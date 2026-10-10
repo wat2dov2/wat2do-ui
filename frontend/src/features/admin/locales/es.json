@@ -22,7 +22,8 @@
         "label": "Categorías de diagnóstico de la aplicación",
         "endpoints": "Endpoints",
         "scraping": "Scraping",
-        "browser": "Browser worker"
+        "browser": "Browser worker",
+        "latency": "Latencia"
       },
       "automateLogs": {
         "title": "Automatizar registros",
@@ -45,6 +46,29 @@
         "event": "Event",
         "school": "School / account",
         "details": "Job / URL / reason"
+      },
+      "latency": {
+        "title": "Latencia de captura de Instagram",
+        "description": "Cuánto tarda desde que se publica un post de Instagram hasta que el agente de ingesta publica o actualiza su evento.",
+        "rangeLabel": "Periodo",
+        "last24Hours": "Últimas 24 horas",
+        "newEvents": "Eventos nuevos",
+        "newEventsDescription": "Desde la publicación del post hasta que el evento aparece en la lista.",
+        "updates": "Actualizaciones",
+        "updatesDescription": "Desde un post posterior (recordatorio, cambio de fecha o cancelación) hasta que se aplica el cambio.",
+        "count": "Capturas",
+        "mean": "Media",
+        "median": "Mediana",
+        "newMean": "Media nuevos",
+        "newMedian": "Mediana nuevos",
+        "updateMean": "Media actualizaciones",
+        "updateMedian": "Mediana actualizaciones",
+        "hourlyTitle": "Latencia por hora",
+        "hourlyDescription": "Retraso medio y mediano de cada captura, agrupado por la hora en que se capturó.",
+        "meanMinutes": "Media (min)",
+        "medianMinutes": "Mediana (min)",
+        "empty": "Aún no hay capturas de Instagram registradas en este periodo.",
+        "error": "No se pudo cargar la latencia de ingesta."
       }
     },
     "manageEvents": "Gestionar Eventos",

@@ -22,7 +22,8 @@
         "label": "ਐਪ ਡਾਇਗਨੌਸਟਿਕ ਸ਼੍ਰੇਣੀਆਂ",
         "endpoints": "ਅੰਤ ਬਿੰਦੂ",
         "scraping": "ਸਕ੍ਰੈਪਿੰਗ",
-        "browser": "Browser worker"
+        "browser": "Browser worker",
+        "latency": "ਦੇਰੀ"
       },
       "automateLogs": {
         "title": "Automate ਲੌਗਸ",
@@ -45,6 +46,29 @@
         "event": "Event",
         "school": "School / account",
         "details": "Job / URL / reason"
+      },
+      "latency": {
+        "title": "Instagram ਕੈਪਚਰ ਦੇਰੀ",
+        "description": "Instagram ਪੋਸਟ ਪਾਉਣ ਤੋਂ ਲੈ ਕੇ ਇੰਜੈਸ਼ਨ ਏਜੰਟ ਵੱਲੋਂ ਉਸਦਾ ਇਵੈਂਟ ਸੂਚੀਬੱਧ ਜਾਂ ਅੱਪਡੇਟ ਕਰਨ ਤੱਕ ਕਿੰਨਾ ਸਮਾਂ ਲੱਗਦਾ ਹੈ।",
+        "rangeLabel": "ਸਮਾਂ ਸੀਮਾ",
+        "last24Hours": "ਪਿਛਲੇ 24 ਘੰਟੇ",
+        "newEvents": "ਨਵੇਂ ਇਵੈਂਟ",
+        "newEventsDescription": "ਪੋਸਟ ਪਾਉਣ ਤੋਂ ਇਵੈਂਟ ਸੂਚੀਬੱਧ ਹੋਣ ਤੱਕ।",
+        "updates": "ਅੱਪਡੇਟ",
+        "updatesDescription": "ਬਾਅਦ ਦੀ ਪੋਸਟ (ਯਾਦ-ਦਹਾਨੀ, ਨਵਾਂ ਸਮਾਂ ਜਾਂ ਰੱਦ) ਤੋਂ ਬਦਲਾਅ ਲਾਗੂ ਹੋਣ ਤੱਕ।",
+        "count": "ਕੈਪਚਰ",
+        "mean": "ਔਸਤ",
+        "median": "ਮੱਧਕ",
+        "newMean": "ਨਵਿਆਂ ਦੀ ਔਸਤ",
+        "newMedian": "ਨਵਿਆਂ ਦਾ ਮੱਧਕ",
+        "updateMean": "ਅੱਪਡੇਟ ਦੀ ਔਸਤ",
+        "updateMedian": "ਅੱਪਡੇਟ ਦਾ ਮੱਧਕ",
+        "hourlyTitle": "ਘੰਟੇ ਅਨੁਸਾਰ ਦੇਰੀ",
+        "hourlyDescription": "ਹਰ ਕੈਪਚਰ ਦੀ ਔਸਤ ਅਤੇ ਮੱਧਕ ਦੇਰੀ, ਕੈਪਚਰ ਦੇ ਘੰਟੇ ਅਨੁਸਾਰ ਸਮੂਹਬੱਧ।",
+        "meanMinutes": "ਔਸਤ (ਮਿੰਟ)",
+        "medianMinutes": "ਮੱਧਕ (ਮਿੰਟ)",
+        "empty": "ਇਸ ਸਮੇਂ ਦੌਰਾਨ ਅਜੇ ਕੋਈ Instagram ਕੈਪਚਰ ਦਰਜ ਨਹੀਂ ਹੋਇਆ।",
+        "error": "ਇੰਜੈਸ਼ਨ ਦੇਰੀ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ।"
       }
     },
     "manageEvents": "ਇਵੈਂਟਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ",

@@ -22,7 +22,8 @@
         "label": "Категории диагностики приложения",
         "endpoints": "Конечные точки",
         "scraping": "Скрапинг",
-        "browser": "Browser worker"
+        "browser": "Browser worker",
+        "latency": "Задержка"
       },
       "automateLogs": {
         "title": "Журналы Automate",
@@ -45,6 +46,29 @@
         "event": "Event",
         "school": "School / account",
         "details": "Job / URL / reason"
+      },
+      "latency": {
+        "title": "Задержка захвата Instagram",
+        "description": "Сколько времени проходит от публикации поста в Instagram до того, как агент загрузки добавит или обновит событие.",
+        "rangeLabel": "Период",
+        "last24Hours": "Последние 24 часа",
+        "newEvents": "Новые события",
+        "newEventsDescription": "От публикации поста до появления события.",
+        "updates": "Обновления",
+        "updatesDescription": "От более позднего поста (напоминание, перенос или отмена) до применения изменения.",
+        "count": "Захваты",
+        "mean": "Среднее",
+        "median": "Медиана",
+        "newMean": "Среднее (новые)",
+        "newMedian": "Медиана (новые)",
+        "updateMean": "Среднее (обновления)",
+        "updateMedian": "Медиана (обновления)",
+        "hourlyTitle": "Задержка по часам",
+        "hourlyDescription": "Средняя и медианная задержка всех захватов, сгруппированная по часу захвата.",
+        "meanMinutes": "Среднее (мин)",
+        "medianMinutes": "Медиана (мин)",
+        "empty": "За этот период захваты из Instagram ещё не зарегистрированы.",
+        "error": "Не удалось загрузить задержку загрузки."
       }
     },
     "manageEvents": "Управление событиями",

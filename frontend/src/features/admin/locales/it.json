@@ -22,7 +22,8 @@
         "label": "Categorie di diagnostica dell'app",
         "endpoints": "Endpoint",
         "scraping": "Scraping",
-        "browser": "Browser worker"
+        "browser": "Browser worker",
+        "latency": "Latenza"
       },
       "automateLogs": {
         "title": "Log di Automate",
@@ -45,6 +46,29 @@
         "event": "Event",
         "school": "School / account",
         "details": "Job / URL / reason"
+      },
+      "latency": {
+        "title": "Latenza di acquisizione Instagram",
+        "description": "Quanto tempo passa dalla pubblicazione di un post Instagram a quando l'agente di ingestione pubblica o aggiorna il relativo evento.",
+        "rangeLabel": "Periodo",
+        "last24Hours": "Ultime 24 ore",
+        "newEvents": "Nuovi eventi",
+        "newEventsDescription": "Dalla pubblicazione del post all'inserimento dell'evento.",
+        "updates": "Aggiornamenti",
+        "updatesDescription": "Da un post successivo (promemoria, riprogrammazione o annullamento) all'applicazione della modifica.",
+        "count": "Acquisizioni",
+        "mean": "Media",
+        "median": "Mediana",
+        "newMean": "Media nuovi",
+        "newMedian": "Mediana nuovi",
+        "updateMean": "Media aggiornamenti",
+        "updateMedian": "Mediana aggiornamenti",
+        "hourlyTitle": "Latenza per ora",
+        "hourlyDescription": "Ritardo medio e mediano di ogni acquisizione, raggruppato per l'ora in cui è avvenuta.",
+        "meanMinutes": "Media (min)",
+        "medianMinutes": "Mediana (min)",
+        "empty": "Nessuna acquisizione Instagram registrata in questo periodo.",
+        "error": "Impossibile caricare la latenza di ingestione."
       }
     },
     "manageEvents": "Gestisci Eventi",

@@ -72,8 +72,9 @@ def ingest(post: dict, *, school: str, publisher_ig: str | None = None) -> None:
         try:
             _run(prompt, workdir)
         finally:
-            if caption:
-                changes.describe(source_url, caption, since=started)
+            changes.stamp_new_rows(
+                source_url, caption=caption, posted_at=_posted_at(post), since=started
+            )
             changes.drain()
 
 
@@ -213,11 +214,23 @@ def _render(
         "categories": ", ".join(f"'{category}'" for category in EVENT_CATEGORIES),
         "discovery_rules": EVENT_DISCOVERY_RULES,
         "campus_seasons": campus_season_prompt(school.slug),
+        "posted_stamp_rule": (
+            "Whenever this source changes an event that was already listed, including only "
+            "its dates or cancellation, also set `last_source_posted_at = "
+            f"'{posted.isoformat()}'` on that event in the same transaction."
+            if (posted := _posted_at(post))
+            else "This source has no post time; leave `last_source_posted_at` unchanged."
+        ),
     }
     prompt = PROMPT
     for key, value in values.items():
         prompt = prompt.replace("{{" + key + "}}", value)
     return prompt
+
+
+def _posted_at(post: dict) -> datetime | None:
+    """When the Instagram post went up; directory pages have no post time."""
+    return parse_iso_datetime(post.get("timestamp")) if is_instagram(post["url"]) else None
 
 
 def _run(prompt: str, workdir: str) -> None:

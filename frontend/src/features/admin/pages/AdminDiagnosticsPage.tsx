@@ -10,6 +10,7 @@ import {
 } from "@/shared/ui/tabs";
 import { DiscoveryQueries } from "@/features/admin/components/DiscoveryQueries";
 import { DiagnosticsLogs } from "@/features/admin/components/DiagnosticsLogs";
+import { IngestionLatency } from "@/features/admin/components/IngestionLatency";
 
 interface AdminDiagnosticsPageProps {
   onBack: () => void;
@@ -43,6 +44,9 @@ export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
               <TabsTrigger value="scraping">
                 {t("admin.diagnostics.tabs.scraping")}
               </TabsTrigger>
+              <TabsTrigger value="latency">
+                {t("admin.diagnostics.tabs.latency")}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="queries"><DiscoveryQueries /></TabsContent>
@@ -53,6 +57,9 @@ export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
             </TabsContent>
             <TabsContent value="browser">
               <DiagnosticsLogs browserWorker />
+            </TabsContent>
+            <TabsContent value="latency">
+              <IngestionLatency />
             </TabsContent>
           </Stack>
         </Tabs>

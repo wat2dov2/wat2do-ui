@@ -22,7 +22,8 @@
         "label": "App diagnostic categories",
         "endpoints": "Endpoints",
         "scraping": "Scraping",
-        "browser": "Browser worker"
+        "browser": "Browser worker",
+        "latency": "Latency"
       },
       "automateLogs": {
         "title": "Automate Logs",
@@ -45,6 +46,29 @@
         "event": "Event",
         "school": "School / account",
         "details": "Job / URL / reason"
+      },
+      "latency": {
+        "title": "Instagram catch latency",
+        "description": "How long it takes from an Instagram post going up until the ingestion agent lists or updates its event.",
+        "rangeLabel": "Time window",
+        "last24Hours": "Last 24 hours",
+        "newEvents": "New events",
+        "newEventsDescription": "From the post going up to the event being listed.",
+        "updates": "Updates",
+        "updatesDescription": "From a later post (reminder, reschedule or cancellation) to the change being applied.",
+        "count": "Catches",
+        "mean": "Mean",
+        "median": "Median",
+        "newMean": "New mean",
+        "newMedian": "New median",
+        "updateMean": "Update mean",
+        "updateMedian": "Update median",
+        "hourlyTitle": "Latency by hour",
+        "hourlyDescription": "Mean and median delay of every catch, grouped by the hour it was caught.",
+        "meanMinutes": "Mean (min)",
+        "medianMinutes": "Median (min)",
+        "empty": "No Instagram catches recorded yet in this window.",
+        "error": "Could not load ingestion latency."
       }
     },
     "manageEvents": "Manage Events",

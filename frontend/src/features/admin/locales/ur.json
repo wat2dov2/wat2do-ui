@@ -22,7 +22,8 @@
         "label": "ایپ تشخیصی زمرے",
         "endpoints": "اینڈ پوائنٹس",
         "scraping": "اسکریپنگ",
-        "browser": "Browser worker"
+        "browser": "Browser worker",
+        "latency": "تاخیر"
       },
       "automateLogs": {
         "title": "Automate لاگز",
@@ -45,6 +46,29 @@
         "event": "Event",
         "school": "School / account",
         "details": "Job / URL / reason"
+      },
+      "latency": {
+        "title": "Instagram کیپچر تاخیر",
+        "description": "Instagram پوسٹ شائع ہونے سے لے کر انجیسشن ایجنٹ کے اس کا ایونٹ درج یا اپ ڈیٹ کرنے تک کتنا وقت لگتا ہے۔",
+        "rangeLabel": "وقت کی حد",
+        "last24Hours": "پچھلے 24 گھنٹے",
+        "newEvents": "نئے ایونٹس",
+        "newEventsDescription": "پوسٹ شائع ہونے سے ایونٹ درج ہونے تک۔",
+        "updates": "اپ ڈیٹس",
+        "updatesDescription": "بعد کی پوسٹ (یاد دہانی، نیا وقت یا منسوخی) سے تبدیلی لاگو ہونے تک۔",
+        "count": "کیپچرز",
+        "mean": "اوسط",
+        "median": "وسطانیہ",
+        "newMean": "نئے کی اوسط",
+        "newMedian": "نئے کا وسطانیہ",
+        "updateMean": "اپ ڈیٹ کی اوسط",
+        "updateMedian": "اپ ڈیٹ کا وسطانیہ",
+        "hourlyTitle": "فی گھنٹہ تاخیر",
+        "hourlyDescription": "ہر کیپچر کی اوسط اور وسطانیہ تاخیر، کیپچر کے گھنٹے کے لحاظ سے گروپ شدہ۔",
+        "meanMinutes": "اوسط (منٹ)",
+        "medianMinutes": "وسطانیہ (منٹ)",
+        "empty": "اس مدت میں ابھی تک کوئی Instagram کیپچر درج نہیں ہوا۔",
+        "error": "انجیسشن تاخیر لوڈ نہیں ہو سکی۔"
       }
     },
     "manageEvents": "ایونٹس کا نظم کریں",

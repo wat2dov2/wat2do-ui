@@ -22,7 +22,8 @@
         "label": "دسته‌های تشخیصی برنامه",
         "endpoints": "نقاط پایانی",
         "scraping": "استخراج داده",
-        "browser": "Browser worker"
+        "browser": "Browser worker",
+        "latency": "تأخیر"
       },
       "automateLogs": {
         "title": "Automate گزارش‌ها",
@@ -45,6 +46,29 @@
         "event": "Event",
         "school": "School / account",
         "details": "Job / URL / reason"
+      },
+      "latency": {
+        "title": "تأخیر دریافت از Instagram",
+        "description": "مدت زمان از انتشار یک پست در Instagram تا زمانی که عامل دریافت، رویداد آن را فهرست یا به‌روزرسانی کند.",
+        "rangeLabel": "بازه زمانی",
+        "last24Hours": "۲۴ ساعت گذشته",
+        "newEvents": "رویدادهای جدید",
+        "newEventsDescription": "از انتشار پست تا فهرست شدن رویداد.",
+        "updates": "به‌روزرسانی‌ها",
+        "updatesDescription": "از یک پست بعدی (یادآوری، تغییر زمان یا لغو) تا اعمال تغییر.",
+        "count": "دریافت‌ها",
+        "mean": "میانگین",
+        "median": "میانه",
+        "newMean": "میانگین جدیدها",
+        "newMedian": "میانه جدیدها",
+        "updateMean": "میانگین به‌روزرسانی‌ها",
+        "updateMedian": "میانه به‌روزرسانی‌ها",
+        "hourlyTitle": "تأخیر بر حسب ساعت",
+        "hourlyDescription": "میانگین و میانه تأخیر هر دریافت، گروه‌بندی‌شده بر اساس ساعت دریافت.",
+        "meanMinutes": "میانگین (دقیقه)",
+        "medianMinutes": "میانه (دقیقه)",
+        "empty": "هنوز هیچ دریافتی از Instagram در این بازه ثبت نشده است.",
+        "error": "بارگیری تأخیر دریافت ممکن نشد."
       }
     },
     "manageEvents": "مدیریت رویدادها",

@@ -136,6 +136,10 @@ export function getDiscoveryQueries(filters: AdminListFilters) {
   return getAdminPage<components["schemas"]["DiscoveryQueryResponse"]>("/discovery-queries/", filters);
 }
 
+export function getIngestionLatency(days: number) {
+  return api.get<components["schemas"]["IngestionLatencyResponse"]>(`/ingestion-latency/?days=${days}`);
+}
+
 export function getAdminEventsPage(filters: AdminListFilters) {
   return getAdminPage<Event>("/events/admin", filters);
 }

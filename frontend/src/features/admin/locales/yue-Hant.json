@@ -22,7 +22,8 @@
         "label": "應用程式診斷類別",
         "endpoints": "端點",
         "scraping": "爬蟲",
-        "browser": "Browser worker"
+        "browser": "Browser worker",
+        "latency": "延遲"
       },
       "automateLogs": {
         "title": "Automate 日誌",
@@ -45,6 +46,29 @@
         "event": "Event",
         "school": "School / account",
         "details": "Job / URL / reason"
+      },
+      "latency": {
+        "title": "Instagram 擷取延遲",
+        "description": "由 Instagram 帖文發佈到擷取代理上架或者更新相關活動所需嘅時間。",
+        "rangeLabel": "時間範圍",
+        "last24Hours": "過去 24 小時",
+        "newEvents": "新活動",
+        "newEventsDescription": "由帖文發佈到活動上架。",
+        "updates": "更新",
+        "updatesDescription": "由之後嘅帖文（提醒、改期或者取消）到變更生效。",
+        "count": "擷取次數",
+        "mean": "平均值",
+        "median": "中位數",
+        "newMean": "新活動平均值",
+        "newMedian": "新活動中位數",
+        "updateMean": "更新平均值",
+        "updateMedian": "更新中位數",
+        "hourlyTitle": "按小時嘅延遲",
+        "hourlyDescription": "按擷取所喺小時分組嘅每次擷取平均同中位延遲。",
+        "meanMinutes": "平均值（分鐘）",
+        "medianMinutes": "中位數（分鐘）",
+        "empty": "呢個時間範圍入面仲未有任何 Instagram 擷取紀錄。",
+        "error": "無法載入擷取延遲。"
       }
     },
     "manageEvents": "管理活動",

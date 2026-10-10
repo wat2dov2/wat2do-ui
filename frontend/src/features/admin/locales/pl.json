@@ -22,7 +22,8 @@
         "label": "Kategorie diagnostyki aplikacji",
         "endpoints": "Punkty końcowe",
         "scraping": "Scraping",
-        "browser": "Browser worker"
+        "browser": "Browser worker",
+        "latency": "Opóźnienie"
       },
       "automateLogs": {
         "title": "Automate logi",
@@ -45,6 +46,29 @@
         "event": "Event",
         "school": "School / account",
         "details": "Job / URL / reason"
+      },
+      "latency": {
+        "title": "Opóźnienie przechwytywania z Instagrama",
+        "description": "Ile czasu mija od publikacji posta na Instagramie do dodania lub aktualizacji wydarzenia przez agenta importu.",
+        "rangeLabel": "Zakres czasu",
+        "last24Hours": "Ostatnie 24 godziny",
+        "newEvents": "Nowe wydarzenia",
+        "newEventsDescription": "Od publikacji posta do dodania wydarzenia.",
+        "updates": "Aktualizacje",
+        "updatesDescription": "Od późniejszego posta (przypomnienie, zmiana terminu lub odwołanie) do wprowadzenia zmiany.",
+        "count": "Przechwycenia",
+        "mean": "Średnia",
+        "median": "Mediana",
+        "newMean": "Średnia nowych",
+        "newMedian": "Mediana nowych",
+        "updateMean": "Średnia aktualizacji",
+        "updateMedian": "Mediana aktualizacji",
+        "hourlyTitle": "Opóźnienie według godzin",
+        "hourlyDescription": "Średnie i medianowe opóźnienie wszystkich przechwyceń, pogrupowane według godziny przechwycenia.",
+        "meanMinutes": "Średnia (min)",
+        "medianMinutes": "Mediana (min)",
+        "empty": "W tym okresie nie zarejestrowano jeszcze żadnych przechwyceń z Instagrama.",
+        "error": "Nie udało się wczytać opóźnienia importu."
       }
     },
     "manageEvents": "Zarządzaj wydarzeniami",

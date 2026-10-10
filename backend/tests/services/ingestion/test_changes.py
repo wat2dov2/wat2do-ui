@@ -118,9 +118,12 @@ def test_drain_refreshes_feeds_and_clears_rows(db):
     ]
 
 
-def test_describe_gives_rows_created_from_the_source_its_caption(db):
+def test_stamp_new_rows_gives_rows_from_the_source_its_caption_and_post_time(db):
     since = datetime(2026, 10, 10, tzinfo=timezone.utc)
-    module.describe("https://www.instagram.com/p/NEW/", "x" * 6000, since=since)
+    posted = datetime(2026, 10, 9, 18, tzinfo=timezone.utc)
+    module.stamp_new_rows(
+        "https://www.instagram.com/p/NEW/", caption="x" * 6000, posted_at=posted, since=since
+    )
 
     [(event_table, event_payload, event_filters), (position_table, position_payload, _)] = (
         db.updates
@@ -131,7 +134,22 @@ def test_describe_gives_rows_created_from_the_source_its_caption(db):
         ("added_at>=", since.isoformat()),
     ]
     assert len(event_payload["description"]) == module.MAX_EVENT_DESCRIPTION_LENGTH
+    assert (
+        event_payload["source_posted_at"]
+        == event_payload["last_source_posted_at"]
+        == posted.isoformat()
+    )
     assert len(position_payload["description"]) == module.MAX_POSITION_DESCRIPTION_LENGTH
+
+
+def test_stamp_new_rows_skips_directory_pages_without_text(db):
+    module.stamp_new_rows(
+        "https://wusa.ca/event/jam/",
+        caption="",
+        posted_at=None,
+        since=datetime(2026, 10, 10, tzinfo=timezone.utc),
+    )
+    assert db.updates == []
 
 
 def test_drain_alerts_people_going_when_a_date_is_removed(db):

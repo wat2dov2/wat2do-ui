@@ -694,6 +694,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ingestion-latency/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ingestion Latency
+         * @description Delay between an Instagram post and the agent listing or updating its event.
+         */
+        get: operations["get_ingestion_latency_ingestion_latency__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/instagram-publishing/batches/": {
         parameters: {
             query?: never;
@@ -2759,6 +2779,34 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HourlyIngestionLatency */
+        HourlyIngestionLatency: {
+            /**
+             * Hour
+             * Format: date-time
+             */
+            hour: string;
+            /** Count */
+            count: number;
+            /** Mean Minutes */
+            mean_minutes: number;
+            /** Median Minutes */
+            median_minutes: number;
+        };
+        /** IngestionLatencyResponse */
+        IngestionLatencyResponse: {
+            /**
+             * Since
+             * Format: date-time
+             */
+            since: string;
+            new_events: components["schemas"]["LatencyStats"];
+            updates: components["schemas"]["LatencyStats"];
+            /** Schools */
+            schools: components["schemas"]["SchoolIngestionLatency"][];
+            /** Hourly */
+            hourly: components["schemas"]["HourlyIngestionLatency"][];
+        };
         /** InstagramPublishBatchPublish */
         InstagramPublishBatchPublish: {
             /** Version */
@@ -3037,6 +3085,15 @@ export interface components {
             metadata?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** LatencyStats */
+        LatencyStats: {
+            /** Count */
+            count: number;
+            /** Mean Minutes */
+            mean_minutes: number | null;
+            /** Median Minutes */
+            median_minutes: number | null;
         };
         /** LatestAddedItem */
         LatestAddedItem: {
@@ -4081,6 +4138,13 @@ export interface components {
             };
             /** Display Windows */
             display_windows: components["schemas"]["CampusSeasonWindow"][];
+        };
+        /** SchoolIngestionLatency */
+        SchoolIngestionLatency: {
+            /** School */
+            school: string;
+            new_events: components["schemas"]["LatencyStats"];
+            updates: components["schemas"]["LatencyStats"];
         };
         /** SchoolSummary */
         SchoolSummary: {
@@ -5963,6 +6027,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GoingEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ingestion_latency_ingestion_latency__get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IngestionLatencyResponse"];
                 };
             };
             /** @description Validation Error */

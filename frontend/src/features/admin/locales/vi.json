@@ -22,7 +22,8 @@
         "label": "Các loại chẩn đoán ứng dụng",
         "endpoints": "Các điểm cuối",
         "scraping": "Thu thập dữ liệu",
-        "browser": "Browser worker"
+        "browser": "Browser worker",
+        "latency": "Độ trễ"
       },
       "automateLogs": {
         "title": "Automate Nhật ký",
@@ -45,6 +46,29 @@
         "event": "Event",
         "school": "School / account",
         "details": "Job / URL / reason"
+      },
+      "latency": {
+        "title": "Độ trễ thu thập Instagram",
+        "description": "Thời gian từ khi một bài đăng Instagram được đăng đến khi tác nhân thu thập đăng hoặc cập nhật sự kiện của bài đó.",
+        "rangeLabel": "Khoảng thời gian",
+        "last24Hours": "24 giờ qua",
+        "newEvents": "Sự kiện mới",
+        "newEventsDescription": "Từ khi bài đăng được đăng đến khi sự kiện được liệt kê.",
+        "updates": "Cập nhật",
+        "updatesDescription": "Từ một bài đăng sau đó (nhắc nhở, đổi lịch hoặc hủy) đến khi thay đổi được áp dụng.",
+        "count": "Lượt thu thập",
+        "mean": "Trung bình",
+        "median": "Trung vị",
+        "newMean": "Trung bình mới",
+        "newMedian": "Trung vị mới",
+        "updateMean": "Trung bình cập nhật",
+        "updateMedian": "Trung vị cập nhật",
+        "hourlyTitle": "Độ trễ theo giờ",
+        "hourlyDescription": "Độ trễ trung bình và trung vị của mỗi lượt thu thập, nhóm theo giờ thu thập.",
+        "meanMinutes": "Trung bình (phút)",
+        "medianMinutes": "Trung vị (phút)",
+        "empty": "Chưa có lượt thu thập Instagram nào được ghi nhận trong khoảng thời gian này.",
+        "error": "Không thể tải độ trễ thu thập."
       }
     },
     "manageEvents": "Quản lý sự kiện",

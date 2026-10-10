@@ -34,15 +34,27 @@ def drain() -> None:
             _settle(rows)
 
 
-def describe(source_url: str, caption: str, *, since: datetime) -> None:
-    """Give rows the agent created from ``source_url`` the source's original text."""
-    for table, limit in (
-        (EVENTS, MAX_EVENT_DESCRIPTION_LENGTH),
-        (POSITIONS, MAX_POSITION_DESCRIPTION_LENGTH),
-    ):
-        get_sb().table(table).update({"description": caption[:limit]}).eq(
-            "source_url", source_url
-        ).gte("added_at", since.isoformat()).execute()
+def stamp_new_rows(
+    source_url: str, *, caption: str, posted_at: datetime | None, since: datetime
+) -> None:
+    """Give rows the agent created from ``source_url`` the source's text and post time."""
+    event = {
+        **({"description": caption[:MAX_EVENT_DESCRIPTION_LENGTH]} if caption else {}),
+        **(
+            {
+                "source_posted_at": posted_at.isoformat(),
+                "last_source_posted_at": posted_at.isoformat(),
+            }
+            if posted_at
+            else {}
+        ),
+    }
+    position = {"description": caption[:MAX_POSITION_DESCRIPTION_LENGTH]} if caption else {}
+    for table, payload in ((EVENTS, event), (POSITIONS, position)):
+        if payload:
+            get_sb().table(table).update(payload).eq("source_url", source_url).gte(
+                "added_at", since.isoformat()
+            ).execute()
 
 
 def _settle(rows: list[dict]) -> None:

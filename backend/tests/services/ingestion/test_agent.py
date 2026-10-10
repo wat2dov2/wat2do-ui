@@ -1,4 +1,5 @@
 import subprocess
+from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -9,6 +10,7 @@ from services.ingestion import agent as module
 from services.scraper.org_resolve import ResolvedClub
 
 _DIRECTORY_URL = "https://clubs.example.edu/events/123"
+_POSTED = datetime(2026, 10, 15, 15, tzinfo=UTC)
 _SCHOOL = SimpleNamespace(slug="uwaterloo", id=7)
 _POST = {
     "url": "https://www.instagram.com/p/NEW/",
@@ -50,8 +52,10 @@ def run(monkeypatch, tmp_path):
     monkeypatch.setattr(module.changes, "drain", lambda: state.drains.append("drain"))
     monkeypatch.setattr(
         module.changes,
-        "describe",
-        lambda url, caption, *, since: state.drains.append(("describe", url, caption)),
+        "stamp_new_rows",
+        lambda url, *, caption, posted_at, since: state.drains.append(
+            ("stamp", url, caption, posted_at)
+        ),
     )
     monkeypatch.setattr(module.shutil, "which", lambda name: f"/usr/local/bin/{name}")
     monkeypatch.setattr(
@@ -85,7 +89,7 @@ def test_ingest_runs_haiku_with_psql_only_then_settles_its_changes(run):
     assert kwargs["timeout"] == module.CONTROL.model_timeout_seconds
     assert run.files == {"image-0.jpg"}
     # New rows from this source get its caption, then every change settles.
-    assert run.drains == [("describe", _POST["url"], _POST["caption"]), "drain"]
+    assert run.drains == [("stamp", _POST["url"], _POST["caption"], _POSTED), "drain"]
 
 
 def test_ingest_gives_the_agent_a_scoped_login_and_no_application_secrets(run, monkeypatch):
@@ -114,6 +118,7 @@ def test_ingest_renders_every_prompt_placeholder(run):
     assert "Image 0: ./image-0.jpg, stored as https://wat2do.io/media/0.jpg" in prompt
     assert "local timezone America/Toronto" in prompt
     assert "Current semester ends: 2026-12-22" in prompt
+    assert "set `last_source_posted_at = '2026-10-15T15:00:00+00:00'`" in prompt
 
 
 def test_ingest_lets_directory_pages_fall_back_to_the_publishing_club(run):
@@ -131,6 +136,7 @@ def test_ingest_lets_directory_pages_fall_back_to_the_publishing_club(run):
     prompt = run.calls[0][1]["input"]
     assert "ingestion_source = 'directory'" in prompt
     assert "Images (read every one" in prompt and "(no images)" in prompt
+    assert "This source has no post time" in prompt
 
 
 def test_ingest_still_drains_when_the_agent_fails(run):
@@ -138,7 +144,7 @@ def test_ingest_still_drains_when_the_agent_fails(run):
 
     with pytest.raises(module.AgentError, match="exit 1"):
         module.ingest(dict(_POST), school="uwaterloo")
-    assert run.drains == [("describe", _POST["url"], _POST["caption"]), "drain"]
+    assert run.drains == [("stamp", _POST["url"], _POST["caption"], _POSTED), "drain"]
 
 
 def test_ingest_skips_sources_already_listed(run, monkeypatch):

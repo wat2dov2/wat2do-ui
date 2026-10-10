@@ -22,7 +22,8 @@
         "label": "એપ્લિકેશન ડાયગ્નોસ્ટિક શ્રેણીઓ",
         "endpoints": "એન્ડપોઇન્ટ્સ",
         "scraping": "સ્ક્રેપિંગ",
-        "browser": "Browser worker"
+        "browser": "Browser worker",
+        "latency": "વિલંબ"
       },
       "automateLogs": {
         "title": "Automate લોગ્સ",
@@ -45,6 +46,29 @@
         "event": "Event",
         "school": "School / account",
         "details": "Job / URL / reason"
+      },
+      "latency": {
+        "title": "Instagram કૅપ્ચર વિલંબ",
+        "description": "Instagram પોસ્ટ પ્રકાશિત થયા પછી ઇન્જેશન એજન્ટ તેની ઇવેન્ટ સૂચિબદ્ધ કે અપડેટ કરે ત્યાં સુધી કેટલો સમય લાગે છે.",
+        "rangeLabel": "સમયગાળો",
+        "last24Hours": "છેલ્લા 24 કલાક",
+        "newEvents": "નવી ઇવેન્ટ્સ",
+        "newEventsDescription": "પોસ્ટ પ્રકાશિત થવાથી ઇવેન્ટ સૂચિબદ્ધ થવા સુધી.",
+        "updates": "અપડેટ્સ",
+        "updatesDescription": "પછીની પોસ્ટ (રિમાઇન્ડર, નવો સમય અથવા રદ) થી ફેરફાર લાગુ થવા સુધી.",
+        "count": "કૅપ્ચર",
+        "mean": "સરેરાશ",
+        "median": "મધ્યક",
+        "newMean": "નવીની સરેરાશ",
+        "newMedian": "નવીનો મધ્યક",
+        "updateMean": "અપડેટની સરેરાશ",
+        "updateMedian": "અપડેટનો મધ્યક",
+        "hourlyTitle": "કલાક મુજબ વિલંબ",
+        "hourlyDescription": "દરેક કૅપ્ચરનો સરેરાશ અને મધ્યક વિલંબ, કૅપ્ચરના કલાક મુજબ જૂથબદ્ધ.",
+        "meanMinutes": "સરેરાશ (મિનિટ)",
+        "medianMinutes": "મધ્યક (મિનિટ)",
+        "empty": "આ સમયગાળામાં હજુ સુધી કોઈ Instagram કૅપ્ચર નોંધાયો નથી.",
+        "error": "ઇન્જેશન વિલંબ લોડ થઈ શક્યો નથી."
       }
     },
     "manageEvents": "ઇવેન્ટનું સંચાલન કરો",

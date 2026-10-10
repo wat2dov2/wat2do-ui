@@ -22,7 +22,8 @@
         "label": "App-Diagnosekategorien",
         "endpoints": "Endpunkte",
         "scraping": "Scraping",
-        "browser": "Browser worker"
+        "browser": "Browser worker",
+        "latency": "Latenz"
       },
       "automateLogs": {
         "title": "Automate-Protokolle",
@@ -45,6 +46,29 @@
         "event": "Event",
         "school": "School / account",
         "details": "Job / URL / reason"
+      },
+      "latency": {
+        "title": "Instagram-Erfassungslatenz",
+        "description": "Wie lange es dauert, bis der Ingestion-Agent nach einem Instagram-Post das Event listet oder aktualisiert.",
+        "rangeLabel": "Zeitraum",
+        "last24Hours": "Letzte 24 Stunden",
+        "newEvents": "Neue Events",
+        "newEventsDescription": "Vom Post bis zur Veröffentlichung des Events.",
+        "updates": "Aktualisierungen",
+        "updatesDescription": "Von einem späteren Post (Erinnerung, Verschiebung oder Absage) bis zur übernommenen Änderung.",
+        "count": "Erfassungen",
+        "mean": "Mittelwert",
+        "median": "Median",
+        "newMean": "Mittelwert neu",
+        "newMedian": "Median neu",
+        "updateMean": "Mittelwert Updates",
+        "updateMedian": "Median Updates",
+        "hourlyTitle": "Latenz pro Stunde",
+        "hourlyDescription": "Mittlere und mediane Verzögerung aller Erfassungen, gruppiert nach der Stunde der Erfassung.",
+        "meanMinutes": "Mittelwert (Min.)",
+        "medianMinutes": "Median (Min.)",
+        "empty": "In diesem Zeitraum wurden noch keine Instagram-Erfassungen aufgezeichnet.",
+        "error": "Ingestion-Latenz konnte nicht geladen werden."
       }
     },
     "manageEvents": "Veranstaltungen verwalten",

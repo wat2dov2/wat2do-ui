@@ -2994,6 +2994,57 @@
         }
       }
     },
+    "/ingestion-latency/": {
+      "get": {
+        "tags": [
+          "ingestion-latency"
+        ],
+        "summary": "Get Ingestion Latency",
+        "description": "Delay between an Instagram post and the agent listing or updating its event.",
+        "operationId": "get_ingestion_latency_ingestion_latency__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 30,
+              "minimum": 1,
+              "default": 7,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionLatencyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/instagram-publishing/batches/": {
       "get": {
         "tags": [
@@ -10143,6 +10194,73 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HourlyIngestionLatency": {
+        "properties": {
+          "hour": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Hour"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "mean_minutes": {
+            "type": "number",
+            "title": "Mean Minutes"
+          },
+          "median_minutes": {
+            "type": "number",
+            "title": "Median Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hour",
+          "count",
+          "mean_minutes",
+          "median_minutes"
+        ],
+        "title": "HourlyIngestionLatency"
+      },
+      "IngestionLatencyResponse": {
+        "properties": {
+          "since": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Since"
+          },
+          "new_events": {
+            "$ref": "#/components/schemas/LatencyStats"
+          },
+          "updates": {
+            "$ref": "#/components/schemas/LatencyStats"
+          },
+          "schools": {
+            "items": {
+              "$ref": "#/components/schemas/SchoolIngestionLatency"
+            },
+            "type": "array",
+            "title": "Schools"
+          },
+          "hourly": {
+            "items": {
+              "$ref": "#/components/schemas/HourlyIngestionLatency"
+            },
+            "type": "array",
+            "title": "Hourly"
+          }
+        },
+        "type": "object",
+        "required": [
+          "since",
+          "new_events",
+          "updates",
+          "schools",
+          "hourly"
+        ],
+        "title": "IngestionLatencyResponse"
+      },
       "InstagramPublishBatchPublish": {
         "properties": {
           "version": {
@@ -10770,6 +10888,43 @@
           "interaction_type"
         ],
         "title": "InteractionCreate"
+      },
+      "LatencyStats": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "mean_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Minutes"
+          },
+          "median_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "count",
+          "mean_minutes",
+          "median_minutes"
+        ],
+        "title": "LatencyStats"
       },
       "LatestAddedItem": {
         "properties": {
@@ -13784,6 +13939,27 @@
           "display_windows"
         ],
         "title": "SchoolEventSeason"
+      },
+      "SchoolIngestionLatency": {
+        "properties": {
+          "school": {
+            "type": "string",
+            "title": "School"
+          },
+          "new_events": {
+            "$ref": "#/components/schemas/LatencyStats"
+          },
+          "updates": {
+            "$ref": "#/components/schemas/LatencyStats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "school",
+          "new_events",
+          "updates"
+        ],
+        "title": "SchoolIngestionLatency"
       },
       "SchoolSummary": {
         "properties": {

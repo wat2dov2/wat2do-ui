@@ -98,6 +98,7 @@ AUTHENTICATED_ENDPOINTS = (
     Endpoint("/discovery-queries/", "/discovery-queries/?page=1&page_size=20", True),
     Endpoint("/events/admin", "/events/admin?page=1&page_size=20", True),
     Endpoint("/going-events/", "/going-events/", True),
+    Endpoint("/ingestion-latency/", "/ingestion-latency/?days=7", True),
     Endpoint(
         "/instagram-publishing/batches/",
         "/instagram-publishing/batches/?page=1&page_size=10",

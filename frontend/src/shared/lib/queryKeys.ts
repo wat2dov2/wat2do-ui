@@ -5,6 +5,7 @@ export const queryKeys = {
     list: (resource: string, filters: object) => [...queryKeys.admin.lists(resource), filters] as const,
     count: (resource: string) => [...queryKeys.admin.all, resource, "pending-count"] as const,
     submission: (id: string | null) => [...queryKeys.admin.all, "submission", id] as const,
+    ingestionLatency: (days: number) => [...queryKeys.admin.all, "ingestion-latency", days] as const,
   },
   meta: {
     all: ["meta"] as const,

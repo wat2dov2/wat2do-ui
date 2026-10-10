@@ -152,7 +152,7 @@ def test_agent_failure_keeps_the_capture_queued_without_logging_it(queue, monkey
         agent, "resolve_club_for_scrape", Mock(return_value=SimpleNamespace(club_id=None))
     )
     monkeypatch.setattr(agent, "_render", lambda *args, **kwargs: "prompt")
-    monkeypatch.setattr(agent.changes, "describe", lambda *args, **kwargs: None)
+    monkeypatch.setattr(agent.changes, "stamp_new_rows", lambda *args, **kwargs: None)
     monkeypatch.setattr(agent.shutil, "which", lambda name: name)
     monkeypatch.setattr(agent, "_agent_environment", lambda: {})
     monkeypatch.setattr(
