@@ -125,3 +125,17 @@ def test_prune_forgets_checked_content_after_the_ttl(queue, clock):
     assert queue.counts() == {"queued": 0, "checked": 1}
     assert queue.enqueue(_item("https://example.edu/events/old")) is True
     assert queue.enqueue(_item("https://example.edu/events/new")) is False
+
+
+def test_repeated_scrapes_of_a_rejected_page_keep_one_checked_row(queue, clock):
+    for _ in range(5):
+        queue.enqueue(_item(url="https://events.example.edu/listing", caption="All events"))
+        item = queue.claim()
+        if item is not None:
+            queue.complete(item)
+        clock.now += 12 * 3600
+
+    with sqlite3.connect(queue.database_path) as db:
+        rows = db.execute("SELECT source_url FROM checked").fetchall()
+    assert rows == [("https://events.example.edu/listing",)]
+    assert queue.counts() == {"queued": 0, "checked": 1}

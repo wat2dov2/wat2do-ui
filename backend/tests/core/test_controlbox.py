@@ -95,7 +95,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.ingestion.model == "claude-haiku-5-5"
     assert controlbox.ingestion.process_interval_seconds == 300
     assert controlbox.ingestion.directory_scrape_interval_seconds == 43200
-    assert controlbox.ingestion.checked_ttl_days == 30
+    assert controlbox.ingestion.checked_ttl_days == 14
     assert controlbox.instagram_digest.operation_name == "SubscriptionDigestFeedQuery"
     assert controlbox.instagram_digest.client_doc_id == "20099285643937437306465362209"
     assert controlbox.instagram_digest.maximum_pages == 25
