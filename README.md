@@ -154,13 +154,16 @@ Before switching registrar nameservers, inventory every current Vercel DNS recor
 
 The first ARM64 frontend and backend images, plus the x86-64 social-preview image, must be pushed to ECR by digest before the initial production apply.
 Once production exists, pushes to `main` use GitHub OIDC to build all three images, tag them with the full commit SHA, update the ECS task definition, and update the Lambda image.
-Directory events are imported by a daily local Codex scheduled prompt using the official sources in `backend/services/scraper/urls/directories.json`.
-The computer must be on with Codex running for directory imports.
+Official school event directories are listed in the `public.directory_sources` table.
+Every 12 hours a local LaunchAgent queues new directory event pages, and every 5 minutes another drains the local ingestion queue with Claude Haiku (`backend/scripts/ingest.py`).
+Install both with `cd backend && .venv/bin/python scripts/ingest.py install-schedule`; the Mac must be on and signed in to Claude Code.
 Notifications and recommendation compute run on GitHub-hosted runners.
-Instagram notifications resolve to exact post URLs, which the pending-media workers fetch from public Instagram embeds without Apify or Instagram credentials.
-Single images and all available carousel slide images use the same parser; incomplete or unavailable content fails the claim rather than being marked successful.
-Post timestamps are optional, and the notification digest expansion still needs its existing logged-in browser session.
-Manual username lookups and profile-logo backfills remain separate Apify tools.
+Instagram notifications come from a physical Android phone running Automate, which triggers the `process-notification` workflow.
+The workflow records exact post URLs in the Supabase notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker.
+The Brave worker retrieves each pending post, captures it into the local ingestion queue (`~/.local/state/wat2do/ingestion/queue.sqlite3`), and marks its ledger row succeeded.
+The same 5-minute queue processor then extracts events and positions with Claude Haiku through `claude -p` and saves them with the existing writers.
+Manual profile or post lookups use `cd backend && python scripts/instagram_browser.py retrieve --school <slug> --url <url>`.
+Profile-logo backfills and single-post media repairs remain separate Apify operator tools.
 For a read-only live retrieval check, run `cd backend && python scripts/probe_instagram_post.py --url https://www.instagram.com/p/SHORTCODE/`.
 
 ## 🤝 Support

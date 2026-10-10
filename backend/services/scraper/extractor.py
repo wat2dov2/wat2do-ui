@@ -1,15 +1,16 @@
-"""OpenAI vision-based event and hiring extraction for scraped content.
+"""Vision-based event and hiring extraction for scraped content.
 
-Each ``image_url`` block in the user-message content is preceded by an
-``{"type": "text", "text": "Image N:"}`` marker. The vision model keys off
-these markers when populating ``image_index`` on extracted events; without
-them carousel-image attribution is essentially random.
+The model call is a ``Completion``: the API uses ``openai_completion`` and the
+local ingestion processor passes a Claude completion. Every image is preceded
+by an ``Image N:`` marker. The model keys off these markers when populating
+``image_index``; without them carousel-image attribution is essentially random.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from datetime import date, datetime
 from typing import Annotated, Literal
 from zoneinfo import ZoneInfo
@@ -70,14 +71,31 @@ class PostExtractionError(RuntimeError):
         super().__init__("Instagram post extraction failed")
 
 
-def _client() -> OpenAI | None:
-    """Return a configured OpenAI client, or None if ``OPENAI_API_KEY`` is unset.
+Completion = Callable[[str, str, list[str]], str | None]
+"""``(system, prompt, image_urls) -> response text``, or None when the call failed."""
 
-    Dry-run does not bypass extraction; it still needs a key to call the model.
-    """
+
+def openai_completion(system: str, prompt: str, image_urls: list[str]) -> str | None:
+    """Run one vision completion with the configured OpenAI extraction model."""
     if not settings.openai_api_key:
+        log.warning("OpenAI extraction client unavailable")
         return None
-    return OpenAI(api_key=settings.openai_api_key)
+    user_content: list[dict] = [{"type": "text", "text": prompt}]
+    for i, url in enumerate(image_urls):
+        user_content.append({"type": "text", "text": f"Image {i}:"})
+        user_content.append({"type": "image_url", "image_url": {"url": url}})
+    try:
+        response = OpenAI(api_key=settings.openai_api_key).chat.completions.create(
+            model=settings.openai_extraction_model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_content},
+            ],
+        )
+    except Exception:
+        log.warning("OpenAI extraction call failed")
+        return None
+    return response.choices[0].message.content or ""
 
 
 def extract_post_content(
@@ -86,7 +104,7 @@ def extract_post_content(
     image_urls: list[str] | None,
     post_created_at: datetime | None,
     school: str,
-    model: str | None = None,
+    complete: Completion = openai_completion,
 ) -> ExtractedPostContent:
     """Triage content and extract zero-or-more events and hiring positions.
 
@@ -100,22 +118,12 @@ def extract_post_content(
             phrases like "tonight"/"tomorrow"). Falls back to "now" in
             the school's local TZ if missing.
         school: school slug (e.g. "uwaterloo").
-        model: vision-capable OpenAI model. Defaults to
-            ``settings.openai_extraction_model``.
+        complete: the vision model call; defaults to ``openai_completion``.
 
     Returns cleaned event and position dictionaries in one result. A valid
     non-event post may be empty; provider and unusable-response failures raise
     ``PostExtractionError`` so an importer can retry without consuming the post.
     """
-    client = None
-    try:
-        client = _client()
-    except Exception:
-        log.warning("OpenAI extraction client could not be configured")
-    if client is None:
-        log.warning("OpenAI extraction client unavailable for %s", school)
-        raise PostExtractionError()
-
     tz_name = resolve_school_timezone(school)
     try:
         local_tz = ZoneInfo(tz_name)
@@ -152,33 +160,12 @@ def extract_post_content(
         categories_str=categories_str,
     )
 
-    user_content: list[dict] = [{"type": "text", "text": prompt}]
-    valid_urls = [u for u in (image_urls or []) if u]
-    # Inline ``Image N:`` text markers before each image_url block.
-    # See module docstring - preserving this is a hard requirement.
-    for i, url in enumerate(valid_urls):
-        user_content.append({"type": "text", "text": f"Image {i}:"})
-        user_content.append({"type": "image_url", "image_url": {"url": url}})
-
-    messages = [
-        {"role": "system", "content": _SYSTEM_MESSAGE},
-        {"role": "user", "content": user_content},
-    ]
-
-    response = None
-    try:
-        response = client.chat.completions.create(
-            model=model or settings.openai_extraction_model,
-            messages=messages,
-        )
-    except Exception:
-        log.warning("OpenAI extraction call failed")
-    if response is None:
-        raise PostExtractionError() from None
+    raw = complete(_SYSTEM_MESSAGE, prompt, [u for u in (image_urls or []) if u])
+    if raw is None:
+        raise PostExtractionError()
 
     try:
-        raw = (response.choices[0].message.content or "").strip()
-        parsed = _parse_model_json(raw)
+        parsed = _parse_model_json(raw.strip())
 
         # These values belong to the source, not to model interpretation.
         if isinstance(parsed, dict):
@@ -197,7 +184,7 @@ def extract_post_content(
 
         return _clean_extracted_content(parsed)
     except Exception:
-        log.warning("OpenAI extraction returned an unusable response")
+        log.warning("Extraction returned an unusable response")
     # Keep upstream content out of exception context as well as the message.
     raise PostExtractionError() from None
 
@@ -208,7 +195,6 @@ def extract_events_from_post(
     image_urls: list[str] | None,
     post_created_at: datetime | None,
     school: str,
-    model: str | None = None,
 ) -> list[dict]:
     """Extract events for event-only consumers such as poster scanning."""
     return extract_post_content(
@@ -216,7 +202,6 @@ def extract_events_from_post(
         image_urls=image_urls,
         post_created_at=post_created_at,
         school=school,
-        model=model,
     ).events
 
 
@@ -288,7 +273,7 @@ def _build_prompt(
     )
 
     return f"""
-Analyze the following Instagram caption and images. First classify the post, then extract every campus event and every open hiring position it clearly advertises.
+Analyze the following Instagram caption, or official school event-directory page text, and images. First classify the post, then extract every campus event and every open hiring position it clearly advertises.
 
 Campus context: {school}. Use this to disambiguate an explicitly named campus venue and timezone, never to supply a missing venue.
 Explicit school, club, location, and timezone information in the caption or image takes precedence over campus context.

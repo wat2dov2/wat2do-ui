@@ -1,5 +1,5 @@
 {
-  "notification_page_size": 500,
+  "stale_check_interval_minutes": 30,
   "capture_path": "/",
   "viewport_width": 1200,
   "viewport_height": 630,

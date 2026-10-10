@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, Literal, Sequence
+from typing import Any, Sequence
 from uuid import UUID
 
 from core.constants import INSTAGRAM_BATCH_PUBLISHED
 from core.database import get_sb
-from core.pagination import fetch_all_pages
 from core.tables import INSTAGRAM_NOTIFICATION_MEDIA, INSTAGRAM_PUBLISH_BATCHES
 from services.instagram_notifications.browser_session import BrowserSessionError, canonical_post_url
 
@@ -85,58 +83,12 @@ def acknowledge_browser_delivery(
     )
 
 
-def recover_finished_media_claims(is_run_completed: Callable[[str], bool]) -> int:
-    """Release abandoned claims only after their owning workflow has completed.
-
-    Snapshot before changing rows so pagination cannot skip released claims.
-    Claim tokens protect against a worker that has already reclaimed the item.
-    """
-
-    def page(offset: int, page_size: int) -> list[dict]:
-        return (
-            get_sb()
-            .table(INSTAGRAM_NOTIFICATION_MEDIA)
-            .select("id,claim_token,github_run_id")
-            .eq("status", "processing")
-            .order("id")
-            .range(offset, offset + page_size - 1)
-            .execute()
-            .data
-            or []
-        )
-
-    rows = fetch_all_pages(page)
-    completed: dict[str, bool] = {}
-    recovered = 0
-    for row in rows:
-        run_id = row.get("github_run_id")
-        if not isinstance(run_id, str) or not run_id.isdecimal():
-            continue
-        if run_id not in completed:
-            completed[run_id] = is_run_completed(run_id)
-        if completed[run_id] and rollback_media_claim(
-            media_row_id=str(row["id"]), claim_token=str(row["claim_token"])
-        ):
-            recovered += 1
-    return recovered
-
-
 @dataclass(frozen=True)
 class MaterializedMedia:
     """One exact Instagram media target recovered from a notification."""
 
     media_id: str
     source_url: str
-
-
-@dataclass(frozen=True)
-class MediaClaim:
-    """Irreversible processing claim for one materialized media item."""
-
-    media_row_id: str
-    source_url: str
-    claim_token: str
-    intended_recipient_id: str
 
 
 def record_notification_media(
@@ -184,90 +136,22 @@ def record_notification_media(
     return notification_id, newly_inserted_count
 
 
-def claim_next_notification_media(
-    *,
-    notification_id: str,
-    github_run_id: str | None,
-) -> MediaClaim | None:
-    """Irreversibly claim only the next pending media item immediately before use."""
-
-    response = (
-        get_sb()
-        .rpc(
-            "claim_next_instagram_notification_media",
-            {
-                "p_notification_id": notification_id,
-                "p_github_run_id": _optional_text(github_run_id),
-            },
-        )
-        .execute()
-    )
-    rows = response.data or []
-    if not rows:
-        return None
-    row = rows[0]
-    return MediaClaim(
-        media_row_id=str(row["media_row_id"]),
-        source_url=str(row["source_url"]),
-        claim_token=str(row["claim_token"]),
-        intended_recipient_id=str(row["intended_recipient_id"]),
-    )
-
-
-def claim_next_pending_media(
-    *,
-    github_run_id: str | None,
-) -> MediaClaim | None:
-    """Irreversibly claim the next globally pending media item immediately before use."""
-
-    response = (
-        get_sb()
-        .rpc(
-            "claim_next_pending_instagram_media",
-            {
-                "p_github_run_id": _optional_text(github_run_id),
-            },
-        )
-        .execute()
-    )
-    rows = response.data or []
-    if not rows:
-        return None
-    row = rows[0]
-    return MediaClaim(
-        media_row_id=str(row["media_row_id"]),
-        source_url=str(row["source_url"]),
-        claim_token=str(row["claim_token"]),
-        intended_recipient_id=str(row["intended_recipient_id"]),
-    )
-
-
 def mark_media_succeeded(*, media_row_id: str, claim_token: str) -> bool:
     """Commit success only while the irreversible claim is still processing."""
-    return _finalize_media(
-        media_row_id=media_row_id,
-        claim_token=claim_token,
-        status="succeeded",
-        failure_category=None,
+    response = (
+        get_sb()
+        .rpc(
+            "finalize_instagram_notification_media",
+            {
+                "p_media_row_id": media_row_id,
+                "p_claim_token": claim_token,
+                "p_status": "succeeded",
+                "p_failure_category": None,
+            },
+        )
+        .execute()
     )
-
-
-def mark_media_failed(
-    *,
-    media_row_id: str,
-    claim_token: str,
-    failure_category: str,
-) -> bool:
-    """Commit a sanitized terminal failure while the caller owns the claim."""
-    category = failure_category.strip()
-    if not category:
-        raise ValueError("failure_category cannot be empty")
-    return _finalize_media(
-        media_row_id=media_row_id,
-        claim_token=claim_token,
-        status="failed",
-        failure_category=category,
-    )
+    return response.data is True
 
 
 def rollback_media_claim(
@@ -283,130 +167,6 @@ def rollback_media_claim(
             {
                 "p_media_row_id": media_row_id,
                 "p_claim_token": claim_token,
-            },
-        )
-        .execute()
-    )
-    return response.data is True
-
-
-def validate_failed_media_retry(
-    expected_media: dict[str, Any],
-    *,
-    school_id: int,
-    intended_recipient_id: str,
-) -> None:
-    """Validate a fresh failed row and its routing without recording an RPC intent."""
-    columns = {
-        "id",
-        "notification_id",
-        "media_id",
-        "source_url",
-        "status",
-        "claim_token",
-        "succeeded_at",
-        "failure_category",
-        "github_run_id",
-        "created_at",
-        "updated_at",
-        "browser_delivery_generation",
-    }
-    if type(school_id) is not int or school_id <= 0:
-        raise ValueError("Failed media retry requires a positive school ID")
-    if not isinstance(intended_recipient_id, str) or not re.fullmatch(
-        r"[1-9][0-9]{0,31}", intended_recipient_id
-    ):
-        raise ValueError("Failed media retry requires a valid recipient ID")
-    if not isinstance(expected_media, dict) or set(expected_media) != columns:
-        raise ValueError("Failed media retry requires the complete raw failed row")
-    invalid = "Failed media retry requires a valid failed workflow baseline"
-    if (
-        expected_media["status"] != "failed"
-        or expected_media["succeeded_at"] is not None
-        or not isinstance(expected_media["media_id"], str)
-        or not re.fullmatch(r"[1-9][0-9]{0,31}", expected_media["media_id"])
-        or not isinstance(expected_media["github_run_id"], str)
-        or not re.fullmatch(r"[1-9][0-9]{0,49}", expected_media["github_run_id"])
-        or not isinstance(expected_media["source_url"], str)
-        or not re.fullmatch(
-            r"https://(www\.)?instagram\.com/(p|reel|tv)/[A-Za-z0-9_-]+/?",
-            expected_media["source_url"],
-        )
-        or not isinstance(expected_media["failure_category"], str)
-        or not re.fullmatch(r"[a-z0-9][a-z0-9_.:-]{0,99}", expected_media["failure_category"])
-    ):
-        raise ValueError(invalid)
-    for key in ("id", "notification_id", "claim_token", "browser_delivery_generation"):
-        value = expected_media[key]
-        if key == "browser_delivery_generation" and value is None:
-            continue
-        try:
-            if not isinstance(value, str) or str(UUID(value)) != value or UUID(value).int == 0:
-                raise ValueError(invalid)
-        except (ValueError, AttributeError):
-            raise ValueError(invalid) from None
-    for key in ("created_at", "updated_at"):
-        value = expected_media[key]
-        try:
-            if (
-                not isinstance(value, str)
-                or not re.fullmatch(
-                    r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})",
-                    value,
-                )
-                or datetime.fromisoformat(value).utcoffset() is None
-            ):
-                raise ValueError(invalid)
-        except ValueError:
-            raise ValueError(invalid) from None
-
-
-def retry_failed_media(
-    expected_media: dict[str, Any],
-    *,
-    school_id: int,
-    intended_recipient_id: str,
-) -> bool:
-    """Reset one approved failed cloud claim using its fresh complete raw row.
-
-    The caller must durably preserve the original failure and prove its owning
-    workflow is terminal before calling. A lost response or a false result must
-    be reconciled by readback, never by sending this mutation again.
-    """
-    validate_failed_media_retry(
-        expected_media, school_id=school_id, intended_recipient_id=intended_recipient_id
-    )
-    response = (
-        get_sb()
-        .rpc(
-            "retry_failed_instagram_notification_media",
-            {
-                "p_expected_media": expected_media,
-                "p_school_id": school_id,
-                "p_intended_recipient_id": intended_recipient_id,
-            },
-        )
-        .execute()
-    )
-    return response.data is True
-
-
-def _finalize_media(
-    *,
-    media_row_id: str,
-    claim_token: str,
-    status: Literal["succeeded", "failed"],
-    failure_category: str | None,
-) -> bool:
-    response = (
-        get_sb()
-        .rpc(
-            "finalize_instagram_notification_media",
-            {
-                "p_media_row_id": media_row_id,
-                "p_claim_token": claim_token,
-                "p_status": status,
-                "p_failure_category": failure_category,
             },
         )
         .execute()
@@ -436,13 +196,13 @@ def _optional_text(value: str | None) -> str | None:
 
 
 def claim_pending_browser_media(*, media_row_id: str, claim_token: str) -> bool:
-    """Claim one retrieved row with a token journaled by the local importer first.
+    """Claim one retrieved row with a token journaled by the local capture first.
 
-    Conditional UPDATE is atomic against the existing RPC claimers. Persisting
+    The conditional UPDATE claims only a still-pending row. Persisting
     the caller-generated token before this request covers a crash even when the
     database committed but the client never received its response.
     """
-    from datetime import datetime, timezone
+    from datetime import timezone
     from uuid import UUID
 
     UUID(media_row_id)

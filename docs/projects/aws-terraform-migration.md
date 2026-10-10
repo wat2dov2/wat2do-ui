@@ -882,14 +882,12 @@ Each workflow authenticates through GitHub OIDC, reads only its required values 
 
 Do not provision a separate ECS jobs task definition, task role, or CloudWatch log group.
 
-### 18.2 Daily directory events
+### 18.2 Directory events
 
-Directory event ingestion now runs as a local Codex scheduled prompt, daily at 04:00 America/Toronto.
-The prompt uses the signed-in ChatGPT plan and the source inventory in `backend/services/scraper/urls/directories.json`.
-It identifies the actual hosting club from each official event page and uses existing database services for deduplication, validated writes, and readback.
-The computer must remain on with Codex running.
-The GitHub workflow and API-backed directory runner have been removed to keep one ingestion path.
-Instagram ingestion retains its existing extraction pipeline.
+Directory and Instagram ingestion share one local queue on the Mac.
+A LaunchAgent queues new pages from the official sources in `public.directory_sources` every 12 hours.
+Another LaunchAgent drains the queue every 5 minutes, extracting with Claude Haiku and writing through the existing database services.
+The computer must remain on and signed in to Claude Code.
 
 ### 18.3 Notification dispatcher
 
@@ -919,15 +917,13 @@ python -m recommender.job
 
 Keep the existing nightly schedule.
 
-### 18.5 Single-user scrape
+### 18.5 Instagram notification processing
 
-Keep the GitHub workflow as the authenticated event and manual trigger.
+Keep the `process-notification` GitHub workflow as the authenticated event and manual trigger.
 
-Validate the username, recipient ID, and cutoff days before running the scraper.
+It records exact post URLs in the notification ledger or queues a manual browser retrieval; it no longer runs an Apify scraper.
 
-Install the backend dependencies and run `python jobs/scrape.py` directly on the GitHub-hosted runner.
-
-Fail the workflow when the scraper exits nonzero.
+The Mac's browser worker captures retrieved posts into the local ingestion queue described in 18.2.
 
 ### 18.6 Nightly redeployment
 

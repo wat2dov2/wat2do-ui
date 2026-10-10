@@ -46,22 +46,12 @@ def test_extraction_attaches_source_fields_without_model_copying(monkeypatch, ca
         for items in (payload["events"], payload["positions"]):
             items[0]["description"] = "Details read from the image."
 
-    def create(**kwargs):
-        calls.append(kwargs)
-        return SimpleNamespace(
-            choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(payload)))]
-        )
-
-    monkeypatch.setattr(
-        extractor,
-        "_client",
-        lambda: SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create))),
-    )
     result = extractor.extract_post_content(
         caption_text=caption,
         image_urls=["https://example.com/image.jpg"],
         post_created_at=None,
         school=" UTSG ",
+        complete=_completion(json.dumps(payload), calls),
     )
 
     expected = caption if caption and caption.strip() else "Details read from the image."
@@ -70,8 +60,8 @@ def test_extraction_attaches_source_fields_without_model_copying(monkeypatch, ca
         result.positions[0]["description"] == expected[: extractor.MAX_POSITION_DESCRIPTION_LENGTH]
     )
     assert result.events[0]["school"] == "utsg"
-    content = calls[0]["messages"][1]["content"]
-    prompt = content[0]["text"]
+    system, prompt, image_urls = calls[0]
+    assert system == extractor._SYSTEM_MESSAGE
     assert "Campus context: utsg." in prompt
     assert "takes precedence over campus context" in prompt
     assert "Never rename a host to match campus context" in prompt
@@ -83,8 +73,74 @@ def test_extraction_attaches_source_fields_without_model_copying(monkeypatch, ca
     assert ('"description": string' in prompt) == (not caption or not caption.strip())
     assert '"school": string' not in prompt
     assert "https://example.com/image.jpg" not in prompt
-    assert content[1] == {"type": "text", "text": "Image 0:"}
-    assert content[2]["image_url"]["url"] == "https://example.com/image.jpg"
+    assert image_urls == ["https://example.com/image.jpg"]
+
+
+def _completion(response: str | None, calls: list | None = None) -> extractor.Completion:
+    """Return ``response`` as the model output and record each call's arguments."""
+
+    def complete(system: str, prompt: str, image_urls: list[str]) -> str | None:
+        if calls is not None:
+            calls.append((system, prompt, image_urls))
+        return response
+
+    return complete
+
+
+def _fake_openai(monkeypatch, create) -> list[str]:
+    """Route ``openai_completion`` through ``create`` and record each client's API key."""
+    api_keys = []
+
+    def client(*, api_key):
+        api_keys.append(api_key)
+        return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+
+    monkeypatch.setattr(extractor.settings, "openai_api_key", "test-key")
+    monkeypatch.setattr(extractor, "OpenAI", client)
+    return api_keys
+
+
+def _openai_response(content: str | None) -> SimpleNamespace:
+    return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
+
+
+def test_openai_completion_marks_each_image_before_its_block(monkeypatch):
+    create = Mock(return_value=_openai_response('{"content_type":"other"}'))
+    api_keys = _fake_openai(monkeypatch, create)
+
+    result = extractor.openai_completion(
+        "System", "Prompt", ["https://example.com/a.jpg", "https://example.com/b.jpg"]
+    )
+
+    assert result == '{"content_type":"other"}'
+    assert api_keys == ["test-key"]
+    kwargs = create.call_args.kwargs
+    assert kwargs["model"] == extractor.settings.openai_extraction_model
+    assert kwargs["messages"] == [
+        {"role": "system", "content": "System"},
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Prompt"},
+                {"type": "text", "text": "Image 0:"},
+                {"type": "image_url", "image_url": {"url": "https://example.com/a.jpg"}},
+                {"type": "text", "text": "Image 1:"},
+                {"type": "image_url", "image_url": {"url": "https://example.com/b.jpg"}},
+            ],
+        },
+    ]
+
+
+def test_openai_completion_returns_none_without_key_or_on_provider_failure(monkeypatch, caplog):
+    create = Mock(side_effect=TimeoutError("upstream-private-detail"))
+    _fake_openai(monkeypatch, create)
+
+    assert extractor.openai_completion("System", "Prompt", []) is None
+    assert "upstream-private-detail" not in caplog.text
+
+    monkeypatch.setattr(extractor.settings, "openai_api_key", "")
+    assert extractor.openai_completion("System", "Prompt", []) is None
+    create.assert_called_once()
 
 
 def test_parse_model_json_strict_array():
@@ -123,23 +179,15 @@ def test_parse_model_json_handles_null_response():
 
 
 @pytest.mark.parametrize(
-    "failure", ["no_client", "provider", "invalid_json", "invalid_triage", "invalid_events"]
+    "response",
+    [
+        pytest.param(None, id="failed-completion"),
+        pytest.param("not JSON", id="invalid-json"),
+        pytest.param('{"content_type":"unknown"}', id="invalid-triage"),
+        pytest.param('{"content_type":"event","events":false}', id="invalid-events"),
+    ],
 )
-def test_extraction_failure_is_distinct_from_a_valid_non_event(monkeypatch, failure):
-    create = Mock()
-    if failure == "provider":
-        create.side_effect = TimeoutError("upstream-private-detail")
-    else:
-        content = {
-            "invalid_json": "not JSON",
-            "invalid_triage": '{"content_type":"unknown"}',
-            "invalid_events": '{"content_type":"event","events":false}',
-        }.get(failure, '{"content_type":"other"}')
-        create.return_value = SimpleNamespace(
-            choices=[SimpleNamespace(message=SimpleNamespace(content=content))]
-        )
-    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
-    monkeypatch.setattr(extractor, "_client", lambda: None if failure == "no_client" else client)
+def test_extraction_failure_is_distinct_from_a_valid_non_event(monkeypatch, response):
     monkeypatch.setattr(extractor, "resolve_school_timezone", lambda _: "America/Toronto")
     monkeypatch.setattr(extractor, "current_semester_end", lambda *args, **kwargs: None)
     monkeypatch.setattr(extractor, "campus_season_prompt", lambda _: "")
@@ -152,13 +200,30 @@ def test_extraction_failure_is_distinct_from_a_valid_non_event(monkeypatch, fail
             image_urls=[],
             post_created_at=None,
             school="uwaterloo",
+            complete=_completion(response),
         )
     assert raised.value.__context__ is None
     assert raised.value.__cause__ is None
 
 
+def test_extraction_of_a_valid_non_event_is_empty(monkeypatch):
+    monkeypatch.setattr(extractor, "resolve_school_timezone", lambda _: "America/Toronto")
+    monkeypatch.setattr(extractor, "current_semester_end", lambda *args, **kwargs: None)
+    monkeypatch.setattr(extractor, "campus_season_prompt", lambda _: "")
+
+    result = extractor.extract_post_content(
+        caption_text="Club photo dump",
+        image_urls=[],
+        post_created_at=None,
+        school="uwaterloo",
+        complete=_completion('{"content_type":"other"}'),
+    )
+
+    assert result.events == []
+    assert result.positions == []
+
+
 def test_extraction_prompt_uses_school_slug(monkeypatch):
-    calls = []
     monkeypatch.setattr(
         extractor,
         "resolve_school_timezone",
@@ -166,25 +231,8 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
     )
     monkeypatch.setattr(extractor, "current_semester_end", lambda *_args, **_kwargs: None)
 
-    class FakeCompletions:
-        def create(self, **kwargs):
-            calls.append(kwargs)
-            message = type("Message", (), {"content": '{"content_type":"other"}'})()
-            choice = type("Choice", (), {"message": message})()
-            return type("Response", (), {"choices": [choice]})()
-
-    fake_client = type(
-        "Client",
-        (),
-        {
-            "chat": type(
-                "Chat",
-                (),
-                {"completions": FakeCompletions()},
-            )()
-        },
-    )()
-    monkeypatch.setattr(extractor, "_client", lambda: fake_client)
+    create = Mock(return_value=_openai_response('{"content_type":"other"}'))
+    _fake_openai(monkeypatch, create)
 
     assert (
         extractor.extract_events_from_post(
@@ -196,7 +244,7 @@ def test_extraction_prompt_uses_school_slug(monkeypatch):
         == []
     )
 
-    prompt = calls[0]["messages"][1]["content"][0]["text"]
+    prompt = create.call_args.kwargs["messages"][1]["content"][0]["text"]
     assert "Campus context: ubc." in prompt
     assert "Campus context: University of British Columbia" not in prompt
     assert '"content_type": "event" | "hiring"' in prompt
@@ -209,26 +257,6 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     monkeypatch.setattr(extractor, "resolve_school_timezone", lambda _school: "America/Toronto")
     monkeypatch.setattr(extractor, "current_semester_end", lambda *_args, **_kwargs: None)
 
-    class FakeCompletions:
-        def create(self, **kwargs):
-            calls.append(kwargs)
-            message = type("Message", (), {"content": '{"content_type":"other"}'})()
-            choice = type("Choice", (), {"message": message})()
-            return type("Response", (), {"choices": [choice]})()
-
-    fake_client = type(
-        "Client",
-        (),
-        {
-            "chat": type(
-                "Chat",
-                (),
-                {"completions": FakeCompletions()},
-            )()
-        },
-    )()
-    monkeypatch.setattr(extractor, "_client", lambda: fake_client)
-
     extractor.extract_post_content(
         caption_text=(
             "F26 Exec Elections start today. Read the candidates' speeches and vote for "
@@ -237,9 +265,10 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
         image_urls=[],
         post_created_at=None,
         school="uwaterloo",
+        complete=_completion('{"content_type":"other"}', calls),
     )
 
-    prompt = calls[0]["messages"][1]["content"][0]["text"]
+    prompt = calls[0][1]
     assert "SEASONS FOR uwaterloo" in prompt
     assert "POSITION ELIGIBILITY GATE (CRITICAL):" in prompt
     assert "Election voting posts are not hiring." in prompt

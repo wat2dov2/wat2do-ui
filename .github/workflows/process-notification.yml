@@ -26,12 +26,6 @@ on:
         description: 'School name'
         required: false
         type: string
-      media_provider:
-        description: 'Media retrieval provider (browser queue by default)'
-        required: false
-        type: choice
-        options: [browser, apify]
-        default: browser
       notification_payload:
         description: 'Raw JSON payload of the notification'
         required: false
@@ -42,18 +36,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       runner: ${{ steps.check.outputs.runner }}
-      media_provider: ${{ steps.check.outputs.media_provider }}
     steps:
-      - uses: actions/checkout@v4
       - id: check
         env:
-          MEDIA_PROVIDER: ${{ inputs.media_provider }}
           POSTER_ID: ${{ inputs.poster_id }}
           NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
         run: |
-          provider="${MEDIA_PROVIDER:-$(jq -r '.notification_media_provider' backend/controlbox/instagram_browser.json)}"
-          echo "media_provider=$provider" >> "$GITHUB_OUTPUT"
-          if echo "$NOTIFICATION_JSON" | grep -q "cache_ent_id" || [[ -n "$POSTER_ID" && "$provider" == "browser" ]]; then
+          if echo "$NOTIFICATION_JSON" | grep -q "cache_ent_id" || [[ -n "$POSTER_ID" ]]; then
             echo 'runner=["self-hosted", "wat2do-macmini-browser"]' >> "$GITHUB_OUTPUT"
           else
             echo 'runner="ubuntu-latest"' >> "$GITHUB_OUTPUT"
@@ -76,7 +65,6 @@ jobs:
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
       EVENT_FEED_REVALIDATION_SECRET: ${{ secrets.EVENT_FEED_REVALIDATION_SECRET }}
       POSTER_ID: ${{ inputs.poster_id }}
       INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || github.event.client_payload.notification_dict['com.instagram.android.igns.logging.intended_recipient_id'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.intended_recipient_id'] }}
@@ -181,7 +169,6 @@ jobs:
           fi
 
       - name: Process the Instagram account
-        id: process
         timeout-minutes: ${{ fromJSON(steps.dependencies.outputs.process_timeout_minutes) }}
         working-directory: backend
         run: |
@@ -189,25 +176,12 @@ jobs:
           if [[ "$NOTIFICATION_JSON" != "null" && -n "$NOTIFICATION_JSON" ]]; then
             echo "Processing raw notification payload..."
             "$NOTIFICATION_VENV/bin/python" jobs/process_notification.py
-          elif [[ "${{ needs.route.outputs.media_provider }}" == "browser" ]]; then
+          else
             "$NOTIFICATION_VENV/bin/python" scripts/instagram_browser.py retrieve \
               --school "$TARGET_SCHOOL" \
               --url "$POSTER_ID" \
               --cutoff-days "$CUTOFF_DAYS"
-          else
-            test -n "$APIFY_API_TOKEN"
-            echo "Processing standard poster_id..."
-            "$NOTIFICATION_VENV/bin/python" jobs/scrape.py \
-              --username "$POSTER_ID" \
-              --cutoff-days "$CUTOFF_DAYS" \
-              --dry-run false
           fi
-
-      - name: Trigger background scraper
-        if: success() && steps.process.outputs.new_items > 0 && needs.route.outputs.media_provider == 'apify'
-        run: gh workflow run scrape-pending-media.yml -f cutoff_days="$CUTOFF_DAYS" -f media_provider=apify
-        env:
-          GH_TOKEN: ${{ secrets.RUNNER_CHECK_TOKEN }}
 
       - name: Maintain notification dependency cache
         if: always()

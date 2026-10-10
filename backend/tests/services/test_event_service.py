@@ -1288,35 +1288,44 @@ def test_edit_validates_or_clears_seasons_for_destination_school(
 
 @pytest.mark.parametrize("model", [EventSummaryResponse, EventResponse])
 @pytest.mark.parametrize(
-    "source,school,expected",
-    [
-        ("https://events.wlu.ca/2026/oct/campus-event.html", "wlu", True),
-        ("https://events.wlu.ca/2026/oct/campus-event.html", "uwaterloo", False),
-        ("https://www.instagram.com/p/realposter/", "wlu", False),
-        (None, "wlu", False),
-    ],
+    "ingestion_source,expected",
+    [("directory", True), ("instagram_scraper", False), (None, False)],
 )
-def test_directory_event_identity_preserves_original_media(model, source, school, expected):
+def test_directory_event_identity_preserves_original_media(model, ingestion_source, expected):
     row = {
         "id": 1,
         "title": "Campus event",
-        "school": school,
-        "source_url": source,
+        "school": "wlu",
+        "source_url": "https://events.wlu.ca/2026/oct/campus-event.html",
         "source_image_url": "https://example.com/original.jpg",
         "added_at": datetime(2026, 9, 30, tzinfo=timezone.utc),
         "clubs": {"logo_url": "https://example.com/club.jpg"},
+        "ingestion_source": ingestion_source,
     }
     event = event_query.hydrate_event(row, [], model)
     assert event.is_directory_event is expected
     assert event.source_image_url == "https://example.com/original.jpg"
     assert event.club_logo_url == "https://example.com/club.jpg"
+    assert "ingestion_source" in event_query._SUMMARY_COLUMNS.split(",")
     assert "is_directory_event" not in event_query._SUMMARY_COLUMNS
 
 
 @pytest.mark.parametrize("model", [EventSummaryResponse, EventResponse])
 def test_directory_missing_host_picture_uses_union_without_renaming_host(monkeypatch, model):
-    from services import club_service
+    from schemas.directory_source import DirectorySource
+    from services.ingestion import directory
 
+    source = DirectorySource(
+        id=1,
+        school="cornell",
+        name="Cornell CampusGroups",
+        url="https://cornell.campusgroups.com/events",
+        default_club="Cornell Student Assembly",
+        default_club_ig="cornell_studentassembly",
+        source_format="html",
+        event_url_patterns=["/rsvp"],
+    )
+    monkeypatch.setattr(directory, "_sources_by_school", lambda: {"cornell": (source,)})
     lookup = MagicMock(return_value={"logo_url": "https://example.com/union.jpg"})
     monkeypatch.setattr(club_service, "lookup_club_by_school_and_ig", lookup)
     row = {
@@ -1327,6 +1336,7 @@ def test_directory_missing_host_picture_uses_union_without_renaming_host(monkeyp
         "source_url": "https://cornell.campusgroups.com/rsvp?id=2313686",
         "added_at": datetime(2026, 9, 30, tzinfo=timezone.utc),
         "clubs": {"logo_url": None},
+        "ingestion_source": "directory",
     }
     event = event_query.hydrate_event(row, [], model)
     assert event.club == "Scholars Working Ambitiously to Graduate"

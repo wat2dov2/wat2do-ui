@@ -5,17 +5,12 @@ from __future__ import annotations
 
 import argparse
 import fcntl
-import gzip
-import hashlib
 import json
 import logging
 import os
-import shutil
 import sqlite3
 import subprocess
 import sys
-import tempfile
-from contextlib import closing
 from dataclasses import asdict
 from io import TextIOWrapper
 from logging.handlers import RotatingFileHandler
@@ -26,7 +21,6 @@ BACKEND_DIRECTORY = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIRECTORY))
 
-from core.controlbox import controlbox  # noqa: E402
 from core.launch_agents import LaunchAgentRecoveryError, install_launch_agent  # noqa: E402
 from services.instagram_notifications.browser_queue import (  # noqa: E402
     CONTROL,
@@ -38,132 +32,6 @@ from services.instagram_notifications.browser_worker import run_worker  # noqa: 
 
 LAUNCH_AGENT_LABEL = "io.wat2do.instagram-browser.worker"
 LOG_FORMAT = "%(levelname)s %(name)s: %(message)s"
-
-
-def _file_hash(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def _require_review_storage_capacity(queue: BrowserJobQueue, directory: Path) -> None:
-    with closing(queue._connect()) as db:
-        logical_bytes = (
-            db.execute("PRAGMA page_count").fetchone()[0]
-            * db.execute("PRAGMA page_size").fetchone()[0]
-        )
-    required = max(logical_bytes, queue.database_path.stat().st_size) * 2 + (
-        controlbox.notification_workflow.minimum_free_disk_mb * 1024 * 1024
-    )
-    if shutil.disk_usage(directory).free < required:
-        raise RuntimeError(
-            "Review maintenance needs more free disk space; existing evidence is unchanged"
-        )
-
-
-def _backup_review_storage(queue: BrowserJobQueue, directory: Path) -> dict[str, Any]:
-    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-    if directory.is_symlink() or any(parent.is_symlink() for parent in directory.parents):
-        raise ValueError("Review backup ownership is invalid")
-    directory.chmod(0o700)
-    _require_review_storage_capacity(queue, directory)
-    destination = directory / "latest-before-review-compaction.sqlite3.gz"
-    with tempfile.TemporaryDirectory(prefix=".review-backup-", dir=directory) as staging:
-        snapshot = Path(staging) / "queue.sqlite3"
-        with closing(queue._connect()) as source, closing(sqlite3.connect(snapshot)) as target:
-            source.backup(target)
-        snapshot.chmod(0o600)
-        digest = _file_hash(snapshot)
-        compressed = Path(staging) / "queue.sqlite3.gz"
-        with compressed.open("wb") as handle:
-            compressed.chmod(0o600)
-            with gzip.GzipFile(fileobj=handle, mode="wb", compresslevel=6, mtime=0) as archive:
-                with snapshot.open("rb") as source:
-                    shutil.copyfileobj(source, archive)
-            handle.flush()
-            os.fsync(handle.fileno())
-        verified = hashlib.sha256()
-        with gzip.open(compressed, "rb") as handle:
-            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                verified.update(chunk)
-        if verified.hexdigest() != digest:
-            raise RuntimeError("Review backup verification failed; existing evidence is unchanged")
-        compressed.replace(destination)
-    return {"backup": str(destination), "uncompressed_sha256": digest}
-
-
-def compact_review_storage(
-    queue: BrowserJobQueue,
-    *,
-    backup_directory: Path,
-    artifacts_directory: Path | None = None,
-    protected_patterns: Sequence[str] = (),
-    vacuum: bool = False,
-) -> dict[str, Any]:
-    """Keep source evidence byte-exact while replacing its redundant storage."""
-    import fnmatch
-
-    with (
-        (queue.state_directory / "worker-install.lock").open("a+") as install_lock,
-        (queue.state_directory / "ingestion.lock").open("a+") as import_lock,
-        (queue.state_directory / "worker.lock").open("a+") as worker_lock,
-    ):
-        for lock in (install_lock, import_lock, worker_lock):
-            try:
-                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except BlockingIOError:
-                raise RuntimeError(
-                    "Review compaction requires idle, stopped worker and import processes"
-                ) from None
-        if not queue.get_setting("paused", False):
-            raise RuntimeError("Review compaction requires an existing maintenance admission hold")
-        result = _backup_review_storage(queue, backup_directory)
-        result["settings"] = queue.compact_review_settings()
-        stats = {"compacted": 0, "already_compact": 0, "protected": 0, "changed": 0}
-        if artifacts_directory is not None:
-            for path in sorted(artifacts_directory.glob("notification*.json")):
-                if any(fnmatch.fnmatch(path.name, pattern) for pattern in protected_patterns):
-                    stats["protected"] += 1
-                    continue
-                if path.is_symlink():
-                    raise ValueError("Review artifact ownership is invalid")
-                raw = path.read_bytes()
-                original = queue.review_artifact_bytes(path)
-                if raw != original:
-                    stats["already_compact"] += 1
-                    continue
-                # Small summaries do not cause the measured disk amplification.
-                if len(original) < CONTROL.review_snapshot_chunk_bytes:
-                    continue
-                if queue.write_review_artifact(
-                    path,
-                    original.decode("utf-8"),
-                    expected_sha256=hashlib.sha256(original).hexdigest(),
-                ):
-                    if queue.review_artifact_bytes(path) != original:
-                        raise RuntimeError(
-                            "Review artifact readback failed; preserve the maintenance hold"
-                        )
-                    stats["compacted"] += 1
-                else:
-                    stats["changed"] += 1
-        result["artifacts"] = stats
-        result["artifact_inventory"] = queue.inventory_review_artifacts()
-        result["review_storage"] = queue.maintain_review_storage(
-            force=True, _ingestion_lock=import_lock
-        )
-        if vacuum:
-            _require_review_storage_capacity(queue, queue.state_directory)
-            with closing(queue._connect()) as db:
-                db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-                db.execute("PRAGMA auto_vacuum=INCREMENTAL")
-                db.execute("VACUUM")
-                if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
-                    raise RuntimeError("Review database integrity verification failed")
-        result["database_bytes"] = queue.database_path.stat().st_size
-        return result
 
 
 class _WorkerOperationalLogHandler(RotatingFileHandler):
@@ -279,7 +147,7 @@ def install(queue: BrowserJobQueue) -> dict[str, str]:
             fcntl.flock(import_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise RuntimeError(
-                "Wait for the current browser media import before installing"
+                "Wait for the current browser media capture before installing"
             ) from None
         return _install_idle_worker(queue)
 
@@ -330,22 +198,10 @@ def parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Execute queued jobs without polling published carousels",
     )
-    for name in ("ingestion-sync", "ingestion-ready", "ingestion-import"):
-        ingestion_command = commands.add_parser(
-            name, help="Queue retrievals, preview fair review targets, or import verified results"
-        )
-        if name == "ingestion-ready":
-            ingestion_command.add_argument(
-                "--held-media-id",
-                action="append",
-                help="Stage one explicitly selected held media row for fresh review; repeat within the batch limit",
-            )
-    recovery = commands.add_parser(
-        "ingestion-recover-failed",
-        help="Preview or explicitly reopen failed cloud media for guarded review",
+    commands.add_parser(
+        "ingestion-enqueue",
+        help="Queue notification retrievals, then capture retrieved posts for ingestion",
     )
-    recovery.add_argument("--media-id", action="append", required=True)
-    recovery.add_argument("--apply", action="store_true")
     retrieve = commands.add_parser(
         "retrieve", help="Queue a profile or post for browser extraction"
     )
@@ -353,14 +209,6 @@ def parser() -> argparse.ArgumentParser:
     retrieve.add_argument("--url", required=True)
     retrieve.add_argument("--cutoff-days", type=int, default=1)
     commands.add_parser("install", help="Install and start the macOS worker LaunchAgent")
-    compact = commands.add_parser(
-        "compact-review-storage",
-        help="Losslessly compact backed-up review evidence while the worker is stopped",
-    )
-    compact.add_argument("--backup-directory", type=Path, required=True)
-    compact.add_argument("--artifacts-directory", type=Path)
-    compact.add_argument("--protect", action="append", default=[])
-    compact.add_argument("--vacuum", action="store_true")
     status = commands.add_parser("status", help="Show worker health and queue quantities by school")
     status.add_argument("--job-id", help="Inspect the full result of one job")
     commands.add_parser(
@@ -383,6 +231,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     arguments = parser().parse_args(argv)
     logging.basicConfig(level=logging.WARNING, format=LOG_FORMAT, force=True)
     result: dict[str, Any]
+    incomplete = False
     try:
         queue = BrowserJobQueue(arguments.state_directory)
         if arguments.command == "worker":
@@ -393,14 +242,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if arguments.command == "install":
             result = install(queue)
-        elif arguments.command == "compact-review-storage":
-            result = compact_review_storage(
-                queue,
-                backup_directory=arguments.backup_directory,
-                artifacts_directory=arguments.artifacts_directory,
-                protected_patterns=arguments.protect,
-                vacuum=arguments.vacuum,
-            )
         elif arguments.command == "status":
             if arguments.job_id:
                 job = queue.get(arguments.job_id)
@@ -435,27 +276,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             if updated_job is None:
                 raise RuntimeError("Instagram browser job disappeared during the operation")
             result = asdict(updated_job)
-        elif arguments.command in {"ingestion-sync", "ingestion-ready", "ingestion-import"}:
+        elif arguments.command == "ingestion-enqueue":
             from services.instagram_notifications.notification_ingestion import (
-                import_retrieved_media,
-                ready_review_targets,
+                enqueue_retrieved_media,
                 sync_notification_media,
             )
 
-            operation = {
-                "ingestion-sync": sync_notification_media,
-                "ingestion-ready": ready_review_targets,
-                "ingestion-import": import_retrieved_media,
-            }[arguments.command]
-            result = (
-                ready_review_targets(queue, held_media_ids=arguments.held_media_id)
-                if arguments.command == "ingestion-ready" and arguments.held_media_id is not None
-                else operation(queue)
-            )
-        elif arguments.command == "ingestion-recover-failed":
-            from services.instagram_notifications.notification_ingestion import recover_failed_media
-
-            result = recover_failed_media(queue, arguments.media_id, apply=arguments.apply)
+            synced = sync_notification_media(queue)
+            enqueued = enqueue_retrieved_media(queue)
+            result = {"sync": synced, "enqueue": enqueued}
+            incomplete = any(enqueued.get(key, 0) for key in ("failed", "invalid", "busy"))
         elif arguments.command == "retrieve":
             from services import school_service
             from services.instagram_notifications.browser_session import school_account_username
@@ -494,15 +324,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 ]
             }
         print(json.dumps(result, indent=2, sort_keys=True))
-        if arguments.command == "ingestion-import" and any(
-            result.get(key, 0) for key in ("failed", "blocked", "invalid", "busy")
-        ):
-            return 1
-        if arguments.command == "ingestion-recover-failed" and any(
-            result.get(key, 0) for key in ("blocked", "busy")
-        ):
-            return 1
-        return 0
+        return 1 if incomplete else 0
     except (ValueError, BrowserSessionError, RuntimeError) as exc:
         print(str(exc), file=sys.stderr)
     except (OSError, sqlite3.Error, subprocess.SubprocessError) as exc:

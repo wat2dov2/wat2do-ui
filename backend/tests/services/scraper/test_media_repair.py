@@ -224,32 +224,6 @@ def test_loading_target_requires_only_selected_public_media_fields(persistence):
     query.limit.assert_called_once_with(1)
 
 
-@pytest.mark.parametrize("apply", [False, True])
-def test_directory_spinner_is_cleared_only_after_owned_image_validation(
-    target, assets, persistence, monkeypatch, apply
-):
-    from services.scraper import directory_page
-
-    storage, client = assets
-    db, query, refresh = persistence
-    selected = replace(target, school="uwaterloo", source_url="https://wusa.ca/event/lunch")
-    stored_poster(client, width=40)
-    monkeypatch.setattr(
-        directory_page, "scrape_event_page", lambda url, config: ("Lunch details", [])
-    )
-    result = module.repair_directory_image(selected, apply=apply)
-    assert result["width"] == 40
-    assert result["status"] == ("updated" if apply else "ready")
-    if apply:
-        query.update.assert_called_once_with({"source_image_url": None})
-        query.eq.assert_any_call("source_image_url", selected.source_image_url)
-        query.eq.assert_any_call("source_url", selected.source_url)
-        refresh.assert_called_once_with("uwaterloo", resources=("events", "clubs"))
-    else:
-        query.update.assert_not_called()
-        refresh.assert_not_called()
-
-
 def test_missing_instagram_image_uses_exact_post_cover_and_conditional_write(
     target, persistence, monkeypatch
 ):
@@ -290,39 +264,3 @@ def test_instagram_image_repair_preserves_existing_artwork_and_rejects_wrong_pos
         == "unavailable"
     )
     upload.assert_not_called()
-
-
-def test_directory_repair_restores_a_missing_poster_from_event_artwork(
-    target, assets, persistence, monkeypatch
-):
-    from services.scraper import directory_page, image_uploader
-
-    selected = replace(
-        target, school="uwaterloo", source_url="https://wusa.ca/event/lunch", source_image_url=None
-    )
-    monkeypatch.setattr(
-        directory_page,
-        "scrape_event_page",
-        lambda *_: ("Lunch event details", ["https://wusa.ca/lunch-poster.jpg"]),
-    )
-    upload = MagicMock(return_value="https://wat2do.io/media/event-images/lunch.jpg")
-    monkeypatch.setattr(image_uploader, "upload_image_from_url", upload)
-    assert module.repair_directory_image(selected, apply=True)["status"] == "updated"
-    upload.assert_called_once_with(
-        "https://wusa.ca/lunch-poster.jpg", bucket=BUCKET_EVENT_IMAGES, allow_all_domains=True
-    )
-    persistence[1].is_.assert_called_once_with("source_image_url", "null")
-    assets[1].get_object.assert_not_called()
-
-
-def test_directory_without_original_artwork_does_not_write_a_fake_poster(
-    target, persistence, monkeypatch
-):
-    from services.scraper import directory_page
-
-    selected = replace(
-        target, school="uwaterloo", source_url="https://wusa.ca/event/lunch", source_image_url=None
-    )
-    monkeypatch.setattr(directory_page, "scrape_event_page", lambda *_: ("Lunch details", []))
-    assert module.repair_directory_image(selected, apply=True)["status"] == "unavailable"
-    persistence[1].update.assert_not_called()

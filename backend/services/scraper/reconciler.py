@@ -13,7 +13,6 @@ from typing import Annotated, Any
 
 from pydantic import BeforeValidator, Field, field_validator, model_validator
 
-from core.config import settings
 from core.constants import EVENT_CATEGORIES
 from schemas.event import EventDiscoveryFields
 from services.event_service import normalize_campus_season_ids
@@ -22,10 +21,11 @@ from services.scraper.dedup import confident_duplicate_id
 from services.scraper.extractor import (
     EVENT_DISCOVERY_JSON_FIELDS,
     EVENT_DISCOVERY_RULES,
+    Completion,
     ExtractedOccurrence,
-    _client,
     _parse_model_json,
     empty_str_to_none,
+    openai_completion,
 )
 
 log = logging.getLogger(__name__)
@@ -76,7 +76,7 @@ def reconcile_events(
     candidates_by_index: list[list[dict]],
     caption_text: str | None,
     school: str,
-    model: str | None = None,
+    complete: Completion = openai_completion,
     resolved_club_ids: list[int | None] | None = None,
     resolved_ig_handles: list[str | None] | None = None,
 ) -> list[dict] | None:
@@ -106,11 +106,6 @@ def reconcile_events(
         for index, event in enumerate(extracted_events)
     ]
 
-    client = _client()
-    if client is None:
-        log.warning("OpenAI key not configured; skipping Pass 2 reconcile for %s", school)
-        return _confident_match_fallback(extracted_events, confident_ids, school)
-
     prompt = _build_reconcile_prompt(
         extracted_events=extracted_events,
         candidates_by_index=candidates_by_index,
@@ -119,22 +114,12 @@ def reconcile_events(
         resolved_club_ids=resolved_club_ids,
         resolved_ig_handles=resolved_ig_handles,
     )
-    messages = [
-        {"role": "system", "content": _SYSTEM_MESSAGE},
-        {"role": "user", "content": prompt},
-    ]
-
-    try:
-        response = client.chat.completions.create(
-            model=model or settings.openai_extraction_model,
-            messages=messages,
-        )
-    except Exception as e:
-        log.exception("Pass 2 reconcile OpenAI call failed: %s", e)
+    raw = complete(_SYSTEM_MESSAGE, prompt, [])
+    if raw is None:
+        log.warning("Pass 2 reconcile model call failed for %s", school)
         return _confident_match_fallback(extracted_events, confident_ids, school)
 
-    raw = (response.choices[0].message.content or "").strip()
-    parsed = _parse_model_json(raw)
+    parsed = _parse_model_json(raw.strip())
     if isinstance(parsed, dict):
         events = [parsed]
     elif isinstance(parsed, list):

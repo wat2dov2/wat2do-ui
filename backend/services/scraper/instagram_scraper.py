@@ -1,23 +1,17 @@
-"""Instagram retrieval through Apify for exact posts and manual lookups.
+"""Apify retrieval of exact posts and profiles for operator repair scripts.
 
 Class-based per backend-architecture.md: external-client wrappers are
 the one place we deviate from function-based services. The module
 exports a singleton-friendly factory (``get_scraper``) so call sites do
 not re-instantiate the client and tests can swap it via monkeypatch.
-
-Current Apify policy:
-    * ``skipPinnedPosts=True`` always set on the actor input.
-    * 1-hour timeout per Apify run.
-    * Server-side warning when a pinned post comes back despite the flag
-      (Apify occasionally violates skipPinnedPosts when ``resultsLimit==1``).
+Each Apify run has a one-hour timeout.
 """
 
 from __future__ import annotations
 
 import logging
-import os
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from typing import Literal
 
 from apify_client import ApifyClient
@@ -48,7 +42,7 @@ class InstagramScraperError(RuntimeError):
 
 
 class InstagramScraper:
-    """Fetch exact posts and manual lookups through the shared Apify client."""
+    """Fetch exact posts and profiles through the shared Apify client."""
 
     def scrape_posts(self, targets: list[str]) -> list[dict]:
         if not targets or not all(is_exact_post_url_target(target) for target in targets):
@@ -58,55 +52,6 @@ class InstagramScraper:
             {"username": list(dict.fromkeys(targets))},
             timeout_seconds=SCRAPING_APIFY_TIMEOUT_SECONDS,
         )
-
-    def scrape_latest(
-        self,
-        target: str | list[str],
-        *,
-        results_limit: int | None = None,
-        cutoff_days: int = 1,
-        timeout_seconds: int = SCRAPING_APIFY_TIMEOUT_SECONDS,
-    ) -> tuple[list[dict], bool]:
-        """Manual username lookup only; exact posts use ``scrape_posts``."""
-        username_list = [target] if isinstance(target, str) else target
-        if any(t.startswith("http") for t in username_list):
-            raise InstagramScraperError("input")
-
-        cutoff = datetime.now(timezone.utc) - timedelta(days=cutoff_days)
-        cutoff_str = cutoff.strftime("%Y-%m-%d")
-
-        run_input: dict[str, object] = {
-            "username": username_list,
-            "skipPinnedPosts": True,
-            "onlyPostsNewerThan": cutoff_str,
-        }
-        if results_limit:
-            run_input["resultsLimit"] = results_limit
-
-        log.info(
-            "Apify scrape start: target=%s, limit=%s, cutoff=%s",
-            target,
-            results_limit,
-            cutoff_str,
-        )
-
-        dataset_items = self._run_actor(
-            ACTOR_ID,
-            run_input,
-            timeout_seconds=timeout_seconds,
-        )
-
-        pinned_returned = any(bool(item.get("isPinned")) for item in dataset_items)
-        if results_limit == 1 and pinned_returned:
-            warning = "Apify returned a pinned post while resultsLimit=1"
-            log.warning(warning)
-            if os.getenv("GITHUB_ACTIONS", "").lower() == "true":
-                # GitHub Actions reads ``::warning::`` annotations from stdout;
-                # logger output is captured separately and does not produce
-                # the annotation, so we still print here.
-                print(f"::warning::{warning}")
-
-        return dataset_items, pinned_returned
 
     def scrape_profiles(
         self,

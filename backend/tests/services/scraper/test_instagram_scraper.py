@@ -30,18 +30,12 @@ def test_scrape_uses_apify_run_model_attributes(monkeypatch):
         status="SUCCEEDED",
         default_dataset_id="dataset-456",
     )
-    client.dataset.return_value.list_items.return_value.items = [
-        {"id": "post-1", "isPinned": False}
-    ]
+    client.dataset.return_value.list_items.return_value.items = [{"username": "wat2do"}]
 
-    posts, pinned_warning = _scraper_with_client(client, monkeypatch).scrape_latest(
-        "wat2do",
-        results_limit=1,
-    )
+    profiles = _scraper_with_client(client, monkeypatch).scrape_profiles(["wat2do"])
 
-    assert posts == [{"id": "post-1", "isPinned": False}]
-    assert pinned_warning is False
-    client.actor.assert_called_once_with(ACTOR_ID)
+    assert profiles == [{"username": "wat2do"}]
+    client.actor.assert_called_once_with(PROFILE_ACTOR_ID)
     client.run.assert_called_once_with("run-123")
     client.dataset.assert_called_once_with("dataset-456")
 
@@ -55,7 +49,7 @@ def test_scrape_raises_sanitized_terminal_error_when_apify_run_fails(monkeypatch
     )
 
     with pytest.raises(InstagramScraperError) as raised:
-        _scraper_with_client(client, monkeypatch).scrape_latest("wat2do")
+        _scraper_with_client(client, monkeypatch).scrape_profiles(["wat2do"])
 
     assert raised.value.stage == "terminal"
     assert str(raised.value) == "Instagram scraper provider terminal failure"
@@ -84,7 +78,7 @@ def test_scrape_raises_sanitized_provider_errors(failure_stage, caplog, monkeypa
         client.dataset.return_value.list_items.side_effect = RuntimeError(secret)
 
     with caplog.at_level(logging.ERROR), pytest.raises(InstagramScraperError) as raised:
-        _scraper_with_client(client, monkeypatch).scrape_latest("wat2do")
+        _scraper_with_client(client, monkeypatch).scrape_profiles(["wat2do"])
 
     assert raised.value.stage == failure_stage
     assert str(raised.value) == f"Instagram scraper provider {failure_stage} failure"
@@ -102,10 +96,7 @@ def test_scrape_preserves_successful_empty_dataset(monkeypatch):
     )
     client.dataset.return_value.list_items.return_value.items = []
 
-    posts, pinned_warning = _scraper_with_client(client, monkeypatch).scrape_latest("wat2do")
-
-    assert posts == []
-    assert pinned_warning is False
+    assert _scraper_with_client(client, monkeypatch).scrape_profiles(["wat2do"]) == []
 
 
 def test_scrape_profiles_sends_all_identifiers_to_profile_actor(monkeypatch):

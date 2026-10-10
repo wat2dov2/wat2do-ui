@@ -1,34 +1,29 @@
-"""Scrape pipeline orchestrator.
+"""Process one captured post or directory page into events and positions.
 
 Stages:
-    1. Filter - drop posts already in the DB (skipped in dry-run).
-    2. Upload - push each post's images to application storage.
-    3. Extract - triage and extract events and hiring positions per post.
-    4. Reconcile - Pass 2 match/update event candidates.
-    5. Save - write events, occurrences, and positions.
+    1. Upload - push the source's images to application storage.
+    2. Extract - triage and extract events and hiring positions with Claude.
+    3. Reconcile - Pass 2 match/update event candidates.
+    4. Save - write events, occurrences, and positions.
 
-Public entry point: ``run_pipeline``. ``backend/jobs/scrape.py`` prefetches
-posts, then hands them here for processing.
+Public entry point: ``process_post``, called by the local ingestion processor
+for each queued capture.
 """
 
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from typing import Literal
+from urllib.parse import urlsplit
 
-from core.constants import (
-    WORKFLOW_RUN_ERROR,
-    WORKFLOW_RUN_NO_POSTS,
-    WORKFLOW_RUN_SUCCESS,
-)
 from core.sanitize import normalize_scraped_text, parse_iso_datetime
-from schemas.workflow_run import WorkflowRunCreate
-from services import workflow_run_service
+from core.tables import POSITIONS
+from services.ingestion.claude_completion import claude_completion
 from services.scraper.dedup import (
     _extract_shortcode,
     collapse_duplicate_extractions,
     existing_shortcodes,
+    existing_urls,
     find_candidates,
 )
 from services.scraper.event_writer import _lookup_club_by_ig, write_event
@@ -39,132 +34,114 @@ from services.scraper.image_uploader import (
     upload_post_images,
     upload_video_from_url,
 )
-from services.scraper.org_resolve import resolve_club_for_scrape
+from services.scraper.org_resolve import ResolvedClub, resolve_club_for_scrape
 from services.scraper.position_writer import write_position
 from services.scraper.reconciler import reconcile_events
 
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class ScrapeResult:
-    """Outcome of processing one handle's prefetched posts."""
+def process_post(post: dict, *, school: str, publisher_ig: str | None = None) -> None:
+    """Persist every verified event and position in one captured source.
 
-    ig_handle: str
-    posts_fetched: int = 0
-    posts_new: int = 0
-    events_extracted: int = 0
-    events_saved: int = 0
-    events_updated: int = 0
-    events_duplicates: int = 0
-    positions_extracted: int = 0
-    positions_saved: int = 0
-    positions_updated: int = 0
-    pinned_post_warning: bool = False
-    status: str = WORKFLOW_RUN_SUCCESS
-    error_message: str | None = None
-    workflow_run_id: str | None = None
-    dry_run: bool = False
+    Instagram posts carry ``ownerUsername``/``coauthors``, which own the items
+    and may target more schools. Official directory pages carry neither: hosts
+    are matched by name at ``school``, and roles without a registered host fall
+    back to the directory's publisher club ``publisher_ig``.
+    """
+    source_url = post["url"]
+    if _already_imported(source_url):
+        return
+    instagram = _is_instagram(source_url)
+    image_urls = _extract_image_urls(post)
+    # Upload one poster at a time to retain its relationship to carousel videos
+    # even when an earlier poster is rejected by storage validation.
+    uploaded: list[str] = []
+    source_images: list[str] = []
+    for image_url in image_urls:
+        stored = upload_post_images([image_url], allow_all_domains=not instagram)
+        if stored:
+            uploaded.extend(stored)
+            source_images.append(image_url)
 
+    caption = normalize_scraped_text(post.get("caption") or post.get("text")) or ""
+    content = extract_post_content(
+        caption_text=caption,
+        image_urls=uploaded,
+        post_created_at=parse_iso_datetime(post.get("timestamp")),
+        school=school,
+        complete=claude_completion,
+    )
+    events = content.events
+    positions = content.positions
+    if not events and not positions:
+        return
 
-def run_pipeline(
-    *,
-    ig_handle: str,
-    school: str,
-    posts: list[dict],
-    cutoff_days: int,
-    pinned_post_warning: bool = False,
-    dry_run: bool = False,
-    github_run_id: str | None = None,
-    allow_past_events: bool = False,
-) -> ScrapeResult:
-    """Process prefetched posts for one Instagram handle."""
-    result = ScrapeResult(
-        ig_handle=ig_handle,
-        pinned_post_warning=pinned_post_warning,
-        dry_run=dry_run,
+    video_sources = _extract_video_urls(post)
+    stored_videos = {
+        source: upload_video_from_url(source) for source in dict.fromkeys(video_sources.values())
+    }
+    videos = [stored_videos.get(video_sources.get(image, "")) for image in source_images]
+    # A standalone Reel can provide alternate poster URLs in `images` and
+    # `displayUrl`. Its video still belongs to that poster (or caption alone).
+    # A carousel must retain the exact per-slide association instead.
+    fallback_video = stored_videos.get(single_post_video_url(post) or "")
+    _attach_source_metadata(
+        events, uploaded=uploaded, videos=videos, fallback_video=fallback_video, school=school
+    )
+    _attach_source_metadata(
+        positions,
+        uploaded=uploaded,
+        videos=videos,
+        fallback_video=fallback_video,
+        school=school,
+        preserve_existing_media=True,
     )
 
-    log.info(
-        "Pipeline start: handle=%s, school=%s, cutoff_days=%d, dry_run=%s, posts=%d",
-        ig_handle,
-        school,
-        cutoff_days,
-        dry_run,
-        len(posts),
-    )
+    handle = (post.get("ownerUsername") or "").strip().lstrip("@").lower() or None
+    candidate_handles = _get_candidate_handles(post, handle or "") if instagram else []
+    create_stub_if_missing = instagram and len(image_urls) <= 1
 
-    if not dry_run:
-        run = workflow_run_service.create_workflow_run(
-            WorkflowRunCreate(ig_username=ig_handle, github_run_id=github_run_id),
+    target_schools = {school}
+    for c in candidate_handles:
+        org = _lookup_club_by_ig(c)
+        if org and isinstance(org.get("schools"), dict) and org["schools"].get("slug"):
+            target_schools.add(org["schools"]["slug"])
+
+    for target_school in target_schools:
+        _process_events_for_school(
+            events,
+            target_school=target_school,
+            source_school=school,
+            candidate_handles=candidate_handles,
+            create_stub_if_missing=create_stub_if_missing,
+            caption=caption,
+            source_url=source_url,
+            handle=handle,
+            publisher_ig=publisher_ig,
         )
-        result.workflow_run_id = run.id
-
-    try:
-        result.posts_fetched = len(posts)
-        if not posts:
-            result.status = WORKFLOW_RUN_NO_POSTS
-            _finalize(result)
-            return result
-
-        target_shortcodes = {
-            shortcode
-            for post in posts
-            if (shortcode := _extract_shortcode(post.get("url") or "")) is not None
-        }
-        seen_shortcodes: set[str] = set() if dry_run else existing_shortcodes(target_shortcodes)
-        cutoff_dt = datetime.now(timezone.utc) - timedelta(days=cutoff_days)
-        new_posts = _filter_new_posts(
-            posts,
-            seen_shortcodes=seen_shortcodes,
-            cutoff=cutoff_dt,
+        _process_positions_for_school(
+            positions,
+            target_school=target_school,
+            source_school=school,
+            candidate_handles=candidate_handles,
+            create_stub_if_missing=create_stub_if_missing,
+            source_url=source_url,
+            handle=handle,
+            publisher_ig=publisher_ig,
         )
-        result.posts_new = len(new_posts)
-
-        for post in new_posts:
-            _process_one_post(
-                post,
-                handle=ig_handle,
-                school=school,
-                result=result,
-                dry_run=dry_run,
-                allow_past_events=allow_past_events,
-            )
-
-        _finalize(result)
-    except Exception as exc:
-        log.exception("Pipeline failed for handle=%s: %s", ig_handle, exc)
-        result.status = WORKFLOW_RUN_ERROR
-        result.error_message = str(exc)[:4000]
-        _finalize(result)
-
-    return result
 
 
-def _filter_new_posts(
-    posts: list[dict],
-    *,
-    seen_shortcodes: set[str],
-    cutoff: datetime,
-) -> list[dict]:
-    """Drop already-seen shortcodes and posts older than ``cutoff``."""
-    fresh: list[dict] = []
-    known_shortcodes = set(seen_shortcodes)
-    for post in posts:
-        url = post.get("url") or ""
-        shortcode = _extract_shortcode(url)
-        if shortcode is None:
-            continue
-        if shortcode in known_shortcodes:
-            continue
+def _is_instagram(source_url: str) -> bool:
+    host = (urlsplit(source_url).hostname or "").removeprefix("www.")
+    return host == "instagram.com"
 
-        post_dt = parse_iso_datetime(post.get("timestamp"))
-        if post_dt is not None and post_dt < cutoff:
-            continue
 
-        fresh.append(post)
-        known_shortcodes.add(shortcode)
-    return fresh
+def _already_imported(source_url: str) -> bool:
+    shortcode = _extract_shortcode(source_url) if _is_instagram(source_url) else None
+    if shortcode is not None:
+        return bool(existing_shortcodes({shortcode}))
+    return bool(existing_urls({source_url}) or existing_urls({source_url}, table=POSITIONS))
 
 
 def _get_candidate_handles(post: dict, fallback_handle: str) -> list[str]:
@@ -204,116 +181,6 @@ def _get_candidate_handles(post: dict, fallback_handle: str) -> list[str]:
     return sorted(result, key=lambda candidate: (candidate != owner_handle, candidate))
 
 
-def _process_one_post(
-    post: dict,
-    *,
-    handle: str,
-    school: str,
-    result: ScrapeResult,
-    dry_run: bool,
-    allow_past_events: bool = False,
-) -> None:
-    image_urls = _extract_image_urls(post)
-    # Upload one poster at a time to retain its relationship to carousel videos
-    # even when an earlier poster is rejected by storage validation.
-    uploaded: list[str] = []
-    source_images: list[str] = []
-    for image_url in image_urls:
-        stored = upload_post_images([image_url])
-        if stored:
-            uploaded.extend(stored)
-            source_images.append(image_url)
-
-    caption = normalize_scraped_text(post.get("caption") or post.get("text")) or ""
-    post_dt = parse_iso_datetime(post.get("timestamp"))
-
-    content = extract_post_content(
-        caption_text=caption,
-        image_urls=uploaded,
-        post_created_at=post_dt,
-        school=school,
-    )
-    events = content.events
-    positions = content.positions
-    result.events_extracted += len(events)
-    result.positions_extracted += len(positions)
-    if not events and not positions:
-        return
-
-    source_url = post.get("url") or ""
-    video_sources = _extract_video_urls(post)
-    stored_videos = {
-        source: upload_video_from_url(source) for source in dict.fromkeys(video_sources.values())
-    }
-    videos = [stored_videos.get(video_sources.get(image, "")) for image in source_images]
-    # A standalone Reel can provide alternate poster URLs in `images` and
-    # `displayUrl`. Its video still belongs to that poster (or caption alone).
-    # A carousel must retain the exact per-slide association instead.
-    fallback_video = stored_videos.get(single_post_video_url(post) or "")
-    _attach_source_metadata(
-        events, uploaded=uploaded, videos=videos, fallback_video=fallback_video, school=school
-    )
-    _attach_source_metadata(
-        positions,
-        uploaded=uploaded,
-        videos=videos,
-        fallback_video=fallback_video,
-        school=school,
-        preserve_existing_media=True,
-    )
-
-    if dry_run:
-        for event in events:
-            log.info(
-                "[%s] DRY-RUN would save %r with %d occurrence(s)",
-                handle,
-                event.get("title"),
-                len(event.get("occurrences", [])),
-            )
-            result.events_saved += 1
-        for position in positions:
-            log.info(
-                "[%s] DRY-RUN would save position %r",
-                handle,
-                position.get("title"),
-            )
-            result.positions_saved += 1
-        return
-
-    candidate_handles = _get_candidate_handles(post, handle)
-    create_stub_if_missing = len(image_urls) <= 1
-
-    target_schools = {school}
-    for c in candidate_handles:
-        org = _lookup_club_by_ig(c)
-        if org and isinstance(org.get("schools"), dict) and org["schools"].get("slug"):
-            target_schools.add(org["schools"]["slug"])
-
-    for target_school in target_schools:
-        _process_events_for_school(
-            events,
-            target_school=target_school,
-            source_school=school,
-            candidate_handles=candidate_handles,
-            create_stub_if_missing=create_stub_if_missing,
-            caption=caption,
-            source_url=source_url,
-            handle=handle,
-            result=result,
-            allow_past_events=allow_past_events,
-        )
-        _process_positions_for_school(
-            positions,
-            target_school=target_school,
-            source_school=school,
-            candidate_handles=candidate_handles,
-            create_stub_if_missing=create_stub_if_missing,
-            source_url=source_url,
-            handle=handle,
-            result=result,
-        )
-
-
 def _attach_source_metadata(
     items: list[dict],
     *,
@@ -349,9 +216,8 @@ def _process_events_for_school(
     create_stub_if_missing: bool,
     caption: str,
     source_url: str,
-    handle: str,
-    result: ScrapeResult,
-    allow_past_events: bool,
+    handle: str | None,
+    publisher_ig: str | None,
 ) -> None:
     if not events:
         return
@@ -371,13 +237,20 @@ def _process_events_for_school(
         )
         for event in events_copy
     ]
+    if publisher_ig:
+        # A directory page without a named host belongs to its publishing club.
+        resolved_orgs = [
+            (_publisher_club(publisher_ig, target_school) or resolved)
+            if resolved.club_id is None and not (event.get("club") or "").strip()
+            else resolved
+            for event, resolved in zip(events_copy, resolved_orgs, strict=True)
+        ]
     events_copy, source_indexes, duplicate_count = collapse_duplicate_extractions(
         events_copy,
         club_ids=[resolved.club_id for resolved in resolved_orgs],
         ig_handles=[resolved.ig_handle for resolved in resolved_orgs],
     )
     if duplicate_count:
-        result.events_duplicates += duplicate_count
         resolved_orgs = [resolved_orgs[index] for index in source_indexes]
         log.info(
             "[%s] Collapsed %d same-post duplicate event extraction(s) for %s",
@@ -402,6 +275,7 @@ def _process_events_for_school(
         candidates_by_index=candidates_by_index,
         caption_text=caption,
         school=target_school,
+        complete=claude_completion,
         resolved_club_ids=[resolved.club_id for resolved in resolved_orgs],
         resolved_ig_handles=[resolved.ig_handle for resolved in resolved_orgs],
     )
@@ -427,18 +301,13 @@ def _process_events_for_school(
                 create_stub_if_missing=create_stub_if_missing and target_school == source_school,
             )
         )
-        outcome = write_event(
+        write_event(
             event,
             ig_handle=handle,
             source_url=source_url,
-            allow_past_events=allow_past_events,
             resolved_org=resolved,
+            ingestion_source=_ingestion_source(source_url),
         )
-        if outcome == "inserted":
-            result.events_saved += 1
-        elif outcome == "updated":
-            result.events_updated += 1
-            result.events_saved += 1
 
 
 def _process_positions_for_school(
@@ -449,8 +318,8 @@ def _process_positions_for_school(
     candidate_handles: list[str],
     create_stub_if_missing: bool,
     source_url: str,
-    handle: str,
-    result: ScrapeResult,
+    handle: str | None,
+    publisher_ig: str | None,
 ) -> None:
     for original in positions:
         # A reviewed ID is one existing row at the notification's source school.
@@ -468,32 +337,26 @@ def _process_positions_for_school(
                 and original.get("id") is None
             ),
         )
-        outcome = write_position(
+        if resolved.club_id is None and publisher_ig:
+            resolved = _publisher_club(publisher_ig, target_school) or resolved
+        write_position(
             position,
-            ig_handle=handle,
+            ig_handle=handle or resolved.ig_handle or "",
             source_url=source_url,
             resolved_org=resolved,
+            ingestion_source=_ingestion_source(source_url),
         )
-        if outcome == "inserted":
-            result.positions_saved += 1
-        elif outcome == "updated":
-            result.positions_updated += 1
-            result.positions_saved += 1
 
 
-def _finalize(result: ScrapeResult) -> None:
-    if result.dry_run or not result.workflow_run_id:
-        return
-    workflow_run_service.mark_finished(
-        result.workflow_run_id,
-        status=result.status,
-        posts_fetched=result.posts_fetched,
-        posts_new=result.posts_new,
-        events_extracted=result.events_extracted,
-        events_saved=result.events_saved,
-        pinned_post_warning=result.pinned_post_warning,
-        error_message=result.error_message,
+def _publisher_club(publisher_ig: str, school: str) -> ResolvedClub | None:
+    resolved = resolve_club_for_scrape(
+        ig_handle=publisher_ig, school=school, club_name=None, create_stub_if_missing=False
     )
+    return resolved if resolved.club_id is not None else None
+
+
+def _ingestion_source(source_url: str) -> Literal["instagram_scraper", "directory"]:
+    return "instagram_scraper" if _is_instagram(source_url) else "directory"
 
 
 def _extract_image_urls(post: dict) -> list[str]:

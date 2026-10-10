@@ -704,8 +704,8 @@ def existing_shortcodes(shortcodes: set[str]) -> set[str]:
     return seen
 
 
-def existing_urls(urls: set[str]) -> set[str]:
-    """Return which of the provided exact URLs already exist on ``events.source_url``.
+def existing_urls(urls: set[str], *, table: str = EVENTS) -> set[str]:
+    """Return which of the provided exact URLs already exist on ``<table>.source_url``.
 
     Batch source identity lookup for directory imports.
     """
@@ -719,7 +719,7 @@ def existing_urls(urls: set[str]) -> set[str]:
     def _page(offset: int, page_size: int) -> list[dict]:
         return (
             get_sb()
-            .table(EVENTS)
+            .table(table)
             .select("source_url")
             .in_("source_url", list(clean_urls))
             .order("id", desc=False)

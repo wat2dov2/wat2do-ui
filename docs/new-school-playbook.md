@@ -86,11 +86,11 @@ Do not use the old Facebook Login flow, Meta Business Suite Page asset assignmen
 
 Meta documents the distinction in its official [Instagram API with Instagram Login collection](https://www.postman.com/meta/instagram/folder/6raa77c/instagram-api-with-instagram-login) and [Instagram API documentation](https://www.postman.com/meta/instagram/documentation/23987686-9386f468-7714-490f-9bfc-9442db5c8f00).
 
-### 3.4 `scrape.py` does not need publishing credentials
+### 3.4 Instagram ingestion does not need publishing credentials
 
-Do not modify `backend/jobs/scrape.py` merely because a new publishing token was added.
+Do not modify the notification ingestion path merely because a new publishing token was added.
 
-The single-user scraper consumes an Instagram post or username and resolves its school from `INTENDED_RECIPIENT_ID` or `TARGET_SCHOOL` through `school_service`.
+`backend/jobs/process_notification.py` resolves a notification's school from its intended recipient ID through `school_service`, and the browser worker captures the retrieved posts into the local ingestion queue.
 
 It does not use the Meta publishing token or publishing user ID.
 
@@ -377,7 +377,8 @@ Record the directory home URL, platform, pagination method, estimated club count
 
 Separately identify the official event directory used to seed or supplement the event feed.
 
-Do not confuse a club directory with the scheduled event-directory prompt sources configured in `backend/services/scraper/urls/directories.json`.
+Do not confuse a club directory with the event-directory sources stored in the `public.directory_sources` table.
+Add the event directory as one `directory_sources` row in a migration, with its listing URL, publishing club, listing format, and event URL patterns.
 
 ### 9.2 Inspect the site before choosing a scraper
 
@@ -716,9 +717,9 @@ Compare the final database count to the authoritative directory count and accoun
 
 ## 12. Phase H: Create the chapter Instagram account on Android
 
-### 12.1 Prepare the emulator or device
+### 12.1 Prepare the Android phone
 
-Use Android Studio Device Manager or the explicitly approved Android device.
+Use the explicitly approved physical Android phone; Android emulators are not used.
 
 The repo policy prohibits an agent from launching a browser, emulator, or long-running process without an explicit in-the-moment request from the human.
 
@@ -728,7 +729,7 @@ Confirm the target device with:
 ~/Library/Android/sdk/platform-tools/adb devices
 ```
 
-Select one explicit serial such as `emulator-5554` for every ADB command.
+Select the phone's explicit serial from that list for every ADB command.
 
 Do not assume the first connected device is the intended device.
 
@@ -876,7 +877,7 @@ The actual implementation should normalize handles through one shared helper rat
 
 ### 14.1 Confirm the Android account identity
 
-Open Instagram on the assigned emulator and confirm the active account is exactly `<schoolslug>.wat2do.io`.
+Open Instagram on the assigned Android phone and confirm the active account is exactly `<schoolslug>.wat2do.io`.
 
 Stop on an authentication loss, security challenge, soft block, or unexpected account identity.
 

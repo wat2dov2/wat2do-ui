@@ -1,7 +1,10 @@
 # Instagram Automation Commands
 
-The active collection path uses Android Instagram notifications.
+The active collection path uses Instagram notifications on a physical Android phone running Automate.
+Automate triggers the GitHub `process-notification` workflow, which records each exact post URL in the Supabase notification ledger.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
+The Mac's Brave worker retrieves each pending post and captures it into the local ingestion queue at `~/.local/state/wat2do/ingestion/queue.sqlite3`, then marks its ledger row succeeded.
+Every five minutes a launchd processor, `backend/scripts/ingest.py process`, drains that queue with Claude Haiku through `claude -p` and saves events and positions through the existing writers.
 The same worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
 Digest expansion, public post/profile retrieval, and engagement share one worker-owned pool of fifteen tabs in one registered Brave window, with credentials remaining inside the browser.
 
@@ -41,24 +44,13 @@ Image repairs write a new immutable URL instead of replacing a cached file in pl
 Each update is conditional on the selected row retaining the original media reference, and successful updates refresh that school's discovery data.
 Existing assets remain available to other references and cached pages.
 
-## Single-node Instagram notification farm
+## Android notification phone
 
-`backend/controlbox/emulator_farm.json` is the single source of truth for the farm.
-It fixes the maximum at one running AVD on port 5554, limits the node to three Instagram accounts, and assigns 3 GB of guest RAM.
-Do not start extra AVDs outside the supervisor while the farm is running.
-
-Log into whichever Instagram accounts are being collected, up to the three-account capacity:
-
-| Node | Serial | Instagram accounts |
-| --- | --- | --- |
-| `ig_node_1` | `emulator-5554` | Any one to three logged-in accounts |
-
-Automate's Android `NotificationListenerService` keeps Instagram notification observation active on every node.
-When installed, the macOS LaunchAgent runs every 30 minutes as the single GitHub dispatch, health, and evidence path.
-It starts missing AVDs windowed, reapplies persistent settings, and sends a deduplicated `new_instagram_post` repository dispatch for each complete Instagram push.
-It accepts every complete Instagram notification from the node and forwards its recipient ID, push ID, push category, and Instagram action to the existing workflow.
-The dispatcher forwards an incomplete `subscription_daily_digest` unchanged so `jobs/process_notification.py` remains the single owner of media materialization.
-Its local state stores recipient evidence plus one-way hashes of dispatched push IDs, never notification titles, bodies, raw push IDs, or media metadata.
+Notifications come from one physical Android phone, not an emulator.
+Log the phone's Instagram app into the school accounts being collected, keeping each device to three accounts or fewer and adding devices for more capacity.
+Automate's Android `NotificationListenerService` flow observes each Instagram notification and sends a `new_instagram_post` repository dispatch to GitHub.
+The dispatch carries the notification's recipient ID, push ID, push category, and Instagram action.
+A collapsed `subscription_daily_digest` notification is forwarded unchanged so `jobs/process_notification.py` remains the single owner of media materialization.
 
 ## Shared Brave browser worker
 
@@ -137,43 +129,12 @@ Storage recovery must preserve authentication holds, operator pauses, and uncert
 The worker's operational log rotates within `worker_log_max_bytes` and `worker_log_backup_count`, including when it is supervised by launchd.
 Late service imports preserve that entrypoint-owned handler and level instead of replacing it with an unbounded stderr stream.
 If log storage fails, one sanitized warning identifies the continuous failure episode without repeatedly dumping tracebacks into launchd's stderr log.
-Keep scheduled tasks on the installed revision; never fast-forward or replace the live worker checkout during draft generation or import.
-Code and runtime updates belong to maintenance with the existing installation and import locks, an owned admission pause, no running jobs, and worker health readback.
+Keep scheduled tasks on the installed revision; never fast-forward or replace the live worker checkout during draft generation.
+Code and runtime updates belong to maintenance with the existing installation and capture locks, an owned admission pause, no running jobs, and worker health readback.
 
-The scheduled notification reviewer keeps one current packet/checkpoint and canonical full review artifacts per media identity and actual source revision.
-Reuse unchanged source and directory snapshots instead of multiplying full batch, held-inventory, refresh, and nested-history copies.
-Full review targets are stored automatically as small inline pointers to compressed, content-addressed data in the queue's SQLite `review_snapshots` storage.
-`get_setting` restores the complete original value, preserving dictionary insertion order, array order, and image-map order for existing import guards.
-`instagram_browser.json` controls snapshot chunk size, maximum decoded snapshot bytes, and the retained compressed-storage budget.
-Snapshot-size or storage-budget exhaustion fails before a new pointer or checkpoint is published, preserving the previous checkpoint.
-Use `queue.read_review_artifact(path)` and `queue.review_artifact_bytes(path)` when loading compact artifact files, and `queue.write_review_artifact(path, text)` when storing the original JSON text.
-These artifact helpers preserve the exact original JSON bytes for SHA256 checks and restore every raw guard field before claims or writes.
-All candidate equality checks, fresh readbacks, pending and held evidence, and uncertain recovery journals remain required.
-The worker runs local review-storage maintenance every 300 seconds, with a 30-second deadline and at most 100 completed targets/artifacts per pass, using the validated controls in `instagram_browser.json`.
-Automatic maintenance uses the database's verified publication index without opening external checkpoint files.
-Unknown legacy publication records defer cleanup until a stopped-worker inventory verifies them.
-Successful retrieval job results remain intact.
-`queue.record_review_completion(qa_path, input_paths=..., artifact_paths=...)` seals retention eligibility from independent Codex terminal QA, its seven SHA-bound inputs, exact source and school/recipient identities, successful claim finalization, and verified listing readbacks.
-A saved `import` decision or a successful retrieval alone cannot establish completed review work.
-Completed reviews retain their full context for at least 24 hours after verified completion, and the latest completed batch keeps its full context.
-Older fully completed batch artifacts and review targets may be replaced with compact receipts containing their source identity, proof hashes, verified outcome, and affected listing IDs.
-Current packets, pending or held sources, partial imports, active claims, uncertain recovery evidence, and shared review contracts keep their full context.
-Mixed packets stay pinned until every owned source has a verified completion receipt.
-Maintenance reclaims superseded content-addressed nodes only after tracing surviving settings and artifact references, preserving shared data still needed by another review.
-The `compact-review-storage` CLI migrates existing settings and artifacts through compare-and-swap checks under the worker, installation, and import maintenance locks, with a private backup made first.
-After verifying its backup and compacting evidence, the CLI calls `queue.inventory_review_artifacts()` before forced maintenance or optional vacuum.
-Inventory owns the artifact publication lock and reads all physical descriptors before opening a SQLite write transaction.
-Migration preserves changes made after its source snapshot, leaves interrupted or unresolved evidence intact, and does not claim work, clear jobs, or reset retry budgets.
-Existing evidence is preserved; it is not disposable package-cache storage.
 Digest callers wait through the installer's temporary pause within their original deadline, including while its service restarts.
 Other recovery and operator holds still return immediately for inspection.
 The resume command preserves an active installation hold or a safety reason written after the operator's status read.
-
-To stage a specific held post for fresh review, run `python scripts/instagram_browser.py ingestion-ready --held-media-id <media-row-uuid>` from the installed backend.
-Repeat `--held-media-id` within the configured batch limit to select additional held posts in that exact order.
-This preview requires complete current retrieval and matching school, recipient, source and prior review context; it preserves every unresolved marker and the ordinary review cursor.
-Stage reconsideration preparation in review artifacts, and keep the prior unresolved queue setting intact until fresh Codex approval and the existing native import guards are satisfied.
-The packet retains the prior decision and an order-sensitive `prior_held_review_sha256` of the untouched full target, encoded as compact UTF-8 JSON with `ensure_ascii=False`.
 
 ### Queue priority and school ordering
 
@@ -224,17 +185,14 @@ Failed or unsupported engagement jobs remain visible for operator inspection and
 An uncertain native click or unverified completion also pauses further browser admission for inspection.
 Conflicting repost states and action toolbars that borrow another post's permalink fail before clicking.
 The durable queue’s `excluded_accounts` setting holds jobs for explicitly excluded school accounts across all job types without deleting or consuming them.
-Notification synchronization and imports respect the same exclusions.
+Notification synchronization and capture respect the same exclusions.
 
-### Notification retrieval without Apify
+### Notification retrieval and capture
 
 The notification workflow records exact post URLs in the existing production media ledger.
-With `notification_media_provider` set to `browser` in `backend/controlbox/instagram_browser.json`, it does not dispatch the Apify scraper.
-The worker's background collector checks for pending URLs not yet delivered to its durable queue every ten seconds, independently of the Codex schedule.
-Delivery acknowledgements are separate from import claims and are written only after the local enqueue and notification receipt commit.
+The worker's background collector checks for pending URLs not yet delivered to its durable queue every ten seconds.
+Delivery acknowledgements are separate from ledger claims and are written only after the local enqueue and notification receipt commit.
 A persistent queue generation makes normal restarts skip delivered rows and makes a recreated database recover pending rows from the lost queue.
-Review and import still see all pending rows, including work already delivered to the browser queue.
-Codex reviews retrieved data and applies saved reconciliation decisions through the guarded importer.
 Retrieval fills all fourteen secondary slots as new jobs arrive and streams continuously until the queue empties, a digest takes priority, overdue engagement needs a turn, or the worker pauses.
 Each job retains its own timeout; the stream does not drain on a fixed timer.
 Confirmed HTTP 429 responses stop new browser claims, refills, and tab maintenance until the shared cooldown expires, while active requests settle and independent collectors continue.
@@ -245,75 +203,49 @@ Repeated rate limits increase the shared cooldown from two minutes up to thirty 
 A fresh verified successful job resets the next cooldown only after fifteen minutes without another confirmed rate limit following the expired hold.
 One successful public read cannot immediately reset escalation while another browser route remains limited.
 Digest callers retain their own deadlines throughout the hold.
+
+A separate background collector captures retrieved posts every ten seconds.
+For each pending ledger row whose retrieval succeeded with exactly one post matching the row's canonical target URL, it enqueues that post into the local ingestion queue.
+The post URL is the queue key and becomes the event's `source_url`.
+Only after the capture is durable does it journal a claim token, claim the ledger row, and mark it succeeded.
+The next pass releases an interrupted claim using its exact journaled token.
+An unconfirmed success releases the claim back to pending.
+A retrieval whose result does not match its exact target is counted as `invalid` and stays pending until an operator retries it.
+Retrieval never claims production media while it waits for the browser, and capture never holds the browser lock.
+Extraction, deduplication, school routing, storage, and discovery invalidation happen later in the ingestion processor, which deletes each queue item after handling it.
+
 Public profiles and individual posts can also be queued manually:
 
 ```sh
 cd backend
 python scripts/instagram_browser.py retrieve --school utsc --url https://www.instagram.com/example_club/ --cutoff-days 1
-python scripts/instagram_browser.py ingestion-sync
-python scripts/instagram_browser.py ingestion-ready
+python scripts/instagram_browser.py ingestion-enqueue
 python scripts/instagram_browser.py status
 ```
 
 Use actual club handles rather than the illustrative profile URL above.
+Every post a manual retrieval returns is captured once into the ingestion queue.
+`ingestion-enqueue` runs one notification collection and one capture pass immediately instead of waiting for the background collectors.
+It reports nonzero exit status for failed, invalid, or busy capture outcomes; inspect its counts before treating a pass as complete.
 The installed worker reserves one primary tab and processes retrieval batches of up to `parallel_tabs - 1`, checking priority before every replacement claim.
-Public post/profile retrieval reuses the currently logged-in account without switching to the notification school’s account.
+Public post/profile retrieval reuses the currently logged-in account without switching to the notification school's account.
 All parallel tabs verify the same active account, while each notification retains its own school routing.
 A challenge, uncertain primary action, or unconfirmed secondary closure pauses further work after active requests drain.
 It verifies the active account remains unchanged throughout navigation and retrieval, and only public captions, owners, timestamps, coauthors, tagged users, and media fields leave the browser.
 The queued notification recipient determines school routing, independent of the browser account.
 The notification collector retries delivered failed reads locally within their original budget, even when its cloud collection fails.
 Concurrent retry passes preserve explicitly cancelled jobs, exhausted attempts, excluded accounts, and manual retrieval jobs.
-Malformed notification identities or URLs remain pending for repair, while valid schools continue through collection and import.
-The source and import summaries expose an `invalid` count for these targets.
-An explicit retrieval retry resets its import markers and read budget in one transaction only while the target is still idle.
-The `ingestion-import` command reports nonzero exit status for failed, blocked, invalid, or busy outcomes; inspect its counts before treating a batch as complete.
-Historical failed cloud media require explicit recovery before they appear in the pending review backlog.
-Preview `python scripts/instagram_browser.py ingestion-recover-failed --media-id <media-row-uuid>` from the installed backend, repeat `--media-id` for at most `ingestion_batch_size` unique rows, and add `--apply` only for the intended bounded recovery.
-The preview durably saves each original full PostgREST media row, authoritative notification/school/recipient routing, and the historical Scrape Pending Media run's current terminal attempt and SHA in the private queue's canonical `notification-failed-recovery.json`.
-Apply freshly rechecks that proof and publishes an exact per-row intent before one service-role RPC compares the complete failed row and current routing atomically.
-The RPC changes only that ledger ID back to pending and clears its old claim, failure, workflow and delivery fields; it preserves the original ID, notification, media, source URL and creation time.
-Recovery queues the existing public retrieval and guarded Codex review path, without importing listings, rerunning the historical workflow, starting a paid actor, or resetting local retry budgets, exclusions, review holds or the review cursor.
-Its `reopened` count reports failed-to-pending transitions and `queued` reports distinct retrieval admissions; neither is a completed post review or native event/position import.
-Two ledger IDs for the same recipient and public source retain separate original evidence and delivery bindings while sharing one canonical retrieval job.
-An older succeeded ledger row for the same source does not prove that a later failed row received a valid review or import.
-After a lost response or interruption, the same canonical journal reconciles a fresh pending readback with the exact original identity; it never resends a recorded intent, even when another invocation selects a different subset or order.
-Changed row generations, running or changed owner attempts, routing changes, existing review evidence, exhausted budgets, excluded accounts, and unverified outcomes fail closed with nonzero exit status and preserved evidence for inspection.
+Malformed notification identities or URLs remain pending for repair, while valid schools continue through collection and capture.
+The source and capture summaries expose an `invalid` count for these targets.
+`python scripts/instagram_browser.py retry --job-id <id>` retrieves an idle target again and lets its fresh result be captured again.
 The `retrieve` command confirms queue admission; read `status --job-id` to establish the retrieval's outcome.
 Digest expansion and engagement still require the exact intended school account.
 All carousel children and each video's corresponding poster are preserved.
-Missing or mismatched media fails retrieval rather than importing incomplete artwork.
+Missing or mismatched media fails retrieval rather than capturing incomplete artwork.
 GitHub self-hosted runner capacity is separate from tab capacity.
 One registered Actions runner still executes one workflow job at a time; more tabs accelerate the shared retrieval backlog and compatible digest jobs already waiting in the queue.
 A profile job reviews at most `profile_post_limit` recent posts; it is not an exhaustive historical profile scrape.
-
-Retrieval does not claim production media while it waits for the browser.
-The importer takes a separate singleton lock, journals its claim token before claiming a specific pending ledger row, and calls the existing prefetched-post pipeline without the Apify adapter.
-The next run releases an interrupted claim using its exact journaled token.
-Event/position extraction, post deduplication, school routing, storage and discovery invalidation continue through the existing pipeline.
-A successful import finalizes the original notification media row.
-A failed import releases the row back to pending and refreshes expired public media details, with bounded retries and visible failures.
-After resolving a failure, `python scripts/instagram_browser.py retry --job-id <id>` resets only that retrieval target’s import retry budget.
 A login, challenge or suspended-account page pauses browser retrieval for human recovery.
-The Codex heartbeat reviews the queue every five minutes and stays quiet when nothing actionable changes.
-Use `ingestion-ready` for every new review packet instead of continuing a saved school-specific snapshot.
-It reads fresh pending production media and local retrieval results, returns at most `ingestion_batch_size` targets, and gives each ready school a turn before selecting a second target from that school.
-Each school independently alternates newer and older posts so neither side of its backlog waits indefinitely.
-Age ordering uses the verified post timestamp, falls back to ledger creation time when unavailable, and uses the ledger ID to break ties.
-The packet reports pending, ready, waiting, failed, held, blocked, excluded, cancelled, invalid, and selected counts by school.
-Only a saved `codex_review` with reviewer `Codex`, decision `unresolved`, and matching source URL and school holds a target; extraction preparations alone remain eligible.
-The command does not enqueue, claim, import, consume targets, or write progress.
-Review targets in their returned order and persist each target's `cursor_after` to the existing queue setting `notification_review_cursor` only after its Codex decision and required production readback are durable.
-An explicit unresolved decision advances reviewed progress while preserving its hold.
-If a target fails before a durable decision, retain the last committed cursor and request a fresh packet before advancing later cursor snapshots.
-The packet's `suggested_next_cursor` is safe to commit only after its entire returned prefix has been reviewed.
-The importer never holds the browser lock while it runs AI extraction.
-The existing extraction pipeline still uses its configured AI provider; replacing Apify does not replace that provider.
-
-The Apify implementation remains available for explicit operator fallback.
-Select `media_provider=apify` when manually dispatching Process Notifications or Scrape Pending Media.
-Scrape Pending Media defaults to leaving work for the Mac schedule and never silently switches a browser failure to a paid provider.
-Keep the scheduled importer and worker on the same Mac user and shared state directory.
 Reload worker code only when its current job has finished, preserving the spool and pause state.
 
 ### Eligible event posts
@@ -436,103 +368,22 @@ The browser lock remains the same lock used by older direct-resolution workflows
 Priority scheduling applies only once notification callers submit through the shared queue.
 An older direct-resolution workflow waiting on the lock does not participate in queue priority.
 
-With the worker running, queue one captured digest without dispatching it to GitHub:
+The `process-notification` workflow submits a collapsed digest to the shared worker's queued resolver automatically.
 
-```sh
-cd backend
-python scripts/emulator_farm.py resolve-digest \
-  --recipient-id '<intended_recipient_id>' \
-  --account-username '<school_instagram_username>' \
-  --cache-ent-id '<cache_ent_id>' \
-  --instagram-action '<full_instagram_action>' \
-  --total-media-count '<total_non_mmc_media_count>'
-```
+## Android phone setup
 
-The command prints the matched account, the complete media ID list, page count, and merged Instagram action.
-It waits for the shared worker; it does not drive Brave directly.
-The `process-notification` workflow uses the same queued resolver automatically when it receives a collapsed digest.
-The regular `run-cycle` and `monitor` commands only forward the original Android payload.
-
-## Android provisioning and operation
-
-Provision the official Google Play ARM64 image and the persistent AVD:
-
-```sh
-cd backend
-python scripts/emulator_farm.py provision
-```
-
-For the one-time setup, start the node with a window and install Instagram and Automate through Google Play.
+Install Instagram and Automate on the physical Android phone through Google Play.
 An authorized human must complete Instagram login, two-factor prompts, security challenges, and Automate flow import.
-Keep each node to three accounts or fewer and do not add them to a shared Accounts Center.
+Keep the phone to three accounts or fewer and do not add them to a shared Accounts Center.
+Import the established Automate notification listener flow and grant Automate notification access when Android asks.
+The flow dispatches each Instagram notification to the `process-notification` workflow.
+
+For each logged-in Instagram account, enable USB debugging, open the consolidated `All profiles you follow` screen on the phone, and run the existing bell configuration against the phone's serial from `adb devices`:
 
 ```sh
 cd backend
-python scripts/emulator_farm.py start
-python scripts/emulator_farm.py status
+python scripts/automate_bell_notifications.py --device '<adb_serial>'
 ```
-
-Local APKs can be installed without Google Play when approved APK files are available:
-
-```sh
-cd backend
-python scripts/emulator_farm.py install-apks \
-  --instagram-apk /absolute/path/to/instagram.apk \
-  --automate-apk /absolute/path/to/automate.apk
-```
-
-Import the established Automate notification listener flow on the node.
-The flow waits for Instagram notification transitions while the scheduled Mac cycle owns GitHub dispatch.
-Grant Automate notification access when Android asks.
-
-For each logged-in Instagram account, open the consolidated `All profiles you follow` screen and run the existing bell configuration against the correct serial:
-
-```sh
-cd backend
-python scripts/automate_bell_notifications.py --device emulator-5554
-```
-
-After the one-time setup, run one windowed cycle and install the 30-minute dispatcher and watchdog:
-
-```sh
-cd backend
-python scripts/emulator_farm.py run-cycle --json
-python scripts/emulator_farm.py install-schedule
-```
-
-For a manual terminal monitor, add `--show-notifications`.
-The resulting JSON includes every parsed notification's observed timestamp, title, body, recipient ID, push ID, category, Instagram action, CacheEntID, and media count.
-This output is limited to the interactive command and is not saved to the farm's local evidence state.
-
-```sh
-python scripts/emulator_farm.py run-cycle --json --show-notifications
-```
-
-For live terminal monitoring, run the command below.
-It polls the active Android notification tray every three seconds, prints each newly observed Instagram notification once, and immediately dispatches complete pushes to GitHub.
-Press `Ctrl+C` to stop it.
-
-```sh
-python scripts/emulator_farm.py monitor
-```
-
-The live monitor reduces the window in which an active notification can be missed, but it cannot recover a push that Instagram never posts to Android or removes before the next poll.
-Its dispatch summary reports GitHub delivery, while the corresponding workflow log reports digest expansion or a sanitized browser error.
-
-The `check` output reports every recently observed recipient ID and whether the node remains within its three-account capacity.
-Generate a real post notification for each logged-in account, then inspect the safe evidence result:
-
-```sh
-cd backend
-python scripts/emulator_farm.py check --json
-```
-
-Use `python scripts/emulator_farm.py doctor` for host readiness and `python scripts/emulator_farm.py status --json` for AVD, package, notification-access, and routing status.
-The scheduled `run-cycle` exits nonzero while either app is missing, Automate lacks notification access, or GitHub dispatch fails, so `launchctl print gui/$(id -u)/io.wat2do.emulator-farm.check` exposes incomplete setup through its last exit code.
-
-Device and scheduler commands are bounded by `command_timeout_seconds` in `emulator_farm.json`, with separate explicit boot deadlines.
-Concurrent dispatchers cannot claim the same local dispatch ledger.
-Malformed dispatch history fails before forwarding notifications; restore the history rather than deleting it and replaying old notifications.
 
 `backend/scripts/setup_isolated_runners.sh` preserves existing runner registrations and checks their service installation.
 It downloads into a private staging directory, validates the archive against the official release checksum, and reports partial setup as a repair error.

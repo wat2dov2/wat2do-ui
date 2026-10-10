@@ -346,9 +346,6 @@ def main() -> int:
     log.info(success_msg)
     if os.getenv("GITHUB_ACTIONS") == "true":
         print(f"::notice::{success_msg}", flush=True)
-        if github_output := os.getenv("GITHUB_OUTPUT"):
-            with open(github_output, "a") as f:
-                f.write(f"new_items={newly_inserted_count}\n")
     return 0
 
 

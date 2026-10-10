@@ -10,7 +10,7 @@ from __future__ import annotations
 import functools
 import logging
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from core.constants import (
     MAX_CLUB_NAME_LENGTH,
@@ -44,6 +44,7 @@ def write_event(
     source_url: str,
     allow_past_events: bool = False,
     resolved_org: ResolvedClub | None = None,
+    ingestion_source: Literal["instagram_scraper", "directory"] = "instagram_scraper",
 ) -> str:
     """Insert or overwrite one event from Pass 1 / Pass 2 output.
 
@@ -132,7 +133,7 @@ def write_event(
         "club": club_name[:MAX_EVENT_CLUB_LENGTH],
         "ig_handle": effective_ig[:MAX_EVENT_HANDLE_LENGTH] if effective_ig else None,
         "cancelled": bool(event.get("cancelled", False)),
-        "ingestion_source": "instagram_scraper",
+        "ingestion_source": ingestion_source,
     }
     event_row = {k: remove_surrogates(v) for k, v in event_row.items()}
 

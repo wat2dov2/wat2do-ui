@@ -29,7 +29,7 @@ from core.tables import EVENT_DATES, EVENTS, INSTAGRAM_PUBLISH_ITEMS
 from schemas.event import EventSummaryResponse
 from schemas.event_date import OccurrenceResponse
 from services import event_date_service, school_service
-from services.scraper.directory_config import directory_for_event
+from services.ingestion import directory
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +52,10 @@ _SUMMARY_COMPUTED_FIELDS = {
     "club_discord",
 }
 _SUMMARY_COLUMNS = ",".join(
-    f for f in EventSummaryResponse.model_fields if f not in _SUMMARY_COMPUTED_FIELDS
+    [
+        *(f for f in EventSummaryResponse.model_fields if f not in _SUMMARY_COMPUTED_FIELDS),
+        "ingestion_source",
+    ]
 )
 # Read-time embed of the owning club's display/link/social fields via the
 # ``events.club_id`` FK, flattened onto the event in ``hydrate_event``.
@@ -112,21 +115,17 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
         if isinstance(org, dict)
         else {}
     )
-    directory = directory_for_event(row.get("source_url"), row.get("school"))
-    if directory and directory.default_club_ig and not org_fields.get("club_logo_url"):
-        from services import club_service
-
-        fallback = club_service.lookup_club_by_school_and_ig(
-            directory.school, directory.default_club_ig
+    is_directory_event = row.pop("ingestion_source", None) == "directory"
+    if is_directory_event and not org_fields.get("club_logo_url"):
+        org_fields["club_logo_url"] = directory.default_club_logo(
+            row.get("school"), row.get("source_url")
         )
-        if fallback:
-            org_fields["club_logo_url"] = fallback.get("logo_url")
     return model.model_validate(
         {
             **row,
             **org_fields,
             "occurrences": occurrences,
-            "is_directory_event": directory is not None,
+            "is_directory_event": is_directory_event,
             "featured": featured,
         }
     )

@@ -1,7 +1,5 @@
 """Scraping pipeline constants."""
 
-from typing import Final
-
 from core.controlbox import controlbox
 
 _CONTROL = controlbox.scraping
@@ -18,8 +16,3 @@ SCRAPING_MAX_CANDIDATES = _CONTROL.maximum_candidates
 # Same-day cross-org recall is capped tighter than same-org so Pass 2
 # is not flooded with unrelated campus events on busy days.
 SCRAPING_MAX_CROSS_ORG_CANDIDATES = _CONTROL.maximum_cross_club_candidates
-
-WORKFLOW_RUN_RUNNING: Final = "running"
-WORKFLOW_RUN_SUCCESS: Final = "success"
-WORKFLOW_RUN_ERROR: Final = "error"
-WORKFLOW_RUN_NO_POSTS: Final = "no_posts"

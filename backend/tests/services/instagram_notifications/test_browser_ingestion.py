@@ -1,4 +1,3 @@
-import hashlib
 import json
 import shutil
 import subprocess
@@ -9,6 +8,7 @@ from uuid import UUID
 
 import pytest
 
+from services.ingestion.queue import IngestionQueue
 from services.instagram_notifications import browser_ingestion as module
 from services.instagram_notifications import notification_ingestion as bridge
 from services.instagram_notifications.browser_queue import BrowserJobQueue
@@ -170,6 +170,7 @@ def test_incomplete_or_mismatched_media_fails(mutation):
 
 @pytest.fixture
 def import_setup(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
     queue = BrowserJobQueue(tmp_path)
     row = {
         "id": "d6246624-50f7-4aa1-bf0a-0d14b604d5a7",
@@ -185,71 +186,72 @@ def import_setup(tmp_path, monkeypatch):
     return queue, row, jid
 
 
+def _retrieved(queue, jid, posts=None, target_url=URL):
+    queue.finish(
+        queue.claim_next(),
+        result={"account_username": ACCOUNT, "target_url": target_url, "posts": posts or [POST]},
+    )
+    assert queue.get(jid).state == "succeeded"
+
+
+def _captured():
+    ingestion = IngestionQueue()
+    items = []
+    while item := ingestion.claim():
+        items.append(item)
+    return items
+
+
 def test_pending_retrieval_does_not_claim_production_media(import_setup, monkeypatch):
     queue, _, _ = import_setup
     monkeypatch.setattr(
         bridge, "claim_pending_browser_media", lambda **_: pytest.fail("Not retrieved")
     )
-    assert bridge.import_retrieved_media(queue)["waiting"] == 1
+    assert bridge.enqueue_retrieved_media(queue)["waiting"] == 1
+    assert _captured() == []
 
 
-def test_import_uses_existing_pipeline_only_after_journaling_claim(import_setup, monkeypatch):
+def test_capture_is_durable_before_the_journaled_ledger_claim(import_setup, monkeypatch):
     queue, row, jid = import_setup
-    queue.claim_next()
-    queue.finish(
-        queue.get(jid), result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]}
-    )
+    _retrieved(queue, jid)
 
     def claim(**args):
         assert queue.get_setting(bridge._JOURNAL) == args
+        assert args["media_row_id"] == row["id"]
+        assert IngestionQueue().counts()["queued"] == 1
         return True
 
-    calls = []
     monkeypatch.setattr(bridge, "claim_pending_browser_media", claim)
-    monkeypatch.setattr(
-        bridge,
-        "run_pipeline",
-        lambda **args: calls.append(args) or SimpleNamespace(status="success"),
-    )
     monkeypatch.setattr(bridge, "mark_media_succeeded", lambda **_: True)
-    result = bridge.import_retrieved_media(queue)
-    assert result["imported"] == 1
-    assert calls[0]["posts"] == [POST]
-    assert calls[0]["school"] == "ubc"
+
+    assert bridge.enqueue_retrieved_media(queue)["enqueued"] == 1
     assert queue.get_setting(bridge._JOURNAL) is None
+    assert [(item.school, item.post) for item in _captured()] == [("ubc", POST)]
+    assert queue.get_setting("notification_enqueue_status")["enqueued"] == 1
 
 
-def test_import_failure_rolls_back_and_refreshes_without_success(import_setup, monkeypatch):
+def test_unconfirmed_success_releases_the_claim(import_setup, monkeypatch):
     queue, _, jid = import_setup
-    queue.claim_next()
-    queue.finish(
-        queue.get(jid), result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]}
-    )
+    _retrieved(queue, jid)
     monkeypatch.setattr(bridge, "claim_pending_browser_media", lambda **_: True)
-    monkeypatch.setattr(
-        bridge, "_import_posts", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError())
-    )
+    monkeypatch.setattr(bridge, "mark_media_succeeded", lambda **_: False)
     rollbacks = []
     monkeypatch.setattr(
         bridge, "rollback_media_claim", lambda **args: rollbacks.append(args) or True
     )
-    monkeypatch.setattr(bridge, "mark_media_succeeded", lambda **_: pytest.fail("Failed import"))
-    assert bridge.import_retrieved_media(queue)["failed"] == 1
+    assert bridge.enqueue_retrieved_media(queue)["failed"] == 1
     assert len(rollbacks) == 1
-    assert queue.get(jid).state == "pending"
+    assert queue.get_setting(bridge._JOURNAL) is None
 
 
 def test_commit_then_network_failure_keeps_recoverable_token(import_setup, monkeypatch):
     queue, _, jid = import_setup
-    queue.claim_next()
-    queue.finish(
-        queue.get(jid), result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]}
-    )
+    _retrieved(queue, jid)
     monkeypatch.setattr(
         bridge, "claim_pending_browser_media", lambda **_: (_ for _ in ()).throw(OSError())
     )
     with pytest.raises(OSError):
-        bridge.import_retrieved_media(queue)
+        bridge.enqueue_retrieved_media(queue)
     journal = queue.get_setting(bridge._JOURNAL)
     assert journal is not None
     recovered = []
@@ -257,21 +259,17 @@ def test_commit_then_network_failure_keeps_recoverable_token(import_setup, monke
         bridge, "rollback_media_claim", lambda **args: recovered.append(args) or True
     )
     monkeypatch.setattr(bridge, "_pending_rows", lambda: [])
-    assert bridge.import_retrieved_media(queue)["recovered"] == 1
+    assert bridge.enqueue_retrieved_media(queue)["recovered"] == 1
     assert recovered == [journal]
 
 
-def test_import_claim_conflict_does_not_extract_or_finalize(import_setup, monkeypatch):
+def test_claim_conflict_does_not_finalize(import_setup, monkeypatch):
     queue, _, jid = import_setup
-    queue.claim_next()
-    queue.finish(
-        queue.get(jid), result={"account_username": "wat2do.ca", "target_url": URL, "posts": [POST]}
-    )
+    _retrieved(queue, jid)
     monkeypatch.setattr(bridge, "claim_pending_browser_media", lambda **_: False)
-    monkeypatch.setattr(
-        bridge, "_import_posts", lambda *_args, **_kwargs: pytest.fail("Claim lost")
-    )
-    assert bridge.import_retrieved_media(queue)["imported"] == 0
+    monkeypatch.setattr(bridge, "mark_media_succeeded", lambda **_: pytest.fail("Claim lost"))
+    assert bridge.enqueue_retrieved_media(queue)["enqueued"] == 0
+    assert queue.get_setting(bridge._JOURNAL) is None
 
 
 def test_browser_projects_only_public_fields_and_keeps_all_carousel_children(monkeypatch):
@@ -530,14 +528,15 @@ def test_suspended_account_stops_before_switch_or_fetch():
         module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
 
 
-def test_explicit_retrieval_retry_resets_only_matching_media(import_setup, monkeypatch):
-    queue, row, jid = import_setup
-    key = f"notification_import_attempts:{row['id']}"
-    queue.set_setting(key, 3)
-    queue.set_setting("notification_import_attempts:other", 3)
+def test_explicit_retrieval_retry_recaptures_only_its_target(import_setup):
+    queue, _, jid = import_setup
+    _retrieved(queue, jid)
+    queue.set_setting(f"manual_enqueued:{jid}", True)
+    queue.set_setting("manual_enqueued:other", True)
     bridge.retry_retrieved_media(queue, jid)
-    assert queue.get_setting(key) == 0
-    assert queue.get_setting("notification_import_attempts:other") == 3
+    assert queue.get(jid).state == "pending"
+    assert queue.get_setting(f"manual_enqueued:{jid}") is None
+    assert queue.get_setting("manual_enqueued:other") is True
 
 
 def test_retrieval_rejects_account_change():
@@ -553,67 +552,77 @@ def test_retrieval_rejects_account_change():
         module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
 
 
-def test_import_rejects_wrong_retrieved_target(import_setup, monkeypatch):
+@pytest.mark.parametrize(
+    "posts,target_url",
+    [
+        ([POST], "https://www.instagram.com/p/Other/"),
+        ([POST, {**POST, "url": "https://www.instagram.com/p/Second/"}], URL),
+        ([{**POST, "url": "https://www.instagram.com/p/Other/"}], URL),
+    ],
+)
+def test_exact_notification_requires_exactly_its_one_post(
+    import_setup, monkeypatch, posts, target_url
+):
     queue, _, jid = import_setup
-    queue.claim_next()
-    queue.finish(
-        queue.get(jid),
-        result={
-            "account_username": "wat2do.ca",
-            "target_url": "https://www.instagram.com/p/Other/",
-            "posts": [POST],
-        },
-    )
+    _retrieved(queue, jid, posts, target_url)
     monkeypatch.setattr(
         bridge, "claim_pending_browser_media", lambda **_: pytest.fail("Wrong target")
     )
-    assert bridge.import_retrieved_media(queue)["invalid"] == 1
+    assert bridge.enqueue_retrieved_media(queue)["invalid"] == 1
+    assert _captured() == []
     assert queue.get(jid).state == "succeeded"
 
 
-def test_invalid_import_target_cannot_block_another_school(import_setup, monkeypatch):
+def test_invalid_target_cannot_block_another_school(import_setup, monkeypatch):
     queue, row, jid = import_setup
-    queue.finish(
-        queue.claim_next(),
-        result={"account_username": ACCOUNT, "target_url": URL, "posts": [POST]},
-    )
+    _retrieved(queue, jid)
     broken = {**row, "id": "615b6bca-4efd-41c6-8e69-0ff62f3aece2", "source_url": None}
     monkeypatch.setattr(bridge, "_pending_rows", lambda: [broken, row])
-    imports = []
     claims = []
     monkeypatch.setattr(
         bridge, "claim_pending_browser_media", lambda **claim: claims.append(claim) or True
     )
-    monkeypatch.setattr(
-        bridge, "_import_posts", lambda *args, **kwargs: imports.append((args, kwargs))
-    )
     monkeypatch.setattr(bridge, "mark_media_succeeded", lambda **_: True)
 
-    result = bridge.import_retrieved_media(queue)
+    result = bridge.enqueue_retrieved_media(queue)
 
-    assert result["imported"] == 1
+    assert result["enqueued"] == 1
     assert result["invalid"] == 1
     assert [claim["media_row_id"] for claim in claims] == [row["id"]]
-    assert len(imports) == 1
-    assert queue.get(jid).state == "succeeded"
+    assert len(_captured()) == 1
 
 
-def test_manual_retry_cannot_reset_import_history_after_a_worker_claim(import_setup, monkeypatch):
-    queue, row, jid = import_setup
-    key = f"notification_import_attempts:{row['id']}"
-    queue.set_setting(key, 3)
+def test_manual_targets_capture_every_retrieved_post_once(import_setup, monkeypatch):
+    queue, _, notification_job = import_setup
+    monkeypatch.setattr(bridge, "_pending_rows", lambda: [])
+    profile = "https://www.instagram.com/club/"
+    second = {**POST, "url": "https://www.instagram.com/p/Second/"}
+    jid = queue.enqueue_retrieval(
+        school="ubc", recipient_id=RECIPIENT, account_username=ACCOUNT, url=profile
+    )
+    queue.set_setting(f"manual_retrieval:{jid}", True)
+    queue.cancel(notification_job)
+    queue.finish(
+        queue.claim_next(),
+        result={"account_username": ACCOUNT, "target_url": profile, "posts": [POST, second]},
+    )
 
-    def pending():
-        assert queue.claim_next().id == jid
-        return [row]
+    assert bridge.enqueue_retrieved_media(queue)["enqueued"] == 2
+    assert bridge.enqueue_retrieved_media(queue)["enqueued"] == 0
+    assert [item.post["url"] for item in _captured()] == [URL, second["url"]]
+    assert queue.get_setting(f"manual_enqueued:{jid}") is True
 
-    monkeypatch.setattr(bridge, "_pending_rows", pending)
+
+def test_retry_cannot_reset_a_target_after_a_worker_claim(import_setup, monkeypatch):
+    queue, _, jid = import_setup
+    queue.set_setting(f"manual_enqueued:{jid}", True)
+    assert queue.claim_next().id == jid
 
     with pytest.raises(ValueError, match="idle retrieval"):
         bridge.retry_retrieved_media(queue, jid)
 
     assert queue.get(jid).state == "running"
-    assert queue.get_setting(key) == 3
+    assert queue.get_setting(f"manual_enqueued:{jid}") is True
 
 
 def test_excluded_account_remains_pending_while_other_retrieval_runs(tmp_path):
@@ -630,12 +639,12 @@ def test_excluded_account_remains_pending_while_other_retrieval_runs(tmp_path):
     assert queue.claim_next() is None
 
 
-def test_excluded_notification_is_not_synced_or_imported(import_setup, monkeypatch):
+def test_excluded_notification_is_not_synced_or_captured(import_setup, monkeypatch):
     queue, _, jid = import_setup
     queue.set_setting("excluded_accounts", [ACCOUNT])
     monkeypatch.setattr(bridge, "claim_pending_browser_media", lambda **_: pytest.fail("Excluded"))
     assert bridge.sync_notification_media(queue)["queued"] == 0
-    assert bridge.import_retrieved_media(queue)["imported"] == 0
+    assert bridge.enqueue_retrieved_media(queue)["enqueued"] == 0
     assert queue.get(jid).state == "pending"
     bridge.acknowledge_browser_delivery.assert_not_called()
 
@@ -847,834 +856,3 @@ def test_invalid_notification_cannot_block_other_schools(import_setup, monkeypat
     )
     assert queue.claim_next().id == jid
     assert queue.claim_next() is None
-
-
-def test_refreshing_signed_media_never_resets_the_separate_import_failure_budget(
-    import_setup, monkeypatch
-):
-    queue, row, jid = import_setup
-    key = f"notification_import_attempts:{row['id']}"
-    claims = []
-    monkeypatch.setattr(
-        bridge, "claim_pending_browser_media", lambda **claim: claims.append(claim) or True
-    )
-    monkeypatch.setattr(bridge, "rollback_media_claim", lambda **_: True)
-    monkeypatch.setattr(
-        bridge, "_import_posts", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError())
-    )
-    for attempt in range(1, bridge._CONTROL.ingestion_retry_limit + 1):
-        assert queue.claim_next().id == jid
-        queue.finish(
-            queue.get(jid), result={"account_username": ACCOUNT, "target_url": URL, "posts": [POST]}
-        )
-        assert bridge.import_retrieved_media(queue)["failed"] == 1
-        assert queue.get(jid).attempts == 0
-        assert queue.get_setting(key) == attempt
-    queue.claim_next()
-    queue.finish(
-        queue.get(jid), result={"account_username": ACCOUNT, "target_url": URL, "posts": [POST]}
-    )
-    assert bridge.import_retrieved_media(queue)["blocked"] == 1
-    assert len(claims) == bridge._CONTROL.ingestion_retry_limit
-    assert queue.get_setting(key) == bridge._CONTROL.ingestion_retry_limit
-
-
-@pytest.fixture
-def review_backlog(tmp_path, monkeypatch):
-    queue = BrowserJobQueue(tmp_path)
-    rows = []
-    sequence = 0
-    monkeypatch.setattr(bridge, "_pending_rows", lambda: list(rows))
-    monkeypatch.setattr(
-        bridge,
-        "_identity",
-        lambda row: (
-            row["school"],
-            row["notification"]["intended_recipient_id"],
-            f"wat2do.{row['school']}",
-        ),
-    )
-
-    def add(school, *, state="succeeded", timestamp=POST["timestamp"]):
-        nonlocal sequence
-        sequence += 1
-        index = sequence
-        url = f"https://www.instagram.com/p/Review{index}/"
-        row = {
-            "id": str(UUID(int=index)),
-            "school": school,
-            "source_url": url,
-            "created_at": "2026-10-08T00:00:00Z",
-            "notification": {"intended_recipient_id": str(100 + ord(school[0]))},
-        }
-        rows.append(row)
-        job_id = queue.enqueue_retrieval(
-            school=school,
-            recipient_id=row["notification"]["intended_recipient_id"],
-            account_username=f"wat2do.{school}",
-            url=url,
-        )
-        if state in {"succeeded", "failed"}:
-            claim = queue.claim_next()
-            assert claim.id == job_id
-            if state == "failed":
-                queue.finish(claim, error="read failed")
-            else:
-                queue.finish(
-                    claim,
-                    result={
-                        "target_url": url,
-                        "posts": [{**deepcopy(POST), "url": url, "timestamp": timestamp}],
-                    },
-                )
-        elif state == "cancelled":
-            queue.cancel(job_id)
-        return row, job_id
-
-    return queue, rows, add
-
-
-def test_review_selection_rotates_schools_before_returning_to_large_backlog(review_backlog):
-    queue, _, add = review_backlog
-    for _ in range(20):
-        add("a")
-    add("b")
-    add("c")
-    queue.set_setting(bridge._REVIEW_CURSOR, {"last_school": "a", "next_newest": {}})
-
-    result = bridge.ready_review_targets(queue)
-
-    assert [target["school"] for target in result["targets"][:3]] == ["b", "c", "a"]
-    assert len(result["targets"]) == bridge._CONTROL.ingestion_batch_size
-    assert result["schools"]["a"]["ready"] == 20
-    assert result["totals"]["pending"] == 22
-
-
-def test_review_selection_does_not_claim_enqueue_or_advance_unreviewed_targets(
-    review_backlog, monkeypatch
-):
-    queue, rows, add = review_backlog
-    row, job_id = add("a")
-    for name in ("enqueue_retrieval", "claim_next", "set_setting"):
-        monkeypatch.setattr(queue, name, MagicMock(side_effect=AssertionError("Preview must read")))
-    monkeypatch.setattr(
-        bridge, "claim_pending_browser_media", MagicMock(side_effect=AssertionError())
-    )
-
-    first = bridge.ready_review_targets(queue)
-    newer_row, newer_job_id = deepcopy(row), job_id
-    newer_row["id"] = str(UUID(int=100))
-    rows.append(newer_row)
-    second = bridge.ready_review_targets(queue)
-
-    assert first["targets"][0]["row"] == row
-    assert first["targets"][0]["job_id"] == job_id
-    assert first["targets"][0]["posts"][0]["url"] == row["source_url"]
-    assert len(second["targets"]) == 2
-    assert second["targets"][0]["job_id"] == newer_job_id
-    assert queue.get_setting(bridge._REVIEW_CURSOR) is None
-    assert queue.get(job_id).state == "succeeded"
-    bridge.claim_pending_browser_media.assert_not_called()
-
-
-def test_review_cursor_alternates_age_per_school_even_across_even_batch_cycle(
-    review_backlog, monkeypatch
-):
-    queue, rows, add = review_backlog
-    monkeypatch.setattr(
-        bridge, "_CONTROL", SimpleNamespace(ingestion_batch_size=1, ingestion_retry_limit=3)
-    )
-    a_new, _ = add("a", timestamp="2026-10-07T12:00:00Z")
-    a_old, _ = add("a", timestamp="2026-10-03T12:00:00Z")
-    b_new, _ = add("b", timestamp="2026-10-07T12:00:00Z")
-    b_old, _ = add("b", timestamp="2026-10-03T12:00:00Z")
-
-    first = bridge.ready_review_targets(queue)
-    assert first["targets"][0]["row"] == a_new
-    queue.set_setting(bridge._REVIEW_CURSOR, first["targets"][0]["cursor_after"])
-    rows.remove(a_new)
-    second = bridge.ready_review_targets(queue)
-    assert second["targets"][0]["row"] == b_new
-    queue.set_setting(bridge._REVIEW_CURSOR, second["targets"][0]["cursor_after"])
-    rows.remove(b_new)
-    add("a", timestamp="2026-10-08T12:00:00Z")
-    add("b", timestamp="2026-10-08T12:00:00Z")
-
-    third = bridge.ready_review_targets(queue)
-    assert third["targets"][0]["row"] == a_old
-    queue.set_setting(bridge._REVIEW_CURSOR, third["targets"][0]["cursor_after"])
-    rows.remove(a_old)
-    assert bridge.ready_review_targets(queue)["targets"][0]["row"] == b_old
-
-
-def test_review_cursor_after_each_target_supports_partial_completed_batch(review_backlog):
-    queue, _, add = review_backlog
-    add("a")
-    add("b")
-    add("c")
-    result = bridge.ready_review_targets(queue)
-    first_cursor = result["targets"][0]["cursor_after"]
-    assert first_cursor == {"last_school": "a", "next_newest": {"a": False}}
-    assert result["suggested_next_cursor"]["last_school"] == "c"
-    queue.set_setting(bridge._REVIEW_CURSOR, first_cursor)
-
-    assert bridge.ready_review_targets(queue)["targets"][0]["school"] == "b"
-
-
-@pytest.mark.parametrize(
-    "review",
-    [
-        {"reviewer": "Codex", "decision": "unresolved", "school": "a", "source_url": "MATCH"},
-        {"reviewer": "Codex", "decision": "unresolved", "school": "b", "source_url": "MATCH"},
-        {"reviewer": "Codex", "decision": "unresolved", "school": "a", "source_url": URL},
-        {"reviewer": "extractor", "decision": "unresolved", "school": "a", "source_url": "MATCH"},
-        None,
-    ],
-)
-def test_only_exact_codex_unresolved_decisions_hold_review_targets(review_backlog, review):
-    queue, _, add = review_backlog
-    row, _ = add("a")
-    if review and review["source_url"] == "MATCH":
-        review = {**review, "source_url": row["source_url"]}
-    queue.set_setting(
-        f"notification_reviewed_target:{row['id']}", {"codex_review": review, "content": {}}
-    )
-
-    result = bridge.ready_review_targets(queue)
-
-    held = review == {
-        "reviewer": "Codex",
-        "decision": "unresolved",
-        "school": "a",
-        "source_url": row["source_url"],
-    }
-    assert result["totals"]["held"] == int(held)
-    assert len(result["targets"]) == int(not held)
-
-
-def test_review_backlog_reports_held_failed_waiting_blocked_and_excluded(review_backlog):
-    queue, _, add = review_backlog
-    held, _ = add("a")
-    queue.set_setting(
-        f"notification_reviewed_target:{held['id']}",
-        {
-            "codex_review": {
-                "reviewer": "Codex",
-                "decision": "unresolved",
-                "school": "a",
-                "source_url": held["source_url"],
-            }
-        },
-    )
-    blocked, _ = add("b")
-    queue.set_setting(
-        f"notification_import_attempts:{blocked['id']}", bridge._CONTROL.ingestion_retry_limit
-    )
-    add("c", state="failed")
-    add("d", state="cancelled")
-    add("e")
-    add("f", state="pending")
-    queue.set_setting("excluded_accounts", ["wat2do.e"])
-    assert {job.school for job in queue.retrieval_results()} == {"a", "b", "e"}
-    assert len(queue.retrieval_results(succeeded_only=False)) == 6
-
-    result = bridge.ready_review_targets(queue)
-
-    assert result["targets"] == []
-    assert result["totals"] == {
-        "pending": 6,
-        "ready": 0,
-        "waiting": 1,
-        "failed": 1,
-        "held": 1,
-        "blocked": 1,
-        "excluded": 1,
-        "cancelled": 1,
-        "invalid": 0,
-        "selected": 0,
-    }
-    assert result["schools"]["c"]["failed"] == 1
-    assert queue.get_setting(bridge._REVIEW_CURSOR) is None
-
-
-@pytest.mark.parametrize(
-    "cursor", ["corrupt", {"last_school": None, "next_newest": {"a": "false"}}]
-)
-def test_invalid_review_cursor_fails_without_resetting_progress(review_backlog, cursor):
-    queue, _, add = review_backlog
-    add("a")
-    queue.set_setting(bridge._REVIEW_CURSOR, cursor)
-    with pytest.raises(ValueError, match="review cursor is invalid"):
-        bridge.ready_review_targets(queue)
-    assert queue.get_setting(bridge._REVIEW_CURSOR) == cursor
-
-
-def test_review_selection_matches_recipient_and_verified_exact_post(review_backlog, monkeypatch):
-    queue, rows, add = review_backlog
-    row, job_id = add("a")
-    original_recipient = row["notification"]["intended_recipient_id"]
-    row["notification"]["intended_recipient_id"] = "99999"
-    assert bridge.ready_review_targets(queue)["totals"]["waiting"] == 1
-    row["notification"]["intended_recipient_id"] = original_recipient
-    job = queue.get(job_id)
-    job.result["posts"][0]["url"] = URL
-    monkeypatch.setattr(queue, "retrieval_results", lambda **_: [job])
-    invalid = bridge.ready_review_targets(queue)
-    assert invalid["totals"]["invalid"] == 1
-    assert invalid["targets"] == []
-    assert rows == [row]
-
-
-def _save_full_held_review(queue, row, job_id):
-    saved = {
-        "row": deepcopy(row),
-        "school": row["school"],
-        "job_id": job_id,
-        "posts": deepcopy(queue.get(job_id).result["posts"]),
-        "content": {"events": [], "positions": []},
-        "image_map": {"z": "https://images.test/z", "a": "https://images.test/a"},
-        "candidate_baseline": {"preserved": ["source evidence" * 1000]},
-        "codex_review": {
-            "reviewer": "Codex",
-            "decision": "unresolved",
-            "school": row["school"],
-            "source_url": row["source_url"],
-            "evidence": ["A source-specific clock still needs verification"],
-        },
-    }
-    queue.set_setting(f"notification_reviewed_target:{row['id']}", saved)
-    return saved
-
-
-def test_explicit_held_review_stages_fresh_evidence_in_requested_order_without_writes(
-    review_backlog, monkeypatch
-):
-    queue, _, add = review_backlog
-    first, first_job = add("a")
-    second, second_job = add("b")
-    first_saved = _save_full_held_review(queue, first, first_job)
-    second_saved = _save_full_held_review(queue, second, second_job)
-    ready, _ = add("c")
-    cursor = {"last_school": "a", "next_newest": {"a": False}}
-    queue.set_setting(bridge._REVIEW_CURSOR, cursor)
-    queue.refresh_retrieval(first_job)
-    claim = queue.claim_next()
-    assert claim.id == first_job
-    fresh_post = {**POST, "url": first["source_url"], "caption": "New source clock evidence"}
-    queue.finish(claim, result={"target_url": first["source_url"], "posts": [fresh_post]})
-    assert [t["row"] for t in bridge.ready_review_targets(queue)["targets"]] == [ready]
-    with queue._connect() as db:
-        before = db.execute("SELECT key,value FROM settings ORDER BY key").fetchall()
-    jobs = queue.retrieval_results(succeeded_only=False)
-    for name in ("set_setting", "enqueue_retrieval", "claim_next"):
-        monkeypatch.setattr(queue, name, lambda *_args, **_kw: pytest.fail("Selection must read"))
-    monkeypatch.setattr(
-        bridge, "claim_pending_browser_media", lambda **_: pytest.fail("Selection cannot claim")
-    )
-
-    result = bridge.ready_review_targets(queue, held_media_ids=[second["id"], first["id"]])
-
-    assert [target["row"]["id"] for target in result["targets"]] == [second["id"], first["id"]]
-    assert result["targets"][1]["posts"] == [fresh_post]
-    for target, saved in zip(result["targets"], (second_saved, first_saved), strict=True):
-        assert target["codex_review"] == saved["codex_review"]
-        assert (
-            target["prior_held_review_sha256"]
-            == hashlib.sha256(
-                json.dumps(saved, ensure_ascii=False, separators=(",", ":")).encode()
-            ).hexdigest()
-        )
-        assert "cursor_after" not in target
-        assert "prior_held_review" not in target
-        assert queue.get_setting(f"notification_reviewed_target:{saved['row']['id']}") == saved
-    assert result["cursor"] == result["suggested_next_cursor"] == cursor
-    assert result["totals"]["ready"] == 1
-    assert result["totals"]["held"] == result["totals"]["selected"] == 2
-    assert queue.retrieval_results(succeeded_only=False) == jobs
-    with queue._connect() as db:
-        assert db.execute("SELECT key,value FROM settings ORDER BY key").fetchall() == before
-
-
-@pytest.mark.parametrize("invalid_request", ["empty", "malformed", "duplicate", "over_limit"])
-def test_explicit_held_review_rejects_invalid_admission_before_ledger_read(
-    review_backlog, monkeypatch, invalid_request
-):
-    queue, _, add = review_backlog
-    first, job_id = add("a")
-    _save_full_held_review(queue, first, job_id)
-    second, second_job = add("b")
-    _save_full_held_review(queue, second, second_job)
-    monkeypatch.setattr(
-        bridge, "_CONTROL", SimpleNamespace(ingestion_batch_size=1, ingestion_retry_limit=3)
-    )
-    requests = {
-        "empty": [],
-        "malformed": ["not-a-media-id"],
-        "duplicate": [first["id"], first["id"]],
-        "over_limit": [first["id"], second["id"]],
-    }
-    if invalid_request == "duplicate":
-        monkeypatch.setattr(
-            bridge, "_CONTROL", SimpleNamespace(ingestion_batch_size=2, ingestion_retry_limit=3)
-        )
-    monkeypatch.setattr(
-        bridge, "_pending_rows", lambda: pytest.fail("Invalid request cannot inspect the ledger")
-    )
-    with pytest.raises(ValueError, match="Held review requests"):
-        bridge.ready_review_targets(queue, held_media_ids=requests[invalid_request])
-
-
-@pytest.mark.parametrize(
-    "blocker",
-    [
-        "unknown",
-        "not_held",
-        "excluded",
-        "incomplete_result",
-        "running",
-        "recipient",
-        "school",
-        "source",
-        "held_context",
-        "exhausted_import",
-    ],
-)
-def test_explicit_held_review_requires_pending_exact_held_source_and_succeeded_read(
-    review_backlog, monkeypatch, blocker
-):
-    queue, rows, add = review_backlog
-    row, job_id = add("a")
-    saved = _save_full_held_review(queue, row, job_id)
-    requested_id = row["id"]
-    if blocker == "unknown":
-        requested_id = str(UUID(int=999))
-    elif blocker == "not_held":
-        saved["codex_review"]["decision"] = "import"
-    elif blocker == "excluded":
-        queue.set_setting("excluded_accounts", ["wat2do.a"])
-    elif blocker == "incomplete_result":
-        job = queue.get(job_id)
-        job.result["posts"] = []
-        monkeypatch.setattr(queue, "retrieval_results", lambda **_: [job])
-    elif blocker == "running":
-        queue.refresh_retrieval(job_id)
-        assert queue.claim_next().id == job_id
-    elif blocker == "recipient":
-        row["notification"]["intended_recipient_id"] = "99999"
-    elif blocker == "school":
-        row["school"] = "b"
-    elif blocker == "source":
-        row["source_url"] = URL
-    elif blocker == "held_context":
-        saved["row"]["id"] = str(UUID(int=999))
-    elif blocker == "exhausted_import":
-        queue.set_setting(f"notification_import_attempts:{row['id']}", 3)
-    queue.set_setting(f"notification_reviewed_target:{row['id']}", saved)
-    with queue._connect() as db:
-        before = db.execute("SELECT key,value FROM settings ORDER BY key").fetchall()
-
-    with pytest.raises(ValueError, match="current, complete held review"):
-        bridge.ready_review_targets(queue, held_media_ids=[requested_id])
-
-    assert rows == [row]
-    with queue._connect() as db:
-        assert db.execute("SELECT key,value FROM settings ORDER BY key").fetchall() == before
-
-
-@pytest.fixture
-def failed_recovery(tmp_path, monkeypatch):
-    queue = BrowserJobQueue(tmp_path)
-    original = {
-        str(UUID(int=index)): {
-            "id": str(UUID(int=index)),
-            "notification_id": str(UUID(int=index + 10)),
-            "media_id": module.media_id_from_url(URL),
-            "source_url": URL,
-            "status": "failed",
-            "claim_token": str(UUID(int=index + 20)),
-            "succeeded_at": None,
-            "failure_category": "scrape_error",
-            "github_run_id": "123456789",
-            "created_at": "2026-09-11T12:00:00+00:00",
-            "updated_at": "2026-10-02T12:00:00+00:00",
-            "browser_delivery_generation": None,
-        }
-        for index in (1, 2)
-    }
-    current = deepcopy(original)
-    notifications = {
-        row["notification_id"]: {
-            "id": row["notification_id"],
-            "school_id": 1,
-            "intended_recipient_id": RECIPIENT,
-        }
-        for row in original.values()
-    }
-    client, media_query, notification_query, school_query = (
-        MagicMock(),
-        MagicMock(),
-        MagicMock(),
-        MagicMock(),
-    )
-    requested, notification_id = [], ""
-
-    def read_ids(column, ids):
-        nonlocal requested
-        assert column == "id"
-        requested = list(ids)
-        return media_query
-
-    def read_notification(column, value):
-        nonlocal notification_id
-        assert column == "id"
-        notification_id = value
-        return notification_query
-
-    client.table.side_effect = lambda table: {
-        bridge.INSTAGRAM_NOTIFICATION_MEDIA: media_query,
-        bridge.INSTAGRAM_NOTIFICATIONS: notification_query,
-        bridge.SCHOOLS: school_query,
-    }[table]
-    media_query.select.return_value = media_query
-    media_query.in_.side_effect = read_ids
-    media_query.execute.side_effect = lambda: SimpleNamespace(
-        data=[deepcopy(current[rid]) for rid in requested]
-    )
-    notification_query.select.return_value = notification_query
-    notification_query.eq.side_effect = read_notification
-    notification_query.single.return_value = notification_query
-    notification_query.execute.side_effect = lambda: SimpleNamespace(
-        data=deepcopy(notifications[notification_id])
-    )
-    monkeypatch.setattr(bridge, "get_sb", lambda: client)
-    school = {"id": 1, "slug": "ubc", "recipient_id": RECIPIENT}
-    school_query.select.return_value = school_query
-    school_query.eq.return_value = school_query
-    school_query.single.return_value = school_query
-    school_query.execute.side_effect = lambda: SimpleNamespace(data=deepcopy(school))
-    monkeypatch.setattr(
-        bridge.school_service,
-        "get_school_by_recipient_id",
-        lambda _: pytest.fail("Recovery must not use cached routing"),
-    )
-    proof = {
-        "repository": bridge._FAILED_OWNER_REPOSITORY,
-        "id": "123456789",
-        "path": ".github/workflows/scrape-pending-media.yml",
-        "run_attempt": 1,
-        "head_sha": "a" * 40,
-        "conclusion": "failure",
-        "checked_at": "2026-10-09T08:00:00+00:00",
-    }
-    owner = MagicMock(side_effect=lambda _: deepcopy(proof))
-    monkeypatch.setattr(bridge, "_failed_media_owner", owner)
-    path = tmp_path / "notification-failed-recovery.json"
-
-    def reset(expected, *, school_id, intended_recipient_id):
-        entry = queue.read_review_artifact(path)["rows"][expected["id"]]
-        assert entry["original_media"] == original[expected["id"]] == expected
-        assert entry["intent"]["started_at"]
-        assert entry["owner_run"] == proof
-        assert (school_id, intended_recipient_id) == (1, RECIPIENT)
-        current[expected["id"]].update(
-            status="pending",
-            claim_token=None,
-            succeeded_at=None,
-            failure_category=None,
-            github_run_id=None,
-            browser_delivery_generation=None,
-            updated_at="2026-10-09T08:00:01+00:00",
-        )
-        return True
-
-    rpc = MagicMock(side_effect=reset)
-    monkeypatch.setattr(bridge, "retry_failed_media", rpc)
-    return SimpleNamespace(
-        queue=queue,
-        original=original,
-        current=current,
-        notifications=notifications,
-        school=school,
-        client=client,
-        media_query=media_query,
-        proof=proof,
-        owner=owner,
-        path=path,
-        reset=reset,
-        rpc=rpc,
-    )
-
-
-def test_failed_cloud_recovery_preserves_all_original_rows_and_deduplicates_only_retrieval(
-    failed_recovery,
-):
-    state = failed_recovery
-    ids = list(state.original)
-    state.queue.set_setting("paused", "Human must inspect the browser")
-    state.queue.set_setting(bridge._REVIEW_CURSOR, {"last_school": "mun"})
-    state.queue.set_setting(f"notification_import_attempts:{ids[0]}", 1)
-    preview = bridge.recover_failed_media(state.queue, ids)
-    assert (preview["selected"], preview["eligible"], preview["distinct_sources"]) == (2, 2, 1)
-    assert state.rpc.call_count == 0
-    assert state.queue.status()["queues"] == []
-    assert state.path.stat().st_mode & 0o777 == 0o600
-    result = bridge.recover_failed_media(state.queue, list(reversed(ids)), apply=True)
-    assert (result["reopened"], result["queued"], result["blocked"]) == (2, 1, 0)
-    assert state.rpc.call_count == 2
-    jobs = {state.queue.get_setting(f"notification_delivery:{rid}") for rid in ids}
-    assert len(jobs) == 1
-    job = state.queue.get(jobs.pop())
-    assert (job.school, job.recipient_id, job.account_username, job.payload["url"]) == (
-        "ubc",
-        RECIPIENT,
-        bridge.school_account_username("ubc"),
-        URL,
-    )
-    assert state.queue.get_setting(f"manual_retrieval:{job.id}") is None
-    assert state.queue.get_setting("paused") == "Human must inspect the browser"
-    assert state.queue.get_setting(bridge._REVIEW_CURSOR) == {"last_school": "mun"}
-    assert state.queue.get_setting(f"notification_import_attempts:{ids[0]}") == 1
-    assert state.media_query.select.call_args_list and all(
-        call.args == ("*",) for call in state.media_query.select.call_args_list
-    )
-    saved = state.queue.read_review_artifact(state.path)
-    assert {rid: saved["rows"][rid]["original_media"] for rid in ids} == state.original
-
-
-@pytest.mark.parametrize("failure_phase", ["original", "intent", "cas"])
-def test_failed_cloud_recovery_never_mutates_without_verified_durable_evidence(
-    failed_recovery, monkeypatch, failure_phase
-):
-    state = failed_recovery
-    write = state.queue.write_review_artifact
-    calls = 0
-
-    def fail(path, text, **kwargs):
-        nonlocal calls
-        calls += 1
-        if failure_phase == "cas":
-            return False
-        if calls == (1 if failure_phase == "original" else 2):
-            raise OSError("Disk full")
-        return write(path, text, **kwargs)
-
-    monkeypatch.setattr(state.queue, "write_review_artifact", fail)
-    with pytest.raises((OSError, RuntimeError)):
-        bridge.recover_failed_media(state.queue, [next(iter(state.original))], apply=True)
-    assert state.rpc.call_count == 0
-    assert state.current == state.original
-
-
-@pytest.mark.parametrize(
-    "change", ["ledger", "routing", "owner_attempt", "hold", "budget", "excluded", "generation"]
-)
-def test_failed_cloud_recovery_rechecks_preview_policy_and_generation(failed_recovery, change):
-    state = failed_recovery
-    rid = next(iter(state.original))
-    bridge.recover_failed_media(state.queue, [rid])
-    if change == "ledger":
-        state.current[rid]["claim_token"] = str(UUID(int=500))
-    elif change == "routing":
-        state.notifications[state.original[rid]["notification_id"]]["school_id"] = 2
-    elif change == "owner_attempt":
-        state.proof["run_attempt"] = 2
-    elif change == "hold":
-        state.queue.set_setting(
-            f"notification_reviewed_target:{rid}", {"codex_review": {"decision": "unresolved"}}
-        )
-    elif change == "budget":
-        state.queue.set_setting(
-            f"notification_import_attempts:{rid}", bridge._CONTROL.ingestion_retry_limit
-        )
-    elif change == "excluded":
-        state.queue.set_setting("excluded_accounts", [bridge.school_account_username("ubc")])
-    elif change == "generation":
-        journal = state.queue.read_review_artifact(state.path)
-        journal["rows"][rid]["delivery_generation"] = str(UUID(int=500))
-        state.queue.write_review_artifact(state.path, json.dumps(journal))
-    assert bridge.recover_failed_media(state.queue, [rid], apply=True)["blocked"] == 1
-    assert state.rpc.call_count == 0
-    assert (
-        state.queue.read_review_artifact(state.path)["rows"][rid]["original_media"]
-        == state.original[rid]
-    )
-
-
-def test_failed_cloud_recovery_rechecks_owner_immediately_before_rpc(failed_recovery):
-    state = failed_recovery
-    proof = deepcopy(state.proof)
-    state.owner.side_effect = [
-        proof,
-        ValueError("Failed media owning workflow is not verified terminal"),
-    ]
-    with pytest.raises(ValueError, match="not verified terminal"):
-        bridge.recover_failed_media(state.queue, [next(iter(state.original))], apply=True)
-    assert state.rpc.call_count == 0
-    assert (
-        state.queue.read_review_artifact(state.path)["rows"][next(iter(state.original))]["intent"]
-        is None
-    )
-
-
-@pytest.mark.parametrize("committed", [False, True])
-def test_failed_cloud_recovery_never_resends_an_uncertain_intent_across_subsets(
-    failed_recovery, committed
-):
-    state = failed_recovery
-    ids = list(state.original)
-
-    def uncertain(*args, **kwargs):
-        if committed:
-            state.reset(*args, **kwargs)
-        raise TimeoutError("Private provider response")
-
-    state.rpc.side_effect = uncertain
-    result = bridge.recover_failed_media(state.queue, ids, apply=True)
-    assert result["blocked"] == (0 if committed else 1)
-    assert result["reconciled"] == (2 if committed else 0)
-    calls = state.rpc.call_count
-    resumed = bridge.recover_failed_media(state.queue, [ids[0]], apply=True)
-    assert resumed["blocked"] == (0 if committed else 1)
-    assert resumed["reconciled"] == int(committed)
-    assert state.rpc.call_count == calls
-    assert len(state.queue.read_review_artifact(state.path)["rows"]) == 2
-    assert "Private provider response" not in json.dumps(
-        state.queue.read_review_artifact(state.path)
-    )
-
-
-@pytest.mark.parametrize(
-    "advance", ["processing", "succeeded", "new_failed", "delivery", "missing_field"]
-)
-def test_failed_cloud_recovery_resume_rejects_advanced_or_incomplete_readback(
-    failed_recovery, advance
-):
-    state = failed_recovery
-    rid = next(iter(state.original))
-    bridge.recover_failed_media(state.queue, [rid], apply=True)
-    if advance == "new_failed":
-        state.current[rid] = {**state.original[rid], "claim_token": str(UUID(int=501))}
-    elif advance == "delivery":
-        state.current[rid]["browser_delivery_generation"] = str(UUID(int=501))
-    elif advance == "missing_field":
-        state.current[rid].pop("succeeded_at")
-    else:
-        state.current[rid]["status"] = advance
-    assert bridge.recover_failed_media(state.queue, [rid], apply=True)["blocked"] == 1
-    assert state.rpc.call_count == 1
-
-
-def test_failed_cloud_recovery_reconciles_interrupted_readback_without_resending(
-    failed_recovery, monkeypatch
-):
-    state = failed_recovery
-    rid = next(iter(state.original))
-    read = bridge._failed_media_rows
-    calls = 0
-
-    def interrupted(ids):
-        nonlocal calls
-        calls += 1
-        if calls == 3:
-            raise RuntimeError("Failed media recovery could not read its exact ledger rows")
-        return read(ids)
-
-    monkeypatch.setattr(bridge, "_failed_media_rows", interrupted)
-    with pytest.raises(RuntimeError, match="exact ledger rows"):
-        bridge.recover_failed_media(state.queue, [rid], apply=True)
-    assert state.queue.read_review_artifact(state.path)["rows"][rid]["intent"]
-    assert state.rpc.call_count == 1
-    result = bridge.recover_failed_media(state.queue, [rid], apply=True)
-    assert (result["reconciled"], result["queued"]) == (1, 1)
-    assert state.rpc.call_count == 1
-    other = next(key for key in state.original if key != rid)
-    assert state.current[other] == state.original[other]
-
-
-def test_failed_cloud_recovery_rejects_current_generation_with_wrong_delivery_identity(
-    failed_recovery,
-):
-    state = failed_recovery
-    rid = next(iter(state.original))
-    bridge.recover_failed_media(state.queue, [rid], apply=True)
-    wrong = state.queue.enqueue_retrieval(
-        school="utm", recipient_id="5001", account_username="wat2do.utm", url=URL
-    )
-    state.queue.set_setting(f"notification_delivery:{rid}", wrong)
-    state.current[rid]["browser_delivery_generation"] = state.queue.delivery_generation
-    assert bridge.recover_failed_media(state.queue, [rid], apply=True)["blocked"] == 1
-    assert state.rpc.call_count == 1
-    assert state.queue.get_setting(f"notification_delivery:{rid}") == wrong
-
-
-@pytest.mark.parametrize("damage", ["missing_claim", "source_url"])
-def test_failed_cloud_recovery_invalid_raw_baseline_never_publishes_an_intent(
-    failed_recovery, damage
-):
-    state = failed_recovery
-    rid = next(iter(state.original))
-    if damage == "missing_claim":
-        state.current[rid].pop("claim_token")
-    else:
-        state.current[rid]["source_url"] = "https://example.org/private"
-    assert bridge.recover_failed_media(state.queue, [rid])["blocked"] == 1
-    assert bridge.recover_failed_media(state.queue, [rid], apply=True)["blocked"] == 1
-    entry = state.queue.read_review_artifact(state.path)["rows"][rid]
-    assert entry["intent"] is None
-    assert entry["original_media"] == state.current[rid]
-    assert state.rpc.call_count == state.owner.call_count == 0
-    assert state.queue.status()["queues"] == []
-
-
-@pytest.mark.parametrize("invalid", ["empty", "duplicate", "noncanonical", "over_limit"])
-def test_failed_cloud_recovery_rejects_unbounded_or_ambiguous_ids_before_network(
-    failed_recovery, monkeypatch, invalid
-):
-    state = failed_recovery
-    ids = list(state.original)
-    requests = {
-        "empty": [],
-        "duplicate": [ids[0], ids[0]],
-        "noncanonical": ["not-a-uuid"],
-        "over_limit": ids,
-    }
-    monkeypatch.setattr(bridge, "_CONTROL", SimpleNamespace(ingestion_batch_size=1))
-    with pytest.raises(ValueError, match="unique canonical IDs"):
-        bridge.recover_failed_media(state.queue, requests[invalid], apply=True)
-    assert not state.client.table.called
-    assert state.rpc.call_count == 0
-    assert not state.path.exists()
-
-
-@pytest.mark.parametrize(
-    "damage", ["in_progress", "foreign_repo", "foreign_workflow", "missing_sha"]
-)
-def test_failed_cloud_owner_proof_requires_exact_terminal_repository_workflow(monkeypatch, damage):
-    run = {
-        "id": 123,
-        "repository": {"full_name": bridge._FAILED_OWNER_REPOSITORY},
-        "path": ".github/workflows/scrape-pending-media.yml",
-        "status": "completed",
-        "conclusion": "failure",
-        "run_attempt": 1,
-        "head_sha": "a" * 40,
-    }
-    if damage == "in_progress":
-        run["status"] = damage
-    elif damage == "foreign_repo":
-        run["repository"]["full_name"] = "other/repository"
-    elif damage == "foreign_workflow":
-        run["path"] = ".github/workflows/process-notification.yml"
-    else:
-        run.pop("head_sha")
-    calls = []
-
-    def gh(command, **kwargs):
-        calls.append((command, kwargs))
-        return SimpleNamespace(stdout=json.dumps(run))
-
-    monkeypatch.setattr(bridge.subprocess, "run", gh)
-    with pytest.raises(ValueError, match="not verified terminal"):
-        bridge._failed_media_owner("123")
-    assert calls[0][0] == ["gh", "api", "repos/wat2dov2/wat2do-ui/actions/runs/123"]
-    assert calls[0][1]["timeout"] == bridge.controlbox.scraping.workflow_status_timeout_seconds

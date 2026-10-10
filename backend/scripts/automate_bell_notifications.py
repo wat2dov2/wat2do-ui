@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Set "Posts -> All" notifications for every account on Instagram's
-"All profiles you follow" screen, driving a running Android emulator over ADB.
+"All profiles you follow" screen, driving the connected Android phone over ADB.
 
 You open that screen yourself first. This script does not launch Instagram,
 switch accounts, or navigate menus. It assumes the consolidated list is already
@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import hashlib
+import os
 import re
 import subprocess
 import sys
@@ -31,11 +32,21 @@ if str(BACKEND_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIRECTORY))
 
 from core.controlbox import controlbox  # noqa: E402
-from scripts.emulator_farm import default_paths  # noqa: E402
 
 CONTROL = controlbox.instagram_bell_setup
-ADB_PATH = str(default_paths().adb)
+_SDK_ROOT = os.environ.get("ANDROID_SDK_ROOT") or os.environ.get("ANDROID_HOME")
+ADB_PATH = str(
+    (Path(_SDK_ROOT).expanduser() if _SDK_ROOT else Path.home() / "Library/Android/sdk")
+    / "platform-tools/adb"
+)
 TARGET_DEVICE: str | None = None
+
+
+def state_directory_path() -> Path:
+    return (
+        Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
+        / "wat2do/instagram-bell-setup"
+    )
 
 
 class BellSetupError(RuntimeError):
@@ -327,10 +338,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Instagram bell notification enabler. "
-            "Open 'All profiles you follow' on the emulator first, then run this."
+            "Open 'All profiles you follow' on the phone first, then run this."
         )
     )
-    parser.add_argument("--device", help="Target ADB device serial (e.g. emulator-5556)")
+    parser.add_argument("--device", help="Target ADB device serial from `adb devices`")
     args = parser.parse_args(argv)
 
     global TARGET_DEVICE
@@ -344,7 +355,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         line.split()[0] for line in devices.splitlines()[1:] if line.strip().endswith("device")
     ]
     if not connected:
-        raise BellSetupError("No emulator/device connected.")
+        raise BellSetupError("No Android device connected.")
 
     if args.device:
         if args.device not in connected:
@@ -358,7 +369,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         TARGET_DEVICE = connected[0]
         print(f"No --device given, using {TARGET_DEVICE}")
 
-    state_directory = default_paths().state_directory
+    state_directory = state_directory_path()
     state_directory.mkdir(parents=True, exist_ok=True)
     device_key = hashlib.sha256(TARGET_DEVICE.encode("utf-8")).hexdigest()
     with (state_directory / f"bell-setup-{device_key}.lock").open("a+") as lock:

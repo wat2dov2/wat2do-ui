@@ -1,12 +1,8 @@
 {
   "apify_memory_megabytes": 1024,
-  "pending_media_workers": 8,
-  "pending_media_memory_budget_megabytes": 8192,
-  "workflow_status_timeout_seconds": 30,
   "apify_timeout_seconds": 3600,
   "poll_interval_seconds": 5,
   "instagram_web_app_id": "936619743392459",
-  "single_user_recent_post_minutes": 30,
   "same_club_title_threshold": 0.8,
   "title_similarity_threshold": 0.7,
   "location_similarity_threshold": 0.5,

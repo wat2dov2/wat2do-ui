@@ -23,6 +23,7 @@ from schemas.event import EventResponse
 from services.scraper import event_writer
 from services.scraper import pipeline as pipeline_module
 from services.scraper.event_writer import write_event
+from services.scraper.extractor import Completion
 from services.scraper.reconciler import reconcile_events
 
 _FUTURE = (datetime.now(timezone.utc) + timedelta(days=3)).replace(microsecond=0)
@@ -100,36 +101,9 @@ def _candidate(**overrides) -> dict:
     return base
 
 
-def _mock_openai_json(monkeypatch, payload: list[dict] | dict | str | None):
-    """Install a fake OpenAI client that returns ``payload`` as message content."""
-    if payload is None:
-        content = "null"
-    elif isinstance(payload, str):
-        content = payload
-    else:
-        content = json.dumps(payload)
-
-    class _Msg:
-        def __init__(self):
-            self.content = content
-
-    class _Choice:
-        message = _Msg()
-
-    class _Resp:
-        choices = [_Choice()]
-
-    class _Completions:
-        def create(self, **kwargs):
-            return _Resp()
-
-    class _Chat:
-        completions = _Completions()
-
-    class _Client:
-        chat = _Chat()
-
-    monkeypatch.setattr("services.scraper.reconciler._client", lambda: _Client())
+def _completion(payload: list[dict]) -> Completion:
+    """Return ``payload`` as the Pass 2 model response."""
+    return lambda _system, _prompt, _image_urls: json.dumps(payload)
 
 
 # ── Pass 2 JSON → reconcile_events ────────────────────────────────────
@@ -146,13 +120,14 @@ def test_pass2_update_json_keeps_candidate_id(monkeypatch):
             "cancelled": False,
         }
     ]
-    _mock_openai_json(monkeypatch, pass2)
+    complete = _completion(pass2)
 
     result = reconcile_events(
         extracted_events=[extracted],
         candidates_by_index=[[candidate]],
         caption_text="UPDATE: Tea tasting moved to DC 1302",
         school="uwaterloo",
+        complete=complete,
     )
 
     assert result is not None
@@ -175,13 +150,14 @@ def test_pass2_cancel_json_sets_cancelled_true(monkeypatch):
             "image_index": 0,
         }
     ]
-    _mock_openai_json(monkeypatch, pass2)
+    complete = _completion(pass2)
 
     result = reconcile_events(
         extracted_events=[extracted],
         candidates_by_index=[[candidate]],
         caption_text="CANCELLED: Tea Tasting Night is cancelled this week.",
         school="uwaterloo",
+        complete=complete,
     )
 
     assert result is not None
@@ -206,13 +182,14 @@ def test_pass2_new_instance_json_has_null_id(monkeypatch):
     )
     candidate = _candidate()
     pass2 = [{**extracted, "id": None, "cancelled": False}]
-    _mock_openai_json(monkeypatch, pass2)
+    complete = _completion(pass2)
 
     result = reconcile_events(
         extracted_events=[extracted],
         candidates_by_index=[[candidate]],
         caption_text="Tea tasting next Friday in SLC 3223! A new weekly session.",
         school="uwaterloo",
+        complete=complete,
     )
 
     assert result is not None
@@ -226,13 +203,14 @@ def test_pass2_same_occurrence_repost_json_keeps_candidate_id(monkeypatch):
     extracted = _extracted(title="Tea Tasting Night", description="Reminder: bring a mug.")
     candidate = _candidate()
     pass2 = [{**extracted, "id": 42, "cancelled": False}]
-    _mock_openai_json(monkeypatch, pass2)
+    complete = _completion(pass2)
 
     result = reconcile_events(
         extracted_events=[extracted],
         candidates_by_index=[[candidate]],
         caption_text="Tea Tasting Night is this Friday in SLC 3223! Bring a mug.",
         school="uwaterloo",
+        complete=complete,
     )
 
     assert result is not None
@@ -245,13 +223,14 @@ def test_pass2_omitted_candidate_is_not_in_output(monkeypatch):
     c1 = _candidate(id=42, title="Tea Tasting Night")
     c2 = _candidate(id=99, title="Unrelated Workshop")
     pass2 = [{**extracted, "id": 42, "cancelled": False}]
-    _mock_openai_json(monkeypatch, pass2)
+    complete = _completion(pass2)
 
     result = reconcile_events(
         extracted_events=[extracted],
         candidates_by_index=[[c1, c2]],
         caption_text="Update: room change for tea tasting",
         school="uwaterloo",
+        complete=complete,
     )
 
     assert result is not None
@@ -264,13 +243,14 @@ def test_pass2_shorter_description_wins(monkeypatch):
     extracted = _extracted(description="Short.")
     candidate = _candidate(description="A much longer original description.")
     pass2 = [{**extracted, "id": 42, "description": "Short.", "cancelled": False}]
-    _mock_openai_json(monkeypatch, pass2)
+    complete = _completion(pass2)
 
     result = reconcile_events(
         extracted_events=[extracted],
         candidates_by_index=[[candidate]],
         caption_text="Update: new flyer",
         school="uwaterloo",
+        complete=complete,
     )
 
     assert result[0]["description"] == "Short."
@@ -322,13 +302,14 @@ def test_pass2_cancel_json_overwrites_db_cancelled(fake_sb, patch_sb, monkeypatc
             "source_image_url": candidate["source_image_url"],
         }
     ]
-    _mock_openai_json(monkeypatch, pass2_payload)
+    complete = _completion(pass2_payload)
 
     reconciled = reconcile_events(
         extracted_events=[extracted],
         candidates_by_index=[[candidate]],
         caption_text="This event is CANCELLED.",
         school="uwaterloo",
+        complete=complete,
     )
     assert reconciled and reconciled[0]["cancelled"] is True
 
@@ -373,13 +354,14 @@ def test_pass2_update_json_overwrites_location(fake_sb, patch_sb, monkeypatch):
     extracted = _extracted(location="DC 1302", description="Moved room.")
     candidate = _candidate()
     pass2_payload = [{**extracted, "id": 42, "cancelled": False}]
-    _mock_openai_json(monkeypatch, pass2_payload)
+    complete = _completion(pass2_payload)
 
     reconciled = reconcile_events(
         extracted_events=[extracted],
         candidates_by_index=[[candidate]],
         caption_text="Update: moved to DC 1302",
         school="uwaterloo",
+        complete=complete,
     )
 
     old = EventResponse.model_validate(
@@ -423,13 +405,14 @@ def test_pass2_insert_json_creates_row(fake_sb, patch_sb, monkeypatch):
 
     extracted = _extracted()
     pass2_payload = [{**extracted, "id": None, "cancelled": False}]
-    _mock_openai_json(monkeypatch, pass2_payload)
+    complete = _completion(pass2_payload)
 
     reconciled = reconcile_events(
         extracted_events=[extracted],
         candidates_by_index=[[]],
         caption_text="Brand new tea tasting Friday!",
         school="uwaterloo",
+        complete=complete,
     )
     assert reconciled[0]["id"] is None
 
@@ -475,7 +458,6 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
 
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")
-    patch_sb("services.workflow_run_service")
     patch_sb("services.scraper.dedup")
 
     extracted = [_extracted()]
@@ -499,7 +481,7 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
         }
     ]
 
-    monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
+    monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls, **_: list(urls))
     monkeypatch.setattr(
         pipeline_module,
         "extract_post_content",
@@ -515,7 +497,7 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
             ig_handle="uwteaclub",
         ),
     )
-    _mock_openai_json(monkeypatch, pass2)
+    monkeypatch.setattr(pipeline_module, "claude_completion", _completion(pass2))
 
     old = EventResponse.model_validate(
         {
@@ -543,83 +525,32 @@ def test_pipeline_pass2_cancel_updates_existing(monkeypatch, fake_sb, patch_sb):
     updated = EventResponse.model_validate({**old.model_dump(), "cancelled": True})
     update = _install_overwrite_stubs(monkeypatch, old=old, updated=updated)
 
-    occ_now = datetime.now(timezone.utc).isoformat()
     inserts: list[object] = []
 
     def _smart_execute():
         if fake_sb.insert.call_count > len(inserts):
             payload = fake_sb.insert.call_args_list[-1][0][0]
             inserts.append(payload)
-            if isinstance(payload, dict) and "ig_username" in payload:
-                return MagicMock(
-                    data=[
-                        {
-                            "id": "00000000-0000-0000-0000-000000000aaa",
-                            "ig_username": payload["ig_username"],
-                            "github_run_id": payload.get("github_run_id"),
-                            "status": "running",
-                            "posts_fetched": 0,
-                            "posts_new": 0,
-                            "events_extracted": 0,
-                            "events_saved": 0,
-                            "pinned_post_warning": False,
-                            "error_message": None,
-                            "started_at": occ_now,
-                            "finished_at": None,
-                        }
-                    ],
-                    count=0,
-                )
             if isinstance(payload, dict):
                 return MagicMock(data=[{**payload, "id": 42}], count=0)
             return MagicMock(data=[], count=0)
         if fake_sb.update.call_count:
-            # First updates are event overwrites; later may be workflow finish.
-            last = fake_sb.update.call_args_list[-1][0][0]
-            if isinstance(last, dict) and "cancelled" in last:
-                return MagicMock(data=[{"id": 42}], count=0)
-            return MagicMock(
-                data=[
-                    {
-                        "id": "00000000-0000-0000-0000-000000000aaa",
-                        "ig_username": "uwteaclub",
-                        "github_run_id": None,
-                        "status": "success",
-                        "posts_fetched": 1,
-                        "posts_new": 1,
-                        "events_extracted": 1,
-                        "events_saved": 1,
-                        "pinned_post_warning": False,
-                        "error_message": None,
-                        "started_at": occ_now,
-                        "finished_at": occ_now,
-                    }
-                ],
-                count=0,
-            )
+            return MagicMock(data=[{"id": 42}], count=0)
         return MagicMock(data=[], count=0)
 
     fake_sb.execute.side_effect = _smart_execute
 
-    result = pipeline_module.run_pipeline(
-        ig_handle="uwteaclub",
+    pipeline_module.process_post(
+        {
+            "url": "https://www.instagram.com/p/CANCEL1/",
+            "ownerUsername": "uwteaclub",
+            "caption": "CANCELLED: Tea Tasting Night is off.",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "displayUrl": "https://cdn/img.jpg",
+        },
         school="uwaterloo",
-        posts=[
-            {
-                "url": "https://www.instagram.com/p/CANCEL1/",
-                "ownerUsername": "uwteaclub",
-                "caption": "CANCELLED: Tea Tasting Night is off.",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "displayUrl": "https://cdn/img.jpg",
-            }
-        ],
-        cutoff_days=4,
-        dry_run=False,
     )
 
-    assert result.events_extracted == 1
-    assert result.events_updated == 1
-    assert result.events_saved == 1
     update.assert_called_once()
     assert update.call_args.args[1]["cancelled"] is True
 
@@ -630,11 +561,10 @@ def test_pipeline_pass2_failure_falls_back_to_insert(monkeypatch, fake_sb, patch
 
     patch_sb("services.scraper.event_writer")
     patch_sb("services.event_date_service")
-    patch_sb("services.workflow_run_service")
     patch_sb("services.scraper.dedup")
 
     extracted = [_extracted()]
-    monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls: list(urls))
+    monkeypatch.setattr(pipeline_module, "upload_post_images", lambda urls, **_: list(urls))
     monkeypatch.setattr(
         pipeline_module,
         "extract_post_content",
@@ -659,26 +589,6 @@ def test_pipeline_pass2_failure_falls_back_to_insert(monkeypatch, fake_sb, patch
         if fake_sb.insert.call_count > len(inserts):
             payload = fake_sb.insert.call_args_list[-1][0][0]
             inserts.append(payload)
-            if isinstance(payload, dict) and "ig_username" in payload:
-                return MagicMock(
-                    data=[
-                        {
-                            "id": "00000000-0000-0000-0000-000000000bbb",
-                            "ig_username": payload["ig_username"],
-                            "github_run_id": payload.get("github_run_id"),
-                            "status": "running",
-                            "posts_fetched": 0,
-                            "posts_new": 0,
-                            "events_extracted": 0,
-                            "events_saved": 0,
-                            "pinned_post_warning": False,
-                            "error_message": None,
-                            "started_at": occ_now,
-                            "finished_at": None,
-                        }
-                    ],
-                    count=0,
-                )
             if isinstance(payload, dict) and "title" in payload:
                 return MagicMock(data=[{**payload, "id": 77}], count=0)
             if isinstance(payload, list):
@@ -698,49 +608,21 @@ def test_pipeline_pass2_failure_falls_back_to_insert(monkeypatch, fake_sb, patch
                     count=0,
                 )
             return MagicMock(data=[], count=0)
-        if fake_sb.update.call_count > 0:
-            return MagicMock(
-                data=[
-                    {
-                        "id": "00000000-0000-0000-0000-000000000bbb",
-                        "ig_username": "uwteaclub",
-                        "github_run_id": None,
-                        "status": "success",
-                        "posts_fetched": 1,
-                        "posts_new": 1,
-                        "events_extracted": 1,
-                        "events_saved": 1,
-                        "pinned_post_warning": False,
-                        "error_message": None,
-                        "started_at": occ_now,
-                        "finished_at": occ_now,
-                    }
-                ],
-                count=0,
-            )
         return MagicMock(data=[], count=0)
 
     fake_sb.execute.side_effect = _smart_execute
 
-    result = pipeline_module.run_pipeline(
-        ig_handle="uwteaclub",
+    pipeline_module.process_post(
+        {
+            "url": "https://www.instagram.com/p/FALLBACK1/",
+            "ownerUsername": "uwteaclub",
+            "caption": "Tea tasting Friday",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "displayUrl": "https://cdn/img.jpg",
+        },
         school="uwaterloo",
-        posts=[
-            {
-                "url": "https://www.instagram.com/p/FALLBACK1/",
-                "ownerUsername": "uwteaclub",
-                "caption": "Tea tasting Friday",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "displayUrl": "https://cdn/img.jpg",
-            }
-        ],
-        cutoff_days=4,
-        dry_run=False,
     )
 
-    assert result.events_extracted == 1
-    assert result.events_saved == 1
-    assert result.events_updated == 0
     event_inserts = [
         c[0][0]
         for c in fake_sb.insert.call_args_list

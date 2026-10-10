@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from typing import Literal
 
 from postgrest.exceptions import APIError
 from pydantic import ValidationError as PydanticValidationError
@@ -53,6 +54,7 @@ def write_position(
     source_url: str,
     resolved_org: ResolvedClub,
     expected_position: dict | None = None,
+    ingestion_source: Literal["instagram_scraper", "directory"] = "instagram_scraper",
 ) -> str:
     """Insert a role or atomically update an explicitly reviewed existing row."""
     if not isinstance(position, dict):
@@ -95,7 +97,7 @@ def write_position(
         "source_video_url": _clean_optional(
             position.get("source_video_url"), MAX_POSITION_SOURCE_URL_LENGTH
         ),
-        "ingestion_source": "instagram_scraper",
+        "ingestion_source": ingestion_source,
     }
 
     try:

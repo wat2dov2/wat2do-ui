@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta, timezone
-from types import SimpleNamespace
 
 import pytest
 
@@ -24,6 +23,7 @@ from services.scraper.dedup import (
     jaccard_similarity,
     title_similarity,
 )
+from services.scraper.extractor import Completion
 from services.scraper.reconciler import reconcile_events
 
 _DAY = datetime.now(timezone.utc).replace(hour=18, minute=0, second=0, microsecond=0) + timedelta(
@@ -115,14 +115,9 @@ def _extracted(
     }
 
 
-def _mock_pass2(monkeypatch, payload: list[dict]):
-    response = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(payload)))]
-    )
-    client = SimpleNamespace(
-        chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **kwargs: response))
-    )
-    monkeypatch.setattr("services.scraper.reconciler._client", lambda: client)
+def _completion(payload: list[dict]) -> Completion:
+    """Return canned Pass 2 JSON in place of a model call."""
+    return lambda _system, _prompt, _image_urls: json.dumps(payload)
 
 
 # ── Real dedup edge cases ─────────────────────────────────────────────
@@ -305,7 +300,7 @@ def test_dedup_title_and_location_threshold_pair(fake_sb, patch_sb):
 # ── Real dedup → Pass 2 (canned JSON) ─────────────────────────────────
 
 
-def test_e2e_dedup_then_pass2_update_uses_live_candidate_id(fake_sb, patch_sb, monkeypatch):
+def test_e2e_dedup_then_pass2_update_uses_live_candidate_id(fake_sb, patch_sb):
     patch_sb("services.scraper.dedup")
     row = _db_event(eid=42, title="Tea Tasting Night", location="SLC 1000")
     _queue_dedup_db(fake_sb, same_org_rows=[row], same_day_rows=[])
@@ -320,8 +315,7 @@ def test_e2e_dedup_then_pass2_update_uses_live_candidate_id(fake_sb, patch_sb, m
     )
     assert [c["id"] for c in candidates] == [42]
 
-    _mock_pass2(
-        monkeypatch,
+    complete = _completion(
         [{**extracted, "id": 42, "cancelled": False}],
     )
     finals = reconcile_events(
@@ -329,13 +323,14 @@ def test_e2e_dedup_then_pass2_update_uses_live_candidate_id(fake_sb, patch_sb, m
         candidates_by_index=[candidates],
         caption_text="UPDATE: tea tasting moved to DC 1302",
         school="uwaterloo",
+        complete=complete,
     )
     assert finals is not None
     assert finals[0]["id"] == 42
     assert finals[0]["location"] == "DC 1302"
 
 
-def test_e2e_dedup_miss_means_pass2_cannot_overwrite(fake_sb, patch_sb, monkeypatch):
+def test_e2e_dedup_miss_means_pass2_cannot_overwrite(fake_sb, patch_sb):
     """If dedup returns no candidates, Pass 2 id is stripped even if model invents one."""
     patch_sb("services.scraper.dedup")
     row = _db_event(eid=55, title="Totally Different Event", location="Remote")
@@ -351,8 +346,7 @@ def test_e2e_dedup_miss_means_pass2_cannot_overwrite(fake_sb, patch_sb, monkeypa
     )
     assert candidates == []
 
-    _mock_pass2(
-        monkeypatch,
+    complete = _completion(
         [{**extracted, "id": 55, "cancelled": False}],
     )
     finals = reconcile_events(
@@ -360,12 +354,13 @@ def test_e2e_dedup_miss_means_pass2_cannot_overwrite(fake_sb, patch_sb, monkeypa
         candidates_by_index=[candidates],
         caption_text="Come to our brand new mixer!",
         school="uwaterloo",
+        complete=complete,
     )
     assert finals is not None
     assert finals[0]["id"] is None
 
 
-def test_e2e_multi_candidate_pass2_picks_one(fake_sb, patch_sb, monkeypatch):
+def test_e2e_multi_candidate_pass2_picks_one(fake_sb, patch_sb):
     patch_sb("services.scraper.dedup")
     a = _db_event(eid=70, title="Tea Tasting Night", location="SLC")
     b = _db_event(eid=71, title="Tea Tasting Evening", location="SLC")
@@ -381,8 +376,7 @@ def test_e2e_multi_candidate_pass2_picks_one(fake_sb, patch_sb, monkeypatch):
     )
     assert {c["id"] for c in candidates} == {70, 71}
 
-    _mock_pass2(
-        monkeypatch,
+    complete = _completion(
         [{**extracted, "id": 70, "cancelled": False}],
     )
     finals = reconcile_events(
@@ -390,13 +384,14 @@ def test_e2e_multi_candidate_pass2_picks_one(fake_sb, patch_sb, monkeypatch):
         candidates_by_index=[candidates],
         caption_text="Update: room is now SLC 3223",
         school="uwaterloo",
+        complete=complete,
     )
     assert finals is not None
     assert finals[0]["id"] == 70
     assert 71 not in [f.get("id") for f in finals]
 
 
-def test_e2e_cancel_with_live_dedup_candidate(fake_sb, patch_sb, monkeypatch):
+def test_e2e_cancel_with_live_dedup_candidate(fake_sb, patch_sb):
     patch_sb("services.scraper.dedup")
     row = _db_event(eid=88, title="Tea Tasting Night", location="SLC")
     _queue_dedup_db(fake_sb, same_org_rows=[row], same_day_rows=[])
@@ -411,8 +406,7 @@ def test_e2e_cancel_with_live_dedup_candidate(fake_sb, patch_sb, monkeypatch):
     )
     assert candidates[0]["id"] == 88
 
-    _mock_pass2(
-        monkeypatch,
+    complete = _completion(
         [
             {
                 **extracted,
@@ -427,6 +421,7 @@ def test_e2e_cancel_with_live_dedup_candidate(fake_sb, patch_sb, monkeypatch):
         candidates_by_index=[candidates],
         caption_text="CANCELLED: Tea Tasting Night is cancelled.",
         school="uwaterloo",
+        complete=complete,
     )
     assert finals[0]["id"] == 88
     assert finals[0]["cancelled"] is True

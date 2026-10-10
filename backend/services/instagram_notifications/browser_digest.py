@@ -5,9 +5,8 @@ from __future__ import annotations
 import json
 import re
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from dataclasses import dataclass
-from urllib.parse import parse_qsl, urlencode
 
 from core.controlbox import controlbox
 from services.instagram_notifications.browser_session import (
@@ -26,7 +25,6 @@ from services.instagram_notifications.browser_session import (
 
 _CONTROL = controlbox.instagram_digest
 _CACHE_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,255}$")
-_MEDIA_KEYS = frozenset({"media_list", "media_id"})
 
 
 class BrowserDigestError(BrowserSessionError):
@@ -120,21 +118,6 @@ class BrowserInstagramDigestResolver:
         )
 
 
-def action_media_ids(instagram_action: str) -> tuple[str, ...]:
-    """Return canonical media IDs explicitly encoded in an Instagram action."""
-
-    _, separator, query_string = instagram_action.partition("?")
-    if not separator:
-        return ()
-    media_ids: dict[str, None] = {}
-    for key, value in parse_qsl(query_string, keep_blank_values=True):
-        if key not in _MEDIA_KEYS:
-            continue
-        for raw_media_id in value.split(","):
-            media_ids.setdefault(_canonical_media_id(raw_media_id), None)
-    return tuple(media_ids)
-
-
 def digest_media_count_shortfall(
     actual_count: int,
     advertised_count: int | None,
@@ -146,32 +129,6 @@ def digest_media_count_shortfall(
     if actual_count > advertised_count:
         raise BrowserDigestError("Instagram digest resolved more media IDs than advertised")
     return advertised_count - actual_count
-
-
-def merge_action_media_ids(
-    instagram_action: str,
-    additional_media_ids: Sequence[str],
-) -> str:
-    """Merge resolved media into the one canonical media-list query field."""
-
-    action_path, separator, query_string = instagram_action.partition("?")
-    if not action_path or not separator:
-        raise BrowserDigestError("Instagram digest action is invalid")
-
-    query = parse_qsl(query_string, keep_blank_values=True)
-    merged: dict[str, None] = {media_id: None for media_id in action_media_ids(instagram_action)}
-    for raw_media_id in additional_media_ids:
-        merged.setdefault(_canonical_media_id(raw_media_id), None)
-    if not merged:
-        raise BrowserDigestError("Instagram digest returned no media IDs")
-
-    media_index = next(
-        (index for index, (key, _value) in enumerate(query) if key in _MEDIA_KEYS),
-        len(query),
-    )
-    remaining = [(key, value) for key, value in query if key not in _MEDIA_KEYS]
-    remaining.insert(media_index, ("media_list", ",".join(merged)))
-    return f"{action_path}?{urlencode(remaining)}"
 
 
 def _canonical_media_id(raw_media_id: object) -> str:
@@ -353,6 +310,4 @@ __all__ = (
     "BrowserDigestError",
     "BrowserInstagramDigestResolver",
     "DigestResolution",
-    "action_media_ids",
-    "merge_action_media_ids",
 )

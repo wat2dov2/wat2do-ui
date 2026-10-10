@@ -8,7 +8,6 @@ from pydantic import ValidationError
 from core.controlbox import (
     EcsRuntimeControl,
     GoogleAnalyticsControl,
-    InstagramBrowserControl,
     NotificationWorkflowControl,
     controlbox,
     load_controlbox,
@@ -62,7 +61,7 @@ def test_checked_in_controlbox_is_valid() -> None:
         "exam_destress",
         "finals_prep",
     }
-    assert controlbox.social_previews.notification_page_size == 500
+    assert controlbox.social_previews.stale_check_interval_minutes == 30
     assert controlbox.social_previews.capture_path == "/"
     assert controlbox.social_previews.viewport_width == 1200
     assert controlbox.social_previews.viewport_height == 630
@@ -93,16 +92,10 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.scraping.instagram_web_app_id == "936619743392459"
     assert controlbox.positions.undated_visibility_months == 4
     assert controlbox.scraping.directory_minimum_image_dimension_pixels == 160
-    assert controlbox.emulator_farm.maximum_running_nodes == 1
-    assert controlbox.emulator_farm.accounts_per_node == 3
-    assert controlbox.emulator_farm.check_interval_seconds == 1800
-    assert controlbox.emulator_farm.live_monitor_interval_seconds == 3
-    assert controlbox.emulator_farm.command_timeout_seconds == 30
-    assert controlbox.emulator_farm.run_headlessly is False
-    assert controlbox.emulator_farm.github_repository == "wat2dov2/wat2do-ui"
-    assert controlbox.emulator_farm.github_event_type == "new_instagram_post"
-    assert [node.name for node in controlbox.emulator_farm.nodes] == ["ig_node_1"]
-    assert [node.port for node in controlbox.emulator_farm.nodes] == [5554]
+    assert controlbox.ingestion.model == "claude-haiku-5-5"
+    assert controlbox.ingestion.process_interval_seconds == 300
+    assert controlbox.ingestion.directory_scrape_interval_seconds == 43200
+    assert controlbox.ingestion.checked_ttl_days == 30
     assert controlbox.instagram_digest.operation_name == "SubscriptionDigestFeedQuery"
     assert controlbox.instagram_digest.client_doc_id == "20099285643937437306465362209"
     assert controlbox.instagram_digest.maximum_pages == 25
@@ -179,8 +172,8 @@ def test_duplicate_upload_mime_types_are_rejected(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("field", "value"),
     [
-        ("notification_page_size", 0),
-        ("notification_page_size", 1001),
+        ("stale_check_interval_minutes", 4),
+        ("stale_check_interval_minutes", 1441),
         ("capture_scale", 0.4),
         ("device_scale_factor", 4),
         ("asset_retention_days", 6),
@@ -250,16 +243,7 @@ def test_invalid_instagram_web_app_id_is_rejected(tmp_path: Path) -> None:
         load_controlbox(path)
 
 
-@pytest.mark.parametrize(
-    "field,value",
-    [
-        ("apify_memory_megabytes", 1000),
-        ("pending_media_workers", 0),
-        ("workflow_status_timeout_seconds", 0),
-        ("pending_media_workers", 16),
-        ("pending_media_memory_budget_megabytes", 0),
-    ],
-)
+@pytest.mark.parametrize("field,value", [("apify_memory_megabytes", 1000)])
 def test_scrape_resource_controls_are_validated(tmp_path, field, value):
     path = _write_control(tmp_path, "scraping", lambda payload: payload.update({field: value}))
     with pytest.raises(ValidationError):
@@ -274,58 +258,6 @@ def test_invalid_instagram_digest_endpoint_is_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValidationError, match="must use i.instagram.com"):
-        load_controlbox(path)
-
-
-def _append_emulator_node(
-    payload: dict[str, object],
-    *,
-    port: int,
-) -> None:
-    payload["maximum_running_nodes"] = 2
-    payload["nodes"].append(
-        {
-            "name": "ig_node_2",
-            "port": port,
-        }
-    )
-
-
-@pytest.mark.parametrize(
-    ("mutate", "message"),
-    [
-        (
-            lambda payload: payload.update({"maximum_running_nodes": 4}),
-            "maximum_running_nodes",
-        ),
-        (
-            lambda payload: payload.update({"command_timeout_seconds": 0}),
-            "command_timeout_seconds",
-        ),
-        (
-            lambda payload: payload.update({"command_timeout_seconds": 301}),
-            "command_timeout_seconds",
-        ),
-        (
-            lambda payload: payload["nodes"][0].update({"port": 5555}),
-            "ports must be even",
-        ),
-        (
-            lambda payload: _append_emulator_node(payload, port=5554),
-            "ports must be unique",
-        ),
-        (
-            lambda payload: payload.update(
-                {"system_image": "system-images;android-35;google_apis;x86_64"}
-            ),
-            "Google Play",
-        ),
-    ],
-)
-def test_invalid_emulator_farm_control_is_rejected(tmp_path: Path, mutate, message: str) -> None:
-    path = _write_control(tmp_path, "emulator_farm", mutate)
-
-    with pytest.raises(ValidationError, match=message):
         load_controlbox(path)
 
 
@@ -636,10 +568,6 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
     assert controlbox.instagram_browser.source_page_size == 100
     assert controlbox.instagram_browser.worker_log_max_bytes == 8388608
     assert controlbox.instagram_browser.worker_log_backup_count == 3
-    assert controlbox.instagram_browser.review_maintenance_interval_seconds == 300
-    assert controlbox.instagram_browser.completed_review_retention_seconds == 86400
-    assert controlbox.instagram_browser.review_maintenance_timeout_seconds == 30
-    assert controlbox.instagram_browser.review_maintenance_batch_size == 100
     assert controlbox.instagram_browser.result_timeout_seconds > (
         controlbox.instagram_browser.job_timeout_seconds
     )
@@ -709,16 +637,6 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"worker_log_max_bytes": 67108865},
         {"worker_log_backup_count": 0},
         {"worker_log_backup_count": 11},
-        {"review_snapshot_chunk_bytes": 1023},
-        {"review_snapshot_chunk_bytes": 65537},
-        {"review_snapshot_max_bytes": 1048575},
-        {"review_snapshot_max_bytes": 268435457},
-        {"review_snapshot_storage_max_mb": 63},
-        {"review_snapshot_storage_max_mb": 4097},
-        {"review_maintenance_interval_seconds": 59},
-        {"completed_review_retention_seconds": 86399},
-        {"review_maintenance_timeout_seconds": 31},
-        {"review_maintenance_batch_size": 101},
         {"engagement_interval_seconds": 0},
         {"engagement_max_wait_seconds": 0},
         {"engagement_max_wait_seconds": 3601},
@@ -739,17 +657,6 @@ def test_instagram_browser_controls_reject_unsafe_worker_configuration(tmp_path,
     )
     with pytest.raises(ValidationError):
         load_controlbox(directory)
-
-
-def test_review_snapshot_bounds_accept_largest_chunk_with_smallest_snapshot_limit():
-    values = controlbox.instagram_browser.model_dump()
-    values.update(
-        review_snapshot_chunk_bytes=65536,
-        review_snapshot_max_bytes=1048576,
-        review_snapshot_storage_max_mb=64,
-    )
-    configuration = InstagramBrowserControl.model_validate(values)
-    assert configuration.review_snapshot_chunk_bytes <= configuration.review_snapshot_max_bytes
 
 
 @pytest.mark.parametrize(

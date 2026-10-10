@@ -1,7 +1,6 @@
 import subprocess
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
@@ -120,7 +119,7 @@ def test_multiple_devices_require_an_explicit_target(monkeypatch, tmp_path):
     monkeypatch.setattr(
         script,
         "run_cmd",
-        lambda *_args: "List of devices attached\nemulator-5554\tdevice\nemulator-5556\tdevice",
+        lambda *_args: "List of devices attached\nR5CT1234567\tdevice\nR5CT7654321\tdevice",
     )
     with pytest.raises(script.BellSetupError, match="Multiple devices"):
         script.main([])
@@ -131,11 +130,9 @@ def test_main_returns_nonzero_when_any_account_is_unconfirmed(monkeypatch, tmp_p
     adb.touch()
     monkeypatch.setattr(script, "ADB_PATH", str(adb))
     monkeypatch.setattr(
-        script, "run_cmd", lambda *_args: "List of devices attached\nemulator-5554\tdevice"
+        script, "run_cmd", lambda *_args: "List of devices attached\nR5CT1234567\tdevice"
     )
     monkeypatch.setattr(script, "disable_animations", lambda: None)
-    monkeypatch.setattr(
-        script, "default_paths", lambda: SimpleNamespace(state_directory=tmp_path / "state")
-    )
+    monkeypatch.setattr(script, "state_directory_path", lambda: tmp_path / "state")
     monkeypatch.setattr(script, "run", lambda: {"confirmed": 1, "failed": 1})
     assert script.main([]) == 1

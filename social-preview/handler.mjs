@@ -72,14 +72,13 @@ async function supabaseRequest(path, init = {}) {
   return response.json();
 }
 
-export function parseCompletedRun(event) {
+export function parseScheduledCheck(event) {
   if (
-    event?.action !== "scrape-completed" ||
-    !/^[0-9]{1,50}$/.test(event.run_id ?? "")
+    event?.source !== "aws.events" ||
+    event?.["detail-type"] !== "Scheduled Event"
   ) {
     throw new Error("Unsupported social-preview Lambda event");
   }
-  return String(event.run_id);
 }
 
 export function resolveTargetRevision(school, queuedRevision) {
@@ -141,43 +140,22 @@ export function buildCaptureUrl(slug, domainName) {
   return `https://${slug}.${domainName}${controls.capture_path}`;
 }
 
-async function enqueueCompletedRunPreviews(runId) {
-  // Page through notifications, not media, so a massive digest stays bounded.
-  const schoolIds = new Set();
-  const pageSize = controls.notification_page_size;
-  for (let offset = 0; ; offset += pageSize) {
-    const notifications = await supabaseRequest(
-      "instagram_notifications?select=id,school_id,instagram_notification_media!inner(id)" +
-        `&cache_ent_id=not.is.null&instagram_notification_media.github_run_id=eq.${runId}` +
-        `&order=id&limit=${pageSize}&offset=${offset}`,
-    );
-    for (const notification of notifications)
-      schoolIds.add(Number(notification.school_id));
-    if (notifications.length < pageSize) break;
-  }
-
-  const messages = [];
-  for (const schoolId of schoolIds) {
-    // A worker can roll over into another run. Do not capture half a digest.
-    const unfinished = await supabaseRequest(
-      "instagram_notification_media?select=id,instagram_notifications!inner(school_id,cache_ent_id)" +
-        `&instagram_notifications.school_id=eq.${schoolId}` +
-        "&instagram_notifications.cache_ent_id=not.is.null&status=in.(pending,processing)&limit=1",
-    );
-    if (unfinished.length) continue;
-    const school = await getSchoolState(schoolId);
-    if (
-      !school ||
-      Number(school.social_preview_rendered_revision) >=
-        Number(school.social_preview_revision)
+async function enqueueStalePreviews() {
+  // Every school whose discovery data changed since its last rendered preview.
+  const schools = await supabaseRequest(
+    "schools?select=id,slug,social_preview_revision,social_preview_rendered_revision&order=id",
+  );
+  const messages = schools
+    .filter(
+      (school) =>
+        Number(school.social_preview_rendered_revision) <
+        Number(school.social_preview_revision),
     )
-      continue;
-    messages.push({
-      school_id: schoolId,
+    .map((school) => ({
+      school_id: Number(school.id),
       slug: String(school.slug),
       revision: Number(school.social_preview_revision),
-    });
-  }
+    }));
 
   const queueUrl = requiredEnvironment("QUEUE_URL");
   for (let offset = 0; offset < messages.length; offset += 10) {
@@ -372,5 +350,6 @@ async function processQueue(event) {
 
 export async function handler(event) {
   if (Array.isArray(event?.Records)) return processQueue(event);
-  return enqueueCompletedRunPreviews(parseCompletedRun(event));
+  parseScheduledCheck(event);
+  return enqueueStalePreviews();
 }

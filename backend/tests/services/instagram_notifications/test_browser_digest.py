@@ -16,19 +16,6 @@ from services.instagram_notifications.browser_session import (
 )
 
 
-def test_action_media_ids_and_merge_use_one_canonical_media_list() -> None:
-    action = (
-        "clips_home?media_id=123_456&media_list=789%2C123&"
-        "notif_type=subscription_daily_digest&cache_ent_id=cache-1"
-    )
-
-    assert browser_digest.action_media_ids(action) == ("123", "789")
-    assert browser_digest.merge_action_media_ids(action, ("101", "789")) == (
-        "clips_home?media_list=123%2C789%2C101&notif_type=subscription_daily_digest&"
-        "cache_ent_id=cache-1"
-    )
-
-
 def test_digest_media_count_treats_under_count_as_advisory() -> None:
     assert browser_digest.digest_media_count_shortfall(155, 156) == 1
     assert browser_digest.digest_media_count_shortfall(156, 156) == 0

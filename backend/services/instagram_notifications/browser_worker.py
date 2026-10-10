@@ -637,7 +637,10 @@ def _poll_source(
 
 def _source_pollers(queue: BrowserJobQueue, stopping: threading.Event) -> list[threading.Thread]:
     from services.instagram_notifications.carousel_engagement import sync_published_carousels
-    from services.instagram_notifications.notification_ingestion import sync_notification_media
+    from services.instagram_notifications.notification_ingestion import (
+        enqueue_retrieved_media,
+        sync_notification_media,
+    )
 
     def collect_carousels() -> None:
         result = sync_published_carousels(queue)
@@ -649,9 +652,9 @@ def _source_pollers(queue: BrowserJobQueue, stopping: threading.Event) -> list[t
 
     sources = (
         ("notification_source_status", collect_notifications),
+        ("notification_enqueue_status", lambda: enqueue_retrieved_media(queue)),
         ("diagnostics_status", lambda: queue.publish_diagnostics(should_stop=stopping.is_set)),
         ("source_status", collect_carousels),
-        ("review_storage_status", lambda: queue.maintain_review_storage()),
     )
     return [
         threading.Thread(

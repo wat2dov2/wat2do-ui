@@ -26,8 +26,6 @@
     "like",
     "repost"
   ],
-  "notification_media_provider": "browser",
-  "ingestion_batch_size": 10,
   "parallel_tabs": 15,
   "tab_health_interval_seconds": 10,
   "profile_post_limit": 12,
@@ -37,12 +35,5 @@
   "storage_retry_limit": 3,
   "storage_retry_interval_seconds": 1,
   "worker_log_max_bytes": 8388608,
-  "worker_log_backup_count": 3,
-  "review_snapshot_chunk_bytes": 4096,
-  "review_snapshot_max_bytes": 67108864,
-  "review_snapshot_storage_max_mb": 1024,
-  "review_maintenance_interval_seconds": 300,
-  "completed_review_retention_seconds": 86400,
-  "review_maintenance_timeout_seconds": 30,
-  "review_maintenance_batch_size": 100
+  "worker_log_backup_count": 3
 }

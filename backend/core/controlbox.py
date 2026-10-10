@@ -447,13 +447,9 @@ class ReelTranscriptionControl(_ControlModel):
 
 class ScrapingControl(_ControlModel):
     apify_memory_megabytes: Literal[128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
-    pending_media_workers: int = Field(gt=0)
-    pending_media_memory_budget_megabytes: int = Field(gt=0)
-    workflow_status_timeout_seconds: int = Field(gt=0)
     apify_timeout_seconds: int = Field(gt=0)
     poll_interval_seconds: int = Field(gt=0)
     instagram_web_app_id: str = Field(pattern=r"^[0-9]{10,20}$")
-    single_user_recent_post_minutes: int = Field(gt=0)
     same_club_title_threshold: float = Field(ge=0, le=1)
     title_similarity_threshold: float = Field(ge=0, le=1)
     location_similarity_threshold: float = Field(ge=0, le=1)
@@ -464,11 +460,6 @@ class ScrapingControl(_ControlModel):
 
     @model_validator(mode="after")
     def validate_limits(self) -> "ScrapingControl":
-        if (
-            self.pending_media_workers * self.apify_memory_megabytes
-            > self.pending_media_memory_budget_megabytes
-        ):
-            raise ValueError("pending media workers exceed their Apify memory budget")
         if self.maximum_cross_club_candidates > self.maximum_candidates:
             raise ValueError("maximum_cross_club_candidates cannot exceed maximum_candidates")
         return self
@@ -479,7 +470,7 @@ class PublicAttendanceControl(_ControlModel):
 
 
 class SocialPreviewsControl(_ControlModel):
-    notification_page_size: int = Field(gt=0, le=1000)
+    stale_check_interval_minutes: int = Field(ge=5, le=1440)
     capture_path: Literal["/"]
     viewport_width: int = Field(ge=600, le=2400)
     viewport_height: int = Field(ge=315, le=1260)
@@ -598,59 +589,9 @@ class InstagramPublishingControl(_ControlModel):
         return self
 
 
-class EmulatorFarmNodeControl(_ControlModel):
-    name: str = Field(pattern=r"^ig_node_[1-9][0-9]*$")
-    port: int = Field(ge=5554, le=5682)
-
-    @model_validator(mode="after")
-    def validate_node(self) -> "EmulatorFarmNodeControl":
-        if self.port % 2:
-            raise ValueError("emulator console ports must be even")
-        return self
-
-
-class EmulatorFarmControl(_ControlModel):
-    maximum_running_nodes: int = Field(gt=0, le=3)
-    accounts_per_node: int = Field(gt=0, le=3)
-    check_interval_seconds: int = Field(ge=300)
-    live_monitor_interval_seconds: int = Field(ge=1, le=60)
-    boot_timeout_seconds: int = Field(gt=0, le=900)
-    command_timeout_seconds: int = Field(ge=1, le=300)
-    notification_evidence_max_age_seconds: int = Field(gt=0, le=604800)
-    system_image: str = Field(min_length=1)
-    device_profile: str = Field(pattern=r"^[a-z0-9_]+$")
-    memory_megabytes_per_node: int = Field(ge=2048, le=6144)
-    cpu_cores_per_node: int = Field(ge=1, le=4)
-    run_headlessly: bool
-    instagram_package: Literal["com.instagram.android"]
-    automate_package: Literal["com.llamalab.automate"]
-    recipient_id_key: Literal["com.instagram.android.igns.logging.intended_recipient_id"]
-    github_repository: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
-    github_event_type: Literal["new_instagram_post"]
-    nodes: tuple[EmulatorFarmNodeControl, ...] = Field(min_length=1, max_length=3)
-
-    @model_validator(mode="after")
-    def validate_farm(self) -> "EmulatorFarmControl":
-        if len(self.nodes) != self.maximum_running_nodes:
-            raise ValueError("configured emulator nodes must equal maximum_running_nodes")
-        names = [node.name for node in self.nodes]
-        ports = [node.port for node in self.nodes]
-        if len(names) != len(set(names)):
-            raise ValueError("emulator node names must be unique")
-        if len(ports) != len(set(ports)):
-            raise ValueError("emulator node ports must be unique")
-        if "google_apis_playstore" not in self.system_image:
-            raise ValueError("emulator farm system image must include Google Play")
-        if not self.system_image.endswith(";arm64-v8a"):
-            raise ValueError("emulator farm system image must use arm64-v8a")
-        return self
-
-
 class InstagramBrowserControl(_ControlModel):
     parallel_tabs: int = Field(ge=2, le=100)
     tab_health_interval_seconds: float = Field(ge=1, le=300)
-    notification_media_provider: Literal["browser", "apify"]
-    ingestion_batch_size: int = Field(gt=0, le=100)
     ingestion_retry_limit: int = Field(gt=0, le=10)
     profile_post_limit: int = Field(gt=0, le=50)
     school_switcher_username_overrides: dict[
@@ -681,21 +622,12 @@ class InstagramBrowserControl(_ControlModel):
     source_page_size: int = Field(gt=0, le=1000)
     worker_log_max_bytes: int = Field(ge=65536, le=67108864)
     worker_log_backup_count: int = Field(ge=1, le=10)
-    review_snapshot_chunk_bytes: int = Field(ge=1024, le=65536)
-    review_snapshot_max_bytes: int = Field(ge=1048576, le=268435456)
-    review_snapshot_storage_max_mb: int = Field(ge=64, le=4096)
-    review_maintenance_interval_seconds: int = Field(ge=60, le=3600)
-    completed_review_retention_seconds: int = Field(ge=86400, le=7776000)
-    review_maintenance_timeout_seconds: int = Field(ge=1, le=30)
-    review_maintenance_batch_size: int = Field(ge=1, le=100)
     engagement_interval_seconds: float = Field(ge=1, le=3600)
     engagement_max_wait_seconds: float = Field(ge=1, le=3600)
     actions: tuple[Literal["like", "save", "repost"], ...] = Field(min_length=1, max_length=3)
 
     @model_validator(mode="after")
     def validate_worker(self) -> "InstagramBrowserControl":
-        if self.review_snapshot_chunk_bytes > self.review_snapshot_max_bytes:
-            raise ValueError("Review snapshot chunk size must not exceed the snapshot size limit")
         if len(self.actions) != len(set(self.actions)):
             raise ValueError("Instagram browser actions must be unique")
         if self.result_timeout_seconds <= self.job_timeout_seconds:
@@ -919,6 +851,33 @@ class PositionsControl(_ControlModel):
     undated_visibility_months: int = Field(gt=0, le=12)
 
 
+class IngestionControl(_ControlModel):
+    model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    process_interval_seconds: int = Field(ge=60, le=3600)
+    process_time_budget_seconds: int = Field(gt=0, le=3600)
+    directory_scrape_interval_seconds: int = Field(ge=3600, le=86400)
+    claim_lease_seconds: int = Field(gt=0, le=86400)
+    max_attempts: int = Field(ge=1, le=10)
+    checked_ttl_days: int = Field(ge=1, le=365)
+    model_timeout_seconds: int = Field(gt=0, le=1800)
+    max_images_per_item: int = Field(ge=0, le=20)
+    storage_busy_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    directory_max_listing_pages: int = Field(gt=0, le=200)
+    directory_max_detail_pages_per_source: int = Field(gt=0, le=5000)
+    fetch_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    fetch_max_text_characters: int = Field(gt=0, le=100000)
+    fetch_max_images: int = Field(gt=0, le=50)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def validate_budgets(self) -> "IngestionControl":
+        if self.process_time_budget_seconds >= self.process_interval_seconds:
+            raise ValueError("Ingestion processing must finish before its next interval")
+        if self.claim_lease_seconds <= self.model_timeout_seconds:
+            raise ValueError("Ingestion claims must outlive one model call")
+        return self
+
+
 class ControlBox(_ControlModel):
     positions: PositionsControl
     database: DatabaseControl
@@ -939,6 +898,7 @@ class ControlBox(_ControlModel):
     interaction_ingestion: InteractionIngestionControl
     rate_limits: RateLimitsControl
     scraping: ScrapingControl
+    ingestion: IngestionControl
     reel_transcription: ReelTranscriptionControl
     email_delivery: EmailDeliveryControl
     contact: ContactControl
@@ -946,7 +906,6 @@ class ControlBox(_ControlModel):
     uploads: UploadsControl
     public_attendance: PublicAttendanceControl
     social_previews: SocialPreviewsControl
-    emulator_farm: EmulatorFarmControl
     instagram_browser: InstagramBrowserControl
     notification_workflow: NotificationWorkflowControl
     runner_setup: RunnerSetupControl

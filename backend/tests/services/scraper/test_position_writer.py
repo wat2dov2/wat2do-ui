@@ -29,7 +29,8 @@ def _position() -> dict:
     }
 
 
-def test_write_position_inserts_scraper_payload(fake_sb, patch_sb, monkeypatch):
+@pytest.mark.parametrize("ingestion_source", ["instagram_scraper", "directory"])
+def test_write_position_inserts_scraper_payload(fake_sb, patch_sb, monkeypatch, ingestion_source):
     patch_sb("services.scraper.position_writer")
     revalidate = MagicMock()
     monkeypatch.setattr(
@@ -52,6 +53,7 @@ def test_write_position_inserts_scraper_payload(fake_sb, patch_sb, monkeypatch):
             ig_handle="uwdesign",
             cohost_club_ids=(8, 10),
         ),
+        ingestion_source=ingestion_source,
     )
 
     assert outcome == "inserted"
@@ -64,7 +66,7 @@ def test_write_position_inserts_scraper_payload(fake_sb, patch_sb, monkeypatch):
     assert payload["is_paid"] is False
     assert payload["requirements"] == ["Portfolio", "Clear communication"]
     assert payload["source_url"] == "https://www.instagram.com/p/HIRING123/"
-    assert payload["ingestion_source"] == "instagram_scraper"
+    assert payload["ingestion_source"] == ingestion_source
     revalidate.assert_called_once_with("uwaterloo", resources=("positions", "clubs"))
 
 

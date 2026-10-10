@@ -41,10 +41,16 @@ maintainability.
 
 ### Instagram notification ingestion direction
 
-Collect Instagram notifications through the official Android app and Android
-`NotificationListenerService` routing.
-For physical-device capacity planning, budget no more than three Instagram
-accounts per device and scale horizontally by adding devices.
+Collect Instagram notifications through the official Instagram app on a physical
+Android phone running Automate, whose `NotificationListenerService` flow triggers
+the GitHub `process-notification` workflow directly.
+Do not use Android emulators.
+Budget no more than three Instagram accounts per device and scale horizontally by
+adding devices.
+The workflow records exact post URLs in the Supabase notification ledger.
+The Mac's browser worker retrieves each post, captures it into the local
+ingestion queue, and only then marks its ledger row succeeded.
+The local ingestion processor owns extraction and database writes.
 
 When Instagram collapses a notification into "account posted and N others", the
 `process-notification` job may expand that notification's CacheEntID through one

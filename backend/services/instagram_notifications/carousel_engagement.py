@@ -105,9 +105,10 @@ def sync_published_carousels(
                 if accounts is None:
                     accounts = _enabled_accounts()
                 account = accounts.get(str(batch["account_key"]))
-                sources = _enqueue_batch(queue, batch, account, stats)
-                if sources is None:
+                enqueued = _enqueue_batch(queue, batch, account, stats)
+                if enqueued is None:
                     continue
+                sources = enqueued
                 queue.set_setting(completion_setting, str(batch["published_at"]))
         except ValueError:
             # A missing or ambiguous original selection cannot authorize changed posts.

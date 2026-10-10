@@ -2,7 +2,6 @@ name: Nightly recommendation compute
 
 on:
   schedule:
-    # Run after the 08:00 UTC directory scrape has had time to finish.
     - cron: '0 10 * * *'
   workflow_dispatch:
 

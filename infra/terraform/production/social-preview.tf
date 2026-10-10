@@ -157,3 +157,22 @@ resource "aws_cloudwatch_metric_alarm" "social_preview_dead_letters" {
     QueueName = aws_sqs_queue.social_preview_dead_letter.name
   }
 }
+
+resource "aws_cloudwatch_event_rule" "social_preview_stale_check" {
+  name                = "${local.name_prefix}-social-preview-stale-check"
+  description         = "Queue previews for schools whose discovery data changed"
+  schedule_expression = "rate(${local.social_preview_control.stale_check_interval_minutes} minutes)"
+}
+
+resource "aws_cloudwatch_event_target" "social_preview_stale_check" {
+  rule = aws_cloudwatch_event_rule.social_preview_stale_check.name
+  arn  = aws_lambda_function.social_preview.arn
+}
+
+resource "aws_lambda_permission" "social_preview_stale_check" {
+  statement_id  = "AllowScheduledStalePreviewCheck"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.social_preview.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.social_preview_stale_check.arn
+}

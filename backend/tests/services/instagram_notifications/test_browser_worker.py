@@ -34,6 +34,7 @@ ACCOUNT_USERNAME = "ubc.wat2do.io"
 def isolated_browser(monkeypatch, tmp_path):
     monkeypatch.setattr(module, "CONTROL", module.CONTROL.model_copy(update={"parallel_tabs": 10}))
     monkeypatch.setattr(notification_ingestion, "sync_notification_media", lambda _: {})
+    monkeypatch.setattr(notification_ingestion, "enqueue_retrieved_media", lambda _: {})
     monkeypatch.setattr(module, "maintain_tab_pool", lambda _: True)
     monkeypatch.setattr(module, "BROWSER_LOCK_PATH", str(tmp_path / "browser.lock"))
     monkeypatch.setattr(
@@ -2116,7 +2117,7 @@ def test_aged_engagement_yields_stream_only_after_active_reads_settle(queue, mon
     assert queue.get(later_ids[0]).state == "succeeded"
 
 
-@pytest.mark.parametrize("failed_source", ["notification", "diagnostics", "review_storage"])
+@pytest.mark.parametrize("failed_source", ["notification", "diagnostics", "enqueue"])
 def test_source_failure_does_not_prevent_collecting_published_engagement(
     queue, monkeypatch, caplog, failed_source
 ):
@@ -2140,7 +2141,7 @@ def test_source_failure_does_not_prevent_collecting_published_engagement(
     elif failed_source == "diagnostics":
         monkeypatch.setattr(queue, "publish_diagnostics", fail)
     else:
-        monkeypatch.setattr(queue, "maintain_review_storage", fail)
+        monkeypatch.setattr(notification_ingestion, "enqueue_retrieved_media", fail)
     monkeypatch.setattr(carousel_engagement, "sync_published_carousels", carousel)
     _run_test_source_pollers(queue, stopping)
     assert calls == ["carousel"]
@@ -2148,7 +2149,7 @@ def test_source_failure_does_not_prevent_collecting_published_engagement(
     status_key = {
         "notification": "notification_source_status",
         "diagnostics": "diagnostics_status",
-        "review_storage": "review_storage_status",
+        "enqueue": "notification_enqueue_status",
     }[failed_source]
     assert queue.get_setting(status_key)["error"] == "ValueError"
     assert "Private source credentials" not in caplog.text
@@ -2664,7 +2665,7 @@ def test_closed_secondary_stops_refills_and_drains_before_pool_repair(queue, mon
     assert not queue.get_setting("paused", False)
 
 
-@pytest.mark.parametrize("blocked_source", ["notification", "diagnostics", "review_storage"])
+@pytest.mark.parametrize("blocked_source", ["notification", "diagnostics", "enqueue"])
 def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, blocked_source):
     stopping = threading.Event()
     entered = threading.Event()
@@ -2672,7 +2673,7 @@ def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, 
     notification_progress = threading.Event()
     diagnostics_progress = threading.Event()
     carousel_progress = threading.Event()
-    maintenance_progress = threading.Event()
+    enqueue_progress = threading.Event()
 
     def blocked(*args, **kwargs):
         entered.set()
@@ -2692,8 +2693,9 @@ def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, 
         carousel_progress.set()
         return {"submitted": 1}
 
-    def maintenance():
-        maintenance_progress.set()
+    def enqueue(current):
+        assert current is queue
+        enqueue_progress.set()
         return {}
 
     monkeypatch.setattr(
@@ -2708,9 +2710,9 @@ def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, 
     )
     monkeypatch.setattr(carousel_engagement, "sync_published_carousels", carousels)
     monkeypatch.setattr(
-        queue,
-        "maintain_review_storage",
-        blocked if blocked_source == "review_storage" else maintenance,
+        notification_ingestion,
+        "enqueue_retrieved_media",
+        blocked if blocked_source == "enqueue" else enqueue,
     )
     pollers = module._source_pollers(queue, stopping)
     for poller in pollers:
@@ -2722,8 +2724,8 @@ def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, 
             assert notification_progress.wait(5)
         if blocked_source != "diagnostics":
             assert diagnostics_progress.wait(5)
-        if blocked_source != "review_storage":
-            assert maintenance_progress.wait(5)
+        if blocked_source != "enqueue":
+            assert enqueue_progress.wait(5)
         assert not release.is_set()
     finally:
         stopping.set()

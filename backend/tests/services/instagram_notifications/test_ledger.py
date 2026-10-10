@@ -1,31 +1,6 @@
-from unittest.mock import MagicMock
-
 import pytest
 
 from services.instagram_notifications import ledger
-
-
-def test_recovery_releases_only_claims_from_confirmed_completed_runs(
-    fake_sb, patch_sb, monkeypatch
-):
-    patch_sb("services.instagram_notifications.ledger")
-    fake_sb.set_response(
-        data=[
-            {"id": "old-a", "claim_token": "token-a", "github_run_id": "123"},
-            {"id": "old-b", "claim_token": "token-b", "github_run_id": "123"},
-            {"id": "active", "claim_token": "token-c", "github_run_id": "456"},
-            {"id": "unknown", "claim_token": "token-d", "github_run_id": None},
-        ]
-    )
-    status = MagicMock(side_effect=lambda run_id: run_id == "123")
-    rollback = MagicMock(side_effect=[True, False])
-    monkeypatch.setattr(ledger, "rollback_media_claim", rollback)
-    assert ledger.recover_finished_media_claims(status) == 1
-    assert [call.args for call in status.call_args_list] == [("123",), ("456",)]
-    assert [call.kwargs for call in rollback.call_args_list] == [
-        {"media_row_id": "old-a", "claim_token": "token-a"},
-        {"media_row_id": "old-b", "claim_token": "token-b"},
-    ]
 
 
 def _record(**overrides):
@@ -121,52 +96,6 @@ def test_record_notification_media_rejects_conflicting_duplicate_urls(fake_sb, p
     fake_sb.rpc.assert_not_called()
 
 
-def test_claim_next_notification_media_returns_one_irreversible_claim(fake_sb, patch_sb):
-    patch_sb("services.instagram_notifications.ledger")
-    fake_sb.set_response(
-        data=[
-            {
-                "media_row_id": "media-row-1",
-                "source_url": "https://www.instagram.com/p/ABC123/",
-                "claim_token": "claim-1",
-                "intended_recipient_id": "76214170483",
-            }
-        ]
-    )
-
-    assert ledger.claim_next_notification_media(
-        notification_id="notification-1",
-        github_run_id="31756592543",
-    ) == ledger.MediaClaim(
-        media_row_id="media-row-1",
-        source_url="https://www.instagram.com/p/ABC123/",
-        claim_token="claim-1",
-        intended_recipient_id="76214170483",
-    )
-    fake_sb.rpc.assert_called_once_with(
-        "claim_next_instagram_notification_media",
-        {
-            "p_notification_id": "notification-1",
-            "p_github_run_id": "31756592543",
-        },
-    )
-
-
-def test_claim_next_notification_media_returns_none_when_no_pending_rows(
-    fake_sb,
-    patch_sb,
-):
-    patch_sb("services.instagram_notifications.ledger")
-
-    assert (
-        ledger.claim_next_notification_media(
-            notification_id="notification-1",
-            github_run_id=None,
-        )
-        is None
-    )
-
-
 def test_mark_media_succeeded_uses_token_guarded_rpc(fake_sb, patch_sb):
     patch_sb("services.instagram_notifications.ledger")
     fake_sb.set_response(data=True)
@@ -183,26 +112,6 @@ def test_mark_media_succeeded_uses_token_guarded_rpc(fake_sb, patch_sb):
     )
 
 
-def test_mark_media_failed_sends_only_sanitized_category(fake_sb, patch_sb):
-    patch_sb("services.instagram_notifications.ledger")
-    fake_sb.set_response(data=True)
-
-    assert ledger.mark_media_failed(
-        media_row_id="media-row-1",
-        claim_token="claim-1",
-        failure_category=" provider_timeout ",
-    )
-    fake_sb.rpc.assert_called_once_with(
-        "finalize_instagram_notification_media",
-        {
-            "p_media_row_id": "media-row-1",
-            "p_claim_token": "claim-1",
-            "p_status": "failed",
-            "p_failure_category": "provider_timeout",
-        },
-    )
-
-
 def test_finalization_returns_false_after_claim_is_lost(fake_sb, patch_sb):
     patch_sb("services.instagram_notifications.ledger")
     fake_sb.set_response(data=False)
@@ -211,19 +120,6 @@ def test_finalization_returns_false_after_claim_is_lost(fake_sb, patch_sb):
         media_row_id="media-row-1",
         claim_token="stale-claim",
     )
-
-
-def test_mark_media_failed_rejects_empty_category(fake_sb, patch_sb):
-    patch_sb("services.instagram_notifications.ledger")
-
-    with pytest.raises(ValueError, match="cannot be empty"):
-        ledger.mark_media_failed(
-            media_row_id="media-row-1",
-            claim_token="claim-1",
-            failure_category="   ",
-        )
-
-    fake_sb.rpc.assert_not_called()
 
 
 def test_browser_claim_uses_journaled_token_and_pending_status_guard(fake_sb, patch_sb):
@@ -240,135 +136,3 @@ def test_browser_claim_uses_journaled_token_and_pending_status_guard(fake_sb, pa
     assert calls.eq.call_args_list[-1].args == ("status", "pending")
     fake_sb.set_response(data=[])
     assert not ledger.claim_pending_browser_media(media_row_id=row_id, claim_token=token)
-
-
-def _failed_media():
-    return {
-        "id": "d6246624-50f7-4aa1-bf0a-0d14b604d5a7",
-        "notification_id": "ad7f79b0-8148-4297-b1cf-cdf0f8c963e2",
-        "media_id": "3701234567890123456",
-        "source_url": "https://www.instagram.com/p/ABC123/",
-        "status": "failed",
-        "claim_token": "196f8685-0164-4a2a-9349-d78dc2b6b346",
-        "succeeded_at": None,
-        "failure_category": "provider_timeout",
-        "github_run_id": "31756592543",
-        "created_at": "2026-09-01T12:00:00+00:00",
-        "updated_at": "2026-09-01T12:01:00+00:00",
-        "browser_delivery_generation": "a59a2b3a-7c90-48e5-a9d0-3c08d2eff81d",
-    }
-
-
-def test_retry_failed_media_uses_exact_full_fresh_row_and_authoritative_routing(fake_sb, patch_sb):
-    patch_sb("services.instagram_notifications.ledger")
-    fake_sb.set_response(data=True)
-    expected = _failed_media()
-
-    assert (
-        ledger.retry_failed_media(expected, school_id=7, intended_recipient_id="76214170483")
-        is True
-    )
-
-    fake_sb.rpc.assert_called_once_with(
-        "retry_failed_instagram_notification_media",
-        {
-            "p_expected_media": expected,
-            "p_school_id": 7,
-            "p_intended_recipient_id": "76214170483",
-        },
-    )
-    assert expected == _failed_media()
-    fake_sb.update.assert_not_called()
-    fake_sb.insert.assert_not_called()
-    fake_sb.delete.assert_not_called()
-
-
-@pytest.mark.parametrize(
-    "overrides",
-    [
-        {"school_id": True},
-        {"school_id": 0},
-        {"intended_recipient_id": 76214170483},
-        {"intended_recipient_id": "076214170483"},
-    ],
-)
-def test_failed_media_retry_rejects_unbound_routing_before_rpc(fake_sb, patch_sb, overrides):
-    patch_sb("services.instagram_notifications.ledger")
-    routing = {"school_id": 7, "intended_recipient_id": "76214170483"} | overrides
-    with pytest.raises(ValueError, match="Failed media retry requires"):
-        ledger.retry_failed_media(_failed_media(), **routing)
-    fake_sb.rpc.assert_not_called()
-
-
-@pytest.mark.parametrize(
-    "changes",
-    [
-        {"status": "processing"},
-        {"claim_token": None},
-        {"id": "3701234567890123456"},
-        {"media_id": "d6246624-50f7-4aa1-bf0a-0d14b604d5a7"},
-        {"github_run_id": None},
-        {"created_at": "2026-09-01T12:00:00"},
-        {"updated_at": "2026-02-30T12:00:00+00:00"},
-        {"updated_at": "2026-09-01T12:01:00+0000"},
-        {"browser_delivery_generation": False},
-        {"source_url": "https://example.com/p/ABC123/"},
-        {"failure_category": "private provider error details"},
-    ],
-)
-def test_failed_media_retry_rejects_invalid_full_baseline_before_rpc(fake_sb, patch_sb, changes):
-    patch_sb("services.instagram_notifications.ledger")
-    with pytest.raises(ValueError, match="valid failed workflow baseline"):
-        ledger.retry_failed_media(
-            _failed_media() | changes, school_id=7, intended_recipient_id="76214170483"
-        )
-    fake_sb.rpc.assert_not_called()
-
-
-def test_failed_media_retry_refuses_projection_or_manifest_instead_of_fresh_row(fake_sb, patch_sb):
-    patch_sb("services.instagram_notifications.ledger")
-    expected = _failed_media()
-    expected.pop("browser_delivery_generation")
-    with pytest.raises(ValueError, match="complete raw failed row"):
-        ledger.retry_failed_media(expected, school_id=7, intended_recipient_id="76214170483")
-    fake_sb.rpc.assert_not_called()
-
-
-@pytest.mark.parametrize("response", [False, None, "true"])
-def test_failed_media_retry_does_not_resend_or_fall_back_when_cas_not_acknowledged(
-    fake_sb, patch_sb, response
-):
-    patch_sb("services.instagram_notifications.ledger")
-    fake_sb.set_response(data=response)
-    assert not ledger.retry_failed_media(
-        _failed_media(), school_id=7, intended_recipient_id="76214170483"
-    )
-    fake_sb.rpc.assert_called_once()
-    fake_sb.table.assert_not_called()
-
-
-def test_failed_media_retry_propagates_uncertain_response_without_resending(fake_sb, patch_sb):
-    patch_sb("services.instagram_notifications.ledger")
-    fake_sb.rpc.return_value.execute.side_effect = TimeoutError("request outcome unknown")
-    with pytest.raises(TimeoutError):
-        ledger.retry_failed_media(_failed_media(), school_id=7, intended_recipient_id="76214170483")
-    fake_sb.rpc.assert_called_once()
-    fake_sb.table.assert_not_called()
-
-
-def test_failed_media_retry_validation_is_pure_before_recording_intent(fake_sb, patch_sb):
-    patch_sb("services.instagram_notifications.ledger")
-    expected = _failed_media()
-    assert (
-        ledger.validate_failed_media_retry(
-            expected, school_id=7, intended_recipient_id="76214170483"
-        )
-        is None
-    )
-    expected.pop("claim_token")
-    with pytest.raises(ValueError, match="complete raw failed row"):
-        ledger.validate_failed_media_retry(
-            expected, school_id=7, intended_recipient_id="76214170483"
-        )
-    fake_sb.rpc.assert_not_called()
-    fake_sb.table.assert_not_called()
