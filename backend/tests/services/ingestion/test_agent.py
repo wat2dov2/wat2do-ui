@@ -47,7 +47,12 @@ def run(monkeypatch, tmp_path):
         return f"{stem}.jpg"
 
     monkeypatch.setattr(module, "download_image", download)
-    monkeypatch.setattr(module.changes, "drain", lambda *, caption: state.drains.append(caption))
+    monkeypatch.setattr(module.changes, "drain", lambda: state.drains.append("drain"))
+    monkeypatch.setattr(
+        module.changes,
+        "describe",
+        lambda url, caption, *, since: state.drains.append(("describe", url, caption)),
+    )
     monkeypatch.setattr(module.shutil, "which", lambda name: f"/usr/local/bin/{name}")
     monkeypatch.setattr(
         module.settings,
@@ -66,7 +71,7 @@ def run(monkeypatch, tmp_path):
     return state
 
 
-def test_ingest_runs_haiku_with_psql_only_and_drains_around_it(run):
+def test_ingest_runs_haiku_with_psql_only_then_settles_its_changes(run):
     module.ingest(dict(_POST), school="uwaterloo")
 
     [(args, kwargs)] = run.calls
@@ -79,8 +84,8 @@ def test_ingest_runs_haiku_with_psql_only_and_drains_around_it(run):
     assert "--no-session-persistence" in args
     assert kwargs["timeout"] == module.CONTROL.model_timeout_seconds
     assert run.files == {"image-0.jpg"}
-    # Leftovers settle first; this item's new rows get its caption.
-    assert run.drains == [None, _POST["caption"]]
+    # New rows from this source get its caption, then every change settles.
+    assert run.drains == [("describe", _POST["url"], _POST["caption"]), "drain"]
 
 
 def test_ingest_gives_the_agent_a_scoped_login_and_no_application_secrets(run, monkeypatch):
@@ -133,7 +138,7 @@ def test_ingest_still_drains_when_the_agent_fails(run):
 
     with pytest.raises(module.AgentError, match="exit 1"):
         module.ingest(dict(_POST), school="uwaterloo")
-    assert run.drains == [None, _POST["caption"]]
+    assert run.drains == [("describe", _POST["url"], _POST["caption"]), "drain"]
 
 
 def test_ingest_skips_sources_already_listed(run, monkeypatch):

@@ -156,6 +156,7 @@ The first ARM64 frontend and backend images, plus the x86-64 social-preview imag
 Once production exists, pushes to `main` use GitHub OIDC to build all three images, tag them with the full commit SHA, update the ECS task definition, and update the Lambda image.
 Official school event directories are listed in the `public.directory_sources` table.
 Every 12 hours a local LaunchAgent queues new directory event pages, and every 5 minutes another drains the local ingestion queue with Claude Haiku (`backend/scripts/ingest.py`).
+Each 5-minute run keeps going until the queue is empty, running `parallel_agents` Haiku agents at once (`backend/controlbox/ingestion.json`); a tick that finds a run still going does nothing, and posts from one club never run at the same time.
 Install both with `cd backend && .venv/bin/python scripts/ingest.py install-schedule`; the Mac must be on and signed in to Claude Code.
 Notifications and recommendation compute run on GitHub-hosted runners.
 Instagram notifications come from a physical Android phone running Automate, which triggers the `process-notification` workflow.

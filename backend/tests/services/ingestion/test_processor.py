@@ -1,4 +1,6 @@
 import fcntl
+import threading
+import time
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -11,6 +13,14 @@ from services.ingestion.queue import IngestionQueue, QueueItem
 @pytest.fixture
 def queue(tmp_path):
     return IngestionQueue(tmp_path / "ingestion")
+
+
+@pytest.fixture(autouse=True)
+def no_database(monkeypatch):
+    drains = []
+    monkeypatch.setattr(module.changes, "drain", lambda: drains.append(True))
+    monkeypatch.setattr(module, "list_sources", lambda: [])
+    return drains
 
 
 def _item(url: str, **kwargs) -> QueueItem:
@@ -83,30 +93,50 @@ def test_process_queue_looks_up_publishers_once_and_only_for_directory_items(que
     }
 
 
-def test_instagram_only_queue_never_reads_directory_sources(queue, monkeypatch):
-    queue.enqueue(_item("https://www.instagram.com/p/POST/"))
-    list_sources = Mock()
-    monkeypatch.setattr(module, "list_sources", list_sources)
-    monkeypatch.setattr(module, "ingest", lambda *_args, **_kwargs: None)
-
-    assert module.process_queue(queue) == {"processed": 1, "failed": 0}
-    list_sources.assert_not_called()
-
-
-def test_process_queue_stops_at_the_time_budget_and_prunes_first(queue, monkeypatch):
-    queue.enqueue(_item("https://example.edu/events/1"))
+def test_process_queue_drains_everything_and_settles_leftovers_first(
+    queue, monkeypatch, no_database
+):
+    for index in range(10):
+        queue.enqueue(_item(f"https://example.edu/events/{index}", directory_source_id=index))
     prune = Mock(return_value=0)
     monkeypatch.setattr(queue, "prune", prune)
-    monkeypatch.setattr(
-        module, "time", SimpleNamespace(monotonic=Mock(side_effect=[0.0, float("inf")]))
-    )
-    process = Mock()
-    monkeypatch.setattr(module, "ingest", process)
+    seen = []
+    monkeypatch.setattr(module, "ingest", lambda post, **_: seen.append(post["url"]))
 
-    assert module.process_queue(queue) == {"processed": 0, "failed": 0}
+    assert module.process_queue(queue) == {"processed": 10, "failed": 0}
     prune.assert_called_once_with()
-    process.assert_not_called()
-    assert queue.counts()["queued"] == 1
+    assert no_database == [True]
+    assert sorted(seen) == sorted(f"https://example.edu/events/{i}" for i in range(10))
+    assert queue.counts() == {"queued": 0, "checked": 10}
+
+
+def test_posts_from_one_club_never_run_at_the_same_time(queue, monkeypatch):
+    for index in range(4):
+        queue.enqueue(
+            QueueItem(
+                school="uwaterloo",
+                post={
+                    "url": f"https://www.instagram.com/p/P{index}/",
+                    "ownerUsername": "@UWImprov",
+                },
+            )
+        )
+    running = []
+    overlaps = []
+    guard = threading.Lock()
+
+    def ingest(post, **_):
+        with guard:
+            running.append(post["url"])
+            overlaps.append(len(running))
+        time.sleep(0.02)
+        with guard:
+            running.remove(post["url"])
+
+    monkeypatch.setattr(module, "ingest", ingest)
+
+    assert module.process_queue(queue) == {"processed": 4, "failed": 0}
+    assert max(overlaps) == 1
 
 
 def test_agent_failure_keeps_the_capture_queued_without_logging_it(queue, monkeypatch, caplog):
@@ -122,7 +152,7 @@ def test_agent_failure_keeps_the_capture_queued_without_logging_it(queue, monkey
         agent, "resolve_club_for_scrape", Mock(return_value=SimpleNamespace(club_id=None))
     )
     monkeypatch.setattr(agent, "_render", lambda *args, **kwargs: "prompt")
-    monkeypatch.setattr(agent.changes, "drain", lambda *, caption: None)
+    monkeypatch.setattr(agent.changes, "describe", lambda *args, **kwargs: None)
     monkeypatch.setattr(agent.shutil, "which", lambda name: name)
     monkeypatch.setattr(agent, "_agent_environment", lambda: {})
     monkeypatch.setattr(

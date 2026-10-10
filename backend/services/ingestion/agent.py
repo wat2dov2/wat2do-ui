@@ -13,7 +13,7 @@ import os
 import shutil
 import subprocess
 import tempfile
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 from zoneinfo import ZoneInfo
@@ -67,12 +67,14 @@ def ingest(post: dict, *, school: str, publisher_ig: str | None = None) -> None:
         prompt = _render(
             post, school=record, caption=caption, media=media, files=files, owner=owner
         )
-        # A run interrupted before draining leaves its changes for the next item.
-        changes.drain(caption=None)
+        # Allow for clock skew between this Mac and the database's added_at.
+        started = datetime.now(UTC) - timedelta(minutes=5)
         try:
             _run(prompt, workdir)
         finally:
-            changes.drain(caption=caption)
+            if caption:
+                changes.describe(source_url, caption, since=started)
+            changes.drain()
 
 
 def is_instagram(source_url: str) -> bool:

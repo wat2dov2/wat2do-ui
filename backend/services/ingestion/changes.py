@@ -2,13 +2,14 @@
 
 Database triggers record every event and position the agent's login touches
 in ``ingestion_changes``, with the event as it was before. Draining refreshes
-the affected feeds, gives new rows the source's original text, and alerts
-people going to an event whose dates, location, or cancellation changed.
+the affected feeds and alerts people going to an event whose dates, location, or cancellation changed.
 """
 
 from __future__ import annotations
 
 import logging
+import threading
+from datetime import datetime
 from uuid import UUID
 
 from core.constants.positions import MAX_POSITION_DESCRIPTION_LENGTH
@@ -22,16 +23,31 @@ from services.notifications.event_change import enqueue_event_change
 log = logging.getLogger(__name__)
 
 
-def drain(*, caption: str | None) -> None:
-    """Settle every recorded change; ``caption`` describes rows created just now."""
-    rows = get_sb().table(INGESTION_CHANGES).select("*").execute().data or []
-    if not rows:
-        return
+_DRAIN_LOCK = threading.Lock()
+
+
+def drain() -> None:
+    """Settle every recorded change, whichever parallel agent made it."""
+    with _DRAIN_LOCK:
+        rows = get_sb().table(INGESTION_CHANGES).select("*").execute().data or []
+        if rows:
+            _settle(rows)
+
+
+def describe(source_url: str, caption: str, *, since: datetime) -> None:
+    """Give rows the agent created from ``source_url`` the source's original text."""
+    for table, limit in (
+        (EVENTS, MAX_EVENT_DESCRIPTION_LENGTH),
+        (POSITIONS, MAX_POSITION_DESCRIPTION_LENGTH),
+    ):
+        get_sb().table(table).update({"description": caption[:limit]}).eq(
+            "source_url", source_url
+        ).gte("added_at", since.isoformat()).execute()
+
+
+def _settle(rows: list[dict]) -> None:
     for row in rows:
-        created = row["snapshot"] is None
-        if created and caption:
-            _describe(row["kind"], row["record_id"], caption)
-        if row["kind"] == "event" and not created:
+        if row["kind"] == "event" and row["snapshot"] is not None:
             _alert_going(row["record_id"], row["snapshot"])
     school_ids = sorted({row["school_id"] for row in rows if row["school_id"] is not None})
     schools = (
@@ -49,15 +65,6 @@ def drain(*, caption: str | None) -> None:
             get_sb().table(INGESTION_CHANGES).delete().eq("kind", kind).in_(
                 "record_id", ids
             ).execute()
-
-
-def _describe(kind: str, record_id: int, caption: str) -> None:
-    table, limit = (
-        (EVENTS, MAX_EVENT_DESCRIPTION_LENGTH)
-        if kind == "event"
-        else (POSITIONS, MAX_POSITION_DESCRIPTION_LENGTH)
-    )
-    get_sb().table(table).update({"description": caption[:limit]}).eq("id", record_id).execute()
 
 
 def _alert_going(event_id: int, snapshot: dict) -> None:

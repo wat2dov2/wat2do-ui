@@ -855,7 +855,7 @@ class PositionsControl(_ControlModel):
 class IngestionControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     process_interval_seconds: int = Field(ge=60, le=3600)
-    process_time_budget_seconds: int = Field(gt=0, le=3600)
+    parallel_agents: int = Field(ge=1, le=16)
     directory_scrape_interval_seconds: int = Field(ge=3600, le=86400)
     claim_lease_seconds: int = Field(gt=0, le=86400)
     max_attempts: int = Field(ge=1, le=10)
@@ -872,8 +872,6 @@ class IngestionControl(_ControlModel):
 
     @model_validator(mode="after")
     def validate_budgets(self) -> "IngestionControl":
-        if self.process_time_budget_seconds >= self.process_interval_seconds:
-            raise ValueError("Ingestion processing must finish before its next interval")
         if self.claim_lease_seconds <= self.model_timeout_seconds:
             raise ValueError("Ingestion claims must outlive one model call")
         return self

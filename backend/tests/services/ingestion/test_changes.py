@@ -47,6 +47,10 @@ def db(monkeypatch):
             self.filters.append((column, value))
             return self
 
+        def gte(self, column, value):
+            self.filters.append((f"{column}>=", value))
+            return self
+
         def in_(self, column, values):
             self.filters.append((column, list(values)))
             return self
@@ -95,36 +99,39 @@ def _event(event_id: int, *, days: list[int], location: str = "AL 113") -> Event
 
 
 def test_drain_does_nothing_without_changes(db):
-    module.drain(caption="caption")
+    module.drain()
     assert db.revalidated == [] and db.updates == [] and db.deletes == []
 
 
-def test_drain_gives_new_rows_the_caption_refreshes_feeds_and_clears_rows(db):
+def test_drain_refreshes_feeds_and_clears_rows(db):
     db.rows = [
         {"kind": "event", "record_id": 5, "school_id": 7, "snapshot": None},
         {"kind": "position", "record_id": 9, "school_id": 7, "snapshot": None},
     ]
-    module.drain(caption="x" * 6000)
+    module.drain()
 
-    [(event_table, event_payload, event_filters), (position_table, position_payload, _)] = (
-        db.updates
-    )
-    assert (event_table, event_filters) == (EVENTS, [("id", 5)])
-    assert len(event_payload["description"]) == module.MAX_EVENT_DESCRIPTION_LENGTH
-    assert position_table == POSITIONS
-    assert len(position_payload["description"]) == module.MAX_POSITION_DESCRIPTION_LENGTH
+    assert db.updates == [] and db.alerts == []
     assert db.revalidated == [(["uwaterloo"], ("events", "clubs", "positions"))]
     assert db.deletes == [
         (INGESTION_CHANGES, [("kind", "event"), ("record_id", [5])]),
         (INGESTION_CHANGES, [("kind", "position"), ("record_id", [9])]),
     ]
-    assert db.alerts == []
 
 
-def test_drain_leaves_descriptions_alone_for_leftovers(db):
-    db.rows = [{"kind": "event", "record_id": 5, "school_id": 7, "snapshot": None}]
-    module.drain(caption=None)
-    assert db.updates == []
+def test_describe_gives_rows_created_from_the_source_its_caption(db):
+    since = datetime(2026, 10, 10, tzinfo=timezone.utc)
+    module.describe("https://www.instagram.com/p/NEW/", "x" * 6000, since=since)
+
+    [(event_table, event_payload, event_filters), (position_table, position_payload, _)] = (
+        db.updates
+    )
+    assert event_table == EVENTS and position_table == POSITIONS
+    assert event_filters == [
+        ("source_url", "https://www.instagram.com/p/NEW/"),
+        ("added_at>=", since.isoformat()),
+    ]
+    assert len(event_payload["description"]) == module.MAX_EVENT_DESCRIPTION_LENGTH
+    assert len(position_payload["description"]) == module.MAX_POSITION_DESCRIPTION_LENGTH
 
 
 def test_drain_alerts_people_going_when_a_date_is_removed(db):
@@ -143,7 +150,7 @@ def test_drain_alerts_people_going_when_a_date_is_removed(db):
         }
     ]
 
-    module.drain(caption="No jam Oct 21")
+    module.drain()
 
     [(event_id, diff, recipients)] = db.alerts
     assert event_id == 3 and set(diff) == {"occurrences"}
@@ -168,5 +175,5 @@ def test_drain_skips_alerts_without_material_changes_or_attendees(db):
             "snapshot": {**snapshot, "location": "AL 116", "going_user_ids": []},
         },
     ]
-    module.drain(caption=None)
+    module.drain()
     assert db.alerts == []
