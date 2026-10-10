@@ -345,3 +345,19 @@ def test_default_club_logo_needs_a_registered_publisher(monkeypatch, sources_cac
 
     assert module.default_club_logo("upenn", LISTING_URL) is None
     assert module.default_club_logo("mit", LISTING_URL) is None
+
+
+@pytest.mark.parametrize(
+    "url,expected",
+    [
+        ("https://ssmu.ca/events/?mo=9&yr=2026", False),
+        ("https://ssmu.ca/events?page=2", False),
+        ("https://ssmu.ca/events/winter-general-assembly/", True),
+        ("https://ssmu.ca/event/winter-general-assembly/", True),
+    ],
+)
+def test_listing_query_variants_are_not_event_pages(url, expected):
+    source = _source(
+        url="https://ssmu.ca/events/", event_url_patterns=["ssmu.ca/event/", "ssmu.ca/events/"]
+    )
+    assert module.matches_event_url(url, source) is expected

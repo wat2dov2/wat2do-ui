@@ -112,6 +112,10 @@ def matches_event_url(url: str, source: DirectorySource) -> bool:
             return False
         if any(pattern in url for pattern in source.event_url_exclude_patterns):
             return False
+        listing = urlsplit(source.url)
+        if _host(url) == _host(source.url) and parsed.path.rstrip("/") == listing.path.rstrip("/"):
+            # Query variants of the listing itself (months, pages, filters) are not events.
+            return False
         for pattern in source.event_url_patterns:
             target = urlsplit(
                 urljoin(source.url, pattern) if pattern.startswith("/") else f"https://{pattern}"
