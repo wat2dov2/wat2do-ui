@@ -18,6 +18,7 @@ import base64
 import logging
 import re
 from dataclasses import dataclass, field
+from email.message import EmailMessage as MimeMessage
 
 import boto3  # type: ignore[import-untyped]
 import httpx
@@ -166,34 +167,11 @@ class EmailService:
     def _dispatch_ses(self, msg: EmailMessage) -> bool:
         # SES has no idempotency key; the notifications log claim already
         # guarantees one dispatch per (user, type, target).
-        content: dict = {
-            "Subject": {"Data": msg.subject, "Charset": "UTF-8"},
-            "Body": {
-                "Html": {"Data": msg.body_html, "Charset": "UTF-8"},
-                "Text": {"Data": msg.body_text, "Charset": "UTF-8"},
-            },
-        }
-        if msg.headers:
-            content["Headers"] = [{"Name": k, "Value": v} for k, v in msg.headers.items()]
-        if msg.inline_images:
-            content["Attachments"] = [
-                {
-                    "RawContent": image.content,
-                    "ContentDisposition": "INLINE",
-                    "FileName": image.filename,
-                    "ContentId": image.content_id,
-                    "ContentType": image.content_type,
-                }
-                for image in msg.inline_images
-            ]
-        request: dict = {
-            "FromEmailAddress": settings.email_from,
-            "Destination": {"ToAddresses": [msg.to] if isinstance(msg.to, str) else msg.to},
-            "Content": {"Simple": content},
-        }
-        if msg.reply_to:
-            request["ReplyToAddresses"] = [msg.reply_to]
-        self._get_ses_client().send_email(**request)
+        recipients = [msg.to] if isinstance(msg.to, str) else msg.to
+        self._get_ses_client().send_email(
+            Destination={"ToAddresses": recipients},
+            Content={"Raw": {"Data": _mime_message(msg, recipients)}},
+        )
         return True
 
     def _get_ses_client(self):
@@ -205,6 +183,36 @@ class EmailService:
                 config=Config(connect_timeout=timeout, read_timeout=timeout),
             )
         return self._ses
+
+
+def _mime_message(msg: EmailMessage, recipients: list[str]) -> bytes:
+    """Build the standard text/HTML alternative with inline images related to the HTML.
+
+    Gmail and Outlook only resolve ``cid:`` images that sit in the HTML part's
+    multipart/related container, so the message is assembled here rather than by SES.
+    """
+    mime = MimeMessage()
+    mime["From"] = settings.email_from
+    mime["To"] = ", ".join(recipients)
+    mime["Subject"] = msg.subject
+    if msg.reply_to:
+        mime["Reply-To"] = msg.reply_to
+    for name, value in msg.headers.items():
+        mime[name] = value
+    mime.set_content(msg.body_text)
+    mime.add_alternative(msg.body_html, subtype="html")
+    html_part = mime.get_payload()[1]
+    for image in msg.inline_images:
+        maintype, subtype = image.content_type.split("/", 1)
+        html_part.add_related(
+            image.content,
+            maintype=maintype,
+            subtype=subtype,
+            cid=f"<{image.content_id}>",
+            filename=image.filename,
+            disposition="inline",
+        )
+    return mime.as_bytes()
 
 
 email_service = EmailService()
