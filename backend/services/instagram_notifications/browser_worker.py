@@ -10,7 +10,7 @@ import threading
 import time
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from contextlib import contextmanager
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from typing import Callable, Iterator
 
 from services.instagram_notifications.browser_digest import BrowserInstagramDigestResolver
@@ -28,6 +28,7 @@ from services.instagram_notifications.browser_session import (
     _BrowserReadCleanupPending,
     _BrowserTabUnavailable,
     _PinnedBraveJavascriptRunner,
+    school_account_username,
 )
 
 log = logging.getLogger(__name__)
@@ -168,6 +169,28 @@ def _settle_job(
         raise
 
 
+def _school_account_for(recipient_id: str) -> str | None:
+    """The school account's current name; its recipient ID never changes."""
+    from services import school_service
+
+    try:
+        school = school_service.get_school_by_recipient_id(recipient_id)
+    except Exception:  # noqa: BLE001 - keep the queued name when Supabase is unreachable
+        return None
+    return school_account_username(school.slug) if school else None
+
+
+def _with_current_account(job: BrowserJob) -> BrowserJob:
+    """A digest rerun replays an old commit, which may queue an account's former name."""
+    if job.kind != "digest":
+        return job
+    username = _school_account_for(job.recipient_id)
+    if username is None or username == job.account_username:
+        return job
+    log.info("Digest %s uses %s, the current name of %s", job.id, username, job.account_username)
+    return replace(job, account_username=username)
+
+
 def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -> bool:
     """Claim only after browser ownership; a waiting digest can overtake any like."""
     if queue.get_setting("paused", False):
@@ -184,6 +207,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
             )
             if job is None:
                 return False
+            job = _with_current_account(job)
             queue.record_diagnostic("running", job)
             if queue.storage_unavailable:
                 return False
@@ -193,6 +217,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 allow_engagement=allow_engagement,
             )
             if companions or job.kind in {"retrieval", "digest"}:
+                companions = [_with_current_account(companion) for companion in companions]
                 _process_batch(queue, [job, *companions], allow_engagement=allow_engagement)
                 return True
             try:

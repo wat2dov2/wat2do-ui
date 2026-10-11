@@ -2744,3 +2744,45 @@ def test_profiles_are_queued_on_start_and_after_each_retrieval_not_on_a_timer(qu
         stopping.set()
         for poller in pollers:
             poller.join(timeout=5)
+
+
+def test_a_rerun_digest_uses_the_renamed_school_accounts_current_name(monkeypatch):
+    from services import school_service
+    from services.instagram_notifications.browser_queue import BrowserJob
+
+    # Undo the suite-wide stub so the real lookup runs against a fake school table.
+    monkeypatch.undo()
+    monkeypatch.setattr(
+        school_service,
+        "get_school_by_recipient_id",
+        lambda recipient_id: SimpleNamespace(slug="uwaterloo")
+        if recipient_id == "76214170483"
+        else None,
+    )
+    job = BrowserJob(
+        id="j",
+        kind="digest",
+        school="",
+        recipient_id="76214170483",
+        account_username="wat2do.ca",
+        payload={"cache_ent_id": "1"},
+        state="running",
+        created_at=0,
+        started_at=0,
+        result=None,
+        error=None,
+        attempts=1,
+    )
+    assert module._with_current_account(job) == replace(job, account_username="wat2do.uwaterloo")
+    # Other kinds, unknown recipients and an unreachable Supabase keep the queued name.
+    for kept in (
+        replace(job, kind="engagement"),
+        replace(job, recipient_id="1"),
+    ):
+        assert module._with_current_account(kept) is kept
+
+    def offline(recipient_id):
+        raise ConnectionError("down")
+
+    monkeypatch.setattr(school_service, "get_school_by_recipient_id", offline)
+    assert module._with_current_account(job) is job

@@ -10,7 +10,7 @@ from core.constants import ROLE_ADMIN, ROLE_USER
 from main import app
 from schemas.user import UserResponse
 from services import user_service
-from services.instagram_notifications import browser_session
+from services.instagram_notifications import browser_session, browser_worker
 
 
 @pytest.fixture(autouse=True)
@@ -145,3 +145,4 @@ def no_real_mac_focus_or_idle(monkeypatch):
     """Tests never read real keyboard idle time or move real app focus."""
     monkeypatch.setattr(browser_session, "_input_idle_seconds", lambda: float("inf"))
     monkeypatch.setattr(browser_session, "_front_application", lambda pid="": "")
+    monkeypatch.setattr(browser_worker, "_school_account_for", lambda recipient_id: None)
