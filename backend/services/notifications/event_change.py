@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, timezone
 from itertools import batched
 from typing import Any
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from core.constants import NOTIFICATION_TYPE_EVENT_CHANGE
 from core.controlbox import controlbox
@@ -28,9 +29,12 @@ from services.notifications.delivery_log import (
 )
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
-    _render_event_change_html,
-    _render_event_change_text,
+    event_change_subject,
+    render_event_change_html,
+    render_event_change_text,
 )
+from services.notifications.unsubscribe import unsubscribe_url
+from services.school_context import resolve_school_timezone, school_frontend_url
 
 log = logging.getLogger(__name__)
 
@@ -136,7 +140,6 @@ def enqueue_event_change(
         if _send_event_change(
             user_id=user_id,
             email=user["email"],
-            event_id=event_id,
             event_summary=event_summary,
             diff=diff,
             target_id=target_id,
@@ -149,11 +152,14 @@ def _send_event_change(
     *,
     user_id: str,
     email: str,
-    event_id: int,
     event_summary: dict,
     diff: dict,
     target_id: str,
 ) -> bool:
+    # Render before claiming, so a rendering failure cannot strand a pending delivery.
+    message = _event_change_message(
+        user_id=user_id, email=email, event_summary=event_summary, diff=diff, target_id=target_id
+    )
     row_id = claim_delivery(
         user_id=user_id,
         notification_type=NOTIFICATION_TYPE_EVENT_CHANGE,
@@ -162,17 +168,52 @@ def _send_event_change(
     )
     if row_id is None:
         return False
-    title = event_summary.get("title") or "an event you're going to"
-    subject = f"Update: {title}"
     return deliver_claimed_email(
         row_id=row_id,
-        message=EmailMessage(
-            to=email,
-            subject=subject,
-            body_html=_render_event_change_html(event_summary, diff),
-            body_text=_render_event_change_text(event_summary, diff),
-            idempotency_key=f"{NOTIFICATION_TYPE_EVENT_CHANGE}:{user_id}:{target_id}",
-        ),
+        message=message,
         provider_attempts=1,
-        log_context=f"notification=event_change user={user_id} event={event_id}",
+        log_context=f"notification=event_change user={user_id} event={event_summary['id']}",
+    )
+
+
+def _event_change_message(
+    *,
+    user_id: str,
+    email: str,
+    event_summary: dict,
+    diff: dict,
+    target_id: str,
+) -> EmailMessage:
+    school = event_summary.get("school")
+    frontend_url = school_frontend_url(school)
+    unsubscribe = unsubscribe_url(user_id, NOTIFICATION_TYPE_EVENT_CHANGE, school)
+    preferences_url = f"{frontend_url}/settings?tab=notifications"
+    tz = ZoneInfo(resolve_school_timezone(school))
+    subject = event_change_subject(event_summary, diff)
+    return EmailMessage(
+        to=email,
+        subject=subject,
+        body_html=render_event_change_html(
+            subject=subject,
+            event=event_summary,
+            diff=diff,
+            tz=tz,
+            frontend_url=frontend_url,
+            preferences_url=preferences_url,
+            unsubscribe_url=unsubscribe,
+        ),
+        body_text=render_event_change_text(
+            subject=subject,
+            event=event_summary,
+            diff=diff,
+            tz=tz,
+            frontend_url=frontend_url,
+            preferences_url=preferences_url,
+            unsubscribe_url=unsubscribe,
+        ),
+        idempotency_key=f"{NOTIFICATION_TYPE_EVENT_CHANGE}:{user_id}:{target_id}",
+        headers={
+            "List-Unsubscribe": f"<{unsubscribe}>",
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
     )

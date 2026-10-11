@@ -175,11 +175,93 @@ def test_morning_html_escapes_event_values(monkeypatch):
     assert "<script>" not in html
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
     assert "SLC &amp; DC" in html
-    assert "/?eventId=42" in html
+    assert "/events/42" in html
     assert "Today's drop" not in html
     assert "/100" not in html
     assert "background:#121212" in html
-    assert 'href="https://uwaterloo.wat2do.io/?eventId=42"' in html
+    assert 'href="https://uwaterloo.wat2do.io/events/42"' in html
+
+
+def _change_email(diff, **event_fields):
+    args = {
+        "subject": "Changed: Tea Tasting",
+        "event": _event(**event_fields),
+        "diff": diff,
+        "tz": ZoneInfo("America/Toronto"),
+        "frontend_url": "https://uwaterloo.wat2do.io",
+        "preferences_url": "https://uwaterloo.wat2do.io/settings",
+        "unsubscribe_url": "https://uwaterloo.wat2do.io/unsubscribe",
+    }
+    return rendering.render_event_change_html(**args), rendering.render_event_change_text(**args)
+
+
+def _date(start: str, end: str | None = None) -> dict:
+    return {"dtstart_utc": start, "dtend_utc": end, "duration": None, "tz": None}
+
+
+def test_event_change_email_reads_each_change_in_local_time():
+    html, text = _change_email(
+        {
+            "location": {"old": "RCH 208", "new": "DC 1301"},
+            "occurrences": {
+                "old": [
+                    _date("2026-11-02T18:00:00+00:00", "2026-11-02T21:00:00+00:00"),
+                    _date("2026-11-16T18:00:00+00:00"),
+                ],
+                "new": [
+                    _date("2026-11-02T20:00:00+00:00", "2026-11-02T22:00:00+00:00"),
+                    _date("2026-11-23T18:00:00+00:00"),
+                ],
+            },
+        },
+        source_image_url="https://wat2do.io/media/event-images/poster.jpg",
+    )
+
+    assert text.splitlines()[2:7] == [
+        "You're going to this event. Here's what changed:",
+        "",
+        "- Location: RCH 208 -> DC 1301",
+        "- Mon, Nov 2: 1 PM - 4 PM -> 3 PM - 5 PM",
+        "- Removed date: Mon, Nov 16, 1 PM (removed)",
+    ]
+    assert "- Added date: Mon, Nov 23, 1 PM" in text
+    assert "View the event: https://uwaterloo.wat2do.io/events/42" in text
+    assert '<img src="https://wat2do.io/media/event-images/poster.jpg"' in html
+    assert html.count('href="https://uwaterloo.wat2do.io/events/42"') == 3
+    assert 'text-decoration:line-through;">RCH 208</span> &rarr; <strong>DC 1301</strong>' in html
+    assert "Location: " not in html
+
+
+def test_event_change_email_leads_with_cancellation_and_escapes_values():
+    html, _text = _change_email(
+        {"cancelled": {"old": False, "new": True}},
+        title="<b>Night</b>",
+        source_image_url=None,
+    )
+
+    assert rendering.event_change_subject(_event(), {"cancelled": {"new": True}}) == (
+        "Cancelled: Tea Tasting"
+    )
+    assert rendering.event_change_subject(_event(), {"location": {}}) == "Changed: Tea Tasting"
+    assert "<strong>Cancelled</strong>" in html
+    assert "&lt;b&gt;Night&lt;/b&gt;" in html
+    assert "<img" not in html
+
+
+def test_event_change_rendering_failure_claims_no_delivery(monkeypatch):
+    monkeypatch.setattr(settings, "email_unsubscribe_secret", "")
+    claim = MagicMock()
+    monkeypatch.setattr(event_change, "claim_delivery", claim)
+
+    with pytest.raises(RuntimeError, match="EMAIL_UNSUBSCRIBE_SECRET"):
+        event_change._send_event_change(
+            user_id=str(USER_ID),
+            email="student@uwaterloo.ca",
+            event_summary=_event(school="uwaterloo"),
+            diff={"location": {"old": "SLC", "new": "DC"}},
+            target_id="42:abc",
+        )
+    claim.assert_not_called()
 
 
 def test_unsubscribe_token_round_trip_and_tamper(monkeypatch):
@@ -441,7 +523,7 @@ def test_event_reminder_send_is_idempotent_per_occurrence_start(monkeypatch):
     message = deliver.call_args.kwargs["message"]
     assert message.subject == "Starts in about 1 hour: <Tea>"
     assert "&lt;Tea&gt;" in message.body_html
-    assert "https://uwaterloo.wat2do.io/?eventId=42" in message.body_html
+    assert "https://uwaterloo.wat2do.io/events/42" in message.body_html
     assert message.headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
 
 
@@ -483,7 +565,7 @@ def test_send_prepared_email_adds_unsubscribe_headers_without_rankings(monkeypat
     message = deliver.call_args.kwargs["message"]
     assert message.headers["List-Unsubscribe"].startswith("<https://uwaterloo.wat2do.io/")
     assert message.headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
-    assert "https://uwaterloo.wat2do.io/?eventId=42" in message.body_html
+    assert "https://uwaterloo.wat2do.io/events/42" in message.body_html
     assert "Today's drop" not in message.body_html
     assert "Today's drop" not in message.body_text
     assert "/100" not in message.body_html

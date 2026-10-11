@@ -1,6 +1,6 @@
 """Pure HTML and plain-text rendering for active notification types."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 from html import escape
 from zoneinfo import ZoneInfo
 
@@ -159,8 +159,7 @@ def _event_section(
 
 
 def _event_card(event: dict, tz: ZoneInfo, frontend_url: str) -> str:
-    event_id = int(event["id"])
-    event_url = f"{frontend_url}/?eventId={event_id}"
+    event_url = _event_url(event, frontend_url)
     title = escape(str(event.get("title") or "Untitled event"))
     location = escape(str(event.get("location") or "Location TBA"))
     date_label, time_label = _format_event_date_time(event, tz)
@@ -178,11 +177,15 @@ def _event_card(event: dict, tz: ZoneInfo, frontend_url: str) -> str:
 
 def _text_event(event: dict, tz: ZoneInfo, frontend_url: str) -> str:
     date_label, time_label = _format_event_date_time(event, tz)
-    event_url = f"{frontend_url}/?eventId={int(event['id'])}"
+    event_url = _event_url(event, frontend_url)
     return (
         f"- {event.get('title') or 'Untitled event'} | {date_label} {time_label} | "
         f"{event.get('location') or 'Location TBA'} | {event_url}"
     )
+
+
+def _event_url(event: dict, frontend_url: str) -> str:
+    return f"{frontend_url}/events/{int(event['id'])}"
 
 
 def _format_event_date_time(event: dict, tz: ZoneInfo) -> tuple[str, str]:
@@ -200,102 +203,150 @@ def _format_event_date_time(event: dict, tz: ZoneInfo) -> tuple[str, str]:
     return date_label, f"{hour}{minute} {am_pm}"
 
 
-def _render_event_change_text(summary: dict, diff: dict) -> str:
-    lines = [
-        f"Update to an event you're going to: {summary.get('title', '')}",
-        "",
-    ]
-    for field, change in diff.items():
-        if field == "occurrences":
-            lines.extend(_render_occurrence_diff_text(change))
-        elif field == "cancelled":
-            lines.append(_render_cancelled_diff_text(change))
+def event_change_subject(event: dict, diff: dict) -> str:
+    title = event.get("title") or "an event you're going to"
+    cancelled = diff.get("cancelled", {}).get("new") is True
+    return f"{'Cancelled' if cancelled else 'Changed'}: {title}"
+
+
+def render_event_change_text(
+    *,
+    subject: str,
+    event: dict,
+    diff: dict,
+    tz: ZoneInfo,
+    frontend_url: str,
+    preferences_url: str,
+    unsubscribe_url: str,
+) -> str:
+    lines = [subject, "", "You're going to this event. Here's what changed:", ""]
+    for label, old, new in _describe_changes(diff, tz):
+        if old and new:
+            lines.append(f"- {label}: {old} -> {new}")
         else:
-            lines.append(f"  {field}: {change.get('old')} -> {change.get('new')}")
-    lines.extend(["", f"Location: {summary.get('location', '')}"])
+            lines.append(f"- {label}: {new or f'{old} (removed)'}")
+    lines.extend(
+        [
+            "",
+            f"View the event: {_event_url(event, frontend_url)}",
+            "",
+            f"Manage email preferences: {preferences_url}",
+            f"Unsubscribe from event change emails: {unsubscribe_url}",
+            "",
+            "wat2do helps students discover campus events.",
+        ]
+    )
     return "\n".join(lines)
 
 
-def _render_event_change_html(summary: dict, diff: dict) -> str:
-    parts: list[str] = []
-    for field, change in diff.items():
-        if field == "occurrences":
-            parts.append(_render_occurrence_diff_html(change))
-        elif field == "cancelled":
-            parts.append(_render_cancelled_diff_html(change))
+def render_event_change_html(
+    *,
+    subject: str,
+    event: dict,
+    diff: dict,
+    tz: ZoneInfo,
+    frontend_url: str,
+    preferences_url: str,
+    unsubscribe_url: str,
+) -> str:
+    event_url = escape(_event_url(event, frontend_url), quote=True)
+    title = escape(str(event.get("title") or "Untitled event"))
+    image_url = event.get("source_image_url")
+    image = (
+        f'<a href="{event_url}"><img src="{escape(str(image_url), quote=True)}" '
+        f'alt="{title}" width="590" style="display:block;width:100%;max-width:590px;'
+        'height:auto;margin:0 0 20px;border-radius:12px;"></a>'
+        if image_url
+        else ""
+    )
+    rows = "".join(
+        _change_row_html(label, old, new) for label, old, new in _describe_changes(diff, tz)
+    )
+    content = (
+        f'<p style="margin:0 0 18px;color:{_EMAIL_THEME["muted_foreground"]};'
+        "font:15px/1.6 sans-serif;\">You're going to this event. Here's what changed.</p>"
+        f"{image}"
+        f'<a href="{event_url}" style="color:{_EMAIL_THEME["foreground"]};'
+        f'text-decoration:none;"><h2 style="margin:0 0 8px;font:700 19px sans-serif;">'
+        f"{title}</h2></a>"
+        f"{rows}"
+        f'<a href="{event_url}" style="display:inline-block;margin:20px 0 0;padding:12px 20px;'
+        f"background:{_EMAIL_THEME['foreground']};color:{_EMAIL_THEME['background']};"
+        'border-radius:999px;font:700 14px sans-serif;text-decoration:none;">'
+        "View event on wat2do</a>"
+    )
+    return _email_shell(
+        subject=subject,
+        content=content,
+        preferences_url=preferences_url,
+        unsubscribe_url=unsubscribe_url,
+    )
+
+
+def _change_row_html(label: str, old: str | None, new: str | None) -> str:
+    muted = _EMAIL_THEME["muted_foreground"]
+    struck = (
+        f'<span style="color:{muted};text-decoration:line-through;">{escape(old)}</span>'
+        if old
+        else ""
+    )
+    if old and new:
+        value = f"{struck} &rarr; <strong>{escape(new)}</strong>"
+    elif new:
+        value = f"<strong>{escape(new)}</strong>"
+    else:
+        value = f'{struck} <span style="color:{muted};">(removed)</span>'
+    return (
+        f'<div style="padding:12px 0;border-top:1px solid {_EMAIL_THEME["border"]};">'
+        f'<div style="margin:0 0 4px;color:{muted};font:700 12px sans-serif;'
+        f'letter-spacing:.06em;text-transform:uppercase;">{escape(label)}</div>'
+        f'<div style="color:{_EMAIL_THEME["foreground"]};font:15px/1.5 sans-serif;">'
+        f"{value}</div></div>"
+    )
+
+
+def _describe_changes(diff: dict, tz: ZoneInfo) -> list[tuple[str, str | None, str | None]]:
+    """(label, old, new) rows in reading order: status, location, then dates.
+
+    A date whose start or end moved within the same local day reads as one
+    "old time -> new time" row; anything else is an added or removed date.
+    """
+    rows: list[tuple[str, str | None, str | None]] = []
+    cancelled = diff.get("cancelled")
+    if cancelled and cancelled.get("new") is True:
+        rows.append(("Status", None, "Cancelled"))
+    elif cancelled and cancelled.get("old") is True:
+        rows.append(("Status", "Cancelled", "Back on"))
+    location = diff.get("location")
+    if location:
+        rows.append(("Location", location.get("old") or "TBA", location.get("new") or "TBA"))
+    occurrences = diff.get("occurrences")
+    if occurrences:
+        rows.extend(_describe_date_changes(occurrences, tz))
+    return rows
+
+
+def _describe_date_changes(change: dict, tz: ZoneInfo) -> list[tuple[str, str | None, str | None]]:
+    old = [_local_occurrence(item, tz) for item in change.get("old") or []]
+    new = [_local_occurrence(item, tz) for item in change.get("new") or []]
+    removed = [item for item in old if item not in new]
+    added = [item for item in new if item not in old]
+    rows: list[tuple[str, str | None, str | None]] = []
+    for day, times in removed:
+        moved = next((item for item in added if item[0] == day), None)
+        if moved is not None:
+            added.remove(moved)
+            rows.append((day, times, moved[1]))
         else:
-            parts.append(
-                f"<li><strong>{escape(str(field))}</strong>: "
-                f"{escape(str(change.get('old')))} &rarr; "
-                f"{escape(str(change.get('new')))}</li>"
-            )
-    return (
-        "<p>Update to an event you're going to: "
-        f"<strong>{escape(str(summary.get('title', '')))}</strong></p>"
-        f"<ul>{''.join(parts)}</ul>"
-        f"<p>Location: {escape(str(summary.get('location', '')))}</p>"
-    )
+            rows.append(("Removed date", f"{day}, {times}", None))
+    rows.extend(("Added date", None, f"{day}, {times}") for day, times in added)
+    return rows
 
 
-def _render_cancelled_diff_text(change: dict) -> str:
-    if change.get("new") is True:
-        return "  status: cancelled"
-    if change.get("old") is True and change.get("new") is False:
-        return "  status: no longer cancelled"
-    return f"  cancelled: {change.get('old')} -> {change.get('new')}"
-
-
-def _render_cancelled_diff_html(change: dict) -> str:
-    if change.get("new") is True:
-        return "<li><strong>status</strong>: cancelled</li>"
-    if change.get("old") is True and change.get("new") is False:
-        return "<li><strong>status</strong>: no longer cancelled</li>"
-    return (
-        "<li><strong>cancelled</strong>: "
-        f"{escape(str(change.get('old')))} &rarr; "
-        f"{escape(str(change.get('new')))}</li>"
-    )
-
-
-def _occurrence_set(items: list[dict] | None) -> set[str]:
-    if not items:
-        return set()
-    return {str(item["dtstart_utc"]) for item in items if item.get("dtstart_utc")}
-
-
-def _format_occurrence_dt(dtstart_iso: str) -> str:
-    try:
-        dt = datetime.fromisoformat(dtstart_iso.replace("Z", "+00:00"))
-    except (ValueError, AttributeError):
-        return dtstart_iso
-    return dt.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-
-
-def _render_occurrence_diff_text(change: dict) -> list[str]:
-    old_set = _occurrence_set(change.get("old"))
-    new_set = _occurrence_set(change.get("new"))
-    added = sorted(new_set - old_set)
-    removed = sorted(old_set - new_set)
-    if not added and not removed:
-        return ["  dates: edited"]
-    lines = ["  dates:"]
-    lines.extend(f"    + added {_format_occurrence_dt(value)}" for value in added)
-    lines.extend(f"    - removed {_format_occurrence_dt(value)}" for value in removed)
-    return lines
-
-
-def _render_occurrence_diff_html(change: dict) -> str:
-    old_set = _occurrence_set(change.get("old"))
-    new_set = _occurrence_set(change.get("new"))
-    added = sorted(new_set - old_set)
-    removed = sorted(old_set - new_set)
-    if not added and not removed:
-        return "<li><strong>dates</strong>: edited</li>"
-    items = [
-        f"<li>added <strong>{escape(_format_occurrence_dt(value))}</strong></li>" for value in added
-    ]
-    items.extend(
-        f"<li>removed <strong>{escape(_format_occurrence_dt(value))}</strong></li>"
-        for value in removed
-    )
-    return f"<li><strong>dates</strong>:<ul>{''.join(items)}</ul></li>"
+def _local_occurrence(item: dict, tz: ZoneInfo) -> tuple[str, str]:
+    """(local day label, local time range) for one occurrence."""
+    day, start = _format_event_date_time(item, tz)
+    if not item.get("dtend_utc"):
+        return day, start
+    _, end = _format_event_date_time({"dtstart_utc": item["dtend_utc"]}, tz)
+    return day, f"{start} - {end}"
