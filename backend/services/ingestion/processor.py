@@ -158,8 +158,9 @@ def process_queue(
             return {"busy": 1}
         # Nothing else runs agents now, so whatever a killed run left behind can go.
         agent.remove_leftovers()
-        # An interrupted run may have left changes whose side effects never ran.
-        changes.drain()
+        # An interrupted run may have left changes whose side effects never ran,
+        # including rows whose agent was killed before storing their posters.
+        changes.drain(include_pending_posters=True)
         processor = _Processor(stopping)
         if wait_for_work:
             threading.Thread(

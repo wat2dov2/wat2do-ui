@@ -63,7 +63,7 @@ def queue(monkeypatch, tmp_path):
     fake = FakeQueue()
     monkeypatch.setattr(module, "items", fake)
     monkeypatch.setattr(module, "state_directory", lambda: tmp_path)
-    monkeypatch.setattr(module.changes, "drain", lambda: None)
+    monkeypatch.setattr(module.changes, "drain", lambda **kwargs: None)
     monkeypatch.setattr(module.agent, "remove_leftovers", lambda: None)
     monkeypatch.setattr(module, "list_sources", lambda: [])
     monkeypatch.setattr(
@@ -184,13 +184,16 @@ def test_publishers_are_looked_up_only_for_directory_rows(queue, monkeypatch):
 def test_leftovers_are_cleared_and_changes_settled_before_any_work(queue, monkeypatch):
     order = []
     monkeypatch.setattr(module.agent, "remove_leftovers", lambda: order.append("leftovers"))
-    monkeypatch.setattr(module.changes, "drain", lambda: order.append("drain"))
+    monkeypatch.setattr(
+        module.changes, "drain", lambda **kwargs: order.append(("drain", kwargs))
+    )
     queue.add("https://example.edu/events/1")
     monkeypatch.setattr(module.agent, "ingest", lambda post, **_: order.append("ingest"))
 
     module.process_queue(wait_for_work=False)
 
-    assert order == ["leftovers", "drain", "ingest"]
+    # Startup also settles rows a killed agent left with placeholder posters.
+    assert order == ["leftovers", ("drain", {"include_pending_posters": True}), "ingest"]
 
 
 def test_posts_from_one_club_never_run_at_the_same_time(queue, monkeypatch):

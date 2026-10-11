@@ -26,7 +26,9 @@ def _occurrence(event_id: int, day: int) -> dict:
 @pytest.fixture
 def db(monkeypatch):
     """Serve ``ingestion_changes`` rows and record every write and side effect."""
-    state = SimpleNamespace(rows=[], updates=[], deletes=[], revalidated=[], alerts=[], events={})
+    state = SimpleNamespace(
+        rows=[], updates=[], deletes=[], revalidated=[], alerts=[], events={}, pending={}
+    )
 
     class Query:
         def __init__(self, table):
@@ -55,6 +57,10 @@ def db(monkeypatch):
             self.filters.append((column, list(values)))
             return self
 
+        def like(self, column, pattern):
+            self.filters.append((f"{column}~", pattern))
+            return self
+
         def execute(self):
             if self.action == "update":
                 state.updates.append((self.table, self.payload, self.filters))
@@ -62,6 +68,10 @@ def db(monkeypatch):
                 state.deletes.append((self.table, self.filters))
             elif self.table == INGESTION_CHANGES:
                 return SimpleNamespace(data=state.rows)
+            elif ("source_image_url~", "pending:%") in self.filters:
+                return SimpleNamespace(
+                    data=[{"id": record_id} for record_id in state.pending.get(self.table, [])]
+                )
             else:
                 return SimpleNamespace(data=[{"slug": "uwaterloo"}])
             return SimpleNamespace(data=[])
@@ -191,3 +201,18 @@ def test_drain_skips_alerts_without_material_changes_or_attendees(db):
     ]
     module.drain()
     assert db.alerts == []
+
+
+def test_drain_leaves_another_agents_rows_until_their_posters_are_stored(db):
+    db.rows = [
+        {"kind": "event", "record_id": 5, "school_id": 7, "snapshot": None},
+        {"kind": "event", "record_id": 6, "school_id": 7, "snapshot": None},
+    ]
+    db.pending = {EVENTS: [6]}
+    module.drain()
+    # Only event 5 settles; event 6 would otherwise reach feeds with a placeholder image.
+    assert db.deletes == [(INGESTION_CHANGES, [("kind", "event"), ("record_id", [5])])]
+
+    db.deletes.clear()
+    module.drain(include_pending_posters=True)
+    assert db.deletes == [(INGESTION_CHANGES, [("kind", "event"), ("record_id", [5, 6])])]

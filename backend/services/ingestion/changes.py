@@ -26,12 +26,38 @@ log = logging.getLogger(__name__)
 _DRAIN_LOCK = threading.Lock()
 
 
-def drain() -> None:
-    """Settle every recorded change, whichever parallel agent made it."""
+def drain(*, include_pending_posters: bool = False) -> None:
+    """Settle every recorded change, whichever parallel agent made it.
+
+    A row whose poster is still a placeholder belongs to an agent that has not
+    stored it yet; settling it now would refresh feeds with a broken image and
+    leave that agent nothing to refresh afterwards. It waits for that agent's
+    own drain, or for the processor's startup drain if the agent was killed.
+    """
     with _DRAIN_LOCK:
         rows = get_sb().table(INGESTION_CHANGES).select("*").execute().data or []
+        if rows and not include_pending_posters:
+            rows = _without_pending_posters(rows)
         if rows:
             _settle(rows)
+
+
+def _without_pending_posters(rows: list[dict]) -> list[dict]:
+    pending: set[tuple[str, int]] = set()
+    for kind, table in (("event", EVENTS), ("position", POSITIONS)):
+        ids = [row["record_id"] for row in rows if row["kind"] == kind]
+        if ids:
+            waiting = (
+                get_sb()
+                .table(table)
+                .select("id")
+                .in_("id", ids)
+                .like("source_image_url", "pending:%")
+                .execute()
+                .data
+            )
+            pending.update((kind, row["id"]) for row in waiting or [])
+    return [row for row in rows if (row["kind"], row["record_id"]) not in pending]
 
 
 def stamp_new_rows(
