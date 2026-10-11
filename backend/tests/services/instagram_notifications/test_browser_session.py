@@ -1219,6 +1219,7 @@ def test_pool_waits_for_username_and_captures_the_readable_value():
         current_page_path=lambda **kwargs: "/wat2do.sfu/",
         current_account_username=lambda: next(readings),
         poll_until=poll,
+        read=lambda source: "false",
     )
     assert browser.BrowserTabPool._ready_username(session) == "wat2do.sfu"
 
@@ -1242,8 +1243,9 @@ def test_pool_unreadable_identity_is_transient_not_recovery():
 
 def test_logged_out_primary_asks_a_person_to_log_in_instead_of_retrying():
     def poll(ready):
-        assert not ready()
-        raise browser._BrowserPageUnavailable("timed out")
+        # The first poll recognizes the logged-out page, before the budget is spent.
+        ready()
+        pytest.fail("a logged-out page must not be polled again")
 
     session = SimpleNamespace(
         current_page_path=lambda **kwargs: "/wat2do.uwaterloo/",

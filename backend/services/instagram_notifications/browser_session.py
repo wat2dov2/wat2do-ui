@@ -1540,6 +1540,12 @@ class BrowserTabPool:
             nonlocal username
             session.current_page_path(check_response=True)
             username = session.current_account_username()
+            if username is None and session.read(_LOGGED_OUT_SOURCE) == "true":
+                # A logged-out page never gains an identity; only a person can
+                # log in. Checked on every poll: waiting first spends the budget.
+                raise BrowserSessionError(
+                    "Instagram browser requires human account recovery: log in to Instagram in Brave"
+                )
             return username is not None
 
         try:
@@ -1547,11 +1553,6 @@ class BrowserTabPool:
         except _BrowserPageUnavailable:
             username = None
         if username is None:
-            # A logged-out page never gains an identity; only a person can log in.
-            if session.read(_LOGGED_OUT_SOURCE) == "true":
-                raise BrowserSessionError(
-                    "Instagram browser requires human account recovery: log in to Instagram in Brave"
-                )
             raise TimeoutError("Instagram account identity is temporarily unreadable")
         return username
 
