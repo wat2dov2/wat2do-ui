@@ -14,6 +14,7 @@ API key.
 
 from __future__ import annotations
 
+import base64
 import logging
 import re
 from dataclasses import dataclass, field
@@ -34,6 +35,20 @@ _LEGACY_WAT2DO_URL = re.compile(
 )
 
 
+@dataclass(frozen=True)
+class InlineImage:
+    """An image carried inside the message and referenced from HTML as ``cid:<content_id>``.
+
+    Clients such as Outlook block remote images from unfamiliar senders but
+    show embedded ones.
+    """
+
+    content_id: str
+    filename: str
+    content_type: str
+    content: bytes
+
+
 @dataclass
 class EmailMessage:
     to: str | list[str]
@@ -48,6 +63,7 @@ class EmailMessage:
     # ``UPDATE status='sent'`` commits.
     idempotency_key: str | None = None
     headers: dict[str, str] = field(default_factory=dict)
+    inline_images: list[InlineImage] = field(default_factory=list)
 
 
 class EmailService:
@@ -127,6 +143,16 @@ class EmailService:
         }
         if msg.reply_to:
             payload["reply_to"] = msg.reply_to
+        if msg.inline_images:
+            payload["attachments"] = [
+                {
+                    "filename": image.filename,
+                    "content": base64.b64encode(image.content).decode("ascii"),
+                    "content_type": image.content_type,
+                    "content_id": image.content_id,
+                }
+                for image in msg.inline_images
+            ]
 
         response = httpx.post(
             RESEND_EMAILS_URL,
@@ -149,6 +175,17 @@ class EmailService:
         }
         if msg.headers:
             content["Headers"] = [{"Name": k, "Value": v} for k, v in msg.headers.items()]
+        if msg.inline_images:
+            content["Attachments"] = [
+                {
+                    "RawContent": image.content,
+                    "ContentDisposition": "INLINE",
+                    "FileName": image.filename,
+                    "ContentId": image.content_id,
+                    "ContentType": image.content_type,
+                }
+                for image in msg.inline_images
+            ]
         request: dict = {
             "FromEmailAddress": settings.email_from,
             "Destination": {"ToAddresses": [msg.to] if isinstance(msg.to, str) else msg.to},

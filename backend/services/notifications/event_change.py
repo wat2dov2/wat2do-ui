@@ -16,19 +16,22 @@ from typing import Any
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
+import httpx
+
 from core.constants import NOTIFICATION_TYPE_EVENT_CHANGE
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.tables import EVENT_CHANGE_ALERTS, USERS
 from schemas.event import EventResponse
 from services import event_service
-from services.email_service import EmailMessage
+from services.email_service import EmailMessage, InlineImage
 from services.notifications.delivery_log import (
     claim_delivery,
     deliver_claimed_email,
 )
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
+    EMAIL_LOGO,
     event_change_subject,
     render_event_change_html,
     render_event_change_text,
@@ -37,6 +40,9 @@ from services.notifications.unsubscribe import unsubscribe_url
 from services.school_context import resolve_school_timezone, school_frontend_url
 
 log = logging.getLogger(__name__)
+
+# Outlook does not display WebP, so only these formats are embedded.
+_EMBEDDABLE_IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif"}
 
 
 def send_due_alerts(now: datetime | None = None) -> int:
@@ -129,6 +135,7 @@ def enqueue_event_change(
 
     change_hash = _compute_change_hash(diff)
     target_id = f"{event_id}:{change_hash}"
+    image = _event_image(event.source_image_url)
 
     sent = 0
     for user_id in user_ids:
@@ -142,6 +149,7 @@ def enqueue_event_change(
             email=user["email"],
             event_summary=event_summary,
             diff=diff,
+            image=image,
             target_id=target_id,
         ):
             sent += 1
@@ -154,11 +162,17 @@ def _send_event_change(
     email: str,
     event_summary: dict,
     diff: dict,
+    image: InlineImage | None,
     target_id: str,
 ) -> bool:
     # Render before claiming, so a rendering failure cannot strand a pending delivery.
     message = _event_change_message(
-        user_id=user_id, email=email, event_summary=event_summary, diff=diff, target_id=target_id
+        user_id=user_id,
+        email=email,
+        event_summary=event_summary,
+        diff=diff,
+        image=image,
+        target_id=target_id,
     )
     row_id = claim_delivery(
         user_id=user_id,
@@ -182,6 +196,7 @@ def _event_change_message(
     email: str,
     event_summary: dict,
     diff: dict,
+    image: InlineImage | None,
     target_id: str,
 ) -> EmailMessage:
     school = event_summary.get("school")
@@ -190,6 +205,7 @@ def _event_change_message(
     preferences_url = f"{frontend_url}/settings?tab=notifications"
     tz = ZoneInfo(resolve_school_timezone(school))
     subject = event_change_subject(event_summary, diff)
+    image_src = f"cid:{image.content_id}" if image else event_summary.get("source_image_url")
     return EmailMessage(
         to=email,
         subject=subject,
@@ -197,6 +213,7 @@ def _event_change_message(
             subject=subject,
             event=event_summary,
             diff=diff,
+            image_src=image_src,
             tz=tz,
             frontend_url=frontend_url,
             preferences_url=preferences_url,
@@ -216,4 +233,28 @@ def _event_change_message(
             "List-Unsubscribe": f"<{unsubscribe}>",
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
+        inline_images=[EMAIL_LOGO, image] if image else [EMAIL_LOGO],
+    )
+
+
+def _event_image(url: str | None) -> InlineImage | None:
+    """Download the event poster to embed it, or None to fall back to linking it."""
+    if not url:
+        return None
+    control = controlbox.event_change_alerts
+    try:
+        response = httpx.get(url, timeout=control.image_timeout_seconds, follow_redirects=True)
+        response.raise_for_status()
+    except httpx.HTTPError:
+        log.warning("Could not download event image for embedding: %s", url, exc_info=True)
+        return None
+    content_type = response.headers.get("content-type", "").split(";")[0].strip().lower()
+    extension = _EMBEDDABLE_IMAGE_TYPES.get(content_type)
+    if extension is None or len(response.content) > control.image_max_bytes:
+        return None
+    return InlineImage(
+        content_id="event-image",
+        filename=f"event{extension}",
+        content_type=content_type,
+        content=response.content,
     )

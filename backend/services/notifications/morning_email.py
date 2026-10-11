@@ -19,6 +19,7 @@ from services.notifications.delivery_log import (
 )
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
+    EMAIL_LOGO,
     morning_email_subject,
     render_morning_email_html,
     render_morning_email_text,
@@ -277,6 +278,7 @@ def _send_prepared_email(
             "List-Unsubscribe": f"<{unsubscribe}>",
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
+        inline_images=[EMAIL_LOGO],
     )
     return deliver_claimed_email(
         row_id=row_id,

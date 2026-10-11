@@ -182,17 +182,20 @@ def test_morning_html_escapes_event_values(monkeypatch):
     assert 'href="https://uwaterloo.wat2do.io/events/42"' in html
 
 
-def _change_email(diff, **event_fields):
+def _change_email(diff, image_src=None, **event_fields):
     args = {
         "subject": "Changed: Tea Tasting",
         "event": _event(**event_fields),
         "diff": diff,
+        "image_src": image_src,
         "tz": ZoneInfo("America/Toronto"),
         "frontend_url": "https://uwaterloo.wat2do.io",
         "preferences_url": "https://uwaterloo.wat2do.io/settings",
         "unsubscribe_url": "https://uwaterloo.wat2do.io/unsubscribe",
     }
-    return rendering.render_event_change_html(**args), rendering.render_event_change_text(**args)
+    html = rendering.render_event_change_html(**args)
+    del args["image_src"]
+    return html, rendering.render_event_change_text(**args)
 
 
 def _date(start: str, end: str | None = None) -> dict:
@@ -214,7 +217,7 @@ def test_event_change_email_reads_each_change_in_local_time():
                 ],
             },
         },
-        source_image_url="https://wat2do.io/media/event-images/poster.jpg",
+        image_src="cid:event-image",
     )
 
     assert text.splitlines()[2:7] == [
@@ -226,7 +229,8 @@ def test_event_change_email_reads_each_change_in_local_time():
     ]
     assert "- Added date: Mon, Nov 23, 1 PM" in text
     assert "View the event: https://uwaterloo.wat2do.io/events/42" in text
-    assert '<img src="https://wat2do.io/media/event-images/poster.jpg"' in html
+    assert '<img src="cid:event-image"' in html
+    assert '<img src="cid:wat2do-logo" alt="wat2do"' in html
     assert html.count('href="https://uwaterloo.wat2do.io/events/42"') == 3
     assert 'text-decoration:line-through;">RCH 208</span> &rarr; <strong>DC 1301</strong>' in html
     assert "Location: " not in html
@@ -236,7 +240,6 @@ def test_event_change_email_leads_with_cancellation_and_escapes_values():
     html, _text = _change_email(
         {"cancelled": {"old": False, "new": True}},
         title="<b>Night</b>",
-        source_image_url=None,
     )
 
     assert rendering.event_change_subject(_event(), {"cancelled": {"new": True}}) == (
@@ -245,7 +248,7 @@ def test_event_change_email_leads_with_cancellation_and_escapes_values():
     assert rendering.event_change_subject(_event(), {"location": {}}) == "Changed: Tea Tasting"
     assert "<strong>Cancelled</strong>" in html
     assert "&lt;b&gt;Night&lt;/b&gt;" in html
-    assert "<img" not in html
+    assert "event-image" not in html
 
 
 def test_event_change_rendering_failure_claims_no_delivery(monkeypatch):
@@ -259,9 +262,45 @@ def test_event_change_rendering_failure_claims_no_delivery(monkeypatch):
             email="student@uwaterloo.ca",
             event_summary=_event(school="uwaterloo"),
             diff={"location": {"old": "SLC", "new": "DC"}},
+            image=None,
             target_id="42:abc",
         )
     claim.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("content_type", "size", "embedded"),
+    [("image/jpeg", 10, True), ("image/webp", 10, False), ("image/png", 6_000_000, False)],
+)
+def test_event_image_embeds_only_formats_every_client_shows(
+    monkeypatch, content_type, size, embedded
+):
+    url = "https://wat2do.io/media/event-images/poster"
+    monkeypatch.setattr(
+        event_change.httpx,
+        "get",
+        lambda *_args, **_kwargs: httpx.Response(
+            200,
+            content=b"x" * size,
+            headers={"content-type": content_type},
+            request=httpx.Request("GET", url),
+        ),
+    )
+
+    image = event_change._event_image(url)
+
+    assert (image is not None) is embedded
+    if image:
+        assert (image.content_id, image.filename) == ("event-image", "event.jpg")
+
+
+def test_event_image_download_failure_falls_back_to_linking(monkeypatch):
+    def fail(*_args, **_kwargs):
+        raise httpx.ConnectTimeout("slow")
+
+    monkeypatch.setattr(event_change.httpx, "get", fail)
+    assert event_change._event_image("https://wat2do.io/poster.jpg") is None
+    assert event_change._event_image(None) is None
 
 
 def test_unsubscribe_token_round_trip_and_tamper(monkeypatch):

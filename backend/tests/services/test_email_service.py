@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from services import email_service as email_module
-from services.email_service import EmailMessage, EmailService
+from services.email_service import EmailMessage, EmailService, InlineImage
 
 
 def _message(**overrides) -> EmailMessage:
@@ -149,6 +149,45 @@ def test_ses_dispatch_sends_simple_email(monkeypatch, recipients, addresses):
         },
         ReplyToAddresses=["sender@example.com"],
     )
+
+
+_LOGO = InlineImage(
+    content_id="wat2do-logo", filename="logo.png", content_type="image/png", content=b"png"
+)
+
+
+def test_inline_images_ride_inside_the_message_for_each_provider(monkeypatch):
+    monkeypatch.setattr(email_module.settings, "email_provider", "ses")
+    ses = MagicMock()
+    EmailService(ses_client=ses).send(_message(inline_images=[_LOGO]))
+    assert ses.send_email.call_args.kwargs["Content"]["Simple"]["Attachments"] == [
+        {
+            "RawContent": b"png",
+            "ContentDisposition": "INLINE",
+            "FileName": "logo.png",
+            "ContentId": "wat2do-logo",
+            "ContentType": "image/png",
+        }
+    ]
+
+    monkeypatch.setattr(email_module.settings, "email_provider", "resend")
+    monkeypatch.setattr(email_module.settings, "email_provider_api_key", "re_test")
+    captured = {}
+
+    def fake_post(url, *, json, headers, timeout):
+        captured["json"] = json
+        return httpx.Response(200, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(email_module.httpx, "post", fake_post)
+    EmailService().send(_message(inline_images=[_LOGO]))
+    assert captured["json"]["attachments"] == [
+        {
+            "filename": "logo.png",
+            "content": "cG5n",
+            "content_type": "image/png",
+            "content_id": "wat2do-logo",
+        }
+    ]
 
 
 def test_ses_errors_bubble_to_caller(monkeypatch):
