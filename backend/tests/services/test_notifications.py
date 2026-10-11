@@ -178,7 +178,7 @@ def test_morning_html_escapes_event_values(monkeypatch):
     assert "/events/42" in html
     assert "Today's drop" not in html
     assert "/100" not in html
-    assert "background:#121212" in html
+    assert "background:#f9f9f9" in html
     assert 'href="https://uwaterloo.wat2do.io/events/42"' in html
 
 

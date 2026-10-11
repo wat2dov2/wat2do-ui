@@ -8,14 +8,14 @@ from zoneinfo import ZoneInfo
 from services.email_service import InlineImage
 
 # Email clients do not reliably support CSS custom properties or OKLCH.
-# These resolved sRGB values preserve the app's semantic dark-theme roles.
+# These resolved sRGB values preserve the app's semantic light-theme roles.
 _EMAIL_THEME = {
-    "background": "#121212",
-    "surface": "#1a1a1a",
-    "surface_elevated": "#222222",
-    "foreground": "#f7f7f7",
-    "muted_foreground": "#a3a3a3",
-    "border": "#3a3a3a",
+    "background": "#f9f9f9",
+    "surface": "#ffffff",
+    "surface_elevated": "#f3f3f3",
+    "foreground": "#171717",
+    "muted_foreground": "#5c5c5c",
+    "border": "#d6d6d6",
 }
 
 
