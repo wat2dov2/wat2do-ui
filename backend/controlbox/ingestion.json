@@ -6,6 +6,7 @@
   "fetch_block_pause_seconds": 600,
   "retry_backoff_seconds": 120,
   "realtime_reconnect_seconds": 5,
+  "realtime_probe_seconds": 30,
   "directory_agents": 4,
   "directory_items_per_run": 60,
   "directory_horizon_days": 30,
