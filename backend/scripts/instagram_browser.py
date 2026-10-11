@@ -135,20 +135,11 @@ def launch_agent_payload(queue: BrowserJobQueue) -> dict[str, Any]:
 def install(queue: BrowserJobQueue) -> dict[str, str]:
     if sys.platform != "darwin":
         raise ValueError("The Instagram browser worker requires macOS and an existing Brave tab")
-    with (
-        (queue.state_directory / "worker-install.lock").open("a+") as lock,
-        (queue.state_directory / "ingestion.lock").open("a+") as import_lock,
-    ):
+    with (queue.state_directory / "worker-install.lock").open("a+") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise RuntimeError("Another browser worker installation is still running") from None
-        try:
-            fcntl.flock(import_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            raise RuntimeError(
-                "Wait for the current browser media capture before installing"
-            ) from None
         return _install_idle_worker(queue)
 
 
@@ -198,12 +189,9 @@ def parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Execute queued jobs without polling published carousels",
     )
-    commands.add_parser(
-        "ingestion-enqueue",
-        help="Queue notification retrievals, then capture retrieved posts for ingestion",
-    )
     retrieve = commands.add_parser(
-        "retrieve", help="Queue a profile or post for browser extraction"
+        "retrieve",
+        help="Queue a post for ingestion, or a profile for Brave to list its recent posts",
     )
     retrieve.add_argument("--school", required=True)
     retrieve.add_argument("--url", required=True)
@@ -265,43 +253,44 @@ def main(argv: Sequence[str] | None = None) -> int:
             if job is None:
                 raise ValueError("Instagram browser job does not exist")
             if arguments.command == "retry" and job.kind == "retrieval":
-                from services.instagram_notifications.notification_ingestion import (
-                    retry_retrieved_media,
-                )
-
-                retry_retrieved_media(queue, arguments.job_id)
+                queue.retry_retrieval(arguments.job_id)
             else:
                 getattr(queue, arguments.command)(arguments.job_id)
             updated_job = queue.get(arguments.job_id)
             if updated_job is None:
                 raise RuntimeError("Instagram browser job disappeared during the operation")
             result = asdict(updated_job)
-        elif arguments.command == "ingestion-enqueue":
-            from services.instagram_notifications.notification_ingestion import (
-                enqueue_retrieved_media,
-                sync_notification_media,
-            )
-
-            synced = sync_notification_media(queue)
-            enqueued = enqueue_retrieved_media(queue)
-            result = {"sync": synced, "enqueue": enqueued}
-            incomplete = any(enqueued.get(key, 0) for key in ("failed", "invalid", "busy"))
         elif arguments.command == "retrieve":
             from services import school_service
-            from services.instagram_notifications.browser_session import school_account_username
+            from services.ingestion import items
+            from services.instagram_notifications.browser_ingestion import canonical_target_url
+            from services.instagram_notifications.browser_session import (
+                canonical_post_url,
+                school_account_username,
+            )
 
             school = school_service.get_school(arguments.school)
             if school is None or not school.recipient_id:
                 raise ValueError("School has no configured notification recipient")
-            job_id = queue.enqueue_retrieval(
-                school=school.slug,
-                recipient_id=school.recipient_id,
-                account_username=school_account_username(school.slug),
-                url=arguments.url,
-                cutoff_days=arguments.cutoff_days,
-            )
-            queue.set_setting(f"manual_retrieval:{job_id}", True)
-            result = {"job_id": job_id}
+            target = canonical_target_url(arguments.url)
+            try:
+                post_url = canonical_post_url(target)
+            except BrowserSessionError:
+                post_url = None
+            if post_url:
+                # A post needs no login: it goes straight to the ingestion queue.
+                result = {"queued": items.queue_instagram([post_url], school=school.slug)}
+            else:
+                # Listing a profile's posts needs the login, so Brave does it.
+                job_id = queue.enqueue_retrieval(
+                    school=school.slug,
+                    recipient_id=school.recipient_id,
+                    account_username=school_account_username(school.slug),
+                    url=target,
+                    cutoff_days=arguments.cutoff_days,
+                )
+                queue.set_setting(f"profile_request:{job_id}", True)
+                result = {"job_id": job_id}
         elif arguments.command == "sync":
             from services.instagram_notifications.carousel_engagement import (
                 sync_published_carousels,

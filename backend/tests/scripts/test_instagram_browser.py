@@ -53,7 +53,7 @@ configure_worker_logging(Path.cwd())
 root = logging.getLogger()
 handler = root.handlers[0]
 handler.maxBytes = 256
-from services.instagram_notifications import carousel_engagement, notification_ingestion
+from services.instagram_notifications import carousel_engagement, profile_retrieval
 assert root.handlers == [handler]
 assert root.level == logging.WARNING
 logging.getLogger("instagram.worker.test").info("Ignored informational diagnostic")
@@ -270,16 +270,6 @@ def test_concurrent_installs_cannot_overwrite_pause_ownership(tmp_path, monkeypa
     assert queue.get_setting("paused", False) is False
 
 
-def test_install_refuses_to_interrupt_an_active_media_capture(tmp_path, monkeypatch):
-    queue = BrowserJobQueue(tmp_path / "state")
-    monkeypatch.setattr(script.sys, "platform", "darwin")
-    with (queue.state_directory / "ingestion.lock").open("a+") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        with pytest.raises(RuntimeError, match="current browser media capture"):
-            script.install(queue)
-    assert queue.get_setting("paused", False) is False
-
-
 def test_install_cannot_erase_a_new_runtime_safety_pause(tmp_path, monkeypatch):
     queue = BrowserJobQueue(tmp_path / "state")
     monkeypatch.setattr(script.sys, "platform", "darwin")
@@ -434,38 +424,6 @@ def test_unknown_job_returns_failure(tmp_path, capsys):
     assert "does not exist" in capsys.readouterr().err
 
 
-@pytest.mark.parametrize("outcome", ["failed", "invalid", "busy"])
-def test_enqueue_reports_incomplete_outcomes_as_failure(tmp_path, monkeypatch, capsys, outcome):
-    from services.instagram_notifications import notification_ingestion
-
-    monkeypatch.setattr(notification_ingestion, "sync_notification_media", lambda _: {})
-    monkeypatch.setattr(notification_ingestion, "enqueue_retrieved_media", lambda _: {outcome: 1})
-
-    assert script.main(["--state-directory", str(tmp_path), "ingestion-enqueue"]) == 1
-    assert json.loads(capsys.readouterr().out) == {"sync": {}, "enqueue": {outcome: 1}}
-
-
-def test_enqueue_syncs_then_captures_without_starting_work(tmp_path, monkeypatch, capsys):
-    from services.instagram_notifications import notification_ingestion
-
-    calls = []
-    monkeypatch.setattr(
-        notification_ingestion, "sync_notification_media", lambda _: calls.append("sync") or {}
-    )
-    monkeypatch.setattr(
-        notification_ingestion,
-        "enqueue_retrieved_media",
-        lambda _: calls.append("enqueue") or {"enqueued": 1},
-    )
-    monkeypatch.setattr(
-        script, "run_worker", lambda *_, **__: pytest.fail("Enqueue cannot start work")
-    )
-
-    assert script.main(["--state-directory", str(tmp_path), "ingestion-enqueue"]) == 0
-    assert calls == ["sync", "enqueue"]
-    assert json.loads(capsys.readouterr().out)["enqueue"] == {"enqueued": 1}
-
-
 def test_resume_preserves_installer_owned_pause(tmp_path, capsys):
     queue = BrowserJobQueue(tmp_path)
     queue.set_setting("paused", script.WORKER_INSTALLATION_PAUSE)
@@ -488,3 +446,44 @@ def test_resume_cannot_erase_a_concurrent_safety_hold(tmp_path, monkeypatch, cap
     assert script.main(["--state-directory", str(tmp_path), "resume"]) == 1
     assert BrowserJobQueue(tmp_path).get_setting("paused") == hold
     assert "pause changed" in capsys.readouterr().err
+
+
+def test_retrieve_sends_a_post_straight_to_the_ingestion_queue(tmp_path, monkeypatch, capsys):
+    from services import school_service
+    from services.ingestion import items
+
+    monkeypatch.setattr(
+        school_service,
+        "get_school",
+        lambda slug: SimpleNamespace(slug="ubc", recipient_id="12342599092"),
+    )
+    queued = []
+    monkeypatch.setattr(
+        items, "queue_instagram", lambda urls, *, school: queued.append((urls, school)) or 1
+    )
+
+    argv = ["--state-directory", str(tmp_path), "retrieve", "--school", "ubc"]
+    assert script.main([*argv, "--url", "https://instagram.com/reel/AbC"]) == 0
+
+    assert queued == [(["https://www.instagram.com/reel/AbC/"], "ubc")]
+    assert json.loads(capsys.readouterr().out) == {"queued": 1}
+    # No browser work: Brave never opens a post.
+    assert BrowserJobQueue(tmp_path).status()["queues"] == []
+
+
+def test_retrieve_asks_brave_to_list_a_profile(tmp_path, monkeypatch, capsys):
+    from services import school_service
+
+    monkeypatch.setattr(
+        school_service,
+        "get_school",
+        lambda slug: SimpleNamespace(slug="ubc", recipient_id="12342599092"),
+    )
+
+    argv = ["--state-directory", str(tmp_path), "retrieve", "--school", "ubc"]
+    assert script.main([*argv, "--url", "@UBCClub"]) == 0
+
+    job_id = json.loads(capsys.readouterr().out)["job_id"]
+    queue = BrowserJobQueue(tmp_path)
+    assert queue.get(job_id).payload["url"] == "https://www.instagram.com/ubcclub/"
+    assert queue.get_setting(f"profile_request:{job_id}") is True

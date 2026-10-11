@@ -90,7 +90,7 @@ Meta documents the distinction in its official [Instagram API with Instagram Log
 
 Do not modify the notification ingestion path merely because a new publishing token was added.
 
-`backend/jobs/process_notification.py` resolves a notification's school from its intended recipient ID through `school_service`, and the browser worker captures the retrieved posts into the local ingestion queue.
+`backend/jobs/process_notification.py` resolves a notification's school from its intended recipient ID through `school_service`, and each recorded post joins the Supabase ingestion queue (`public.ingestion_items`) with that school.
 
 It does not use the Meta publishing token or publishing user ID.
 

@@ -3,11 +3,11 @@ import threading
 import pytest
 from realtime import RealtimeSubscribeStates
 
-from services.instagram_notifications import ledger_listener as module
+from services.ingestion import realtime_listener as module
 
 
 @pytest.fixture(autouse=True)
-def offline_ledger_listener(monkeypatch):
+def offline_listener(monkeypatch):
     """These tests exercise the real listener against a fake Realtime client."""
     monkeypatch.setattr(
         module, "CONTROL", module.CONTROL.model_copy(update={"realtime_reconnect_seconds": 0.01})
@@ -16,21 +16,24 @@ def offline_ledger_listener(monkeypatch):
     monkeypatch.setattr(module.settings, "supabase_secret_key", "service-key")
 
 
-def test_listener_catches_up_on_every_subscription_and_wakes_on_each_insert(monkeypatch):
+def test_listener_catches_up_on_every_subscription_and_wakes_on_each_change(monkeypatch):
     stopping = threading.Event()
     connections = []
     closed = []
     listened = []
 
     class Channel:
+        callbacks: list = []
+
         def on_postgres_changes(self, event, *, schema, table, callback):
             listened.append((event, schema, table))
-            self.insert = callback
+            self.callbacks = [*self.callbacks, callback]
             return self
 
         async def subscribe(self, on_state):
             on_state(RealtimeSubscribeStates.SUBSCRIBED, None)
-            self.insert({"record": {"id": 1}})
+            for callback in self.callbacks:
+                callback({"record": {"source_url": "https://example.com/"}})
             if len(connections) == 1:
                 # The first connection drops; the listener reconnects and catches up.
                 on_state(RealtimeSubscribeStates.CHANNEL_ERROR, None)
@@ -55,12 +58,19 @@ def test_listener_catches_up_on_every_subscription_and_wakes_on_each_insert(monk
     monkeypatch.setattr(module, "AsyncRealtimeClient", Client)
     wakes = []
 
-    module.listen_for_inserts("instagram_notification_media", lambda: wakes.append(1), stopping)
+    module.listen_for_changes("ingestion_items", lambda: wakes.append(1), stopping)
 
     assert connections == [("wss://ref.supabase.co/realtime/v1", "service-key", False)] * 2
-    assert listened == [("INSERT", "public", "instagram_notification_media")] * 2
-    # Each connection: one catch-up on subscribing plus one wake for the insert.
-    assert len(wakes) == 4
+    assert (
+        listened
+        == [
+            ("INSERT", "public", "ingestion_items"),
+            ("UPDATE", "public", "ingestion_items"),
+        ]
+        * 2
+    )
+    # Each connection: one catch-up on subscribing plus one wake per change.
+    assert len(wakes) == 6
     assert len(closed) == 2
 
 
@@ -68,7 +78,7 @@ def test_listener_keeps_reconnecting_after_failures(monkeypatch):
     stopping = threading.Event()
     attempts = []
 
-    async def failing(table, on_insert, stop):
+    async def failing(table, on_change, stop):
         attempts.append(table)
         if len(attempts) == 3:
             stopping.set()
@@ -76,6 +86,6 @@ def test_listener_keeps_reconnecting_after_failures(monkeypatch):
 
     monkeypatch.setattr(module, "_listen", failing)
 
-    module.listen_for_inserts("instagram_notification_media", lambda: None, stopping)
+    module.listen_for_changes("ingestion_items", lambda: None, stopping)
 
-    assert attempts == ["instagram_notification_media"] * 3
+    assert attempts == ["ingestion_items"] * 3

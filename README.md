@@ -154,19 +154,19 @@ Before switching registrar nameservers, inventory every current Vercel DNS recor
 
 The first ARM64 frontend and backend images, plus the x86-64 social-preview image, must be pushed to ECR by digest before the initial production apply.
 Once production exists, pushes to `main` use GitHub OIDC to build all three images, tag them with the full commit SHA, update the ECS task definition, and update the Lambda image.
-Official school event directories are listed in the `public.directory_sources` table.
-Every 12 hours a local LaunchAgent queues new directory event pages, and an always-on processor turns queued captures into events and positions with Claude Haiku (`backend/scripts/ingest.py`).
-The processor runs up to `parallel_agents` Haiku agents at once (`backend/controlbox/ingestion.json`) and sleeps when the queue is empty; each newly queued item wakes it through a local socket, and posts from one club never run at the same time.
-Install both with `cd backend && .venv/bin/python scripts/ingest.py install-schedule`; the Mac must be on and signed in to Claude Code.
-Notifications and recommendation compute run on GitHub-hosted runners.
+Event and position ingestion runs through one Supabase table, `public.ingestion_items`, with one row per Instagram post or directory page (`backend/scripts/ingest.py`).
 Instagram notifications come from a physical Android phone running Automate, which triggers the `process-notification` workflow.
-The workflow records exact post URLs in the Supabase notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker.
-Supabase Realtime pushes each new ledger row to the Brave worker, which opens the post as soon as a tab is free (retrievals start at least `retrieval_interval_seconds` apart), captures it into the local ingestion queue (`~/.local/state/wat2do/ingestion/queue.sqlite3`), and marks its ledger row succeeded.
-On startup the worker catches up on ledger rows that arrived while it was off.
-The processor then hands each capture to a Claude Haiku agent (`claude -p`), which follows `backend/services/ingestion/prompt.md`.
+The workflow records exact post URLs in the Supabase notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker, and a database trigger adds each post to `ingestion_items`.
+An always-on processor on the Mac wakes through Supabase Realtime whenever a row is added or becomes ready.
+Its fetcher reads each new post logged out, with no account or cookies (`backend/services/ingestion/instagram_fetch.py`), and marks the row ready; a deleted post is marked gone.
+Every 12 hours Claude Haiku directory agents read the official school directories listed in `public.directory_sources`, skip what is already handled or listed, and add finished event details as ready rows (`backend/services/ingestion/directory_prompt.md`).
+For each ready row the processor runs a Claude Haiku agent (`claude -p`) that follows `backend/services/ingestion/prompt.md`, up to `parallel_agents` at once (`backend/controlbox/ingestion.json`); posts from one club never run at the same time.
 The agent inserts, updates, cancels or reschedules events and positions itself through `psql` with the `wat2do_ingest_agent` login, which can only write events, event dates and positions.
 Set its connection string as `INGEST_AGENT_DATABASE_URL` in `backend/.env`; the role is created by migration and its password is set out of band.
-Manual profile or post lookups use `cd backend && python scripts/instagram_browser.py retrieve --school <slug> --url <url>`.
+Finished rows stay as `done` or `not_event`, so no URL is processed twice, and the Mac keeps no queue of its own.
+Install both LaunchAgents with `cd backend && .venv/bin/python scripts/ingest.py install-schedule`; the Mac must be on and signed in to Claude Code.
+Notifications and recommendation compute run on GitHub-hosted runners.
+Queue a post by hand with `cd backend && python scripts/ingest.py enqueue --school <slug> --url <post url>`; `scripts/instagram_browser.py retrieve` also accepts a profile, which the Brave worker lists before its posts are queued.
 Profile-logo backfills and single-post media repairs remain separate Apify operator tools.
 For a read-only live retrieval check, run `cd backend && python scripts/probe_instagram_post.py --url https://www.instagram.com/p/SHORTCODE/`.
 

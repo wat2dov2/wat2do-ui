@@ -95,7 +95,8 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.ingestion.model == "claude-haiku-5-5"
     assert controlbox.ingestion.parallel_agents == 8
     assert controlbox.ingestion.directory_scrape_interval_seconds == 43200
-    assert controlbox.ingestion.checked_ttl_days == 14
+    assert controlbox.ingestion.fetch_lanes == 8
+    assert controlbox.ingestion.directory_agents == 4
     assert controlbox.instagram_digest.operation_name == "SubscriptionDigestFeedQuery"
     assert controlbox.instagram_digest.client_doc_id == "20099285643937437306465362209"
     assert controlbox.instagram_digest.maximum_pages == 25
@@ -547,7 +548,7 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
     }
     assert controlbox.instagram_browser.bootstrap_profile_school == "uwaterloo"
     assert controlbox.instagram_browser.actions == ("like", "repost")
-    assert controlbox.instagram_browser.parallel_tabs == 15
+    assert controlbox.instagram_browser.parallel_tabs == 2
     assert controlbox.instagram_browser.bridge_retry_limit == 3
     assert controlbox.instagram_browser.storage_busy_timeout_seconds == 2
     assert controlbox.instagram_browser.storage_retry_limit == 3
@@ -585,7 +586,7 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"apple_event_timeout_seconds": 31},
         {"apple_event_timeout_seconds": 121},
         {"navigation_interval_seconds": 0},
-        {"navigation_interval_seconds": 3},
+        {"navigation_interval_seconds": 30},
         {"navigation_interval_seconds": 31},
         {"rate_limit_backoff_seconds": 0},
         {"rate_limit_backoff_seconds": 300},

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Local event and position ingestion.
+"""Event and position ingestion through the Supabase ingestion queue.
 
-Producers capture sources into the local queue: the Instagram browser worker
-queues retrieved posts, and ``scrape-directories`` queues official directory
-pages. ``process`` stays running and turns queued captures into events and
-positions with Claude agents as soon as they are queued, whatever their source.
+Notified Instagram posts join the queue when GitHub records them; ``enqueue``
+adds one by hand, and ``scrape-directories`` runs the Haiku directory agents.
+``process`` stays running on the Mac: it fetches queued Instagram posts logged
+out and turns every ready row into events and positions with Claude agents.
 ``install-schedule`` installs both macOS LaunchAgents; they keep no logs.
 """
 
@@ -22,7 +22,7 @@ if str(BACKEND_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIRECTORY))
 
 from core.launch_agents import install_launch_agent  # noqa: E402
-from services.ingestion.queue import CONTROL, IngestionQueue  # noqa: E402
+from services.ingestion.items import CONTROL  # noqa: E402
 
 # The processor stays running (no interval); the directory scrape repeats.
 LAUNCH_AGENTS: dict[str, tuple[str, int | None]] = {
@@ -67,31 +67,41 @@ def install_schedule() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("scrape-directories", help="Queue new official directory pages")
+    commands.add_parser(
+        "scrape-directories", help="Run the directory agents and queue what they find"
+    )
     process = commands.add_parser(
-        "process", help="Stay running and turn queued captures into events and positions"
+        "process", help="Stay running and turn queued sources into events and positions"
     )
     process.add_argument("--once", action="store_true", help="Drain what is queued now, then exit")
+    enqueue = commands.add_parser("enqueue", help="Queue Instagram post URLs for one school")
+    enqueue.add_argument("--school", required=True)
+    enqueue.add_argument("--url", action="append", required=True, dest="urls")
     commands.add_parser("status", help="Show queue counts")
     commands.add_parser("install-schedule", help="Install both macOS LaunchAgents")
     arguments = parser.parse_args()
     logging.basicConfig(level=logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
 
-    queue = IngestionQueue()
     if arguments.command == "install-schedule":
         install_schedule()
         return 0
     if arguments.command == "scrape-directories":
-        from services.ingestion.directory import scrape_directories
+        from services.ingestion.directory_agent import scrape_directories
 
-        result = scrape_directories(queue)
+        result = scrape_directories()
     elif arguments.command == "process":
         from services.ingestion.processor import process_queue
 
-        result = process_queue(queue, wait_for_work=not arguments.once)
+        result = process_queue(wait_for_work=not arguments.once)
+    elif arguments.command == "enqueue":
+        from services.ingestion import items
+
+        result = {"queued": items.queue_instagram(arguments.urls, school=arguments.school)}
     else:
-        result = queue.counts()
+        from services.ingestion import items
+
+        result = items.counts()
     print(json.dumps(result, sort_keys=True))
     return 0
 

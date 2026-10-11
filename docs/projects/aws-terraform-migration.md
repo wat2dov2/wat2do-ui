@@ -884,9 +884,9 @@ Do not provision a separate ECS jobs task definition, task role, or CloudWatch l
 
 ### 18.2 Directory events
 
-Directory and Instagram ingestion share one local queue on the Mac.
-A LaunchAgent queues new pages from the official sources in `public.directory_sources` every 12 hours.
-Another, always-on LaunchAgent wakes whenever a capture is queued and drains the queue with Claude Haiku agents that write events and positions directly through a scoped database login.
+Directory and Instagram ingestion share one Supabase queue, `public.ingestion_items`.
+A LaunchAgent on the Mac runs Claude Haiku directory agents over the official sources in `public.directory_sources` every 12 hours; they queue finished event details.
+Another, always-on LaunchAgent wakes through Supabase Realtime, fetches queued Instagram posts logged out, and runs Claude Haiku agents that write events and positions directly through a scoped database login.
 The computer must remain on and signed in to Claude Code.
 
 ### 18.3 Notification dispatcher
@@ -921,9 +921,7 @@ Keep the existing nightly schedule.
 
 Keep the `process-notification` GitHub workflow as the authenticated event and manual trigger.
 
-It records exact post URLs in the notification ledger or queues a manual browser retrieval; it no longer runs an Apify scraper.
-
-The Mac's browser worker captures retrieved posts into the local ingestion queue described in 18.2.
+It records exact post URLs in the notification ledger, which a database trigger adds to the ingestion queue described in 18.2, or queues a manual post or profile; it no longer runs an Apify scraper.
 
 ### 18.6 Nightly redeployment
 

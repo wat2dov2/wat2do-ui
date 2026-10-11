@@ -657,49 +657,35 @@ def _on_signal(
 
 
 def _source_pollers(queue: BrowserJobQueue, stopping: threading.Event) -> list[threading.Thread]:
-    from core.tables import INSTAGRAM_NOTIFICATION_MEDIA
     from services.instagram_notifications.carousel_engagement import sync_published_carousels
-    from services.instagram_notifications.ledger_listener import listen_for_inserts
-    from services.instagram_notifications.notification_ingestion import (
-        enqueue_retrieved_media,
-        sync_notification_media,
-    )
+    from services.instagram_notifications.profile_retrieval import queue_retrieved_profiles
 
     def collect_carousels() -> None:
         result = sync_published_carousels(queue)
         queue.set_setting("source_status", {"checked_at": time.time(), "result": result})
 
-    def collect_notifications() -> None:
-        queue.retry_failed_notification_retrievals()
-        sync_notification_media(queue)
+    def queue_profiles() -> None:
+        result = queue_retrieved_profiles(queue)
+        queue.set_setting("profile_queue_status", {"checked_at": time.time(), **result})
 
-    def hand_off_captures() -> None:
-        if enqueue_retrieved_media(queue).get("busy"):
-            # Another hand-off holds the lock; try again once it can finish.
-            stopping.wait(CONTROL.worker_poll_interval_seconds)
-            queue.retrieval_finished.set()
-
-    # Both start set: on startup the worker catches up on anything it missed.
-    new_notifications = threading.Event()
-    new_notifications.set()
+    # Starts set: on startup the worker queues profiles it listed while stopping.
     queue.retrieval_finished.set()
     polled = (
         ("diagnostics_status", lambda: queue.publish_diagnostics(should_stop=stopping.is_set)),
         ("source_status", collect_carousels),
     )
-    signalled = (
-        ("notification_source_status", collect_notifications, new_notifications),
-        ("notification_enqueue_status", hand_off_captures, queue.retrieval_finished),
-    )
     return [
-        *(
-            threading.Thread(
-                target=_on_signal,
-                args=(queue, status_key, collect, signal, stopping),
-                name=f"instagram-browser-{status_key}",
-                daemon=True,
-            )
-            for status_key, collect, signal in signalled
+        threading.Thread(
+            target=_on_signal,
+            args=(
+                queue,
+                "profile_queue_status",
+                queue_profiles,
+                queue.retrieval_finished,
+                stopping,
+            ),
+            name="instagram-browser-profile-queue",
+            daemon=True,
         ),
         *(
             threading.Thread(
@@ -709,12 +695,6 @@ def _source_pollers(queue: BrowserJobQueue, stopping: threading.Event) -> list[t
                 daemon=True,
             )
             for status_key, collect in polled
-        ),
-        threading.Thread(
-            target=listen_for_inserts,
-            args=(INSTAGRAM_NOTIFICATION_MEDIA, new_notifications.set, stopping),
-            name="instagram-browser-ledger-listener",
-            daemon=True,
         ),
     ]
 

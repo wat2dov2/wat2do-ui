@@ -181,8 +181,7 @@ jobs:
               --school "$TARGET_SCHOOL" \
               --url "$POSTER_ID" \
               --cutoff-days "$CUTOFF_DAYS"
-            echo "Queued $POSTER_ID for the Mac's Brave worker."
-            echo "It reaches the site after the worker captures it and the 5-minute Haiku processor ingests it."
+            echo "Queued $POSTER_ID for ingestion; the Mac's processor picks it up within seconds."
           fi
 
       - name: Maintain notification dependency cache

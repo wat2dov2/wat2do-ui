@@ -32,7 +32,7 @@ from services.instagram_notifications.browser_session import (
     validate_account_username,
 )
 from services.instagram_notifications.ledger import (
-    acknowledge_browser_delivery,
+    acknowledge_carousel_delivery,
     freeze_browser_sources,
     validate_browser_sources,
 )
@@ -115,8 +115,7 @@ def sync_published_carousels(
             log.warning("Carousel %s has no faithful browser source selection", batch["id"])
             stats["skipped"] += 1
             continue
-        acknowledge_browser_delivery(
-            table=INSTAGRAM_PUBLISH_BATCHES,
+        acknowledge_carousel_delivery(
             row_id=str(batch["id"]),
             delivery_generation=delivery_generation,
             sources=sources,

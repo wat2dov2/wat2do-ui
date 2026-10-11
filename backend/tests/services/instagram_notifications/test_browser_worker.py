@@ -13,11 +13,7 @@ from urllib.parse import urlsplit
 import pytest
 
 from services.instagram_notifications import browser_worker as module
-from services.instagram_notifications import (
-    carousel_engagement,
-    ledger_listener,
-    notification_ingestion,
-)
+from services.instagram_notifications import carousel_engagement, profile_retrieval
 from services.instagram_notifications.browser_digest import DigestResolution
 from services.instagram_notifications.browser_queue import BrowserJobQueue
 from services.instagram_notifications.browser_session import (
@@ -38,8 +34,7 @@ ACCOUNT_USERNAME = "ubc.wat2do.io"
 @pytest.fixture(autouse=True)
 def isolated_browser(monkeypatch, tmp_path):
     monkeypatch.setattr(module, "CONTROL", module.CONTROL.model_copy(update={"parallel_tabs": 10}))
-    monkeypatch.setattr(notification_ingestion, "sync_notification_media", lambda _: {})
-    monkeypatch.setattr(notification_ingestion, "enqueue_retrieved_media", lambda _: {})
+    monkeypatch.setattr(profile_retrieval, "queue_retrieved_profiles", lambda _: {})
     monkeypatch.setattr(module, "maintain_tab_pool", lambda _: True)
     monkeypatch.setattr(module, "BROWSER_LOCK_PATH", str(tmp_path / "browser.lock"))
     monkeypatch.setattr(
@@ -868,37 +863,6 @@ def test_once_recovers_under_browser_lock_and_never_starts_collection(queue, mon
     assert signal.getsignal(signal.SIGTERM) is prior_term
 
 
-def test_delivered_notification_read_retries_locally_when_cloud_collection_fails(
-    queue, monkeypatch
-):
-    job_id = queue.enqueue_retrieval(
-        school="ubc",
-        recipient_id=RECIPIENT_ID,
-        account_username=ACCOUNT_USERNAME,
-        url="https://www.instagram.com/p/DeliveredRetry/",
-    )
-    queue.set_setting("notification_delivery:cloud-media-id", job_id)
-    queue.finish(queue.claim_next(), error="Read requires human recovery")
-    queue.set_setting("paused", "human account recovery")
-    stopping = threading.Event()
-
-    def unavailable(_):
-        assert queue.get(job_id).state == "pending"
-        stopping.set()
-        raise RuntimeError("Cloud unavailable")
-
-    monkeypatch.setattr(notification_ingestion, "sync_notification_media", unavailable)
-    module._source_pollers(queue, stopping)[0].run()
-    assert queue.get_setting("notification_source_status")["error"] == "RuntimeError"
-    assert queue.get_setting("paused") == "human account recovery"
-    queue.set_setting("paused", False)
-    resumed = queue.claim_next()
-    assert resumed.id == job_id
-    assert resumed.attempts == 2
-    queue.finish(resumed, result={"posts": []})
-    assert queue.get(job_id).state == "succeeded"
-
-
 def test_collector_source_failure_is_sanitized_and_retried(queue, monkeypatch, caplog):
     stopping = threading.Event()
     attempts = []
@@ -1288,12 +1252,12 @@ def test_source_collectors_continue_while_browser_claims_are_rate_limited(queue,
     _engagement(queue, "SourcesCooldown")
     queue.defer_for_rate_limit(queue.claim_next(), "Instagram browser is rate limited (HTTP 429)")
     stopping = threading.Event()
-    notifications = threading.Event()
+    profiles = threading.Event()
     diagnostics = threading.Event()
 
-    def collect_notifications(current):
+    def queue_profiles(current):
         assert current.is_rate_limited()
-        notifications.set()
+        profiles.set()
         return {}
 
     def publish_diagnostics(**kwargs):
@@ -1302,15 +1266,15 @@ def test_source_collectors_continue_while_browser_claims_are_rate_limited(queue,
 
     def collect_carousels(current):
         assert current.is_rate_limited()
-        assert notifications.wait(5) and diagnostics.wait(5)
+        assert profiles.wait(5) and diagnostics.wait(5)
         stopping.set()
         return {}
 
-    monkeypatch.setattr(notification_ingestion, "sync_notification_media", collect_notifications)
+    monkeypatch.setattr(profile_retrieval, "queue_retrieved_profiles", queue_profiles)
     monkeypatch.setattr(queue, "publish_diagnostics", publish_diagnostics)
     monkeypatch.setattr(carousel_engagement, "sync_published_carousels", collect_carousels)
     _run_test_source_pollers(queue, stopping)
-    assert notifications.is_set() and diagnostics.is_set()
+    assert profiles.is_set() and diagnostics.is_set()
 
 
 def test_digest_loading_account_route_does_not_pause(queue, monkeypatch):
@@ -1680,29 +1644,6 @@ def test_stream_uses_idle_tabs_for_jobs_arriving_after_start(queue, monkeypatch)
     monkeypatch.setattr(module, "execute_job", retrieve)
     assert module.process_next_job(queue)
     assert arrived.is_set()
-
-
-def test_collector_feeds_notifications_without_an_import(queue, monkeypatch):
-    stopping = threading.Event()
-    calls = []
-    notified = threading.Event()
-
-    def sync(current):
-        assert current is queue
-        calls.append("notifications")
-        notified.set()
-        return {"queued": 140}
-
-    def carousel(current):
-        assert notified.wait(5)
-        calls.append("carousels")
-        stopping.set()
-        return {}
-
-    monkeypatch.setattr(notification_ingestion, "sync_notification_media", sync)
-    monkeypatch.setattr(carousel_engagement, "sync_published_carousels", carousel)
-    _run_test_source_pollers(queue, stopping)
-    assert calls == ["notifications", "carousels"]
 
 
 def test_retrieval_stream_keeps_refilling_past_one_job_timeout(queue, monkeypatch):
@@ -2122,7 +2063,7 @@ def test_aged_engagement_yields_stream_only_after_active_reads_settle(queue, mon
     assert queue.get(later_ids[0]).state == "succeeded"
 
 
-@pytest.mark.parametrize("failed_source", ["notification", "diagnostics", "enqueue"])
+@pytest.mark.parametrize("failed_source", ["profiles", "diagnostics"])
 def test_source_failure_does_not_prevent_collecting_published_engagement(
     queue, monkeypatch, caplog, failed_source
 ):
@@ -2141,20 +2082,17 @@ def test_source_failure_does_not_prevent_collecting_published_engagement(
         stopping.set()
         return {"submitted": 1}
 
-    if failed_source == "notification":
-        monkeypatch.setattr(notification_ingestion, "sync_notification_media", fail)
-    elif failed_source == "diagnostics":
-        monkeypatch.setattr(queue, "publish_diagnostics", fail)
+    if failed_source == "profiles":
+        monkeypatch.setattr(profile_retrieval, "queue_retrieved_profiles", fail)
     else:
-        monkeypatch.setattr(notification_ingestion, "enqueue_retrieved_media", fail)
+        monkeypatch.setattr(queue, "publish_diagnostics", fail)
     monkeypatch.setattr(carousel_engagement, "sync_published_carousels", carousel)
     _run_test_source_pollers(queue, stopping)
     assert calls == ["carousel"]
     assert queue.get_setting("source_status")["result"] == {"submitted": 1}
     status_key = {
-        "notification": "notification_source_status",
+        "profiles": "profile_queue_status",
         "diagnostics": "diagnostics_status",
-        "enqueue": "notification_enqueue_status",
     }[failed_source]
     assert queue.get_setting(status_key)["error"] == "ValueError"
     assert "Private source credentials" not in caplog.text
@@ -2670,24 +2608,23 @@ def test_closed_secondary_stops_refills_and_drains_before_pool_repair(queue, mon
     assert not queue.get_setting("paused", False)
 
 
-@pytest.mark.parametrize("blocked_source", ["notification", "diagnostics", "enqueue"])
+@pytest.mark.parametrize("blocked_source", ["profiles", "diagnostics"])
 def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, blocked_source):
     stopping = threading.Event()
     entered = threading.Event()
     release = threading.Event()
-    notification_progress = threading.Event()
+    profile_progress = threading.Event()
     diagnostics_progress = threading.Event()
     carousel_progress = threading.Event()
-    enqueue_progress = threading.Event()
 
     def blocked(*args, **kwargs):
         entered.set()
         assert release.wait(5)
         return {}
 
-    def notifications(current):
+    def profiles(current):
         assert current is queue
-        notification_progress.set()
+        profile_progress.set()
         return {}
 
     def diagnostics(**kwargs):
@@ -2698,15 +2635,10 @@ def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, 
         carousel_progress.set()
         return {"submitted": 1}
 
-    def enqueue(current):
-        assert current is queue
-        enqueue_progress.set()
-        return {}
-
     monkeypatch.setattr(
-        notification_ingestion,
-        "sync_notification_media",
-        blocked if blocked_source == "notification" else notifications,
+        profile_retrieval,
+        "queue_retrieved_profiles",
+        blocked if blocked_source == "profiles" else profiles,
     )
     monkeypatch.setattr(
         queue,
@@ -2714,23 +2646,16 @@ def test_blocked_source_does_not_delay_other_source_pollers(queue, monkeypatch, 
         blocked if blocked_source == "diagnostics" else diagnostics,
     )
     monkeypatch.setattr(carousel_engagement, "sync_published_carousels", carousels)
-    monkeypatch.setattr(
-        notification_ingestion,
-        "enqueue_retrieved_media",
-        blocked if blocked_source == "enqueue" else enqueue,
-    )
     pollers = module._source_pollers(queue, stopping)
     for poller in pollers:
         poller.start()
     try:
         assert entered.wait(5)
         assert carousel_progress.wait(5)
-        if blocked_source != "notification":
-            assert notification_progress.wait(5)
+        if blocked_source != "profiles":
+            assert profile_progress.wait(5)
         if blocked_source != "diagnostics":
             assert diagnostics_progress.wait(5)
-        if blocked_source != "enqueue":
-            assert enqueue_progress.wait(5)
         assert not release.is_set()
     finally:
         stopping.set()
@@ -2792,44 +2717,32 @@ def test_digest_transient_pathname_read_recovers_without_spending_another_job_at
     assert not queue.get_setting("paused", False)
 
 
-def test_notifications_and_captures_are_handled_on_signal_not_on_a_timer(queue, monkeypatch):
+def test_profiles_are_queued_on_start_and_after_each_retrieval_not_on_a_timer(queue, monkeypatch):
     stopping = threading.Event()
     calls = []
-    wake_ledger = []
     monkeypatch.setattr(
-        notification_ingestion, "sync_notification_media", lambda _queue: calls.append("sync")
-    )
-    monkeypatch.setattr(
-        notification_ingestion,
-        "enqueue_retrieved_media",
-        lambda _queue: calls.append("handoff") or {"enqueued": 0},
+        profile_retrieval,
+        "queue_retrieved_profiles",
+        lambda _queue: calls.append("profiles") or {"queued": 0},
     )
     monkeypatch.setattr(carousel_engagement, "sync_published_carousels", lambda _queue: {})
-    monkeypatch.setattr(
-        ledger_listener,
-        "listen_for_inserts",
-        lambda _table, on_insert, stop: wake_ledger.append(on_insert) or stop.wait(),
-    )
     pollers = module._source_pollers(queue, stopping)
     for poller in pollers:
         poller.start()
     try:
-        # Startup catches up once on each.
+        # Startup catches up once.
         for _ in range(200):
-            if sorted(calls) == ["handoff", "sync"]:
+            if calls:
                 break
             time.sleep(0.01)
-        assert sorted(calls) == ["handoff", "sync"]
         time.sleep(0.2)
-        assert sorted(calls) == ["handoff", "sync"], "Nothing reruns without a signal"
-        # A pushed ledger insert and a finished retrieval each run their step again.
-        wake_ledger[0]()
+        assert calls == ["profiles"], "Nothing reruns without a signal"
         queue.retrieval_finished.set()
         for _ in range(200):
-            if sorted(calls) == ["handoff", "handoff", "sync", "sync"]:
+            if len(calls) == 2:
                 break
             time.sleep(0.01)
-        assert sorted(calls) == ["handoff", "handoff", "sync", "sync"]
+        assert calls == ["profiles", "profiles"]
     finally:
         stopping.set()
         for poller in pollers:

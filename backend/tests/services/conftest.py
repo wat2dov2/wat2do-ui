@@ -169,9 +169,15 @@ def clear_scraper_caches():
     _lookup_club_by_ig.cache_clear()
 
     # school_service caches
-    from services.school_service import get_school, get_school_by_name, get_school_by_recipient_id
+    from services.school_service import (
+        get_school,
+        get_school_by_id,
+        get_school_by_name,
+        get_school_by_recipient_id,
+    )
 
     get_school.cache_clear()
+    get_school_by_id.cache_clear()
     get_school_by_recipient_id.cache_clear()
     get_school_by_name.cache_clear()
 

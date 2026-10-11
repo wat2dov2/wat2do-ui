@@ -8,9 +8,11 @@ applies the side effects of what the agent changed.
 
 from __future__ import annotations
 
+import json
 import logging
 import mimetypes
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -28,7 +30,7 @@ from core.sanitize import normalize_scraped_text, parse_iso_datetime
 from core.tables import EVENTS, POSITIONS
 from services import school_service
 from services.ingestion import changes
-from services.ingestion.queue import CONTROL
+from services.ingestion.items import CONTROL
 from services.school_context import (
     campus_season_prompt,
     current_semester_end,
@@ -47,6 +49,22 @@ from services.scraper.org_resolve import resolve_club_for_scrape
 
 log = logging.getLogger(__name__)
 PROMPT = Path(__file__).with_name("prompt.md").read_text()
+WORKDIR_PREFIX = "wat2do-ingestion-"
+# The agent's final answer; "nothing" means the source changed no listing.
+OUTCOME_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["outcome", "summary"],
+    "properties": {
+        "outcome": {"enum": ["added", "updated", "nothing"]},
+        "summary": {"type": "string"},
+    },
+}
+DIRECTORY_NOTE = (
+    "A directory agent already read this page and confirmed it is a real event or position, "
+    "so its details below are accurate. Your job is to avoid duplicates and fit it with what "
+    "is already listed."
+)
 
 
 class AgentError(RuntimeError):
@@ -63,17 +81,17 @@ class _Image:
     video_url: str | None
 
 
-def ingest(post: dict, *, school: str, publisher_ig: str | None = None) -> None:
-    """Have the agent bring the database in line with one captured source."""
+def ingest(post: dict, *, school: str, publisher_ig: str | None = None) -> bool:
+    """Have the agent bring the database in line with one source; True if it changed anything."""
     source_url = post["url"]
     if already_imported(source_url):
-        return
+        return True
     record = school_service.get_school(school)
     if record is None:
         raise AgentError("School is not registered")
     caption = normalize_scraped_text(post.get("caption") or post.get("text")) or ""
     token = uuid4().hex[:12]
-    with tempfile.TemporaryDirectory(prefix="wat2do-ingestion-") as workdir:
+    with tempfile.TemporaryDirectory(prefix=WORKDIR_PREFIX) as workdir:
         images = _download_images(post, Path(workdir), instagram=is_instagram(source_url))
         owner = _owner_club(
             post, school=school, publisher_ig=publisher_ig, image_count=len(image_urls(post))
@@ -84,7 +102,7 @@ def ingest(post: dict, *, school: str, publisher_ig: str | None = None) -> None:
         # Allow for clock skew between this Mac and the database's added_at.
         started = datetime.now(UTC) - timedelta(minutes=5)
         try:
-            _run(prompt, workdir)
+            return _run(prompt, workdir) != "nothing"
         finally:
             _store_chosen_posters(token, images)
             changes.stamp_new_rows(
@@ -251,6 +269,7 @@ def _render(
         "owner_club": owner,
         "coauthors": ", ".join(f"@{h}" for h in candidate_handles(post)[1:]) or "none",
         "caption": caption or "(no text)",
+        "source_note": "" if instagram else DIRECTORY_NOTE,
         "images": "\n".join(
             f"- Image {index}: ./{image.file}, poster reference `{poster_reference(token, index)}`"
             + (" (a video slide)" if image.video_url else "")
@@ -279,7 +298,8 @@ def _posted_at(post: dict) -> datetime | None:
     return parse_iso_datetime(post.get("timestamp")) if is_instagram(post["url"]) else None
 
 
-def _run(prompt: str, workdir: str) -> None:
+def _run(prompt: str, workdir: str) -> str:
+    """Run the agent in ``workdir`` and return its reported outcome."""
     executable = shutil.which("claude")
     if executable is None:
         raise AgentError("Claude Code is not installed")
@@ -300,7 +320,9 @@ def _run(prompt: str, workdir: str) -> None:
                 "--strict-mcp-config",
                 "--no-session-persistence",
                 "--output-format",
-                "text",
+                "json",
+                "--json-schema",
+                json.dumps(OUTCOME_SCHEMA),
             ],
             input=prompt,
             cwd=workdir,
@@ -311,19 +333,58 @@ def _run(prompt: str, workdir: str) -> None:
         )
     except (OSError, subprocess.SubprocessError) as exc:
         raise AgentError(f"Ingestion agent failed ({type(exc).__name__})") from None
+    finally:
+        remove_run_folder(workdir)
     if result.returncode:
         raise AgentError(f"Ingestion agent failed (exit {result.returncode})")
-    log.debug("Ingestion agent: %s", result.stdout.strip()[-500:])
+    return _outcome(result.stdout)
+
+
+def _outcome(stdout: str) -> str:
+    try:
+        answer = json.loads(stdout).get("structured_output") or {}
+    except (ValueError, AttributeError):
+        answer = {}
+    outcome = answer.get("outcome")
+    if outcome not in OUTCOME_SCHEMA["properties"]["outcome"]["enum"]:
+        raise AgentError("Ingestion agent gave no outcome")
+    log.debug("Ingestion agent: %s", str(answer.get("summary"))[:500])
+    return outcome
+
+
+def claude_projects() -> Path:
+    return Path.home() / ".claude/projects"
+
+
+def remove_run_folder(workdir: str) -> None:
+    """Delete the folder Claude Code keeps for a run, named after its working directory."""
+    name = re.sub(r"[^A-Za-z0-9]", "-", os.path.realpath(workdir))
+    shutil.rmtree(claude_projects() / name, ignore_errors=True)
+
+
+def remove_leftovers(prefix: str = WORKDIR_PREFIX) -> None:
+    """Delete working and Claude Code folders that interrupted runs never cleaned up."""
+    leftovers = [
+        *Path(tempfile.gettempdir()).glob(f"{prefix}*"),
+        *claude_projects().glob(f"*{re.sub(r'[^A-Za-z0-9]', '-', prefix)}*"),
+    ]
+    for folder in leftovers:
+        shutil.rmtree(folder, ignore_errors=True)
+
+
+def claude_environment() -> dict[str, str]:
+    """Only what Claude Code itself needs; no application secrets."""
+    inherited = ("PATH", "HOME", "USER", "LOGNAME", "LANG", "TMPDIR")
+    return {name: os.environ[name] for name in inherited if name in os.environ}
 
 
 def _agent_environment() -> dict[str, str]:
-    """Only what Claude Code and psql need; no application secrets."""
+    """Claude Code plus the scoped database login psql uses."""
     database = urlsplit(settings.ingest_agent_database_url)
     if not database.hostname or not database.username:
         raise AgentError("INGEST_AGENT_DATABASE_URL is not configured")
-    inherited = ("PATH", "HOME", "USER", "LOGNAME", "LANG", "TMPDIR")
     return {
-        **{name: os.environ[name] for name in inherited if name in os.environ},
+        **claude_environment(),
         "PGHOST": database.hostname,
         "PGPORT": str(database.port or 5432),
         "PGUSER": unquote(database.username),

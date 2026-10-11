@@ -1,15 +1,18 @@
-"""Durable media claims and browser delivery receipts for Instagram sources."""
+"""The notification ledger GitHub records, and carousel delivery receipts.
+
+Each recorded notification post joins the Supabase ingestion queue through a
+database trigger; nothing on the Mac claims or settles ledger rows.
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any, Sequence
 from uuid import UUID
 
 from core.constants import INSTAGRAM_BATCH_PUBLISHED
 from core.database import get_sb
-from core.tables import INSTAGRAM_NOTIFICATION_MEDIA, INSTAGRAM_PUBLISH_BATCHES
+from core.tables import INSTAGRAM_PUBLISH_BATCHES
 from services.instagram_notifications.browser_session import BrowserSessionError, canonical_post_url
 
 
@@ -50,35 +53,26 @@ def freeze_browser_sources(*, batch_id: str, sources: list[dict[str, Any]]) -> l
     return validate_browser_sources(response.data)
 
 
-def acknowledge_browser_delivery(
-    *,
-    table: str,
-    row_id: str,
-    delivery_generation: str,
-    sources: list[dict[str, Any]] | None = None,
+def acknowledge_carousel_delivery(
+    *, row_id: str, delivery_generation: str, sources: list[dict[str, Any]]
 ) -> None:
-    """Record delivery only after the source has committed to its local queue.
+    """Record delivery only after the carousel's posts have committed to the local queue.
 
-    This receipt is independent of processing or engagement completion.
-    A recreated queue uses a new generation and discovers the source again.
+    This receipt is independent of engagement completion.
+    A recreated queue uses a new generation and discovers the carousel again.
     """
-    status = {
-        INSTAGRAM_NOTIFICATION_MEDIA: "pending",
-        INSTAGRAM_PUBLISH_BATCHES: INSTAGRAM_BATCH_PUBLISHED,
-    }[table]
-    receipt: dict[str, Any] = {"browser_delivery_generation": str(UUID(delivery_generation))}
-    if table == INSTAGRAM_PUBLISH_BATCHES:
-        if sources is None:
-            raise ValueError("Published carousel delivery requires its frozen sources")
-        receipt["browser_delivery_sources"] = validate_browser_sources(sources)
-    elif sources is not None:
-        raise ValueError("Notification media delivery does not contain carousel sources")
     (
         get_sb()
-        .table(table)
-        .update(receipt, returning="minimal")
+        .table(INSTAGRAM_PUBLISH_BATCHES)
+        .update(
+            {
+                "browser_delivery_generation": str(UUID(delivery_generation)),
+                "browser_delivery_sources": validate_browser_sources(sources),
+            },
+            returning="minimal",
+        )
         .eq("id", str(UUID(row_id)))
-        .eq("status", status)
+        .eq("status", INSTAGRAM_BATCH_PUBLISHED)
         .execute()
     )
 
@@ -136,44 +130,6 @@ def record_notification_media(
     return notification_id, newly_inserted_count
 
 
-def mark_media_succeeded(*, media_row_id: str, claim_token: str) -> bool:
-    """Commit success only while the irreversible claim is still processing."""
-    response = (
-        get_sb()
-        .rpc(
-            "finalize_instagram_notification_media",
-            {
-                "p_media_row_id": media_row_id,
-                "p_claim_token": claim_token,
-                "p_status": "succeeded",
-                "p_failure_category": None,
-            },
-        )
-        .execute()
-    )
-    return response.data is True
-
-
-def rollback_media_claim(
-    *,
-    media_row_id: str,
-    claim_token: str,
-) -> bool:
-    """Release a claim back to pending for a transient infrastructure failure."""
-    response = (
-        get_sb()
-        .rpc(
-            "rollback_instagram_notification_media",
-            {
-                "p_media_row_id": media_row_id,
-                "p_claim_token": claim_token,
-            },
-        )
-        .execute()
-    )
-    return response.data is True
-
-
 def _deduplicate_media(media: Sequence[MaterializedMedia]) -> list[MaterializedMedia]:
     deduplicated: dict[str, MaterializedMedia] = {}
     for item in media:
@@ -193,33 +149,3 @@ def _optional_text(value: str | None) -> str | None:
         return None
     normalized = value.strip()
     return normalized or None
-
-
-def claim_pending_browser_media(*, media_row_id: str, claim_token: str) -> bool:
-    """Claim one retrieved row with a token journaled by the local capture first.
-
-    The conditional UPDATE claims only a still-pending row. Persisting
-    the caller-generated token before this request covers a crash even when the
-    database committed but the client never received its response.
-    """
-    from datetime import timezone
-    from uuid import UUID
-
-    UUID(media_row_id)
-    UUID(claim_token)
-    response = (
-        get_sb()
-        .table(INSTAGRAM_NOTIFICATION_MEDIA)
-        .update(
-            {
-                "status": "processing",
-                "claim_token": claim_token,
-                "github_run_id": None,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            }
-        )
-        .eq("id", media_row_id)
-        .eq("status", "pending")
-        .execute()
-    )
-    return bool(response.data)

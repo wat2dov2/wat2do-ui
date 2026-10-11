@@ -1,134 +1,202 @@
 import fcntl
-import shutil
-import tempfile
 import threading
 import time
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
 
 from services.ingestion import processor as module
-from services.ingestion.queue import IngestionQueue, QueueItem
+from services.ingestion.items import Item
+
+
+class FakeQueue:
+    """The Supabase ingestion queue, in memory: one row per URL, claimed by stage."""
+
+    def __init__(self) -> None:
+        self.rows: dict[str, dict] = {}
+        self.lock = threading.Lock()
+
+    def add(self, url, *, status="ready", post=None, source="instagram", directory_source_id=None):
+        self.rows[url] = {
+            "status": status,
+            "post": post if post is not None or status == "fetch" else {"url": url},
+            "source": source,
+            "directory_source_id": directory_source_id,
+            "attempts": 0,
+            "waiting": False,
+        }
+
+    def claim(self, stage):
+        with self.lock:
+            for url, row in self.rows.items():
+                if row["status"] == stage and not row["waiting"]:
+                    row["status"] = "working" if stage == "ready" else "fetch"
+                    row["waiting"] = True
+                    row["attempts"] += 1
+                    return Item(
+                        source_url=url,
+                        school="upenn",
+                        source=row["source"],
+                        post=row["post"],
+                        directory_source_id=row["directory_source_id"],
+                        attempts=row["attempts"],
+                    )
+        return None
+
+    def mark_fetched(self, item, post):
+        self.rows[item.source_url].update(status="ready", post=post, attempts=0, waiting=False)
+
+    def mark(self, item, status):
+        self.rows[item.source_url].update(status=status, waiting=False)
+
+    def release(self, item, stage, *, delay_seconds=None):
+        # Released rows wait for their retry time, which never passes within a test.
+        self.rows[item.source_url].update(status=stage, waiting=True)
+
+    def statuses(self):
+        return {url: row["status"] for url, row in self.rows.items()}
 
 
 @pytest.fixture
-def queue(tmp_path):
-    return IngestionQueue(tmp_path / "ingestion")
-
-
-@pytest.fixture(autouse=True)
-def no_database(monkeypatch):
-    drains = []
-    monkeypatch.setattr(module.changes, "drain", lambda: drains.append(True))
+def queue(monkeypatch, tmp_path):
+    fake = FakeQueue()
+    monkeypatch.setattr(module, "items", fake)
+    monkeypatch.setattr(module, "state_directory", lambda: tmp_path)
+    monkeypatch.setattr(module.changes, "drain", lambda: None)
+    monkeypatch.setattr(module.agent, "remove_leftovers", lambda: None)
     monkeypatch.setattr(module, "list_sources", lambda: [])
-    return drains
+    monkeypatch.setattr(
+        module, "listen_for_changes", lambda _table, _wake, stopping: stopping.wait()
+    )
+    monkeypatch.setattr(
+        module, "fetch_post", lambda url: pytest.fail("Fetched without a fetch row")
+    )
+    return fake
 
 
-def _item(url: str, **kwargs) -> QueueItem:
-    return QueueItem(school="upenn", post={"url": url, "caption": url}, **kwargs)
+def test_process_queue_reports_busy_when_another_run_holds_the_lock(queue, monkeypatch, tmp_path):
+    queue.add("https://example.edu/events/1")
+    monkeypatch.setattr(module.agent, "ingest", Mock())
 
-
-def test_process_queue_reports_busy_when_another_run_holds_the_lock(queue, monkeypatch):
-    process = Mock()
-    monkeypatch.setattr(module, "ingest", process)
-    queue.enqueue(_item("https://example.edu/events/1"))
-    queue.state_directory.mkdir(parents=True, exist_ok=True)
-
-    with (queue.state_directory / "process.lock").open("a+") as lock:
+    with (tmp_path / "process.lock").open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        assert module.process_queue(queue, wait_for_work=False) == {
-            "processed": 0,
-            "failed": 0,
-            "busy": 1,
-        }
+        assert module.process_queue(wait_for_work=False) == {"busy": 1}
 
-    process.assert_not_called()
-    assert queue.counts()["queued"] == 1
+    module.agent.ingest.assert_not_called()
 
 
-def test_process_queue_completes_successes_and_releases_failures(queue, monkeypatch, caplog):
-    queue.enqueue(_item("https://example.edu/events/ok"))
-    queue.enqueue(_item("https://example.edu/events/broken"))
-    processed = []
+def test_rows_end_done_not_event_or_retried(queue, monkeypatch, caplog):
+    queue.add("https://example.edu/events/listed")
+    queue.add("https://example.edu/events/meme")
+    queue.add("https://example.edu/events/broken", post={"url": "x", "caption": "Secret text"})
 
     def ingest(post, *, school, publisher_ig):
-        processed.append((post["url"], school, publisher_ig))
-        if post["url"].endswith("broken"):
-            raise RuntimeError("extraction failed")
+        if post["url"] == "x":
+            raise RuntimeError("agent failed")
+        return post["url"].endswith("listed")
 
-    monkeypatch.setattr(module, "ingest", ingest)
+    monkeypatch.setattr(module.agent, "ingest", ingest)
 
-    assert module.process_queue(queue, wait_for_work=False) == {"processed": 1, "failed": 1}
-    assert processed == [
-        ("https://example.edu/events/ok", "upenn", None),
-        ("https://example.edu/events/broken", "upenn", None),
-    ]
-    # The failure stays queued (and leased) for a later run; the success is remembered.
-    assert queue.counts() == {"queued": 1, "checked": 1}
-    assert queue.enqueue(_item("https://example.edu/events/ok")) is False
+    assert module.process_queue(wait_for_work=False) == {"processed": 2, "failed": 1}
+    assert queue.statuses() == {
+        "https://example.edu/events/listed": "done",
+        "https://example.edu/events/meme": "not_event",
+        "https://example.edu/events/broken": "ready",
+    }
     assert "Ingestion item failed (attempt 1)" in caplog.text
+    assert "Secret text" not in caplog.text
 
 
-def test_process_queue_looks_up_publishers_once_and_only_for_directory_items(queue, monkeypatch):
-    queue.enqueue(_item("https://www.instagram.com/p/POST/"))
-    queue.enqueue(_item("https://example.edu/events/1", directory_source_id=4))
-    queue.enqueue(_item("https://example.edu/events/2", directory_source_id=5))
-    queue.enqueue(_item("https://example.edu/events/3", directory_source_id=99))
-    list_sources = Mock(
-        return_value=[
-            SimpleNamespace(id=4, default_club_ig="pennclubs"),
-            SimpleNamespace(id=5, default_club_ig=None),
-        ]
-    )
+def test_fetched_posts_become_ready_and_are_processed_in_one_run(queue, monkeypatch):
+    queue.add("https://www.instagram.com/p/NEW/", status="fetch")
+    queue.add("https://www.instagram.com/p/DELETED/", status="fetch")
+    fetched = {"https://www.instagram.com/p/NEW/": {"url": "new", "ownerUsername": "club"}}
+    monkeypatch.setattr(module, "fetch_post", fetched.get)
+    seen = []
+    monkeypatch.setattr(module.agent, "ingest", lambda post, **_: seen.append(post["url"]) or True)
+
+    stats = module.process_queue(wait_for_work=False)
+
+    assert stats == {"fetched": 1, "processed": 1}
+    assert seen == ["new"]
+    assert queue.statuses() == {
+        "https://www.instagram.com/p/NEW/": "done",
+        # An empty page is looked at once more before it is given up as gone.
+        "https://www.instagram.com/p/DELETED/": "fetch",
+    }
+
+
+def test_an_empty_post_twice_is_gone(queue, monkeypatch):
+    queue.add("https://www.instagram.com/p/DELETED/", status="fetch")
+    queue.rows["https://www.instagram.com/p/DELETED/"]["attempts"] = 1
+    monkeypatch.setattr(module, "fetch_post", lambda _url: None)
+
+    assert module.process_queue(wait_for_work=False) == {"gone": 1}
+    assert queue.statuses() == {"https://www.instagram.com/p/DELETED/": "gone"}
+
+
+def test_a_login_wall_pauses_fetching_without_giving_up(queue, monkeypatch):
+    queue.add("https://www.instagram.com/p/A/", status="fetch")
+    queue.add("https://www.instagram.com/p/B/", status="fetch")
+    calls = []
+
+    def blocked(url):
+        calls.append(url)
+        raise module.FetchBlocked("Instagram asked for a login")
+
+    monkeypatch.setattr(module, "fetch_post", blocked)
+    monkeypatch.setattr(module, "CONTROL", module.CONTROL.model_copy(update={"fetch_lanes": 1}))
+
+    stats = module.process_queue(wait_for_work=False)
+
+    # One refusal pauses every lane instead of burning through the queue.
+    assert stats == {"fetch_blocked": 1}
+    assert calls == ["https://www.instagram.com/p/A/"]
+    assert set(queue.statuses().values()) == {"fetch"}
+
+
+def test_publishers_are_looked_up_only_for_directory_rows(queue, monkeypatch):
+    queue.add("https://www.instagram.com/p/POST/")
+    queue.add("https://example.edu/events/1", source="directory", directory_source_id=4)
+    queue.add("https://example.edu/events/2", source="directory", directory_source_id=99)
+    list_sources = Mock(return_value=[SimpleNamespace(id=4, default_club_ig="pennclubs")])
     monkeypatch.setattr(module, "list_sources", list_sources)
+    monkeypatch.setattr(module, "CONTROL", module.CONTROL.model_copy(update={"parallel_agents": 1}))
     publishers = {}
     monkeypatch.setattr(
-        module,
+        module.agent,
         "ingest",
         lambda post, *, school, publisher_ig: publishers.update({post["url"]: publisher_ig}),
     )
 
-    assert module.process_queue(queue, wait_for_work=False) == {"processed": 4, "failed": 0}
-    # Loaded on the first directory item, and again for an unknown source.
+    module.process_queue(wait_for_work=False)
+
+    # Loaded on the first directory row, and again for an unknown source.
     assert list_sources.call_count == 2
     assert publishers == {
         "https://www.instagram.com/p/POST/": None,
         "https://example.edu/events/1": "pennclubs",
         "https://example.edu/events/2": None,
-        "https://example.edu/events/3": None,
     }
 
 
-def test_process_queue_drains_everything_and_settles_leftovers_first(
-    queue, monkeypatch, no_database
-):
-    for index in range(10):
-        queue.enqueue(_item(f"https://example.edu/events/{index}", directory_source_id=index))
-    prune = Mock(return_value=0)
-    monkeypatch.setattr(queue, "prune", prune)
-    seen = []
-    monkeypatch.setattr(module, "ingest", lambda post, **_: seen.append(post["url"]))
+def test_leftovers_are_cleared_and_changes_settled_before_any_work(queue, monkeypatch):
+    order = []
+    monkeypatch.setattr(module.agent, "remove_leftovers", lambda: order.append("leftovers"))
+    monkeypatch.setattr(module.changes, "drain", lambda: order.append("drain"))
+    queue.add("https://example.edu/events/1")
+    monkeypatch.setattr(module.agent, "ingest", lambda post, **_: order.append("ingest"))
 
-    assert module.process_queue(queue, wait_for_work=False) == {"processed": 10, "failed": 0}
-    prune.assert_called_once_with()
-    assert no_database == [True]
-    assert sorted(seen) == sorted(f"https://example.edu/events/{i}" for i in range(10))
-    assert queue.counts() == {"queued": 0, "checked": 10}
+    module.process_queue(wait_for_work=False)
+
+    assert order == ["leftovers", "drain", "ingest"]
 
 
 def test_posts_from_one_club_never_run_at_the_same_time(queue, monkeypatch):
     for index in range(4):
-        queue.enqueue(
-            QueueItem(
-                school="uwaterloo",
-                post={
-                    "url": f"https://www.instagram.com/p/P{index}/",
-                    "ownerUsername": "@UWImprov",
-                },
-            )
-        )
+        url = f"https://www.instagram.com/p/P{index}/"
+        queue.add(url, post={"url": url, "ownerUsername": "@UWImprov"})
     running = []
     overlaps = []
     guard = threading.Lock()
@@ -140,71 +208,38 @@ def test_posts_from_one_club_never_run_at_the_same_time(queue, monkeypatch):
         time.sleep(0.02)
         with guard:
             running.remove(post["url"])
+        return True
 
-    monkeypatch.setattr(module, "ingest", ingest)
+    monkeypatch.setattr(module.agent, "ingest", ingest)
 
-    assert module.process_queue(queue, wait_for_work=False) == {"processed": 4, "failed": 0}
+    assert module.process_queue(wait_for_work=False) == {"processed": 4}
     assert max(overlaps) == 1
 
 
-def test_agent_failure_keeps_the_capture_queued_without_logging_it(queue, monkeypatch, caplog):
-    from services.ingestion import agent
-
-    post = {"url": "https://www.instagram.com/p/FAIL/", "caption": "Secret caption text"}
-    queue.enqueue(QueueItem(school="ubc", post=post))
-    monkeypatch.setattr(agent, "already_imported", lambda _url: False)
+def test_a_running_processor_wakes_when_the_queue_changes(queue, monkeypatch):
+    wakes = []
     monkeypatch.setattr(
-        agent.school_service, "get_school", lambda slug: SimpleNamespace(slug=slug, id=1)
+        module,
+        "listen_for_changes",
+        lambda _table, wake, stopping: wakes.append(wake) or stopping.wait(),
     )
-    monkeypatch.setattr(
-        agent, "resolve_club_for_scrape", Mock(return_value=SimpleNamespace(club_id=None))
-    )
-    monkeypatch.setattr(agent, "_render", lambda *args, **kwargs: "prompt")
-    monkeypatch.setattr(agent.changes, "stamp_new_rows", lambda *args, **kwargs: None)
-    monkeypatch.setattr(agent.shutil, "which", lambda name: name)
-    monkeypatch.setattr(agent, "_agent_environment", lambda: {})
-    monkeypatch.setattr(
-        agent.subprocess,
-        "run",
-        lambda args, **kwargs: agent.subprocess.CompletedProcess(args, 1, stdout=""),
-    )
-
-    assert module.process_queue(queue, wait_for_work=False) == {"processed": 0, "failed": 1}
-    # The capture waits for a later run instead of exhausting its attempts now.
-    assert queue.counts() == {"queued": 1, "checked": 0}
-    assert queue.claim() is None
-    assert "Secret caption text" not in caplog.text
-
-
-def test_a_running_processor_wakes_as_soon_as_an_item_is_queued(monkeypatch):
-    # Unix socket paths must stay short, so this queue lives directly under /tmp.
-    directory = Path(tempfile.mkdtemp(prefix="w2d-", dir="/tmp"))
-    queue = IngestionQueue(directory)
     handled = threading.Event()
-    monkeypatch.setattr(module, "ingest", lambda post, **_: handled.set())
+    monkeypatch.setattr(module.agent, "ingest", lambda post, **_: handled.set() or True)
     stopping = threading.Event()
-    runner = threading.Thread(
-        target=module.process_queue, args=(queue,), kwargs={"stopping": stopping}
-    )
+    runner = threading.Thread(target=module.process_queue, kwargs={"stopping": stopping})
     runner.start()
     try:
-        for _ in range(100):
-            if queue.wake_path.exists():
+        for _ in range(200):
+            if wakes:
                 break
             time.sleep(0.01)
-        assert queue.claim() is None
-        queue.enqueue(_item("https://example.edu/events/new"))
-        # Woken by the enqueue itself, long before any lease-based fallback.
+        time.sleep(0.05)
+        queue.add("https://example.edu/events/new")
+        wakes[0]()
+        # Woken by the Realtime push, long before the retry fallback.
         assert handled.wait(5)
-        stopping.set()
-        runner.join(5)
-        assert not runner.is_alive()
-        assert queue.counts() == {"queued": 0, "checked": 1}
     finally:
         stopping.set()
-        shutil.rmtree(directory, ignore_errors=True)
-
-
-def test_wake_without_a_running_processor_is_harmless(queue):
-    queue.wake_processor()
-    assert queue.enqueue(_item("https://example.edu/events/1")) is True
+        runner.join(5)
+    assert not runner.is_alive()
+    assert queue.statuses() == {"https://example.edu/events/new": "done"}

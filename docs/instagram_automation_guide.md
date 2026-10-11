@@ -3,11 +3,11 @@
 The active collection path uses Instagram notifications on a physical Android phone running Automate.
 Automate triggers the GitHub `process-notification` workflow, which records each exact post URL in the Supabase notification ledger.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
-Supabase Realtime pushes each new ledger row to the Mac's Brave worker, which retrieves the post right away and captures it into the local ingestion queue at `~/.local/state/wat2do/ingestion/queue.sqlite3`, then marks its ledger row succeeded.
-On startup the worker catches up on any ledger rows recorded while it was off.
-An always-on launchd processor, `backend/scripts/ingest.py process`, wakes as soon as a capture is queued and drains that queue with a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
-The same worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
-Digest expansion, public post/profile retrieval, and engagement share one worker-owned pool of fifteen tabs in one registered Brave window, with credentials remaining inside the browser.
+A database trigger adds each recorded post to `public.ingestion_items`, the Supabase ingestion queue.
+An always-on launchd processor on the Mac, `backend/scripts/ingest.py process`, wakes through Supabase Realtime, reads each new post logged out (no account, cookie or session ID), and then runs a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
+The Brave worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
+Digest expansion, manual profile listing, and engagement share two worker-owned tabs in one registered Brave window, with credentials remaining inside the browser.
+Brave never opens individual posts for ingestion.
 
 ## Repair an existing poster or scraped video
 
@@ -58,9 +58,9 @@ A collapsed `subscription_daily_digest` notification is forwarded unchanged so `
 Keep Brave running with the school accounts logged in and available under More > Switch accounts.
 Open one Instagram tab for the worker to use as its primary tab.
 The first registered Instagram tab is reserved for account switching and serialized likes/reposts.
-Public post/profile retrieval and digest queries use secondary tabs only.
+Digest queries and manual profile listings use the second tab only.
 Humans complete login and challenge recovery in the primary tab; the worker never logs in automatically.
-The healthy worker maintains `parallel_tabs` Instagram tabs in that same window (fifteen total by default), including when the queue is empty.
+The healthy worker maintains `parallel_tabs` Instagram tabs in that same window (two by default), including when the queue is empty.
 It checks pool health on startup, before batches, and every `tab_health_interval_seconds` while idle.
 It persists their exact tab IDs and recreates closed worker tabs inside their registered existing window, even if every worker tab was closed.
 It adopts existing Instagram tabs from that registered window up to the configured total and closes surplus Instagram tabs under the human-authorized resize policy.
@@ -146,7 +146,7 @@ Public post/profile jobs run concurrently on the registered secondary tabs, leav
 One independent worker heartbeat stays fresh throughout startup, pool maintenance, preparation, and continuous retrieval streams.
 Digest jobs can run concurrently only for the same recipient and account; account switches and engagement remain serialized.
 All pool tabs settle their pending requests before the primary tab switches accounts, and secondary tabs reload to verify the resulting identity before a digest query.
-Public post/profile retrieval comes after digests and before engagement.
+Manual profile listing comes after digests and before engagement.
 No account switch or click is interrupted halfway through to start another job.
 An exclusive browser lock covers each complete operation, and a separate worker lock prevents duplicate workers.
 Every completion is conditional on the original running claim's attempt and start time.
@@ -186,67 +186,32 @@ Failed or unsupported engagement jobs remain visible for operator inspection and
 An uncertain native click or unverified completion also pauses further browser admission for inspection.
 Conflicting repost states and action toolbars that borrow another post's permalink fail before clicking.
 The durable queue’s `excluded_accounts` setting holds jobs for explicitly excluded school accounts across all job types without deleting or consuming them.
-Notification synchronization and capture respect the same exclusions.
+Profile listings respect the same exclusions.
 
-### Notification retrieval and capture
+### Notification posts and the ingestion queue
 
-The notification workflow records exact post URLs in the existing production media ledger.
-The worker's background collector checks for pending URLs not yet delivered to its durable queue every ten seconds.
-Delivery acknowledgements are separate from ledger claims and are written only after the local enqueue and notification receipt commit.
-A persistent queue generation makes normal restarts skip delivered rows and makes a recreated database recover pending rows from the lost queue.
-Retrieval fills all fourteen secondary slots as new jobs arrive and streams continuously until the queue empties, a digest takes priority, overdue engagement needs a turn, or the worker pauses.
-Each job retains its own timeout; the stream does not drain on a fixed timer.
-Confirmed HTTP 429 responses stop new browser claims, refills, and tab maintenance until the shared cooldown expires, while active requests settle and independent collectors continue.
-After settlement, confirmed rate-limited reads return to the queue without consuming their ordinary failure budget.
-Cooldown expiry resumes queue admission automatically and preserves genuine authentication pauses and manual engagement retry rules.
-The status output shows the rate-limit retry time, remaining seconds, and backoff separately from the worker heartbeat and safety pause.
-Repeated rate limits increase the shared cooldown from two minutes up to thirty minutes, once per expired cooldown rather than once per parallel job.
-A fresh verified successful job resets the next cooldown only after fifteen minutes without another confirmed rate limit following the expired hold.
-One successful public read cannot immediately reset escalation while another browser route remains limited.
-Digest callers retain their own deadlines throughout the hold.
+The notification workflow records exact post URLs in the production notification ledger.
+A database trigger adds each post to `public.ingestion_items` with status `fetch`, keyed by its `https://www.instagram.com/p/<shortcode>/` URL, and marks the ledger row succeeded; the ledger is the notification's receipt.
+The Mac's processor receives every new or changed row through Supabase Realtime, and catches up on everything waiting whenever it starts or reconnects.
+Its fetch lanes (`fetch_lanes` in `backend/controlbox/ingestion.json`) read each post's public page logged out with a browser-like TLS fingerprint and no cookies, then write the caption, owner, post time, coauthors, tagged users and media links onto the row and mark it `ready`.
+A page with no post is read once more and then marked `gone`, which is how deleted posts are ignored.
+A login wall, HTTP 429 or server error pauses every fetch lane for `fetch_block_pause_seconds` without consuming the row's attempts.
+Ready rows go to the Haiku agents; each row ends `done` or `not_event` and stays, so a post is never processed twice.
 
-A separate background collector captures retrieved posts every ten seconds.
-For each pending ledger row whose retrieval succeeded with exactly one post matching the row's canonical target URL, it enqueues that post into the local ingestion queue.
-The post URL is the queue key and becomes the event's `source_url`.
-Only after the capture is durable does it journal a claim token, claim the ledger row, and mark it succeeded.
-The next pass releases an interrupted claim using its exact journaled token.
-An unconfirmed success releases the claim back to pending.
-A retrieval whose result does not match its exact target is counted as `invalid` and stays pending until an operator retries it.
-Retrieval never claims production media while it waits for the browser, and capture never holds the browser lock.
-Extraction, matching against listed events, school routing, storage, and discovery invalidation happen later in the ingestion processor, which deletes each queue item after handling it.
-
-Public profiles and individual posts can also be queued manually:
+Queue a post by hand:
 
 ```sh
 cd backend
-python scripts/instagram_browser.py retrieve --school utsc --url https://www.instagram.com/example_club/ --cutoff-days 1
-python scripts/instagram_browser.py ingestion-enqueue
-python scripts/instagram_browser.py status
+python scripts/ingest.py enqueue --school utsc --url https://www.instagram.com/p/SHORTCODE/
+python scripts/ingest.py status
 ```
 
-Use actual club handles rather than the illustrative profile URL above.
-Every post a manual retrieval returns is captured once into the ingestion queue.
-`ingestion-enqueue` runs one notification collection and one capture pass immediately instead of waiting for the background collectors.
-It reports nonzero exit status for failed, invalid, or busy capture outcomes; inspect its counts before treating a pass as complete.
-The installed worker reserves one primary tab and processes retrieval batches of up to `parallel_tabs - 1`, checking priority before every replacement claim.
-Public post/profile retrieval reuses the currently logged-in account without switching to the notification school's account.
-All parallel tabs verify the same active account, while each notification retains its own school routing.
-A challenge, uncertain primary action, or unconfirmed secondary closure pauses further work after active requests drain.
-It verifies the active account remains unchanged throughout navigation and retrieval, and only public captions, owners, timestamps, coauthors, tagged users, and media fields leave the browser.
-The queued notification recipient determines school routing, independent of the browser account.
-The notification collector retries delivered failed reads locally within their original budget, even when its cloud collection fails.
-Concurrent retry passes preserve explicitly cancelled jobs, exhausted attempts, excluded accounts, and manual retrieval jobs.
-Malformed notification identities or URLs remain pending for repair, while valid schools continue through collection and capture.
-The source and capture summaries expose an `invalid` count for these targets.
-`python scripts/instagram_browser.py retry --job-id <id>` retrieves an idle target again and lets its fresh result be captured again.
-The `retrieve` command confirms queue admission; read `status --job-id` to establish the retrieval's outcome.
-Digest expansion and engagement still require the exact intended school account.
-All carousel children and each video's corresponding poster are preserved.
-Missing or mismatched media fails retrieval rather than capturing incomplete artwork.
-GitHub self-hosted runner capacity is separate from tab capacity.
-One registered Actions runner still executes one workflow job at a time; more tabs accelerate the shared retrieval backlog and compatible digest jobs already waiting in the queue.
-A profile job reviews at most `profile_post_limit` recent posts; it is not an exhaustive historical profile scrape.
-A login, challenge or suspended-account page pauses browser retrieval for human recovery.
+`scripts/instagram_browser.py retrieve --school <slug> --url <url>` accepts the same post URLs, and also a profile.
+A profile needs the login to list, so the Brave worker lists at most `profile_post_limit` recent posts on its second tab and adds each one to the ingestion queue.
+Use actual club handles rather than an illustrative profile URL.
+`python scripts/instagram_browser.py retry --job-id <id>` lists an idle profile again.
+Public profile listing reuses the currently logged-in account without switching to the school's account; digest expansion and engagement still require the exact intended school account.
+A login, challenge or suspended-account page pauses browser work for human recovery.
 Reload worker code only when its current job has finished, preserving the spool and pause state.
 
 ### Eligible event posts

@@ -47,11 +47,12 @@ the GitHub `process-notification` workflow directly.
 Do not use Android emulators.
 Budget no more than three Instagram accounts per device and scale horizontally by
 adding devices.
-The workflow records exact post URLs in the Supabase notification ledger.
-The Mac's browser worker retrieves each post, captures it into the local
-ingestion queue, and only then marks its ledger row succeeded.
-The local ingestion processor owns extraction and database writes.
+The workflow records exact post URLs in the Supabase notification ledger, and a
+database trigger adds each post to `public.ingestion_items`, the only ingestion queue.
+The Mac's always-on processor reads each queued post logged out, with no account,
+cookie or session ID, then owns extraction and database writes.
 It runs a Claude Haiku agent that follows `backend/services/ingestion/prompt.md` and writes only events, event dates and positions through the scoped `wat2do_ingest_agent` login.
+Haiku directory agents, not code-based parsers, read the official school directories and queue finished event details.
 The earlier fixed pipeline (`services/scraper/pipeline.py`, `reconciler.py`, candidate matching in `dedup.py`, and the event and position writers) is vestigial and kept on purpose; do not delete it.
 
 When Instagram collapses a notification into "account posted and N others", the
@@ -59,9 +60,9 @@ When Instagram collapses a notification into "account posted and N others", the
 existing, human-authenticated browser tab before recording notification media.
 CacheEntID workflow jobs submit through the browser-capable Mac runner to the
 single installed worker.
-The worker owns fifteen Instagram tabs in the existing Brave session.
-The first tab is reserved for account switching and serialized likes/reposts; fourteen secondary tabs own retrieval and digest queries.
-Only same-account digest requests and public retrievals may run in parallel.
+The worker owns two Instagram tabs in the existing Brave session.
+The first tab is reserved for account switching and serialized likes/reposts; the second tab owns digest queries and manual profile listings.
+Brave never opens individual posts for ingestion.
 Account switches wait for every tab request to settle, verify the notification's
 intended recipient, and refresh each selected tab before querying.
 Engagement remains serialized.

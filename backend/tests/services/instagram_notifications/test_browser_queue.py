@@ -148,37 +148,6 @@ def test_missing_delivery_generation_uses_existing_initialization_without_losing
     assert reopened.get_setting("paused") == "Operator safety hold"
 
 
-def test_local_retry_only_revives_delivered_notification_reads_with_budget(queue):
-    def retrieval(shortcode):
-        return queue.enqueue_retrieval(
-            school="ubc",
-            recipient_id=RECIPIENT_ID,
-            account_username=ACCOUNT_USERNAME,
-            url=f"https://www.instagram.com/p/{shortcode}/",
-        )
-
-    retryable = retrieval("Delivered")
-    exhausted = retrieval("Exhausted")
-    cancelled = retrieval("Cancelled")
-    manual = retrieval("Manual")
-    for job_id in (retryable, exhausted, cancelled):
-        queue.set_setting(f"notification_delivery:{uuid4()}", job_id)
-    with sqlite3.connect(queue.database_path) as db:
-        db.execute("UPDATE jobs SET state='failed',attempts=1")
-        db.execute(
-            "UPDATE jobs SET attempts=? WHERE id=?",
-            (module.CONTROL.ingestion_retry_limit, exhausted),
-        )
-        db.execute("UPDATE jobs SET state='cancelled' WHERE id=?", (cancelled,))
-    assert queue.retry_failed_notification_retrievals() == 1
-    assert queue.get(retryable).state == "pending"
-    assert queue.get(retryable).attempts == 1
-    assert queue.get(exhausted).state == "failed"
-    assert queue.get(cancelled).state == "cancelled"
-    assert queue.get(manual).state == "failed"
-    assert queue.retry_failed_notification_retrievals() == 0
-
-
 def test_recorded_engagement_sources_preserve_original_urls_and_reject_ambiguity(queue):
     _engagement(queue, "Original", event_id=7)
     expected = [{"post_url": "https://www.instagram.com/p/Original/", "event_id": 7}]
@@ -2158,54 +2127,6 @@ def test_late_digest_waiter_can_reuse_an_already_completed_result_after_admissio
     assert clock.elapsed == 0
 
 
-def test_competing_collectors_retry_a_failed_read_once_without_resetting_attempts(queue):
-    job_id = queue.enqueue_retrieval(
-        school="ubc",
-        recipient_id=RECIPIENT_ID,
-        account_username=ACCOUNT_USERNAME,
-        url="https://www.instagram.com/p/CollectorRetry/",
-    )
-    original = queue.claim_next()
-    queue.finish(original, error="Temporary read failure")
-    queue.set_setting(f"notification_delivery:{uuid4()}", job_id)
-    with ThreadPoolExecutor(max_workers=14) as executor:
-        changes = list(
-            executor.map(lambda _: queue.retry_failed_notification_retrievals(), range(14))
-        )
-    assert sum(changes) == 1
-    assert queue.get(job_id).state == "pending"
-    assert queue.get(job_id).attempts == original.attempts
-
-
-@pytest.mark.parametrize("state", ["pending", "cancelled", "succeeded", "exhausted", "engagement"])
-def test_collector_admission_preserves_cancellation_and_retry_budgets(queue, state):
-    job_id = (
-        _engagement(queue)
-        if state == "engagement"
-        else queue.enqueue_retrieval(
-            school="ubc",
-            recipient_id=RECIPIENT_ID,
-            account_username=ACCOUNT_USERNAME,
-            url="https://www.instagram.com/p/PreserveCollectorState/",
-        )
-    )
-    if state == "cancelled":
-        queue.cancel(job_id)
-    elif state != "pending":
-        for _ in range(module.CONTROL.ingestion_retry_limit if state == "exhausted" else 1):
-            claim = queue.claim_next()
-            queue.finish(claim, error=None if state == "succeeded" else "Read failure")
-            if (
-                state == "exhausted"
-                and queue.get(job_id).attempts < module.CONTROL.ingestion_retry_limit
-            ):
-                queue.retry(job_id)
-    before = queue.get(job_id)
-    queue.set_setting(f"notification_delivery:{uuid4()}", job_id)
-    assert not queue.retry_failed_notification_retrievals()
-    assert queue.get(job_id) == before
-
-
 def test_retrieval_retry_rechecks_running_state_before_clearing_its_capture_marker(queue):
     job_id = queue.enqueue_retrieval(
         school="ubc",
@@ -2229,17 +2150,17 @@ def test_retrieval_retry_clears_only_its_capture_marker_before_next_claim(queue)
         url="https://www.instagram.com/p/ManualRetryMarkers/",
     )
     queue.finish(queue.claim_next(), result={"posts": ["old signed media"]})
-    queue.set_setting(f"manual_enqueued:{job_id}", True)
-    queue.set_setting("manual_enqueued:other", True)
+    queue.set_setting(f"profile_queued:{job_id}", True)
+    queue.set_setting("profile_queued:other", True)
     queue.retry_retrieval(job_id)
     claim = queue.claim_next()
     assert claim.attempts == 1
     assert claim.result is None
-    assert queue.get_setting(f"manual_enqueued:{job_id}") is None
-    assert queue.get_setting("manual_enqueued:other") is True
+    assert queue.get_setting(f"profile_queued:{job_id}") is None
+    assert queue.get_setting("profile_queued:other") is True
 
 
-def test_upgrade_drops_removed_review_storage_and_renames_capture_markers(queue):
+def test_upgrade_drops_removed_review_storage_and_notification_capture_state(queue):
     job_id = _engagement(queue, "ReviewUpgrade")
     with sqlite3.connect(queue.database_path) as db:
         db.execute("CREATE TABLE review_snapshots (digest TEXT PRIMARY KEY, payload BLOB)")
@@ -2250,7 +2171,13 @@ def test_upgrade_drops_removed_review_storage_and_renames_capture_markers(queue)
         "notification_review_cursor": {"last_school": None, "next_newest": {}},
         "review_storage_status": {"checked_at": 1},
         "manual_imported:job-1": True,
+        "manual_enqueued:job-2": True,
+        "manual_retrieval:job-2": True,
+        "notification_delivery:row": "job-3",
         "notification_browser_import_claim": {"media_row_id": "row", "claim_token": "t"},
+        "notification_ledger_claim": {"media_row_id": "row", "claim_token": "t"},
+        "notification_source_status": {"checked_at": 1},
+        "notification_enqueue_status": {"checked_at": 1},
         "excluded_accounts": ["wat2do.utsc"],
     }.items():
         queue.set_setting(key, value)
@@ -2261,16 +2188,7 @@ def test_upgrade_drops_removed_review_storage_and_renames_capture_markers(queue)
         tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master")}
         keys = {row[0] for row in db.execute("SELECT key FROM settings")}
     assert not tables & set(module._OBSOLETE_REVIEW_TABLES)
-    assert keys == {
-        "delivery_generation",
-        "excluded_accounts",
-        "manual_enqueued:job-1",
-        "notification_ledger_claim",
-    }
-    assert reopened.get_setting("notification_ledger_claim") == {
-        "media_row_id": "row",
-        "claim_token": "t",
-    }
+    assert keys == {"delivery_generation", "excluded_accounts", "notification_retrievals_retired"}
     assert reopened.get(job_id).state == "pending"
     assert reopened.delivery_generation == queue.delivery_generation
     assert module.BrowserJobQueue._current_delivery_generation(reopened) == (
@@ -2307,28 +2225,6 @@ def test_status_reports_no_rate_limit_before_any_hold(queue):
     }
 
 
-def test_retrievals_start_no_closer_than_the_pacing_interval(queue, monkeypatch):
-    monkeypatch.setattr(
-        module, "CONTROL", module.CONTROL.model_copy(update={"retrieval_interval_seconds": 6})
-    )
-    ids = [
-        queue.enqueue_retrieval(
-            school="uwaterloo",
-            recipient_id=RECIPIENT_ID,
-            account_username=ACCOUNT_USERNAME,
-            url=f"https://www.instagram.com/p/PACED{index}/",
-        )
-        for index in range(2)
-    ]
-
-    assert queue.claim_next(now=1000.0).id == ids[0]
-    # A burst waits its turn instead of hitting Instagram back to back.
-    assert queue.claim_next(now=1005.0) is None
-    digest = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-paced")
-    assert queue.claim_next(now=1005.0).id == digest.id
-    assert queue.claim_next(now=1006.0).id == ids[1]
-
-
 def test_finishing_a_retrieval_signals_its_capture_hand_off(queue):
     job_id = queue.enqueue_retrieval(
         school="uwaterloo",
@@ -2343,3 +2239,26 @@ def test_finishing_a_retrieval_signals_its_capture_hand_off(queue):
     queue.finish(job, result={"posts": []})
 
     assert queue.retrieval_finished.is_set()
+
+
+def test_first_upgrade_cancels_waiting_notification_reads_once(tmp_path):
+    queue = module.BrowserJobQueue(tmp_path / "state")
+    with sqlite3.connect(queue.database_path) as db:
+        db.execute("DELETE FROM settings WHERE key='notification_retrievals_retired'")
+    waiting = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/p/NotifiedBefore/",
+    )
+
+    upgraded = module.BrowserJobQueue(queue.state_directory)
+    # Its post now waits in the Supabase ingestion queue instead.
+    assert upgraded.get(waiting).state == "cancelled"
+    later = upgraded.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/ubcclub/",
+    )
+    assert module.BrowserJobQueue(queue.state_directory).get(later).state == "pending"

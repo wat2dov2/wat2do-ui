@@ -100,6 +100,16 @@ def get_school(slug: str | None) -> SchoolRecord | None:
 
 
 @lru_cache(maxsize=128)
+def get_school_by_id(school_id: int | None) -> SchoolRecord | None:
+    if not school_id:
+        return None
+    response = get_sb().table(SCHOOLS).select(SCHOOL_COLUMNS).eq("id", school_id).limit(1).execute()
+    if not response.data:
+        return None
+    return _school_record(response.data[0])
+
+
+@lru_cache(maxsize=128)
 def get_school_by_recipient_id(recipient_id: str | None) -> SchoolRecord | None:
     normalized_recipient_id = (recipient_id or "").strip()
     if not normalized_recipient_id:

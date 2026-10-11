@@ -1,3 +1,4 @@
+import json
 import re
 import subprocess
 from datetime import UTC, datetime
@@ -26,7 +27,10 @@ _POST = {
 @pytest.fixture
 def run(monkeypatch, tmp_path):
     """Run ``ingest`` with storage, club resolution and the database replaced."""
-    state = SimpleNamespace(calls=[], drains=[], files={}, result=None, resolved=[])
+    state = SimpleNamespace(
+        calls=[], drains=[], files={}, result=None, resolved=[], removed=[], outcome="added"
+    )
+    monkeypatch.setattr(module, "remove_run_folder", state.removed.append)
     monkeypatch.setattr(module, "already_imported", lambda _url: False)
     monkeypatch.setattr(module.school_service, "get_school", lambda slug: _SCHOOL)
     monkeypatch.setattr(module, "resolve_school_timezone", lambda slug: "America/Toronto")
@@ -65,14 +69,17 @@ def run(monkeypatch, tmp_path):
         state.files = {path.name for path in Path(kwargs["cwd"]).iterdir()}
         if isinstance(state.result, BaseException):
             raise state.result
-        return state.result or subprocess.CompletedProcess(args, 0, stdout="Inserted event 1")
+        answer = {"outcome": state.outcome, "summary": "Inserted event 1"}
+        return state.result or subprocess.CompletedProcess(
+            args, 0, stdout=json.dumps({"structured_output": answer})
+        )
 
     monkeypatch.setattr(module.subprocess, "run", fake_run)
     return state
 
 
 def test_ingest_runs_haiku_with_psql_only_then_settles_its_changes(run):
-    module.ingest(dict(_POST), school="uwaterloo")
+    assert module.ingest(dict(_POST), school="uwaterloo") is True
 
     [(args, kwargs)] = run.calls
     assert args[:2] == ["/usr/local/bin/claude", "-p"]
@@ -82,8 +89,11 @@ def test_ingest_runs_haiku_with_psql_only_then_settles_its_changes(run):
     assert allowed == ["Read(./**)", "Bash(psql:*)"]
     assert args[args.index("--permission-mode") + 1] == "dontAsk"
     assert "--no-session-persistence" in args
+    assert json.loads(args[args.index("--json-schema") + 1]) == module.OUTCOME_SCHEMA
     assert kwargs["timeout"] == module.CONTROL.model_timeout_seconds
     assert run.files == {"image-0.jpg"}
+    # Claude Code's folder for this run never outlives it.
+    assert run.removed == [kwargs["cwd"]]
     # New rows from this source get its caption, then every change settles.
     assert run.drains == [
         ("posters", 1),
@@ -137,6 +147,7 @@ def test_ingest_lets_directory_pages_fall_back_to_the_publishing_club(run):
     ]
     prompt = run.calls[0][1]["input"]
     assert "ingestion_source = 'directory'" in prompt
+    assert module.DIRECTORY_NOTE in prompt
     assert "Images (read every one" in prompt and "(no images)" in prompt
     assert "This source has no post time" in prompt
 
@@ -155,8 +166,54 @@ def test_ingest_still_drains_when_the_agent_fails(run):
 
 def test_ingest_skips_sources_already_listed(run, monkeypatch):
     monkeypatch.setattr(module, "already_imported", lambda _url: True)
-    module.ingest(dict(_POST), school="uwaterloo")
+    assert module.ingest(dict(_POST), school="uwaterloo") is True
     assert run.calls == [] and run.drains == []
+
+
+def test_ingest_reports_a_source_that_changed_nothing(run):
+    run.outcome = "nothing"
+    assert module.ingest(dict(_POST), school="uwaterloo") is False
+    assert module.DIRECTORY_NOTE not in run.calls[0][1]["input"]
+
+
+def test_an_agent_without_an_outcome_fails_and_still_cleans_up(run):
+    run.result = subprocess.CompletedProcess([], 0, stdout="Inserted event 1")
+
+    with pytest.raises(module.AgentError, match="no outcome"):
+        module.ingest(dict(_POST), school="uwaterloo")
+    assert run.removed and run.drains[-1] == "drain"
+
+
+def test_leftover_run_folders_are_removed_but_nothing_else(monkeypatch, tmp_path):
+    temp = tmp_path / "tmp"
+    projects = tmp_path / "projects"
+    for folder in (
+        temp / "wat2do-ingestion-abc",
+        temp / "other-work",
+        projects / "-private-var-T-wat2do-ingestion-abc",
+        projects / "-Users-me-code",
+    ):
+        folder.mkdir(parents=True)
+    monkeypatch.setattr(module.tempfile, "gettempdir", lambda: str(temp))
+    monkeypatch.setattr(module, "claude_projects", lambda: projects)
+
+    module.remove_leftovers()
+
+    assert [path.name for path in temp.iterdir()] == ["other-work"]
+    assert [path.name for path in projects.iterdir()] == ["-Users-me-code"]
+
+
+def test_a_run_folder_is_named_after_the_working_directory(monkeypatch, tmp_path):
+    projects = tmp_path / "projects"
+    workdir = tmp_path / "wat2do-ingestion-x_y"
+    workdir.mkdir()
+    name = re.sub(r"[^A-Za-z0-9]", "-", str(workdir.resolve()))
+    (projects / name).mkdir(parents=True)
+    monkeypatch.setattr(module, "claude_projects", lambda: projects)
+
+    module.remove_run_folder(str(workdir))
+
+    assert list(projects.iterdir()) == []
 
 
 def test_ingest_requires_the_scoped_login(run, monkeypatch):

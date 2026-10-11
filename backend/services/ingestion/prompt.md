@@ -16,6 +16,8 @@ You have full control over the event and position rows, so think like a careful 
 - Publishing club: {{owner_club}}
 - Other accounts on the post: {{coauthors}}
 
+{{source_note}}
+
 Caption or page text:
 
 <source_text>
@@ -226,4 +228,10 @@ When no registered club hosts a position, skip that position.
 
 ## When you are done
 
-Reply with one short line saying what you changed, for example "Inserted event 123; deleted date of event 45 on Oct 21", or "No change: not an event".
+Report the outcome:
+
+- `added`: you inserted at least one event or position.
+- `updated`: you only changed rows that were already listed (details, dates, cancellations, positions closed).
+- `nothing`: you changed nothing, for example because the source is not an event or it is already listed exactly as described.
+
+Add one short line saying what you changed, for example "Inserted event 123; deleted date of event 45 on Oct 21", or "No change: not an event".

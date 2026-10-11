@@ -5,8 +5,7 @@ from pathlib import Path
 import pytest
 
 from scripts import ingest as script
-from services.ingestion import directory, processor
-from services.ingestion.queue import IngestionQueue, QueueItem
+from services.ingestion import directory_agent, items, processor
 
 
 @pytest.mark.parametrize(
@@ -83,31 +82,55 @@ def test_install_schedule_installs_both_agents(monkeypatch, tmp_path, capsys):
             {"processed": 2},
             {"wait_for_work": False},
         ),
-        (["scrape-directories"], (directory, "scrape_directories"), {"queued": 3}, {}),
+        (["scrape-directories"], (directory_agent, "scrape_directories"), {"queued": 3}, {}),
     ],
 )
-def test_main_runs_the_command_against_the_local_queue(
-    monkeypatch, tmp_path, capsys, argv, patched, result, options
-):
-    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+def test_main_runs_the_command(monkeypatch, capsys, argv, patched, result, options):
     calls = []
-    monkeypatch.setattr(*patched, lambda queue, **kwargs: calls.append((queue, kwargs)) or result)
+    monkeypatch.setattr(*patched, lambda **kwargs: calls.append(kwargs) or result)
     monkeypatch.setattr(sys, "argv", ["ingest.py", *argv])
 
     assert script.main() == 0
 
-    assert calls[0][0].state_directory == tmp_path / "wat2do/ingestion"
-    assert calls[0][1] == options
+    assert calls == [options]
     assert json.loads(capsys.readouterr().out) == result
 
 
-def test_main_status_prints_queue_counts(monkeypatch, tmp_path, capsys):
-    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
-    IngestionQueue().enqueue(
-        QueueItem(school="upenn", post={"url": "https://example.edu/events/1"})
+def test_main_enqueue_queues_post_urls(monkeypatch, capsys):
+    calls = []
+    monkeypatch.setattr(
+        items, "queue_instagram", lambda urls, *, school: calls.append((urls, school)) or 2
     )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "ingest.py",
+            "enqueue",
+            "--school",
+            "uwaterloo",
+            "--url",
+            "https://www.instagram.com/p/ABC/",
+            "--url",
+            "https://www.instagram.com/reel/XYZ/",
+        ],
+    )
+
+    assert script.main() == 0
+
+    assert calls == [
+        (
+            ["https://www.instagram.com/p/ABC/", "https://www.instagram.com/reel/XYZ/"],
+            "uwaterloo",
+        )
+    ]
+    assert json.loads(capsys.readouterr().out) == {"queued": 2}
+
+
+def test_main_status_prints_queue_counts(monkeypatch, capsys):
+    monkeypatch.setattr(items, "counts", lambda: {"fetch": 1, "ready": 2})
     monkeypatch.setattr(sys, "argv", ["ingest.py", "status"])
 
     assert script.main() == 0
 
-    assert json.loads(capsys.readouterr().out) == {"checked": 0, "queued": 1}
+    assert json.loads(capsys.readouterr().out) == {"fetch": 1, "ready": 2}

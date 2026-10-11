@@ -67,14 +67,15 @@ _QUEUE_SCHEMA = """
         id TEXT PRIMARY KEY, event TEXT NOT NULL, created_at REAL NOT NULL
     );
 """
-# The removed Codex review gate kept evidence in these tables and settings.
+# The removed Codex review gate kept evidence in these tables.
 _OBSOLETE_REVIEW_TABLES = (
     "review_snapshots",
     "review_artifacts",
     "review_completions",
     "review_artifact_retention",
 )
-_OBSOLETE_REVIEW_SETTINGS = (
+# Settings of the removed review gate and Brave's former notification capture.
+_OBSOLETE_SETTINGS = (
     "notification_reviewed_target:*",
     "notification_review_reopened:*",
     "notification_import_attempts:*",
@@ -83,6 +84,15 @@ _OBSOLETE_REVIEW_SETTINGS = (
     "notification_import_status",
     "notification_import_error",
     "review_storage_status",
+    # Notified posts now reach the Supabase ingestion queue without Brave.
+    "notification_delivery:*",
+    "notification_ledger_claim",
+    "notification_browser_import_claim",
+    "notification_source_status",
+    "notification_enqueue_status",
+    "manual_retrieval:*",
+    "manual_enqueued:*",
+    "manual_imported:*",
 )
 
 
@@ -139,7 +149,7 @@ class BrowserJobQueue:
     @_retry_storage
     def __init__(self, state_directory: Path | None = None) -> None:
         self.storage_unavailable = False
-        # Set whenever a retrieval finishes, so its capture is handed off at once.
+        # Set whenever a retrieval finishes, so a listed profile's posts are queued at once.
         self.retrieval_finished = threading.Event()
         self._pending_pause: Any = None
         self._pending_rate_limit = False
@@ -176,16 +186,18 @@ class BrowserJobQueue:
                 db.execute(f"DROP TABLE {table}")
             db.executemany(
                 "DELETE FROM settings WHERE key GLOB ?",
-                [(pattern,) for pattern in _OBSOLETE_REVIEW_SETTINGS],
+                [(pattern,) for pattern in _OBSOLETE_SETTINGS],
             )
-            db.execute(
-                "UPDATE settings SET key='manual_enqueued:'||substr(key,17) "
-                "WHERE key GLOB 'manual_imported:*'"
-            )
-            db.execute(
-                "UPDATE settings SET key='notification_ledger_claim' "
-                "WHERE key='notification_browser_import_claim'"
-            )
+            if not db.execute(
+                "SELECT 1 FROM settings WHERE key='notification_retrievals_retired'"
+            ).fetchone():
+                # Their posts moved to the Supabase queue, which fetches them without Brave.
+                db.execute(
+                    "UPDATE jobs SET state='cancelled',finished_at=? "
+                    "WHERE kind='retrieval' AND state='pending'",
+                    (time.time(),),
+                )
+                db.execute("INSERT INTO settings VALUES ('notification_retrievals_retired','true')")
             db.execute(
                 "INSERT INTO settings VALUES ('delivery_generation',?) ON CONFLICT(key) DO NOTHING",
                 (json.dumps(str(uuid.uuid4())),),
@@ -270,6 +282,11 @@ class BrowserJobQueue:
                 actual = definitions.get((expected[1].lower(), expected[2]))
                 if not actual or schema_tokens(actual) != schema_tokens(statement):
                     return None
+            if not db.execute(
+                "SELECT 1 FROM settings WHERE key='notification_retrievals_retired'"
+            ).fetchone():
+                # Upgrade once: Brave no longer captures notified posts.
+                return None
             row = db.execute(
                 "SELECT value FROM settings WHERE key='delivery_generation'"
             ).fetchone()
@@ -668,7 +685,7 @@ class BrowserJobQueue:
             ).fetchone()
             if not row and allow_engagement:
                 row = self._select_engagement(db, now, require_waited=True)
-            if not row and self._retrieval_due(db, now):
+            if not row:
                 row = db.execute(
                     "SELECT * FROM jobs WHERE state='pending' AND kind='retrieval' "
                     f"AND {_AVAILABLE_ACCOUNT_SQL} "
@@ -688,12 +705,6 @@ class BrowserJobQueue:
                 (now, row["id"]),
             )
             return self._job(db.execute("SELECT * FROM jobs WHERE id=?", (row["id"],)).fetchone())
-
-    @staticmethod
-    def _retrieval_due(db: sqlite3.Connection, now: float) -> bool:
-        """Space post retrievals so notification bursts queue instead of hitting 429s."""
-        (last,) = db.execute("SELECT max(started_at) FROM jobs WHERE kind='retrieval'").fetchone()
-        return last is None or now - last >= CONTROL.retrieval_interval_seconds
 
     @staticmethod
     def _expire_pending_digests(db: sqlite3.Connection, now: float) -> None:
@@ -795,7 +806,7 @@ class BrowserJobQueue:
             )
         finally:
             if isinstance(claim, BrowserJob) and claim.kind == "retrieval":
-                # Hands the capture to the ingestion queue without a polling loop.
+                # Queues a listed profile's posts without a polling loop.
                 self.retrieval_finished.set()
 
     @_retry_storage
@@ -953,24 +964,6 @@ class BrowserJobQueue:
         self._record_job_diagnostic("queued", job_id)
 
     @_retry_storage
-    def retry_failed_notification_retrievals(self) -> int:
-        """Retry delivered notification reads locally without another cloud backlog scan."""
-        with closing(self._connect()) as db, db:
-            changed = db.execute(
-                "UPDATE jobs SET state='pending',created_at=?,result=NULL,error=NULL,"
-                "started_at=NULL,finished_at=NULL WHERE kind='retrieval' "
-                "AND state='failed' AND attempts<? "
-                "AND id IN (SELECT json_extract(value,'$') FROM settings "
-                "WHERE key GLOB 'notification_delivery:*') "
-                f"AND {_AVAILABLE_ACCOUNT_SQL} RETURNING id",
-                (time.time(), CONTROL.ingestion_retry_limit),
-            ).fetchall()
-        for row in changed:
-            job_id = row["id"]
-            self._record_job_diagnostic("queued", job_id)
-        return len(changed)
-
-    @_retry_storage
     def cancel(self, job_id: str) -> None:
         with closing(self._connect()) as db, db:
             db.execute(
@@ -1008,7 +1001,7 @@ class BrowserJobQueue:
             ).rowcount
             if not changed:
                 raise ValueError("Only an idle retrieval job may be retried")
-            db.execute("DELETE FROM settings WHERE key=?", (f"manual_enqueued:{job_id}",))
+            db.execute("DELETE FROM settings WHERE key=?", (f"profile_queued:{job_id}",))
         self._record_job_diagnostic("queued", job_id)
 
     @_retry_storage
@@ -1046,8 +1039,7 @@ class BrowserJobQueue:
                 "backoff_seconds": self.get_setting("browser_rate_limit_backoff_seconds", 0),
             },
             "source": self.get_setting("source_status"),
-            "notification_source": self.get_setting("notification_source_status"),
-            "notification_enqueue": self.get_setting("notification_enqueue_status"),
+            "profile_queue": self.get_setting("profile_queue_status"),
         }
 
 
