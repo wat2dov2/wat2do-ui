@@ -344,10 +344,6 @@ def test_pins_existing_tab_and_never_rediscovers_after_navigation(monkeypatch):
     [
         ("Executing JavaScript through AppleScript is turned off. secret", "Enable Brave View"),
         ("Brave is not running. secret", "Open Brave"),
-        (
-            "Brave must be foreground for worker viewport initialization. secret",
-            "Bring the registered Instagram window to the foreground briefly",
-        ),
     ],
 )
 def test_browser_errors_are_actionable_and_sanitized(monkeypatch, detail, expected):
@@ -2364,27 +2360,18 @@ def test_ready_primary_viewport_never_selects_a_tab_or_resizes_a_window(monkeypa
     assert len(samples) == 2
 
 
-def test_native_foreground_guards_precede_tab_selection_and_creation():
-    for script, mutation in (
-        (browser._ACTIVATE_TAB_SCRIPT, "set active tab index"),
-        (browser._CREATE_WORKER_TAB_SCRIPT, "make new tab"),
+def test_worker_tab_scripts_run_while_brave_stays_in_the_background():
+    for script in (
+        browser._ACTIVATE_TAB_SCRIPT,
+        browser._RESTORE_ACTIVE_TAB_SCRIPT,
+        browser._CREATE_WORKER_TAB_SCRIPT,
+        browser._NAVIGATE_TAB_SCRIPT,
+        browser._EXECUTE_TAB_SCRIPT,
     ):
-        assert script.index("if not frontmost then") < script.index(mutation)
-    assert browser._RESTORE_ACTIVE_TAB_SCRIPT.index("if not frontmost then") < (
-        browser._RESTORE_ACTIVE_TAB_SCRIPT.index("set active tab index")
-    )
-    assert "activate application" not in browser._ACTIVATE_TAB_SCRIPT
-    assert 'tell application "System Events"' not in browser._ACTIVATE_TAB_SCRIPT
-    assert "frontmost" not in browser._NAVIGATE_TAB_SCRIPT
-    assert "frontmost" not in browser._EXECUTE_TAB_SCRIPT
-    for script, mutation in (
-        (browser._ACTIVATE_TAB_SCRIPT, "set active tab index"),
-        (browser._ACTIVATE_TAB_SCRIPT, "set bounds of browserWindow"),
-        (browser._RESTORE_ACTIVE_TAB_SCRIPT, "set active tab index"),
-    ):
-        before_mutation = script[: script.index(mutation)].rstrip().splitlines()
-        assert any("if not frontmost then" in line for line in before_mutation[-3:])
-        assert any("id of front window" in line for line in before_mutation[-3:])
+        assert "frontmost" not in script
+        assert "front window" not in script
+        assert "activate" not in script
+        assert 'tell application "System Events"' not in script
 
 
 def test_cold_background_viewport_stops_before_any_job_source(monkeypatch):
@@ -2396,13 +2383,11 @@ def test_cold_background_viewport_stops_before_any_job_source(monkeypatch):
             assert arguments == ("42", browser._VIEWPORT_SOURCE, "99")
             return '{"width":0,"height":0}'
         assert script == browser._ACTIVATE_TAB_SCRIPT
-        raise browser.BrowserSessionError(
-            "Bring the registered Instagram window to the foreground briefly"
-        )
+        raise browser.BrowserSessionError("The pinned Brave tab is no longer on Instagram")
 
     monkeypatch.setattr(browser, "_run_applescript", run)
     runner = browser._PinnedBraveJavascriptRunner("42", window_id="99")
-    with pytest.raises(browser.BrowserSessionError, match="foreground briefly"):
+    with pytest.raises(browser.BrowserSessionError, match="no longer on Instagram"):
         runner("start readonly request", 1)
     assert calls == [browser._EXECUTE_TAB_SCRIPT, browser._ACTIVATE_TAB_SCRIPT]
     assert not runner._viewport_ready

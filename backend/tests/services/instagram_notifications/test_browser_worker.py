@@ -573,14 +573,11 @@ def test_known_account_failure_does_not_quarantine_other_notifications(queue, mo
 
 @pytest.mark.parametrize("kind", ["engagement", "digest", "retrieval"])
 @pytest.mark.parametrize("stage", ["preparation", "execution"])
-def test_foreground_initialization_failure_pauses_before_more_jobs_are_claimed(
+def test_human_recovery_failure_pauses_before_more_jobs_are_claimed(
     queue, monkeypatch, kind, stage
 ):
     monkeypatch.setattr(module, "CONTROL", module.CONTROL.model_copy(update={"parallel_tabs": 2}))
-    reason = (
-        "Bring the registered Instagram window to the foreground briefly to initialize "
-        "its worker tabs, then resume the browser worker"
-    )
+    reason = "Instagram requires human account recovery"
     ids = [
         _engagement(queue, f"Foreground{index}")
         if kind == "engagement"

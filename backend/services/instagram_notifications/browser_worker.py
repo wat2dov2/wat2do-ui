@@ -57,7 +57,6 @@ def _requires_human_recovery(error: BaseException) -> bool:
             "cancellation could not be confirmed",
             "human account recovery",
             "human reauthorization",
-            "Bring the registered Instagram window to the foreground briefly",
         )
     )
 
