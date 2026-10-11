@@ -101,6 +101,13 @@ data "aws_iam_policy_document" "github_deploy" {
   }
 
   statement {
+    sid       = "SendScheduledNotificationEmail"
+    effect    = "Allow"
+    actions   = ["ses:SendEmail", "ses:SendRawEmail"]
+    resources = ["arn:${data.aws_partition.current.partition}:ses:${var.application_region}:${data.aws_caller_identity.current.account_id}:identity/*"]
+  }
+
+  statement {
     sid    = "ReadDeploymentDiagnostics"
     effect = "Allow"
     actions = [
