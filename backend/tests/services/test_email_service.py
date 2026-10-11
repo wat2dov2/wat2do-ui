@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import email
+import email.policy
 from unittest.mock import MagicMock
 
 import httpx
@@ -132,23 +134,21 @@ def test_ses_dispatch_sends_simple_email(monkeypatch, recipients, addresses):
     )
     assert EmailService(ses_client=ses).send(message) is True
 
-    ses.send_email.assert_called_once_with(
-        FromEmailAddress="wat2do <notifications@wat2do.io>",
-        Destination={"ToAddresses": addresses},
-        Content={
-            "Simple": {
-                "Subject": {"Data": "Wat2do update", "Charset": "UTF-8"},
-                "Body": {
-                    "Html": {"Data": "<p>Hello</p>", "Charset": "UTF-8"},
-                    "Text": {"Data": "Hello", "Charset": "UTF-8"},
-                },
-                "Headers": [
-                    {"Name": "List-Unsubscribe", "Value": "<https://wat2do.io/unsubscribe>"}
-                ],
-            }
-        },
-        ReplyToAddresses=["sender@example.com"],
-    )
+    request = ses.send_email.call_args.kwargs
+    assert request["Destination"] == {"ToAddresses": addresses}
+    sent = _sent_mime(ses)
+    assert sent["From"] == "wat2do <notifications@wat2do.io>"
+    assert sent["To"] == ", ".join(addresses)
+    assert sent["Subject"] == "Wat2do update"
+    assert sent["Reply-To"] == "sender@example.com"
+    assert sent["List-Unsubscribe"] == "<https://wat2do.io/unsubscribe>"
+    assert sent.get_body(("plain",)).get_content().strip() == "Hello"
+    assert sent.get_body(("html",)).get_content().strip() == "<p>Hello</p>"
+
+
+def _sent_mime(ses):
+    raw = ses.send_email.call_args.kwargs["Content"]["Raw"]["Data"]
+    return email.message_from_bytes(raw, policy=email.policy.default)
 
 
 _LOGO = InlineImage(
@@ -160,15 +160,11 @@ def test_inline_images_ride_inside_the_message_for_each_provider(monkeypatch):
     monkeypatch.setattr(email_module.settings, "email_provider", "ses")
     ses = MagicMock()
     EmailService(ses_client=ses).send(_message(inline_images=[_LOGO]))
-    assert ses.send_email.call_args.kwargs["Content"]["Simple"]["Attachments"] == [
-        {
-            "RawContent": b"png",
-            "ContentDisposition": "INLINE",
-            "FileName": "logo.png",
-            "ContentId": "wat2do-logo",
-            "ContentType": "image/png",
-        }
-    ]
+    html = _sent_mime(ses).get_body(("related",))
+    assert [part.get_content_type() for part in html.iter_parts()] == ["text/html", "image/png"]
+    image = list(html.iter_parts())[1]
+    assert (image["Content-ID"], image.get_content_disposition()) == ("<wat2do-logo>", "inline")
+    assert image.get_content() == b"png"
 
     monkeypatch.setattr(email_module.settings, "email_provider", "resend")
     monkeypatch.setattr(email_module.settings, "email_provider_api_key", "re_test")
