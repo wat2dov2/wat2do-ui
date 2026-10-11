@@ -8,6 +8,8 @@
   "viewport_warm_timeout_seconds": 3,
   "primary_minimum_viewport_width": 1024,
   "worker_window_height": 1000,
+  "worker_window_idle_seconds": 3,
+  "worker_window_idle_wait_seconds": 20,
   "interaction_timeout_seconds": 30,
   "account_transition_grace_seconds": 2,
   "secondary_cleanup_timeout_seconds": 5,

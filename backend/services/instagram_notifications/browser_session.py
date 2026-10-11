@@ -67,6 +67,7 @@ on run argv
     set targetUrl to item 2 of argv
     set intendedWindowId to item 3 of argv
     set reloadTarget to item 4 of argv
+    set navigationSource to item 5 of argv
     if application "Brave Browser" is not running then error "Brave is not running."
     tell application "Brave Browser"
         if not (exists window id intendedWindowId) then error "Worker browser window is closed."
@@ -77,7 +78,15 @@ on run argv
         set currentUrl to URL of browserTab
         if currentUrl starts with "https://www.instagram.com/accounts/login" or currentUrl starts with "https://www.instagram.com/accounts/suspended" or currentUrl starts with "https://www.instagram.com/challenge" or currentUrl starts with "https://www.instagram.com/checkpoint" then error "Instagram requires human account recovery."
         if reloadTarget is "false" and URL of browserTab is targetUrl then return "already_open"
-        set URL of browserTab to targetUrl
+        try
+            with timeout of 2 seconds
+                execute browserTab javascript navigationSource
+            end timeout
+        on error errorMessage number errorCode
+            if errorCode is not -1712 then error errorMessage number errorCode
+            -- Brave's URL setter also raises the app, so it only rescues a hung page.
+            set URL of browserTab to targetUrl
+        end try
         return "navigating"
     end tell
 end run
@@ -317,7 +326,9 @@ class _PinnedBraveJavascriptRunner:
         tab_id, window_id = self._pin(deadline)
         try:
             result = _dispatch_navigation(
-                _NAVIGATE_TAB_SCRIPT, (tab_id, url, window_id, json.dumps(reload)), deadline
+                _NAVIGATE_TAB_SCRIPT,
+                (tab_id, url, window_id, json.dumps(reload), _navigation_source(url)),
+                deadline,
             )
             if result.strip() == "navigating":
                 self._viewport_ready = False
@@ -436,7 +447,7 @@ class BrowserInstagramSession:
         return path
 
     def navigate(self, url: str, *, reload: bool = False) -> str:
-        """Navigate through Brave's native URL setter without waiting on a renderer."""
+        """Navigate from the page itself, which loads without raising Brave."""
         target = urlsplit(url)
         if (
             target.scheme != "https"
@@ -742,6 +753,11 @@ def _account_profile_url(username: str) -> str:
     if not isinstance(username, str) or not _USERNAME_PATTERN.fullmatch(username):
         raise BrowserSessionError("Instagram browser profile username is invalid")
     return f"https://www.instagram.com/{username}/"
+
+
+def _navigation_source(url: str) -> str:
+    # Deferred so the Apple Event returns before the document unloads.
+    return f"setTimeout(() => window.location.assign({json.dumps(url)}), 0); 1"
 
 
 def _bridge_time_left(deadline: float) -> float:
@@ -1184,6 +1200,51 @@ end run
 """.strip()
 
 
+_FRONT_APPLICATION_SOURCE = """
+ObjC.import("AppKit");
+function run(argv) {
+    if (argv.length) {
+        const app = $.NSRunningApplication.runningApplicationWithProcessIdentifier(Number(argv[0]));
+        return String(!app.isNil() && app.activateWithOptions(2));
+    }
+    return String($.NSWorkspace.sharedWorkspace.frontmostApplication.processIdentifier);
+}
+""".strip()
+
+
+def _front_application(pid: str = "") -> str:
+    """The frontmost app's pid, or reactivate pid; AppKit needs no Apple Events grant."""
+    try:
+        completed = subprocess.run(
+            ["/usr/bin/osascript", "-l", "JavaScript", "-e", _FRONT_APPLICATION_SOURCE, "--"]
+            + ([pid] if pid else []),
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=_CONTROL.apple_event_timeout_seconds,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    result = completed.stdout.strip()
+    return result if result.isascii() and result.isdigit() else ""
+
+
+def _input_idle_seconds() -> float:
+    """Seconds since the last keyboard or mouse input on this Mac."""
+    try:
+        completed = subprocess.run(
+            ["/usr/sbin/ioreg", "-c", "IOHIDSystem", "-d", "4"],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=_CONTROL.apple_event_timeout_seconds,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return float("inf")
+    match = re.search(r'"HIDIdleTime" = (\d+)', completed.stdout)
+    return int(match.group(1)) / 1e9 if match else float("inf")
+
+
 _LIVE_WORKER_TABS_SCRIPT = """
 on run argv
     if application "Brave Browser" is not running then
@@ -1385,6 +1446,26 @@ class BrowserTabPool:
 
     @staticmethod
     def _open_window(opener_tab_id: str | None, initial_url: str) -> str:
+        """Open a popup between keystrokes, then hand focus back to whoever had it.
+
+        Brave raises itself whenever it creates a window, so this is the only
+        worker action that can take focus; page loads never do.
+        """
+        quiet_by = time.monotonic() + _CONTROL.worker_window_idle_wait_seconds
+        while (
+            _input_idle_seconds() < _CONTROL.worker_window_idle_seconds
+            and time.monotonic() < quiet_by
+        ):
+            time.sleep(_CONTROL.poll_interval_seconds)
+        front = _front_application()
+        try:
+            return BrowserTabPool._open_popup(opener_tab_id, initial_url)
+        finally:
+            if front and _front_application() != front:
+                _front_application(front)
+
+    @staticmethod
+    def _open_popup(opener_tab_id: str | None, initial_url: str) -> str:
         source = (
             f"window.open({json.dumps(initial_url)}, '_blank', "
             f"'popup,noopener,width={_CONTROL.primary_minimum_viewport_width + 256},"

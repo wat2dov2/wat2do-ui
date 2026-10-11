@@ -612,6 +612,8 @@ class InstagramBrowserControl(_ControlModel):
     viewport_warm_timeout_seconds: float = Field(gt=0, le=120)
     primary_minimum_viewport_width: int = Field(ge=1024, le=4096)
     worker_window_height: int = Field(ge=600, le=2160)
+    worker_window_idle_seconds: float = Field(ge=0, le=60)
+    worker_window_idle_wait_seconds: float = Field(ge=0, le=60)
     interaction_timeout_seconds: float = Field(gt=0, le=120)
     account_transition_grace_seconds: float = Field(gt=0, le=120)
     secondary_cleanup_timeout_seconds: float = Field(gt=0, le=120)

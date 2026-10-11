@@ -710,14 +710,17 @@ def test_post_navigation_waits_for_delayed_profile_identity_but_rejects_wrong_ac
 
 
 @pytest.mark.parametrize("reload", [False, True])
-def test_post_navigation_uses_native_url_setter_without_renderer_javascript(monkeypatch, reload):
+def test_post_navigation_loads_from_the_page_so_brave_stays_in_the_background(
+    monkeypatch, reload
+):
     calls = []
 
     def run(script, arguments, timeout):
         calls.append((script, arguments))
         assert script == browser._NAVIGATE_TAB_SCRIPT
-        assert "set URL of browserTab to targetUrl" in script
-        assert "execute" not in script
+        # Brave's URL setter raises the app; it only rescues a page too hung to answer.
+        assert "execute browserTab javascript navigationSource" in script
+        assert "if errorCode is not -1712" in script
         return "navigating" if reload else "already_open"
 
     monkeypatch.setattr(browser, "_run_applescript", run)
@@ -727,7 +730,47 @@ def test_post_navigation_uses_native_url_setter_without_renderer_javascript(monk
     assert session.navigate("https://www.instagram.com/p/TARGET/", reload=reload) == (
         "navigating" if reload else "already_open"
     )
-    assert calls[0][1] == ("42", "https://www.instagram.com/p/TARGET/", "99", json.dumps(reload))
+    assert calls[0][1] == (
+        "42",
+        "https://www.instagram.com/p/TARGET/",
+        "99",
+        json.dumps(reload),
+        'setTimeout(() => window.location.assign("https://www.instagram.com/p/TARGET/"), 0); 1',
+    )
+
+
+def test_a_new_worker_window_waits_for_a_pause_and_hands_focus_back(monkeypatch):
+    now = [0.0]
+    idle = iter([0.5, 1.0, 9.0])
+    focus = []
+
+    def front(pid=""):
+        focus.append(pid)
+        return pid or ("700" if len(focus) == 1 else "31")  # Brave took focus.
+
+    monkeypatch.setattr(browser, "_input_idle_seconds", lambda: next(idle))
+    monkeypatch.setattr(browser, "_front_application", front)
+    monkeypatch.setattr(browser.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(browser.time, "sleep", lambda seconds: now.__setitem__(0, now[0] + seconds))
+    monkeypatch.setattr(
+        browser.BrowserTabPool, "_open_popup", staticmethod(lambda opener, url: "55")
+    )
+    assert browser.BrowserTabPool._open_window("1", "https://www.instagram.com/x/") == "55"
+    assert now[0] == 2 * browser._CONTROL.poll_interval_seconds
+    assert focus == ["", "", "700"]
+
+
+def test_a_new_worker_window_opens_anyway_after_the_person_stays_busy(monkeypatch):
+    now = [0.0]
+    monkeypatch.setattr(browser, "_input_idle_seconds", lambda: 0.0)
+    monkeypatch.setattr(browser, "_front_application", lambda pid="": pid or "700")
+    monkeypatch.setattr(browser.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(browser.time, "sleep", lambda seconds: now.__setitem__(0, now[0] + seconds))
+    monkeypatch.setattr(
+        browser.BrowserTabPool, "_open_popup", staticmethod(lambda opener, url: "55")
+    )
+    assert browser.BrowserTabPool._open_window("1", "https://www.instagram.com/x/") == "55"
+    assert now[0] >= browser._CONTROL.worker_window_idle_wait_seconds
 
 
 def test_fourteen_native_navigations_are_spaced_without_losing_exact_targets(monkeypatch):
