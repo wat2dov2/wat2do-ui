@@ -1,15 +1,26 @@
-"""Going-event change notification fanout."""
+"""Going-event change notification fanout.
+
+A database trigger records each event as it was before its first material
+change (``event_change_alerts``). Once an event has been quiet for
+``controlbox.event_change_alerts.quiet_minutes``, ``send_due_alerts`` compares
+that record with the event as it is now and sends everyone who was going one
+email covering every change in the burst.
+"""
 
 import hashlib
 import json
+import logging
+from datetime import datetime, timedelta, timezone
 from itertools import batched
 from typing import Any
 from uuid import UUID
 
 from core.constants import NOTIFICATION_TYPE_EVENT_CHANGE
+from core.controlbox import controlbox
 from core.database import get_sb
-from core.tables import USERS
+from core.tables import EVENT_CHANGE_ALERTS, USERS
 from schemas.event import EventResponse
+from services import event_service
 from services.email_service import EmailMessage
 from services.notifications.delivery_log import (
     claim_delivery,
@@ -20,6 +31,55 @@ from services.notifications.rendering import (
     _render_event_change_html,
     _render_event_change_text,
 )
+
+log = logging.getLogger(__name__)
+
+
+def send_due_alerts(now: datetime | None = None) -> int:
+    """Send one alert per event whose recorded changes have gone quiet.
+
+    Returns the number of emails sent. A row is cleared only if no newer
+    change arrived while it was being sent; a retried send is deduplicated
+    by the delivery log.
+    """
+    cutoff = (now or datetime.now(timezone.utc)) - timedelta(
+        minutes=controlbox.event_change_alerts.quiet_minutes
+    )
+    rows = (
+        get_sb()
+        .table(EVENT_CHANGE_ALERTS)
+        .select("event_id,snapshot,changed_at")
+        .lte("changed_at", cutoff.isoformat())
+        .execute()
+    ).data or []
+    sent = 0
+    for row in rows:
+        try:
+            sent += _send_alert(row["event_id"], row["snapshot"])
+        except Exception:
+            log.warning("Going alert failed for event id=%s", row["event_id"], exc_info=True)
+            continue
+        get_sb().table(EVENT_CHANGE_ALERTS).delete().eq("event_id", row["event_id"]).eq(
+            "changed_at", row["changed_at"]
+        ).execute()
+    return sent
+
+
+def _send_alert(event_id: int, snapshot: dict) -> int:
+    current = event_service.get_event(event_id)
+    if current is None:
+        return 0
+    before = EventResponse.model_validate(
+        {
+            **current.model_dump(),
+            "location": snapshot["location"],
+            "cancelled": snapshot["cancelled"],
+            "occurrences": snapshot["occurrences"],
+        }
+    )
+    diff = event_service.compute_event_diff(before, current)
+    recipients = [UUID(user_id) for user_id in snapshot.get("going_user_ids") or []]
+    return enqueue_event_change(current, diff, recipients)
 
 
 def _compute_change_hash(diff: dict[str, dict[str, Any]]) -> str:

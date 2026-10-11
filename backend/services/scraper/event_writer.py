@@ -33,7 +33,6 @@ from schemas.event import EventDiscoveryFields, normalize_category
 from schemas.event_date import OccurrenceCreate, OccurrenceResponse, OccurrenceUpdate
 from services import event_date_service, event_service, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
-from services.notifications.event_change import enqueue_event_change
 
 if TYPE_CHECKING:
     from services.scraper.org_resolve import ResolvedClub
@@ -304,7 +303,7 @@ def _overwrite_event(
             future_occurrences,
         )
     )
-    recipient_ids = event_service.update_event_and_occurrences(
+    event_service.update_event_and_occurrences(
         existing_id,
         merged,
         stable_occurrences,
@@ -313,19 +312,6 @@ def _overwrite_event(
         [old_event.school, school_slug],
         resources=("events", "clubs"),
     )
-
-    updated = event_service.get_event(existing_id)
-    if updated is not None:
-        diff = event_service.compute_event_diff(old_event, updated)
-        if diff:
-            try:
-                enqueue_event_change(updated, diff, recipient_ids)
-            except Exception as e:
-                log.warning(
-                    "enqueue_event_change failed for scraped overwrite id=%s: %s",
-                    existing_id,
-                    e,
-                )
 
     from services.scraper.dedup import clear_candidate_caches
 

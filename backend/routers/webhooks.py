@@ -1,4 +1,5 @@
 import logging
+import secrets
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,6 +11,7 @@ from core.config import settings
 from services import school_service
 from services.automate_log_service import create_automate_log
 from services.automate_log_service import get_automate_logs as fetch_logs
+from services.notifications import event_change
 
 log = logging.getLogger(__name__)
 
@@ -21,12 +23,22 @@ router = APIRouter(
 security = HTTPBearer()
 
 
-def verify_automate_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
-    if not settings.automate_webhook_key:
+def _require_bearer(credentials: HTTPAuthorizationCredentials, key: str) -> str:
+    if not key:
         raise HTTPException(status_code=500, detail="Webhook key not configured")
-    if credentials.credentials != settings.automate_webhook_key:
+    if not secrets.compare_digest(credentials.credentials, key):
         raise HTTPException(status_code=401, detail="Invalid token")
     return credentials.credentials
+
+
+def verify_automate_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    return _require_bearer(credentials, settings.automate_webhook_key)
+
+
+def verify_event_change_alerts_token(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> str:
+    return _require_bearer(credentials, settings.event_change_alerts_key)
 
 
 class AutomateLogPayload(BaseModel):
@@ -59,6 +71,12 @@ async def receive_automate_log(
     )
 
     return {"status": "ok"}
+
+
+@router.post("/event-change-alerts")
+def send_event_change_alerts(_: str = Depends(verify_event_change_alerts_token)):
+    """Called every minute by Supabase pg_cron while event changes are pending."""
+    return {"sent": event_change.send_due_alerts()}
 
 
 @router.get("/automate/logs")

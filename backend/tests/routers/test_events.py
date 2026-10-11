@@ -29,10 +29,6 @@ def _mock_event(**overrides) -> EventResponse:
     return EventResponse.model_validate(defaults)
 
 
-def _update_result(event: EventResponse) -> event_service.EventUpdateResult:
-    return event_service.EventUpdateResult(event=event, recipient_ids=[])
-
-
 def _mock_club(**overrides) -> ClubResponse:
     defaults = {
         "id": 7,
@@ -198,9 +194,7 @@ def test_update_event_owner_allowed(authenticated_client, monkeypatch):
     """Owner can update their own event."""
     event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-    monkeypatch.setattr(
-        event_service, "update_event", MagicMock(return_value=_update_result(event))
-    )
+    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=event))
 
     # is_admin check must return False for the non-admin user
 
@@ -221,9 +215,7 @@ def test_update_event_admin_allowed(admin_client, monkeypatch):
     """Admin can update any event regardless of ownership."""
     event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
-    monkeypatch.setattr(
-        event_service, "update_event", MagicMock(return_value=_update_result(event))
-    )
+    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=event))
 
     from schemas.user import UserResponse
 
@@ -261,77 +253,6 @@ def test_delete_event_owner_allowed(authenticated_client, monkeypatch):
 
     resp = authenticated_client.delete("/events/1")
     assert resp.status_code == 204
-
-
-# ---------------------------------------------------------------------------
-# event_change hook — router wires the notification fanout on material diff
-# ---------------------------------------------------------------------------
-
-
-def test_update_event_material_diff_triggers_enqueue(authenticated_client, monkeypatch):
-    """PATCH with a material change (location) should fire enqueue_event_change."""
-    from services.notifications import event_change
-
-    old = _mock_event(created_by=FAKE_USER["id"], location="Here")
-    updated = _mock_event(created_by=FAKE_USER["id"], location="There")
-    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=old))
-    monkeypatch.setattr(
-        event_service, "update_event", MagicMock(return_value=_update_result(updated))
-    )
-
-    mock_enqueue = MagicMock(return_value=0)
-    monkeypatch.setattr(event_change, "enqueue_event_change", mock_enqueue)
-
-    resp = authenticated_client.patch(
-        "/events/1", json={"location": "There", "map_location": "There, Waterloo, ON"}
-    )
-    assert resp.status_code == 200
-    mock_enqueue.assert_called_once()
-    args, _ = mock_enqueue.call_args
-    assert args[0] == updated
-    assert "location" in args[1]
-    assert args[2] == []
-
-
-def test_update_event_non_material_diff_skips_enqueue(authenticated_client, monkeypatch):
-    """PATCH that only changes title must NOT fire enqueue_event_change."""
-    from services.notifications import event_change
-
-    old = _mock_event(created_by=FAKE_USER["id"], title="Old Title")
-    updated = _mock_event(created_by=FAKE_USER["id"], title="New Title")
-    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=old))
-    monkeypatch.setattr(
-        event_service, "update_event", MagicMock(return_value=_update_result(updated))
-    )
-
-    mock_enqueue = MagicMock(return_value=0)
-    monkeypatch.setattr(event_change, "enqueue_event_change", mock_enqueue)
-
-    resp = authenticated_client.patch("/events/1", json={"title": "New Title"})
-    assert resp.status_code == 200
-    mock_enqueue.assert_not_called()
-
-
-def test_update_event_enqueue_failure_does_not_break_update(authenticated_client, monkeypatch):
-    """A notification-layer exception must not propagate up to the user."""
-    from services.notifications import event_change
-
-    old = _mock_event(created_by=FAKE_USER["id"], location="Here")
-    updated = _mock_event(created_by=FAKE_USER["id"], location="There")
-    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=old))
-    monkeypatch.setattr(
-        event_service, "update_event", MagicMock(return_value=_update_result(updated))
-    )
-    monkeypatch.setattr(
-        event_change,
-        "enqueue_event_change",
-        MagicMock(side_effect=RuntimeError("provider down")),
-    )
-
-    resp = authenticated_client.patch(
-        "/events/1", json={"location": "There", "map_location": "There, Waterloo, ON"}
-    )
-    assert resp.status_code == 200  # update still succeeded
 
 
 # ---------------------------------------------------------------------------
@@ -723,7 +644,7 @@ def test_patch_event_accepts_discovery_corrections_without_resetting_other_facts
 ):
     existing = _mock_event(employers_on_campus=True, sports_game=True)
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=existing))
-    update = MagicMock(return_value=_update_result(existing))
+    update = MagicMock(return_value=existing)
     monkeypatch.setattr(event_service, "update_event", update)
     response = admin_client.patch("/events/1", json={"sports_game": False})
     assert response.status_code == 200
@@ -746,30 +667,3 @@ def test_featured_is_read_only(request, client_fixture, monkeypatch):
     response = client.patch("/events/1", json={"featured": True})
     assert response.status_code == 422
     update.assert_not_called()
-
-
-def test_update_event_location_requires_map_location(authenticated_client, monkeypatch):
-    """A new venue must come with its new map location, never alone."""
-    update = MagicMock()
-    monkeypatch.setattr(event_service, "update_event", update)
-
-    resp = authenticated_client.patch("/events/1", json={"location": "There"})
-
-    assert resp.status_code == 422
-    update.assert_not_called()
-
-
-def test_map_location_is_optional_and_never_empty():
-    from schemas.event import EventCreate, EventUpdate
-
-    base = {
-        "title": "Jam",
-        "location": "Online",
-        "club_id": 7,
-        "occurrences": [{"dtstart_utc": "2026-10-21T23:00:00Z"}],
-    }
-    assert EventCreate(**base).map_location is None
-    assert EventCreate(**base, map_location="AL, Waterloo, ON").map_location == "AL, Waterloo, ON"
-    assert EventUpdate(map_location="AL, Waterloo, ON").map_location == "AL, Waterloo, ON"
-    with pytest.raises(ValueError):
-        EventCreate(**base, map_location="")

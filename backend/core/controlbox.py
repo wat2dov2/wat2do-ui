@@ -438,6 +438,10 @@ class MorningEmailControl(_ControlModel):
     provider_attempts: int = Field(gt=0, le=10)
 
 
+class EventChangeAlertsControl(_ControlModel):
+    quiet_minutes: int = Field(gt=0, le=60)
+
+
 class EventReminderControl(_ControlModel):
     lead_minutes: int = Field(gt=0)
     early_tolerance_minutes: int = Field(ge=0)
@@ -955,6 +959,7 @@ class ControlBox(_ControlModel):
     recommendations: RecommendationControl
     morning_email: MorningEmailControl
     event_reminder: EventReminderControl
+    event_change_alerts: EventChangeAlertsControl
     notification_defaults: NotificationDefaultsControl
     interaction_ingestion: InteractionIngestionControl
     rate_limits: RateLimitsControl

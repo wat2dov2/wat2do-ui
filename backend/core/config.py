@@ -60,7 +60,8 @@ class Settings(BaseSettings):
 
     # --- Email provider (notifications) ----------------------------------
     # Empty string => dry-run mode (log-only). Set to ``resend`` to send
-    # via Resend, and populate ``email_provider_api_key`` + ``email_from``.
+    # via Resend with ``email_provider_api_key``, or ``ses`` to send through
+    # Amazon SES in ``aws_region`` with the runtime's AWS credentials.
     email_provider: str = ""
     email_provider_api_key: str = ""
     email_from: str = "wat2do <notifications@wat2do.io>"
@@ -84,6 +85,8 @@ class Settings(BaseSettings):
     instagram_slide_render_secret: str = ""
     instagram_slide_render_timeout: float = 30.0
     automate_webhook_key: str = ""
+    # Bearer key Supabase's pg_cron job sends to the event change alerts webhook.
+    event_change_alerts_key: str = ""
 
     @model_validator(mode="after")
     def validate_database_region(self) -> "Settings":

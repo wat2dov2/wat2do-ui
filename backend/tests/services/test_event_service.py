@@ -1168,7 +1168,7 @@ def test_event_edit_refreshes_both_school_snapshots_after_commit(monkeypatch):
     updated = _event(id=42, school="western", club_id=8, title="Updated title")
     monkeypatch.setattr(event_service, "get_event", MagicMock(side_effect=[old, updated]))
     monkeypatch.setattr(event_service, "has_ended", lambda _: False)
-    commit = MagicMock(return_value=[])
+    commit = MagicMock(return_value=None)
     monkeypatch.setattr(event_service, "update_event_and_occurrences", commit)
     refresh = MagicMock(side_effect=lambda *args, **kwargs: commit.assert_called_once())
     monkeypatch.setattr(
@@ -1177,7 +1177,7 @@ def test_event_edit_refreshes_both_school_snapshots_after_commit(monkeypatch):
 
     result = event_service.update_event(42, EventUpdate(title="Updated title"))
 
-    assert result.event is updated
+    assert result is updated
     refresh.assert_called_once_with(
         ["uwaterloo", "western"],
         resources=("events", "clubs"),
@@ -1275,7 +1275,7 @@ def test_edit_validates_or_clears_seasons_for_destination_school(
         "campus_season_ids",
         lambda school: frozenset({"hoco"}) if school == "uwaterloo" else frozenset({"holidays"}),
     )
-    commit = MagicMock(return_value=[])
+    commit = MagicMock(return_value=None)
     monkeypatch.setattr(event_service, "update_event_and_occurrences", commit)
     monkeypatch.setattr(
         event_service.event_feed_revalidation_service, "revalidate_schools", MagicMock()

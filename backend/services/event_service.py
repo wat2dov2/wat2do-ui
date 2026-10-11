@@ -6,9 +6,7 @@ response models as the ``occurrences`` list.
 """
 
 import logging
-from dataclasses import dataclass
 from datetime import datetime, timezone
-from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from postgrest.exceptions import APIError
@@ -38,12 +36,6 @@ from services.event_feed_revalidation import event_feed_revalidation_service
 from services.school_context import resolve_school_timezone
 
 log = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class EventUpdateResult:
-    event: EventResponse
-    recipient_ids: list[UUID]
 
 
 # Event fields whose changes constitute a "material" update - the ones
@@ -294,7 +286,7 @@ def has_ended(event: EventResponse | EventSummaryResponse, *, now: datetime | No
     return latest_end < current
 
 
-def update_event(event_id: int, data: EventUpdate) -> EventUpdateResult | None:
+def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
     """Update an event, refusing edits to already-past events.
 
     Past-event freezing (audit I12) - once every occurrence has passed,
@@ -331,7 +323,7 @@ def update_event(event_id: int, data: EventUpdate) -> EventUpdateResult | None:
             payload["campus_season_ids"], school, strict=True
         )
 
-    recipient_ids = update_event_and_occurrences(
+    update_event_and_occurrences(
         event_id,
         payload,
         data.occurrences if new_occurrences is not None else None,
@@ -343,20 +335,16 @@ def update_event(event_id: int, data: EventUpdate) -> EventUpdateResult | None:
             [existing.school, updated.school],
             resources=("events", "clubs"),
         )
-        return EventUpdateResult(
-            event=updated,
-            recipient_ids=recipient_ids,
-        )
-    return None
+    return updated
 
 
 def update_event_and_occurrences(
     event_id: int,
     event_patch: dict,
     occurrences: list[OccurrenceUpdate] | None,
-) -> list[UUID]:
+) -> None:
     """Apply an event patch and stable occurrence set through the transaction RPC."""
-    response = (
+    (
         get_sb()
         .rpc(
             "update_event_with_occurrences",
@@ -375,8 +363,6 @@ def update_event_and_occurrences(
         )
         .execute()
     )
-    result_row = response.data[0] if response.data else {}
-    return [UUID(str(user_id)) for user_id in result_row.get("recipient_ids") or []]
 
 
 def delete_event(event_id: int) -> bool:
