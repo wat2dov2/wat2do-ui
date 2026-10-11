@@ -18,7 +18,9 @@ import logging
 import re
 from dataclasses import dataclass, field
 
+import boto3  # type: ignore[import-untyped]
 import httpx
+from botocore.config import Config  # type: ignore[import-untyped]
 
 from core.config import settings
 from core.controlbox import controlbox
@@ -49,13 +51,16 @@ class EmailMessage:
 
 
 class EmailService:
-    """Thin wrapper around the outbound email provider.
+    """Thin wrapper around the outbound email provider (Resend or Amazon SES).
 
     Methods intentionally take an ``EmailMessage`` rather than positional
     ``to/subject/...`` so the call site is a single stable signature
     across providers. Provider-specific headers (reply-to, sender domain)
     get set inside ``_dispatch_*`` helpers.
     """
+
+    def __init__(self, ses_client=None):
+        self._ses = ses_client
 
     def send(self, msg: EmailMessage) -> bool:
         """Send one email. Returns True if accepted by the provider.
@@ -77,6 +82,8 @@ class EmailService:
 
         if provider == "resend":
             return self._dispatch_resend(msg)
+        if provider == "ses":
+            return self._dispatch_ses(msg)
 
         raise NotImplementedError(
             f"email provider {provider!r} configured but dispatch is not wired yet"
@@ -129,6 +136,38 @@ class EmailService:
         )
         response.raise_for_status()
         return True
+
+    def _dispatch_ses(self, msg: EmailMessage) -> bool:
+        # SES has no idempotency key; the notifications log claim already
+        # guarantees one dispatch per (user, type, target).
+        content: dict = {
+            "Subject": {"Data": msg.subject, "Charset": "UTF-8"},
+            "Body": {
+                "Html": {"Data": msg.body_html, "Charset": "UTF-8"},
+                "Text": {"Data": msg.body_text, "Charset": "UTF-8"},
+            },
+        }
+        if msg.headers:
+            content["Headers"] = [{"Name": k, "Value": v} for k, v in msg.headers.items()]
+        request: dict = {
+            "FromEmailAddress": settings.email_from,
+            "Destination": {"ToAddresses": [msg.to] if isinstance(msg.to, str) else msg.to},
+            "Content": {"Simple": content},
+        }
+        if msg.reply_to:
+            request["ReplyToAddresses"] = [msg.reply_to]
+        self._get_ses_client().send_email(**request)
+        return True
+
+    def _get_ses_client(self):
+        if self._ses is None:
+            timeout = controlbox.email_delivery.provider_timeout_seconds
+            self._ses = boto3.client(
+                "sesv2",
+                region_name=settings.aws_region,
+                config=Config(connect_timeout=timeout, read_timeout=timeout),
+            )
+        return self._ses
 
 
 email_service = EmailService()

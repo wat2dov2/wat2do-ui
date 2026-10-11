@@ -617,3 +617,88 @@ def test_event_change_reads_recipients_in_batches(monkeypatch, fake_sb, patch_sb
         enabled.assert_called_once_with(ids, NOTIFICATION_TYPE_EVENT_CHANGE)
     else:
         enabled.assert_not_called()
+
+
+def _occurrence(start: str) -> dict:
+    return {
+        "id": f"00000000-0000-0000-0000-{start[5:7]}{start[8:10]}{start[11:13]}000000",
+        "event_id": 42,
+        "dtstart_utc": start,
+        "dtend_utc": None,
+        "duration": None,
+        "tz": "America/Toronto",
+    }
+
+
+def _alert_row(**snapshot) -> dict:
+    return {
+        "event_id": 42,
+        "changed_at": "2026-10-11T14:00:00+00:00",
+        "snapshot": {
+            "location": "SLC",
+            "cancelled": False,
+            "occurrences": [
+                _occurrence("2026-11-02T18:00:00+00:00"),
+                _occurrence("2026-11-09T18:00:00+00:00"),
+            ],
+            "going_user_ids": [USER_ID],
+            **snapshot,
+        },
+    }
+
+
+@pytest.fixture
+def alerts(monkeypatch, fake_sb, patch_sb):
+    patch_sb("services.notifications.event_change")
+    current = EventResponse.model_validate(
+        _event(
+            location="DC 1301",
+            occurrences=[
+                _occurrence("2026-11-02T19:00:00+00:00"),
+                _occurrence("2026-11-09T20:00:00+00:00"),
+            ],
+        )
+    )
+    monkeypatch.setattr(event_change.event_service, "get_event", lambda _event_id: current)
+    enqueue = MagicMock(return_value=1)
+    monkeypatch.setattr(event_change, "enqueue_event_change", enqueue)
+    return enqueue
+
+
+def test_due_alert_sends_one_email_for_every_change_in_a_burst(alerts, fake_sb):
+    fake_sb.queue_responses([[_alert_row()], []])
+    now = datetime(2026, 10, 11, 14, 10, tzinfo=timezone.utc)
+
+    assert event_change.send_due_alerts(now) == 1
+
+    fake_sb.lte.assert_called_once_with("changed_at", (now - timedelta(minutes=5)).isoformat())
+    [call] = alerts.call_args_list
+    event, diff, recipients = call.args
+    assert event.id == 42
+    assert set(diff) == {"location", "occurrences"}
+    assert diff["location"] == {"old": "SLC", "new": "DC 1301"}
+    assert [o["dtstart_utc"] for o in diff["occurrences"]["new"]] == [
+        "2026-11-02T19:00:00+00:00",
+        "2026-11-09T20:00:00+00:00",
+    ]
+    assert recipients == [UUID(USER_ID)]
+    fake_sb.delete.assert_called_once()
+    fake_sb.eq.assert_any_call("event_id", 42)
+    fake_sb.eq.assert_any_call("changed_at", "2026-10-11T14:00:00+00:00")
+
+
+def test_due_alert_keeps_the_row_when_sending_fails(alerts, fake_sb):
+    alerts.side_effect = RuntimeError("provider down")
+    fake_sb.queue_responses([[_alert_row()]])
+
+    assert event_change.send_due_alerts() == 0
+    fake_sb.delete.assert_not_called()
+
+
+def test_due_alert_clears_rows_whose_event_is_gone(alerts, fake_sb, monkeypatch):
+    monkeypatch.setattr(event_change.event_service, "get_event", lambda _event_id: None)
+    fake_sb.queue_responses([[_alert_row()], []])
+
+    assert event_change.send_due_alerts() == 0
+    alerts.assert_not_called()
+    fake_sb.delete.assert_called_once()

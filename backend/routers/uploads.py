@@ -135,16 +135,7 @@ async def upload_event_image(
         file,
         BUCKET_EVENT_IMAGES,
         event.source_image_url,
-        lambda u: (
-            result.event
-            if (
-                result := event_service.update_event(
-                    event_id,
-                    EventUpdate(source_image_url=u),
-                )
-            )
-            else None
-        ),
+        lambda u: event_service.update_event(event_id, EventUpdate(source_image_url=u)),
     )
     return {"url": url}
 

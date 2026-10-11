@@ -267,8 +267,7 @@ def _install_overwrite_stubs(monkeypatch, *, old: EventResponse, updated: EventR
         return old if calls["n"] == 1 else updated
 
     monkeypatch.setattr(event_writer.event_service, "get_event", _get_event)
-    monkeypatch.setattr(event_writer, "enqueue_event_change", lambda *a, **k: 1)
-    update = MagicMock(return_value=[])
+    update = MagicMock(return_value=None)
     monkeypatch.setattr(
         event_writer.event_service,
         "update_event_and_occurrences",

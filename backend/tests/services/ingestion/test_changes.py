@@ -1,34 +1,16 @@
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from uuid import UUID
 
 import pytest
 
 from core.tables import EVENTS, INGESTION_CHANGES, POSITIONS
-from schemas.event import EventResponse
 from services.ingestion import changes as module
-
-_GOING = "6f1c2a52-3b8e-4a0f-9c1d-2f6b7e9a1c33"
-
-
-def _occurrence(event_id: int, day: int) -> dict:
-    start = datetime(2026, 10, day, 23, 0, tzinfo=timezone.utc).isoformat()
-    return {
-        "id": f"00000000-0000-0000-0000-0000000000{day}",
-        "event_id": event_id,
-        "dtstart_utc": start,
-        "dtend_utc": None,
-        "duration": None,
-        "tz": "America/Toronto",
-    }
 
 
 @pytest.fixture
 def db(monkeypatch):
     """Serve ``ingestion_changes`` rows and record every write and side effect."""
-    state = SimpleNamespace(
-        rows=[], updates=[], deletes=[], revalidated=[], alerts=[], events={}, pending={}
-    )
+    state = SimpleNamespace(rows=[], updates=[], deletes=[], revalidated=[], pending={})
 
     class Query:
         def __init__(self, table):
@@ -82,30 +64,7 @@ def db(monkeypatch):
         "revalidate_schools",
         lambda schools, *, resources: state.revalidated.append((list(schools), resources)),
     )
-    monkeypatch.setattr(
-        module.event_service, "get_event", lambda event_id: state.events.get(event_id)
-    )
-    monkeypatch.setattr(
-        module,
-        "enqueue_event_change",
-        lambda event, diff, recipients: state.alerts.append((event.id, diff, recipients)),
-    )
     return state
-
-
-def _event(event_id: int, *, days: list[int], location: str = "AL 113") -> EventResponse:
-    return EventResponse.model_validate(
-        {
-            "id": event_id,
-            "title": "Drop-In Jams",
-            "location": location,
-            "club": "Improv Club, UW",
-            "school": "uwaterloo",
-            "added_at": "2026-10-01T00:00:00Z",
-            "cancelled": False,
-            "occurrences": [_occurrence(event_id, d) for d in days],
-        }
-    )
 
 
 def test_drain_does_nothing_without_changes(db):
@@ -115,12 +74,12 @@ def test_drain_does_nothing_without_changes(db):
 
 def test_drain_refreshes_feeds_and_clears_rows(db):
     db.rows = [
-        {"kind": "event", "record_id": 5, "school_id": 7, "snapshot": None},
-        {"kind": "position", "record_id": 9, "school_id": 7, "snapshot": None},
+        {"kind": "event", "record_id": 5, "school_id": 7},
+        {"kind": "position", "record_id": 9, "school_id": 7},
     ]
     module.drain()
 
-    assert db.updates == [] and db.alerts == []
+    assert db.updates == []
     assert db.revalidated == [(["uwaterloo"], ("events", "clubs", "positions"))]
     assert db.deletes == [
         (INGESTION_CHANGES, [("kind", "event"), ("record_id", [5])]),
@@ -158,55 +117,10 @@ def test_stamp_new_rows_skips_directory_pages_without_text(db):
     assert db.updates == []
 
 
-def test_drain_alerts_people_going_when_a_date_is_removed(db):
-    db.events[3] = _event(3, days=[14, 28])
-    db.rows = [
-        {
-            "kind": "event",
-            "record_id": 3,
-            "school_id": 7,
-            "snapshot": {
-                "location": "AL 113",
-                "cancelled": False,
-                "occurrences": [_occurrence(3, d) for d in (14, 21, 28)],
-                "going_user_ids": [_GOING],
-            },
-        }
-    ]
-
-    module.drain()
-
-    [(event_id, diff, recipients)] = db.alerts
-    assert event_id == 3 and set(diff) == {"occurrences"}
-    assert recipients == [UUID(_GOING)]
-    assert db.updates == []
-
-
-def test_drain_skips_alerts_without_material_changes_or_attendees(db):
-    db.events[3] = _event(3, days=[14])
-    snapshot = {"location": "AL 113", "cancelled": False, "occurrences": [_occurrence(3, 14)]}
-    db.rows = [
-        {
-            "kind": "event",
-            "record_id": 3,
-            "school_id": 7,
-            "snapshot": {**snapshot, "going_user_ids": [_GOING]},
-        },
-        {
-            "kind": "event",
-            "record_id": 4,
-            "school_id": 7,
-            "snapshot": {**snapshot, "location": "AL 116", "going_user_ids": []},
-        },
-    ]
-    module.drain()
-    assert db.alerts == []
-
-
 def test_drain_leaves_another_agents_rows_until_their_posters_are_stored(db):
     db.rows = [
-        {"kind": "event", "record_id": 5, "school_id": 7, "snapshot": None},
-        {"kind": "event", "record_id": 6, "school_id": 7, "snapshot": None},
+        {"kind": "event", "record_id": 5, "school_id": 7},
+        {"kind": "event", "record_id": 6, "school_id": 7},
     ]
     db.pending = {EVENTS: [6]}
     module.drain()

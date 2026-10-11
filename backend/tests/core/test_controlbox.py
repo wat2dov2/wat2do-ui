@@ -44,6 +44,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.recommendations.snapshot.candidate_events_per_school == 1000
     assert controlbox.morning_email.new_event_window_hours == 24
     assert controlbox.event_reminder.lead_minutes == 60
+    assert controlbox.event_change_alerts.quiet_minutes == 5
     assert controlbox.event_discovery.new_event_window_hours == 24
     assert controlbox.event_discovery.event_without_end_visibility_minutes == 60
     assert controlbox.club_management.initial_render_count == 24

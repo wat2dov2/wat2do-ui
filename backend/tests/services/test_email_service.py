@@ -110,6 +110,56 @@ def test_resend_dispatch_includes_reply_to(monkeypatch, recipients):
     assert captured["json"]["reply_to"] == "sender@example.com"
 
 
+@pytest.mark.parametrize(
+    ("recipients", "addresses"),
+    [
+        ("student@uwaterloo.ca", ["student@uwaterloo.ca"]),
+        (
+            ["e22han@uwaterloo.ca", "tqiu@uwaterloo.ca"],
+            ["e22han@uwaterloo.ca", "tqiu@uwaterloo.ca"],
+        ),
+    ],
+)
+def test_ses_dispatch_sends_simple_email(monkeypatch, recipients, addresses):
+    monkeypatch.setattr(email_module.settings, "email_provider", "ses")
+    monkeypatch.setattr(email_module.settings, "email_from", "wat2do <notifications@wat2do.io>")
+    ses = MagicMock()
+
+    message = _message(
+        to=recipients,
+        reply_to="sender@example.com",
+        headers={"List-Unsubscribe": "<https://wat2do.io/unsubscribe>"},
+    )
+    assert EmailService(ses_client=ses).send(message) is True
+
+    ses.send_email.assert_called_once_with(
+        FromEmailAddress="wat2do <notifications@wat2do.io>",
+        Destination={"ToAddresses": addresses},
+        Content={
+            "Simple": {
+                "Subject": {"Data": "Wat2do update", "Charset": "UTF-8"},
+                "Body": {
+                    "Html": {"Data": "<p>Hello</p>", "Charset": "UTF-8"},
+                    "Text": {"Data": "Hello", "Charset": "UTF-8"},
+                },
+                "Headers": [
+                    {"Name": "List-Unsubscribe", "Value": "<https://wat2do.io/unsubscribe>"}
+                ],
+            }
+        },
+        ReplyToAddresses=["sender@example.com"],
+    )
+
+
+def test_ses_errors_bubble_to_caller(monkeypatch):
+    monkeypatch.setattr(email_module.settings, "email_provider", "ses")
+    ses = MagicMock()
+    ses.send_email.side_effect = RuntimeError("MessageRejected")
+
+    with pytest.raises(RuntimeError, match="MessageRejected"):
+        EmailService(ses_client=ses).send(_message())
+
+
 def test_send_safely_logs_and_returns_false(monkeypatch):
     service = EmailService()
     monkeypatch.setattr(service, "send", MagicMock(side_effect=RuntimeError("provider down")))

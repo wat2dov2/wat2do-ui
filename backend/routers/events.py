@@ -1,4 +1,3 @@
-import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Literal
@@ -31,9 +30,6 @@ from schemas.event import (
 )
 from schemas.user import UserResponse
 from services import admin_query, club_service, event_query, event_service
-from services.notifications import event_change
-
-log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/events", tags=["events"])
 EventSortBy = Literal["date", "title", "location", "price", "added_at"]
@@ -180,24 +176,12 @@ def update_event(
     data: EventUpdate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    old_event = _get_event_or_404_authorized(event_id, db_user)
+    _get_event_or_404_authorized(event_id, db_user)
     # Reassigning orgs requires management-team membership (or admin), same as create.
     if data.club_id is not None:
         _authorize_event_club(data.club_id, db_user)
-    update_result = get_or_404(event_service.update_event(event_id, data), EVENT_NOT_FOUND)
-    updated_event = update_result.event
-    # Notify on material diff only (compute_event_diff); never fail the update on notify errors.
-    diff = event_service.compute_event_diff(old_event, updated_event)
-    if diff:
-        try:
-            event_change.enqueue_event_change(
-                updated_event,
-                diff,
-                update_result.recipient_ids,
-            )
-        except Exception as e:
-            log.warning("enqueue_event_change failed event=%s: %s", event_id, e)
-    return updated_event
+    # People going hear about material changes through event_change_alerts.
+    return get_or_404(event_service.update_event(event_id, data), EVENT_NOT_FOUND)
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -209,12 +209,7 @@ def test_upload_event_image_owner_allowed(authenticated_client, monkeypatch):
     monkeypatch.setattr(
         event_service,
         "update_event",
-        MagicMock(
-            return_value=event_service.EventUpdateResult(
-                event=event,
-                recipient_ids=[],
-            )
-        ),
+        MagicMock(return_value=event),
     )
     monkeypatch.setattr(
         storage, "upload_file", MagicMock(return_value="https://example.com/img.png")
