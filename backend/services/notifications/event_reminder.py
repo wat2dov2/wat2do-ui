@@ -15,6 +15,7 @@ from services.email_service import EmailMessage
 from services.notifications.delivery_log import claim_delivery, deliver_claimed_email
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
+    EMAIL_LOGO,
     event_reminder_subject,
     render_event_reminder_html,
     render_event_reminder_text,
@@ -181,6 +182,7 @@ def _send_event_reminder(*, user: dict, reminder: dict) -> bool | None:
             "List-Unsubscribe": f"<{unsubscribe}>",
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
+        inline_images=[EMAIL_LOGO],
     )
     return deliver_claimed_email(
         row_id=row_id,

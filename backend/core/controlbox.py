@@ -440,6 +440,8 @@ class MorningEmailControl(_ControlModel):
 
 class EventChangeAlertsControl(_ControlModel):
     quiet_minutes: int = Field(gt=0, le=60)
+    image_timeout_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
+    image_max_bytes: int = Field(gt=0, le=20_000_000)
 
 
 class EventReminderControl(_ControlModel):

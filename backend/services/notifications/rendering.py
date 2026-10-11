@@ -2,7 +2,10 @@
 
 from datetime import datetime
 from html import escape
+from pathlib import Path
 from zoneinfo import ZoneInfo
+
+from services.email_service import InlineImage
 
 # Email clients do not reliably support CSS custom properties or OKLCH.
 # These resolved sRGB values preserve the app's semantic dark-theme roles.
@@ -14,6 +17,15 @@ _EMAIL_THEME = {
     "muted_foreground": "#a3a3a3",
     "border": "#3a3a3a",
 }
+
+
+# Embedded in every notification email; the shared shell shows it as cid:wat2do-logo.
+EMAIL_LOGO = InlineImage(
+    content_id="wat2do-logo",
+    filename="wat2do-logo.png",
+    content_type="image/png",
+    content=Path(__file__).with_name("wat2do-logo.png").read_bytes(),
+)
 
 
 def morning_email_subject(picks_count: int) -> str:
@@ -127,8 +139,8 @@ def _email_shell(
         f'<div style="margin:0;background:{_EMAIL_THEME["background"]};padding:28px 16px;">'
         f'<div style="max-width:640px;margin:0 auto;background:{_EMAIL_THEME["surface"]};'
         f'border:1px solid {_EMAIL_THEME["border"]};border-radius:16px;padding:24px;">'
-        f'<p style="margin:0 0 8px;color:{_EMAIL_THEME["muted_foreground"]};'
-        'font:700 12px sans-serif;letter-spacing:.08em;text-transform:uppercase;">wat2do</p>'
+        f'<img src="cid:{EMAIL_LOGO.content_id}" alt="wat2do" width="80" height="57" '
+        'style="display:block;margin:0 0 16px;border:0;">'
         f'<h1 style="margin:0 0 24px;color:{_EMAIL_THEME["foreground"]};'
         f'font:800 28px sans-serif;">{escape(subject)}</h1>'
         f"{content}"
@@ -244,6 +256,7 @@ def render_event_change_html(
     subject: str,
     event: dict,
     diff: dict,
+    image_src: str | None,
     tz: ZoneInfo,
     frontend_url: str,
     preferences_url: str,
@@ -251,12 +264,11 @@ def render_event_change_html(
 ) -> str:
     event_url = escape(_event_url(event, frontend_url), quote=True)
     title = escape(str(event.get("title") or "Untitled event"))
-    image_url = event.get("source_image_url")
     image = (
-        f'<a href="{event_url}"><img src="{escape(str(image_url), quote=True)}" '
+        f'<a href="{event_url}"><img src="{escape(image_src, quote=True)}" '
         f'alt="{title}" width="590" style="display:block;width:100%;max-width:590px;'
         'height:auto;margin:0 0 20px;border-radius:12px;"></a>'
-        if image_url
+        if image_src
         else ""
     )
     rows = "".join(
