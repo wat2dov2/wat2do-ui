@@ -311,15 +311,13 @@ def test_normalizes_only_valid_post_permalink():
     )
 
 
-def test_pins_existing_tab_and_never_rediscovers_after_navigation(monkeypatch):
+def test_pins_owned_tab_window_once_and_never_rediscovers_after_navigation(monkeypatch):
     calls = []
 
     def run(args, **kwargs):
         calls.append(args)
         output = (
-            "42"
-            if args[2] == browser._SELECT_TAB_SCRIPT
-            else "99"
+            "99"
             if args[2] == browser._WORKER_WINDOW_SCRIPT
             else '{"width":1200,"height":900}'
             if args[-2] == browser._VIEWPORT_SOURCE
@@ -328,15 +326,21 @@ def test_pins_existing_tab_and_never_rediscovers_after_navigation(monkeypatch):
         return subprocess.CompletedProcess(args, 0, stdout=output)
 
     monkeypatch.setattr(browser.subprocess, "run", run)
-    runner = browser._PinnedBraveJavascriptRunner()
+    runner = browser._PinnedBraveJavascriptRunner("42")
     assert runner("first operation", 1) == "ok"
     assert runner("second operation", 1) == "ok"
-    assert calls[0][2] == browser._SELECT_TAB_SCRIPT
-    assert calls[1][2] == browser._WORKER_WINDOW_SCRIPT
-    assert calls[2][-3:] == ["42", browser._VIEWPORT_SOURCE, "99"]
-    assert calls[3][-3:] == ["42", "first operation", "99"]
-    assert calls[4][-3:] == ["42", "second operation", "99"]
-    assert "make new" not in browser._SELECT_TAB_SCRIPT
+    assert calls[0][2] == browser._WORKER_WINDOW_SCRIPT
+    assert calls[1][-3:] == ["42", browser._VIEWPORT_SOURCE, "99"]
+    assert calls[2][-3:] == ["42", "first operation", "99"]
+    assert calls[3][-3:] == ["42", "second operation", "99"]
+
+
+def test_runner_never_adopts_a_persons_instagram_tab(monkeypatch):
+    monkeypatch.setattr(
+        browser.subprocess, "run", lambda *a, **k: pytest.fail("No tab discovery")
+    )
+    with pytest.raises(browser._BrowserTabUnavailable, match="No worker Instagram window"):
+        browser._PinnedBraveJavascriptRunner()("operation", 1)
 
 
 @pytest.mark.parametrize(
@@ -617,8 +621,9 @@ def test_automation_permission_error_preserves_actionable_sanitized_cause(monkey
         raise subprocess.CalledProcessError(1, "osascript", stderr=detail)
 
     monkeypatch.setattr(browser.subprocess, "run", run)
+    runner = browser._PinnedBraveJavascriptRunner("42", window_id="99")
     with pytest.raises(browser.BrowserSessionError) as raised:
-        browser.BrowserInstagramSession().cancel_pending_request()
+        browser.BrowserInstagramSession(javascript_runner=runner).cancel_pending_request()
     message = str(raised.value)
     assert "Instagram browser request cancellation could not be confirmed" in message
     assert "Allow the Mac runner to control Brave" in message
@@ -630,9 +635,13 @@ def test_cancellation_preserves_sanitized_browser_timeout(monkeypatch):
     def run(*args, **kwargs):
         raise subprocess.TimeoutExpired("osascript", 30, output="secret")
 
+    clock = iter(range(0, 10**6, 5))
     monkeypatch.setattr(browser.subprocess, "run", run)
+    monkeypatch.setattr(browser.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(browser.time, "monotonic", lambda: float(next(clock)))
+    runner = browser._PinnedBraveJavascriptRunner("42", window_id="99")
     with pytest.raises(browser.BrowserSessionError) as raised:
-        browser.BrowserInstagramSession().cancel_pending_request()
+        browser.BrowserInstagramSession(javascript_runner=runner).cancel_pending_request()
     assert str(raised.value) == (
         "Instagram browser request cancellation could not be confirmed: "
         "Brave browser automation timed out"
@@ -749,44 +758,6 @@ def test_fourteen_native_navigations_are_spaced_without_losing_exact_targets(mon
         (str(tab_id), f"https://www.instagram.com/p/POST{tab_id}/") for tab_id in range(14)
     }
     assert all(after[2] - before[2] >= interval * 0.9 for before, after in zip(sent, sent[1:]))
-
-
-def test_tab_replacements_share_the_same_page_load_spacing_as_existing_navigation(monkeypatch):
-    now = [0.0]
-    sent = []
-    created = []
-
-    def native(script, arguments, timeout):
-        sent.append((script, now[0]))
-        if script == browser._CREATE_WORKER_TAB_SCRIPT:
-            tab_id = str(len(created) + 2)
-            created.append(tab_id)
-            return tab_id
-        assert script == browser._NAVIGATE_TAB_SCRIPT
-        return "navigating"
-
-    monkeypatch.setattr(
-        browser,
-        "_CONTROL",
-        browser._CONTROL.model_copy(update={"navigation_interval_seconds": 1}),
-    )
-    monkeypatch.setattr(browser.time, "monotonic", lambda: now[0])
-    monkeypatch.setattr(browser.time, "sleep", lambda seconds: now.__setitem__(0, now[0] + seconds))
-    monkeypatch.setattr(browser, "_run_applescript", native)
-    monkeypatch.setattr(browser.BrowserTabPool, "_instagram_tab_ids", lambda _: ["1", *created])
-    profile = "https://www.instagram.com/wat2do.uwaterloo/"
-    runner = browser._PinnedBraveJavascriptRunner("1", window_id="99")
-    assert runner.navigate(profile, 3) == "navigating"
-    for expected in ["2", "3", "4"]:
-        assert browser.BrowserTabPool._create_tab("99", "last", profile) == expected
-    assert runner.navigate("https://www.instagram.com/p/POST/", 3) == "navigating"
-    assert sent == [
-        (browser._NAVIGATE_TAB_SCRIPT, 0),
-        (browser._CREATE_WORKER_TAB_SCRIPT, 1),
-        (browser._CREATE_WORKER_TAB_SCRIPT, 2),
-        (browser._CREATE_WORKER_TAB_SCRIPT, 3),
-        (browser._NAVIGATE_TAB_SCRIPT, 4),
-    ]
 
 
 def test_navigation_spacing_wait_releases_transport_for_healthy_read(monkeypatch):
@@ -1100,116 +1071,6 @@ def test_pool_cancels_all_registered_tabs_before_switching_account(monkeypatch):
     assert [s.tab_id for s in sessions] == ["2"] and username == "wat2do.ubc"
 
 
-def test_pool_does_not_adopt_human_tabs_when_all_owned_tabs_are_closed(monkeypatch):
-    from types import SimpleNamespace
-
-    q = SimpleNamespace(
-        get_setting=lambda key, default=None: ["1", "2"] if key == "browser_tab_ids" else default
-    )
-    monkeypatch.setattr(
-        browser,
-        "_run_applescript",
-        lambda script, *args: (
-            (_ for _ in ()).throw(
-                browser.BrowserSessionError("The pinned Instagram tab was closed")
-            )
-            if script == browser._WORKER_WINDOW_SCRIPT
-            else pytest.fail("No human tab adoption")
-        ),
-    )
-    with pytest.raises(browser.BrowserSessionError, match="No registered worker window"):
-        browser.BrowserTabPool(q).ensure_capacity()
-
-
-def test_pool_caps_instagram_tabs_and_repairs_closed_slots(monkeypatch):
-    from types import SimpleNamespace
-
-    monkeypatch.setattr(
-        browser, "_CONTROL", browser._CONTROL.model_copy(update={"parallel_tabs": 10})
-    )
-    settings = {"browser_tab_ids": ["1"]}
-    live = {
-        "1",
-        "101",
-        "102",
-        "103",
-        "104",
-        "105",
-        "106",
-        "107",
-        "108",
-        "109",
-        "110",
-        "111",
-        "112",
-        "113",
-    }
-    created = []
-
-    def applescript(script, args, timeout):
-        if script == browser._ACTIVATE_TAB_SCRIPT:
-            return sorted(live)[0]
-        if script == browser._EXECUTE_TAB_SCRIPT:
-            assert args[1] == browser._VIEWPORT_SOURCE
-            return '{"width":1200,"height":900}'
-        if script == browser._RESTORE_ACTIVE_TAB_SCRIPT:
-            return "restored"
-        if script == browser._CLOSE_WORKER_TAB_SCRIPT:
-            live.discard(args[0])
-            return "closed"
-        if script == browser._INSTAGRAM_TAB_INVENTORY_SCRIPT:
-            return "\n".join(sorted(live))
-        if script == browser._WORKER_WINDOW_SCRIPT:
-            if args[0] not in live:
-                raise browser.BrowserSessionError("The pinned Instagram tab was closed")
-            return "99"
-        if script == browser._WORKER_TAB_INVENTORY_SCRIPT:
-            assert args[0] == "99"
-            return "\n".join(tab_id for tab_id in args[1:] if tab_id in live)
-        assert script == browser._CREATE_WORKER_TAB_SCRIPT
-        tab_id = str(len(created) + 2)
-        created.append(tab_id)
-        live.add(tab_id)
-        return tab_id
-
-    q = SimpleNamespace(
-        get_setting=lambda key, default=None: settings.get(key, default),
-        set_setting=lambda key, value: settings.update(
-            {key: list(value) if isinstance(value, list) else value}
-        ),
-        peek_account_username=lambda: "wat2do.ubc",
-    )
-    monkeypatch.setattr(browser, "_run_applescript", applescript)
-    monkeypatch.setattr(
-        browser,
-        "BrowserInstagramSession",
-        lambda **kw: SimpleNamespace(
-            run=lambda _: "/",
-            current_page_path=lambda **kwargs: "/wat2do.ubc/",
-            current_account_username=lambda: "wat2do.ubc",
-            cancel_pending_request=lambda: None,
-            poll_until=lambda ready: ready(),
-        ),
-    )
-    pool = browser.BrowserTabPool(q)
-    first = pool.ensure_capacity()
-    assert len(first) == len(set(first)) == 10
-    assert len(created) == 0
-    assert pool.ensure_capacity() == first
-    assert len(created) == 0
-    live.remove("105")
-    repaired = pool.ensure_capacity()
-    assert len(repaired) == len(set(repaired)) == 10
-    assert "105" not in repaired
-    assert repaired == settings["browser_tab_ids"]
-    assert len(created) == 1
-    live.clear()
-    restored = pool.ensure_capacity()
-    assert len(restored) == len(set(restored)) == 10
-    assert len(created) == 11
-    assert settings["browser_window_id"] == "99"
-
-
 def test_public_pool_records_verified_bootstrap_hint_without_navigating_targets(monkeypatch):
     from types import SimpleNamespace
 
@@ -1366,7 +1227,7 @@ def test_fresh_primary_bootstrap_429_propagates_before_polling_missing_identity(
 def test_primary_public_bootstrap_recovers_blank_routes_and_preserves_auth_guards(
     monkeypatch, path, actual_username
 ):
-    settings = {"browser_tab_ids": ["1", "2"], "browser_window_id": "99", "paused": "existing"}
+    settings = {"browser_tab_ids": ["1", "2"], "paused": "existing"}
     if actual_username == "student.personal":
         settings["retrieval_pool_account"] = actual_username
     navigations = []
@@ -1396,10 +1257,7 @@ def test_primary_public_bootstrap_recovers_blank_routes_and_preserves_auth_guard
         return primary
 
     def applescript(script, arguments, timeout):
-        assert script in {
-            browser._WORKER_TAB_INVENTORY_SCRIPT,
-            browser._INSTAGRAM_TAB_INVENTORY_SCRIPT,
-        }
+        assert script == browser._LIVE_WORKER_TABS_SCRIPT
         return "1\n2"
 
     monkeypatch.setattr(
@@ -1723,53 +1581,6 @@ def test_applescript_error_reports_only_numeric_code(monkeypatch):
     assert "sensitive" not in str(raised.value)
 
 
-def test_pool_settles_excess_owned_tabs_and_keeps_reserved_primary(monkeypatch):
-    from types import SimpleNamespace
-
-    settings = {"browser_tab_ids": [str(i) for i in range(1, 21)], "browser_window_id": "99"}
-    settled = []
-    closed = []
-    monkeypatch.setattr(
-        browser, "_CONTROL", browser._CONTROL.model_copy(update={"parallel_tabs": 7})
-    )
-
-    def applescript(script, args, timeout):
-        if script == browser._WORKER_TAB_INVENTORY_SCRIPT:
-            return "\n".join(tab for tab in args[1:] if tab not in closed)
-        if script == browser._CLOSE_WORKER_TAB_SCRIPT:
-            assert args[0] in settled
-            closed.append(args[0])
-            return "closed"
-        if script == browser._INSTAGRAM_TAB_INVENTORY_SCRIPT:
-            return "\n".join([str(i) for i in range(1, 8)] + ["999"])
-        if script == browser._WORKER_WINDOW_SCRIPT:
-            if args[0] in closed:
-                raise browser.BrowserSessionError("The pinned Instagram tab was closed")
-            return "99"
-        raise AssertionError(script)
-
-    monkeypatch.setattr(browser, "_run_applescript", applescript)
-    monkeypatch.setattr(
-        browser,
-        "BrowserInstagramSession",
-        lambda **kw: SimpleNamespace(
-            cancel_pending_request=lambda: settled.append(kw["javascript_runner"]._tab_id),
-            run=lambda _: "/",
-            current_page_path=lambda **kwargs: "/wat2do.ubc/",
-            current_account_username=lambda: "wat2do.ubc",
-            poll_until=lambda ready: ready(),
-        ),
-    )
-    q = SimpleNamespace(
-        get_setting=lambda key, default=None: settings.get(key, default),
-        set_setting=lambda key, value: settings.update({key: value}),
-        peek_account_username=lambda: "wat2do.ubc",
-    )
-    assert browser.BrowserTabPool(q).ensure_capacity() == [str(i) for i in range(1, 8)]
-    assert closed == [str(i) for i in range(8, 21)] + ["999"]
-    assert "1" not in closed and "999" in closed
-
-
 def test_closed_owned_document_is_settled_without_retargeting_tab():
     calls = []
 
@@ -1780,55 +1591,6 @@ def test_closed_owned_document_is_settled_without_retargeting_tab():
     browser.BrowserInstagramSession(javascript_runner=runner).cancel_pending_request()
     assert len(calls) == 1
     assert "request.controller.abort()" in calls[0]
-
-
-def test_surplus_tab_timeout_closes_exact_document_and_verifies_absence(monkeypatch):
-    from types import SimpleNamespace
-
-    calls = []
-
-    def cancel():
-        raise browser.BrowserSessionError(
-            "Instagram browser request cancellation could not be confirmed: Brave browser automation timed out"
-        )
-
-    monkeypatch.setattr(
-        browser,
-        "BrowserInstagramSession",
-        lambda **kwargs: SimpleNamespace(cancel_pending_request=cancel),
-    )
-
-    def applescript(script, args, timeout):
-        calls.append((script, args))
-        if script == browser._CLOSE_WORKER_TAB_SCRIPT:
-            return "closed"
-        raise browser.BrowserSessionError("The pinned Instagram tab was closed")
-
-    monkeypatch.setattr(browser, "_run_applescript", applescript)
-    browser.BrowserTabPool._close_settled_tab("42", "99")
-    assert calls == [
-        (browser._CLOSE_WORKER_TAB_SCRIPT, ("42", "99")),
-        (browser._WORKER_WINDOW_SCRIPT, ("42",)),
-    ]
-
-
-def test_surplus_tab_closure_requires_verified_absence(monkeypatch):
-    from types import SimpleNamespace
-
-    monkeypatch.setattr(
-        browser,
-        "BrowserInstagramSession",
-        lambda **kwargs: SimpleNamespace(cancel_pending_request=lambda: None),
-    )
-    monkeypatch.setattr(
-        browser,
-        "_run_applescript",
-        lambda script, args, timeout: (
-            "closed" if script == browser._CLOSE_WORKER_TAB_SCRIPT else "42"
-        ),
-    )
-    with pytest.raises(browser.BrowserSessionError, match="closure could not be confirmed"):
-        browser.BrowserTabPool._close_settled_tab("42", "99")
 
 
 def test_applescript_transport_serializes_parallel_tabs_without_serializing_jobs(monkeypatch):
@@ -2222,7 +1984,6 @@ def test_fifteen_tab_pool_reserves_primary_and_assigns_all_fourteen_secondary_ta
 
     def session(**kwargs):
         runner = kwargs["javascript_runner"]
-        assert runner._window_id == "99"
         assert kwargs["allow_account_switch"] is (runner._tab_id == "1")
         return SimpleNamespace(
             tab_id=runner._tab_id,
@@ -2242,105 +2003,6 @@ def test_fifteen_tab_pool_reserves_primary_and_assigns_all_fourteen_secondary_ta
     assert calls[15] == ("switch", "1")
     assert [call[1] for call in calls[16:]] == ids[1:]
     assert all(call[2] == "https://www.instagram.com/wat2do.ubc/" for call in calls[16:])
-
-
-@pytest.mark.parametrize("bootstrap_username", ["wat2do.ubc", "student.personal"])
-def test_closed_primary_is_repaired_first_without_promoting_a_retrieval_tab(
-    monkeypatch, bootstrap_username
-):
-    settings = {"browser_tab_ids": ["1", "2", "3"], "browser_window_id": "99"}
-    live = {"2", "3"}
-    created = []
-    monkeypatch.setattr(
-        browser, "_CONTROL", browser._CONTROL.model_copy(update={"parallel_tabs": 3})
-    )
-
-    def applescript(script, arguments, timeout):
-        if script == browser._ACTIVATE_TAB_SCRIPT:
-            return "2"
-        if script == browser._EXECUTE_TAB_SCRIPT:
-            assert arguments[1] == browser._VIEWPORT_SOURCE
-            return '{"width":1200,"height":900}'
-        if script == browser._RESTORE_ACTIVE_TAB_SCRIPT:
-            return "restored"
-        if script == browser._WORKER_TAB_INVENTORY_SCRIPT:
-            return "2\n3"
-        if script == browser._WORKER_WINDOW_SCRIPT:
-            raise browser.BrowserSessionError("The pinned Instagram tab was closed")
-        if script == browser._INSTAGRAM_TAB_INVENTORY_SCRIPT:
-            assert arguments == ("99",)
-            return "\n".join(sorted(live))
-        if script == browser._CREATE_WORKER_TAB_SCRIPT:
-            created.append(arguments)
-            live.add("4")
-            return "4"
-        pytest.fail("No existing secondary document should be closed")
-
-    monkeypatch.setattr(browser, "_run_applescript", applescript)
-    monkeypatch.setattr(
-        browser,
-        "BrowserInstagramSession",
-        lambda **kwargs: SimpleNamespace(
-            current_page_path=lambda **kwargs: f"/{bootstrap_username}/",
-            current_account_username=lambda: bootstrap_username,
-            poll_until=lambda predicate: predicate(),
-        ),
-    )
-    queue = SimpleNamespace(
-        get_setting=lambda key, default=None: settings.get(key, default),
-        set_setting=lambda key, value: settings.update({key: value}),
-        peek_account_username=lambda: bootstrap_username,
-    )
-    assert browser.BrowserTabPool(queue).ensure_capacity() == ["4", "2", "3"]
-    assert created == [("99", "first", f"https://www.instagram.com/{bootstrap_username}/")]
-    assert settings["retrieval_pool_account"] is None
-
-
-def test_owned_tab_moved_to_another_window_is_never_replaced_or_adopted(monkeypatch):
-    settings = {"browser_tab_ids": ["1", "2"], "browser_window_id": "99"}
-
-    def applescript(script, arguments, timeout):
-        if script == browser._WORKER_TAB_INVENTORY_SCRIPT:
-            assert arguments == ("99", "1", "2")
-            return "2"
-        if script == browser._WORKER_WINDOW_SCRIPT:
-            assert arguments == ("1",)
-            return "100"
-        pytest.fail("No mutation after an owned tab leaves its registered window")
-
-    monkeypatch.setattr(browser, "_run_applescript", applescript)
-    queue = SimpleNamespace(get_setting=lambda key, default=None: settings.get(key, default))
-    with pytest.raises(browser.BrowserSessionError, match="moved outside"):
-        browser.BrowserTabPool(queue).ensure_capacity()
-
-
-@pytest.mark.parametrize("created_ids", [["4"], ["4", "5"]])
-def test_uncertain_creation_is_reconciled_without_replaying_make(monkeypatch, created_ids):
-    live = {"2", "3"}
-    creates = []
-
-    def applescript(script, arguments, timeout):
-        if script == browser._INSTAGRAM_TAB_INVENTORY_SCRIPT:
-            return "\n".join(sorted(live))
-        assert script == browser._CREATE_WORKER_TAB_SCRIPT
-        creates.append(arguments)
-        live.update(created_ids)
-        raise browser._BrowserAutomationTransient("Brave browser automation timed out")
-
-    monkeypatch.setattr(browser, "_run_applescript", applescript)
-    if len(created_ids) == 1:
-        assert (
-            browser.BrowserTabPool._create_tab(
-                "99", "first", "https://www.instagram.com/wat2do.ubc/"
-            )
-            == "4"
-        )
-    else:
-        with pytest.raises(browser._BrowserAutomationTransient):
-            browser.BrowserTabPool._create_tab(
-                "99", "first", "https://www.instagram.com/wat2do.ubc/"
-            )
-    assert creates == [("99", "first", "https://www.instagram.com/wat2do.ubc/")]
 
 
 def test_ready_primary_viewport_never_selects_a_tab_or_resizes_a_window(monkeypatch):
@@ -2364,7 +2026,8 @@ def test_worker_tab_scripts_run_while_brave_stays_in_the_background():
     for script in (
         browser._ACTIVATE_TAB_SCRIPT,
         browser._RESTORE_ACTIVE_TAB_SCRIPT,
-        browser._CREATE_WORKER_TAB_SCRIPT,
+        browser._OPEN_WORKER_WINDOW_SCRIPT,
+        browser._LIVE_WORKER_TABS_SCRIPT,
         browser._NAVIGATE_TAB_SCRIPT,
         browser._EXECUTE_TAB_SCRIPT,
     ):
@@ -2775,3 +2438,252 @@ def test_native_navigation_preserves_actionable_recovery_failure(monkeypatch):
     with pytest.raises(browser.BrowserSessionError, match="human account recovery") as raised:
         session.navigate("https://www.instagram.com/wat2do.ubc/")
     assert "private" not in str(raised.value)
+
+
+class FakeBrave:
+    """Brave windows as {window_id: [[tab_id, url], ...]}; a worker popup holds one tab."""
+
+    def __init__(self, windows):
+        self.windows = {window: [list(tab) for tab in tabs] for window, tabs in windows.items()}
+        self.next_id = 1000
+        self.opened = []
+        self.closed = []
+
+    def find(self, tab_id):
+        for window, tabs in self.windows.items():
+            for tab in tabs:
+                if tab[0] == tab_id:
+                    return window, tab
+        return None
+
+    def __call__(self, script, args, timeout):
+        if script == browser._LIVE_WORKER_TABS_SCRIPT:
+            return "\n".join(
+                tab_id
+                for tab_id in args
+                if (found := self.find(tab_id))
+                and found[1][1].startswith("https://www.instagram.com/")
+            )
+        if script == browser._OPEN_WORKER_WINDOW_SCRIPT:
+            opener, source = args
+            assert "'popup,noopener," in source
+            self.opened.append(opener)
+            url = json.loads(source.split("window.open(", 1)[1].split(", '_blank'", 1)[0])
+            self.next_id += 2
+            self.windows[str(self.next_id)] = [[str(self.next_id + 1), url]]
+            return str(self.next_id + 1)
+        if script == browser._WORKER_WINDOW_SCRIPT:
+            found = self.find(args[0])
+            if not found:
+                raise browser._BrowserTabUnavailable("The pinned Instagram tab was closed")
+            return found[0]
+        if script == browser._EXECUTE_TAB_SCRIPT:
+            assert args[1] == browser._VIEWPORT_SOURCE
+            return '{"width":1300,"height":900}'
+        if script == browser._CLOSE_WORKER_TAB_SCRIPT:
+            tab_id, window = args
+            self.windows[window] = [tab for tab in self.windows[window] if tab[0] != tab_id]
+            if not self.windows[window]:
+                del self.windows[window]
+            self.closed.append(tab_id)
+            return "closed"
+        raise AssertionError(script)
+
+
+@pytest.fixture
+def brave_pool(monkeypatch):
+    def build(windows, *, tabs=2, registered=()):
+        brave = FakeBrave(windows)
+        settings = {"browser_tab_ids": list(registered), "retrieval_pool_account": "wat2do.ubc"}
+        monkeypatch.setattr(
+            browser,
+            "_CONTROL",
+            browser._CONTROL.model_copy(
+                update={"parallel_tabs": tabs, "navigation_interval_seconds": 0}
+            ),
+        )
+        monkeypatch.setattr(browser, "_LAST_NAVIGATION_AT", None)
+        monkeypatch.setattr(browser, "_run_applescript", brave)
+        monkeypatch.setattr(
+            browser,
+            "BrowserInstagramSession",
+            lambda **kw: SimpleNamespace(
+                current_page_path=lambda **kwargs: "/wat2do.ubc/",
+                current_account_username=lambda: "wat2do.ubc",
+                cancel_pending_request=lambda: None,
+                poll_until=lambda ready: ready(),
+            ),
+        )
+        queue = SimpleNamespace(
+            get_setting=lambda key, default=None: settings.get(key, default),
+            set_setting=lambda key, value: settings.update(
+                {key: list(value) if isinstance(value, list) else value}
+            ),
+            peek_account_username=lambda: "wat2do.ubc",
+        )
+        return brave, settings, browser.BrowserTabPool(queue)
+
+    return build
+
+
+def test_pool_opens_its_own_popup_windows_and_never_adopts_a_persons_tab(brave_pool):
+    brave, settings, pool = brave_pool({"10": [["500", "https://www.instagram.com/"]]})
+    ids = pool.ensure_capacity()
+    assert len(ids) == 2 and "500" not in ids
+    assert settings["browser_tab_ids"] == ids
+    # The first window comes from a blank bootstrap; later ones from the primary.
+    assert brave.opened == ["", ids[0]]
+    assert all(len(brave.windows[brave.find(tab)[0]]) == 1 for tab in ids)
+    assert pool.ensure_capacity() == ids and len(brave.opened) == 2
+
+
+def test_pool_replaces_closed_and_browsed_away_windows_without_pausing(brave_pool):
+    profile = "https://www.instagram.com/wat2do.ubc/"
+    brave, settings, pool = brave_pool(
+        {"20": [["1", profile]], "30": [["2", profile]]}, registered=["1", "2"]
+    )
+    del brave.windows["30"]
+    first = pool.ensure_capacity()
+    assert first[0] == "1" and first[1] != "2" and brave.opened == ["1"]
+    window, tab = brave.find(first[1])
+    tab[1] = "https://example.com/reading"
+    second = pool.ensure_capacity()
+    assert second[0] == "1" and second[1] not in first
+    # A window someone browsed elsewhere is left open for them.
+    assert brave.closed == [] and brave.find(first[1])
+    assert settings["retrieval_pool_account"] == "wat2do.ubc"
+
+
+def test_lost_primary_is_replaced_first_without_promoting_a_retrieval_tab(brave_pool):
+    profile = "https://www.instagram.com/wat2do.ubc/"
+    brave, settings, pool = brave_pool(
+        {"30": [["2", profile]], "40": [["3", profile]]}, tabs=3, registered=["1", "2", "3"]
+    )
+    ids = pool.ensure_capacity()
+    assert ids[1:] == ["2", "3"] and ids[0] not in {"1", "2", "3"}
+    assert brave.opened == ["2"]
+    assert settings["retrieval_pool_account"] is None
+
+
+def test_pool_closes_surplus_owned_windows_and_leaves_other_tabs_alone(brave_pool):
+    profile = "https://www.instagram.com/wat2do.ubc/"
+    owned = [str(i) for i in range(1, 21)]
+    windows = {str(100 + int(tab)): [[tab, profile]] for tab in owned}
+    windows["person"] = [["999", "https://www.instagram.com/"]]
+    brave, settings, pool = brave_pool(windows, tabs=7, registered=owned)
+    assert pool.ensure_capacity() == owned[:7]
+    assert brave.closed == owned[7:]
+    assert brave.find("999") and brave.opened == []
+
+
+def test_window_creation_shares_page_load_spacing_with_navigation(monkeypatch):
+    now = [0.0]
+    sent = []
+
+    def native(script, arguments, timeout):
+        sent.append((script, now[0]))
+        if script == browser._OPEN_WORKER_WINDOW_SCRIPT:
+            return str(len(sent) + 1)
+        assert script == browser._NAVIGATE_TAB_SCRIPT
+        return "navigating"
+
+    monkeypatch.setattr(
+        browser, "_CONTROL", browser._CONTROL.model_copy(update={"navigation_interval_seconds": 1})
+    )
+    monkeypatch.setattr(browser, "_LAST_NAVIGATION_AT", None)
+    monkeypatch.setattr(browser.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(browser.time, "sleep", lambda seconds: now.__setitem__(0, now[0] + seconds))
+    monkeypatch.setattr(browser, "_run_applescript", native)
+    profile = "https://www.instagram.com/wat2do.uwaterloo/"
+    runner = browser._PinnedBraveJavascriptRunner("1", window_id="99")
+    assert runner.navigate(profile, 3) == "navigating"
+    for _ in range(3):
+        browser.BrowserTabPool._open_window("1", profile)
+    assert runner.navigate("https://www.instagram.com/p/POST/", 3) == "navigating"
+    assert [(script, at) for script, at in sent] == [
+        (browser._NAVIGATE_TAB_SCRIPT, 0),
+        (browser._OPEN_WORKER_WINDOW_SCRIPT, 1),
+        (browser._OPEN_WORKER_WINDOW_SCRIPT, 2),
+        (browser._OPEN_WORKER_WINDOW_SCRIPT, 3),
+        (browser._NAVIGATE_TAB_SCRIPT, 4),
+    ]
+
+
+def test_uncertain_window_opening_is_never_replayed(brave_pool, monkeypatch):
+    brave, settings, pool = brave_pool({})
+    opens = []
+
+    def native(script, arguments, timeout):
+        if script == browser._OPEN_WORKER_WINDOW_SCRIPT:
+            opens.append(arguments)
+            raise browser._BrowserAutomationTransient("Brave browser automation timed out")
+        return brave(script, arguments, timeout)
+
+    monkeypatch.setattr(browser, "_run_applescript", native)
+    with pytest.raises(browser._BrowserAutomationTransient):
+        pool.ensure_capacity()
+    assert len(opens) == 1 and settings["browser_tab_ids"] == []
+
+
+def test_surplus_window_timeout_closes_exact_document_and_verifies_absence(monkeypatch):
+    calls = []
+
+    def cancel():
+        raise browser.BrowserSessionError(
+            "Instagram browser request cancellation could not be confirmed: Brave browser automation timed out"
+        )
+
+    monkeypatch.setattr(
+        browser,
+        "BrowserInstagramSession",
+        lambda **kwargs: SimpleNamespace(cancel_pending_request=cancel),
+    )
+
+    def applescript(script, args, timeout):
+        calls.append((script, args))
+        if script == browser._CLOSE_WORKER_TAB_SCRIPT:
+            return "closed"
+        if len(calls) == 1:
+            return "99"
+        raise browser._BrowserTabUnavailable("The pinned Instagram tab was closed")
+
+    monkeypatch.setattr(browser, "_run_applescript", applescript)
+    browser.BrowserTabPool._close_settled_tab("42")
+    assert calls == [
+        (browser._WORKER_WINDOW_SCRIPT, ("42",)),
+        (browser._CLOSE_WORKER_TAB_SCRIPT, ("42", "99")),
+        (browser._WORKER_WINDOW_SCRIPT, ("42",)),
+    ]
+
+
+def test_surplus_window_closure_requires_verified_absence(monkeypatch):
+    monkeypatch.setattr(
+        browser,
+        "BrowserInstagramSession",
+        lambda **kwargs: SimpleNamespace(cancel_pending_request=lambda: None),
+    )
+    monkeypatch.setattr(
+        browser,
+        "_run_applescript",
+        lambda script, args, timeout: (
+            "closed" if script == browser._CLOSE_WORKER_TAB_SCRIPT else "99"
+        ),
+    )
+    with pytest.raises(browser.BrowserSessionError, match="closure could not be confirmed"):
+        browser.BrowserTabPool._close_settled_tab("42")
+
+
+def test_already_closed_surplus_window_needs_no_closing(monkeypatch):
+    monkeypatch.setattr(
+        browser,
+        "BrowserInstagramSession",
+        lambda **kwargs: SimpleNamespace(cancel_pending_request=lambda: None),
+    )
+
+    def applescript(script, args, timeout):
+        assert script == browser._WORKER_WINDOW_SCRIPT
+        raise browser._BrowserTabUnavailable("The pinned Instagram tab was closed")
+
+    monkeypatch.setattr(browser, "_run_applescript", applescript)
+    browser.BrowserTabPool._close_settled_tab("42")
+

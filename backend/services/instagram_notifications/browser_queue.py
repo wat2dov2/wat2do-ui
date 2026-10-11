@@ -93,6 +93,8 @@ _OBSOLETE_SETTINGS = (
     "manual_retrieval:*",
     "manual_enqueued:*",
     "manual_imported:*",
+    # Worker tabs now live in their own popup windows.
+    "browser_window_id",
 )
 
 

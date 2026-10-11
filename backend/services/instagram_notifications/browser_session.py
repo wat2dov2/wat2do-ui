@@ -35,35 +35,6 @@ _PAGE_RESPONSE_SOURCE = """JSON.stringify({
   document.title === "www.instagram.com" &&
   document.querySelector("#main-frame-error .error-code")?.textContent.trim() === "HTTP ERROR 429"
 })"""
-_SELECT_TAB_SCRIPT = """
-on run
-    if application "Brave Browser" is not running then
-        error "Brave is not running."
-    end if
-    tell application "Brave Browser"
-        repeat with browserWindowId in (get id of every window)
-            try
-                set browserWindow to window id (contents of browserWindowId)
-                repeat with browserTabId in (get id of every tab of browserWindow)
-                    try
-                        set browserTab to tab id (contents of browserTabId) of browserWindow
-                        if URL of browserTab starts with "https://www.instagram.com/" then
-                            return (id of browserTab) as text
-                        end if
-                    on error detail number errorCode
-                        if errorCode is not -1719 and errorCode is not -1728 then error detail number errorCode
-                        if exists tab id (contents of browserTabId) of browserWindow then error detail number errorCode
-                    end try
-                end repeat
-            on error detail number errorCode
-                if errorCode is not -1719 and errorCode is not -1728 then error detail number errorCode
-                if exists window id (contents of browserWindowId) then error detail number errorCode
-            end try
-        end repeat
-    end tell
-    error "No existing Instagram tab."
-end run
-""".strip()
 _EXECUTE_TAB_SCRIPT = f"""
 on run argv
     set intendedTabId to item 1 of argv
@@ -356,10 +327,9 @@ class _PinnedBraveJavascriptRunner:
 
     def _pin(self, deadline: float) -> tuple[str, str]:
         if self._tab_id is None:
-            tab_id = _read_applescript(_SELECT_TAB_SCRIPT, (), _bridge_time_left(deadline)).strip()
-            if not tab_id.isascii() or not tab_id.isdigit():
-                raise BrowserSessionError("Brave returned an invalid Instagram tab identity")
-            self._tab_id = tab_id
+            # Worker windows are opened by BrowserTabPool; a person's own
+            # Instagram tabs are never adopted.
+            raise _BrowserTabUnavailable("No worker Instagram window is open")
         if self._window_id is None:
             window_id = _read_applescript(
                 _WORKER_WINDOW_SCRIPT, (self._tab_id,), _bridge_time_left(deadline)
@@ -382,9 +352,7 @@ class _PinnedBraveJavascriptRunner:
             if str(location_error) == "The pinned Instagram tab was closed":
                 raise exc from None
             raise
-        raise BrowserSessionError(
-            "The pinned Instagram tab left its registered window; inspect before retrying"
-        ) from None
+        raise _BrowserTabUnavailable("The worker Instagram tab left its window") from None
 
 
 class BrowserInstagramSession:
@@ -835,18 +803,27 @@ def _run_applescript(script: str, arguments: tuple[str, ...], timeout_seconds: f
             "(-1743)": "Allow the Mac runner to control Brave in System Settings > Privacy & Security > Automation",
             "Executing JavaScript through AppleScript is turned off": "Enable Brave View > Developer > Allow JavaScript from Apple Events",
             "Brave is not running": "Open Brave with the logged-in Instagram accounts",
-            "No existing Instagram tab": "Open an Instagram tab in Brave with the logged-in accounts",
-            "Pinned Instagram tab changed site": "The pinned Brave tab is no longer on Instagram",
+            "Worker Instagram window did not open": "Brave did not open a worker Instagram window",
+            "Pinned Instagram tab changed site": "A worker Instagram window left Instagram",
             "Pinned Instagram tab is closed": "The pinned Instagram tab was closed",
             "Pinned Instagram tab is loading": "The pinned Instagram tab is loading",
-            "Worker browser window is closed": "The registered worker browser window was closed",
+            "Worker browser window is closed": "A worker Instagram window was closed",
             "Instagram requires human account recovery": "Instagram browser requires human account recovery",
         }
         for detail_match, message in messages.items():
             if detail_match in detail:
+                # Someone using Brave may close, browse away from or quit the
+                # worker's windows; the pool repairs those and waits for Brave.
                 error = (
                     _BrowserTabUnavailable
-                    if detail_match == "Pinned Instagram tab is closed"
+                    if detail_match
+                    in {
+                        "Pinned Instagram tab is closed",
+                        "Pinned Instagram tab changed site",
+                        "Worker browser window is closed",
+                    }
+                    else _BrowserAutomationTransient
+                    if detail_match in {"Brave is not running", "Worker Instagram window did not open"}
                     else _BrowserPageUnavailable
                     if detail_match == "Pinned Instagram tab is loading"
                     else BrowserSessionError
@@ -1139,84 +1116,97 @@ def _post_context_source(post_url: str) -> str:
 """.strip()
 
 
-_CREATE_WORKER_TAB_SCRIPT = """
+# Each worker tab is the only tab of its own popup window. Brave never routes a
+# person's links or new tabs into a popup, and the window is opened from a
+# worker tab (or a blank window that closes again), never from a person's tab.
+# The person's front window gets its place back afterwards.
+_OPEN_WORKER_WINDOW_SCRIPT = """
 on run argv
-    set registeredWindowId to item 1 of argv
-    set placement to item 2 of argv
-    set initialUrl to item 3 of argv
+    set openerTabId to item 1 of argv
+    set popupSource to item 2 of argv
     if application "Brave Browser" is not running then
         error "Brave is not running."
     end if
     tell application "Brave Browser"
-        if not (exists window id registeredWindowId) then
-            error "Worker browser window is closed."
-        end if
-        set browserWindow to window id registeredWindowId
-        if placement is "first" then
-            set workerTab to make new tab at beginning of tabs of browserWindow with properties {URL:initialUrl}
-        else
-            set workerTab to make new tab at end of tabs of browserWindow with properties {URL:initialUrl}
-        end if
-        return (id of workerTab) as text
-    end tell
-end run
-""".strip()
-
-
-_WORKER_TAB_INVENTORY_SCRIPT = """
-on run argv
-    set registeredWindowId to item 1 of argv
-    if application "Brave Browser" is not running then
-        error "Brave is not running."
-    end if
-    set foundIds to ""
-    tell application "Brave Browser"
-        if not (exists window id registeredWindowId) then
-            error "Worker browser window is closed."
-        end if
-        set browserWindow to window id registeredWindowId
-        repeat with requestedTabId in (rest of argv)
-            set tabId to contents of requestedTabId
-            if exists tab id tabId of browserWindow then
+        set frontWindowId to missing value
+        if (count windows) > 0 then set frontWindowId to id of window 1
+        set knownWindowIds to get id of every window
+        set opener to missing value
+        set bootstrapId to missing value
+        if openerTabId is not "" then
+            repeat with browserWindowId in knownWindowIds
                 try
-                    set browserTab to tab id tabId of browserWindow
-                    if URL of browserTab does not start with "https://www.instagram.com/" then
-                        error "Pinned Instagram tab changed site."
+                    set browserWindow to window id (contents of browserWindowId)
+                    if exists tab id openerTabId of browserWindow then
+                        if URL of tab id openerTabId of browserWindow starts with "https://www.instagram.com/" then
+                            set opener to tab id openerTabId of browserWindow
+                        end if
+                        exit repeat
                     end if
-                    set foundIds to foundIds & tabId & linefeed
                 on error detail number errorCode
                     if errorCode is not -1719 and errorCode is not -1728 then error detail number errorCode
-                    if exists tab id tabId of browserWindow then error detail number errorCode
                 end try
-            end if
+            end repeat
+        end if
+        if opener is missing value then
+            set bootstrapWindow to make new window
+            set bootstrapId to id of bootstrapWindow
+            set end of knownWindowIds to bootstrapId
+            set opener to active tab of bootstrapWindow
+            set URL of opener to "about:blank"
+            delay 0.5
+        end if
+        execute opener javascript popupSource
+        set popupTabId to missing value
+        repeat 40 times
+            repeat with browserWindowId in (get id of every window)
+                if knownWindowIds does not contain (contents of browserWindowId) then
+                    set popupWindow to window id (contents of browserWindowId)
+                    if (count tabs of popupWindow) is 1 then
+                        set popupTabId to (id of active tab of popupWindow) as text
+                    end if
+                end if
+            end repeat
+            if popupTabId is not missing value then exit repeat
+            delay 0.25
         end repeat
+        if bootstrapId is not missing value then
+            if exists window id bootstrapId then close window id bootstrapId
+        end if
+        if frontWindowId is not missing value then
+            if exists window id frontWindowId then set index of window id frontWindowId to 1
+        end if
+        if popupTabId is missing value then error "Worker Instagram window did not open."
+        return popupTabId
     end tell
-    return foundIds
 end run
 """.strip()
 
 
-_INSTAGRAM_TAB_INVENTORY_SCRIPT = """
+_LIVE_WORKER_TABS_SCRIPT = """
 on run argv
-    set registeredWindowId to item 1 of argv
     if application "Brave Browser" is not running then
         error "Brave is not running."
     end if
     set foundIds to ""
     tell application "Brave Browser"
-        if not (exists window id registeredWindowId) then
-            error "Worker browser window is closed."
-        end if
-        set browserWindow to window id registeredWindowId
-        repeat with browserTabId in (get id of every tab of browserWindow)
+        repeat with browserWindowId in (get id of every window)
             try
-                set browserTab to tab id (contents of browserTabId) of browserWindow
-                if URL of browserTab starts with "https://www.instagram.com/" then
-                    set foundIds to foundIds & ((id of browserTab) as text) & linefeed
-                end if
+                set browserWindow to window id (contents of browserWindowId)
+                repeat with browserTabId in (get id of every tab of browserWindow)
+                    set tabId to (contents of browserTabId) as text
+                    if argv contains tabId then
+                        try
+                            if URL of tab id tabId of browserWindow starts with "https://www.instagram.com/" then
+                                set foundIds to foundIds & tabId & linefeed
+                            end if
+                        on error detail number errorCode
+                            if errorCode is not -1719 and errorCode is not -1728 then error detail number errorCode
+                        end try
+                    end if
+                end repeat
             on error detail number errorCode
                 if errorCode is not -1719 and errorCode is not -1728 then error detail number errorCode
-                if exists tab id (contents of browserTabId) of browserWindow then error detail number errorCode
             end try
         end repeat
     end tell
@@ -1300,11 +1290,15 @@ def _close_owned_tab(tab_id: str, window_id: str) -> None:
 
 
 class BrowserTabPool:
-    """Worker-owned tabs in the existing Brave session, under the browser lock.
+    """Worker-owned popup windows in the existing Brave session, under the browser lock.
 
-    Persist each new tab immediately. Keep the configured total, reserving the primary tab.
-    Repair closed worker tabs inside their registered existing window. Account switching happens only after
-    every pool tab's previous asynchronous request has settled.
+    Each worker tab is the only tab of its own popup window, so a person can use
+    Brave freely: their links and new tabs never land in a worker window. A
+    worker window that is closed, browsed away from or otherwise lost is simply
+    forgotten and replaced; one browsed elsewhere is left for the person. Persist
+    each new tab immediately and keep the configured total, with the first as
+    the primary tab. Account switching happens only after every pool tab's
+    previous asynchronous request has settled.
     """
 
     def __init__(self, queue) -> None:
@@ -1323,74 +1317,38 @@ class BrowserTabPool:
             raise BrowserSessionError("Worker tab registry is invalid; inspect before retrying")
         return ids
 
+    def _save(self, ids: list[str]) -> None:
+        self.queue.set_setting("browser_tab_ids", ids)
+
     def ensure_capacity(self, *, bootstrap_username: str | None = None) -> list[str]:
-        ids = self._registered_ids()
-        if not ids:
-            runner = _PinnedBraveJavascriptRunner()
-            runner("'pinned'", _CONTROL.request_timeout_seconds)
-            assert runner._tab_id is not None
-            ids = [runner._tab_id]
-            self.queue.set_setting("browser_tab_ids", ids)
-            self.queue.set_setting("browser_window_id", runner._window_id)
-        window_id = self.queue.get_setting("browser_window_id")
-        if not window_id:
-            for tab_id in ids:
-                try:
-                    window_id = _read_applescript(
-                        _WORKER_WINDOW_SCRIPT, (tab_id,), _CONTROL.request_timeout_seconds
-                    ).strip()
-                    break
-                except BrowserSessionError as exc:
-                    if str(exc) != "The pinned Instagram tab was closed":
-                        raise
-            if window_id:
-                self.queue.set_setting("browser_window_id", window_id)
-        if not isinstance(window_id, str) or not window_id.isascii() or not window_id.isdigit():
-            raise BrowserSessionError(
-                "No registered worker window remains; inspect before retrying"
-            )
-        live = set(
-            _read_applescript(
-                _WORKER_TAB_INVENTORY_SCRIPT,
-                (window_id, *ids),
-                _CONTROL.request_timeout_seconds,
-            ).split()
-        )
-        if live - set(ids):
-            raise BrowserSessionError("Brave returned an invalid worker tab inventory")
-        for tab_id in set(ids) - live:
-            try:
-                _read_applescript(
-                    _WORKER_WINDOW_SCRIPT, (tab_id,), _CONTROL.request_timeout_seconds
-                )
-            except BrowserSessionError as exc:
-                if str(exc) != "The pinned Instagram tab was closed":
-                    raise
-            else:
-                raise BrowserSessionError(
-                    "An owned Instagram tab moved outside the registered worker window"
-                )
-        survivors = [tab_id for tab_id in ids if tab_id in live]
+        registered = self._registered_ids()
+        ids = self._live_ids(registered)
+        if ids != registered:
+            self._save(ids)
+            if not ids or ids[0] != registered[0]:
+                # A new primary must re-verify which account it shows.
+                self.queue.set_setting("retrieval_pool_account", None)
         bootstrap_username = (
             bootstrap_username
             or self.queue.get_setting("retrieval_pool_account")
             or self.queue.peek_account_username()
             or school_account_username(_CONTROL.bootstrap_profile_school)
         )
-        if ids[0] not in live:
-            profile_url = _account_profile_url(bootstrap_username)
-            survivors.insert(0, self._create_tab(window_id, "first", profile_url))
-            self.queue.set_setting("browser_tab_ids", survivors)
-            self.queue.set_setting("retrieval_pool_account", None)
-            _PinnedBraveJavascriptRunner(survivors[0], window_id=window_id).warm_viewport(
+        if not ids or ids[0] != registered[0]:
+            # A lost primary is replaced first; a retrieval tab is never promoted.
+            ids.insert(
+                0, self._open_window(ids[0] if ids else None, _account_profile_url(bootstrap_username))
+            )
+            self._save(ids)
+            _PinnedBraveJavascriptRunner(ids[0]).warm_viewport(
                 _CONTROL.interaction_timeout_seconds
             )
-        for tab_id in survivors[_CONTROL.parallel_tabs :]:
-            self._close_settled_tab(tab_id, window_id)
-            survivors.remove(tab_id)
-            self.queue.set_setting("browser_tab_ids", survivors)
+        for tab_id in ids[_CONTROL.parallel_tabs :]:
+            self._close_settled_tab(tab_id)
+            ids.remove(tab_id)
+            self._save(ids)
         primary = BrowserInstagramSession(
-            javascript_runner=_PinnedBraveJavascriptRunner(survivors[0], window_id=window_id),
+            javascript_runner=_PinnedBraveJavascriptRunner(ids[0]),
             job_timeout_seconds=_CONTROL.interaction_timeout_seconds,
         )
         path = primary.current_page_path()
@@ -1401,85 +1359,81 @@ class BrowserTabPool:
             primary.navigate(_account_profile_url(bootstrap_username), reload=True)
             username = self._ready_username(primary)
         profile_url = _account_profile_url(username)
-        available = self._instagram_tab_ids(window_id)
-        ids = list(dict.fromkeys([*survivors, *available]))[: _CONTROL.parallel_tabs]
-        for tab_id in available:
-            if tab_id not in ids:
-                self._close_settled_tab(tab_id, window_id)
-        self.queue.set_setting("browser_tab_ids", ids)
-        for tab_id in ids:
-            if tab_id not in survivors:
-                _PinnedBraveJavascriptRunner(tab_id, window_id=window_id).warm_viewport(
-                    _CONTROL.interaction_timeout_seconds
-                )
         while len(ids) < _CONTROL.parallel_tabs:
-            tab_id = self._create_tab(window_id, "last", profile_url)
-            if not tab_id.isascii() or not tab_id.isdigit() or tab_id in ids:
+            tab_id = self._open_window(ids[0], profile_url)
+            if tab_id in ids:
                 raise BrowserSessionError("Brave returned an invalid worker tab identity")
             ids.append(tab_id)
-            self.queue.set_setting("browser_tab_ids", ids)
-            _PinnedBraveJavascriptRunner(tab_id, window_id=window_id).warm_viewport(
-                _CONTROL.interaction_timeout_seconds
-            )
+            self._save(ids)
+            _PinnedBraveJavascriptRunner(tab_id).warm_viewport(_CONTROL.interaction_timeout_seconds)
         return ids
 
     @staticmethod
-    def _instagram_tab_ids(window_id: str) -> list[str]:
-        ids = _read_applescript(
-            _INSTAGRAM_TAB_INVENTORY_SCRIPT, (window_id,), _CONTROL.request_timeout_seconds
-        ).split()
-        if len(ids) != len(set(ids)) or any(not tab.isascii() or not tab.isdigit() for tab in ids):
-            raise BrowserSessionError("Brave returned an invalid Instagram tab inventory")
-        return ids
+    def _live_ids(ids: list[str]) -> list[str]:
+        """Registered tabs still open on Instagram, in registry order."""
+        if not ids:
+            return []
+        live = set(
+            _read_applescript(
+                _LIVE_WORKER_TABS_SCRIPT, tuple(ids), _CONTROL.request_timeout_seconds
+            ).split()
+        )
+        if live - set(ids):
+            raise BrowserSessionError("Brave returned an invalid worker tab inventory")
+        return [tab_id for tab_id in ids if tab_id in live]
 
-    @classmethod
-    def _create_tab(cls, window_id: str, placement: str, initial_url: str) -> str:
-        before = set(cls._instagram_tab_ids(window_id))
-        try:
-            tab_id = _dispatch_navigation(
-                _CREATE_WORKER_TAB_SCRIPT,
-                (window_id, placement, initial_url),
-                time.monotonic() + _CONTROL.request_timeout_seconds,
-            ).strip()
-        except _BrowserAutomationTransient:
-            # A timed-out make command may already have created its document.
-            # Reconcile the inventory instead of repeating the mutation.
-            created = set(cls._instagram_tab_ids(window_id)) - before
-            if len(created) != 1:
-                raise
-            tab_id = created.pop()
-        if not tab_id.isascii() or not tab_id.isdigit() or tab_id in before:
+    @staticmethod
+    def _open_window(opener_tab_id: str | None, initial_url: str) -> str:
+        source = (
+            f"window.open({json.dumps(initial_url)}, '_blank', "
+            f"'popup,noopener,width={_CONTROL.primary_minimum_viewport_width + 256},"
+            f"height={_CONTROL.worker_window_height}');1"
+        )
+        tab_id = _dispatch_navigation(
+            _OPEN_WORKER_WINDOW_SCRIPT,
+            (opener_tab_id or "", source),
+            time.monotonic() + _CONTROL.interaction_timeout_seconds,
+        ).strip()
+        if not tab_id.isascii() or not tab_id.isdigit():
             raise BrowserSessionError("Brave returned an invalid worker tab identity")
         return tab_id
 
     @staticmethod
-    def _close_settled_tab(tab_id: str, window_id: str) -> None:
+    def _close_settled_tab(tab_id: str) -> None:
+        runner = _PinnedBraveJavascriptRunner(tab_id)
         try:
-            BrowserInstagramSession(
-                javascript_runner=_PinnedBraveJavascriptRunner(tab_id, window_id=window_id)
-            ).cancel_pending_request()
+            BrowserInstagramSession(javascript_runner=runner).cancel_pending_request()
+        except _BrowserTabUnavailable:
+            return
         except BrowserSessionError as exc:
             if "cancellation could not be confirmed" not in str(exc):
                 raise
             # This surplus document is being destroyed, never reused or switched.
             # Closing its exact ID is the final cancellation boundary.
-        _close_owned_tab(tab_id, window_id)
+        try:
+            tab, window = runner._pin(time.monotonic() + _CONTROL.request_timeout_seconds)
+        except _BrowserTabUnavailable:
+            return  # Already closed.
+        _close_owned_tab(tab, window)
 
     def settle_registered_tabs(self) -> list[BrowserInstagramSession]:
         """Settle every owned tab; retire only failed secondary reads before any switch."""
-        window_id = self.queue.get_setting("browser_window_id")
         sessions = [
             BrowserInstagramSession(
-                javascript_runner=_PinnedBraveJavascriptRunner(tab_id, window_id=window_id),
+                javascript_runner=_PinnedBraveJavascriptRunner(tab_id),
                 allow_account_switch=index == 0,
             )
             for index, tab_id in enumerate(self._registered_ids())
         ]
+        if not sessions:
+            raise _BrowserTabUnavailable("No worker Instagram window is open")
         failures: list[BrowserSessionError] = []
         retired = False
         for index, session in enumerate(sessions):
             try:
                 session.cancel_pending_request()
+            except _BrowserTabUnavailable:
+                raise
             except BrowserSessionError as exc:
                 if index == 0 or "cancellation could not be confirmed" not in str(exc):
                     failures.append(exc)

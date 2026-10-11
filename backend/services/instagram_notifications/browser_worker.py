@@ -208,9 +208,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                         execute_job(
                             job,
                             session=BrowserInstagramSession(
-                                javascript_runner=_PinnedBraveJavascriptRunner(
-                                    ids[0], window_id=queue.get_setting("browser_window_id")
-                                )
+                                javascript_runner=_PinnedBraveJavascriptRunner(ids[0])
                             ),
                         )
                         if ids
@@ -594,6 +592,9 @@ def maintain_tab_pool(queue: BrowserJobQueue) -> bool:
             log.warning(
                 "Tab maintenance deferred: browser bridge or account identity is temporarily unavailable"
             )
+        except _BrowserTabUnavailable:
+            # Someone closed or browsed away from a worker window mid-repair.
+            log.warning("Tab maintenance deferred: a worker window changed during repair")
         except BrowserSessionError as exc:
             queue.set_setting("paused", str(exc))
         except sqlite3.Error:
@@ -717,7 +718,9 @@ def _recover_worker_queue(queue: BrowserJobQueue) -> None:
         try:
             BrowserTabPool(queue).settle_registered_tabs()
         except _BrowserTabUnavailable:
-            log.warning("Retired unavailable secondary tabs before worker recovery")
+            log.warning("Worker windows are missing; they are reopened before the next job")
+        except _BrowserAutomationTransient:
+            log.warning("Brave is unavailable; the worker waits for it")
         except BrowserSessionError as exc:
             queue.set_setting("paused", str(exc))
         queue.recover_interrupted()
