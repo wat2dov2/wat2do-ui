@@ -34,7 +34,7 @@ locals {
     EVENT_FEED_REVALIDATION_URL     = "http://127.0.0.1:3000/api/revalidate-events"
     EVENT_FEED_REVALIDATION_TIMEOUT = "3"
     INSTAGRAM_SLIDE_RENDER_URL      = "http://127.0.0.1:3000/api/render-instagram-slide"
-    EMAIL_PROVIDER                  = "resend"
+    EMAIL_PROVIDER                  = "ses"
     EMAIL_FROM                      = var.email_from
     AWS_REGION                      = var.aws_region
     STORAGE_BUCKET_NAME             = aws_s3_bucket.assets.id
@@ -49,8 +49,8 @@ locals {
     "OPENAI_API_KEY",
     "APIFY_API_TOKEN",
     "INSTAGRAM_TOKEN_ENCRYPTION_KEY",
-    "EMAIL_PROVIDER_API_KEY",
     "EMAIL_UNSUBSCRIBE_SECRET",
+    "EVENT_CHANGE_ALERTS_KEY",
     "EVENT_FEED_REVALIDATION_SECRET",
     "INSTAGRAM_SLIDE_RENDER_SECRET",
     "POSTER_HASH_SECRET",

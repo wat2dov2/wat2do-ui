@@ -64,3 +64,18 @@ resource "aws_iam_role_policy" "ecs_task_assets" {
   role   = aws_iam_role.ecs_task.id
   policy = data.aws_iam_policy_document.ecs_task_assets.json
 }
+
+data "aws_iam_policy_document" "ecs_task_email" {
+  statement {
+    sid       = "SendNotificationEmail"
+    effect    = "Allow"
+    actions   = ["ses:SendEmail", "ses:SendRawEmail"]
+    resources = ["arn:${data.aws_partition.current.partition}:ses:${var.aws_region}:${data.aws_caller_identity.current.account_id}:identity/*"]
+  }
+}
+
+resource "aws_iam_role_policy" "ecs_task_email" {
+  name   = "send-wat2do-email"
+  role   = aws_iam_role.ecs_task.id
+  policy = data.aws_iam_policy_document.ecs_task_email.json
+}

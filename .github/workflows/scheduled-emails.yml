@@ -28,7 +28,7 @@ jobs:
       AWS_RUNTIME_SECRET_ARN: ${{ vars.AWS_RUNTIME_SECRET_ARN }}
       ENVIRONMENT: production
       FRONTEND_URL: ${{ vars.FRONTEND_URL }}
-      EMAIL_PROVIDER: resend
+      EMAIL_PROVIDER: ses
       EMAIL_FROM: ${{ vars.AWS_EMAIL_FROM }}
 
     steps:
@@ -53,7 +53,7 @@ jobs:
             --secret-id "$AWS_RUNTIME_SECRET_ARN" \
             --query SecretString \
             --output text)"
-          for secret_key in SUPABASE_URL SUPABASE_KEY SUPABASE_SECRET_KEY EMAIL_PROVIDER_API_KEY EMAIL_UNSUBSCRIBE_SECRET; do
+          for secret_key in SUPABASE_URL SUPABASE_KEY SUPABASE_SECRET_KEY EMAIL_UNSUBSCRIBE_SECRET; do
             secret_value="$(jq -er --arg key "$secret_key" '.[$key]' <<< "$secret_json")"
             echo "::add-mask::$secret_value"
             echo "$secret_key=$secret_value" >> "$GITHUB_ENV"
