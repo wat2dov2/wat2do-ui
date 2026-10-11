@@ -29,6 +29,7 @@ _APPLESCRIPT_LOCK = threading.RLock()
 _NAVIGATION_LOCK = threading.Lock()
 _LAST_NAVIGATION_AT: float | None = None
 _VIEWPORT_SOURCE = "JSON.stringify({width: window.innerWidth, height: window.innerHeight})"
+_LOGGED_OUT_SOURCE = """String(!!document.querySelector('a[href^="/accounts/login"]'))"""
 _PAGE_RESPONSE_SOURCE = """JSON.stringify({
  path: window.location.pathname,
  rate_limited: document.readyState === "complete" &&
@@ -1463,8 +1464,13 @@ class BrowserTabPool:
         try:
             session.poll_until(readable)
         except _BrowserPageUnavailable:
-            raise TimeoutError("Instagram account identity is temporarily unreadable") from None
+            username = None
         if username is None:
+            # A logged-out page never gains an identity; only a person can log in.
+            if session.read(_LOGGED_OUT_SOURCE) == "true":
+                raise BrowserSessionError(
+                    "Instagram browser requires human account recovery: log in to Instagram in Brave"
+                )
             raise TimeoutError("Instagram account identity is temporarily unreadable")
         return username
 

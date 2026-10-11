@@ -1191,9 +1191,26 @@ def test_pool_unreadable_identity_is_transient_not_recovery():
         current_page_path=lambda **kwargs: "/wat2do.sfu/",
         current_account_username=lambda: None,
         poll_until=poll,
+        read=lambda source: "false" if source == browser._LOGGED_OUT_SOURCE else pytest.fail(),
     )
     with pytest.raises(TimeoutError, match="temporarily unreadable"):
         browser.BrowserTabPool._ready_username(session)
+
+
+def test_logged_out_primary_asks_a_person_to_log_in_instead_of_retrying():
+    def poll(ready):
+        assert not ready()
+        raise browser._BrowserPageUnavailable("timed out")
+
+    session = SimpleNamespace(
+        current_page_path=lambda **kwargs: "/wat2do.uwaterloo/",
+        current_account_username=lambda: None,
+        poll_until=poll,
+        read=lambda source: "true" if source == browser._LOGGED_OUT_SOURCE else pytest.fail(),
+    )
+    with pytest.raises(browser.BrowserSessionError, match="log in to Instagram in Brave") as raised:
+        browser.BrowserTabPool._ready_username(session)
+    assert "human account recovery" in str(raised.value)
 
 
 def test_fresh_primary_bootstrap_429_propagates_before_polling_missing_identity():
