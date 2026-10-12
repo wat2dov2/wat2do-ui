@@ -122,7 +122,6 @@ def scrape_source(source: DirectorySource) -> Counter[str]:
         values = {
             "name": source.name,
             "school": source.school,
-            "publisher": source.default_club,
             "listing_url": source.url,
             "listing_file": listing_file,
             "today": now.strftime("%A %Y-%m-%d"),
