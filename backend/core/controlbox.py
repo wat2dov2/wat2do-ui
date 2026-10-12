@@ -434,14 +434,14 @@ class ClubManagementControl(_ControlModel):
 class MorningEmailControl(_ControlModel):
     local_send_hour: int = Field(ge=0, le=23)
     new_event_window_hours: int = Field(gt=0)
-    minimum_recommendation_score: float = Field(ge=0, le=1)
     provider_attempts: int = Field(gt=0, le=10)
+    card_image_px: int = Field(gt=0, le=1200)
+    image_download_concurrency: int = Field(gt=0, le=32)
 
 
 class EventChangeAlertsControl(_ControlModel):
     quiet_minutes: int = Field(gt=0, le=60)
-    image_timeout_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
-    image_max_bytes: int = Field(gt=0, le=20_000_000)
+    image_width_px: int = Field(gt=0, le=2400)
 
 
 class EventReminderControl(_ControlModel):
@@ -543,6 +543,9 @@ class SocialPreviewsControl(_ControlModel):
 class EmailDeliveryControl(_ControlModel):
     provider_timeout_seconds: float = Field(gt=0)
     notification_consent_version: str = Field(min_length=1)
+    image_timeout_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
+    image_max_bytes: int = Field(gt=0, le=20_000_000)
+    image_quality: int = Field(gt=0, le=95)
 
 
 class BusinessSupportLimits(_ControlModel):

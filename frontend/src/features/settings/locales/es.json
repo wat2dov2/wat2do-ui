@@ -34,7 +34,7 @@
       "title": "Preferencias de notificación",
       "description": "Elige cómo quieres ser notificado sobre eventos y actualizaciones",
       "morningEmail": "Correo matutino",
-      "morningEmailDesc": "A las 9 AM, obtener coincidencias fuertes agregadas en las últimas 24 horas.",
+      "morningEmailDesc": "A las 9 AM, recibe todos los eventos y puestos agregados en tu universidad en las últimas 24 horas.",
       "eventReminder": "Recordatorios de eventos",
       "eventReminderDesc": "Recibir un correo aproximadamente una hora antes de un evento que hayas seleccionado.",
       "eventChange": "Alertas de cambios de eventos",

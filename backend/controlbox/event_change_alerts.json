@@ -1,5 +1,4 @@
 {
   "quiet_minutes": 5,
-  "image_timeout_seconds": 10,
-  "image_max_bytes": 5000000
+  "image_width_px": 1200
 }

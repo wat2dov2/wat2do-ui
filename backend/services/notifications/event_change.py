@@ -16,8 +16,6 @@ from typing import Any
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-import httpx
-
 from core.constants import NOTIFICATION_TYPE_EVENT_CHANGE
 from core.controlbox import controlbox
 from core.database import get_sb
@@ -29,6 +27,7 @@ from services.notifications.delivery_log import (
     claim_delivery,
     deliver_claimed_email,
 )
+from services.notifications.email_images import email_image
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
     EMAIL_LOGO,
@@ -40,9 +39,6 @@ from services.notifications.unsubscribe import unsubscribe_url
 from services.school_context import resolve_school_timezone, school_frontend_url
 
 log = logging.getLogger(__name__)
-
-# Outlook does not display WebP, so only these formats are embedded.
-_EMBEDDABLE_IMAGE_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif"}
 
 
 def send_due_alerts(now: datetime | None = None) -> int:
@@ -135,7 +131,12 @@ def enqueue_event_change(
 
     change_hash = _compute_change_hash(diff)
     target_id = f"{event_id}:{change_hash}"
-    image = _event_image(event.source_image_url)
+    image = email_image(
+        event.source_image_url,
+        "event-image",
+        width=controlbox.event_change_alerts.image_width_px,
+        square=False,
+    )
 
     sent = 0
     for user_id in user_ids:
@@ -234,27 +235,4 @@ def _event_change_message(
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
         inline_images=[EMAIL_LOGO, image] if image else [EMAIL_LOGO],
-    )
-
-
-def _event_image(url: str | None) -> InlineImage | None:
-    """Download the event poster to embed it, or None to fall back to linking it."""
-    if not url:
-        return None
-    control = controlbox.event_change_alerts
-    try:
-        response = httpx.get(url, timeout=control.image_timeout_seconds, follow_redirects=True)
-        response.raise_for_status()
-    except httpx.HTTPError:
-        log.warning("Could not download event image for embedding: %s", url, exc_info=True)
-        return None
-    content_type = response.headers.get("content-type", "").split(";")[0].strip().lower()
-    extension = _EMBEDDABLE_IMAGE_TYPES.get(content_type)
-    if extension is None or len(response.content) > control.image_max_bytes:
-        return None
-    return InlineImage(
-        content_id="event-image",
-        filename=f"event{extension}",
-        content_type=content_type,
-        content=response.content,
     )

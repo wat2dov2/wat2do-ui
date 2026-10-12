@@ -34,7 +34,7 @@
       "title": "Notification Preferences",
       "description": "Choose how you want to be notified about events and updates",
       "morningEmail": "Morning email",
-      "morningEmailDesc": "At 9 AM, get strong matches added in the last 24 hours.",
+      "morningEmailDesc": "At 9 AM, get every event and position added at your school in the last 24 hours.",
       "eventReminder": "Event reminders",
       "eventReminderDesc": "Get an email about one hour before an event you selected.",
       "eventChange": "Event-change alerts",

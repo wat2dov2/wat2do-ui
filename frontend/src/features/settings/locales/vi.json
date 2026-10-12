@@ -34,7 +34,7 @@
       "title": "Tùy chọn thông báo",
       "description": "Chọn cách bạn muốn nhận thông báo về các sự kiện và cập nhật",
       "morningEmail": "Email buổi sáng",
-      "morningEmailDesc": "Vào 9 giờ sáng, nhận các kết quả phù hợp mạnh được thêm trong 24 giờ qua.",
+      "morningEmailDesc": "Vào 9 giờ sáng, nhận mọi sự kiện và vị trí được thêm tại trường của bạn trong 24 giờ qua.",
       "eventReminder": "Nhắc nhở sự kiện",
       "eventReminderDesc": "Nhận email khoảng một giờ trước sự kiện bạn đã chọn.",
       "eventChange": "Cảnh báo thay đổi sự kiện",

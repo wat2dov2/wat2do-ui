@@ -5,9 +5,11 @@ Owner: Tony.
 
 ## 1. Goal
 
-Replace `morning_digest`, `weekly_digest`, and `daily_new_events` with one recommendation-only `morning_email` sent around 9:00 AM in the user's school timezone.
+Replace `morning_digest`, `weekly_digest`, and `daily_new_events` with one `morning_email` sent around 9:00 AM in the user's school timezone.
 
-The morning email contains events added in the previous 24 hours whose stored nightly recommendation score is at least `0.30`.
+The morning email contains every upcoming event and active position added at the user's school in the previous 24 hours, newest first.
+It shows them as image cards in two columns, like the app's event grid.
+Earlier versions sent only events whose stored recommendation score was at least `0.30`; that filter was removed in October 2026.
 
 `event_reminder` is a separate email sent about one hour before an occurrence the user explicitly selected as Going.
 Going is occurrence-aware so the reminder targets the showing the user intends to attend.
@@ -22,19 +24,19 @@ Going is occurrence-aware so the reminder targets the showing the user intends t
 - Use `event_reminder` as the one-hour Going reminder type.
 - Default `morning_email` to disabled and require an explicit settings opt-in.
 - Default `event_reminder` to enabled.
-- Send a morning email only when at least one recommendation qualifies.
+- Send a morning email only when the school has at least one new event or position.
 - Use the user's school timezone.
 - Use the selected occurrence for reminders, calendar entries, and Going state.
 - Keep public Going counts at the event level using distinct users.
-- Read stored `user_recommendations` at send time.
-- Never run the recommendation pipeline while composing email.
-- Require a stored recommendation score of at least `0.30`.
+- Every recipient at a school gets the same digest.
+- Embed each card's poster as a resized square JPEG so Outlook shows it; link the original URL when that fails.
 - Use a fixed 24-hour recent-event window.
 - Do not apply a separate email item cap.
 - Keep one preference per active notification type, shared by settings and unsubscribe.
 - Save only changed settings preferences and record every submitted choice atomically in `notification_consent_history`.
 - Consent evidence contains the internal user ID, notification type, choice, server timestamp, settings/unsubscribe source, and notice version.
 - Notice version `2026-09` refers to the localized notification descriptions and explicit toggle-and-save interaction in Settings.
+- Notice version `2026-10` describes the morning email as every event and position added at the user's school in the last 24 hours.
 - Deploy the consent migration before code that calls `set_notification_preferences`; do not synthesize historical opt-in evidence.
 - Keep one canonical write path for Going selections.
 - Do not add compatibility shims or parallel APIs.
@@ -429,32 +431,25 @@ Reduce onboarding from six steps to five.
 
 The user loader must not silently stop at PostgREST's 1,000-row limit.
 
-Users with a missing school receive no cross-school recommendations.
+Users with a missing school receive no morning email.
 
 ### Batch loaders
 
-For all eligible users, load:
-
-- Explicit `morning_email` preference rows in user-ID chunks.
-- Stored recommendation rows by user-ID chunk.
+For all eligible users, load explicit `morning_email` preference rows in user-ID chunks.
 
 For each eligible school, load once:
 
 - Non-cancelled events added within the fixed 24-hour window.
-- The earliest future occurrence for each candidate event.
-
-After candidate IDs are known, load once per chunk:
-
-- Going exclusions only for those candidate event IDs and eligible users.
-
-Build each user's recommendation list in memory from these maps.
+- The earliest future occurrence for each of those events.
+- Active positions added within the same window.
+- Every card poster, downloaded and resized once and shared by all recipients at that school.
 
 ### Query-count invariant
 
 Database read count must scale with:
 
 ```text
-user ID chunks + eligible timezones + eligible schools + candidate ID chunks
+user ID chunks + eligible schools + event ID chunks
 ```
 
 It must not scale as:
@@ -463,7 +458,7 @@ It must not scale as:
 eligible users x query families
 ```
 
-Add a service test that composes one user and many same-school users and proves query calls grow only when a configured chunk boundary is crossed.
+Add a service test that composes many same-school users and proves each school's digest is loaded once.
 
 ### New-event candidates
 
@@ -483,25 +478,10 @@ Candidate requirements:
 - Not cancelled.
 - At least one occurrence starts at or after `window_end`.
 - Hydrated with the earliest future occurrence.
-- Excluded when the user has any Going selection for that event.
 
-### Recommendation ranking
+Positions must be active, at the user's school, and added inside the same window.
 
-Use one batch read helper owned by the recommender service that returns stored rows only.
-It must never fall back to live computation.
-
-For each user:
-
-1. Keep stored recommendation rows whose score is at least `0.30`.
-2. Intersect those rows with the user's candidate IDs.
-3. Preserve stored nightly rank order.
-4. Return every match without a separate email cap.
-
-The stored nightly snapshot currently has a natural upper bound of 20 rows per user.
-If stored recommendations are absent or stale, no morning email is sent.
-Event reminders remain independent of the recommendation snapshot.
-
-Email colors use semantic roles matching the application's dark design tokens.
+Email colors use semantic roles matching the application's light design tokens.
 
 ### Sending
 
@@ -635,9 +615,7 @@ The following invariants are release requirements.
 
 - Users load with pagination.
 - Preferences load by chunks.
-- Candidate events load by school.
-- Recommendation rows load by user chunks.
-- Going exclusions load only for candidate events.
+- New events, positions, and card posters load once per school.
 - No database read is issued from the per-user composition loop.
 
 ### Event reminders
@@ -788,11 +766,9 @@ Do not deploy a nullable compatibility period or dual Going API.
 - Other-day and unselected same-event occurrences excluded.
 - Cancelled events excluded.
 - New candidates use exact fixed 24-hour boundaries.
-- Going events excluded from picks.
-- Stored intersection preserves rank.
-- Scores below `0.30` are excluded.
-- Every qualifying stored match is included.
-- Missing stored recommendations produce no recommendation section.
+- New positions use the same fixed 24-hour boundaries.
+- Cards render two per row with embedded or linked posters.
+- Every recipient at a school gets the same digest.
 - Both-empty skips.
 - Each one-section and two-section rendering state works.
 - HTML fields are escaped.

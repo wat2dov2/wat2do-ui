@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from html import escape
+from itertools import batched
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -28,28 +29,34 @@ EMAIL_LOGO = InlineImage(
 )
 
 
-def morning_email_subject(picks_count: int) -> str:
-    picks_label = f"{picks_count} new {'pick' if picks_count == 1 else 'picks'}"
-    return f"{picks_label} for you"
+def morning_email_subject(event_count: int, position_count: int) -> str:
+    counts = [
+        f"{count} new {noun if count == 1 else noun + 's'}"
+        for count, noun in ((event_count, "event"), (position_count, "position"))
+        if count
+    ]
+    return " and ".join(counts)
 
 
 def render_morning_email_text(
     *,
     subject: str,
-    picks: list[dict],
+    events: list[dict],
+    positions: list[dict],
     tz: ZoneInfo,
     frontend_url: str,
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
-    lines = [
-        subject,
-        "",
-        "New picks for you",
-        "",
-    ]
-    lines.extend(_text_event(event, tz, frontend_url) for event in picks)
-    lines.append("")
+    lines = [subject, ""]
+    if events:
+        lines.extend(["New events", ""])
+        lines.extend(_text_event(event, tz, frontend_url) for event in events)
+        lines.append("")
+    if positions:
+        lines.extend(["New positions", ""])
+        lines.extend(_text_position(position, tz, frontend_url) for position in positions)
+        lines.append("")
     lines.extend(
         [
             f"Manage email preferences: {preferences_url}",
@@ -64,13 +71,27 @@ def render_morning_email_text(
 def render_morning_email_html(
     *,
     subject: str,
-    picks: list[dict],
+    events: list[dict],
+    positions: list[dict],
     tz: ZoneInfo,
     frontend_url: str,
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
-    content = _event_section("New picks for you", picks, tz, frontend_url)
+    """Cards in two columns, like the app's event grid.
+
+    Each event and position carries ``image_src``: an embedded ``cid:`` image or the poster URL.
+    """
+    content = ""
+    if events:
+        content += _grid_section(
+            "New events", [_event_grid_card(event, tz, frontend_url) for event in events]
+        )
+    if positions:
+        content += _grid_section(
+            "New positions",
+            [_position_grid_card(position, tz, frontend_url) for position in positions],
+        )
     return _email_shell(
         subject=subject,
         content=content,
@@ -184,6 +205,91 @@ def _event_card(event: dict, tz: ZoneInfo, frontend_url: str) -> str:
         f'<strong style="font:700 16px sans-serif;">{title}</strong><br>'
         f'<span style="color:{_EMAIL_THEME["muted_foreground"]};font:13px/1.5 sans-serif;">'
         f"{escape(date_label)} at {escape(time_label)} &middot; {location}</span></a>"
+    )
+
+
+def _grid_section(title: str, cards: list[str]) -> str:
+    rows = "".join(
+        "<tr>"
+        + "".join(
+            f'<td width="50%" valign="top" style="width:50%;padding:0 {6 if side == 0 else 0}px '
+            f'20px {6 if side == 1 else 0}px;">{card}</td>'
+            for side, card in enumerate(pair)
+        )
+        + ('<td width="50%" style="width:50%;"></td>' if len(pair) == 1 else "")
+        + "</tr>"
+        for pair in batched(cards, 2)
+    )
+    return (
+        f'<h2 style="margin:24px 0 12px;color:{_EMAIL_THEME["foreground"]};'
+        f'font:700 19px sans-serif;">{escape(title)}</h2>'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        f'style="width:100%;border-collapse:collapse;table-layout:fixed;">{rows}</table>'
+    )
+
+
+def _event_grid_card(event: dict, tz: ZoneInfo, frontend_url: str) -> str:
+    date_label, time_label = _format_event_date_time(event, tz)
+    return _grid_card(
+        href=_event_url(event, frontend_url),
+        image_src=event.get("image_src"),
+        title=str(event.get("title") or "Untitled event"),
+        details=[f"{date_label} · {time_label}", str(event.get("location") or "Location TBA")],
+    )
+
+
+def _position_grid_card(position: dict, tz: ZoneInfo, frontend_url: str) -> str:
+    deadline = _format_position_deadline(position, tz)
+    return _grid_card(
+        href=f"{frontend_url}/positions",
+        image_src=position.get("image_src"),
+        title=str(position.get("title") or "Untitled position"),
+        details=[f"Apply by {deadline}"] if deadline else [],
+    )
+
+
+def _grid_card(*, href: str, image_src: str | None, title: str, details: list[str]) -> str:
+    if image_src:
+        image = (
+            f'<img src="{escape(image_src, quote=True)}" alt="" width="288" '
+            'style="display:block;width:100%;height:auto;border:0;border-radius:12px;">'
+        )
+    else:
+        image = (
+            f'<div style="padding:56px 12px;background:{_EMAIL_THEME["surface_elevated"]};'
+            f"border-radius:12px;color:{_EMAIL_THEME['foreground']};text-align:center;"
+            f'font:600 15px/1.3 sans-serif;">{escape(title)}</div>'
+        )
+    detail_lines = "".join(
+        f'<br><span style="color:{_EMAIL_THEME["muted_foreground"]};font:13px/1.5 sans-serif;">'
+        f"{escape(detail)}</span>"
+        for detail in details
+    )
+    return (
+        f'<a href="{escape(href, quote=True)}" style="display:block;'
+        f'color:{_EMAIL_THEME["foreground"]};text-decoration:none;">{image}'
+        f'<div style="padding:8px 2px 0;"><strong style="font:700 15px/1.35 sans-serif;">'
+        f"{escape(title)}</strong>{detail_lines}</div></a>"
+    )
+
+
+def _format_position_deadline(position: dict, tz: ZoneInfo) -> str | None:
+    if position.get("deadline_at"):
+        deadline = datetime.fromisoformat(str(position["deadline_at"]).replace("Z", "+00:00"))
+        deadline = deadline.astimezone(tz)
+    elif position.get("deadline_date"):
+        deadline = datetime.fromisoformat(str(position["deadline_date"]))
+    else:
+        return None
+    return f"{deadline.strftime('%a, %b')} {deadline.day}"
+
+
+def _text_position(position: dict, tz: ZoneInfo, frontend_url: str) -> str:
+    deadline = _format_position_deadline(position, tz)
+    deadline_label = f"Apply by {deadline}" if deadline else "No deadline listed"
+    return (
+        f"- {position.get('title') or 'Untitled position'} | {deadline_label} | "
+        f"{frontend_url}/positions"
     )
 
 

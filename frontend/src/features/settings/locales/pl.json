@@ -34,7 +34,7 @@
       "title": "Preferencje powiadomień",
       "description": "Wybierz, w jaki sposób chcesz otrzymywać powiadomienia o wydarzeniach i aktualizacjach",
       "morningEmail": "Poranny e-mail",
-      "morningEmailDesc": "O godzinie 9:00 otrzymuj listę silnych dopasowań dodanych w ciągu ostatnich 24 godzin.",
+      "morningEmailDesc": "O 9:00 otrzymuj wszystkie wydarzenia i stanowiska dodane na Twojej uczelni w ciągu ostatnich 24 godzin.",
       "eventReminder": "Przypomnienia o wydarzeniach",
       "eventReminderDesc": "Otrzymuj e-mail około godzinę przed wybranym wydarzeniem.",
       "eventChange": "Alerty o zmianach wydarzeń",

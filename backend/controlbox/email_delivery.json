@@ -1,4 +1,7 @@
 {
   "provider_timeout_seconds": 10,
-  "notification_consent_version": "2026-09"
+  "notification_consent_version": "2026-10",
+  "image_timeout_seconds": 10,
+  "image_max_bytes": 5000000,
+  "image_quality": 80
 }
