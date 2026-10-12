@@ -525,6 +525,19 @@ def test_loaders_flatten_the_posting_club(fake_sb, patch_sb):
     assert "clubs" not in position
 
 
+def test_digest_keeps_one_card_per_post():
+    post = "https://www.instagram.com/p/ABC/"
+    rows = [
+        {"id": 9, "source_url": post},
+        {"id": 4, "source_url": "https://www.instagram.com/p/XYZ/"},
+        {"id": 3, "source_url": post},
+        {"id": 5, "source_url": None},
+        {"id": 6, "source_url": None},
+    ]
+
+    assert [row["id"] for row in morning_email._one_card_per_post(rows)] == [4, 3, 5, 6]
+
+
 def test_event_reminder_window_centers_on_one_hour():
     now = datetime(2026, 5, 1, 13, tzinfo=timezone.utc)
 

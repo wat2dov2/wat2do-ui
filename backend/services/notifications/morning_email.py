@@ -141,7 +141,7 @@ def _load_new_events(school_id: str, window_end: datetime) -> list[dict]:
                 get_sb()
                 .table(EVENTS)
                 .select(
-                    "id,title,location,source_image_url,added_at,club_name:club,clubs(logo_url)"
+                    "id,title,location,source_url,source_image_url,added_at,club_name:club,clubs(logo_url)"
                 )
                 .eq("school_id", school_id)
                 .eq("cancelled", False)
@@ -171,15 +171,17 @@ def _load_new_events(school_id: str, window_end: datetime) -> list[dict]:
         for occurrence in occurrence_rows:
             earliest_occurrence.setdefault(int(occurrence["event_id"]), occurrence)
 
-    return [
-        {
-            **event,
-            "dtstart_utc": earliest_occurrence[event_id]["dtstart_utc"],
-            "dtend_utc": earliest_occurrence[event_id].get("dtend_utc"),
-        }
-        for event_id, event in by_id.items()
-        if event_id in earliest_occurrence
-    ]
+    return _one_card_per_post(
+        [
+            {
+                **event,
+                "dtstart_utc": earliest_occurrence[event_id]["dtstart_utc"],
+                "dtend_utc": earliest_occurrence[event_id].get("dtend_utc"),
+            }
+            for event_id, event in by_id.items()
+            if event_id in earliest_occurrence
+        ]
+    )
 
 
 def _load_new_positions(school_id: str, window_end: datetime) -> list[dict]:
@@ -190,7 +192,7 @@ def _load_new_positions(school_id: str, window_end: datetime) -> list[dict]:
                 get_sb()
                 .table(POSITIONS)
                 .select(
-                    "id,title,source_image_url,deadline_at,deadline_date,added_at,"
+                    "id,title,source_url,source_image_url,deadline_at,deadline_date,added_at,"
                     "clubs(club_name,logo_url)"
                 )
                 .eq("school_id", school_id)
@@ -205,7 +207,24 @@ def _load_new_positions(school_id: str, window_end: datetime) -> list[dict]:
             or []
         )
     )
-    return [_flatten_club(row) for row in rows]
+    return _one_card_per_post([_flatten_club(row) for row in rows])
+
+
+def _one_card_per_post(rows: list[dict]) -> list[dict]:
+    """Keep only the first item from each source post, in the original order.
+
+    A carousel post can yield several events or positions; the digest shows
+    the first one (lowest id) as the post's single card.
+    """
+    first_by_post: dict[str, int] = {}
+    for row in rows:
+        if source := row.get("source_url"):
+            first_by_post[source] = min(first_by_post.get(source, row["id"]), row["id"])
+    return [
+        row
+        for row in rows
+        if not row.get("source_url") or first_by_post[row["source_url"]] == row["id"]
+    ]
 
 
 def _flatten_club(row: dict) -> dict:
