@@ -1098,6 +1098,7 @@ def test_pool_cancels_all_registered_tabs_before_switching_account(monkeypatch):
     def session(**kw):
         tab = kw["javascript_runner"]._tab_id
         return SimpleNamespace(
+            read=lambda source: "logged_in",
             tab_id=tab,
             cancel_pending_request=lambda: calls.append(("cancel", tab)),
             activate_account=lambda *args: calls.append(("switch", tab)) or "wat2do.ubc",
@@ -1129,6 +1130,7 @@ def test_public_pool_records_verified_bootstrap_hint_without_navigating_targets(
         browser,
         "BrowserInstagramSession",
         lambda **kw: SimpleNamespace(
+            read=lambda source: "logged_in",
             cancel_pending_request=lambda: None,
             current_page_path=lambda **kwargs: f"/{current[0]}/",
             current_account_username=lambda: current[0],
@@ -1169,6 +1171,7 @@ def test_fourteen_retrieval_slots_navigate_only_their_own_assigned_target(monkey
             page["url"] = url
 
         return SimpleNamespace(
+            read=lambda source: "logged_in",
             tab_id=tab_id,
             cancel_pending_request=lambda: None,
             current_account_username=lambda: "wat2do.uwaterloo",
@@ -2048,6 +2051,7 @@ def test_fifteen_tab_pool_reserves_primary_and_assigns_all_fourteen_secondary_ta
         runner = kwargs["javascript_runner"]
         assert kwargs["allow_account_switch"] is (runner._tab_id == "1")
         return SimpleNamespace(
+            read=lambda source: "logged_in",
             tab_id=runner._tab_id,
             cancel_pending_request=lambda: calls.append(("cancel", runner._tab_id)),
             activate_account=lambda *args: calls.append(("switch", runner._tab_id)) or "wat2do.ubc",
@@ -2843,3 +2847,22 @@ def test_login_recovery_stops_for_a_person_at_a_password_or_challenge(monkeypatc
 def test_click_label_source_only_clicks_one_exact_match():
     source = browser._click_label_source("Save info")
     assert '"save info"' in source and 'matches.length !== 1' in source
+
+
+def test_a_job_asks_instagrams_server_before_trusting_a_logged_in_page(monkeypatch):
+    # A page can still look logged in after Instagram logs the browser out.
+    sources = []
+    primary = SimpleNamespace(
+        read=lambda source: sources.append(source) or "logged_out",
+        activate_account=lambda *args: pytest.fail("switched accounts while logged out"),
+    )
+    pool = browser.BrowserTabPool(SimpleNamespace())
+    monkeypatch.setattr(pool, "ensure_capacity", lambda **kwargs: None)
+    monkeypatch.setattr(pool, "settle_registered_tabs", lambda: [primary, SimpleNamespace()])
+    job = SimpleNamespace(kind="digest", recipient_id="123", account_username="wat2do.ubc")
+    with pytest.raises(browser.BrowserSessionError) as raised:
+        pool.prepare(job, 1)
+    assert str(raised.value) == browser.LOGGED_OUT_PAUSE
+    assert sources == [browser._SERVER_LOGIN_SOURCE]
+    assert "/accounts/edit/" in browser._SERVER_LOGIN_SOURCE
+    assert "cookie" not in browser._SERVER_LOGIN_SOURCE.lower()

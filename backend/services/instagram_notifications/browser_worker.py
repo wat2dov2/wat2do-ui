@@ -436,9 +436,14 @@ def _process_batch(
 
     try:
         with job_deadline():
-            sessions, username = BrowserTabPool(queue).prepare(
-                jobs[0], CONTROL.parallel_tabs if jobs[0].kind == "retrieval" else len(jobs)
-            )
+            capacity = CONTROL.parallel_tabs if jobs[0].kind == "retrieval" else len(jobs)
+            try:
+                sessions, username = BrowserTabPool(queue).prepare(jobs[0], capacity)
+            except BrowserSessionError as exc:
+                # A logout found before any request: log back in, then run the batch.
+                if not _is_logout(str(exc)) or not _attempt_login_recovery(queue, time.time):
+                    raise
+                sessions, username = BrowserTabPool(queue).prepare(jobs[0], capacity)
         # Keep slots busy until the queue empties, a digest arrives, or work is paused.
         with ThreadPoolExecutor(max_workers=len(sessions)) as executor:
             idle_sessions = sessions[len(jobs) :]
@@ -599,16 +604,13 @@ def _process_batch(
             raise storage_error
 
 
-def recover_login(queue: BrowserJobQueue, *, now: Callable[[], float] = time.time) -> bool:
-    """Log back in after Instagram logs Brave out; True once browser work may resume.
-
-    Spaced and capped so a flagged browser is not hammered with logins. A
-    password prompt or challenge replaces the pause with one only a person clears.
-    """
-    paused = queue.get_setting("paused", False)
+def _is_logout(paused: object) -> bool:
     # Every logout pause shares this prefix; a challenge is recognized on the page.
-    if not isinstance(paused, str) or not paused.startswith(LOGGED_OUT_PAUSE.split(":")[0]):
-        return False
+    return isinstance(paused, str) and paused.startswith(LOGGED_OUT_PAUSE.split(":")[0])
+
+
+def _attempt_login_recovery(queue: BrowserJobQueue, now: Callable[[], float]) -> bool:
+    """Log back in once if spacing and the daily cap allow; the browser lock is held."""
     attempts = [
         at for at in queue.get_setting("login_recovery_attempts", []) if now() - at < 86400
     ]
@@ -616,30 +618,44 @@ def recover_login(queue: BrowserJobQueue, *, now: Callable[[], float] = time.tim
         "login_recovery_next_at", 0
     ):
         return False
+    queue.set_setting("login_recovery_attempts", [*attempts, now()])
+    queue.set_setting("login_recovery_next_at", now() + CONTROL.login_recovery_interval_seconds)
+    try:
+        username = BrowserTabPool(queue).recover_login()
+    except (
+        TimeoutError,
+        _BrowserAutomationTransient,
+        _BrowserPageUnavailable,
+        _BrowserTabUnavailable,
+    ) as exc:
+        # A Brave hiccup is not a login Instagram saw; try again soon.
+        queue.set_setting("login_recovery_next_at", now() + CONTROL.login_recovery_retry_seconds)
+        queue.set_setting("paused", LOGGED_OUT_PAUSE)
+        log.warning("Instagram login recovery did not finish (%s); retrying shortly", exc)
+        return False
+    except BrowserSessionError as exc:
+        log.error("Instagram login recovery needs a person: %s", exc)
+        queue.set_setting("paused", str(exc))
+        return False
+    log.warning("Logged back in to Instagram as %s after a logout", username)
+    queue.set_setting("paused", False)
+    return True
+
+
+def recover_login(queue: BrowserJobQueue, *, now: Callable[[], float] = time.time) -> bool:
+    """Log back in after Instagram logs Brave out; True once browser work may resume.
+
+    Spaced and capped so a flagged browser is not hammered with logins. A
+    password prompt or challenge replaces the pause with one only a person clears.
+    """
+    if not _is_logout(queue.get_setting("paused", False)):
+        return False
     with open(BROWSER_LOCK_PATH, "a+") as browser_lock:
         try:
             fcntl.flock(browser_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             return False
-        queue.set_setting("login_recovery_attempts", [*attempts, now()])
-        queue.set_setting("login_recovery_next_at", now() + CONTROL.login_recovery_interval_seconds)
-        try:
-            username = BrowserTabPool(queue).recover_login()
-        except (TimeoutError, _BrowserAutomationTransient, _BrowserPageUnavailable,
-                _BrowserTabUnavailable) as exc:
-            # A Brave hiccup is not a login Instagram saw; try again soon.
-            queue.set_setting(
-                "login_recovery_next_at", now() + CONTROL.login_recovery_retry_seconds
-            )
-            log.warning("Instagram login recovery did not finish (%s); retrying shortly", exc)
-            return False
-        except BrowserSessionError as exc:
-            log.error("Instagram login recovery needs a person: %s", exc)
-            queue.set_setting("paused", str(exc))
-            return False
-        log.warning("Logged back in to Instagram as %s after a logout", username)
-        queue.set_setting("paused", False)
-        return True
+        return _attempt_login_recovery(queue, now)
 
 
 def maintain_tab_pool(queue: BrowserJobQueue) -> bool:

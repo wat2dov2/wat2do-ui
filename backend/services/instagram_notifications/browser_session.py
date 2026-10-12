@@ -46,6 +46,14 @@ _LOGIN_PAGE_SOURCE = """JSON.stringify((() => {
  return {state: profiles.length ? "profiles" : "loading", profiles};
 })())"""
 LOGGED_OUT_PAUSE = "Instagram browser requires human account recovery: log in to Instagram in Brave"
+# Asks Instagram's server, not the page, which may still show a logged-in screen
+# after a logout. Logged out, account settings redirect to the login page.
+_SERVER_LOGIN_SOURCE = """(() => {
+ const request = new XMLHttpRequest();
+ request.open("GET", "/accounts/edit/", false);
+ request.send();
+ return new URL(request.responseURL).pathname.startsWith("/accounts/login") ? "logged_out" : "logged_in";
+})()"""
 _PAGE_RESPONSE_SOURCE = """JSON.stringify({
  path: window.location.pathname,
  rate_limited: document.readyState === "complete" &&
@@ -1662,6 +1670,12 @@ class BrowserTabPool:
         self.ensure_capacity(bootstrap_username=job.account_username)
         sessions = self.settle_registered_tabs()
         primary = sessions[0]
+        try:
+            logged_out = primary.read(_SERVER_LOGIN_SOURCE) == "logged_out"
+        except (_BrowserAutomationTransient, _BrowserPageUnavailable):
+            logged_out = False  # Unknown; the job's own requests will tell.
+        if logged_out:
+            raise BrowserSessionError(LOGGED_OUT_PAUSE)
         if job.kind == "digest":
             username = primary.activate_account(job.recipient_id, job.account_username)
         else:
