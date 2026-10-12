@@ -1,6 +1,6 @@
 {
   "model": "claude-haiku-5-5",
-  "parallel_agents": 8,
+  "parallel_agents": 12,
   "fetch_lanes": 8,
   "fetch_impersonate": "chrome",
   "fetch_block_pause_seconds": 600,
