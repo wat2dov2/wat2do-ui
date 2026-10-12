@@ -273,6 +273,15 @@ def test_digest_aborts_inflight_fetch_before_account_can_change():
     [
         # A post Instagram could not load is skipped; the digest keeps the rest.
         ([{"media": {"pk": "111"}}, {"media": None}, {"media": {"pk": "222"}}], ["111", "222"]),
+        # A partly loaded post is kept through its "<media>_<owner>" strong ID.
+        (
+            [
+                {"media": {"pk": "111"}},
+                {"media": {"strong_id__": "3988328074353983199_19865977534", "context__": None}},
+                {"media": {"context__": None}},
+            ],
+            ["111", "3988328074353983199"],
+        ),
         # A post whose identities disagree still fails the whole digest.
         ([{"media": {"pk": "111", "id": "999_1"}}], None),
     ],

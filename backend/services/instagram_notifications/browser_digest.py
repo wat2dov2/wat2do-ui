@@ -237,9 +237,14 @@ def _digest_query_source(cache_ent_id: str, recipient_id: str) -> str:
           // Instagram nulls a post it could not load (deleted or restricted)
           // and reports an execution error; the rest of the page is still good.
           if (media === null || media === undefined) continue;
-          const candidates = [media?.pk, media?.id]
+          let candidates = [media?.pk, media?.id]
             .filter(value => value !== undefined && value !== null)
             .map(value => String(value).split("_", 1)[0]);
+          // A partly loaded post keeps only its "<media>_<owner>" strong ID.
+          if (!candidates.length && typeof media.strong_id__ === "string") {{
+            candidates = [media.strong_id__.split("_", 1)[0]];
+          }}
+          if (!candidates.length) continue;
           if (!candidates.length || candidates.some(value => value !== candidates[0]) ||
               !/^[1-9][0-9]{{0,31}}$/.test(candidates[0])) {{
             request.result = {{state: "failed", reason: "invalid_response"}};
