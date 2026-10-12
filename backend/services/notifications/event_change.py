@@ -22,6 +22,7 @@ from core.database import get_sb
 from core.tables import EVENT_CHANGE_ALERTS, USERS
 from schemas.event import EventResponse
 from services import event_service
+from services.email_layout import EMAIL_LOGO
 from services.email_service import EmailMessage, InlineImage
 from services.notifications.delivery_log import (
     claim_delivery,
@@ -30,7 +31,6 @@ from services.notifications.delivery_log import (
 from services.notifications.email_images import event_hero_image
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
-    EMAIL_LOGO,
     event_change_subject,
     render_event_change_html,
     render_event_change_text,

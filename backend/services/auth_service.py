@@ -1,6 +1,7 @@
 """Auth via Supabase (auth + users table). Sync."""
 
 import hashlib
+from html import escape
 from typing import NoReturn
 from urllib.parse import urlencode
 
@@ -26,6 +27,14 @@ from schemas.auth import (
     TokenResponse,
 )
 from services import school_service
+from services.email_layout import (
+    EMAIL_LOGO,
+    EMAIL_THEME,
+    email_button,
+    email_note,
+    email_paragraph,
+    email_shell,
+)
 from services.email_service import EmailMessage
 from services.school_context import school_from_frontend_url, school_frontend_url
 
@@ -292,37 +301,7 @@ class AuthService:
             callback_params["returnTo"] = return_to
         callback_url = f"{base_url}/auth/callback?{urlencode(callback_params)}"
 
-        subject = "Your Wat2Do login code and link"
-        body_html = f"""
-        <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <h2 style="color: #1a202c; margin-bottom: 16px;">Log in to Wat2Do</h2>
-            <p style="color: #4a5568; line-height: 1.5;">Here is your 6-digit login code:</p>
-            <div style="background-color: #f7fafc; border: 1px solid #edf2f7; border-radius: 6px; padding: 12px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 4px; color: #2d3748; margin: 16px 0;">
-                {link_res.properties.email_otp}
-            </div>
-            <p style="color: #4a5568; line-height: 1.5;">Or open this link and confirm to sign in:</p>
-            <div style="text-align: center; margin: 24px 0;">
-                <a href="{callback_url}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Open sign-in link</a>
-            </div>
-            <hr style="border: 0; border-top: 1px solid #edf2f7; margin: 24px 0;" />
-            <p style="color: #718096; font-size: 12px; line-height: 1.5;">This code and link will expire in 15 minutes. If you did not request this, you can safely ignore this email.</p>
-        </div>
-        """
-        body_text = f"""
-        Log in to Wat2Do
-
-        Here is your 6-digit login code:
-        {link_res.properties.email_otp}
-
-        Or open this link and confirm to sign in:
-        {callback_url}
-
-        This code and link will expire in 15 minutes. If you did not request this, you can safely ignore this email.
-        """
-
-        return EmailMessage(
-            to=email_clean, subject=subject, body_html=body_html, body_text=body_text
-        )
+        return _login_email(email_clean, link_res.properties.email_otp, callback_url)
 
     def _complete_authenticated_session(
         self,
@@ -523,3 +502,43 @@ class AuthService:
 
 
 auth = AuthService()
+
+
+def _login_email(email: str, code: str, callback_url: str) -> EmailMessage:
+    minutes = controlbox.authentication.verification_token_minutes
+    expiry = (
+        f"This code and link expire in {minutes} minutes. "
+        "If you did not request this, you can safely ignore this email."
+    )
+    code_box = (
+        f'<div style="margin:0 0 20px;padding:16px;background:{EMAIL_THEME["surface_elevated"]};'
+        f"border:1px solid {EMAIL_THEME['border']};border-radius:12px;text-align:center;"
+        f'color:{EMAIL_THEME["foreground"]};font:800 30px monospace;letter-spacing:8px;">'
+        f"{escape(code)}</div>"
+    )
+    return EmailMessage(
+        to=email,
+        subject="Your wat2do login code and link",
+        body_html=email_shell(
+            heading="Log in to wat2do",
+            content=(
+                email_paragraph("Here is your 6-digit login code:", muted=True)
+                + code_box
+                + email_paragraph("Or open this link to sign in:", muted=True)
+                + email_button(callback_url, "Open sign-in link")
+                + email_note(escape(expiry))
+            ),
+        ),
+        body_text="\n".join(
+            [
+                "Log in to wat2do",
+                "",
+                f"Here is your 6-digit login code: {code}",
+                "",
+                f"Or open this link to sign in: {callback_url}",
+                "",
+                expiry,
+            ]
+        ),
+        inline_images=[EMAIL_LOGO],
+    )

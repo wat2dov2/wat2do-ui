@@ -11,12 +11,12 @@ from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import USER_GOING_EVENTS, USERS
 from services import school_service
+from services.email_layout import EMAIL_LOGO
 from services.email_service import EmailMessage, InlineImage
 from services.notifications.delivery_log import claim_delivery, deliver_claimed_email
 from services.notifications.email_images import event_hero_image
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
-    EMAIL_LOGO,
     event_reminder_subject,
     render_event_reminder_html,
     render_event_reminder_text,
