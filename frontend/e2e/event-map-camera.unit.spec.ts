@@ -46,7 +46,7 @@ test("map camera survives feed refreshes, marker selection, closing the sheet an
     if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string, args?: { count: number; location: string }) => args && key.includes("cluster") ? `${args.count} events ${key.endsWith("At") ? "at" : "near"} ${args.location}` : key, i18n: { language: "en" } }) };
     if (id.endsWith("controlBox")) return { controlBox: { eventDiscovery: { views: { map_initial_zoom: 14, map_style: "mapbox://styles/mapbox/streets-v12", map_marker_preview_count: 3 } } } };
     if (id.endsWith("utils/event")) return { getEventImageStatus: () => "default" };
-    if (id.endsWith("utils/date")) return { formatCardDate: () => "Today", formatCardTime: () => "6 PM" };
+    if (id.endsWith("utils/date")) return { formatCardDate: () => "Today", formatCardTime: () => "6 PM", isEventHappeningNow: () => false };
     return primitive;
   } });
   const render = () => { stateIndex = refIndex = 0; return exports.EventsMap({ events: markerEvents, allEvents: [listing, secondListing], school: "uwaterloo", onEventClick() { openedEvents++; } }); };

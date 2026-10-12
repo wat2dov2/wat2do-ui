@@ -70,30 +70,35 @@ function matchesVenue(name: string, feature: MapboxSearchResponse["features"][nu
   return expected.every(word => actual.has(word));
 }
 
-async function searchLocation(query: string, near: string, signal?: AbortSignal, venue?: string, locality?: string): Promise<MapCoordinates | null> {
+async function searchLocation(query: string, near: string, venue: string, locality: string | undefined, signal: AbortSignal): Promise<MapCoordinates | null> {
   const params = new URLSearchParams({
     q: query.slice(0, 256), near, limit: "5", types: "poi,address", access_token: MAPBOX_TOKEN,
   });
   const timeout = AbortSignal.timeout(controlBox.eventDiscovery.views.map_search_timeout_seconds * 1000);
   const response = await fetch(`https://api.mapbox.com/search/searchbox/v1/forward?${params}`, {
-    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+    signal: AbortSignal.any([signal, timeout]),
   });
   if (!response.ok) throw new Error(`Mapbox location lookup failed (${response.status})`);
   const result: MapboxSearchResponse = await response.json();
   const feature = result.features.find(({ geometry, properties }) =>
     geometry.type === "Point" && ["poi", "address"].includes(properties.feature_type) &&
-    (!venue || matchesVenue(venue, { geometry, properties }, locality)));
+    matchesVenue(venue, { geometry, properties }, locality));
   const coordinates = feature?.geometry.coordinates;
   if (!coordinates || coordinates.length !== 2 || !coordinates.every(Number.isFinite) ||
       Math.abs(coordinates[0]) > 180 || Math.abs(coordinates[1]) > 90) return null;
   return [coordinates[0], coordinates[1]];
 }
 
+function campusCenter(schoolSlug: string): MapCoordinates | undefined {
+  const center = Object.entries(controlBox.eventDiscovery.views.map_campus_centers).find(([slug]) => slug === schoolSlug)?.[1];
+  return center && [center[0], center[1]];
+}
+
 /** Session-only query cache: Mapbox Search Box results are never persisted. */
-function locationQuery(school: string, query: string, near: string, venue?: string, locality?: string) {
+function locationQuery(school: string, query: string, near: string, venue: string, locality?: string) {
   return queryOptions({
     queryKey: queryKeys.events.mapLocation(school, query, venue, locality),
-    queryFn: ({ signal }) => searchLocation(query, near, signal, venue, locality),
+    queryFn: ({ signal }) => searchLocation(query, near, venue, locality, signal),
     staleTime: Infinity,
     retry: false,
   });
@@ -111,8 +116,10 @@ export function eventMapLocationsQuery(schoolSlug: string, school: SchoolSummary
       if (!school) throw new Error("School directory is unavailable");
       const client = getQueryClient();
       const context = school.city || school.name;
-      const center = await client.fetchQuery(locationQuery(school.slug, `${school.name}, ${context}`, context));
-      if (!center) throw new Error("School location could not be found");
+      // Geocoding a school's name is unreliable (some campuses return no result),
+      // so every campus center is fixed in the event discovery control box.
+      const center = campusCenter(schoolSlug);
+      if (!center) throw new Error(`No map campus center is configured for ${schoolSlug}`);
       signal.throwIfAborted();
       const found: EventMapLocations = { center, locations: {}, failedCount: 0, pendingCount: 0 };
       const schoolAliases = Object.entries(controlBox.eventDiscovery.views.map_venue_aliases).find(([slug]) => slug === schoolSlug)?.[1];

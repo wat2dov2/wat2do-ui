@@ -797,7 +797,10 @@ def test_instagram_music_rejects_missing_chart_mapping(tmp_path):
         ("map_search_concurrency", 0),
         ("map_search_timeout_seconds", 0),
         ("map_style", "https://invalid.example/style"),
+        ("map_dark_style", "https://invalid.example/style"),
         ("map_venue_aliases", {"uwaterloo": {"Davis Centre": " "}}),
+        ("map_campus_centers", {"uwaterloo": [-80.5449]}),
+        ("map_campus_centers", {"uwaterloo": [-80.5449, 95]}),
     ],
 )
 def test_event_view_controls_reject_invalid_configuration(tmp_path, field, value):
@@ -805,4 +808,17 @@ def test_event_view_controls_reject_invalid_configuration(tmp_path, field, value
         tmp_path, "event_discovery", lambda data: data["views"].update({field: value})
     )
     with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        lambda data: data["views"]["map_campus_centers"].pop("mun"),
+        lambda data: data["views"]["map_campus_centers"].update(unknown=[0, 0]),
+    ],
+)
+def test_event_view_controls_require_a_campus_center_per_school(tmp_path, change):
+    directory = _write_control(tmp_path, "event_discovery", change)
+    with pytest.raises(ValidationError, match="map campus center"):
         load_controlbox(directory)

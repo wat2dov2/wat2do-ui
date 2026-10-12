@@ -218,6 +218,15 @@ class EventViewsControl(_ControlModel):
     map_search_concurrency: int = Field(gt=0, le=10)
     map_search_timeout_seconds: int = Field(gt=0, le=60)
     map_style: str = Field(pattern=r"^mapbox://styles/")
+    map_dark_style: str = Field(pattern=r"^mapbox://styles/")
+    # Campus centers are fixed [longitude, latitude] pairs, not geocoded at runtime.
+    map_campus_centers: dict[
+        Annotated[str, Field(pattern=r"^[a-z][a-z0-9-]*$")],
+        tuple[
+            Annotated[float, Field(ge=-180, le=180, allow_inf_nan=False)],
+            Annotated[float, Field(ge=-90, le=90, allow_inf_nan=False)],
+        ],
+    ]
     map_venue_aliases: dict[
         Annotated[str, Field(pattern=r"^[a-z][a-z0-9-]*$")],
         dict[Annotated[str, Field(pattern=r"\S")], Annotated[str, Field(pattern=r"\S")]],
@@ -232,6 +241,12 @@ class EventDiscoveryControl(_ControlModel):
     server_feed_page_size: int = Field(gt=0, le=100)
     campus_seasons: CampusSeasonsControl
     views: EventViewsControl
+
+    @model_validator(mode="after")
+    def validate_map_campus_centers(self) -> "EventDiscoveryControl":
+        if set(self.views.map_campus_centers) != set(self.campus_seasons.schools):
+            raise ValueError("every school must have exactly one map campus center")
+        return self
 
 
 class DatabaseControl(_ControlModel):

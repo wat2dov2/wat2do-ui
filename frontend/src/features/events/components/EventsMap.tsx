@@ -11,8 +11,9 @@ import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { X } from "@/shared/ui/doodle-icons";
-import { formatCardDate, formatCardTime } from "@/shared/utils/date";
+import { formatCardDate, formatCardTime, isEventHappeningNow } from "@/shared/utils/date";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { controlBox } from "@/shared/config/controlBox";
 import { EmptyState } from "@/shared/feedback";
 import { Stack } from "@/shared/layout/stack";
@@ -24,7 +25,8 @@ import { getEventImageStatus } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
 
 function EventMapPoster({ event, isGoing }: { event: Event; isGoing: boolean }) {
-  return <span className="event-map-poster" data-status={getEventImageStatus(event, isGoing)} data-featured={event.featured || undefined}>
+  const live = isEventHappeningNow(event);
+  return <span className={live ? "event-map-poster animate-pulse-live" : "event-map-poster"} data-status={getEventImageStatus(event, isGoing)} data-featured={event.featured || undefined} data-live={live || undefined}>
     <LazyImage src={event.source_image_url ?? event.club_logo_url} alt="" width={64} height={64} loading="eager" />
   </span>;
 }
@@ -61,6 +63,7 @@ export function EventsMap({ events, allEvents, school, onEventClick }: { events:
   const { t, i18n } = useTranslation();
   const mobile = useMobileClickActivation();
   const { getSchoolTimezone } = useSchoolDirectory();
+  const { isDarkMode } = useDarkMode();
   const { query, venues, center, mappedCount, unmappedCount } = useEventMap(events, allEvents, school);
   const { data: goingSelections = [] } = useGoingEvents();
   const goingIds = useMemo(() => new Set(goingSelections.map(selection => selection.event_id)), [goingSelections]);
@@ -111,7 +114,7 @@ export function EventsMap({ events, allEvents, school, onEventClick }: { events:
           ref={mapRef}
           mapboxAccessToken={MAPBOX_TOKEN}
           initialViewState={{ longitude: center[0], latitude: center[1], zoom: settings.map_initial_zoom }}
-          mapStyle={settings.map_style}
+          mapStyle={isDarkMode ? settings.map_dark_style : settings.map_style}
           onLoad={() => { mapLoaded.current = true; fitVenues(); void refreshMarkers(); }}
           onMoveEnd={() => { void refreshMarkers(); }}
           onResize={() => { void refreshMarkers(); }}

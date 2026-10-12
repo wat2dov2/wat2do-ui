@@ -34,7 +34,7 @@ export function FilterBar({ children, trailing, refreshKey, appliedQueryKey, dis
   const { scrollRef, scrollEndRef, showScrollFade, syncScrollFade,
     syncScrollFadeAfterWheel, dragScrollProps } = useHorizontalScrollFade({ refreshKey });
   return (
-    <fieldset data-activation="click" disabled={unavailable} aria-busy={unavailable} className="min-w-0 border-0 p-0 disabled:pointer-events-none">
+    <fieldset data-activation="click" disabled={unavailable} aria-busy={unavailable} className="min-w-0 border-0 p-0 disabled:pointer-events-none in-data-[page-layout=viewport]:px-2 in-data-[page-layout=viewport]:pt-2">
       <Stack direction="horizontal" align="center" gap={2}>
         <div className="relative min-w-0 flex-1">
           <HorizontalScrollFade

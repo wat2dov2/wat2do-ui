@@ -1,4 +1,15 @@
 /* Map-owned poster and sheet composition, shared by every venue and cluster. */
+/* In a viewport page layout the page header's filter bar floats over the top of the map. */
+[data-page-layout="viewport"] [data-view="map"] {
+  --event-map-top-inset: 3rem;
+}
+[data-page-layout="viewport"] .event-map-sheet {
+  border-top: 1px solid var(--border);
+  border-top-left-radius: 0.75rem;
+}
+[data-view="map"] .mapboxgl-ctrl-top-right {
+  top: var(--event-map-top-inset, 0);
+}
 .event-map-marker[data-slot="button"] {
   position: relative;
   width: 4rem;
@@ -41,11 +52,18 @@
 .event-map-poster[data-status="going"] {
   border-color: var(--badge-going);
 }
+/* Live outranks new and going, and pulses like the live badge on event cards. */
+.event-map-poster[data-live="true"] {
+  border-color: var(--destructive);
+}
 .event-map-poster-stack > .event-map-poster {
   position: absolute;
   inset: 0;
   transition: transform 220ms ease;
   animation: event-map-fan-enter 280ms ease-out;
+}
+.event-map-poster-stack > .event-map-poster[data-live="true"] {
+  animation: event-map-fan-enter 280ms ease-out, pulse-live 4s ease-in-out infinite;
 }
 .event-map-poster-stack > .event-map-poster:first-child {
   z-index: 2;
@@ -113,7 +131,8 @@
 }
 .event-map-sheet {
   position: absolute;
-  inset-block: 0;
+  top: var(--event-map-top-inset, 0);
+  bottom: 0;
   right: 0;
   z-index: 4;
   width: min(20rem, 85%);
@@ -174,7 +193,9 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .event-map-marker[data-slot="button"],
-  .event-map-poster-stack > .event-map-poster {
+  .event-map-poster-stack > .event-map-poster,
+  .event-map-poster-stack > .event-map-poster[data-live="true"],
+  .event-map-poster[data-live="true"] {
     transition: none;
     animation: none;
   }

@@ -114,7 +114,9 @@ function PageHeader({
       data-slot="page-header"
       data-variant={variant}
       // Paint beyond the page gutters without widening or moving the header controls.
-      className={cn(variant === "listing" && "sticky top-0 z-20 isolate m-0 shrink-0 bg-background pt-4 pb-2 before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:bg-background before:content-['']", className)}
+      // A viewport layout never scrolls beneath the header, so it drops that backdrop
+      // and pulls its content up beneath the last header row (the filter bar).
+      className={cn(variant === "listing" && "sticky top-0 z-20 isolate m-0 shrink-0 bg-background pt-4 pb-2 before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:bg-background before:content-[''] in-data-[page-layout=viewport]:-mb-15 in-data-[page-layout=viewport]:bg-transparent in-data-[page-layout=viewport]:before:hidden", className)}
       {...props}
     >
       <Stack gap={variant === "listing" ? 3 : 4}>

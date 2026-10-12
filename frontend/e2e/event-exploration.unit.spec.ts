@@ -69,12 +69,30 @@ test("map lookups deduplicate venues and reuse session queries across filter cha
   const first = eventMapLocationsQuery(school.slug, school, ["Student Life Centre", "Student Life Centre", "Davis Centre"]);
   const result = await first.queryFn!({ signal: new AbortController().signal } as never);
   expect(Object.keys(result.locations)).toHaveLength(2);
-  expect(requests).toHaveLength(3); // Campus plus two distinct venues.
-  expect(requests[0].searchParams.get("near")).toBe("Waterloo");
-  expect(requests[1].searchParams.get("near")).toBe("-80.54,43.47");
+  expect(requests).toHaveLength(2); // Two distinct venues; the campus center is configured.
+  expect(requests[0].searchParams.get("near")).toBe(controlBox.eventDiscovery.views.map_campus_centers.uwaterloo.join(","));
   const second = eventMapLocationsQuery(school.slug, school, ["Student Life Centre"]);
   await second.queryFn!({ signal: new AbortController().signal } as never);
-  expect(requests).toHaveLength(3);
+  expect(requests).toHaveLength(2);
+});
+
+test("map centers every configured school without geocoding its name", async () => {
+  const requests: string[] = [];
+  globalThis.fetch = async input => {
+    requests.push(new URL(String(input)).searchParams.get("q")!);
+    return new Response(JSON.stringify({ features: [] }), { status: 200 });
+  };
+  // Mapbox returns no result for these names, which previously failed the whole map.
+  for (const slug of ["mun", "berkeley", "utm", "uwo"]) {
+    const result = await eventMapLocationsQuery(slug, { ...school, slug }, []).queryFn!({ signal: new AbortController().signal } as never);
+    expect(result.center).toEqual(controlBox.eventDiscovery.views.map_campus_centers[slug as keyof typeof controlBox.eventDiscovery.views.map_campus_centers]);
+  }
+  expect(requests).toEqual([]);
+});
+
+test("map reports a school without a configured campus center", async () => {
+  const query = eventMapLocationsQuery("unknown", { ...school, slug: "unknown" }, []);
+  await expect(query.queryFn!({ signal: new AbortController().signal } as never)).rejects.toThrow("No map campus center");
 });
 
 test("map exposes the campus and ready venues while a slow lookup is still pending", async () => {
@@ -89,7 +107,7 @@ test("map exposes the campus and ready venues while a slow lookup is still pendi
   const pending = getQueryClient().fetchQuery(query);
   try {
     await expect.poll(() => getQueryClient().getQueryData(query.queryKey)).toMatchObject({
-      center: [-80.54, 43.47], locations: { "Davis Centre": [-80.54, 43.47] }, pendingCount: 1,
+      center: controlBox.eventDiscovery.views.map_campus_centers.uwaterloo, locations: { "Davis Centre": [-80.54, 43.47] }, pendingCount: 1,
     });
     const snapshot = getQueryClient().getQueryData(query.queryKey);
     expect(getQueryClient().getQueryState(query.queryKey)?.fetchStatus).toBe("fetching");
@@ -124,15 +142,16 @@ test("map keeps its campus and cached venues while a genuinely new feed location
   const added = eventMapLocationsQuery(school.slug, school, ["Davis Centre", "Slow venue"]);
   try {
     observer.setOptions(added);
-    expect(observer.getCurrentResult().data?.center).toEqual([-80.54, 43.47]);
+    expect(observer.getCurrentResult().data?.center).toEqual(controlBox.eventDiscovery.views.map_campus_centers.uwaterloo);
     expect(observer.getCurrentResult().data?.locations["Davis Centre"]).toEqual([-80.54, 43.47]);
     await expect.poll(() => client.getQueryData(added.queryKey)).toMatchObject({
       locations: { "Davis Centre": [-80.54, 43.47] }, pendingCount: 1,
     });
     expect(requests.filter(name => name.startsWith("Davis Centre"))).toHaveLength(1);
-    expect(requests).toHaveLength(3); // Cached campus and Davis Centre, one new venue.
+    expect(requests).toHaveLength(2); // Cached Davis Centre, one new venue.
     observer.setOptions(eventMapLocationsQuery("utsg", { ...school, slug: "utsg", name: "University of Toronto" }, []));
-    expect(observer.getCurrentResult().data).toBeUndefined();
+    // Another school never shows the previous school's campus or venues.
+    expect(observer.getCurrentResult().data).toMatchObject({ center: controlBox.eventDiscovery.views.map_campus_centers.utsg, locations: {} });
   } finally {
     finishSlow();
     await client.fetchQuery(added);
@@ -162,7 +181,7 @@ test("map cancels queued work when the user leaves the view", async () => {
   globalThis.fetch = async () => { calls++; return searchResponse([-80.54, 43.47]); };
   const query = eventMapLocationsQuery(school.slug, school, ["A", "B", "C"]);
   await expect(query.queryFn!({ signal: controller.signal } as never)).rejects.toThrow();
-  expect(calls).toBe(1); // No venue queries were scheduled.
+  expect(calls).toBe(0); // No venue queries were scheduled.
 });
 
 test("returning to a cancelled location query completes its pending snapshot from the venue cache", async () => {
@@ -186,7 +205,7 @@ test("returning to a cancelled location query completes its pending snapshot fro
     expect(result.pendingCount).toBe(0);
     expect(result.locations["Davis Centre"]).toEqual([-80.54, 43.47]);
     expect(result.locations["Slow venue"]).toEqual([-80.54, 43.47]);
-    expect(requests).toBe(3);
+    expect(requests).toBe(2);
   } finally {
     finishSlow();
     await pending;
@@ -253,7 +272,6 @@ test("map resolves an unlisted named venue through its supplied street address a
   globalThis.fetch = async input => {
     const query = new URL(String(input)).searchParams.get("q")!;
     requests.push(query);
-    if (query.startsWith("University of Waterloo")) return searchResponse([-80.54, 43.47]);
     if (query.startsWith("Unlisted venue")) return new Response(JSON.stringify({ features: [] }), { status: 200 });
     return new Response(JSON.stringify({ features: [
       { geometry: { type: "Point", coordinates: [-80.54, 43.47] }, properties: { feature_type: "address", full_address: "1133 West Hastings Street, Waterloo, Ontario, Canada" } },
@@ -269,7 +287,7 @@ test("map resolves an unlisted named venue through its supplied street address a
   const roomDetail = "Unlisted venue, 1133 W Hastings St, Vancouver, BC, Room 2034";
   const repeated = await getQueryClient().fetchQuery(eventMapLocationsQuery(school.slug, school, [roomDetail]));
   expect(repeated.locations[roomDetail]).toEqual([-123.118, 49.286]);
-  expect(requests).toHaveLength(3); // Campus, named venue, exact supplied address only once.
+  expect(requests).toHaveLength(2); // Named venue, exact supplied address only once.
 });
 
 test("map uses an off-campus address city for the venue and rejects the same name in another city", async () => {
@@ -277,7 +295,6 @@ test("map uses an off-campus address city for the venue and rejects the same nam
   globalThis.fetch = async input => {
     const query = new URL(String(input)).searchParams.get("q")!;
     requests.push(query);
-    if (query.startsWith("University of Waterloo")) return searchResponse([-80.54, 43.47]);
     return new Response(JSON.stringify({ features: [
       { geometry: { type: "Point", coordinates: [-80.54, 43.47] }, properties: { feature_type: "poi", name: "Baker Hall", full_address: "Baker Hall, Waterloo, Ontario, Canada" } },
       { geometry: { type: "Point", coordinates: [-79.94, 40.44] }, properties: { feature_type: "poi", name: "Baker Hall", full_address: "Baker Hall, 4909 Frew Street, Pittsburgh, Pennsylvania, USA" } },
@@ -287,7 +304,7 @@ test("map uses an off-campus address city for the venue and rejects the same nam
   const result = await getQueryClient().fetchQuery(eventMapLocationsQuery(school.slug, school, [location]));
   expect(result.locations[location]).toEqual([-79.94, 40.44]);
   expect(requests).toContain("Baker Hall, Pittsburgh");
-  expect(requests).toHaveLength(2); // Exact named venue succeeds without an address retry.
+  expect(requests).toHaveLength(1); // Exact named venue succeeds without an address retry.
 });
 
 test("map ignores campus and room metadata between a supplied street and its city", async () => {
@@ -295,7 +312,6 @@ test("map ignores campus and room metadata between a supplied street and its cit
   globalThis.fetch = async input => {
     const query = new URL(String(input)).searchParams.get("q")!;
     requests.push(query);
-    if (query.startsWith("University of Waterloo")) return searchResponse([-80.54, 43.47]);
     if (query.startsWith("Mattamy Athletic Centre")) return new Response(JSON.stringify({ features: [] }), { status: 200 });
     return searchResponse([-79.38, 43.66], "address", "50 Carlton Street, Toronto, Ontario, Canada");
   };
@@ -311,7 +327,6 @@ test("map retains short city names when choosing the supplied address locality",
   globalThis.fetch = async input => {
     const query = new URL(String(input)).searchParams.get("q")!;
     requests.push(query);
-    if (query.startsWith("University of Waterloo")) return searchResponse([-80.54, 43.47]);
     return searchResponse([-80.45, 43.29], "poi", "Workshop venue, 1 Main Street, Ayr, Ontario, Canada");
   };
   const location = "Workshop venue, 1 Main Street, Ayr, ON";
@@ -326,7 +341,6 @@ test("a supplied city cannot reuse a venue cached without that matching constrai
   globalThis.fetch = async input => {
     const query = new URL(String(input)).searchParams.get("q")!;
     requests.push(query);
-    if (query.startsWith("University of Toronto")) return searchResponse([-79.39, 43.66]);
     if (query.startsWith("40 St.")) return searchResponse([-79.39, 43.66], "address", "40 St. George Street, Toronto, Ontario, Canada");
     return searchResponse([-75.69, 45.42], "poi", "Bahen Centre, Ottawa, Ontario, Canada");
   };
@@ -336,7 +350,7 @@ test("a supplied city cannot reuse a venue cached without that matching constrai
   const detailed = await getQueryClient().fetchQuery(eventMapLocationsQuery(toronto.slug, toronto, [location]));
   expect(detailed.locations[location]).toEqual([-79.39, 43.66]);
   expect(requests.filter(query => query === "Bahen Centre, Toronto")).toHaveLength(2);
-  expect(requests).toHaveLength(4); // Campus, bare venue, constrained venue, exact address.
+  expect(requests).toHaveLength(3); // Bare venue, constrained venue, exact address.
 });
 
 test("map street extraction never treats room numbers or campus buildings as street addresses", () => {
@@ -383,7 +397,6 @@ test("map preserves exact street types and compound directions in Canadian and U
   const locations = [...labels.keys()].map(address => `${address}, Waterloo`);
   globalThis.fetch = async input => {
     const query = new URL(String(input)).searchParams.get("q")!.split(",")[0];
-    if (query.startsWith("University of Waterloo")) return searchResponse([-80.54, 43.47]);
     const label = labels.get(query)!;
     const wrongLabel = query.startsWith("8 ") ? "8 Road Avenue West" : /\b(?:Private|Pvt)\b/.test(label)
       ? label.replace(/\b(?:Private|Pvt)\b/, "Street") : label.replace(/Northwest|Northeast|Southwest|Southeast|North|South|East/, "West");
@@ -414,6 +427,5 @@ test("hybrid events map their physical venue while online-only events never crea
   expect(result.locations[locations[0]]).toEqual([-80.54, 43.47]);
   expect(result.locations[locations[1]]).toEqual([-80.54, 43.47]);
   expect(result.locations[locations[2]]).toBeNull();
-  expect(requests).toHaveLength(2); // Campus and one shared physical venue.
-  expect(requests[1]).toBe("Student Life Centre, Waterloo");
+  expect(requests).toEqual(["Student Life Centre, Waterloo"]); // One shared physical venue.
 });
