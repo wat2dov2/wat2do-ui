@@ -17,7 +17,7 @@ from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
 from core.database import get_sb
 from core.errors import CLUB_NOT_FOUND, EVENT_ALREADY_PAST
 from core.exceptions import NotFoundError, ValidationError
-from core.pagination import LatestAddedItem
+from core.pagination import LATEST_ADDED_COLUMNS, LatestAddedItem
 from core.tables import EVENTS
 from schemas.event import (
     EventCreate,
@@ -120,7 +120,7 @@ def normalize_campus_season_ids(
 
 def get_latest_added_event(school: str | None = None) -> LatestAddedItem | None:
     """Return the most recently added event (by added_at desc), or None if no events."""
-    q = get_sb().table(EVENTS).select("title,added_at")
+    q = get_sb().table(EVENTS).select(LATEST_ADDED_COLUMNS)
     if school:
         school_id = school_service.get_school_id(school)
         if school_id is None:
@@ -129,7 +129,7 @@ def get_latest_added_event(school: str | None = None) -> LatestAddedItem | None:
     r = q.order("added_at", desc=True).limit(1).execute()
     if not r.data or len(r.data) == 0:
         return None
-    return LatestAddedItem.model_validate(r.data[0])
+    return LatestAddedItem.from_row(r.data[0])
 
 
 def get_event(event_id: int) -> EventResponse | None:

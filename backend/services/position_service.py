@@ -10,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 from core.constants import DEFAULT_LIST_LIMIT
 from core.controlbox import controlbox
 from core.database import get_sb
-from core.pagination import LatestAddedItem, fetch_all_pages
+from core.pagination import LATEST_ADDED_COLUMNS, LatestAddedItem, fetch_all_pages
 from core.sanitize import sanitize_postgrest_value
 from core.tables import POSITIONS
 from schemas.position import PositionResponse, PositionType
@@ -150,14 +150,14 @@ def get_club_position_counts(
 
 
 def get_latest_added_position(school: str | None) -> LatestAddedItem | None:
-    query = _apply_open_filter(get_sb().table(POSITIONS).select("title,added_at"))
+    query = _apply_open_filter(get_sb().table(POSITIONS).select(LATEST_ADDED_COLUMNS))
     if school:
         school_id = school_service.get_school_id(school)
         if school_id is None:
             return None
         query = query.eq("school_id", school_id)
     response = query.order("added_at", desc=True).order("id", desc=True).limit(1).execute()
-    return LatestAddedItem.model_validate(response.data[0]) if response.data else None
+    return LatestAddedItem.from_row(response.data[0]) if response.data else None
 
 
 def get_position(position_id: int) -> PositionResponse | None:

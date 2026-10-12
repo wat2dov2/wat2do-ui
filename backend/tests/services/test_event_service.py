@@ -1056,6 +1056,7 @@ def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb, monkeypatch
             {
                 "title": "MIT Men's Soccer",
                 "added_at": datetime(2026, 5, 15, 18, 0, tzinfo=timezone.utc).isoformat(),
+                "clubs": {"club_name": "MIT Athletics", "logo_url": "https://cdn.example/mit.png"},
             }
         ]
     )
@@ -1064,6 +1065,9 @@ def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb, monkeypatch
 
     assert latest is not None
     assert latest.title == "MIT Men's Soccer"
+    assert latest.club_name == "MIT Athletics"
+    assert latest.club_logo_url == "https://cdn.example/mit.png"
+    fake_sb.select.assert_called_once_with("title,added_at,clubs(club_name,logo_url)")
     fake_sb.eq.assert_any_call("school_id", 99)
 
 

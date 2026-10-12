@@ -171,7 +171,7 @@ function mergeEventIntoFeed(
   let latest = feed.latest_added_event;
   if (isLatestEvent(latest, existing)) latest = null;
   if (belongsToSchool && (!latest || Date.parse(event.added_at) >= Date.parse(latest.added_at))) {
-    latest = { title: event.title, added_at: event.added_at };
+    latest = { title: event.title, added_at: event.added_at, club_name: event.club, club_logo_url: event.club_logo_url };
   }
   return withFeedItems(feed, items, latest, Math.max(confirmedAt, feed.confirmed_at ?? 0));
 }

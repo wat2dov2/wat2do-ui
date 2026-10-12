@@ -3128,6 +3128,10 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
+            /** Club Name */
+            club_name?: string | null;
+            /** Club Logo Url */
+            club_logo_url?: string | null;
         };
         /** MessageResponse */
         MessageResponse: {

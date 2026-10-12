@@ -4,7 +4,7 @@ import logging
 import math
 from collections.abc import Callable, Generator
 from datetime import datetime
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, Self, TypeVar
 
 from fastapi import Query
 from pydantic import BaseModel
@@ -73,6 +73,22 @@ T = TypeVar("T")
 class LatestAddedItem(BaseModel):
     title: str
     added_at: datetime
+    club_name: str | None = None
+    club_logo_url: str | None = None
+
+    @classmethod
+    def from_row(cls, row: dict) -> Self:
+        """A row selected with ``LATEST_ADDED_COLUMNS``, its club's name and logo flattened."""
+        club = row.get("clubs") or {}
+        return cls(
+            title=row["title"],
+            added_at=row["added_at"],
+            club_name=club.get("club_name"),
+            club_logo_url=club.get("logo_url"),
+        )
+
+
+LATEST_ADDED_COLUMNS = "title,added_at,clubs(club_name,logo_url)"
 
 
 class PaginationParams:

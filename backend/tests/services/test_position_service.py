@@ -93,9 +93,13 @@ def test_paid_filter_requires_explicit_true(fake_sb, patch_sb):
 def test_latest_position_is_school_scoped_and_open(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.position_service")
     monkeypatch.setattr(position_service.school_service, "get_school_id", lambda _school: 2)
-    fake_sb.set_response(data=[{"title": "Latest role", "added_at": "2026-09-09T12:00:00Z"}])
+    fake_sb.set_response(
+        data=[{"title": "Latest role", "added_at": "2026-09-09T12:00:00Z", "clubs": None}]
+    )
     latest = position_service.get_latest_added_position("mcmaster")
     assert latest.title == "Latest role"
+    assert latest.club_logo_url is None
+    fake_sb.select.assert_called_once_with("title,added_at,clubs(club_name,logo_url)")
     fake_sb.eq.assert_any_call("school_id", 2)
     fake_sb.eq.assert_any_call("is_active", True)
     fake_sb.order.assert_any_call("added_at", desc=True)

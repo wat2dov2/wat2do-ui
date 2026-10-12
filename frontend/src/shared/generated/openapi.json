@@ -11066,6 +11066,28 @@
             "type": "string",
             "format": "date-time",
             "title": "Added At"
+          },
+          "club_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Name"
+          },
+          "club_logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Logo Url"
           }
         },
         "type": "object",

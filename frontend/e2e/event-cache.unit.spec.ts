@@ -46,7 +46,7 @@ function feed(items: Event[]): PaginatedEventsResponse {
   const latest = items.at(-1);
   return {
     items, total: items.length, page: 1, page_size: items.length, total_pages: 1,
-    latest_added_event: latest ? { title: latest.title, added_at: latest.added_at } : null,
+    latest_added_event: latest ? { title: latest.title, added_at: latest.added_at, club_name: latest.club, club_logo_url: latest.club_logo_url } : null,
   };
 }
 const form: EventFormData = {

@@ -1,6 +1,7 @@
 import NumberFlow from "@number-flow/react";
 import { Trans, useTranslation } from "react-i18next";
 import { Stack } from "@/shared/layout/stack";
+import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -30,6 +31,9 @@ export function PageCountHeading({ count, label, latest, currentTimeMs, level = 
       <Stack direction="horizontal" align="center" gap={2} data-slot="latest-added-item">
         {latest ? <>
           <Badge variant="new" size="sm" className="shrink-0">{t("events.new")}</Badge>
+          {latest.item.club_logo_url ? (
+            <AvatarStack size="sm" avatars={[{ src: latest.item.club_logo_url, name: latest.item.club_name ?? latest.item.title }]} />
+          ) : null}
           <Button type="button" variant="link" size="inline" onClick={latest.onSelect} className="min-w-0 shrink text-left leading-tight sm:leading-normal">
             <span>
               <Trans i18nKey="common.latestAddedItem" values={{ title: latest.item.title, time: formatRelativeTime(latest.item.added_at, t, { alwaysAgo: true, locale: i18n.language, now: currentTimeMs ?? undefined }) }} components={{ addedPrefix: <span />, eventTitle: <span />, addedTime: <span /> }} />
