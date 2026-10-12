@@ -3,30 +3,9 @@
 from datetime import datetime
 from html import escape
 from itertools import batched
-from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from services.email_service import InlineImage
-
-# Email clients do not reliably support CSS custom properties or OKLCH.
-# These resolved sRGB values preserve the app's semantic light-theme roles.
-_EMAIL_THEME = {
-    "background": "#f9f9f9",
-    "surface": "#ffffff",
-    "surface_elevated": "#f3f3f3",
-    "foreground": "#171717",
-    "muted_foreground": "#5c5c5c",
-    "border": "#d6d6d6",
-}
-
-
-# Embedded in every notification email; the shared shell shows it as cid:wat2do-logo.
-EMAIL_LOGO = InlineImage(
-    content_id="wat2do-logo",
-    filename="wat2do-logo.png",
-    content_type="image/png",
-    content=Path(__file__).with_name("wat2do-logo.png").read_bytes(),
-)
+from services.email_layout import EMAIL_THEME, email_button, email_paragraph, email_shell
 
 
 def morning_email_subject(event_count: int, position_count: int) -> str:
@@ -92,11 +71,13 @@ def render_morning_email_html(
             "New positions",
             [_position_grid_card(position, tz, frontend_url) for position in positions],
         )
-    return _email_shell(
-        subject=subject,
+    return email_shell(
+        heading=subject,
         content=content,
-        preferences_url=preferences_url,
-        unsubscribe_url=unsubscribe_url,
+        footer_links=[
+            ("Manage email preferences", preferences_url),
+            ("Unsubscribe", unsubscribe_url),
+        ],
     )
 
 
@@ -144,8 +125,8 @@ def render_event_reminder_html(
     unsubscribe_url: str,
 ) -> str:
     day, times = _local_occurrence(event, tz)
-    return _email_shell(
-        subject=subject,
+    return email_shell(
+        heading=subject,
         content=_event_spotlight(
             intro="You're going to this event. It starts in about an hour.",
             event=event,
@@ -156,36 +137,10 @@ def render_event_reminder_html(
                 ("Where", None, str(event.get("location") or "Location TBA")),
             ],
         ),
-        preferences_url=preferences_url,
-        unsubscribe_url=unsubscribe_url,
-    )
-
-
-def _email_shell(
-    *,
-    subject: str,
-    content: str,
-    preferences_url: str,
-    unsubscribe_url: str,
-) -> str:
-    return (
-        f'<div style="margin:0;background:{_EMAIL_THEME["background"]};padding:28px 16px;">'
-        f'<div style="max-width:640px;margin:0 auto;background:{_EMAIL_THEME["surface"]};'
-        f'border:1px solid {_EMAIL_THEME["border"]};border-radius:16px;padding:24px;">'
-        f'<img src="cid:{EMAIL_LOGO.content_id}" alt="wat2do" width="80" height="57" '
-        'style="display:block;margin:0 0 16px;border:0;">'
-        f'<h1 style="margin:0 0 24px;color:{_EMAIL_THEME["foreground"]};'
-        f'font:800 28px sans-serif;">{escape(subject)}</h1>'
-        f"{content}"
-        f'<p style="margin:24px 0 0;color:{_EMAIL_THEME["muted_foreground"]};'
-        'font:12px/1.6 sans-serif;">'
-        f'<a style="color:{_EMAIL_THEME["foreground"]};" '
-        f'href="{escape(preferences_url, quote=True)}">Manage email preferences</a>'
-        " &middot; "
-        f'<a style="color:{_EMAIL_THEME["foreground"]};" '
-        f'href="{escape(unsubscribe_url, quote=True)}">Unsubscribe</a><br>'
-        "wat2do helps students discover campus events."
-        "</p></div></div>"
+        footer_links=[
+            ("Manage email preferences", preferences_url),
+            ("Unsubscribe", unsubscribe_url),
+        ],
     )
 
 
@@ -202,7 +157,7 @@ def _grid_section(title: str, cards: list[str]) -> str:
         for pair in batched(cards, 2)
     )
     return (
-        f'<h2 style="margin:24px 0 12px;color:{_EMAIL_THEME["foreground"]};'
+        f'<h2 style="margin:24px 0 12px;color:{EMAIL_THEME["foreground"]};'
         f'font:700 19px sans-serif;">{escape(title)}</h2>'
         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'style="width:100%;border-collapse:collapse;table-layout:fixed;">{rows}</table>'
@@ -249,18 +204,18 @@ def _grid_card(
         )
     else:
         image = (
-            f'<div style="padding:56px 12px;background:{_EMAIL_THEME["surface_elevated"]};'
-            f"border-radius:12px;color:{_EMAIL_THEME['foreground']};text-align:center;"
+            f'<div style="padding:56px 12px;background:{EMAIL_THEME["surface_elevated"]};'
+            f"border-radius:12px;color:{EMAIL_THEME['foreground']};text-align:center;"
             f'font:600 15px/1.3 sans-serif;">{escape(title)}</div>'
         )
     detail_lines = "".join(
-        f'<br><span style="color:{_EMAIL_THEME["muted_foreground"]};font:13px/1.5 sans-serif;">'
+        f'<br><span style="color:{EMAIL_THEME["muted_foreground"]};font:13px/1.5 sans-serif;">'
         f"{escape(detail)}</span>"
         for detail in details
     )
     return (
         f'<a href="{escape(href, quote=True)}" style="display:block;'
-        f'color:{_EMAIL_THEME["foreground"]};text-decoration:none;">{image}'
+        f'color:{EMAIL_THEME["foreground"]};text-decoration:none;">{image}'
         f"{_club_line(club_name, club_logo_src)}"
         f'<div style="padding:6px 2px 0;"><strong style="font:700 15px/1.35 sans-serif;">'
         f"{escape(title)}</strong>{detail_lines}</div></a>"
@@ -281,7 +236,7 @@ def _club_line(club_name: str | None, club_logo_src: str | None) -> str:
     return (
         '<table role="presentation" cellpadding="0" cellspacing="0" '
         'style="border-collapse:collapse;margin:10px 2px 0;"><tr>'
-        f'{logo}<td valign="middle" style="color:{_EMAIL_THEME["muted_foreground"]};'
+        f'{logo}<td valign="middle" style="color:{EMAIL_THEME["muted_foreground"]};'
         f'font:600 13px/1.3 sans-serif;">{escape(club_name)}</td></tr></table>'
     )
 
@@ -381,8 +336,8 @@ def render_event_change_html(
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
-    return _email_shell(
-        subject=subject,
+    return email_shell(
+        heading=subject,
         content=_event_spotlight(
             intro="You're going to this event. Here's what changed.",
             event=event,
@@ -390,8 +345,10 @@ def render_event_change_html(
             frontend_url=frontend_url,
             rows=_describe_changes(diff, tz),
         ),
-        preferences_url=preferences_url,
-        unsubscribe_url=unsubscribe_url,
+        footer_links=[
+            ("Manage email preferences", preferences_url),
+            ("Unsubscribe", unsubscribe_url),
+        ],
     )
 
 
@@ -414,22 +371,19 @@ def _event_spotlight(
         else ""
     )
     return (
-        f'<p style="margin:0 0 18px;color:{_EMAIL_THEME["muted_foreground"]};'
-        f'font:15px/1.6 sans-serif;">{escape(intro)}</p>'
+        f"{email_paragraph(escape(intro), muted=True)}"
         f"{image}"
-        f'<a href="{event_url}" style="color:{_EMAIL_THEME["foreground"]};'
+        f'<a href="{event_url}" style="color:{EMAIL_THEME["foreground"]};'
         f'text-decoration:none;"><h2 style="margin:0 0 8px;font:700 19px sans-serif;">'
         f"{title}</h2></a>"
         + "".join(_detail_row_html(label, old, new) for label, old, new in rows)
-        + f'<a href="{event_url}" style="display:inline-block;margin:20px 0 0;padding:12px 20px;'
-        f"background:{_EMAIL_THEME['foreground']};color:{_EMAIL_THEME['background']};"
-        'border-radius:999px;font:700 14px sans-serif;text-decoration:none;">'
-        "View event on wat2do</a>"
+        + '<div style="height:16px;"></div>'
+        + email_button(_event_url(event, frontend_url), "View event on wat2do")
     )
 
 
 def _detail_row_html(label: str, old: str | None, new: str | None) -> str:
-    muted = _EMAIL_THEME["muted_foreground"]
+    muted = EMAIL_THEME["muted_foreground"]
     struck = (
         f'<span style="color:{muted};text-decoration:line-through;">{escape(old)}</span>'
         if old
@@ -442,10 +396,10 @@ def _detail_row_html(label: str, old: str | None, new: str | None) -> str:
     else:
         value = f'{struck} <span style="color:{muted};">(removed)</span>'
     return (
-        f'<div style="padding:12px 0;border-top:1px solid {_EMAIL_THEME["border"]};">'
+        f'<div style="padding:12px 0;border-top:1px solid {EMAIL_THEME["border"]};">'
         f'<div style="margin:0 0 4px;color:{muted};font:700 12px sans-serif;'
         f'letter-spacing:.06em;text-transform:uppercase;">{escape(label)}</div>'
-        f'<div style="color:{_EMAIL_THEME["foreground"]};font:15px/1.5 sans-serif;">'
+        f'<div style="color:{EMAIL_THEME["foreground"]};font:15px/1.5 sans-serif;">'
         f"{value}</div></div>"
     )
 

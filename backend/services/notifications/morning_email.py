@@ -17,6 +17,7 @@ from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import EVENT_DATES, EVENTS, POSITIONS, USERS
 from services import school_service
+from services.email_layout import EMAIL_LOGO
 from services.email_service import EmailMessage, InlineImage
 from services.notifications.delivery_log import (
     claim_delivery,
@@ -25,7 +26,6 @@ from services.notifications.delivery_log import (
 from services.notifications.email_images import email_image
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
-    EMAIL_LOGO,
     morning_email_subject,
     render_morning_email_html,
     render_morning_email_text,

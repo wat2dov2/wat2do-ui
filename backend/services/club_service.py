@@ -766,23 +766,41 @@ def create_invitation(club_id: int, email: str, invited_by: UUID) -> dict:
         raise
 
     try:
+        from html import escape
+
+        from services.email_layout import (
+            EMAIL_LOGO,
+            email_button,
+            email_note,
+            email_paragraph,
+            email_shell,
+        )
         from services.email_service import EmailMessage, email_service
 
         invite_url = f"{school_frontend_url(club.school)}/invite/{token}"
-        subject = f"Invitation to manage {club.club_name} on Wat2Do"
-        body_html = f"""
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-          <h2 style="color: #3b82f6;">You're Invited!</h2>
-          <p>You have been invited to join the management team of <strong>{club.club_name}</strong> on Wat2Do.</p>
-          <p>Click the button below to accept the invitation and get access to the club panel:</p>
-          <div style="margin: 30px 0;">
-            <a href="{invite_url}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Accept Invitation</a>
-          </div>
-          <p style="font-size: 12px; color: #64748b;">This invitation link will expire in 7 days. If you did not expect this invitation, you can safely ignore this email.</p>
-        </div>
-        """
-        body_text = f"You have been invited to join the management team of {club.club_name} on Wat2Do. Click the link to accept: {invite_url}"
-        msg = EmailMessage(to=email, subject=subject, body_html=body_html, body_text=body_text)
+        days = controlbox.club_management.invite_expiration_days
+        intro = (
+            f"You've been invited to join the management team of {club.club_name} on wat2do. "
+            "Accept to get access to the club panel."
+        )
+        expiry = (
+            f"This invitation expires in {days} days. "
+            "If you did not expect it, you can safely ignore this email."
+        )
+        msg = EmailMessage(
+            to=email,
+            subject=f"Invitation to manage {club.club_name} on wat2do",
+            body_html=email_shell(
+                heading=f"Join {club.club_name}",
+                content=(
+                    email_paragraph(escape(intro), muted=True)
+                    + email_button(invite_url, "Accept invitation")
+                    + email_note(escape(expiry))
+                ),
+            ),
+            body_text=f"{intro}\n\nAccept the invitation: {invite_url}\n\n{expiry}",
+            inline_images=[EMAIL_LOGO],
+        )
         email_service.send(msg)
     except Exception as e:
         log.warning("Failed to send invitation email: %s", e)

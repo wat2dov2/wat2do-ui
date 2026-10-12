@@ -129,6 +129,8 @@ def test_create_invitation_enforces_school_matching_for_non_admins(monkeypatch, 
     message = send.call_args.args[0]
     assert "https://uwaterloo.wat2do.io/invite/" in message.body_html
     assert "https://uwaterloo.wat2do.io/invite/" in message.body_text
+    assert '<img src="cid:wat2do-logo"' in message.body_html
+    assert [image.content_id for image in message.inline_images] == ["wat2do-logo"]
 
     # Inviting an email from a different school should raise ValidationError
     with pytest.raises(ValidationError) as excinfo:
