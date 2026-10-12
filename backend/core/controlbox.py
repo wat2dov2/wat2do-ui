@@ -597,6 +597,16 @@ class InstagramPublishingControl(_ControlModel):
     token_lifetime_days: int = Field(gt=0, le=90)
     token_refresh_lead_days: int = Field(gt=0, le=30)
 
+    curation_model: str = Field(min_length=1)
+    curation_parallel_agents: int = Field(ge=1, le=16)
+    curation_attempts: int = Field(ge=1, le=5)
+    curation_timeout_seconds: int = Field(ge=60, le=7200)
+    curation_poster_pixels: int = Field(ge=128, le=2048)
+    curation_hour: int = Field(ge=0, le=23)
+    curation_minute: int = Field(ge=0, le=59)
+    chart_timeout_seconds: float = Field(gt=0, le=120)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=120)
+
     @model_validator(mode="after")
     def validate_token_windows(self) -> "InstagramPublishingControl":
         if self.token_refresh_lead_days >= self.token_lifetime_days:

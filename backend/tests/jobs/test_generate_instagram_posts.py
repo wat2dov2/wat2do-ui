@@ -44,3 +44,20 @@ def test_save_command_validates_external_choices(monkeypatch, tmp_path, capsys):
     assert job.main() == 0
     assert saved.call_args.args[0].picks[0].event_id == 17
     assert json.loads(capsys.readouterr().out)["batch"]["id"] == "draft-1"
+
+
+@pytest.mark.parametrize(("outcomes", "code"), [({"saved": 2}, 0), ({"saved": 1, "failed": 1}, 1)])
+def test_curate_command_reports_outcomes(monkeypatch, capsys, outcomes, code):
+    from services.instagram_publishing import curation
+
+    monkeypatch.setattr(sys, "argv", ["job", "curate"])
+    monkeypatch.setattr(curation, "curate_all", lambda: outcomes)
+    assert job.main() == code
+    assert json.loads(capsys.readouterr().out) == outcomes
+
+
+def test_launch_agent_runs_curate_daily_without_logs():
+    payload = job.launch_agent_payload()
+    assert payload["ProgramArguments"][-1] == "curate"
+    assert payload["StartCalendarInterval"] == {"Hour": 9, "Minute": 0}
+    assert payload["StandardOutPath"] == "/dev/null"

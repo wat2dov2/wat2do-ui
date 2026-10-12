@@ -365,8 +365,12 @@ Unconfirmed changes are reported as failures for inspection rather than retried 
 
 ## Carousel draft selection and artwork
 
-A daily Codex automation owns event selection, carousel order, sticker choices, caption introduction, and cover copy.
-It reads candidate packets through `backend/jobs/generate_instagram_posts.py candidates`, reviews the event data itself, and saves its choices with `save <selection.json>`.
+A daily Claude job owns event selection, carousel order, sticker choices, caption introduction, and cover copy.
+`backend/jobs/generate_instagram_posts.py curate` runs one Claude Code agent per school that has no draft for today, in parallel (`services/instagram_publishing/curation.py`, prompt in `curation_prompt.md`).
+Each agent gets only Read access to a private folder holding the school's candidate packet and downscaled posters, and no application secrets.
+Its structured answer is validated through the same `DraftSelection` contract and saved with `save_review_draft`; a rejected answer is retried once with the reason.
+Schools with no eligible events get an empty draft without an agent.
+The `candidates` and `save <selection.json>` commands remain for manual review.
 Every registered school receives a candidate packet and may save a review draft, even before an Instagram publishing account is connected.
 The school directory is the generation roster; connected account `enabled` controls publication only.
 Unconnected drafts keep `instagram_user_id` null, never a fabricated account ID.
@@ -398,7 +402,7 @@ The publishing limit applies only when the admin publishes the final carousel.
 
 Sticker choices are saved in `instagram_publish_batches.sticker_selections` by event ID, so reordering a draft preserves them.
 Migration `20261002010000_instagram_sticker_copy.sql` converts retired preset IDs into readable labels without changing published images.
-Codex writes original sticker text in the school's configured language, aiming for three to four distinct benefits or practical details per event.
+Claude writes original sticker text in the school's configured language, aiming for three to four distinct benefits or practical details per event.
 Prioritize price, included or explicitly free food, prizes, learning, networking and entry requirements over generic hype.
 Use `Free` as the default price label unless the event states a cost, as requested by the human; this editorial default does not change the event's stored price.
 Use `Reg. Required` for required registration and capitalize each word, preserving acronyms.
@@ -429,10 +433,12 @@ The renderer no longer requests maps or club hiring data.
 
 ### Daily publishing schedule
 
-The Codex automation runs daily at 9 a.m. Toronto time in the existing chat.
-The old launchd dispatcher and GitHub workflow have been removed.
-Keep the Mac on and Codex running for this local automation, as described in the [official scheduled-task documentation](https://learn.chatgpt.com/docs/automations?surface=app).
-The automation uses the repository's existing production configuration and authenticated AWS access without printing or persisting credentials.
+The `io.wat2do.instagram.curate` LaunchAgent on the Mac mini runs `curate` daily at the `curation_hour` and `curation_minute` in `backend/controlbox/instagram_publishing.json` (9 a.m. Toronto); install or update it with `generate_instagram_posts.py install-schedule`.
+launchd runs a missed time once the Mac wakes, and a skipped day is not lost: the next draft window starts at the last successful cutoff.
+The job keeps no logs and exits non-zero when any school fails; failed schools are retried by running `curate` again, which skips schools already drafted today.
+The model, parallel agents, attempts, timeout and poster size are the `curation_*` controlbox settings.
+Apple Music charts are read once per run from their public `serialized-server-data`; agents choose a song only by its number in that list, and when a chart cannot be read they may only reuse the school's previously verified suggestions.
+The job uses the repository's existing production configuration and authenticated AWS access without printing or persisting credentials.
 It calls `refresh-tokens` before reviewing candidates, so encrypted account token maintenance remains part of the daily operation.
 Token-refresh failures are reported separately and do not prevent reviewing other healthy accounts.
 

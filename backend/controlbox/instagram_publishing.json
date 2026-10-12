@@ -68,5 +68,14 @@
     "carleton": "ottawa",
     "ulaval": "quebec-city"
   },
-  "default_music_chart": "canada"
+  "default_music_chart": "canada",
+  "curation_model": "claude-haiku-5-5",
+  "curation_parallel_agents": 6,
+  "curation_attempts": 2,
+  "curation_timeout_seconds": 1800,
+  "curation_poster_pixels": 512,
+  "curation_hour": 9,
+  "curation_minute": 0,
+  "chart_timeout_seconds": 30,
+  "launch_agent_timeout_seconds": 30
 }

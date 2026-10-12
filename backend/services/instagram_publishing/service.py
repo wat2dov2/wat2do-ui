@@ -115,7 +115,7 @@ def _draft_schools() -> list[dict[str, Any]]:
 
 
 def list_draft_candidates(now_utc: datetime | None = None) -> list[dict[str, Any]]:
-    """Read candidate packets for Codex's daily editorial review, without writing drafts."""
+    """Read candidate packets for Claude's daily editorial review, without writing drafts."""
     now = _aware_utc(now_utc or datetime.now(timezone.utc))
     local_date = now.astimezone(ZoneInfo(_CONTROL.generation_timezone)).date()
     packets = []
@@ -395,7 +395,7 @@ def _draft_window_start(account_key: str, now: datetime) -> datetime:
 
 
 def save_review_draft(selection: DraftSelection) -> dict[str, Any]:
-    """Persist Codex's validated choices and read them back through the admin service.
+    """Persist Claude's validated choices and read them back through the admin service.
 
     The daily database key prevents repeated runs from replacing an existing draft.
     Failed saves and publication attempts remain visible for admin recovery.
