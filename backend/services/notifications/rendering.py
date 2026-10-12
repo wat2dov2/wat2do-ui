@@ -233,6 +233,8 @@ def _event_grid_card(event: dict, tz: ZoneInfo, frontend_url: str) -> str:
     return _grid_card(
         href=_event_url(event, frontend_url),
         image_src=event.get("image_src"),
+        club_name=event.get("club_name"),
+        club_logo_src=event.get("club_logo_src"),
         title=str(event.get("title") or "Untitled event"),
         details=[f"{date_label} · {time_label}", str(event.get("location") or "Location TBA")],
     )
@@ -243,12 +245,22 @@ def _position_grid_card(position: dict, tz: ZoneInfo, frontend_url: str) -> str:
     return _grid_card(
         href=f"{frontend_url}/positions",
         image_src=position.get("image_src"),
+        club_name=position.get("club_name"),
+        club_logo_src=position.get("club_logo_src"),
         title=str(position.get("title") or "Untitled position"),
         details=[f"Apply by {deadline}"] if deadline else [],
     )
 
 
-def _grid_card(*, href: str, image_src: str | None, title: str, details: list[str]) -> str:
+def _grid_card(
+    *,
+    href: str,
+    image_src: str | None,
+    club_name: str | None,
+    club_logo_src: str | None,
+    title: str,
+    details: list[str],
+) -> str:
     if image_src:
         image = (
             f'<img src="{escape(image_src, quote=True)}" alt="" width="288" '
@@ -268,8 +280,28 @@ def _grid_card(*, href: str, image_src: str | None, title: str, details: list[st
     return (
         f'<a href="{escape(href, quote=True)}" style="display:block;'
         f'color:{_EMAIL_THEME["foreground"]};text-decoration:none;">{image}'
-        f'<div style="padding:8px 2px 0;"><strong style="font:700 15px/1.35 sans-serif;">'
+        f"{_club_line(club_name, club_logo_src)}"
+        f'<div style="padding:6px 2px 0;"><strong style="font:700 15px/1.35 sans-serif;">'
         f"{escape(title)}</strong>{detail_lines}</div></a>"
+    )
+
+
+def _club_line(club_name: str | None, club_logo_src: str | None) -> str:
+    """The posting club's round profile picture and name, under the card's poster."""
+    if not club_name:
+        return ""
+    logo = (
+        f'<td width="28" valign="middle" style="width:28px;padding:0 8px 0 0;">'
+        f'<img src="{escape(club_logo_src, quote=True)}" alt="" width="20" height="20" '
+        f'style="display:block;width:20px;height:20px;border:0;border-radius:10px;"></td>'
+        if club_logo_src
+        else ""
+    )
+    return (
+        '<table role="presentation" cellpadding="0" cellspacing="0" '
+        'style="border-collapse:collapse;margin:10px 2px 0;"><tr>'
+        f'{logo}<td valign="middle" style="color:{_EMAIL_THEME["muted_foreground"]};'
+        f'font:600 13px/1.3 sans-serif;">{escape(club_name)}</td></tr></table>'
     )
 
 

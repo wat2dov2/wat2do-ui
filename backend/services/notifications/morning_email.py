@@ -4,6 +4,7 @@ Every recipient at a school gets the same digest: each event and position added
 there in the last 24 hours, newest first.
 """
 
+import hashlib
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -128,7 +129,7 @@ def _load_school_digest(school: str, window_end: datetime) -> _SchoolDigest:
         return _SchoolDigest(events=[], positions=[], images=[])
     events = _load_new_events(school_id, window_end)
     positions = _load_new_positions(school_id, window_end)
-    images = _embed_card_images(events, "event") + _embed_card_images(positions, "position")
+    images = _embed_card_images(events, positions)
     return _SchoolDigest(events=events, positions=positions, images=images)
 
 
@@ -139,7 +140,9 @@ def _load_new_events(school_id: str, window_end: datetime) -> list[dict]:
             (
                 get_sb()
                 .table(EVENTS)
-                .select("id,title,location,source_image_url,added_at")
+                .select(
+                    "id,title,location,source_image_url,added_at,club_name:club,clubs(logo_url)"
+                )
                 .eq("school_id", school_id)
                 .eq("cancelled", False)
                 .gt("added_at", (window_end - _CONTENT_WINDOW).isoformat())
@@ -152,7 +155,7 @@ def _load_new_events(school_id: str, window_end: datetime) -> list[dict]:
             or []
         )
     )
-    by_id = {int(row["id"]): row for row in rows}
+    by_id = {int(row["id"]): _flatten_club(row) for row in rows}
 
     earliest_occurrence: dict[int, dict] = {}
     for event_id_chunk in batched(by_id, _CHUNK_SIZE):
@@ -181,12 +184,15 @@ def _load_new_events(school_id: str, window_end: datetime) -> list[dict]:
 
 def _load_new_positions(school_id: str, window_end: datetime) -> list[dict]:
     """Active positions added in the window, newest first."""
-    return fetch_all_pages(
+    rows = fetch_all_pages(
         lambda offset, page_size: (
             (
                 get_sb()
                 .table(POSITIONS)
-                .select("id,title,source_image_url,deadline_at,deadline_date,added_at")
+                .select(
+                    "id,title,source_image_url,deadline_at,deadline_date,added_at,"
+                    "clubs(club_name,logo_url)"
+                )
                 .eq("school_id", school_id)
                 .eq("is_active", True)
                 .gt("added_at", (window_end - _CONTENT_WINDOW).isoformat())
@@ -199,27 +205,46 @@ def _load_new_positions(school_id: str, window_end: datetime) -> list[dict]:
             or []
         )
     )
+    return [_flatten_club(row) for row in rows]
 
 
-def _embed_card_images(items: list[dict], kind: str) -> list[InlineImage]:
-    """Embed each item's poster as a square card image, linking the original when that fails.
+def _flatten_club(row: dict) -> dict:
+    """Move the embedded club's name and logo onto the card row."""
+    club = row.pop("clubs", None) or {}
+    row.setdefault("club_name", club.get("club_name"))
+    row["club_logo_url"] = club.get("logo_url")
+    return row
 
-    Sets ``image_src`` on every item for the renderer.
+
+def _embed_card_images(events: list[dict], positions: list[dict]) -> list[InlineImage]:
+    """Embed every poster and club logo, linking the original wherever that fails.
+
+    Sets ``image_src`` and ``club_logo_src`` on every item for the renderer. A
+    logo shared by several cards is embedded once.
     """
+    items = [("event", event) for event in events] + [
+        ("position", position) for position in positions
+    ]
+    logo_urls = sorted({item["club_logo_url"] for _kind, item in items if item["club_logo_url"]})
+    jobs = [
+        (item.get("source_image_url"), f"{kind}-{int(item['id'])}", _CONTROL.card_image_px)
+        for kind, item in items
+    ] + [
+        (url, f"club-{hashlib.sha256(url.encode()).hexdigest()[:16]}", _CONTROL.club_logo_px)
+        for url in logo_urls
+    ]
     with ThreadPoolExecutor(max_workers=_CONTROL.image_download_concurrency) as pool:
         images = list(
             pool.map(
-                lambda item: email_image(
-                    item.get("source_image_url"),
-                    f"{kind}-{int(item['id'])}",
-                    width=_CONTROL.card_image_px,
-                    square=True,
-                ),
-                items,
+                lambda job: email_image(job[0], job[1], width=job[2], square=True),
+                jobs,
             )
         )
-    for item, image in zip(items, images, strict=True):
-        item["image_src"] = f"cid:{image.content_id}" if image else item.get("source_image_url")
+    logos = dict(zip(logo_urls, images[len(items) :], strict=True))
+    for (_kind, item), poster in zip(items, images, strict=False):
+        item["image_src"] = f"cid:{poster.content_id}" if poster else item.get("source_image_url")
+        logo = logos.get(item["club_logo_url"])
+        item["club_logo_src"] = f"cid:{logo.content_id}" if logo else item["club_logo_url"]
     return [image for image in images if image]
 
 

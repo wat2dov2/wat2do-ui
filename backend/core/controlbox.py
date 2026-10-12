@@ -436,6 +436,7 @@ class MorningEmailControl(_ControlModel):
     new_event_window_hours: int = Field(gt=0)
     provider_attempts: int = Field(gt=0, le=10)
     card_image_px: int = Field(gt=0, le=1200)
+    club_logo_px: int = Field(gt=0, le=512)
     image_download_concurrency: int = Field(gt=0, le=32)
 
 

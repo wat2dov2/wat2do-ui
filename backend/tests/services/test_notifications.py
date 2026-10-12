@@ -170,6 +170,8 @@ def _position(**overrides) -> dict:
         "title": "VP Events",
         "deadline_at": "2026-05-08T03:59:00+00:00",
         "image_src": "cid:position-7",
+        "club_name": "Esports",
+        "club_logo_src": "cid:club-esports",
     }
     defaults.update(overrides)
     return defaults
@@ -208,13 +210,15 @@ def test_morning_html_lays_cards_out_two_per_row():
         [_position()],
     )
 
-    events_table, positions_table = html.split("<table")[1:]
+    events_table, positions_table = html.split("New positions")
     assert events_table.count("<tr>") == 2
     assert events_table.count('width="50%"') == 4
     assert "Tea Tasting" in events_table
     assert 'src="cid:position-7"' in positions_table
     assert "Apply by Thu, May 7" in positions_table
     assert 'href="https://uwaterloo.wat2do.io/positions"' in positions_table
+    assert 'src="cid:club-esports"' in positions_table
+    assert "Esports" in positions_table
 
 
 def _change_email(diff, image_src=None, **event_fields):
@@ -473,28 +477,52 @@ def test_new_event_and_position_loaders_use_fixed_previous_24_hours(fake_sb, pat
     assert fake_sb.gt.call_args_list == [(("added_at", "2026-04-30T13:00:00+00:00"),)] * 2
 
 
-def test_card_images_embed_when_possible_and_link_otherwise(monkeypatch):
+def test_card_images_embed_posters_and_each_club_logo_once(monkeypatch):
+    requested = []
+
     def fake_image(url, content_id, *, width, square):
-        assert (width, square) == (morning_email._CONTROL.card_image_px, True)
-        return (
-            None
-            if url.endswith("broken.jpg")
-            else InlineImage(content_id, "x.jpg", "image/jpeg", b"x")
-        )
+        requested.append((url, width))
+        assert square is True
+        if not url or url.endswith("broken.jpg"):
+            return None
+        return InlineImage(content_id, f"{content_id}.jpg", "image/jpeg", b"x")
 
     monkeypatch.setattr(morning_email, "email_image", fake_image)
-    items = [
-        {"id": 1, "source_image_url": "https://wat2do.io/media/ok.jpg"},
-        {"id": 2, "source_image_url": "https://wat2do.io/media/broken.jpg"},
+    logo = "https://wat2do.io/media/club.png"
+    events = [
+        {"id": 1, "source_image_url": "https://wat2do.io/media/ok.jpg", "club_logo_url": logo},
+        {"id": 2, "source_image_url": "https://wat2do.io/media/broken.jpg", "club_logo_url": logo},
     ]
+    positions = [{"id": 7, "source_image_url": None, "club_logo_url": None}]
 
-    images = morning_email._embed_card_images(items, "event")
+    images = morning_email._embed_card_images(events, positions)
 
-    assert [image.content_id for image in images] == ["event-1"]
-    assert [item["image_src"] for item in items] == [
+    card_px, logo_px = morning_email._CONTROL.card_image_px, morning_email._CONTROL.club_logo_px
+    assert requested.count((logo, logo_px)) == 1
+    assert ("https://wat2do.io/media/ok.jpg", card_px) in requested
+    assert [image.content_id for image in images][0] == "event-1"
+    assert [item["image_src"] for item in [*events, *positions]] == [
         "cid:event-1",
         "https://wat2do.io/media/broken.jpg",
+        None,
     ]
+    assert events[0]["club_logo_src"] == events[1]["club_logo_src"]
+    assert events[0]["club_logo_src"].startswith("cid:club-")
+    assert positions[0]["club_logo_src"] is None
+
+
+def test_loaders_flatten_the_posting_club(fake_sb, patch_sb):
+    patch_sb("services.notifications.morning_email")
+    fake_sb.set_response(
+        data=[
+            {"id": 7, "title": "VP Events", "clubs": {"club_name": "Esports", "logo_url": "l.png"}}
+        ]
+    )
+
+    [position] = morning_email._load_new_positions(1, datetime(2026, 5, 1, tzinfo=timezone.utc))
+
+    assert (position["club_name"], position["club_logo_url"]) == ("Esports", "l.png")
+    assert "clubs" not in position
 
 
 def test_event_reminder_window_centers_on_one_hour():
