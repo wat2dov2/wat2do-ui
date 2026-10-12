@@ -738,36 +738,28 @@ def _publish_claimed_batch(
 
 
 def _count_new_events(batch: dict[str, Any]) -> int:
-    """Count recent school events plus the current carousel, without duplicates.
+    """The larger of the carousel's size and the school's recent event count.
 
     The recent window ends at the batch's immutable ``window_end`` so its time
-    boundary does not drift while the batch waits for review. Carousel events
-    are included even when they were added before that window because the
-    cover must never claim fewer events than the carousel contains.
+    boundary does not drift while the batch waits for review. The cover never
+    claims fewer events than the carousel contains, and removing a slide never
+    lowers the number below the school's recent event count.
     """
     window_end = _parse_datetime(batch["window_end"])
-    window_start = window_end - timedelta(hours=_CONTROL.new_event_window_hours)
-    carousel_event_ids = {
-        int(item["event_id"]) for item in batch.get("items", []) if item.get("event_id") is not None
-    }
-
     recent_count = _count_active_events_added_between(
         school=batch["school"],
-        window_start=window_start,
+        window_start=window_end - timedelta(hours=_CONTROL.new_event_window_hours),
         window_end=window_end,
         batch_kind=batch["batch_kind"],
     )
-    if not carousel_event_ids:
-        return recent_count
-
-    carousel_overlap_count = _count_active_events_added_between(
-        school=batch["school"],
-        window_start=window_start,
-        window_end=window_end,
-        event_ids=carousel_event_ids,
-        batch_kind=batch["batch_kind"],
+    carousel_count = len(
+        {
+            int(item["event_id"])
+            for item in batch.get("items", [])
+            if item.get("event_id") is not None
+        }
     )
-    return recent_count + len(carousel_event_ids) - carousel_overlap_count
+    return max(recent_count, carousel_count)
 
 
 def _count_active_events_added_between(
@@ -775,7 +767,6 @@ def _count_active_events_added_between(
     school: str,
     window_start: datetime,
     window_end: datetime,
-    event_ids: set[int] | None = None,
     batch_kind: InstagramPublishBatchKind = "events",
 ) -> int:
     school_id = school_service.get_school_id(school)
@@ -794,8 +785,6 @@ def _count_active_events_added_between(
         query = query.eq("employers_on_campus", True)
     else:
         query = query.or_("employers_on_campus.is.null,employers_on_campus.eq.false")
-    if event_ids is not None:
-        query = query.in_("id", sorted(event_ids))
     response = query.limit(1).execute()
     return response.count or 0
 

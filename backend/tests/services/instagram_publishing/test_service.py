@@ -560,30 +560,23 @@ def test_update_batch_rejects_a_repeated_event(monkeypatch, draft_editor):
         )
 
 
-def test_count_new_events_unions_the_carousel_with_the_anchored_recent_window(monkeypatch):
+@pytest.mark.parametrize(("recent", "expected"), [(8, 8), (2, 3)])
+def test_count_new_events_takes_the_larger_of_carousel_and_recent_window(
+    monkeypatch, recent, expected
+):
     calls: list[tuple] = []
-    queries = iter(
-        [
-            _FakeQuery([], calls, count=8),
-            _FakeQuery([], calls, count=2),
-        ]
-    )
     monkeypatch.setattr(
         service,
         "get_sb",
-        lambda: SimpleNamespace(table=lambda _name: next(queries)),
+        lambda: SimpleNamespace(table=lambda _name: _FakeQuery([], calls, count=recent)),
     )
     monkeypatch.setattr(service.school_service, "get_school_id", lambda _school: 1)
 
-    result = service._count_new_events(_batch([7, 8, 9]))
-
-    # Eight recent events plus three carousel events, with two ids overlapping.
-    assert result == 9
-    assert calls.count(("gte", ("added_at", "2026-07-26T12:30:00+00:00"), {})) == 2
-    assert calls.count(("lt", ("added_at", "2026-07-27T12:30:00+00:00"), {})) == 2
-    assert calls.count(("eq", ("school_id", 1), {})) == 2
-    assert calls.count(("eq", ("cancelled", False), {})) == 2
-    assert ("in_", ("id", [7, 8, 9]), {}) in calls
+    assert service._count_new_events(_batch([7, 8, 9])) == expected
+    assert ("gte", ("added_at", "2026-07-26T12:30:00+00:00"), {}) in calls
+    assert ("lt", ("added_at", "2026-07-27T12:30:00+00:00"), {}) in calls
+    assert ("eq", ("school_id", 1), {}) in calls
+    assert ("eq", ("cancelled", False), {}) in calls
 
 
 def test_count_new_events_without_a_carousel_returns_only_the_recent_count(monkeypatch):
