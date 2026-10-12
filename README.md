@@ -39,10 +39,11 @@ Pending local migrations and `backend/supabase/seed.sql` run before the apps sta
 Ordinary code reloads do not rerun migrations or seeds.
 
 Open `http://uwaterloo.wat2do.localhost:3000` or `http://ulaval.wat2do.localhost:3000`.
-Set `EMAIL_PROVIDER_API_KEY` to your Resend key in the ignored `backend/.env` before starting.
-Login codes and other app emails arrive in the recipient's real inbox.
-The default sender is `wat2do <notifications@wat2do.io>`; your key must be authorized to send from that verified domain, or set `EMAIL_FROM` to your verified sender.
-Automated backend tests disable delivery and mock Resend calls.
+Set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` for an IAM user allowed `ses:SendEmail` in the ignored `backend/.env` before starting.
+Login codes and other app emails arrive in the recipient's real inbox through Amazon SES.
+The default sender is `wat2do <notifications@wat2do.io>`; it must be a verified SES identity in `AWS_REGION`, or set `EMAIL_FROM` to your verified sender.
+While the SES account is in the sandbox, recipients must be verified SES identities too.
+Automated backend tests disable delivery and mock SES calls.
 The workflow derives database credentials from local Supabase and overrides production database settings in `backend/.env`.
 Keep optional OpenAI and development storage credentials in that ignored file to test extraction and uploads.
 Do not put production storage credentials there.

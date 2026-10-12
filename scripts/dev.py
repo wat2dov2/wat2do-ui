@@ -81,8 +81,11 @@ def main():
         run([*COMPOSE, "config", "--format", "json"], capture_output=True, text=True).stdout
     )
     backend_environment = compose_config["services"]["backend"]["environment"]
-    if not (backend_environment.get("EMAIL_PROVIDER_API_KEY") or "").strip():
-        parser.error("Set EMAIL_PROVIDER_API_KEY to your Resend key in backend/.env first.")
+    if not all(
+        (backend_environment.get(name) or "").strip()
+        for name in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY")
+    ):
+        parser.error("Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY for SES in backend/.env first.")
 
     print("Starting local Supabase infrastructure...", flush=True)
     run(["supabase", "start"], cwd=BACKEND, stdout=subprocess.DEVNULL)
@@ -95,7 +98,7 @@ def main():
     )
     run([*COMPOSE, "up", "--build", "--detach", "--wait"], env=app_environment(status))
     print("App: http://uwaterloo.wat2do.localhost:3000")
-    print("Login codes are sent to your email through Resend.")
+    print("Login codes are sent to your email through Amazon SES.")
     print("Code changes reload automatically. Use make stop to stop without deleting data.")
 
 

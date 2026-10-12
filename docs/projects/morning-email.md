@@ -494,8 +494,8 @@ For each prepared non-empty email:
 5. Mark sent with `sent_at`.
 6. Mark failed with an operator-safe error category after bounded retries fail.
 
-Keep individual provider sends initially because they preserve per-recipient isolation and stable idempotency.
-Do not add Resend batch sending unless measured runtime approaches the workflow timeout.
+Send one SES message per recipient because it preserves per-recipient isolation and a clean delivery log.
+Do not add SES bulk sending unless measured runtime approaches the workflow timeout.
 
 ## 4.4 Morning-email rendering
 
@@ -559,7 +559,7 @@ List-Unsubscribe: <https://wat2do.app/api/notification-preferences/unsubscribe?t
 List-Unsubscribe-Post: List-Unsubscribe=One-Click
 ```
 
-Extend `EmailMessage` with custom headers and pass them through the Resend payload.
+Extend `EmailMessage` with custom headers and write them into the raw MIME message sent to SES.
 
 ## 4.6 Workflow ordering
 
@@ -851,7 +851,7 @@ Do not deploy a nullable compatibility period or dual Going API.
 - Add one scheduled-email workflow for hourly morning checks and five-minute reminder checks.
 - Update `.github/workflows/nightly-recs.yml` to follow successful scrape completion.
 - Add production `EMAIL_UNSUBSCRIBE_SECRET` and explicit `FRONTEND_URL`.
-- Configure and verify the Resend sending domain.
+- Verify the SES sending domain and leave the SES sandbox.
 
 ## 9. Required checks
 

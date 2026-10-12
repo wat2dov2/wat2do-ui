@@ -61,7 +61,7 @@ There is no staging environment, canary deployment, blue-green deployment, paral
 - Migrating Supabase authentication to Cognito.
 - Changing the Supabase schema or historical migrations.
 - Rewriting application API contracts.
-- Replacing OpenAI, Apify, Resend, PostHog, or Mapbox.
+- Replacing OpenAI, Apify, PostHog, or Mapbox.
 - Adding a staging environment.
 - Adding multiple AWS accounts.
 - Adding multi-region deployment.
@@ -137,7 +137,7 @@ The Fargate task runs in public subnets with a public IP for outbound access.
 
 The Application Load Balancer runs in public subnets.
 
-The task security group accepts inbound traffic only from the Application Load Balancer and uses the internet gateway for Supabase, ECR, OpenAI, Apify, Resend, and other outbound HTTPS traffic.
+The task security group accepts inbound traffic only from the Application Load Balancer and uses the internet gateway for Supabase, ECR, SES, OpenAI, Apify, and other outbound HTTPS traffic.
 
 The ECS service keeps the configured task count running, with a minimum of two tasks.
 
@@ -722,10 +722,10 @@ The expected secret-backed backend environment includes:
 - `DATABASE_URL`
 - `OPENAI_API_KEY`
 - `APIFY_API_TOKEN`
-- `EMAIL_PROVIDER_API_KEY`
 - `EVENT_FEED_REVALIDATION_SECRET`
 
-Set `EMAIL_PROVIDER=resend` and the configured `EMAIL_FROM` as non-secret values unless implementation confirms a reason to keep them secret.
+Set `EMAIL_DELIVERY_ENABLED=true` and the configured `EMAIL_FROM` as non-secret values.
+SES sends with the task role's credentials, so email needs no secret.
 
 Do not copy obsolete Railway, Vercel, or AWS credentials into the runtime secret.
 

@@ -5,23 +5,21 @@ architecture convention - see backend-architecture.md). The module-level
 singleton ``email_service`` is what callers import; tests monkeypatch
 the instance directly.
 
-DRY-RUN by default: if no ``EMAIL_PROVIDER`` is set in settings,
-``send()`` logs the message and returns success without dispatching. That
-lets the rest of the notifications pipeline (enqueue, dedup, log writes,
-cron composition) run end-to-end locally and in CI without a provider
-API key.
+Mail goes out through Amazon SES. DRY-RUN by default: unless
+``EMAIL_DELIVERY_ENABLED`` is set, ``send()`` logs the message and returns
+success without dispatching. That lets the rest of the notifications pipeline
+(enqueue, dedup, log writes, cron composition) run end-to-end in CI without
+AWS credentials.
 """
 
 from __future__ import annotations
 
-import base64
 import logging
 import re
 from dataclasses import dataclass, field
 from email.message import EmailMessage as MimeMessage
 
 import boto3  # type: ignore[import-untyped]
-import httpx
 from botocore.config import Config  # type: ignore[import-untyped]
 
 from core.config import settings
@@ -29,7 +27,6 @@ from core.controlbox import controlbox
 
 log = logging.getLogger(__name__)
 
-RESEND_EMAILS_URL = "https://api.resend.com/emails"
 _LEGACY_WAT2DO_URL = re.compile(
     r"https?://(?:[a-z0-9-]+\.)*wat2do\.ca(?=[:/?#\s\"'<]|$)",
     re.IGNORECASE,
@@ -57,38 +54,32 @@ class EmailMessage:
     body_html: str
     body_text: str
     reply_to: str | None = None
-    # Stable per-send key - the provider (when configured) uses it for
-    # its own idempotency; inside our own log the (user, type, target, channel)
-    # UNIQUE constraint already protects us, so this is purely belt-and-
-    # suspenders in case a cron restart re-hits the provider before our
-    # ``UPDATE status='sent'`` commits.
+    # Stable per-send key, logged so a dispatch can be traced to its
+    # notifications log row. SES has no idempotency key; the log's
+    # (user, type, target, channel) UNIQUE claim guarantees one dispatch.
     idempotency_key: str | None = None
     headers: dict[str, str] = field(default_factory=dict)
     inline_images: list[InlineImage] = field(default_factory=list)
 
 
 class EmailService:
-    """Thin wrapper around the outbound email provider (Resend or Amazon SES).
+    """Thin wrapper around Amazon SES.
 
-    Methods intentionally take an ``EmailMessage`` rather than positional
-    ``to/subject/...`` so the call site is a single stable signature
-    across providers. Provider-specific headers (reply-to, sender domain)
-    get set inside ``_dispatch_*`` helpers.
+    Methods take an ``EmailMessage`` rather than positional
+    ``to/subject/...`` so every caller shares one stable signature.
     """
 
     def __init__(self, ses_client=None):
         self._ses = ses_client
 
     def send(self, msg: EmailMessage) -> bool:
-        """Send one email. Returns True if accepted by the provider.
+        """Send one email. Returns True once SES accepts it.
 
-        In dry-run mode (``settings.email_provider`` empty) we log and
-        return True. Callers treat True as "provider accepted" - actual
-        delivery is the provider's responsibility.
+        In dry-run mode (``settings.email_delivery_enabled`` false) we log
+        and return True. Actual delivery is SES's responsibility.
         """
         self._validate_v2_identity(msg)
-        provider = (settings.email_provider or "").strip().lower()
-        if not provider:
+        if not settings.email_delivery_enabled:
             log.info(
                 "[email][dry-run] to=%s subject=%r idempotency_key=%s",
                 msg.to,
@@ -96,18 +87,15 @@ class EmailService:
                 msg.idempotency_key,
             )
             return True
-
-        if provider == "resend":
-            return self._dispatch_resend(msg)
-        if provider == "ses":
-            return self._dispatch_ses(msg)
-
-        raise NotImplementedError(
-            f"email provider {provider!r} configured but dispatch is not wired yet"
+        recipients = [msg.to] if isinstance(msg.to, str) else msg.to
+        self._get_ses_client().send_email(
+            Destination={"ToAddresses": recipients},
+            Content={"Raw": {"Data": _mime_message(msg, recipients)}},
         )
+        return True
 
     def send_safely(self, msg: EmailMessage) -> bool:
-        """Dispatch a background email and log provider failures."""
+        """Dispatch a background email and log SES failures."""
         try:
             return self.send(msg)
         except Exception:
@@ -121,58 +109,6 @@ class EmailService:
             raise RuntimeError("EMAIL_FROM must use wat2do.io, not wat2do.ca")
         if _LEGACY_WAT2DO_URL.search(msg.body_html) or _LEGACY_WAT2DO_URL.search(msg.body_text):
             raise RuntimeError("Outbound email links must use wat2do.io, not wat2do.ca")
-
-    def _dispatch_resend(self, msg: EmailMessage) -> bool:
-        api_key = settings.email_provider_api_key.strip()
-        if not api_key:
-            raise RuntimeError("EMAIL_PROVIDER_API_KEY is required when EMAIL_PROVIDER=resend")
-
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
-        if msg.idempotency_key:
-            headers["Idempotency-Key"] = msg.idempotency_key
-
-        payload = {
-            "from": settings.email_from,
-            "to": msg.to,
-            "subject": msg.subject,
-            "html": msg.body_html,
-            "text": msg.body_text,
-            "headers": msg.headers,
-        }
-        if msg.reply_to:
-            payload["reply_to"] = msg.reply_to
-        if msg.inline_images:
-            payload["attachments"] = [
-                {
-                    "filename": image.filename,
-                    "content": base64.b64encode(image.content).decode("ascii"),
-                    "content_type": image.content_type,
-                    "content_id": image.content_id,
-                }
-                for image in msg.inline_images
-            ]
-
-        response = httpx.post(
-            RESEND_EMAILS_URL,
-            json=payload,
-            headers=headers,
-            timeout=controlbox.email_delivery.provider_timeout_seconds,
-        )
-        response.raise_for_status()
-        return True
-
-    def _dispatch_ses(self, msg: EmailMessage) -> bool:
-        # SES has no idempotency key; the notifications log claim already
-        # guarantees one dispatch per (user, type, target).
-        recipients = [msg.to] if isinstance(msg.to, str) else msg.to
-        self._get_ses_client().send_email(
-            Destination={"ToAddresses": recipients},
-            Content={"Raw": {"Data": _mime_message(msg, recipients)}},
-        )
-        return True
 
     def _get_ses_client(self):
         if self._ses is None:

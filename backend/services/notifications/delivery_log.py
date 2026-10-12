@@ -4,7 +4,12 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-import httpx
+from botocore.exceptions import (  # type: ignore[import-untyped]
+    ClientError,
+    ConnectTimeoutError,
+    EndpointConnectionError,
+    ReadTimeoutError,
+)
 
 from core.constants import (
     NOTIFICATION_STATUS_FAILED,
@@ -15,6 +20,10 @@ from core.tables import NOTIFICATIONS_LOG
 from services.email_service import EmailMessage, email_service
 
 log = logging.getLogger(__name__)
+# SES errors worth another attempt; every other rejection is final.
+_RETRYABLE_SES_ERRORS = frozenset(
+    {"TooManyRequestsException", "InternalServiceErrorException", "ServiceUnavailable"}
+)
 
 
 def claim_delivery(
@@ -88,12 +97,14 @@ def deliver_claimed_email(
             email_service.send(message)
             _mark_log_sent(row_id)
             return True
-        except httpx.HTTPStatusError as exc:
-            failure_category = f"provider_http_{exc.response.status_code}"
-            if 400 <= exc.response.status_code < 500 and exc.response.status_code != 429:
+        except ClientError as exc:
+            code = exc.response.get("Error", {}).get("Code", "unknown")
+            failure_category = f"ses_{code.lower()}"
+            if code not in _RETRYABLE_SES_ERRORS:
+                log.warning("SES rejected notification %s (%s)", log_context, code)
                 break
-        except httpx.TimeoutException:
-            failure_category = "provider_timeout"
+        except (ConnectTimeoutError, ReadTimeoutError, EndpointConnectionError):
+            failure_category = "ses_timeout"
         except Exception:
             log.warning(
                 "Notification provider failure %s",
