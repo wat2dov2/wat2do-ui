@@ -703,7 +703,7 @@ export interface paths {
         };
         /**
          * Get Ingestion Latency
-         * @description Delay between an Instagram post and the agent listing or updating its event.
+         * @description Delay between an Instagram post and its event being added to wat2do.
          */
         get: operations["get_ingestion_latency_ingestion_latency__get"];
         put?: never;
@@ -2800,8 +2800,7 @@ export interface components {
              * Format: date-time
              */
             since: string;
-            new_events: components["schemas"]["LatencyStats"];
-            updates: components["schemas"]["LatencyStats"];
+            overall: components["schemas"]["LatencyStats"];
             /** Schools */
             schools: components["schemas"]["SchoolIngestionLatency"][];
             /** Hourly */
@@ -4141,10 +4140,14 @@ export interface components {
         };
         /** SchoolIngestionLatency */
         SchoolIngestionLatency: {
+            /** Count */
+            count: number;
+            /** Mean Minutes */
+            mean_minutes: number | null;
+            /** Median Minutes */
+            median_minutes: number | null;
             /** School */
             school: string;
-            new_events: components["schemas"]["LatencyStats"];
-            updates: components["schemas"]["LatencyStats"];
         };
         /** SchoolSummary */
         SchoolSummary: {

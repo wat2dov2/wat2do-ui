@@ -134,11 +134,7 @@ def test_stamp_new_rows_gives_rows_from_the_source_its_caption_and_post_time(db)
         ("added_at>=", since.isoformat()),
     ]
     assert len(event_payload["description"]) == module.MAX_EVENT_DESCRIPTION_LENGTH
-    assert (
-        event_payload["source_posted_at"]
-        == event_payload["last_source_posted_at"]
-        == posted.isoformat()
-    )
+    assert event_payload["source_posted_at"] == posted.isoformat()
     assert len(position_payload["description"]) == module.MAX_POSITION_DESCRIPTION_LENGTH
 
 

@@ -130,7 +130,6 @@ def test_ingest_renders_every_prompt_placeholder(run):
     )
     assert "local timezone America/Toronto" in prompt
     assert "Current semester ends: 2026-12-22" in prompt
-    assert "set `last_source_posted_at = '2026-10-15T15:00:00+00:00'`" in prompt
 
 
 def test_ingest_lets_directory_pages_fall_back_to_the_publishing_club(run):
@@ -149,7 +148,6 @@ def test_ingest_lets_directory_pages_fall_back_to_the_publishing_club(run):
     assert "ingestion_source = 'directory'" in prompt
     assert module.DIRECTORY_NOTE in prompt
     assert "Images (read every one" in prompt and "(no images)" in prompt
-    assert "This source has no post time" in prompt
 
 
 def test_ingest_still_drains_when_the_agent_fails(run):

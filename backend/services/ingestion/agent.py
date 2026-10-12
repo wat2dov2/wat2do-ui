@@ -279,13 +279,6 @@ def _render(
         "categories": ", ".join(f"'{category}'" for category in EVENT_CATEGORIES),
         "discovery_rules": EVENT_DISCOVERY_RULES,
         "campus_seasons": campus_season_prompt(school.slug),
-        "posted_stamp_rule": (
-            "Whenever this source changes an event that was already listed, including only "
-            "its dates or cancellation, also set `last_source_posted_at = "
-            f"'{posted.isoformat()}'` on that event in the same transaction."
-            if (posted := _posted_at(post))
-            else "This source has no post time; leave `last_source_posted_at` unchanged."
-        ),
     }
     prompt = PROMPT
     for key, value in values.items():

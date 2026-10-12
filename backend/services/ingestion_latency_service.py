@@ -1,4 +1,4 @@
-"""Summarise delays between an Instagram post and the agent catching it."""
+"""Summarise delays between an Instagram post and its event being added to wat2do."""
 
 from __future__ import annotations
 
@@ -17,31 +17,25 @@ from schemas.ingestion_latency import (
 
 
 def get_report(days: int) -> IngestionLatencyResponse:
-    """Mean and median catch delay per school and per hour over the last ``days``."""
+    """Mean and median delay overall, per school and per hour over the last ``days``."""
     since = datetime.now(UTC) - timedelta(days=days)
     rows = get_sb().rpc("ingestion_latencies", {"p_since": since.isoformat()}).execute().data or []
-    by_kind: defaultdict[str, list[float]] = defaultdict(list)
-    by_school: defaultdict[tuple[str, str], list[float]] = defaultdict(list)
+    overall: list[float] = []
+    by_school: defaultdict[str, list[float]] = defaultdict(list)
     by_hour: defaultdict[datetime, list[float]] = defaultdict(list)
     for row in rows:
         minutes = float(row["latency_seconds"]) / 60
-        caught_at = parse_iso_datetime(row["caught_at"])
-        by_kind[row["kind"]].append(minutes)
-        by_school[(row["school"], row["kind"])].append(minutes)
-        if caught_at is not None:
-            by_hour[caught_at.replace(minute=0, second=0, microsecond=0)].append(minutes)
-    schools = sorted({school for school, _ in by_school})
+        added_at = parse_iso_datetime(row["added_at"])
+        overall.append(minutes)
+        by_school[row["school"]].append(minutes)
+        if added_at is not None:
+            by_hour[added_at.replace(minute=0, second=0, microsecond=0)].append(minutes)
     return IngestionLatencyResponse(
         since=since,
-        new_events=_stats(by_kind["new"]),
-        updates=_stats(by_kind["update"]),
+        overall=_stats(overall),
         schools=[
-            SchoolIngestionLatency(
-                school=school,
-                new_events=_stats(by_school[(school, "new")]),
-                updates=_stats(by_school[(school, "update")]),
-            )
-            for school in schools
+            SchoolIngestionLatency(school=school, **_stats(values).model_dump())
+            for school, values in sorted(by_school.items())
         ],
         hourly=[
             HourlyIngestionLatency(

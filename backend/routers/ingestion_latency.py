@@ -13,5 +13,5 @@ def get_ingestion_latency(
     days: int = Query(default=7, ge=1, le=30),
     _: UserResponse = Depends(get_admin_user),
 ) -> IngestionLatencyResponse:
-    """Delay between an Instagram post and the agent listing or updating its event."""
+    """Delay between an Instagram post and its event being added to wat2do."""
     return ingestion_latency_service.get_report(days)

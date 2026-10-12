@@ -3000,7 +3000,7 @@
           "ingestion-latency"
         ],
         "summary": "Get Ingestion Latency",
-        "description": "Delay between an Instagram post and the agent listing or updating its event.",
+        "description": "Delay between an Instagram post and its event being added to wat2do.",
         "operationId": "get_ingestion_latency_ingestion_latency__get",
         "security": [
           {
@@ -10230,10 +10230,7 @@
             "format": "date-time",
             "title": "Since"
           },
-          "new_events": {
-            "$ref": "#/components/schemas/LatencyStats"
-          },
-          "updates": {
+          "overall": {
             "$ref": "#/components/schemas/LatencyStats"
           },
           "schools": {
@@ -10254,8 +10251,7 @@
         "type": "object",
         "required": [
           "since",
-          "new_events",
-          "updates",
+          "overall",
           "schools",
           "hourly"
         ],
@@ -13942,22 +13938,43 @@
       },
       "SchoolIngestionLatency": {
         "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "mean_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Minutes"
+          },
+          "median_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median Minutes"
+          },
           "school": {
             "type": "string",
             "title": "School"
-          },
-          "new_events": {
-            "$ref": "#/components/schemas/LatencyStats"
-          },
-          "updates": {
-            "$ref": "#/components/schemas/LatencyStats"
           }
         },
         "type": "object",
         "required": [
-          "school",
-          "new_events",
-          "updates"
+          "count",
+          "mean_minutes",
+          "median_minutes",
+          "school"
         ],
         "title": "SchoolIngestionLatency"
       },

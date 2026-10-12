@@ -1,4 +1,4 @@
-"""How long the ingestion agent takes to catch Instagram posts."""
+"""How long events take to reach wat2do after their Instagram post goes up."""
 
 from datetime import datetime
 
@@ -11,10 +11,8 @@ class LatencyStats(BaseModel):
     median_minutes: float | None
 
 
-class SchoolIngestionLatency(BaseModel):
+class SchoolIngestionLatency(LatencyStats):
     school: str
-    new_events: LatencyStats
-    updates: LatencyStats
 
 
 class HourlyIngestionLatency(BaseModel):
@@ -26,7 +24,6 @@ class HourlyIngestionLatency(BaseModel):
 
 class IngestionLatencyResponse(BaseModel):
     since: datetime
-    new_events: LatencyStats
-    updates: LatencyStats
+    overall: LatencyStats
     schools: list[SchoolIngestionLatency]
     hourly: list[HourlyIngestionLatency]

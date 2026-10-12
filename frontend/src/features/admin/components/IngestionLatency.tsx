@@ -39,7 +39,7 @@ function formatMinutes(minutes: number | null, language: string) {
 export function IngestionLatency() {
   const { t } = useTranslation();
   const { data, isLoading, isError, days, setDays } = useIngestionLatency();
-  const hasCatches = Boolean(data && data.new_events.count + data.updates.count > 0);
+  const hasEvents = Boolean(data && data.overall.count > 0);
 
   return (
     <Card>
@@ -60,7 +60,7 @@ export function IngestionLatency() {
         </CardAction>
       </CardHeader>
       <CardContent>
-        {isLoading ? <LoadingPage /> : isError || !data ? <p>{t("admin.diagnostics.latency.error")}</p> : hasCatches ? (
+        {isLoading ? <LoadingPage /> : isError || !data ? <p>{t("admin.diagnostics.latency.error")}</p> : hasEvents ? (
           <LatencyReport report={data} />
         ) : <p>{t("admin.diagnostics.latency.empty")}</p>}
       </CardContent>
@@ -72,43 +72,25 @@ function LatencyReport({ report }: { report: IngestionLatencyReport }) {
   const { t, i18n } = useTranslation();
   const { getSchoolName } = useSchoolDirectory();
   const format = (minutes: number | null) => formatMinutes(minutes, i18n.language);
-  const statCells = (stats: LatencyStats) => [
-    <TableCell key="count">{stats.count.toLocaleString(i18n.language)}</TableCell>,
-    <TableCell key="mean">{format(stats.mean_minutes)}</TableCell>,
-    <TableCell key="median">{format(stats.median_minutes)}</TableCell>,
-  ];
 
   return (
     <Stack gap={6}>
-      <FormGrid columns={2}>
-        <LatencySummary
-          title={t("admin.diagnostics.latency.newEvents")}
-          description={t("admin.diagnostics.latency.newEventsDescription")}
-          stats={report.new_events}
-        />
-        <LatencySummary
-          title={t("admin.diagnostics.latency.updates")}
-          description={t("admin.diagnostics.latency.updatesDescription")}
-          stats={report.updates}
-        />
-      </FormGrid>
+      <LatencySummary stats={report.overall} />
       <HourlyLatencyChart hourly={report.hourly} />
       <Table>
         <TableHeader><TableRow>
           <TableHead>{t("schools.school")}</TableHead>
-          <TableHead>{t("admin.diagnostics.latency.newEvents")}</TableHead>
-          <TableHead>{t("admin.diagnostics.latency.newMean")}</TableHead>
-          <TableHead>{t("admin.diagnostics.latency.newMedian")}</TableHead>
-          <TableHead>{t("admin.diagnostics.latency.updates")}</TableHead>
-          <TableHead>{t("admin.diagnostics.latency.updateMean")}</TableHead>
-          <TableHead>{t("admin.diagnostics.latency.updateMedian")}</TableHead>
+          <TableHead>{t("admin.diagnostics.latency.events")}</TableHead>
+          <TableHead>{t("admin.diagnostics.latency.averageDelay")}</TableHead>
+          <TableHead>{t("admin.diagnostics.latency.medianDelay")}</TableHead>
         </TableRow></TableHeader>
         <TableBody>
           {report.schools.map(row => (
             <TableRow key={row.school}>
               <TableCell>{getSchoolName(row.school)}</TableCell>
-              {statCells(row.new_events)}
-              {statCells(row.updates)}
+              <TableCell>{row.count.toLocaleString(i18n.language)}</TableCell>
+              <TableCell>{format(row.mean_minutes)}</TableCell>
+              <TableCell>{format(row.median_minutes)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -117,33 +99,31 @@ function LatencyReport({ report }: { report: IngestionLatencyReport }) {
   );
 }
 
-function LatencySummary({ title, description, stats }: { title: string; description: string; stats: LatencyStats }) {
+function LatencySummary({ stats }: { stats: LatencyStats }) {
   const { t, i18n } = useTranslation();
   const values = [
-    { label: t("admin.diagnostics.latency.count"), value: stats.count.toLocaleString(i18n.language) },
-    { label: t("admin.diagnostics.latency.mean"), value: formatMinutes(stats.mean_minutes, i18n.language) },
-    { label: t("admin.diagnostics.latency.median"), value: formatMinutes(stats.median_minutes, i18n.language) },
+    { label: t("admin.diagnostics.latency.events"), value: stats.count.toLocaleString(i18n.language) },
+    { label: t("admin.diagnostics.latency.averageDelay"), value: formatMinutes(stats.mean_minutes, i18n.language) },
+    { label: t("admin.diagnostics.latency.medianDelay"), value: formatMinutes(stats.median_minutes, i18n.language) },
   ];
   return (
-    <Section title={title} description={description}>
-      <FormGrid columns={3} collapse={false}>
-        {values.map(({ label, value }) => (
-          <Item key={label} variant="outline" size="sm">
-            <ItemContent>
-              <ItemDescription>{label}</ItemDescription>
-              <ItemTitle>{value}</ItemTitle>
-            </ItemContent>
-          </Item>
-        ))}
-      </FormGrid>
-    </Section>
+    <FormGrid columns={3} collapse={false}>
+      {values.map(({ label, value }) => (
+        <Item key={label} variant="outline" size="sm">
+          <ItemContent>
+            <ItemDescription>{label}</ItemDescription>
+            <ItemTitle>{value}</ItemTitle>
+          </ItemContent>
+        </Item>
+      ))}
+    </FormGrid>
   );
 }
 
 function HourlyLatencyChart({ hourly }: { hourly: IngestionLatencyReport["hourly"] }) {
   const { t, i18n } = useTranslation();
   const config = {
-    mean: { label: t("admin.diagnostics.latency.meanMinutes"), color: "var(--primary)" },
+    mean: { label: t("admin.diagnostics.latency.averageMinutes"), color: "var(--primary)" },
     median: { label: t("admin.diagnostics.latency.medianMinutes"), color: "var(--muted-foreground)" },
   } satisfies ChartConfig;
   const hourLabel = new Intl.DateTimeFormat(i18n.language, { month: "short", day: "numeric", hour: "numeric" });

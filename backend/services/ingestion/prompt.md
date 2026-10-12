@@ -93,7 +93,6 @@ Apply exactly the change the source supports, in one transaction per logical cha
   When the same role from the same club is already listed and active, update it instead.
 - **Applications closed or role filled for a listed position:** set `is_active = false`.
 
-{{posted_stamp_rule}}
 Only change rows that belong to this source's club, or that this source clearly describes.
 Never change another club's event to match this post; if another club lists the same event, leave theirs alone.
 Never delete past dates, and never add dates that already ended.
@@ -148,7 +147,7 @@ Columns:
 - `registration`: true only when attendees are clearly told to register, RSVP or sign up.
 - `category`: one of {{categories}}, or NULL.
 - `cancelled`: false unless the event is cancelled.
-- Never set `featured`, `created_by`, `display_handle`, `dtstart_utc`, `dtend_utc`, `source_posted_at` or `last_source_changed_at` on `events`; the system fills them.
+- Never set `featured`, `created_by`, `display_handle`, `dtstart_utc`, `dtend_utc` or `source_posted_at` on `events`; the system fills them.
 
 {{discovery_rules}}
 

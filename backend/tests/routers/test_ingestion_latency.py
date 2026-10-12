@@ -14,8 +14,7 @@ def test_latency_report_is_admin_only(authenticated_client):
 def test_latency_report_reads_the_requested_window(admin_client, monkeypatch):
     report = IngestionLatencyResponse(
         since=datetime(2026, 10, 3, tzinfo=UTC),
-        new_events=_EMPTY,
-        updates=_EMPTY,
+        overall=_EMPTY,
         schools=[],
         hourly=[],
     )
@@ -26,7 +25,7 @@ def test_latency_report_reads_the_requested_window(admin_client, monkeypatch):
 
     assert response.status_code == 200
     read.assert_called_once_with(30)
-    assert response.json()["new_events"] == {
+    assert response.json()["overall"] == {
         "count": 0,
         "mean_minutes": None,
         "median_minutes": None,

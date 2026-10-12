@@ -40,14 +40,7 @@ def stamp_new_rows(
     """Give rows the agent created from ``source_url`` the source's text and post time."""
     event = {
         **({"description": caption[:MAX_EVENT_DESCRIPTION_LENGTH]} if caption else {}),
-        **(
-            {
-                "source_posted_at": posted_at.isoformat(),
-                "last_source_posted_at": posted_at.isoformat(),
-            }
-            if posted_at
-            else {}
-        ),
+        **({"source_posted_at": posted_at.isoformat()} if posted_at else {}),
     }
     position = {"description": caption[:MAX_POSITION_DESCRIPTION_LENGTH]} if caption else {}
     for table, payload in ((EVENTS, event), (POSITIONS, position)):
