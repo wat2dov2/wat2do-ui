@@ -266,3 +266,43 @@ def test_digest_aborts_inflight_fetch_before_account_can_change():
     result = subprocess.run([node], input=script, text=True, capture_output=True)
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout) == {"aborted": True, "first": "pending", "second": "settled"}
+
+
+@pytest.mark.parametrize(
+    ("items", "expected"),
+    [
+        # A post Instagram could not load is skipped; the digest keeps the rest.
+        ([{"media": {"pk": "111"}}, {"media": None}, {"media": {"pk": "222"}}], ["111", "222"]),
+        # A post whose identities disagree still fails the whole digest.
+        ([{"media": {"pk": "111", "id": "999_1"}}], None),
+    ],
+)
+def test_digest_skips_posts_instagram_could_not_load(items, expected):
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js unavailable")
+    from services.instagram_notifications import browser_session
+
+    source = browser_digest._digest_query_source("cache-1", "41553815702")
+    script = (
+        """
+      global.window = {};
+      global.document = {cookie: "csrftoken=fixture; ds_user_id=41553815702"};
+      global.fetch = async () => ({status: 200, ok: true, json: async () => ({
+        errors: [{message: "execution error", severity: "ERROR"}],
+        data: {subscription_digest_feed: {items: %s, paging_info: {more_available: false}}}
+      })});
+    """
+        % json.dumps(items)
+        + source
+        + ";setImmediate(() => setImmediate(() => {const request = window["
+        + json.dumps(browser_session._REQUEST_KEY)
+        + "]; console.log(JSON.stringify(request.result));}));"
+    )
+    completed = subprocess.run([node], input=script, text=True, capture_output=True, timeout=5)
+    assert completed.returncode == 0, completed.stderr
+    result = json.loads(completed.stdout)
+    if expected is None:
+        assert result == {"state": "failed", "reason": "invalid_response"}
+    else:
+        assert result == {"state": "succeeded", "media_ids": expected, "page_count": 1}

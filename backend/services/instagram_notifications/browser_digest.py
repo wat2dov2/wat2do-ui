@@ -234,6 +234,9 @@ def _digest_query_source(cache_ent_id: str, recipient_id: str) -> str:
         }}
         for (const item of feed.items) {{
           const media = item?.media;
+          // Instagram nulls a post it could not load (deleted or restricted)
+          // and reports an execution error; the rest of the page is still good.
+          if (media === null || media === undefined) continue;
           const candidates = [media?.pk, media?.id]
             .filter(value => value !== undefined && value !== null)
             .map(value => String(value).split("_", 1)[0]);
