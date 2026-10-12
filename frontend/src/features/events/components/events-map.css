@@ -10,6 +10,16 @@
 [data-view="map"] .mapboxgl-ctrl-top-right {
   top: var(--event-map-top-inset, 0);
 }
+/* Floats over the map's bottom-left corner, just above the Mapbox logo, and
+   flies back to the campus centre. */
+.event-map-home[data-slot="button"] {
+  position: absolute;
+  left: 0.75rem;
+  bottom: 2.5rem;
+  z-index: 3;
+  background: var(--background);
+  box-shadow: 0 6px 20px -8px rgb(0 0 0 / 0.45);
+}
 .event-map-marker[data-slot="button"] {
   position: relative;
   width: 4rem;

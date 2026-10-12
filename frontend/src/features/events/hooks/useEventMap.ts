@@ -34,7 +34,5 @@ export function useEventMap(events: Event[], allEvents: Event[], schoolSlug: str
     }
     return [...byCoordinates.values()];
   }, [events, query.data]);
-  const mappedCount = venues.reduce((count, venue) => count + venue.events.length, 0);
-  const unmappedCount = query.isFetching ? 0 : events.length - mappedCount;
-  return { query, venues, center: query.data?.center, unmappedCount, mappedCount };
+  return { query, venues, center: query.data?.center };
 }

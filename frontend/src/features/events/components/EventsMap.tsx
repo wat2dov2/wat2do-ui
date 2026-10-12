@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Map, { Source, Layer, Marker, NavigationControl, type MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "./events-map.css";
@@ -10,7 +10,7 @@ import { useEventMapMarkers } from "@/features/events/hooks/useEventMapMarkers";
 import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
-import { X } from "@/shared/ui/doodle-icons";
+import { GraduationCap, X } from "@/shared/ui/doodle-icons";
 import { formatCardDate, formatCardTime, isEventHappeningNow } from "@/shared/utils/date";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
@@ -64,7 +64,7 @@ export function EventsMap({ events, allEvents, school, onEventClick }: { events:
   const mobile = useMobileClickActivation();
   const { getSchoolTimezone } = useSchoolDirectory();
   const { isDarkMode } = useDarkMode();
-  const { query, venues, center, mappedCount, unmappedCount } = useEventMap(events, allEvents, school);
+  const { query, venues, center } = useEventMap(events, allEvents, school);
   const { data: goingSelections = [] } = useGoingEvents();
   const goingIds = useMemo(() => new Set(goingSelections.map(selection => selection.event_id)), [goingSelections]);
   const mapRef = useRef<MapRef>(null);
@@ -89,19 +89,6 @@ export function EventsMap({ events, allEvents, school, onEventClick }: { events:
     })),
   }), [venues]);
 
-  const fitVenues = useCallback(() => {
-    const map = mapRef.current;
-    if (!map || !center) return;
-    if (venues.length <= 1) {
-      const point = venues[0]?.coordinates ?? center;
-      map.jumpTo({ center: point, zoom: settings.map_initial_zoom });
-      return;
-    }
-    const lngs = venues.map(venue => venue.coordinates[0]);
-    const lats = venues.map(venue => venue.coordinates[1]);
-    map.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: 64, maxZoom: settings.map_initial_zoom, duration: 0 });
-  }, [center, venues, settings.map_initial_zoom]);
-
   if (!MAPBOX_TOKEN) return <EmptyState title={t("events.views.mapUnavailable")} description={t("events.views.mapUnavailableDescription")} />;
   if ((query.isError && !center) || mapFailed) return <EmptyState title={t("events.views.mapFailed")} action={<Button variant="outline" onClick={() => { setMapFailed(false); void query.refetch(); }}>{t("common.tryAgain")}</Button>} />;
   if (query.isPending && !center) return <EventViewSkeleton variant="map" />;
@@ -115,7 +102,7 @@ export function EventsMap({ events, allEvents, school, onEventClick }: { events:
           mapboxAccessToken={MAPBOX_TOKEN}
           initialViewState={{ longitude: center[0], latitude: center[1], zoom: settings.map_initial_zoom }}
           mapStyle={isDarkMode ? settings.map_dark_style : settings.map_style}
-          onLoad={() => { mapLoaded.current = true; fitVenues(); void refreshMarkers(); }}
+          onLoad={() => { mapLoaded.current = true; void refreshMarkers(); }}
           onMoveEnd={() => { void refreshMarkers(); }}
           onResize={() => { void refreshMarkers(); }}
           onSourceData={event => { if (event.sourceId === "events" && event.isSourceLoaded) void refreshMarkers(); }}
@@ -139,6 +126,9 @@ export function EventsMap({ events, allEvents, school, onEventClick }: { events:
             }} />
           </Marker>)}
         </Map>
+        <Button variant="outline" className="event-map-home" onClick={() => mapRef.current?.flyTo({ center, zoom: settings.map_initial_zoom })}>
+          <GraduationCap />{t("events.views.backToCampus")}
+        </Button>
         {selectedEvents.length && !mobile ? <aside className="event-map-sheet" aria-label={selectedHeading}>
           <Stack direction="horizontal" justify="between" align="center" gap={2}>
             <strong>{selectedHeading}</strong>
@@ -158,14 +148,6 @@ export function EventsMap({ events, allEvents, school, onEventClick }: { events:
           <DrawerBody>{selection}</DrawerBody>
         </DrawerContent>
       </Drawer> : null}
-      <Stack direction="horizontal" justify="between" align="center" wrap gap={2}>
-        <p className="text-sm text-muted-foreground" role="status">
-          {t("events.views.mapSummary", { count: mappedCount })}
-          {query.isFetching ? ` ${t("common.loading")}` : ""}
-          {unmappedCount > 0 ? ` ${t("events.views.unmapped", { count: unmappedCount })}` : ""}
-        </p>
-        {query.data?.failedCount || query.isError ? <Button size="sm" variant="outline" onClick={() => { void query.refetch(); }}>{t("common.tryAgain")}</Button> : null}
-      </Stack>
     </Stack>
   );
 }

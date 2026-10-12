@@ -152,16 +152,15 @@
       "mapUnavailable": "मानचित्र अभी उपलब्ध नहीं है",
       "mapUnavailableDescription": "आप ग्रिड या कैलेंडर में कार्यक्रम देख सकते हैं।",
       "mapFailed": "कार्यक्रम मानचित्र लोड नहीं हो सका",
+      "backToCampus": "कैंपस पर वापस जाएँ",
       "noLocations": "मानचित्र पर कोई स्थान उपलब्ध नहीं",
       "noLocationsDescription": "ये कार्यक्रम ऑनलाइन हैं या उनका स्थान नहीं दिया गया है या नहीं मिला।",
-      "mapSummary": "मानचित्र पर: {{count}}।",
       "clusterAt": "{{location}} पर {{count}} कार्यक्रम",
       "clusterAt_one": "{{location}} पर {{count}} कार्यक्रम",
       "clusterAt_other": "{{location}} पर {{count}} कार्यक्रम",
       "clusterNear": "{{location}} के पास {{count}} कार्यक्रम",
       "clusterNear_one": "{{location}} के पास {{count}} कार्यक्रम",
-      "clusterNear_other": "{{location}} के पास {{count}} कार्यक्रम",
-      "unmapped": "मानचित्र पर स्थान के बिना: {{count}}।"
+      "clusterNear_other": "{{location}} के पास {{count}} कार्यक्रम"
     }
   }
 }

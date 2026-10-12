@@ -148,16 +148,15 @@
       "mapUnavailable": "Map temporarily unavailable",
       "mapUnavailableDescription": "You can still browse events in Grid or Calendar view.",
       "mapFailed": "Could not load the event map",
+      "backToCampus": "Back to campus",
       "noLocations": "No map locations available",
       "noLocationsDescription": "These events have virtual, missing, or unresolved locations.",
-      "mapSummary": "On the map: {{count}}.",
       "clusterAt": "{{count}} event at {{location}}",
       "clusterAt_one": "{{count}} event at {{location}}",
       "clusterAt_other": "{{count}} events at {{location}}",
       "clusterNear": "{{count}} event near {{location}}",
       "clusterNear_one": "{{count}} event near {{location}}",
-      "clusterNear_other": "{{count}} events near {{location}}",
-      "unmapped": "Without a map location: {{count}}."
+      "clusterNear_other": "{{count}} events near {{location}}"
     }
   }
 }

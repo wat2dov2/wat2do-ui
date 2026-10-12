@@ -157,9 +157,9 @@
       "mapUnavailable": "Carte temporairement indisponible",
       "mapUnavailableDescription": "Vous pouvez consulter les événements dans la grille ou le calendrier.",
       "mapFailed": "Impossible de charger la carte",
+      "backToCampus": "Retour au campus",
       "noLocations": "Aucun lieu disponible sur la carte",
       "noLocationsDescription": "Les lieux de ces événements sont virtuels, absents ou introuvables.",
-      "mapSummary": "Sur la carte : {{count}}.",
       "clusterAt": "{{count}} événement à {{location}}",
       "clusterAt_one": "{{count}} événement à {{location}}",
       "clusterAt_many": "{{count}} événements à {{location}}",
@@ -167,8 +167,7 @@
       "clusterNear": "{{count}} événement près de {{location}}",
       "clusterNear_one": "{{count}} événement près de {{location}}",
       "clusterNear_many": "{{count}} événements près de {{location}}",
-      "clusterNear_other": "{{count}} événements près de {{location}}",
-      "unmapped": "Sans lieu sur la carte : {{count}}."
+      "clusterNear_other": "{{count}} événements près de {{location}}"
     }
   }
 }

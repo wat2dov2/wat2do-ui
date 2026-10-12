@@ -152,16 +152,15 @@
       "mapUnavailable": "வரைபடம் தற்காலிகமாக கிடைக்கவில்லை",
       "mapUnavailableDescription": "கட்டம் அல்லது நாட்காட்டியில் நிகழ்வுகளைப் பார்க்கலாம்.",
       "mapFailed": "நிகழ்வு வரைபடத்தை ஏற்ற முடியவில்லை",
+      "backToCampus": "வளாகத்துக்குத் திரும்பு",
       "noLocations": "வரைபட இடங்கள் இல்லை",
       "noLocationsDescription": "இந்த நிகழ்வுகள் இணையத்தில் நடைபெறுகின்றன அல்லது அவற்றின் இடங்கள் தெரியவில்லை.",
-      "mapSummary": "வரைபடத்தில்: {{count}}.",
       "clusterAt": "{{location}} இல் {{count}} நிகழ்வு",
       "clusterAt_one": "{{location}} இல் {{count}} நிகழ்வு",
       "clusterAt_other": "{{location}} இல் {{count}} நிகழ்வுகள்",
       "clusterNear": "{{location}} அருகே {{count}} நிகழ்வு",
       "clusterNear_one": "{{location}} அருகே {{count}} நிகழ்வு",
-      "clusterNear_other": "{{location}} அருகே {{count}} நிகழ்வுகள்",
-      "unmapped": "வரைபட இடம் இல்லாதவை: {{count}}."
+      "clusterNear_other": "{{location}} அருகே {{count}} நிகழ்வுகள்"
     }
   }
 }

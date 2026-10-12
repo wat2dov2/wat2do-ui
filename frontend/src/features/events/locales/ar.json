@@ -172,9 +172,9 @@
       "mapUnavailable": "الخريطة غير متاحة مؤقتًا",
       "mapUnavailableDescription": "يمكنك تصفح الفعاليات في عرض الشبكة أو التقويم.",
       "mapFailed": "تعذر تحميل خريطة الفعاليات",
+      "backToCampus": "العودة إلى الحرم الجامعي",
       "noLocations": "لا توجد مواقع متاحة على الخريطة",
       "noLocationsDescription": "هذه الفعاليات افتراضية أو مواقعها غير محددة أو لم يتم العثور عليها.",
-      "mapSummary": "على الخريطة: {{count}}.",
       "clusterAt": "{{count}} فعالية في {{location}}",
       "clusterAt_zero": "{{count}} فعالية في {{location}}",
       "clusterAt_one": "{{count}} فعالية في {{location}}",
@@ -188,8 +188,7 @@
       "clusterNear_two": "{{count}} فعاليتان قرب {{location}}",
       "clusterNear_few": "{{count}} فعاليات قرب {{location}}",
       "clusterNear_many": "{{count}} فعالية قرب {{location}}",
-      "clusterNear_other": "{{count}} فعالية قرب {{location}}",
-      "unmapped": "دون موقع على الخريطة: {{count}}."
+      "clusterNear_other": "{{count}} فعالية قرب {{location}}"
     }
   }
 }

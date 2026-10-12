@@ -152,16 +152,15 @@
       "mapUnavailable": "نقشہ عارضی طور پر دستیاب نہیں",
       "mapUnavailableDescription": "آپ گرڈ یا کیلنڈر میں تقریبات دیکھ سکتے ہیں۔",
       "mapFailed": "تقریبات کا نقشہ لوڈ نہیں ہو سکا",
+      "backToCampus": "کیمپس پر واپس جائیں",
       "noLocations": "نقشے پر کوئی مقام دستیاب نہیں",
       "noLocationsDescription": "یہ تقریبات آن لائن ہیں یا ان کے مقامات نامعلوم ہیں۔",
-      "mapSummary": "نقشے پر: {{count}}۔",
       "clusterAt": "{{location}} پر {{count}} تقریب",
       "clusterAt_one": "{{location}} پر {{count}} تقریب",
       "clusterAt_other": "{{location}} پر {{count}} تقریبات",
       "clusterNear": "{{location}} کے قریب {{count}} تقریب",
       "clusterNear_one": "{{location}} کے قریب {{count}} تقریب",
-      "clusterNear_other": "{{location}} کے قریب {{count}} تقریبات",
-      "unmapped": "نقشے پر مقام کے بغیر: {{count}}۔"
+      "clusterNear_other": "{{location}} کے قریب {{count}} تقریبات"
     }
   }
 }

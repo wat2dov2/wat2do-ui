@@ -162,9 +162,9 @@
       "mapUnavailable": "Карта временно недоступна",
       "mapUnavailableDescription": "Вы можете просматривать события в сетке или календаре.",
       "mapFailed": "Не удалось загрузить карту событий",
+      "backToCampus": "Вернуться к кампусу",
       "noLocations": "Нет мест на карте",
       "noLocationsDescription": "Эти события проходят онлайн, или их места не указаны либо не найдены.",
-      "mapSummary": "На карте: {{count}}.",
       "clusterAt": "{{count}} событие в {{location}}",
       "clusterAt_one": "{{count}} событие в {{location}}",
       "clusterAt_few": "{{count}} события в {{location}}",
@@ -174,8 +174,7 @@
       "clusterNear_one": "{{count}} событие рядом с {{location}}",
       "clusterNear_few": "{{count}} события рядом с {{location}}",
       "clusterNear_many": "{{count}} событий рядом с {{location}}",
-      "clusterNear_other": "{{count}} события рядом с {{location}}",
-      "unmapped": "Без места на карте: {{count}}."
+      "clusterNear_other": "{{count}} события рядом с {{location}}"
     }
   }
 }

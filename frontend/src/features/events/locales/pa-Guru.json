@@ -152,16 +152,15 @@
       "mapUnavailable": "ਨਕਸ਼ਾ ਅਸਥਾਈ ਤੌਰ ਤੇ ਉਪਲਬਧ ਨਹੀਂ",
       "mapUnavailableDescription": "ਤੁਸੀਂ ਗਰਿੱਡ ਜਾਂ ਕੈਲੰਡਰ ਵਿੱਚ ਸਮਾਗਮ ਵੇਖ ਸਕਦੇ ਹੋ।",
       "mapFailed": "ਸਮਾਗਮਾਂ ਦਾ ਨਕਸ਼ਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ",
+      "backToCampus": "ਕੈਂਪਸ ਵੱਲ ਵਾਪਸ ਜਾਓ",
       "noLocations": "ਨਕਸ਼ੇ ਤੇ ਕੋਈ ਥਾਂ ਉਪਲਬਧ ਨਹੀਂ",
       "noLocationsDescription": "ਇਹ ਸਮਾਗਮ ਆਨਲਾਈਨ ਹਨ ਜਾਂ ਉਨ੍ਹਾਂ ਦੀ ਥਾਂ ਨਹੀਂ ਦਿੱਤੀ ਜਾਂ ਨਹੀਂ ਮਿਲੀ।",
-      "mapSummary": "ਨਕਸ਼ੇ ਤੇ: {{count}}।",
       "clusterAt": "{{location}} ਵਿਖੇ {{count}} ਸਮਾਗਮ",
       "clusterAt_one": "{{location}} ਵਿਖੇ {{count}} ਸਮਾਗਮ",
       "clusterAt_other": "{{location}} ਵਿਖੇ {{count}} ਸਮਾਗਮ",
       "clusterNear": "{{location}} ਦੇ ਨੇੜੇ {{count}} ਸਮਾਗਮ",
       "clusterNear_one": "{{location}} ਦੇ ਨੇੜੇ {{count}} ਸਮਾਗਮ",
-      "clusterNear_other": "{{location}} ਦੇ ਨੇੜੇ {{count}} ਸਮਾਗਮ",
-      "unmapped": "ਨਕਸ਼ੇ ਤੇ ਥਾਂ ਤੋਂ ਬਿਨਾਂ: {{count}}।"
+      "clusterNear_other": "{{location}} ਦੇ ਨੇੜੇ {{count}} ਸਮਾਗਮ"
     }
   }
 }

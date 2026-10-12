@@ -147,14 +147,13 @@
       "mapUnavailable": "地圖暫時無法使用",
       "mapUnavailableDescription": "你仍可用網格或日曆瀏覽活動。",
       "mapFailed": "無法載入活動地圖",
+      "backToCampus": "返回校園",
       "noLocations": "暫無地圖位置",
       "noLocationsDescription": "這些活動在線上舉行、缺少地點或無法定位。",
-      "mapSummary": "地圖上：{{count}} 項。",
       "clusterAt": "{{location}} 有 {{count}} 個活動",
       "clusterAt_other": "{{location}} 有 {{count}} 個活動",
       "clusterNear": "{{location}} 附近有 {{count}} 個活動",
-      "clusterNear_other": "{{location}} 附近有 {{count}} 個活動",
-      "unmapped": "沒有地圖位置：{{count}} 項。"
+      "clusterNear_other": "{{location}} 附近有 {{count}} 個活動"
     }
   }
 }

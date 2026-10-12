@@ -6,7 +6,7 @@ import ts from "typescript";
 import type { Event } from "../src/shared/types";
 
 // Exercise the mounted component's callbacks without starting WebGL or a browser.
-test("map camera survives feed refreshes, marker selection, closing the sheet and transient tile failures", () => {
+test("map opens on campus, flies back to campus, and keeps its camera through feed refreshes, marker selection, closing the sheet and transient tile failures", () => {
   const filename = new URL("../src/features/events/components/EventsMap.tsx", import.meta.url);
   const source = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: {
     module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
@@ -36,7 +36,7 @@ test("map camera survives feed refreshes, marker selection, closing the sheet an
     };
     if (id === "react/jsx-runtime") return require(id);
     if (id === "react-map-gl/mapbox") return { __esModule: true, default: "Map", Source: "Source", Layer: "Layer", Marker: "Marker", NavigationControl: "NavigationControl" };
-    if (id.endsWith("useEventMap")) return { useEventMap: () => ({ query: { data: {}, isPending: false, refetch() { retries++; } }, venues: [{ coordinates: [1, 2], events: markerEvents }, { coordinates: [2, 3], events: [] }], center: [1, 2], mappedCount: markerEvents.length, unmappedCount: 0 }) };
+    if (id.endsWith("useEventMap")) return { useEventMap: () => ({ query: { data: {}, isPending: false, refetch() { retries++; } }, venues: [{ coordinates: [1, 2], events: markerEvents }, { coordinates: [2, 3], events: [] }], center: [1, 2] }) };
     if (id.endsWith("useEventMapMarkers")) return { useEventMapMarkers: () => ({ markers: markerEvents.length ? [{ id: "venue:0", coordinates: [1, 2], events: markerEvents }] : [], refreshMarkers() {} }) };
     if (id.endsWith("useGoingEvents")) return { useGoingEvents: () => ({ data: [] }) };
     if (id.endsWith("eventMap.api")) return { MAPBOX_TOKEN: "test" };
@@ -74,8 +74,16 @@ test("map camera survives feed refreshes, marker selection, closing the sheet an
   expect(retries).toBe(1);
   tree = render();
   map = find(tree, node => node.type === "Map")!;
-  refs[0].current = { fitBounds() { fits++; }, jumpTo() { fits++; } };
+  expect(map.props.initialViewState).toEqual({ longitude: 1, latitude: 2, zoom: 14 });
+  const flights: unknown[] = [];
+  refs[0].current = { fitBounds() { fits++; }, jumpTo() { fits++; }, flyTo(options: unknown) { fits++; flights.push(options); } };
+  // The map opens on the campus centre; loading never refits it to the events.
   (map.props.onLoad as () => void)();
+  expect(fits).toBe(0);
+  const home = find(tree, node => node.props.className === "event-map-home")!;
+  expect([home.props.children].flat()).toContain("events.views.backToCampus");
+  (home.props.onClick as () => void)();
+  expect(flights).toEqual([{ center: [1, 2], zoom: 14 }]);
   expect(fits).toBe(1);
   // Individual resource failures after a successful load retain the canvas
   // and its existing camera instead of switching to a whole-map failure.
@@ -204,7 +212,7 @@ test("map filters the loaded events without changing its location query", () => 
   const second = { id: 2, location: "DC 1350", map_location: "Davis Centre" } as Event;
   const allEvents = [listing, second];
   const options: { locations: string[]; enabled: boolean }[] = [];
-  const exports = {} as { useEventMap: (events: Event[], allEvents: Event[], school: string) => { mappedCount: number; venues: unknown[]; center: number[] } };
+  const exports = {} as { useEventMap: (events: Event[], allEvents: Event[], school: string) => { venues: { events: unknown[] }[]; center: number[] } };
   runInNewContext(source, { exports, require: (id: string) => {
     if (id === "react") return { useMemo: (fn: () => unknown) => fn() };
     if (id === "@tanstack/react-query") return { useQuery: (query: typeof options[number]) => {
@@ -217,10 +225,11 @@ test("map filters the loaded events without changing its location query", () => 
     };
     return { useSchoolDirectory: () => ({ schoolBySlug: new Map([["uwaterloo", { slug: "uwaterloo" }]]) }) };
   } });
-  expect(exports.useEventMap([listing], allEvents, "uwaterloo").mappedCount).toBe(1);
-  expect(exports.useEventMap([second], allEvents, "uwaterloo").mappedCount).toBe(1);
+  const mapped = (events: Event[]) => exports.useEventMap(events, allEvents, "uwaterloo").venues.flatMap(venue => venue.events);
+  expect(mapped([listing])).toEqual([listing]);
+  expect(mapped([second])).toEqual([second]);
   const empty = exports.useEventMap([], allEvents, "uwaterloo");
-  expect(empty.mappedCount).toBe(0);
+  expect(empty.venues).toEqual([]);
   expect(empty.center).toEqual([1, 2]);
   expect(options.map(query => query.locations)).toEqual([
     ["Student Life Centre", "Davis Centre"], ["Student Life Centre", "Davis Centre"], ["Student Life Centre", "Davis Centre"],

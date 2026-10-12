@@ -10,7 +10,6 @@ export type MapCoordinates = [longitude: number, latitude: number];
 export interface EventMapLocations {
   center: MapCoordinates;
   locations: Record<string, MapCoordinates | null>;
-  failedCount: number;
   pendingCount: number;
 }
 
@@ -121,7 +120,7 @@ export function eventMapLocationsQuery(schoolSlug: string, school: SchoolSummary
       const center = campusCenter(schoolSlug);
       if (!center) throw new Error(`No map campus center is configured for ${schoolSlug}`);
       signal.throwIfAborted();
-      const found: EventMapLocations = { center, locations: {}, failedCount: 0, pendingCount: 0 };
+      const found: EventMapLocations = { center, locations: {}, pendingCount: 0 };
       const schoolAliases = Object.entries(controlBox.eventDiscovery.views.map_venue_aliases).find(([slug]) => slug === schoolSlug)?.[1];
       const lookups = sortedLocations.flatMap(location => {
         const parsedVenue = venueName(location);
@@ -172,7 +171,6 @@ export function eventMapLocationsQuery(schoolSlug: string, school: SchoolSummary
           } catch {
             signal.throwIfAborted();
             found.locations[location] = null;
-            found.failedCount++;
           }
           signal.throwIfAborted();
           found.pendingCount--;

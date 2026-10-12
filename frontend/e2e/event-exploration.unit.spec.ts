@@ -171,7 +171,6 @@ test("map preserves located events when another venue lookup fails and rejects c
   expect(result.locations["Davis Centre"]).toEqual([-80.54, 43.47]);
   expect(result.locations.Failed).toBeNull();
   expect(result.locations.Unknown).toBeNull();
-  expect(result.failedCount).toBe(1);
 });
 
 test("map cancels queued work when the user leaves the view", async () => {
