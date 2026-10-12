@@ -63,7 +63,7 @@ variable "public_subnet_cidrs" {
 }
 
 variable "email_from" {
-  description = "Sender identity used by the Resend notification provider."
+  description = "Verified SES sender identity for app email."
   type        = string
   default     = "wat2do <newsletter@wat2do.io>"
 }

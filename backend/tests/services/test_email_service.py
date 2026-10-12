@@ -4,7 +4,6 @@ import email
 import email.policy
 from unittest.mock import MagicMock
 
-import httpx
 import pytest
 
 from services import email_service as email_module
@@ -23,93 +22,12 @@ def _message(**overrides) -> EmailMessage:
     return EmailMessage(**defaults)
 
 
-def test_send_without_provider_uses_dry_run(monkeypatch):
-    monkeypatch.setattr(email_module.settings, "email_provider", "")
-    post = MagicMock()
-    monkeypatch.setattr(email_module.httpx, "post", post)
+def test_send_with_delivery_disabled_uses_dry_run(monkeypatch):
+    monkeypatch.setattr(email_module.settings, "email_delivery_enabled", False)
+    ses = MagicMock()
 
-    assert EmailService().send(_message()) is True
-    post.assert_not_called()
-
-
-def test_resend_dispatch_posts_email(monkeypatch):
-    monkeypatch.setattr(email_module.settings, "email_provider", "resend")
-    monkeypatch.setattr(email_module.settings, "email_provider_api_key", "re_test")
-    monkeypatch.setattr(
-        email_module.settings,
-        "email_from",
-        "wat2do <notifications@wat2do.io>",
-    )
-    captured = {}
-
-    def fake_post(url, *, json, headers, timeout):
-        captured.update(
-            {
-                "url": url,
-                "json": json,
-                "headers": headers,
-                "timeout": timeout,
-            }
-        )
-        return httpx.Response(
-            200,
-            json={"id": "email_123"},
-            request=httpx.Request("POST", url),
-        )
-
-    monkeypatch.setattr(email_module.httpx, "post", fake_post)
-
-    assert EmailService().send(_message()) is True
-
-    assert captured["url"] == "https://api.resend.com/emails"
-    assert captured["json"] == {
-        "from": "wat2do <notifications@wat2do.io>",
-        "to": "student@uwaterloo.ca",
-        "subject": "Wat2do update",
-        "html": "<p>Hello</p>",
-        "text": "Hello",
-        "headers": {},
-    }
-    assert captured["headers"] == {
-        "Authorization": "Bearer re_test",
-        "Content-Type": "application/json",
-        "Idempotency-Key": "event_change:user-1:event-1",
-    }
-    assert captured["timeout"] == 10
-
-
-def test_resend_dispatch_omits_empty_idempotency_key(monkeypatch):
-    monkeypatch.setattr(email_module.settings, "email_provider", "resend")
-    monkeypatch.setattr(email_module.settings, "email_provider_api_key", "re_test")
-    captured = {}
-
-    def fake_post(url, *, json, headers, timeout):
-        captured["headers"] = headers
-        return httpx.Response(200, request=httpx.Request("POST", url))
-
-    monkeypatch.setattr(email_module.httpx, "post", fake_post)
-
-    assert EmailService().send(_message(idempotency_key=None)) is True
-    assert "Idempotency-Key" not in captured["headers"]
-
-
-@pytest.mark.parametrize(
-    "recipients", ["student@uwaterloo.ca", ["e22han@uwaterloo.ca", "tqiu@uwaterloo.ca"]]
-)
-def test_resend_dispatch_includes_reply_to(monkeypatch, recipients):
-    monkeypatch.setattr(email_module.settings, "email_provider", "resend")
-    monkeypatch.setattr(email_module.settings, "email_provider_api_key", "re_test")
-    captured = {}
-
-    def fake_post(url, *, json, headers, timeout):
-        captured["json"] = json
-        return httpx.Response(200, request=httpx.Request("POST", url))
-
-    monkeypatch.setattr(email_module.httpx, "post", fake_post)
-
-    assert EmailService().send(_message(to=recipients, reply_to="sender@example.com")) is True
-    assert captured["json"]["to"] == recipients
-    assert captured["json"]["reply_to"] == "sender@example.com"
+    assert EmailService(ses_client=ses).send(_message()) is True
+    ses.send_email.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -122,8 +40,8 @@ def test_resend_dispatch_includes_reply_to(monkeypatch, recipients):
         ),
     ],
 )
-def test_ses_dispatch_sends_simple_email(monkeypatch, recipients, addresses):
-    monkeypatch.setattr(email_module.settings, "email_provider", "ses")
+def test_send_builds_raw_ses_message(monkeypatch, recipients, addresses):
+    monkeypatch.setattr(email_module.settings, "email_delivery_enabled", True)
     monkeypatch.setattr(email_module.settings, "email_from", "wat2do <notifications@wat2do.io>")
     ses = MagicMock()
 
@@ -156,8 +74,8 @@ _LOGO = InlineImage(
 )
 
 
-def test_inline_images_ride_inside_the_message_for_each_provider(monkeypatch):
-    monkeypatch.setattr(email_module.settings, "email_provider", "ses")
+def test_inline_images_ride_inside_the_html_part(monkeypatch):
+    monkeypatch.setattr(email_module.settings, "email_delivery_enabled", True)
     ses = MagicMock()
     EmailService(ses_client=ses).send(_message(inline_images=[_LOGO]))
     html = _sent_mime(ses).get_body(("related",))
@@ -166,28 +84,9 @@ def test_inline_images_ride_inside_the_message_for_each_provider(monkeypatch):
     assert (image["Content-ID"], image.get_content_disposition()) == ("<wat2do-logo>", "inline")
     assert image.get_content() == b"png"
 
-    monkeypatch.setattr(email_module.settings, "email_provider", "resend")
-    monkeypatch.setattr(email_module.settings, "email_provider_api_key", "re_test")
-    captured = {}
-
-    def fake_post(url, *, json, headers, timeout):
-        captured["json"] = json
-        return httpx.Response(200, request=httpx.Request("POST", url))
-
-    monkeypatch.setattr(email_module.httpx, "post", fake_post)
-    EmailService().send(_message(inline_images=[_LOGO]))
-    assert captured["json"]["attachments"] == [
-        {
-            "filename": "logo.png",
-            "content": "cG5n",
-            "content_type": "image/png",
-            "content_id": "wat2do-logo",
-        }
-    ]
-
 
 def test_ses_errors_bubble_to_caller(monkeypatch):
-    monkeypatch.setattr(email_module.settings, "email_provider", "ses")
+    monkeypatch.setattr(email_module.settings, "email_delivery_enabled", True)
     ses = MagicMock()
     ses.send_email.side_effect = RuntimeError("MessageRejected")
 
@@ -197,38 +96,13 @@ def test_ses_errors_bubble_to_caller(monkeypatch):
 
 def test_send_safely_logs_and_returns_false(monkeypatch):
     service = EmailService()
-    monkeypatch.setattr(service, "send", MagicMock(side_effect=RuntimeError("provider down")))
+    monkeypatch.setattr(service, "send", MagicMock(side_effect=RuntimeError("SES down")))
 
     assert service.send_safely(_message()) is False
 
 
-def test_resend_requires_api_key(monkeypatch):
-    monkeypatch.setattr(email_module.settings, "email_provider", "resend")
-    monkeypatch.setattr(email_module.settings, "email_provider_api_key", "")
-
-    with pytest.raises(RuntimeError, match="EMAIL_PROVIDER_API_KEY"):
-        EmailService().send(_message())
-
-
-def test_resend_http_error_bubbles_to_caller(monkeypatch):
-    monkeypatch.setattr(email_module.settings, "email_provider", "resend")
-    monkeypatch.setattr(email_module.settings, "email_provider_api_key", "re_test")
-
-    def fake_post(url, *, json, headers, timeout):
-        return httpx.Response(
-            422,
-            json={"message": "Invalid `from` field"},
-            request=httpx.Request("POST", url),
-        )
-
-    monkeypatch.setattr(email_module.httpx, "post", fake_post)
-
-    with pytest.raises(httpx.HTTPStatusError):
-        EmailService().send(_message())
-
-
 def test_send_rejects_legacy_sender_before_dry_run(monkeypatch):
-    monkeypatch.setattr(email_module.settings, "email_provider", "")
+    monkeypatch.setattr(email_module.settings, "email_delivery_enabled", False)
     monkeypatch.setattr(
         email_module.settings,
         "email_from",
@@ -247,7 +121,7 @@ def test_send_rejects_legacy_sender_before_dry_run(monkeypatch):
     ],
 )
 def test_send_rejects_legacy_links_before_dry_run(monkeypatch, field, body):
-    monkeypatch.setattr(email_module.settings, "email_provider", "")
+    monkeypatch.setattr(email_module.settings, "email_delivery_enabled", False)
     monkeypatch.setattr(
         email_module.settings,
         "email_from",

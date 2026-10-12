@@ -34,7 +34,7 @@ locals {
     EVENT_FEED_REVALIDATION_URL     = "http://127.0.0.1:3000/api/revalidate-events"
     EVENT_FEED_REVALIDATION_TIMEOUT = "3"
     INSTAGRAM_SLIDE_RENDER_URL      = "http://127.0.0.1:3000/api/render-instagram-slide"
-    EMAIL_PROVIDER                  = "ses"
+    EMAIL_DELIVERY_ENABLED          = "true"
     EMAIL_FROM                      = var.email_from
     AWS_REGION                      = var.aws_region
     STORAGE_BUCKET_NAME             = aws_s3_bucket.assets.id

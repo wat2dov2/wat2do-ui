@@ -28,7 +28,7 @@ jobs:
       AWS_RUNTIME_SECRET_ARN: ${{ vars.AWS_RUNTIME_SECRET_ARN }}
       ENVIRONMENT: production
       FRONTEND_URL: ${{ vars.FRONTEND_URL }}
-      EMAIL_PROVIDER: ses
+      EMAIL_DELIVERY_ENABLED: "true"
       EMAIL_FROM: ${{ vars.AWS_EMAIL_FROM }}
 
     steps:

@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-import httpx
 import pytest
+from botocore.exceptions import ClientError, ReadTimeoutError  # type: ignore[import-untyped]
 
 from core.config import settings
 from core.constants import (
@@ -678,12 +678,14 @@ def test_send_prepared_email_skips_when_delivery_is_already_claimed(monkeypatch)
     deliver.assert_not_called()
 
 
-def test_claimed_delivery_retries_timeouts_then_marks_sent(monkeypatch):
+def test_claimed_delivery_retries_timeouts_and_throttling_then_marks_sent(monkeypatch):
     mark_sent = MagicMock()
     mark_failed = MagicMock()
     monkeypatch.setattr(delivery_log, "_mark_log_sent", mark_sent)
     monkeypatch.setattr(delivery_log, "_mark_log_failed", mark_failed)
-    send = MagicMock(side_effect=[httpx.ReadTimeout("slow"), httpx.ReadTimeout("slow"), True])
+    timeout = ReadTimeoutError(endpoint_url="https://email.ca-central-1.amazonaws.com")
+    throttled = ClientError({"Error": {"Code": "TooManyRequestsException"}}, "SendEmail")
+    send = MagicMock(side_effect=[timeout, throttled, True])
     monkeypatch.setattr(delivery_log.email_service, "send", send)
 
     result = delivery_log.deliver_claimed_email(
@@ -703,15 +705,7 @@ def test_claimed_delivery_does_not_retry_terminal_provider_error(monkeypatch):
     monkeypatch.setattr(delivery_log, "_mark_log_sent", MagicMock())
     mark_failed = MagicMock()
     monkeypatch.setattr(delivery_log, "_mark_log_failed", mark_failed)
-    request = httpx.Request("POST", "https://api.resend.com/emails")
-    response = httpx.Response(400, request=request)
-    send = MagicMock(
-        side_effect=httpx.HTTPStatusError(
-            "bad request",
-            request=request,
-            response=response,
-        )
-    )
+    send = MagicMock(side_effect=ClientError({"Error": {"Code": "MessageRejected"}}, "SendEmail"))
     monkeypatch.setattr(delivery_log.email_service, "send", send)
 
     result = delivery_log.deliver_claimed_email(
@@ -723,7 +717,7 @@ def test_claimed_delivery_does_not_retry_terminal_provider_error(monkeypatch):
 
     assert result is False
     send.assert_called_once()
-    mark_failed.assert_called_once_with("row-1", "provider_http_400")
+    mark_failed.assert_called_once_with("row-1", "ses_messagerejected")
 
 
 @pytest.mark.parametrize("user_count", [0, 1, 499, 500, 501, 1001])

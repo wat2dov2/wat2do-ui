@@ -16,8 +16,7 @@ from services.instagram_notifications import browser_session, browser_worker
 @pytest.fixture(autouse=True)
 def test_environment_settings(monkeypatch):
     """Isolate test cookies, redirects, and email from developer settings."""
-    monkeypatch.setattr(settings, "email_provider", "")
-    monkeypatch.setattr(settings, "email_provider_api_key", "")
+    monkeypatch.setattr(settings, "email_delivery_enabled", False)
     monkeypatch.setattr(settings, "cookie_domain", "")
     monkeypatch.setattr(settings, "frontend_url", "http://localhost:3000")
     monkeypatch.setattr(settings, "cors_origins", ["http://localhost:3000"])

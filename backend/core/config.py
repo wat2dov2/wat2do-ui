@@ -58,12 +58,10 @@ class Settings(BaseSettings):
     # that shares peers with untrusted workloads.
     trusted_proxies: list[str] = ["127.0.0.1", "::1"]
 
-    # --- Email provider (notifications) ----------------------------------
-    # Empty string => dry-run mode (log-only). Set to ``resend`` to send
-    # via Resend with ``email_provider_api_key``, or ``ses`` to send through
-    # Amazon SES in ``aws_region`` with the runtime's AWS credentials.
-    email_provider: str = ""
-    email_provider_api_key: str = ""
+    # --- Email (Amazon SES) ----------------------------------------------
+    # False => dry-run mode (log-only). True sends through Amazon SES in
+    # ``aws_region`` with the runtime's AWS credentials.
+    email_delivery_enabled: bool = False
     email_from: str = "wat2do <notifications@wat2do.io>"
     frontend_url: str = "http://localhost:3000"
     email_unsubscribe_secret: str = ""

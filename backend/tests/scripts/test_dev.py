@@ -21,7 +21,12 @@ def workflow(monkeypatch):
                 stdout=json.dumps(
                     {
                         "services": {
-                            "backend": {"environment": {"EMAIL_PROVIDER_API_KEY": "re_test"}}
+                            "backend": {
+                                "environment": {
+                                    "AWS_ACCESS_KEY_ID": "AKIATEST",
+                                    "AWS_SECRET_ACCESS_KEY": "test-secret",
+                                }
+                            }
                         }
                     }
                 )
@@ -58,13 +63,15 @@ def test_dev_uses_local_infrastructure_then_single_seed_then_apps(workflow, monk
 
 
 @pytest.mark.parametrize("key", [None, "", "   "])
-def test_dev_requires_resend_key_before_starting_services(workflow, monkeypatch, key):
+def test_dev_requires_ses_credentials_before_starting_services(workflow, monkeypatch, key):
     module, calls = workflow
     monkeypatch.setattr("sys.argv", ["dev.py", "dev"])
 
     def run(command, **kwargs):
         calls.append((command, kwargs))
-        environment = {} if key is None else {"EMAIL_PROVIDER_API_KEY": key}
+        environment = {"AWS_ACCESS_KEY_ID": "AKIATEST"}
+        if key is not None:
+            environment["AWS_SECRET_ACCESS_KEY"] = key
         return SimpleNamespace(
             stdout=json.dumps({"services": {"backend": {"environment": environment}}})
         )
