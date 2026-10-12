@@ -34,7 +34,7 @@
       "title": "Preferências de Notificação",
       "description": "Escolha como você quer ser notificado sobre eventos e atualizações",
       "morningEmail": "Email matinal",
-      "morningEmailDesc": "Às 9h, obtenha as partidas fortes adicionadas nas últimas 24 horas.",
+      "morningEmailDesc": "Às 9h, receba todos os eventos e vagas adicionados na sua universidade nas últimas 24 horas.",
       "eventReminder": "Lembretes de eventos",
       "eventReminderDesc": "Receba um e-mail cerca de uma hora antes de um evento que você selecionou.",
       "eventChange": "Alertas de alteração de evento",

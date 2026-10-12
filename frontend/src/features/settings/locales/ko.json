@@ -34,7 +34,7 @@
       "title": "알림 설정",
       "description": "이벤트 및 업데이트에 대한 알림 방법 선택",
       "morningEmail": "아침 이메일",
-      "morningEmailDesc": "오전 9시에 지난 24시간 동안 추가된 강력한 매치를 받으세요.",
+      "morningEmailDesc": "오전 9시에 지난 24시간 동안 학교에 추가된 모든 이벤트와 포지션을 받아보세요.",
       "eventReminder": "이벤트 알림",
       "eventReminderDesc": "선택한 이벤트 약 1시간 전에 이메일을 받으세요.",
       "eventChange": "이벤트 변경 알림",

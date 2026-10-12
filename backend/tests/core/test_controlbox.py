@@ -39,13 +39,13 @@ def test_google_analytics_rejects_invalid_measurement_ids(measurement_id):
 
 def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.notification_defaults.morning_email is False
-    assert controlbox.email_delivery.notification_consent_version == "2026-09"
+    assert controlbox.email_delivery.notification_consent_version == "2026-10"
     assert controlbox.reel_transcription.model == "gpt-4o-mini-transcribe"
     assert controlbox.recommendations.snapshot.candidate_events_per_school == 1000
     assert controlbox.morning_email.new_event_window_hours == 24
     assert controlbox.event_reminder.lead_minutes == 60
     assert controlbox.event_change_alerts.quiet_minutes == 5
-    assert controlbox.event_change_alerts.image_max_bytes == 5_000_000
+    assert controlbox.email_delivery.image_max_bytes == 5_000_000
     assert controlbox.event_discovery.new_event_window_hours == 24
     assert controlbox.event_discovery.event_without_end_visibility_minutes == 60
     assert controlbox.club_management.initial_render_count == 24

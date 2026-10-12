@@ -34,7 +34,7 @@
       "title": "Preferenze di Notifica",
       "description": "Scegli come vuoi essere notificato riguardo eventi e aggiornamenti",
       "morningEmail": "Email mattutina",
-      "morningEmailDesc": "Alle 9:00, ricevi le corrispondenze più forti aggiunte nelle ultime 24 ore.",
+      "morningEmailDesc": "Alle 9:00, ricevi tutti gli eventi e le posizioni aggiunti nella tua scuola nelle ultime 24 ore.",
       "eventReminder": "Promemoria eventi",
       "eventReminderDesc": "Ricevi un'email circa un'ora prima di un evento che hai selezionato.",
       "eventChange": "Avvisi di modifica eventi",

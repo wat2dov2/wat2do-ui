@@ -1,7 +1,12 @@
-"""Batched composition and isolated delivery of the 9 AM morning email."""
+"""Batched composition and isolated delivery of the 9 AM morning email.
+
+Every recipient at a school gets the same digest: each event and position added
+there in the last 24 hours, newest first.
+"""
 
 import logging
-from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from itertools import batched
 
@@ -9,14 +14,14 @@ from core.constants import NOTIFICATION_TYPE_MORNING_EMAIL
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.pagination import fetch_all_pages
-from core.tables import EVENT_DATES, EVENTS, USER_GOING_EVENTS, USERS
-from recommender.service import get_stored_recommendations_for_users
+from core.tables import EVENT_DATES, EVENTS, POSITIONS, USERS
 from services import school_service
-from services.email_service import EmailMessage
+from services.email_service import EmailMessage, InlineImage
 from services.notifications.delivery_log import (
     claim_delivery,
     deliver_claimed_email,
 )
+from services.notifications.email_images import email_image
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
     EMAIL_LOGO,
@@ -31,50 +36,46 @@ log = logging.getLogger(__name__)
 
 _CONTROL = controlbox.morning_email
 _CONTENT_WINDOW = timedelta(hours=_CONTROL.new_event_window_hours)
-_MIN_RECOMMENDATION_SCORE = _CONTROL.minimum_recommendation_score
 _CHUNK_SIZE = 500
 
 
+@dataclass(frozen=True)
+class _SchoolDigest:
+    """One school's new events and positions, shared by every recipient there."""
+
+    events: list[dict]
+    positions: list[dict]
+    images: list[InlineImage]
+
+
 def dispatch_morning_emails(now_utc: datetime) -> dict[str, int]:
-    """Compose all eligible users from batched reads, then send independently."""
+    """Compose each school's digest once from batched reads, then send independently."""
     window_end = _aware_utc(now_utc)
     users = _eligible_users(_fetch_users(), window_end)
+    if users:
+        enabled_ids = get_enabled_user_ids(
+            [str(user["id"]) for user in users], NOTIFICATION_TYPE_MORNING_EMAIL
+        )
+        users = [user for user in users if str(user["id"]) in enabled_ids]
     if not users:
         return {"eligible": 0, "prepared": 0, "sent": 0, "failed": 0, "skipped": 0}
 
-    user_ids = [str(user["id"]) for user in users]
-    enabled_ids = get_enabled_user_ids(user_ids, NOTIFICATION_TYPE_MORNING_EMAIL)
-    users = [user for user in users if str(user["id"]) in enabled_ids]
-    if not users:
-        return {"eligible": 0, "prepared": 0, "sent": 0, "failed": 0, "skipped": 0}
-
-    user_ids = [str(user["id"]) for user in users]
-    candidates_by_school = _load_candidates_by_school(users, window_end)
-    stored_by_user = get_stored_recommendations_for_users(user_ids)
-    candidate_ids = sorted(
-        {int(event["id"]) for events in candidates_by_school.values() for event in events}
-    )
-    exclusions = _load_going_exclusions(user_ids, candidate_ids)
+    schools = sorted({str(user["school"]) for user in users if user.get("school")})
+    digests = {school: _load_school_digest(school, window_end) for school in schools}
 
     prepared = 0
     sent = 0
     failed = 0
     skipped = 0
     for user in users:
-        user_id = str(user["id"])
-        picks = _select_picks(
-            user=user,
-            candidates_by_school=candidates_by_school,
-            stored=stored_by_user.get(user_id, []),
-            excluded_event_ids=exclusions.get(user_id, set()),
-        )
-        if not picks:
+        digest = digests.get(str(user.get("school")))
+        if digest is None or not (digest.events or digest.positions):
             continue
 
         prepared += 1
         delivery_result = _send_prepared_email(
             user=user,
-            picks=picks,
+            digest=digest,
             window_end=window_end,
         )
         if delivery_result is True:
@@ -121,118 +122,111 @@ def _eligible_users(users: list[dict], now_utc: datetime) -> list[dict]:
     ]
 
 
-def _load_candidates_by_school(
-    users: list[dict],
-    window_end: datetime,
-) -> dict[str, list[dict]]:
-    schools = sorted({str(user["school"]) for user in users if user.get("school")})
-    earliest_start = window_end - _CONTENT_WINDOW
-    candidates: dict[str, list[dict]] = {}
-    for school in schools:
-        school_id = school_service.get_school_id(school)
-        if school_id is None:
-            candidates[school] = []
-            continue
-        rows = fetch_all_pages(
-            lambda offset, page_size: (
-                (
-                    get_sb()
-                    .table(EVENTS)
-                    .select("id,title,location,source_image_url,club,category,added_at,cancelled")
-                    .eq("school_id", school_id)
-                    .eq("cancelled", False)
-                    .gt("added_at", earliest_start.isoformat())
-                    .lte("added_at", window_end.isoformat())
-                    .order("added_at", desc=True)
-                    .order("id")
-                    .range(offset, offset + page_size - 1)
-                    .execute()
-                ).data
-                or []
+def _load_school_digest(school: str, window_end: datetime) -> _SchoolDigest:
+    school_id = school_service.get_school_id(school)
+    if school_id is None:
+        return _SchoolDigest(events=[], positions=[], images=[])
+    events = _load_new_events(school_id, window_end)
+    positions = _load_new_positions(school_id, window_end)
+    images = _embed_card_images(events, "event") + _embed_card_images(positions, "position")
+    return _SchoolDigest(events=events, positions=positions, images=images)
+
+
+def _load_new_events(school_id: str, window_end: datetime) -> list[dict]:
+    """Upcoming, uncancelled events added in the window, newest first."""
+    rows = fetch_all_pages(
+        lambda offset, page_size: (
+            (
+                get_sb()
+                .table(EVENTS)
+                .select("id,title,location,source_image_url,added_at")
+                .eq("school_id", school_id)
+                .eq("cancelled", False)
+                .gt("added_at", (window_end - _CONTENT_WINDOW).isoformat())
+                .lte("added_at", window_end.isoformat())
+                .order("added_at", desc=True)
+                .order("id")
+                .range(offset, offset + page_size - 1)
+                .execute()
+            ).data
+            or []
+        )
+    )
+    by_id = {int(row["id"]): row for row in rows}
+
+    earliest_occurrence: dict[int, dict] = {}
+    for event_id_chunk in batched(by_id, _CHUNK_SIZE):
+        occurrence_rows = (
+            get_sb()
+            .table(EVENT_DATES)
+            .select("event_id,dtstart_utc,dtend_utc")
+            .in_("event_id", event_id_chunk)
+            .gte("dtstart_utc", window_end.isoformat())
+            .order("dtstart_utc")
+            .execute()
+        ).data or []
+        for occurrence in occurrence_rows:
+            earliest_occurrence.setdefault(int(occurrence["event_id"]), occurrence)
+
+    return [
+        {
+            **event,
+            "dtstart_utc": earliest_occurrence[event_id]["dtstart_utc"],
+            "dtend_utc": earliest_occurrence[event_id].get("dtend_utc"),
+        }
+        for event_id, event in by_id.items()
+        if event_id in earliest_occurrence
+    ]
+
+
+def _load_new_positions(school_id: str, window_end: datetime) -> list[dict]:
+    """Active positions added in the window, newest first."""
+    return fetch_all_pages(
+        lambda offset, page_size: (
+            (
+                get_sb()
+                .table(POSITIONS)
+                .select("id,title,source_image_url,deadline_at,deadline_date,added_at")
+                .eq("school_id", school_id)
+                .eq("is_active", True)
+                .gt("added_at", (window_end - _CONTENT_WINDOW).isoformat())
+                .lte("added_at", window_end.isoformat())
+                .order("added_at", desc=True)
+                .order("id")
+                .range(offset, offset + page_size - 1)
+                .execute()
+            ).data
+            or []
+        )
+    )
+
+
+def _embed_card_images(items: list[dict], kind: str) -> list[InlineImage]:
+    """Embed each item's poster as a square card image, linking the original when that fails.
+
+    Sets ``image_src`` on every item for the renderer.
+    """
+    with ThreadPoolExecutor(max_workers=_CONTROL.image_download_concurrency) as pool:
+        images = list(
+            pool.map(
+                lambda item: email_image(
+                    item.get("source_image_url"),
+                    f"{kind}-{int(item['id'])}",
+                    width=_CONTROL.card_image_px,
+                    square=True,
+                ),
+                items,
             )
         )
-        for row in rows:
-            row["school"] = school
-        by_id = {int(row["id"]): row for row in rows}
-        if not by_id:
-            candidates[school] = []
-            continue
-
-        earliest_occurrence: dict[int, dict] = {}
-        for event_id_chunk in batched(by_id, _CHUNK_SIZE):
-            occurrence_rows = (
-                get_sb()
-                .table(EVENT_DATES)
-                .select("event_id,dtstart_utc,dtend_utc")
-                .in_("event_id", event_id_chunk)
-                .gte("dtstart_utc", window_end.isoformat())
-                .order("dtstart_utc")
-                .execute()
-            ).data or []
-            for occurrence in occurrence_rows:
-                earliest_occurrence.setdefault(int(occurrence["event_id"]), occurrence)
-
-        hydrated: list[dict] = []
-        for event_id, event in by_id.items():
-            occurrence = earliest_occurrence.get(event_id)
-            if occurrence is None:
-                continue
-            item = dict(event)
-            item["dtstart_utc"] = occurrence["dtstart_utc"]
-            item["dtend_utc"] = occurrence.get("dtend_utc")
-            hydrated.append(item)
-        candidates[school] = hydrated
-    return candidates
-
-
-def _load_going_exclusions(
-    user_ids: list[str],
-    candidate_ids: list[int],
-) -> dict[str, set[int]]:
-    excluded: dict[str, set[int]] = defaultdict(set)
-    for user_chunk in batched(user_ids, _CHUNK_SIZE):
-        for event_chunk in batched(candidate_ids, _CHUNK_SIZE):
-            rows = (
-                get_sb()
-                .table(USER_GOING_EVENTS)
-                .select("user_id,event_id")
-                .in_("user_id", user_chunk)
-                .in_("event_id", event_chunk)
-                .execute()
-            ).data or []
-            for row in rows:
-                excluded[str(row["user_id"])].add(int(row["event_id"]))
-    return excluded
-
-
-def _select_picks(
-    *,
-    user: dict,
-    candidates_by_school: dict[str, list[dict]],
-    stored: list[dict],
-    excluded_event_ids: set[int],
-) -> list[dict]:
-    school = user.get("school")
-    if not school:
-        return []
-    by_id = {
-        int(event["id"]): event
-        for event in candidates_by_school.get(str(school), [])
-        if int(event["id"]) not in excluded_event_ids
-    }
-    selected: list[dict] = []
-    for recommendation in stored:
-        event_id = int(recommendation["event_id"])
-        score = float(recommendation["predicted_score"])
-        if score >= _MIN_RECOMMENDATION_SCORE and event_id in by_id:
-            selected.append(by_id[event_id])
-    return selected
+    for item, image in zip(items, images, strict=True):
+        item["image_src"] = f"cid:{image.content_id}" if image else item.get("source_image_url")
+    return [image for image in images if image]
 
 
 def _send_prepared_email(
     *,
     user: dict,
-    picks: list[dict],
+    digest: _SchoolDigest,
     window_end: datetime,
 ) -> bool | None:
     user_id = str(user["id"])
@@ -253,13 +247,14 @@ def _send_prepared_email(
         user.get("school"),
     )
     preferences_url = f"{frontend_url}/settings?tab=notifications"
-    subject = morning_email_subject(len(picks))
+    subject = morning_email_subject(len(digest.events), len(digest.positions))
     message = EmailMessage(
         to=str(user["email"]),
         subject=subject,
         body_html=render_morning_email_html(
             subject=subject,
-            picks=picks,
+            events=digest.events,
+            positions=digest.positions,
             tz=tz,
             frontend_url=frontend_url,
             preferences_url=preferences_url,
@@ -267,7 +262,8 @@ def _send_prepared_email(
         ),
         body_text=render_morning_email_text(
             subject=subject,
-            picks=picks,
+            events=digest.events,
+            positions=digest.positions,
             tz=tz,
             frontend_url=frontend_url,
             preferences_url=preferences_url,
@@ -278,7 +274,7 @@ def _send_prepared_email(
             "List-Unsubscribe": f"<{unsubscribe}>",
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
-        inline_images=[EMAIL_LOGO],
+        inline_images=[EMAIL_LOGO, *digest.images],
     )
     return deliver_claimed_email(
         row_id=row_id,

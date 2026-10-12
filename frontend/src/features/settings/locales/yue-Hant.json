@@ -34,7 +34,7 @@
       "title": "通知偏好",
       "description": "選擇你想收到活動及更新的通知方式",
       "morningEmail": "早晨電郵",
-      "morningEmailDesc": "上午9時，取得過去24小時新增的強力匹配。",
+      "morningEmailDesc": "上午9時，接收過去24小時你學校新增嘅所有活動同職位。",
       "eventReminder": "活動提醒",
       "eventReminderDesc": "在你選定的活動前大約一小時收取電郵。",
       "eventChange": "活動變更警報",

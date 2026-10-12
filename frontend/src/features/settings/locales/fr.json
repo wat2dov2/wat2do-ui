@@ -34,7 +34,7 @@
       "title": "Préférences de notification",
       "description": "Choisissez comment vous souhaitez être informé des événements et mises à jour",
       "morningEmail": "Email du matin",
-      "morningEmailDesc": "À 9 h, obtenir les correspondances fortes ajoutées au cours des dernières 24 heures.",
+      "morningEmailDesc": "À 9 h, recevez tous les événements et postes ajoutés à votre établissement au cours des dernières 24 heures.",
       "eventReminder": "Rappels d'événements",
       "eventReminderDesc": "Recevoir un email environ une heure avant un événement que vous avez sélectionné.",
       "eventChange": "Alertes de modification d'événement",

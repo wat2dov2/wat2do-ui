@@ -34,7 +34,7 @@
       "title": "Benachrichtigungseinstellungen",
       "description": "Wähle, wie du über Ereignisse und Updates benachrichtigt werden möchtest",
       "morningEmail": "Morgen-E-Mail",
-      "morningEmailDesc": "Um 9 Uhr morgens die in den letzten 24 Stunden hinzugefügten starken Übereinstimmungen abrufen.",
+      "morningEmailDesc": "Um 9 Uhr morgens alle Veranstaltungen und Positionen erhalten, die in den letzten 24 Stunden an deiner Hochschule hinzugefügt wurden.",
       "eventReminder": "Veranstaltungserinnerungen",
       "eventReminderDesc": "Erhalten Sie etwa eine Stunde vor einer von Ihnen ausgewählten Veranstaltung eine E-Mail.",
       "eventChange": "Benachrichtigungen bei Veranstaltungsänderungen",

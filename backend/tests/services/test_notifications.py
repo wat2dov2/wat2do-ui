@@ -15,6 +15,7 @@ from core.constants import (
 from jobs import send_notifications
 from schemas.event import EventResponse
 from schemas.notification_preference import NotificationPreferenceUpdate
+from services.email_service import InlineImage
 from services.notifications import (
     delivery_log,
     event_change,
@@ -157,29 +158,63 @@ def test_event_change_empty_diff_is_noop():
     assert event_change.enqueue_event_change(None, {}, []) == 0
 
 
-def test_morning_subject_uses_recommendation_count():
-    assert rendering.morning_email_subject(4) == "4 new picks for you"
-    assert rendering.morning_email_subject(1) == "1 new pick for you"
+def test_morning_subject_counts_events_and_positions():
+    assert rendering.morning_email_subject(4, 2) == "4 new events and 2 new positions"
+    assert rendering.morning_email_subject(1, 0) == "1 new event"
+    assert rendering.morning_email_subject(0, 1) == "1 new position"
 
 
-def test_morning_html_escapes_event_values(monkeypatch):
-    html = rendering.render_morning_email_html(
-        subject="1 new pick for you",
-        picks=[_event(title="<script>alert(1)</script>", location="SLC & DC")],
+def _position(**overrides) -> dict:
+    defaults = {
+        "id": 7,
+        "title": "VP Events",
+        "deadline_at": "2026-05-08T03:59:00+00:00",
+        "image_src": "cid:position-7",
+    }
+    defaults.update(overrides)
+    return defaults
+
+
+def _morning_html(events, positions) -> str:
+    return rendering.render_morning_email_html(
+        subject="2 new events",
+        events=events,
+        positions=positions,
         tz=ZoneInfo("America/Toronto"),
         frontend_url="https://uwaterloo.wat2do.io",
         preferences_url="https://uwaterloo.wat2do.io/settings",
         unsubscribe_url="https://uwaterloo.wat2do.io/unsubscribe",
     )
 
+
+def test_morning_html_escapes_event_values():
+    html = _morning_html(
+        [_event(title="<script>alert(1)</script>", location="SLC & DC", image_src="cid:event-42")],
+        [],
+    )
+
     assert "<script>" not in html
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
     assert "SLC &amp; DC" in html
-    assert "/events/42" in html
-    assert "Today's drop" not in html
-    assert "/100" not in html
+    assert 'src="cid:event-42"' in html
     assert "background:#f9f9f9" in html
     assert 'href="https://uwaterloo.wat2do.io/events/42"' in html
+    assert "New positions" not in html
+
+
+def test_morning_html_lays_cards_out_two_per_row():
+    html = _morning_html(
+        [_event(id=event_id, image_src=None) for event_id in (1, 2, 3)],
+        [_position()],
+    )
+
+    events_table, positions_table = html.split("<table")[1:]
+    assert events_table.count("<tr>") == 2
+    assert events_table.count('width="50%"') == 4
+    assert "Tea Tasting" in events_table
+    assert 'src="cid:position-7"' in positions_table
+    assert "Apply by Thu, May 7" in positions_table
+    assert 'href="https://uwaterloo.wat2do.io/positions"' in positions_table
 
 
 def _change_email(diff, image_src=None, **event_fields):
@@ -268,41 +303,6 @@ def test_event_change_rendering_failure_claims_no_delivery(monkeypatch):
     claim.assert_not_called()
 
 
-@pytest.mark.parametrize(
-    ("content_type", "size", "embedded"),
-    [("image/jpeg", 10, True), ("image/webp", 10, False), ("image/png", 6_000_000, False)],
-)
-def test_event_image_embeds_only_formats_every_client_shows(
-    monkeypatch, content_type, size, embedded
-):
-    url = "https://wat2do.io/media/event-images/poster"
-    monkeypatch.setattr(
-        event_change.httpx,
-        "get",
-        lambda *_args, **_kwargs: httpx.Response(
-            200,
-            content=b"x" * size,
-            headers={"content-type": content_type},
-            request=httpx.Request("GET", url),
-        ),
-    )
-
-    image = event_change._event_image(url)
-
-    assert (image is not None) is embedded
-    if image:
-        assert (image.content_id, image.filename) == ("event-image", "event.jpg")
-
-
-def test_event_image_download_failure_falls_back_to_linking(monkeypatch):
-    def fail(*_args, **_kwargs):
-        raise httpx.ConnectTimeout("slow")
-
-    monkeypatch.setattr(event_change.httpx, "get", fail)
-    assert event_change._event_image("https://wat2do.io/poster.jpg") is None
-    assert event_change._event_image(None) is None
-
-
 def test_unsubscribe_token_round_trip_and_tamper(monkeypatch):
     monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
     token = unsubscribe.create_unsubscribe_token(
@@ -326,48 +326,41 @@ def test_unsubscribe_all_binary_signatures_round_trip(monkeypatch):
         )
 
 
-def test_dispatch_batch_loaders_do_not_scale_per_user(monkeypatch):
+def test_dispatch_composes_each_school_once_and_sends_everyone_there(monkeypatch):
     users = [_user(id=f"11111111-1111-1111-1111-{index:012d}") for index in range(20)]
-    calls = {
-        "preferences": 0,
-        "candidates": 0,
-        "stored": 0,
-        "exclusions": 0,
+    users.append(_user(id="22222222-2222-2222-2222-222222222222", school="quiet-school"))
+    preference_reads = []
+    digests = {
+        "uwaterloo": morning_email._SchoolDigest(events=[_event()], positions=[], images=[]),
+        "quiet-school": morning_email._SchoolDigest(events=[], positions=[], images=[]),
     }
+    loaded = []
 
     monkeypatch.setattr(morning_email, "_fetch_users", lambda: users)
-    monkeypatch.setattr(morning_email, "_eligible_users", lambda loaded, _now: loaded)
+    monkeypatch.setattr(morning_email, "_eligible_users", lambda found, _now: found)
+    monkeypatch.setattr(
+        morning_email,
+        "get_enabled_user_ids",
+        lambda ids, _type: preference_reads.append(1) or set(ids),
+    )
+    monkeypatch.setattr(
+        morning_email,
+        "_load_school_digest",
+        lambda school, _now: loaded.append(school) or digests[school],
+    )
+    sends = []
+    monkeypatch.setattr(
+        morning_email,
+        "_send_prepared_email",
+        lambda **kwargs: sends.append(kwargs["user"]["id"]) or True,
+    )
 
-    def enabled(user_ids, _notification_type):
-        calls["preferences"] += 1
-        return set(user_ids)
-
-    monkeypatch.setattr(morning_email, "get_enabled_user_ids", enabled)
-    monkeypatch.setattr(
-        morning_email,
-        "_load_candidates_by_school",
-        lambda _users, _now: calls.__setitem__("candidates", calls["candidates"] + 1) or {},
-    )
-    monkeypatch.setattr(
-        morning_email,
-        "get_stored_recommendations_for_users",
-        lambda _ids: calls.__setitem__("stored", calls["stored"] + 1) or {},
-    )
-    monkeypatch.setattr(
-        morning_email,
-        "_load_going_exclusions",
-        lambda _users, _events: calls.__setitem__("exclusions", calls["exclusions"] + 1) or {},
-    )
     stats = morning_email.dispatch_morning_emails(datetime(2026, 5, 1, 13, tzinfo=timezone.utc))
 
-    assert stats["eligible"] == 20
-    assert stats["prepared"] == 0
-    assert calls == {
-        "preferences": 1,
-        "candidates": 1,
-        "stored": 1,
-        "exclusions": 1,
-    }
+    assert stats == {"eligible": 21, "prepared": 20, "sent": 20, "failed": 0, "skipped": 0}
+    assert preference_reads == [1]
+    assert loaded == ["quiet-school", "uwaterloo"]
+    assert sends == [user["id"] for user in users[:20]]
 
 
 def test_morning_email_eligibility_tracks_eastern_dst_and_delayed_starts():
@@ -470,17 +463,38 @@ def test_notification_job_dispatches_event_reminders(monkeypatch):
     dispatch.assert_called_once_with(datetime(2026, 5, 1, 13, tzinfo=timezone.utc))
 
 
-def test_candidate_loader_uses_fixed_previous_24_hours(fake_sb, patch_sb):
+def test_new_event_and_position_loaders_use_fixed_previous_24_hours(fake_sb, patch_sb):
     patch_sb("services.notifications.morning_email")
     fake_sb.set_response(data=[])
+    window_end = datetime(2026, 5, 1, 13, tzinfo=timezone.utc)
 
-    result = morning_email._load_candidates_by_school(
-        [_user()],
-        datetime(2026, 5, 1, 13, tzinfo=timezone.utc),
-    )
+    assert morning_email._load_new_events(1, window_end) == []
+    assert morning_email._load_new_positions(1, window_end) == []
+    assert fake_sb.gt.call_args_list == [(("added_at", "2026-04-30T13:00:00+00:00"),)] * 2
 
-    assert result == {"uwaterloo": []}
-    fake_sb.gt.assert_called_once_with("added_at", "2026-04-30T13:00:00+00:00")
+
+def test_card_images_embed_when_possible_and_link_otherwise(monkeypatch):
+    def fake_image(url, content_id, *, width, square):
+        assert (width, square) == (morning_email._CONTROL.card_image_px, True)
+        return (
+            None
+            if url.endswith("broken.jpg")
+            else InlineImage(content_id, "x.jpg", "image/jpeg", b"x")
+        )
+
+    monkeypatch.setattr(morning_email, "email_image", fake_image)
+    items = [
+        {"id": 1, "source_image_url": "https://wat2do.io/media/ok.jpg"},
+        {"id": 2, "source_image_url": "https://wat2do.io/media/broken.jpg"},
+    ]
+
+    images = morning_email._embed_card_images(items, "event")
+
+    assert [image.content_id for image in images] == ["event-1"]
+    assert [item["image_src"] for item in items] == [
+        "cid:event-1",
+        "https://wat2do.io/media/broken.jpg",
+    ]
 
 
 def test_event_reminder_window_centers_on_one_hour():
@@ -566,28 +580,14 @@ def test_event_reminder_send_is_idempotent_per_occurrence_start(monkeypatch):
     assert message.headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
 
 
-def test_select_picks_uses_threshold_without_email_cap():
-    candidates = [_event(id=event_id) for event_id in range(1, 13)]
-    stored = [
-        {
-            "event_id": event_id,
-            "predicted_score": 0.29 if event_id == 3 else 0.31,
-        }
-        for event_id in reversed(range(1, 13))
-    ]
-
-    result = morning_email._select_picks(
-        user=_user(),
-        candidates_by_school={"uwaterloo": candidates},
-        stored=stored,
-        excluded_event_ids={2},
-    )
-
-    assert [event["id"] for event in result] == [12, 11, 10, 9, 8, 7, 6, 5, 4, 1]
-    assert all("recommendation_score" not in event for event in result)
+_DIGEST = morning_email._SchoolDigest(
+    events=[_event(image_src="cid:event-42")],
+    positions=[_position()],
+    images=[InlineImage("event-42", "event-42.jpg", "image/jpeg", b"x")],
+)
 
 
-def test_send_prepared_email_adds_unsubscribe_headers_without_rankings(monkeypatch):
+def test_send_prepared_email_adds_unsubscribe_headers_and_embedded_cards(monkeypatch):
     monkeypatch.setattr(settings, "frontend_url", "https://wat2do.io")
     monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
     monkeypatch.setattr(morning_email, "claim_delivery", lambda **_kwargs: "row-1")
@@ -596,7 +596,7 @@ def test_send_prepared_email_adds_unsubscribe_headers_without_rankings(monkeypat
 
     result = morning_email._send_prepared_email(
         user=_user(),
-        picks=[_event()],
+        digest=_DIGEST,
         window_end=datetime(2026, 5, 1, 13, tzinfo=timezone.utc),
     )
 
@@ -605,10 +605,9 @@ def test_send_prepared_email_adds_unsubscribe_headers_without_rankings(monkeypat
     assert message.headers["List-Unsubscribe"].startswith("<https://uwaterloo.wat2do.io/")
     assert message.headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
     assert "https://uwaterloo.wat2do.io/events/42" in message.body_html
-    assert "Today's drop" not in message.body_html
-    assert "Today's drop" not in message.body_text
-    assert "/100" not in message.body_html
-    assert "/100" not in message.body_text
+    assert message.subject == "1 new event and 1 new position"
+    assert [image.content_id for image in message.inline_images] == ["wat2do-logo", "event-42"]
+    assert "New positions" in message.body_text
 
 
 def test_send_prepared_email_skips_when_delivery_is_already_claimed(monkeypatch):
@@ -618,7 +617,7 @@ def test_send_prepared_email_skips_when_delivery_is_already_claimed(monkeypatch)
 
     result = morning_email._send_prepared_email(
         user=_user(),
-        picks=[_event()],
+        digest=_DIGEST,
         window_end=datetime(2026, 5, 1, 13, tzinfo=timezone.utc),
     )
 
@@ -689,25 +688,6 @@ def test_user_reads_preserve_batch_boundaries(fake_sb, patch_sb, user_count, loa
     assert [value for chunk in chunks for value in chunk] == user_ids
     assert all(0 < len(chunk) <= 500 for chunk in chunks)
     assert len(chunks) == (user_count + 499) // 500
-
-
-def test_going_exclusion_reads_cover_each_user_event_batch(fake_sb, patch_sb):
-    patch_sb("services.notifications.morning_email")
-    user_ids = [str(index) for index in range(501)]
-    event_ids = list(range(501))
-
-    assert morning_email._load_going_exclusions(user_ids, event_ids) == {}
-
-    calls = fake_sb.in_.call_args_list
-    pairs = list(zip(calls[::2], calls[1::2], strict=True))
-    assert len(pairs) == 4
-    assert [
-        (list(user_call.args[1]), list(event_call.args[1])) for user_call, event_call in pairs
-    ] == [
-        (user_ids[user_start : user_start + 500], event_ids[event_start : event_start + 500])
-        for user_start in (0, 500)
-        for event_start in (0, 500)
-    ]
 
 
 @pytest.mark.parametrize("count", [0, 1, 499, 500, 501, 1200])
