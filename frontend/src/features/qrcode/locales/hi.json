@@ -36,8 +36,6 @@
     "posterAriaLabel": "पोस्टर {{id}}",
     "posterFallbackName": "पोस्टर {{id}}",
     "dragPlacementAriaLabel": "QR प्लेसमेंट को स्थानांतरित करने के लिए खींचें",
-    "mapboxTokenMissingTitle": "मैपबॉक्स टोकन कॉन्फ़िगर नहीं किया गया",
-    "mapboxTokenMissingDescription": "कृपया अपने पर्यावरण चर में NEXT_PUBLIC_MAPBOX_TOKEN सेट करें",
     "posterCount": "{{count}} पोस्टर",
     "posterCount_other": "{{count}} पोस्टर",
     "scanCount": "{{count}} स्कैन",

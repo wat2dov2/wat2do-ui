@@ -794,11 +794,8 @@ def test_instagram_music_rejects_missing_chart_mapping(tmp_path):
         ("map_cluster_radius", 0),
         ("map_marker_viewport_padding_px", -1),
         ("map_marker_preview_count", 0),
-        ("map_search_concurrency", 0),
-        ("map_search_timeout_seconds", 0),
-        ("map_style", "https://invalid.example/style"),
-        ("map_dark_style", "https://invalid.example/style"),
-        ("map_venue_aliases", {"uwaterloo": {"Davis Centre": " "}}),
+        ("map_style", "http://tiles.example/style"),
+        ("map_dark_style", "mapbox://styles/mapbox/dark-v11"),
         ("map_campus_centers", {"uwaterloo": [-80.5449]}),
         ("map_campus_centers", {"uwaterloo": [-80.5449, 95]}),
     ],
@@ -808,6 +805,39 @@ def test_event_view_controls_reject_invalid_configuration(tmp_path, field, value
         tmp_path, "event_discovery", lambda data: data["views"].update({field: value})
     )
     with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("search_url", "http://nominatim.example/search"),
+        ("user_agent", ""),
+        ("request_interval_seconds", 0.5),
+        ("request_timeout_seconds", 0),
+        ("search_radius_degrees", 0),
+        ("candidate_count", 0),
+        ("not_found_retry_days", 0),
+        ("known_places", {"uwaterloo": {"Davis Centre": [-80.54]}}),
+        ("known_places", {"uwaterloo": {"Davis Centre": [-80.54, 95]}}),
+        ("known_places", {"uwaterloo": {" ": [-80.54, 43.47]}}),
+    ],
+)
+def test_map_geocoding_controls_reject_invalid_configuration(tmp_path, field, value):
+    directory = _write_control(
+        tmp_path, "event_discovery", lambda data: data["map_geocoding"].update({field: value})
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
+def test_known_map_places_must_belong_to_a_configured_school(tmp_path):
+    directory = _write_control(
+        tmp_path,
+        "event_discovery",
+        lambda data: data["map_geocoding"]["known_places"].update(unknown={"Hall": [0, 0]}),
+    )
+    with pytest.raises(ValidationError, match="known map places"):
         load_controlbox(directory)
 
 

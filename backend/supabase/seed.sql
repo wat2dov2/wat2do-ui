@@ -718,5 +718,10 @@ UPDATE public.instagram_publish_batches
 SET instagram_user_id = NULL
 WHERE account_key = 'ulaval' AND status = 'ready_for_review';
 
--- Seeded venues are plain building names that the map can search as written.
-UPDATE public.events SET map_location = location WHERE map_location IS NULL;
+-- Seeded venues are plain building names; their map locations name the campus
+-- and city the way the ingestion agent writes them, so the map can place them.
+UPDATE public.events AS event
+SET map_location = format('%s, %s, %s', event.location, school.name, school.city)
+FROM public.schools AS school
+WHERE school.id = event.school_id
+  AND (event.map_location IS NULL OR event.map_location = event.location);

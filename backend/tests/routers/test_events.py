@@ -408,6 +408,32 @@ def test_list_events_overlaps_feed_and_latest_event_queries(client, monkeypatch)
     assert response.json()["latest_added_event"] is None
 
 
+def test_list_events_looks_up_listed_map_locations_after_responding(client, monkeypatch):
+    listing = {
+        "id": 1,
+        "title": "Talk",
+        "map_location": "Davis Centre",
+        "map_coordinates": None,
+        "added_at": "2026-09-01T00:00:00Z",
+    }
+    monkeypatch.setattr(event_service, "list_events", MagicMock(return_value=([listing], 1)))
+    monkeypatch.setattr(event_service, "get_latest_added_event", MagicMock(return_value=None))
+    locate = MagicMock()
+    monkeypatch.setattr(event_service, "locate_event_map_locations", locate)
+
+    response = client.get("/events/", params={"school": "uwaterloo"})
+
+    assert response.status_code == 200
+    assert response.json()["items"][0]["map_coordinates"] is None
+    ((school, items), _) = locate.call_args
+    assert school == "uwaterloo"
+    assert [item["map_location"] for item in items] == ["Davis Centre"]
+
+    locate.reset_mock()
+    assert client.get("/events/").status_code == 200
+    locate.assert_not_called()
+
+
 def test_list_events_forwards_date_window(client, monkeypatch):
     """The public browse route exposes an occurrence UTC window."""
     mock_list = MagicMock(return_value=([], 0))

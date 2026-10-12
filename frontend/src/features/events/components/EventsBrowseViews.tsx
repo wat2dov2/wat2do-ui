@@ -10,13 +10,12 @@ const EventsCalendar = dynamic(() => import("@/features/events/components/Events
 type EventsBrowseViewsProps = ComponentProps<typeof EventList> & {
   view: EventBrowseView;
   school: string;
-  allEvents: ComponentProps<typeof EventList>["events"];
   onEventClick: NonNullable<ComponentProps<typeof EventList>["onEventClick"]>;
 };
 
-export function EventsBrowseViews({ view, school, allEvents, ...listProps }: EventsBrowseViewsProps) {
+export function EventsBrowseViews({ view, school, ...listProps }: EventsBrowseViewsProps) {
   if (view === "grid") return <EventList {...listProps} />;
   if (listProps.isLoading) return <EventViewSkeleton variant={view} />;
-  if (view === "map") return <EventsMap key={school} school={school} events={listProps.events} allEvents={allEvents} onEventClick={listProps.onEventClick} />;
+  if (view === "map") return <EventsMap key={school} school={school} events={listProps.events} onEventClick={listProps.onEventClick} />;
   return <EventsCalendar key={school} school={school} events={listProps.events} onEventClick={listProps.onEventClick} />;
 }

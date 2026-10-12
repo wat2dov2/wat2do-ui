@@ -36,8 +36,6 @@
     "posterAriaLabel": "પોસ્ટર {{id}}",
     "posterFallbackName": "પોસ્ટર {{id}}",
     "dragPlacementAriaLabel": "સ્થાન બદલવા માટે QR ખેંચો",
-    "mapboxTokenMissingTitle": "મેપબોક્સ ટોકન કૉન્ફિગર નથી",
-    "mapboxTokenMissingDescription": "કૃપા કરીને તમારા પર્યાવરણ વેરિએબલ્સમાં NEXT_PUBLIC_MAPBOX_TOKEN સેટ કરો",
     "posterCount": "{{count}} પોસ્ટર",
     "posterCount_other": "{{count}} પોસ્ટર્સ",
     "scanCount": "{{count}} સ્કેન",

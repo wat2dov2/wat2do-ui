@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import Map from "react-map-gl/mapbox";
-import { Marker } from "@vis.gl/react-mapbox";
-import "mapbox-gl/dist/mapbox-gl.css";
+import { useMemo, useState } from "react";
+import Map, { Marker } from "react-map-gl/maplibre";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { PosterMapMarker } from "@/features/posters/types";
 import { MapPin } from "@/shared/ui/doodle-icons";
@@ -9,14 +8,14 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { Stack } from "@/shared/layout";
 import { LazyImage } from "@/shared/ui/lazy-image";
+import { controlBox } from "@/shared/config/controlBox";
+import { useDarkMode } from "@/shared/hooks/useDarkMode";
 
 interface QRScanMapProps {
   markers: PosterMapMarker[];
   height?: string;
   onMarkerClick?: (posterId: string) => void;
 }
-
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
 const COVERAGE_BUCKET_COLORS: Record<
   Extract<PosterMapMarker, { kind: "coverage" }>["confirmedVisitorBucket"],
@@ -141,20 +140,7 @@ export function QRScanMap({
   onMarkerClick,
 }: QRScanMapProps) {
   const { t } = useTranslation();
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    const checkDarkMode = () => {
-      setIsDarkMode(document.documentElement.classList.contains("dark"));
-    };
-    checkDarkMode();
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => observer.disconnect();
-  }, []);
+  const { isDarkMode } = useDarkMode();
 
   const center = useMemo(() => {
     if (markers.length === 0) {
@@ -170,7 +156,7 @@ export function QRScanMap({
     };
   }, [markers]);
 
-  if (!MAPBOX_TOKEN || MAPBOX_TOKEN.includes("example") || !center) {
+  if (!center) {
     return (
       <div
         className="flex w-full items-center justify-center rounded-xl border border-border bg-secondary shadow-sm"
@@ -182,14 +168,10 @@ export function QRScanMap({
             <MapPin className="size-8 text-primary" />
           </div>
           <p className="mb-2 text-sm font-medium text-foreground">
-            {markers.length === 0
-              ? t("posters.map.noCoverageTitle")
-              : t("qrCode.mapboxTokenMissingTitle")}
+            {t("posters.map.noCoverageTitle")}
           </p>
           <p className="text-xs text-muted-foreground">
-            {markers.length === 0
-              ? t("posters.map.noCoverageDescription")
-              : t("qrCode.mapboxTokenMissingDescription")}
+            {t("posters.map.noCoverageDescription")}
           </p>
         </div>
       </div>
@@ -203,7 +185,6 @@ export function QRScanMap({
       data-testid="poster-map"
     >
       <Map
-        mapboxAccessToken={MAPBOX_TOKEN}
         initialViewState={{
           longitude: center.longitude,
           latitude: center.latitude,
@@ -212,10 +193,10 @@ export function QRScanMap({
         style={{ width: "100%", height: "100%" }}
         mapStyle={
           isDarkMode
-            ? "mapbox://styles/mapbox/dark-v11"
-            : "mapbox://styles/mapbox/light-v11"
+            ? controlBox.eventDiscovery.views.map_dark_style
+            : controlBox.eventDiscovery.views.map_style
         }
-        attributionControl={false}
+        attributionControl={{ compact: true }}
       >
         {markers.map((marker) => (
           <Marker

@@ -1,38 +1,30 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { eventMapLocationsQuery, MAPBOX_TOKEN, venueName, type MapCoordinates } from "@/features/events/api/eventMap.api";
-import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { getEventStreetAddress } from "@/shared/utils/event";
+import { controlBox } from "@/shared/config/controlBox";
 import type { Event } from "@/shared/types";
+
+export type MapCoordinates = [longitude: number, latitude: number];
 
 export interface EventMapVenue {
   coordinates: MapCoordinates;
   events: Event[];
 }
 
-export function useEventMap(events: Event[], allEvents: Event[], schoolSlug: string) {
-  const { schoolBySlug } = useSchoolDirectory();
-  const school = schoolBySlug.get(schoolSlug);
-  // The map searches each event's map location; the original location is display text.
-  const locations = useMemo(() => allEvents.flatMap(event => {
-    const location = event.map_location?.trim();
-    return location && (venueName(location) || getEventStreetAddress(location)) ? [location] : [];
-  }), [allEvents]);
-  const query = useQuery({
-    ...eventMapLocationsQuery(schoolSlug, school, locations),
-    enabled: Boolean(MAPBOX_TOKEN && school),
-  });
+/** Group events by the coordinates the feed stores with each one; the original location is display text. */
+export function useEventMap(events: Event[], schoolSlug: string) {
+  // Every campus center is fixed in the event discovery control box.
+  const configured = (controlBox.eventDiscovery.views.map_campus_centers as Record<string, number[] | undefined>)[schoolSlug];
+  const center: MapCoordinates | undefined = configured && [configured[0], configured[1]];
   const venues = useMemo(() => {
     const byCoordinates = new Map<string, EventMapVenue>();
     for (const event of events) {
-      const coordinates = query.data?.locations[event.map_location?.trim() ?? ""];
+      const coordinates = event.map_coordinates;
       if (!coordinates) continue;
       const key = coordinates.join(",");
       const venue = byCoordinates.get(key);
       if (venue) venue.events.push(event);
-      else byCoordinates.set(key, { coordinates, events: [event] });
+      else byCoordinates.set(key, { coordinates: [coordinates[0], coordinates[1]], events: [event] });
     }
     return [...byCoordinates.values()];
-  }, [events, query.data]);
-  return { query, venues, center: query.data?.center };
+  }, [events]);
+  return { venues, center };
 }

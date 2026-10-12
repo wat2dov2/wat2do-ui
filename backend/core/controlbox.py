@@ -215,10 +215,8 @@ class EventViewsControl(_ControlModel):
     map_marker_viewport_padding_px: int = Field(ge=0, le=256)
     map_marker_preview_count: int = Field(ge=1, le=3)
     map_cluster_max_zoom: int = Field(ge=0, le=22)
-    map_search_concurrency: int = Field(gt=0, le=10)
-    map_search_timeout_seconds: int = Field(gt=0, le=60)
-    map_style: str = Field(pattern=r"^mapbox://styles/")
-    map_dark_style: str = Field(pattern=r"^mapbox://styles/")
+    map_style: str = Field(pattern=r"^https://")
+    map_dark_style: str = Field(pattern=r"^https://")
     # Campus centers are fixed [longitude, latitude] pairs, not geocoded at runtime.
     map_campus_centers: dict[
         Annotated[str, Field(pattern=r"^[a-z][a-z0-9-]*$")],
@@ -227,9 +225,28 @@ class EventViewsControl(_ControlModel):
             Annotated[float, Field(ge=-90, le=90, allow_inf_nan=False)],
         ],
     ]
-    map_venue_aliases: dict[
+
+
+class MapGeocodingControl(_ControlModel):
+    # Nominatim's usage policy allows one request a second from an identified client.
+    search_url: str = Field(pattern=r"^https://")
+    user_agent: str = Field(min_length=1)
+    request_interval_seconds: float = Field(ge=1, le=60, allow_inf_nan=False)
+    request_timeout_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
+    search_radius_degrees: float = Field(gt=0, le=5, allow_inf_nan=False)
+    candidate_count: int = Field(ge=1, le=40)
+    not_found_retry_days: int = Field(ge=1)
+    # OpenStreetMap coordinates for campus buildings Nominatim cannot find by
+    # the name events use, keyed by school then building name.
+    known_places: dict[
         Annotated[str, Field(pattern=r"^[a-z][a-z0-9-]*$")],
-        dict[Annotated[str, Field(pattern=r"\S")], Annotated[str, Field(pattern=r"\S")]],
+        dict[
+            Annotated[str, Field(pattern=r"\S")],
+            tuple[
+                Annotated[float, Field(ge=-180, le=180, allow_inf_nan=False)],
+                Annotated[float, Field(ge=-90, le=90, allow_inf_nan=False)],
+            ],
+        ],
     ]
 
 
@@ -241,11 +258,14 @@ class EventDiscoveryControl(_ControlModel):
     server_feed_page_size: int = Field(gt=0, le=100)
     campus_seasons: CampusSeasonsControl
     views: EventViewsControl
+    map_geocoding: MapGeocodingControl
 
     @model_validator(mode="after")
     def validate_map_campus_centers(self) -> "EventDiscoveryControl":
         if set(self.views.map_campus_centers) != set(self.campus_seasons.schools):
             raise ValueError("every school must have exactly one map campus center")
+        if not set(self.map_geocoding.known_places) <= set(self.campus_seasons.schools):
+            raise ValueError("known map places must belong to configured schools")
         return self
 
 

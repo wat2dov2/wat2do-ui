@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { GeoJSONSource } from "mapbox-gl";
-import type { MapRef } from "react-map-gl/mapbox";
+import type { GeoJSONSource } from "maplibre-gl";
+import type { MapRef } from "react-map-gl/maplibre";
 import type { EventMapVenue } from "@/features/events/hooks/useEventMap";
 import { controlBox } from "@/shared/config/controlBox";
 import type { Event } from "@/shared/types";
@@ -11,7 +11,7 @@ interface EventMapMarker {
   events: Event[];
 }
 
-/** Keep thumbnail stacks that overlap the viewport, using Mapbox's single clustering path. */
+/** Keep thumbnail stacks that overlap the viewport, using the map's single clustering path. */
 export function useEventMapMarkers(mapRef: React.RefObject<MapRef | null>, venues: EventMapVenue[]) {
   const [markers, setMarkers] = useState<EventMapMarker[]>([]);
   const generation = useRef(0);
@@ -37,11 +37,10 @@ export function useEventMapMarkers(mapRef: React.RefObject<MapRef | null>, venue
     const next = await Promise.all(features.map(async feature => {
       const properties = feature.properties ?? {};
       const coordinates = (feature.geometry as GeoJSON.Point).coordinates as [number, number];
-      const venueIds: string[] = properties.cluster ? await new Promise<string[]>(resolve => {
-        source.getClusterLeaves(properties.cluster_id, properties.point_count, 0, (error, leaves) => {
-          resolve(error ? [] : (leaves ?? []).map(leaf => String(leaf.properties?.venue)));
-        });
-      }) : [String(properties.venue)];
+      const venueIds: string[] = properties.cluster
+        ? await source.getClusterLeaves(properties.cluster_id, properties.point_count, 0)
+          .then(leaves => leaves.map(leaf => String(leaf.properties?.venue)), () => [])
+        : [String(properties.venue)];
       return {
         id: properties.cluster ? `cluster:${properties.cluster_id}` : `venue:${properties.venue}`,
         coordinates,

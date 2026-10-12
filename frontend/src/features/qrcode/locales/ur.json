@@ -36,8 +36,6 @@
     "posterAriaLabel": "پوسٹر {{id}}",
     "posterFallbackName": "پوسٹر {{id}}",
     "dragPlacementAriaLabel": "QR کی جگہ منتقل کرنے کے لیے ڈریگ کریں",
-    "mapboxTokenMissingTitle": "Mapbox ٹوکن ترتیب نہیں دیا گیا",
-    "mapboxTokenMissingDescription": "براہ کرم اپنی ماحولیاتی متغیرات میں NEXT_PUBLIC_MAPBOX_TOKEN سیٹ کریں",
     "posterCount": "{{count}} پوسٹر",
     "posterCount_other": "{{count}} پوسٹرز",
     "scanCount": "{{count}} اسکین",

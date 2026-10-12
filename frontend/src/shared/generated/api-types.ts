@@ -2425,6 +2425,11 @@ export interface components {
             location?: string | null;
             /** Map Location */
             map_location?: string | null;
+            /** Map Coordinates */
+            map_coordinates?: [
+                number,
+                number
+            ] | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceResponse"][];
             /** Price */
@@ -2523,6 +2528,11 @@ export interface components {
             location?: string | null;
             /** Map Location */
             map_location?: string | null;
+            /** Map Coordinates */
+            map_coordinates?: [
+                number,
+                number
+            ] | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceResponse"][];
             /** Price */
@@ -2645,6 +2655,11 @@ export interface components {
             location?: string | null;
             /** Map Location */
             map_location?: string | null;
+            /** Map Coordinates */
+            map_coordinates?: [
+                number,
+                number
+            ] | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceSummaryResponse"][];
             /** Price */

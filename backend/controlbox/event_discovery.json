@@ -11,10 +11,8 @@
     "map_marker_viewport_padding_px": 80,
     "map_marker_preview_count": 3,
     "map_cluster_max_zoom": 14,
-    "map_search_concurrency": 4,
-    "map_search_timeout_seconds": 10,
-    "map_style": "mapbox://styles/mapbox/streets-v12",
-    "map_dark_style": "mapbox://styles/mapbox/dark-v11",
+    "map_style": "https://tiles.openfreemap.org/styles/liberty",
+    "map_dark_style": "https://tiles.openfreemap.org/styles/dark",
     "map_campus_centers": {
       "berkeley": [-122.2585, 37.8719],
       "brocku": [-79.2477, 43.1176],
@@ -53,11 +51,59 @@
       "uwo": [-81.2737, 43.0096],
       "wlu": [-80.5275, 43.4738],
       "yorku": [-79.5019, 43.7735]
-    },
-    "map_venue_aliases": {
+    }
+  },
+  "map_geocoding": {
+    "search_url": "https://nominatim.openstreetmap.org/search",
+    "user_agent": "wat2do/1.0 (+https://wat2do.ca)",
+    "request_interval_seconds": 1.1,
+    "request_timeout_seconds": 10,
+    "search_radius_degrees": 0.3,
+    "candidate_count": 5,
+    "not_found_retry_days": 30,
+    "known_places": {
+      "berkeley": {
+        "Cal Alumni House": [-122.26114, 37.86975],
+        "Genetics & Plant Biology Building": [-122.2647, 37.87343]
+      },
+      "mcgill": {
+        "University Centre": [-73.57816, 45.50354]
+      },
+      "mun": {
+        "Arts and Administration Building": [-52.73254, 47.5711],
+        "Chemistry/Physics Building": [-52.73278, 47.57322],
+        "Education Building": [-52.73597, 47.57105],
+        "Engineering Building": [-52.73536, 47.57488],
+        "Science Building": [-52.73264, 47.5724]
+      },
+      "ubc": {
+        "Acadia Park": [-123.23705, 49.26294]
+      },
+      "utsg": {
+        "Chestnut Residence": [-79.38518, 43.6543],
+        "Chestnut Dining Commons": [-79.38518, 43.6543],
+        "Innis College": [-79.39915, 43.66576],
+        "Leslie Dan Faculty of Pharmacy": [-79.39178, 43.65995],
+        "University College": [-79.39517, 43.66283],
+        "Victoria College": [-79.39195, 43.66693]
+      },
       "uwaterloo": {
-        "J.G. Hagey Hall of the Humanities": "Hagey Hall",
-        "William G. Davis Computer Research Centre": "Davis Centre"
+        "Davis Centre": [-80.54204, 43.4725],
+        "Mathematics & Computer": [-80.54393, 43.47211],
+        "Needles Hall": [-80.54364, 43.46981],
+        "Needles Hall North": [-80.54364, 43.46981],
+        "Rod Coutts Hall": [-80.54071, 43.47028]
+      },
+      "uwo": {
+        "Alexander Charles Spencer Engineering Building": [-81.27609, 43.00519],
+        "Spencer Engineering Building": [-81.27609, 43.00519],
+        "Arts and Humanities Building": [-81.27288, 43.0074],
+        "Biological and Geological Sciences Building": [-81.27182, 43.01071],
+        "International and Graduate Affairs Building": [-81.27221, 43.00748],
+        "Ivey Business School": [-81.27859, 43.00442],
+        "Social Science Centre": [-81.27511, 43.00931],
+        "Social Science Building": [-81.27511, 43.00931],
+        "University Community Centre": [-81.27617, 43.00866]
       }
     }
   },

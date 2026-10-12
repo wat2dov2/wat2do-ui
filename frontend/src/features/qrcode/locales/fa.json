@@ -36,8 +36,6 @@
     "posterAriaLabel": "پوستر {{id}}",
     "posterFallbackName": "پوستر {{id}}",
     "dragPlacementAriaLabel": "برای جابجایی مکان QR بکشید",
-    "mapboxTokenMissingTitle": "توکن Mapbox تنظیم نشده است",
-    "mapboxTokenMissingDescription": "لطفاً NEXT_PUBLIC_MAPBOX_TOKEN را در متغیرهای محیطی خود تنظیم کنید",
     "posterCount": "{{count}} پوستر",
     "posterCount_other": "{{count}} پوستر",
     "scanCount": "{{count}} اسکن",

@@ -681,7 +681,6 @@ Runtime secrets include:
 Production infrastructure must also provide:
 
 - Correct trusted-proxy handling for the real client IP.
-- A production Mapbox token.
 - Scheduled monthly execution of the payout job.
 - Secure handling of generated Interac CSV files.
 - Published and versioned promoter Terms content for the scroll-gated acceptance dialog.
@@ -774,7 +773,6 @@ Status: implemented.
 - Publish and version promoter Terms of Service.
 - Verify production proxy IP handling without storing raw IP.
 - Configure production secrets.
-- Configure Mapbox.
 - Schedule the monthly payout job.
 - Print and test every initial template.
 - Rehearse one normal payout and one held payout.

@@ -40,26 +40,21 @@ CSP_DIRECTIVES: list[tuple[str, str]] = [
     # Fonts: self + Google Fonts static files.
     ("font-src", "'self' https://fonts.gstatic.com"),
     # Images: self + Supabase storage + S3 event images + Unsplash editorial
-    # images + Mapbox tiles + data: URIs (SVG fallbacks) + blob: (QR generator).
+    # images + OpenFreeMap tiles + data: URIs (SVG fallbacks) + blob: (QR generator).
     (
         "img-src",
         "'self' data: blob: "
         "https://*.supabase.co "
         "https://*.amazonaws.com "
         "https://images.unsplash.com "
-        "https://api.mapbox.com "
-        "https://*.tiles.mapbox.com",
+        "https://tiles.openfreemap.org",
     ),
-    # XHR / fetch / WebSocket connections: own API + Supabase + Mapbox.
+    # XHR / fetch / WebSocket connections: own API + Supabase + OpenFreeMap.
     (
         "connect-src",
-        "'self' "
-        "https://*.supabase.co "
-        "https://api.mapbox.com "
-        "https://*.tiles.mapbox.com "
-        "https://events.mapbox.com",
+        "'self' https://*.supabase.co https://tiles.openfreemap.org",
     ),
-    # Web workers used by mapbox-gl.
+    # Web workers used by maplibre-gl.
     ("worker-src", "'self' blob:"),
     # Disallow <object>, <embed>, <applet>.
     ("object-src", "'none'"),

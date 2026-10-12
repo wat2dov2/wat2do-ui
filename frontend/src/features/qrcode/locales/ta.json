@@ -36,8 +36,6 @@
     "posterAriaLabel": "போஸ்டர் {{id}}",
     "posterFallbackName": "போஸ்டர் {{id}}",
     "dragPlacementAriaLabel": "QR இடத்தை நகர்க்க டிராக் செய்யவும்",
-    "mapboxTokenMissingTitle": "Mapbox டோக்கன் அமைக்கப்படவில்லை",
-    "mapboxTokenMissingDescription": "உங்கள் சூழல் மாறிலிகளில் NEXT_PUBLIC_MAPBOX_TOKEN அமைக்கவும்",
     "posterCount": "{{count}} போஸ்டர்",
     "posterCount_other": "{{count}} போஸ்டர்கள்",
     "scanCount": "{{count}} ஸ்கேன்",

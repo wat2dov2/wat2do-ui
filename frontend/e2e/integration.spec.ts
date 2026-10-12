@@ -1912,7 +1912,7 @@ test.describe("Events Page", () => {
     async () => ({ json: { items: [event], total: 1, page: 1, page_size: 1, total_pages: 1 } }));
     await mockApi(page, next, url => apiPath(url) === "/events/9017", async () => ({ json: event }));
     const mapRequests: string[] = [];
-    page.on("request", request => { if (request.url().startsWith("https://api.mapbox.com/")) mapRequests.push(request.url()); });
+    page.on("request", request => { if (request.url().startsWith("https://tiles.openfreemap.org/")) mapRequests.push(request.url()); });
     await page.goto(BASE);
     const views = page.getByRole("combobox", { name: "Event view" });
     await expect(views).toHaveText("Grid");
@@ -1963,7 +1963,8 @@ test.describe("Events Page", () => {
       id: 9300 + index, title, club: "Campus Club", club_id: 1, school: "uwaterloo",
       source_image_url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='128'%3E%3Crect width='64' height='128' fill='purple'/%3E%3C/svg%3E",
       club_logo_url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Crect width='20' height='20' fill='green'/%3E%3C/svg%3E",
-      location: index === 2 ? "Davis Centre" : "Student Life Centre", price: 0, category: "Social",
+      location: index === 2 ? "DC 1302" : "SLC Great Hall", map_location: index === 2 ? "Davis Centre" : "Student Life Centre",
+      map_coordinates: index === 2 ? [-80.537, 43.47] : [-80.542, 43.47], price: 0, category: "Social",
       food: [], registration: false, added_at: new Date().toISOString(),
       occurrences: [{ id: `map-${index}`, event_id: 9300 + index, dtstart_utc: startsAt, dtend_utc: null }],
     }));
@@ -1972,22 +1973,11 @@ test.describe("Events Page", () => {
     async () => ({ json: { items: events, total: events.length, page: 1, page_size: events.length, total_pages: 1 } }));
     await mockApi(page, next, url => /^\/events\/93\d{2}$/.test(apiPath(url) ?? ""),
       async request => ({ json: events.find(event => event.id === Number(new URL(request.url).pathname.split("/").at(-1))) }));
-    let finishSlow!: () => void;
-    const slowVenue = new Promise<void>(resolve => { finishSlow = resolve; });
-    let geocodeRequests = 0;
-    await page.route("https://api.mapbox.com/**", async route => {
+    await page.route("https://tiles.openfreemap.org/**", async route => {
       const url = new URL(route.request().url());
-      if (url.pathname.includes("/searchbox/")) {
-        geocodeRequests++;
-        const venue = url.searchParams.get("q")!.split(",")[0];
-        if (venue === "Davis Centre") await slowVenue;
-        await route.fulfill({ json: { features: [{
-          geometry: { type: "Point", coordinates: [venue === "Davis Centre" ? -80.537 : -80.542, 43.47] },
-          properties: { feature_type: "poi", name: venue },
-        }] } });
-      } else if (url.pathname.includes("/styles/")) {
+      if (url.pathname.includes("/styles/")) {
         await route.fulfill({ json: { version: 8, sources: {
-          unavailable: { type: "vector", tiles: ["https://api.mapbox.com/test/unavailable/{z}/{x}/{y}.pbf"] },
+          unavailable: { type: "vector", tiles: ["https://tiles.openfreemap.org/test/unavailable/{z}/{x}/{y}.pbf"], attribution: "OpenStreetMap" },
         }, layers: [
           { id: "background", type: "background", paint: { "background-color": "#d7efcf" } },
           { id: "unavailable", type: "circle", source: "unavailable", "source-layer": "points" },
@@ -1996,70 +1986,71 @@ test.describe("Events Page", () => {
         await route.fulfill({ status: 503, body: "Temporary tile failure" });
       } else await route.fulfill({ json: {} });
     });
-    try {
-      await page.goto(`${BASE}/events`);
-      await page.getByRole("combobox", { name: "Event view" }).click();
-      await page.getByRole("option", { name: "Map", exact: true }).click();
-      await expect(page.locator(".mapboxgl-canvas")).toBeVisible();
-      await expect(page.getByText("Could not load the event map", { exact: true })).toHaveCount(0);
-      const scrollRoot = page.locator(".main-content-grid");
-      await expect.poll(() => scrollRoot.evaluate(element => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
-      const surface = page.locator('[data-slot="event-view-surface"][data-view="map"]');
-      const main = page.getByRole("main", { name: "Events list" });
-      await expect.poll(async () => {
-        const mapBox = (await surface.boundingBox())!;
-        const contentBox = (await main.boundingBox())!;
-        return Math.abs(contentBox.width - mapBox.width);
-      }).toBeLessThanOrEqual(1);
-      await expect.poll(async () => (await surface.boundingBox())!.height).toBeGreaterThan(viewport.height * 0.5);
-      const cluster = page.getByRole("button", { name: "Map dinner, Map talk", exact: true });
-      await expect(cluster).toBeVisible();
-      await expect(cluster).toHaveCSS("width", "64px");
-      await expect(cluster.locator(".event-map-poster")).toHaveCount(2);
-      await expect(cluster.locator(".event-map-poster:first-child img")).toHaveCSS("height", "60px");
-      await expect(cluster.locator('.event-map-poster[data-status="new"]')).toHaveCount(2);
-      await cluster.hover();
-      await expect(cluster).not.toHaveCSS("transform", "none");
-      await expect(page.getByRole("combobox", { name: "Open an event", exact: true })).toHaveCount(0);
-      await cluster.click();
-      const sheet = page.getByRole(viewport.width < 640 ? "dialog" : "complementary", { name: "2 events at Student Life Centre", exact: true });
-      await expect(sheet).toBeVisible();
-      if (viewport.width < 640) {
-        await expect(sheet).toHaveAttribute("data-vaul-drawer-direction", "bottom");
-        const drawerBox = (await sheet.boundingBox())!;
-        expect(Math.abs(drawerBox.y + drawerBox.height - viewport.height)).toBeLessThanOrEqual(1);
-      }
-      await expect(sheet.getByRole("img", { name: "Campus Club", exact: true })).toHaveCount(2);
-      await sheet.getByRole("button", { name: /Map dinner/ }).click();
-      await expect(page.getByRole("dialog", { name: "Map dinner", exact: true })).toBeVisible();
-      if (viewport.width < 640) await expect(sheet).toBeHidden();
-      await page.keyboard.press("Escape");
-      if (viewport.width >= 640) await sheet.getByRole("button", { name: "Close", exact: true }).click();
-      finishSlow();
-      const single = page.getByRole("button", { name: "Map workshop", exact: true });
-      await expect(single).toBeVisible();
-      await single.click();
-      await expect(page.getByRole("dialog", { name: "Map workshop", exact: true })).toBeVisible();
-      await page.keyboard.press("Escape");
-      const separation = async () => Math.abs((await single.boundingBox())!.x - (await cluster.boundingBox())!.x);
-      const before = await separation();
-      const canvas = (await page.locator(".mapboxgl-canvas").boundingBox())!;
-      await page.mouse.move(canvas.x + canvas.width / 2, canvas.y + canvas.height / 2);
-      await page.mouse.wheel(0, -300);
-      await expect.poll(separation).toBeGreaterThan(before + 5);
-      const canvasHandle = await page.locator(".mapboxgl-canvas").elementHandle();
-      const requestsBeforeFiltering = geocodeRequests;
-      const search = page.getByPlaceholder("Search events", { exact: true });
-      await search.fill("No matching map event");
-      await expect(page.locator(".event-map-marker")).toHaveCount(0);
-      await expect(page.locator(".mapboxgl-canvas")).toBeVisible();
-      await search.fill("");
-      await expect(single).toBeVisible();
-      expect(await canvasHandle!.evaluate(canvas => canvas.isConnected)).toBe(true);
-      expect(geocodeRequests).toBe(requestsBeforeFiltering);
-    } finally {
-      finishSlow();
+    await page.goto(`${BASE}/events`);
+    await page.getByRole("combobox", { name: "Event view" }).click();
+    await page.getByRole("option", { name: "Map", exact: true }).click();
+    await expect(page.locator(".maplibregl-canvas")).toBeVisible();
+    await expect(page.getByText("Could not load the event map", { exact: true })).toHaveCount(0);
+    const scrollRoot = page.locator(".main-content-grid");
+    await expect.poll(() => scrollRoot.evaluate(element => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
+    const surface = page.locator('[data-slot="event-view-surface"][data-view="map"]');
+    const main = page.getByRole("main", { name: "Events list" });
+    await expect.poll(async () => {
+      const mapBox = (await surface.boundingBox())!;
+      const contentBox = (await main.boundingBox())!;
+      return Math.abs(contentBox.width - mapBox.width);
+    }).toBeLessThanOrEqual(1);
+    await expect.poll(async () => (await surface.boundingBox())!.height).toBeGreaterThan(viewport.height * 0.5);
+    // Back to campus sits in the bottom-left corner; the map credits stay bottom-right.
+    const home = page.getByRole("button", { name: "Back to campus", exact: true });
+    const mapBox = (await page.locator(".maplibregl-canvas").boundingBox())!;
+    const homeBox = (await home.boundingBox())!;
+    expect(Math.round(homeBox.x - mapBox.x)).toBe(12);
+    expect(Math.round(mapBox.y + mapBox.height - homeBox.y - homeBox.height)).toBe(12);
+    const credits = (await page.locator(".maplibregl-ctrl-attrib").boundingBox())!;
+    expect(credits.x).toBeGreaterThan(homeBox.x + homeBox.width);
+    const cluster = page.getByRole("button", { name: "Map dinner, Map talk", exact: true });
+    await expect(cluster).toBeVisible();
+    await expect(cluster).toHaveCSS("width", "64px");
+    await expect(cluster.locator(".event-map-poster")).toHaveCount(2);
+    await expect(cluster.locator(".event-map-poster:first-child img")).toHaveCSS("height", "60px");
+    await expect(cluster.locator('.event-map-poster[data-status="new"]')).toHaveCount(2);
+    await cluster.hover();
+    await expect(cluster).not.toHaveCSS("transform", "none");
+    await expect(page.getByRole("combobox", { name: "Open an event", exact: true })).toHaveCount(0);
+    await cluster.click();
+    const sheet = page.getByRole(viewport.width < 640 ? "dialog" : "complementary", { name: "2 events at Student Life Centre", exact: true });
+    await expect(sheet).toBeVisible();
+    if (viewport.width < 640) {
+      await expect(sheet).toHaveAttribute("data-vaul-drawer-direction", "bottom");
+      const drawerBox = (await sheet.boundingBox())!;
+      expect(Math.abs(drawerBox.y + drawerBox.height - viewport.height)).toBeLessThanOrEqual(1);
     }
+    await expect(sheet.getByRole("img", { name: "Campus Club", exact: true })).toHaveCount(2);
+    await sheet.getByRole("button", { name: /Map dinner/ }).click();
+    await expect(page.getByRole("dialog", { name: "Map dinner", exact: true })).toBeVisible();
+    if (viewport.width < 640) await expect(sheet).toBeHidden();
+    await page.keyboard.press("Escape");
+    if (viewport.width >= 640) await sheet.getByRole("button", { name: "Close", exact: true }).click();
+    const single = page.getByRole("button", { name: "Map workshop", exact: true });
+    await expect(single).toBeVisible();
+    await single.click();
+    await expect(page.getByRole("dialog", { name: "Map workshop", exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    const separation = async () => Math.abs((await single.boundingBox())!.x - (await cluster.boundingBox())!.x);
+    const before = await separation();
+    const canvas = (await page.locator(".maplibregl-canvas").boundingBox())!;
+    await page.mouse.move(canvas.x + canvas.width / 2, canvas.y + canvas.height / 2);
+    await page.mouse.wheel(0, -300);
+    await expect.poll(separation).toBeGreaterThan(before + 5);
+    const canvasHandle = await page.locator(".maplibregl-canvas").elementHandle();
+    const search = page.getByPlaceholder("Search events", { exact: true });
+    await search.fill("No matching map event");
+    await expect(page.locator(".event-map-marker")).toHaveCount(0);
+    await expect(page.locator(".maplibregl-canvas")).toBeVisible();
+    await search.fill("");
+    await expect(single).toBeVisible();
+    expect(await canvasHandle!.evaluate(canvas => canvas.isConnected)).toBe(true);
   });
   }
 

@@ -94,11 +94,11 @@ test("disabled buttons expose their reason on a hoverable keyboard target withou
   expect(render({ disabled: false, disabledReason: "Unavailable", children: "Going" }, null).type).toBe("button");
 });
 
-test("native click activation survives Mapbox preventing marker mouse down", () => {
+test("native click activation survives the map preventing marker mouse down", () => {
   let calls = 0;
   const button = handlers({ activation: "click", onClick: () => calls++ });
   const mouseDown = event();
-  mouseDown.preventDefault(); // Mapbox's Marker prevents this before React sees it.
+  mouseDown.preventDefault(); // The map's Marker prevents this before React sees it.
   button.onMouseDown?.(mouseDown);
   expect(calls).toBe(0);
   button.onClick?.(event());

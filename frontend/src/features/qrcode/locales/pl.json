@@ -36,8 +36,6 @@
     "posterAriaLabel": "Plakat {{id}}",
     "posterFallbackName": "Plakat {{id}}",
     "dragPlacementAriaLabel": "Przeciągnij, aby przesunąć umiejscowienie QR",
-    "mapboxTokenMissingTitle": "Token Mapbox nie został skonfigurowany",
-    "mapboxTokenMissingDescription": "Proszę ustawić NEXT_PUBLIC_MAPBOX_TOKEN w zmiennych środowiskowych",
     "posterCount": "{{count}} plakat",
     "posterCount_other": "{{count}} plakatu",
     "scanCount": "{{count}} skan",

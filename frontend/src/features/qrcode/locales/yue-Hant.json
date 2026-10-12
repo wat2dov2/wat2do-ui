@@ -36,8 +36,6 @@
     "posterAriaLabel": "封面 {{id}}",
     "posterFallbackName": "封面 {{id}}",
     "dragPlacementAriaLabel": "拖曳以移動 QR 的位置",
-    "mapboxTokenMissingTitle": "Mapbox 權杖未設定",
-    "mapboxTokenMissingDescription": "請在你的環境變數中設定 NEXT_PUBLIC_MAPBOX_TOKEN",
     "posterCount": "{{count}} 張海報",
     "posterCount_other": "{{count}} 張海報",
     "scanCount": "{{count}} 次掃描",

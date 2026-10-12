@@ -36,8 +36,6 @@
     "posterAriaLabel": "Постер {{id}}",
     "posterFallbackName": "Постер {{id}}",
     "dragPlacementAriaLabel": "Перетащите, чтобы изменить расположение QR",
-    "mapboxTokenMissingTitle": "Токен Mapbox не настроен",
-    "mapboxTokenMissingDescription": "Пожалуйста, установите NEXT_PUBLIC_MAPBOX_TOKEN в переменных окружения",
     "posterCount": "{{count}} плакат",
     "posterCount_other": "{{count}} плаката",
     "scanCount": "{{count}} сканирование",

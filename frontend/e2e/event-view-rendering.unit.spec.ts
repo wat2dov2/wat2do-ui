@@ -334,13 +334,12 @@ test("map clusters fan real event posters with attendance borders and club avata
   const require = createRequire(import.meta.url);
   const { EventsMap } = loadComponent("features/events/components/EventsMap", {
     react: { ...require("react"), useState: (initial: unknown) => [Array.isArray(initial) ? posters.map(item => item.id) : initial, () => {}] },
-    "react-map-gl/mapbox": { __esModule: true, default: children, Source: children, Layer: () => null, Marker: children, NavigationControl: () => null },
-    "@/features/events/api/eventMap.api": { MAPBOX_TOKEN: "test" },
-    "@/features/events/hooks/useEventMap": { useEventMap: () => ({ query: { data: {}, isPending: false }, center: [1, 2], venues: [{ coordinates: [1, 2], events: posters }] }) },
+    "react-map-gl/maplibre": { __esModule: true, default: children, Source: children, Layer: () => null, Marker: children, NavigationControl: () => null },
+    "@/features/events/hooks/useEventMap": { useEventMap: () => ({ center: [1, 2], venues: [{ coordinates: [1, 2], events: posters }] }) },
     "@/features/events/hooks/useEventMapMarkers": { useEventMapMarkers: () => ({ markers: [{ id: "cluster:1", coordinates: [1, 2], events: posters }], refreshMarkers() {} }) },
     "@/features/events/hooks/useGoingEvents": { useGoingEvents: () => ({ data: [{ event_id: 2, occurrence_ids: ["future"] }] }) },
   }) as typeof import("../src/features/events/components/EventsMap");
-  const html = renderToStaticMarkup(createElement(EventsMap, { events: posters, allEvents: posters, school: "uwaterloo", onEventClick() {} }));
+  const html = renderToStaticMarkup(createElement(EventsMap, { events: posters, school: "uwaterloo", onEventClick() {} }));
   expect(html).toContain('data-view="map"');
   expect(html).toContain('class="event-map-poster-stack" data-count="3"');
   expect(html.match(/class="event-map-poster" data-status="new"/g)).toHaveLength(2);

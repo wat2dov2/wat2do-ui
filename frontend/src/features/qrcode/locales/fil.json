@@ -36,8 +36,6 @@
     "posterAriaLabel": "Poster {{id}}",
     "posterFallbackName": "Poster {{id}}",
     "dragPlacementAriaLabel": "I-drag upang ilipat ang puwesto ng QR",
-    "mapboxTokenMissingTitle": "Hindi naka-configure ang Mapbox token",
-    "mapboxTokenMissingDescription": "Pakiseti ang NEXT_PUBLIC_MAPBOX_TOKEN sa iyong environment variables",
     "posterCount": "{{count}} poster",
     "posterCount_other": "{{count}} poster",
     "scanCount": "{{count}} scan",

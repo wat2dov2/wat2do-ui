@@ -36,8 +36,6 @@
     "posterAriaLabel": "Pôster {{id}}",
     "posterFallbackName": "Pôster {{id}}",
     "dragPlacementAriaLabel": "Arraste para mover a posição de QR",
-    "mapboxTokenMissingTitle": "Token do Mapbox não configurado",
-    "mapboxTokenMissingDescription": "Por favor, defina NEXT_PUBLIC_MAPBOX_TOKEN nas suas variáveis de ambiente",
     "posterCount": "{{count}} cartaz",
     "posterCount_other": "{{count}} cartazes",
     "scanCount": "{{count}} escaneamento",

@@ -36,8 +36,6 @@
     "posterAriaLabel": "Affiche {{id}}",
     "posterFallbackName": "Affiche {{id}}",
     "dragPlacementAriaLabel": "Faites glisser pour déplacer le placement de QR",
-    "mapboxTokenMissingTitle": "Jeton Mapbox non configuré",
-    "mapboxTokenMissingDescription": "Veuillez définir NEXT_PUBLIC_MAPBOX_TOKEN dans vos variables d'environnement",
     "posterCount": "{{count}} affiche",
     "posterCount_other": "{{count}} affiches",
     "scanCount": "{{count}} scan",

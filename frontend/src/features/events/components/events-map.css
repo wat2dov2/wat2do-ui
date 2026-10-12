@@ -7,18 +7,30 @@
   border-top: 1px solid var(--border);
   border-top-left-radius: 0.75rem;
 }
-[data-view="map"] .mapboxgl-ctrl-top-right {
+[data-view="map"] .maplibregl-ctrl-top-right {
   top: var(--event-map-top-inset, 0);
 }
-/* Floats over the map's bottom-left corner, just above the Mapbox logo, and
-   flies back to the campus centre. */
+/* Floats in the map's bottom-left corner and flies back to the campus centre.
+   The map's credits stay in the bottom-right corner. */
 .event-map-home[data-slot="button"] {
   position: absolute;
   left: 0.75rem;
-  bottom: 2.5rem;
+  bottom: 0.75rem;
   z-index: 3;
   background: var(--background);
   box-shadow: 0 6px 20px -8px rgb(0 0 0 / 0.45);
+}
+/* The map credits follow the app theme instead of MapLibre's white pill. */
+[data-view="map"] .maplibregl-ctrl.maplibregl-ctrl-attrib {
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  color: var(--muted-foreground);
+}
+[data-view="map"] .maplibregl-ctrl-attrib a {
+  color: inherit;
+}
+/* MapLibre draws the ⓘ icon in black; dark mode turns it light on a dark button. */
+.dark [data-view="map"] .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
 }
 .event-map-marker[data-slot="button"] {
   position: relative;
@@ -36,7 +48,7 @@
   transform: translateY(-0.25rem) scale(1.16);
   filter: drop-shadow(0 0.25rem 0.375rem color-mix(in srgb, var(--foreground) 18%, transparent));
 }
-[data-view="map"] .mapboxgl-marker:has(.event-map-marker:is(:hover, :focus-visible)) {
+[data-view="map"] .maplibregl-marker:has(.event-map-marker:is(:hover, :focus-visible)) {
   z-index: 1;
 }
 .event-map-poster-stack {

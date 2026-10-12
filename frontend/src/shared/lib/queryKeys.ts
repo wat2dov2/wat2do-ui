@@ -82,10 +82,6 @@ export const queryKeys = {
   },
   events: {
     all: ["events"] as const,
-    mapLocation: (school: string, location: string, venue: string, locality: string | undefined) =>
-      [...queryKeys.events.all, "map-location", school, location, venue, locality ?? null] as const,
-    mapLocations: (school: string, locations: string[]) =>
-      [...queryKeys.events.all, "map-locations", school, locations] as const,
     detail: (eventId: number) =>
       [...queryKeys.events.all, "detail", eventId] as const,
     attendees: (eventId: number) =>

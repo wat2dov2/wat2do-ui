@@ -36,8 +36,6 @@
     "posterAriaLabel": "Poster {{id}}",
     "posterFallbackName": "Poster {{id}}",
     "dragPlacementAriaLabel": "Kéo để di chuyển vị trí QR",
-    "mapboxTokenMissingTitle": "Token Mapbox chưa được cấu hình",
-    "mapboxTokenMissingDescription": "Vui lòng đặt NEXT_PUBLIC_MAPBOX_TOKEN trong các biến môi trường của bạn",
     "posterCount": "{{count}} áp phích",
     "posterCount_other": "{{count}} các áp phích",
     "scanCount": "{{count}} quét",

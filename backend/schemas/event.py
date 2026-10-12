@@ -161,6 +161,12 @@ class EventDiscoveryFields(BaseModel):
         return sorted(set(value)) if value is not None else None
 
 
+# A map pin's [longitude, latitude], as map libraries take it.
+MapCoordinates = tuple[
+    Annotated[float, Field(ge=-180, le=180)], Annotated[float, Field(ge=-90, le=90)]
+]
+
+
 class EventCreate(EventDiscoveryFields):
     model_config = ConfigDict(extra="forbid")
 
@@ -294,6 +300,8 @@ class EventSummaryResponse(EventDiscoveryFields):
     description: str | None = None
     location: str | None = None
     map_location: str | None = None
+    # Stored when the map location is found, so the map needs no lookup of its own.
+    map_coordinates: MapCoordinates | None = None
     occurrences: list[OccurrenceSummaryResponse] = Field(default_factory=list)
     price: float | None = None
     food: list[str] | None = None
@@ -352,6 +360,8 @@ class EventResponse(EventDiscoveryFields):
     description: str | None = None
     location: str | None = None
     map_location: str | None = None
+    # Stored when the map location is found, so the map needs no lookup of its own.
+    map_coordinates: MapCoordinates | None = None
     occurrences: list[OccurrenceResponse] = Field(default_factory=list)
     price: float | None = None
     food: list[str] | None = None
@@ -386,6 +396,8 @@ class EventPublicResponse(EventDiscoveryFields):
     description: str | None = None
     location: str | None = None
     map_location: str | None = None
+    # Stored when the map location is found, so the map needs no lookup of its own.
+    map_coordinates: MapCoordinates | None = None
     occurrences: list[OccurrenceResponse] = Field(default_factory=list)
     price: float | None = None
     food: list[str] | None = None

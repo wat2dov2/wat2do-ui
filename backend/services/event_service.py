@@ -32,6 +32,7 @@ from services import (
     event_query,
     going_event_service,
     interaction_service,
+    map_location_service,
     school_service,
 )
 from services.event_feed_revalidation import event_feed_revalidation_service
@@ -168,6 +169,15 @@ def get_event_stats_for_school(school: str) -> dict[str, EventStatsResponse]:
         for event_id in event_ids
         if click_counts.get(event_id, 0) > 0 or going_counts.get(event_id, 0) > 0
     }
+
+
+def locate_event_map_locations(school: str, events: list[EventSummaryResponse]) -> None:
+    """Look up the places of listed events without coordinates; refresh the feed once found."""
+    unmapped = {
+        event.map_location for event in events if event.map_location and not event.map_coordinates
+    }
+    if unmapped and map_location_service.look_up(school, unmapped):
+        event_feed_revalidation_service.revalidate_school(school, resources=("events",))
 
 
 def _today_start_utc(school: str | None) -> datetime:

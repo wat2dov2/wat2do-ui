@@ -36,8 +36,6 @@
     "posterAriaLabel": "ਪੋਸਟਰ {{id}}",
     "posterFallbackName": "ਪੋਸਟਰ {{id}}",
     "dragPlacementAriaLabel": "QR ਪਲੇਸਮੈਂਟ ਨੂੰ ਮੂਵ ਕਰਨ ਲਈ ਖਿੱਚੋ",
-    "mapboxTokenMissingTitle": "ਮੈਪਬਾਕਸ ਟੋਕਨ ਕੌਂਫਿਗਰ ਨਹੀਂ ਕੀਤਾ ਗਿਆ",
-    "mapboxTokenMissingDescription": "ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੇ ਵਾਤਾਵਰਣ ਵੇਰੀਏਬਲ ਵਿੱਚ NEXT_PUBLIC_MAPBOX_TOKEN ਸੈਟ ਕਰੋ",
     "posterCount": "{{count}} ਪੋਸਟਰ",
     "posterCount_other": "{{count}} ਪੋਸਟਰ",
     "scanCount": "{{count}} ਸਕੈਨ",

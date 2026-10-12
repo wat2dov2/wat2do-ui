@@ -36,8 +36,6 @@
     "posterAriaLabel": "포스터 {{id}}",
     "posterFallbackName": "포스터 {{id}}",
     "dragPlacementAriaLabel": "드래그하여 QR 위치 이동",
-    "mapboxTokenMissingTitle": "Mapbox 토큰이 구성되지 않았습니다",
-    "mapboxTokenMissingDescription": "환경 변수에 NEXT_PUBLIC_MAPBOX_TOKEN을 설정해주세요",
     "posterCount": "{{count}} 포스터",
     "posterCount_other": "{{count}} 포스터들",
     "scanCount": "{{count}} 스캔",

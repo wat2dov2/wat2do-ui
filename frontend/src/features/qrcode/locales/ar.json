@@ -36,8 +36,6 @@
     "posterAriaLabel": "ملصق {{id}}",
     "posterFallbackName": "ملصق {{id}}",
     "dragPlacementAriaLabel": "اسحب لتحريك موضع QR",
-    "mapboxTokenMissingTitle": "رمز Mapbox غير مُكوَّن",
-    "mapboxTokenMissingDescription": "يرجى تعيين NEXT_PUBLIC_MAPBOX_TOKEN في متغيرات البيئة الخاصة بك",
     "posterCount": "{{count}} ملصق",
     "posterCount_other": "{{count}} ملصق",
     "scanCount": "{{count}} عملية مسح",

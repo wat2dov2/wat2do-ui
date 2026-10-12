@@ -175,7 +175,7 @@ jobs:
           FRONTEND_BUILD_SECRET_ID: wat2do/production/frontend-build
         run: |
           secret_json="$(aws secretsmanager get-secret-value --secret-id "$FRONTEND_BUILD_SECRET_ID" --query SecretString --output text)"
-          for secret_key in NEXT_PUBLIC_MAPBOX_TOKEN NEXT_PUBLIC_GOOGLE_MAPS_API_KEY NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN NEXT_PUBLIC_POSTHOG_HOST; do
+          for secret_key in NEXT_PUBLIC_GOOGLE_MAPS_API_KEY NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN NEXT_PUBLIC_POSTHOG_HOST; do
             secret_value="$(jq -er --arg key "$secret_key" '.[$key]' <<< "$secret_json")"
             echo "::add-mask::$secret_value"
             echo "$secret_key=$secret_value" >> "$GITHUB_ENV"
@@ -209,7 +209,6 @@ jobs:
             NEXT_PUBLIC_API_URL=/api
             API_REWRITE_URL=http://127.0.0.1:8000
             BACKEND_API_URL=http://127.0.0.1:8000
-            NEXT_PUBLIC_MAPBOX_TOKEN=${{ env.NEXT_PUBLIC_MAPBOX_TOKEN }}
             NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
             NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=${{ env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
             NEXT_PUBLIC_POSTHOG_HOST=${{ env.NEXT_PUBLIC_POSTHOG_HOST }}

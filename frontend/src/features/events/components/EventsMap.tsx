@@ -1,11 +1,10 @@
 import { useMemo, useRef, useState } from "react";
-import Map, { Source, Layer, Marker, NavigationControl, type MapRef } from "react-map-gl/mapbox";
-import "mapbox-gl/dist/mapbox-gl.css";
+import Map, { Source, Layer, Marker, NavigationControl, type MapRef } from "react-map-gl/maplibre";
+import "maplibre-gl/dist/maplibre-gl.css";
 import "./events-map.css";
 import { useTranslation } from "react-i18next";
 import { useEventMap } from "@/features/events/hooks/useEventMap";
-import { MAPBOX_TOKEN } from "@/features/events/api/eventMap.api";
-import { EventViewSurface, EventViewSkeleton } from "@/features/events/components/EventViewSurface";
+import { EventViewSurface } from "@/features/events/components/EventViewSurface";
 import { useEventMapMarkers } from "@/features/events/hooks/useEventMapMarkers";
 import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
 import { LazyImage } from "@/shared/ui/lazy-image";
@@ -59,12 +58,21 @@ function EventMapSelection({ events, goingIds, timezone, language, onEventClick 
   </Stack>;
 }
 
-export function EventsMap({ events, allEvents, school, onEventClick }: { events: Event[]; allEvents: Event[]; school: string; onEventClick: (event: Event) => void }) {
+// Without a fixed compact setting, credits show in full on wide maps and behind
+// an ⓘ button on maps 640px wide or narrower.
+const CREDITS = {};
+
+/** MapLibre opens narrow credits on load, over Back to campus; they start behind their ⓘ button instead. */
+function collapseCredits(container: HTMLElement) {
+  container.querySelector(".maplibregl-compact-show")?.classList.remove("maplibregl-compact-show");
+}
+
+export function EventsMap({ events, school, onEventClick }: { events: Event[]; school: string; onEventClick: (event: Event) => void }) {
   const { t, i18n } = useTranslation();
   const mobile = useMobileClickActivation();
   const { getSchoolTimezone } = useSchoolDirectory();
   const { isDarkMode } = useDarkMode();
-  const { query, venues, center } = useEventMap(events, allEvents, school);
+  const { venues, center } = useEventMap(events, school);
   const { data: goingSelections = [] } = useGoingEvents();
   const goingIds = useMemo(() => new Set(goingSelections.map(selection => selection.event_id)), [goingSelections]);
   const mapRef = useRef<MapRef>(null);
@@ -89,29 +97,28 @@ export function EventsMap({ events, allEvents, school, onEventClick }: { events:
     })),
   }), [venues]);
 
-  if (!MAPBOX_TOKEN) return <EmptyState title={t("events.views.mapUnavailable")} description={t("events.views.mapUnavailableDescription")} />;
-  if ((query.isError && !center) || mapFailed) return <EmptyState title={t("events.views.mapFailed")} action={<Button variant="outline" onClick={() => { setMapFailed(false); void query.refetch(); }}>{t("common.tryAgain")}</Button>} />;
-  if (query.isPending && !center) return <EventViewSkeleton variant="map" />;
-  if (!center) return <EmptyState title={t("events.views.noLocations")} description={t("events.views.noLocationsDescription")} />;
+  const mapStyle = isDarkMode ? settings.map_dark_style : settings.map_style;
+
+  if (!center || mapFailed) return <EmptyState title={t("events.views.mapFailed")} action={<Button variant="outline" onClick={() => setMapFailed(false)}>{t("common.tryAgain")}</Button>} />;
 
   return (
     <Stack gap={2} grow>
       <EventViewSurface variant="map" aria-label={t("events.views.map")}>
         <Map
           ref={mapRef}
-          mapboxAccessToken={MAPBOX_TOKEN}
           initialViewState={{ longitude: center[0], latitude: center[1], zoom: settings.map_initial_zoom }}
-          mapStyle={isDarkMode ? settings.map_dark_style : settings.map_style}
-          onLoad={() => { mapLoaded.current = true; void refreshMarkers(); }}
+          mapStyle={mapStyle}
+          attributionControl={CREDITS}
+          onLoad={event => { mapLoaded.current = true; collapseCredits(event.target.getContainer()); void refreshMarkers(); }}
           onMoveEnd={() => { void refreshMarkers(); }}
           onResize={() => { void refreshMarkers(); }}
           onSourceData={event => { if (event.sourceId === "events" && event.isSourceLoaded) void refreshMarkers(); }}
           onError={event => {
             // Source/tile errors may arrive before load. Keep that map alive so
-            // Mapbox can finish rendering; only initialization/style failures
+            // it can finish rendering; only initialization/style failures
             // can replace the entire viewport with its retry state.
             const error = event.error as { url?: string };
-            if (!mapLoaded.current && (event.target === null || error.url?.includes("/styles/v1/"))) setMapFailed(true);
+            if (!mapLoaded.current && (event.target === null || error.url === mapStyle)) setMapFailed(true);
           }}
           cursor="pointer"
         >
