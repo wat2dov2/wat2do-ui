@@ -87,6 +87,7 @@ const apiCollectionPaths = [
   "contact",
   "discovery-queries",
   "events",
+  "ingestion-latency",
   "instagram-publishing/batches",
   "clubs",
   "payouts",
