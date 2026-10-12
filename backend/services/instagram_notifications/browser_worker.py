@@ -612,8 +612,8 @@ def recover_login(queue: BrowserJobQueue, *, now: Callable[[], float] = time.tim
     attempts = [
         at for at in queue.get_setting("login_recovery_attempts", []) if now() - at < 86400
     ]
-    if len(attempts) >= CONTROL.login_recovery_daily_limit or (
-        attempts and now() - attempts[-1] < CONTROL.login_recovery_interval_seconds
+    if len(attempts) >= CONTROL.login_recovery_daily_limit or now() < queue.get_setting(
+        "login_recovery_next_at", 0
     ):
         return False
     with open(BROWSER_LOCK_PATH, "a+") as browser_lock:
@@ -622,11 +622,16 @@ def recover_login(queue: BrowserJobQueue, *, now: Callable[[], float] = time.tim
         except BlockingIOError:
             return False
         queue.set_setting("login_recovery_attempts", [*attempts, now()])
+        queue.set_setting("login_recovery_next_at", now() + CONTROL.login_recovery_interval_seconds)
         try:
             username = BrowserTabPool(queue).recover_login()
         except (TimeoutError, _BrowserAutomationTransient, _BrowserPageUnavailable,
                 _BrowserTabUnavailable) as exc:
-            log.warning("Instagram login recovery did not finish (%s); retrying later", exc)
+            # A Brave hiccup is not a login Instagram saw; try again soon.
+            queue.set_setting(
+                "login_recovery_next_at", now() + CONTROL.login_recovery_retry_seconds
+            )
+            log.warning("Instagram login recovery did not finish (%s); retrying shortly", exc)
             return False
         except BrowserSessionError as exc:
             log.error("Instagram login recovery needs a person: %s", exc)

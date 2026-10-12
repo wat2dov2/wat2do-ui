@@ -616,6 +616,7 @@ class InstagramBrowserControl(_ControlModel):
     worker_window_idle_wait_seconds: float = Field(ge=0, le=60)
     login_recovery_timeout_seconds: float = Field(gt=0, le=300)
     login_recovery_interval_seconds: float = Field(ge=0, le=86400)
+    login_recovery_retry_seconds: float = Field(ge=0, le=3600)
     login_recovery_daily_limit: int = Field(ge=0, le=100)
     interaction_timeout_seconds: float = Field(gt=0, le=120)
     account_transition_grace_seconds: float = Field(gt=0, le=120)

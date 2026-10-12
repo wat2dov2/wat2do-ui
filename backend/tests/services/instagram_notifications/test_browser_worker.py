@@ -2810,12 +2810,14 @@ def test_login_recovery_is_spaced_capped_and_unpauses_on_success(monkeypatch, tm
     clock = lambda: now[0]  # noqa: E731
     assert module.recover_login(queue, now=clock) is False  # Transient: stays paused.
     assert settings["paused"] == module.LOGGED_OUT_PAUSE
-    now[0] += 60
+    now[0] += module.CONTROL.login_recovery_retry_seconds - 1
     assert module.recover_login(queue, now=clock) is False  # Too soon to try again.
-    now[0] += module.CONTROL.login_recovery_interval_seconds
+    now[0] += 1  # A Brave hiccup retries after the short delay, not the full spacing.
     assert module.recover_login(queue, now=clock) is True
     assert settings["paused"] is False
     assert len(settings["login_recovery_attempts"]) == 2
+    # A real login spaces the next attempt by the full interval.
+    assert settings["login_recovery_next_at"] == now[0] + module.CONTROL.login_recovery_interval_seconds
 
     settings["paused"] = "Inspect before retrying"
     assert module.recover_login(queue, now=clock) is False  # Only logouts recover.
@@ -2846,7 +2848,7 @@ def test_login_recovery_stops_after_the_daily_limit(monkeypatch, tmp_path):
     limit = module.CONTROL.login_recovery_daily_limit
     settings = {
         "paused": module.LOGGED_OUT_PAUSE,
-        # All within the last day, and the latest long enough ago to be allowed by spacing.
+        # All within the last day; spacing alone would allow another.
         "login_recovery_attempts": [100000.0 - 80000 + at for at in range(limit)],
     }
     queue = SimpleNamespace(

@@ -2753,7 +2753,7 @@ def test_already_closed_surplus_window_needs_no_closing(monkeypatch):
 
 def _login_pool(monkeypatch, pages, *, preferred="wat2do.ottawa"):
     """A pool whose primary window shows ``pages`` in turn; records clicks."""
-    clicks, settings = [], {"browser_tab_ids": ["1"], "retrieval_pool_account": preferred}
+    clicks, settings = [], {"browser_tab_ids": ["1", "2"], "retrieval_pool_account": preferred}
     pages = iter(pages)
     current = {}
 
@@ -2777,6 +2777,13 @@ def _login_pool(monkeypatch, pages, *, preferred="wat2do.ottawa"):
     )
     monkeypatch.setattr(browser, "BrowserInstagramSession", lambda **kwargs: session)
     monkeypatch.setattr(browser.BrowserTabPool, "_live_ids", staticmethod(lambda ids: ids))
+    reloaded = []
+    monkeypatch.setattr(
+        browser,
+        "_PinnedBraveJavascriptRunner",
+        lambda tab_id, **kwargs: lambda source, timeout: reloaded.append((tab_id, source)),
+    )
+    settings["reloaded"] = reloaded
     queue = SimpleNamespace(
         get_setting=lambda key, default=None: settings.get(key, default),
         set_setting=lambda key, value: settings.update({key: value}),
@@ -2804,6 +2811,8 @@ def test_login_recovery_clicks_the_saved_profile_and_keeps_one_tap_login(monkeyp
     ]
     # Account identity is re-verified before the next job.
     assert settings["retrieval_pool_account"] is None
+    # The other worker window drops its stale logged-out page.
+    assert settings["reloaded"] == [("2", "window.location.reload(); 1")]
 
 
 def test_login_recovery_falls_back_to_any_saved_wat2do_profile(monkeypatch):

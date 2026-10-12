@@ -1646,6 +1646,14 @@ class BrowserTabPool:
 
         session.poll_until(identified)
         self.queue.set_setting("retrieval_pool_account", None)
+        # Other worker windows still show the logged-out page until reloaded.
+        for tab_id in ids[1:]:
+            try:
+                _PinnedBraveJavascriptRunner(tab_id)(
+                    "window.location.reload(); 1", _CONTROL.request_timeout_seconds
+                )
+            except BrowserSessionError:
+                pass  # The pool check repairs a window that cannot reload.
         return cast(str, username)
 
     def prepare(self, job, count: int) -> tuple[list[BrowserInstagramSession], str]:
