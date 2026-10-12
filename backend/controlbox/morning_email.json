@@ -3,5 +3,6 @@
   "new_event_window_hours": 24,
   "provider_attempts": 3,
   "card_image_px": 480,
-  "image_download_concurrency": 8
+  "image_download_concurrency": 8,
+  "club_logo_px": 64
 }

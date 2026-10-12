@@ -8,7 +8,7 @@ Owner: Tony.
 Replace `morning_digest`, `weekly_digest`, and `daily_new_events` with one `morning_email` sent around 9:00 AM in the user's school timezone.
 
 The morning email contains every upcoming event and active position added at the user's school in the previous 24 hours, newest first.
-It shows them as image cards in two columns, like the app's event grid.
+It shows them as image cards in two columns, like the app's event grid, with the posting club's profile picture and name under each poster.
 Earlier versions sent only events whose stored recommendation score was at least `0.30`; that filter was removed in October 2026.
 
 `event_reminder` is a separate email sent about one hour before an occurrence the user explicitly selected as Going.
@@ -442,7 +442,7 @@ For each eligible school, load once:
 - Non-cancelled events added within the fixed 24-hour window.
 - The earliest future occurrence for each of those events.
 - Active positions added within the same window.
-- Every card poster, downloaded and resized once and shared by all recipients at that school.
+- Every card poster and club logo, downloaded and resized once and shared by all recipients at that school.
 
 ### Query-count invariant
 
