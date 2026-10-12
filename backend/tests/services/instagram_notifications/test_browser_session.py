@@ -2749,3 +2749,88 @@ def test_already_closed_surplus_window_needs_no_closing(monkeypatch):
     monkeypatch.setattr(browser, "_run_applescript", applescript)
     browser.BrowserTabPool._close_settled_tab("42")
 
+
+
+def _login_pool(monkeypatch, pages, *, preferred="wat2do.ottawa"):
+    """A pool whose primary window shows ``pages`` in turn; records clicks."""
+    clicks, settings = [], {"browser_tab_ids": ["1"], "retrieval_pool_account": preferred}
+    pages = iter(pages)
+    current = {}
+
+    def read(source):
+        assert source == browser._LOGIN_PAGE_SOURCE
+        current.update(page=next(pages, current.get("page")))
+        return json.dumps(current["page"])
+
+    def run(source):
+        clicks.append(source)
+        return "clicked"
+
+    def poll(ready):
+        for _ in range(10):
+            if ready():
+                return
+        raise browser._BrowserPageUnavailable("timed out")
+
+    session = SimpleNamespace(
+        read=read, run=run, poll_until=poll, current_account_username=lambda: "wat2do.ottawa"
+    )
+    monkeypatch.setattr(browser, "BrowserInstagramSession", lambda **kwargs: session)
+    monkeypatch.setattr(browser.BrowserTabPool, "_live_ids", staticmethod(lambda ids: ids))
+    queue = SimpleNamespace(
+        get_setting=lambda key, default=None: settings.get(key, default),
+        set_setting=lambda key, value: settings.update({key: value}),
+    )
+    return browser.BrowserTabPool(queue), clicks, settings
+
+
+def test_login_recovery_clicks_the_saved_profile_and_keeps_one_tap_login(monkeypatch):
+    profiles = ["about", "remove profiles from this browser", "wat2do.ubc", "wat2do.ottawa"]
+    pool, clicks, settings = _login_pool(
+        monkeypatch,
+        [
+            {"state": "loading"},
+            {"state": "profiles", "profiles": profiles},
+            {"state": "profiles", "profiles": profiles},
+            {"state": "save_info"},
+        ],
+    )
+    assert pool.recover_login() == "wat2do.ottawa"
+    assert "window.location.assign" in clicks[0]
+    # The previously active account is preferred, clicked once, then login info is saved.
+    assert clicks[1:] == [
+        browser._click_label_source("wat2do.ottawa"),
+        browser._click_label_source("Save info"),
+    ]
+    # Account identity is re-verified before the next job.
+    assert settings["retrieval_pool_account"] is None
+
+
+def test_login_recovery_falls_back_to_any_saved_wat2do_profile(monkeypatch):
+    pool, clicks, _ = _login_pool(
+        monkeypatch,
+        [{"state": "profiles", "profiles": ["help", "wat2do.ubc"]}, {"state": "logged_in"}],
+        preferred=None,
+    )
+    assert pool.recover_login() == "wat2do.ottawa"
+    assert clicks[1:] == [browser._click_label_source("wat2do.ubc")]
+
+
+@pytest.mark.parametrize(
+    ("state", "message"),
+    [("password", "asks for a password"), ("challenge", "asks to confirm the account")],
+)
+def test_login_recovery_stops_for_a_person_at_a_password_or_challenge(monkeypatch, state, message):
+    pool, clicks, _ = _login_pool(
+        monkeypatch, [{"state": "profiles", "profiles": ["wat2do.ottawa"]}, {"state": state}]
+    )
+    with pytest.raises(browser.BrowserSessionError, match=message) as raised:
+        pool.recover_login()
+    # This pause is not the logged-out one, so recovery is not attempted again.
+    assert not str(raised.value).startswith("Instagram browser requires human account recovery")
+    assert not any("password" in click for click in clicks)
+
+
+def test_click_label_source_only_clicks_one_exact_match():
+    source = browser._click_label_source("Save info")
+    assert '"save info"' in source and 'matches.length !== 1' in source

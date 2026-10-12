@@ -2786,3 +2786,76 @@ def test_a_rerun_digest_uses_the_renamed_school_accounts_current_name(monkeypatc
 
     monkeypatch.setattr(school_service, "get_school_by_recipient_id", offline)
     assert module._with_current_account(job) is job
+
+
+def test_login_recovery_is_spaced_capped_and_unpauses_on_success(monkeypatch, tmp_path):
+    settings = {"paused": module.LOGGED_OUT_PAUSE}
+    queue = SimpleNamespace(
+        get_setting=lambda key, default=None: settings.get(key, default),
+        set_setting=lambda key, value: settings.update({key: value}),
+    )
+    monkeypatch.setattr(module, "BROWSER_LOCK_PATH", str(tmp_path / "browser.lock"))
+    results = iter([module._BrowserPageUnavailable("slow"), "wat2do.ottawa"])
+
+    def recover(self):
+        result = next(results)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    monkeypatch.setattr(
+        module, "BrowserTabPool", lambda queue: SimpleNamespace(recover_login=lambda: recover(None))
+    )
+    now = [1000.0]
+    clock = lambda: now[0]  # noqa: E731
+    assert module.recover_login(queue, now=clock) is False  # Transient: stays paused.
+    assert settings["paused"] == module.LOGGED_OUT_PAUSE
+    now[0] += 60
+    assert module.recover_login(queue, now=clock) is False  # Too soon to try again.
+    now[0] += module.CONTROL.login_recovery_interval_seconds
+    assert module.recover_login(queue, now=clock) is True
+    assert settings["paused"] is False
+    assert len(settings["login_recovery_attempts"]) == 2
+
+    settings["paused"] = "Inspect before retrying"
+    assert module.recover_login(queue, now=clock) is False  # Only logouts recover.
+
+
+def test_login_recovery_gives_way_to_a_person_at_a_password_prompt(monkeypatch, tmp_path):
+    settings = {"paused": "Instagram browser requires human account recovery"}
+    queue = SimpleNamespace(
+        get_setting=lambda key, default=None: settings.get(key, default),
+        set_setting=lambda key, value: settings.update({key: value}),
+    )
+    monkeypatch.setattr(module, "BROWSER_LOCK_PATH", str(tmp_path / "browser.lock"))
+
+    def recover(self):
+        raise module.BrowserSessionError("Instagram needs a person: it asks for a password")
+
+    monkeypatch.setattr(
+        module, "BrowserTabPool", lambda queue: SimpleNamespace(recover_login=lambda: recover(None))
+    )
+    assert module.recover_login(queue, now=lambda: 1000.0) is False
+    assert settings["paused"] == "Instagram needs a person: it asks for a password"
+    # The new pause is not a logout pause, so no further attempts are made.
+    assert module.recover_login(queue, now=lambda: 99999.0) is False
+    assert len(settings["login_recovery_attempts"]) == 1
+
+
+def test_login_recovery_stops_after_the_daily_limit(monkeypatch, tmp_path):
+    limit = module.CONTROL.login_recovery_daily_limit
+    settings = {
+        "paused": module.LOGGED_OUT_PAUSE,
+        # All within the last day, and the latest long enough ago to be allowed by spacing.
+        "login_recovery_attempts": [100000.0 - 80000 + at for at in range(limit)],
+    }
+    queue = SimpleNamespace(
+        get_setting=lambda key, default=None: settings.get(key, default),
+        set_setting=lambda key, value: settings.update({key: value}),
+    )
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda queue: SimpleNamespace(recover_login=lambda: pytest.fail("over the daily limit")),
+    )
+    assert module.recover_login(queue, now=lambda: 100000.0) is False

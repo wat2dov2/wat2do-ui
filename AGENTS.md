@@ -72,6 +72,10 @@ of truth for matching recipient IDs to logged-in usernames.
 Browser credentials must remain inside the browser.
 Never read, copy, print, persist, rotate, or maintain `sessionid` values or browser
 cookie jars, and never create a parallel pool of browser sessions.
+Exception: after Instagram logs Brave out, the worker may log back in by clicking a
+saved wat2do profile on Instagram's own logged-out page and accepting "Save info",
+spaced and capped by controlbox. It never types passwords, and a password prompt or
+challenge waits for a person.
 If serialized browser expansion cannot complete, fail before recording that
 notification's media so the workflow can be rerun safely.
 Other notification workflow runs must remain independently processable.

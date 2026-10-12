@@ -27,6 +27,7 @@ from services.instagram_notifications.browser_session import (
     _BrowserPageUnavailable,
     _BrowserReadCleanupPending,
     _BrowserTabUnavailable,
+    LOGGED_OUT_PAUSE,
     _PinnedBraveJavascriptRunner,
     school_account_username,
 )
@@ -598,6 +599,44 @@ def _process_batch(
             raise storage_error
 
 
+def recover_login(queue: BrowserJobQueue, *, now: Callable[[], float] = time.time) -> bool:
+    """Log back in after Instagram logs Brave out; True once browser work may resume.
+
+    Spaced and capped so a flagged browser is not hammered with logins. A
+    password prompt or challenge replaces the pause with one only a person clears.
+    """
+    paused = queue.get_setting("paused", False)
+    # Every logout pause shares this prefix; a challenge is recognized on the page.
+    if not isinstance(paused, str) or not paused.startswith(LOGGED_OUT_PAUSE.split(":")[0]):
+        return False
+    attempts = [
+        at for at in queue.get_setting("login_recovery_attempts", []) if now() - at < 86400
+    ]
+    if len(attempts) >= CONTROL.login_recovery_daily_limit or (
+        attempts and now() - attempts[-1] < CONTROL.login_recovery_interval_seconds
+    ):
+        return False
+    with open(BROWSER_LOCK_PATH, "a+") as browser_lock:
+        try:
+            fcntl.flock(browser_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return False
+        queue.set_setting("login_recovery_attempts", [*attempts, now()])
+        try:
+            username = BrowserTabPool(queue).recover_login()
+        except (TimeoutError, _BrowserAutomationTransient, _BrowserPageUnavailable,
+                _BrowserTabUnavailable) as exc:
+            log.warning("Instagram login recovery did not finish (%s); retrying later", exc)
+            return False
+        except BrowserSessionError as exc:
+            log.error("Instagram login recovery needs a person: %s", exc)
+            queue.set_setting("paused", str(exc))
+            return False
+        log.warning("Logged back in to Instagram as %s after a logout", username)
+        queue.set_setting("paused", False)
+        return True
+
+
 def maintain_tab_pool(queue: BrowserJobQueue) -> bool:
     """Admit work only after restoring the configured pool without changing accounts."""
     if queue.get_setting("paused", False) or queue.is_rate_limited():
@@ -788,6 +827,8 @@ def run_worker(queue: BrowserJobQueue, *, once: bool = False, collect: bool = Tr
                             for collector in collectors:
                                 collector.start()
                     if time.monotonic() >= next_tab_check:
+                        if recover_login(queue):
+                            next_tab_check = 0.0
                         tab_pool_ready = maintain_tab_pool(queue)
                         next_tab_check = time.monotonic() + (
                             CONTROL.tab_health_interval_seconds

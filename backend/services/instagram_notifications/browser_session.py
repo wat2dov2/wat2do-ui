@@ -30,6 +30,22 @@ _NAVIGATION_LOCK = threading.Lock()
 _LAST_NAVIGATION_AT: float | None = None
 _VIEWPORT_SOURCE = "JSON.stringify({width: window.innerWidth, height: window.innerHeight})"
 _LOGGED_OUT_SOURCE = """String(!!document.querySelector('a[href^="/accounts/login"]'))"""
+_INSTAGRAM_HOME_URL = "https://www.instagram.com/"
+# Instagram's own logged-out screen: its saved profiles, a one-tap "save login
+# info" step, or a password/challenge only a person can answer.
+_LOGIN_PAGE_SOURCE = """JSON.stringify((() => {
+ const path = window.location.pathname;
+ if (/^\\/(challenge|checkpoint|accounts\\/suspended)/.test(path)) return {state: "challenge"};
+ if (document.querySelector('a[href*="/direct/inbox"]')) {
+  return {state: path.startsWith("/accounts/onetap") ? "save_info" : "logged_in"};
+ }
+ if (document.querySelector('input[type="password"]')) return {state: "password"};
+ const label = element => (element.innerText || element.textContent || "").trim().toLowerCase();
+ const profiles = [...document.querySelectorAll('button,[role="button"],a')]
+  .map(label).filter(text => /^[a-z0-9._]{1,30}$/.test(text));
+ return {state: profiles.length ? "profiles" : "loading", profiles};
+})())"""
+LOGGED_OUT_PAUSE = "Instagram browser requires human account recovery: log in to Instagram in Brave"
 _PAGE_RESPONSE_SOURCE = """JSON.stringify({
  path: window.location.pathname,
  rate_limited: document.readyState === "complete" &&
@@ -1039,6 +1055,21 @@ def _recipient_is_active_source(recipient_id: str) -> str:
 """.strip()
 
 
+def _click_label_source(text: str) -> str:
+    """Click the one button on the page labelled exactly ``text``."""
+    return f"""
+(() => {{
+  const text = {json.dumps(text.lower())};
+  const label = element => (element.innerText || element.textContent || "").trim().toLowerCase();
+  const matches = [...document.querySelectorAll('button,[role="button"],a')]
+    .filter(element => label(element) === text);
+  if (matches.length !== 1) return matches.length ? "ambiguous" : "missing";
+  matches[0].click();
+  return "clicked";
+}})()
+""".strip()
+
+
 def _close_account_chooser_source() -> str:
     return """
 (() => {
@@ -1543,9 +1574,7 @@ class BrowserTabPool:
             if username is None and session.read(_LOGGED_OUT_SOURCE) == "true":
                 # A logged-out page never gains an identity; only a person can
                 # log in. Checked on every poll: waiting first spends the budget.
-                raise BrowserSessionError(
-                    "Instagram browser requires human account recovery: log in to Instagram in Brave"
-                )
+                raise BrowserSessionError(LOGGED_OUT_PAUSE)
             return username is not None
 
         try:
@@ -1555,6 +1584,69 @@ class BrowserTabPool:
         if username is None:
             raise TimeoutError("Instagram account identity is temporarily unreadable")
         return username
+
+    def recover_login(self) -> str:
+        """Log back in through Instagram's saved profiles, the way a person would.
+
+        Clicks a saved wat2do profile and accepts "save login info" so the next
+        recovery works the same way. Never types a password or touches cookies;
+        a password prompt or challenge stops for a person.
+        """
+        ids = self._live_ids(self._registered_ids())
+        if not ids:
+            raise _BrowserTabUnavailable("No worker Instagram window is open")
+        session = BrowserInstagramSession(
+            javascript_runner=_PinnedBraveJavascriptRunner(ids[0]),
+            job_timeout_seconds=_CONTROL.login_recovery_timeout_seconds,
+        )
+        # Instagram's home page lists the saved profiles when logged out.
+        session.run(f"window.location.assign({json.dumps(_INSTAGRAM_HOME_URL)}); 1")
+        preferred = self.queue.get_setting("retrieval_pool_account")
+        clicked: list[str] = []
+        outcome = ""
+
+        def settled() -> bool:
+            nonlocal outcome
+            try:
+                page = json.loads(session.read(_LOGIN_PAGE_SOURCE))
+            except json.JSONDecodeError:
+                return False
+            outcome = page.get("state", "")
+            if outcome in {"logged_in", "password", "challenge"}:
+                return True
+            if outcome == "save_info":
+                # Keeps one-tap login available; logged in either way.
+                session.run(_click_label_source("Save info"))
+                return True
+            if outcome == "profiles" and not clicked:
+                profiles = [
+                    profile
+                    for profile in page.get("profiles", [])
+                    if _WAT2DO_ACCOUNT_PATTERN.fullmatch(profile)
+                ]
+                if profiles:
+                    choice = preferred if preferred in profiles else profiles[0]
+                    if session.run(_click_label_source(choice)) == "clicked":
+                        clicked.append(choice)
+            return False
+
+        session.poll_until(settled)
+        if outcome == "password":
+            raise BrowserSessionError(
+                "Instagram needs a person: it asks for a password to log back in"
+            )
+        if outcome == "challenge":
+            raise BrowserSessionError("Instagram needs a person: it asks to confirm the account")
+        username = None
+
+        def identified() -> bool:
+            nonlocal username
+            username = session.current_account_username()
+            return username is not None
+
+        session.poll_until(identified)
+        self.queue.set_setting("retrieval_pool_account", None)
+        return cast(str, username)
 
     def prepare(self, job, count: int) -> tuple[list[BrowserInstagramSession], str]:
         if count < 1:
