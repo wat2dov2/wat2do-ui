@@ -113,11 +113,17 @@ def render_event_reminder_text(
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
+    day, times = _local_occurrence(event, tz)
     return "\n".join(
         [
             subject,
             "",
-            _text_event(event, tz, frontend_url),
+            "You're going to this event. It starts in about an hour.",
+            "",
+            f"- When: {day}, {times}",
+            f"- Where: {event.get('location') or 'Location TBA'}",
+            "",
+            f"View the event: {_event_url(event, frontend_url)}",
             "",
             f"Manage email preferences: {preferences_url}",
             f"Unsubscribe from event reminders: {unsubscribe_url}",
@@ -131,19 +137,25 @@ def render_event_reminder_html(
     *,
     subject: str,
     event: dict,
+    image_src: str | None,
     tz: ZoneInfo,
     frontend_url: str,
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
-    content = (
-        f'<p style="margin:0 0 18px;color:{_EMAIL_THEME["muted_foreground"]};'
-        'font:15px/1.6 sans-serif;">You marked this event as Going.</p>'
-        + _event_section("Coming up", [event], tz, frontend_url)
-    )
+    day, times = _local_occurrence(event, tz)
     return _email_shell(
         subject=subject,
-        content=content,
+        content=_event_spotlight(
+            intro="You're going to this event. It starts in about an hour.",
+            event=event,
+            image_src=image_src,
+            frontend_url=frontend_url,
+            rows=[
+                ("When", None, f"{day}, {times}"),
+                ("Where", None, str(event.get("location") or "Location TBA")),
+            ],
+        ),
         preferences_url=preferences_url,
         unsubscribe_url=unsubscribe_url,
     )
@@ -174,37 +186,6 @@ def _email_shell(
         f'href="{escape(unsubscribe_url, quote=True)}">Unsubscribe</a><br>'
         "wat2do helps students discover campus events."
         "</p></div></div>"
-    )
-
-
-def _event_section(
-    title: str,
-    events: list[dict],
-    tz: ZoneInfo,
-    frontend_url: str,
-) -> str:
-    cards = "".join(_event_card(event, tz, frontend_url) for event in events)
-    return (
-        f'<h2 style="margin:24px 0 12px;color:{_EMAIL_THEME["foreground"]};'
-        'font:700 19px sans-serif;">'
-        f"{escape(title)}</h2>{cards}"
-    )
-
-
-def _event_card(event: dict, tz: ZoneInfo, frontend_url: str) -> str:
-    event_url = _event_url(event, frontend_url)
-    title = escape(str(event.get("title") or "Untitled event"))
-    location = escape(str(event.get("location") or "Location TBA"))
-    date_label, time_label = _format_event_date_time(event, tz)
-    return (
-        f'<a style="display:block;margin:0 0 10px;padding:14px;'
-        f"background:{_EMAIL_THEME['surface_elevated']};"
-        f"border:1px solid {_EMAIL_THEME['border']};border-radius:12px;"
-        f'color:{_EMAIL_THEME["foreground"]};text-decoration:none;" '
-        f'href="{escape(event_url, quote=True)}">'
-        f'<strong style="font:700 16px sans-serif;">{title}</strong><br>'
-        f'<span style="color:{_EMAIL_THEME["muted_foreground"]};font:13px/1.5 sans-serif;">'
-        f"{escape(date_label)} at {escape(time_label)} &middot; {location}</span></a>"
     )
 
 
@@ -291,7 +272,7 @@ def _club_line(club_name: str | None, club_logo_src: str | None) -> str:
     if not club_name:
         return ""
     logo = (
-        f'<td width="28" valign="middle" style="width:28px;padding:0 8px 0 0;">'
+        f'<td width="20" valign="middle" style="width:20px;padding:0 6px 0 0;">'
         f'<img src="{escape(club_logo_src, quote=True)}" alt="" width="20" height="20" '
         f'style="display:block;width:20px;height:20px;border:0;border-radius:10px;"></td>'
         if club_logo_src
@@ -400,6 +381,29 @@ def render_event_change_html(
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
+    return _email_shell(
+        subject=subject,
+        content=_event_spotlight(
+            intro="You're going to this event. Here's what changed.",
+            event=event,
+            image_src=image_src,
+            frontend_url=frontend_url,
+            rows=_describe_changes(diff, tz),
+        ),
+        preferences_url=preferences_url,
+        unsubscribe_url=unsubscribe_url,
+    )
+
+
+def _event_spotlight(
+    *,
+    intro: str,
+    event: dict,
+    image_src: str | None,
+    frontend_url: str,
+    rows: list[tuple[str, str | None, str | None]],
+) -> str:
+    """One event's poster, title, detail rows, and link: the body of single-event emails."""
     event_url = escape(_event_url(event, frontend_url), quote=True)
     title = escape(str(event.get("title") or "Untitled event"))
     image = (
@@ -409,31 +413,22 @@ def render_event_change_html(
         if image_src
         else ""
     )
-    rows = "".join(
-        _change_row_html(label, old, new) for label, old, new in _describe_changes(diff, tz)
-    )
-    content = (
+    return (
         f'<p style="margin:0 0 18px;color:{_EMAIL_THEME["muted_foreground"]};'
-        "font:15px/1.6 sans-serif;\">You're going to this event. Here's what changed.</p>"
+        f'font:15px/1.6 sans-serif;">{escape(intro)}</p>'
         f"{image}"
         f'<a href="{event_url}" style="color:{_EMAIL_THEME["foreground"]};'
         f'text-decoration:none;"><h2 style="margin:0 0 8px;font:700 19px sans-serif;">'
         f"{title}</h2></a>"
-        f"{rows}"
-        f'<a href="{event_url}" style="display:inline-block;margin:20px 0 0;padding:12px 20px;'
+        + "".join(_detail_row_html(label, old, new) for label, old, new in rows)
+        + f'<a href="{event_url}" style="display:inline-block;margin:20px 0 0;padding:12px 20px;'
         f"background:{_EMAIL_THEME['foreground']};color:{_EMAIL_THEME['background']};"
         'border-radius:999px;font:700 14px sans-serif;text-decoration:none;">'
         "View event on wat2do</a>"
     )
-    return _email_shell(
-        subject=subject,
-        content=content,
-        preferences_url=preferences_url,
-        unsubscribe_url=unsubscribe_url,
-    )
 
 
-def _change_row_html(label: str, old: str | None, new: str | None) -> str:
+def _detail_row_html(label: str, old: str | None, new: str | None) -> str:
     muted = _EMAIL_THEME["muted_foreground"]
     struck = (
         f'<span style="color:{muted};text-decoration:line-through;">{escape(old)}</span>'

@@ -566,6 +566,11 @@ def test_event_reminder_dispatch_uses_preferences_and_selected_occurrences(monke
         "get_enabled_user_ids",
         lambda _ids, _notification_type: {USER_ID},
     )
+    poster = InlineImage("event-image", "event-image.jpg", "image/jpeg", b"x")
+    downloads = []
+    monkeypatch.setattr(
+        event_reminder, "event_hero_image", lambda url: downloads.append(url) or poster
+    )
     send = MagicMock(return_value=True)
     monkeypatch.setattr(event_reminder, "_send_event_reminder", send)
 
@@ -578,7 +583,8 @@ def test_event_reminder_dispatch_uses_preferences_and_selected_occurrences(monke
         "failed": 0,
         "skipped": 0,
     }
-    send.assert_called_once_with(user=_user(), reminder=reminder)
+    send.assert_called_once_with(user=_user(), reminder=reminder, image=poster)
+    assert downloads == [None]
 
 
 def test_event_reminder_send_is_idempotent_per_occurrence_start(monkeypatch):
@@ -594,7 +600,11 @@ def test_event_reminder_send_is_idempotent_per_occurrence_start(monkeypatch):
         "event": _event(title="<Tea>"),
     }
 
-    assert event_reminder._send_event_reminder(user=_user(), reminder=reminder) is True
+    poster = InlineImage("event-image", "event-image.jpg", "image/jpeg", b"x")
+
+    assert (
+        event_reminder._send_event_reminder(user=_user(), reminder=reminder, image=poster) is True
+    )
 
     claim.assert_called_once_with(
         user_id=USER_ID,
@@ -606,6 +616,21 @@ def test_event_reminder_send_is_idempotent_per_occurrence_start(monkeypatch):
     assert "&lt;Tea&gt;" in message.body_html
     assert "https://uwaterloo.wat2do.io/events/42" in message.body_html
     assert message.headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
+    assert '<img src="cid:event-image"' in message.body_html
+    assert [image.content_id for image in message.inline_images] == ["wat2do-logo", "event-image"]
+    assert "- When: Fri, May 1, 11 AM" in message.body_text
+    assert "- Where: SLC" in message.body_text
+
+
+def test_event_reminder_rendering_failure_claims_no_delivery(monkeypatch):
+    claim = MagicMock()
+    monkeypatch.setattr(event_reminder, "claim_delivery", claim)
+    monkeypatch.setattr(event_reminder, "unsubscribe_url", MagicMock(side_effect=RuntimeError))
+    reminder = {"user_id": USER_ID, "event_date_id": "d", "event": _event()}
+
+    with pytest.raises(RuntimeError):
+        event_reminder._send_event_reminder(user=_user(), reminder=reminder, image=None)
+    claim.assert_not_called()
 
 
 _DIGEST = morning_email._SchoolDigest(
