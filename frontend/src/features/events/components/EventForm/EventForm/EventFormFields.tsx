@@ -14,7 +14,7 @@ import { FormGrid, Stack } from "@/shared/layout";
 import { Switch } from "@/shared/ui/switch";
 import { Button } from "@/shared/ui/button";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
-import { translateCategory } from "@/shared/utils/event";
+import { isVirtualLocation, translateCategory } from "@/shared/utils/event";
 import { FormDateTimePicker, FormInput, FormSelect, FormTextarea } from "@/shared/ui/form-field";
 import { TagInput } from "@/shared/ui/tag-input";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
@@ -135,6 +135,19 @@ export function EventFormFields() {
             labelIcon={<LocationPin className="size-4" />}
             error={errors.location}
             touched={touched.location}
+          />
+
+          <FormInput
+            name="map_location"
+            label={t("forms.mapLocationLabel")}
+            required={!isVirtualLocation(formData.location)}
+            value={formData.map_location}
+            onChange={(value) => updateField("map_location", value as string)}
+            onBlur={() => handleBlur("map_location")}
+            placeholder={t("forms.mapLocationPlaceholder")}
+            labelIcon={<LocationPin className="size-4" />}
+            error={errors.map_location}
+            touched={touched.map_location}
           />
         </FieldGroup>
       </FieldSet>

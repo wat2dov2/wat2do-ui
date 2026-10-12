@@ -27,8 +27,12 @@ export function useEventForm(options: UseEventFormOptions) {
 
   // Existing unlinked events remain editable; new events require a club.
   const rules = useMemo<EventFormRules>(
-    () => ({ requireClub: !isEditMode || initialData?.club_id != null }),
-    [isEditMode, initialData?.club_id],
+    () => ({
+      requireClub: !isEditMode || initialData?.club_id != null,
+      initialLocation: isEditMode ? initialData?.location ?? "" : "",
+      initialMapLocation: isEditMode ? initialData?.map_location ?? "" : "",
+    }),
+    [isEditMode, initialData?.club_id, initialData?.location, initialData?.map_location],
   );
   const validate = useCallback(
     (data: EventFormData, touched: Record<string, boolean>) =>
@@ -40,6 +44,7 @@ export function useEventForm(options: UseEventFormOptions) {
           clubRequired: t("forms.clubRequired"),
           occurrenceRequired: t("forms.occurrenceRequired"),
           locationRequired: t("forms.locationRequired"),
+          mapLocationRequired: t("forms.mapLocationRequired"),
         },
         rules,
       ) as Record<string, string>,

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Annotated
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from core.constants import (
     EVENT_CATEGORIES,
@@ -167,6 +167,11 @@ class EventCreate(EventDiscoveryFields):
     title: str = Field(..., min_length=1, max_length=MAX_EVENT_TITLE_LENGTH)
     description: str | None = Field(default=None, max_length=MAX_EVENT_DESCRIPTION_LENGTH)
     location: str = Field(..., min_length=1, max_length=MAX_EVENT_LOCATION_LENGTH)
+    # ``location`` is shown exactly as the host wrote it; ``map_location`` is
+    # its geocodable form for the map, null when the event has no map place.
+    map_location: str | None = Field(
+        default=None, min_length=1, max_length=MAX_EVENT_LOCATION_LENGTH
+    )
     # Occurrences live in the event_dates table - one row per occurrence,
     # one events row per logical event. Per-occurrence dtstart/dtend
     # validation lives on OccurrenceCreate; the only constraint here is
@@ -209,6 +214,9 @@ class EventUpdate(EventDiscoveryFields):
     title: str | None = Field(default=None, max_length=MAX_EVENT_TITLE_LENGTH)
     description: str | None = Field(default=None, max_length=MAX_EVENT_DESCRIPTION_LENGTH)
     location: str | None = Field(default=None, max_length=MAX_EVENT_LOCATION_LENGTH)
+    map_location: str | None = Field(
+        default=None, min_length=1, max_length=MAX_EVENT_LOCATION_LENGTH
+    )
     # ``None`` (the default) leaves occurrences unchanged. An empty list
     # is rejected - every event must have at least one occurrence - so
     # callers wanting to clear dates must instead delete the event.
@@ -240,6 +248,13 @@ class EventUpdate(EventDiscoveryFields):
     @classmethod
     def _safe_handle(cls, v: str | None) -> str | None:
         return _validate_optional_handle(v)
+
+    @model_validator(mode="after")
+    def _map_location_follows_location(self) -> "EventUpdate":
+        # A new venue invalidates the old map placement, so the two change together.
+        if "location" in self.model_fields_set and "map_location" not in self.model_fields_set:
+            raise ValueError("map_location is required when location changes")
+        return self
 
 
 class EventTimeMeta(BaseModel):
@@ -278,6 +293,7 @@ class EventSummaryResponse(EventDiscoveryFields):
     title: str
     description: str | None = None
     location: str | None = None
+    map_location: str | None = None
     occurrences: list[OccurrenceSummaryResponse] = Field(default_factory=list)
     price: float | None = None
     food: list[str] | None = None
@@ -335,6 +351,7 @@ class EventResponse(EventDiscoveryFields):
     title: str
     description: str | None = None
     location: str | None = None
+    map_location: str | None = None
     occurrences: list[OccurrenceResponse] = Field(default_factory=list)
     price: float | None = None
     food: list[str] | None = None
@@ -368,6 +385,7 @@ class EventPublicResponse(EventDiscoveryFields):
     title: str
     description: str | None = None
     location: str | None = None
+    map_location: str | None = None
     occurrences: list[OccurrenceResponse] = Field(default_factory=list)
     price: float | None = None
     food: list[str] | None = None

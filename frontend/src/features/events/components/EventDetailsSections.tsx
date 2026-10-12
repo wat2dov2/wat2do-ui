@@ -412,7 +412,7 @@ function EventMapSection({
   event: Event;
   school: string | null | undefined;
 }) {
-  return <EventLocationMap location={event.location} school={event.school ?? school} />;
+  return <EventLocationMap location={event.map_location} school={event.school ?? school} />;
 }
 
 /** Shared live attendance summary for the drawer and event page. */

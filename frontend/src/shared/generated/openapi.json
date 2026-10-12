@@ -8777,6 +8777,19 @@
             "minLength": 1,
             "title": "Location"
           },
+          "map_location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Location"
+          },
           "occurrences": {
             "items": {
               "$ref": "#/components/schemas/OccurrenceCreate"
@@ -9108,6 +9121,17 @@
             ],
             "title": "Location"
           },
+          "map_location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Location"
+          },
           "occurrences": {
             "items": {
               "$ref": "#/components/schemas/OccurrenceResponse"
@@ -9376,6 +9400,17 @@
               }
             ],
             "title": "Location"
+          },
+          "map_location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Location"
           },
           "occurrences": {
             "items": {
@@ -9674,6 +9709,17 @@
             ],
             "title": "Location"
           },
+          "map_location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Location"
+          },
           "occurrences": {
             "items": {
               "$ref": "#/components/schemas/OccurrenceSummaryResponse"
@@ -9970,6 +10016,19 @@
               }
             ],
             "title": "Location"
+          },
+          "map_location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Location"
           },
           "occurrences": {
             "anyOf": [

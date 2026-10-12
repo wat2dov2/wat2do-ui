@@ -629,6 +629,7 @@ SELECT md5('wat2do-local-event-submission-' || fixture.slug || '-' || fixture.sl
         'title', format('Demo %s Event Submission %s', fixture.slug, fixture.slot),
         'description', 'Synthetic local submission for testing cross-school moderation.',
         'location', format('%s Student Centre', fixture.slug),
+        'map_location', format('%s Student Centre', fixture.slug),
         'club_id', club.id,
         'category', 'Games & Recreation',
         'price', 0,
@@ -716,3 +717,6 @@ WHERE account_key = 'uwaterloo' AND status = 'ready_for_review';
 UPDATE public.instagram_publish_batches
 SET instagram_user_id = NULL
 WHERE account_key = 'ulaval' AND status = 'ready_for_review';
+
+-- Seeded venues are plain building names that the map can search as written.
+UPDATE public.events SET map_location = location WHERE map_location IS NULL;

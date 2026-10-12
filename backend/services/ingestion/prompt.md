@@ -64,7 +64,7 @@ Before writing anything, look up this club's upcoming events and their dates.
 When the publishing club has an id, start with:
 
 ```
-psql -c "SELECT e.id, e.title, e.location, e.cancelled, e.source_url, string_agg(to_char(d.dtstart_utc AT TIME ZONE '{{timezone}}', 'Dy YYYY-MM-DD HH24:MI') || ' [' || d.id || ']', ', ' ORDER BY d.dtstart_utc) AS dates FROM events e JOIN event_dates d ON d.event_id = e.id WHERE e.club_id = <club id> AND d.dtstart_utc > now() - interval '1 day' GROUP BY e.id ORDER BY min(d.dtstart_utc) LIMIT 40"
+psql -c "SELECT e.id, e.title, e.location, e.map_location, e.cancelled, e.source_url, string_agg(to_char(d.dtstart_utc AT TIME ZONE '{{timezone}}', 'Dy YYYY-MM-DD HH24:MI') || ' [' || d.id || ']', ', ' ORDER BY d.dtstart_utc) AS dates FROM events e JOIN event_dates d ON d.event_id = e.id WHERE e.club_id = <club id> AND d.dtstart_utc > now() - interval '1 day' GROUP BY e.id ORDER BY min(d.dtstart_utc) LIMIT 40"
 ```
 
 Also search the school for the same activity under another host or a slightly different title when it could be a duplicate, for example `WHERE e.school_id = {{school_id}} AND e.title ILIKE '%jam%'`.
@@ -86,7 +86,7 @@ Apply exactly the change the source supports, in one transaction per logical cha
   The other dates of the series stay.
 - **Whole event cancelled:** set `cancelled = true` on the event.
   Never delete an event row.
-- **Location changed for the whole event:** update `events.location`.
+- **Location changed for the whole event:** update `events.location` and `events.map_location` together.
 - **Location changed for only one date of a series:** delete that date from the series and insert a separate event for that date with the new location, copying the series' other fields.
 - **Schedule replaced** (for example "jams now run Thursdays instead of Wednesdays"): update or replace the future dates to match.
 - **New hiring position:** insert one `positions` row per distinct open role.
@@ -105,10 +105,11 @@ Example insert of a weekly event with two dates:
 psql -v ON_ERROR_STOP=1 <<'SQL'
 BEGIN;
 WITH e AS (
-  INSERT INTO events (title, description, location, club, club_id, ig_handle, school_id, source_url,
+  INSERT INTO events (title, description, location, map_location, club, club_id, ig_handle, school_id, source_url,
     source_image_url, ingestion_source, price, food, registration, category,
     competition, employers_on_campus, free_food_on_campus, sports_game, campus_season_ids)
-  VALUES ($t$Drop-In Jam$t$, $t$Weekly improv jam.$t$, $t$AL 113$t$, $t$Improv Club, UW$t$, 6805,
+  VALUES ($t$Drop-In Jam$t$, $t$Weekly improv jam.$t$, $t$AL 113$t$,
+    $t$Arts Lecture Hall, University of Waterloo, 200 University Ave W, Waterloo, ON$t$, $t$Improv Club, UW$t$, 6805,
     'uwimprovisation', {{school_id}}, '{{source_url}}', '<poster reference>',
     '{{ingestion_source}}', 0, '[]', false, 'Arts & Culture', NULL, NULL, NULL, NULL, NULL)
   RETURNING id
@@ -132,6 +133,7 @@ Columns:
 - `description`: one short sentence summarising the event.
   For rows you create, the system replaces it with the original caption afterwards.
 - `location`: required. See the location rules below.
+- `map_location`: where the event is on a map, written so a map search finds it. See the location rules below.
 - `club`: the hosting club's name as printed in the source, at most 255 characters.
 - `club_id`: the host's `clubs.id` at this school when it is registered, otherwise NULL.
 - `ig_handle`: the host's Instagram handle without "@", or NULL.
@@ -209,6 +211,15 @@ When no registered club hosts a position, skip that position.
   For hybrid events keep the physical venue and the online format.
 - Keep an explicit "TBA", "TBD" or "location shared after registration".
   Never invent a venue or use the school name or "On campus".
+- `location` is shown to students exactly as the source writes it, so never expand or reword it.
+- `map_location` is that same place written for a map search: the building or venue name and its street address, city and province or state.
+  Drop rooms, floors and directions ("SN-2109, Science Building" becomes "Science Building, Memorial University, 230 Elizabeth Ave, St. John's, NL").
+  Keep the venue in the source's words: expand only an abbreviation or room code ("SLC 2156" is "Student Life Centre"), never lengthen a name already written out, and never swap it for a different building.
+  Use your own knowledge of {{school}} for its building names and addresses; never place the event anywhere the source does not say.
+  For several venues, use the first physical one.
+  For a named venue you cannot place, write its name with the school and city.
+  Use NULL for an online event, a TBA venue, a whole city or region, or a short code you cannot decode.
+  When you change `location`, always rewrite `map_location` in the same update.
 - When neither a location nor an online format is evidenced, do not create the event.
   An update to a listed event may still change its dates or cancel it.
 

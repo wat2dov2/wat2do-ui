@@ -47,6 +47,7 @@ export function buildPreviewEvent({
     id,
     title: formData.title || fallbackTitle,
     location: formData.location,
+    map_location: formData.map_location || null,
     occurrences: formData.occurrences.flatMap((occurrence, index) => {
       try {
         return [{

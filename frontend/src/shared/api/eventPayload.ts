@@ -24,6 +24,7 @@ export function buildEventPayload(eventData: EventFormData): ApiEventCreate {
     title: eventData.title,
     description: eventData.description || null,
     location: eventData.location,
+    map_location: eventData.map_location.trim() || null,
     occurrences: submittedOccurrences(eventData).map((occurrence) => buildEventOccurrence(occurrence, eventData.timeZone)),
     price: eventData.price || null,
     food: eventData.food?.length ? eventData.food : null,

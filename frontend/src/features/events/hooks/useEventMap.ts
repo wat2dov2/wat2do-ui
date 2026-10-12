@@ -13,8 +13,9 @@ export interface EventMapVenue {
 export function useEventMap(events: Event[], allEvents: Event[], schoolSlug: string) {
   const { schoolBySlug } = useSchoolDirectory();
   const school = schoolBySlug.get(schoolSlug);
+  // The map searches each event's map location; the original location is display text.
   const locations = useMemo(() => allEvents.flatMap(event => {
-    const location = event.location?.trim();
+    const location = event.map_location?.trim();
     return location && (venueName(location) || getEventStreetAddress(location)) ? [location] : [];
   }), [allEvents]);
   const query = useQuery({
@@ -24,7 +25,7 @@ export function useEventMap(events: Event[], allEvents: Event[], schoolSlug: str
   const venues = useMemo(() => {
     const byCoordinates = new Map<string, EventMapVenue>();
     for (const event of events) {
-      const coordinates = query.data?.locations[event.location?.trim() ?? ""];
+      const coordinates = query.data?.locations[event.map_location?.trim() ?? ""];
       if (!coordinates) continue;
       const key = coordinates.join(",");
       const venue = byCoordinates.get(key);

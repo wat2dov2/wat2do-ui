@@ -199,8 +199,9 @@ test("map keeps overlapping thumbnail stacks near every viewport edge", async ()
 test("map filters the loaded events without changing its location query", () => {
   const filename = new URL("../src/features/events/hooks/useEventMap.ts", import.meta.url);
   const source = ts.transpileModule(readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2023 } }).outputText;
-  const listing = { id: 1, location: "Student Life Centre" } as Event;
-  const second = { id: 2, location: "Davis Centre" } as Event;
+  // The map searches each map location, never the display location.
+  const listing = { id: 1, location: "SLC 3223", map_location: "Student Life Centre" } as Event;
+  const second = { id: 2, location: "DC 1350", map_location: "Davis Centre" } as Event;
   const allEvents = [listing, second];
   const options: { locations: string[]; enabled: boolean }[] = [];
   const exports = {} as { useEventMap: (events: Event[], allEvents: Event[], school: string) => { mappedCount: number; venues: unknown[]; center: number[] } };

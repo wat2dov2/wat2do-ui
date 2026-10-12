@@ -57,6 +57,7 @@ export function eventToFormData(event: Event, timeZone: string): EventFormData {
     description: event.description || "",
     occurrences: eventOccurrencesToFormOccurrences(event, timeZone),
     location: event.location ?? "",
+    map_location: event.map_location ?? "",
     category: getEventCategory(event),
     price: event.price ?? 0,
     food: event.food || [],

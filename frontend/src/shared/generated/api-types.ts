@@ -2288,6 +2288,8 @@ export interface components {
             description?: string | null;
             /** Location */
             location: string;
+            /** Map Location */
+            map_location?: string | null;
             /** Occurrences */
             occurrences: components["schemas"]["OccurrenceCreate"][];
             /** Price */
@@ -2421,6 +2423,8 @@ export interface components {
             description?: string | null;
             /** Location */
             location?: string | null;
+            /** Map Location */
+            map_location?: string | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceResponse"][];
             /** Price */
@@ -2517,6 +2521,8 @@ export interface components {
             description?: string | null;
             /** Location */
             location?: string | null;
+            /** Map Location */
+            map_location?: string | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceResponse"][];
             /** Price */
@@ -2637,6 +2643,8 @@ export interface components {
             description?: string | null;
             /** Location */
             location?: string | null;
+            /** Map Location */
+            map_location?: string | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceSummaryResponse"][];
             /** Price */
@@ -2724,6 +2732,8 @@ export interface components {
             description?: string | null;
             /** Location */
             location?: string | null;
+            /** Map Location */
+            map_location?: string | null;
             /** Occurrences */
             occurrences?: components["schemas"]["OccurrenceUpdate"][] | null;
             /** Price */

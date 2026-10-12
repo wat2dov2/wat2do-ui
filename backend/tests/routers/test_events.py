@@ -282,7 +282,9 @@ def test_update_event_material_diff_triggers_enqueue(authenticated_client, monke
     mock_enqueue = MagicMock(return_value=0)
     monkeypatch.setattr(event_change, "enqueue_event_change", mock_enqueue)
 
-    resp = authenticated_client.patch("/events/1", json={"location": "There"})
+    resp = authenticated_client.patch(
+        "/events/1", json={"location": "There", "map_location": "There, Waterloo, ON"}
+    )
     assert resp.status_code == 200
     mock_enqueue.assert_called_once()
     args, _ = mock_enqueue.call_args
@@ -326,7 +328,9 @@ def test_update_event_enqueue_failure_does_not_break_update(authenticated_client
         MagicMock(side_effect=RuntimeError("provider down")),
     )
 
-    resp = authenticated_client.patch("/events/1", json={"location": "There"})
+    resp = authenticated_client.patch(
+        "/events/1", json={"location": "There", "map_location": "There, Waterloo, ON"}
+    )
     assert resp.status_code == 200  # update still succeeded
 
 
@@ -742,3 +746,30 @@ def test_featured_is_read_only(request, client_fixture, monkeypatch):
     response = client.patch("/events/1", json={"featured": True})
     assert response.status_code == 422
     update.assert_not_called()
+
+
+def test_update_event_location_requires_map_location(authenticated_client, monkeypatch):
+    """A new venue must come with its new map location, never alone."""
+    update = MagicMock()
+    monkeypatch.setattr(event_service, "update_event", update)
+
+    resp = authenticated_client.patch("/events/1", json={"location": "There"})
+
+    assert resp.status_code == 422
+    update.assert_not_called()
+
+
+def test_map_location_is_optional_and_never_empty():
+    from schemas.event import EventCreate, EventUpdate
+
+    base = {
+        "title": "Jam",
+        "location": "Online",
+        "club_id": 7,
+        "occurrences": [{"dtstart_utc": "2026-10-21T23:00:00Z"}],
+    }
+    assert EventCreate(**base).map_location is None
+    assert EventCreate(**base, map_location="AL, Waterloo, ON").map_location == "AL, Waterloo, ON"
+    assert EventUpdate(map_location="AL, Waterloo, ON").map_location == "AL, Waterloo, ON"
+    with pytest.raises(ValueError):
+        EventCreate(**base, map_location="")

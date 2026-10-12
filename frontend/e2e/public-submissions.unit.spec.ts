@@ -15,7 +15,7 @@ test("public submission APIs send explicit email without inventing ownership", a
   };
   try {
     await submitEventForReview({
-      club_id: 7, title: "Visitor Event", description: "Details", location: "Campus",
+      club_id: 7, title: "Visitor Event", description: "Details", location: "Campus", map_location: "Campus",
       timeZone: "America/Toronto", occurrences: [{ dtstart_local: "2026-12-01T12:00", dtend_local: "" }],
       price: 0, food: [], registration: false, category: "Arts & Culture",
       source_url: "https://example.com/event", source_image_url: "https://example.com/flyer.png",

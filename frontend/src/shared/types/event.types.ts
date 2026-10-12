@@ -56,6 +56,8 @@ export interface EventFormData {
   description: string;
   occurrences: EventFormOccurrence[];
   location: string;
+  /** Where the map places the event; empty for an online event. */
+  map_location: string;
   category: string;
   price: number;
   food: string[];
@@ -71,4 +73,5 @@ export interface ValidationErrors {
   club_id?: string;
   occurrences?: string;
   location?: string;
+  map_location?: string;
 }
