@@ -34,6 +34,7 @@ import {
 } from "@/features/admin/lib/instagramCarousel";
 import { CarouselSlidePreview } from "@/features/admin/components/instagram/CarouselSlidePreview";
 import { defaultCoverBody } from "@/features/admin/lib/instagramSlides";
+import instagramPublishingControl from "../../../../../../backend/controlbox/instagram_publishing.json";
 
 type Batch = ApiInstagramPublishBatchResponse;
 
@@ -359,7 +360,7 @@ export function InstagramCarouselDrawer({
                   <Textarea
                     id="instagram-cover-body"
                     value={coverBody}
-                    maxLength={280}
+                    maxLength={instagramPublishingControl.cover_body_character_limit}
                     rows={3}
                     disabled={!editable || busy}
                     placeholder={defaultCoverBody(eventIds.length, school?.language ?? "en")}

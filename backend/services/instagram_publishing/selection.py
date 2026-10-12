@@ -51,7 +51,7 @@ class DraftSelection(BaseModel):
     account_key: str = Field(min_length=1)
     window_end: datetime
     caption_intro: str = Field(max_length=2200)
-    cover_body: str = Field(max_length=280)
+    cover_body: str = Field(max_length=_CONTROL.cover_body_character_limit)
     suggested_song: InstagramSongSuggestion | None = None
     picks: list[CarouselPick]
 

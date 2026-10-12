@@ -344,6 +344,24 @@ def test_hydration_excludes_invalid_slides_only_from_drafts(monkeypatch, status)
     assert batch["new_event_count"] == 3
 
 
+def test_hydration_counts_the_stored_carousel_events(monkeypatch):
+    batch = _batch([1, 2])
+    items = [{**item, "batch_id": batch["id"]} for item in batch.pop("items")]
+    counted = []
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _name: _FakeQuery(items, []))
+    )
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {1: _event(1), 2: _event(2)})
+    monkeypatch.setattr(
+        service,
+        "_count_new_events",
+        lambda batch: counted.append([item["event_id"] for item in batch["items"]]) or 2,
+    )
+    monkeypatch.setattr(service, "build_caption", lambda *_: "Caption")
+    service._hydrate_batch(batch)
+    assert counted == [[1, 2]]
+
+
 def test_hydration_handles_an_empty_batch(monkeypatch):
     batch = _batch([])
     monkeypatch.setattr(service, "_load_batch_items", lambda *_: [])

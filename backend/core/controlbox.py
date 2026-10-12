@@ -578,6 +578,7 @@ class InstagramPublishingControl(_ControlModel):
             raise ValueError("instagram music mappings must reference configured charts")
         return self
 
+    cover_body_character_limit: int = Field(gt=0, le=280)
     maximum_stickers_per_event: int = Field(ge=1, le=4)
     sticker_line_character_limit: int = Field(ge=8, le=12)
     sticker_maximum_lines: int = Field(ge=1, le=2)

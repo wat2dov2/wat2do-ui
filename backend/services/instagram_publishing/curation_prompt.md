@@ -20,7 +20,7 @@ Write original sticker labels in the school's language, aiming for three or four
 
 ## Cover and caption
 
-`cover_body` describes the events you actually picked, in the school's language. Name two to four picked events or clearly identifiable activities with accurate titles, club names, subjects, companies or activity details. For one pick, describe that event specifically. Use one or two compact sentences, ideally 120 to 180 characters and never over 280. Avoid umbrella phrases like "useful workshops", "career exploration", "creative breaks" or "campus connection". Do not repeat the headline, event count, school name or date, which the cover already shows. Every named highlight and perk must be supported by a picked event's title and description. With no picks, use an empty string.
+`cover_body` describes the events you actually picked, in the school's language. Name two or three picked events or clearly identifiable activities with accurate titles, club names, subjects, companies or activity details. For one pick, describe that event specifically. Use one compact sentence of at most 120 characters. Avoid umbrella phrases like "useful workshops", "career exploration", "creative breaks" or "campus connection". Do not repeat the headline, event count, school name or date, which the cover already shows. Every named highlight and perk must be supported by a picked event's title and description. With no picks, use an empty string.
 
 `caption_intro` opens the post caption. Keep the packet's default unless a short, factual improvement in the school's language clearly fits the picks; at most 2200 characters.
 

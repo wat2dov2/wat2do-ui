@@ -826,7 +826,7 @@ def _hydrate_batch(batch: dict[str, Any]) -> None:
             _load_slide_events,
             [int(item["event_id"]) for item in items if item["event_id"] is not None],
         )
-        count_future = pool.submit(_count_new_events, batch)
+        count_future = pool.submit(_count_new_events, {**batch, "items": items})
         slide_events = events_future.result()
         batch["new_event_count"] = count_future.result()
 

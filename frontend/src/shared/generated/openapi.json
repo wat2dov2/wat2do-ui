@@ -10703,7 +10703,7 @@
           },
           "cover_body": {
             "type": "string",
-            "maxLength": 280,
+            "maxLength": 120,
             "title": "Cover Body",
             "default": ""
           },

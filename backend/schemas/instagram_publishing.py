@@ -12,6 +12,7 @@ from core.constants import (
     INSTAGRAM_BATCH_PUBLISHING,
     INSTAGRAM_BATCH_READY_FOR_REVIEW,
 )
+from core.controlbox import controlbox
 from schemas.event import EventSummaryResponse
 
 InstagramPublishBatchKind = Literal["events", "employers_on_campus"]
@@ -99,7 +100,9 @@ class InstagramPublishBatchUpdate(BaseModel):
 
     version: int = Field(gt=0)
     caption_intro: str = Field(default="", max_length=2200)
-    cover_body: str = Field(default="", max_length=280)
+    cover_body: str = Field(
+        default="", max_length=controlbox.instagram_publishing.cover_body_character_limit
+    )
     # Carousel order, by event. The editor owns which events are on the
     # carousel - including ones an admin added by hand - so the batch stores
     # exactly this list.

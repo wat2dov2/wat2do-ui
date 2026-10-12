@@ -78,7 +78,7 @@ ANSWER_SCHEMA: dict[str, Any] = {
                 },
             },
         },
-        "cover_body": {"type": "string", "maxLength": 280},
+        "cover_body": {"type": "string", "maxLength": _CONTROL.cover_body_character_limit},
         "caption_intro": {"type": "string", "maxLength": 2200},
         "song_number": {"type": ["integer", "null"]},
         "notes": {"type": "string"},
