@@ -52,3 +52,10 @@ def email_image(
         content_type="image/jpeg",
         content=out.getvalue(),
     )
+
+
+def event_hero_image(url: str | None) -> InlineImage | None:
+    """The full-width poster at the top of single-event emails."""
+    return email_image(
+        url, "event-image", width=controlbox.email_delivery.hero_image_px, square=False
+    )

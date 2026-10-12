@@ -11,8 +11,9 @@ from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import USER_GOING_EVENTS, USERS
 from services import school_service
-from services.email_service import EmailMessage
+from services.email_service import EmailMessage, InlineImage
 from services.notifications.delivery_log import claim_delivery, deliver_claimed_email
+from services.notifications.email_images import event_hero_image
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
     EMAIL_LOGO,
@@ -39,6 +40,7 @@ def dispatch_event_reminders(now_utc: datetime) -> dict[str, int]:
     user_ids = list(dict.fromkeys(str(row["user_id"]) for row in due))
     users_by_id = _load_users(user_ids)
     enabled_ids = get_enabled_user_ids(user_ids, NOTIFICATION_TYPE_EVENT_REMINDER)
+    images = _event_images(due)
 
     prepared = 0
     sent = 0
@@ -52,7 +54,9 @@ def dispatch_event_reminders(now_utc: datetime) -> dict[str, int]:
             continue
 
         prepared += 1
-        delivery_result = _send_event_reminder(user=user, reminder=row)
+        delivery_result = _send_event_reminder(
+            user=user, reminder=row, image=images.get(row["event"]["id"])
+        )
         if delivery_result is True:
             sent += 1
         elif delivery_result is False:
@@ -93,7 +97,7 @@ def _load_due_reminders(
                     "occurrence:event_dates!user_going_events_event_occurrence_fkey!inner"
                     "(id,dtstart_utc,dtend_utc),"
                     "event:events!fk_user_going_events_event_id!inner"
-                    "(id,title,location,club,category,cancelled)"
+                    "(id,title,location,club,category,cancelled,source_image_url)"
                 )
                 .gte("occurrence.dtstart_utc", window_start.isoformat())
                 .lt("occurrence.dtstart_utc", window_end.isoformat())
@@ -136,19 +140,20 @@ def _load_users(user_ids: list[str]) -> dict[str, dict]:
     return users
 
 
-def _send_event_reminder(*, user: dict, reminder: dict) -> bool | None:
+def _event_images(due: list[dict]) -> dict[Any, InlineImage | None]:
+    """Each due event's poster, downloaded once however many attendees it has."""
+    events = {row["event"]["id"]: row["event"] for row in due}
+    return {
+        event_id: event_hero_image(event.get("source_image_url"))
+        for event_id, event in events.items()
+    }
+
+
+def _send_event_reminder(*, user: dict, reminder: dict, image: InlineImage | None) -> bool | None:
     user_id = str(user["id"])
     event = reminder["event"]
     occurrence_start = _canonical_occurrence_start(event["dtstart_utc"])
     target_id = f"{reminder['event_date_id']}:{occurrence_start}"
-    row_id = claim_delivery(
-        user_id=user_id,
-        notification_type=NOTIFICATION_TYPE_EVENT_REMINDER,
-        target_id=target_id,
-    )
-    if row_id is None:
-        return None
-
     tz = resolve_user_timezone(user)
     frontend_url = school_frontend_url(user.get("school"))
     unsubscribe = unsubscribe_url(
@@ -164,6 +169,7 @@ def _send_event_reminder(*, user: dict, reminder: dict) -> bool | None:
         body_html=render_event_reminder_html(
             subject=subject,
             event=event,
+            image_src=f"cid:{image.content_id}" if image else event.get("source_image_url"),
             tz=tz,
             frontend_url=frontend_url,
             preferences_url=preferences_url,
@@ -182,8 +188,16 @@ def _send_event_reminder(*, user: dict, reminder: dict) -> bool | None:
             "List-Unsubscribe": f"<{unsubscribe}>",
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
-        inline_images=[EMAIL_LOGO],
+        inline_images=[EMAIL_LOGO, image] if image else [EMAIL_LOGO],
     )
+    # Render before claiming, so a rendering failure cannot strand a pending delivery.
+    row_id = claim_delivery(
+        user_id=user_id,
+        notification_type=NOTIFICATION_TYPE_EVENT_REMINDER,
+        target_id=target_id,
+    )
+    if row_id is None:
+        return None
     return deliver_claimed_email(
         row_id=row_id,
         message=message,

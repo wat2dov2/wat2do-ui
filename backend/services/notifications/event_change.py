@@ -27,7 +27,7 @@ from services.notifications.delivery_log import (
     claim_delivery,
     deliver_claimed_email,
 )
-from services.notifications.email_images import email_image
+from services.notifications.email_images import event_hero_image
 from services.notifications.preferences import get_enabled_user_ids
 from services.notifications.rendering import (
     EMAIL_LOGO,
@@ -131,12 +131,7 @@ def enqueue_event_change(
 
     change_hash = _compute_change_hash(diff)
     target_id = f"{event_id}:{change_hash}"
-    image = email_image(
-        event.source_image_url,
-        "event-image",
-        width=controlbox.event_change_alerts.image_width_px,
-        square=False,
-    )
+    image = event_hero_image(event.source_image_url)
 
     sent = 0
     for user_id in user_ids:
