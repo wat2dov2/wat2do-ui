@@ -1019,55 +1019,6 @@ def test_event_stats_use_only_the_school_feed_ids_and_window(monkeypatch):
     assert stats["24704"].click_count == 9
 
 
-def _feed_event(event_id, map_location, map_coordinates=None):
-    return EventSummaryResponse(
-        id=event_id,
-        title="Listing",
-        map_location=map_location,
-        map_coordinates=map_coordinates,
-        added_at=datetime(2026, 9, 1, tzinfo=timezone.utc),
-    )
-
-
-def test_event_map_locations_are_looked_up_for_listed_events_without_pins(monkeypatch):
-    look_up = MagicMock(return_value=True)
-    monkeypatch.setattr(event_service.map_location_service, "look_up", look_up)
-    revalidate = MagicMock()
-    monkeypatch.setattr(
-        event_service.event_feed_revalidation_service, "revalidate_school", revalidate
-    )
-
-    event_service.locate_event_map_locations(
-        "uwaterloo",
-        [
-            _feed_event(1, "Student Life Centre", (-80.54, 43.47)),
-            _feed_event(2, "Davis Centre"),
-            _feed_event(3, "Davis Centre"),
-            _feed_event(4, None),
-        ],
-    )
-
-    look_up.assert_called_once_with("uwaterloo", {"Davis Centre"})
-    revalidate.assert_called_once_with("uwaterloo", resources=("events",))
-
-
-def test_event_feed_is_not_refreshed_when_nothing_new_was_found(monkeypatch):
-    look_up = MagicMock(return_value=False)
-    monkeypatch.setattr(event_service.map_location_service, "look_up", look_up)
-    revalidate = MagicMock()
-    monkeypatch.setattr(
-        event_service.event_feed_revalidation_service, "revalidate_school", revalidate
-    )
-
-    event_service.locate_event_map_locations("uwaterloo", [_feed_event(1, "Nowhere")])
-    event_service.locate_event_map_locations(
-        "uwaterloo", [_feed_event(2, "Student Life Centre", (-80.54, 43.47))]
-    )
-
-    look_up.assert_called_once_with("uwaterloo", {"Nowhere"})
-    revalidate.assert_not_called()
-
-
 def test_get_event_stats_for_school_keeps_clicks_when_going_counts_fail(monkeypatch):
     monkeypatch.setattr(event_service, "resolve_school_timezone", lambda school: "America/Toronto")
     monkeypatch.setattr(

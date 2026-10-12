@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import get_admin_user, get_authorized_resource, get_db_user, is_admin
 from core.constants import (
@@ -96,7 +96,6 @@ def get_event_stats(school: str = Query(..., min_length=1, max_length=MAX_EVENT_
 
 @router.get("/", response_model=EventFeedResponse)
 def list_events(
-    background_tasks: BackgroundTasks,
     school: str | None = Query(default=None, max_length=MAX_EVENT_SCHOOL_LENGTH),
     search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
     categories: list[str] | None = Query(default=None),
@@ -153,10 +152,6 @@ def list_events(
             include_past=include_past,
         )
         latest_event = latest_event_future.result() if latest_event_future else None
-
-    if school:
-        # Places first listed here are found after the response; the feed then refreshes with their pins.
-        background_tasks.add_task(event_service.locate_event_map_locations, school, items)
 
     return {
         **paginated_response(items, total, pagination),

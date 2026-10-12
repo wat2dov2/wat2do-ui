@@ -236,6 +236,12 @@ class MapGeocodingControl(_ControlModel):
     search_radius_degrees: float = Field(gt=0, le=5, allow_inf_nan=False)
     candidate_count: int = Field(ge=1, le=40)
     not_found_retry_days: int = Field(ge=1)
+    # A claimed place is left to another worker once its lease lapses.
+    claim_lease_seconds: int = Field(ge=60, le=3600)
+    # How long a worker waits before checking again when no place is waiting.
+    idle_poll_seconds: float = Field(gt=0, le=3600, allow_inf_nan=False)
+    # Schools gaining pins have their feeds refreshed at most this often.
+    feed_refresh_seconds: float = Field(gt=0, le=3600, allow_inf_nan=False)
     # OpenStreetMap coordinates for campus buildings Nominatim cannot find by
     # the name events use, keyed by school then building name.
     known_places: dict[

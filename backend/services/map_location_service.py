@@ -1,8 +1,9 @@
 """Coordinates for event map locations, found once with OpenStreetMap's Nominatim.
 
 Events carry their place's stored coordinates, so the map draws from the feed
-alone. A place nobody has looked up yet is searched after the feed request that
-first listed it, one request at a time as Nominatim's usage policy requires.
+alone. Every place an event names waits in ``map_locations`` until a backend
+worker looks it up. Workers claim one place at a time across every server, so
+the whole app keeps to one request a second as Nominatim's usage policy requires.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ import re
 import threading
 import time
 import unicodedata
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -22,11 +23,11 @@ from core.database import get_sb
 from core.tables import MAP_LOCATIONS
 from schemas.event import MapCoordinates
 from services import school_service
+from services.event_feed_revalidation import event_feed_revalidation_service
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.event_discovery.map_geocoding
 
-_LOOKUP_LOCK = threading.Lock()
 _STREET_NUMBER = re.compile(r"^\d+[a-z]?(?:-\d+)?\s+\S", re.IGNORECASE)
 # A campus's mailing address is shared by every building on it, so it never
 # places a named building.
@@ -103,47 +104,106 @@ _LOCALITY_KEYS = (
 )
 
 
-def look_up(school: str, map_locations: Iterable[str]) -> bool:
-    """Search and store places not recently looked up; True when any was found.
+def run(stopping: threading.Event) -> None:
+    """Look up waiting places until ``stopping`` is set, refreshing the feeds of schools with new pins."""
+    refresh = _FeedRefresh()
+    with httpx.Client(
+        headers={"User-Agent": CONTROL.user_agent}, timeout=CONTROL.request_timeout_seconds
+    ) as client:
+        while not stopping.is_set():
+            try:
+                looked_up = look_up_next(lambda query, center: _search(client, query, center))
+            except Exception:
+                # The claim lapses after its lease, so the place is tried again later.
+                log.exception("Map location lookup failed")
+                looked_up = None
+            if looked_up is None:
+                refresh.flush()
+                stopping.wait(CONTROL.idle_poll_seconds)
+                continue
+            school, found = looked_up
+            if found:
+                refresh.add(school)
+            refresh.flush_when_due()
+        refresh.flush()
 
-    Stored coordinates reach every event at that place through the database. A
-    lookup already running takes these places on its next pass instead.
+
+def look_up_next(
+    search: Callable[[str, tuple[float, float]], list[dict]],
+) -> tuple[str, bool] | None:
+    """Claim, look up and store the next waiting place.
+
+    Returns its school and whether it was found, or None when no place is waiting
+    or another worker is mid-lookup. Stored coordinates reach every event at that
+    place through the database.
     """
-    if not _LOOKUP_LOCK.acquire(blocking=False):
-        return False
-    found = False
-    try:
-        center = controlbox.event_discovery.views.map_campus_centers.get(school)
-        school_id = school_service.get_school_id(school)
-        if center is None or school_id is None:
-            return False
-        retry_before = datetime.now(timezone.utc) - timedelta(days=CONTROL.not_found_retry_days)
-        looked_up = _looked_up_since(school_id, retry_before)
-        with httpx.Client(
-            headers={"User-Agent": CONTROL.user_agent}, timeout=CONTROL.request_timeout_seconds
-        ) as client:
-            for map_location in sorted(set(map_locations) - looked_up):
-                coordinates = locate(
-                    map_location,
-                    center,
-                    lambda query: _search(client, query, center),
-                    CONTROL.known_places.get(school, {}),
-                )
-                get_sb().table(MAP_LOCATIONS).upsert(
-                    {
-                        "school_id": school_id,
-                        "map_location": map_location,
-                        "coordinates": list(coordinates) if coordinates else None,
-                        "looked_up_at": datetime.now(timezone.utc).isoformat(),
-                    }
-                ).execute()
-                found = found or coordinates is not None
-    except httpx.HTTPError as exc:
-        # Unfinished places stay unlocated, so the next feed request tries again.
-        log.warning("Map location lookup stopped: %s", exc)
-    finally:
-        _LOOKUP_LOCK.release()
-    return found
+    retry_before = datetime.now(timezone.utc) - timedelta(days=CONTROL.not_found_retry_days)
+    claimed = (
+        get_sb()
+        .rpc(
+            "claim_map_location",
+            {
+                "p_lease_seconds": CONTROL.claim_lease_seconds,
+                "p_retry_before": retry_before.isoformat(),
+            },
+        )
+        .execute()
+        .data
+    )
+    if not claimed:
+        return None
+    place = claimed[0]
+    school = school_service.get_school_by_id(place["school_id"])
+    slug = school.slug if school is not None else ""
+    center = controlbox.event_discovery.views.map_campus_centers.get(slug)
+    coordinates = (
+        locate(
+            place["map_location"],
+            center,
+            lambda query: search(query, center),
+            CONTROL.known_places.get(slug, {}),
+        )
+        if center is not None
+        else None
+    )
+    (
+        get_sb()
+        .table(MAP_LOCATIONS)
+        .update(
+            {
+                "coordinates": list(coordinates) if coordinates else None,
+                "looked_up_at": datetime.now(timezone.utc).isoformat(),
+                "claimed_until": None,
+            }
+        )
+        .eq("school_id", place["school_id"])
+        .eq("map_location", place["map_location"])
+        .execute()
+    )
+    return slug, coordinates is not None
+
+
+class _FeedRefresh:
+    """Schools whose feeds gain pins, refreshed together at most once per interval."""
+
+    def __init__(self) -> None:
+        self._schools: set[str] = set()
+        self._flushed_at = time.monotonic()
+
+    def add(self, school: str) -> None:
+        self._schools.add(school)
+
+    def flush_when_due(self) -> None:
+        if time.monotonic() - self._flushed_at >= CONTROL.feed_refresh_seconds:
+            self.flush()
+
+    def flush(self) -> None:
+        self._flushed_at = time.monotonic()
+        if self._schools:
+            event_feed_revalidation_service.revalidate_schools(
+                sorted(self._schools), resources=("events",)
+            )
+            self._schools.clear()
 
 
 def locate(
@@ -294,18 +354,3 @@ def _place_key(name: str) -> frozenset[str]:
 def _words(value: str) -> set[str]:
     plain = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode().lower()
     return {word for word in re.split(r"[^a-z0-9]+", plain) if word}
-
-
-def _looked_up_since(school_id: int, since: datetime) -> set[str]:
-    # A school's places number in the hundreds, fewer than its location names would fill a URL.
-    rows = (
-        get_sb()
-        .table(MAP_LOCATIONS)
-        .select("map_location")
-        .eq("school_id", school_id)
-        .gte("looked_up_at", since.isoformat())
-        .execute()
-        .data
-        or []
-    )
-    return {row["map_location"] for row in rows}

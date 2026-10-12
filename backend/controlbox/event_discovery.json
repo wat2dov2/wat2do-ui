@@ -61,6 +61,9 @@
     "search_radius_degrees": 0.3,
     "candidate_count": 5,
     "not_found_retry_days": 30,
+    "claim_lease_seconds": 300,
+    "idle_poll_seconds": 30,
+    "feed_refresh_seconds": 60,
     "known_places": {
       "berkeley": {
         "Cal Alumni House": [-122.26114, 37.86975],

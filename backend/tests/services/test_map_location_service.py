@@ -1,4 +1,7 @@
+import threading
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import httpx
 import pytest
@@ -172,80 +175,130 @@ def test_locate_rejects_a_same_named_venue_in_another_city():
     assert map_location_service.locate(location, WATERLOO, search, {}) is None
 
 
-@pytest.fixture
-def look_up(fake_sb, patch_sb, monkeypatch):
-    patch_sb("services.map_location_service")
-    monkeypatch.setattr(map_location_service.school_service, "get_school_id", lambda school: 7)
-    monkeypatch.setattr(map_location_service.time, "sleep", lambda seconds: None)
-    searched = []
+def _claimed(map_location, school_id=7):
+    return [{"school_id": school_id, "map_location": map_location, "coordinates": None}]
 
-    def search(client, query, center):
-        searched.append((query, center))
+
+@pytest.fixture
+def searched(fake_sb, patch_sb, monkeypatch):
+    patch_sb("services.map_location_service")
+    monkeypatch.setattr(
+        map_location_service.school_service,
+        "get_school_by_id",
+        lambda school_id: SimpleNamespace(slug="uwaterloo") if school_id == 7 else None,
+    )
+    asked = []
+
+    def search(query, center):
+        asked.append((query, center))
         if query == "Student Life Centre, Waterloo, ON":
             return [_place("Student Life Centre", -80.5450, 43.4720, city="Waterloo")]
         return []
 
-    monkeypatch.setattr(map_location_service, "_search", search)
-    return searched
+    return search, asked
 
 
-def test_look_up_stores_found_and_missing_places(fake_sb, look_up):
-    found = map_location_service.look_up(
-        "uwaterloo", {"Student Life Centre, Waterloo, ON", "Nowhere, Waterloo, ON"}
-    )
+def test_look_up_next_claims_one_place_and_stores_it_found(fake_sb, searched):
+    search, asked = searched
+    fake_sb.set_response(data=_claimed("Student Life Centre, Waterloo, ON"))
 
-    assert found is True
-    stored = [call.args[0] for call in fake_sb.upsert.call_args_list]
-    assert [(row["map_location"], row["coordinates"]) for row in stored] == [
-        ("Nowhere, Waterloo, ON", None),
-        ("Student Life Centre, Waterloo, ON", [-80.5450, 43.4720]),
-    ]
-    assert all(row["school_id"] == 7 for row in stored)
-    assert {center for _, center in look_up} == {(-80.5449, 43.4723)}
-    fake_sb.table.assert_any_call("map_locations")
+    assert map_location_service.look_up_next(search) == ("uwaterloo", True)
 
-
-def test_look_up_skips_places_looked_up_within_the_retry_period(fake_sb, look_up):
-    fake_sb.set_response(data=[{"map_location": "Nowhere, Waterloo, ON"}])
-
-    found = map_location_service.look_up("uwaterloo", {"Nowhere, Waterloo, ON"})
-
-    assert found is False
-    assert look_up == []
-    fake_sb.upsert.assert_not_called()
-    fake_sb.eq.assert_called_once_with("school_id", 7)
-    (column, since), _ = fake_sb.gte.call_args
+    (name, params), _ = fake_sb.rpc.call_args
     retry = timedelta(days=map_location_service.CONTROL.not_found_retry_days)
-    assert column == "looked_up_at"
-    assert abs(datetime.now(timezone.utc) - retry - datetime.fromisoformat(since)) < timedelta(
-        minutes=1
-    )
+    assert name == "claim_map_location"
+    assert params["p_lease_seconds"] == map_location_service.CONTROL.claim_lease_seconds
+    assert abs(
+        datetime.now(timezone.utc) - retry - datetime.fromisoformat(params["p_retry_before"])
+    ) < timedelta(minutes=1)
+    stored = fake_sb.update.call_args.args[0]
+    assert stored["coordinates"] == [-80.5450, 43.4720]
+    assert stored["claimed_until"] is None
+    assert stored["looked_up_at"]
+    fake_sb.eq.assert_any_call("school_id", 7)
+    fake_sb.eq.assert_any_call("map_location", "Student Life Centre, Waterloo, ON")
+    assert {center for _, center in asked} == {(-80.5449, 43.4723)}
 
 
-def test_look_up_leaves_places_to_a_lookup_already_running(fake_sb, look_up):
-    with map_location_service._LOOKUP_LOCK:
-        assert (
-            map_location_service.look_up("uwaterloo", ["Student Life Centre, Waterloo, ON"])
-            is False
-        )
+def test_look_up_next_stores_a_place_it_cannot_find_so_it_waits_for_the_retry_period(
+    fake_sb, searched
+):
+    search, _ = searched
+    fake_sb.set_response(data=_claimed("Nowhere, Waterloo, ON"))
 
-    assert look_up == []
-    fake_sb.upsert.assert_not_called()
+    assert map_location_service.look_up_next(search) == ("uwaterloo", False)
+
+    stored = fake_sb.update.call_args.args[0]
+    assert stored["coordinates"] is None
+    assert stored["looked_up_at"]
 
 
-def test_look_up_stops_without_storing_when_nominatim_fails(fake_sb, patch_sb, monkeypatch):
-    patch_sb("services.map_location_service")
-    monkeypatch.setattr(map_location_service.school_service, "get_school_id", lambda school: 7)
+def test_look_up_next_stores_a_place_at_a_school_without_a_map_unsearched(fake_sb, searched):
+    search, asked = searched
+    fake_sb.set_response(data=_claimed("Student Life Centre, Waterloo, ON", school_id=99))
 
-    def unavailable(client, query, center):
+    assert map_location_service.look_up_next(search) == ("", False)
+
+    assert asked == []
+    assert fake_sb.update.call_args.args[0]["coordinates"] is None
+
+
+def test_look_up_next_waits_when_nothing_is_claimed(fake_sb, searched):
+    search, asked = searched
+
+    assert map_location_service.look_up_next(search) is None
+
+    assert asked == []
+    fake_sb.update.assert_not_called()
+
+
+def test_look_up_next_leaves_the_claim_to_lapse_when_nominatim_fails(fake_sb, searched):
+    fake_sb.set_response(data=_claimed("Student Life Centre, Waterloo, ON"))
+
+    def unavailable(query, center):
         raise httpx.ConnectError("offline")
 
-    monkeypatch.setattr(map_location_service, "_search", unavailable)
+    with pytest.raises(httpx.ConnectError):
+        map_location_service.look_up_next(unavailable)
 
-    assert map_location_service.look_up("uwaterloo", ["Student Life Centre, Waterloo, ON"]) is False
+    fake_sb.update.assert_not_called()
 
-    fake_sb.upsert.assert_not_called()
-    assert not map_location_service._LOOKUP_LOCK.locked()
+
+def test_run_refreshes_feeds_of_schools_that_gained_pins_and_survives_failures(monkeypatch):
+    stopping = threading.Event()
+    results = iter(
+        [
+            ("uwaterloo", True),
+            ("uwaterloo", False),
+            ("ubc", True),
+            RuntimeError("database unavailable"),
+        ]
+    )
+
+    def look_up_next(search):
+        result = next(results)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    waits = []
+
+    def wait(seconds):
+        waits.append(seconds)
+        stopping.set()
+        return True
+
+    monkeypatch.setattr(map_location_service, "look_up_next", look_up_next)
+    monkeypatch.setattr(stopping, "wait", wait)
+    revalidate = MagicMock()
+    monkeypatch.setattr(
+        map_location_service.event_feed_revalidation_service, "revalidate_schools", revalidate
+    )
+
+    map_location_service.run(stopping)
+
+    revalidate.assert_called_once_with(["ubc", "uwaterloo"], resources=("events",))
+    assert waits == [map_location_service.CONTROL.idle_poll_seconds]
 
 
 def test_search_identifies_wat2do_and_waits_between_requests(monkeypatch):
@@ -372,15 +425,17 @@ def test_locate_uses_a_known_building_before_searching():
     assert asked == []
 
 
-def test_look_up_uses_the_school_known_places(fake_sb, look_up, monkeypatch):
+def test_look_up_next_uses_the_school_known_places(fake_sb, searched, monkeypatch):
+    search, asked = searched
     places = {"uwaterloo": {"Davis Centre": (-80.54204, 43.4725)}}
     monkeypatch.setattr(
         map_location_service,
         "CONTROL",
         map_location_service.CONTROL.model_copy(update={"known_places": places}),
     )
+    fake_sb.set_response(data=_claimed("Davis Centre, Waterloo, ON"))
 
-    assert map_location_service.look_up("uwaterloo", {"Davis Centre, Waterloo, ON"}) is True
+    assert map_location_service.look_up_next(search) == ("uwaterloo", True)
 
-    assert fake_sb.upsert.call_args.args[0]["coordinates"] == [-80.54204, 43.4725]
-    assert look_up == []
+    assert fake_sb.update.call_args.args[0]["coordinates"] == [-80.54204, 43.4725]
+    assert asked == []

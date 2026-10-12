@@ -1,6 +1,9 @@
 import importlib
 import logging
 import pkgutil
+import threading
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +14,7 @@ from core.config import settings
 from core.constants import MAX_IMAGE_SIZE_BYTES
 from core.error_handlers import register_error_handlers
 from core.security_headers import SecurityHeadersMiddleware
+from services import map_location_service
 
 log = logging.getLogger(__name__)
 
@@ -19,8 +23,21 @@ log = logging.getLogger(__name__)
 # 1 MB default would fail before our storage validation can run.
 MultiPartParser.spool_max_size = MAX_IMAGE_SIZE_BYTES
 
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    # Every server looks up waiting map locations; they take turns through the database.
+    stopping = threading.Event()
+    threading.Thread(
+        target=map_location_service.run, args=(stopping,), name="map-location-lookups", daemon=True
+    ).start()
+    yield
+    stopping.set()
+
+
 app = FastAPI(
     title="wat2do API",
+    lifespan=lifespan,
     # Disable OpenAPI docs in production to reduce attack surface.
     docs_url=None if settings.is_production else "/docs",
     redoc_url=None if settings.is_production else "/redoc",
