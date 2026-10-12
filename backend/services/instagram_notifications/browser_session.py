@@ -864,7 +864,8 @@ def _run_applescript(script: str, arguments: tuple[str, ...], timeout_seconds: f
                         "Worker browser window is closed",
                     }
                     else _BrowserAutomationTransient
-                    if detail_match in {"Brave is not running", "Worker Instagram window did not open"}
+                    if detail_match
+                    in {"Brave is not running", "Worker Instagram window did not open"}
                     else _BrowserPageUnavailable
                     if detail_match == "Pinned Instagram tab is loading"
                     else BrowserSessionError
@@ -1438,12 +1439,13 @@ class BrowserTabPool:
         if not ids or ids[0] != registered[0]:
             # A lost primary is replaced first; a retrieval tab is never promoted.
             ids.insert(
-                0, self._open_window(ids[0] if ids else None, _account_profile_url(bootstrap_username))
+                0,
+                self._open_window(
+                    ids[0] if ids else None, _account_profile_url(bootstrap_username)
+                ),
             )
             self._save(ids)
-            _PinnedBraveJavascriptRunner(ids[0]).warm_viewport(
-                _CONTROL.interaction_timeout_seconds
-            )
+            _PinnedBraveJavascriptRunner(ids[0]).warm_viewport(_CONTROL.interaction_timeout_seconds)
         for tab_id in ids[_CONTROL.parallel_tabs :]:
             self._close_settled_tab(tab_id)
             ids.remove(tab_id)

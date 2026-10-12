@@ -2755,9 +2755,9 @@ def test_a_rerun_digest_uses_the_renamed_school_accounts_current_name(monkeypatc
     monkeypatch.setattr(
         school_service,
         "get_school_by_recipient_id",
-        lambda recipient_id: SimpleNamespace(slug="uwaterloo")
-        if recipient_id == "76214170483"
-        else None,
+        lambda recipient_id: (
+            SimpleNamespace(slug="uwaterloo") if recipient_id == "76214170483" else None
+        ),
     )
     job = BrowserJob(
         id="j",
@@ -2817,7 +2817,10 @@ def test_login_recovery_is_spaced_capped_and_unpauses_on_success(monkeypatch, tm
     assert settings["paused"] is False
     assert len(settings["login_recovery_attempts"]) == 2
     # A real login spaces the next attempt by the full interval.
-    assert settings["login_recovery_next_at"] == now[0] + module.CONTROL.login_recovery_interval_seconds
+    assert (
+        settings["login_recovery_next_at"]
+        == now[0] + module.CONTROL.login_recovery_interval_seconds
+    )
 
     settings["paused"] = "Inspect before retrying"
     assert module.recover_login(queue, now=clock) is False  # Only logouts recover.

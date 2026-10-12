@@ -336,9 +336,7 @@ def test_pins_owned_tab_window_once_and_never_rediscovers_after_navigation(monke
 
 
 def test_runner_never_adopts_a_persons_instagram_tab(monkeypatch):
-    monkeypatch.setattr(
-        browser.subprocess, "run", lambda *a, **k: pytest.fail("No tab discovery")
-    )
+    monkeypatch.setattr(browser.subprocess, "run", lambda *a, **k: pytest.fail("No tab discovery"))
     with pytest.raises(browser._BrowserTabUnavailable, match="No worker Instagram window"):
         browser._PinnedBraveJavascriptRunner()("operation", 1)
 
@@ -710,9 +708,7 @@ def test_post_navigation_waits_for_delayed_profile_identity_but_rejects_wrong_ac
 
 
 @pytest.mark.parametrize("reload", [False, True])
-def test_post_navigation_loads_from_the_page_so_brave_stays_in_the_background(
-    monkeypatch, reload
-):
+def test_post_navigation_loads_from_the_page_so_brave_stays_in_the_background(monkeypatch, reload):
     calls = []
 
     def run(script, arguments, timeout):
@@ -2754,7 +2750,6 @@ def test_already_closed_surplus_window_needs_no_closing(monkeypatch):
     browser.BrowserTabPool._close_settled_tab("42")
 
 
-
 def _login_pool(monkeypatch, pages, *, preferred="wat2do.ottawa"):
     """A pool whose primary window shows ``pages`` in turn; records clicks."""
     clicks, settings = [], {"browser_tab_ids": ["1", "2"], "retrieval_pool_account": preferred}
@@ -2846,7 +2841,7 @@ def test_login_recovery_stops_for_a_person_at_a_password_or_challenge(monkeypatc
 
 def test_click_label_source_only_clicks_one_exact_match():
     source = browser._click_label_source("Save info")
-    assert '"save info"' in source and 'matches.length !== 1' in source
+    assert '"save info"' in source and "matches.length !== 1" in source
 
 
 def test_a_job_asks_instagrams_server_before_trusting_a_logged_in_page(monkeypatch):

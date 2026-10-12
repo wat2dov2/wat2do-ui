@@ -59,9 +59,7 @@ async def _listen(table: str, on_change: Callable[[], None], stopping: threading
         # The channel hears its own broadcasts, so an echo proves the socket and
         # channel still deliver. The client's is_connected stays true after the
         # socket closes, so it cannot tell a dead connection from a quiet one.
-        channel = client.channel(
-            f"wat2do-{table}", {"config": {"broadcast": {"self": True}}}
-        )
+        channel = client.channel(f"wat2do-{table}", {"config": {"broadcast": {"self": True}}})
         channel.on_broadcast(_PROBE_EVENT, lambda _payload: echoed.append(time.monotonic()))
         for event in ("INSERT", "UPDATE"):
             channel.on_postgres_changes(

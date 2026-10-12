@@ -17,6 +17,7 @@ from services.instagram_notifications.browser_digest import BrowserInstagramDige
 from services.instagram_notifications.browser_engagement import BrowserInstagramEngagementExecutor
 from services.instagram_notifications.browser_queue import CONTROL, BrowserJob, BrowserJobQueue
 from services.instagram_notifications.browser_session import (
+    LOGGED_OUT_PAUSE,
     BrowserAccountChanged,
     BrowserEngagementUncertain,
     BrowserInstagramSession,
@@ -27,7 +28,6 @@ from services.instagram_notifications.browser_session import (
     _BrowserPageUnavailable,
     _BrowserReadCleanupPending,
     _BrowserTabUnavailable,
-    LOGGED_OUT_PAUSE,
     _PinnedBraveJavascriptRunner,
     school_account_username,
 )
@@ -611,9 +611,7 @@ def _is_logout(paused: object) -> bool:
 
 def _attempt_login_recovery(queue: BrowserJobQueue, now: Callable[[], float]) -> bool:
     """Log back in once if spacing and the daily cap allow; the browser lock is held."""
-    attempts = [
-        at for at in queue.get_setting("login_recovery_attempts", []) if now() - at < 86400
-    ]
+    attempts = [at for at in queue.get_setting("login_recovery_attempts", []) if now() - at < 86400]
     if len(attempts) >= CONTROL.login_recovery_daily_limit or now() < queue.get_setting(
         "login_recovery_next_at", 0
     ):
