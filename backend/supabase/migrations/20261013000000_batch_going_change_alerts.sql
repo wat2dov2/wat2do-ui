@@ -143,6 +143,10 @@ BEGIN
             WHEN p_event_patch ? 'location' THEN p_event_patch->>'location'
             ELSE event.location
         END,
+        map_location = CASE
+            WHEN p_event_patch ? 'map_location' THEN p_event_patch->>'map_location'
+            ELSE event.map_location
+        END,
         price = CASE
             WHEN p_event_patch ? 'price' THEN (p_event_patch->>'price')::double precision
             ELSE event.price
