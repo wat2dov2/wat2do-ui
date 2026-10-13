@@ -239,7 +239,6 @@ The implementation audit must include:
 - DKIM records.
 - DMARC records.
 - Domain-verification records.
-- Resend records.
 - Any Supabase custom-domain records.
 - Any unrelated subdomains that must continue resolving.
 
