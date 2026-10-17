@@ -377,6 +377,7 @@
       "eventId": "इवेंट आईडी",
       "eventIdPlaceholder": "एक इवेंट आईडी दर्ज करें",
       "coverSlide": "कवर स्लाइड",
+      "outroSlide": "अंतिम स्लाइड",
       "coverBody": "मुख्य पाठ को कवर करें",
       "slideOf": "{{count}} में से स्लाइड {{index}}",
       "undoRemoveSlide": "स्लाइड हटाना पूर्ववत करें",

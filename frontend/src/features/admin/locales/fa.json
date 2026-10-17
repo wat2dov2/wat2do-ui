@@ -377,6 +377,7 @@
       "eventId": "شناسه رویداد",
       "eventIdPlaceholder": "یک شناسه رویداد وارد کنید",
       "coverSlide": "اسلاید جلد",
+      "outroSlide": "اسلاید آخر",
       "coverBody": "متن بدنه جلد",
       "slideOf": "اسلاید {{index}} از {{count}}",
       "undoRemoveSlide": "واگرد حذف اسلاید",

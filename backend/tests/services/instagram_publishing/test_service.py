@@ -25,6 +25,13 @@ def registered_school(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def excluded_clubs(monkeypatch):
+    handles: set[str] = set()
+    monkeypatch.setattr(service, "_excluded_club_handles", lambda: handles)
+    return handles
+
+
+@pytest.fixture(autouse=True)
 def feed_revalidation(monkeypatch):
     revalidation = Mock()
     monkeypatch.setattr(service, "event_feed_revalidation_service", revalidation)
@@ -287,6 +294,8 @@ def _batch(event_ids: list[int], **overrides) -> dict:
         "cover_body": "Body",
         # Counted on read from the recent-event/carousel union.
         "new_event_count": 20,
+        # Hydrated on read: the recent window's events without a slide.
+        "other_events": [],
         "version": 3,
         "items": [
             {
@@ -335,7 +344,7 @@ def test_hydration_excludes_invalid_slides_only_from_drafts(monkeypatch, status)
         service, "get_sb", lambda: SimpleNamespace(table=lambda _name: _FakeQuery(items, []))
     )
     monkeypatch.setattr(service, "_load_slide_events", lambda _ids: events)
-    monkeypatch.setattr(service, "_count_new_events", lambda _batch: 3)
+    monkeypatch.setattr(service, "_summarize_recent_events", lambda _batch: (3, []))
     monkeypatch.setattr(service, "build_caption", lambda *_: "Caption")
     service._hydrate_batch(batch)
     assert [item["event_id"] for item in batch["items"]] == (
@@ -354,8 +363,8 @@ def test_hydration_counts_the_stored_carousel_events(monkeypatch):
     monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {1: _event(1), 2: _event(2)})
     monkeypatch.setattr(
         service,
-        "_count_new_events",
-        lambda batch: counted.append([item["event_id"] for item in batch["items"]]) or 2,
+        "_summarize_recent_events",
+        lambda batch: (counted.append([item["event_id"] for item in batch["items"]]) or 2, []),
     )
     monkeypatch.setattr(service, "build_caption", lambda *_: "Caption")
     service._hydrate_batch(batch)
@@ -367,7 +376,7 @@ def test_hydration_handles_an_empty_batch(monkeypatch):
     monkeypatch.setattr(service, "_load_batch_items", lambda *_: [])
     load_events = Mock(return_value={})
     monkeypatch.setattr(service, "_load_slide_events", load_events)
-    monkeypatch.setattr(service, "_count_new_events", lambda _: 0)
+    monkeypatch.setattr(service, "_summarize_recent_events", lambda _: (0, []))
     monkeypatch.setattr(service, "build_caption", lambda *_: "Empty caption")
 
     service._hydrate_batch(batch)
@@ -389,7 +398,7 @@ def test_deleted_event_does_not_block_batch_and_preserves_published_image(monkey
     monkeypatch.setattr(service, "_load_batch_items", lambda *_: [item])
     load_events = Mock(return_value={})
     monkeypatch.setattr(service, "_load_slide_events", load_events)
-    monkeypatch.setattr(service, "_count_new_events", lambda _: 0)
+    monkeypatch.setattr(service, "_summarize_recent_events", lambda _: (0, []))
     monkeypatch.setattr(service, "build_caption", lambda *_: "Empty caption")
 
     service._hydrate_batch(batch)
@@ -437,7 +446,7 @@ def test_hydration_refreshes_only_editable_captions(monkeypatch, status):
         ),
     )
     monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {1: _event(1, "Updated title")})
-    monkeypatch.setattr(service, "_count_new_events", lambda _batch: 1)
+    monkeypatch.setattr(service, "_summarize_recent_events", lambda _batch: (1, []))
     caption = Mock(return_value="Updated caption")
     monkeypatch.setattr(service, "build_caption", caption)
 
@@ -561,37 +570,76 @@ def test_update_batch_rejects_a_repeated_event(monkeypatch, draft_editor):
 
 
 @pytest.mark.parametrize(("recent", "expected"), [(8, 8), (2, 3)])
-def test_count_new_events_takes_the_larger_of_carousel_and_recent_window(
+def test_new_event_count_takes_the_larger_of_carousel_and_recent_window(
     monkeypatch, recent, expected
 ):
     calls: list[tuple] = []
+    rows = [{"id": 100 + index} for index in range(recent)]
     monkeypatch.setattr(
         service,
         "get_sb",
-        lambda: SimpleNamespace(table=lambda _name: _FakeQuery([], calls, count=recent)),
+        lambda: SimpleNamespace(table=lambda _name: _FakeQuery(rows, calls)),
     )
-    monkeypatch.setattr(service.school_service, "get_school_id", lambda _school: 1)
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {})
 
-    assert service._count_new_events(_batch([7, 8, 9])) == expected
+    count, _others = service._summarize_recent_events(_batch([7, 8, 9]))
+    assert count == expected
     assert ("gte", ("added_at", "2026-07-26T12:30:00+00:00"), {}) in calls
     assert ("lt", ("added_at", "2026-07-27T12:30:00+00:00"), {}) in calls
     assert ("eq", ("school_id", 1), {}) in calls
     assert ("eq", ("cancelled", False), {}) in calls
 
 
-def test_count_new_events_without_a_carousel_returns_only_the_recent_count(monkeypatch):
-    calls: list[tuple] = []
-    tables: list[str] = []
+def test_outro_lists_the_upcoming_window_events_without_a_slide(monkeypatch):
+    rows = [{"id": event_id} for event_id in (7, 11, 12, 13)]
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _name: _FakeQuery(rows, []))
+    )
+    ended = _event(12)
+    ended.occurrences[0].dtstart_utc = datetime(2000, 1, 1, tzinfo=timezone.utc)
+    sooner = _event(13)
+    sooner.occurrences[0].dtstart_utc = datetime(2099, 7, 1, tzinfo=timezone.utc)
+    loaded: list[list[int]] = []
 
-    def table(name: str):
-        tables.append(name)
-        return _FakeQuery([], calls, count=4)
+    def load(ids):
+        loaded.append(ids)
+        return {11: _event(11), 12: ended, 13: sooner}
 
-    monkeypatch.setattr(service, "get_sb", lambda: SimpleNamespace(table=table))
+    monkeypatch.setattr(service, "_load_slide_events", load)
 
-    assert service._count_new_events(_batch([])) == 4
-    assert tables == ["events"]
-    assert not any(name == "in_" for name, _args, _kwargs in calls)
+    count, others = service._summarize_recent_events(_batch([7, 8]))
+
+    assert count == 4
+    assert loaded == [[11, 12, 13]]
+    assert [event.id for event in others] == [13, 11]
+
+
+def test_outro_leaves_out_excluded_clubs(monkeypatch, excluded_clubs):
+    excluded_clubs.add("v1vaclub")
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(table=lambda _name: _FakeQuery([{"id": 11}, {"id": 12}], [])),
+    )
+    excluded = _event(12).model_copy(update={"ig_handle": "@V1vaClub"})
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {11: _event(11), 12: excluded})
+
+    _count, others = service._summarize_recent_events(_batch([]))
+
+    assert [event.id for event in others] == [11]
+
+
+def test_published_batches_skip_the_outro_events(monkeypatch):
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(table=lambda _name: _FakeQuery([{"id": 11}], [])),
+    )
+    load = Mock()
+    monkeypatch.setattr(service, "_load_slide_events", load)
+
+    assert service._summarize_recent_events(_batch([], status="published")) == (1, [])
+    load.assert_not_called()
 
 
 @pytest.mark.parametrize("batch_kind", ["events", "employers_on_campus"])
@@ -619,6 +667,7 @@ def test_publish_batch_renders_the_slides_from_live_event_data(
             instagram_user_id="37640733598873542",
             school="dalhousie",
             batch_kind=batch_kind,
+            other_events=[_event(11)],
         ),
     )
     monkeypatch.setattr(
@@ -630,6 +679,14 @@ def test_publish_batch_renders_the_slides_from_live_event_data(
         service,
         "render_event_asset",
         lambda event: rendered.append(int(event["id"])) or f"https://a/{event['id']}.png",
+    )
+    monkeypatch.setattr(
+        service,
+        "render_outro_asset",
+        lambda events, school, *, batch_kind: (
+            rendered.append(("outro", [int(e["id"]) for e in events], school, batch_kind))
+            or "https://a/outro.png"
+        ),
     )
     monkeypatch.setattr(
         service,
@@ -674,13 +731,25 @@ def test_publish_batch_renders_the_slides_from_live_event_data(
     assert ("or_", ("event_id.is.null,event_id.not.in.(7,8)",), {}) in table_calls
     assert ("is_", ("published_at", "null"), {}) in table_calls
     assert load_credentials.call_args.args[0] == "dalhousie"
-    assert rendered == [("cover", [7, 8], "dalhousie", "Body", "2026-07-26", 20), 7, 8]
-    assert containers == ["https://a/cover.png", "https://a/7.png", "https://a/8.png"]
+    assert rendered == [
+        ("cover", [7, 8], "dalhousie", "Body", "2026-07-26", 20),
+        7,
+        8,
+        ("outro", [11], "dalhousie", batch_kind),
+    ]
+    assert containers == [
+        "https://a/cover.png",
+        "https://a/7.png",
+        "https://a/8.png",
+        "https://a/outro.png",
+    ]
     published = [call for call in table_calls if call[0] == "update"]
     assert any(fields.get("meta_media_id") == "media-1" for _, (fields,), _ in published)
     # A published run keeps the images it posted; the events behind them move on.
     assert any(
-        fields.get("published_cover_url") == "https://a/cover.png" for _, (fields,), _ in published
+        fields.get("published_cover_url") == "https://a/cover.png"
+        and fields.get("published_outro_url") == "https://a/outro.png"
+        for _, (fields,), _ in published
     )
     assert {
         fields["published_asset_url"]
@@ -965,7 +1034,7 @@ def test_employer_hydration_filters_reclassified_events_only_before_publication(
             2: _event(2),
         },
     )
-    monkeypatch.setattr(service, "_count_new_events", lambda _: 1)
+    monkeypatch.setattr(service, "_summarize_recent_events", lambda _: (1, []))
     monkeypatch.setattr(service, "build_caption", lambda *_: "Caption")
     service._hydrate_batch(batch)
     assert [item["event_id"] for item in batch["items"]] == (
@@ -975,10 +1044,13 @@ def test_employer_hydration_filters_reclassified_events_only_before_publication(
 
 def test_employer_cover_counts_only_employer_events(monkeypatch):
     calls = []
+    rows = [{"id": event_id} for event_id in (1, 2, 3)]
     monkeypatch.setattr(
-        service, "get_sb", lambda: SimpleNamespace(table=lambda _: _FakeQuery([], calls, count=3))
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _: _FakeQuery(rows, calls))
     )
-    assert service._count_new_events(_batch([], batch_kind="employers_on_campus")) == 3
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {})
+    count, _others = service._summarize_recent_events(_batch([], batch_kind="employers_on_campus"))
+    assert count == 3
     assert ("eq", ("employers_on_campus", True), {}) in calls
 
 
@@ -1064,7 +1136,8 @@ def codex_draft(monkeypatch):
     )
 
 
-def test_codex_reads_candidates_without_writing(monkeypatch, codex_draft):
+def test_codex_reads_candidates_without_writing(monkeypatch, codex_draft, excluded_clubs):
+    excluded_clubs.add("v1vaclub")
     database = Mock()
     monkeypatch.setattr(service, "get_sb", database)
     packets = service.list_draft_candidates(codex_draft.window_end)
@@ -1075,6 +1148,7 @@ def test_codex_reads_candidates_without_writing(monkeypatch, codex_draft):
     assert packets[0]["music_chart"]["name"] == "Top 100: Canada"
     assert packets[0]["recent_songs"] == []
     assert packets[0]["events"][0]["id"] == 17
+    assert packets[0]["excluded_clubs"] == ["v1vaclub"]
     database.assert_not_called()
 
 

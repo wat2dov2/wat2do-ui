@@ -38,6 +38,7 @@ from core.pagination import fetch_all_pages
 from core.tables import (
     EVENT_DATES,
     EVENTS,
+    INSTAGRAM_EXCLUDED_CLUBS,
     INSTAGRAM_PUBLISH_BATCHES,
     INSTAGRAM_PUBLISH_ITEMS,
     INSTAGRAM_PUBLISHING_ACCOUNTS,
@@ -55,7 +56,11 @@ from services.event_service import has_ended
 from services.instagram_publishing.captions import build_caption, default_caption_intro
 from services.instagram_publishing.credentials import load_account_credentials
 from services.instagram_publishing.meta import MetaInstagramClient
-from services.instagram_publishing.rendering import render_cover_asset, render_event_asset
+from services.instagram_publishing.rendering import (
+    render_cover_asset,
+    render_event_asset,
+    render_outro_asset,
+)
 from services.instagram_publishing.selection import (
     CarouselPick,
     DraftSelection,
@@ -120,6 +125,7 @@ def list_draft_candidates(now_utc: datetime | None = None) -> list[dict[str, Any
     local_date = now.astimezone(ZoneInfo(_CONTROL.generation_timezone)).date()
     packets = []
     accounts = {row["account_key"]: row for row in _enabled_accounts()}
+    excluded_clubs = sorted(_excluded_club_handles())
     for school in _draft_schools():
         account_key = str(school["slug"])
         account = accounts.get(account_key)
@@ -148,6 +154,7 @@ def list_draft_candidates(now_utc: datetime | None = None) -> list[dict[str, Any
             window_start=window_start.isoformat(),
             caption_intro=default_caption_intro(account_key, "events"),
             events=events,
+            excluded_clubs=excluded_clubs,
             music_chart=_CONTROL.music_charts[
                 _CONTROL.music_chart_by_school.get(account_key, _CONTROL.default_music_chart)
             ].model_dump(mode="json"),
@@ -691,6 +698,15 @@ def _publish_claimed_batch(
         client.wait_until_ready(child_id)
         child_ids.append(child_id)
 
+    outro_url = render_outro_asset(
+        [_slide_payload(event) for event in batch["other_events"]],
+        batch["school"],
+        batch_kind=batch["batch_kind"],
+    )
+    outro_container_id = client.create_image_container(user_id, outro_url)
+    client.wait_until_ready(outro_container_id)
+    child_ids.append(outro_container_id)
+
     carousel_id = client.create_carousel_container(
         user_id,
         child_ids=child_ids,
@@ -722,6 +738,7 @@ def _publish_claimed_batch(
                 "status": INSTAGRAM_BATCH_PUBLISHED,
                 "meta_media_id": media_id,
                 "published_cover_url": cover_url,
+                "published_outro_url": outro_url,
                 "published_at": published_at,
                 "updated_at": published_at,
                 "error_message": None,
@@ -737,56 +754,71 @@ def _publish_claimed_batch(
         )
 
 
-def _count_new_events(batch: dict[str, Any]) -> int:
-    """The larger of the carousel's size and the school's recent event count.
+def _summarize_recent_events(
+    batch: dict[str, Any],
+) -> tuple[int, list[EventSummaryResponse]]:
+    """The cover's event count and, for a draft, the events the outro lists.
 
     The recent window ends at the batch's immutable ``window_end`` so its time
     boundary does not drift while the batch waits for review. The cover never
     claims fewer events than the carousel contains, and removing a slide never
-    lowers the number below the school's recent event count.
+    lowers the number below the school's recent event count. The outro lists the
+    window's upcoming events that did not get a slide of their own, soonest
+    first; a published batch keeps the outro image it posted instead.
     """
-    window_end = _parse_datetime(batch["window_end"])
-    recent_count = _count_active_events_added_between(
-        school=batch["school"],
-        window_start=window_end - timedelta(hours=_CONTROL.new_event_window_hours),
-        window_end=window_end,
-        batch_kind=batch["batch_kind"],
-    )
-    carousel_count = len(
-        {
-            int(item["event_id"])
-            for item in batch.get("items", [])
-            if item.get("event_id") is not None
-        }
-    )
-    return max(recent_count, carousel_count)
+    recent_ids = _recent_event_ids(batch)
+    carousel_ids = {
+        int(item["event_id"]) for item in batch.get("items", []) if item.get("event_id") is not None
+    }
+    new_event_count = max(len(recent_ids), len(carousel_ids))
+    if batch["status"] not in {INSTAGRAM_BATCH_READY_FOR_REVIEW, INSTAGRAM_BATCH_FAILED}:
+        return new_event_count, []
+    now = datetime.now(timezone.utc)
+    excluded = _excluded_club_handles()
+    others = [
+        event
+        for event in _load_slide_events(sorted(recent_ids - carousel_ids)).values()
+        if not has_ended(event, now=now) and _club_handle(event.ig_handle) not in excluded
+    ]
+    others.sort(key=lambda event: (event.occurrences[0].dtstart_utc, event.id))
+    return new_event_count, others
 
 
-def _count_active_events_added_between(
-    *,
-    school: str,
-    window_start: datetime,
-    window_end: datetime,
-    batch_kind: InstagramPublishBatchKind = "events",
-) -> int:
-    school_id = school_service.get_school_id(school)
+def _excluded_club_handles() -> set[str]:
+    """Instagram handles of clubs that asked not to appear in carousels."""
+    rows = get_sb().table(INSTAGRAM_EXCLUDED_CLUBS).select("ig_handle").execute().data or []
+    return {row["ig_handle"] for row in rows}
+
+
+def _club_handle(handle: str | None) -> str:
+    return (handle or "").strip().lstrip("@").lower()
+
+
+def _recent_event_ids(batch: dict[str, Any]) -> set[int]:
+    """Active events added to the batch's school in the recent window."""
+    school_id = school_service.get_school_id(batch["school"])
     if school_id is None:
-        return 0
-    query = (
-        get_sb()
-        .table(EVENTS)
-        .select("id", count="exact")
-        .eq("school_id", school_id)
-        .eq("cancelled", False)
-        .gte("added_at", window_start.isoformat())
-        .lt("added_at", window_end.isoformat())
-    )
-    if batch_kind == "employers_on_campus":
-        query = query.eq("employers_on_campus", True)
-    else:
-        query = query.or_("employers_on_campus.is.null,employers_on_campus.eq.false")
-    response = query.limit(1).execute()
-    return response.count or 0
+        return set()
+    window_end = _parse_datetime(batch["window_end"])
+    window_start = window_end - timedelta(hours=_CONTROL.new_event_window_hours)
+
+    def page(offset: int, limit: int) -> list[dict[str, Any]]:
+        query = (
+            get_sb()
+            .table(EVENTS)
+            .select("id")
+            .eq("school_id", school_id)
+            .eq("cancelled", False)
+            .gte("added_at", window_start.isoformat())
+            .lt("added_at", window_end.isoformat())
+        )
+        if batch["batch_kind"] == "employers_on_campus":
+            query = query.eq("employers_on_campus", True)
+        else:
+            query = query.or_("employers_on_campus.is.null,employers_on_campus.eq.false")
+        return query.order("id").range(offset, offset + limit - 1).execute().data or []
+
+    return {int(row["id"]) for row in fetch_all_pages(page)}
 
 
 def _load_batch_items(batch_ids: list[str], columns: str) -> list[dict[str, Any]]:
@@ -815,9 +847,9 @@ def _hydrate_batch(batch: dict[str, Any]) -> None:
             _load_slide_events,
             [int(item["event_id"]) for item in items if item["event_id"] is not None],
         )
-        count_future = pool.submit(_count_new_events, {**batch, "items": items})
+        summary_future = pool.submit(_summarize_recent_events, {**batch, "items": items})
         slide_events = events_future.result()
-        batch["new_event_count"] = count_future.result()
+        batch["new_event_count"], batch["other_events"] = summary_future.result()
 
     now = datetime.now(timezone.utc)
     editable = batch["status"] in (INSTAGRAM_BATCH_READY_FOR_REVIEW, INSTAGRAM_BATCH_FAILED)

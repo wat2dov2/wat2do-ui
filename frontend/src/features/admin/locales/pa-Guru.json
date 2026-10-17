@@ -377,6 +377,7 @@
       "eventId": "ਇਵੈਂਟ ਆਈ.ਡੀ",
       "eventIdPlaceholder": "ਇੱਕ ਇਵੈਂਟ ID ਦਾਖਲ ਕਰੋ",
       "coverSlide": "ਕਵਰ ਸਲਾਈਡ",
+      "outroSlide": "ਆਖਰੀ ਸਲਾਈਡ",
       "coverBody": "ਮੁੱਖ ਪਾਠ ਨੂੰ ਕਵਰ ਕਰੋ",
       "slideOf": "{{count}} ਵਿੱਚੋਂ ਸਲਾਈਡ {{index}}",
       "undoRemoveSlide": "ਸਲਾਈਡ ਹਟਾਉਣਾ ਵਾਪਸ ਲਓ",

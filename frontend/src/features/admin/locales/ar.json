@@ -377,6 +377,7 @@
       "eventId": "معرف الحدث",
       "eventIdPlaceholder": "أدخل معرف الحدث",
       "coverSlide": "شريحة الغلاف",
+      "outroSlide": "الشريحة الأخيرة",
       "coverBody": "نص جسم الغلاف",
       "slideOf": "الشريحة {{index}} من {{count}}",
       "undoRemoveSlide": "التراجع عن إزالة الشريحة",

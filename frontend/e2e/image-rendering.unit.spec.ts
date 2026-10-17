@@ -9,7 +9,7 @@ import sharp from "sharp";
 import imageDelivery from "../../backend/controlbox/image_delivery.json" with { type: "json" };
 import instagramPublishing from "../../backend/controlbox/instagram_publishing.json" with { type: "json" };
 
-let renderedSlide: ReactElement<{ model: { imageSrc?: string; avatarSrc?: string; siteName?: string; tiles?: string[]; poster: { width: number; height: number } } }> | undefined;
+let renderedSlide: ReactElement<{ model: { imageSrc?: string; avatarSrc?: string; siteName?: string; tiles?: string[]; rows?: { title: string; detail: string }[]; moreLine?: string; poster: { width: number; height: number } } }> | undefined;
 let requestSchool = "uwaterloo";
 let goingSelections: { event_id: number }[] = [];
 
@@ -533,6 +533,36 @@ test.describe("Instagram raster preparation", () => {
       await test.info().attach("cover-slide", { path: artifact, contentType: "image/png" });
     });
   }
+
+  test("the outro lists the scrape's other events and counts the ones that do not fit", async () => {
+    globalThis.fetch = async () => { throw new Error("The outro downloads no artwork"); };
+    const events = Array.from({ length: instagramPublishing.outro_event_rows + 2 }, (_, index) => ({
+      id: index + 1, tz: "America/Toronto", title: `Other event ${index + 1}`, ig_handle: "uwclub",
+      dtstart_utc: "2026-10-23T02:00:00Z",
+    }));
+    const response = await POST(request({ kind: "outro", school: "uwaterloo", events }));
+    expect(response.status).toBe(200);
+    const model = renderedSlide!.props.model;
+    expect(model.rows).toHaveLength(instagramPublishing.outro_event_rows);
+    expect(model.rows![0]).toEqual({ title: "Other event 1", detail: "Thu, Oct 22, 10:00 PM · @uwclub" });
+    expect(model.moreLine).toBe(`+2 more on ${model.siteName}`);
+    const output = Buffer.from(await response.arrayBuffer());
+    expect(await sharp(output).metadata()).toMatchObject({ width: 1080, height: 1350 });
+    const artifact = test.info().outputPath("outro-slide.png");
+    writeFileSync(artifact, output);
+    await test.info().attach("outro-slide", { path: artifact, contentType: "image/png" });
+  });
+
+  test("an outro with no other events points to the school's site", async () => {
+    const response = await POST(request({ kind: "outro", school: "uwaterloo", events: [] }));
+    expect(response.status).toBe(200);
+    const model = renderedSlide!.props.model;
+    expect(model.rows).toEqual([]);
+    expect(renderToStaticMarkup(renderedSlide!)).toContain(model.siteName!);
+    const artifact = test.info().outputPath("outro-empty-slide.png");
+    writeFileSync(artifact, Buffer.from(await response.arrayBuffer()));
+    await test.info().attach("outro-empty-slide", { path: artifact, contentType: "image/png" });
+  });
 });
 
 

@@ -377,6 +377,7 @@
       "eventId": "ID sự kiện",
       "eventIdPlaceholder": "Nhập ID sự kiện",
       "coverSlide": "Slide bìa",
+      "outroSlide": "Trang chiếu cuối",
       "coverBody": "Văn bản nội dung bìa",
       "slideOf": "Slide {{index}} của {{count}}",
       "undoRemoveSlide": "Hoàn tác xóa trang chiếu",

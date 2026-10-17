@@ -112,3 +112,19 @@ def test_employer_cover_passes_its_kind_to_the_shared_renderer(monkeypatch):
     requests, _ = _capture_render(monkeypatch)
     rendering.render_cover_asset([_event(1)], "uwaterloo", batch_kind="employers_on_campus")
     assert requests[0]["json"]["batch_kind"] == "employers_on_campus"
+
+
+def test_render_outro_asset_posts_the_other_events_even_when_there_are_none(monkeypatch):
+    requests, _ = _capture_render(monkeypatch)
+
+    assert rendering.render_outro_asset([], "uwaterloo") == "https://asset.test/slide.png"
+    rendering.render_outro_asset([_event(3)], "uwaterloo", batch_kind="employers_on_campus")
+
+    assert requests[0]["json"] == {
+        "kind": "outro",
+        "batch_kind": "events",
+        "events": [],
+        "school": "uwaterloo",
+    }
+    assert [event["id"] for event in requests[1]["json"]["events"]] == [3]
+    assert requests[1]["json"]["batch_kind"] == "employers_on_campus"

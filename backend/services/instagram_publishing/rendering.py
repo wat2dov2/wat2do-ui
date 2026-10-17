@@ -54,6 +54,18 @@ def render_cover_asset(
     )
 
 
+def render_outro_asset(
+    events: list[dict[str, Any]],
+    school: str,
+    *,
+    batch_kind: InstagramPublishBatchKind = "events",
+) -> str:
+    """Render and upload the last slide, listing the scrape's other events."""
+    return _upload_png(
+        _render({"kind": "outro", "batch_kind": batch_kind, "events": events, "school": school})
+    )
+
+
 def _render(slide: dict[str, Any]) -> bytes:
     url = settings.instagram_slide_render_url.strip()
     if not url:

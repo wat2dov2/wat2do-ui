@@ -377,6 +377,7 @@
       "eventId": "ID события",
       "eventIdPlaceholder": "Введите ID события",
       "coverSlide": "Обложка слайда",
+      "outroSlide": "Последний слайд",
       "coverBody": "Текст основного слайда",
       "slideOf": "Слайд {{index}} из {{count}}",
       "undoRemoveSlide": "Отменить удаление слайда",

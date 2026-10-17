@@ -377,6 +377,7 @@
       "eventId": "تقریب کا شناختی نمبر",
       "eventIdPlaceholder": "تقریب کا شناختی نمبر درج کریں",
       "coverSlide": "کور سلائیڈ",
+      "outroSlide": "آخری سلائیڈ",
       "coverBody": "کور باڈی متن",
       "slideOf": "{{count}} میں سے سلائیڈ {{index}}",
       "undoRemoveSlide": "سلائیڈ ہٹانا واپس کریں",

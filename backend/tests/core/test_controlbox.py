@@ -88,7 +88,8 @@ def test_checked_in_controlbox_is_valid() -> None:
     # written when the account is connected.
     assert not hasattr(controlbox.instagram_publishing, "accounts")
     assert controlbox.instagram_publishing.new_event_window_hours == 24
-    assert controlbox.instagram_publishing.maximum_event_slides == 9
+    assert controlbox.instagram_publishing.maximum_event_slides == 8
+    assert controlbox.instagram_publishing.outro_event_rows == 10
     assert controlbox.instagram_publishing.status_poll_interval_seconds == 3
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
     assert controlbox.scraping.instagram_web_app_id == "936619743392459"

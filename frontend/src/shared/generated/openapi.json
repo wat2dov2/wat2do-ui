@@ -7000,6 +7000,31 @@
         ]
       }
     },
+    "/webhooks/event-change-alerts": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Send Event Change Alerts",
+        "description": "Called every minute by Supabase pg_cron while event changes are pending.",
+        "operationId": "send_event_change_alerts_webhooks_event_change_alerts_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/webhooks/automate/logs": {
       "get": {
         "tags": [
@@ -10529,6 +10554,17 @@
             ],
             "title": "Published Cover Url"
           },
+          "published_outro_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Outro Url"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -10565,6 +10601,13 @@
             "type": "integer",
             "title": "New Event Count",
             "default": 0
+          },
+          "other_events": {
+            "items": {
+              "$ref": "#/components/schemas/EventSummaryResponse"
+            },
+            "type": "array",
+            "title": "Other Events"
           },
           "items": {
             "items": {
@@ -10713,6 +10756,17 @@
               }
             ],
             "title": "Published Cover Url"
+          },
+          "published_outro_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Outro Url"
           },
           "created_at": {
             "type": "string",

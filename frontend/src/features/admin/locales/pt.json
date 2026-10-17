@@ -377,6 +377,7 @@
       "eventId": "ID do evento",
       "eventIdPlaceholder": "Digite um ID de evento",
       "coverSlide": "Slide de capa",
+      "outroSlide": "Último slide",
       "coverBody": "Texto do corpo da capa",
       "slideOf": "Slide {{index}} de {{count}}",
       "undoRemoveSlide": "Desfazer remoção do slide",

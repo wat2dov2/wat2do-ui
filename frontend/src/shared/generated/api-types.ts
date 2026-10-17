@@ -1632,6 +1632,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/webhooks/event-change-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Event Change Alerts
+         * @description Called every minute by Supabase pg_cron while event changes are pending.
+         */
+        post: operations["send_event_change_alerts_webhooks_event_change_alerts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/webhooks/automate/logs": {
         parameters: {
             query?: never;
@@ -2896,6 +2916,8 @@ export interface components {
             meta_media_id?: string | null;
             /** Published Cover Url */
             published_cover_url?: string | null;
+            /** Published Outro Url */
+            published_outro_url?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -2917,6 +2939,8 @@ export interface components {
              * @default 0
              */
             new_event_count: number;
+            /** Other Events */
+            other_events?: components["schemas"]["EventSummaryResponse"][];
             /** Items */
             items: components["schemas"]["InstagramPublishItemResponse"][];
         };
@@ -2980,6 +3004,8 @@ export interface components {
             meta_media_id?: string | null;
             /** Published Cover Url */
             published_cover_url?: string | null;
+            /** Published Outro Url */
+            published_outro_url?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -8218,6 +8244,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_event_change_alerts_webhooks_event_change_alerts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

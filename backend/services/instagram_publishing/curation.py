@@ -224,6 +224,7 @@ def _write_packet(workdir: Path, packet: dict[str, Any], songs: list[dict[str, A
                 "language": school.language if school else "en",
                 "default_caption_intro": packet["caption_intro"],
                 "events": events,
+                "excluded_clubs": packet["excluded_clubs"],
                 "songs": [{"title": song["title"], "artist": song["artist"]} for song in songs],
                 "recent_songs": [
                     {"title": song["title"], "artist": song["artist"]}

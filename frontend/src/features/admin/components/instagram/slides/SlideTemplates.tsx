@@ -18,6 +18,7 @@ import {
   SLIDE_STICKER_SIZE,
   type CoverSlideModel,
   type EventSlideModel,
+  type OutroSlideModel,
 } from "@/features/admin/lib/instagramSlides";
 
 // Light-theme functional tokens, resolved from styles/functional-tokens.css.
@@ -373,6 +374,93 @@ export function CoverSlideTemplate({ model, renderPoster = renderSlidePoster }: 
         </div>
         <div style={{ display: "flex" }}>{model.siteLine}</div>
       </div>
+    </div>
+  );
+}
+
+/** Ten rows of these fill the card between the outro's header and footer. */
+const OUTRO_ROW_PADDING = 12;
+
+/**
+ * The carousel's last slide: the scrape's other events, or the school's site.
+ *
+ * It shares the cover's colours, doodles and logo, and lists events on the
+ * event slides' white card so the rows read like the rest of the carousel.
+ */
+export function OutroSlideTemplate({ model }: { model: OutroSlideModel }) {
+  const { primary, secondary } = model.colors;
+
+  return (
+    <div style={{ ...slideFrame, backgroundColor: primary, color: secondary, overflow: "hidden" }}>
+      <CoverDoodleField icons={model.doodleIcons} />
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          padding: `${COVER_MARGIN}px ${COVER_MARGIN}px 0 ${COVER_MARGIN}px`,
+        }}
+      >
+        <div style={{ display: "flex", fontSize: 56, fontWeight: 700, lineHeight: 1.05, maxWidth: COVER_CONTENT_WIDTH - COVER_LOGO_SIZE }}>
+          {model.headline}
+        </div>
+        <CoverLogo src={model.logoSrc} />
+      </div>
+
+      {model.rows.length ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              margin: `28px ${COVER_MARGIN}px 0 ${COVER_MARGIN}px`,
+              padding: `8px ${SLIDE_CARD_INSET + 4}px`,
+              backgroundColor: LIGHT.surface,
+              color: LIGHT.foreground,
+              borderRadius: 28,
+            }}
+          >
+            {model.rows.map((row, index) => (
+              <div
+                key={index}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 3,
+                  padding: `${OUTRO_ROW_PADDING}px 0`,
+                  borderTop: index ? `2px solid ${LIGHT.secondary}` : "none",
+                }}
+              >
+                <p style={{ ...clampText(1), fontSize: 32, fontWeight: 700, lineHeight: 1.2, maxHeight: 39 }}>{row.title}</p>
+                {row.detail ? <p style={{ ...clampText(1), fontSize: 24, fontWeight: 500, lineHeight: 1.2, maxHeight: 29, color: LIGHT.mutedForeground }}>{row.detail}</p> : null}
+              </div>
+            ))}
+          </div>
+      ) : (
+        <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", padding: `0 ${COVER_MARGIN}px ${COVER_MARGIN}px` }}>
+          <div
+            style={{
+              display: "flex",
+              padding: "36px 56px",
+              backgroundColor: LIGHT.surface,
+              color: LIGHT.foreground,
+              borderRadius: 28,
+              fontSize: 64,
+              fontWeight: 700,
+              lineHeight: 1.1,
+            }}
+          >
+            {model.siteName}
+          </div>
+        </div>
+      )}
+
+      {/* Pinned to the corner the cover's footer uses. */}
+      {model.rows.length ? (
+        <div style={{ display: "flex", position: "absolute", left: COVER_MARGIN, bottom: COVER_MARGIN, fontSize: 30, fontWeight: 700 }}>
+          {model.moreLine || model.siteLine}
+        </div>
+      ) : null}
     </div>
   );
 }

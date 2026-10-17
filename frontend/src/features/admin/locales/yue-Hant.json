@@ -377,6 +377,7 @@
       "eventId": "活動 ID",
       "eventIdPlaceholder": "輸入活動 ID",
       "coverSlide": "封面幻燈片",
+      "outroSlide": "最後一張幻燈片",
       "coverBody": "封面正文",
       "slideOf": "第 {{index}} 張幻燈片，共 {{count}} 張",
       "undoRemoveSlide": "復原移除投影片",

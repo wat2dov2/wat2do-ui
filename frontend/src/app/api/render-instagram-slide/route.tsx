@@ -7,6 +7,7 @@ import sharp from "sharp";
 import {
   CoverSlideTemplate,
   EventSlideTemplate,
+  OutroSlideTemplate,
 } from "@/features/admin/components/instagram/slides/SlideTemplates";
 import {
   SLIDE_HEIGHT,
@@ -14,6 +15,7 @@ import {
   SLIDE_POSTER_REGIONS,
   buildCoverSlideModel,
   buildEventSlideModel,
+  buildOutroSlideModel,
   fitEventSlidePoster,
   type SlideEvent,
 } from "@/features/admin/lib/instagramSlides";
@@ -41,7 +43,15 @@ interface CoverSlideRequest {
   body?: string | null;
 }
 
-type SlideRequest = EventSlideRequest | CoverSlideRequest;
+interface OutroSlideRequest {
+  batch_kind?: Parameters<typeof buildOutroSlideModel>[0]["batchKind"];
+  kind: "outro";
+  /** The scrape window's other upcoming events, soonest first; may be empty. */
+  events: SlideEvent[];
+  school: string;
+}
+
+type SlideRequest = EventSlideRequest | CoverSlideRequest | OutroSlideRequest;
 
 const MAX_SOURCE_IMAGE_BYTES = 15 * 1024 * 1024;
 // The slide templates mirror the event card's type scale, which uses regular,
@@ -154,7 +164,9 @@ async function inlineImage(sourceUrl: string | null | undefined, kind: keyof typ
 async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
   const school = slide.kind === "event"
     ? slide.event.school ?? slide.school ?? ""
-    : slide.school ?? slide.events[0]?.school ?? "";
+    : slide.kind === "outro"
+      ? slide.school
+      : slide.school ?? slide.events[0]?.school ?? "";
   const schoolRecord = await getSchool(school);
   if (!schoolRecord) throw new Error(`School not found for slide rendering: ${school}`);
 
@@ -170,6 +182,20 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
       poster: dimensions?.width && dimensions.height ? fitEventSlidePoster(dimensions.width, dimensions.height) : undefined,
     });
     return <EventSlideTemplate model={model} />;
+  }
+
+  if (slide.kind === "outro") {
+    return (
+      <OutroSlideTemplate
+        model={buildOutroSlideModel({
+          school,
+          language: schoolRecord.language ?? "en",
+          colors: getSchoolColors(schoolRecord),
+          batchKind: slide.batch_kind,
+          events: slide.events,
+        })}
+      />
+    );
   }
 
   const posterUrls = slide.events
@@ -203,6 +229,10 @@ function isSlideRequest(value: unknown): value is SlideRequest {
   const slide = value as Partial<SlideRequest>;
   if (slide.kind === "event") return typeof (slide as EventSlideRequest).event?.id === "number";
   if (slide.kind === "cover") return Array.isArray((slide as CoverSlideRequest).events);
+  if (slide.kind === "outro") {
+    const outro = slide as OutroSlideRequest;
+    return Array.isArray(outro.events) && typeof outro.school === "string";
+  }
   return false;
 }
 

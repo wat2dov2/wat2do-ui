@@ -377,6 +377,7 @@
       "eventId": "ID wydarzenia",
       "eventIdPlaceholder": "Wprowadź ID wydarzenia",
       "coverSlide": "Slajd okładkowy",
+      "outroSlide": "Ostatni slajd",
       "coverBody": "Tekst główny na okładce",
       "slideOf": "Slajd {{index}} z {{count}}",
       "undoRemoveSlide": "Cofnij usunięcie slajdu",

@@ -397,7 +397,11 @@ Draft selection has no event-count quota.
 Keep every eligible event with visibly high-effort, appealing artwork or a genuinely compelling student experience.
 Exclude routine administrative meetings, generic information sessions and low-value listings unless the artwork or the activity clearly meets that bar.
 Review the actual poster before relying on artwork quality; an image URL alone is not evidence.
-Order retained events for engaging review, without filling slots or discarding good events to fit nine.
+Clubs that asked not to be posted are rows in `public.instagram_excluded_clubs`, keyed by lowercase Instagram handle without `@`.
+Add a row by hand when a club asks.
+Each candidate packet carries those handles as `excluded_clubs`, the curation prompt forbids picking their events, and the outro leaves them out.
+An admin can still add such an event to a draft by hand, so check before adding one manually.
+Order retained events for engaging review, without filling slots or discarding good events to fit the publishing limit.
 The publishing limit applies only when the admin publishes the final carousel.
 
 Sticker choices are saved in `instagram_publish_batches.sticker_selections` by event ID, so reordering a draft preserves them.
@@ -419,6 +423,13 @@ Use one or two compact sentences in the school's configured language, ideally 12
 Avoid umbrella copy such as “useful workshops,” “career exploration,” “creative breaks” or “campus connection” that obscures what the events are.
 Do not repeat the headline, event count, school or date already rendered on the cover.
 Each named highlight and perk must be supported by a selected event's title and full description, with selected event IDs recorded in the editorial evidence.
+
+Every carousel ends with an outro slide after the event slides.
+It lists the upcoming events from the cover's count window, the last `new_event_window_hours` before the batch's `window_end`, that did not get a slide of their own, soonest first.
+Each row shows the title, start time and club handle, up to `outro_event_rows`, and the footer counts any that did not fit.
+When there are none, the outro points to the school's site instead.
+Cover, event slides and outro must fit Instagram's ten-image carousel, so `maximum_event_slides` is eight.
+The admin drawer previews the outro from the batch's `other_events`, and a published batch keeps the posted image in `published_outro_url`.
 
 The event artwork and cover share school colors and the translucent doodle field.
 Event frames are inset on all four sides, and the former comment footer remains white with only the selected stickers.

@@ -107,6 +107,17 @@ export function InstagramCarouselDrawer({
         .filter((url) => url.length > 0),
     [eventIds, slideEvents],
   );
+  // The cover and the outro both read the batch's school, language and kind.
+  const cover = {
+    language: school?.language ?? "en",
+    batchKind: batch.batch_kind,
+    school: batch.school,
+    localDate: batch.local_date,
+    newEventCount: batch.new_event_count,
+    eventCount: eventIds.length,
+    body: coverBody,
+    tiles: coverTiles,
+  };
 
   const [editors, setEditors] = useState<Array<{
     eventId: number;
@@ -288,19 +299,23 @@ export function InstagramCarouselDrawer({
                 event={eventId == null ? null : liveSlides[eventId] ?? slideEvents[eventId] ?? null}
                 stickerLabels={eventId == null ? undefined : batch.sticker_selections?.[String(eventId)]}
                 coverColors={coverColors}
-                cover={{
-                  language: school?.language ?? "en",
-                  batchKind: batch.batch_kind,
-                  school: batch.school,
-                  localDate: batch.local_date,
-                  newEventCount: batch.new_event_count,
-                  eventCount: eventIds.length,
-                  body: coverBody,
-                  tiles: coverTiles,
-                }}
+                cover={cover}
+                outroEvents={batch.published_outro_url && index === publishedAssets.length - 1 ? [] : undefined}
                 publishedAssetUrl={publishedAssets[index] ?? null}
               />
               ))}
+              {/* A draft's last slide lists the scrape's events that have no slide; it is not editable. */}
+              {!publishedAssets.length && (
+                <CarouselSlidePreview
+                  key="outro"
+                  slideIndex={slideCount}
+                  slideCount={slideCount}
+                  event={null}
+                  coverColors={coverColors}
+                  cover={cover}
+                  outroEvents={batch.other_events ?? []}
+                />
+              )}
             </FormGrid>
             <Stack gap={6}>
             <InstagramSongSuggestion song={batch.suggested_song} />

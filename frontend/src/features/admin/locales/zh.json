@@ -377,6 +377,7 @@
       "eventId": "活动 ID",
       "eventIdPlaceholder": "输入活动 ID",
       "coverSlide": "封面",
+      "outroSlide": "最后一张幻灯片",
       "coverBody": "封面正文",
       "slideOf": "第 {{index}} 张，共 {{count}} 张",
       "undoRemoveSlide": "撤销移除幻灯片",

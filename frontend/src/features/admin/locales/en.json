@@ -377,6 +377,7 @@
       "eventId": "Event ID",
       "eventIdPlaceholder": "Enter an event ID",
       "coverSlide": "Cover slide",
+      "outroSlide": "Last slide",
       "coverBody": "Cover body text",
       "slideOf": "Slide {{index}} of {{count}}",
       "undoRemoveSlide": "Undo remove slide",

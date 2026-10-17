@@ -377,6 +377,7 @@
       "eventId": "Ereignis-ID",
       "eventIdPlaceholder": "Geben Sie eine Ereignis-ID ein",
       "coverSlide": "Titel-Folie",
+      "outroSlide": "Letzte Folie",
       "coverBody": "Text auf der Titelfolie",
       "slideOf": "Folie {{index}} von {{count}}",
       "undoRemoveSlide": "Entfernen der Folie rückgängig machen",

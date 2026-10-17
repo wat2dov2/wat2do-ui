@@ -18,6 +18,7 @@ def _packet(events=None):
         "music_chart": CHART,
         "recent_songs": [],
         "events": [{"id": 17, "title": "Pizza Night"}] if events is None else events,
+        "excluded_clubs": [],
     }
 
 

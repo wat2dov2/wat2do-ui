@@ -105,6 +105,20 @@ export interface CoverSlideModel {
   tiles: string[];
 }
 
+export interface OutroSlideModel {
+  colors: SchoolColors;
+  logoSrc: string;
+  doodleIcons: string[];
+  headline: string;
+  /** The scrape's other events, soonest first; empty when it found none. */
+  rows: { title: string; detail: string }[];
+  /** How many more events the slide had no room to list, as a sentence. */
+  moreLine: string;
+  /** The school's own origin, which the slide points to in either case. */
+  siteName: string;
+  siteLine: string;
+}
+
 const slideLocales = new Map<School["language"], Promise<i18n>>();
 
 /** Artwork never changes the reviewing admin's language or another render's locale. */
@@ -317,6 +331,68 @@ export function buildCoverSlideModel({
     siteLine: `${language === "fr" ? "Plus d’infos sur" : "More info on"} ${getSchoolPublicUrl(school)}`,
     tiles: tiles.slice(0, instagramPublishing.maximum_event_slides),
   };
+}
+
+/**
+ * The carousel's last slide, compiled from the scrape's other events.
+ *
+ * The backend sends every upcoming event from the cover's scrape window that did
+ * not get a slide of its own, soonest first. The slide lists as many as fit and
+ * counts the rest; with none it simply points to the school's site.
+ */
+export function buildOutroSlideModel({
+  school,
+  language,
+  colors,
+  batchKind = "events",
+  events,
+}: {
+  school: string;
+  language: "en" | "fr";
+  colors: SchoolColors;
+  batchKind?: ApiInstagramPublishBatchResponse["batch_kind"];
+  events: SlideEvent[];
+}): OutroSlideModel {
+  const siteName = getSchoolPublicUrl(school);
+  const rows = events.slice(0, instagramPublishing.outro_event_rows).map(event => {
+    const handle = normalizeInstagramHandle(event.ig_handle) || normalizeInstagramHandle(event.club_ig);
+    return {
+      title: text(event.title),
+      detail: [formatOutroWhen(event, language), handle ? `@${handle}` : text(event.club)].filter(Boolean).join(" · "),
+    };
+  });
+  const hidden = events.length - rows.length;
+  const employers = batchKind === "employers_on_campus";
+  return {
+    colors,
+    logoSrc: buildInstagramCoverLogo(colors),
+    doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),
+    headline: rows.length
+      ? employers
+        ? (language === "fr" ? "AUTRES EMPLOYEURS SUR LE CAMPUS" : "MORE EMPLOYERS ON CAMPUS")
+        : (language === "fr" ? "AUSSI AJOUTÉS AUJOURD’HUI" : "ALSO NEW TODAY")
+      : employers
+        ? (language === "fr" ? "DÉCOUVREZ TOUS LES EMPLOYEURS" : "CHECK OUT EVERY EMPLOYER")
+        : (language === "fr" ? "DÉCOUVREZ TOUS LES ÉVÉNEMENTS" : "CHECK OUT EVERY EVENT"),
+    rows,
+    moreLine: hidden > 0 ? (language === "fr" ? `+${hidden} autres sur ${siteName}` : `+${hidden} more on ${siteName}`) : "",
+    siteName,
+    siteLine: `${language === "fr" ? "Plus d’infos sur" : "More info on"} ${siteName}`,
+  };
+}
+
+/** "Thu, Oct 22, 10:00 PM": only the start, since each outro row has one detail line. */
+function formatOutroWhen(event: SlideEvent, locale: string): string {
+  const start = event.dtstart_utc ? new Date(event.dtstart_utc) : null;
+  if (!start || Number.isNaN(start.getTime())) return "";
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: event.tz,
+  }).format(start).replace(/[\u2009\u202f]/g, " ");
 }
 
 export function defaultCoverBody(eventCount: number, language: "en" | "fr"): string {

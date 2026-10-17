@@ -377,6 +377,7 @@
       "eventId": "ID de l'événement",
       "eventIdPlaceholder": "Entrez un ID d'événement",
       "coverSlide": "Diapositive de couverture",
+      "outroSlide": "Dernière diapositive",
       "coverBody": "Texte principal de la couverture",
       "slideOf": "Diapositive {{index}} sur {{count}}",
       "undoRemoveSlide": "Annuler le retrait de la diapositive",

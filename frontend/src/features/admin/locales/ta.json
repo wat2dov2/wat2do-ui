@@ -377,6 +377,7 @@
       "eventId": "நிகழ்வு ஐடி",
       "eventIdPlaceholder": "ஒரு நிகழ்வு ஐடி பதிவு செய்யவும்",
       "coverSlide": "முகப்பு ஸ்லைடு",
+      "outroSlide": "கடைசி ஸ்லைடு",
       "coverBody": "முகப்பு உள்ளடக்க உரை",
       "slideOf": "{{count}}-இல் ஸ்லைடு {{index}}",
       "undoRemoveSlide": "ஸ்லைடு அகற்றுதலைச் செயல்தவிர்",

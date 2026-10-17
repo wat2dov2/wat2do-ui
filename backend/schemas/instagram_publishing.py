@@ -77,6 +77,7 @@ class InstagramPublishBatchBaseResponse(BaseModel):
     error_message: str | None = None
     meta_media_id: str | None = None
     published_cover_url: str | None = None
+    published_outro_url: str | None = None
     created_at: datetime
     updated_at: datetime
     published_at: datetime | None = None
@@ -92,6 +93,9 @@ class InstagramPublishBatchResponse(InstagramPublishBatchBaseResponse):
     # plus every event currently selected for the carousel.
     sticker_selections: dict[str, list[str]] = Field(default_factory=dict)
     new_event_count: int = 0
+    # The rest of that lookback's upcoming events, hydrated like a slide's
+    # event, which the carousel's last slide lists. Never stored on the batch.
+    other_events: list[EventSummaryResponse] = Field(default_factory=list)
     items: list[InstagramPublishItemResponse]
 
 

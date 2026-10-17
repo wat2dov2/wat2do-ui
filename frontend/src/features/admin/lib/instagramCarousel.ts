@@ -36,7 +36,7 @@ export function isBatchEditable(batch: Batch): boolean {
 
 /**
  * The images a published run posted, indexed by slide: 0 is the cover, then the
- * event slides in carousel order.
+ * event slides in carousel order, then the outro when the run posted one.
  *
  * Empty until the run publishes, which is what makes the editor fall back to
  * rendering the templates from live event data.
@@ -46,5 +46,6 @@ export function publishedCarouselAssets(batch: Batch): (string | null)[] {
   return [
     batch.published_cover_url,
     ...carouselItems(batch).map((item) => item.published_asset_url ?? null),
+    ...(batch.published_outro_url ? [batch.published_outro_url] : []),
   ];
 }

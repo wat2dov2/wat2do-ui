@@ -4,13 +4,14 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { X } from "@/shared/ui/doodle-icons";
 import { cn } from "@/shared/lib/utils";
-import { CoverSlideTemplate, EventSlideTemplate, type SlidePosterProps } from "@/features/admin/components/instagram/slides/SlideTemplates";
+import { CoverSlideTemplate, EventSlideTemplate, OutroSlideTemplate, type SlidePosterProps } from "@/features/admin/components/instagram/slides/SlideTemplates";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import {
   SLIDE_HEIGHT,
   SLIDE_WIDTH,
   buildCoverSlideModel,
   buildEventSlideModel,
+  buildOutroSlideModel,
   fitEventSlidePoster,
   type EventSlideModel,
 } from "@/features/admin/lib/instagramSlides";
@@ -33,6 +34,8 @@ interface CarouselSlidePreviewProps {
   stickerLabels?: string[];
   cover: Omit<Parameters<typeof buildCoverSlideModel>[0], "colors">;
   coverColors: SchoolColors | null;
+  /** Set on the draft's last slide: the scrape's other events it lists. */
+  outroEvents?: Event[];
   /**
    * The PNG this slide published as, once the run is live.
    *
@@ -54,6 +57,7 @@ export function CarouselSlidePreview({
   stickerLabels,
   cover,
   coverColors,
+  outroEvents,
   publishedAssetUrl,
   selected,
   onSelect,
@@ -68,6 +72,7 @@ export function CarouselSlidePreview({
   const [posterResult, setPosterResult] = useState<{ src: string; width: number; height: number } | null>(null);
   const poster = posterResult?.src === event?.source_image_url ? posterResult : undefined;
   const isCover = slideIndex === COVER_INDEX;
+  const isOutro = outroEvents !== undefined;
   const previewRef = useRef<HTMLDivElement>(null);
   const [previewWidth, setPreviewWidth] = useState(PREVIEW_WIDTH);
   const previewScale = previewWidth / SLIDE_WIDTH;
@@ -131,7 +136,7 @@ export function CarouselSlidePreview({
       className={cn("relative z-0 flex max-w-full flex-col items-center gap-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring", onSelect && "cursor-pointer", selected && "ring-2 ring-primary")}
       style={{ width: "100%" }}
     >
-      {publishedAssetUrl || (isCover && coverColors) || (!isCover && slideModel) ? (
+      {publishedAssetUrl || ((isCover || isOutro) && coverColors) || (!isCover && slideModel) ? (
         <div
           className="relative overflow-hidden rounded-xl border border-border bg-surface"
           style={{ width: "100%", height: SLIDE_HEIGHT * previewScale }}
@@ -148,19 +153,28 @@ export function CarouselSlidePreview({
           >
             {isCover && coverColors
               ? <CoverSlideTemplate model={buildCoverSlideModel({ ...cover, colors: coverColors })} renderPoster={renderPoster} />
-              : slideModel ? <EventSlideTemplate model={slideModel} renderPoster={renderPoster} /> : null}
+              : isOutro && coverColors
+                ? <OutroSlideTemplate model={buildOutroSlideModel({
+                  school: cover.school,
+                  language: cover.language,
+                  colors: coverColors,
+                  batchKind: cover.batchKind,
+                  // Publishing lists each event's first stored occurrence, as event slides do.
+                  events: outroEvents.map(event => ({ ...event, ...event.occurrences[0], id: event.id, tz: getSchoolTimezone(event.school) })),
+                })} />
+                : slideModel ? <EventSlideTemplate model={slideModel} renderPoster={renderPoster} /> : null}
           </div>}
         </div>
       ) : (
         <p className="py-12 text-center text-sm text-muted-foreground">
-          {modelError ? t("common.error") : isCover || event
+          {modelError ? t("common.error") : isCover || isOutro || event
             ? t("common.loading")
             : t("admin.instagramPublishing.slideEventUnavailable")}
         </p>
       )}
-      {isCover && (
+      {(isCover || isOutro) && (
         <figcaption className="text-xs text-muted-foreground">
-          {t("admin.instagramPublishing.coverSlide")}
+          {t(isCover ? "admin.instagramPublishing.coverSlide" : "admin.instagramPublishing.outroSlide")}
         </figcaption>
       )}
     </figure>
