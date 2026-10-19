@@ -395,6 +395,40 @@
       "description": "Esamina le proposte di attività vicine.",
       "reviewHelp": "L’approvazione registra la tua decisione. Non pubblica un banner."
     },
+    "painPoints": {
+      "title": "Criticità dei concorrenti",
+      "cardDescription": "Lamentele su Eventbrite, Meetup e Fable Social.",
+      "description": "Recensioni e post pubblici in cui le persone si lamentano dei concorrenti. Sola lettura; wat2do non risponde mai.",
+      "competitor": "Concorrente",
+      "source": "Fonte",
+      "audience": "Chi",
+      "complaint": "Lamentela",
+      "posted": "Pubblicato",
+      "open": "Apri originale",
+      "markSeen": "Segna come visto",
+      "dismiss": "Ignora",
+      "emptyTitle": "Nessuna lamentela trovata",
+      "emptyDescription": "Ancora nulla corrisponde a questi filtri.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Recensioni Google",
+        "trustpilot": "Trustpilot",
+        "forum": "Forum"
+      },
+      "audiences": {
+        "organizer": "Organizzatore",
+        "attendee": "Partecipante",
+        "other": "Altro"
+      },
+      "statuses": {
+        "new": "Nuovo",
+        "seen": "Visto",
+        "dismissed": "Ignorato"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "Dettagli del record",
       "clubId": "ID del club: {{id}}",

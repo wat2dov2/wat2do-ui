@@ -395,6 +395,40 @@
       "description": "Analise as indicações de negócios próximos.",
       "reviewHelp": "A aprovação registra sua decisão. Ela não publica um banner."
     },
+    "painPoints": {
+      "title": "Dores dos concorrentes",
+      "cardDescription": "Reclamações sobre Eventbrite, Meetup e Fable Social.",
+      "description": "Avaliações e publicações públicas em que pessoas reclamam dos concorrentes. Somente leitura; a wat2do nunca responde.",
+      "competitor": "Concorrente",
+      "source": "Fonte",
+      "audience": "Quem",
+      "complaint": "Reclamação",
+      "posted": "Publicado",
+      "open": "Abrir original",
+      "markSeen": "Marcar como visto",
+      "dismiss": "Descartar",
+      "emptyTitle": "Nenhuma reclamação encontrada",
+      "emptyDescription": "Nada corresponde a esses filtros ainda.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Avaliações do Google",
+        "trustpilot": "Trustpilot",
+        "forum": "Fórum"
+      },
+      "audiences": {
+        "organizer": "Organizador",
+        "attendee": "Participante",
+        "other": "Outro"
+      },
+      "statuses": {
+        "new": "Novo",
+        "seen": "Visto",
+        "dismissed": "Descartado"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "Detalhes do registo",
       "clubId": "ID do clube: {{id}}",

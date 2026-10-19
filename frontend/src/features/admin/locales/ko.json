@@ -395,6 +395,40 @@
       "description": "근처 가게 추천을 검토하세요.",
       "reviewHelp": "승인은 검토 결과를 기록합니다. 배너를 게시하지는 않습니다."
     },
+    "painPoints": {
+      "title": "경쟁사 불만 사항",
+      "cardDescription": "Eventbrite, Meetup, Fable Social에 대한 불만.",
+      "description": "사람들이 경쟁사에 대해 불평하는 공개 리뷰와 게시물입니다. 읽기 전용이며 wat2do는 절대 답글을 달지 않습니다.",
+      "competitor": "경쟁사",
+      "source": "출처",
+      "audience": "대상",
+      "complaint": "불만",
+      "posted": "게시일",
+      "open": "원본 열기",
+      "markSeen": "확인함으로 표시",
+      "dismiss": "무시",
+      "emptyTitle": "불만을 찾지 못했습니다",
+      "emptyDescription": "아직 이 필터와 일치하는 항목이 없습니다.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Google 리뷰",
+        "trustpilot": "Trustpilot",
+        "forum": "포럼"
+      },
+      "audiences": {
+        "organizer": "주최자",
+        "attendee": "참가자",
+        "other": "기타"
+      },
+      "statuses": {
+        "new": "새 항목",
+        "seen": "확인함",
+        "dismissed": "무시함"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "기록 상세 정보",
       "clubId": "동아리 ID: {{id}}",

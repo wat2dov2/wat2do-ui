@@ -395,6 +395,40 @@
       "description": "Examinez les propositions de commerces à proximité.",
       "reviewHelp": "L’approbation enregistre votre décision. Elle ne publie pas de bannière."
     },
+    "painPoints": {
+      "title": "Irritants des concurrents",
+      "cardDescription": "Plaintes sur Eventbrite, Meetup et Fable Social.",
+      "description": "Avis et publications publics où des gens se plaignent des concurrents. Lecture seule; wat2do ne répond jamais.",
+      "competitor": "Concurrent",
+      "source": "Source",
+      "audience": "Qui",
+      "complaint": "Plainte",
+      "posted": "Publié",
+      "open": "Ouvrir l’original",
+      "markSeen": "Marquer comme vu",
+      "dismiss": "Ignorer",
+      "emptyTitle": "Aucune plainte trouvée",
+      "emptyDescription": "Rien ne correspond encore à ces filtres.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Avis Google",
+        "trustpilot": "Trustpilot",
+        "forum": "Forum"
+      },
+      "audiences": {
+        "organizer": "Organisateur",
+        "attendee": "Participant",
+        "other": "Autre"
+      },
+      "statuses": {
+        "new": "Nouveau",
+        "seen": "Vu",
+        "dismissed": "Ignoré"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "Détails du dossier",
       "clubId": "Identifiant du club : {{id}}",

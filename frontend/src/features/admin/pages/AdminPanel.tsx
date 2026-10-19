@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Building2, Users, Calendar, Instagram, Megaphone, Settings, Shield } from "@/shared/ui/doodle-icons";
+import { Building2, Users, Calendar, Instagram, Megaphone, MessageCircle, Settings, Shield } from "@/shared/ui/doodle-icons";
 import { Button } from "@/shared/ui/button";
 import { AdminCard } from "@/shared/ui/AdminCard";
 import { Stack } from "@/shared/layout/stack";
@@ -47,6 +47,8 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
         <AdminCard icon={Building2} title={t("admin.sponsors.title")} description={t("admin.sponsors.description")}
           pendingCounts={[{ label: t("admin.sponsors.submissions"), count: counts.sponsorSubmissions }]}
           onClick={() => onNavigate("admin-sponsors")} />
+        <AdminCard icon={MessageCircle} title={t("admin.painPoints.title")} description={t("admin.painPoints.cardDescription")}
+          onClick={() => onNavigate("admin-pain-points")} />
         <AdminCard icon={Instagram} title={t("admin.instagramPublishing.title")} description={t("admin.instagramPublishing.cardDescription")}
           onClick={() => onNavigate("admin-instagram")} />
         <AdminCard icon={Settings} title={t("admin.diagnostics.title")} description={t("admin.diagnostics.cardDescription")}

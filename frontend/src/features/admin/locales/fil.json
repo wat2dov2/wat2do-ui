@@ -395,6 +395,40 @@
       "description": "Suriin ang mga mungkahi para sa kalapit na negosyo.",
       "reviewHelp": "Itinatala ng pag-apruba ang desisyon mo. Hindi ito naglalathala ng banner."
     },
+    "painPoints": {
+      "title": "Mga reklamo sa kakumpitensya",
+      "cardDescription": "Mga reklamo tungkol sa Eventbrite, Meetup at Fable Social.",
+      "description": "Mga pampublikong review at post kung saan nagrereklamo ang mga tao tungkol sa mga kakumpitensya. Basahin lang; hindi kailanman sumasagot ang wat2do.",
+      "competitor": "Kakumpitensya",
+      "source": "Pinagmulan",
+      "audience": "Sino",
+      "complaint": "Reklamo",
+      "posted": "Na-post",
+      "open": "Buksan ang orihinal",
+      "markSeen": "Markahang nakita",
+      "dismiss": "Balewalain",
+      "emptyTitle": "Walang nakitang reklamo",
+      "emptyDescription": "Wala pang tumutugma sa mga filter na ito.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Mga review sa Google",
+        "trustpilot": "Trustpilot",
+        "forum": "Forum"
+      },
+      "audiences": {
+        "organizer": "Organizer",
+        "attendee": "Dadalo",
+        "other": "Iba pa"
+      },
+      "statuses": {
+        "new": "Bago",
+        "seen": "Nakita",
+        "dismissed": "Binalewala"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "Mga detalye ng tala",
       "clubId": "ID ng club: {{id}}",

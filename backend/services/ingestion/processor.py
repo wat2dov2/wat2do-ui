@@ -20,6 +20,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from core.tables import INGESTION_ITEMS
+from services.claude_code import remove_leftovers
 from services.ingestion import agent, changes, items
 from services.ingestion.directory import list_sources
 from services.ingestion.instagram_fetch import FetchBlocked, fetch_post
@@ -157,7 +158,7 @@ def process_queue(
         except BlockingIOError:
             return {"busy": 1}
         # Nothing else runs agents now, so whatever a killed run left behind can go.
-        agent.remove_leftovers()
+        remove_leftovers(agent.WORKDIR_PREFIX)
         # An interrupted run may have left changes whose side effects never ran,
         # including rows whose agent was killed before storing their posters.
         changes.drain(include_pending_posters=True)

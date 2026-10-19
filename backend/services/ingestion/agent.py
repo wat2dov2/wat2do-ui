@@ -8,13 +8,8 @@ applies the side effects of what the agent changed.
 
 from __future__ import annotations
 
-import json
 import logging
 import mimetypes
-import os
-import re
-import shutil
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -29,6 +24,7 @@ from core.database import get_sb
 from core.sanitize import normalize_scraped_text, parse_iso_datetime
 from core.tables import EVENTS, POSITIONS
 from services import school_service
+from services.claude_code import ClaudeCodeError, claude_environment, run_agent
 from services.ingestion import changes
 from services.ingestion.items import CONTROL
 from services.school_context import (
@@ -293,82 +289,24 @@ def _posted_at(post: dict) -> datetime | None:
 
 def _run(prompt: str, workdir: str) -> str:
     """Run the agent in ``workdir`` and return its reported outcome."""
-    executable = shutil.which("claude")
-    if executable is None:
-        raise AgentError("Claude Code is not installed")
     try:
-        result = subprocess.run(
-            [
-                executable,
-                "-p",
-                "--model",
-                CONTROL.model,
-                "--tools",
-                "Read,Bash",
-                "--allowedTools",
-                "Read(./**)",
-                "Bash(psql:*)",
-                "--permission-mode",
-                "dontAsk",
-                "--strict-mcp-config",
-                "--no-session-persistence",
-                "--output-format",
-                "json",
-                "--json-schema",
-                json.dumps(OUTCOME_SCHEMA),
-            ],
-            input=prompt,
-            cwd=workdir,
-            env=_agent_environment(),
-            capture_output=True,
-            text=True,
+        answer = run_agent(
+            prompt,
+            workdir=workdir,
+            model=CONTROL.model,
+            tools=("Read", "Bash"),
+            allowed_tools=("Read(./**)", "Bash(psql:*)"),
+            schema=OUTCOME_SCHEMA,
             timeout=CONTROL.model_timeout_seconds,
+            env=_agent_environment(),
         )
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise AgentError(f"Ingestion agent failed ({type(exc).__name__})") from None
-    finally:
-        remove_run_folder(workdir)
-    if result.returncode:
-        raise AgentError(f"Ingestion agent failed (exit {result.returncode})")
-    return _outcome(result.stdout)
-
-
-def _outcome(stdout: str) -> str:
-    try:
-        answer = json.loads(stdout).get("structured_output") or {}
-    except (ValueError, AttributeError):
-        answer = {}
+    except ClaudeCodeError as exc:
+        raise AgentError(f"Ingestion agent {exc}") from None
     outcome = answer.get("outcome")
     if outcome not in OUTCOME_SCHEMA["properties"]["outcome"]["enum"]:
         raise AgentError("Ingestion agent gave no outcome")
     log.debug("Ingestion agent: %s", str(answer.get("summary"))[:500])
     return outcome
-
-
-def claude_projects() -> Path:
-    return Path.home() / ".claude/projects"
-
-
-def remove_run_folder(workdir: str) -> None:
-    """Delete the folder Claude Code keeps for a run, named after its working directory."""
-    name = re.sub(r"[^A-Za-z0-9]", "-", os.path.realpath(workdir))
-    shutil.rmtree(claude_projects() / name, ignore_errors=True)
-
-
-def remove_leftovers(prefix: str = WORKDIR_PREFIX) -> None:
-    """Delete working and Claude Code folders that interrupted runs never cleaned up."""
-    leftovers = [
-        *Path(tempfile.gettempdir()).glob(f"{prefix}*"),
-        *claude_projects().glob(f"*{re.sub(r'[^A-Za-z0-9]', '-', prefix)}*"),
-    ]
-    for folder in leftovers:
-        shutil.rmtree(folder, ignore_errors=True)
-
-
-def claude_environment() -> dict[str, str]:
-    """Only what Claude Code itself needs; no application secrets."""
-    inherited = ("PATH", "HOME", "USER", "LOGNAME", "LANG", "TMPDIR")
-    return {name: os.environ[name] for name in inherited if name in os.environ}
 
 
 def _agent_environment() -> dict[str, str]:

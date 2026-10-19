@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from schemas.directory_source import DirectorySource
+from services import claude_code
 from services.ingestion import directory_agent as module
 
 LISTING_URL = "https://clubs.example.edu/events"
@@ -135,8 +136,8 @@ def test_one_failing_directory_never_stops_the_others(monkeypatch, tmp_path):
 def test_agent_runs_without_secrets_and_leaves_no_run_folder(monkeypatch, tmp_path):
     calls = []
     removed = []
-    monkeypatch.setattr(module.shutil, "which", lambda _name: "/usr/local/bin/claude")
-    monkeypatch.setattr(module, "remove_run_folder", removed.append)
+    monkeypatch.setattr(claude_code.shutil, "which", lambda _name: "/usr/local/bin/claude")
+    monkeypatch.setattr(claude_code, "remove_run_folder", removed.append)
     monkeypatch.setenv("SUPABASE_SECRET_KEY", "never-passed")
 
     def run(command, **kwargs):
@@ -144,7 +145,7 @@ def test_agent_runs_without_secrets_and_leaves_no_run_folder(monkeypatch, tmp_pa
         report = {"items": [{"url": "https://clubs.example.edu/events/jam", "verdict": "event"}]}
         return SimpleNamespace(returncode=0, stdout=json.dumps({"structured_output": report}))
 
-    monkeypatch.setattr(module.subprocess, "run", run)
+    monkeypatch.setattr(claude_code.subprocess, "run", run)
 
     reported = module._run("prompt", str(tmp_path))
 
@@ -158,10 +159,12 @@ def test_agent_runs_without_secrets_and_leaves_no_run_folder(monkeypatch, tmp_pa
 
 
 def test_agent_without_a_report_fails(monkeypatch, tmp_path):
-    monkeypatch.setattr(module.shutil, "which", lambda _name: "/usr/local/bin/claude")
-    monkeypatch.setattr(module, "remove_run_folder", lambda _workdir: None)
+    monkeypatch.setattr(claude_code.shutil, "which", lambda _name: "/usr/local/bin/claude")
+    monkeypatch.setattr(claude_code, "remove_run_folder", lambda _workdir: None)
     monkeypatch.setattr(
-        module.subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=0, stdout="oops")
+        claude_code.subprocess,
+        "run",
+        lambda *_a, **_k: SimpleNamespace(returncode=0, stdout="oops"),
     )
 
     with pytest.raises(module.AgentError):

@@ -395,6 +395,40 @@
       "description": "ਨੇੜਲੇ ਕਾਰੋਬਾਰਾਂ ਦੀਆਂ ਨਾਮਜ਼ਦਗੀਆਂ ਦੀ ਸਮੀਖਿਆ ਕਰੋ।",
       "reviewHelp": "ਮਨਜ਼ੂਰੀ ਤੁਹਾਡਾ ਫ਼ੈਸਲਾ ਦਰਜ ਕਰਦੀ ਹੈ। ਇਸ ਨਾਲ ਬੈਨਰ ਪ੍ਰਕਾਸ਼ਿਤ ਨਹੀਂ ਹੁੰਦਾ।"
     },
+    "painPoints": {
+      "title": "ਮੁਕਾਬਲੇਬਾਜ਼ਾਂ ਦੀਆਂ ਸਮੱਸਿਆਵਾਂ",
+      "cardDescription": "Eventbrite, Meetup ਅਤੇ Fable Social ਬਾਰੇ ਸ਼ਿਕਾਇਤਾਂ।",
+      "description": "ਜਨਤਕ ਸਮੀਖਿਆਵਾਂ ਅਤੇ ਪੋਸਟਾਂ ਜਿੱਥੇ ਲੋਕ ਮੁਕਾਬਲੇਬਾਜ਼ਾਂ ਬਾਰੇ ਸ਼ਿਕਾਇਤ ਕਰਦੇ ਹਨ। ਸਿਰਫ਼ ਪੜ੍ਹਨ ਲਈ; wat2do ਕਦੇ ਜਵਾਬ ਨਹੀਂ ਦਿੰਦਾ।",
+      "competitor": "ਮੁਕਾਬਲੇਬਾਜ਼",
+      "source": "ਸਰੋਤ",
+      "audience": "ਕੌਣ",
+      "complaint": "ਸ਼ਿਕਾਇਤ",
+      "posted": "ਪੋਸਟ ਕੀਤਾ",
+      "open": "ਮੂਲ ਖੋਲ੍ਹੋ",
+      "markSeen": "ਵੇਖਿਆ ਮਾਰਕ ਕਰੋ",
+      "dismiss": "ਖਾਰਜ ਕਰੋ",
+      "emptyTitle": "ਕੋਈ ਸ਼ਿਕਾਇਤ ਨਹੀਂ ਮਿਲੀ",
+      "emptyDescription": "ਅਜੇ ਇਹਨਾਂ ਫਿਲਟਰਾਂ ਨਾਲ ਕੁਝ ਮੇਲ ਨਹੀਂ ਖਾਂਦਾ।",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Google ਸਮੀਖਿਆਵਾਂ",
+        "trustpilot": "Trustpilot",
+        "forum": "ਫੋਰਮ"
+      },
+      "audiences": {
+        "organizer": "ਪ੍ਰਬੰਧਕ",
+        "attendee": "ਹਾਜ਼ਰ",
+        "other": "ਹੋਰ"
+      },
+      "statuses": {
+        "new": "ਨਵਾਂ",
+        "seen": "ਵੇਖਿਆ",
+        "dismissed": "ਖਾਰਜ"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "ਰਿਕਾਰਡ ਵੇਰਵੇ",
       "clubId": "ਕਲੱਬ ਆਈਡੀ: {{id}}",

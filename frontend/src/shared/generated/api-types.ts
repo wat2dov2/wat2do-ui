@@ -516,6 +516,40 @@ export interface paths {
         patch: operations["update_claim_clubs_claims__claim_id__patch"];
         trace?: never;
     };
+    "/competitor-pain-points/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pain Points */
+        get: operations["list_pain_points_competitor_pain_points__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/competitor-pain-points/{pain_point_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Review Pain Point */
+        patch: operations["review_pain_point_competitor_pain_points__pain_point_id__patch"];
+        trace?: never;
+    };
     "/contact/": {
         parameters: {
             query?: never;
@@ -2176,6 +2210,54 @@ export interface components {
             /** School */
             school?: string | null;
         };
+        /** CompetitorPainPointResponse */
+        CompetitorPainPointResponse: {
+            /** Competitor */
+            competitor: string;
+            /** Source */
+            source: string;
+            /** Url */
+            url: string;
+            /**
+             * Author
+             * @default
+             */
+            author: string;
+            /** Quote */
+            quote: string;
+            /** Pain Point */
+            pain_point: string;
+            /**
+             * Audience
+             * @enum {string}
+             */
+            audience: "organizer" | "attendee" | "other";
+            /** Posted At */
+            posted_at?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Found At
+             * Format: date-time
+             */
+            found_at: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "seen" | "dismissed";
+        };
+        /** CompetitorPainPointReview */
+        CompetitorPainPointReview: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "seen" | "dismissed";
+        };
         /** ContactCreate */
         ContactCreate: {
             /**
@@ -3320,6 +3402,19 @@ export interface components {
         PaginatedResponse_ClubSubmissionResponse_: {
             /** Items */
             items: components["schemas"]["ClubSubmissionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[CompetitorPainPointResponse] */
+        PaginatedResponse_CompetitorPainPointResponse_: {
+            /** Items */
+            items: components["schemas"]["CompetitorPainPointResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -5617,6 +5712,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClubClaimResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_pain_points_competitor_pain_points__get: {
+        parameters: {
+            query?: {
+                competitor?: string | null;
+                source?: string | null;
+                audience?: ("organizer" | "attendee" | "other") | null;
+                pain_point_status?: ("new" | "seen" | "dismissed") | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_CompetitorPainPointResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_pain_point_competitor_pain_points__pain_point_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pain_point_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompetitorPainPointReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetitorPainPointResponse"];
                 };
             };
             /** @description Validation Error */

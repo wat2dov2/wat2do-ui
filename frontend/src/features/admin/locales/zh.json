@@ -395,6 +395,40 @@
       "description": "审核附近商家的推荐。",
       "reviewHelp": "批准仅记录审核决定，不会发布横幅。"
     },
+    "painPoints": {
+      "title": "竞品痛点",
+      "cardDescription": "关于 Eventbrite、Meetup 和 Fable Social 的投诉。",
+      "description": "人们在公开评论和帖子中对竞品的抱怨。仅供阅读；wat2do 从不回复。",
+      "competitor": "竞品",
+      "source": "来源",
+      "audience": "谁",
+      "complaint": "投诉",
+      "posted": "发布时间",
+      "open": "打开原文",
+      "markSeen": "标记为已看",
+      "dismiss": "忽略",
+      "emptyTitle": "未找到投诉",
+      "emptyDescription": "暂无符合这些筛选条件的内容。",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Google 评论",
+        "trustpilot": "Trustpilot",
+        "forum": "论坛"
+      },
+      "audiences": {
+        "organizer": "组织者",
+        "attendee": "参与者",
+        "other": "其他"
+      },
+      "statuses": {
+        "new": "新",
+        "seen": "已看",
+        "dismissed": "已忽略"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "记录详情",
       "clubId": "社团 ID：{{id}}",

@@ -395,6 +395,40 @@
       "description": "पास के व्यवसायों के नामांकनों की समीक्षा करें।",
       "reviewHelp": "स्वीकृति आपका निर्णय दर्ज करती है। इससे बैनर प्रकाशित नहीं होता।"
     },
+    "painPoints": {
+      "title": "प्रतिस्पर्धियों की समस्याएं",
+      "cardDescription": "Eventbrite, Meetup और Fable Social के बारे में शिकायतें।",
+      "description": "सार्वजनिक समीक्षाएं और पोस्ट जिनमें लोग प्रतिस्पर्धियों की शिकायत करते हैं। केवल पढ़ने के लिए; wat2do कभी जवाब नहीं देता।",
+      "competitor": "प्रतिस्पर्धी",
+      "source": "स्रोत",
+      "audience": "कौन",
+      "complaint": "शिकायत",
+      "posted": "पोस्ट किया गया",
+      "open": "मूल खोलें",
+      "markSeen": "देखा हुआ चिह्नित करें",
+      "dismiss": "खारिज करें",
+      "emptyTitle": "कोई शिकायत नहीं मिली",
+      "emptyDescription": "अभी इन फ़िल्टरों से कुछ भी मेल नहीं खाता।",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Google समीक्षाएं",
+        "trustpilot": "Trustpilot",
+        "forum": "फ़ोरम"
+      },
+      "audiences": {
+        "organizer": "आयोजक",
+        "attendee": "प्रतिभागी",
+        "other": "अन्य"
+      },
+      "statuses": {
+        "new": "नया",
+        "seen": "देखा गया",
+        "dismissed": "खारिज"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "रिकॉर्ड विवरण",
       "clubId": "क्लब आईडी: {{id}}",

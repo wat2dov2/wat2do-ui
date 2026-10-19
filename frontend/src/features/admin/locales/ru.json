@@ -395,6 +395,40 @@
       "description": "Рассмотрите заявки компаний поблизости.",
       "reviewHelp": "Одобрение сохраняет ваше решение. Оно не публикует баннер."
     },
+    "painPoints": {
+      "title": "Боли конкурентов",
+      "cardDescription": "Жалобы на Eventbrite, Meetup и Fable Social.",
+      "description": "Публичные отзывы и посты, где люди жалуются на конкурентов. Только чтение; wat2do никогда не отвечает.",
+      "competitor": "Конкурент",
+      "source": "Источник",
+      "audience": "Кто",
+      "complaint": "Жалоба",
+      "posted": "Опубликовано",
+      "open": "Открыть оригинал",
+      "markSeen": "Отметить просмотренным",
+      "dismiss": "Скрыть",
+      "emptyTitle": "Жалобы не найдены",
+      "emptyDescription": "Пока ничего не подходит под эти фильтры.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Отзывы Google",
+        "trustpilot": "Trustpilot",
+        "forum": "Форум"
+      },
+      "audiences": {
+        "organizer": "Организатор",
+        "attendee": "Участник",
+        "other": "Другое"
+      },
+      "statuses": {
+        "new": "Новое",
+        "seen": "Просмотрено",
+        "dismissed": "Скрыто"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "Сведения о записи",
       "clubId": "ID клуба: {{id}}",

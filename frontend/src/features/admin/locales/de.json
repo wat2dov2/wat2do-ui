@@ -395,6 +395,40 @@
       "description": "Prüfe Vorschläge für Unternehmen in der Nähe.",
       "reviewHelp": "Die Genehmigung speichert deine Entscheidung. Sie veröffentlicht kein Banner."
     },
+    "painPoints": {
+      "title": "Probleme bei Mitbewerbern",
+      "cardDescription": "Beschwerden über Eventbrite, Meetup und Fable Social.",
+      "description": "Öffentliche Bewertungen und Beiträge, in denen sich Leute über Mitbewerber beschweren. Nur lesen; wat2do antwortet nie.",
+      "competitor": "Mitbewerber",
+      "source": "Quelle",
+      "audience": "Wer",
+      "complaint": "Beschwerde",
+      "posted": "Veröffentlicht",
+      "open": "Original öffnen",
+      "markSeen": "Als gesehen markieren",
+      "dismiss": "Verwerfen",
+      "emptyTitle": "Keine Beschwerden gefunden",
+      "emptyDescription": "Noch nichts passt zu diesen Filtern.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Google-Bewertungen",
+        "trustpilot": "Trustpilot",
+        "forum": "Forum"
+      },
+      "audiences": {
+        "organizer": "Veranstalter",
+        "attendee": "Teilnehmer",
+        "other": "Andere"
+      },
+      "statuses": {
+        "new": "Neu",
+        "seen": "Gesehen",
+        "dismissed": "Verworfen"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "Datensatzdetails",
       "clubId": "Club-ID: {{id}}",

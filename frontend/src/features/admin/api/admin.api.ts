@@ -351,3 +351,28 @@ export function getSponsorSubmissions(page = 1, status = "", school = "", search
 export function reviewSponsorSubmission(id: string, status: "approved" | "rejected") {
   return api.patch<SponsorSubmission>("/sponsor-submissions/" + id, { status });
 }
+
+export type CompetitorPainPoint = components["schemas"]["CompetitorPainPointResponse"];
+
+/** Empty values mean "all"; the page keeps them as plain strings for its selects. */
+export interface CompetitorPainPointFilters {
+  competitor: string;
+  source: string;
+  audience: string;
+  status: string;
+  search: string;
+}
+
+export function getCompetitorPainPoints(page: number, filters: CompetitorPainPointFilters) {
+  const params = new URLSearchParams({ page: String(page), page_size: String(ADMIN_ITEMS_PER_PAGE) });
+  if (filters.competitor) params.set("competitor", filters.competitor);
+  if (filters.source) params.set("source", filters.source);
+  if (filters.audience) params.set("audience", filters.audience);
+  if (filters.status) params.set("pain_point_status", filters.status);
+  if (filters.search) params.set("search", filters.search);
+  return api.get<components["schemas"]["PaginatedResponse_CompetitorPainPointResponse_"]>("/competitor-pain-points/?" + params);
+}
+
+export function reviewCompetitorPainPoint(id: string, status: CompetitorPainPoint["status"]) {
+  return api.patch<CompetitorPainPoint>("/competitor-pain-points/" + id, { status });
+}

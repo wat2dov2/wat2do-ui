@@ -1918,6 +1918,225 @@
         }
       }
     },
+    "/competitor-pain-points/": {
+      "get": {
+        "tags": [
+          "competitor-pain-points"
+        ],
+        "summary": "List Pain Points",
+        "operationId": "list_pain_points_competitor_pain_points__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "competitor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64,
+                  "pattern": "^[a-z0-9_]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Competitor"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64,
+                  "pattern": "^[a-z0-9_]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "name": "audience",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "organizer",
+                    "attendee",
+                    "other"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Audience"
+            }
+          },
+          {
+            "name": "pain_point_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "new",
+                    "seen",
+                    "dismissed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Pain Point Status"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_CompetitorPainPointResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/competitor-pain-points/{pain_point_id}": {
+      "patch": {
+        "tags": [
+          "competitor-pain-points"
+        ],
+        "summary": "Review Pain Point",
+        "operationId": "review_pain_point_competitor_pain_points__pain_point_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pain_point_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Pain Point Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompetitorPainPointReview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitorPainPointResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/contact/": {
       "post": {
         "tags": [
@@ -8495,6 +8714,116 @@
         "type": "object",
         "title": "ClubUpdate"
       },
+      "CompetitorPainPointResponse": {
+        "properties": {
+          "competitor": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Competitor"
+          },
+          "source": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Source"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "pattern": "^https://\\S+$",
+            "title": "Url"
+          },
+          "author": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Author",
+            "default": ""
+          },
+          "quote": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Quote"
+          },
+          "pain_point": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Pain Point"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "organizer",
+              "attendee",
+              "other"
+            ],
+            "title": "Audience"
+          },
+          "posted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Posted At"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "found_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Found At"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "seen",
+              "dismissed"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "competitor",
+          "source",
+          "url",
+          "quote",
+          "pain_point",
+          "audience",
+          "id",
+          "found_at",
+          "status"
+        ],
+        "title": "CompetitorPainPointResponse"
+      },
+      "CompetitorPainPointReview": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "seen",
+              "dismissed"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "CompetitorPainPointReview"
+      },
       "ContactCreate": {
         "properties": {
           "email": {
@@ -11576,6 +11905,42 @@
           "total_pages"
         ],
         "title": "PaginatedResponse[ClubSubmissionResponse]"
+      },
+      "PaginatedResponse_CompetitorPainPointResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CompetitorPainPointResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[CompetitorPainPointResponse]"
       },
       "PaginatedResponse_DiscoveryQueryResponse_": {
         "properties": {

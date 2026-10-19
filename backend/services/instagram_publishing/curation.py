@@ -27,7 +27,7 @@ from pydantic import ValidationError as PydanticValidationError
 from core.controlbox import controlbox
 from core.exceptions import ValidationError
 from services import school_service
-from services.ingestion.agent import claude_environment, remove_leftovers, remove_run_folder
+from services.claude_code import ClaudeCodeError, remove_leftovers, run_agent
 from services.instagram_publishing.credentials import refresh_expiring_tokens
 from services.instagram_publishing.selection import DraftSelection
 from services.instagram_publishing.service import list_draft_candidates, save_review_draft
@@ -138,7 +138,6 @@ def curate_school(packet: dict[str, Any], tracks: list[dict[str, str]] | None) -
         raise CurationError("Instagram curation made no attempt")
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
-        remove_run_folder(workdir)
 
 
 def _save(packet: dict[str, Any], answer: dict[str, Any], songs: list[dict[str, Any]]) -> str:
@@ -271,44 +270,15 @@ def _download_poster(url: str | None, folder: Path, event_id: int) -> str | None
 
 
 def _run(prompt: str, workdir: str) -> dict[str, Any]:
-    executable = shutil.which("claude")
-    if executable is None:
-        raise CurationError("Claude Code is not installed")
     try:
-        result = subprocess.run(
-            [
-                executable,
-                "-p",
-                "--model",
-                _CONTROL.curation_model,
-                "--tools",
-                "Read",
-                "--allowedTools",
-                "Read(./**)",
-                "--permission-mode",
-                "dontAsk",
-                "--strict-mcp-config",
-                "--no-session-persistence",
-                "--output-format",
-                "json",
-                "--json-schema",
-                json.dumps(ANSWER_SCHEMA),
-            ],
-            input=prompt,
-            cwd=workdir,
-            env=claude_environment(),
-            capture_output=True,
-            text=True,
+        return run_agent(
+            prompt,
+            workdir=workdir,
+            model=_CONTROL.curation_model,
+            tools=("Read",),
+            allowed_tools=("Read(./**)",),
+            schema=ANSWER_SCHEMA,
             timeout=_CONTROL.curation_timeout_seconds,
         )
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise CurationError(f"Instagram curation agent failed ({type(exc).__name__})") from None
-    if result.returncode:
-        raise CurationError(f"Instagram curation agent failed (exit {result.returncode})")
-    try:
-        answer = json.loads(result.stdout).get("structured_output")
-    except (ValueError, AttributeError):
-        answer = None
-    if not isinstance(answer, dict):
-        raise CurationError("Instagram curation agent gave no answer")
-    return answer
+    except ClaudeCodeError as exc:
+        raise CurationError(f"Instagram curation agent {exc}") from None

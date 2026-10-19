@@ -19,7 +19,7 @@ BACKEND_DIRECTORY = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_DIRECTORY))
 
 from core.controlbox import controlbox  # noqa: E402
-from core.launch_agents import install_launch_agent  # noqa: E402
+from core.launch_agents import CLAUDE_CODE_PATH, install_launch_agent  # noqa: E402
 from services.instagram_publishing import (  # noqa: E402
     list_draft_candidates,
     refresh_expiring_tokens,
@@ -30,9 +30,6 @@ from services.instagram_publishing.selection import DraftSelection  # noqa: E402
 logging.basicConfig(level=logging.INFO)
 
 LAUNCH_AGENT_LABEL = "io.wat2do.instagram.curate"
-LAUNCH_AGENT_PATH = (
-    f"{Path.home() / '.local/bin'}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-)
 
 
 def launch_agent_payload() -> dict:
@@ -41,7 +38,7 @@ def launch_agent_payload() -> dict:
         "Label": LAUNCH_AGENT_LABEL,
         "ProgramArguments": [sys.executable, str(Path(__file__).resolve()), "curate"],
         "WorkingDirectory": str(BACKEND_DIRECTORY),
-        "EnvironmentVariables": {"PATH": LAUNCH_AGENT_PATH},
+        "EnvironmentVariables": {"PATH": CLAUDE_CODE_PATH},
         "StartCalendarInterval": {"Hour": control.curation_hour, "Minute": control.curation_minute},
         "ProcessType": "Background",
         "StandardOutPath": "/dev/null",

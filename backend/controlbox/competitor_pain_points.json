@@ -1,0 +1,46 @@
+{
+  "model": "claude-haiku-5-5",
+  "agent_timeout_seconds": 1500,
+  "parallel_agents": 3,
+  "sweep_interval_hours": 6,
+  "lookback_days": 3,
+  "findings_per_competitor": 25,
+  "known_urls_in_prompt": 300,
+  "launch_agent_timeout_seconds": 30,
+  "x_queries": [
+    "{name}",
+    "{name} fees",
+    "{name} alternative"
+  ],
+  "x_scrolls": 3,
+  "x_page_wait_seconds": 6,
+  "x_posts_per_query": 40,
+  "competitors": {
+    "eventbrite": "Eventbrite",
+    "meetup": "Meetup",
+    "fable": "Fable Social"
+  },
+  "sources": {
+    "reddit": [
+      "reddit.com"
+    ],
+    "x": [
+      "x.com",
+      "twitter.com"
+    ],
+    "app_store": [
+      "apps.apple.com"
+    ],
+    "google_play": [
+      "play.google.com"
+    ],
+    "google_reviews": [
+      "google.com",
+      "maps.app.goo.gl"
+    ],
+    "trustpilot": [
+      "trustpilot.com"
+    ],
+    "forum": []
+  }
+}

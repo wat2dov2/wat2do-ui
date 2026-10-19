@@ -395,6 +395,40 @@
       "description": "審核附近商戶嘅推薦。",
       "reviewHelp": "批准只會記錄審核決定，唔會發布橫幅。"
     },
+    "painPoints": {
+      "title": "競爭對手痛點",
+      "cardDescription": "關於 Eventbrite、Meetup 同 Fable Social 嘅投訴。",
+      "description": "大家喺公開評論同帖文入面投訴競爭對手。只供閱讀；wat2do 從來唔會回覆。",
+      "competitor": "競爭對手",
+      "source": "來源",
+      "audience": "邊個",
+      "complaint": "投訴",
+      "posted": "發佈日期",
+      "open": "打開原文",
+      "markSeen": "標記為已睇",
+      "dismiss": "略過",
+      "emptyTitle": "搵唔到投訴",
+      "emptyDescription": "暫時冇嘢符合呢啲篩選條件。",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Google 評論",
+        "trustpilot": "Trustpilot",
+        "forum": "論壇"
+      },
+      "audiences": {
+        "organizer": "主辦者",
+        "attendee": "參加者",
+        "other": "其他"
+      },
+      "statuses": {
+        "new": "新",
+        "seen": "已睇",
+        "dismissed": "已略過"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "記錄詳情",
       "clubId": "社團 ID：{{id}}",

@@ -395,6 +395,40 @@
       "description": "அருகிலுள்ள வணிகப் பரிந்துரைகளை மதிப்பாய்வு செய்யுங்கள்.",
       "reviewHelp": "ஒப்புதல் உங்கள் முடிவைப் பதிவு செய்கிறது. அது விளம்பரப் பதாகையை வெளியிடாது."
     },
+    "painPoints": {
+      "title": "போட்டியாளர்களின் குறைகள்",
+      "cardDescription": "Eventbrite, Meetup மற்றும் Fable Social பற்றிய புகார்கள்.",
+      "description": "போட்டியாளர்கள் பற்றி மக்கள் புகார் செய்யும் பொது விமர்சனங்கள் மற்றும் பதிவுகள். படிக்க மட்டும்; wat2do ஒருபோதும் பதிலளிக்காது.",
+      "competitor": "போட்டியாளர்",
+      "source": "ஆதாரம்",
+      "audience": "யார்",
+      "complaint": "புகார்",
+      "posted": "வெளியிடப்பட்டது",
+      "open": "மூலத்தைத் திற",
+      "markSeen": "பார்த்ததாகக் குறி",
+      "dismiss": "நிராகரி",
+      "emptyTitle": "புகார்கள் எதுவும் இல்லை",
+      "emptyDescription": "இந்த வடிப்பான்களுடன் இன்னும் எதுவும் பொருந்தவில்லை.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Google விமர்சனங்கள்",
+        "trustpilot": "Trustpilot",
+        "forum": "மன்றம்"
+      },
+      "audiences": {
+        "organizer": "ஏற்பாட்டாளர்",
+        "attendee": "பங்கேற்பாளர்",
+        "other": "மற்றவை"
+      },
+      "statuses": {
+        "new": "புதியது",
+        "seen": "பார்த்தது",
+        "dismissed": "நிராகரிக்கப்பட்டது"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "பதிவு விவரங்கள்",
       "clubId": "கழக அடையாளம்: {{id}}",

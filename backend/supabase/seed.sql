@@ -677,6 +677,23 @@ SELECT '77777777-7777-4777-8777-777777777771', id, 'Campus Corner Cafe',
 FROM public.schools WHERE slug = 'uwaterloo'
 ON CONFLICT (id) DO NOTHING;
 
+-- Local examples for the admin Competitor pain points page, one per audience.
+INSERT INTO public.competitor_pain_points
+    (id, competitor, source, url, author, quote, pain_point, audience, posted_at, status)
+VALUES
+    ('88888888-8888-4888-8888-888888888881', 'eventbrite', 'reddit',
+     'https://www.reddit.com/r/example/comments/seed1/', 'club_treasurer',
+     'Eventbrite took a fee from every free RSVP for our club social.',
+     'Fees on free club events', 'organizer', now() - interval '1 day', 'new'),
+    ('88888888-8888-4888-8888-888888888882', 'meetup', 'app_store',
+     'https://apps.apple.com/ca/app/meetup/id375990038?see-all=reviews#seed2', 'firstyear22',
+     'Nothing near campus shows up, just paid groups miles away.',
+     'No relevant campus events nearby', 'attendee', now() - interval '2 days', 'seen'),
+    ('88888888-8888-4888-8888-888888888883', 'fable', 'x',
+     'https://x.com/example/status/1888888888888888883', 'someone',
+     'The app keeps logging me out.', 'Unreliable login', 'other', NULL, 'dismissed')
+ON CONFLICT (id) DO NOTHING;
+
 COMMIT;
 
 -- Give seeded draft carousels a safe, non-time-sensitive example sticker.

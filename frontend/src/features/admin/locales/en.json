@@ -395,6 +395,40 @@
       "description": "Review nearby business nominations.",
       "reviewHelp": "Approval records your review. It does not publish a banner."
     },
+    "painPoints": {
+      "title": "Competitor pain points",
+      "cardDescription": "Complaints about Eventbrite, Meetup and Fable Social.",
+      "description": "Public reviews and posts where people complain about competitors. Read only; wat2do never replies.",
+      "competitor": "Competitor",
+      "source": "Source",
+      "audience": "Who",
+      "complaint": "Complaint",
+      "posted": "Posted",
+      "open": "Open original",
+      "markSeen": "Mark seen",
+      "dismiss": "Dismiss",
+      "emptyTitle": "No complaints found",
+      "emptyDescription": "Nothing matches these filters yet.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Google reviews",
+        "trustpilot": "Trustpilot",
+        "forum": "Forum"
+      },
+      "audiences": {
+        "organizer": "Organizer",
+        "attendee": "Attendee",
+        "other": "Other"
+      },
+      "statuses": {
+        "new": "New",
+        "seen": "Seen",
+        "dismissed": "Dismissed"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "Record details",
       "clubId": "Club ID: {{id}}",

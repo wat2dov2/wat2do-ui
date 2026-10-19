@@ -395,6 +395,40 @@
       "description": "Xem xét các đề cử doanh nghiệp gần trường.",
       "reviewHelp": "Phê duyệt ghi lại quyết định của bạn, không đăng biểu ngữ."
     },
+    "painPoints": {
+      "title": "Điểm yếu của đối thủ",
+      "cardDescription": "Phàn nàn về Eventbrite, Meetup và Fable Social.",
+      "description": "Đánh giá và bài đăng công khai nơi mọi người phàn nàn về đối thủ. Chỉ đọc; wat2do không bao giờ trả lời.",
+      "competitor": "Đối thủ",
+      "source": "Nguồn",
+      "audience": "Ai",
+      "complaint": "Phàn nàn",
+      "posted": "Đã đăng",
+      "open": "Mở bản gốc",
+      "markSeen": "Đánh dấu đã xem",
+      "dismiss": "Bỏ qua",
+      "emptyTitle": "Không tìm thấy phàn nàn",
+      "emptyDescription": "Chưa có gì khớp với các bộ lọc này.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Đánh giá Google",
+        "trustpilot": "Trustpilot",
+        "forum": "Diễn đàn"
+      },
+      "audiences": {
+        "organizer": "Người tổ chức",
+        "attendee": "Người tham dự",
+        "other": "Khác"
+      },
+      "statuses": {
+        "new": "Mới",
+        "seen": "Đã xem",
+        "dismissed": "Đã bỏ qua"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "Chi tiết bản ghi",
       "clubId": "ID câu lạc bộ: {{id}}",

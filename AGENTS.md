@@ -120,6 +120,11 @@ run because they need a browser or a running server, so the human can run them.
 
 The only exception is an explicit, in-the-moment request from the human to open
 a browser or start a server.
+The scheduled competitor pain point sweep is a standing, human-approved exception:
+`backend/services/competitor_pain_points/x_browser.py` opens and closes its own
+Safari window to read X search results in a session a person logged in.
+It only reads what the page shows, never posts, likes, replies or follows, and
+never reads or stores cookies; it never uses the Instagram worker's Brave.
 Standing permission from an earlier task does not carry over.
 When you are done with anything you were explicitly asked to start, shut it down.
 

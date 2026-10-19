@@ -395,6 +395,40 @@
       "description": "راجع ترشيحات المشاريع القريبة.",
       "reviewHelp": "تسجل الموافقة قرارك ولا تنشر إعلانًا."
     },
+    "painPoints": {
+      "title": "شكاوى المنافسين",
+      "cardDescription": "شكاوى حول Eventbrite وMeetup وFable Social.",
+      "description": "مراجعات ومنشورات عامة يشتكي فيها الناس من المنافسين. للقراءة فقط؛ لا ترد wat2do أبدًا.",
+      "competitor": "المنافس",
+      "source": "المصدر",
+      "audience": "من",
+      "complaint": "الشكوى",
+      "posted": "تاريخ النشر",
+      "open": "فتح الأصل",
+      "markSeen": "تعليم كمقروء",
+      "dismiss": "تجاهل",
+      "emptyTitle": "لم يتم العثور على شكاوى",
+      "emptyDescription": "لا شيء يطابق هذه الفلاتر بعد.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "مراجعات Google",
+        "trustpilot": "Trustpilot",
+        "forum": "منتدى"
+      },
+      "audiences": {
+        "organizer": "منظم",
+        "attendee": "حاضر",
+        "other": "آخر"
+      },
+      "statuses": {
+        "new": "جديد",
+        "seen": "مقروء",
+        "dismissed": "متجاهل"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "تفاصيل السجل",
       "clubId": "معرّف النادي: {{id}}",

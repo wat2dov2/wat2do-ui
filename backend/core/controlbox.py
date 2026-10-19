@@ -951,6 +951,31 @@ class IngestionControl(_ControlModel):
         return self
 
 
+class CompetitorPainPointsControl(_ControlModel):
+    model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    agent_timeout_seconds: int = Field(gt=0, le=3600)
+    parallel_agents: int = Field(ge=1, le=8)
+    sweep_interval_hours: int = Field(ge=1, le=24)
+    lookback_days: int = Field(ge=1, le=30)
+    findings_per_competitor: int = Field(ge=1, le=100)
+    known_urls_in_prompt: int = Field(ge=0, le=2000)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # X searches read in Safari; "{name}" becomes the competitor's display name.
+    x_queries: list[Annotated[str, Field(pattern=r"\{name\}")]] = Field(max_length=10)
+    x_scrolls: int = Field(ge=0, le=10)
+    x_page_wait_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
+    x_posts_per_query: int = Field(ge=1, le=200)
+    # Competitor slug -> display name, and source slug -> the hosts its links
+    # may use; a source with no hosts (forums) accepts any public host.
+    competitors: dict[
+        Annotated[str, Field(pattern=r"^[a-z0-9_]+$")], Annotated[str, Field(min_length=1)]
+    ] = Field(min_length=1)
+    sources: dict[
+        Annotated[str, Field(pattern=r"^[a-z0-9_]+$")],
+        list[Annotated[str, Field(pattern=r"^[a-z0-9.-]+$")]],
+    ] = Field(min_length=1)
+
+
 class ControlBox(_ControlModel):
     positions: PositionsControl
     database: DatabaseControl
@@ -986,6 +1011,7 @@ class ControlBox(_ControlModel):
     instagram_bell_setup: InstagramBellSetupControl
     instagram_digest: InstagramDigestControl
     instagram_publishing: InstagramPublishingControl
+    competitor_pain_points: CompetitorPainPointsControl
     workflow_failure_alerts: WorkflowFailureAlertsControl
     promoter_program: PromoterProgramControl
 

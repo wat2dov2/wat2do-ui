@@ -136,3 +136,4 @@ FAILED_TO_SAVE_TOKEN = "Unable to save verification token. Please try again late
 REGISTRATION_FAILED = "Unable to complete registration. Please try again later."
 
 SPONSOR_SUBMISSION_NOT_FOUND = "Sponsor submission not found"
+COMPETITOR_PAIN_POINT_NOT_FOUND = "Competitor pain point not found"

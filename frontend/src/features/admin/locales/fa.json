@@ -395,6 +395,40 @@
       "description": "معرفی کسب‌وکارهای نزدیک را بررسی کنید.",
       "reviewHelp": "تأیید، تصمیم شما را ثبت می‌کند و بنری منتشر نمی‌کند."
     },
+    "painPoints": {
+      "title": "نقاط ضعف رقبا",
+      "cardDescription": "شکایت‌ها درباره Eventbrite، Meetup و Fable Social.",
+      "description": "نقدها و پست‌های عمومی که مردم در آن‌ها از رقبا شکایت می‌کنند. فقط خواندنی؛ wat2do هرگز پاسخ نمی‌دهد.",
+      "competitor": "رقیب",
+      "source": "منبع",
+      "audience": "چه کسی",
+      "complaint": "شکایت",
+      "posted": "تاریخ انتشار",
+      "open": "باز کردن اصل",
+      "markSeen": "علامت دیده‌شده",
+      "dismiss": "رد کردن",
+      "emptyTitle": "شکایتی پیدا نشد",
+      "emptyDescription": "هنوز چیزی با این فیلترها مطابقت ندارد.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "نقدهای Google",
+        "trustpilot": "Trustpilot",
+        "forum": "انجمن"
+      },
+      "audiences": {
+        "organizer": "برگزارکننده",
+        "attendee": "شرکت‌کننده",
+        "other": "دیگر"
+      },
+      "statuses": {
+        "new": "جدید",
+        "seen": "دیده‌شده",
+        "dismissed": "ردشده"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "جزئیات رکورد",
       "clubId": "شناسه باشگاه: {{id}}",

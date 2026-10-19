@@ -38,6 +38,10 @@ def test_google_analytics_rejects_invalid_measurement_ids(measurement_id):
 
 
 def test_checked_in_controlbox_is_valid() -> None:
+    assert controlbox.competitor_pain_points.model == "claude-haiku-5-5"
+    assert controlbox.competitor_pain_points.sweep_interval_hours == 6
+    assert set(controlbox.competitor_pain_points.competitors) == {"eventbrite", "meetup", "fable"}
+    assert controlbox.competitor_pain_points.sources["forum"] == []
     assert controlbox.notification_defaults.morning_email is False
     assert controlbox.email_delivery.notification_consent_version == "2026-10"
     assert controlbox.reel_transcription.model == "gpt-4o-mini-transcribe"

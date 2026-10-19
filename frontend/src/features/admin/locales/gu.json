@@ -395,6 +395,40 @@
       "description": "નજીકના વ્યવસાયોના નામાંકનોની સમીક્ષા કરો.",
       "reviewHelp": "મંજૂરી તમારો નિર્ણય નોંધે છે. તે બેનર પ્રકાશિત કરતી નથી."
     },
+    "painPoints": {
+      "title": "સ્પર્ધકોની સમસ્યાઓ",
+      "cardDescription": "Eventbrite, Meetup અને Fable Social વિશેની ફરિયાદો.",
+      "description": "જાહેર સમીક્ષાઓ અને પોસ્ટ્સ જ્યાં લોકો સ્પર્ધકો વિશે ફરિયાદ કરે છે. ફક્ત વાંચવા માટે; wat2do ક્યારેય જવાબ આપતું નથી.",
+      "competitor": "સ્પર્ધક",
+      "source": "સ્રોત",
+      "audience": "કોણ",
+      "complaint": "ફરિયાદ",
+      "posted": "પોસ્ટ કર્યું",
+      "open": "મૂળ ખોલો",
+      "markSeen": "જોયેલું ચિહ્નિત કરો",
+      "dismiss": "અવગણો",
+      "emptyTitle": "કોઈ ફરિયાદ મળી નથી",
+      "emptyDescription": "હજી સુધી આ ફિલ્ટર્સ સાથે કંઈ મેળ ખાતું નથી.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Google સમીક્ષાઓ",
+        "trustpilot": "Trustpilot",
+        "forum": "ફોરમ"
+      },
+      "audiences": {
+        "organizer": "આયોજક",
+        "attendee": "હાજરી આપનાર",
+        "other": "અન્ય"
+      },
+      "statuses": {
+        "new": "નવું",
+        "seen": "જોયેલું",
+        "dismissed": "અવગણેલું"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "રેકોર્ડ વિગતો",
       "clubId": "ક્લબ આઈડી: {{id}}",

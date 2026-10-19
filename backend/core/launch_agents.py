@@ -10,6 +10,12 @@ import time
 from pathlib import Path
 from typing import Any
 
+# launchd starts agents with a bare PATH; this one also finds Claude Code
+# (~/.local/bin) and Homebrew tools.
+CLAUDE_CODE_PATH = (
+    f"{Path.home() / '.local/bin'}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+)
+
 
 class LaunchAgentRecoveryError(RuntimeError):
     """A service replacement could not confirm recovery of the previous agent."""

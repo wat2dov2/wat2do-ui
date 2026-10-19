@@ -395,6 +395,40 @@
       "description": "Revisa las propuestas de negocios cercanos.",
       "reviewHelp": "La aprobación registra tu decisión. No publica un anuncio."
     },
+    "painPoints": {
+      "title": "Quejas sobre la competencia",
+      "cardDescription": "Quejas sobre Eventbrite, Meetup y Fable Social.",
+      "description": "Reseñas y publicaciones públicas donde la gente se queja de la competencia. Solo lectura; wat2do nunca responde.",
+      "competitor": "Competidor",
+      "source": "Fuente",
+      "audience": "Quién",
+      "complaint": "Queja",
+      "posted": "Publicado",
+      "open": "Abrir original",
+      "markSeen": "Marcar como visto",
+      "dismiss": "Descartar",
+      "emptyTitle": "No se encontraron quejas",
+      "emptyDescription": "Nada coincide con estos filtros todavía.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Reseñas de Google",
+        "trustpilot": "Trustpilot",
+        "forum": "Foro"
+      },
+      "audiences": {
+        "organizer": "Organizador",
+        "attendee": "Asistente",
+        "other": "Otro"
+      },
+      "statuses": {
+        "new": "Nuevo",
+        "seen": "Visto",
+        "dismissed": "Descartado"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "Detalles del registro",
       "clubId": "ID del club: {{id}}",

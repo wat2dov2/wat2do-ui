@@ -395,6 +395,40 @@
       "description": "قریبی کاروباروں کی نامزدگیوں کا جائزہ لیں۔",
       "reviewHelp": "منظوری آپ کا فیصلہ محفوظ کرتی ہے۔ اس سے بینر شائع نہیں ہوتا۔"
     },
+    "painPoints": {
+      "title": "حریفوں کے مسائل",
+      "cardDescription": "Eventbrite، Meetup اور Fable Social کے بارے میں شکایات۔",
+      "description": "عوامی جائزے اور پوسٹس جن میں لوگ حریفوں کی شکایت کرتے ہیں۔ صرف پڑھنے کے لیے؛ wat2do کبھی جواب نہیں دیتا۔",
+      "competitor": "حریف",
+      "source": "ماخذ",
+      "audience": "کون",
+      "complaint": "شکایت",
+      "posted": "شائع شدہ",
+      "open": "اصل کھولیں",
+      "markSeen": "دیکھا ہوا نشان زد کریں",
+      "dismiss": "مسترد کریں",
+      "emptyTitle": "کوئی شکایت نہیں ملی",
+      "emptyDescription": "ابھی ان فلٹرز سے کچھ بھی مطابقت نہیں رکھتا۔",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Google جائزے",
+        "trustpilot": "Trustpilot",
+        "forum": "فورم"
+      },
+      "audiences": {
+        "organizer": "منتظم",
+        "attendee": "شرکت کنندہ",
+        "other": "دیگر"
+      },
+      "statuses": {
+        "new": "نیا",
+        "seen": "دیکھا گیا",
+        "dismissed": "مسترد"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "ریکارڈ کی تفصیلات",
       "clubId": "کلب کی شناخت: {{id}}",

@@ -166,6 +166,12 @@ The agent inserts, updates, cancels or reschedules events and positions itself t
 Set its connection string as `INGEST_AGENT_DATABASE_URL` in `backend/.env`; the role is created by migration and its password is set out of band.
 Finished rows stay as `done` or `not_event`, so no URL is processed twice, and the Mac keeps no queue of its own.
 Install both LaunchAgents with `cd backend && .venv/bin/python scripts/ingest.py install-schedule`; the Mac must be on and signed in to Claude Code.
+Every 6 hours a Claude Haiku agent per competitor (Eventbrite, Meetup, Fable Social) searches the public web for complaints with only WebSearch and WebFetch (`backend/services/competitor_pain_points/prompt.md`).
+X shows nothing logged out, so before the agents run the sweep reads X's Latest search results in its own Safari window, using an X login a person made in Safari, and hands those posts to each agent (`x_browser.py`); Safari needs Develop > Allow JavaScript from Apple Events, and a logged-out Safari only skips X.
+Checked findings land in `public.competitor_pain_points`, deduplicated by link, and admins triage them on the Competitor pain points admin page; nothing ever replies or posts.
+Competitors, sources and their allowed link hosts, and the schedule live in `backend/controlbox/competitor_pain_points.json`.
+Install its LaunchAgent with `cd backend && .venv/bin/python jobs/find_competitor_pain_points.py install-schedule`, or run one sweep with `sweep`.
+Every local agent runs through `backend/services/claude_code.py`, which passes no application secrets unless the caller supplies them.
 Notifications and recommendation compute run on GitHub-hosted runners.
 Queue a post by hand with `cd backend && python scripts/ingest.py enqueue --school <slug> --url <post url>`; `scripts/instagram_browser.py retrieve` also accepts a profile, which the Brave worker lists before its posts are queued.
 Profile-logo backfills and single-post media repairs remain separate Apify operator tools.

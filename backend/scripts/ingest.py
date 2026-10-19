@@ -21,7 +21,7 @@ BACKEND_DIRECTORY = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIRECTORY))
 
-from core.launch_agents import install_launch_agent  # noqa: E402
+from core.launch_agents import CLAUDE_CODE_PATH, install_launch_agent  # noqa: E402
 from services.ingestion.items import CONTROL  # noqa: E402
 
 # The processor stays running (no interval); the directory scrape repeats.
@@ -32,9 +32,6 @@ LAUNCH_AGENTS: dict[str, tuple[str, int | None]] = {
         CONTROL.directory_scrape_interval_seconds,
     ),
 }
-LAUNCH_AGENT_PATH = (
-    f"{Path.home() / '.local/bin'}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-)
 
 
 def launch_agent_payload(command: str) -> dict[str, Any]:
@@ -43,7 +40,7 @@ def launch_agent_payload(command: str) -> dict[str, Any]:
         "Label": label,
         "ProgramArguments": [sys.executable, str(Path(__file__).resolve()), command],
         "WorkingDirectory": str(BACKEND_DIRECTORY),
-        "EnvironmentVariables": {"PATH": LAUNCH_AGENT_PATH},
+        "EnvironmentVariables": {"PATH": CLAUDE_CODE_PATH},
         "RunAtLoad": True,
         **({"StartInterval": interval} if interval else {"KeepAlive": True}),
         "ProcessType": "Background",

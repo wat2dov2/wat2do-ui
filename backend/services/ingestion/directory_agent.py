@@ -12,8 +12,6 @@ from __future__ import annotations
 import fcntl
 import json
 import logging
-import shutil
-import subprocess
 import tempfile
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
@@ -29,12 +27,8 @@ from core.database import get_sb
 from core.tables import EVENT_DATES, INGESTION_ITEMS, POSITIONS
 from schemas.directory_source import DirectorySource
 from services import school_service
-from services.ingestion.agent import (
-    AgentError,
-    claude_environment,
-    remove_leftovers,
-    remove_run_folder,
-)
+from services.claude_code import ClaudeCodeError, remove_leftovers, run_agent
+from services.ingestion.agent import AgentError
 from services.ingestion.directory import list_sources
 from services.ingestion.items import CONTROL
 from services.ingestion.processor import state_directory
@@ -220,49 +214,18 @@ def _listed(school_id: int, horizon: datetime, timezone: ZoneInfo) -> dict[str, 
 
 
 def _run(prompt: str, workdir: str) -> list[dict]:
-    executable = shutil.which("claude")
-    if executable is None:
-        raise AgentError("Claude Code is not installed")
     try:
-        result = subprocess.run(
-            [
-                executable,
-                "-p",
-                "--model",
-                CONTROL.model,
-                "--tools",
-                "Read,Grep,WebFetch",
-                "--allowedTools",
-                "Read(./**)",
-                "Grep(./**)",
-                "WebFetch",
-                "--permission-mode",
-                "dontAsk",
-                "--strict-mcp-config",
-                "--no-session-persistence",
-                "--output-format",
-                "json",
-                "--json-schema",
-                json.dumps(REPORT_SCHEMA),
-            ],
-            input=prompt,
-            cwd=workdir,
-            # No database login or other secret: the agent only reads public pages.
-            env=claude_environment(),
-            capture_output=True,
-            text=True,
+        answer = run_agent(
+            prompt,
+            workdir=workdir,
+            model=CONTROL.model,
+            tools=("Read", "Grep", "WebFetch"),
+            allowed_tools=("Read(./**)", "Grep(./**)", "WebFetch"),
+            schema=REPORT_SCHEMA,
             timeout=CONTROL.directory_model_timeout_seconds,
         )
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise AgentError(f"Directory agent failed ({type(exc).__name__})") from None
-    finally:
-        remove_run_folder(workdir)
-    if result.returncode:
-        raise AgentError(f"Directory agent failed (exit {result.returncode})")
-    try:
-        answer = json.loads(result.stdout).get("structured_output") or {}
-    except (ValueError, AttributeError):
-        raise AgentError("Directory agent gave no report") from None
+    except ClaudeCodeError as exc:
+        raise AgentError(f"Directory agent {exc}") from None
     reported = answer.get("items")
     if not isinstance(reported, list):
         raise AgentError("Directory agent gave no report")

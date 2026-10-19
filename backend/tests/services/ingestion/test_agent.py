@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from core.tables import EVENTS, POSITIONS
+from services import claude_code
 from services.ingestion import agent as module
 from services.scraper.org_resolve import ResolvedClub
 
@@ -30,7 +31,7 @@ def run(monkeypatch, tmp_path):
     state = SimpleNamespace(
         calls=[], drains=[], files={}, result=None, resolved=[], removed=[], outcome="added"
     )
-    monkeypatch.setattr(module, "remove_run_folder", state.removed.append)
+    monkeypatch.setattr(claude_code, "remove_run_folder", state.removed.append)
     monkeypatch.setattr(module, "already_imported", lambda _url: False)
     monkeypatch.setattr(module.school_service, "get_school", lambda slug: _SCHOOL)
     monkeypatch.setattr(module, "resolve_school_timezone", lambda slug: "America/Toronto")
@@ -57,7 +58,7 @@ def run(monkeypatch, tmp_path):
             ("stamp", url, caption, posted_at)
         ),
     )
-    monkeypatch.setattr(module.shutil, "which", lambda name: f"/usr/local/bin/{name}")
+    monkeypatch.setattr(claude_code.shutil, "which", lambda name: f"/usr/local/bin/{name}")
     monkeypatch.setattr(
         module.settings,
         "ingest_agent_database_url",
@@ -74,7 +75,7 @@ def run(monkeypatch, tmp_path):
             args, 0, stdout=json.dumps({"structured_output": answer})
         )
 
-    monkeypatch.setattr(module.subprocess, "run", fake_run)
+    monkeypatch.setattr(claude_code.subprocess, "run", fake_run)
     return state
 
 
@@ -177,41 +178,9 @@ def test_ingest_reports_a_source_that_changed_nothing(run):
 def test_an_agent_without_an_outcome_fails_and_still_cleans_up(run):
     run.result = subprocess.CompletedProcess([], 0, stdout="Inserted event 1")
 
-    with pytest.raises(module.AgentError, match="no outcome"):
+    with pytest.raises(module.AgentError, match="gave no answer"):
         module.ingest(dict(_POST), school="uwaterloo")
     assert run.removed and run.drains[-1] == "drain"
-
-
-def test_leftover_run_folders_are_removed_but_nothing_else(monkeypatch, tmp_path):
-    temp = tmp_path / "tmp"
-    projects = tmp_path / "projects"
-    for folder in (
-        temp / "wat2do-ingestion-abc",
-        temp / "other-work",
-        projects / "-private-var-T-wat2do-ingestion-abc",
-        projects / "-Users-me-code",
-    ):
-        folder.mkdir(parents=True)
-    monkeypatch.setattr(module.tempfile, "gettempdir", lambda: str(temp))
-    monkeypatch.setattr(module, "claude_projects", lambda: projects)
-
-    module.remove_leftovers()
-
-    assert [path.name for path in temp.iterdir()] == ["other-work"]
-    assert [path.name for path in projects.iterdir()] == ["-Users-me-code"]
-
-
-def test_a_run_folder_is_named_after_the_working_directory(monkeypatch, tmp_path):
-    projects = tmp_path / "projects"
-    workdir = tmp_path / "wat2do-ingestion-x_y"
-    workdir.mkdir()
-    name = re.sub(r"[^A-Za-z0-9]", "-", str(workdir.resolve()))
-    (projects / name).mkdir(parents=True)
-    monkeypatch.setattr(module, "claude_projects", lambda: projects)
-
-    module.remove_run_folder(str(workdir))
-
-    assert list(projects.iterdir()) == []
 
 
 def test_ingest_requires_the_scoped_login(run, monkeypatch):

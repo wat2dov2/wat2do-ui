@@ -395,6 +395,40 @@
       "description": "Przejrzyj zgłoszenia pobliskich firm.",
       "reviewHelp": "Zatwierdzenie zapisuje decyzję. Nie publikuje banera."
     },
+    "painPoints": {
+      "title": "Problemy konkurencji",
+      "cardDescription": "Skargi na Eventbrite, Meetup i Fable Social.",
+      "description": "Publiczne recenzje i posty, w których ludzie narzekają na konkurencję. Tylko do odczytu; wat2do nigdy nie odpowiada.",
+      "competitor": "Konkurent",
+      "source": "Źródło",
+      "audience": "Kto",
+      "complaint": "Skarga",
+      "posted": "Opublikowano",
+      "open": "Otwórz oryginał",
+      "markSeen": "Oznacz jako przejrzane",
+      "dismiss": "Odrzuć",
+      "emptyTitle": "Nie znaleziono skarg",
+      "emptyDescription": "Nic jeszcze nie pasuje do tych filtrów.",
+      "sources": {
+        "reddit": "Reddit",
+        "x": "X",
+        "app_store": "App Store",
+        "google_play": "Google Play",
+        "google_reviews": "Opinie Google",
+        "trustpilot": "Trustpilot",
+        "forum": "Forum"
+      },
+      "audiences": {
+        "organizer": "Organizator",
+        "attendee": "Uczestnik",
+        "other": "Inne"
+      },
+      "statuses": {
+        "new": "Nowe",
+        "seen": "Przejrzane",
+        "dismissed": "Odrzucone"
+      }
+    },
     "clubSubmissionDetails": {
       "records": "Szczegóły rekordu",
       "clubId": "ID klubu: {{id}}",
