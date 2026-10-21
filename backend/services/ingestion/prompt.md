@@ -140,7 +140,9 @@ Columns:
 - `cohost_club_ids`: `clubs.id` values of other registered co-hosting clubs at this school (default `'{}'`).
 - `school_id`: {{school_id}}, unless a co-hosting club belongs to another school (see below).
 - `source_url`: always exactly `{{source_url}}` for rows you create.
-- `source_image_url`: the poster reference of the image that shows this event, from the image list above, or NULL when no image fits.
+- `source_image_url`: a poster reference from the image list above; never NULL when the list has images.
+  Prefer the image that best shows this event, such as its poster.
+  When none is a poster (photos, memes, recaps), use the image that matches this event, such as its slide in a carousel of several events, or else the first image.
   The system stores that image (and its video, for a video slide) and replaces the reference.
   On a listed event, set it only when this source has a clearly better poster.
   Never write any other image URL, and never set `source_video_url`.
