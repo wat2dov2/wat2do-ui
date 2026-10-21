@@ -11,7 +11,7 @@ import { cn } from "@/shared/lib/utils";
 const BURST = {
   viewBox: "0 0 60 50",
   d: "M8 46 L 16 24 M28 44 L 30 12 M46 46 L 56 24",
-  className: "-right-[1.05em] top-[0.05em] h-[0.6em] w-[0.75em]",
+  className: "-right-[0.86em] -top-[0.2em] h-[0.6em] w-[0.75em]",
 } as const;
 
 /**
