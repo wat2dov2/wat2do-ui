@@ -76,6 +76,26 @@ Exception: after Instagram logs Brave out, the worker may log back in by clickin
 saved wat2do profile on Instagram's own logged-out page and accepting "Save info",
 spaced and capped by controlbox. It never types passwords, and a password prompt or
 challenge waits for a person.
+Direct-message notifications (`controlbox/instagram_dms.json` `categories`) also run
+on the browser-capable Mac runner, which queues one `direct` job per message for the
+same worker.
+That job runs alone on the first tab, like likes and reposts: it switches to the
+school's account, reads the thread through the tab's own logged-in request, and asks
+Claude Haiku (`backend/services/instagram_dms/prompt.md`) for one outcome.
+Only two requests get an answer: sharing the club's post or reel to our story, and
+adding it to our posts.
+Everything else is ignored without a reply.
+An "add it to our posts" request queues the shared post in `public.ingestion_items`
+and gets one short reply.
+A story request gets no reply until the app can actually share it to the school's story.
+Code, not the model, checks that the post was shared in the thread and that a reply
+is short, has no links or mentions, and is never sent when our message is already the
+newest.
+Each reply waits a random human-like delay first.
+A reply whose delivery is uncertain pauses the worker for a person and is never retried.
+`dry_run` decides and records every DM without replying or queueing anything.
+Never log DM text.
+
 If serialized browser expansion cannot complete, fail before recording that
 notification's media so the workflow can be rerun safely.
 Other notification workflow runs must remain independently processable.

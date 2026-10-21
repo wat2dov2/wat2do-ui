@@ -475,3 +475,25 @@ The worker forwards events on its existing source collection interval.
 Production retains logs for seven days under the existing log retention policy.
 Only allowlisted job metadata is sent; raw worker output, notification payloads, cookies, and credentials are excluded.
 Existing local job history is not backfilled; lifecycle events begin when the updated worker runs.
+
+## Direct messages
+
+Clubs sometimes DM a school account to ask Wat2Do to share their post.
+The phone's Automate flow already forwards every Instagram notification, and DMs arrive as the `direct_v2_text`, `direct_v2_media_share` and `direct_v2_clips_share` push categories.
+Their `ig_action` is `direct_v2?id=<thread>&x=<message>`; a reel share also carries `clip_id`.
+The workflow routes these to the Mac runner, and `jobs/process_notification.py` queues one `direct` job per message for the Brave worker, delayed by a random interval between `reply_delay_min_seconds` and `reply_delay_max_seconds`.
+
+The worker answers as the school on its first tab:
+
+1. It switches to the school's account and reads the latest `thread_item_limit` messages through the tab's own logged-in request.
+2. Claude Haiku follows `backend/services/instagram_dms/prompt.md` and picks one outcome: `story_repost`, `add_to_post` or `ignore`.
+3. Code checks the answer: the post must be one the club shared in the thread, and a reply must be short, single-line and free of links and mentions, otherwise a varied stock reply replaces it.
+4. `add_to_post` queues the shared post in `public.ingestion_items`, where the normal processor deduplicates it, and sends one short reply.
+5. `story_repost` waits without replying until the Instagram app can share the post to the school's story.
+6. `ignore` does nothing.
+
+`controlbox/instagram_dms.json` starts with `dry_run: true`, which records each decision in the worker's job results without replying or queueing.
+Review those results before setting it to `false`.
+A reply that cannot be confirmed pauses the worker for a person to check the thread, and it is never sent twice.
+DM text is never logged.
+

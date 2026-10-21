@@ -42,11 +42,14 @@ _AVAILABLE_ACCOUNT_SQL = (
 )
 
 
-_QUEUE_SCHEMA = """
+# Every job kind the queue accepts; a stored table missing any of them is rebuilt.
+_JOB_KINDS = ("digest", "retrieval", "engagement", "direct")
+
+_QUEUE_SCHEMA = f"""
     CREATE TABLE IF NOT EXISTS jobs (
         id TEXT PRIMARY KEY,
         dedupe_key TEXT NOT NULL UNIQUE,
-        kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement')),
+        kind TEXT NOT NULL CHECK(kind IN ({", ".join(f"'{kind}'" for kind in _JOB_KINDS)})),
         school TEXT NOT NULL,
         recipient_id TEXT NOT NULL,
         account_username TEXT NOT NULL,
@@ -171,7 +174,7 @@ class BrowserJobQueue:
             # Rebuild atomically while preserving every job and its history.
             db.execute("BEGIN IMMEDIATE")
             existing = db.execute("SELECT sql FROM sqlite_master WHERE name='jobs'").fetchone()
-            if existing and "'retrieval'" not in existing[0]:
+            if existing and any(f"'{kind}'" not in existing[0] for kind in _JOB_KINDS):
                 db.execute("ALTER TABLE jobs RENAME TO jobs_previous")
                 db.execute(_QUEUE_SCHEMA.split(";")[0])
                 db.execute("INSERT INTO jobs SELECT * FROM jobs_previous")
@@ -590,6 +593,39 @@ class BrowserJobQueue:
             },
         ).id
 
+    def enqueue_direct(
+        self,
+        *,
+        school: str,
+        school_name: str,
+        recipient_id: str,
+        account_username: str,
+        thread_id: str,
+        item_id: str,
+        dry_run: bool,
+        not_before: float,
+    ) -> str:
+        """One DM to answer as the school; it waits until ``not_before`` to look human."""
+        from services.instagram_notifications.browser_direct import validate_thread_id
+
+        if not re.fullmatch(r"[a-z0-9-]{1,80}", school):
+            raise ValueError("Instagram DM school is invalid")
+        if not re.fullmatch(r"[0-9]{1,40}", item_id):
+            raise ValueError("Instagram DM item ID is invalid")
+        return self._enqueue(
+            "direct",
+            school,
+            recipient_id,
+            account_username,
+            {
+                "school_name": school_name,
+                "thread_id": validate_thread_id(thread_id),
+                "item_id": item_id,
+                "dry_run": dry_run,
+                "not_before": not_before,
+            },
+        ).id
+
     @_retry_storage
     def _enqueue(
         self, kind: str, school: str, recipient_id: str, username: str, payload: dict[str, Any]
@@ -601,10 +637,13 @@ class BrowserJobQueue:
             identity.append(payload["cache_ent_id"])
         elif kind == "retrieval":
             identity.extend([payload["url"], str(payload["cutoff_days"])])
+        elif kind == "direct":
+            # One notification is one message; its thread and item identify it.
+            identity.extend([payload["thread_id"], payload["item_id"]])
         else:
             # p/ and reel/ can reference the same media. Dedupe by its shortcode.
             identity.extend([payload["post_url"].rstrip("/").split("/")[-1]])
-        if payload.get("dry_run"):
+        if payload.get("dry_run") and kind != "direct":
             identity.extend(["inspect", uuid.uuid4().hex])
         dedupe_key = hashlib.sha256(json.dumps(identity).encode()).hexdigest()
         with closing(self._connect()) as db, db:
@@ -687,6 +726,15 @@ class BrowserJobQueue:
             ).fetchone()
             if not row and allow_engagement:
                 row = self._select_engagement(db, now, require_waited=True)
+            if not row and allow_engagement:
+                # DMs act as the school on the primary tab, like likes and reposts.
+                row = db.execute(
+                    "SELECT * FROM jobs WHERE state='pending' AND kind='direct' "
+                    f"AND {_AVAILABLE_ACCOUNT_SQL} "
+                    "AND json_extract(payload,'$.not_before')<=? "
+                    "ORDER BY created_at,id LIMIT 1",
+                    (now,),
+                ).fetchone()
             if not row:
                 row = db.execute(
                     "SELECT * FROM jobs WHERE state='pending' AND kind='retrieval' "
@@ -748,7 +796,7 @@ class BrowserJobQueue:
         self, first: BrowserJob, *, limit: int, allow_engagement: bool = True
     ) -> list[BrowserJob]:
         """Atomically claim a compatible batch; never parallelize account switches."""
-        if self.storage_unavailable or first.kind == "engagement" or limit <= 0:
+        if self.storage_unavailable or first.kind in {"engagement", "direct"} or limit <= 0:
             return []
         with closing(self._connect()) as db, db:
             db.execute("BEGIN IMMEDIATE")
