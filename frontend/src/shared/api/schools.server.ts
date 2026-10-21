@@ -1,5 +1,6 @@
+import { headers } from "next/headers";
 import { readDiscoverySnapshot } from "@/shared/services/discoveryCache.server";
-import { resolveSchool } from "@/shared/constants/schools";
+import { getSchoolFromRequestHost, resolveSchool } from "@/shared/constants/schools";
 import {
   fetchServerSnapshot,
   getServerApiBaseUrl,
@@ -9,6 +10,14 @@ import {
   type School,
   type SchoolSummary,
 } from "@/shared/api/schools.api";
+
+/** Each school is served from its own subdomain, so the Host header scopes a request. */
+export async function getRequestSchool(): Promise<string> {
+  const requestHeaders = await headers();
+  return getSchoolFromRequestHost(
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
+  );
+}
 
 export async function buildSchoolSnapshot(
   school: string,

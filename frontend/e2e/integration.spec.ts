@@ -5230,6 +5230,26 @@ test.describe("Navigation", () => {
     expect(html).toContain('property="og:url" content="https://uwaterloo.wat2do.io/events"');
   });
 
+  test("the unlisted landing preview leads with the problem and sends students to the feed", async ({ page }) => {
+    await page.goto(`${BASE}/preview-62182b6ad5`, { waitUntil: "domcontentloaded" });
+    // The preview is shared by link only, so search engines must never index it.
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("before it's over.");
+    await expect(page.getByRole("heading", { name: "Campus isn't boring. Its events are just hidden." })).toBeVisible();
+    // The hero is the school's live event map, and the stats are counted from its feeds.
+    await expect(page.getByLabel("Map", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("upcoming events right now")).toBeVisible();
+
+    await page.getByRole("link", { name: "How it works" }).click();
+    await expect(page).toHaveURL(/#how-it-works$/);
+    await expect(page.getByRole("heading", { name: "So how is this different from other event sites?" })).toBeInViewport();
+
+    await page.getByRole("link", { name: "See what's on" }).first().click();
+    await expect(page).toHaveURL(`${BASE}/events`);
+    await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
+  });
+
   test("default and alternate school routes load without event feed errors", async ({ page }) => {
     const routes = [
       { url: BASE, schoolName: "University of Waterloo", color: "#6b238e" },

@@ -61,6 +61,13 @@
   --easter-mcmaster-3: hsl(331 100% 24%);
 
   /* Decorative gradients & glows */
+  /* Crayon scribbles that accent the landing page. Fixed hues, since school
+     colours range from near-black to white and would vanish in one theme. */
+  --scribble-yellow: hsl(45 95% 58%);
+  --scribble-pink: hsl(330 85% 70%);
+  --scribble-blue: hsl(214 95% 66%);
+  --scribble-green: hsl(142 62% 55%);
+
   --gradient-brand: linear-gradient(135deg, hsl(0 0% 20%), hsl(0 0% 12%));
   --gradient-accent: linear-gradient(
     135deg,

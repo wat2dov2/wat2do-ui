@@ -2,13 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import googleAnalytics from "../../../backend/controlbox/google_analytics.json";
 import localFont from "next/font/local";
-import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { AppShell } from "@/app/app-shell";
 import { ClientProviders } from "@/app/client-providers";
 import { SiteBanner } from "@/app/SiteBanner";
-import { getSchoolDirectory } from "@/shared/api/schools.server";
-import { getSchoolFromRequestHost } from "@/shared/constants/schools";
+import { getRequestSchool, getSchoolDirectory } from "@/shared/api/schools.server";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { getSchoolThemeStyle } from "@/shared/lib/schoolBranding";
 import { PageBackground } from "@/shared/layout";
@@ -110,16 +108,13 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const [requestHeaders, initialSchools] = await Promise.all([
-    headers(),
+  const [initialSchool, initialSchools] = await Promise.all([
+    getRequestSchool(),
     getSchoolDirectory().catch((error: unknown) => {
       console.error("Failed to preload the school directory:", error);
       return undefined;
     }),
   ]);
-  const initialSchool = getSchoolFromRequestHost(
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
-  );
   const school = initialSchools?.find((school) => school.slug === initialSchool);
 
   return (

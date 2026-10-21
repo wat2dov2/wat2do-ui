@@ -1,24 +1,15 @@
 import type { Metadata } from "next";
 import { cache } from "react";
-import { headers } from "next/headers";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
 import { PositionsPage as PositionsPageContent } from "@/features/positions/pages/PositionsPage";
-import { getSchool } from "@/shared/api/schools.server";
-import { getSchoolFromRequestHost } from "@/shared/constants/schools";
+import { getRequestSchool, getSchool } from "@/shared/api/schools.server";
 import {
   buildPublicPageMetadata,
   getSchoolCanonicalUrl,
   selectSeoImage,
 } from "@/shared/lib/seo";
-
-async function resolveRequestSchool(): Promise<string> {
-  const requestHeaders = await headers();
-  return getSchoolFromRequestHost(
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
-  );
-}
 
 const loadPositions = cache(async (
   school: string,
@@ -32,7 +23,7 @@ const loadPositions = cache(async (
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const school = await resolveRequestSchool();
+  const school = await getRequestSchool();
   const [schoolRecord, directory] = await Promise.all([
     getSchool(school),
     loadPositions(school),
@@ -64,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PositionsPage() {
-  const school = await resolveRequestSchool();
+  const school = await getRequestSchool();
   const initialDirectory = await loadPositions(school);
 
   return (

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { headers } from "next/headers";
+import { getRequestSchool } from "@/shared/api/schools.server";
 
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import { isEventIndexable } from "@/features/events/lib/eventSeo";
@@ -7,7 +7,6 @@ import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { getClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.server";
 import { isClubIndexable } from "@/features/clubs/lib/clubSeo";
 import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
-import { getSchoolFromRequestHost } from "@/shared/constants/schools";
 import { clubPagePath, ROUTES } from "@/shared/constants/routes";
 import { getSchoolCanonicalUrl } from "@/shared/lib/seo";
 
@@ -22,10 +21,7 @@ function validLastModified(
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const requestHeaders = await headers();
-  const school = getSchoolFromRequestHost(
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
-  );
+  const school = await getRequestSchool();
   const eventsUrl = getSchoolCanonicalUrl(school, ROUTES.EVENTS);
 
   try {

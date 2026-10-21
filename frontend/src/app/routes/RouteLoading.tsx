@@ -7,6 +7,7 @@ import { AboutPage } from "@/features/contact/pages/AboutPage";
 import { AuthEntryPage } from "@/features/auth/pages/AuthEntryPage";
 import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
+import { LandingPage } from "@/features/landing/pages/LandingPage";
 import { ClubCardSkeleton } from "@/features/clubs/components/ClubCardSkeleton";
 import { POSITION_TYPES } from "@/features/positions/api/positions.api";
 import { Container, PageHeader, Stack } from "@/shared/layout";
@@ -70,6 +71,7 @@ function DiscoveryLoading({ resource }: { resource: "events" | "clubs" | "positi
 export function RouteLoading() {
   const pathname = usePathname();
   const { t } = useTranslation();
+  if (pathname === ROUTES.LANDING_PREVIEW) return <LandingPage snapshot={null} />;
   if (pathname === ROUTES.ABOUT) return <AboutPage isLoading />;
   if (pathname === ROUTES.LOGIN) return <AuthEntryPage isPending preview={<AuthHeroPanel isLoading />} />;
   if (pathname === ROUTES.EVENTS) return <DiscoveryLoading resource="events" />;

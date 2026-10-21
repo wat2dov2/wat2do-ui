@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 import type { Event } from "../src/shared/types";
 import type { SchoolSummary } from "../src/shared/api/schools.api";
 import { filterEvents } from "../src/features/search/api/searchService";
-import { clearNarrowingFilterState, EMPTY_FILTER_STATE, normalizeFilterState, resolveCampusSeasonFilters, resolveVarsityGamesFilter, storeStatesToFilterState } from "../src/features/search/api/filterService";
+import { clearNarrowingFilterState, EMPTY_FILTER_STATE, freeFoodFilterPatch, normalizeFilterState, resolveCampusSeasonFilters, resolveVarsityGamesFilter, storeStatesToFilterState } from "../src/features/search/api/filterService";
 import { useSearchStore } from "../src/features/search/store/search.store";
 import { useEventsStore } from "../src/features/events/store/events.store";
 import { getFilterCounts } from "../src/shared/utils/filter";
@@ -481,7 +481,7 @@ test("Free food matches Food plus Free for missing prices and listed food", () =
         startTransition: (callback: () => void) => callback(),
       };
       if (id === "zustand/react/shallow") return { useShallow: (selector: unknown) => selector };
-      if (id === "@/features/search/api/filterService") return { storeStatesToFilterState, clearNarrowingFilterState };
+      if (id === "@/features/search/api/filterService") return { storeStatesToFilterState, clearNarrowingFilterState, freeFoodFilterPatch };
       if (id === "@/features/search/store/search.store") return {
         useSearchStore: Object.assign((selector: (state: ReturnType<typeof useSearchStore.getState>) => unknown) => selector(useSearchStore.getState()), { getState: useSearchStore.getState }),
       };

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { SiteFooter } from "@/app/SiteFooter";
 import { TopNav } from "@/app/TopNav";
 import { BackToTopButton } from "@/shared/ui/back-to-top-button";
 import { PageFrame } from "@/shared/layout";
@@ -12,10 +13,14 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="flex h-dvh flex-col overflow-hidden">
       <TopNav />
 
+      {/* `relative` makes the scroller the containing block, so absolutely
+          positioned content (e.g. Highlighter's drawn annotations) scrolls with
+          the page instead of staying pinned to the viewport. */}
       <PageFrame
-        className="main-content-grid mt-12 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+        className="main-content-grid relative mt-12 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
       >
         {children}
+        <SiteFooter />
       </PageFrame>
 
       <div className="pointer-events-none fixed right-2 bottom-4 z-50 sm:right-4">

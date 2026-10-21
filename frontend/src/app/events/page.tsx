@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
 import { cache } from "react";
-import { headers } from "next/headers";
 import { EventRoutePage } from "@/app/event-route-page";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
-import { getSchool } from "@/shared/api/schools.server";
+import { getRequestSchool, getSchool } from "@/shared/api/schools.server";
 import { ROUTES } from "@/shared/constants/routes";
 import { controlBox } from "@/shared/config/controlBox";
-import { getSchoolFromRequestHost } from "@/shared/constants/schools";
 import {
   buildPublicPageMetadata,
   getSchoolCanonicalUrl,
@@ -28,16 +26,8 @@ const loadInitialSnapshot = cache(async (
   }
 });
 
-/** Each school is served from its own subdomain, so the Host header scopes the feed. */
-async function resolveRequestSchool(): Promise<string> {
-  const requestHeaders = await headers();
-  return getSchoolFromRequestHost(
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
-  );
-}
-
 export async function generateMetadata(): Promise<Metadata> {
-  const school = await resolveRequestSchool();
+  const school = await getRequestSchool();
   const [schoolRecord, snapshot] = await Promise.all([
     getSchool(school),
     loadInitialSnapshot(school),
@@ -79,7 +69,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function EventsPage() {
-  const school = await resolveRequestSchool();
+  const school = await getRequestSchool();
   const snapshot = await loadInitialSnapshot(school);
 
   return <EventRoutePage initialSnapshot={snapshot} initialSchool={school} />;

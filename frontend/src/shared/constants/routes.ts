@@ -13,6 +13,8 @@ import { QP } from "@/shared/constants/queryParams";
 // ── Top-level routes ───────────────────────────────────────────────
 export const ROUTES = {
   HOME: "/",
+  // Unlisted and noindexed: shared by link only while the landing page is reviewed.
+  LANDING_PREVIEW: "/preview-62182b6ad5",
   EVENTS: "/events",
   LOGIN: "/login",
   AUTH_CALLBACK: "/auth/callback",
