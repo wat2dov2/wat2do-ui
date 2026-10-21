@@ -1,0 +1,10 @@
+{
+  "dry_run": true,
+  "categories": ["direct_v2_text", "direct_v2_media_share", "direct_v2_clips_share"],
+  "model": "claude-haiku-5-5",
+  "agent_timeout_seconds": 120,
+  "thread_item_limit": 12,
+  "reply_max_characters": 40,
+  "reply_delay_min_seconds": 120,
+  "reply_delay_max_seconds": 1200
+}

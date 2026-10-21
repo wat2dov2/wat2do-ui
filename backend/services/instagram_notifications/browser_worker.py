@@ -101,6 +101,19 @@ def execute_job(
                 job.payload["url"],
                 cutoff_days=job.payload["cutoff_days"],
             )
+        if job.kind == "direct":
+            from services.instagram_notifications.browser_direct import (
+                BrowserInstagramDirectExecutor,
+            )
+
+            return BrowserInstagramDirectExecutor(session=session).handle(
+                job.recipient_id,
+                job.account_username,
+                job.payload["thread_id"],
+                school=job.school,
+                school_name=job.payload["school_name"],
+                dry_run=bool(job.payload.get("dry_run")),
+            )
         executor = BrowserInstagramEngagementExecutor(session=session)
         return executor.engage_post(
             job.recipient_id,
@@ -256,7 +269,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 raise
             except sqlite3.Error:
                 queue.storage_unavailable = True
-                if job.kind == "engagement" and not job.payload.get("dry_run"):
+                if job.kind in {"engagement", "direct"} and not job.payload.get("dry_run"):
                     try:
                         queue.set_setting(
                             "paused",
@@ -278,7 +291,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 completed = queue.get(job.id)
                 if completed:
                     queue.record_diagnostic(completed.state, completed)
-                if job.kind == "engagement" and not job.payload.get("dry_run"):
+                if job.kind in {"engagement", "direct"} and not job.payload.get("dry_run"):
                     queue.set_setting(
                         "next_engagement_at", time.time() + CONTROL.engagement_interval_seconds
                     )

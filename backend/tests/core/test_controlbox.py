@@ -861,3 +861,26 @@ def test_event_view_controls_require_a_campus_center_per_school(tmp_path, change
     directory = _write_control(tmp_path, "event_discovery", change)
     with pytest.raises(ValidationError, match="map campus center"):
         load_controlbox(directory)
+
+
+def test_instagram_dms_start_in_dry_run_with_a_human_reply_window() -> None:
+    control = load_controlbox().instagram_dms
+    assert control.dry_run is True
+    assert set(control.categories) == {
+        "direct_v2_text",
+        "direct_v2_media_share",
+        "direct_v2_clips_share",
+    }
+    assert control.reply_delay_min_seconds <= control.reply_delay_max_seconds
+
+
+def test_instagram_dms_reject_an_inverted_reply_window(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_dms",
+        lambda payload: payload.update(
+            {"reply_delay_min_seconds": 600, "reply_delay_max_seconds": 60}
+        ),
+    )
+    with pytest.raises(ValidationError, match="reply_delay_min_seconds"):
+        load_controlbox(path)

@@ -950,6 +950,28 @@ class IngestionControl(_ControlModel):
         return self
 
 
+class InstagramDmsControl(_ControlModel):
+    # Dry run reads, decides and logs each DM without replying or queueing anything.
+    dry_run: bool
+    # Android push categories that carry a direct message into a school's inbox.
+    categories: list[Annotated[str, Field(pattern=r"^direct_v2_[a-z_]+$")]] = Field(
+        min_length=1, max_length=10
+    )
+    model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    agent_timeout_seconds: int = Field(gt=0, le=600)
+    thread_item_limit: int = Field(ge=1, le=50)
+    reply_max_characters: int = Field(ge=4, le=200)
+    # A reply waits a random human-like interval inside this window.
+    reply_delay_min_seconds: int = Field(ge=0, le=86_400)
+    reply_delay_max_seconds: int = Field(ge=0, le=86_400)
+
+    @model_validator(mode="after")
+    def validate_reply_delay(self) -> "InstagramDmsControl":
+        if self.reply_delay_min_seconds > self.reply_delay_max_seconds:
+            raise ValueError("reply_delay_min_seconds cannot exceed reply_delay_max_seconds")
+        return self
+
+
 class CompetitorPainPointsControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     agent_timeout_seconds: int = Field(gt=0, le=3600)
@@ -1011,6 +1033,7 @@ class ControlBox(_ControlModel):
     instagram_digest: InstagramDigestControl
     instagram_publishing: InstagramPublishingControl
     competitor_pain_points: CompetitorPainPointsControl
+    instagram_dms: InstagramDmsControl
     workflow_failure_alerts: WorkflowFailureAlertsControl
     promoter_program: PromoterProgramControl
 
