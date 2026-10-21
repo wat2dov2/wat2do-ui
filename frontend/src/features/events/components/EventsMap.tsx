@@ -67,7 +67,13 @@ function collapseCredits(container: HTMLElement) {
   container.querySelector(".maplibregl-compact-show")?.classList.remove("maplibregl-compact-show");
 }
 
-export function EventsMap({ events, school, onEventClick }: { events: Event[]; school: string; onEventClick: (event: Event) => void }) {
+export function EventsMap({ events, school, onEventClick, embedded = false }: {
+  events: Event[];
+  school: string;
+  onEventClick: (event: Event) => void;
+  /** Inside a scrolling page, zoom needs Ctrl/⌘ or two fingers so the map never traps page scroll. */
+  embedded?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const mobile = useMobileClickActivation();
   const { getSchoolTimezone } = useSchoolDirectory();
@@ -121,6 +127,7 @@ export function EventsMap({ events, school, onEventClick }: { events: Event[]; s
             if (!mapLoaded.current && (event.target === null || error.url === mapStyle)) setMapFailed(true);
           }}
           cursor="pointer"
+          cooperativeGestures={embedded}
         >
           <NavigationControl position="top-right" />
           <Source id="events" type="geojson" data={data} cluster clusterRadius={settings.map_cluster_radius} clusterMaxZoom={settings.map_cluster_max_zoom}>

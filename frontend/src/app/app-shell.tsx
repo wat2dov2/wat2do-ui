@@ -49,6 +49,7 @@ function routeUsesChrome(pathname: string): boolean {
 
 function routeOwnsServerMetadata(pathname: string): boolean {
   return (
+    pathname === ROUTES.LANDING_PREVIEW ||
     pathname === ROUTES.EVENTS ||
     pathname === ROUTES.LOGIN ||
     pathname === ROUTES.ABOUT ||

@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import {
   storeStatesToFilterState,
   clearNarrowingFilterState,
+  freeFoodFilterPatch,
 } from "@/features/search/api/filterService";
 import { useSearchStore, type FilterUpdateSource } from "@/features/search/store/search.store";
 import type { EventDateFilter, FilterState } from "@/shared/types";
@@ -138,7 +139,7 @@ export function useFilterState() {
     [updateFilterState],
   );
   const setFreeFood = useCallback(
-    (value: boolean) => updateFilterState({ hasFood: value, minPrice: "", maxPrice: value ? "0" : "" }),
+    (value: boolean) => updateFilterState(freeFoodFilterPatch(value)),
     [updateFilterState],
   );
   const setCompetitions = useCallback(

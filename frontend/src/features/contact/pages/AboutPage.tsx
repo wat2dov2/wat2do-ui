@@ -256,18 +256,6 @@ export function AboutPage({ isLoading = false }: { isLoading?: boolean }) {
           </Button>
         </Stack>
 
-        <Separator />
-
-        <Section>
-          <Stack gap={1}>
-            <CardDescription>{t("contact.footer.about")}</CardDescription>
-            <CardDescription>
-              {t("contact.footer.copyright", {
-                year: new Date().getFullYear(),
-              })}
-            </CardDescription>
-          </Stack>
-        </Section>
       </Stack>
     </Container>
   );

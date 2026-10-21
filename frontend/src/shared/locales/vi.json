@@ -416,7 +416,7 @@
       "title": "Tại sao chúng tôi xây dựng Wat2Do",
       "origin": "Wat2Do bắt đầu khi chúng tôi, những người đồng sáng lập, phát hiện ra cách thu thập các bài đăng công khai Instagram về các sự kiện diễn ra tại University of Waterloo. Chúng tôi xây dựng nó cho chính chúng tôi vì chúng tôi thích thử những điều mới, và sinh viên liên tục tạo ra những điều mới mẻ và thú vị để làm.",
       "belief": "Chúng tôi tin rằng đại học là một trong những khoảng thời gian và môi trường tốt nhất để thử điều gì đó mới. Vấn đề chưa bao giờ là thiếu những sự kiện diễn ra. Vấn đề là tìm thấy chúng trước khi chúng kết thúc.",
-      "scale": "Kể từ tháng Tám 2025, Wat2Do đã ghi lại hơn 3,000 sự kiện. Chúng tôi tiếp tục cải thiện thuật toán cho đến khi nó có thể hiển thị một sự kiện, trung bình, khoảng một phút sau khi bài đăng của Instagram được đăng.",
+      "scale": "Kể từ tháng Tám 2025, Wat2Do đã ghi lại hơn 28,900 sự kiện. Kể từ đó, chúng tôi đã mở rộng thuật toán từ 400 tài khoản lên 19,600 và xử lý 3,340 sự kiện mới mỗi tuần (tính đến ngày 19 tháng Mười 2026).",
       "mission": "Giải quyết vấn đề khám phá đó đã thay đổi trải nghiệm đại học của chính chúng tôi. Bây giờ chúng tôi muốn chia sẻ những gì chúng tôi đã xây dựng và giúp sinh viên ở khắp nơi khám phá nhiều điều mới mẻ, thú vị đang diễn ra xung quanh họ.",
       "signature": "- Tony & Erica"
     },
@@ -483,11 +483,6 @@
       "browse": "Duyệt các Sự kiện",
       "explore": "Khám phá Các Tổ chức"
     },
-    "footer": {
-      "about": "Chúng tôi xây dựng Wat2Do để kết nối sinh viên Waterloo với các sự kiện đời sống sinh viên ít được biết đến. Để đưa ra đề xuất hoặc phản hồi, hãy liên hệ với chúng tôi.",
-      "title": "Wat2Do",
-      "copyright": "© {{year}} Wat2Do"
-    },
     "photos": {
       "label": "Những chuyến thăm trường của chúng tôi",
       "alt": "Đội ngũ Wat2Do ghé thăm {{school}}",
@@ -545,5 +540,220 @@
         "messageTooLong": "Đề cử của bạn quá dài. Vui lòng rút ngắn các câu trả lời."
       }
     }
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Miễn phí cho mọi người · Được tài trợ bởi các giải thưởng tác động sinh viên",
+      "titleLead": "Mọi sự kiện trong trường,",
+      "titleHighlight": "trước khi kịp kết thúc.",
+      "description": "Sự kiện của các tổ chức bị chìm nghỉm giữa hàng trăm tài khoản Instagram. Wat2Do gom tất cả vào một bảng tin.",
+      "primaryAction": "Xem có gì hay",
+      "secondaryAction": "Cách hoạt động",
+      "mapTitle": "{{total}} sự kiện sắp diễn ra tại {{school}}",
+      "mapTitle_other": "{{total}} sự kiện sắp diễn ra tại {{school}}"
+    },
+    "problem": {
+      "eyebrow": "Vấn đề",
+      "title": "Trường KHÔNG HỀ nhàm chán. Chỉ là sự kiện bị <mark>giấu kín</mark>.",
+      "description": "Ở {{school}} lúc nào cũng có gì đó diễn ra. Vấn đề nằm ở nơi chúng được thông báo.",
+      "points": {
+        "buried": {
+          "title": "Chìm nghỉm trong bảng tin",
+          "description": "Kể cả khi bạn theo dõi một tổ chức, Instagram vẫn quyết định bạn có thấy bài đăng của họ hay không. Hầu hết poster sự kiện đều bị chìm dưới mọi thứ khác trong bảng tin của bạn."
+        },
+        "scattered": {
+          "title": "Hàng trăm tổ chức, không có bảng tin chung",
+          "description": "Mỗi tổ chức, hội và đội đều đăng trên tài khoản riêng. Chẳng ai theo dõi hết, nên bạn chỉ biết những gì bạn bè đăng lại."
+        },
+        "late": {
+          "title": "Hôm sau bạn mới biết",
+          "description": "Đồ ăn miễn phí, buổi gặp nhà tuyển dụng, lớp nấu ăn $5. Bạn thấy bài tổng kết rồi mới nhận ra là hôm qua."
+        },
+        "quiet": {
+          "title": "Nên cứ ngỡ chẳng có gì diễn ra",
+          "description": "Khi sự kiện nằm rải rác trên hàng trăm tài khoản, trường có vẻ yên ắng. Thật ra không phải vậy. Chỉ là bạn không nhìn thấy."
+        }
+      },
+      "storyLabel": "Vì sao chúng tôi làm Wat2Do",
+      "story": "Tony thấy một Instagram story về lớp học nấu món Ý, chỉ $5. Nhưng nó đã được đăng từ ba ngày trước.",
+      "storyOver": "Sự kiện đã kết thúc rồi.",
+      "storyEnd": "Vậy nên chúng tôi tự tạo ra nơi mà mình từng ước là có.",
+      "signature": "Tony & Erica, nhà sáng lập Wat2Do"
+    },
+    "solution": {
+      "eyebrow": "Giải pháp",
+      "title": "Một bảng tin. <mark>Mọi</mark> tổ chức. Không cần tìm kiếm.",
+      "description": "Wat2Do theo dõi các tài khoản thay bạn, và biến mỗi poster thành một sự kiện bạn có thể tìm kiếm, lọc và lưu lại.",
+      "stats": {
+        "clubsLabel": "tổ chức được theo dõi tại {{school}}",
+        "clubsLabel_other": "tổ chức được theo dõi tại {{school}}",
+        "upcomingLabel": "sự kiện sắp diễn ra",
+        "upcomingLabel_other": "sự kiện sắp diễn ra",
+        "newLabel": "sự kiện mới trong 7 ngày qua",
+        "newLabel_other": "sự kiện mới trong 7 ngày qua"
+      }
+    },
+    "different": {
+      "eyebrow": "Bên trong",
+      "title": "Vậy điều gì làm nó <mark>khác biệt</mark> so với các trang sự kiện khác?",
+      "description": "Các trang khác chờ các tổ chức tự gửi sự kiện lên. Phần còn lại bị khóa trong Instagram, nơi chặn bot. Dù vậy Wat2Do vẫn lấy chúng ra.",
+      "points": {
+        "relay": {
+          "cost": "Hàng trăm giờ"
+        },
+        "alwaysOn": {
+          "title": "Một chiếc Mac mini không bao giờ ngủ",
+          "description": "Một chiếc M4 Mac mini chúng tôi mua về mở từng bài đăng được gắn cờ một cách ẩn danh rồi biến nó thành dữ liệu, 24/7.",
+          "cost": "$899"
+        },
+        "claude": {
+          "title": "Claude đọc mọi poster",
+          "description": "Claude Haiku biến tờ rơi thành sự kiện với các rào chắn: không bịa đặt, kiểm tra trùng lặp, và tài khoản cơ sở dữ liệu chỉ được vào các bảng sự kiện.",
+          "cost": "$200 / tháng"
+        },
+        "cloud": {
+          "title": "Trực tuyến cho mọi trường",
+          "description": "AWS lưu trữ bảng tin cùng bản sao lưu, để không lỗi nào làm hỏng trải nghiệm của sinh viên thật.",
+          "cost": "$100 / tháng"
+        }
+      },
+      "costNote": "Chúng tôi trang trải các chi phí này bằng giải thưởng tác động sinh viên và học bổng tại University of Waterloo, nguồn quỹ dành để cải thiện đời sống sinh viên, để Wat2Do luôn miễn phí cho mọi sinh viên.",
+      "diagramLabel": "Cách một bài đăng Instagram của tổ chức trở thành sự kiện trên Wat2Do: tài khoản tổ chức gửi thông báo đến một bước đã bị ẩn, browser worker và bộ lấy bài đăng trên một Mac mini luôn bật đọc bài đăng, các agent Claude có rào chắn biến nó thành sự kiện, rồi một điểm kiểm tra cho nó vào cơ sở dữ liệu sự kiện được hạn chế truy cập phía sau bảng tin của bạn. Nếu có gì hỏng, Mac mini sẽ báo động đến một điện thoại cá nhân và chúng tôi sửa từ một chiếc laptop.",
+      "diagram": {
+        "zoneInstagram": "Instagram",
+        "zoneMac": "Mac mini · luôn bật",
+        "zoneWat2do": "Wat2Do",
+        "accounts": "Tài khoản tổ chức",
+        "browser": "Browser worker",
+        "fetcher": "Bộ lấy ẩn danh",
+        "agents": "Agent Claude",
+        "database": "Cơ sở dữ liệu sự kiện",
+        "feed": "Bảng tin của bạn",
+        "guardrails": "Rào chắn",
+        "zoneOnCall": "Trực sự cố",
+        "laptop": "Laptop cá nhân của chúng tôi",
+        "laptopNote": "(điều khiển từ xa Mac mini)",
+        "pager": "Điện thoại cá nhân"
+      },
+      "redacted": "Đã ẩn"
+    },
+    "useCases": {
+      "eyebrow": "Cách dùng",
+      "title": "Đời sinh viên theo cách của bạn",
+      "description": "Sáu cách sinh viên tại {{school}} dùng Wat2Do.",
+      "items": {
+        "freeFood": {
+          "title": "Đồ ăn miễn phí giữa giờ học",
+          "description": "Pizza ở buổi giới thiệu, bake sale, buổi giao lưu có đồ ăn vặt. Lọc theo đồ ăn miễn phí và lên kế hoạch bữa trưa.",
+          "action": "Xem đồ ăn miễn phí"
+        },
+        "employers": {
+          "title": "Gặp nhà tuyển dụng ngay tại trường",
+          "description": "Các buổi giới thiệu và đêm networking có nhà tuyển dụng đến tận nơi. Cơ hội tốt thường bắt đầu từ một cuộc trò chuyện.",
+          "action": "Xem sự kiện tuyển dụng"
+        },
+        "competitions": {
+          "title": "Cuộc thi và hackathon",
+          "description": "Thi giải case, hackathon và đêm pitching, có giải thưởng và trải nghiệm thật để ghi vào CV.",
+          "action": "Xem cuộc thi"
+        },
+        "newToCampus": {
+          "title": "Mới đến trường?",
+          "description": "Xem mọi tổ chức trong trường và tìm những người có cùng sở thích với bạn.",
+          "action": "Xem các tổ chức"
+        },
+        "getInvolved": {
+          "title": "Gia nhập ban điều hành",
+          "description": "Các tổ chức đăng vị trí đang tuyển ở đây, từ đại diện năm nhất đến chủ tịch. Không chỉ đến tham gia mà còn góp sức.",
+          "action": "Xem vị trí đang tuyển"
+        },
+        "bored": {
+          "title": "Tối nay không có gì làm?",
+          "description": "Tìm \"random\" trên bảng tin và Wat2Do sẽ chọn cho bạn một sự kiện sắp diễn ra.",
+          "action": "Gợi ý bất ngờ"
+        }
+      }
+    },
+    "features": {
+      "capture": {
+        "eyebrow": "Tự động",
+        "title": "Từ poster Instagram thành sự kiện, hoàn toàn tự động",
+        "description": "Các tổ chức cứ đăng bài như mọi khi. Wat2Do đọc từng poster và lấy ra ngày, giờ, địa điểm và giá, để sự kiện tự lên bảng tin mà không ai phải điền form.",
+        "mockHandle": "@italian.club",
+        "mockTitle": "Lớp nấu món Ý",
+        "mockDate": "Thứ Năm, 18:00",
+        "mockPlace": "Bếp trung tâm sinh viên",
+        "mockPrice": "$5",
+        "mockAdded": "Đã thêm từ bài đăng của tổ chức"
+      },
+      "filters": {
+        "eyebrow": "Bộ lọc",
+        "title": "Đồ ăn miễn phí chỉ sau hai lần chạm",
+        "description": "Lọc nhanh đồ ăn miễn phí, nhà tuyển dụng tại trường và cuộc thi. Hoặc thu hẹp theo ngày, giá, tổ chức và địa điểm.",
+        "mockQuery": "pizza"
+      },
+      "reminders": {
+        "eyebrow": "Nhắc nhở",
+        "title": "Không bao giờ quên chỗ mình định đi",
+        "description": "Bấm \"Sẽ tham gia\" và Wat2Do sẽ gửi email cho bạn khoảng một tiếng trước khi bắt đầu. Lưu sự kiện vào Google Calendar hoặc iCal, hoặc bật email lúc 9 giờ sáng với các sự kiện trong ngày.",
+        "mockSubject": "Bắt đầu sau 1 tiếng: Lớp nấu món Ý",
+        "mockBody": "Bếp trung tâm sinh viên lúc 18:00. Hẹn gặp bạn ở đó!",
+        "mockMorning": "Email 9 giờ sáng mỗi ngày"
+      },
+      "clubs": {
+        "eyebrow": "Tổ chức",
+        "title": "Khám phá những tổ chức bạn chưa từng biết",
+        "description": "Xem mọi tổ chức tại {{school}}, theo dõi những nơi bạn thích, và tìm vị trí đang tuyển khi bạn muốn tham gia.",
+        "mockClubOne": "CLB Sửa chữa",
+        "mockClubTwo": "Hội Salsa",
+        "mockClubThree": "CLB Leo núi",
+        "mockUpcoming": "{{count}} sự kiện sắp tới",
+        "mockUpcoming_other": "{{count}} sự kiện sắp tới",
+        "mockFollow": "Theo dõi",
+        "mockFollowing": "Đang theo dõi"
+      }
+    },
+    "faq": {
+      "eyebrow": "Hỏi đáp",
+      "title": "Những câu sinh viên hay hỏi",
+      "items": {
+        "free": {
+          "question": "Wat2Do có miễn phí không?",
+          "answer": "Có. Wat2Do miễn phí cho sinh viên, và bạn có thể xem mọi sự kiện mà không cần tài khoản. Đăng nhập để đánh dấu sự kiện \"Sẽ tham gia\" và nhận lời nhắc."
+        },
+        "clubs": {
+          "question": "Tổ chức của mình có cần đăng ký không?",
+          "answer": "Không. Nếu tổ chức của bạn đăng sự kiện trên tài khoản Instagram công khai, Wat2Do sẽ tự động lấy về. Bạn cũng có thể nhận quyền quản lý trang của tổ chức."
+        },
+        "speed": {
+          "question": "Sự kiện mới xuất hiện nhanh cỡ nào?",
+          "answer": "Hầu hết sự kiện mới xuất hiện trong vòng 19 giờ sau khi tổ chức đăng bài."
+        },
+        "submit": {
+          "question": "Mình có thể tự thêm sự kiện không?",
+          "answer": "Được. Gửi sự kiện từ trang sự kiện. Tải poster lên và Wat2Do sẽ điền thông tin chi tiết giúp bạn."
+        },
+        "schools": {
+          "question": "Wat2Do có ở những trường nào?",
+          "answer": "Wat2Do đang có mặt tại {{count}} trường ở Canada và Mỹ. Mỗi trường có bảng tin riêng, và bạn có thể đổi trường ở đầu trang.",
+          "answer_other": "Wat2Do đang có mặt tại {{count}} trường ở Canada và Mỹ. Mỗi trường có bảng tin riêng, và bạn có thể đổi trường ở đầu trang."
+        }
+      }
+    },
+    "closing": {
+      "eyebrow": "Sẵn sàng chưa?",
+      "title": "Đừng để <mark>hôm sau</mark> mới biết nữa.",
+      "description": "Xem mọi thứ đang diễn ra tại {{school}}, tất cả ở một nơi.",
+      "action": "Xem có gì hay"
+    }
+  },
+  "footer": {
+    "tagline": "Mọi sự kiện trong trường, trong một bảng tin, trước khi kịp kết thúc.",
+    "explore": "Khám phá",
+    "company": "Wat2Do",
+    "promote": "Kiếm tiền với poster",
+    "supportLocal": "Ủng hộ doanh nghiệp địa phương",
+    "copyright": "© {{year}} Wat2Do",
+    "madeBy": "Do sinh viên làm, dành cho sinh viên."
   }
 }

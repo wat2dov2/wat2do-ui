@@ -12,6 +12,8 @@ const linkVariants = cva("transition-colors", {
     variant: {
       navigation: "text-inherit",
       default: "text-primary underline-offset-4 hover:underline",
+      /** Quiet secondary links, such as the site footer's, that brighten on hover. */
+      subtle: "text-sm text-muted-foreground transition-colors hover:text-foreground",
       muted:
         "text-muted-foreground underline-offset-4 hover:text-foreground hover:underline",
       announcement:
