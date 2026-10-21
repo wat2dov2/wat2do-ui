@@ -161,7 +161,7 @@ export function CarouselSlidePreview({
                   batchKind: cover.batchKind,
                   // Publishing lists each event's first stored occurrence, as event slides do.
                   events: outroEvents.map(event => ({ ...event, ...event.occurrences[0], id: event.id, tz: getSchoolTimezone(event.school) })),
-                })} />
+                })} renderPoster={renderPoster} />
                 : slideModel ? <EventSlideTemplate model={slideModel} renderPoster={renderPoster} /> : null}
           </div>}
         </div>

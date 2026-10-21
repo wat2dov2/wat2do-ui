@@ -6,7 +6,6 @@
   "minimum_lead_hours": 4,
   "maximum_lead_days": 21,
   "maximum_event_slides": 8,
-  "outro_event_rows": 10,
   "status_poll_interval_seconds": 3,
   "meta_poll_attempts": 10,
   "meta_poll_interval_seconds": 2,
