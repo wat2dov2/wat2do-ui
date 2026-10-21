@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { createRequire } from "node:module";
 import { getRedirectUrl, getRewrittenUrl, unstable_getResponseFromNextConfig } from "next/experimental/testing/server.js";
 import nextConfig from "../next.config";
+import openApi from "../src/shared/generated/openapi.json" with { type: "json" };
 
 const { warmPublicPages, prefetchPublicPage }: typeof import("../src/app/hooks/useAppNavigation") =
   createRequire(import.meta.url)("../src/app/hooks/useAppNavigation");
@@ -90,15 +91,20 @@ for (const host of ["wat2do.io", "uwaterloo.wat2do.io"]) {
     expect(getRewrittenUrl(response)).toBeNull();
   });
 
-  test(`contact submissions on ${host} keep the upstream collection slash`, async () => {
-    const response = await unstable_getResponseFromNextConfig({
-      url: `https://${host}/api/contact/`,
-      nextConfig,
-    });
-    expect(getRedirectUrl(response)).toBeNull();
-    const destination = getRewrittenUrl(response);
-    expect(destination).not.toBeNull();
-    expect(new URL(destination!).pathname).toBe("/contact/");
+  test(`every API collection on ${host} keeps the upstream collection slash`, async () => {
+    // A dropped slash makes FastAPI redirect the browser to its internal address.
+    const collections = Object.keys(openApi.paths).filter(path => path !== "/" && path.endsWith("/"));
+    expect(collections).toContain("/competitor-pain-points/");
+    for (const path of collections) {
+      const response = await unstable_getResponseFromNextConfig({
+        url: `https://${host}/api${path}?page=1`,
+        nextConfig,
+      });
+      expect(getRedirectUrl(response), path).toBeNull();
+      const destination = getRewrittenUrl(response);
+      expect(destination, path).not.toBeNull();
+      expect(new URL(destination!).pathname, path).toBe(path);
+    }
   });
 }
 

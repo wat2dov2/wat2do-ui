@@ -1,5 +1,6 @@
 import imageDelivery from "../backend/controlbox/image_delivery.json" with { type: "json" };
 import eventDiscovery from "../backend/controlbox/event_discovery.json" with { type: "json" };
+import openApi from "./src/shared/generated/openapi.json" with { type: "json" };
 import type { NextConfig } from "next";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -83,25 +84,12 @@ const publicPromoterProgram = {
     availableForCreation: template.available_for_creation,
   })),
 };
-const apiCollectionPaths = [
-  "contact",
-  "discovery-queries",
-  "events",
-  "ingestion-latency",
-  "instagram-publishing/batches",
-  "clubs",
-  "payouts",
-  "positions",
-  "position-submissions",
-  "sponsor-submissions",
-  "qr",
-  "reports",
-  "going-events",
-  "saved-clubs",
-  "submissions",
-  "users",
-  "v1/saved-events",
-];
+// Next drops a trailing slash before rewriting, but every backend route that
+// ends in one (a router's collection root) must keep it. They are read from the
+// generated OpenAPI schema, so a new router can never be left out.
+const apiCollectionPaths = Object.keys(openApi.paths)
+  .filter((path) => path !== "/" && path.endsWith("/"))
+  .map((path) => path.slice(1, -1));
 
 const nextConfig: NextConfig = {
   experimental: { testProxy: process.env.PLAYWRIGHT_TEST === "1" },
