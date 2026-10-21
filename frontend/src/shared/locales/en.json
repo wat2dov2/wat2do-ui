@@ -543,7 +543,7 @@
   },
   "landing": {
     "hero": {
-      "eyebrow": "Free for everyone · Funded by student impact awards",
+      "note": "Free for everyone · Funded by student impact awards",
       "titleLead": "Every campus event,",
       "titleHighlight": "before it's over.",
       "description": "Club events get buried across hundreds of Instagram accounts. Wat2Do puts them all in one feed.",
@@ -553,8 +553,7 @@
       "mapTitle_other": "{{total}} upcoming events at {{school}}"
     },
     "problem": {
-      "eyebrow": "The problem",
-      "title": "Campus is NOT boring. Its events are just <mark>hidden</mark>.",
+      "title": "Campus is NOT boring. Its events are just hidden.",
       "description": "There's always something happening at {{school}}. The problem is where it gets announced.",
       "points": {
         "buried": {
@@ -574,15 +573,13 @@
           "description": "When events are scattered across hundreds of accounts, campus feels quiet. It isn't. You just can't see it."
         }
       },
-      "storyLabel": "Why we built Wat2Do",
       "story": "Tony found an Instagram story for Italian cooking lessons, just $5. It had been posted three days earlier.",
       "storyOver": "The event was already over.",
       "storyEnd": "So we built the one place we wished existed.",
       "signature": "Tony & Erica, founders of Wat2Do"
     },
     "solution": {
-      "eyebrow": "The fix",
-      "title": "One feed. <mark>Every</mark> club. No searching.",
+      "title": "One feed. Every club. No searching.",
       "description": "Wat2Do follows the accounts so you don't have to, and turns every flyer into an event you can search, filter and save.",
       "stats": {
         "clubsLabel": "club tracked at {{school}}",
@@ -594,8 +591,7 @@
       }
     },
     "different": {
-      "eyebrow": "Under the hood",
-      "title": "So how is this <mark>different</mark> from other event sites?",
+      "title": "So how is this different from other event sites?",
       "description": "Other sites wait for clubs to submit events. The rest stay locked inside Instagram, which bans bots. Wat2Do gets them out anyway.",
       "points": {
         "relay": {
@@ -638,7 +634,6 @@
       "redacted": "Redacted"
     },
     "useCases": {
-      "eyebrow": "Use cases",
       "title": "However you do campus",
       "description": "Six ways students at {{school}} use Wat2Do.",
       "items": {
@@ -676,7 +671,6 @@
     },
     "features": {
       "capture": {
-        "eyebrow": "Automatic",
         "title": "From Instagram flyer to event, automatically",
         "description": "Clubs keep posting the way they always have. Wat2Do reads each flyer and pulls out the date, time, place and price, so the event lands in the feed without anyone filling out a form.",
         "mockHandle": "@italian.club",
@@ -687,13 +681,11 @@
         "mockAdded": "Added from the club's post"
       },
       "filters": {
-        "eyebrow": "Filters",
         "title": "Free food in two taps",
         "description": "Quick filters for free food, employers on campus and competitions. Or narrow it down by day, price, club and location.",
         "mockQuery": "pizza"
       },
       "reminders": {
-        "eyebrow": "Reminders",
         "title": "Never forget you were going",
         "description": "Tap Going and Wat2Do emails you about an hour before it starts. Save events to Google Calendar or iCal, or turn on a 9 AM email with the day's events.",
         "mockSubject": "Starts in 1 hour: Italian cooking class",
@@ -701,7 +693,6 @@
         "mockMorning": "9 AM daily email"
       },
       "clubs": {
-        "eyebrow": "Clubs",
         "title": "Find the clubs you didn't know existed",
         "description": "Browse every club at {{school}}, follow the ones you like, and find open positions when you want to get involved.",
         "mockClubOne": "Repair Club",
@@ -714,7 +705,6 @@
       }
     },
     "faq": {
-      "eyebrow": "FAQ",
       "title": "Questions students ask",
       "items": {
         "free": {
@@ -741,8 +731,7 @@
       }
     },
     "closing": {
-      "eyebrow": "Ready?",
-      "title": "Stop finding out <mark>the day after</mark>.",
+      "title": "Stop finding out the day after.",
       "description": "See everything happening at {{school}}, all in one place.",
       "action": "See what's on"
     }

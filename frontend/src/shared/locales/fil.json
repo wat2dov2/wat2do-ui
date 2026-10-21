@@ -546,7 +546,7 @@
   },
   "landing": {
     "hero": {
-      "eyebrow": "Libre para sa lahat · Pinopondohan ng mga student impact award",
+      "note": "Libre para sa lahat · Pinopondohan ng mga student impact award",
       "titleLead": "Bawat kaganapan sa campus,",
       "titleHighlight": "bago pa ito matapos.",
       "description": "Natatabunan ang mga kaganapan ng mga organisasyon sa daan-daang Instagram account. Inilalagay ng Wat2Do ang lahat ng ito sa iisang feed.",
@@ -557,8 +557,7 @@
       "mapTitle_other": "{{total}} paparating na kaganapan sa {{school}}"
     },
     "problem": {
-      "eyebrow": "Ang problema",
-      "title": "HINDI boring ang campus. <mark>Nakatago</mark> lang ang mga kaganapan.",
+      "title": "HINDI boring ang campus. Nakatago lang ang mga kaganapan.",
       "description": "Laging may nangyayari sa {{school}}. Ang problema ay kung saan ito inaanunsyo.",
       "points": {
         "buried": {
@@ -578,15 +577,13 @@
           "description": "Kapag kalat ang mga kaganapan sa daan-daang account, parang tahimik ang campus. Pero hindi. Hindi mo lang ito nakikita."
         }
       },
-      "storyLabel": "Bakit namin ginawa ang Wat2Do",
       "story": "Nakakita si Tony ng Instagram story para sa Italian cooking lessons, $5 lang. Tatlong araw na pala itong naka-post.",
       "storyOver": "Tapos na ang kaganapan.",
       "storyEnd": "Kaya ginawa namin ang lugar na matagal na naming hinihiling na meron.",
       "signature": "Tony & Erica, mga founder ng Wat2Do"
     },
     "solution": {
-      "eyebrow": "Ang solusyon",
-      "title": "Iisang feed. <mark>Bawat</mark> organisasyon. Walang paghahanap.",
+      "title": "Iisang feed. Bawat organisasyon. Walang paghahanap.",
       "description": "Ang Wat2Do na ang magfo-follow sa mga account para hindi mo na kailangan, at ginagawang kaganapan ang bawat flyer na puwede mong i-search, i-filter at i-save.",
       "stats": {
         "clubsLabel": "organisasyong sinusubaybayan sa {{school}}",
@@ -601,8 +598,7 @@
       }
     },
     "different": {
-      "eyebrow": "Sa likod ng eksena",
-      "title": "So bakit ito <mark>naiiba</mark> sa ibang site ng mga kaganapan?",
+      "title": "So bakit ito naiiba sa ibang site ng mga kaganapan?",
       "description": "Naghihintay ang ibang site na i-submit ng mga organisasyon ang kanilang mga kaganapan. Ang iba ay nakakulong sa loob ng Instagram, na bina-ban ang mga bot. Pero nailalabas pa rin ng Wat2Do ang mga ito.",
       "points": {
         "relay": {
@@ -645,7 +641,6 @@
       "redacted": "Naka-redact"
     },
     "useCases": {
-      "eyebrow": "Mga gamit",
       "title": "Campus life, sa paraan mo",
       "description": "Anim na paraan ng paggamit ng mga estudyante sa {{school}} ng Wat2Do.",
       "items": {
@@ -683,7 +678,6 @@
     },
     "features": {
       "capture": {
-        "eyebrow": "Awtomatiko",
         "title": "Mula Instagram flyer hanggang kaganapan, awtomatiko",
         "description": "Tuloy lang ang mga organisasyon sa pag-post gaya ng dati. Binabasa ng Wat2Do ang bawat flyer at kinukuha ang petsa, oras, lugar at presyo, kaya napupunta ang kaganapan sa feed nang walang kailangang mag-fill out ng form.",
         "mockHandle": "@italian.club",
@@ -694,13 +688,11 @@
         "mockAdded": "Naidagdag mula sa post ng organisasyon"
       },
       "filters": {
-        "eyebrow": "Mga Filter",
         "title": "Libreng pagkain sa dalawang tap",
         "description": "Mabilis na filter para sa libreng pagkain, mga employer sa campus at mga kompetisyon. O paliitin pa ayon sa araw, presyo, organisasyon at lokasyon.",
         "mockQuery": "pizza"
       },
       "reminders": {
-        "eyebrow": "Mga Paalala",
         "title": "Hindi mo na makakalimutang pupunta ka",
         "description": "I-tap ang Pupunta at ie-email ka ng Wat2Do mga isang oras bago ito magsimula. I-save ang mga kaganapan sa Google Calendar o iCal, o i-on ang 9 AM na email ng mga kaganapan sa araw na iyon.",
         "mockSubject": "Magsisimula sa loob ng 1 oras: Italian cooking class",
@@ -708,7 +700,6 @@
         "mockMorning": "Araw-araw na email tuwing 9 AM"
       },
       "clubs": {
-        "eyebrow": "Mga Organisasyon",
         "title": "Hanapin ang mga organisasyong hindi mo alam na meron pala",
         "description": "I-browse ang bawat organisasyon sa {{school}}, i-follow ang mga gusto mo, at maghanap ng mga bakanteng posisyon kapag gusto mong sumali.",
         "mockClubOne": "Repair Club",
@@ -722,7 +713,6 @@
       }
     },
     "faq": {
-      "eyebrow": "FAQ",
       "title": "Mga tanong ng mga estudyante",
       "items": {
         "free": {
@@ -750,8 +740,7 @@
       }
     },
     "closing": {
-      "eyebrow": "Handa ka na?",
-      "title": "Tama na ang pag-alam <mark>kinabukasan</mark>.",
+      "title": "Tama na ang pag-alam kinabukasan.",
       "description": "Tingnan ang lahat ng nangyayari sa {{school}}, sa iisang lugar.",
       "action": "Tingnan kung ano'ng meron"
     }

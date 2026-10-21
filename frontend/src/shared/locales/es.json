@@ -549,7 +549,7 @@
   },
   "landing": {
     "hero": {
-      "eyebrow": "Gratis para todos · Financiado con premios de impacto estudiantil",
+      "note": "Gratis para todos · Financiado con premios de impacto estudiantil",
       "titleLead": "Todos los eventos del campus,",
       "titleHighlight": "antes de que terminen.",
       "description": "Los eventos de los clubes quedan enterrados entre cientos de cuentas de Instagram. Wat2Do los reúne todos en un solo feed.",
@@ -561,8 +561,7 @@
       "mapTitle_other": "{{total}} eventos próximos en {{school}}"
     },
     "problem": {
-      "eyebrow": "El problema",
-      "title": "El campus NO es aburrido. Sus eventos están <mark>escondidos</mark>.",
+      "title": "El campus NO es aburrido. Sus eventos están escondidos.",
       "description": "Siempre está pasando algo en {{school}}. El problema es dónde se anuncia.",
       "points": {
         "buried": {
@@ -582,15 +581,13 @@
           "description": "Cuando los eventos están repartidos entre cientos de cuentas, el campus parece tranquilo. No lo es. Simplemente no lo ves."
         }
       },
-      "storyLabel": "Por qué creamos Wat2Do",
       "story": "Tony encontró una historia de Instagram sobre clases de cocina italiana, por solo $5. Se había publicado tres días antes.",
       "storyOver": "El evento ya había terminado.",
       "storyEnd": "Así que creamos el lugar que nos hubiera gustado tener.",
       "signature": "Tony & Erica, fundadores de Wat2Do"
     },
     "solution": {
-      "eyebrow": "La solución",
-      "title": "Un solo feed. <mark>Todos</mark> los clubes. Sin buscar.",
+      "title": "Un solo feed. Todos los clubes. Sin buscar.",
       "description": "Wat2Do sigue las cuentas por ti y convierte cada cartel en un evento que puedes buscar, filtrar y guardar.",
       "stats": {
         "clubsLabel": "club seguido en {{school}}",
@@ -608,8 +605,7 @@
       }
     },
     "different": {
-      "eyebrow": "Por dentro",
-      "title": "¿Y qué tiene de <mark>diferente</mark> frente a otros sitios de eventos?",
+      "title": "¿Y qué tiene de diferente frente a otros sitios de eventos?",
       "description": "Otros sitios esperan a que los clubes envíen sus eventos. El resto se queda encerrado en Instagram, que bloquea a los bots. Wat2Do los saca de todos modos.",
       "points": {
         "relay": {
@@ -652,7 +648,6 @@
       "redacted": "Censurado"
     },
     "useCases": {
-      "eyebrow": "Casos de uso",
       "title": "Vive el campus a tu manera",
       "description": "Seis formas en que los estudiantes de {{school}} usan Wat2Do.",
       "items": {
@@ -690,7 +685,6 @@
     },
     "features": {
       "capture": {
-        "eyebrow": "Automático",
         "title": "Del cartel de Instagram al evento, automáticamente",
         "description": "Los clubes siguen publicando como siempre. Wat2Do lee cada cartel y saca la fecha, la hora, el lugar y el precio, para que el evento llegue al feed sin que nadie rellene un formulario.",
         "mockHandle": "@italian.club",
@@ -701,13 +695,11 @@
         "mockAdded": "Añadido desde la publicación del club"
       },
       "filters": {
-        "eyebrow": "Filtros",
         "title": "Comida gratis en dos toques",
         "description": "Filtros rápidos para comida gratis, empleadores en el campus y competiciones. O afina por día, precio, club y ubicación.",
         "mockQuery": "pizza"
       },
       "reminders": {
-        "eyebrow": "Recordatorios",
         "title": "Nunca olvides que ibas a ir",
         "description": "Toca Asistiré y Wat2Do te envía un correo una hora antes de que empiece. Guarda eventos en Google Calendar o iCal, o activa un correo a las 9 AM con los eventos del día.",
         "mockSubject": "Empieza en 1 hora: Clase de cocina italiana",
@@ -715,7 +707,6 @@
         "mockMorning": "Correo diario a las 9 AM"
       },
       "clubs": {
-        "eyebrow": "Organizaciones",
         "title": "Descubre clubes que no sabías que existían",
         "description": "Explora todas las organizaciones de {{school}}, sigue las que te gusten y encuentra puestos abiertos cuando quieras involucrarte.",
         "mockClubOne": "Club de Reparación",
@@ -730,7 +721,6 @@
       }
     },
     "faq": {
-      "eyebrow": "Preguntas frecuentes",
       "title": "Lo que preguntan los estudiantes",
       "items": {
         "free": {
@@ -759,8 +749,7 @@
       }
     },
     "closing": {
-      "eyebrow": "¿Listo?",
-      "title": "Deja de enterarte <mark>al día siguiente</mark>.",
+      "title": "Deja de enterarte al día siguiente.",
       "description": "Mira todo lo que pasa en {{school}}, en un solo lugar.",
       "action": "Ver qué hay"
     }
