@@ -145,7 +145,10 @@ Columns:
   On a listed event, set it only when this source has a clearly better poster.
   Never write any other image URL, and never set `source_video_url`.
 - `price`: registration cost only, preferring the general admission or non-member price; 0 for free, NULL when not mentioned.
-- `food`: a JSON array such as `'["Pizza"]'`; `'["Food"]'` for a generic mention; `'[]'` when none.
+- `food`: what this event gives attendees to eat or drink at no extra charge, free or included in its entry price, as the caption or poster states it: a JSON array such as `'["Pizza", "Drinks"]'`, or `'["Food"]'` for a generic "food provided".
+  Use `'[]'` when nothing is stated, and never guess food from the kind of event (a movie night is not popcorn, a social is not snacks).
+  Also use `'[]'` when food or drinks are only sold (bake sales, fundraisers, concessions, food trucks, priced items, pub or restaurant deals, dining-hall menus, "available for purchase"), when attendees bring it (potlucks, "bring a snack"), when it is collected or handed out to others (food drives, packing meals for shelters), when it is only a prize, only alcohol, only the theme (a talk about coffee, a pie-throwing fundraiser), or when the post recaps a past event.
+  When some items are free and others sold, list only the free ones.
 - `registration`: true only when attendees are clearly told to register, RSVP or sign up.
 - `category`: one of {{categories}}, or NULL.
 - `cancelled`: false unless the event is cancelled.
