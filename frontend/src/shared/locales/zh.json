@@ -543,7 +543,7 @@
   },
   "landing": {
     "hero": {
-      "eyebrow": "所有人免费 · 由学生影响力奖项资助",
+      "note": "所有人免费 · 由学生影响力奖项资助",
       "titleLead": "校园里的每一场活动，",
       "titleHighlight": "赶在结束之前。",
       "description": "组织的活动淹没在上百个 Instagram 账号里。Wat2Do 把它们全部汇总到一个信息流。",
@@ -553,8 +553,7 @@
       "mapTitle_other": "{{school}} 有 {{total}} 场即将举行的活动"
     },
     "problem": {
-      "eyebrow": "痛点",
-      "title": "校园并不无聊，只是活动都<mark>藏起来</mark>了。",
+      "title": "校园并不无聊，只是活动都藏起来了。",
       "description": "{{school}} 每天都有事情发生。问题出在活动发布的地方。",
       "points": {
         "buried": {
@@ -574,15 +573,13 @@
           "description": "活动分散在上百个账号里，校园就显得冷冷清清。其实并不是，只是你看不到而已。"
         }
       },
-      "storyLabel": "我们为什么做 Wat2Do",
       "story": "Tony 刷到一条意大利烹饪课的 Instagram 快拍，只要 $5。可它三天前就发出来了。",
       "storyOver": "活动早就结束了。",
       "storyEnd": "于是我们做了一个自己一直想要的地方。",
       "signature": "Tony & Erica，Wat2Do 创始人"
     },
     "solution": {
-      "eyebrow": "解决方案",
-      "title": "一个信息流。<mark>所有</mark>组织。无需搜索。",
+      "title": "一个信息流。所有组织。无需搜索。",
       "description": "Wat2Do 替你关注所有账号，把每张海报变成可以搜索、筛选和收藏的活动。",
       "stats": {
         "clubsLabel": "{{school}} 已收录的组织",
@@ -594,8 +591,7 @@
       }
     },
     "different": {
-      "eyebrow": "幕后",
-      "title": "那么它和其他活动网站有什么<mark>不同</mark>？",
+      "title": "那么它和其他活动网站有什么不同？",
       "description": "其他网站都在等组织提交活动。其余的活动被锁在会封禁机器人的 Instagram 里。Wat2Do 照样能把它们找出来。",
       "points": {
         "relay": {
@@ -638,7 +634,6 @@
       "redacted": "已隐去"
     },
     "useCases": {
-      "eyebrow": "使用场景",
       "title": "校园生活，随你怎么过",
       "description": "{{school}} 的同学们使用 Wat2Do 的六种方式。",
       "items": {
@@ -676,7 +671,6 @@
     },
     "features": {
       "capture": {
-        "eyebrow": "全自动",
         "title": "Instagram 海报自动变成活动",
         "description": "组织照常发帖就行。Wat2Do 会读取每张海报，提取日期、时间、地点和价格，活动直接出现在信息流里，没人需要填表。",
         "mockHandle": "@italian.club",
@@ -687,13 +681,11 @@
         "mockAdded": "从组织的帖子添加"
       },
       "filters": {
-        "eyebrow": "筛选",
         "title": "点两下就找到免费餐饮",
         "description": "一键筛选免费餐饮、雇主进校园和竞赛。也可以按日期、价格、组织和地点进一步缩小范围。",
         "mockQuery": "披萨"
       },
       "reminders": {
-        "eyebrow": "提醒",
         "title": "再也不会忘了要去",
         "description": "点一下“参加中”，Wat2Do 会在活动开始前大约一小时给你发邮件。你可以把活动保存到 Google Calendar 或 iCal，也可以开启每天早上 9 点的当日活动邮件。",
         "mockSubject": "1 小时后开始：意大利烹饪课",
@@ -701,7 +693,6 @@
         "mockMorning": "每天早上 9 点的邮件"
       },
       "clubs": {
-        "eyebrow": "组织",
         "title": "发现你从没听说过的组织",
         "description": "浏览 {{school}} 的所有组织，关注你喜欢的，想参与的时候还能找到正在招人的职位。",
         "mockClubOne": "维修俱乐部",
@@ -714,7 +705,6 @@
       }
     },
     "faq": {
-      "eyebrow": "常见问题",
       "title": "同学们常问的问题",
       "items": {
         "free": {
@@ -741,8 +731,7 @@
       }
     },
     "closing": {
-      "eyebrow": "准备好了吗？",
-      "title": "别再<mark>第二天</mark>才知道了。",
+      "title": "别再第二天才知道了。",
       "description": "{{school}} 的所有活动，尽在一处。",
       "action": "看看有什么活动"
     }

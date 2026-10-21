@@ -543,7 +543,7 @@
   },
   "landing": {
     "hero": {
-      "eyebrow": "Miễn phí cho mọi người · Được tài trợ bởi các giải thưởng tác động sinh viên",
+      "note": "Miễn phí cho mọi người · Được tài trợ bởi các giải thưởng tác động sinh viên",
       "titleLead": "Mọi sự kiện trong trường,",
       "titleHighlight": "trước khi kịp kết thúc.",
       "description": "Sự kiện của các tổ chức bị chìm nghỉm giữa hàng trăm tài khoản Instagram. Wat2Do gom tất cả vào một bảng tin.",
@@ -553,8 +553,7 @@
       "mapTitle_other": "{{total}} sự kiện sắp diễn ra tại {{school}}"
     },
     "problem": {
-      "eyebrow": "Vấn đề",
-      "title": "Trường KHÔNG HỀ nhàm chán. Chỉ là sự kiện bị <mark>giấu kín</mark>.",
+      "title": "Trường KHÔNG HỀ nhàm chán. Chỉ là sự kiện bị giấu kín.",
       "description": "Ở {{school}} lúc nào cũng có gì đó diễn ra. Vấn đề nằm ở nơi chúng được thông báo.",
       "points": {
         "buried": {
@@ -574,15 +573,13 @@
           "description": "Khi sự kiện nằm rải rác trên hàng trăm tài khoản, trường có vẻ yên ắng. Thật ra không phải vậy. Chỉ là bạn không nhìn thấy."
         }
       },
-      "storyLabel": "Vì sao chúng tôi làm Wat2Do",
       "story": "Tony thấy một Instagram story về lớp học nấu món Ý, chỉ $5. Nhưng nó đã được đăng từ ba ngày trước.",
       "storyOver": "Sự kiện đã kết thúc rồi.",
       "storyEnd": "Vậy nên chúng tôi tự tạo ra nơi mà mình từng ước là có.",
       "signature": "Tony & Erica, nhà sáng lập Wat2Do"
     },
     "solution": {
-      "eyebrow": "Giải pháp",
-      "title": "Một bảng tin. <mark>Mọi</mark> tổ chức. Không cần tìm kiếm.",
+      "title": "Một bảng tin. Mọi tổ chức. Không cần tìm kiếm.",
       "description": "Wat2Do theo dõi các tài khoản thay bạn, và biến mỗi poster thành một sự kiện bạn có thể tìm kiếm, lọc và lưu lại.",
       "stats": {
         "clubsLabel": "tổ chức được theo dõi tại {{school}}",
@@ -594,8 +591,7 @@
       }
     },
     "different": {
-      "eyebrow": "Bên trong",
-      "title": "Vậy điều gì làm nó <mark>khác biệt</mark> so với các trang sự kiện khác?",
+      "title": "Vậy điều gì làm nó khác biệt so với các trang sự kiện khác?",
       "description": "Các trang khác chờ các tổ chức tự gửi sự kiện lên. Phần còn lại bị khóa trong Instagram, nơi chặn bot. Dù vậy Wat2Do vẫn lấy chúng ra.",
       "points": {
         "relay": {
@@ -638,7 +634,6 @@
       "redacted": "Đã ẩn"
     },
     "useCases": {
-      "eyebrow": "Cách dùng",
       "title": "Đời sinh viên theo cách của bạn",
       "description": "Sáu cách sinh viên tại {{school}} dùng Wat2Do.",
       "items": {
@@ -676,7 +671,6 @@
     },
     "features": {
       "capture": {
-        "eyebrow": "Tự động",
         "title": "Từ poster Instagram thành sự kiện, hoàn toàn tự động",
         "description": "Các tổ chức cứ đăng bài như mọi khi. Wat2Do đọc từng poster và lấy ra ngày, giờ, địa điểm và giá, để sự kiện tự lên bảng tin mà không ai phải điền form.",
         "mockHandle": "@italian.club",
@@ -687,13 +681,11 @@
         "mockAdded": "Đã thêm từ bài đăng của tổ chức"
       },
       "filters": {
-        "eyebrow": "Bộ lọc",
         "title": "Đồ ăn miễn phí chỉ sau hai lần chạm",
         "description": "Lọc nhanh đồ ăn miễn phí, nhà tuyển dụng tại trường và cuộc thi. Hoặc thu hẹp theo ngày, giá, tổ chức và địa điểm.",
         "mockQuery": "pizza"
       },
       "reminders": {
-        "eyebrow": "Nhắc nhở",
         "title": "Không bao giờ quên chỗ mình định đi",
         "description": "Bấm \"Sẽ tham gia\" và Wat2Do sẽ gửi email cho bạn khoảng một tiếng trước khi bắt đầu. Lưu sự kiện vào Google Calendar hoặc iCal, hoặc bật email lúc 9 giờ sáng với các sự kiện trong ngày.",
         "mockSubject": "Bắt đầu sau 1 tiếng: Lớp nấu món Ý",
@@ -701,7 +693,6 @@
         "mockMorning": "Email 9 giờ sáng mỗi ngày"
       },
       "clubs": {
-        "eyebrow": "Tổ chức",
         "title": "Khám phá những tổ chức bạn chưa từng biết",
         "description": "Xem mọi tổ chức tại {{school}}, theo dõi những nơi bạn thích, và tìm vị trí đang tuyển khi bạn muốn tham gia.",
         "mockClubOne": "CLB Sửa chữa",
@@ -714,7 +705,6 @@
       }
     },
     "faq": {
-      "eyebrow": "Hỏi đáp",
       "title": "Những câu sinh viên hay hỏi",
       "items": {
         "free": {
@@ -741,8 +731,7 @@
       }
     },
     "closing": {
-      "eyebrow": "Sẵn sàng chưa?",
-      "title": "Đừng để <mark>hôm sau</mark> mới biết nữa.",
+      "title": "Đừng để hôm sau mới biết nữa.",
       "description": "Xem mọi thứ đang diễn ra tại {{school}}, tất cả ở một nơi.",
       "action": "Xem có gì hay"
     }

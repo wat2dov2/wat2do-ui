@@ -1,8 +1,7 @@
 "use client";
 
 import NextLink from "next/link";
-import { Trans, useTranslation } from "react-i18next";
-import { LandingMark } from "@/features/landing/components/LandingMarks";
+import { useTranslation } from "react-i18next";
 import { LandingHeading } from "@/features/landing/components/LandingSection";
 import { ROUTES } from "@/shared/constants/routes";
 import { Stack } from "@/shared/layout";
@@ -14,10 +13,10 @@ export function LandingClosing({ schoolName }: { schoolName: string }) {
   const { t } = useTranslation();
 
   return (
-    <Stack as="section" gap={8} align="center" className="rounded-xl border border-border bg-surface px-6 py-12 sm:py-16">
+    <Stack as="section" gap={12} align="center" className="border-t border-border pt-20 pb-8 sm:pt-32 sm:pb-16">
       <LandingHeading
-        eyebrow={t("landing.closing.eyebrow")}
-        title={<Trans i18nKey="landing.closing.title" components={{ mark: <LandingMark kind="strike" tone="pink" /> }} />}
+        align="center"
+        title={t("landing.closing.title")}
         description={t("landing.closing.description", { school: schoolName })}
       />
       <Button size="lg" asChild>

@@ -543,7 +543,7 @@
   },
   "landing": {
     "hero": {
-      "eyebrow": "모두에게 무료 · 학생 임팩트 어워드 지원",
+      "note": "모두에게 무료 · 학생 임팩트 어워드 지원",
       "titleLead": "캠퍼스의 모든 이벤트,",
       "titleHighlight": "끝나기 전에.",
       "description": "조직 이벤트는 수백 개의 Instagram 계정 속에 묻혀 버려요. Wat2Do는 모두 하나의 피드에 모아 드려요.",
@@ -553,8 +553,7 @@
       "mapTitle_other": "{{school}}에서 예정된 이벤트 {{total}}개"
     },
     "problem": {
-      "eyebrow": "문제",
-      "title": "캠퍼스가 지루한 게 아니에요. 이벤트가 <mark>숨어</mark> 있을 뿐이죠.",
+      "title": "캠퍼스가 지루한 게 아니에요. 이벤트가 숨어 있을 뿐이죠.",
       "description": "{{school}}에서는 늘 뭔가가 열리고 있어요. 문제는 그걸 알리는 곳이에요.",
       "points": {
         "buried": {
@@ -574,15 +573,13 @@
           "description": "이벤트가 수백 개의 계정에 흩어져 있으면 캠퍼스가 조용해 보여요. 사실은 아니에요. 그냥 안 보일 뿐이에요."
         }
       },
-      "storyLabel": "Wat2Do를 만든 이유",
       "story": "Tony는 단돈 $5짜리 이탈리안 요리 수업 Instagram 스토리를 발견했어요. 그런데 3일 전에 올라온 거였죠.",
       "storyOver": "이벤트는 이미 끝나 있었어요.",
       "storyEnd": "그래서 우리가 바라던 바로 그곳을 직접 만들었어요.",
       "signature": "Tony & Erica, Wat2Do 창업자"
     },
     "solution": {
-      "eyebrow": "해결책",
-      "title": "하나의 피드. <mark>모든</mark> 조직. 검색할 필요 없이.",
+      "title": "하나의 피드. 모든 조직. 검색할 필요 없이.",
       "description": "Wat2Do가 대신 계정들을 팔로우하고, 모든 포스터를 검색하고 필터링하고 저장할 수 있는 이벤트로 바꿔 드려요.",
       "stats": {
         "clubsLabel": "{{school}}에서 추적 중인 조직",
@@ -594,8 +591,7 @@
       }
     },
     "different": {
-      "eyebrow": "작동 방식",
-      "title": "그럼 다른 이벤트 사이트와 무엇이 <mark>다른</mark> 걸까요?",
+      "title": "그럼 다른 이벤트 사이트와 무엇이 다른 걸까요?",
       "description": "다른 사이트는 조직이 이벤트를 등록해 주길 기다려요. 나머지는 봇을 차단하는 Instagram 안에 갇혀 있어요. 그래도 Wat2Do는 꺼내 와요.",
       "points": {
         "relay": {
@@ -638,7 +634,6 @@
       "redacted": "가려짐"
     },
     "useCases": {
-      "eyebrow": "활용 사례",
       "title": "캠퍼스 생활, 내 방식대로",
       "description": "{{school}} 학생들이 Wat2Do를 활용하는 여섯 가지 방법.",
       "items": {
@@ -676,7 +671,6 @@
     },
     "features": {
       "capture": {
-        "eyebrow": "자동",
         "title": "Instagram 포스터가 자동으로 이벤트로",
         "description": "조직은 늘 하던 대로 글을 올리면 돼요. Wat2Do가 포스터를 읽고 날짜, 시간, 장소, 가격을 뽑아내서, 아무도 양식을 채우지 않아도 이벤트가 피드에 올라가요.",
         "mockHandle": "@italian.club",
@@ -687,13 +681,11 @@
         "mockAdded": "조직 게시물에서 추가됨"
       },
       "filters": {
-        "eyebrow": "필터",
         "title": "두 번 탭하면 무료 음식",
         "description": "무료 음식, 캠퍼스 채용 행사, 대회를 빠르게 필터링하세요. 날짜, 가격, 조직, 위치로 더 좁힐 수도 있어요.",
         "mockQuery": "피자"
       },
       "reminders": {
-        "eyebrow": "알림",
         "title": "가기로 한 걸 잊을 일 없게",
         "description": "'참여 예정'을 누르면 Wat2Do가 시작 약 1시간 전에 이메일을 보내 드려요. 이벤트를 Google Calendar나 iCal에 저장하거나, 그날의 이벤트를 담은 오전 9시 이메일을 켤 수도 있어요.",
         "mockSubject": "1시간 후 시작: 이탈리안 요리 수업",
@@ -701,7 +693,6 @@
         "mockMorning": "매일 오전 9시 이메일"
       },
       "clubs": {
-        "eyebrow": "조직",
         "title": "몰랐던 조직을 찾아보세요",
         "description": "{{school}}의 모든 조직을 둘러보고, 마음에 드는 곳을 팔로우하고, 참여하고 싶을 땐 모집 중인 자리도 찾아보세요.",
         "mockClubOne": "수리 동아리",
@@ -714,7 +705,6 @@
       }
     },
     "faq": {
-      "eyebrow": "FAQ",
       "title": "학생들이 자주 묻는 질문",
       "items": {
         "free": {
@@ -741,8 +731,7 @@
       }
     },
     "closing": {
-      "eyebrow": "준비됐나요?",
-      "title": "이제 <mark>다음 날</mark> 알게 되는 일은 그만.",
+      "title": "이제 다음 날 알게 되는 일은 그만.",
       "description": "{{school}}에서 열리는 모든 걸 한곳에서 확인하세요.",
       "action": "지금 뭐 하는지 보기"
     }
