@@ -12,10 +12,12 @@ interface ClubCardFrameDimensions {
 interface ClubCardFramePaths {
   borderOuter: string;
   borderCutout: string;
+  /** The whole border as one continuous loop, for strokes that travel around it. */
+  outline: string;
   clip: string;
 }
 
-const EMPTY_FRAME_PATHS: ClubCardFramePaths = { borderOuter: "", borderCutout: "", clip: "" };
+const EMPTY_FRAME_PATHS: ClubCardFramePaths = { borderOuter: "", borderCutout: "", outline: "", clip: "" };
 
 function getClubCardFramePaths({
   w,
@@ -33,7 +35,7 @@ function getClubCardFramePaths({
 
   if (cutoutWidth === 0 || cutoutHeight === 0) {
     const standardPath = `M ${cardRadius} 0 L ${w - cardRadius} 0 A ${cardRadius} ${cardRadius} 0 0 1 ${w} ${cardRadius} L ${w} ${h - cardRadius} A ${cardRadius} ${cardRadius} 0 0 1 ${w - cardRadius} ${h} L ${cardRadius} ${h} A ${cardRadius} ${cardRadius} 0 0 1 0 ${h - cardRadius} L 0 ${cardRadius} A ${cardRadius} ${cardRadius} 0 0 1 ${cardRadius} 0 Z`;
-    return { borderOuter: standardPath, borderCutout: "", clip: standardPath };
+    return { borderOuter: standardPath, borderCutout: "", outline: standardPath, clip: standardPath };
   }
 
   const offset = 0.75;
@@ -46,7 +48,10 @@ function getClubCardFramePaths({
   const borderCutout = `M ${offset} ${borderCutoutHeight + cutoutRadius} A ${cutoutRadius} ${cutoutRadius} 0 0 1 ${cutoutRadius + offset} ${borderCutoutHeight} L ${borderCutoutWidth - cutoutRadius} ${borderCutoutHeight} A ${cutoutRadius} ${cutoutRadius} 0 0 0 ${borderCutoutWidth} ${borderCutoutHeight - cutoutRadius} L ${borderCutoutWidth} ${cutoutRadius + offset} A ${cutoutRadius} ${cutoutRadius} 0 0 1 ${borderCutoutWidth + cutoutRadius} ${offset}`;
   const clipPath = `M ${cutoutWidth + cutoutRadius} 0 L ${w - cardRadius} 0 A ${cardRadius} ${cardRadius} 0 0 1 ${w} ${cardRadius} L ${w} ${h - cardRadius} A ${cardRadius} ${cardRadius} 0 0 1 ${w - cardRadius} ${h} L ${cardRadius} ${h} A ${cardRadius} ${cardRadius} 0 0 1 0 ${h - cardRadius} L 0 ${cutoutHeight + cutoutRadius} A ${cutoutRadius} ${cutoutRadius} 0 0 1 ${cutoutRadius} ${cutoutHeight} L ${cutoutWidth - cutoutRadius} ${cutoutHeight} A ${cutoutRadius} ${cutoutRadius} 0 0 0 ${cutoutWidth} ${cutoutHeight - cutoutRadius} L ${cutoutWidth} ${cutoutRadius} A ${cutoutRadius} ${cutoutRadius} 0 0 1 ${cutoutWidth + cutoutRadius} 0 Z`;
 
-  return { borderOuter, borderCutout, clip: clipPath };
+  // The cutout starts where the outer border ends, so dropping its move joins them.
+  const outline = `${borderOuter} ${borderCutout.replace(/^M [^A-Z]+/, "")} Z`;
+
+  return { borderOuter, borderCutout, outline, clip: clipPath };
 }
 
 export function useClubCardFrame() {

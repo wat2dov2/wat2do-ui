@@ -148,6 +148,13 @@
       transform: rotate(-5deg) scale(0.9);
     }
   }
+  /* A highlight that travels around an SVG outline drawn with pathLength="100". */
+  --animate-border-trace: border-trace 5s linear infinite;
+  @keyframes border-trace {
+    to {
+      stroke-dashoffset: -100;
+    }
+  }
   --animate-shine: shine var(--duration) infinite linear;
   @keyframes shine {
     0% {

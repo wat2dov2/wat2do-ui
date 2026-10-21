@@ -271,6 +271,22 @@ function ClubCardComponent({
           />
         </svg>
       )}
+      {/* A followed club's outline carries a highlight that travels around it. */}
+      {isSaved && paths.outline && (
+        <svg aria-hidden="true" className="absolute inset-0 w-full h-full pointer-events-none z-20 text-badge-new">
+          <path d={paths.outline} fill="none" stroke="currentColor" strokeOpacity={0.45} strokeWidth={1.5} />
+          <path
+            d={paths.outline}
+            pathLength={100}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeDasharray="18 82"
+            className="animate-border-trace motion-reduce:animate-none"
+          />
+        </svg>
+      )}
       {paths.borderCutout && (
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-40">
           <path
