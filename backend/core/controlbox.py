@@ -628,7 +628,6 @@ class InstagramPublishingControl(_ControlModel):
     maximum_lead_days: int = Field(gt=0)
     # Instagram takes ten images: the cover, the event slides and the outro.
     maximum_event_slides: int = Field(gt=0, le=8)
-    outro_event_rows: int = Field(ge=1, le=10)
     status_poll_interval_seconds: float = Field(gt=0, le=60)
     meta_poll_attempts: int = Field(gt=0, le=30)
     meta_poll_interval_seconds: float = Field(gt=0, le=30)

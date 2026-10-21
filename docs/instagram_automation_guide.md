@@ -426,7 +426,8 @@ Each named highlight and perk must be supported by a selected event's title and 
 
 Every carousel ends with an outro slide after the event slides.
 It lists the upcoming events from the cover's count window, the last `new_event_window_hours` before the batch's `window_end`, that did not get a slide of their own, soonest first.
-Each row shows the title, start time and club handle, up to `outro_event_rows`, and the footer counts any that did not fit.
+It lays them out as a two-column grid of miniature event cards, each with the poster, club, title, date, time and location.
+The grid holds ten cards; when there are more events, the last cell becomes a "+N more" card pointing to the school's site.
 When there are none, the outro points to the school's site instead.
 Cover, event slides and outro must fit Instagram's ten-image carousel, so `maximum_event_slides` is eight.
 The admin drawer previews the outro from the batch's `other_events`, and a published batch keeps the posted image in `published_outro_url`.
