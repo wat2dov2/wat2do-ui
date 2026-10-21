@@ -43,6 +43,11 @@ def run(monkeypatch, tmp_path):
         "_store_chosen_posters",
         lambda token, images: state.drains.append(("posters", len(images))),
     )
+    monkeypatch.setattr(
+        module,
+        "_cover_posterless_events",
+        lambda url, images, *, since: state.drains.append(("cover", url, len(images))),
+    )
 
     def resolve(**kwargs):
         state.resolved.append(kwargs)
@@ -98,6 +103,7 @@ def test_ingest_runs_haiku_with_psql_only_then_settles_its_changes(run):
     # New rows from this source get its caption, then every change settles.
     assert run.drains == [
         ("posters", 1),
+        ("cover", _POST["url"], 1),
         ("stamp", _POST["url"], _POST["caption"], _POSTED),
         "drain",
     ]
@@ -158,6 +164,7 @@ def test_ingest_still_drains_when_the_agent_fails(run):
         module.ingest(dict(_POST), school="uwaterloo")
     assert run.drains == [
         ("posters", 1),
+        ("cover", _POST["url"], 1),
         ("stamp", _POST["url"], _POST["caption"], _POSTED),
         "drain",
     ]
@@ -320,3 +327,58 @@ def test_only_the_posters_the_agent_chose_are_stored(monkeypatch):
         # A reference to an image that does not exist leaves no poster.
         (POSITIONS, {"source_image_url": None}, "pending:abc/image-9"),
     ]
+
+
+def test_events_left_without_a_poster_get_the_cover_image(monkeypatch):
+    stored = []
+    calls = []
+    since = datetime(2026, 10, 20, 2, tzinfo=UTC)
+
+    class Query:
+        def __init__(self, table):
+            self.table, self.payload = table, None
+
+        def select(self, *_):
+            return self
+
+        def update(self, payload):
+            self.payload = payload
+            return self
+
+        def __getattr__(self, name):
+            def filter_(*args):
+                calls.append((name, *args, self.payload))
+                return self
+
+            return filter_
+
+        def execute(self):
+            return SimpleNamespace(data=[{"id": 1}, {"id": 2}] if self.payload is None else [])
+
+    monkeypatch.setattr(module, "get_sb", lambda: SimpleNamespace(table=Query))
+    monkeypatch.setattr(
+        module,
+        "store_image",
+        lambda data, content_type: stored.append(data) or "https://wat2do.io/media/c.jpg",
+    )
+    images = [
+        module._Image("image-0.jpg", b"cover", "image/jpeg", None),
+        module._Image("image-1.jpg", b"other", "image/jpeg", None),
+    ]
+
+    module._cover_posterless_events(_POST["url"], images, since=since)
+
+    # Only new posterless rows from this source are matched, and the cover is uploaded once.
+    assert stored == [b"cover"]
+    assert calls == [
+        ("eq", "source_url", _POST["url"], None),
+        ("gte", "added_at", since.isoformat(), None),
+        ("is_", "source_image_url", "null", None),
+        ("in_", "id", [1, 2], {"source_image_url": "https://wat2do.io/media/c.jpg"}),
+    ]
+
+
+def test_a_source_without_images_leaves_events_posterless(monkeypatch):
+    monkeypatch.setattr(module, "get_sb", lambda: pytest.fail("no images, no queries"))
+
+    module._cover_posterless_events(_POST["url"], [], since=datetime.now(UTC))

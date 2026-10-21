@@ -101,6 +101,7 @@ def ingest(post: dict, *, school: str, publisher_ig: str | None = None) -> bool:
             return _run(prompt, workdir) != "nothing"
         finally:
             _store_chosen_posters(token, images)
+            _cover_posterless_events(source_url, images, since=started)
             changes.stamp_new_rows(
                 source_url, caption=caption, posted_at=_posted_at(post), since=started
             )
@@ -206,6 +207,30 @@ def _store_chosen_posters(token: str, images: list[_Image]) -> None:
             get_sb().table(table).update(stored[reference]).eq(
                 "source_image_url", reference
             ).execute()
+
+
+def _cover_posterless_events(source_url: str, images: list[_Image], *, since: datetime) -> None:
+    """Give events the agent created without a poster the source's cover image.
+
+    Posts with no flyer (photos, memes) would otherwise show a placeholder card.
+    """
+    if not images:
+        return
+    rows = (
+        get_sb()
+        .table(EVENTS)
+        .select("id")
+        .eq("source_url", source_url)
+        .gte("added_at", since.isoformat())
+        .is_("source_image_url", "null")
+        .execute()
+        .data
+        or []
+    )
+    if rows:
+        get_sb().table(EVENTS).update(_store_poster(images[0])).in_(
+            "id", [row["id"] for row in rows]
+        ).execute()
 
 
 def _store_poster(image: _Image | None) -> dict[str, str | None]:
