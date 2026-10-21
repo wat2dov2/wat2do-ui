@@ -119,7 +119,7 @@ class EventDiscoveryFields(BaseModel):
         strict=True,
         description=(
             "True only when people from employers (companies, firms, public employers or "
-            "industry organizations) take part in person on this school's campus for "
+            "industry organizations) take part, in person on this school's campus or online, for "
             "recruiting, employer information sessions, co-op or internship information, "
             "career fairs, or career networking with students. Working professionals who "
             "explain careers in their industry or network with students qualify, including "
@@ -136,8 +136,8 @@ class EventDiscoveryFields(BaseModel):
             "booths, sponsorship, professional status and the word fair alone are "
             "insufficient. Interview or job-search coaching and talks about job contracts or "
             "workers' rights do not qualify unless an employer recruits or presents. "
-            "Student-club hiring, online-only sessions, grad school "
-            "information and off-campus events do not qualify. Use false for confirmed "
+            "Student-club hiring, grad school information and in-person off-campus "
+            "events do not qualify. Use false for confirmed "
             "non-employer activities and null when employer participation or campus "
             "location is unconfirmed."
         ),
