@@ -40,7 +40,7 @@ export function LandingHero({ schoolName, events, isLoading }: LandingHeroProps)
             <>
               {t("landing.hero.titleLead")}{" "}
               {/* The margin reserves the burst's width past the marker, so wrapping and centring count it and it never clips. */}
-              <span className="mr-[0.9em] inline-block">
+              <span className="mr-[0.7em] inline-block">
                 <Highlighter action="highlight" color="var(--school-marker)">
                   <span className="text-school-marker-foreground">
                     <LandingBurst>{t("landing.hero.titleHighlight")}</LandingBurst>
