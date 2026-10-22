@@ -109,3 +109,17 @@ def test_holding_the_emulator_is_reentrant_but_exclusive(tmp_path, monkeypatch) 
         other.close()
     with (tmp_path / "emulator.lock").open("a") as other:
         fcntl.flock(other, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+PROMPT = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
+<node text="Introducing instants" content-desc="" bounds="[126,1720][780,1790]" />
+<node text="Not now" content-desc="" bounds="[466,2080][612,2140]" />
+</hierarchy>UI hierchary dumped to: /dev/tty"""
+
+
+def test_waiting_declines_an_announcement_covering_the_app() -> None:
+    commands = []
+    tap = (0, "")
+    node = _device([(0, PROMPT), tap, (0, SCREEN)], commands).wait_for(re.compile("^Your story$"))
+    assert node.text == "Your story"
+    assert commands[1][-3:-2] == ["tap"]
