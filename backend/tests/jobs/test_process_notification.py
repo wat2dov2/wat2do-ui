@@ -419,47 +419,11 @@ def _dm_payload(action: str) -> dict[str, object]:
     }
 
 
-def _capture_direct(monkeypatch):
-    calls = []
-
-    class _Queue:
-        def enqueue_direct(self, **kwargs):
-            calls.append(kwargs)
-            return "job-1"
-
-    monkeypatch.setattr(process_notification, "BrowserJobQueue", _Queue)
-    monkeypatch.setattr(
-        process_notification.school_service,
-        "get_school_by_recipient_id",
-        lambda recipient_id: (
-            SimpleNamespace(id=7, slug="ubc", name="UBC") if recipient_id == RECIPIENT_ID else None
-        ),
-    )
-    return calls
-
-
-def test_a_dm_is_queued_for_the_schools_browser_worker(monkeypatch, caplog) -> None:
-    calls = _capture_direct(monkeypatch)
+def test_a_dm_notification_is_left_to_the_inbox_sweep(monkeypatch, caplog) -> None:
     _set_payload(
         monkeypatch, _dm_payload("direct_v2?id=340282366841710300949128&x=31337&clip_id=9")
     )
     with caplog.at_level(logging.INFO):
         assert process_notification.main() == 0
-
-    [call] = calls
-    control = process_notification._DM_CONTROL
-    assert (call["school"], call["school_name"], call["account_username"]) == (
-        "ubc",
-        "UBC",
-        "wat2do.ubc",
-    )
-    assert (call["thread_id"], call["item_id"]) == ("340282366841710300949128", "31337")
-    assert call["dry_run"] is control.dry_run
+    assert "Ignoring unsupported Instagram notification." in caplog.text
     assert "must-never-reach-logs" not in caplog.text
-
-
-def test_a_dm_without_its_thread_fails_without_queueing(monkeypatch) -> None:
-    calls = _capture_direct(monkeypatch)
-    _set_payload(monkeypatch, _dm_payload("direct_v2?x=31337"))
-    assert process_notification.main() == 1
-    assert calls == []

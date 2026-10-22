@@ -954,10 +954,6 @@ _DmReply = Annotated[str, Field(min_length=1, max_length=40, pattern=r"^[^\n@/]+
 class InstagramDmsControl(_ControlModel):
     # Dry run reads, decides and logs each DM without replying or queueing anything.
     dry_run: bool
-    # Android push categories that carry a direct message into a school's inbox.
-    categories: list[Annotated[str, Field(pattern=r"^direct_v2_[a-z_]+$")]] = Field(
-        min_length=1, max_length=10
-    )
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     agent_timeout_seconds: int = Field(gt=0, le=600)
     thread_item_limit: int = Field(ge=1, le=50)
@@ -965,22 +961,34 @@ class InstagramDmsControl(_ControlModel):
     # trick the model can never put words in the school account's mouth.
     replies: list[_DmReply] = Field(min_length=1, max_length=20)
     done_replies: list[_DmReply] = Field(min_length=1, max_length=20)
-    # A reply waits a random human-like interval inside this window.
-    reply_delay_min_seconds: int = Field(ge=0, le=86_400)
-    reply_delay_max_seconds: int = Field(ge=0, le=86_400)
 
     # After a story repost, "Done!" follows the first reply after this human-like gap.
     done_reply_delay_min_seconds: int = Field(ge=0, le=600)
     done_reply_delay_max_seconds: int = Field(ge=0, le=600)
 
+    # The inbox sweep: a LaunchAgent checks this often, and a sweep runs once a random
+    # gap in this window has passed since the last one, only between these local hours.
+    sweep_check_interval_seconds: int = Field(ge=60, le=3600)
+    sweep_gap_min_minutes: int = Field(ge=10, le=1440)
+    sweep_gap_max_minutes: int = Field(ge=10, le=1440)
+    sweep_start_hour: int = Field(ge=0, le=23)
+    sweep_end_hour: int = Field(ge=1, le=24)
+    # Threads whose newest message is older than this are left alone: the event is
+    # likely over. The inbox is scrolled at most this many screens to find them.
+    max_thread_age_days: int = Field(ge=1, le=60)
+    inbox_scrolls: int = Field(ge=0, le=10)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+
     @model_validator(mode="after")
-    def validate_reply_delay(self) -> "InstagramDmsControl":
-        if self.reply_delay_min_seconds > self.reply_delay_max_seconds:
-            raise ValueError("reply_delay_min_seconds cannot exceed reply_delay_max_seconds")
+    def validate_windows(self) -> "InstagramDmsControl":
         if self.done_reply_delay_min_seconds > self.done_reply_delay_max_seconds:
             raise ValueError(
                 "done_reply_delay_min_seconds cannot exceed done_reply_delay_max_seconds"
             )
+        if self.sweep_gap_min_minutes > self.sweep_gap_max_minutes:
+            raise ValueError("sweep_gap_min_minutes cannot exceed sweep_gap_max_minutes")
+        if self.sweep_start_hour >= self.sweep_end_hour:
+            raise ValueError("sweep_start_hour must be before sweep_end_hour")
         return self
 
 
@@ -1007,8 +1015,6 @@ class InstagramEmulatorControl(_ControlModel):
     keystroke_delay_min_seconds: float = Field(ge=0, le=5, allow_inf_nan=False)
     keystroke_delay_max_seconds: float = Field(ge=0, le=5, allow_inf_nan=False)
     story_upload_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
-    # A DM job that may repost to a story gets this deadline instead of the browser's.
-    story_job_timeout_seconds: float = Field(gt=0, le=1800, allow_inf_nan=False)
     # How long an edited post may take to save after Done, once a song is chosen.
     audio_save_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
 
@@ -1020,10 +1026,6 @@ class InstagramEmulatorControl(_ControlModel):
             raise ValueError(
                 "keystroke_delay_min_seconds cannot exceed keystroke_delay_max_seconds"
             )
-        if self.story_job_timeout_seconds <= (
-            self.user_switch_wait_seconds + self.story_upload_wait_seconds
-        ):
-            raise ValueError("story_job_timeout_seconds must fit a user switch and an upload")
         if (
             Counter(self.android_user_by_school.values()).most_common(1)[0][1]
             > _INSTAGRAM_ACCOUNTS_PER_APP

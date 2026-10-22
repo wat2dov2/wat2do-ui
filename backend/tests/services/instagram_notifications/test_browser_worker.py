@@ -382,16 +382,6 @@ def test_job_deadline_disarms_alarm_and_restores_signal_handler(monkeypatch):
     assert timer_calls == [(0, module.CONTROL.job_timeout_seconds), (0, 0)]
 
 
-def test_a_dm_job_gets_the_emulator_story_deadline():
-    direct = SimpleNamespace(kind="direct")
-    engagement = SimpleNamespace(kind="engagement")
-    assert (
-        module.job_timeout_seconds(direct)
-        == module.controlbox.instagram_emulator.story_job_timeout_seconds
-    )
-    assert module.job_timeout_seconds(engagement) == module.CONTROL.job_timeout_seconds
-
-
 def test_timed_out_job_is_failed_once_and_releases_browser_for_digest(queue, monkeypatch):
     job_id = _engagement(queue)
 

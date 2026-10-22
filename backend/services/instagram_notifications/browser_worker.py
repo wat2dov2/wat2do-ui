@@ -13,7 +13,6 @@ from contextlib import contextmanager
 from dataclasses import asdict, replace
 from typing import Callable, Iterator
 
-from core.controlbox import controlbox
 from services.instagram_notifications.browser_digest import BrowserInstagramDigestResolver
 from services.instagram_notifications.browser_engagement import BrowserInstagramEngagementExecutor
 from services.instagram_notifications.browser_queue import CONTROL, BrowserJob, BrowserJobQueue
@@ -72,13 +71,6 @@ def _requires_human_recovery(error: BaseException, job: BrowserJob) -> bool:
     )
 
 
-def job_timeout_seconds(job: BrowserJob) -> float:
-    """A DM is read, reposted and answered in the emulator, which takes longer than a tab."""
-    if job.kind == "direct":
-        return controlbox.instagram_emulator.story_job_timeout_seconds
-    return CONTROL.job_timeout_seconds
-
-
 @contextmanager
 def job_deadline(seconds: float) -> Iterator[None]:
     def expired(_signum: int, _frame: object) -> None:
@@ -99,17 +91,6 @@ def execute_job(
     session: BrowserInstagramSession | None = None,
     on_rate_limit: Callable[[BrowserRateLimited], None] | None = None,
 ) -> dict:
-    if job.kind == "direct":
-        # DMs are read and answered in the Instagram app on the emulator, never in Brave.
-        from services.instagram_emulator.direct import EmulatorDirectExecutor
-
-        return EmulatorDirectExecutor().handle(
-            job.account_username,
-            job.payload["thread_id"],
-            school=job.school,
-            school_name=job.payload["school_name"],
-            dry_run=bool(job.payload.get("dry_run")),
-        )
     session = session or BrowserInstagramSession()
     operation_error: BaseException | None = None
     try:
@@ -249,12 +230,8 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 _process_batch(queue, [job, *companions], allow_engagement=allow_engagement)
                 return True
             try:
-                with job_deadline(job_timeout_seconds(job)):
-                    result = (
-                        execute_job(job)
-                        if job.kind == "direct"
-                        else _execute_on_primary_tab(queue, job)
-                    )
+                with job_deadline(CONTROL.job_timeout_seconds):
+                    result = _execute_on_primary_tab(queue, job)
                 queue.finish(job, result=result)
             except BrowserRateLimited as exc:
                 queue.defer_for_rate_limit(job, str(exc))
@@ -271,7 +248,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 raise
             except sqlite3.Error:
                 queue.storage_unavailable = True
-                if job.kind in {"engagement", "direct"} and not job.payload.get("dry_run"):
+                if job.kind == "engagement" and not job.payload.get("dry_run"):
                     try:
                         queue.set_setting(
                             "paused",
@@ -293,7 +270,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 completed = queue.get(job.id)
                 if completed:
                     queue.record_diagnostic(completed.state, completed)
-                if job.kind in {"engagement", "direct"} and not job.payload.get("dry_run"):
+                if job.kind == "engagement" and not job.payload.get("dry_run"):
                     queue.set_setting(
                         "next_engagement_at", time.time() + CONTROL.engagement_interval_seconds
                     )

@@ -1744,7 +1744,7 @@ def test_old_queue_upgrade_keeps_jobs_settings_and_selected_school(queue, legacy
         db.execute("PRAGMA writable_schema=ON")
         db.execute(
             "UPDATE sqlite_master SET sql=replace(sql, ?, ?) WHERE name='jobs'",
-            ("'digest', 'retrieval', 'engagement', 'direct'", legacy_kinds),
+            ("'digest', 'retrieval', 'engagement'", legacy_kinds),
         )
         db.execute("PRAGMA writable_schema=OFF")
     reopened = module.BrowserJobQueue(queue.state_directory)
@@ -2262,83 +2262,3 @@ def test_first_upgrade_cancels_waiting_notification_reads_once(tmp_path):
         url="https://www.instagram.com/ubcclub/",
     )
     assert module.BrowserJobQueue(queue.state_directory).get(later).state == "pending"
-
-
-def _queue_direct(queue, *, item_id="31337", not_before=0.0, dry_run=True):
-    return queue.enqueue_direct(
-        school="ubc",
-        school_name="UBC",
-        recipient_id=RECIPIENT_ID,
-        account_username=ACCOUNT_USERNAME,
-        thread_id="340282366841710300949128",
-        item_id=item_id,
-        dry_run=dry_run,
-        not_before=not_before,
-    )
-
-
-def test_a_dm_notification_creates_one_job_per_message(queue):
-    first = _queue_direct(queue)
-    assert _queue_direct(queue) == first
-    assert _queue_direct(queue, item_id="31338") != first
-
-
-@pytest.mark.parametrize(("dry_run", "state"), [(True, "pending"), (False, "failed")])
-def test_only_a_failed_dry_run_dm_is_read_again_when_requeued(queue, dry_run, state):
-    # A dry run only reads the thread; a live DM job may already have replied.
-    job_id = _queue_direct(queue, dry_run=dry_run)
-    queue.finish(queue.claim_next(now=10.0), error="Instagram DM thread could not be read")
-    assert _queue_direct(queue, dry_run=dry_run) == job_id
-    assert queue.get(job_id).state == state
-
-
-def test_a_dm_waits_for_its_human_reply_delay(queue):
-    job_id = _queue_direct(queue, not_before=1_000.0)
-    assert queue.claim_next(now=999.0) is None
-    claimed = queue.claim_next(now=1_000.0)
-    assert claimed is not None and claimed.id == job_id and claimed.kind == "direct"
-
-
-def test_a_dm_is_never_batched_with_other_jobs(queue):
-    _queue_direct(queue)
-    claimed = queue.claim_next(now=10.0)
-    assert claimed is not None and claimed.kind == "direct"
-    assert queue.claim_companions(claimed, limit=4) == []
-
-
-def test_an_existing_queue_gains_the_dm_kind_without_losing_jobs(tmp_path):
-    directory = tmp_path / "browser"
-    queue = module.BrowserJobQueue(directory)
-    job_id = queue.enqueue_engagement(
-        school="ubc",
-        recipient_id=RECIPIENT_ID,
-        account_username=ACCOUNT_USERNAME,
-        post_url="https://www.instagram.com/p/ABC123/",
-    )
-    database = next(directory.glob("*.sqlite3"))
-    with sqlite3.connect(database) as db:
-        sql = db.execute("SELECT sql FROM sqlite_master WHERE name='jobs'").fetchone()[0]
-        db.execute("ALTER TABLE jobs RENAME TO jobs_new")
-        db.execute(sql.replace(", 'direct'", ""))
-        db.execute("INSERT INTO jobs SELECT * FROM jobs_new")
-        db.execute("DROP TABLE jobs_new")
-    reopened = module.BrowserJobQueue(directory)
-    assert reopened.get(job_id) is not None
-    assert _queue_direct(reopened)
-
-
-@pytest.mark.parametrize("field", ["thread_id", "item_id", "school"])
-def test_dm_identifiers_are_validated(queue, field):
-    arguments = {
-        "school": "ubc",
-        "school_name": "UBC",
-        "recipient_id": RECIPIENT_ID,
-        "account_username": ACCOUNT_USERNAME,
-        "thread_id": "340282366841710300949128",
-        "item_id": "31337",
-        "dry_run": True,
-        "not_before": 0.0,
-        field: "not valid!",
-    }
-    with pytest.raises(ValueError):
-        queue.enqueue_direct(**arguments)

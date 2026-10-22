@@ -1,13 +1,18 @@
 {
-  "dry_run": true,
-  "categories": ["direct_v2_text", "direct_v2_media_share", "direct_v2_clips_share"],
+  "dry_run": false,
   "model": "claude-haiku-5-5",
   "agent_timeout_seconds": 120,
   "thread_item_limit": 12,
   "replies": ["Sure!", "Of course!", "Sure thing!", "Yep, on it!", "Will do!", "For sure!"],
   "done_replies": ["Done!", "All set!", "Posted!", "Done :)", "It's up!"],
-  "reply_delay_min_seconds": 120,
-  "reply_delay_max_seconds": 1200,
   "done_reply_delay_min_seconds": 20,
-  "done_reply_delay_max_seconds": 75
+  "done_reply_delay_max_seconds": 75,
+  "sweep_check_interval_seconds": 600,
+  "sweep_gap_min_minutes": 90,
+  "sweep_gap_max_minutes": 240,
+  "sweep_start_hour": 9,
+  "sweep_end_hour": 23,
+  "max_thread_age_days": 7,
+  "inbox_scrolls": 3,
+  "launch_agent_timeout_seconds": 30
 }
