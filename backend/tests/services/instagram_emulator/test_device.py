@@ -123,3 +123,15 @@ def test_waiting_declines_an_announcement_covering_the_app() -> None:
     node = _device([(0, PROMPT), tap, (0, SCREEN)], commands).wait_for(re.compile("^Your story$"))
     assert node.text == "Your story"
     assert commands[1][-3:-2] == ["tap"]
+
+
+def test_an_account_below_the_switcher_fold_is_scrolled_into_view(monkeypatch) -> None:
+    device = _device([], [])
+    row = module.Node("", "wat2do.ubc, 2 follows", (42, 1130, 1038, 1303))
+    name = module.Node("wat2do.dalhousie", "", (221, 1900, 534, 1955))
+    screens = [[row], [row], [row, name]]
+    scrolls = []
+    monkeypatch.setattr(device, "screen", lambda: screens[min(len(scrolls), 2)])
+    monkeypatch.setattr(device, "scroll_down", lambda: scrolls.append(1))
+    assert device._account_in_switcher("wat2do.dalhousie") == name
+    assert len(scrolls) == 2

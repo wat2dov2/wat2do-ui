@@ -74,6 +74,9 @@ _PROFILE_TAB = re.compile(r"^Profile$")
 _SAVE_LOGIN = labels("Save your login info")
 _SAVE = re.compile(r"^Save$")
 _NOT_NOW = re.compile(r"^Not now$")
+# Rows in the account switcher read "wat2do.school, 3 follows and 2 more".
+_SWITCHER_ROW = re.compile(r"^wat2do\.[a-z0-9._]+(?:, .*)?$")
+_SWITCHER_SCROLLS = 3
 
 
 def _sdk_tool(name: str, folder: str) -> str:
@@ -294,11 +297,23 @@ class EmulatorDevice:
         if self.find(own_story) is not None:
             return
         self.tap(self.wait_for(_PROFILE_TAB), hold_ms=1200)
-        self.tap_when(re.compile(rf"^{re.escape(account_username)}$"))
+        self.tap(self._account_in_switcher(account_username))
         switched = self.wait_for(labels(f"{account_username}'s story", "Save your login info"))
         if switched.labelled(_SAVE_LOGIN):
             self.tap_when(_SAVE)
             self.wait_for(own_story)
+
+    def _account_in_switcher(self, account_username: str) -> Node:
+        """The account's row in the switcher, scrolled into view: a full Android user's
+        tenth account starts below the bottom of the screen."""
+        account = re.compile(rf"^{re.escape(account_username)}$")
+        self.wait_for(_SWITCHER_ROW)
+        for _ in range(_SWITCHER_SCROLLS):
+            node = self.find(account)
+            if node is not None:
+                return node
+            self.scroll_down()
+        return self.wait_for(account)
 
     def _go_home(self) -> None:
         for _ in range(6):
