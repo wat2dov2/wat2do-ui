@@ -162,7 +162,8 @@ Native navigation is spaced through its own gate, which waits outside the transp
 Queries prove their terminal result and settled request state in one atomic browser read before returning; successful operations do not repeat cancellation through the busy transport.
 Each query declares whether it only reads.
 When the primary tab cannot confirm cancellation of its own read-only query (a digest, a post lookup or a DM thread read), the worker abandons that request instead of pausing for a person, because a read cannot change anything and its late result lands in its own request object.
-Uncertain sends, likes and reposts still pause the worker.
+Beyond that, a digest or retrieval job never pauses the worker over an unconfirmed cancellation, wherever in the job it happens; the job fails and retries instead.
+Uncertain sends, likes and reposts still pause the worker, as do logouts that need a person.
 Only idempotent reads, inventory, and cleanup retry within `bridge_retry_limit`; uncertain engagement clicks are never replayed.
 Navigation uses the pinned tab's native URL setter, so blank or unresponsive page JavaScript cannot block the navigation needed to recover it.
 Retrieval tabs open their actual post/profile targets before readiness checks; digest preparation uses the verified account's public profile instead of relying on a blank home feed.

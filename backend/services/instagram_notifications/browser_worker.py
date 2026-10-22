@@ -52,14 +52,22 @@ def _storage_failure_reason(error: BaseException) -> str | None:
     return "Browser queue storage is unavailable; inspect before resuming"
 
 
-def _requires_human_recovery(error: BaseException) -> bool:
-    return isinstance(error, BrowserEngagementUncertain) or any(
-        reason in str(error)
-        for reason in (
-            "cancellation could not be confirmed",
-            "human account recovery",
-            "human reauthorization",
-        )
+# Jobs that only read Instagram: nothing they leave in flight can change anything.
+_READ_ONLY_JOB_KINDS = frozenset({"digest", "retrieval"})
+
+
+def _requires_human_recovery(error: BaseException, job: BrowserJob) -> bool:
+    """Pause for a person on account trouble or an action that may still go through.
+
+    A read-only job whose cancellation cannot be confirmed fails and retries
+    instead: its leftover request cannot like, repost or send anything.
+    """
+    if isinstance(error, BrowserEngagementUncertain):
+        return True
+    if "cancellation could not be confirmed" in str(error):
+        return job.kind not in _READ_ONLY_JOB_KINDS
+    return any(
+        reason in str(error) for reason in ("human account recovery", "human reauthorization")
     )
 
 
@@ -258,7 +266,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 queue.defer_for_rate_limit(job, str(exc))
                 queue.finish(job, error=str(exc))
             except (BrowserSessionError, TimeoutError) as exc:
-                if _requires_human_recovery(exc):
+                if _requires_human_recovery(exc, job):
                     queue.set_setting("paused", str(exc))
                 queue.finish(job, error=str(exc))
             except (KeyboardInterrupt, SystemExit):
@@ -403,7 +411,7 @@ def _process_batch(
             persist(queue.set_setting, "retrieval_pool_account", None)
         if isinstance(exc, (BrowserSessionError, TimeoutError)):
             error = str(exc)
-            if _requires_human_recovery(exc):
+            if _requires_human_recovery(exc, job):
                 persist(queue.set_setting, "paused", error)
         else:
             error = _storage_failure_reason(exc) or (
