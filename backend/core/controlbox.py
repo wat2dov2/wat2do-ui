@@ -993,6 +993,11 @@ class InstagramEmulatorControl(_ControlModel):
     # The Android emulator whose Instagram app shares posts to school stories.
     serial: str = Field(pattern=r"^emulator-[0-9]{4,5}$")
     instagram_package: str = Field(pattern=r"^[a-z][a-z0-9_.]+$")
+    # The always-on LaunchAgent boots this virtual device with these arguments
+    # whenever adb cannot see it, checking again after this many seconds.
+    avd_name: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
+    emulator_arguments: tuple[Annotated[str, Field(pattern=r"^[A-Za-z0-9_.-]+$")], ...]
+    keep_alive_check_seconds: int = Field(ge=10, le=3600)
     # The Instagram app holds at most ten accounts per Android user, so school
     # accounts are spread across the emulator's users.
     android_user_by_school: dict[
@@ -1004,6 +1009,8 @@ class InstagramEmulatorControl(_ControlModel):
     # Every tap and keystroke waits a random human-like pause inside this window.
     step_delay_min_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
     step_delay_max_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
+    keystroke_delay_min_seconds: float = Field(ge=0, le=5, allow_inf_nan=False)
+    keystroke_delay_max_seconds: float = Field(ge=0, le=5, allow_inf_nan=False)
     story_upload_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
     # A DM job that may repost to a story gets this deadline instead of the browser's.
     story_job_timeout_seconds: float = Field(gt=0, le=1800, allow_inf_nan=False)
@@ -1012,6 +1019,10 @@ class InstagramEmulatorControl(_ControlModel):
     def validate_timing(self) -> "InstagramEmulatorControl":
         if self.step_delay_min_seconds > self.step_delay_max_seconds:
             raise ValueError("step_delay_min_seconds cannot exceed step_delay_max_seconds")
+        if self.keystroke_delay_min_seconds > self.keystroke_delay_max_seconds:
+            raise ValueError(
+                "keystroke_delay_min_seconds cannot exceed keystroke_delay_max_seconds"
+            )
         if self.story_job_timeout_seconds <= (
             self.user_switch_wait_seconds + self.story_upload_wait_seconds
         ):

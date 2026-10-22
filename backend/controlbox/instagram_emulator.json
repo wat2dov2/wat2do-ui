@@ -1,6 +1,21 @@
 {
   "serial": "emulator-5554",
   "instagram_package": "com.instagram.android",
+  "avd_name": "ig_node_1",
+  "emulator_arguments": [
+    "-no-window",
+    "-no-audio",
+    "-no-boot-anim",
+    "-no-snapshot-load",
+    "-no-snapshot-save",
+    "-gpu",
+    "host",
+    "-memory",
+    "2048",
+    "-cores",
+    "2"
+  ],
+  "keep_alive_check_seconds": 60,
   "android_user_by_school": {
     "yorku": 0,
     "uwaterloo": 0,
@@ -44,6 +59,8 @@
   "screen_wait_seconds": 15,
   "step_delay_min_seconds": 1.5,
   "step_delay_max_seconds": 4,
+  "keystroke_delay_min_seconds": 0.08,
+  "keystroke_delay_max_seconds": 0.35,
   "story_upload_wait_seconds": 60,
   "story_job_timeout_seconds": 600
 }

@@ -946,3 +946,15 @@ def test_pain_points_need_an_about_line_for_every_competitor() -> None:
         type(controlbox.competitor_pain_points).model_validate(
             {**raw, "lanes": {**raw["lanes"], "reddit": "Reddit threads"}}
         )
+
+
+def test_instagram_emulator_rejects_an_inverted_keystroke_window(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_emulator",
+        lambda payload: payload.update(
+            {"keystroke_delay_min_seconds": 2, "keystroke_delay_max_seconds": 1}
+        ),
+    )
+    with pytest.raises(ValidationError, match="keystroke_delay_min_seconds"):
+        load_controlbox(path)

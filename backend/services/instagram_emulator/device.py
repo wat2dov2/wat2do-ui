@@ -7,14 +7,17 @@ a random pause, so the app sees a person's rhythm rather than a script's.
 
 from __future__ import annotations
 
+import fcntl
 import os
 import random
 import re
 import shutil
 import subprocess
+import threading
 import time
 import xml.etree.ElementTree as ElementTree
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -25,6 +28,9 @@ _BOUNDS = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 _DUMP_SUFFIX = "UI hierchary dumped to"
 _LAUNCHER_ACTIVITY = "com.instagram.mainactivity.LauncherActivity"
 _SCREEN_READ_ATTEMPTS = 5
+# Every job that drives the emulator holds this lock, so two never tap at once.
+_LOCK_PATH = Path.home() / ".local/state/wat2do/instagram-emulator.lock"
+_held = threading.local()
 
 
 class EmulatorError(RuntimeError):
@@ -36,9 +42,15 @@ class Node:
     text: str
     description: str
     bounds: tuple[int, int, int, int]
+    # The app's own name for the view, for the few controls Instagram leaves unlabelled.
+    resource_id: str = ""
 
     def labelled(self, pattern: re.Pattern[str]) -> bool:
-        return bool(pattern.match(self.text) or pattern.match(self.description))
+        return bool(
+            pattern.match(self.text)
+            or pattern.match(self.description)
+            or (self.resource_id and pattern.match(self.resource_id))
+        )
 
 
 def labels(*names: str) -> re.Pattern[str]:
@@ -46,12 +58,35 @@ def labels(*names: str) -> re.Pattern[str]:
     return re.compile("^(?:" + "|".join(re.escape(name) for name in names) + r")(?:\b|$)")
 
 
-def _adb_path() -> str:
-    found = shutil.which("adb")
+_HOME_TAB = re.compile(r"^Home$")
+_PROFILE_TAB = re.compile(r"^Profile$")
+_SAVE_LOGIN = labels("Save your login info")
+_SAVE = re.compile(r"^Save$")
+
+
+def _sdk_tool(name: str, folder: str) -> str:
+    found = shutil.which(name)
     if found:
         return found
     sdk = Path(os.environ.get("ANDROID_HOME") or Path.home() / "Library/Android/sdk")
-    return str(sdk / "platform-tools" / "adb")
+    return str(sdk / folder / name)
+
+
+def _adb_path() -> str:
+    return _sdk_tool("adb", "platform-tools")
+
+
+def emulator_command() -> list[str]:
+    """Boot the configured virtual device headless on the port its serial names."""
+    port = CONTROL.serial.removeprefix("emulator-")
+    return [
+        _sdk_tool("emulator", "emulator"),
+        "-avd",
+        CONTROL.avd_name,
+        "-port",
+        port,
+        *CONTROL.emulator_arguments,
+    ]
 
 
 class EmulatorDevice:
@@ -68,6 +103,12 @@ class EmulatorDevice:
         self._monotonic = monotonic
         self._rng = rng or random.SystemRandom()
         self._adb = _adb_path()
+
+    def is_online(self) -> bool:
+        try:
+            return self.adb("get-state").strip() == "device"
+        except EmulatorError:
+            return False
 
     def adb(self, *args: str) -> str:
         try:
@@ -109,7 +150,12 @@ class EmulatorDevice:
             x1, y1, x2, y2 = (int(value) for value in match.groups())
             if x2 > x1 and y2 > y1:
                 nodes.append(
-                    Node(element.get("text", ""), element.get("content-desc", ""), (x1, y1, x2, y2))
+                    Node(
+                        element.get("text", ""),
+                        element.get("content-desc", ""),
+                        (x1, y1, x2, y2),
+                        element.get("resource-id", "").rpartition("/")[2],
+                    )
                 )
         return nodes
 
@@ -163,6 +209,36 @@ class EmulatorDevice:
         self.pause()
         self.adb("shell", "input", "keyevent", "KEYCODE_BACK")
 
+    def type_text(self, text: str) -> None:
+        """Type into the focused field one character at a time, at a person's pace."""
+        for character in text:
+            self._sleep(
+                self._rng.uniform(
+                    CONTROL.keystroke_delay_min_seconds, CONTROL.keystroke_delay_max_seconds
+                )
+            )
+            # adb's input text reads %s as a space and needs shell metacharacters escaped.
+            escaped = "%s" if character == " " else re.sub(r"([^A-Za-z0-9])", r"\\\1", character)
+            self.adb("shell", "input", "text", escaped)
+
+    def scroll_down(self) -> None:
+        """Swipe up through the middle of the screen with a slightly uneven hand."""
+        self.pause()
+        x = round(self._rng.uniform(400, 680))
+        start = round(self._rng.uniform(1600, 1800))
+        end = round(self._rng.uniform(800, 1000))
+        duration = round(self._rng.uniform(500, 900))
+        self.adb(
+            "shell",
+            "input",
+            "swipe",
+            str(x),
+            str(start),
+            str(x + self._rng.randint(-20, 20)),
+            str(end),
+            str(duration),
+        )
+
     def wake(self) -> None:
         self.adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
         self.adb("shell", "wm", "dismiss-keyguard")
@@ -177,9 +253,57 @@ class EmulatorDevice:
         if self.adb("shell", "am", "get-current-user").strip() != str(user):
             raise EmulatorError("Emulator did not switch Android users")
 
+    def use_account(self, user: int, account_username: str) -> None:
+        """Switch the app to the account, confirmed by its own story bubble on the home feed."""
+        own_story = labels(f"{account_username}'s story")
+        self.open_instagram(user)
+        self._go_home()
+        if self.find(own_story) is not None:
+            return
+        self.tap(self.wait_for(_PROFILE_TAB), hold_ms=1200)
+        self.tap_when(re.compile(rf"^{re.escape(account_username)}$"))
+        switched = self.wait_for(labels(f"{account_username}'s story", "Save your login info"))
+        if switched.labelled(_SAVE_LOGIN):
+            self.tap_when(_SAVE)
+            self.wait_for(own_story)
+
+    def _go_home(self) -> None:
+        for _ in range(6):
+            home = self.find(_HOME_TAB)
+            if home is not None:
+                self.tap(home)
+                return
+            self.back()
+        raise EmulatorError("Instagram's home feed could not be reached")
+
     def open_instagram(self, user: int, url: str | None = None) -> None:
         if url is None:
             target = ["-n", f"{CONTROL.instagram_package}/{_LAUNCHER_ACTIVITY}"]
         else:
             target = ["-a", "android.intent.action.VIEW", "-d", url, CONTROL.instagram_package]
         self.adb("shell", "am", "start", "--user", str(user), *target)
+
+
+@contextmanager
+def exclusive() -> Iterator[None]:
+    """Hold the emulator for one job; another job waits until this one is done.
+
+    A job may nest it, such as a DM job around the story repost it triggers; only
+    the outermost hold takes the lock.
+    """
+    if getattr(_held, "depth", 0):
+        _held.depth += 1
+        try:
+            yield
+        finally:
+            _held.depth -= 1
+        return
+    _LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with _LOCK_PATH.open("a") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        _held.depth = 1
+        try:
+            yield
+        finally:
+            _held.depth = 0
+            fcntl.flock(handle, fcntl.LOCK_UN)

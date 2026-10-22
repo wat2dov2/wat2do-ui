@@ -1,4 +1,6 @@
+import fcntl
 import random
+import re
 import subprocess
 
 import pytest
@@ -70,3 +72,33 @@ def test_the_current_android_user_is_not_switched_again() -> None:
     commands = []
     _device([(0, "10\n")], commands).use_android_user(10)
     assert len(commands) == 1
+
+
+def test_unlabelled_controls_are_found_by_their_resource_id() -> None:
+    screen = SCREEN.replace(
+        "</hierarchy>",
+        '<node text="" content-desc="" resource-id="com.instagram.android:id/action_bar_button_action" bounds="[912,128][1059,275]" />\n</hierarchy>',
+    )
+    nodes = _device([(0, screen)], []).screen()
+    check = module.Node("", "", (912, 128, 1059, 275), "action_bar_button_action")
+    assert check in nodes
+    assert check.labelled(re.compile(r"^action_bar_button_action$"))
+
+
+def test_typing_sends_one_escaped_character_at_a_time() -> None:
+    commands = []
+    _device([(0, "")] * 6, commands).type_text("a b'&")
+    assert [command[-1] for command in commands] == ["a", "%s", "b", "\\'", "\\&"]
+
+
+def test_holding_the_emulator_is_reentrant_but_exclusive(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(module, "_LOCK_PATH", tmp_path / "emulator.lock")
+    with module.exclusive():
+        with module.exclusive():
+            pass
+        other = (tmp_path / "emulator.lock").open("a")
+        with pytest.raises(BlockingIOError):
+            fcntl.flock(other, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        other.close()
+    with (tmp_path / "emulator.lock").open("a") as other:
+        fcntl.flock(other, fcntl.LOCK_EX | fcntl.LOCK_NB)

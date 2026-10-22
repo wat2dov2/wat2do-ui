@@ -1,3 +1,5 @@
+from contextlib import nullcontext
+
 import pytest
 
 from services.instagram_emulator import story as module
@@ -56,6 +58,7 @@ def screens(monkeypatch):
         device = _Device(sequence)
         devices.append(device)
         monkeypatch.setattr(module, "EmulatorDevice", lambda: device)
+        monkeypatch.setattr(module, "exclusive", nullcontext)
         return device
 
     return use
