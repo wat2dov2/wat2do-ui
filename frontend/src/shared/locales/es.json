@@ -756,7 +756,8 @@
   "footer": {
     "tagline": "Todos los eventos del campus, en un solo feed, antes de que terminen.",
     "explore": "Explorar",
-    "company": "Wat2Do",
+    "brand": "Wat2Do",
+    "company": "Empresa",
     "promote": "Gana dinero con carteles",
     "supportLocal": "Apoya a un negocio local",
     "copyright": "© {{year}} Wat2Do",

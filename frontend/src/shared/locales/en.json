@@ -738,7 +738,8 @@
   "footer": {
     "tagline": "Every campus event, in one feed, before it's over.",
     "explore": "Explore",
-    "company": "Wat2Do",
+    "brand": "Wat2Do",
+    "company": "Company",
     "promote": "Earn with posters",
     "supportLocal": "Support a local business",
     "copyright": "© {{year}} Wat2Do",

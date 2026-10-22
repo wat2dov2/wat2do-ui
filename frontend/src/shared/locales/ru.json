@@ -765,7 +765,8 @@
   "footer": {
     "tagline": "Все события кампуса в одной ленте, пока они не прошли.",
     "explore": "Обзор",
-    "company": "Wat2Do",
+    "brand": "Wat2Do",
+    "company": "Компания",
     "promote": "Зарабатывайте на афишах",
     "supportLocal": "Поддержите местный бизнес",
     "copyright": "© {{year}} Wat2Do",
