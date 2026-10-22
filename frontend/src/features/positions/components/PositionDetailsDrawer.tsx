@@ -131,19 +131,17 @@ export function PositionDetailsDrawer({
                   <PositionCardImage
                     position={position}
                     variant="detail"
-                    onClubFilterSelect={onClose}
+                    onClubNavigate={onClose}
                   />
                   <Section variant="divided" title={t("common.postedBy")}>
                     <ClubBadgeDropdown
+                      clubId={position.club_id}
                       clubName={position.club_name}
                       clubLogoUrl={position.club_logo_url}
                       cohosts={position.cohosts}
                       clubType={position.club_type}
                       school={position.school}
-                      clubPage={position.club_page}
-                      clubIg={position.club_ig}
-                      clubDiscord={position.club_discord}
-                      onFilterSelect={onClose}
+                      onNavigate={onClose}
                     />
                   </Section>
                 </Stack>

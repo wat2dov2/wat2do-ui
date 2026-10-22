@@ -28,7 +28,7 @@ interface EventCardImageProps {
    */
   interactive?: boolean;
   /** Runs after the club badge applies its feed filter. */
-  onClubFilterSelect?: () => void;
+  onClubNavigate?: () => void;
   /** Load this poster immediately because it can be an initial LCP candidate. */
   priority?: boolean;
 }
@@ -44,7 +44,7 @@ export function EventCardImage({
   event,
   variant,
   interactive = true,
-  onClubFilterSelect,
+  onClubNavigate,
   priority = false,
 }: EventCardImageProps) {
   const { t } = useTranslation();
@@ -131,16 +131,14 @@ export function EventCardImage({
         {event.club && !(variant === "detail" && event.source_video_url) && (
           <BadgeMask variant="bottom-left" cutout containerRef={registerCorner("bottom-left")}>
             <ClubBadgeDropdown
+              clubId={event.club_id}
               clubName={event.club}
               clubLogoUrl={event.club_logo_url}
               cohosts={event.cohosts}
               clubType={event.club_type}
               school={event.school}
-              clubPage={event.club_page}
-              clubIg={event.club_ig}
-              clubDiscord={event.club_discord}
               disabled={!interactive}
-              onFilterSelect={onClubFilterSelect}
+              onNavigate={onClubNavigate}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             />
