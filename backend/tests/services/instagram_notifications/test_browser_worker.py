@@ -722,7 +722,7 @@ def test_successful_query_settlement_proof_is_not_rechecked_by_worker(queue, mon
     session = browser_session.BrowserInstagramSession(javascript_runner=run, sleep=lambda _: None)
 
     def resolve(*args):
-        payload = session.query("start-query-fixture")
+        payload = session.query("start-query-fixture", read_only=True)
         return DigestResolution(
             ACCOUNT_USERNAME, tuple(payload["media_ids"]), payload["page_count"]
         )
@@ -734,7 +734,7 @@ def test_successful_query_settlement_proof_is_not_rechecked_by_worker(queue, mon
         browser_ingestion,
         "BrowserInstagramRetriever",
         lambda _: SimpleNamespace(
-            retrieve=lambda *args, **kwargs: session.query("start-query-fixture")
+            retrieve=lambda *args, **kwargs: session.query("start-query-fixture", read_only=True)
         ),
     )
     job_id = (
@@ -1376,7 +1376,7 @@ def test_blank_first_target_does_not_prevent_other_slots_visiting_their_own_targ
             if not ready():
                 raise _BrowserPageUnavailable("The assigned target remains blank")
 
-        def query(source, state=state):
+        def query(source, state=state, *, read_only):
             queries.append(state.url)
             return {
                 "state": "succeeded",
@@ -1446,7 +1446,7 @@ def test_retrieval_refill_reloads_its_exact_target_before_owned_readiness(queue,
     def poll(ready):
         assert ready(), "Readiness must inspect the assigned target rather than the stale tab"
 
-    def query(source):
+    def query(source, *, read_only):
         queries.append(state.url)
         if state.url == urls[0]:
             ids.append(
@@ -2416,7 +2416,7 @@ def test_confirmed_auth_failure_survives_deferred_secondary_cleanup(
                 "Instagram browser request cancellation could not be confirmed"
             )
 
-    def query(_source):
+    def query(_source, *, read_only):
         raise _BrowserReadCleanupPending(
             "Instagram browser request cancellation could not be confirmed",
             completed_payload={"state": "failed", "reason": "auth_required"},

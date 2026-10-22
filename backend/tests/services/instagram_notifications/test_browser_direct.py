@@ -16,7 +16,7 @@ class _Session:
     def activate_account(self, recipient_id, username):
         return username
 
-    def query(self, source):
+    def query(self, source, *, read_only):
         self.queries.append(source)
         if "broadcast/text" in source:
             return {"state": self.send_state}

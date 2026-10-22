@@ -160,6 +160,9 @@ Apple Event transport is serialized within each call deadline while asynchronous
 Native event execution has a separate short timeout, so a stalled command cannot consume every waiting tab's transport budget.
 Native navigation is spaced through its own gate, which waits outside the transport lock so other tabs can read and settle.
 Queries prove their terminal result and settled request state in one atomic browser read before returning; successful operations do not repeat cancellation through the busy transport.
+Each query declares whether it only reads.
+When the primary tab cannot confirm cancellation of its own read-only query (a digest, a post lookup or a DM thread read), the worker abandons that request instead of pausing for a person, because a read cannot change anything and its late result lands in its own request object.
+Uncertain sends, likes and reposts still pause the worker.
 Only idempotent reads, inventory, and cleanup retry within `bridge_retry_limit`; uncertain engagement clicks are never replayed.
 Navigation uses the pinned tab's native URL setter, so blank or unresponsive page JavaScript cannot block the navigation needed to recover it.
 Retrieval tabs open their actual post/profile targets before readiness checks; digest preparation uses the verified account's public profile instead of relying on a blank home feed.

@@ -52,7 +52,7 @@ def test_verified_browser_result_preserves_carousel_video_and_coauthors():
         poll_until=lambda predicate: predicate(),
         activate_account=lambda *_: pytest.fail("Retrieval must never switch accounts"),
         navigate=lambda url, *, reload: calls.append((url, reload)),
-        query=lambda *_: {"state": "succeeded", "posts": [deepcopy(POST)]},
+        query=lambda *_, **__: {"state": "succeeded", "posts": [deepcopy(POST)]},
     )
     result = module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
     assert result["account_username"] == "wat2do.ca"
@@ -70,7 +70,7 @@ def test_same_target_reload_refreshes_cached_account_before_readiness_and_query(
         if reload:
             state.username = ACCOUNT
 
-    def query(source):
+    def query(source, *, read_only):
         assert state.username == ACCOUNT
         return {"state": "succeeded", "posts": [deepcopy(POST)]}
 
@@ -94,7 +94,7 @@ def test_verified_failed_429_is_not_lost_to_a_later_loading_identity():
             raise TimeoutError("The post-query navigation identity is still loading")
         return ACCOUNT
 
-    def query(source):
+    def query(source, *, read_only):
         nonlocal queried
         queried = True
         return {"state": "failed", "reason": "http_error", "http_status": 429}
@@ -128,7 +128,7 @@ def test_account_identity_wait_detects_a_fresh_native_429(rate_limit_phase):
         current_page_path=path,
         current_account_username=lambda: ACCOUNT,
         poll_until=lambda ready: ready(),
-        query=lambda source: (
+        query=lambda source, **_: (
             queries.append(source) or {"state": "succeeded", "posts": [deepcopy(POST)]}
         ),
     )
@@ -158,7 +158,7 @@ def test_incomplete_or_mismatched_media_fails(mutation):
         poll_until=lambda predicate: predicate(),
         activate_account=lambda *_: pytest.fail("Retrieval must never switch accounts"),
         navigate=lambda *_, **__: None,
-        query=lambda *_: {"state": "succeeded", "posts": [post]},
+        query=lambda *_, **__: {"state": "succeeded", "posts": [post]},
     )
     with pytest.raises(module.BrowserSessionError):
         module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)
@@ -304,7 +304,7 @@ def test_classified_public_response_failures_preserve_bounded_read_retry_type(
         current_page_path=lambda **kwargs: "/p/AbC/",
         current_account_username=lambda: ACCOUNT,
         poll_until=lambda ready: ready(),
-        query=lambda source: {"state": "failed", "reason": reason, "http_status": status},
+        query=lambda source, **_: {"state": "failed", "reason": reason, "http_status": status},
     )
     error_type = (
         module.BrowserRateLimited
@@ -327,7 +327,7 @@ def test_retrieval_preserves_original_human_recovery_error_and_deferred_payload(
         completed_payload=payload,
     )
 
-    def query(source):
+    def query(source, *, read_only):
         raise pending
 
     session = SimpleNamespace(
@@ -365,7 +365,7 @@ def test_confirmed_deferred_429_preserves_human_account_and_interrupt_errors(ori
         completed_payload=payload,
     )
 
-    def query(source):
+    def query(source, *, read_only):
         raise pending
 
     session = SimpleNamespace(
@@ -402,7 +402,7 @@ def test_deferred_payload_requires_the_exact_verified_429_contract(payload):
         "Instagram browser request cancellation could not be confirmed", completed_payload=payload
     )
 
-    def query(source):
+    def query(source, *, read_only):
         raise pending
 
     session = SimpleNamespace(
@@ -435,7 +435,7 @@ def test_retrieval_rejects_account_change():
         navigate=lambda *_, **__: None,
         current_account_username=lambda: next(names),
         poll_until=lambda predicate: predicate(),
-        query=lambda *_: {"state": "succeeded", "posts": [deepcopy(POST)]},
+        query=lambda *_, **__: {"state": "succeeded", "posts": [deepcopy(POST)]},
     )
     with pytest.raises(module.BrowserSessionError, match="changed"):
         module.BrowserInstagramRetriever(session).retrieve(URL, cutoff_days=1)

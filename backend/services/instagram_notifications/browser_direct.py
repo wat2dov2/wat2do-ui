@@ -77,7 +77,7 @@ class BrowserInstagramDirectExecutor:
         return {**result, "status": "replied"}
 
     def _read_thread(self, thread_id: str, username: str) -> list[dict[str, Any]]:
-        payload = self._session.query(_thread_source(thread_id, username))
+        payload = self._session.query(_thread_source(thread_id, username), read_only=True)
         if payload.get("state") != "succeeded" or not isinstance(payload.get("items"), list):
             raise BrowserSessionError("Instagram DM thread could not be read")
         return payload["items"]
@@ -87,7 +87,9 @@ class BrowserInstagramDirectExecutor:
         # drops an accidental duplicate of this exact request.
         client_context = str(secrets.randbits(63))
         try:
-            payload = self._session.query(_send_source(thread_id, username, text, client_context))
+            payload = self._session.query(
+                _send_source(thread_id, username, text, client_context), read_only=False
+            )
         except Exception:
             raise BrowserEngagementUncertain(
                 "Instagram DM reply is uncertain; inspect the thread before resuming"

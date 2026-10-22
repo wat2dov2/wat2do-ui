@@ -395,7 +395,7 @@ def test_query_cancels_and_awaits_settlement_when_interrupted(failure):
 
     with pytest.raises(failure):
         browser.BrowserInstagramSession(javascript_runner=run, sleep=lambda _: None).query(
-            "start request"
+            "start request", read_only=False
         )
     assert cancelled
     assert calls[-1].startswith("delete window")
@@ -442,7 +442,7 @@ def test_secondary_uncertain_query_cleanup_preserves_result_and_original_error(
 
     monkeypatch.setattr(session, "poll_until", poll)
     with pytest.raises(browser._BrowserReadCleanupPending) as raised:
-        session.query("start request")
+        session.query("start request", read_only=True)
     assert "cancellation could not be confirmed" in str(raised.value)
     assert raised.value.operation_error is original_error
     assert raised.value.completed_payload == (None if operation_fails else payload)
@@ -475,7 +475,7 @@ def test_atomic_settlement_proof_preserves_terminal_result_under_cleanup_content
         return json.dumps({"result": payload, "settled": True})
 
     session = browser.BrowserInstagramSession(javascript_runner=run)
-    assert session.query("start request") == payload
+    assert session.query("start request", read_only=True) == payload
     assert cancellation_calls == [False]
 
 
@@ -504,7 +504,7 @@ def test_query_waits_for_terminal_result_and_settlement_in_one_atomic_read():
         return json.dumps(next(states))
 
     session = browser.BrowserInstagramSession(javascript_runner=run, sleep=sleeps.append)
-    assert session.query("start request") == payload
+    assert session.query("start request", read_only=True) == payload
     assert len(reads) == 5 and len(sleeps) == 4
     assert all("request.result" in source and "request.settled" in source for source in reads)
 
@@ -541,7 +541,9 @@ def test_invalid_atomic_request_state_cannot_skip_cleanup(state):
         return json.dumps(state)
 
     with pytest.raises(browser.BrowserSessionError, match="invalid request state"):
-        browser.BrowserInstagramSession(javascript_runner=run).query("start request")
+        browser.BrowserInstagramSession(javascript_runner=run).query(
+            "start request", read_only=False
+        )
     assert cancellations == [False, True]
 
 
@@ -571,7 +573,7 @@ def test_terminal_unsettled_result_timing_out_still_aborts_and_cleans_request():
         job_timeout_seconds=1,
     )
     with pytest.raises(browser._BrowserPageUnavailable, match="timed out"):
-        session.query("start request")
+        session.query("start request", read_only=True)
     assert cancellations == [False, True]
     assert len(cleared) == 2
 
@@ -1177,7 +1179,7 @@ def test_fourteen_retrieval_slots_navigate_only_their_own_assigned_target(monkey
             poll_until=lambda completed: (
                 completed() or pytest.fail("Target must precede readiness")
             ),
-            query=lambda source: {
+            query=lambda source, **_: {
                 "state": "succeeded",
                 "posts": [{**deepcopy(POST), "url": page["url"]}],
             },
@@ -1587,7 +1589,7 @@ def test_query_recovers_transient_cleanup_bridge_failure_without_repeating_reque
         raise AssertionError(source)
 
     session = browser.BrowserInstagramSession(javascript_runner=run, sleep=sleeps.append)
-    assert session.query("start request")["media_ids"] == ["123"]
+    assert session.query("start request", read_only=True)["media_ids"] == ["123"]
     session.cancel_pending_request()
     assert starts == 1
     assert failures == 2
@@ -2861,3 +2863,31 @@ def test_a_job_asks_instagrams_server_before_trusting_a_logged_in_page(monkeypat
     assert sources == [browser._SERVER_LOGIN_SOURCE]
     assert "/accounts/edit/" in browser._SERVER_LOGIN_SOURCE
     assert "cookie" not in browser._SERVER_LOGIN_SOURCE.lower()
+
+
+@pytest.mark.parametrize("read_only", [True, False])
+def test_an_unconfirmed_cancellation_pauses_only_requests_that_can_change_something(read_only):
+    """A primary-tab read that cannot be cancelled is dropped; an action still needs a person."""
+    now = [0.0]
+    started = False
+
+    def run(source, timeout):
+        nonlocal started
+        if source == "start request":
+            started = True
+            return "started"
+        if source.startswith("delete window"):
+            return "cleared"
+        if "request.controller.abort()" in source and not started:
+            return "settled"
+        if "JSON.stringify" in source or "request.controller.abort()" in source:
+            now[0] += 1000  # The page stops answering once the request is in flight.
+            raise browser._BrowserAutomationTransient("Brave browser automation timed out")
+        raise AssertionError(source)
+
+    session = browser.BrowserInstagramSession(
+        javascript_runner=run, sleep=lambda _: None, monotonic=lambda: now[0]
+    )
+    with pytest.raises(BaseException) as raised:
+        session.query("start request", read_only=read_only)
+    assert ("cancellation could not be confirmed" in str(raised.value)) is not read_only

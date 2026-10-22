@@ -413,6 +413,9 @@ class BrowserInstagramSession:
         self._monotonic = monotonic
         self._allow_account_switch = allow_account_switch
         self._deadline = monotonic() + job_timeout_seconds if job_timeout_seconds else None
+        # Whether this session's own in-flight request only reads; unknown (None)
+        # for anything an earlier session or process may have left on the page.
+        self._pending_read_only: bool | None = None
 
     def reset_job_deadline(self, timeout_seconds: float) -> None:
         """Start a fresh bounded job on a settled reusable tab."""
@@ -572,8 +575,12 @@ class BrowserInstagramSession:
         self.verify_account(recipient_id, username)
         return canonical_url
 
-    def query(self, source: str) -> dict[str, Any]:
-        """Read result and settlement together; cancel every exit without that proof."""
+    def query(self, source: str, *, read_only: bool) -> dict[str, Any]:
+        """Read result and settlement together; cancel every exit without that proof.
+
+        ``read_only`` says the request cannot change anything on Instagram, so an
+        unconfirmed cancellation of it is safe to abandon instead of pausing.
+        """
         self.cancel_pending_request()
         payload: dict[str, Any] | None = None
         operation_error: BaseException | None = None
@@ -617,6 +624,7 @@ class BrowserInstagramSession:
             return completion_settled
 
         try:
+            self._pending_read_only = read_only
             self.run(source)
             self.poll_until(completed)
         except BaseException as exc:
@@ -652,6 +660,7 @@ class BrowserInstagramSession:
                 try:
                     self.poll_until(lambda: self.run(_cancel_request_source()) == "settled")
                     self.run(f"delete window[{json.dumps(_REQUEST_KEY)}]; 'cleared'")
+                    self._pending_read_only = None
                     return
                 except _BrowserAutomationTransient as exc:
                     last_error = exc
@@ -663,16 +672,32 @@ class BrowserInstagramSession:
             if str(exc) == "The pinned Instagram tab was closed":
                 # Its document no longer exists; no async page request can be reused.
                 return
+            if self._abandon_read_only_request():
+                return
             raise BrowserSessionError(
                 f"Instagram browser request cancellation could not be confirmed: {exc}"
             ) from None
         except TimeoutError:
+            if self._abandon_read_only_request():
+                return
             reason = str(last_error) if last_error else "the browser job deadline expired"
             raise BrowserSessionError(
                 f"Instagram browser request cancellation could not be confirmed: {reason}"
             ) from None
         finally:
             self._deadline = job_deadline
+
+    def _abandon_read_only_request(self) -> bool:
+        """Drop this session's own unconfirmed read instead of pausing for a person.
+
+        A read cannot change anything on Instagram, and its late result lands in its
+        own request object rather than the next query's, so nothing can reuse it.
+        A secondary read tab keeps its stronger cleanup: its document is closed.
+        """
+        if self._pending_read_only is not True or self.is_secondary_read_tab:
+            return False
+        self._pending_read_only = None
+        return True
 
     def poll_until(self, completed: Callable[[], bool]) -> None:
         deadline = self._monotonic() + _CONTROL.interaction_timeout_seconds

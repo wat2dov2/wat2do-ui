@@ -66,7 +66,9 @@ class BrowserInstagramDigestResolver:
             raise BrowserDigestError("Instagram digest cache ID is invalid")
         try:
             username = self._session.activate_account(intended_recipient_id, account_username)
-            payload = self._session.query(_digest_query_source(cache_id, intended_recipient_id))
+            payload = self._session.query(
+                _digest_query_source(cache_id, intended_recipient_id), read_only=True
+            )
         except _BrowserReadCleanupPending as exc:
             if (
                 exc.completed_payload is not None

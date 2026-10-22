@@ -101,7 +101,9 @@ class BrowserInstagramRetriever:
             else f"/api/v1/media/{media_id_from_url(target)}/info/"
         )
         try:
-            result = self.session.query(_query_source(endpoint, username, profile=bool(profile)))
+            result = self.session.query(
+                _query_source(endpoint, username, profile=bool(profile)), read_only=True
+            )
         except _BrowserReadCleanupPending as exc:
             payload = exc.completed_payload
             if (
