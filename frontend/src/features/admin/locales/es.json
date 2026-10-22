@@ -397,7 +397,7 @@
     },
     "painPoints": {
       "title": "Quejas sobre la competencia",
-      "cardDescription": "Quejas sobre Eventbrite, Meetup y Fable Social.",
+      "cardDescription": "Quejas sobre apps de eventos de la competencia.",
       "description": "Reseñas y publicaciones públicas donde la gente se queja de la competencia. Solo lectura; wat2do nunca responde.",
       "competitor": "Competidor",
       "source": "Fuente",

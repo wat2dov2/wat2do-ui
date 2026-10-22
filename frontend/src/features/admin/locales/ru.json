@@ -397,7 +397,7 @@
     },
     "painPoints": {
       "title": "Боли конкурентов",
-      "cardDescription": "Жалобы на Eventbrite, Meetup и Fable Social.",
+      "cardDescription": "Жалобы на конкурирующие приложения для мероприятий.",
       "description": "Публичные отзывы и посты, где люди жалуются на конкурентов. Только чтение; wat2do никогда не отвечает.",
       "competitor": "Конкурент",
       "source": "Источник",

@@ -397,7 +397,7 @@
     },
     "painPoints": {
       "title": "Điểm yếu của đối thủ",
-      "cardDescription": "Phàn nàn về Eventbrite, Meetup và Fable Social.",
+      "cardDescription": "Phàn nàn về các ứng dụng sự kiện đối thủ.",
       "description": "Đánh giá và bài đăng công khai nơi mọi người phàn nàn về đối thủ. Chỉ đọc; wat2do không bao giờ trả lời.",
       "competitor": "Đối thủ",
       "source": "Nguồn",

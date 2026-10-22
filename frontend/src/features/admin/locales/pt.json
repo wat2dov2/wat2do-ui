@@ -397,7 +397,7 @@
     },
     "painPoints": {
       "title": "Dores dos concorrentes",
-      "cardDescription": "Reclamações sobre Eventbrite, Meetup e Fable Social.",
+      "cardDescription": "Reclamações sobre apps de eventos concorrentes.",
       "description": "Avaliações e publicações públicas em que pessoas reclamam dos concorrentes. Somente leitura; a wat2do nunca responde.",
       "competitor": "Concorrente",
       "source": "Fonte",

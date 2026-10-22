@@ -397,7 +397,7 @@
     },
     "painPoints": {
       "title": "نقاط ضعف رقبا",
-      "cardDescription": "شکایت‌ها درباره Eventbrite، Meetup و Fable Social.",
+      "cardDescription": "شکایت‌ها درباره اپ‌های رویداد رقیب.",
       "description": "نقدها و پست‌های عمومی که مردم در آن‌ها از رقبا شکایت می‌کنند. فقط خواندنی؛ wat2do هرگز پاسخ نمی‌دهد.",
       "competitor": "رقیب",
       "source": "منبع",

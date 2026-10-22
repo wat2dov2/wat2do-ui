@@ -397,7 +397,7 @@
     },
     "painPoints": {
       "title": "경쟁사 불만 사항",
-      "cardDescription": "Eventbrite, Meetup, Fable Social에 대한 불만.",
+      "cardDescription": "경쟁 이벤트 앱에 대한 불만.",
       "description": "사람들이 경쟁사에 대해 불평하는 공개 리뷰와 게시물입니다. 읽기 전용이며 wat2do는 절대 답글을 달지 않습니다.",
       "competitor": "경쟁사",
       "source": "출처",
