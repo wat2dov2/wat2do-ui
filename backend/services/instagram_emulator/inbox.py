@@ -23,6 +23,7 @@ _MESSAGES_TAB = re.compile(r"^direct_tab$")
 _COMPOSER = re.compile(r"^row_thread_composer_edittext$")
 _REQUEST_PROMPT = re.compile(r"^thread_disabled_title$")
 _ACCEPT = re.compile(r"^Accept$")
+_MOVE_TO_PRIMARY = re.compile(r"^igds_alert_dialog_primary_button$")
 _AGE = re.compile(r"^(now|\d+)([smhdw]?)$")
 _DAYS_PER_UNIT = {"s": 1 / 86_400, "m": 1 / 1440, "h": 1 / 24, "d": 1, "w": 7, "": 0}
 # Previews that show our side or a status instead of their latest message.
@@ -88,7 +89,11 @@ def accept_request(device: EmulatorDevice) -> None:
     if device.find(_REQUEST_PROMPT) is None:
         return
     device.tap_when(_ACCEPT)
-    device.wait_for(_COMPOSER)
+    # Some accounts then ask which inbox the thread moves to; Primary is where we look.
+    shown = device.wait_for(re.compile(f"{_COMPOSER.pattern}|{_MOVE_TO_PRIMARY.pattern}"))
+    if shown.labelled(_MOVE_TO_PRIMARY):
+        device.tap(shown)
+        device.wait_for(_COMPOSER)
     device.pause()
 
 
