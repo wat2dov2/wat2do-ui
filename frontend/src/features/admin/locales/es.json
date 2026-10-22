@@ -477,24 +477,11 @@
     "outreach": {
       "title": "Difusión",
       "cardDescription": "Organizadores a quienes invitar a publicar sus eventos.",
-      "description": "Organizadores de hackathons y eventos con entrada que encontró la búsqueda semanal, con un guion de video y un correo para cada uno. Graba el video, abre el correo en Gmail y envíalo tú mismo.",
-      "newCampaign": "Nueva campaña",
-      "newCampaignDescription": "Indica qué tipo de evento buscar. La búsqueda semanal lo investiga en cada universidad.",
-      "campaignName": "Nombre de la campaña",
-      "leadType": "Buscando",
-      "goal": "Objetivo",
-      "createCampaign": "Crear campaña",
+      "description": "Organizadores de hackatones y eventos con entrada que la búsqueda diaria encontró en cada universidad, cada uno con contexto, guion de video y correo. Graba el video, abre el correo en Gmail y envíalo tú.",
+      "leadType": "Tipo de evento",
       "leadTypes": {
         "hackathon": "Hackathons",
         "ticketed_event": "Eventos con entrada"
-      },
-      "campaign": "Campaña",
-      "allCampaigns": "Todas las campañas",
-      "campaignStatus": "Estado de la campaña",
-      "campaignStatuses": {
-        "active": "Activa",
-        "paused": "En pausa",
-        "done": "Terminada"
       },
       "statuses": {
         "new": "Nuevo",
@@ -505,7 +492,7 @@
         "dismissed": "Descartado"
       },
       "emptyTitle": "Aún no hay organizadores",
-      "emptyDescription": "Crea una campaña y la búsqueda semanal llenará esta lista.",
+      "emptyDescription": "La búsqueda diaria añade organizadores aquí a medida que los encuentra.",
       "event": "Evento",
       "organizer": "Organizador",
       "details": "Detalles",

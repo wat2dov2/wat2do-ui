@@ -3,20 +3,10 @@ from types import SimpleNamespace
 
 import httpx
 
-from schemas.outreach import OutreachCampaignResponse
 from services.claude_code import ClaudeCodeError
 from services.outreach import finder
 
 SCHOOL = {"id": 7, "slug": "uwaterloo", "name": "University of Waterloo"}
-CAMPAIGN = OutreachCampaignResponse(
-    id="99999999-9999-4999-8999-999999999991",
-    name="Fall hackathons",
-    lead_type="hackathon",
-    goal="List every campus hackathon.",
-    school_slugs=[],
-    status="active",
-    created_at="2026-10-22T00:00:00Z",
-)
 SOON = (date.today() + timedelta(days=20)).isoformat()
 GOOD = {
     "event_name": "Example Hacks",
@@ -83,39 +73,36 @@ def test_leads_are_checked_and_unverifiable_known_or_past_ones_dropped(monkeypat
         finder, "CONTROL", finder.CONTROL.model_copy(update={"leads_per_search": 20})
     )
 
-    leads = finder.find(CAMPAIGN, SCHOOL, ["known@examplehacks.ca"])
+    leads = finder.find("hackathon", SCHOOL, ["known@examplehacks.ca"])
 
     assert [lead.email for lead in leads] == ["hello@examplehacks.ca", "events@club.example.org"]
     prompt, kwargs = prompts[0]
     assert kwargs["tools"] == ("WebSearch", "WebFetch") == kwargs["allowed_tools"]
     assert "University of Waterloo" in prompt
+    assert finder.CONTROL.lead_types["hackathon"] in prompt
     assert "https://uwaterloo.wat2do.io/events/submit" in prompt
     assert "known@examplehacks.ca" in prompt
     assert "{{" not in prompt
 
 
-def test_sweep_searches_each_active_campaign_school_and_reports_failures(monkeypatch):
+def test_sweep_researches_every_school_for_every_lead_type_and_reports_failures(monkeypatch):
     other = {"id": 8, "slug": "utsg", "name": "University of Toronto St. George"}
-    scoped = CAMPAIGN.model_copy(
-        update={"id": "99999999-9999-4999-8999-999999999993", "school_slugs": ["utsg", "gone"]}
-    )
     monkeypatch.setattr(finder, "remove_leftovers", lambda _prefix: None)
     monkeypatch.setattr(finder.service, "schools", lambda: [SCHOOL, other])
-    monkeypatch.setattr(finder.service, "active_campaigns", lambda: [CAMPAIGN, scoped])
-    monkeypatch.setattr(finder.service, "known_emails", lambda _campaign, _limit: [])
+    monkeypatch.setattr(finder.service, "known_emails", lambda _limit: ["known@example.org"])
     saved = []
     monkeypatch.setattr(
         finder.service,
         "save_leads",
-        lambda campaign_id, school_id, leads: (
-            saved.append((campaign_id, school_id, len(leads))) or len(leads)
+        lambda school_id, lead_type, leads: (
+            saved.append((school_id, lead_type, len(leads))) or len(leads)
         ),
     )
     searched = []
 
-    def find(campaign, school, _known):
-        searched.append((str(campaign.id), school["slug"]))
-        if school["slug"] == "utsg" and campaign is CAMPAIGN:
+    def find(lead_type, school, known):
+        searched.append((school["slug"], lead_type, tuple(known)))
+        if (school["slug"], lead_type) == ("utsg", "hackathon"):
             raise ClaudeCodeError("timed out")
         return [object()]
 
@@ -123,12 +110,11 @@ def test_sweep_searches_each_active_campaign_school_and_reports_failures(monkeyp
 
     result = finder.sweep()
 
+    lead_types = list(finder.CONTROL.lead_types)
     assert sorted(searched) == sorted(
-        [
-            (str(CAMPAIGN.id), "uwaterloo"),
-            (str(CAMPAIGN.id), "utsg"),
-            (str(scoped.id), "utsg"),
-        ]
+        (slug, lead_type, ("known@example.org",))
+        for slug in ("uwaterloo", "utsg")
+        for lead_type in lead_types
     )
-    assert result == {"saved": 2, "failed": [f"{CAMPAIGN.id}/utsg"]}
-    assert sorted(saved) == sorted([(str(CAMPAIGN.id), 7, 1), (str(scoped.id), 8, 1)])
+    assert result == {"saved": 2 * len(lead_types) - 1, "failed": ["utsg/hackathon"]}
+    assert (8, "hackathon", 1) not in saved and (7, "hackathon", 1) in saved

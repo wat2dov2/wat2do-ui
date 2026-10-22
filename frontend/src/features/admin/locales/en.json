@@ -477,24 +477,11 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Organizers to invite to post their events.",
-      "description": "Hackathon and ticketed-event organizers the weekly research sweep found, with a video script and email for each. Record the video, open the email in Gmail and send it yourself.",
-      "newCampaign": "New campaign",
-      "newCampaignDescription": "Name the kind of event to go after. The weekly sweep researches it at every school.",
-      "campaignName": "Campaign name",
-      "leadType": "Looking for",
-      "goal": "Goal",
-      "createCampaign": "Create campaign",
+      "description": "Hackathon and ticketed-event organizers the daily research run found at every school, each with context, a video script and an email. Record the video, open the email in Gmail and send it yourself.",
+      "leadType": "Event type",
       "leadTypes": {
         "hackathon": "Hackathons",
         "ticketed_event": "Ticketed events"
-      },
-      "campaign": "Campaign",
-      "allCampaigns": "All campaigns",
-      "campaignStatus": "Campaign status",
-      "campaignStatuses": {
-        "active": "Active",
-        "paused": "Paused",
-        "done": "Done"
       },
       "statuses": {
         "new": "New",
@@ -505,7 +492,7 @@
         "dismissed": "Dismissed"
       },
       "emptyTitle": "No organizers yet",
-      "emptyDescription": "Create a campaign, and the weekly sweep fills this in.",
+      "emptyDescription": "The daily research run adds organizers here as it finds them.",
       "event": "Event",
       "organizer": "Organizer",
       "details": "Details",

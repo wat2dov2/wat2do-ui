@@ -477,24 +477,11 @@
     "outreach": {
       "title": "Prospection",
       "cardDescription": "Organisateurs à inviter à publier leurs événements.",
-      "description": "Organisateurs de hackathons et d'événements payants trouvés par la recherche hebdomadaire, avec un script vidéo et un e-mail pour chacun. Enregistrez la vidéo, ouvrez l'e-mail dans Gmail et envoyez-le vous-même.",
-      "newCampaign": "Nouvelle campagne",
-      "newCampaignDescription": "Indiquez le type d'événement à cibler. La recherche hebdomadaire l'explore dans chaque établissement.",
-      "campaignName": "Nom de la campagne",
-      "leadType": "Recherche",
-      "goal": "Objectif",
-      "createCampaign": "Créer la campagne",
+      "description": "Organisateurs de hackathons et d'événements payants trouvés chaque jour par la recherche dans chaque établissement, chacun avec un contexte, un script vidéo et un courriel. Enregistrez la vidéo, ouvrez le courriel dans Gmail et envoyez-le vous-même.",
+      "leadType": "Type d'événement",
       "leadTypes": {
         "hackathon": "Hackathons",
         "ticketed_event": "Événements payants"
-      },
-      "campaign": "Campagne",
-      "allCampaigns": "Toutes les campagnes",
-      "campaignStatus": "Statut de la campagne",
-      "campaignStatuses": {
-        "active": "Active",
-        "paused": "En pause",
-        "done": "Terminée"
       },
       "statuses": {
         "new": "Nouveau",
@@ -505,7 +492,7 @@
         "dismissed": "Écarté"
       },
       "emptyTitle": "Aucun organisateur pour l'instant",
-      "emptyDescription": "Créez une campagne, et la recherche hebdomadaire remplira cette liste.",
+      "emptyDescription": "La recherche quotidienne ajoute ici les organisateurs au fur et à mesure.",
       "event": "Événement",
       "organizer": "Organisateur",
       "details": "Détails",

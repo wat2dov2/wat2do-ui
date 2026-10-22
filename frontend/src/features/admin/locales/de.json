@@ -477,24 +477,11 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Organisatoren, die eingeladen werden sollen, ihre Events zu veröffentlichen.",
-      "description": "Organisatoren von Hackathons und Ticket-Events, die die wöchentliche Recherche gefunden hat, jeweils mit Videoskript und E-Mail. Nimm das Video auf, öffne die E-Mail in Gmail und sende sie selbst.",
-      "newCampaign": "Neue Kampagne",
-      "newCampaignDescription": "Gib an, welche Art von Event gesucht werden soll. Die wöchentliche Recherche sucht danach an jeder Hochschule.",
-      "campaignName": "Kampagnenname",
-      "leadType": "Gesucht",
-      "goal": "Ziel",
-      "createCampaign": "Kampagne erstellen",
+      "description": "Veranstalter von Hackathons und Ticket-Events, die die tägliche Recherche an jeder Hochschule gefunden hat, jeweils mit Kontext, Videoskript und E-Mail. Nimm das Video auf, öffne die E-Mail in Gmail und sende sie selbst.",
+      "leadType": "Veranstaltungsart",
       "leadTypes": {
         "hackathon": "Hackathons",
         "ticketed_event": "Ticket-Events"
-      },
-      "campaign": "Kampagne",
-      "allCampaigns": "Alle Kampagnen",
-      "campaignStatus": "Kampagnenstatus",
-      "campaignStatuses": {
-        "active": "Aktiv",
-        "paused": "Pausiert",
-        "done": "Abgeschlossen"
       },
       "statuses": {
         "new": "Neu",
@@ -505,7 +492,7 @@
         "dismissed": "Verworfen"
       },
       "emptyTitle": "Noch keine Organisatoren",
-      "emptyDescription": "Erstelle eine Kampagne, dann füllt die wöchentliche Recherche diese Liste.",
+      "emptyDescription": "Die tägliche Recherche fügt Veranstalter hier hinzu, sobald sie sie findet.",
       "event": "Event",
       "organizer": "Organisator",
       "details": "Details",

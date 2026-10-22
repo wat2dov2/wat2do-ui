@@ -477,24 +477,11 @@
     "outreach": {
       "title": "Tiếp cận",
       "cardDescription": "Những nhà tổ chức cần mời đăng sự kiện của họ.",
-      "description": "Các nhà tổ chức hackathon và sự kiện bán vé mà đợt tìm kiếm hàng tuần đã tìm thấy, kèm kịch bản video và email cho từng người. Quay video, mở email trong Gmail và tự gửi đi.",
-      "newCampaign": "Chiến dịch mới",
-      "newCampaignDescription": "Nêu loại sự kiện cần tìm. Đợt tìm kiếm hàng tuần sẽ tìm ở mọi trường.",
-      "campaignName": "Tên chiến dịch",
-      "leadType": "Đang tìm",
-      "goal": "Mục tiêu",
-      "createCampaign": "Tạo chiến dịch",
+      "description": "Ban tổ chức hackathon và sự kiện bán vé mà đợt tìm kiếm hằng ngày tìm thấy ở mỗi trường, mỗi người kèm bối cảnh, kịch bản video và email. Quay video, mở email trong Gmail và tự gửi.",
+      "leadType": "Loại sự kiện",
       "leadTypes": {
         "hackathon": "Hackathon",
         "ticketed_event": "Sự kiện bán vé"
-      },
-      "campaign": "Chiến dịch",
-      "allCampaigns": "Tất cả chiến dịch",
-      "campaignStatus": "Trạng thái chiến dịch",
-      "campaignStatuses": {
-        "active": "Đang chạy",
-        "paused": "Tạm dừng",
-        "done": "Hoàn tất"
       },
       "statuses": {
         "new": "Mới",
@@ -505,7 +492,7 @@
         "dismissed": "Đã loại"
       },
       "emptyTitle": "Chưa có nhà tổ chức nào",
-      "emptyDescription": "Tạo một chiến dịch, đợt tìm kiếm hàng tuần sẽ điền danh sách này.",
+      "emptyDescription": "Đợt tìm kiếm hằng ngày thêm ban tổ chức vào đây khi tìm thấy.",
       "event": "Sự kiện",
       "organizer": "Nhà tổ chức",
       "details": "Chi tiết",

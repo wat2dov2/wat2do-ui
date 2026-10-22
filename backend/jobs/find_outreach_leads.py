@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Research event organizers for the admin Outreach page.
 
-``sweep`` has Claude Haiku research every active campaign at each school once;
+``sweep`` has Claude Haiku research every school for every lead type once;
 ``install-schedule`` runs it on the control box's interval through a macOS
 LaunchAgent that keeps no logs.
 """
@@ -41,7 +41,7 @@ def launch_agent_payload() -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("sweep", help="Research every active campaign once and store new leads")
+    commands.add_parser("sweep", help="Research every school once and store new leads")
     commands.add_parser("install-schedule", help="Run sweep on a schedule via a LaunchAgent")
     args = parser.parse_args()
     if args.command == "install-schedule":

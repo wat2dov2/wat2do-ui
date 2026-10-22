@@ -945,41 +945,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/outreach/campaigns/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Campaigns */
-        get: operations["list_campaigns_outreach_campaigns__get"];
-        put?: never;
-        /** Create Campaign */
-        post: operations["create_campaign_outreach_campaigns__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/outreach/campaigns/{campaign_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Campaign */
-        patch: operations["update_campaign_outreach_campaigns__campaign_id__patch"];
-        trace?: never;
-    };
     "/outreach/leads/": {
         parameters: {
             query?: never;
@@ -3536,55 +3501,6 @@ export interface components {
             /** Id */
             id?: string | null;
         };
-        /** OutreachCampaignCreate */
-        OutreachCampaignCreate: {
-            /** Name */
-            name: string;
-            /** Lead Type */
-            lead_type: string;
-            /**
-             * Goal
-             * @default
-             */
-            goal: string;
-            /** School Slugs */
-            school_slugs?: string[];
-        };
-        /** OutreachCampaignResponse */
-        OutreachCampaignResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name: string;
-            /** Lead Type */
-            lead_type: string;
-            /** Goal */
-            goal: string;
-            /** School Slugs */
-            school_slugs: string[];
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "active" | "paused" | "done";
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /** OutreachCampaignUpdate */
-        OutreachCampaignUpdate: {
-            /** Name */
-            name?: string | null;
-            /** Goal */
-            goal?: string | null;
-            /** Status */
-            status?: ("active" | "paused" | "done") | null;
-        };
         /** OutreachLeadResponse */
         OutreachLeadResponse: {
             /** Event Name */
@@ -3624,11 +3540,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Campaign Id
-             * Format: uuid
-             */
-            campaign_id: string;
+            /** Lead Type */
+            lead_type: string;
             /** School Slug */
             school_slug: string;
             /** School Name */
@@ -7059,98 +6972,10 @@ export interface operations {
             };
         };
     };
-    list_campaigns_outreach_campaigns__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OutreachCampaignResponse"][];
-                };
-            };
-        };
-    };
-    create_campaign_outreach_campaigns__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OutreachCampaignCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OutreachCampaignResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_campaign_outreach_campaigns__campaign_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                campaign_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OutreachCampaignUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OutreachCampaignResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_leads_outreach_leads__get: {
         parameters: {
             query?: {
-                campaign_id?: string | null;
+                lead_type?: string | null;
                 lead_status?: ("new" | "contacted" | "replied" | "submitted" | "not_interested" | "dismissed") | null;
                 school?: string | null;
                 search?: string | null;

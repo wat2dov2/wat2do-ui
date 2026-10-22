@@ -2,7 +2,7 @@
   "model": "claude-haiku-5-5",
   "agent_timeout_seconds": 900,
   "parallel_agents": 6,
-  "sweep_interval_hours": 168,
+  "sweep_interval_hours": 24,
   "leads_per_search": 4,
   "known_emails_in_prompt": 500,
   "page_fetch_timeout_seconds": 15,

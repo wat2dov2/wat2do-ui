@@ -477,24 +477,11 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Organizzatori da invitare a pubblicare i loro eventi.",
-      "description": "Organizzatori di hackathon ed eventi a pagamento trovati dalla ricerca settimanale, con uno script video e un'email per ciascuno. Registra il video, apri l'email in Gmail e inviala tu.",
-      "newCampaign": "Nuova campagna",
-      "newCampaignDescription": "Indica il tipo di evento da cercare. La ricerca settimanale lo cerca in ogni università.",
-      "campaignName": "Nome della campagna",
-      "leadType": "Cerchiamo",
-      "goal": "Obiettivo",
-      "createCampaign": "Crea campagna",
+      "description": "Organizzatori di hackathon ed eventi a pagamento trovati ogni giorno dalla ricerca in ogni ateneo, ciascuno con contesto, copione video ed email. Registra il video, apri l'email in Gmail e inviala tu.",
+      "leadType": "Tipo di evento",
       "leadTypes": {
         "hackathon": "Hackathon",
         "ticketed_event": "Eventi a pagamento"
-      },
-      "campaign": "Campagna",
-      "allCampaigns": "Tutte le campagne",
-      "campaignStatus": "Stato della campagna",
-      "campaignStatuses": {
-        "active": "Attiva",
-        "paused": "In pausa",
-        "done": "Conclusa"
       },
       "statuses": {
         "new": "Nuovo",
@@ -505,7 +492,7 @@
         "dismissed": "Scartato"
       },
       "emptyTitle": "Ancora nessun organizzatore",
-      "emptyDescription": "Crea una campagna e la ricerca settimanale riempirà questa lista.",
+      "emptyDescription": "La ricerca quotidiana aggiunge qui gli organizzatori man mano che li trova.",
       "event": "Evento",
       "organizer": "Organizzatore",
       "details": "Dettagli",

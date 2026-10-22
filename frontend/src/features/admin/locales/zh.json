@@ -477,24 +477,11 @@
     "outreach": {
       "title": "推广邀约",
       "cardDescription": "邀请这些组织者发布他们的活动。",
-      "description": "每周调研找到的黑客松和售票活动组织者，每位都附有视频脚本和邮件。录制视频，在 Gmail 中打开邮件并亲自发送。",
-      "newCampaign": "新建计划",
-      "newCampaignDescription": "填写要寻找的活动类型。每周调研会在每所学校中查找。",
-      "campaignName": "计划名称",
-      "leadType": "寻找对象",
-      "goal": "目标",
-      "createCampaign": "创建计划",
+      "description": "每日检索在每所学校找到的黑客松和售票活动组织者，每位都附有背景、视频脚本和邮件。录好视频，在 Gmail 中打开邮件并亲自发送。",
+      "leadType": "活动类型",
       "leadTypes": {
         "hackathon": "黑客松",
         "ticketed_event": "售票活动"
-      },
-      "campaign": "计划",
-      "allCampaigns": "全部计划",
-      "campaignStatus": "计划状态",
-      "campaignStatuses": {
-        "active": "进行中",
-        "paused": "已暂停",
-        "done": "已完成"
       },
       "statuses": {
         "new": "新",
@@ -505,7 +492,7 @@
         "dismissed": "已忽略"
       },
       "emptyTitle": "暂无组织者",
-      "emptyDescription": "创建一个计划，每周调研会填充此列表。",
+      "emptyDescription": "每日检索找到组织者后会添加到这里。",
       "event": "活动",
       "organizer": "组织者",
       "details": "详情",

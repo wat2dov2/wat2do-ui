@@ -389,34 +389,20 @@ export function getCompetitorPainPoints(page: number, filters: CompetitorPainPoi
   return api.get<components["schemas"]["PaginatedResponse_CompetitorPainPointResponse_"]>("/competitor-pain-points/?" + params);
 }
 
-export type OutreachCampaign = components["schemas"]["OutreachCampaignResponse"];
-export type OutreachCampaignCreate = components["schemas"]["OutreachCampaignCreate"];
 export type OutreachLead = components["schemas"]["OutreachLeadResponse"];
 export type OutreachLeadUpdate = components["schemas"]["OutreachLeadUpdate"];
 
 /** Empty values mean "all"; the page keeps them as plain strings for its selects. */
 export interface OutreachLeadFilters {
-  campaignId: string;
+  leadType: string;
   status: string;
   school: string;
   search: string;
 }
 
-export function getOutreachCampaigns() {
-  return api.get<OutreachCampaign[]>("/outreach/campaigns/");
-}
-
-export function createOutreachCampaign(campaign: OutreachCampaignCreate) {
-  return api.post<OutreachCampaign>("/outreach/campaigns/", campaign);
-}
-
-export function updateOutreachCampaignStatus(id: string, status: OutreachCampaign["status"]) {
-  return api.patch<OutreachCampaign>("/outreach/campaigns/" + id, { status });
-}
-
 export function getOutreachLeads(page: number, filters: OutreachLeadFilters) {
   const params = new URLSearchParams({ page: String(page), page_size: String(ADMIN_ITEMS_PER_PAGE) });
-  if (filters.campaignId) params.set("campaign_id", filters.campaignId);
+  if (filters.leadType) params.set("lead_type", filters.leadType);
   if (filters.status) params.set("lead_status", filters.status);
   if (filters.school) params.set("school", filters.school);
   if (filters.search) params.set("search", filters.search);

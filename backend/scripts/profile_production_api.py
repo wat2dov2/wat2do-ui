@@ -143,7 +143,6 @@ AUTHENTICATED_ENDPOINTS = (
         "/competitor-pain-points/reports?page=1&page_size=7",
         True,
     ),
-    Endpoint("/outreach/campaigns/", "/outreach/campaigns/", True),
     Endpoint("/outreach/leads/", "/outreach/leads/?page=1&page_size=10", True),
     Endpoint("/submissions/", "/submissions/?page=1&page_size=10", True),
     Endpoint("/users/", "/users/?skip=0&limit=20", True),

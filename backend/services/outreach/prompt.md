@@ -3,8 +3,6 @@ Today is {{today}}.
 
 {{offer}}
 
-The campaign: {{campaign_goal}}
-
 ## Who to find
 
 {{lead_type}}
@@ -20,7 +18,7 @@ Report up to {{limit}} organizers, each tied to one specific upcoming event.
 - `source_url` is that exact page. The email is checked against it, and a lead whose email is not on that page is thrown away.
 - Never guess, construct or complete an email (no `firstname@school.ca` patterns). If you cannot find one, leave that event out.
 - Prefer the organizing team's own address (for example `hello@`, `events@`, `sponsorship@` or the event's own domain) over a personal one.
-- Skip anyone already contacted for this campaign: {{known_emails}}
+- Skip anyone Wat2Do has already found: {{known_emails}}
 - `contact_name` and `contact_role` are only a person and role a page actually names; otherwise leave them empty.
 
 ## What to write for each organizer

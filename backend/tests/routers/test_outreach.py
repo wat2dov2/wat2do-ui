@@ -1,30 +1,17 @@
 import pytest
 
-from core.errors import OUTREACH_LEAD_NOT_FOUND, OUTREACH_LEAD_TYPE_UNKNOWN
-from core.exceptions import NotFoundError, ValidationError
-from schemas.outreach import OutreachCampaignResponse, OutreachLeadResponse
+from core.errors import OUTREACH_LEAD_NOT_FOUND
+from core.exceptions import NotFoundError
+from schemas.outreach import OutreachLeadResponse
 from services.outreach import service
 
-CAMPAIGN = "99999999-9999-4999-8999-999999999991"
 LEAD = "99999999-9999-4999-8999-999999999992"
-
-
-def campaign(status="active"):
-    return OutreachCampaignResponse(
-        id=CAMPAIGN,
-        name="Fall hackathons",
-        lead_type="hackathon",
-        goal="List every campus hackathon.",
-        school_slugs=[],
-        status=status,
-        created_at="2026-10-22T00:00:00Z",
-    )
 
 
 def lead(status="new"):
     return OutreachLeadResponse(
         id=LEAD,
-        campaign_id=CAMPAIGN,
+        lead_type="hackathon",
         school_slug="uwaterloo",
         school_name="University of Waterloo",
         event_name="Example Hacks",
@@ -46,48 +33,11 @@ def lead(status="new"):
 @pytest.mark.parametrize("fixture, expected", [("client", 401), ("authenticated_client", 403)])
 def test_outreach_is_admin_only(request, fixture, expected):
     client = request.getfixturevalue(fixture)
-    assert client.get("/outreach/campaigns/").status_code == expected
-    assert (
-        client.post(
-            "/outreach/campaigns/", json={"name": "x", "lead_type": "hackathon"}
-        ).status_code
-        == expected
-    )
-    assert (
-        client.patch(f"/outreach/campaigns/{CAMPAIGN}", json={"status": "paused"}).status_code
-        == expected
-    )
     assert client.get("/outreach/leads/").status_code == expected
     assert (
         client.patch(f"/outreach/leads/{LEAD}", json={"status": "contacted"}).status_code
         == expected
     )
-
-
-def test_admin_creates_and_lists_campaigns(admin_client, monkeypatch):
-    created = []
-    monkeypatch.setattr(service, "create_campaign", lambda data: created.append(data) or campaign())
-    monkeypatch.setattr(service, "list_campaigns", lambda: [campaign()])
-    response = admin_client.post(
-        "/outreach/campaigns/",
-        json={
-            "name": " Fall hackathons ",
-            "lead_type": "hackathon",
-            "school_slugs": ["uwaterloo", "uwaterloo"],
-        },
-    )
-    assert response.status_code == 201
-    assert created[0].name == "Fall hackathons" and created[0].school_slugs == ["uwaterloo"]
-    assert admin_client.get("/outreach/campaigns/").json()[0]["lead_type"] == "hackathon"
-
-
-def test_an_unknown_lead_type_is_rejected(admin_client, monkeypatch):
-    def unknown(_data):
-        raise ValidationError(OUTREACH_LEAD_TYPE_UNKNOWN)
-
-    monkeypatch.setattr(service, "create_campaign", unknown)
-    response = admin_client.post("/outreach/campaigns/", json={"name": "x", "lead_type": "bakery"})
-    assert response.status_code in (400, 422)
 
 
 def test_admin_lead_list_forwards_every_filter(admin_client, monkeypatch):
@@ -98,7 +48,7 @@ def test_admin_lead_list_forwards_every_filter(admin_client, monkeypatch):
     response = admin_client.get(
         "/outreach/leads/",
         params={
-            "campaign_id": CAMPAIGN,
+            "lead_type": "hackathon",
             "lead_status": "new",
             "school": "uwaterloo",
             "search": "hacks",
@@ -111,7 +61,7 @@ def test_admin_lead_list_forwards_every_filter(admin_client, monkeypatch):
     assert response.json()["items"][0]["school_name"] == "University of Waterloo"
     assert calls == [
         {
-            "campaign_id": CAMPAIGN,
+            "lead_type": "hackathon",
             "status": "new",
             "school": "uwaterloo",
             "search": "hacks",

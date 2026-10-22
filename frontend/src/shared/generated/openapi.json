@@ -3929,138 +3929,6 @@
         }
       }
     },
-    "/outreach/campaigns/": {
-      "get": {
-        "tags": [
-          "outreach"
-        ],
-        "summary": "List Campaigns",
-        "operationId": "list_campaigns_outreach_campaigns__get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/OutreachCampaignResponse"
-                  },
-                  "type": "array",
-                  "title": "Response List Campaigns Outreach Campaigns  Get"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "outreach"
-        ],
-        "summary": "Create Campaign",
-        "operationId": "create_campaign_outreach_campaigns__post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OutreachCampaignCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OutreachCampaignResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/outreach/campaigns/{campaign_id}": {
-      "patch": {
-        "tags": [
-          "outreach"
-        ],
-        "summary": "Update Campaign",
-        "operationId": "update_campaign_outreach_campaigns__campaign_id__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "campaign_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Campaign Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OutreachCampaignUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OutreachCampaignResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/outreach/leads/": {
       "get": {
         "tags": [
@@ -4075,20 +3943,21 @@
         ],
         "parameters": [
           {
-            "name": "campaign_id",
+            "name": "lead_type",
             "in": "query",
             "required": false,
             "schema": {
               "anyOf": [
                 {
                   "type": "string",
-                  "format": "uuid"
+                  "maxLength": 64,
+                  "pattern": "^[a-z0-9_]+$"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Campaign Id"
+              "title": "Lead Type"
             }
           },
           {
@@ -12446,144 +12315,6 @@
         "title": "OccurrenceUpdate",
         "description": "Occurrence payload for event edits.\n\nAn ID retains an existing occurrence. A missing ID creates a new one."
       },
-      "OutreachCampaignCreate": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "maxLength": 120,
-            "minLength": 1,
-            "title": "Name"
-          },
-          "lead_type": {
-            "type": "string",
-            "maxLength": 64,
-            "pattern": "^[a-z0-9_]+$",
-            "title": "Lead Type"
-          },
-          "goal": {
-            "type": "string",
-            "maxLength": 1000,
-            "title": "Goal",
-            "default": ""
-          },
-          "school_slugs": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "maxItems": 100,
-            "title": "School Slugs"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "name",
-          "lead_type"
-        ],
-        "title": "OutreachCampaignCreate"
-      },
-      "OutreachCampaignResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "lead_type": {
-            "type": "string",
-            "title": "Lead Type"
-          },
-          "goal": {
-            "type": "string",
-            "title": "Goal"
-          },
-          "school_slugs": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "School Slugs"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "active",
-              "paused",
-              "done"
-            ],
-            "title": "Status"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "lead_type",
-          "goal",
-          "school_slugs",
-          "status",
-          "created_at"
-        ],
-        "title": "OutreachCampaignResponse"
-      },
-      "OutreachCampaignUpdate": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 120,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "goal": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 1000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Goal"
-          },
-          "status": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "active",
-                  "paused",
-                  "done"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "OutreachCampaignUpdate"
-      },
       "OutreachLeadResponse": {
         "properties": {
           "event_name": {
@@ -12675,10 +12406,9 @@
             "format": "uuid",
             "title": "Id"
           },
-          "campaign_id": {
+          "lead_type": {
             "type": "string",
-            "format": "uuid",
-            "title": "Campaign Id"
+            "title": "Lead Type"
           },
           "school_slug": {
             "type": "string",
@@ -12723,7 +12453,7 @@
           "email_body",
           "follow_up",
           "id",
-          "campaign_id",
+          "lead_type",
           "school_slug",
           "school_name",
           "status",

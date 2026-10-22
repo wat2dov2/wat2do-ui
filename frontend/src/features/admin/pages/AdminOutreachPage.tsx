@@ -2,20 +2,14 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
-  createOutreachCampaign,
-  getOutreachCampaigns,
   getOutreachLeads,
-  updateOutreachCampaignStatus,
   updateOutreachLead,
-  type OutreachCampaign,
-  type OutreachCampaignCreate,
   type OutreachLead,
   type OutreachLeadFilters,
   type OutreachLeadUpdate,
 } from "@/features/admin/api/admin.api";
 import { gmailComposeUrl } from "@/features/admin/components/outreach/gmailCompose";
 import { LeadDetailsDialog } from "@/features/admin/components/outreach/LeadDetailsDialog";
-import { NewCampaignDialog } from "@/features/admin/components/outreach/NewCampaignDialog";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
@@ -27,29 +21,19 @@ import { ExternalLink, Mail } from "@/shared/ui/doodle-icons";
 import { ItemContent, ItemDescription, ItemTitle } from "@/shared/ui/item";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { TableCell, TableRow } from "@/shared/ui/table";
+import outreach from "../../../../../backend/controlbox/outreach.json" with { type: "json" };
 
 const LEAD_STATUSES = ["new", "contacted", "replied", "submitted", "not_interested", "dismissed"] as const;
-const CAMPAIGN_STATUSES = ["active", "paused", "done"] as const;
 
-/** Organizers the weekly research sweep found, with what to record and send each of them. */
+/** Organizers the daily research run found at every school, with what to record and send each of them. */
 export function AdminOutreachPage({ onBack }: { onBack: () => void }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState<OutreachLeadFilters>({ campaignId: "", status: "new", school: "", search: "" });
-  const [isCreating, setIsCreating] = useState(false);
+  const [filters, setFilters] = useState<OutreachLeadFilters>({ leadType: "", status: "new", school: "", search: "" });
   const [openLead, setOpenLead] = useState<OutreachLead | null>(null);
-  const campaigns = useQuery({ queryKey: queryKeys.outreach.campaigns(), queryFn: getOutreachCampaigns });
   const leads = useQuery({ queryKey: queryKeys.outreach.leads(page, filters), queryFn: () => getOutreachLeads(page, filters) });
   const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.outreach.all });
-  const createCampaign = useMutation({
-    mutationFn: (campaign: OutreachCampaignCreate) => createOutreachCampaign(campaign),
-    onSuccess: () => { setIsCreating(false); void refresh(); },
-  });
-  const setCampaignStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: OutreachCampaign["status"] }) => updateOutreachCampaignStatus(id, status),
-    onSuccess: refresh,
-  });
   const updateLead = useMutation({
     mutationFn: ({ id, update }: { id: string; update: OutreachLeadUpdate }) => updateOutreachLead(id, update),
     onSuccess: (lead) => { setOpenLead(current => (current?.id === lead.id ? lead : current)); void refresh(); },
@@ -58,18 +42,16 @@ export function AdminOutreachPage({ onBack }: { onBack: () => void }) {
     setFilters(current => ({ ...current, [key]: value === "all" ? "" : value }));
     setPage(1);
   };
-  const campaign = campaigns.data?.find(item => item.id === filters.campaignId);
 
   return (
     <Stack gap={5}>
-      <AdminPageHeader icon={Mail} title={t("admin.outreach.title")} description={t("admin.outreach.description")} onBack={onBack}
-        action={{ label: t("admin.outreach.newCampaign"), onClick: () => setIsCreating(true) }} />
+      <AdminPageHeader icon={Mail} title={t("admin.outreach.title")} description={t("admin.outreach.description")} onBack={onBack} />
       <AdminTableFilters search={filters.search} onSearchChange={filter("search")} school={filters.school} onSchoolChange={filter("school")}>
-        <Select value={filters.campaignId || "all"} onValueChange={filter("campaignId")}>
-          <SelectTrigger aria-label={t("admin.outreach.campaign")}><SelectValue /></SelectTrigger>
+        <Select value={filters.leadType || "all"} onValueChange={filter("leadType")}>
+          <SelectTrigger aria-label={t("admin.outreach.leadType")}><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t("admin.outreach.allCampaigns")}</SelectItem>
-            {campaigns.data?.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
+            <SelectItem value="all">{t("common.all")}</SelectItem>
+            {Object.keys(outreach.lead_types).map(value => <SelectItem key={value} value={value}>{t(`admin.outreach.leadTypes.${value}`)}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filters.status || "all"} onValueChange={filter("status")}>
@@ -79,15 +61,6 @@ export function AdminOutreachPage({ onBack }: { onBack: () => void }) {
             {LEAD_STATUSES.map(value => <SelectItem key={value} value={value}>{t(`admin.outreach.statuses.${value}`)}</SelectItem>)}
           </SelectContent>
         </Select>
-        {campaign && (
-          <Select value={campaign.status} disabled={setCampaignStatus.isPending}
-            onValueChange={value => setCampaignStatus.mutate({ id: campaign.id, status: value as OutreachCampaign["status"] })}>
-            <SelectTrigger aria-label={t("admin.outreach.campaignStatus")}><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {CAMPAIGN_STATUSES.map(value => <SelectItem key={value} value={value}>{t(`admin.outreach.campaignStatuses.${value}`)}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        )}
       </AdminTableFilters>
       {leads.isError ? <Button variant="outline" onClick={() => void leads.refetch()}>{t("common.tryAgain")}</Button>
         : !leads.isPending && leads.data?.items.length === 0 ? <AdminEmptyState icon={Mail} title={t("admin.outreach.emptyTitle")} description={t("admin.outreach.emptyDescription")} />
@@ -131,8 +104,6 @@ export function AdminOutreachPage({ onBack }: { onBack: () => void }) {
             </TableCell>
           </TableRow>)}
         </AdminTable>}
-      <NewCampaignDialog isOpen={isCreating} isSaving={createCampaign.isPending} onClose={() => setIsCreating(false)}
-        onCreate={campaign => createCampaign.mutate(campaign)} />
       <LeadDetailsDialog lead={openLead} isSaving={updateLead.isPending} onClose={() => setOpenLead(null)}
         onSaveNotes={(lead, notes) => updateLead.mutate({ id: lead.id, update: { notes } })} />
     </Stack>

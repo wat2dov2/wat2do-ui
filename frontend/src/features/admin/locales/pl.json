@@ -477,24 +477,11 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Organizatorzy, których warto zaprosić do publikowania wydarzeń.",
-      "description": "Organizatorzy hackathonów i biletowanych wydarzeń znalezieni w cotygodniowym przeszukiwaniu, każdy ze skryptem wideo i e-mailem. Nagraj wideo, otwórz e-mail w Gmailu i wyślij go samodzielnie.",
-      "newCampaign": "Nowa kampania",
-      "newCampaignDescription": "Określ, jakiego rodzaju wydarzeń szukać. Cotygodniowe przeszukiwanie sprawdzi je na każdej uczelni.",
-      "campaignName": "Nazwa kampanii",
-      "leadType": "Szukamy",
-      "goal": "Cel",
-      "createCampaign": "Utwórz kampanię",
+      "description": "Organizatorzy hackathonów i biletowanych wydarzeń znalezieni przez codzienne wyszukiwanie na każdej uczelni, każdy z kontekstem, scenariuszem wideo i e-mailem. Nagraj wideo, otwórz e-mail w Gmailu i wyślij go sam.",
+      "leadType": "Rodzaj wydarzenia",
       "leadTypes": {
         "hackathon": "Hackathony",
         "ticketed_event": "Wydarzenia biletowane"
-      },
-      "campaign": "Kampania",
-      "allCampaigns": "Wszystkie kampanie",
-      "campaignStatus": "Status kampanii",
-      "campaignStatuses": {
-        "active": "Aktywna",
-        "paused": "Wstrzymana",
-        "done": "Zakończona"
       },
       "statuses": {
         "new": "Nowy",
@@ -505,7 +492,7 @@
         "dismissed": "Odrzucony"
       },
       "emptyTitle": "Brak organizatorów",
-      "emptyDescription": "Utwórz kampanię, a cotygodniowe przeszukiwanie uzupełni tę listę.",
+      "emptyDescription": "Codzienne wyszukiwanie dodaje tu organizatorów, gdy tylko ich znajdzie.",
       "event": "Wydarzenie",
       "organizer": "Organizator",
       "details": "Szczegóły",

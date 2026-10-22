@@ -48,7 +48,6 @@ export const queryKeys = {
   },
   outreach: {
     all: ["outreach"] as const,
-    campaigns: () => [...queryKeys.outreach.all, "campaigns"] as const,
     leads: (page: number, filters: object) => [...queryKeys.outreach.all, "leads", page, filters] as const,
   },
   sponsorSubmissions: {

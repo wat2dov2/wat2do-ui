@@ -1,53 +1,13 @@
-import re
 from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-CampaignStatus = Literal["active", "paused", "done"]
 LeadStatus = Literal["new", "contacted", "replied", "submitted", "not_interested", "dismissed"]
 
-_SLUG = r"^[a-z0-9_]+$"
-_SCHOOL_SLUG = r"^[a-z0-9-]{1,80}$"
 _EMAIL = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 _HTTPS = r"^https://\S+$"
-
-
-class OutreachCampaignCreate(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-
-    name: str = Field(min_length=1, max_length=120)
-    lead_type: str = Field(pattern=_SLUG, max_length=64)
-    goal: str = Field(default="", max_length=1000)
-    # Empty means every school.
-    school_slugs: list[str] = Field(default_factory=list, max_length=100)
-
-    @field_validator("school_slugs")
-    @classmethod
-    def _slugs(cls, value: list[str]) -> list[str]:
-        for slug in value:
-            if not re.fullmatch(_SCHOOL_SLUG, slug):
-                raise ValueError("School slugs are lowercase letters, digits and dashes")
-        return sorted(set(value))
-
-
-class OutreachCampaignUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-
-    name: str | None = Field(default=None, min_length=1, max_length=120)
-    goal: str | None = Field(default=None, max_length=1000)
-    status: CampaignStatus | None = None
-
-
-class OutreachCampaignResponse(BaseModel):
-    id: UUID
-    name: str
-    lead_type: str
-    goal: str
-    school_slugs: list[str]
-    status: CampaignStatus
-    created_at: datetime
 
 
 class FoundOutreachLead(BaseModel):
@@ -77,7 +37,7 @@ class FoundOutreachLead(BaseModel):
 
 class OutreachLeadResponse(FoundOutreachLead):
     id: UUID
-    campaign_id: UUID
+    lead_type: str
     school_slug: str
     school_name: str
     status: LeadStatus

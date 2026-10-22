@@ -1030,7 +1030,7 @@ class InstagramEmulatorControl(_ControlModel):
 class OutreachControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     agent_timeout_seconds: int = Field(gt=0, le=3600)
-    # Research agents run at once, one per active campaign and school.
+    # Research agents run at once, one per school and lead type.
     parallel_agents: int = Field(ge=1, le=16)
     sweep_interval_hours: int = Field(ge=1, le=720)
     leads_per_search: int = Field(ge=1, le=20)
@@ -1044,7 +1044,7 @@ class OutreachControl(_ControlModel):
     gmail_account: EmailStr
     # "{school}" becomes the school's slug.
     submit_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*$")
-    # Lead type slug -> who and what the research agent looks for.
+    # Lead type slug -> who and what the research agent looks for at every school.
     lead_types: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")], Annotated[str, Field(min_length=1)]
     ] = Field(min_length=1)

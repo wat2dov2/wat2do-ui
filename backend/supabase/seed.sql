@@ -694,24 +694,18 @@ VALUES
      'The app keeps logging me out.', 'Unreliable login', 'other', NULL, 'dismissed')
 ON CONFLICT (id) DO NOTHING;
 
--- Local examples for the admin Outreach page: one campaign and one researched organizer.
-INSERT INTO public.outreach_campaigns (id, name, lead_type, goal, school_slugs, status)
-VALUES
-    ('99999999-9999-4999-8999-999999999991', 'Fall hackathons', 'hackathon',
-     'Get every campus hackathon listed on Wat2Do before registration closes.', '{}', 'active')
-ON CONFLICT (id) DO NOTHING;
-
+-- Local example for the admin Outreach page: one researched hackathon organizer.
 INSERT INTO public.outreach_leads
-    (id, campaign_id, school_id, event_name, event_url, event_date, organization,
+    (id, school_id, lead_type, event_name, event_url, event_date, organization,
      contact_name, contact_role, email, source_url, context, video_script,
      email_subject, email_body, follow_up, status)
 SELECT
-    '99999999-9999-4999-8999-999999999992', '99999999-9999-4999-8999-999999999991', id,
+    '99999999-9999-4999-8999-999999999992', id, 'hackathon',
     'Example Hacks 2026', 'https://example.com/hacks', current_date + 30, 'Example Hacks',
     'Sam Organizer', 'Co-director', 'team@example.com', 'https://example.com/hacks/contact',
     'A 36-hour student hackathon whose registration closes in two weeks.',
     'Hey Sam, I saw Example Hacks opens registration soon...',
-    'Example Hacks on Wat2Do', 'Hi Sam, ...', 'Hi Sam, just floating this back up...', 'new'
+    'Example Hacks on Wat2Do', 'Hi Sam, ...', 'Hi Sam, one more thing...', 'new'
 FROM public.schools WHERE slug = 'uwaterloo'
 ON CONFLICT (id) DO NOTHING;
 
