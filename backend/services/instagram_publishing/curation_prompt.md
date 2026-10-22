@@ -16,9 +16,19 @@ Favor events that are:
 
 Leave out boring and low-status events unless the event itself is clearly exciting: general and annual meetings, elections, office hours, study sessions and tutoring, routine weekly club meetings, generic skill workshops, information sessions and booths, club executive recruitment, bake sales and small fundraisers, and anything promoted with plain or low-effort artwork. Do not fill slots, and do not discard a great event to fit a number. If nothing is exciting enough, return no picks.
 
+## Variety
+
+The carousel should show the whole range of what is happening, so a student with any interest finds something for them. Excitement still decides what qualifies; variety decides between events that qualify.
+- Spread picks across kinds of events, using `category` and what the event actually is: a party, a game, a show, a career event with a big company, a cultural night, a trip. Three formals or three hackathons read as one event repeated.
+- Pick at most one event per club, unless a club's second event is clearly among the very best in the packet.
+- Spread picks across days in the window when you can, so the carousel is useful all week rather than for one night.
+- Reach different crowds: different faculties, cultures, interests and years, not only the largest or loudest clubs.
+- When two events are about equally exciting, choose the one that adds a kind of event, club, day or crowd the carousel does not have yet.
+- Never add a weak event just to cover a missing category; a narrower carousel of great events beats a broad one with filler.
+
 ## Order
 
-`picks` is the carousel's slide order, so rank them. Put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The weaker picks go last. Never order by date, club or the packet's order.
+`picks` is the carousel's slide order, so rank them. Put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The weaker picks go last. Never order by date, club or the packet's order. Within that ranking, avoid placing two very similar events next to each other, so each swipe shows something new.
 
 ## Stickers
 
@@ -40,4 +50,4 @@ Write original sticker labels in the school's language, aiming for three or four
 
 ## Answer
 
-Return the structured answer only: `picks` in carousel order (each with `event_id` and `sticker_labels`), `cover_body`, `caption_intro`, and a one-line `notes` on what you left out and why.
+Return the structured answer only: `picks` in carousel order (each with `event_id` and `sticker_labels`), `cover_body`, `caption_intro`, and a one-line `notes` on what you left out and why, including any strong event you dropped for variety.
