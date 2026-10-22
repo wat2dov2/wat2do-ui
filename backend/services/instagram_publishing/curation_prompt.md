@@ -14,7 +14,11 @@ Favor events that are:
 - unusual, fun or memorable to do;
 - promoted with polished, high-effort, aesthetic artwork.
 
-Leave out boring and low-status events unless the event itself is clearly exciting: general and annual meetings, elections, office hours, study sessions and tutoring, routine weekly club meetings, generic skill workshops, information sessions and booths, club executive recruitment, bake sales and small fundraisers, and anything promoted with plain or low-effort artwork. Do not fill slots, and do not discard a great event to fit a number. Order the picks strongest first, so the most exciting, best-looking event leads the carousel. If nothing is exciting enough, return no picks.
+Leave out boring and low-status events unless the event itself is clearly exciting: general and annual meetings, elections, office hours, study sessions and tutoring, routine weekly club meetings, generic skill workshops, information sessions and booths, club executive recruitment, bake sales and small fundraisers, and anything promoted with plain or low-effort artwork. Do not fill slots, and do not discard a great event to fit a number. If nothing is exciting enough, return no picks.
+
+## Order
+
+`picks` is the carousel's slide order, so rank them. Put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The weaker picks go last. Never order by date, club or the packet's order.
 
 ## Stickers
 

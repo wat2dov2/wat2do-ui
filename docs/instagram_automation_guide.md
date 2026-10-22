@@ -399,6 +399,7 @@ It is not attached to the published carousel by the API; the admin searches for 
 Draft selection has no event-count quota, but it is selective.
 It favors cool, exciting, high-status events students would brag about attending: formals, galas, parties, concerts, big shows, varsity games, trips, prestigious speakers or companies, and events with polished artwork.
 It leaves out boring and low-status events, such as meetings, elections, study sessions, routine club meetings, generic workshops, information sessions, executive recruitment, bake sales and plainly promoted events, unless the event itself is clearly exciting.
+Picks are ranked by status and energy first and artwork second, so the coolest, best-looking event is the first slide; never by date, club or packet order.
 Review the actual poster before relying on artwork quality; an image URL alone is not evidence.
 Clubs that asked not to be posted are rows in `public.instagram_excluded_clubs`, keyed by lowercase Instagram handle without `@`.
 Add a row by hand when a club asks.
