@@ -39,7 +39,7 @@ def test_google_analytics_rejects_invalid_measurement_ids(measurement_id):
 
 def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.competitor_pain_points.model == "claude-haiku-5-5"
-    assert controlbox.competitor_pain_points.sweep_interval_hours == 6
+    assert controlbox.competitor_pain_points.sweep_interval_hours == 24
     assert {"eventbrite", "meetup", "fable"} <= set(controlbox.competitor_pain_points.competitors)
     assert "x" not in controlbox.competitor_pain_points.lanes
     assert controlbox.competitor_pain_points.sources["forum"] == []

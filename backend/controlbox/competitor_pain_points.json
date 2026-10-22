@@ -2,7 +2,7 @@
   "model": "claude-haiku-5-5",
   "agent_timeout_seconds": 1200,
   "parallel_agents": 10,
-  "sweep_interval_hours": 6,
+  "sweep_interval_hours": 24,
   "lookback_days": 3,
   "findings_per_search": 15,
   "known_urls_in_prompt": 300,
