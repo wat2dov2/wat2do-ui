@@ -8,7 +8,7 @@ import { EXTERNAL_LINKS, schoolInstagramHandle } from "@/shared/constants/links"
 import { ROUTES } from "@/shared/constants/routes";
 import { Container, Stack } from "@/shared/layout";
 import { Link } from "@/shared/ui/link";
-import { LinkedInIcon } from "@/shared/ui/platform-icons";
+import { InstagramIcon, LinkedInIcon } from "@/shared/ui/platform-icons";
 
 const FOOTER_LINK_GROUPS = [
   {
@@ -29,22 +29,24 @@ const FOOTER_LINK_GROUPS = [
   },
 ] as const;
 
-const LINKEDIN_LABEL = "LinkedIn";
-
 /**
- * The close to every scrolling page, on its own muted band: the mark, name and
- * this school's socials on the left, the link columns on the right, and the
+ * The close to every scrolling page: the mark beside this school's Instagram
+ * handle with its social icons beneath, the link columns on the right, and the
  * tagline and fine print below one rule.
  */
 export function SiteFooter() {
   const { t } = useTranslation();
   const handle = schoolInstagramHandle(useRequestSchool());
+  const socials = [
+    { label: "Instagram", href: `https://www.instagram.com/${handle}/`, Icon: InstagramIcon },
+    { label: "LinkedIn", href: EXTERNAL_LINKS.LINKEDIN, Icon: LinkedInIcon },
+  ];
 
   return (
-    <footer data-slot="site-footer" className="mt-16 bg-muted sm:mt-24">
+    <footer data-slot="site-footer" className="mt-16 sm:mt-24">
       <Container size="lg">
         <div className="grid gap-12 py-12 sm:py-16 md:grid-cols-[minmax(0,1fr)_auto] md:gap-24">
-          <Stack gap={5}>
+          <Stack gap={4}>
             <Stack direction="horizontal" gap={2} align="center">
               <Image
                 alt={t("common.logo")}
@@ -53,16 +55,15 @@ export function SiteFooter() {
                 className="h-6 w-[34px] select-none object-contain"
                 src={imgLogo}
               />
-              <span className="text-lg font-semibold tracking-tight text-foreground">{t("footer.brand")}</span>
+              <span className="text-lg font-semibold tracking-tight text-foreground">{handle}</span>
             </Stack>
             <nav aria-label={t("footer.social")}>
-              <Stack direction="horizontal" gap={4} align="center">
-                <Link variant="subtle" href={`https://www.instagram.com/${handle}/`} target="_blank" rel="noopener noreferrer">
-                  @{handle}
-                </Link>
-                <Link variant="subtle" href={EXTERNAL_LINKS.LINKEDIN} target="_blank" rel="noopener noreferrer" aria-label={LINKEDIN_LABEL}>
-                  <LinkedInIcon className="size-4" />
-                </Link>
+              <Stack gap={3} align="start">
+                {socials.map((social) => (
+                  <Link key={social.label} variant="subtle" href={social.href} target="_blank" rel="noopener noreferrer" aria-label={social.label}>
+                    <social.Icon className="size-5" />
+                  </Link>
+                ))}
               </Stack>
             </nav>
           </Stack>
