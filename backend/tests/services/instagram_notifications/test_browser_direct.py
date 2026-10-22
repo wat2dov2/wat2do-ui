@@ -9,9 +9,10 @@ THREAD = [{"from": "them", "type": "clip", "text": "", "shared_url": POST}]
 
 
 class _Session:
-    def __init__(self, *, send_state="succeeded"):
+    def __init__(self, *, send_state="succeeded", thread_payload=None):
         self.queries = []
         self.send_state = send_state
+        self.thread_payload = thread_payload or {"state": "succeeded", "items": THREAD}
 
     def activate_account(self, recipient_id, username):
         return username
@@ -20,7 +21,7 @@ class _Session:
         self.queries.append(source)
         if "broadcast/text" in source:
             return {"state": self.send_state}
-        return {"state": "succeeded", "items": THREAD}
+        return self.thread_payload
 
 
 @pytest.fixture
@@ -89,3 +90,14 @@ def test_an_unconfirmed_reply_pauses_for_a_person(monkeypatch, queued) -> None:
 def test_thread_ids_are_validated(thread_id) -> None:
     with pytest.raises(ValueError):
         module.validate_thread_id(thread_id)
+
+
+def test_an_unreadable_thread_names_the_failed_step_and_status(monkeypatch, queued) -> None:
+    session = _Session(
+        thread_payload={"state": "failed", "reason": "http_error", "http_status": 400}
+    )
+    with pytest.raises(
+        module.BrowserSessionError, match=r"could not be read: http_error \(HTTP 400\)"
+    ):
+        _handle(session, monkeypatch, DmDecision("ignore"), dry_run=True)
+    assert _sends(session) == [] and queued == []
