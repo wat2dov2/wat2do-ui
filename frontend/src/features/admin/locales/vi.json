@@ -453,6 +453,25 @@
         "new": "Mới",
         "seen": "Đã xem",
         "dismissed": "Đã bỏ qua"
+      },
+      "tabs": {
+        "label": "Các chế độ xem vấn đề",
+        "complaints": "Phàn nàn",
+        "reports": "Báo cáo hằng ngày"
+      },
+      "reports": {
+        "meta": "Phàn nàn: {{count}} · {{model}}",
+        "suggestions": "Thay đổi đề xuất cho wat2do",
+        "themes": "Chủ đề lặp lại ({{count}})",
+        "where": "Ở đâu:",
+        "evidence": "Dựa trên:",
+        "priorities": {
+          "high": "Cao",
+          "medium": "Trung bình",
+          "low": "Thấp"
+        },
+        "emptyTitle": "Chưa có báo cáo",
+        "emptyDescription": "Một báo cáo được viết sau mỗi lần quét hằng ngày tìm thấy phàn nàn mới."
       }
     },
     "outreach": {

@@ -453,6 +453,25 @@
         "new": "새 항목",
         "seen": "확인함",
         "dismissed": "무시함"
+      },
+      "tabs": {
+        "label": "불만 사항 보기",
+        "complaints": "불만",
+        "reports": "일일 보고서"
+      },
+      "reports": {
+        "meta": "불만: {{count}} · {{model}}",
+        "suggestions": "wat2do 변경 제안",
+        "themes": "반복되는 주제 ({{count}})",
+        "where": "위치:",
+        "evidence": "근거:",
+        "priorities": {
+          "high": "높음",
+          "medium": "보통",
+          "low": "낮음"
+        },
+        "emptyTitle": "아직 보고서가 없습니다",
+        "emptyDescription": "새 불만을 찾은 매일의 검색이 끝나면 보고서가 작성됩니다."
       }
     },
     "outreach": {

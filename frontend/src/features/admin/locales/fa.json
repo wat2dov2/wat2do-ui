@@ -453,6 +453,25 @@
         "new": "جدید",
         "seen": "دیده‌شده",
         "dismissed": "ردشده"
+      },
+      "tabs": {
+        "label": "نماهای مشکلات",
+        "complaints": "شکایت‌ها",
+        "reports": "گزارش‌های روزانه"
+      },
+      "reports": {
+        "meta": "شکایت‌ها: {{count}} · {{model}}",
+        "suggestions": "تغییرات پیشنهادی برای wat2do",
+        "themes": "موضوعات تکراری ({{count}})",
+        "where": "کجا:",
+        "evidence": "بر اساس:",
+        "priorities": {
+          "high": "زیاد",
+          "medium": "متوسط",
+          "low": "کم"
+        },
+        "emptyTitle": "هنوز گزارشی نیست",
+        "emptyDescription": "پس از هر جست‌وجوی روزانه که شکایت تازه‌ای پیدا کند، گزارشی نوشته می‌شود."
       }
     },
     "outreach": {

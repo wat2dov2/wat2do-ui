@@ -453,6 +453,25 @@
         "new": "નવું",
         "seen": "જોયેલું",
         "dismissed": "અવગણેલું"
+      },
+      "tabs": {
+        "label": "સમસ્યાઓના દૃશ્યો",
+        "complaints": "ફરિયાદો",
+        "reports": "દૈનિક અહેવાલો"
+      },
+      "reports": {
+        "meta": "ફરિયાદો: {{count}} · {{model}}",
+        "suggestions": "wat2do માટે સૂચવેલા ફેરફારો",
+        "themes": "વારંવાર આવતા વિષયો ({{count}})",
+        "where": "ક્યાં:",
+        "evidence": "આધાર:",
+        "priorities": {
+          "high": "ઊંચી",
+          "medium": "મધ્યમ",
+          "low": "નીચી"
+        },
+        "emptyTitle": "હજી કોઈ અહેવાલ નથી",
+        "emptyDescription": "નવી ફરિયાદો મળે તેવી દરેક દૈનિક શોધ પછી અહેવાલ લખાય છે."
       }
     },
     "outreach": {

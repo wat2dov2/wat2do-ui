@@ -11,6 +11,7 @@ import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHea
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { AdminTableFilters } from "@/features/admin/components/shared/AdminTableFilters";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
+import { PainPointDailyReports } from "@/features/admin/components/painPoints/PainPointDailyReports";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -18,13 +19,14 @@ import { ExternalLink, MessageCircle } from "@/shared/ui/doodle-icons";
 import { ItemContent, ItemDescription, ItemTitle } from "@/shared/ui/item";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { TableCell, TableRow } from "@/shared/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Stack } from "@/shared/layout";
 import painPoints from "../../../../../backend/controlbox/competitor_pain_points.json" with { type: "json" };
 
 const AUDIENCES = ["organizer", "attendee", "other"] as const;
 const STATUSES = ["new", "seen", "dismissed"] as const;
 
-/** Complaints the Mac's Haiku sweep found about competitors; admins only read and triage them. */
+/** Complaints the Mac's Haiku sweep found about competitors, and Opus's daily reports on them; admins only read and triage. */
 export function AdminCompetitorPainPointsPage({ onBack }: { onBack: () => void }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -52,48 +54,61 @@ export function AdminCompetitorPainPointsPage({ onBack }: { onBack: () => void }
   return (
     <Stack gap={5}>
       <AdminPageHeader icon={MessageCircle} title={t("admin.painPoints.title")} description={t("admin.painPoints.description")} onBack={onBack} />
-      <AdminTableFilters search={filters.search} onSearchChange={filter("search")}>
-        {choices.map(choice => (
-          <Select key={choice.key} value={filters[choice.key] || "all"} onValueChange={filter(choice.key)}>
-            <SelectTrigger aria-label={choice.label}><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("common.all")}</SelectItem>
-              {choice.options.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        ))}
-      </AdminTableFilters>
-      {query.isError ? <Button variant="outline" onClick={() => void query.refetch()}>{t("common.tryAgain")}</Button>
-        : !query.isPending && query.data?.items.length === 0 ? <AdminEmptyState icon={MessageCircle} title={t("admin.painPoints.emptyTitle")} description={t("admin.painPoints.emptyDescription")} />
-        : <AdminTable isLoading={query.isPending} count={query.data?.total ?? 0} label={t("admin.painPoints.title")}
-          pagination={{ currentPage: page, totalPages: query.data?.total_pages ?? 1, onPageChange: setPage }}
-          headers={[{ label: t("admin.painPoints.complaint") }, { label: t("admin.painPoints.competitor") }, { label: t("admin.painPoints.audience") }, { label: t("admin.painPoints.posted") }, { label: t("common.actions") }]}>
-          {query.data?.items.map(item => <TableRow key={item.id}>
-            <TableCell>
-              <ItemContent>
-                <ItemTitle>{item.pain_point}</ItemTitle>
-                <ItemDescription>{item.author ? `${item.author}: ` : ""}“{item.quote}”</ItemDescription>
-              </ItemContent>
-            </TableCell>
-            <TableCell>
-              <Stack gap={1} align="start">
-                <span>{painPoints.competitors[item.competitor as keyof typeof painPoints.competitors] ?? item.competitor}</span>
-                <Badge variant="muted">{t(`admin.painPoints.sources.${item.source}`, { defaultValue: item.source })}</Badge>
-              </Stack>
-            </TableCell>
-            <TableCell><Badge variant={item.audience === "organizer" ? "success" : item.audience === "attendee" ? "warning" : "muted"}>{t(`admin.painPoints.audiences.${item.audience}`)}</Badge></TableCell>
-            <TableCell>{new Date(item.posted_at ?? item.found_at).toLocaleDateString(i18n.language)}</TableCell>
-            <TableCell>
-              <Stack direction="horizontal" gap={2}>
-                <Button asChild variant="outline" size="icon-sm" aria-label={t("admin.painPoints.open")}>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer"><ExternalLink /></a>
-                </Button>
-                {item.status === "new" && <Button variant="outline" disabled={review.isPending} onClick={() => review.mutate({ id: item.id, status: "seen" })}>{t("admin.painPoints.markSeen")}</Button>}
-                {item.status !== "dismissed" && <Button variant="ghost" disabled={review.isPending} onClick={() => review.mutate({ id: item.id, status: "dismissed" })}>{t("admin.painPoints.dismiss")}</Button>}
-              </Stack>
-            </TableCell>
-          </TableRow>)}
-        </AdminTable>}
+      <Tabs defaultValue="complaints">
+        <Stack gap={5}>
+          <TabsList aria-label={t("admin.painPoints.tabs.label")}>
+            <TabsTrigger value="complaints">{t("admin.painPoints.tabs.complaints")}</TabsTrigger>
+            <TabsTrigger value="reports">{t("admin.painPoints.tabs.reports")}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="reports"><PainPointDailyReports /></TabsContent>
+          <TabsContent value="complaints">
+            <Stack gap={5}>
+              <AdminTableFilters search={filters.search} onSearchChange={filter("search")}>
+                {choices.map(choice => (
+                  <Select key={choice.key} value={filters[choice.key] || "all"} onValueChange={filter(choice.key)}>
+                    <SelectTrigger aria-label={choice.label}><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t("common.all")}</SelectItem>
+                      {choice.options.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                ))}
+              </AdminTableFilters>
+              {query.isError ? <Button variant="outline" onClick={() => void query.refetch()}>{t("common.tryAgain")}</Button>
+                : !query.isPending && query.data?.items.length === 0 ? <AdminEmptyState icon={MessageCircle} title={t("admin.painPoints.emptyTitle")} description={t("admin.painPoints.emptyDescription")} />
+                : <AdminTable isLoading={query.isPending} count={query.data?.total ?? 0} label={t("admin.painPoints.title")}
+                  pagination={{ currentPage: page, totalPages: query.data?.total_pages ?? 1, onPageChange: setPage }}
+                  headers={[{ label: t("admin.painPoints.complaint") }, { label: t("admin.painPoints.competitor") }, { label: t("admin.painPoints.audience") }, { label: t("admin.painPoints.posted") }, { label: t("common.actions") }]}>
+                  {query.data?.items.map(item => <TableRow key={item.id}>
+                    <TableCell>
+                      <ItemContent>
+                        <ItemTitle>{item.pain_point}</ItemTitle>
+                        <ItemDescription>{item.author ? `${item.author}: ` : ""}“{item.quote}”</ItemDescription>
+                      </ItemContent>
+                    </TableCell>
+                    <TableCell>
+                      <Stack gap={1} align="start">
+                        <span>{painPoints.competitors[item.competitor as keyof typeof painPoints.competitors] ?? item.competitor}</span>
+                        <Badge variant="muted">{t(`admin.painPoints.sources.${item.source}`, { defaultValue: item.source })}</Badge>
+                      </Stack>
+                    </TableCell>
+                    <TableCell><Badge variant={item.audience === "organizer" ? "success" : item.audience === "attendee" ? "warning" : "muted"}>{t(`admin.painPoints.audiences.${item.audience}`)}</Badge></TableCell>
+                    <TableCell>{new Date(item.posted_at ?? item.found_at).toLocaleDateString(i18n.language)}</TableCell>
+                    <TableCell>
+                      <Stack direction="horizontal" gap={2}>
+                        <Button asChild variant="outline" size="icon-sm" aria-label={t("admin.painPoints.open")}>
+                          <a href={item.url} target="_blank" rel="noopener noreferrer"><ExternalLink /></a>
+                        </Button>
+                        {item.status === "new" && <Button variant="outline" disabled={review.isPending} onClick={() => review.mutate({ id: item.id, status: "seen" })}>{t("admin.painPoints.markSeen")}</Button>}
+                        {item.status !== "dismissed" && <Button variant="ghost" disabled={review.isPending} onClick={() => review.mutate({ id: item.id, status: "dismissed" })}>{t("admin.painPoints.dismiss")}</Button>}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>)}
+                </AdminTable>}
+            </Stack>
+          </TabsContent>
+        </Stack>
+      </Tabs>
     </Stack>
   );
 }

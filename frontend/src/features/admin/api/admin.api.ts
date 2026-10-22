@@ -430,3 +430,10 @@ export function updateOutreachLead(id: string, update: OutreachLeadUpdate) {
 export function reviewCompetitorPainPoint(id: string, status: CompetitorPainPoint["status"]) {
   return api.patch<CompetitorPainPoint>("/competitor-pain-points/" + id, { status });
 }
+
+export type CompetitorPainPointReport = components["schemas"]["DailyReportResponse"];
+
+export function getCompetitorPainPointReports(page: number) {
+  const params = new URLSearchParams({ page: String(page), page_size: "7" });
+  return api.get<components["schemas"]["PaginatedResponse_DailyReportResponse_"]>("/competitor-pain-points/reports?" + params);
+}

@@ -453,6 +453,25 @@
         "new": "新",
         "seen": "已看",
         "dismissed": "已忽略"
+      },
+      "tabs": {
+        "label": "痛点视图",
+        "complaints": "投诉",
+        "reports": "每日报告"
+      },
+      "reports": {
+        "meta": "投诉：{{count}} · {{model}}",
+        "suggestions": "建议对 wat2do 的改动",
+        "themes": "反复出现的主题（{{count}}）",
+        "where": "位置：",
+        "evidence": "依据：",
+        "priorities": {
+          "high": "高",
+          "medium": "中",
+          "low": "低"
+        },
+        "emptyTitle": "暂无报告",
+        "emptyDescription": "每次每日搜索发现新投诉后都会撰写一份报告。"
       }
     },
     "outreach": {

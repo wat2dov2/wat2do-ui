@@ -453,6 +453,25 @@
         "new": "नया",
         "seen": "देखा गया",
         "dismissed": "खारिज"
+      },
+      "tabs": {
+        "label": "समस्याओं के दृश्य",
+        "complaints": "शिकायतें",
+        "reports": "दैनिक रिपोर्ट"
+      },
+      "reports": {
+        "meta": "शिकायतें: {{count}} · {{model}}",
+        "suggestions": "wat2do में सुझाए गए बदलाव",
+        "themes": "बार-बार आने वाले विषय ({{count}})",
+        "where": "कहाँ:",
+        "evidence": "आधार:",
+        "priorities": {
+          "high": "उच्च",
+          "medium": "मध्यम",
+          "low": "निम्न"
+        },
+        "emptyTitle": "अभी कोई रिपोर्ट नहीं",
+        "emptyDescription": "नई शिकायतें मिलने वाली हर दैनिक खोज के बाद एक रिपोर्ट लिखी जाती है।"
       }
     },
     "outreach": {

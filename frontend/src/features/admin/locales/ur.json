@@ -453,6 +453,25 @@
         "new": "نیا",
         "seen": "دیکھا گیا",
         "dismissed": "مسترد"
+      },
+      "tabs": {
+        "label": "مسائل کے منظر",
+        "complaints": "شکایات",
+        "reports": "روزانہ رپورٹس"
+      },
+      "reports": {
+        "meta": "شکایات: {{count}} · {{model}}",
+        "suggestions": "wat2do کے لیے تجویز کردہ تبدیلیاں",
+        "themes": "بار بار آنے والے موضوعات ({{count}})",
+        "where": "کہاں:",
+        "evidence": "بنیاد:",
+        "priorities": {
+          "high": "زیادہ",
+          "medium": "درمیانی",
+          "low": "کم"
+        },
+        "emptyTitle": "ابھی کوئی رپورٹ نہیں",
+        "emptyDescription": "نئی شکایات تلاش کرنے والی ہر روزانہ تلاش کے بعد رپورٹ لکھی جاتی ہے۔"
       }
     },
     "outreach": {

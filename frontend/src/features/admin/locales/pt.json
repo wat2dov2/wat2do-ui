@@ -453,6 +453,25 @@
         "new": "Novo",
         "seen": "Visto",
         "dismissed": "Descartado"
+      },
+      "tabs": {
+        "label": "Visões de problemas",
+        "complaints": "Reclamações",
+        "reports": "Relatórios diários"
+      },
+      "reports": {
+        "meta": "Reclamações: {{count}} · {{model}}",
+        "suggestions": "Mudanças sugeridas para o wat2do",
+        "themes": "Temas recorrentes ({{count}})",
+        "where": "Onde:",
+        "evidence": "Com base em:",
+        "priorities": {
+          "high": "Alta",
+          "medium": "Média",
+          "low": "Baixa"
+        },
+        "emptyTitle": "Ainda não há relatórios",
+        "emptyDescription": "Um relatório é escrito após cada busca diária que encontra novas reclamações."
       }
     },
     "outreach": {

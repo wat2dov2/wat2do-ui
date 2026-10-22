@@ -27,6 +27,7 @@ def pain_point(status="new"):
 def test_pain_points_are_admin_only(request, fixture, expected):
     client = request.getfixturevalue(fixture)
     assert client.get("/competitor-pain-points/").status_code == expected
+    assert client.get("/competitor-pain-points/reports").status_code == expected
     assert client.patch(f"/competitor-pain-points/{ID}", json={"status": "seen"}).status_code == (
         expected
     )
@@ -82,3 +83,38 @@ def test_admin_marks_a_pain_point_and_unknown_ids_404(admin_client, monkeypatch)
         admin_client.patch(f"/competitor-pain-points/{ID}", json={"status": "replied"}).status_code
         == 422
     )
+
+
+def test_admin_lists_daily_reports_newest_first(admin_client, monkeypatch):
+    from schemas.competitor_pain_point import DailyReportResponse
+
+    report = DailyReportResponse(
+        id=ID,
+        report_date="2026-10-21",
+        model="claude-opus-5-5",
+        complaint_count=12,
+        summary="Organizers are tired of fees.",
+        themes=[],
+        suggestions=[
+            {
+                "title": "Say wat2do is free for clubs",
+                "priority": "high",
+                "problem": "Fees",
+                "change": "Add a line",
+                "where": [],
+                "complaint_urls": ["https://www.reddit.com/r/example/comments/seed1/"],
+            }
+        ],
+        created_at="2026-10-21T12:00:00Z",
+    )
+    calls = []
+    monkeypatch.setattr(
+        service, "list_reports", lambda **kwargs: calls.append(kwargs) or ([report], 1)
+    )
+    response = admin_client.get(
+        "/competitor-pain-points/reports", params={"page": 2, "page_size": 5}
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["items"][0]["suggestions"][0]["priority"] == "high"
+    assert calls == [{"offset": 5, "limit": 5}]

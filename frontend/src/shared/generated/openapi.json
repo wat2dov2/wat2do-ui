@@ -2079,6 +2079,72 @@
         }
       }
     },
+    "/competitor-pain-points/reports": {
+      "get": {
+        "tags": [
+          "competitor-pain-points"
+        ],
+        "summary": "List Reports",
+        "operationId": "list_reports_competitor_pain_points_reports_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_DailyReportResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/competitor-pain-points/{pain_point_id}": {
       "patch": {
         "tags": [
@@ -9292,6 +9358,66 @@
         ],
         "title": "ContactCreate"
       },
+      "DailyReportResponse": {
+        "properties": {
+          "report_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Report Date"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "complaint_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Complaint Count"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Summary"
+          },
+          "themes": {
+            "items": {
+              "$ref": "#/components/schemas/ReportTheme"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Themes"
+          },
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/ReportSuggestion"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Suggestions"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_date",
+          "model",
+          "complaint_count",
+          "summary",
+          "id",
+          "created_at"
+        ],
+        "title": "DailyReportResponse"
+      },
       "DiscordChannelOption": {
         "properties": {
           "id": {
@@ -12788,6 +12914,42 @@
         ],
         "title": "PaginatedResponse[CompetitorPainPointResponse]"
       },
+      "PaginatedResponse_DailyReportResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DailyReportResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[DailyReportResponse]"
+      },
       "PaginatedResponse_DiscoveryQueryResponse_": {
         "properties": {
           "items": {
@@ -15201,6 +15363,101 @@
           "reported_at"
         ],
         "title": "ReportResponse"
+      },
+      "ReportSuggestion": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Priority"
+          },
+          "problem": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Problem"
+          },
+          "change": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Change"
+          },
+          "where": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Where"
+          },
+          "complaint_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Complaint Urls"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "priority",
+          "problem",
+          "change"
+        ],
+        "title": "ReportSuggestion",
+        "description": "One change to wat2do.io the report suggests, and the complaints behind it."
+      },
+      "ReportTheme": {
+        "properties": {
+          "theme": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Theme"
+          },
+          "detail": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Detail"
+          },
+          "competitors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Competitors"
+          },
+          "complaint_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Complaint Urls"
+          }
+        },
+        "type": "object",
+        "required": [
+          "theme",
+          "detail"
+        ],
+        "title": "ReportTheme",
+        "description": "A complaint that keeps coming up in one day's findings."
       },
       "ReportUpdate": {
         "properties": {
