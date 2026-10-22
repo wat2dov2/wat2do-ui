@@ -453,6 +453,25 @@
         "new": "جديد",
         "seen": "مقروء",
         "dismissed": "متجاهل"
+      },
+      "tabs": {
+        "label": "عروض نقاط الألم",
+        "complaints": "الشكاوى",
+        "reports": "التقارير اليومية"
+      },
+      "reports": {
+        "meta": "الشكاوى: {{count}} · {{model}}",
+        "suggestions": "تغييرات مقترحة على wat2do",
+        "themes": "موضوعات متكررة ({{count}})",
+        "where": "المكان:",
+        "evidence": "استنادًا إلى:",
+        "priorities": {
+          "high": "عالية",
+          "medium": "متوسطة",
+          "low": "منخفضة"
+        },
+        "emptyTitle": "لا توجد تقارير بعد",
+        "emptyDescription": "يُكتب تقرير بعد كل مسح يومي يعثر على شكاوى جديدة."
       }
     },
     "clubSubmissionDetails": {

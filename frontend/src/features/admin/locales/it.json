@@ -453,6 +453,25 @@
         "new": "Nuovo",
         "seen": "Visto",
         "dismissed": "Ignorato"
+      },
+      "tabs": {
+        "label": "Viste dei problemi",
+        "complaints": "Lamentele",
+        "reports": "Report giornalieri"
+      },
+      "reports": {
+        "meta": "Lamentele: {{count}} · {{model}}",
+        "suggestions": "Modifiche suggerite a wat2do",
+        "themes": "Temi ricorrenti ({{count}})",
+        "where": "Dove:",
+        "evidence": "Basato su:",
+        "priorities": {
+          "high": "Alta",
+          "medium": "Media",
+          "low": "Bassa"
+        },
+        "emptyTitle": "Ancora nessun report",
+        "emptyDescription": "Dopo ogni ricerca giornaliera che trova nuove lamentele viene scritto un report."
       }
     },
     "clubSubmissionDetails": {

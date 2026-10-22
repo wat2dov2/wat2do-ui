@@ -453,6 +453,25 @@
         "new": "Nowe",
         "seen": "Przejrzane",
         "dismissed": "Odrzucone"
+      },
+      "tabs": {
+        "label": "Widoki problemów",
+        "complaints": "Skargi",
+        "reports": "Raporty dzienne"
+      },
+      "reports": {
+        "meta": "Skargi: {{count}} · {{model}}",
+        "suggestions": "Sugerowane zmiany w wat2do",
+        "themes": "Powracające tematy ({{count}})",
+        "where": "Gdzie:",
+        "evidence": "Na podstawie:",
+        "priorities": {
+          "high": "Wysoki",
+          "medium": "Średni",
+          "low": "Niski"
+        },
+        "emptyTitle": "Brak raportów",
+        "emptyDescription": "Raport powstaje po każdym codziennym przeszukaniu, które znajdzie nowe skargi."
       }
     },
     "clubSubmissionDetails": {

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Find public complaints about competitors for the admin page.
 
-``sweep`` has Claude Haiku search each competitor once; ``install-schedule``
-runs it every few hours through a macOS LaunchAgent that keeps no logs.
+``sweep`` has Claude Haiku search each competitor once, then has Opus write
+the daily report on what it found; ``report`` writes only the report.
+``install-schedule`` runs ``sweep`` daily through a LaunchAgent that keeps no
+logs.
 """
 
 from __future__ import annotations
@@ -41,7 +43,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("sweep", help="Search every competitor once and store new complaints")
-    commands.add_parser("install-schedule", help="Run sweep every few hours via a LaunchAgent")
+    commands.add_parser("report", help="Write today's report on the complaints found so far")
+    commands.add_parser("install-schedule", help="Run sweep daily via a LaunchAgent")
     args = parser.parse_args()
     if args.command == "install-schedule":
         install_launch_agent(
@@ -54,9 +57,25 @@ def main() -> int:
         return 0
     from services.competitor_pain_points.finder import sweep
 
-    result = sweep()
+    result = sweep() if args.command == "sweep" else {"failed": []}
+    result["report"] = _report()
     print(json.dumps(result, sort_keys=True))
-    return 1 if result["failed"] else 0
+    return 1 if result["failed"] or result["report"] == "failed" else 0
+
+
+def _report() -> str:
+    """Write the daily report; a failure is logged and leaves the sweep's findings stored."""
+    from pydantic import ValidationError
+
+    from services.claude_code import ClaudeCodeError
+    from services.competitor_pain_points.report import write_daily_report
+
+    try:
+        report = write_daily_report()
+    except (ClaudeCodeError, ValidationError):
+        logging.exception("Daily pain point report failed")
+        return "failed"
+    return "written" if report else "nothing new"
 
 
 if __name__ == "__main__":

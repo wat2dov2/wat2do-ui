@@ -533,6 +533,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/competitor-pain-points/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Reports */
+        get: operations["list_reports_competitor_pain_points_reports_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/competitor-pain-points/{pain_point_id}": {
         parameters: {
             query?: never;
@@ -2303,6 +2320,34 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** DailyReportResponse */
+        DailyReportResponse: {
+            /**
+             * Report Date
+             * Format: date
+             */
+            report_date: string;
+            /** Model */
+            model: string;
+            /** Complaint Count */
+            complaint_count: number;
+            /** Summary */
+            summary: string;
+            /** Themes */
+            themes?: components["schemas"]["ReportTheme"][];
+            /** Suggestions */
+            suggestions?: components["schemas"]["ReportSuggestion"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** DiscordChannelOption */
         DiscordChannelOption: {
             /** Id */
@@ -3474,6 +3519,19 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        /** PaginatedResponse[DailyReportResponse] */
+        PaginatedResponse_DailyReportResponse_: {
+            /** Items */
+            items: components["schemas"]["DailyReportResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         /** PaginatedResponse[DiscoveryQueryResponse] */
         PaginatedResponse_DiscoveryQueryResponse_: {
             /** Items */
@@ -4270,6 +4328,41 @@ export interface components {
             reported_at: string;
             /** Resolved At */
             resolved_at?: string | null;
+        };
+        /**
+         * ReportSuggestion
+         * @description One change to wat2do.io the report suggests, and the complaints behind it.
+         */
+        ReportSuggestion: {
+            /** Title */
+            title: string;
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "high" | "medium" | "low";
+            /** Problem */
+            problem: string;
+            /** Change */
+            change: string;
+            /** Where */
+            where?: string[];
+            /** Complaint Urls */
+            complaint_urls?: string[];
+        };
+        /**
+         * ReportTheme
+         * @description A complaint that keeps coming up in one day's findings.
+         */
+        ReportTheme: {
+            /** Theme */
+            theme: string;
+            /** Detail */
+            detail: string;
+            /** Competitors */
+            competitors?: string[];
+            /** Complaint Urls */
+            complaint_urls?: string[];
         };
         /** ReportUpdate */
         ReportUpdate: {
@@ -5801,6 +5894,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedResponse_CompetitorPainPointResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_reports_competitor_pain_points_reports_get: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_DailyReportResponse_"];
                 };
             };
             /** @description Validation Error */

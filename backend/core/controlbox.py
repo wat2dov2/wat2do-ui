@@ -1037,6 +1037,12 @@ class CompetitorPainPointsControl(_ControlModel):
     findings_per_search: int = Field(ge=1, le=100)
     known_urls_in_prompt: int = Field(ge=0, le=2000)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # The daily report: a stronger model reads the complaints found in the last
+    # window and suggests changes to wat2do.io.
+    report_model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    report_timeout_seconds: int = Field(gt=0, le=7200)
+    report_window_hours: int = Field(ge=1, le=168)
+    report_max_complaints: int = Field(ge=1, le=2000)
     # X and Reddit searches read in Safari; "{name}" becomes the competitor's
     # search name.
     x_queries: list[Annotated[str, Field(pattern=r"\{name\}")]] = Field(max_length=10)

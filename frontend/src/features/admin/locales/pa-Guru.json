@@ -453,6 +453,25 @@
         "new": "ਨਵਾਂ",
         "seen": "ਵੇਖਿਆ",
         "dismissed": "ਖਾਰਜ"
+      },
+      "tabs": {
+        "label": "ਸਮੱਸਿਆਵਾਂ ਦੇ ਦ੍ਰਿਸ਼",
+        "complaints": "ਸ਼ਿਕਾਇਤਾਂ",
+        "reports": "ਰੋਜ਼ਾਨਾ ਰਿਪੋਰਟਾਂ"
+      },
+      "reports": {
+        "meta": "ਸ਼ਿਕਾਇਤਾਂ: {{count}} · {{model}}",
+        "suggestions": "wat2do ਲਈ ਸੁਝਾਏ ਬਦਲਾਅ",
+        "themes": "ਵਾਰ-ਵਾਰ ਆਉਂਦੇ ਵਿਸ਼ੇ ({{count}})",
+        "where": "ਕਿੱਥੇ:",
+        "evidence": "ਆਧਾਰ:",
+        "priorities": {
+          "high": "ਉੱਚ",
+          "medium": "ਦਰਮਿਆਨੀ",
+          "low": "ਘੱਟ"
+        },
+        "emptyTitle": "ਅਜੇ ਕੋਈ ਰਿਪੋਰਟ ਨਹੀਂ",
+        "emptyDescription": "ਨਵੀਆਂ ਸ਼ਿਕਾਇਤਾਂ ਲੱਭਣ ਵਾਲੀ ਹਰ ਰੋਜ਼ਾਨਾ ਖੋਜ ਤੋਂ ਬਾਅਦ ਰਿਪੋਰਟ ਲਿਖੀ ਜਾਂਦੀ ਹੈ।"
       }
     },
     "clubSubmissionDetails": {

@@ -7,6 +7,10 @@
   "findings_per_search": 15,
   "known_urls_in_prompt": 300,
   "launch_agent_timeout_seconds": 30,
+  "report_model": "claude-opus-5-5",
+  "report_timeout_seconds": 2400,
+  "report_window_hours": 24,
+  "report_max_complaints": 400,
   "x_queries": [
     "{name}",
     "{name} fees",

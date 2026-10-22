@@ -453,6 +453,25 @@
         "new": "Nouveau",
         "seen": "Vu",
         "dismissed": "Ignoré"
+      },
+      "tabs": {
+        "label": "Vues des irritants",
+        "complaints": "Plaintes",
+        "reports": "Rapports quotidiens"
+      },
+      "reports": {
+        "meta": "Plaintes : {{count}} · {{model}}",
+        "suggestions": "Changements suggérés pour wat2do",
+        "themes": "Thèmes récurrents ({{count}})",
+        "where": "Où :",
+        "evidence": "D'après :",
+        "priorities": {
+          "high": "Haute",
+          "medium": "Moyenne",
+          "low": "Basse"
+        },
+        "emptyTitle": "Aucun rapport pour l'instant",
+        "emptyDescription": "Un rapport est rédigé après chaque recherche quotidienne qui trouve de nouvelles plaintes."
       }
     },
     "clubSubmissionDetails": {

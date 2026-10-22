@@ -453,6 +453,25 @@
         "new": "新",
         "seen": "已睇",
         "dismissed": "已略過"
+      },
+      "tabs": {
+        "label": "痛點檢視",
+        "complaints": "投訴",
+        "reports": "每日報告"
+      },
+      "reports": {
+        "meta": "投訴：{{count}} · {{model}}",
+        "suggestions": "建議 wat2do 嘅改動",
+        "themes": "經常出現嘅主題（{{count}}）",
+        "where": "位置：",
+        "evidence": "根據：",
+        "priorities": {
+          "high": "高",
+          "medium": "中",
+          "low": "低"
+        },
+        "emptyTitle": "暫時未有報告",
+        "emptyDescription": "每次每日搜尋搵到新投訴之後都會寫一份報告。"
       }
     },
     "clubSubmissionDetails": {

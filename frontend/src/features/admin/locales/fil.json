@@ -453,6 +453,25 @@
         "new": "Bago",
         "seen": "Nakita",
         "dismissed": "Binalewala"
+      },
+      "tabs": {
+        "label": "Mga view ng problema",
+        "complaints": "Mga reklamo",
+        "reports": "Mga pang-araw-araw na ulat"
+      },
+      "reports": {
+        "meta": "Mga reklamo: {{count}} · {{model}}",
+        "suggestions": "Mga mungkahing pagbabago sa wat2do",
+        "themes": "Mga paulit-ulit na tema ({{count}})",
+        "where": "Saan:",
+        "evidence": "Batay sa:",
+        "priorities": {
+          "high": "Mataas",
+          "medium": "Katamtaman",
+          "low": "Mababa"
+        },
+        "emptyTitle": "Wala pang ulat",
+        "emptyDescription": "May isinusulat na ulat pagkatapos ng bawat araw-araw na paghahanap na may bagong reklamo."
       }
     },
     "clubSubmissionDetails": {

@@ -453,6 +453,25 @@
         "new": "Nuevo",
         "seen": "Visto",
         "dismissed": "Descartado"
+      },
+      "tabs": {
+        "label": "Vistas de problemas",
+        "complaints": "Quejas",
+        "reports": "Informes diarios"
+      },
+      "reports": {
+        "meta": "Quejas: {{count}} · {{model}}",
+        "suggestions": "Cambios sugeridos para wat2do",
+        "themes": "Temas recurrentes ({{count}})",
+        "where": "Dónde:",
+        "evidence": "Basado en:",
+        "priorities": {
+          "high": "Alta",
+          "medium": "Media",
+          "low": "Baja"
+        },
+        "emptyTitle": "Aún no hay informes",
+        "emptyDescription": "Se escribe un informe tras cada búsqueda diaria que encuentra quejas nuevas."
       }
     },
     "clubSubmissionDetails": {

@@ -453,6 +453,25 @@
         "new": "New",
         "seen": "Seen",
         "dismissed": "Dismissed"
+      },
+      "tabs": {
+        "label": "Pain point views",
+        "complaints": "Complaints",
+        "reports": "Daily reports"
+      },
+      "reports": {
+        "meta": "Complaints: {{count}} · {{model}}",
+        "suggestions": "Suggested changes to wat2do",
+        "themes": "Recurring themes ({{count}})",
+        "where": "Where:",
+        "evidence": "Based on:",
+        "priorities": {
+          "high": "High",
+          "medium": "Medium",
+          "low": "Low"
+        },
+        "emptyTitle": "No reports yet",
+        "emptyDescription": "A report is written after each daily sweep that finds new complaints."
       }
     },
     "clubSubmissionDetails": {

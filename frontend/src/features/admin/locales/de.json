@@ -453,6 +453,25 @@
         "new": "Neu",
         "seen": "Gesehen",
         "dismissed": "Verworfen"
+      },
+      "tabs": {
+        "label": "Ansichten zu Problemen",
+        "complaints": "Beschwerden",
+        "reports": "Tagesberichte"
+      },
+      "reports": {
+        "meta": "Beschwerden: {{count}} · {{model}}",
+        "suggestions": "Vorgeschlagene Änderungen an wat2do",
+        "themes": "Wiederkehrende Themen ({{count}})",
+        "where": "Wo:",
+        "evidence": "Grundlage:",
+        "priorities": {
+          "high": "Hoch",
+          "medium": "Mittel",
+          "low": "Niedrig"
+        },
+        "emptyTitle": "Noch keine Berichte",
+        "emptyDescription": "Nach jedem täglichen Durchlauf mit neuen Beschwerden wird ein Bericht erstellt."
       }
     },
     "clubSubmissionDetails": {
