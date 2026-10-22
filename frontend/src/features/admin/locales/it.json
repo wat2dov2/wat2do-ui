@@ -474,6 +474,52 @@
         "emptyDescription": "Dopo ogni ricerca giornaliera che trova nuove lamentele viene scritto un report."
       }
     },
+    "outreach": {
+      "title": "Outreach",
+      "cardDescription": "Organizzatori da invitare a pubblicare i loro eventi.",
+      "description": "Organizzatori di hackathon ed eventi a pagamento trovati dalla ricerca settimanale, con uno script video e un'email per ciascuno. Registra il video, apri l'email in Gmail e inviala tu.",
+      "newCampaign": "Nuova campagna",
+      "newCampaignDescription": "Indica il tipo di evento da cercare. La ricerca settimanale lo cerca in ogni università.",
+      "campaignName": "Nome della campagna",
+      "leadType": "Cerchiamo",
+      "goal": "Obiettivo",
+      "createCampaign": "Crea campagna",
+      "leadTypes": {
+        "hackathon": "Hackathon",
+        "ticketed_event": "Eventi a pagamento"
+      },
+      "campaign": "Campagna",
+      "allCampaigns": "Tutte le campagne",
+      "campaignStatus": "Stato della campagna",
+      "campaignStatuses": {
+        "active": "Attiva",
+        "paused": "In pausa",
+        "done": "Conclusa"
+      },
+      "statuses": {
+        "new": "Nuovo",
+        "contacted": "Contattato",
+        "replied": "Ha risposto",
+        "submitted": "Inviato",
+        "not_interested": "Non interessato",
+        "dismissed": "Scartato"
+      },
+      "emptyTitle": "Ancora nessun organizzatore",
+      "emptyDescription": "Crea una campagna e la ricerca settimanale riempirà questa lista.",
+      "event": "Evento",
+      "organizer": "Organizzatore",
+      "details": "Dettagli",
+      "openEmail": "Apri l'email in Gmail",
+      "openFollowUp": "Apri il follow-up in Gmail",
+      "openEvent": "Apri la pagina dell'evento",
+      "source": "Dove è stata trovata l'email",
+      "context": "Contesto",
+      "videoScript": "Script del video",
+      "email": "Email",
+      "followUp": "Follow-up",
+      "notes": "Note",
+      "saveNotes": "Salva note"
+    },
     "clubSubmissionDetails": {
       "records": "Dettagli del record",
       "clubId": "ID del club: {{id}}",

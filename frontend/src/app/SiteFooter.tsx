@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
+import { useRequestSchool } from "@/app/client-providers";
 import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
+import { EXTERNAL_LINKS, schoolInstagramHandle } from "@/shared/constants/links";
 import { ROUTES } from "@/shared/constants/routes";
 import { Container, Stack } from "@/shared/layout";
 import { Link } from "@/shared/ui/link";
@@ -27,54 +29,62 @@ const FOOTER_LINK_GROUPS = [
 ] as const;
 
 /**
- * The close to every scrolling page: the mark and tagline carry the voice on the
- * left, the link groups sit in labelled columns on the right, and the fine print
- * closes the card below a divider.
+ * The close to every scrolling page, in three ruled rows: this school's socials,
+ * then the mark beside the link columns, then the tagline and fine print.
  */
 export function SiteFooter() {
   const { t } = useTranslation();
+  const handle = schoolInstagramHandle(useRequestSchool());
+  const socials = [
+    { label: "Instagram", href: `https://www.instagram.com/${handle}/` },
+    { label: "LinkedIn", href: EXTERNAL_LINKS.LINKEDIN },
+  ];
 
   return (
-    <footer data-slot="site-footer" className="mt-16 sm:mt-24">
+    <footer data-slot="site-footer" className="mt-16 border-t border-border bg-surface sm:mt-24">
       <Container size="lg">
-        <div className="rounded-3xl bg-muted px-6 py-8 sm:px-10 sm:py-10">
-          <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
-            <Stack gap={5} className="max-w-md">
-              <Image
-                alt={t("common.logo")}
-                width={34}
-                height={24}
-                className="h-6 w-[34px] select-none object-contain"
-                src={imgLogo}
-              />
-              <p className="text-[clamp(1.5rem,3vw,2.25rem)] font-medium leading-[1.1] tracking-[-0.03em] text-balance text-foreground">
-                {t("footer.tagline")}
-              </p>
-            </Stack>
+        <nav aria-label={t("footer.social")} className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border py-5 text-sm">
+          <span className="font-medium text-foreground">@{handle}</span>
+          {socials.map((social) => (
+            <Link key={social.label} variant="subtle" href={social.href} target="_blank" rel="noopener noreferrer">
+              {social.label}
+            </Link>
+          ))}
+        </nav>
 
-            <div className="grid grid-cols-2 gap-x-12 gap-y-8 sm:gap-x-16">
-              {FOOTER_LINK_GROUPS.map((group) => (
-                <nav key={group.labelKey} aria-labelledby={`footer-${group.labelKey}`}>
-                  <Stack gap={3}>
-                    <p id={`footer-${group.labelKey}`} className="text-sm font-medium text-foreground">
-                      {t(group.labelKey)}
-                    </p>
-                    <Stack as="ul" gap={3}>
-                      {group.links.map((link) => (
-                        <li key={link.href}>
-                          <Link variant="subtle" href={link.href}>
-                            {t(link.labelKey)}
-                          </Link>
-                        </li>
-                      ))}
-                    </Stack>
+        <div className="grid gap-12 py-12 sm:py-16 md:grid-cols-[minmax(0,1fr)_auto] md:gap-24">
+          <Image
+            alt={t("common.logo")}
+            width={34}
+            height={24}
+            className="h-6 w-[34px] select-none object-contain"
+            src={imgLogo}
+          />
+          <div className="grid grid-cols-2 gap-x-16 gap-y-10 sm:gap-x-24">
+            {FOOTER_LINK_GROUPS.map((group) => (
+              <nav key={group.labelKey} aria-labelledby={`footer-${group.labelKey}`}>
+                <Stack gap={4}>
+                  <p id={`footer-${group.labelKey}`} className="text-sm text-muted-foreground">
+                    {t(group.labelKey)}
+                  </p>
+                  <Stack as="ul" gap={3}>
+                    {group.links.map((link) => (
+                      <li key={link.href} className="text-base">
+                        <Link variant="subtle" href={link.href}>
+                          {t(link.labelKey)}
+                        </Link>
+                      </li>
+                    ))}
                   </Stack>
-                </nav>
-              ))}
-            </div>
+                </Stack>
+              </nav>
+            ))}
           </div>
+        </div>
 
-          <p className="mt-10 border-t border-border pt-6 text-xs tabular-nums text-muted-foreground">
+        <div className="flex flex-col gap-2 border-t border-border py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-pretty">{t("footer.tagline")}</p>
+          <p className="tabular-nums">
             {t("footer.copyright", { year: new Date().getFullYear() })}
             <span aria-hidden="true"> · </span>
             {t("footer.madeBy")}

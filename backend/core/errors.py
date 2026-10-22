@@ -139,3 +139,7 @@ REGISTRATION_FAILED = "Unable to complete registration. Please try again later."
 
 SPONSOR_SUBMISSION_NOT_FOUND = "Sponsor submission not found"
 COMPETITOR_PAIN_POINT_NOT_FOUND = "Competitor pain point not found"
+OUTREACH_CAMPAIGN_NOT_FOUND = "Outreach campaign not found"
+OUTREACH_LEAD_NOT_FOUND = "Outreach lead not found"
+OUTREACH_LEAD_TYPE_UNKNOWN = "Unknown outreach lead type"
+OUTREACH_SCHOOL_UNKNOWN = "Unknown school"

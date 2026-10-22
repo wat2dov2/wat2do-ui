@@ -1027,6 +1027,31 @@ class InstagramEmulatorControl(_ControlModel):
         return self
 
 
+class OutreachControl(_ControlModel):
+    model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    agent_timeout_seconds: int = Field(gt=0, le=3600)
+    # Research agents run at once, one per active campaign and school.
+    parallel_agents: int = Field(ge=1, le=16)
+    sweep_interval_hours: int = Field(ge=1, le=720)
+    leads_per_search: int = Field(ge=1, le=20)
+    known_emails_in_prompt: int = Field(ge=0, le=5000)
+    # Each lead's email must appear on the page it was found on, fetched within this time.
+    page_fetch_timeout_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # Who signs the video script and email.
+    sender_name: str = Field(min_length=1, max_length=60)
+    # The Gmail account the admin page opens each draft in.
+    gmail_account: EmailStr
+    # "{school}" becomes the school's slug.
+    submit_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*$")
+    # Lead type slug -> who and what the research agent looks for.
+    lead_types: dict[
+        Annotated[str, Field(pattern=r"^[a-z0-9_]+$")], Annotated[str, Field(min_length=1)]
+    ] = Field(min_length=1)
+    # What Wat2Do offers an organizer, in plain words the scripts build on.
+    offer: str = Field(min_length=1, max_length=1000)
+
+
 class CompetitorPainPointsControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     agent_timeout_seconds: int = Field(gt=0, le=3600)
@@ -1116,6 +1141,7 @@ class ControlBox(_ControlModel):
     instagram_digest: InstagramDigestControl
     instagram_publishing: InstagramPublishingControl
     competitor_pain_points: CompetitorPainPointsControl
+    outreach: OutreachControl
     instagram_dms: InstagramDmsControl
     instagram_emulator: InstagramEmulatorControl
     workflow_failure_alerts: WorkflowFailureAlertsControl

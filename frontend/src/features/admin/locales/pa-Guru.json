@@ -474,6 +474,52 @@
         "emptyDescription": "ਨਵੀਆਂ ਸ਼ਿਕਾਇਤਾਂ ਲੱਭਣ ਵਾਲੀ ਹਰ ਰੋਜ਼ਾਨਾ ਖੋਜ ਤੋਂ ਬਾਅਦ ਰਿਪੋਰਟ ਲਿਖੀ ਜਾਂਦੀ ਹੈ।"
       }
     },
+    "outreach": {
+      "title": "ਆਊਟਰੀਚ",
+      "cardDescription": "ਪ੍ਰਬੰਧਕ ਜਿਨ੍ਹਾਂ ਨੂੰ ਆਪਣੇ ਇਵੈਂਟ ਪੋਸਟ ਕਰਨ ਲਈ ਸੱਦਾ ਦੇਣਾ ਹੈ।",
+      "description": "ਹਫ਼ਤਾਵਾਰੀ ਖੋਜ ਵਿੱਚ ਮਿਲੇ hackathon ਅਤੇ ਟਿਕਟ ਵਾਲੇ ਇਵੈਂਟਾਂ ਦੇ ਪ੍ਰਬੰਧਕ, ਹਰ ਇੱਕ ਲਈ ਵੀਡੀਓ ਸਕ੍ਰਿਪਟ ਅਤੇ ਈਮੇਲ ਨਾਲ। ਵੀਡੀਓ ਰਿਕਾਰਡ ਕਰੋ, ਈਮੇਲ Gmail ਵਿੱਚ ਖੋਲ੍ਹੋ ਅਤੇ ਆਪ ਭੇਜੋ।",
+      "newCampaign": "ਨਵੀਂ ਮੁਹਿੰਮ",
+      "newCampaignDescription": "ਦੱਸੋ ਕਿ ਕਿਸ ਤਰ੍ਹਾਂ ਦੇ ਇਵੈਂਟ ਲੱਭਣੇ ਹਨ। ਹਫ਼ਤਾਵਾਰੀ ਖੋਜ ਹਰ ਕਾਲਜ ਵਿੱਚ ਇਹਨਾਂ ਨੂੰ ਲੱਭਦੀ ਹੈ।",
+      "campaignName": "ਮੁਹਿੰਮ ਦਾ ਨਾਮ",
+      "leadType": "ਕਿਸ ਦੀ ਭਾਲ",
+      "goal": "ਟੀਚਾ",
+      "createCampaign": "ਮੁਹਿੰਮ ਬਣਾਓ",
+      "leadTypes": {
+        "hackathon": "Hackathons",
+        "ticketed_event": "ਟਿਕਟ ਵਾਲੇ ਇਵੈਂਟ"
+      },
+      "campaign": "ਮੁਹਿੰਮ",
+      "allCampaigns": "ਸਾਰੀਆਂ ਮੁਹਿੰਮਾਂ",
+      "campaignStatus": "ਮੁਹਿੰਮ ਦੀ ਸਥਿਤੀ",
+      "campaignStatuses": {
+        "active": "ਸਰਗਰਮ",
+        "paused": "ਰੋਕੀ ਗਈ",
+        "done": "ਪੂਰੀ"
+      },
+      "statuses": {
+        "new": "ਨਵਾਂ",
+        "contacted": "ਸੰਪਰਕ ਕੀਤਾ",
+        "replied": "ਜਵਾਬ ਦਿੱਤਾ",
+        "submitted": "ਇਵੈਂਟ ਜਮ੍ਹਾਂ ਕੀਤਾ",
+        "not_interested": "ਦਿਲਚਸਪੀ ਨਹੀਂ",
+        "dismissed": "ਰੱਦ ਕੀਤਾ"
+      },
+      "emptyTitle": "ਅਜੇ ਕੋਈ ਪ੍ਰਬੰਧਕ ਨਹੀਂ",
+      "emptyDescription": "ਇੱਕ ਮੁਹਿੰਮ ਬਣਾਓ, ਹਫ਼ਤਾਵਾਰੀ ਖੋਜ ਇਹ ਸੂਚੀ ਭਰ ਦੇਵੇਗੀ।",
+      "event": "ਇਵੈਂਟ",
+      "organizer": "ਪ੍ਰਬੰਧਕ",
+      "details": "ਵੇਰਵੇ",
+      "openEmail": "Gmail ਵਿੱਚ ਈਮੇਲ ਖੋਲ੍ਹੋ",
+      "openFollowUp": "Gmail ਵਿੱਚ ਫਾਲੋ-ਅੱਪ ਖੋਲ੍ਹੋ",
+      "openEvent": "ਇਵੈਂਟ ਪੰਨਾ ਖੋਲ੍ਹੋ",
+      "source": "ਈਮੇਲ ਕਿੱਥੋਂ ਮਿਲੀ",
+      "context": "ਸੰਦਰਭ",
+      "videoScript": "ਵੀਡੀਓ ਸਕ੍ਰਿਪਟ",
+      "email": "ਈਮੇਲ",
+      "followUp": "ਫਾਲੋ-ਅੱਪ",
+      "notes": "ਨੋਟਸ",
+      "saveNotes": "ਨੋਟਸ ਸੇਵ ਕਰੋ"
+    },
     "clubSubmissionDetails": {
       "records": "ਰਿਕਾਰਡ ਵੇਰਵੇ",
       "clubId": "ਕਲੱਬ ਆਈਡੀ: {{id}}",

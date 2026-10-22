@@ -474,6 +474,52 @@
         "emptyDescription": "每次每日搜索发现新投诉后都会撰写一份报告。"
       }
     },
+    "outreach": {
+      "title": "推广邀约",
+      "cardDescription": "邀请这些组织者发布他们的活动。",
+      "description": "每周调研找到的黑客松和售票活动组织者，每位都附有视频脚本和邮件。录制视频，在 Gmail 中打开邮件并亲自发送。",
+      "newCampaign": "新建计划",
+      "newCampaignDescription": "填写要寻找的活动类型。每周调研会在每所学校中查找。",
+      "campaignName": "计划名称",
+      "leadType": "寻找对象",
+      "goal": "目标",
+      "createCampaign": "创建计划",
+      "leadTypes": {
+        "hackathon": "黑客松",
+        "ticketed_event": "售票活动"
+      },
+      "campaign": "计划",
+      "allCampaigns": "全部计划",
+      "campaignStatus": "计划状态",
+      "campaignStatuses": {
+        "active": "进行中",
+        "paused": "已暂停",
+        "done": "已完成"
+      },
+      "statuses": {
+        "new": "新",
+        "contacted": "已联系",
+        "replied": "已回复",
+        "submitted": "已提交",
+        "not_interested": "不感兴趣",
+        "dismissed": "已忽略"
+      },
+      "emptyTitle": "暂无组织者",
+      "emptyDescription": "创建一个计划，每周调研会填充此列表。",
+      "event": "活动",
+      "organizer": "组织者",
+      "details": "详情",
+      "openEmail": "在 Gmail 中打开邮件",
+      "openFollowUp": "在 Gmail 中打开跟进邮件",
+      "openEvent": "打开活动页面",
+      "source": "邮箱来源",
+      "context": "背景",
+      "videoScript": "视频脚本",
+      "email": "邮件",
+      "followUp": "跟进",
+      "notes": "备注",
+      "saveNotes": "保存备注"
+    },
     "clubSubmissionDetails": {
       "records": "记录详情",
       "clubId": "社团 ID：{{id}}",

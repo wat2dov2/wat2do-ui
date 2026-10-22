@@ -474,6 +474,52 @@
         "emptyDescription": "새 불만을 찾은 매일의 검색이 끝나면 보고서가 작성됩니다."
       }
     },
+    "outreach": {
+      "title": "아웃리치",
+      "cardDescription": "행사를 올리도록 초대할 주최자입니다.",
+      "description": "주간 리서치에서 찾은 해커톤 및 유료 행사 주최자 목록으로, 각각 영상 스크립트와 이메일이 준비되어 있습니다. 영상을 녹화하고 Gmail에서 이메일을 열어 직접 보내세요.",
+      "newCampaign": "새 캠페인",
+      "newCampaignDescription": "찾을 행사 유형을 입력하세요. 주간 리서치가 모든 학교에서 조사합니다.",
+      "campaignName": "캠페인 이름",
+      "leadType": "대상",
+      "goal": "목표",
+      "createCampaign": "캠페인 만들기",
+      "leadTypes": {
+        "hackathon": "해커톤",
+        "ticketed_event": "유료 행사"
+      },
+      "campaign": "캠페인",
+      "allCampaigns": "모든 캠페인",
+      "campaignStatus": "캠페인 상태",
+      "campaignStatuses": {
+        "active": "진행 중",
+        "paused": "일시 중지",
+        "done": "완료"
+      },
+      "statuses": {
+        "new": "신규",
+        "contacted": "연락함",
+        "replied": "답장함",
+        "submitted": "제출함",
+        "not_interested": "관심 없음",
+        "dismissed": "제외됨"
+      },
+      "emptyTitle": "아직 주최자가 없습니다",
+      "emptyDescription": "캠페인을 만들면 주간 리서치가 이 목록을 채웁니다.",
+      "event": "행사",
+      "organizer": "주최자",
+      "details": "세부 정보",
+      "openEmail": "Gmail에서 이메일 열기",
+      "openFollowUp": "Gmail에서 후속 메일 열기",
+      "openEvent": "행사 페이지 열기",
+      "source": "이메일을 찾은 곳",
+      "context": "맥락",
+      "videoScript": "영상 스크립트",
+      "email": "이메일",
+      "followUp": "후속 메일",
+      "notes": "메모",
+      "saveNotes": "메모 저장"
+    },
     "clubSubmissionDetails": {
       "records": "기록 상세 정보",
       "clubId": "동아리 ID: {{id}}",

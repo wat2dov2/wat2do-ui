@@ -474,6 +474,52 @@
         "emptyDescription": "Se escribe un informe tras cada búsqueda diaria que encuentra quejas nuevas."
       }
     },
+    "outreach": {
+      "title": "Difusión",
+      "cardDescription": "Organizadores a quienes invitar a publicar sus eventos.",
+      "description": "Organizadores de hackathons y eventos con entrada que encontró la búsqueda semanal, con un guion de video y un correo para cada uno. Graba el video, abre el correo en Gmail y envíalo tú mismo.",
+      "newCampaign": "Nueva campaña",
+      "newCampaignDescription": "Indica qué tipo de evento buscar. La búsqueda semanal lo investiga en cada universidad.",
+      "campaignName": "Nombre de la campaña",
+      "leadType": "Buscando",
+      "goal": "Objetivo",
+      "createCampaign": "Crear campaña",
+      "leadTypes": {
+        "hackathon": "Hackathons",
+        "ticketed_event": "Eventos con entrada"
+      },
+      "campaign": "Campaña",
+      "allCampaigns": "Todas las campañas",
+      "campaignStatus": "Estado de la campaña",
+      "campaignStatuses": {
+        "active": "Activa",
+        "paused": "En pausa",
+        "done": "Terminada"
+      },
+      "statuses": {
+        "new": "Nuevo",
+        "contacted": "Contactado",
+        "replied": "Respondió",
+        "submitted": "Enviado",
+        "not_interested": "No le interesa",
+        "dismissed": "Descartado"
+      },
+      "emptyTitle": "Aún no hay organizadores",
+      "emptyDescription": "Crea una campaña y la búsqueda semanal llenará esta lista.",
+      "event": "Evento",
+      "organizer": "Organizador",
+      "details": "Detalles",
+      "openEmail": "Abrir correo en Gmail",
+      "openFollowUp": "Abrir seguimiento en Gmail",
+      "openEvent": "Abrir página del evento",
+      "source": "Dónde se encontró el correo",
+      "context": "Contexto",
+      "videoScript": "Guion del video",
+      "email": "Correo",
+      "followUp": "Seguimiento",
+      "notes": "Notas",
+      "saveNotes": "Guardar notas"
+    },
     "clubSubmissionDetails": {
       "records": "Detalles del registro",
       "clubId": "ID del club: {{id}}",

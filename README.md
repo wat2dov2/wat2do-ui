@@ -171,6 +171,13 @@ X shows nothing logged out, so before the agents run the sweep reads X's Latest 
 Checked findings land in `public.competitor_pain_points`, deduplicated by link, and admins triage them on the Competitor pain points admin page; nothing ever replies or posts.
 Competitors, sources and their allowed link hosts, and the schedule live in `backend/controlbox/competitor_pain_points.json`.
 Install its LaunchAgent with `cd backend && .venv/bin/python jobs/find_competitor_pain_points.py install-schedule`, or run one sweep with `sweep`.
+Every week a Claude Haiku agent per active outreach campaign and school researches upcoming hackathons or ticketed student events and their organizers, with only WebSearch and WebFetch (`backend/services/outreach/prompt.md`).
+For each organizer it writes a short brief, a 30 to 45 second video script, an email and a follow-up that invite them to submit their event to Wat2Do, in the warm, value-first style of Alex Hormozi's $100M Leads.
+Code keeps a lead only when its email is printed on the page the agent cites, so no address is ever guessed, and an organizer is never researched twice for the same campaign.
+Leads land in `public.outreach_leads`; on the Outreach admin page an admin creates campaigns, reads each lead, opens its email or follow-up as a filled-in Gmail draft in the outreach account, and tracks its status.
+Nothing is sent automatically.
+Lead types, the offer, the sender and the schedule live in `backend/controlbox/outreach.json`.
+Install its LaunchAgent with `cd backend && .venv/bin/python jobs/find_outreach_leads.py install-schedule`, or run one sweep with `sweep`.
 Every local agent runs through `backend/services/claude_code.py`, which passes no application secrets unless the caller supplies them.
 Notifications and recommendation compute run on GitHub-hosted runners.
 Queue a post by hand with `cd backend && python scripts/ingest.py enqueue --school <slug> --url <post url>`; `scripts/instagram_browser.py retrieve` also accepts a profile, which the Brave worker lists before its posts are queued.

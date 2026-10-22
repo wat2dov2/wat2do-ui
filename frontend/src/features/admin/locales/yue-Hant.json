@@ -474,6 +474,52 @@
         "emptyDescription": "每次每日搜尋搵到新投訴之後都會寫一份報告。"
       }
     },
+    "outreach": {
+      "title": "外展邀請",
+      "cardDescription": "邀請呢啲搞手喺度發佈佢哋嘅活動。",
+      "description": "每週調查搵到嘅黑客松同售票活動搞手，每位都有影片稿同電郵。錄好片，喺 Gmail 打開電郵再親自寄出。",
+      "newCampaign": "新增計劃",
+      "newCampaignDescription": "寫低要搵咩類型嘅活動。每週調查會喺每間學校搵。",
+      "campaignName": "計劃名稱",
+      "leadType": "搵緊",
+      "goal": "目標",
+      "createCampaign": "建立計劃",
+      "leadTypes": {
+        "hackathon": "黑客松",
+        "ticketed_event": "售票活動"
+      },
+      "campaign": "計劃",
+      "allCampaigns": "全部計劃",
+      "campaignStatus": "計劃狀態",
+      "campaignStatuses": {
+        "active": "進行中",
+        "paused": "已暫停",
+        "done": "已完成"
+      },
+      "statuses": {
+        "new": "新",
+        "contacted": "已聯絡",
+        "replied": "已回覆",
+        "submitted": "已提交",
+        "not_interested": "冇興趣",
+        "dismissed": "已略過"
+      },
+      "emptyTitle": "暫時未有搞手",
+      "emptyDescription": "建立一個計劃，每週調查就會填好呢個列表。",
+      "event": "活動",
+      "organizer": "搞手",
+      "details": "詳情",
+      "openEmail": "喺 Gmail 打開電郵",
+      "openFollowUp": "喺 Gmail 打開跟進電郵",
+      "openEvent": "打開活動頁面",
+      "source": "電郵喺邊度搵到",
+      "context": "背景",
+      "videoScript": "影片稿",
+      "email": "電郵",
+      "followUp": "跟進",
+      "notes": "筆記",
+      "saveNotes": "儲存筆記"
+    },
     "clubSubmissionDetails": {
       "records": "記錄詳情",
       "clubId": "社團 ID：{{id}}",

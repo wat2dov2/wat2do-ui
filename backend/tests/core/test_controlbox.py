@@ -940,3 +940,19 @@ def test_instagram_emulator_rejects_an_inverted_keystroke_window(tmp_path: Path)
     )
     with pytest.raises(ValidationError, match="keystroke_delay_min_seconds"):
         load_controlbox(path)
+
+
+def test_outreach_targets_hackathons_and_ticketed_events_with_a_school_submit_link() -> None:
+    control = load_controlbox().outreach
+    assert set(control.lead_types) == {"hackathon", "ticketed_event"}
+    assert "{school}" in control.submit_url_template
+
+
+def test_outreach_rejects_a_submit_link_without_the_school(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "outreach",
+        lambda payload: payload.update({"submit_url_template": "https://wat2do.io/events/submit"}),
+    )
+    with pytest.raises(ValidationError, match="submit_url_template"):
+        load_controlbox(path)
