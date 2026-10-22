@@ -58,3 +58,41 @@ def test_ages_read_every_unit() -> None:
     assert inbox._age_days("30m") == pytest.approx(30 / 1440)
     assert inbox._age_days("2w") == 14
     assert inbox._age_days("Active") is None
+
+
+class _AcceptingDevice:
+    """A request thread whose Accept asks which inbox to move it to."""
+
+    def __init__(self, asks_inbox):
+        self.screens = [
+            [_node("", (42, 1956, 1038, 2003), "thread_disabled_title")],
+            [_node("Primary", (238, 1201, 842, 1329), "igds_alert_dialog_primary_button")]
+            if asks_inbox
+            else [_node("Message…", (158, 2185, 621, 2316), "row_thread_composer_edittext")],
+            [_node("Message…", (158, 2185, 621, 2316), "row_thread_composer_edittext")],
+        ]
+        self.tapped = []
+
+    def find(self, pattern, nodes=None):
+        return next((n for n in self.screens[0] if n.labelled(pattern)), None)
+
+    def wait_for(self, pattern):
+        self.screens.pop(0)
+        return next(n for n in self.screens[0] if n.labelled(pattern))
+
+    def tap_when(self, pattern):
+        self.tapped.append(pattern.pattern)
+
+    def tap(self, node):
+        self.tapped.append(node.resource_id)
+
+    def pause(self):
+        pass
+
+
+@pytest.mark.parametrize("asks_inbox", [True, False])
+def test_accepting_a_request_moves_it_to_primary_when_asked(asks_inbox) -> None:
+    device = _AcceptingDevice(asks_inbox)
+    inbox.accept_request(device)
+    expected = ["^Accept$", "igds_alert_dialog_primary_button"] if asks_inbox else ["^Accept$"]
+    assert device.tapped == expected
