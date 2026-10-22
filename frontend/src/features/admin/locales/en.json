@@ -397,7 +397,7 @@
     },
     "painPoints": {
       "title": "Competitor pain points",
-      "cardDescription": "Complaints about Eventbrite, Meetup and Fable Social.",
+      "cardDescription": "Complaints about competing event apps.",
       "description": "Public reviews and posts where people complain about competitors. Read only; wat2do never replies.",
       "competitor": "Competitor",
       "source": "Source",

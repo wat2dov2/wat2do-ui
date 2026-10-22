@@ -1020,26 +1020,48 @@ class InstagramEmulatorControl(_ControlModel):
 class CompetitorPainPointsControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     agent_timeout_seconds: int = Field(gt=0, le=3600)
-    parallel_agents: int = Field(ge=1, le=8)
+    # Agents run at once; each competitor gets one per search lane, plus X.
+    parallel_agents: int = Field(ge=1, le=32)
     sweep_interval_hours: int = Field(ge=1, le=24)
     lookback_days: int = Field(ge=1, le=30)
-    findings_per_competitor: int = Field(ge=1, le=100)
+    findings_per_search: int = Field(ge=1, le=100)
     known_urls_in_prompt: int = Field(ge=0, le=2000)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
-    # X searches read in Safari; "{name}" becomes the competitor's display name.
+    # X and Reddit searches read in Safari; "{name}" becomes the competitor's
+    # search name.
     x_queries: list[Annotated[str, Field(pattern=r"\{name\}")]] = Field(max_length=10)
-    x_scrolls: int = Field(ge=0, le=10)
-    x_page_wait_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
-    x_posts_per_query: int = Field(ge=1, le=200)
-    # Competitor slug -> display name, and source slug -> the hosts its links
-    # may use; a source with no hosts (forums) accepts any public host.
+    reddit_queries: list[Annotated[str, Field(pattern=r"\{name\}")]] = Field(max_length=10)
+    scrolls: int = Field(ge=0, le=10)
+    page_wait_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
+    posts_per_query: int = Field(ge=1, le=200)
+    # Competitor slug -> display name.
     competitors: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")], Annotated[str, Field(min_length=1)]
     ] = Field(min_length=1)
+    # One line per competitor that tells it apart from products with a similar name.
+    about: dict[str, Annotated[str, Field(min_length=1)]]
+    # X and Reddit search term when the display name is not one, e.g. "What2Do (UTM)".
+    search_names: dict[str, Annotated[str, Field(min_length=1)]] = Field(default_factory=dict)
+    # Lane slug -> where that lane's agent looks; every competitor gets each lane.
+    lanes: dict[
+        Annotated[str, Field(pattern=r"^[a-z0-9_]+$")], Annotated[str, Field(min_length=1)]
+    ] = Field(min_length=1)
+    # Source slug -> the hosts its links may use; a source with no hosts
+    # (forums) accepts any public host.
     sources: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")],
         list[Annotated[str, Field(pattern=r"^[a-z0-9.-]+$")]],
     ] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _every_competitor_described(self) -> CompetitorPainPointsControl:
+        if set(self.about) != set(self.competitors):
+            raise ValueError("about must describe exactly the configured competitors")
+        if not set(self.search_names) <= set(self.competitors):
+            raise ValueError("search_names may only name configured competitors")
+        if {"x", "reddit"} & set(self.lanes):
+            raise ValueError("the x and reddit lanes are built in; configure their queries")
+        return self
 
 
 class ControlBox(_ControlModel):

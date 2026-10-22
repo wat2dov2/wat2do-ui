@@ -397,7 +397,7 @@
     },
     "painPoints": {
       "title": "Problemy konkurencji",
-      "cardDescription": "Skargi na Eventbrite, Meetup i Fable Social.",
+      "cardDescription": "Skargi na konkurencyjne aplikacje z wydarzeniami.",
       "description": "Publiczne recenzje i posty, w których ludzie narzekają na konkurencję. Tylko do odczytu; wat2do nigdy nie odpowiada.",
       "competitor": "Konkurent",
       "source": "Źródło",

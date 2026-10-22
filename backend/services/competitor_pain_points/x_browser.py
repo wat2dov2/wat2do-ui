@@ -3,19 +3,19 @@
 X shows nothing to logged-out visitors, so posts are read from the page in a
 Safari window this module opens and closes itself. It only reads what the
 page displays: it never likes, replies, posts or follows, and never touches
-cookies or the login. Safari needs "Allow JavaScript from Apple Events".
+cookies or the login (see ``safari``).
 """
 
 from __future__ import annotations
 
 import json
 import logging
-import subprocess
 import time
 from typing import Any
 from urllib.parse import quote
 
 from core.controlbox import controlbox
+from services.competitor_pain_points import safari
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.competitor_pain_points
@@ -37,10 +37,6 @@ JSON.stringify(location.pathname.startsWith("/i/flow/login") ? null : [...docume
 """
 
 
-class XUnavailable(RuntimeError):
-    """Safari could not show X search results (not logged in, or not scriptable)."""
-
-
 def read_posts(competitor_name: str) -> list[dict[str, Any]]:
     """Recent X posts for the competitor's configured searches, newest first."""
     posts: dict[str, dict[str, Any]] = {}
@@ -52,54 +48,19 @@ def read_posts(competitor_name: str) -> list[dict[str, Any]]:
 
 
 def _search(query: str) -> list[dict[str, Any]]:
-    url = f"https://x.com/search?q={quote(query)}&src=typed_query&f=live"
-    window = _osascript(
-        'tell application "Safari" to make new document with properties {URL:(item 1 of argv)}',
-        'tell application "Safari" to return id of front window',
-        args=[url],
-    )
+    window = safari.open_window(f"https://x.com/search?q={quote(query)}&src=typed_query&f=live")
     try:
         found: dict[str, dict[str, Any]] = {}
-        for scroll in range(CONTROL.x_scrolls + 1):
-            time.sleep(CONTROL.x_page_wait_seconds)
-            page = json.loads(_javascript(window, _READ_POSTS) or "null")
+        for scroll in range(CONTROL.scrolls + 1):
+            time.sleep(CONTROL.page_wait_seconds)
+            page = json.loads(safari.run_javascript(window, _READ_POSTS) or "null")
             if page is None:
-                raise XUnavailable("Safari is not logged in to X")
+                raise safari.SafariUnavailable("Safari is not logged in to X")
             for post in page:
                 found.setdefault(post["url"], post)
-            if len(found) >= CONTROL.x_posts_per_query or scroll == CONTROL.x_scrolls:
+            if len(found) >= CONTROL.posts_per_query or scroll == CONTROL.scrolls:
                 break
-            _javascript(window, "window.scrollBy(0, 4000)")
-        return list(found.values())[: CONTROL.x_posts_per_query]
+            safari.run_javascript(window, "window.scrollBy(0, 4000)")
+        return list(found.values())[: CONTROL.posts_per_query]
     finally:
-        _osascript(
-            'tell application "Safari" to close window id ((item 1 of argv) as integer)',
-            args=[window],
-        )
-
-
-def _javascript(window: str, source: str) -> str:
-    return _osascript(
-        'tell application "Safari" to do JavaScript (item 1 of argv) '
-        "in current tab of window id ((item 2 of argv) as integer)",
-        args=[source, window],
-    )
-
-
-def _osascript(*lines: str, args: list[str]) -> str:
-    script = ["on run argv", *lines, "end run"]
-    try:
-        result = subprocess.run(
-            ["osascript", *(part for line in script for part in ("-e", line)), *args],
-            capture_output=True,
-            text=True,
-            timeout=CONTROL.x_page_wait_seconds * 4,
-            check=True,
-        )
-    except subprocess.CalledProcessError as exc:
-        # Safari's own reason, such as JavaScript from Apple Events being off.
-        reason = (exc.stderr or "").strip().splitlines()[-1:] or ["unknown error"]
-        raise XUnavailable(f"Safari could not be scripted: {reason[0]}") from None
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise XUnavailable(f"Safari could not be scripted ({type(exc).__name__})") from None
-    return result.stdout.strip()
+        safari.close_window(window)

@@ -397,7 +397,7 @@
     },
     "painPoints": {
       "title": "Irritants des concurrents",
-      "cardDescription": "Plaintes sur Eventbrite, Meetup et Fable Social.",
+      "cardDescription": "Plaintes sur les applis d'événements concurrentes.",
       "description": "Avis et publications publics où des gens se plaignent des concurrents. Lecture seule; wat2do ne répond jamais.",
       "competitor": "Concurrent",
       "source": "Source",

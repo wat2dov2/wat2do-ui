@@ -397,7 +397,7 @@
     },
     "painPoints": {
       "title": "Criticità dei concorrenti",
-      "cardDescription": "Lamentele su Eventbrite, Meetup e Fable Social.",
+      "cardDescription": "Lamentele sulle app di eventi concorrenti.",
       "description": "Recensioni e post pubblici in cui le persone si lamentano dei concorrenti. Sola lettura; wat2do non risponde mai.",
       "competitor": "Concorrente",
       "source": "Fonte",
