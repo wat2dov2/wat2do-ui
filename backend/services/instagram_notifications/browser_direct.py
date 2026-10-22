@@ -60,7 +60,7 @@ class BrowserInstagramDirectExecutor:
         thread_id = validate_thread_id(thread_id)
         username = self._session.activate_account(recipient_id, account_username)
         thread = self._read_thread(thread_id, username)
-        decision = decide(thread, account=username, school_name=school_name)
+        decision = decide(thread, account=username, school=school, school_name=school_name)
         result: dict[str, Any] = {
             "outcome": decision.outcome,
             "reason": decision.reason,
