@@ -162,7 +162,8 @@ Native navigation is spaced through its own gate, which waits outside the transp
 Queries prove their terminal result and settled request state in one atomic browser read before returning; successful operations do not repeat cancellation through the busy transport.
 Each query declares whether it only reads.
 When the primary tab cannot confirm cancellation of its own read-only query (a digest, a post lookup or a DM thread read), the worker abandons that request instead of pausing for a person, because a read cannot change anything and its late result lands in its own request object.
-Uncertain sends, likes and reposts still pause the worker.
+Beyond that, a digest or retrieval job never pauses the worker over an unconfirmed cancellation, wherever in the job it happens; the job fails and retries instead.
+Uncertain sends, likes and reposts still pause the worker, as do logouts that need a person.
 Only idempotent reads, inventory, and cleanup retry within `bridge_retry_limit`; uncertain engagement clicks are never replayed.
 Navigation uses the pinned tab's native URL setter, so blank or unresponsive page JavaScript cannot block the navigation needed to recover it.
 Retrieval tabs open their actual post/profile targets before readiness checks; digest preparation uses the verified account's public profile instead of relying on a blank home feed.
@@ -396,9 +397,10 @@ If no recommendation can be substantiated, save `suggested_song: null` and repor
 The recommendation remains fixed with the batch and is displayed read-only in the admin drawer.
 It is not attached to the published carousel by the API; the admin searches for the title and artist in Instagram and checks availability for that account.
 
-Draft selection has no event-count quota.
-Keep every eligible event with visibly high-effort, appealing artwork or a genuinely compelling student experience.
-Exclude routine administrative meetings, generic information sessions and low-value listings unless the artwork or the activity clearly meets that bar.
+Draft selection has no event-count quota, but it is selective.
+It favors cool, exciting, high-status events students would brag about attending: formals, galas, parties, concerts, big shows, varsity games, trips, prestigious speakers or companies, and events with polished artwork.
+It leaves out boring and low-status events, such as meetings, elections, study sessions, routine club meetings, generic workshops, information sessions, executive recruitment, bake sales and plainly promoted events, unless the event itself is clearly exciting.
+Picks are ranked by status and energy first and artwork second, so the coolest, best-looking event is the first slide; never by date, club or packet order.
 Review the actual poster before relying on artwork quality; an image URL alone is not evidence.
 Clubs that asked not to be posted are rows in `public.instagram_excluded_clubs`, keyed by lowercase Instagram handle without `@`.
 Add a row by hand when a club asks.
@@ -496,6 +498,8 @@ The worker answers as the school on its first tab:
 6. `ignore` does nothing.
 
 `controlbox/instagram_dms.json` starts with `dry_run: true`, which records each decision in the worker's job results without replying or queueing.
+A dry-run job only reads, so rerunning its notification reads a failed thread again; a live DM job is never retried.
+A thread that cannot be read fails with the in-tab step and Instagram's HTTP status, for example `http_error (HTTP 400)`.
 Review those results before setting it to `false`.
 A reply that cannot be confirmed pauses the worker for a person to check the thread, and it is never sent twice.
 DM text is never logged.

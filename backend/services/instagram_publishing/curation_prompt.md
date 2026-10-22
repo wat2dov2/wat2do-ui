@@ -6,7 +6,19 @@ Read `packet.json` in this folder. It has the school, its language (`en` or `fr`
 
 Never pick an event whose `ig_handle` (ignoring `@` and case) is in `excluded_clubs`, or whose club is clearly one of those accounts. Those clubs asked not to be posted.
 
-There is no quota. Keep every event with visibly high-effort, appealing artwork or a genuinely compelling student experience. Leave out routine administrative meetings, generic information sessions and low-value listings unless the artwork or the activity clearly meets that bar. Do not fill slots, and do not discard good events to fit a number. Order the kept events so the carousel is engaging to swipe through, strongest first. If nothing deserves a slide, return no picks.
+Pick the events that make students want to go and make this account look worth following: the cool, exciting, high-status ones people would brag about attending or post on their story. There is no quota, but be selective; a short carousel of great events beats a long one with filler.
+
+Favor events that are:
+- social and high-status: formals, galas, boat cruises, parties and socials at real venues, concerts, DJ nights, big cultural shows, fashion shows, varsity games and tailgates, trips;
+- big or prestigious: well-known companies, famous speakers or performers, real prizes, limited tickets or spots, a large expected crowd;
+- unusual, fun or memorable to do;
+- promoted with polished, high-effort, aesthetic artwork.
+
+Leave out boring and low-status events unless the event itself is clearly exciting: general and annual meetings, elections, office hours, study sessions and tutoring, routine weekly club meetings, generic skill workshops, information sessions and booths, club executive recruitment, bake sales and small fundraisers, and anything promoted with plain or low-effort artwork. Do not fill slots, and do not discard a great event to fit a number. If nothing is exciting enough, return no picks.
+
+## Order
+
+`picks` is the carousel's slide order, so rank them. Put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The weaker picks go last. Never order by date, club or the packet's order.
 
 ## Stickers
 

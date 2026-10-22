@@ -44,7 +44,7 @@ maintainability.
 Collect Instagram notifications through the official Instagram app on a physical
 Android phone running Automate, whose `NotificationListenerService` flow triggers
 the GitHub `process-notification` workflow directly.
-Do not use Android emulators.
+Do not use Android emulators for notification collection.
 Budget no more than three Instagram accounts per device and scale horizontally by
 adding devices.
 The workflow records exact post URLs in the Supabase notification ledger, and a
@@ -87,13 +87,24 @@ adding it to our posts.
 Everything else is ignored without a reply.
 An "add it to our posts" request queues the shared post in `public.ingestion_items`
 and gets one short reply.
-A story request gets no reply until the app can actually share it to the school's story.
+A story request is shared first and answered after: the Instagram app on the Mac's
+Android emulator (`controlbox/instagram_emulator.json`) opens the shared post, adds it
+to the school's story, and only then does the thread get the reply and a short
+"done" message.
+Instagram's website cannot add another account's post to a story, which is the only
+reason the emulator is used.
+The emulator holds every school account, logged in once outside this automation and
+spread across Android users because the app keeps at most ten accounts each.
+It finds every control by its accessibility label, taps at a random point inside it
+after a random pause, and never types a password.
+A story repost that fails or cannot be confirmed pauses the worker for a person and
+is never retried, since it may already be posted.
 Code, not the model, checks that the post was shared in the thread and that a reply
 is short, has no links or mentions, and is never sent when our message is already the
 newest.
 Each reply waits a random human-like delay first.
 A reply whose delivery is uncertain pauses the worker for a person and is never retried.
-`dry_run` decides and records every DM without replying or queueing anything.
+`dry_run` decides and records every DM without replying, reposting or queueing anything.
 Never log DM text.
 
 If serialized browser expansion cannot complete, fail before recording that

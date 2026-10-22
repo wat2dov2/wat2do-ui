@@ -13,6 +13,7 @@ from contextlib import contextmanager
 from dataclasses import asdict, replace
 from typing import Callable, Iterator
 
+from core.controlbox import controlbox
 from services.instagram_notifications.browser_digest import BrowserInstagramDigestResolver
 from services.instagram_notifications.browser_engagement import BrowserInstagramEngagementExecutor
 from services.instagram_notifications.browser_queue import CONTROL, BrowserJob, BrowserJobQueue
@@ -52,24 +53,39 @@ def _storage_failure_reason(error: BaseException) -> str | None:
     return "Browser queue storage is unavailable; inspect before resuming"
 
 
-def _requires_human_recovery(error: BaseException) -> bool:
-    return isinstance(error, BrowserEngagementUncertain) or any(
-        reason in str(error)
-        for reason in (
-            "cancellation could not be confirmed",
-            "human account recovery",
-            "human reauthorization",
-        )
+# Jobs that only read Instagram: nothing they leave in flight can change anything.
+_READ_ONLY_JOB_KINDS = frozenset({"digest", "retrieval"})
+
+
+def _requires_human_recovery(error: BaseException, job: BrowserJob) -> bool:
+    """Pause for a person on account trouble or an action that may still go through.
+
+    A read-only job whose cancellation cannot be confirmed fails and retries
+    instead: its leftover request cannot like, repost or send anything.
+    """
+    if isinstance(error, BrowserEngagementUncertain):
+        return True
+    if "cancellation could not be confirmed" in str(error):
+        return job.kind not in _READ_ONLY_JOB_KINDS
+    return any(
+        reason in str(error) for reason in ("human account recovery", "human reauthorization")
     )
 
 
+def job_timeout_seconds(job: BrowserJob) -> float:
+    """A DM may repost to a story through the emulator, which takes longer than a tab."""
+    if job.kind == "direct":
+        return controlbox.instagram_emulator.story_job_timeout_seconds
+    return CONTROL.job_timeout_seconds
+
+
 @contextmanager
-def job_deadline() -> Iterator[None]:
+def job_deadline(seconds: float) -> Iterator[None]:
     def expired(_signum: int, _frame: object) -> None:
         raise TimeoutError("Instagram browser job exceeded its deadline")
 
     previous = signal.signal(signal.SIGALRM, expired)
-    signal.setitimer(signal.ITIMER_REAL, CONTROL.job_timeout_seconds)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
     try:
         yield
     finally:
@@ -235,7 +251,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 _process_batch(queue, [job, *companions], allow_engagement=allow_engagement)
                 return True
             try:
-                with job_deadline():
+                with job_deadline(job_timeout_seconds(job)):
                     pool = BrowserTabPool(queue)
                     try:
                         pool.settle_registered_tabs()
@@ -258,7 +274,7 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 queue.defer_for_rate_limit(job, str(exc))
                 queue.finish(job, error=str(exc))
             except (BrowserSessionError, TimeoutError) as exc:
-                if _requires_human_recovery(exc):
+                if _requires_human_recovery(exc, job):
                     queue.set_setting("paused", str(exc))
                 queue.finish(job, error=str(exc))
             except (KeyboardInterrupt, SystemExit):
@@ -403,7 +419,7 @@ def _process_batch(
             persist(queue.set_setting, "retrieval_pool_account", None)
         if isinstance(exc, (BrowserSessionError, TimeoutError)):
             error = str(exc)
-            if _requires_human_recovery(exc):
+            if _requires_human_recovery(exc, job):
                 persist(queue.set_setting, "paused", error)
         else:
             error = _storage_failure_reason(exc) or (
@@ -448,7 +464,7 @@ def _process_batch(
         unfinished.discard(job.id)
 
     try:
-        with job_deadline():
+        with job_deadline(CONTROL.job_timeout_seconds):
             capacity = CONTROL.parallel_tabs if jobs[0].kind == "retrieval" else len(jobs)
             try:
                 sessions, username = BrowserTabPool(queue).prepare(jobs[0], capacity)

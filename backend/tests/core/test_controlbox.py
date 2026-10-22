@@ -1,5 +1,6 @@
 import json
 import shutil
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -884,6 +885,47 @@ def test_instagram_dms_reject_an_inverted_reply_window(tmp_path: Path) -> None:
         ),
     )
     with pytest.raises(ValidationError, match="reply_delay_min_seconds"):
+        load_controlbox(path)
+
+
+def test_instagram_dms_reject_an_inverted_done_reply_window(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_dms",
+        lambda payload: payload.update(
+            {"done_reply_delay_min_seconds": 90, "done_reply_delay_max_seconds": 10}
+        ),
+    )
+    with pytest.raises(ValidationError, match="done_reply_delay_min_seconds"):
+        load_controlbox(path)
+
+
+def test_instagram_emulator_spreads_accounts_within_the_app_limit() -> None:
+    control = load_controlbox().instagram_emulator
+    per_user = Counter(control.android_user_by_school.values())
+    assert max(per_user.values()) <= 10
+    assert control.step_delay_min_seconds <= control.step_delay_max_seconds
+
+
+def test_instagram_emulator_rejects_more_than_ten_accounts_on_one_user(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_emulator",
+        lambda payload: payload.update(
+            {"android_user_by_school": {f"school-{index}": 0 for index in range(11)}}
+        ),
+    )
+    with pytest.raises(ValidationError, match="at most ten"):
+        load_controlbox(path)
+
+
+def test_instagram_emulator_rejects_an_inverted_step_window(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_emulator",
+        lambda payload: payload.update({"step_delay_min_seconds": 5, "step_delay_max_seconds": 1}),
+    )
+    with pytest.raises(ValidationError, match="step_delay_min_seconds"):
         load_controlbox(path)
 
 

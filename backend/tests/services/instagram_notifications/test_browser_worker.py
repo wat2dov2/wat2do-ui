@@ -375,11 +375,21 @@ def test_job_deadline_disarms_alarm_and_restores_signal_handler(monkeypatch):
     )
 
     with pytest.raises(TimeoutError, match="deadline"):
-        with module.job_deadline():
+        with module.job_deadline(module.CONTROL.job_timeout_seconds):
             state["handler"](14, None)
 
     assert state["handler"] is previous
     assert timer_calls == [(0, module.CONTROL.job_timeout_seconds), (0, 0)]
+
+
+def test_a_dm_job_gets_the_emulator_story_deadline():
+    direct = SimpleNamespace(kind="direct")
+    engagement = SimpleNamespace(kind="engagement")
+    assert (
+        module.job_timeout_seconds(direct)
+        == module.controlbox.instagram_emulator.story_job_timeout_seconds
+    )
+    assert module.job_timeout_seconds(engagement) == module.CONTROL.job_timeout_seconds
 
 
 def test_timed_out_job_is_failed_once_and_releases_browser_for_digest(queue, monkeypatch):
@@ -401,6 +411,40 @@ def test_timed_out_job_is_failed_once_and_releases_browser_for_digest(queue, mon
     assert module.process_next_job(queue) is True
     assert queue.get(digest_id).state == "succeeded"
     assert queue.get(job_id).state == "failed"
+
+
+def test_unconfirmed_cleanup_of_a_read_only_job_does_not_pause_the_worker(queue, monkeypatch):
+    digest_id = (queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "cache-uncertain")).id
+
+    def unsafe_cleanup(_job, **_kwargs):
+        raise module.BrowserSessionError(
+            "Instagram browser request cancellation could not be confirmed: "
+            "Instagram browser automation timed out"
+        )
+
+    monkeypatch.setattr(module, "execute_job", unsafe_cleanup)
+    monkeypatch.setattr(
+        module,
+        "BrowserTabPool",
+        lambda _: SimpleNamespace(
+            prepare=lambda *args: (
+                [
+                    SimpleNamespace(
+                        cancel_pending_request=lambda: None,
+                        is_secondary_read_tab=False,
+                        current_page_path=lambda **kwargs: "/",
+                        current_account_username=lambda: ACCOUNT_USERNAME,
+                        poll_until=lambda ready: ready(),
+                    )
+                ],
+                ACCOUNT_USERNAME,
+            )
+        ),
+    )
+
+    assert module.process_next_job(queue) is True
+    assert queue.get(digest_id).state in {"failed", "pending"}
+    assert not queue.get_setting("paused", False)
 
 
 def test_unconfirmed_cleanup_quarantines_all_browser_work(queue, monkeypatch):
@@ -2239,7 +2283,7 @@ def test_uncertain_cleanup_defers_only_secondary_reads(queue, monkeypatch, kind,
     assert retired == []
 
 
-def test_unconfirmed_secondary_retirement_preserves_cancellation_pause(queue, monkeypatch):
+def test_unconfirmed_secondary_retirement_fails_the_read_without_pausing(queue, monkeypatch):
     from services.instagram_notifications import browser_ingestion
 
     job_id = queue.enqueue_retrieval(
@@ -2281,8 +2325,9 @@ def test_unconfirmed_secondary_retirement_preserves_cancellation_pause(queue, mo
         lambda _: SimpleNamespace(prepare=lambda *args: ([session], ACCOUNT_USERNAME)),
     )
     assert module.process_next_job(queue)
-    assert queue.get(job_id).state == "failed"
-    assert queue.get_setting("paused") == str(cancellation_error)
+    # A read cannot act on Instagram, so its uncertain cleanup never stops other work.
+    assert queue.get(job_id).state in {"failed", "pending"}
+    assert not queue.get_setting("paused", False)
 
 
 @pytest.mark.parametrize("retire", [False, True])

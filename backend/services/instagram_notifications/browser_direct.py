@@ -2,21 +2,25 @@
 
 The thread is read and the reply sent by the tab's own logged-in requests, with
 the active account re-checked around each one, so the browser's identity stays
-the source of truth and no credential ever leaves the browser. A send whose
-outcome is unknown pauses the worker for a person instead of risking a second
-message.
+the source of truth and no credential ever leaves the browser. A story repost
+happens in the Instagram app on the emulator, since the website cannot add
+another account's post to a story. A send or repost whose outcome is unknown
+pauses the worker for a person instead of risking a second one.
 """
 
 from __future__ import annotations
 
 import json
+import random
 import re
 import secrets
+import time
 from typing import Any
 
 from core.controlbox import controlbox
 from services.ingestion import items
 from services.instagram_dms.decide import decide
+from services.instagram_emulator.story import share_to_story
 from services.instagram_notifications.browser_session import (
     _REQUEST_KEY,
     BrowserEngagementUncertain,
@@ -68,9 +72,16 @@ class BrowserInstagramDirectExecutor:
         if dry_run or decision.outcome == "ignore":
             return {**result, "status": "decided"}
         if decision.outcome == "story_repost":
-            # Never promise a repost the app cannot make yet: no reply until the
-            # emulator can share it to the school's story.
-            return {**result, "status": "awaiting_story_repost"}
+            # Never promise a repost that might fail: reply only once it is posted.
+            _repost_to_story(school, username, decision.media_url)
+            self._send(thread_id, username, decision.reply)
+            time.sleep(
+                random.uniform(
+                    CONTROL.done_reply_delay_min_seconds, CONTROL.done_reply_delay_max_seconds
+                )
+            )
+            self._send(thread_id, username, decision.done_reply)
+            return {**result, "status": "reposted"}
         # The ingestion queue deduplicates, so a post Wat2Do already has is a no-op.
         items.queue_instagram([decision.media_url], school=school)
         self._send(thread_id, username, decision.reply)
@@ -79,7 +90,7 @@ class BrowserInstagramDirectExecutor:
     def _read_thread(self, thread_id: str, username: str) -> list[dict[str, Any]]:
         payload = self._session.query(_thread_source(thread_id, username), read_only=True)
         if payload.get("state") != "succeeded" or not isinstance(payload.get("items"), list):
-            raise BrowserSessionError("Instagram DM thread could not be read")
+            raise BrowserSessionError(f"Instagram DM thread could not be read: {_failure(payload)}")
         return payload["items"]
 
     def _send(self, thread_id: str, username: str, text: str) -> None:
@@ -96,8 +107,25 @@ class BrowserInstagramDirectExecutor:
             ) from None
         if payload.get("state") != "succeeded":
             raise BrowserEngagementUncertain(
-                "Instagram DM reply did not confirm; inspect the thread before resuming"
+                f"Instagram DM reply did not confirm ({_failure(payload)}); inspect the thread before resuming"
             )
+
+
+def _failure(payload: dict[str, Any]) -> str:
+    """The in-tab step that failed, and Instagram's HTTP status when it answered with one."""
+    reason = str(payload.get("reason") or payload.get("state") or "unknown")
+    status = payload.get("http_status")
+    return f"{reason} (HTTP {status})" if status else reason
+
+
+def _repost_to_story(school: str, username: str, media_url: str) -> None:
+    try:
+        share_to_story(school, username, media_url)
+    except Exception:
+        # Even a failure may have posted the story, so a person checks before any retry.
+        raise BrowserEngagementUncertain(
+            "Instagram story repost is uncertain; inspect the school's story before resuming"
+        ) from None
 
 
 def _request_source(body: str) -> str:
@@ -109,9 +137,10 @@ def _request_source(body: str) -> str:
  window[key] = request;
  (async () => {{
   let reason = "request_failed";
+  let httpStatus = null;
   try {{
 {body}
-  }} catch (_error) {{request.result = {{state: "failed", reason}};}}
+  }} catch (_error) {{request.result = {{state: "failed", reason, http_status: httpStatus}};}}
   finally {{request.settled = true;}}
  }})();
  return "started";
@@ -135,7 +164,7 @@ def _thread_source(thread_id: str, username: str) -> str:
    const response = await fetch({json.dumps(endpoint)}, {{credentials: "include",
      signal: request.controller.signal,
      headers: {{"x-ig-app-id": {json.dumps(controlbox.scraping.instagram_web_app_id)}}}}});
-   if (!response.ok) {{reason = "http_error"; throw new Error();}}
+   if (!response.ok) {{reason = "http_error"; httpStatus = response.status; throw new Error();}}
    reason = "invalid_json";
    const body = await response.json();
 {_account_check(username)}
@@ -174,7 +203,7 @@ def _send_source(thread_id: str, username: str, text: str, client_context: str) 
      headers: {{"x-ig-app-id": {json.dumps(controlbox.scraping.instagram_web_app_id)},
        "x-csrftoken": csrf, "content-type": "application/x-www-form-urlencoded"}},
      body: new URLSearchParams({json.dumps(form)}).toString()}});
-   if (!response.ok) {{reason = "http_error"; throw new Error();}}
+   if (!response.ok) {{reason = "http_error"; httpStatus = response.status; throw new Error();}}
    reason = "invalid_json";
    const body = await response.json();
    if (body.status !== "ok") {{reason = "not_sent"; throw new Error();}}

@@ -652,8 +652,10 @@ class BrowserJobQueue:
                 "SELECT id,state FROM jobs WHERE dedupe_key=?", (dedupe_key,)
             ).fetchone()
             if existing:
-                # Digest retries are reads. Engagement retries always require an explicit retry.
-                if kind == "digest" and existing["state"] in {"failed", "cancelled"}:
+                # Digest and dry-run DM retries are reads. Engagement and live DM retries always
+                # require an explicit retry, because they may already have acted on Instagram.
+                retryable_read = kind == "digest" or (kind == "direct" and payload["dry_run"])
+                if retryable_read and existing["state"] in {"failed", "cancelled"}:
                     db.execute(
                         "UPDATE jobs SET state='pending',created_at=?,started_at=NULL,finished_at=NULL,error=NULL,result=NULL,attempts=0 WHERE id=?",
                         (time.time(), existing["id"]),

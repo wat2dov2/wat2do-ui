@@ -568,7 +568,7 @@ export function EventDetailsBody({
   school,
   isFetchingDetails = false,
   renderTitle,
-  onClubFilterSelect,
+  onClubNavigate,
 }: {
   event: Event;
   school: string | null | undefined;
@@ -576,7 +576,7 @@ export function EventDetailsBody({
   /** Override the title element (the drawer supplies its DrawerTitle). */
   renderTitle?: (title: string) => React.ReactNode;
   /** Lets drawer composition close after its club filter is applied. */
-  onClubFilterSelect?: () => void;
+  onClubNavigate?: () => void;
 }) {
   useEventView(event.id, event.school);
   const { t } = useTranslation();
@@ -590,7 +590,7 @@ export function EventDetailsBody({
         <EventCardImage
           event={event}
           variant="detail"
-          onClubFilterSelect={onClubFilterSelect}
+          onClubNavigate={onClubNavigate}
         />
       </div>
 
@@ -625,15 +625,13 @@ export function EventDetailsBody({
       <Stack gap={6} className="order-2 md:col-start-1">
         <Section variant="divided" title={t("events.hostedBy")} data-slot="event-host">
             <ClubBadgeDropdown
+              clubId={event.club_id}
               clubName={event.club}
               clubLogoUrl={event.club_logo_url}
               cohosts={event.cohosts}
               clubType={event.club_type}
               school={event.school}
-              clubPage={event.club_page}
-              clubIg={event.club_ig}
-              clubDiscord={event.club_discord}
-              onFilterSelect={onClubFilterSelect}
+              onNavigate={onClubNavigate}
             />
         </Section>
 

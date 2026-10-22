@@ -2283,6 +2283,15 @@ def test_a_dm_notification_creates_one_job_per_message(queue):
     assert _queue_direct(queue, item_id="31338") != first
 
 
+@pytest.mark.parametrize(("dry_run", "state"), [(True, "pending"), (False, "failed")])
+def test_only_a_failed_dry_run_dm_is_read_again_when_requeued(queue, dry_run, state):
+    # A dry run only reads the thread; a live DM job may already have replied.
+    job_id = _queue_direct(queue, dry_run=dry_run)
+    queue.finish(queue.claim_next(now=10.0), error="Instagram DM thread could not be read")
+    assert _queue_direct(queue, dry_run=dry_run) == job_id
+    assert queue.get(job_id).state == state
+
+
 def test_a_dm_waits_for_its_human_reply_delay(queue):
     job_id = _queue_direct(queue, not_before=1_000.0)
     assert queue.claim_next(now=999.0) is None

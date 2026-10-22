@@ -1,8 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
+import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
-import { usePathname, useRouter } from "next/navigation";
-import { ROUTES } from "@/shared/constants/routes";
-import { useFilterActions } from "@/features/search/hooks/useFilterState";
+import { clubPagePath } from "@/shared/constants/routes";
 import { ClubTypeIcon } from "@/shared/components/ClubTypeIcon";
 import {
   DropdownMenu,
@@ -12,63 +11,42 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { Badge } from "@/shared/ui/badge";
 import { TruncatedText } from "@/shared/ui/truncated-text";
-import { sanitizeHref } from "@/shared/utils/url";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import type { ApiEventSummaryResponse } from "@/shared/generated";
 
 const CLUB_NAME_CLASS = "max-w-56 flex-1 font-bold";
 
 interface ClubBadgeDropdownProps {
+  /** The hosting club's Wat2Do page; absent only on decorative, disabled badges. */
+  clubId?: number | null;
   clubName: string;
   cohosts?: ApiEventSummaryResponse["cohosts"];
   clubLogoUrl?: string | null;
   clubType?: string | null;
   school?: string | null;
-  /** Owning club's link/social fields, embedded on the event response. */
-  clubPage?: string | null;
-  clubIg?: string | null;
-  clubDiscord?: string | null;
   disabled?: boolean;
-  onFilterSelect?: () => void;
+  /** Runs when a profile link is chosen, e.g. to close the drawer it sits in. */
+  onNavigate?: () => void;
   onMouseDown?: React.MouseEventHandler;
   onClick?: React.MouseEventHandler;
 }
 
 export function ClubBadgeDropdown({
+  clubId,
   clubName,
   cohosts = [],
   clubLogoUrl,
   clubType,
   school,
-  clubPage,
-  clubIg,
-  clubDiscord,
   disabled = false,
-  onFilterSelect,
+  onNavigate,
   onMouseDown,
   onClick,
 }: ClubBadgeDropdownProps) {
   const { t } = useTranslation();
-  const router = useRouter();
-  const pathname = usePathname();
-  const filterActions = useFilterActions();
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleFilterSelect = useCallback((name: string) => {
-    setIsOpen(false);
-    if (name) {
-      filterActions.updateFilterState({ clubs: [name] });
-      onFilterSelect?.();
-      if (pathname !== ROUTES.EVENTS) {
-        router.push(ROUTES.EVENTS);
-      }
-    }
-  }, [filterActions, onFilterSelect, pathname, router]);
-
-  const clubs = [{
-    club_name: clubName, logo_url: clubLogoUrl, club_page: clubPage,
-    ig: clubIg, discord: clubDiscord,
-  }, ...cohosts];
+  const clubs = [{ id: clubId, club_name: clubName, logo_url: clubLogoUrl }, ...cohosts];
   const content = <>
     <AvatarStack size="sm" avatars={clubs.map(club => ({ name: club.club_name, src: club.logo_url ?? "" }))} />
     <TruncatedText text={clubName || t("events.club")} className={CLUB_NAME_CLASS} />
@@ -109,22 +87,15 @@ export function ClubBadgeDropdown({
           </button>
         </Badge>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-48" align="start" stopPropagation>
-        {clubs.map((club) => {
-          const websiteHref = sanitizeHref(club.club_page);
-          const instagramHref = sanitizeHref(club.ig
-            ? club.ig.startsWith("http") ? club.ig : `https://instagram.com/${club.ig.replace(/^@/, "")}`
-            : null);
-          const discordHref = sanitizeHref(club.discord);
-          return <div key={club.club_name}>
-            <DropdownMenuItem data-activation="click" onSelect={() => handleFilterSelect(club.club_name)}>
-              {t("clubs.filterBy", { name: club.club_name })}
-            </DropdownMenuItem>
-            {websiteHref ? <DropdownMenuItem asChild><a href={websiteHref} target="_blank" rel="noopener noreferrer">{t("clubs.visitWebsite")}</a></DropdownMenuItem> : null}
-            {instagramHref ? <DropdownMenuItem asChild><a href={instagramHref} target="_blank" rel="noopener noreferrer">{t("clubs.instagram")}</a></DropdownMenuItem> : null}
-            {discordHref ? <DropdownMenuItem asChild><a href={discordHref} target="_blank" rel="noopener noreferrer">{t("clubs.discord")}</a></DropdownMenuItem> : null}
-          </div>;
-        })}
+      <DropdownMenuContent className="w-56" align="start" stopPropagation>
+        {/* One line per host: each opens that club's profile on Wat2Do, where its links live. */}
+        {clubs.map((club) => club.id ? (
+          <DropdownMenuItem key={club.id} asChild onSelect={onNavigate}>
+            <NextLink href={clubPagePath(club.id)}>
+              {t("clubs.viewProfile", { name: club.club_name })}
+            </NextLink>
+          </DropdownMenuItem>
+        ) : null)}
       </DropdownMenuContent>
     </DropdownMenu>
   );
