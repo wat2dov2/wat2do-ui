@@ -8,7 +8,6 @@ import { EXTERNAL_LINKS, schoolInstagramHandle } from "@/shared/constants/links"
 import { ROUTES } from "@/shared/constants/routes";
 import { Container, Stack } from "@/shared/layout";
 import { Link } from "@/shared/ui/link";
-import { InstagramIcon, LinkedInIcon } from "@/shared/ui/platform-icons";
 
 const FOOTER_LINK_GROUPS = [
   {
@@ -31,15 +30,15 @@ const FOOTER_LINK_GROUPS = [
 
 /**
  * The close to every scrolling page: the mark beside this school's Instagram
- * handle with its social icons beneath, the link columns on the right, and the
+ * handle with its social links beneath, the link columns on the right, and the
  * tagline and fine print below one rule.
  */
 export function SiteFooter() {
   const { t } = useTranslation();
   const handle = schoolInstagramHandle(useRequestSchool());
   const socials = [
-    { label: "Instagram", href: `https://www.instagram.com/${handle}/`, Icon: InstagramIcon },
-    { label: "LinkedIn", href: EXTERNAL_LINKS.LINKEDIN, Icon: LinkedInIcon },
+    { label: "Instagram", href: `https://www.instagram.com/${handle}/` },
+    { label: "LinkedIn", href: EXTERNAL_LINKS.LINKEDIN },
   ];
 
   return (
@@ -55,13 +54,13 @@ export function SiteFooter() {
                 className="h-6 w-[34px] select-none object-contain"
                 src={imgLogo}
               />
-              <span className="text-lg font-semibold tracking-tight text-foreground">{handle}</span>
+              <span className="text-lg font-semibold tracking-tight text-foreground">@{handle}</span>
             </Stack>
             <nav aria-label={t("footer.social")}>
-              <Stack gap={3} align="start">
+              <Stack direction="horizontal" gap={6} align="center">
                 {socials.map((social) => (
-                  <Link key={social.label} variant="subtle" href={social.href} target="_blank" rel="noopener noreferrer" aria-label={social.label}>
-                    <social.Icon className="size-5" />
+                  <Link key={social.label} variant="subtle" href={social.href} target="_blank" rel="noopener noreferrer">
+                    {social.label}
                   </Link>
                 ))}
               </Stack>
