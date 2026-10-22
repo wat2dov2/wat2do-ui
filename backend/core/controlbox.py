@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections import Counter
 from datetime import date
 from pathlib import Path
 from typing import Annotated, Literal
@@ -11,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, model_vali
 
 _CONTROLBOX_DIRECTORY = Path(__file__).resolve().parents[1] / "controlbox"
 _INTERACTION_TYPES = {"click", "detail_view", "going", "ungoing", "share"}
+_INSTAGRAM_ACCOUNTS_PER_APP = 10
 
 
 class _ControlModel(BaseModel):
@@ -965,10 +967,53 @@ class InstagramDmsControl(_ControlModel):
     reply_delay_min_seconds: int = Field(ge=0, le=86_400)
     reply_delay_max_seconds: int = Field(ge=0, le=86_400)
 
+    # After a story repost, "Done!" follows the first reply after this human-like gap.
+    done_reply_delay_min_seconds: int = Field(ge=0, le=600)
+    done_reply_delay_max_seconds: int = Field(ge=0, le=600)
+
     @model_validator(mode="after")
     def validate_reply_delay(self) -> "InstagramDmsControl":
         if self.reply_delay_min_seconds > self.reply_delay_max_seconds:
             raise ValueError("reply_delay_min_seconds cannot exceed reply_delay_max_seconds")
+        if self.done_reply_delay_min_seconds > self.done_reply_delay_max_seconds:
+            raise ValueError(
+                "done_reply_delay_min_seconds cannot exceed done_reply_delay_max_seconds"
+            )
+        return self
+
+
+class InstagramEmulatorControl(_ControlModel):
+    # The Android emulator whose Instagram app shares posts to school stories.
+    serial: str = Field(pattern=r"^emulator-[0-9]{4,5}$")
+    instagram_package: str = Field(pattern=r"^[a-z][a-z0-9_.]+$")
+    # The Instagram app holds at most ten accounts per Android user, so school
+    # accounts are spread across the emulator's users.
+    android_user_by_school: dict[
+        Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")], Annotated[int, Field(ge=0)]
+    ] = Field(min_length=1)
+    adb_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    user_switch_wait_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    screen_wait_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
+    # Every tap and keystroke waits a random human-like pause inside this window.
+    step_delay_min_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
+    step_delay_max_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
+    story_upload_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
+    # A DM job that may repost to a story gets this deadline instead of the browser's.
+    story_job_timeout_seconds: float = Field(gt=0, le=1800, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def validate_timing(self) -> "InstagramEmulatorControl":
+        if self.step_delay_min_seconds > self.step_delay_max_seconds:
+            raise ValueError("step_delay_min_seconds cannot exceed step_delay_max_seconds")
+        if self.story_job_timeout_seconds <= (
+            self.user_switch_wait_seconds + self.story_upload_wait_seconds
+        ):
+            raise ValueError("story_job_timeout_seconds must fit a user switch and an upload")
+        if (
+            Counter(self.android_user_by_school.values()).most_common(1)[0][1]
+            > _INSTAGRAM_ACCOUNTS_PER_APP
+        ):
+            raise ValueError("An Android user can hold at most ten Instagram accounts")
         return self
 
 
@@ -1034,6 +1079,7 @@ class ControlBox(_ControlModel):
     instagram_publishing: InstagramPublishingControl
     competitor_pain_points: CompetitorPainPointsControl
     instagram_dms: InstagramDmsControl
+    instagram_emulator: InstagramEmulatorControl
     workflow_failure_alerts: WorkflowFailureAlertsControl
     promoter_program: PromoterProgramControl
 

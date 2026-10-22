@@ -1,0 +1,72 @@
+import random
+import subprocess
+
+import pytest
+
+from services.instagram_emulator import device as module
+
+SCREEN = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
+<node text="" content-desc="Send post. Button. Double tap to choose who to send this post to." bounds="[398,1544][461,1665]" />
+<node text="Your story" content-desc="" bounds="[121,2098][379,2161]" />
+<node text="" content-desc="Flat" bounds="[5,5][5,9]" />
+</hierarchy>UI hierchary dumped to: /dev/tty"""
+
+
+def _device(outputs, commands):
+    def run(command, **_kwargs):
+        commands.append(command)
+        returncode, stdout = outputs.pop(0)
+        return subprocess.CompletedProcess(command, returncode, stdout=stdout, stderr="")
+
+    return module.EmulatorDevice(run=run, sleep=lambda _seconds: None, rng=random.Random(4))
+
+
+def test_screen_reads_labelled_controls_and_skips_empty_bounds() -> None:
+    nodes = _device([(0, SCREEN)], []).screen()
+    assert [node.text or node.description for node in nodes] == [
+        "Send post. Button. Double tap to choose who to send this post to.",
+        "Your story",
+    ]
+
+
+def test_screen_retries_while_the_app_is_animating() -> None:
+    commands = []
+    nodes = _device([(1, ""), (1, ""), (0, SCREEN)], commands).screen()
+    assert len(nodes) == 2 and len(commands) == 3
+
+
+def test_a_screen_that_never_settles_raises() -> None:
+    attempts = [(1, "")] * module._SCREEN_READ_ATTEMPTS
+    with pytest.raises(module.EmulatorError):
+        _device(attempts, []).screen()
+
+
+def test_labels_match_a_control_name_but_not_a_longer_word() -> None:
+    share = module.labels("Send post", "Share")
+    assert module.Node("", "Send post. Button.", (0, 0, 1, 1)).labelled(share)
+    assert module.Node("Share", "", (0, 0, 1, 1)).labelled(share)
+    assert not module.Node("", "uwbiochem shared a note", (0, 0, 1, 1)).labelled(share)
+    assert not module.Node("Shared", "", (0, 0, 1, 1)).labelled(share)
+
+
+def test_taps_land_inside_the_middle_of_the_control() -> None:
+    commands = []
+    device = _device([(0, "")] * 20, commands)
+    node = module.Node("Your story", "", (100, 200, 300, 400))
+    for _ in range(20):
+        device.tap(node)
+    for command in commands:
+        x, y = int(command[-2]), int(command[-1])
+        assert 150 <= x <= 250 and 250 <= y <= 350
+
+
+def test_switching_android_users_is_confirmed() -> None:
+    outputs = [(0, "0\n"), (0, ""), (0, ""), (0, ""), (0, "0\n")]
+    with pytest.raises(module.EmulatorError, match="switch Android users"):
+        _device(outputs, []).use_android_user(10)
+
+
+def test_the_current_android_user_is_not_switched_again() -> None:
+    commands = []
+    _device([(0, "10\n")], commands).use_android_user(10)
+    assert len(commands) == 1

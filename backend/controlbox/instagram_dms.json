@@ -6,5 +6,7 @@
   "thread_item_limit": 12,
   "reply_max_characters": 40,
   "reply_delay_min_seconds": 120,
-  "reply_delay_max_seconds": 1200
+  "reply_delay_max_seconds": 1200,
+  "done_reply_delay_min_seconds": 20,
+  "done_reply_delay_max_seconds": 75
 }
