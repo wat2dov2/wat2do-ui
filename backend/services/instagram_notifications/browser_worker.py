@@ -73,7 +73,7 @@ def _requires_human_recovery(error: BaseException, job: BrowserJob) -> bool:
 
 
 def job_timeout_seconds(job: BrowserJob) -> float:
-    """A DM may repost to a story through the emulator, which takes longer than a tab."""
+    """A DM is read, reposted and answered in the emulator, which takes longer than a tab."""
     if job.kind == "direct":
         return controlbox.instagram_emulator.story_job_timeout_seconds
     return CONTROL.job_timeout_seconds
@@ -99,6 +99,17 @@ def execute_job(
     session: BrowserInstagramSession | None = None,
     on_rate_limit: Callable[[BrowserRateLimited], None] | None = None,
 ) -> dict:
+    if job.kind == "direct":
+        # DMs are read and answered in the Instagram app on the emulator, never in Brave.
+        from services.instagram_emulator.direct import EmulatorDirectExecutor
+
+        return EmulatorDirectExecutor().handle(
+            job.account_username,
+            job.payload["thread_id"],
+            school=job.school,
+            school_name=job.payload["school_name"],
+            dry_run=bool(job.payload.get("dry_run")),
+        )
     session = session or BrowserInstagramSession()
     operation_error: BaseException | None = None
     try:
@@ -116,19 +127,6 @@ def execute_job(
             return BrowserInstagramRetriever(session).retrieve(
                 job.payload["url"],
                 cutoff_days=job.payload["cutoff_days"],
-            )
-        if job.kind == "direct":
-            from services.instagram_notifications.browser_direct import (
-                BrowserInstagramDirectExecutor,
-            )
-
-            return BrowserInstagramDirectExecutor(session=session).handle(
-                job.recipient_id,
-                job.account_username,
-                job.payload["thread_id"],
-                school=job.school,
-                school_name=job.payload["school_name"],
-                dry_run=bool(job.payload.get("dry_run")),
             )
         executor = BrowserInstagramEngagementExecutor(session=session)
         return executor.engage_post(
@@ -252,22 +250,10 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
                 return True
             try:
                 with job_deadline(job_timeout_seconds(job)):
-                    pool = BrowserTabPool(queue)
-                    try:
-                        pool.settle_registered_tabs()
-                    except _BrowserTabUnavailable:
-                        pool.ensure_capacity()
-                        pool.settle_registered_tabs()
-                    ids = queue.get_setting("browser_tab_ids", [])
                     result = (
-                        execute_job(
-                            job,
-                            session=BrowserInstagramSession(
-                                javascript_runner=_PinnedBraveJavascriptRunner(ids[0])
-                            ),
-                        )
-                        if ids
-                        else execute_job(job)
+                        execute_job(job)
+                        if job.kind == "direct"
+                        else _execute_on_primary_tab(queue, job)
                     )
                 queue.finish(job, result=result)
             except BrowserRateLimited as exc:
@@ -314,6 +300,22 @@ def process_next_job(queue: BrowserJobQueue, *, allow_engagement: bool = True) -
             return True
         finally:
             fcntl.flock(browser_lock, fcntl.LOCK_UN)
+
+
+def _execute_on_primary_tab(queue: BrowserJobQueue, job: BrowserJob) -> dict:
+    """Likes and reposts act as the school on the first tab, after every tab settles."""
+    pool = BrowserTabPool(queue)
+    try:
+        pool.settle_registered_tabs()
+    except _BrowserTabUnavailable:
+        pool.ensure_capacity()
+        pool.settle_registered_tabs()
+    ids = queue.get_setting("browser_tab_ids", [])
+    if not ids:
+        return execute_job(job)
+    return execute_job(
+        job, session=BrowserInstagramSession(javascript_runner=_PinnedBraveJavascriptRunner(ids[0]))
+    )
 
 
 def _process_batch(

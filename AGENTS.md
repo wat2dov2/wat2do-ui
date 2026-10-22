@@ -79,26 +79,28 @@ challenge waits for a person.
 Direct-message notifications (`controlbox/instagram_dms.json` `categories`) also run
 on the browser-capable Mac runner, which queues one `direct` job per message for the
 same worker.
-That job runs alone on the first tab, like likes and reposts: it switches to the
-school's account, reads the thread through the tab's own logged-in request, and asks
-Claude Haiku (`backend/services/instagram_dms/prompt.md`) for one outcome.
+That job never touches Brave.
+It runs in the official Instagram app on the Mac's Android emulator
+(`controlbox/instagram_emulator.json`), because Instagram's website cannot add another
+account's post to a story and the app is the one place that can do every step.
+The emulator holds every school account, logged in once outside this automation and
+spread across Android users because the app keeps at most ten accounts each.
+The job holds the emulator's lock throughout, switches to the school's Android user and
+account, opens the thread by its ID, and reads who sent each message, its text and any
+shared post from the screen the app draws.
+It then asks Claude Haiku (`backend/services/instagram_dms/prompt.md`) for one outcome.
 Only two requests get an answer: sharing the club's post or reel to our story, and
 adding it to our posts.
 Everything else is ignored without a reply.
 An "add it to our posts" request queues the shared post in `public.ingestion_items`
 and gets one short reply.
-A story request is shared first and answered after: the Instagram app on the Mac's
-Android emulator (`controlbox/instagram_emulator.json`) opens the shared post, adds it
-to the school's story, and only then does the thread get the reply and a short
-"done" message.
-Instagram's website cannot add another account's post to a story, which is the only
-reason the emulator is used.
-The emulator holds every school account, logged in once outside this automation and
-spread across Android users because the app keeps at most ten accounts each.
-It finds every control by its accessibility label, taps at a random point inside it
-after a random pause, and never types a password.
-A story repost that fails or cannot be confirmed pauses the worker for a person and
-is never retried, since it may already be posted.
+A story request is shared first and answered after: the app adds the shared post to
+the school's story, and only then does the thread get the reply and a short "done"
+message.
+The emulator finds every control by its accessibility label, taps at a random point
+inside it after a random pause, types one character at a time, and never types a
+password.
+Each reply is confirmed by seeing it appear in the thread.
 The emulator also adds music to our own carousels after the API publishes them, since
 the API cannot attach a song: a Mac LaunchAgent opens the live post, Edit, Add audio,
 searches the admin's song list in random order, and Claude Haiku picks the matching
@@ -111,7 +113,8 @@ story repost also needs that owner to be a known club at the school, replies com
 from the vetted lists in controlbox, and nothing is sent when our message is already
 the newest.
 Each reply waits a random human-like delay first.
-A reply whose delivery is uncertain pauses the worker for a person and is never retried.
+A reply or story repost that fails or cannot be confirmed pauses the worker for a
+person and is never retried, since it may already have reached Instagram.
 `dry_run` decides and records every DM without replying, reposting or queueing anything.
 Never log DM text.
 

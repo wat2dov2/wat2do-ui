@@ -161,7 +161,7 @@ Native event execution has a separate short timeout, so a stalled command cannot
 Native navigation is spaced through its own gate, which waits outside the transport lock so other tabs can read and settle.
 Queries prove their terminal result and settled request state in one atomic browser read before returning; successful operations do not repeat cancellation through the busy transport.
 Each query declares whether it only reads.
-When the primary tab cannot confirm cancellation of its own read-only query (a digest, a post lookup or a DM thread read), the worker abandons that request instead of pausing for a person, because a read cannot change anything and its late result lands in its own request object.
+When the primary tab cannot confirm cancellation of its own read-only query (a digest or a post lookup), the worker abandons that request instead of pausing for a person, because a read cannot change anything and its late result lands in its own request object.
 Beyond that, a digest or retrieval job never pauses the worker over an unconfirmed cancellation, wherever in the job it happens; the job fails and retries instead.
 Uncertain sends, likes and reposts still pause the worker, as do logouts that need a person.
 Only idempotent reads, inventory, and cleanup retry within `bridge_retry_limit`; uncertain engagement clicks are never replayed.
@@ -488,23 +488,24 @@ Existing local job history is not backfilled; lifecycle events begin when the up
 Clubs sometimes DM a school account to ask Wat2Do to share their post.
 The phone's Automate flow already forwards every Instagram notification, and DMs arrive as the `direct_v2_text`, `direct_v2_media_share` and `direct_v2_clips_share` push categories.
 Their `ig_action` is `direct_v2?id=<thread>&x=<message>`; a reel share also carries `clip_id`.
-The workflow routes these to the Mac runner, and `jobs/process_notification.py` queues one `direct` job per message for the Brave worker, delayed by a random interval between `reply_delay_min_seconds` and `reply_delay_max_seconds`.
+The workflow routes these to the Mac runner, and `jobs/process_notification.py` queues one `direct` job per message for the worker, delayed by a random interval between `reply_delay_min_seconds` and `reply_delay_max_seconds`.
 
-The worker answers as the school on its first tab:
+The worker answers as the school in the Instagram app on the Mac's Android emulator, never in Brave, holding the emulator's lock for the whole job:
 
-1. It switches to the school's account and reads the latest `thread_item_limit` messages through the tab's own logged-in request.
+1. It switches to the Android user that holds the school's account (`android_user_by_school` in `controlbox/instagram_emulator.json`), switches the app to that account, opens `instagram://direct-thread?thread_id=<thread>`, and reads the latest `thread_item_limit` messages from the screen: who sent each one, its text, and the owner and link of any shared post (copied with the post's own Copy link).
 2. Claude Haiku follows `backend/services/instagram_dms/prompt.md` and picks one outcome: `story_repost`, `add_to_post` or `ignore`.
-3. Code checks the answer: the post must be one the club shared in the thread, and a reply must be short, single-line and free of links and mentions, otherwise a varied stock reply replaces it.
+3. Code checks the answer against the thread, as described below, and picks the reply.
 4. `add_to_post` queues the shared post in `public.ingestion_items`, where the normal processor deduplicates it, and sends one short reply.
-5. `story_repost` waits without replying until the Instagram app can share the post to the school's story.
+5. `story_repost` opens the shared post, taps Share, Add to story and Your story, waits for the editor to close, and only then types the reply and, after a random `done_reply_delay` gap, the done reply.
 6. `ignore` does nothing.
 
 `controlbox/instagram_dms.json` starts with `dry_run: true`, which records each decision in the worker's job results without replying or queueing.
 A dry-run job only reads, so rerunning its notification reads a failed thread again; a live DM job is never retried.
 Haiku only classifies the request; it never writes the reply.
 Code then requires the shared post's owner to be the sender, requires a story repost's sender to be a known club at the school, and picks the reply from `replies` and `done_replies` in the controlbox.
-A thread that cannot be read fails with the in-tab step and Instagram's HTTP status, for example `http_error (HTTP 400)`.
+A thread that cannot be read fails with the screen the app never showed, for example `Instagram never showed ^Message…$`.
 Review those results before setting it to `false`.
-A reply that cannot be confirmed pauses the worker for a person to check the thread, and it is never sent twice.
+Each typed reply is confirmed by seeing it appear in the thread.
+A reply or story repost that cannot be confirmed pauses the worker for a person to check the thread and story, and it is never sent twice.
 DM text is never logged.
 

@@ -606,7 +606,7 @@ class BrowserJobQueue:
         not_before: float,
     ) -> str:
         """One DM to answer as the school; it waits until ``not_before`` to look human."""
-        from services.instagram_notifications.browser_direct import validate_thread_id
+        from services.instagram_emulator.direct import validate_thread_id
 
         if not re.fullmatch(r"[a-z0-9-]{1,80}", school):
             raise ValueError("Instagram DM school is invalid")

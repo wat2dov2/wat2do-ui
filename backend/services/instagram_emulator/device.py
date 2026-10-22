@@ -11,6 +11,7 @@ import fcntl
 import os
 import random
 import re
+import shlex
 import shutil
 import subprocess
 import threading
@@ -31,6 +32,7 @@ _SCREEN_READ_ATTEMPTS = 5
 # Every job that drives the emulator holds this lock, so two never tap at once.
 _LOCK_PATH = Path.home() / ".local/state/wat2do/instagram-emulator.lock"
 _held = threading.local()
+_SELECT_ALL = ("113", "29")  # KEYCODE_CTRL_LEFT + KEYCODE_A
 
 
 class EmulatorError(RuntimeError):
@@ -44,6 +46,15 @@ class Node:
     bounds: tuple[int, int, int, int]
     # The app's own name for the view, for the few controls Instagram leaves unlabelled.
     resource_id: str = ""
+
+    @property
+    def label(self) -> str:
+        return self.text or self.description
+
+    def inside(self, outer: Node) -> bool:
+        x1, y1, x2, y2 = self.bounds
+        ox1, oy1, ox2, oy2 = outer.bounds
+        return ox1 <= x1 and oy1 <= y1 and x2 <= ox2 and y2 <= oy2
 
     def labelled(self, pattern: re.Pattern[str]) -> bool:
         return bool(
@@ -205,6 +216,14 @@ class EmulatorDevice:
             self._rng.uniform(CONTROL.step_delay_min_seconds, CONTROL.step_delay_max_seconds)
         )
 
+    def paste(self) -> None:
+        self.pause()
+        self.adb("shell", "input", "keyevent", "KEYCODE_PASTE")
+
+    def clear_field(self) -> None:
+        self.adb("shell", "input", "keycombination", *_SELECT_ALL)
+        self.adb("shell", "input", "keyevent", "KEYCODE_DEL")
+
     def back(self) -> None:
         self.pause()
         self.adb("shell", "input", "keyevent", "KEYCODE_BACK")
@@ -280,7 +299,14 @@ class EmulatorDevice:
         if url is None:
             target = ["-n", f"{CONTROL.instagram_package}/{_LAUNCHER_ACTIVITY}"]
         else:
-            target = ["-a", "android.intent.action.VIEW", "-d", url, CONTROL.instagram_package]
+            # adb hands the command to the device's shell, where "?" and "&" are special.
+            target = [
+                "-a",
+                "android.intent.action.VIEW",
+                "-d",
+                shlex.quote(url),
+                CONTROL.instagram_package,
+            ]
         self.adb("shell", "am", "start", "--user", str(user), *target)
 
 
