@@ -774,3 +774,18 @@ test("a draft explains that music is added after it publishes", () => {
   expect(html).toContain("admin.instagramPublishing.music.afterPublish");
   expect(html).not.toContain("href=");
 });
+
+test("the cover fan draws its cards right to left so the first event sits on top", () => {
+  const { CoverSlideTemplate } = loadComponent("features/admin/components/instagram/slides/SlideTemplates");
+  const tiles = ["https://a/first.png", "https://a/second.png", "https://a/third.png"];
+  const html = render(CoverSlideTemplate, { model: {
+    colors: { primary: "#000000", secondary: "#ffd54f" }, logoSrc: "https://a/logo.svg", doodleIcons: [],
+    dateLine: "Wednesday, October 21st", newEventCount: 3, headline: "New events", body: "",
+    swipeLine: "Swipe", siteLine: "uwaterloo.wat2do.io", tiles,
+  } });
+  const drawn = tiles.map((tile) => html.indexOf(tile));
+  expect(drawn.every((position) => position >= 0)).toBe(true);
+  // satori paints in document order, so the last card drawn covers the others.
+  expect(drawn[2]).toBeLessThan(drawn[1]);
+  expect(drawn[1]).toBeLessThan(drawn[0]);
+});

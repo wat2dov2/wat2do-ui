@@ -167,7 +167,9 @@ const FAN_MIN_OVERLAP = 50;
  * tilt runs from `-FAN_MAX_TILT` on the left to `+FAN_MAX_TILT` on the right so
  * the middle of the fan stays upright. The row is centred, and its lowest card
  * clears the footer by design: `FAN_TOP + FAN_CARD_HEIGHT + FAN_MAX_DIP` must
- * stay above `SLIDE_HEIGHT - COVER_MARGIN`.
+ * stay above `SLIDE_HEIGHT - COVER_MARGIN`. satori has no z-index either, so the
+ * cards are drawn right to left: each lands on the one to its right, leaving the
+ * first event on top.
  */
 function CoverPosterFan({ tiles, secondary, renderPoster }: { tiles: string[]; secondary: string; renderPoster: PosterRenderer }) {
   if (tiles.length === 0) return null;
@@ -194,7 +196,7 @@ function CoverPosterFan({ tiles, secondary, renderPoster }: { tiles: string[]; s
         height: SLIDE_HEIGHT,
       }}
     >
-      {tiles.map((tile, index) => {
+      {tiles.map((tile, index) => ({ tile, index })).reverse().map(({ tile, index }) => {
         const offset = middle === 0 ? 0 : (index - middle) / middle;
         return (
           <div
