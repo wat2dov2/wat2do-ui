@@ -73,6 +73,7 @@ _HOME_TAB = re.compile(r"^Home$")
 _PROFILE_TAB = re.compile(r"^Profile$")
 _SAVE_LOGIN = labels("Save your login info")
 _SAVE = re.compile(r"^Save$")
+_NOT_NOW = re.compile(r"^Not now$")
 
 
 def _sdk_tool(name: str, folder: str) -> str:
@@ -189,9 +190,16 @@ class EmulatorDevice:
     def wait_for(self, pattern: re.Pattern[str], *, seconds: float | None = None) -> Node:
         deadline = self._monotonic() + (seconds or CONTROL.screen_wait_seconds)
         while True:
-            node = self.find(pattern)
+            nodes = self.screen()
+            node = self.find(pattern, nodes)
             if node is not None:
                 return node
+            # One-time announcements ("Introducing instants" and the like) cover the app
+            # until answered; declining is always the safe answer.
+            prompt = self.find(_NOT_NOW, nodes)
+            if prompt is not None and not pattern.match(prompt.label):
+                self.tap(prompt)
+                continue
             if self._monotonic() >= deadline:
                 raise EmulatorError(f"Instagram never showed {pattern.pattern}")
             self._sleep(1)
