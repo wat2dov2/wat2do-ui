@@ -79,7 +79,7 @@ class BrowserInstagramDirectExecutor:
     def _read_thread(self, thread_id: str, username: str) -> list[dict[str, Any]]:
         payload = self._session.query(_thread_source(thread_id, username), read_only=True)
         if payload.get("state") != "succeeded" or not isinstance(payload.get("items"), list):
-            raise BrowserSessionError("Instagram DM thread could not be read")
+            raise BrowserSessionError(f"Instagram DM thread could not be read: {_failure(payload)}")
         return payload["items"]
 
     def _send(self, thread_id: str, username: str, text: str) -> None:
@@ -96,8 +96,15 @@ class BrowserInstagramDirectExecutor:
             ) from None
         if payload.get("state") != "succeeded":
             raise BrowserEngagementUncertain(
-                "Instagram DM reply did not confirm; inspect the thread before resuming"
+                f"Instagram DM reply did not confirm ({_failure(payload)}); inspect the thread before resuming"
             )
+
+
+def _failure(payload: dict[str, Any]) -> str:
+    """The in-tab step that failed, and Instagram's HTTP status when it answered with one."""
+    reason = str(payload.get("reason") or payload.get("state") or "unknown")
+    status = payload.get("http_status")
+    return f"{reason} (HTTP {status})" if status else reason
 
 
 def _request_source(body: str) -> str:
@@ -109,9 +116,10 @@ def _request_source(body: str) -> str:
  window[key] = request;
  (async () => {{
   let reason = "request_failed";
+  let httpStatus = null;
   try {{
 {body}
-  }} catch (_error) {{request.result = {{state: "failed", reason}};}}
+  }} catch (_error) {{request.result = {{state: "failed", reason, http_status: httpStatus}};}}
   finally {{request.settled = true;}}
  }})();
  return "started";
@@ -135,7 +143,7 @@ def _thread_source(thread_id: str, username: str) -> str:
    const response = await fetch({json.dumps(endpoint)}, {{credentials: "include",
      signal: request.controller.signal,
      headers: {{"x-ig-app-id": {json.dumps(controlbox.scraping.instagram_web_app_id)}}}}});
-   if (!response.ok) {{reason = "http_error"; throw new Error();}}
+   if (!response.ok) {{reason = "http_error"; httpStatus = response.status; throw new Error();}}
    reason = "invalid_json";
    const body = await response.json();
 {_account_check(username)}
@@ -174,7 +182,7 @@ def _send_source(thread_id: str, username: str, text: str, client_context: str) 
      headers: {{"x-ig-app-id": {json.dumps(controlbox.scraping.instagram_web_app_id)},
        "x-csrftoken": csrf, "content-type": "application/x-www-form-urlencoded"}},
      body: new URLSearchParams({json.dumps(form)}).toString()}});
-   if (!response.ok) {{reason = "http_error"; throw new Error();}}
+   if (!response.ok) {{reason = "http_error"; httpStatus = response.status; throw new Error();}}
    reason = "invalid_json";
    const body = await response.json();
    if (body.status !== "ok") {{reason = "not_sent"; throw new Error();}}

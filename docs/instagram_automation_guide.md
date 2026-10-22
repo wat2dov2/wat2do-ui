@@ -498,6 +498,8 @@ The worker answers as the school on its first tab:
 6. `ignore` does nothing.
 
 `controlbox/instagram_dms.json` starts with `dry_run: true`, which records each decision in the worker's job results without replying or queueing.
+A dry-run job only reads, so rerunning its notification reads a failed thread again; a live DM job is never retried.
+A thread that cannot be read fails with the in-tab step and Instagram's HTTP status, for example `http_error (HTTP 400)`.
 Review those results before setting it to `false`.
 A reply that cannot be confirmed pauses the worker for a person to check the thread, and it is never sent twice.
 DM text is never logged.
