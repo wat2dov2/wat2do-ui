@@ -755,19 +755,22 @@ for (const variant of ["card", "detail"]) {
 }
 
 
-test("saved music recommendations show search copy and provenance without editing controls", () => {
-  const { InstagramSongSuggestion } = loadComponent("features/admin/components/instagram/InstagramSongSuggestion");
-  const html = render(InstagramSongSuggestion, { song: {
-    title: "Example Song", artist: "Example Artist", chart_name: "Top 25: Toronto",
-    chart_url: "https://music.apple.com/ca/playlist/top-25-toronto/pl.example", checked_on: "2026-10-05",
+test("a published carousel shows the song the emulator added and links the live post", () => {
+  const { InstagramMusicStatus } = loadComponent("features/admin/components/instagram/InstagramMusicStatus");
+  const html = render(InstagramMusicStatus, { batch: {
+    status: "published", permalink: "https://www.instagram.com/p/ABC123/",
+    music_status: "added", music_track: "After Hours by The Weeknd,6:01", music_error: null,
   } });
-  expect(html).toContain("Example Song · Example Artist");
-  expect(html).toContain('href="https://music.apple.com/ca/playlist/top-25-toronto/pl.example"');
-  expect(html).toContain("admin.instagramPublishing.songInstructions");
+  expect(html).toContain("admin.instagramPublishing.music.added");
+  expect(html).toContain('href="https://www.instagram.com/p/ABC123/"');
   expect(html).not.toMatch(/<(input|select|textarea|button)\b/);
 });
 
-test("older batches explicitly show when no music recommendation was saved", () => {
-  const { InstagramSongSuggestion } = loadComponent("features/admin/components/instagram/InstagramSongSuggestion");
-  expect(render(InstagramSongSuggestion, { song: null })).toContain("admin.instagramPublishing.noSuggestedSong");
+test("a draft explains that music is added after it publishes", () => {
+  const { InstagramMusicStatus } = loadComponent("features/admin/components/instagram/InstagramMusicStatus");
+  const html = render(InstagramMusicStatus, { batch: {
+    status: "ready_for_review", permalink: null, music_status: null, music_track: null, music_error: null,
+  } });
+  expect(html).toContain("admin.instagramPublishing.music.afterPublish");
+  expect(html).not.toContain("href=");
 });

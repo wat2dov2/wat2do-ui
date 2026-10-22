@@ -99,6 +99,11 @@ It finds every control by its accessibility label, taps at a random point inside
 after a random pause, and never types a password.
 A story repost that fails or cannot be confirmed pauses the worker for a person and
 is never retried, since it may already be posted.
+The emulator also adds music to our own carousels after the API publishes them, since
+the API cannot attach a song: a Mac LaunchAgent opens the live post, Edit, Add audio,
+searches the admin's song list in random order, and Claude Haiku picks the matching
+track or none.
+Every job that drives the emulator holds its lock, so no two ever tap at once.
 Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
 message, impersonation, login codes, money, follow-for-follow, pressure).
 Code, not the model, has the final say: the post must be shared by its own owner, a

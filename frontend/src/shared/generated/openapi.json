@@ -3533,6 +3533,121 @@
         }
       }
     },
+    "/instagram-publishing/songs/": {
+      "get": {
+        "tags": [
+          "instagram-publishing"
+        ],
+        "summary": "List Instagram Songs",
+        "operationId": "list_instagram_songs_instagram_publishing_songs__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InstagramSongResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Instagram Songs Instagram Publishing Songs  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "instagram-publishing"
+        ],
+        "summary": "Add Instagram Song",
+        "operationId": "add_instagram_song_instagram_publishing_songs__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstagramSongCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstagramSongResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/instagram-publishing/songs/{song_id}": {
+      "delete": {
+        "tags": [
+          "instagram-publishing"
+        ],
+        "summary": "Delete Instagram Song",
+        "operationId": "delete_instagram_song_instagram_publishing_songs__song_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "song_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Song Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/interactions/batch": {
       "post": {
         "tags": [
@@ -10836,16 +10951,6 @@
             "title": "Cover Body",
             "default": ""
           },
-          "suggested_song": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/InstagramSongSuggestion"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "version": {
             "type": "integer",
             "title": "Version"
@@ -10871,6 +10976,55 @@
               }
             ],
             "title": "Meta Media Id"
+          },
+          "permalink": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permalink"
+          },
+          "music_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "added",
+                  "failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Status"
+          },
+          "music_track": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Track"
+          },
+          "music_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Error"
           },
           "published_cover_url": {
             "anyOf": [
@@ -11039,16 +11193,6 @@
             "title": "Cover Body",
             "default": ""
           },
-          "suggested_song": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/InstagramSongSuggestion"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "version": {
             "type": "integer",
             "title": "Version"
@@ -11074,6 +11218,55 @@
               }
             ],
             "title": "Meta Media Id"
+          },
+          "permalink": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permalink"
+          },
+          "music_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "added",
+                  "failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Status"
+          },
+          "music_track": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Track"
+          },
+          "music_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Error"
           },
           "published_cover_url": {
             "anyOf": [
@@ -11270,49 +11463,47 @@
         ],
         "title": "InstagramPublishItemResponse"
       },
-      "InstagramSongSuggestion": {
+      "InstagramSongCreate": {
         "properties": {
-          "title": {
+          "query": {
             "type": "string",
             "maxLength": 200,
             "minLength": 1,
-            "title": "Title"
-          },
-          "artist": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Artist"
-          },
-          "chart_name": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Chart Name"
-          },
-          "chart_url": {
-            "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
-            "title": "Chart Url"
-          },
-          "checked_on": {
-            "type": "string",
-            "format": "date",
-            "title": "Checked On"
+            "pattern": "\\S",
+            "title": "Query"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "title",
-          "artist",
-          "chart_name",
-          "chart_url",
-          "checked_on"
+          "query"
         ],
-        "title": "InstagramSongSuggestion"
+        "title": "InstagramSongCreate"
+      },
+      "InstagramSongResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "query",
+          "created_at"
+        ],
+        "title": "InstagramSongResponse"
       },
       "InteractionBatch": {
         "properties": {

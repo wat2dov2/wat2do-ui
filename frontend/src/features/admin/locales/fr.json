@@ -381,10 +381,36 @@
       "coverBody": "Texte principal de la couverture",
       "slideOf": "Diapositive {{index}} sur {{count}}",
       "undoRemoveSlide": "Annuler le retrait de la diapositive",
-      "suggestedSong": "Chanson suggérée",
-      "songChart": "{{chart}} · Vérifié le {{date}}",
-      "songInstructions": "Recherchez ce titre et cet artiste dans Instagram lors de la publication. La musique n’est pas ajoutée automatiquement.",
-      "noSuggestedSong": "Aucune chanson suggérée enregistrée pour ce lot."
+      "tabs": {
+        "carousels": "Carrousels",
+        "songs": "Chansons"
+      },
+      "songs": {
+        "query": "Chanson",
+        "placeholder": "p. ex. the weeknd after hours",
+        "add": "Ajouter une chanson",
+        "help": "Quelques minutes après la publication d'un carrousel, l'émulateur ajoute une de ces chansons à la publication, en les essayant dans un ordre aléatoire.",
+        "label": "chansons",
+        "columns": {
+          "song": "Chanson",
+          "added": "Ajoutée"
+        },
+        "delete": "Supprimer",
+        "deleteSong": "Supprimer {{song}}",
+        "empty": "Aucune chanson. Ajoutez-en une pour que les nouveaux carrousels aient de la musique.",
+        "addError": "Impossible d'ajouter la chanson",
+        "deleteError": "Impossible de supprimer la chanson",
+        "loadError": "Impossible de charger les chansons."
+      },
+      "music": {
+        "title": "Musique",
+        "afterPublish": "Une chanson de la liste est ajoutée quelques minutes après la publication de ce carrousel.",
+        "pending": "En attente de l'ajout d'une chanson par l'émulateur.",
+        "added": "{{track}} ajoutée",
+        "failed": "Aucune chanson ajoutée : {{reason}}",
+        "none": "Ce carrousel a été publié avant l'ajout automatique des chansons.",
+        "viewPost": "Voir sur Instagram"
+      }
     },
     "clubSubmissions": "Soumissions de clubs",
     "noClubSubmissions": "Aucune soumission de club",

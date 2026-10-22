@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InstagramCarouselDrawer } from "@/features/admin/components/instagram/InstagramCarouselDrawer";
 import { InstagramRunsTable } from "@/features/admin/components/instagram/InstagramRunsTable";
+import { InstagramSongsPanel } from "@/features/admin/components/instagram/InstagramSongsPanel";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { useInstagramPublishing } from "@/features/admin/hooks/useInstagramPublishing";
 import { Container, DrawerBody, Section, Stack } from "@/shared/layout";
@@ -10,6 +11,7 @@ import { Button } from "@/shared/ui/button";
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/shared/ui/drawer";
 import { Instagram } from "@/shared/ui/doodle-icons";
 import { LoadingPage } from "@/shared/ui/loading-page";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { toast } from "@/shared/hooks/use-toast";
 
 interface AdminInstagramPageProps {
@@ -50,41 +52,57 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
           onBack={onBack}
         />
 
-        {error && !page ? (
-          <Section variant="surface" className="text-center">
-            <Stack gap={4} align="center">
-              <p className="text-sm text-destructive">
-                {getApiErrorMessage(error, t("admin.instagramPublishing.loadError"))}
-              </p>
-              <Button variant="outline" onClick={() => retry()}>
-                {t("admin.instagramPublishing.retry")}
-              </Button>
-            </Stack>
-          </Section>
-        ) : !isLoading && batches.length === 0 ? (
-          <Section variant="surface" className="text-center">
-            <p className="text-sm text-muted-foreground">
-              {t("admin.instagramPublishing.noBatches")}
-            </p>
-          </Section>
-        ) : (
-          <InstagramRunsTable
-            isLoading={isLoading}
-            batches={batches}
-            total={page?.total ?? 0}
-            onOpenRun={setOpenBatchId}
-            onPrefetchRun={prefetchBatch}
-            pagination={{
-              currentPage: page?.page ?? 1,
-              totalPages: page?.total_pages ?? 1,
-              onPageChange: (nextPage) => {
-                setOpenBatchId(null);
-                setPageNumber(nextPage);
-              },
-            }}
-          />
-        )}
-
+        <Tabs defaultValue="carousels">
+          <Stack gap={6}>
+            <TabsList>
+              <TabsTrigger value="carousels">
+                {t("admin.instagramPublishing.tabs.carousels")}
+              </TabsTrigger>
+              <TabsTrigger value="songs">
+                {t("admin.instagramPublishing.tabs.songs")}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="carousels">
+              {error && !page ? (
+                <Section variant="surface" className="text-center">
+                  <Stack gap={4} align="center">
+                    <p className="text-sm text-destructive">
+                      {getApiErrorMessage(error, t("admin.instagramPublishing.loadError"))}
+                    </p>
+                    <Button variant="outline" onClick={() => retry()}>
+                      {t("admin.instagramPublishing.retry")}
+                    </Button>
+                  </Stack>
+                </Section>
+              ) : !isLoading && batches.length === 0 ? (
+                <Section variant="surface" className="text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {t("admin.instagramPublishing.noBatches")}
+                  </p>
+                </Section>
+              ) : (
+                <InstagramRunsTable
+                  isLoading={isLoading}
+                  batches={batches}
+                  total={page?.total ?? 0}
+                  onOpenRun={setOpenBatchId}
+                  onPrefetchRun={prefetchBatch}
+                  pagination={{
+                    currentPage: page?.page ?? 1,
+                    totalPages: page?.total_pages ?? 1,
+                    onPageChange: (nextPage) => {
+                      setOpenBatchId(null);
+                      setPageNumber(nextPage);
+                    },
+                  }}
+                />
+              )}
+            </TabsContent>
+            <TabsContent value="songs">
+              <InstagramSongsPanel />
+            </TabsContent>
+          </Stack>
+        </Tabs>
       </Stack>
 
       {openBatchId && !openBatch ? (

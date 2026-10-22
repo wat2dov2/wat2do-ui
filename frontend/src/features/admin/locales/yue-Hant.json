@@ -381,10 +381,36 @@
       "coverBody": "封面正文",
       "slideOf": "第 {{index}} 張幻燈片，共 {{count}} 張",
       "undoRemoveSlide": "復原移除投影片",
-      "suggestedSong": "建議歌曲",
-      "songChart": "{{chart}} · 核實日期 {{date}}",
-      "songInstructions": "發帖時喺 Instagram 搜尋呢個歌名同歌手。音樂唔會自動加入。",
-      "noSuggestedSong": "呢批帖子未有儲存建議歌曲。"
+      "tabs": {
+        "carousels": "輪播帖",
+        "songs": "歌曲"
+      },
+      "songs": {
+        "query": "歌曲",
+        "placeholder": "例如 the weeknd after hours",
+        "add": "加歌",
+        "help": "輪播帖發佈幾分鐘之後，模擬器會用隨機次序試呢啲歌，幫帖子加其中一首。",
+        "label": "首歌",
+        "columns": {
+          "song": "歌曲",
+          "added": "加入時間"
+        },
+        "delete": "刪除",
+        "deleteSong": "刪除 {{song}}",
+        "empty": "仲未有歌。加一首，等新嘅輪播帖有音樂。",
+        "addError": "加唔到首歌",
+        "deleteError": "刪唔到首歌",
+        "loadError": "載入唔到歌曲。"
+      },
+      "music": {
+        "title": "音樂",
+        "afterPublish": "呢個輪播帖發佈幾分鐘之後，會由清單加一首歌。",
+        "pending": "等緊模擬器加歌。",
+        "added": "已加入 {{track}}",
+        "failed": "冇加到歌：{{reason}}",
+        "none": "呢個輪播帖喺自動加歌之前已經發佈。",
+        "viewPost": "喺 Instagram 睇"
+      }
     },
     "clubSubmissions": "社團提交",
     "noClubSubmissions": "暫無社團提交",

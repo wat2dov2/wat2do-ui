@@ -381,10 +381,36 @@
       "coverBody": "Văn bản nội dung bìa",
       "slideOf": "Slide {{index}} của {{count}}",
       "undoRemoveSlide": "Hoàn tác xóa trang chiếu",
-      "suggestedSong": "Bài hát gợi ý",
-      "songChart": "{{chart}} · Đã kiểm tra {{date}}",
-      "songInstructions": "Tìm tên bài hát và nghệ sĩ này trên Instagram khi đăng. Nhạc không được thêm tự động.",
-      "noSuggestedSong": "Chưa lưu bài hát gợi ý cho nhóm bài đăng này."
+      "tabs": {
+        "carousels": "Băng chuyền",
+        "songs": "Bài hát"
+      },
+      "songs": {
+        "query": "Bài hát",
+        "placeholder": "vd: the weeknd after hours",
+        "add": "Thêm bài hát",
+        "help": "Vài phút sau khi băng chuyền được đăng, trình giả lập thêm một trong các bài hát này vào bài đăng, thử chúng theo thứ tự ngẫu nhiên.",
+        "label": "bài hát",
+        "columns": {
+          "song": "Bài hát",
+          "added": "Đã thêm"
+        },
+        "delete": "Xóa",
+        "deleteSong": "Xóa {{song}}",
+        "empty": "Chưa có bài hát nào. Hãy thêm một bài để băng chuyền mới có nhạc.",
+        "addError": "Không thể thêm bài hát",
+        "deleteError": "Không thể xóa bài hát",
+        "loadError": "Không thể tải bài hát."
+      },
+      "music": {
+        "title": "Âm nhạc",
+        "afterPublish": "Một bài hát trong danh sách được thêm vài phút sau khi băng chuyền này được đăng.",
+        "pending": "Đang chờ trình giả lập thêm bài hát.",
+        "added": "Đã thêm {{track}}",
+        "failed": "Chưa thêm bài hát nào: {{reason}}",
+        "none": "Băng chuyền này được đăng trước khi bài hát được thêm tự động.",
+        "viewPost": "Xem trên Instagram"
+      }
     },
     "clubSubmissions": "Đề xuất câu lạc bộ",
     "noClubSubmissions": "Chưa có đề xuất câu lạc bộ",

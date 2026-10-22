@@ -598,24 +598,7 @@ class UploadsControl(_ControlModel):
         return self
 
 
-class InstagramMusicChartControl(_ControlModel):
-    name: str = Field(min_length=1)
-    url: HttpUrl
-
-
 class InstagramPublishingControl(_ControlModel):
-    music_history_batch_count: int = Field(gt=0)
-    music_charts: dict[str, InstagramMusicChartControl]
-    music_chart_by_school: dict[str, str]
-    default_music_chart: str
-
-    @model_validator(mode="after")
-    def validate_music_charts(self) -> "InstagramPublishingControl":
-        chart_keys = {self.default_music_chart, *self.music_chart_by_school.values()}
-        if not chart_keys <= self.music_charts.keys():
-            raise ValueError("instagram music mappings must reference configured charts")
-        return self
-
     cover_body_character_limit: int = Field(gt=0, le=280)
     maximum_stickers_per_event: int = Field(ge=1, le=4)
     sticker_line_character_limit: int = Field(ge=8, le=12)
@@ -644,7 +627,14 @@ class InstagramPublishingControl(_ControlModel):
     curation_poster_pixels: int = Field(ge=128, le=2048)
     curation_hour: int = Field(ge=0, le=23)
     curation_minute: int = Field(ge=0, le=59)
-    chart_timeout_seconds: float = Field(gt=0, le=120)
+    poster_timeout_seconds: float = Field(gt=0, le=120)
+    # Some minutes after a carousel publishes, the Mac's emulator adds a song to it.
+    music_model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    music_agent_timeout_seconds: int = Field(gt=0, le=600)
+    music_delay_minutes: int = Field(ge=1, le=120)
+    music_max_age_hours: int = Field(ge=1, le=72)
+    music_attempts: int = Field(ge=1, le=10)
+    music_interval_seconds: int = Field(ge=60, le=3600)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120)
 
     @model_validator(mode="after")
@@ -1014,6 +1004,8 @@ class InstagramEmulatorControl(_ControlModel):
     story_upload_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
     # A DM job that may repost to a story gets this deadline instead of the browser's.
     story_job_timeout_seconds: float = Field(gt=0, le=1800, allow_inf_nan=False)
+    # How long an edited post may take to save after Done, once a song is chosen.
+    audio_save_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
 
     @model_validator(mode="after")
     def validate_timing(self) -> "InstagramEmulatorControl":

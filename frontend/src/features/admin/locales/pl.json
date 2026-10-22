@@ -381,10 +381,36 @@
       "coverBody": "Tekst główny na okładce",
       "slideOf": "Slajd {{index}} z {{count}}",
       "undoRemoveSlide": "Cofnij usunięcie slajdu",
-      "suggestedSong": "Sugerowany utwór",
-      "songChart": "{{chart}} · Sprawdzono {{date}}",
-      "songInstructions": "Podczas publikowania wyszukaj ten tytuł i wykonawcę na Instagramie. Muzyka nie jest dodawana automatycznie.",
-      "noSuggestedSong": "Dla tej partii nie zapisano sugerowanego utworu."
+      "tabs": {
+        "carousels": "Karuzele",
+        "songs": "Utwory"
+      },
+      "songs": {
+        "query": "Utwór",
+        "placeholder": "np. the weeknd after hours",
+        "add": "Dodaj utwór",
+        "help": "Kilka minut po opublikowaniu karuzeli emulator dodaje do posta jeden z tych utworów, próbując ich w losowej kolejności.",
+        "label": "utwory",
+        "columns": {
+          "song": "Utwór",
+          "added": "Dodano"
+        },
+        "delete": "Usuń",
+        "deleteSong": "Usuń {{song}}",
+        "empty": "Brak utworów. Dodaj jeden, aby nowe karuzele miały muzykę.",
+        "addError": "Nie udało się dodać utworu",
+        "deleteError": "Nie udało się usunąć utworu",
+        "loadError": "Nie udało się wczytać utworów."
+      },
+      "music": {
+        "title": "Muzyka",
+        "afterPublish": "Kilka minut po opublikowaniu tej karuzeli dodawany jest utwór z listy.",
+        "pending": "Czekam, aż emulator doda utwór.",
+        "added": "Dodano {{track}}",
+        "failed": "Nie dodano utworu: {{reason}}",
+        "none": "Ta karuzela została opublikowana, zanim utwory były dodawane automatycznie.",
+        "viewPost": "Zobacz na Instagramie"
+      }
     },
     "clubSubmissions": "Zgłoszenia klubów",
     "noClubSubmissions": "Brak zgłoszeń klubów",

@@ -381,10 +381,36 @@
       "coverBody": "Testo del corpo copertina",
       "slideOf": "Diapositiva {{index}} di {{count}}",
       "undoRemoveSlide": "Annulla rimozione diapositiva",
-      "suggestedSong": "Brano suggerito",
-      "songChart": "{{chart}} · Verificato il {{date}}",
-      "songInstructions": "Cerca questo titolo e artista su Instagram quando pubblichi. La musica non viene aggiunta automaticamente.",
-      "noSuggestedSong": "Nessun brano suggerito salvato per questo gruppo."
+      "tabs": {
+        "carousels": "Caroselli",
+        "songs": "Brani"
+      },
+      "songs": {
+        "query": "Brano",
+        "placeholder": "es. the weeknd after hours",
+        "add": "Aggiungi brano",
+        "help": "Qualche minuto dopo la pubblicazione di un carosello, l'emulatore aggiunge uno di questi brani al post, provandoli in ordine casuale.",
+        "label": "brani",
+        "columns": {
+          "song": "Brano",
+          "added": "Aggiunto"
+        },
+        "delete": "Elimina",
+        "deleteSong": "Elimina {{song}}",
+        "empty": "Ancora nessun brano. Aggiungine uno perché i nuovi caroselli abbiano musica.",
+        "addError": "Impossibile aggiungere il brano",
+        "deleteError": "Impossibile eliminare il brano",
+        "loadError": "Impossibile caricare i brani."
+      },
+      "music": {
+        "title": "Musica",
+        "afterPublish": "Un brano della lista viene aggiunto qualche minuto dopo la pubblicazione di questo carosello.",
+        "pending": "In attesa che l'emulatore aggiunga un brano.",
+        "added": "Aggiunto {{track}}",
+        "failed": "Nessun brano aggiunto: {{reason}}",
+        "none": "Questo carosello è stato pubblicato prima che i brani venissero aggiunti automaticamente.",
+        "viewPost": "Vedi su Instagram"
+      }
     },
     "clubSubmissions": "Proposte di club",
     "noClubSubmissions": "Nessuna proposta di club",

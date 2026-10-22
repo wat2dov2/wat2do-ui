@@ -381,10 +381,36 @@
       "coverBody": "封面正文",
       "slideOf": "第 {{index}} 张，共 {{count}} 张",
       "undoRemoveSlide": "撤销移除幻灯片",
-      "suggestedSong": "推荐歌曲",
-      "songChart": "{{chart}} · 核查日期 {{date}}",
-      "songInstructions": "发布时在 Instagram 搜索此歌曲名称和歌手。音乐不会自动添加。",
-      "noSuggestedSong": "此批次尚未保存推荐歌曲。"
+      "tabs": {
+        "carousels": "轮播帖",
+        "songs": "歌曲"
+      },
+      "songs": {
+        "query": "歌曲",
+        "placeholder": "例如 the weeknd after hours",
+        "add": "添加歌曲",
+        "help": "轮播帖发布几分钟后，模拟器会按随机顺序尝试这些歌曲，并为帖子添加其中一首。",
+        "label": "首歌曲",
+        "columns": {
+          "song": "歌曲",
+          "added": "添加时间"
+        },
+        "delete": "删除",
+        "deleteSong": "删除 {{song}}",
+        "empty": "还没有歌曲。添加一首，让新的轮播帖有音乐。",
+        "addError": "无法添加歌曲",
+        "deleteError": "无法删除歌曲",
+        "loadError": "无法加载歌曲。"
+      },
+      "music": {
+        "title": "音乐",
+        "afterPublish": "此轮播帖发布几分钟后，会从列表中添加一首歌曲。",
+        "pending": "正在等待模拟器添加歌曲。",
+        "added": "已添加 {{track}}",
+        "failed": "未添加歌曲：{{reason}}",
+        "none": "此轮播帖发布时还未自动添加歌曲。",
+        "viewPost": "在 Instagram 上查看"
+      }
     },
     "clubSubmissions": "社团提交",
     "noClubSubmissions": "暂无社团提交",

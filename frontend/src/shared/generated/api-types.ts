@@ -800,6 +800,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instagram-publishing/songs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Instagram Songs */
+        get: operations["list_instagram_songs_instagram_publishing_songs__get"];
+        put?: never;
+        /** Add Instagram Song */
+        post: operations["add_instagram_song_instagram_publishing_songs__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/songs/{song_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Instagram Song */
+        delete: operations["delete_instagram_song_instagram_publishing_songs__song_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/interactions/batch": {
         parameters: {
             query?: never;
@@ -2989,13 +3024,20 @@ export interface components {
              * @default
              */
             cover_body: string;
-            suggested_song?: components["schemas"]["InstagramSongSuggestion"] | null;
             /** Version */
             version: number;
             /** Error Message */
             error_message?: string | null;
             /** Meta Media Id */
             meta_media_id?: string | null;
+            /** Permalink */
+            permalink?: string | null;
+            /** Music Status */
+            music_status?: ("pending" | "added" | "failed") | null;
+            /** Music Track */
+            music_track?: string | null;
+            /** Music Error */
+            music_error?: string | null;
             /** Published Cover Url */
             published_cover_url?: string | null;
             /** Published Outro Url */
@@ -3077,13 +3119,20 @@ export interface components {
              * @default
              */
             cover_body: string;
-            suggested_song?: components["schemas"]["InstagramSongSuggestion"] | null;
             /** Version */
             version: number;
             /** Error Message */
             error_message?: string | null;
             /** Meta Media Id */
             meta_media_id?: string | null;
+            /** Permalink */
+            permalink?: string | null;
+            /** Music Status */
+            music_status?: ("pending" | "added" | "failed") | null;
+            /** Music Track */
+            music_track?: string | null;
+            /** Music Error */
+            music_error?: string | null;
             /** Published Cover Url */
             published_cover_url?: string | null;
             /** Published Outro Url */
@@ -3162,24 +3211,25 @@ export interface components {
              */
             updated_at: string;
         };
-        /** InstagramSongSuggestion */
-        InstagramSongSuggestion: {
-            /** Title */
-            title: string;
-            /** Artist */
-            artist: string;
-            /** Chart Name */
-            chart_name: string;
+        /** InstagramSongCreate */
+        InstagramSongCreate: {
+            /** Query */
+            query: string;
+        };
+        /** InstagramSongResponse */
+        InstagramSongResponse: {
             /**
-             * Chart Url
-             * Format: uri
+             * Id
+             * Format: uuid
              */
-            chart_url: string;
+            id: string;
+            /** Query */
+            query: string;
             /**
-             * Checked On
-             * Format: date
+             * Created At
+             * Format: date-time
              */
-            checked_on: string;
+            created_at: string;
         };
         /**
          * InteractionBatch
@@ -6423,6 +6473,88 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["InstagramPublishBatchResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_instagram_songs_instagram_publishing_songs__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramSongResponse"][];
+                };
+            };
+        };
+    };
+    add_instagram_song_instagram_publishing_songs__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstagramSongCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramSongResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_instagram_song_instagram_publishing_songs__song_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                song_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

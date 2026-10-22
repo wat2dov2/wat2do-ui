@@ -381,10 +381,36 @@
       "coverBody": "Text auf der Titelfolie",
       "slideOf": "Folie {{index}} von {{count}}",
       "undoRemoveSlide": "Entfernen der Folie rückgängig machen",
-      "suggestedSong": "Vorgeschlagener Song",
-      "songChart": "{{chart}} · Geprüft am {{date}}",
-      "songInstructions": "Suche beim Posten auf Instagram nach diesem Titel und Künstler. Musik wird nicht automatisch hinzugefügt.",
-      "noSuggestedSong": "Für diesen Stapel ist kein Songvorschlag gespeichert."
+      "tabs": {
+        "carousels": "Karussells",
+        "songs": "Songs"
+      },
+      "songs": {
+        "query": "Song",
+        "placeholder": "z. B. the weeknd after hours",
+        "add": "Song hinzufügen",
+        "help": "Einige Minuten nach der Veröffentlichung eines Karussells fügt der Emulator dem Beitrag einen dieser Songs hinzu und probiert sie in zufälliger Reihenfolge.",
+        "label": "Songs",
+        "columns": {
+          "song": "Song",
+          "added": "Hinzugefügt"
+        },
+        "delete": "Löschen",
+        "deleteSong": "{{song}} löschen",
+        "empty": "Noch keine Songs. Füge einen hinzu, damit neue Karussells Musik bekommen.",
+        "addError": "Song konnte nicht hinzugefügt werden",
+        "deleteError": "Song konnte nicht gelöscht werden",
+        "loadError": "Songs konnten nicht geladen werden."
+      },
+      "music": {
+        "title": "Musik",
+        "afterPublish": "Einige Minuten nach der Veröffentlichung dieses Karussells wird ein Song aus der Liste hinzugefügt.",
+        "pending": "Warte darauf, dass der Emulator einen Song hinzufügt.",
+        "added": "{{track}} hinzugefügt",
+        "failed": "Kein Song hinzugefügt: {{reason}}",
+        "none": "Dieses Karussell wurde veröffentlicht, bevor Songs automatisch hinzugefügt wurden.",
+        "viewPost": "Auf Instagram ansehen"
+      }
     },
     "clubSubmissions": "Club-Einreichungen",
     "noClubSubmissions": "Keine Club-Einreichungen",

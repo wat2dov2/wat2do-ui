@@ -381,10 +381,36 @@
       "coverBody": "표지 본문 텍스트",
       "slideOf": "슬라이드 {{index}} / {{count}}",
       "undoRemoveSlide": "슬라이드 삭제 취소",
-      "suggestedSong": "추천 노래",
-      "songChart": "{{chart}} · {{date}} 확인",
-      "songInstructions": "게시할 때 Instagram에서 이 제목과 아티스트를 검색하세요. 음악은 자동으로 추가되지 않습니다.",
-      "noSuggestedSong": "이 배치에 저장된 추천 노래가 없습니다."
+      "tabs": {
+        "carousels": "캐러셀",
+        "songs": "노래"
+      },
+      "songs": {
+        "query": "노래",
+        "placeholder": "예: the weeknd after hours",
+        "add": "노래 추가",
+        "help": "캐러셀이 게시되고 몇 분 뒤 에뮬레이터가 이 노래 중 하나를 무작위 순서로 시도해 게시물에 추가합니다.",
+        "label": "곡",
+        "columns": {
+          "song": "노래",
+          "added": "추가됨"
+        },
+        "delete": "삭제",
+        "deleteSong": "{{song}} 삭제",
+        "empty": "아직 노래가 없습니다. 새 캐러셀에 음악이 들어가도록 하나 추가하세요.",
+        "addError": "노래를 추가하지 못했습니다",
+        "deleteError": "노래를 삭제하지 못했습니다",
+        "loadError": "노래를 불러오지 못했습니다."
+      },
+      "music": {
+        "title": "음악",
+        "afterPublish": "이 캐러셀이 게시되고 몇 분 뒤 목록에서 노래 하나가 추가됩니다.",
+        "pending": "에뮬레이터가 노래를 추가하기를 기다리는 중입니다.",
+        "added": "{{track}} 추가됨",
+        "failed": "추가된 노래 없음: {{reason}}",
+        "none": "이 캐러셀은 노래가 자동으로 추가되기 전에 게시되었습니다.",
+        "viewPost": "Instagram에서 보기"
+      }
     },
     "clubSubmissions": "동아리 제출",
     "noClubSubmissions": "동아리 제출 없음",

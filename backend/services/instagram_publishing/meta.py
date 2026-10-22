@@ -77,6 +77,9 @@ class MetaInstagramClient:
         )
         return _required_id(payload)
 
+    def get_permalink(self, media_id: str) -> str:
+        return _required_string(self._get(f"/{media_id}", {"fields": "permalink"}), "permalink")
+
     def wait_until_ready(self, container_id: str) -> None:
         for _ in range(self._poll_attempts):
             payload = self._get(f"/{container_id}", {"fields": "status_code,status"})

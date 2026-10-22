@@ -50,6 +50,10 @@ export type ApiInstagramPublishBatchUpdate =
   components["schemas"]["InstagramPublishBatchUpdate"];
 export type ApiInstagramPublishBatchPublish =
   components["schemas"]["InstagramPublishBatchPublish"];
+export type ApiInstagramSongCreate =
+  components["schemas"]["InstagramSongCreate"];
+export type ApiInstagramSongResponse =
+  components["schemas"]["InstagramSongResponse"];
 
 // ── Event Submissions ───────────────────────────────────────────────
 export type ApiSubmissionResponse = components["schemas"]["SubmissionResponse"];

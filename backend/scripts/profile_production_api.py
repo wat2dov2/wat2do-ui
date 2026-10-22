@@ -104,6 +104,7 @@ AUTHENTICATED_ENDPOINTS = (
         "/instagram-publishing/batches/?page=1&page_size=10",
         True,
     ),
+    Endpoint("/instagram-publishing/songs/", "/instagram-publishing/songs/", True),
     Endpoint("/notification-preferences", "/notification-preferences", True),
     Endpoint("/clubs/claims", "/clubs/claims", True),
     Endpoint(

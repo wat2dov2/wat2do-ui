@@ -381,10 +381,36 @@
       "coverBody": "Cover body text",
       "slideOf": "Slide {{index}} of {{count}}",
       "undoRemoveSlide": "Undo remove slide",
-      "suggestedSong": "Suggested song",
-      "songChart": "{{chart}} · Checked {{date}}",
-      "songInstructions": "Search this title and artist in Instagram when posting. Music is not attached automatically.",
-      "noSuggestedSong": "No song suggestion saved for this batch."
+      "tabs": {
+        "carousels": "Carousels",
+        "songs": "Songs"
+      },
+      "songs": {
+        "query": "Song",
+        "placeholder": "e.g. the weeknd after hours",
+        "add": "Add song",
+        "help": "A few minutes after a carousel publishes, the emulator adds one of these songs to the live post, trying them in random order.",
+        "label": "songs",
+        "columns": {
+          "song": "Song",
+          "added": "Added"
+        },
+        "delete": "Delete",
+        "deleteSong": "Delete {{song}}",
+        "empty": "No songs yet. Add one so new carousels get music.",
+        "addError": "Could not add the song",
+        "deleteError": "Could not delete the song",
+        "loadError": "Could not load songs."
+      },
+      "music": {
+        "title": "Music",
+        "afterPublish": "A song from the song list is added a few minutes after this carousel publishes.",
+        "pending": "Waiting for the emulator to add a song.",
+        "added": "Added {{track}}",
+        "failed": "No song added: {{reason}}",
+        "none": "This carousel was published before songs were added automatically.",
+        "viewPost": "View on Instagram"
+      }
     },
     "clubSubmissions": "Club submissions",
     "noClubSubmissions": "No club submissions",

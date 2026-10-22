@@ -20,6 +20,8 @@ import type {
   ApiInstagramPublishBatchPublish,
   ApiInstagramPublishBatchResponse,
   ApiInstagramPublishBatchUpdate,
+  ApiInstagramSongCreate,
+  ApiInstagramSongResponse,
   ApiPaginatedInstagramPublishBatchSummaryResponse,
   ApiPaginatedPosterPayoutResponse,
   ApiPayoutCsvExportResponse,
@@ -216,6 +218,20 @@ export async function publishInstagramBatch(
     `/instagram-publishing/batches/${id}/publish`,
     data,
   );
+}
+
+export async function getInstagramSongs(): Promise<ApiInstagramSongResponse[]> {
+  return api.get<ApiInstagramSongResponse[]>("/instagram-publishing/songs/");
+}
+
+export async function addInstagramSong(
+  data: ApiInstagramSongCreate,
+): Promise<ApiInstagramSongResponse> {
+  return api.post<ApiInstagramSongResponse>("/instagram-publishing/songs/", data);
+}
+
+export async function deleteInstagramSong(id: string): Promise<void> {
+  return api.delete<void>(`/instagram-publishing/songs/${id}`);
 }
 
 

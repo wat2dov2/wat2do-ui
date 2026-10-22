@@ -2,7 +2,7 @@ from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field
 
 from core.constants import (
     INSTAGRAM_BATCH_EMPTY,
@@ -11,6 +11,9 @@ from core.constants import (
     INSTAGRAM_BATCH_PUBLISHED,
     INSTAGRAM_BATCH_PUBLISHING,
     INSTAGRAM_BATCH_READY_FOR_REVIEW,
+    INSTAGRAM_MUSIC_ADDED,
+    INSTAGRAM_MUSIC_FAILED,
+    INSTAGRAM_MUSIC_PENDING,
 )
 from core.controlbox import controlbox
 from schemas.event import EventSummaryResponse
@@ -27,14 +30,11 @@ InstagramPublishBatchStatus = Literal[
 ]
 
 
-class InstagramSongSuggestion(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-
-    title: str = Field(min_length=1, max_length=200)
-    artist: str = Field(min_length=1, max_length=200)
-    chart_name: str = Field(min_length=1, max_length=200)
-    chart_url: HttpUrl
-    checked_on: date
+InstagramMusicStatus = Literal[
+    INSTAGRAM_MUSIC_PENDING,
+    INSTAGRAM_MUSIC_ADDED,
+    INSTAGRAM_MUSIC_FAILED,
+]
 
 
 class InstagramPublishItemResponse(BaseModel):
@@ -72,10 +72,14 @@ class InstagramPublishBatchBaseResponse(BaseModel):
     caption: str
     caption_intro: str = ""
     cover_body: str = ""
-    suggested_song: InstagramSongSuggestion | None = None
     version: int
     error_message: str | None = None
     meta_media_id: str | None = None
+    permalink: str | None = None
+    # Set once the carousel publishes; the Mac's emulator then adds a song.
+    music_status: InstagramMusicStatus | None = None
+    music_track: str | None = None
+    music_error: str | None = None
     published_cover_url: str | None = None
     published_outro_url: str | None = None
     created_at: datetime
@@ -117,3 +121,18 @@ class InstagramPublishBatchPublish(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     version: int = Field(gt=0)
+
+
+class InstagramSongCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # Typed loosely, the way an admin would say it: "the weeknd after hours".
+    query: str = Field(min_length=1, max_length=200, pattern=r"\S")
+
+
+class InstagramSongResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: UUID
+    query: str
+    created_at: datetime
