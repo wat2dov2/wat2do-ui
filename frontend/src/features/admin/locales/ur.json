@@ -455,6 +455,52 @@
         "dismissed": "مسترد"
       }
     },
+    "outreach": {
+      "title": "رابطہ مہم",
+      "cardDescription": "منتظمین جنہیں اپنے ایونٹس پوسٹ کرنے کی دعوت دینی ہے۔",
+      "description": "ہفتہ وار تحقیق میں ملنے والے ہیکاتھون اور ٹکٹ والے ایونٹس کے منتظمین، ہر ایک کے لیے ویڈیو اسکرپٹ اور ای میل کے ساتھ۔ ویڈیو ریکارڈ کریں، ای میل Gmail میں کھولیں اور خود بھیجیں۔",
+      "newCampaign": "نئی مہم",
+      "newCampaignDescription": "بتائیں کہ کس قسم کے ایونٹ تلاش کرنے ہیں۔ ہفتہ وار تحقیق ہر یونیورسٹی میں انہیں ڈھونڈتی ہے۔",
+      "campaignName": "مہم کا نام",
+      "leadType": "تلاش",
+      "goal": "ہدف",
+      "createCampaign": "مہم بنائیں",
+      "leadTypes": {
+        "hackathon": "ہیکاتھون",
+        "ticketed_event": "ٹکٹ والے ایونٹس"
+      },
+      "campaign": "مہم",
+      "allCampaigns": "تمام مہمات",
+      "campaignStatus": "مہم کی حیثیت",
+      "campaignStatuses": {
+        "active": "فعال",
+        "paused": "موقوف",
+        "done": "مکمل"
+      },
+      "statuses": {
+        "new": "نیا",
+        "contacted": "رابطہ کیا گیا",
+        "replied": "جواب دیا",
+        "submitted": "ایونٹ جمع کرایا",
+        "not_interested": "دلچسپی نہیں",
+        "dismissed": "مسترد"
+      },
+      "emptyTitle": "ابھی کوئی منتظم نہیں",
+      "emptyDescription": "ایک مہم بنائیں، ہفتہ وار تحقیق یہ فہرست بھر دے گی۔",
+      "event": "ایونٹ",
+      "organizer": "منتظم",
+      "details": "تفصیلات",
+      "openEmail": "Gmail میں ای میل کھولیں",
+      "openFollowUp": "Gmail میں فالو اپ کھولیں",
+      "openEvent": "ایونٹ کا صفحہ کھولیں",
+      "source": "ای میل کہاں ملی",
+      "context": "سیاق و سباق",
+      "videoScript": "ویڈیو اسکرپٹ",
+      "email": "ای میل",
+      "followUp": "فالو اپ",
+      "notes": "نوٹس",
+      "saveNotes": "نوٹس محفوظ کریں"
+    },
     "clubSubmissionDetails": {
       "records": "ریکارڈ کی تفصیلات",
       "clubId": "کلب کی شناخت: {{id}}",

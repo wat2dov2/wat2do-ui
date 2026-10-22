@@ -455,6 +455,52 @@
         "dismissed": "ردشده"
       }
     },
+    "outreach": {
+      "title": "ارتباط‌گیری",
+      "cardDescription": "برگزارکنندگانی که باید برای انتشار رویدادهایشان دعوت شوند.",
+      "description": "برگزارکنندگان هکاتون‌ها و رویدادهای بلیت‌دار که جست‌وجوی هفتگی پیدا کرده، با متن ویدیو و ایمیل برای هر کدام. ویدیو را ضبط کنید، ایمیل را در Gmail باز کنید و خودتان بفرستید.",
+      "newCampaign": "کمپین جدید",
+      "newCampaignDescription": "نوع رویدادی را که دنبالش هستید بنویسید. جست‌وجوی هفتگی آن را در همه دانشگاه‌ها بررسی می‌کند.",
+      "campaignName": "نام کمپین",
+      "leadType": "به دنبال",
+      "goal": "هدف",
+      "createCampaign": "ساخت کمپین",
+      "leadTypes": {
+        "hackathon": "هکاتون‌ها",
+        "ticketed_event": "رویدادهای بلیت‌دار"
+      },
+      "campaign": "کمپین",
+      "allCampaigns": "همه کمپین‌ها",
+      "campaignStatus": "وضعیت کمپین",
+      "campaignStatuses": {
+        "active": "فعال",
+        "paused": "متوقف",
+        "done": "تمام‌شده"
+      },
+      "statuses": {
+        "new": "جدید",
+        "contacted": "تماس گرفته شد",
+        "replied": "پاسخ داد",
+        "submitted": "رویداد را ثبت کرد",
+        "not_interested": "علاقه‌ای ندارد",
+        "dismissed": "کنار گذاشته شد"
+      },
+      "emptyTitle": "هنوز برگزارکننده‌ای نیست",
+      "emptyDescription": "یک کمپین بسازید تا جست‌وجوی هفتگی این فهرست را پر کند.",
+      "event": "رویداد",
+      "organizer": "برگزارکننده",
+      "details": "جزئیات",
+      "openEmail": "باز کردن ایمیل در Gmail",
+      "openFollowUp": "باز کردن پیگیری در Gmail",
+      "openEvent": "باز کردن صفحه رویداد",
+      "source": "محل پیدا شدن ایمیل",
+      "context": "زمینه",
+      "videoScript": "متن ویدیو",
+      "email": "ایمیل",
+      "followUp": "پیگیری",
+      "notes": "یادداشت‌ها",
+      "saveNotes": "ذخیره یادداشت‌ها"
+    },
     "clubSubmissionDetails": {
       "records": "جزئیات رکورد",
       "clubId": "شناسه باشگاه: {{id}}",

@@ -455,6 +455,52 @@
         "dismissed": "खारिज"
       }
     },
+    "outreach": {
+      "title": "आउटरीच",
+      "cardDescription": "आयोजक जिन्हें अपने इवेंट पोस्ट करने के लिए आमंत्रित करना है।",
+      "description": "साप्ताहिक रिसर्च में मिले hackathon और टिकट वाले इवेंट के आयोजक, हर एक के लिए वीडियो स्क्रिप्ट और ईमेल के साथ। वीडियो रिकॉर्ड करें, ईमेल Gmail में खोलें और खुद भेजें।",
+      "newCampaign": "नया कैंपेन",
+      "newCampaignDescription": "बताएं कि किस तरह के इवेंट खोजने हैं। साप्ताहिक रिसर्च हर कॉलेज में इन्हें खोजती है।",
+      "campaignName": "कैंपेन का नाम",
+      "leadType": "किसकी तलाश",
+      "goal": "लक्ष्य",
+      "createCampaign": "कैंपेन बनाएं",
+      "leadTypes": {
+        "hackathon": "Hackathon",
+        "ticketed_event": "टिकट वाले इवेंट"
+      },
+      "campaign": "कैंपेन",
+      "allCampaigns": "सभी कैंपेन",
+      "campaignStatus": "कैंपेन स्थिति",
+      "campaignStatuses": {
+        "active": "सक्रिय",
+        "paused": "रुका हुआ",
+        "done": "पूरा"
+      },
+      "statuses": {
+        "new": "नया",
+        "contacted": "संपर्क किया",
+        "replied": "जवाब दिया",
+        "submitted": "इवेंट सबमिट किया",
+        "not_interested": "रुचि नहीं",
+        "dismissed": "खारिज"
+      },
+      "emptyTitle": "अभी कोई आयोजक नहीं",
+      "emptyDescription": "एक कैंपेन बनाएं, साप्ताहिक रिसर्च यह सूची भर देगी।",
+      "event": "इवेंट",
+      "organizer": "आयोजक",
+      "details": "विवरण",
+      "openEmail": "Gmail में ईमेल खोलें",
+      "openFollowUp": "Gmail में फॉलो-अप खोलें",
+      "openEvent": "इवेंट पेज खोलें",
+      "source": "ईमेल कहां मिला",
+      "context": "संदर्भ",
+      "videoScript": "वीडियो स्क्रिप्ट",
+      "email": "ईमेल",
+      "followUp": "फॉलो-अप",
+      "notes": "नोट्स",
+      "saveNotes": "नोट्स सेव करें"
+    },
     "clubSubmissionDetails": {
       "records": "रिकॉर्ड विवरण",
       "clubId": "क्लब आईडी: {{id}}",

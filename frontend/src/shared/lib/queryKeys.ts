@@ -45,6 +45,11 @@ export const queryKeys = {
     all: ["competitor-pain-points"] as const,
     list: (page: number, filters: object) => [...queryKeys.competitorPainPoints.all, page, filters] as const,
   },
+  outreach: {
+    all: ["outreach"] as const,
+    campaigns: () => [...queryKeys.outreach.all, "campaigns"] as const,
+    leads: (page: number, filters: object) => [...queryKeys.outreach.all, "leads", page, filters] as const,
+  },
   sponsorSubmissions: {
     all: ["sponsor-submissions"] as const,
     list: (page: number, status = "", school = "", search = "") => [...queryKeys.sponsorSubmissions.all, page, status, school, search] as const,

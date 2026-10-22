@@ -455,6 +455,52 @@
         "dismissed": "متجاهل"
       }
     },
+    "outreach": {
+      "title": "التواصل",
+      "cardDescription": "منظمون لدعوتهم لنشر فعالياتهم.",
+      "description": "منظمو الهاكاثونات والفعاليات المدفوعة الذين وجدهم البحث الأسبوعي، مع نص فيديو وبريد إلكتروني لكل منهم. سجّل الفيديو، وافتح البريد في Gmail وأرسله بنفسك.",
+      "newCampaign": "حملة جديدة",
+      "newCampaignDescription": "حدّد نوع الفعالية المستهدفة. يبحث عنها البحث الأسبوعي في كل جامعة.",
+      "campaignName": "اسم الحملة",
+      "leadType": "نبحث عن",
+      "goal": "الهدف",
+      "createCampaign": "إنشاء حملة",
+      "leadTypes": {
+        "hackathon": "هاكاثونات",
+        "ticketed_event": "فعاليات مدفوعة"
+      },
+      "campaign": "الحملة",
+      "allCampaigns": "كل الحملات",
+      "campaignStatus": "حالة الحملة",
+      "campaignStatuses": {
+        "active": "نشطة",
+        "paused": "متوقفة مؤقتًا",
+        "done": "منتهية"
+      },
+      "statuses": {
+        "new": "جديد",
+        "contacted": "تم التواصل",
+        "replied": "ردّ",
+        "submitted": "أرسل فعاليته",
+        "not_interested": "غير مهتم",
+        "dismissed": "مستبعد"
+      },
+      "emptyTitle": "لا يوجد منظمون بعد",
+      "emptyDescription": "أنشئ حملة، وسيملأ البحث الأسبوعي هذه القائمة.",
+      "event": "الفعالية",
+      "organizer": "المنظم",
+      "details": "التفاصيل",
+      "openEmail": "فتح البريد في Gmail",
+      "openFollowUp": "فتح رسالة المتابعة في Gmail",
+      "openEvent": "فتح صفحة الفعالية",
+      "source": "مكان العثور على البريد",
+      "context": "السياق",
+      "videoScript": "نص الفيديو",
+      "email": "البريد الإلكتروني",
+      "followUp": "المتابعة",
+      "notes": "ملاحظات",
+      "saveNotes": "حفظ الملاحظات"
+    },
     "clubSubmissionDetails": {
       "records": "تفاصيل السجل",
       "clubId": "معرّف النادي: {{id}}",

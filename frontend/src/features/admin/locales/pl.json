@@ -455,6 +455,52 @@
         "dismissed": "Odrzucone"
       }
     },
+    "outreach": {
+      "title": "Outreach",
+      "cardDescription": "Organizatorzy, których warto zaprosić do publikowania wydarzeń.",
+      "description": "Organizatorzy hackathonów i biletowanych wydarzeń znalezieni w cotygodniowym przeszukiwaniu, każdy ze skryptem wideo i e-mailem. Nagraj wideo, otwórz e-mail w Gmailu i wyślij go samodzielnie.",
+      "newCampaign": "Nowa kampania",
+      "newCampaignDescription": "Określ, jakiego rodzaju wydarzeń szukać. Cotygodniowe przeszukiwanie sprawdzi je na każdej uczelni.",
+      "campaignName": "Nazwa kampanii",
+      "leadType": "Szukamy",
+      "goal": "Cel",
+      "createCampaign": "Utwórz kampanię",
+      "leadTypes": {
+        "hackathon": "Hackathony",
+        "ticketed_event": "Wydarzenia biletowane"
+      },
+      "campaign": "Kampania",
+      "allCampaigns": "Wszystkie kampanie",
+      "campaignStatus": "Status kampanii",
+      "campaignStatuses": {
+        "active": "Aktywna",
+        "paused": "Wstrzymana",
+        "done": "Zakończona"
+      },
+      "statuses": {
+        "new": "Nowy",
+        "contacted": "Skontaktowano",
+        "replied": "Odpowiedział",
+        "submitted": "Zgłoszono",
+        "not_interested": "Brak zainteresowania",
+        "dismissed": "Odrzucony"
+      },
+      "emptyTitle": "Brak organizatorów",
+      "emptyDescription": "Utwórz kampanię, a cotygodniowe przeszukiwanie uzupełni tę listę.",
+      "event": "Wydarzenie",
+      "organizer": "Organizator",
+      "details": "Szczegóły",
+      "openEmail": "Otwórz e-mail w Gmailu",
+      "openFollowUp": "Otwórz follow-up w Gmailu",
+      "openEvent": "Otwórz stronę wydarzenia",
+      "source": "Gdzie znaleziono e-mail",
+      "context": "Kontekst",
+      "videoScript": "Skrypt wideo",
+      "email": "E-mail",
+      "followUp": "Follow-up",
+      "notes": "Notatki",
+      "saveNotes": "Zapisz notatki"
+    },
     "clubSubmissionDetails": {
       "records": "Szczegóły rekordu",
       "clubId": "ID klubu: {{id}}",

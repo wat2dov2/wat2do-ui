@@ -455,6 +455,52 @@
         "dismissed": "Descartado"
       }
     },
+    "outreach": {
+      "title": "Divulgação",
+      "cardDescription": "Organizadores para convidar a publicar seus eventos.",
+      "description": "Organizadores de hackathons e eventos com ingresso encontrados pela pesquisa semanal, com um roteiro de vídeo e um e-mail para cada um. Grave o vídeo, abra o e-mail no Gmail e envie você mesmo.",
+      "newCampaign": "Nova campanha",
+      "newCampaignDescription": "Diga que tipo de evento buscar. A pesquisa semanal procura em todas as universidades.",
+      "campaignName": "Nome da campanha",
+      "leadType": "Procurando",
+      "goal": "Meta",
+      "createCampaign": "Criar campanha",
+      "leadTypes": {
+        "hackathon": "Hackathons",
+        "ticketed_event": "Eventos com ingresso"
+      },
+      "campaign": "Campanha",
+      "allCampaigns": "Todas as campanhas",
+      "campaignStatus": "Status da campanha",
+      "campaignStatuses": {
+        "active": "Ativa",
+        "paused": "Pausada",
+        "done": "Concluída"
+      },
+      "statuses": {
+        "new": "Novo",
+        "contacted": "Contatado",
+        "replied": "Respondeu",
+        "submitted": "Enviado",
+        "not_interested": "Sem interesse",
+        "dismissed": "Descartado"
+      },
+      "emptyTitle": "Nenhum organizador ainda",
+      "emptyDescription": "Crie uma campanha e a pesquisa semanal preencherá esta lista.",
+      "event": "Evento",
+      "organizer": "Organizador",
+      "details": "Detalhes",
+      "openEmail": "Abrir e-mail no Gmail",
+      "openFollowUp": "Abrir follow-up no Gmail",
+      "openEvent": "Abrir página do evento",
+      "source": "Onde o e-mail foi encontrado",
+      "context": "Contexto",
+      "videoScript": "Roteiro do vídeo",
+      "email": "E-mail",
+      "followUp": "Follow-up",
+      "notes": "Notas",
+      "saveNotes": "Salvar notas"
+    },
     "clubSubmissionDetails": {
       "records": "Detalhes do registo",
       "clubId": "ID do clube: {{id}}",

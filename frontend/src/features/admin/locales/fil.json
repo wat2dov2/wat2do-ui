@@ -455,6 +455,52 @@
         "dismissed": "Binalewala"
       }
     },
+    "outreach": {
+      "title": "Outreach",
+      "cardDescription": "Mga organizer na iimbitahang mag-post ng kanilang mga event.",
+      "description": "Mga organizer ng hackathon at may-tiket na event na nahanap ng lingguhang pananaliksik, may video script at email para sa bawat isa. I-record ang video, buksan ang email sa Gmail at ikaw mismo ang magpadala.",
+      "newCampaign": "Bagong campaign",
+      "newCampaignDescription": "Ilagay kung anong uri ng event ang hahanapin. Hahanapin ito ng lingguhang pananaliksik sa bawat paaralan.",
+      "campaignName": "Pangalan ng campaign",
+      "leadType": "Hinahanap",
+      "goal": "Layunin",
+      "createCampaign": "Gumawa ng campaign",
+      "leadTypes": {
+        "hackathon": "Mga hackathon",
+        "ticketed_event": "Mga event na may tiket"
+      },
+      "campaign": "Campaign",
+      "allCampaigns": "Lahat ng campaign",
+      "campaignStatus": "Status ng campaign",
+      "campaignStatuses": {
+        "active": "Aktibo",
+        "paused": "Naka-pause",
+        "done": "Tapos na"
+      },
+      "statuses": {
+        "new": "Bago",
+        "contacted": "Nakontak na",
+        "replied": "Sumagot",
+        "submitted": "Nag-submit",
+        "not_interested": "Hindi interesado",
+        "dismissed": "Inalis"
+      },
+      "emptyTitle": "Wala pang mga organizer",
+      "emptyDescription": "Gumawa ng campaign at pupunuin ito ng lingguhang pananaliksik.",
+      "event": "Event",
+      "organizer": "Organizer",
+      "details": "Mga detalye",
+      "openEmail": "Buksan ang email sa Gmail",
+      "openFollowUp": "Buksan ang follow-up sa Gmail",
+      "openEvent": "Buksan ang page ng event",
+      "source": "Saan nakita ang email",
+      "context": "Konteksto",
+      "videoScript": "Video script",
+      "email": "Email",
+      "followUp": "Follow-up",
+      "notes": "Mga tala",
+      "saveNotes": "I-save ang mga tala"
+    },
     "clubSubmissionDetails": {
       "records": "Mga detalye ng tala",
       "clubId": "ID ng club: {{id}}",

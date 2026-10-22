@@ -455,6 +455,52 @@
         "dismissed": "અવગણેલું"
       }
     },
+    "outreach": {
+      "title": "આઉટરીચ",
+      "cardDescription": "આયોજકો જેમને તેમની ઇવેન્ટ્સ પોસ્ટ કરવા આમંત્રિત કરવાના છે.",
+      "description": "સાપ્તાહિક રિસર્ચમાં મળેલા hackathon અને ટિકિટવાળી ઇવેન્ટ્સના આયોજકો, દરેક માટે વિડિયો સ્ક્રિપ્ટ અને ઇમેઇલ સાથે. વિડિયો રેકોર્ડ કરો, ઇમેઇલ Gmailમાં ખોલો અને જાતે મોકલો.",
+      "newCampaign": "નવું કેમ્પેન",
+      "newCampaignDescription": "કેવા પ્રકારની ઇવેન્ટ શોધવી છે તે જણાવો. સાપ્તાહિક રિસર્ચ દરેક કોલેજમાં તેને શોધે છે.",
+      "campaignName": "કેમ્પેનનું નામ",
+      "leadType": "શોધી રહ્યા છીએ",
+      "goal": "લક્ષ્ય",
+      "createCampaign": "કેમ્પેન બનાવો",
+      "leadTypes": {
+        "hackathon": "Hackathons",
+        "ticketed_event": "ટિકિટવાળી ઇવેન્ટ્સ"
+      },
+      "campaign": "કેમ્પેન",
+      "allCampaigns": "બધા કેમ્પેન",
+      "campaignStatus": "કેમ્પેનની સ્થિતિ",
+      "campaignStatuses": {
+        "active": "સક્રિય",
+        "paused": "થોભાવેલ",
+        "done": "પૂર્ણ"
+      },
+      "statuses": {
+        "new": "નવું",
+        "contacted": "સંપર્ક કર્યો",
+        "replied": "જવાબ આપ્યો",
+        "submitted": "ઇવેન્ટ સબમિટ કરી",
+        "not_interested": "રસ નથી",
+        "dismissed": "રદ કર્યું"
+      },
+      "emptyTitle": "હજી કોઈ આયોજક નથી",
+      "emptyDescription": "કેમ્પેન બનાવો, સાપ્તાહિક રિસર્ચ આ યાદી ભરી દેશે.",
+      "event": "ઇવેન્ટ",
+      "organizer": "આયોજક",
+      "details": "વિગતો",
+      "openEmail": "Gmailમાં ઇમેઇલ ખોલો",
+      "openFollowUp": "Gmailમાં ફોલો-અપ ખોલો",
+      "openEvent": "ઇવેન્ટ પેજ ખોલો",
+      "source": "ઇમેઇલ ક્યાંથી મળ્યો",
+      "context": "સંદર્ભ",
+      "videoScript": "વિડિયો સ્ક્રિપ્ટ",
+      "email": "ઇમેઇલ",
+      "followUp": "ફોલો-અપ",
+      "notes": "નોંધો",
+      "saveNotes": "નોંધો સાચવો"
+    },
     "clubSubmissionDetails": {
       "records": "રેકોર્ડ વિગતો",
       "clubId": "ક્લબ આઈડી: {{id}}",

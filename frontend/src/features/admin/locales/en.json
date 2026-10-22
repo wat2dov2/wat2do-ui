@@ -455,6 +455,52 @@
         "dismissed": "Dismissed"
       }
     },
+    "outreach": {
+      "title": "Outreach",
+      "cardDescription": "Organizers to invite to post their events.",
+      "description": "Hackathon and ticketed-event organizers the weekly research sweep found, with a video script and email for each. Record the video, open the email in Gmail and send it yourself.",
+      "newCampaign": "New campaign",
+      "newCampaignDescription": "Name the kind of event to go after. The weekly sweep researches it at every school.",
+      "campaignName": "Campaign name",
+      "leadType": "Looking for",
+      "goal": "Goal",
+      "createCampaign": "Create campaign",
+      "leadTypes": {
+        "hackathon": "Hackathons",
+        "ticketed_event": "Ticketed events"
+      },
+      "campaign": "Campaign",
+      "allCampaigns": "All campaigns",
+      "campaignStatus": "Campaign status",
+      "campaignStatuses": {
+        "active": "Active",
+        "paused": "Paused",
+        "done": "Done"
+      },
+      "statuses": {
+        "new": "New",
+        "contacted": "Contacted",
+        "replied": "Replied",
+        "submitted": "Submitted",
+        "not_interested": "Not interested",
+        "dismissed": "Dismissed"
+      },
+      "emptyTitle": "No organizers yet",
+      "emptyDescription": "Create a campaign, and the weekly sweep fills this in.",
+      "event": "Event",
+      "organizer": "Organizer",
+      "details": "Details",
+      "openEmail": "Open email in Gmail",
+      "openFollowUp": "Open follow-up in Gmail",
+      "openEvent": "Open event page",
+      "source": "Where the email was found",
+      "context": "Context",
+      "videoScript": "Video script",
+      "email": "Email",
+      "followUp": "Follow-up",
+      "notes": "Notes",
+      "saveNotes": "Save notes"
+    },
     "clubSubmissionDetails": {
       "records": "Record details",
       "clubId": "Club ID: {{id}}",

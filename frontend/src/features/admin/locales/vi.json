@@ -455,6 +455,52 @@
         "dismissed": "Đã bỏ qua"
       }
     },
+    "outreach": {
+      "title": "Tiếp cận",
+      "cardDescription": "Những nhà tổ chức cần mời đăng sự kiện của họ.",
+      "description": "Các nhà tổ chức hackathon và sự kiện bán vé mà đợt tìm kiếm hàng tuần đã tìm thấy, kèm kịch bản video và email cho từng người. Quay video, mở email trong Gmail và tự gửi đi.",
+      "newCampaign": "Chiến dịch mới",
+      "newCampaignDescription": "Nêu loại sự kiện cần tìm. Đợt tìm kiếm hàng tuần sẽ tìm ở mọi trường.",
+      "campaignName": "Tên chiến dịch",
+      "leadType": "Đang tìm",
+      "goal": "Mục tiêu",
+      "createCampaign": "Tạo chiến dịch",
+      "leadTypes": {
+        "hackathon": "Hackathon",
+        "ticketed_event": "Sự kiện bán vé"
+      },
+      "campaign": "Chiến dịch",
+      "allCampaigns": "Tất cả chiến dịch",
+      "campaignStatus": "Trạng thái chiến dịch",
+      "campaignStatuses": {
+        "active": "Đang chạy",
+        "paused": "Tạm dừng",
+        "done": "Hoàn tất"
+      },
+      "statuses": {
+        "new": "Mới",
+        "contacted": "Đã liên hệ",
+        "replied": "Đã trả lời",
+        "submitted": "Đã gửi sự kiện",
+        "not_interested": "Không quan tâm",
+        "dismissed": "Đã loại"
+      },
+      "emptyTitle": "Chưa có nhà tổ chức nào",
+      "emptyDescription": "Tạo một chiến dịch, đợt tìm kiếm hàng tuần sẽ điền danh sách này.",
+      "event": "Sự kiện",
+      "organizer": "Nhà tổ chức",
+      "details": "Chi tiết",
+      "openEmail": "Mở email trong Gmail",
+      "openFollowUp": "Mở email theo dõi trong Gmail",
+      "openEvent": "Mở trang sự kiện",
+      "source": "Nơi tìm thấy email",
+      "context": "Bối cảnh",
+      "videoScript": "Kịch bản video",
+      "email": "Email",
+      "followUp": "Email theo dõi",
+      "notes": "Ghi chú",
+      "saveNotes": "Lưu ghi chú"
+    },
     "clubSubmissionDetails": {
       "records": "Chi tiết bản ghi",
       "clubId": "ID câu lạc bộ: {{id}}",

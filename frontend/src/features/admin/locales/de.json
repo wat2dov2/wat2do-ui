@@ -455,6 +455,52 @@
         "dismissed": "Verworfen"
       }
     },
+    "outreach": {
+      "title": "Outreach",
+      "cardDescription": "Organisatoren, die eingeladen werden sollen, ihre Events zu veröffentlichen.",
+      "description": "Organisatoren von Hackathons und Ticket-Events, die die wöchentliche Recherche gefunden hat, jeweils mit Videoskript und E-Mail. Nimm das Video auf, öffne die E-Mail in Gmail und sende sie selbst.",
+      "newCampaign": "Neue Kampagne",
+      "newCampaignDescription": "Gib an, welche Art von Event gesucht werden soll. Die wöchentliche Recherche sucht danach an jeder Hochschule.",
+      "campaignName": "Kampagnenname",
+      "leadType": "Gesucht",
+      "goal": "Ziel",
+      "createCampaign": "Kampagne erstellen",
+      "leadTypes": {
+        "hackathon": "Hackathons",
+        "ticketed_event": "Ticket-Events"
+      },
+      "campaign": "Kampagne",
+      "allCampaigns": "Alle Kampagnen",
+      "campaignStatus": "Kampagnenstatus",
+      "campaignStatuses": {
+        "active": "Aktiv",
+        "paused": "Pausiert",
+        "done": "Abgeschlossen"
+      },
+      "statuses": {
+        "new": "Neu",
+        "contacted": "Kontaktiert",
+        "replied": "Geantwortet",
+        "submitted": "Eingereicht",
+        "not_interested": "Kein Interesse",
+        "dismissed": "Verworfen"
+      },
+      "emptyTitle": "Noch keine Organisatoren",
+      "emptyDescription": "Erstelle eine Kampagne, dann füllt die wöchentliche Recherche diese Liste.",
+      "event": "Event",
+      "organizer": "Organisator",
+      "details": "Details",
+      "openEmail": "E-Mail in Gmail öffnen",
+      "openFollowUp": "Follow-up in Gmail öffnen",
+      "openEvent": "Eventseite öffnen",
+      "source": "Fundort der E-Mail-Adresse",
+      "context": "Kontext",
+      "videoScript": "Videoskript",
+      "email": "E-Mail",
+      "followUp": "Follow-up",
+      "notes": "Notizen",
+      "saveNotes": "Notizen speichern"
+    },
     "clubSubmissionDetails": {
       "records": "Datensatzdetails",
       "clubId": "Club-ID: {{id}}",

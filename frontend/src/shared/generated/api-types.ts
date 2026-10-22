@@ -928,6 +928,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/outreach/campaigns/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Campaigns */
+        get: operations["list_campaigns_outreach_campaigns__get"];
+        put?: never;
+        /** Create Campaign */
+        post: operations["create_campaign_outreach_campaigns__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/outreach/campaigns/{campaign_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Campaign */
+        patch: operations["update_campaign_outreach_campaigns__campaign_id__patch"];
+        trace?: never;
+    };
+    "/outreach/leads/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Leads */
+        get: operations["list_leads_outreach_leads__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/outreach/leads/{lead_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Lead */
+        patch: operations["update_lead_outreach_leads__lead_id__patch"];
+        trace?: never;
+    };
     "/payouts/": {
         parameters: {
             query?: never;
@@ -3422,6 +3491,123 @@ export interface components {
             /** Id */
             id?: string | null;
         };
+        /** OutreachCampaignCreate */
+        OutreachCampaignCreate: {
+            /** Name */
+            name: string;
+            /** Lead Type */
+            lead_type: string;
+            /**
+             * Goal
+             * @default
+             */
+            goal: string;
+            /** School Slugs */
+            school_slugs?: string[];
+        };
+        /** OutreachCampaignResponse */
+        OutreachCampaignResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Lead Type */
+            lead_type: string;
+            /** Goal */
+            goal: string;
+            /** School Slugs */
+            school_slugs: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "done";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** OutreachCampaignUpdate */
+        OutreachCampaignUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Goal */
+            goal?: string | null;
+            /** Status */
+            status?: ("active" | "paused" | "done") | null;
+        };
+        /** OutreachLeadResponse */
+        OutreachLeadResponse: {
+            /** Event Name */
+            event_name: string;
+            /** Event Url */
+            event_url: string;
+            /** Event Date */
+            event_date?: string | null;
+            /** Organization */
+            organization: string;
+            /**
+             * Contact Name
+             * @default
+             */
+            contact_name: string;
+            /**
+             * Contact Role
+             * @default
+             */
+            contact_role: string;
+            /** Email */
+            email: string;
+            /** Source Url */
+            source_url: string;
+            /** Context */
+            context: string;
+            /** Video Script */
+            video_script: string;
+            /** Email Subject */
+            email_subject: string;
+            /** Email Body */
+            email_body: string;
+            /** Follow Up */
+            follow_up: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Campaign Id
+             * Format: uuid
+             */
+            campaign_id: string;
+            /** School Slug */
+            school_slug: string;
+            /** School Name */
+            school_name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "contacted" | "replied" | "submitted" | "not_interested" | "dismissed";
+            /** Notes */
+            notes: string;
+            /**
+             * Found At
+             * Format: date-time
+             */
+            found_at: string;
+        };
+        /** OutreachLeadUpdate */
+        OutreachLeadUpdate: {
+            /** Status */
+            status?: ("new" | "contacted" | "replied" | "submitted" | "not_interested" | "dismissed") | null;
+            /** Notes */
+            notes?: string | null;
+        };
         /** PaginatedResponse[ClubClaimResponse] */
         PaginatedResponse_ClubClaimResponse_: {
             /** Items */
@@ -3504,6 +3690,19 @@ export interface components {
         PaginatedResponse_InstagramPublishBatchSummaryResponse_: {
             /** Items */
             items: components["schemas"]["InstagramPublishBatchSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[OutreachLeadResponse] */
+        PaginatedResponse_OutreachLeadResponse_: {
+            /** Items */
+            items: components["schemas"]["OutreachLeadResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -6720,6 +6919,167 @@ export interface operations {
                 };
                 content: {
                     "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_campaigns_outreach_campaigns__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutreachCampaignResponse"][];
+                };
+            };
+        };
+    };
+    create_campaign_outreach_campaigns__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OutreachCampaignCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutreachCampaignResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_campaign_outreach_campaigns__campaign_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                campaign_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OutreachCampaignUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutreachCampaignResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_leads_outreach_leads__get: {
+        parameters: {
+            query?: {
+                campaign_id?: string | null;
+                lead_status?: ("new" | "contacted" | "replied" | "submitted" | "not_interested" | "dismissed") | null;
+                school?: string | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_OutreachLeadResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_lead_outreach_leads__lead_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OutreachLeadUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutreachLeadResponse"];
                 };
             };
             /** @description Validation Error */

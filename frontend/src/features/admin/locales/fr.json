@@ -455,6 +455,52 @@
         "dismissed": "Ignoré"
       }
     },
+    "outreach": {
+      "title": "Prospection",
+      "cardDescription": "Organisateurs à inviter à publier leurs événements.",
+      "description": "Organisateurs de hackathons et d'événements payants trouvés par la recherche hebdomadaire, avec un script vidéo et un e-mail pour chacun. Enregistrez la vidéo, ouvrez l'e-mail dans Gmail et envoyez-le vous-même.",
+      "newCampaign": "Nouvelle campagne",
+      "newCampaignDescription": "Indiquez le type d'événement à cibler. La recherche hebdomadaire l'explore dans chaque établissement.",
+      "campaignName": "Nom de la campagne",
+      "leadType": "Recherche",
+      "goal": "Objectif",
+      "createCampaign": "Créer la campagne",
+      "leadTypes": {
+        "hackathon": "Hackathons",
+        "ticketed_event": "Événements payants"
+      },
+      "campaign": "Campagne",
+      "allCampaigns": "Toutes les campagnes",
+      "campaignStatus": "Statut de la campagne",
+      "campaignStatuses": {
+        "active": "Active",
+        "paused": "En pause",
+        "done": "Terminée"
+      },
+      "statuses": {
+        "new": "Nouveau",
+        "contacted": "Contacté",
+        "replied": "A répondu",
+        "submitted": "Soumis",
+        "not_interested": "Pas intéressé",
+        "dismissed": "Écarté"
+      },
+      "emptyTitle": "Aucun organisateur pour l'instant",
+      "emptyDescription": "Créez une campagne, et la recherche hebdomadaire remplira cette liste.",
+      "event": "Événement",
+      "organizer": "Organisateur",
+      "details": "Détails",
+      "openEmail": "Ouvrir l'e-mail dans Gmail",
+      "openFollowUp": "Ouvrir la relance dans Gmail",
+      "openEvent": "Ouvrir la page de l'événement",
+      "source": "Où l'adresse e-mail a été trouvée",
+      "context": "Contexte",
+      "videoScript": "Script vidéo",
+      "email": "E-mail",
+      "followUp": "Relance",
+      "notes": "Notes",
+      "saveNotes": "Enregistrer les notes"
+    },
     "clubSubmissionDetails": {
       "records": "Détails du dossier",
       "clubId": "Identifiant du club : {{id}}",

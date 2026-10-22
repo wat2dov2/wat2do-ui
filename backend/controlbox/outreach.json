@@ -1,0 +1,18 @@
+{
+  "model": "claude-haiku-5-5",
+  "agent_timeout_seconds": 900,
+  "parallel_agents": 6,
+  "sweep_interval_hours": 168,
+  "leads_per_search": 4,
+  "known_emails_in_prompt": 500,
+  "page_fetch_timeout_seconds": 15,
+  "launch_agent_timeout_seconds": 30,
+  "sender_name": "Tony",
+  "gmail_account": "team@wat2do.io",
+  "submit_url_template": "https://{school}.wat2do.io/events/submit",
+  "lead_types": {
+    "hackathon": "Student-run hackathons, game jams, case competitions and similar build or compete weekends at the school or open to its students, with an upcoming date. The organizer team (directors, sponsorship or outreach leads) is the contact.",
+    "ticketed_event": "Upcoming ticketed student events at the school: galas, formals, semi-formals, concerts, cultural shows, conferences and paid socials run by student unions, residence councils, faculty societies or clubs. The organizing group or its events or marketing lead is the contact."
+  },
+  "offer": "Wat2Do lists every campus event at a school in one feed, free for students and organizers. Submitting an event takes about two minutes on the school's submit page, and it then shows up for students browsing what to do that week, on the school's Wat2Do page and in the school's Wat2Do Instagram event carousels."
+}
