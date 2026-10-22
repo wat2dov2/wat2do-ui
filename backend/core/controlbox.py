@@ -634,6 +634,11 @@ class InstagramPublishingControl(_ControlModel):
     music_delay_minutes: int = Field(ge=1, le=120)
     music_max_age_hours: int = Field(ge=1, le=72)
     music_attempts: int = Field(ge=1, le=10)
+    # Campuses with large Asian student communities, the only ones that get a song an
+    # admin marked as Asian or K-pop.
+    asian_song_schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(
+        max_length=100
+    )
     music_interval_seconds: int = Field(ge=60, le=3600)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120)
 

@@ -87,7 +87,7 @@ def add_instagram_song(
     data: InstagramSongCreate,
     _: UserResponse = Depends(get_admin_user),
 ):
-    return music.add_song(data.query)
+    return music.add_song(data.query, asian_campuses_only=data.asian_campuses_only)
 
 
 @router.delete("/songs/{song_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -3294,6 +3294,11 @@ export interface components {
         InstagramSongCreate: {
             /** Query */
             query: string;
+            /**
+             * Asian Campuses Only
+             * @default false
+             */
+            asian_campuses_only: boolean;
         };
         /** InstagramSongResponse */
         InstagramSongResponse: {
@@ -3304,6 +3309,8 @@ export interface components {
             id: string;
             /** Query */
             query: string;
+            /** Asian Campuses Only */
+            asian_campuses_only: boolean;
             /**
              * Created At
              * Format: date-time

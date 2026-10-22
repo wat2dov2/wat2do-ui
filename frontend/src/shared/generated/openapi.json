@@ -11797,6 +11797,11 @@
             "minLength": 1,
             "pattern": "\\S",
             "title": "Query"
+          },
+          "asian_campuses_only": {
+            "type": "boolean",
+            "title": "Asian Campuses Only",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -11817,6 +11822,10 @@
             "type": "string",
             "title": "Query"
           },
+          "asian_campuses_only": {
+            "type": "boolean",
+            "title": "Asian Campuses Only"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -11827,6 +11836,7 @@
         "required": [
           "id",
           "query",
+          "asian_campuses_only",
           "created_at"
         ],
         "title": "InstagramSongResponse"

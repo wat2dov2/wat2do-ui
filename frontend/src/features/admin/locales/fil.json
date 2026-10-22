@@ -389,6 +389,8 @@
         "query": "Kanta",
         "placeholder": "hal. the weeknd after hours",
         "add": "Magdagdag ng kanta",
+        "asianCampusesOnly": "Asian na campus lang",
+        "asianCampuses": "Asian na campus",
         "help": "Ilang minuto matapos mailathala ang carousel, idinadagdag ng emulator ang isa sa mga kantang ito sa post, sinusubukan ang mga ito nang random.",
         "label": "kanta",
         "columns": {

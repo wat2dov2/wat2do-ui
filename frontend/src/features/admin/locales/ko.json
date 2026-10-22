@@ -389,6 +389,8 @@
         "query": "노래",
         "placeholder": "예: the weeknd after hours",
         "add": "노래 추가",
+        "asianCampusesOnly": "아시아계 캠퍼스 전용",
+        "asianCampuses": "아시아계 캠퍼스",
         "help": "캐러셀이 게시되고 몇 분 뒤 에뮬레이터가 이 노래 중 하나를 무작위 순서로 시도해 게시물에 추가합니다.",
         "label": "곡",
         "columns": {

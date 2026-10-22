@@ -3,7 +3,8 @@
 Admins keep a list of songs, typed loosely. Some minutes after a carousel
 publishes, ``add_pending_music`` opens the live post on the emulator and tries
 the songs in random order: Instagram's music search finds candidates and Claude
-Haiku picks the track the admin meant, or none so the next song is tried.
+Haiku picks the track the admin meant, or none so the next song is tried. A song
+marked Asian or K-pop is tried only at the control box's ``asian_song_schools``.
 """
 
 from __future__ import annotations
@@ -60,11 +61,16 @@ def list_songs() -> list[dict[str, Any]]:
     return response.data or []
 
 
-def add_song(query: str) -> dict[str, Any]:
+def add_song(query: str, *, asian_campuses_only: bool = False) -> dict[str, Any]:
     query = " ".join(query.split())
     if any(song["query"].casefold() == query.casefold() for song in list_songs()):
         raise ConflictError(INSTAGRAM_SONG_EXISTS)
-    response = get_sb().table(INSTAGRAM_SONGS).insert({"query": query}).execute()
+    response = (
+        get_sb()
+        .table(INSTAGRAM_SONGS)
+        .insert({"query": query, "asian_campuses_only": asian_campuses_only})
+        .execute()
+    )
     return response.data[0]
 
 
@@ -77,14 +83,23 @@ def delete_song(song_id: UUID) -> None:
 def add_pending_music(now: datetime | None = None) -> dict[str, int]:
     """Add a song to every carousel that has waited long enough since it published."""
     now = now or datetime.now(timezone.utc)
-    songs = [song["query"] for song in list_songs()]
+    songs = list_songs()
     if not songs:
         return {}
     outcomes: dict[str, int] = {}
     for batch in _pending_batches(now):
-        outcome = _add_music(batch, random.sample(songs, len(songs)))
+        playable = _songs_for(batch["school"], songs)
+        if not playable:
+            continue
+        outcome = _add_music(batch, random.sample(playable, len(playable)))
         outcomes[outcome] = outcomes.get(outcome, 0) + 1
     return outcomes
+
+
+def _songs_for(school: str | None, songs: list[dict[str, Any]]) -> list[str]:
+    """Every song can play anywhere except Asian and K-pop ones, kept to Asian campuses."""
+    asian_campus = school in _CONTROL.asian_song_schools
+    return [song["query"] for song in songs if asian_campus or not song.get("asian_campuses_only")]
 
 
 def _pending_batches(now: datetime) -> list[dict[str, Any]]:

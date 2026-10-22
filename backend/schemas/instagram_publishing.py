@@ -128,6 +128,8 @@ class InstagramSongCreate(BaseModel):
 
     # Typed loosely, the way an admin would say it: "the weeknd after hours".
     query: str = Field(min_length=1, max_length=200, pattern=r"\S")
+    # Asian and K-pop songs play only on campuses with large Asian student communities.
+    asian_campuses_only: bool = False
 
 
 class InstagramSongResponse(BaseModel):
@@ -135,4 +137,5 @@ class InstagramSongResponse(BaseModel):
 
     id: UUID
     query: str
+    asian_campuses_only: bool
     created_at: datetime

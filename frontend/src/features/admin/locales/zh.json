@@ -389,6 +389,8 @@
         "query": "歌曲",
         "placeholder": "例如 the weeknd after hours",
         "add": "添加歌曲",
+        "asianCampusesOnly": "仅限亚裔校园",
+        "asianCampuses": "亚裔校园",
         "help": "轮播帖发布几分钟后，模拟器会按随机顺序尝试这些歌曲，并为帖子添加其中一首。",
         "label": "首歌曲",
         "columns": {

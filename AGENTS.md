@@ -105,6 +105,8 @@ The emulator also adds music to our own carousels after the API publishes them, 
 the API cannot attach a song: a Mac LaunchAgent opens the live post, Edit, Add audio,
 searches the admin's song list in random order, and Claude Haiku picks the matching
 track or none.
+A song the admin marks as Asian or K-pop is tried only at the campuses in
+`controlbox/instagram_publishing.json` `asian_song_schools`.
 Every job that drives the emulator holds its lock, so no two ever tap at once.
 Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
 message, impersonation, login codes, money, follow-for-follow, pressure).

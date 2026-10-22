@@ -389,6 +389,8 @@
         "query": "Song",
         "placeholder": "z. B. the weeknd after hours",
         "add": "Song hinzufügen",
+        "asianCampusesOnly": "Nur asiatisch geprägte Campusse",
+        "asianCampuses": "Asiatisch geprägte Campusse",
         "help": "Einige Minuten nach der Veröffentlichung eines Karussells fügt der Emulator dem Beitrag einen dieser Songs hinzu und probiert sie in zufälliger Reihenfolge.",
         "label": "Songs",
         "columns": {

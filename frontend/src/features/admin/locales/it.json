@@ -389,6 +389,8 @@
         "query": "Brano",
         "placeholder": "es. the weeknd after hours",
         "add": "Aggiungi brano",
+        "asianCampusesOnly": "Solo campus asiatici",
+        "asianCampuses": "Campus asiatici",
         "help": "Qualche minuto dopo la pubblicazione di un carosello, l'emulatore aggiunge uno di questi brani al post, provandoli in ordine casuale.",
         "label": "brani",
         "columns": {

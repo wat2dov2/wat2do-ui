@@ -389,6 +389,8 @@
         "query": "Utwór",
         "placeholder": "np. the weeknd after hours",
         "add": "Dodaj utwór",
+        "asianCampusesOnly": "Tylko kampusy azjatyckie",
+        "asianCampuses": "Kampusy azjatyckie",
         "help": "Kilka minut po opublikowaniu karuzeli emulator dodaje do posta jeden z tych utworów, próbując ich w losowej kolejności.",
         "label": "utwory",
         "columns": {

@@ -133,7 +133,11 @@ def test_songs_are_added_once_regardless_of_case(database):
         music.add_song("  The Weeknd   AFTER hours ")
     database.tables["instagram_songs"] = [{"id": str(uuid4()), "query": "sza snooze"}]
     music.add_song("sza  saturn")
-    assert ("insert", ({"query": "sza saturn"},), {}) in database.calls
+    assert (
+        "insert",
+        ({"query": "sza saturn", "asian_campuses_only": False},),
+        {},
+    ) in database.calls
 
 
 def test_deleting_a_missing_song_is_not_found(database):
@@ -146,3 +150,49 @@ def test_deleting_a_missing_song_is_not_found(database):
 def test_blank_or_long_songs_are_rejected(query):
     with pytest.raises(PydanticValidationError):
         InstagramSongCreate(query=query)
+
+
+def _tried_songs(monkeypatch, database, school):
+    database.tables["instagram_songs"] = [
+        {"query": "the weeknd after hours", "asian_campuses_only": False},
+        {"query": "bts spring day", "asian_campuses_only": True},
+    ]
+    database.tables["instagram_publish_batches"] = [
+        {**BATCH, "account_key": school, "school_record": {"slug": school}}
+    ]
+    tried = []
+    monkeypatch.setattr(
+        music,
+        "add_audio",
+        lambda _school, _user, _post, songs, _choose: (
+            tried.append(sorted(songs)) or AddedTrack(songs[0], "After Hours by The Weeknd")
+        ),
+    )
+    music.add_pending_music(NOW)
+    return tried
+
+
+def test_asian_and_kpop_songs_play_only_on_asian_campuses(monkeypatch, database):
+    assert music._CONTROL.asian_song_schools
+    assert "uwaterloo" in music._CONTROL.asian_song_schools
+    assert _tried_songs(monkeypatch, database, "uwaterloo") == [
+        ["bts spring day", "the weeknd after hours"]
+    ]
+    assert _tried_songs(monkeypatch, database, "queensu") == [["the weeknd after hours"]]
+
+
+def test_a_campus_with_no_playable_song_is_left_pending(monkeypatch, database):
+    database.tables["instagram_songs"] = [{"query": "bts spring day", "asian_campuses_only": True}]
+    database.tables["instagram_publish_batches"] = [
+        {**BATCH, "account_key": "queensu", "school_record": {"slug": "queensu"}}
+    ]
+    monkeypatch.setattr(music, "add_audio", Mock(side_effect=AssertionError("no song to try")))
+    assert music.add_pending_music(NOW) == {}
+    assert _updates(database.calls) == []
+
+
+def test_a_song_is_stored_with_its_asian_campus_flag(database):
+    database.tables["instagram_songs"] = [{"query": "bts spring day", "asian_campuses_only": True}]
+    music.add_song("twice  doughnut", asian_campuses_only=True)
+    inserted = [args[0] for name, args, _ in database.calls if name == "insert"]
+    assert inserted == [{"query": "twice doughnut", "asian_campuses_only": True}]

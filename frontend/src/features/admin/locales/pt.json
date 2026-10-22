@@ -389,6 +389,8 @@
         "query": "Música",
         "placeholder": "ex.: the weeknd after hours",
         "add": "Adicionar música",
+        "asianCampusesOnly": "Só campi asiáticos",
+        "asianCampuses": "Campi asiáticos",
         "help": "Alguns minutos depois de um carrossel ser publicado, o emulador adiciona uma destas músicas à publicação, testando-as em ordem aleatória.",
         "label": "músicas",
         "columns": {

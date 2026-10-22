@@ -389,6 +389,8 @@
         "query": "Song",
         "placeholder": "e.g. the weeknd after hours",
         "add": "Add song",
+        "asianCampusesOnly": "Asian campuses only",
+        "asianCampuses": "Asian campuses",
         "help": "A few minutes after a carousel publishes, the emulator adds one of these songs to the live post, trying them in random order.",
         "label": "songs",
         "columns": {

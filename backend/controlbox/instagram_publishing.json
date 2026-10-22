@@ -31,5 +31,6 @@
   "music_delay_minutes": 5,
   "music_max_age_hours": 24,
   "music_attempts": 3,
-  "music_interval_seconds": 120
+  "music_interval_seconds": 120,
+  "asian_song_schools": ["ubc", "utm", "utsc", "utsg", "uwaterloo"]
 }

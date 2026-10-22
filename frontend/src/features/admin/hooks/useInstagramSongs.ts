@@ -16,7 +16,7 @@ export function useInstagramSongs() {
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.instagramPublishing.songs() });
   const addMutation = useMutation({
-    mutationFn: (query: string) => addInstagramSong({ query }),
+    mutationFn: addInstagramSong,
     onSuccess: refresh,
   });
   const deleteMutation = useMutation({

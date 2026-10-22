@@ -389,6 +389,8 @@
         "query": "Canción",
         "placeholder": "p. ej. the weeknd after hours",
         "add": "Añadir canción",
+        "asianCampusesOnly": "Solo campus asiáticos",
+        "asianCampuses": "Campus asiáticos",
         "help": "Unos minutos después de publicar un carrusel, el emulador añade una de estas canciones a la publicación, probándolas en orden aleatorio.",
         "label": "canciones",
         "columns": {

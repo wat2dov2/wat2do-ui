@@ -735,9 +735,14 @@ WHERE position.club_id = owner.id AND owner.club_name = 'UW Board Games Club'
 UPDATE public.events SET featured = true, competition = true
 WHERE id = (SELECT id FROM public.events WHERE ingestion_source = 'seed' AND title LIKE '%Board Games%' ORDER BY id LIMIT 1);
 
--- Songs the Mac's emulator job tries, in random order, on newly published carousels.
-INSERT INTO public.instagram_songs (query)
-VALUES ('the weeknd after hours'), ('dua lipa houdini'), ('sabrina carpenter espresso')
+-- Songs the Mac's emulator job tries, in random order, on newly published carousels;
+-- an Asian or K-pop song plays only at the controlbox's asian_song_schools.
+INSERT INTO public.instagram_songs (query, asian_campuses_only)
+VALUES
+    ('the weeknd after hours', false),
+    ('dua lipa houdini', false),
+    ('sabrina carpenter espresso', false),
+    ('bts spring day', true)
 ON CONFLICT DO NOTHING;
 
 -- The existing ULaval draft exercises review before an Instagram account is connected.

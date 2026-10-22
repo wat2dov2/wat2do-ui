@@ -5,7 +5,9 @@ import { useInstagramSongs } from "@/features/admin/hooks/useInstagramSongs";
 import { Section, Stack } from "@/shared/layout";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { toast } from "@/shared/hooks/use-toast";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { Checkbox } from "@/shared/ui/checkbox";
 import { Trash2 } from "@/shared/ui/doodle-icons";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -18,11 +20,13 @@ export function InstagramSongsPanel() {
   const { songs, isLoading, error, retry, addSong, isAdding, deleteSong, deletingSongId } =
     useInstagramSongs();
   const [query, setQuery] = useState("");
+  const [asianCampusesOnly, setAsianCampusesOnly] = useState(false);
 
   const submit = async () => {
     try {
-      await addSong(query.trim());
+      await addSong({ query: query.trim(), asian_campuses_only: asianCampusesOnly });
       setQuery("");
+      setAsianCampusesOnly(false);
     } catch (addError) {
       toast({
         title: t("admin.instagramPublishing.songs.addError"),
@@ -92,6 +96,17 @@ export function InstagramSongsPanel() {
                 {t("admin.instagramPublishing.songs.add")}
               </LoadingButton>
             </Stack>
+            <Stack direction="horizontal" gap={2} align="center">
+              <Checkbox
+                id="instagram-song-asian-campuses"
+                checked={asianCampusesOnly}
+                disabled={isAdding}
+                onCheckedChange={(checked) => setAsianCampusesOnly(checked === true)}
+              />
+              <Label htmlFor="instagram-song-asian-campuses">
+                {t("admin.instagramPublishing.songs.asianCampusesOnly")}
+              </Label>
+            </Stack>
             <p className="text-sm text-muted-foreground">
               {t("admin.instagramPublishing.songs.help")}
             </p>
@@ -117,7 +132,14 @@ export function InstagramSongsPanel() {
           </TableRow>
         ) : songs.map((song) => (
           <TableRow key={song.id}>
-            <TableCell>{song.query}</TableCell>
+            <TableCell>
+              <Stack direction="horizontal" gap={2} align="center" wrap>
+                <span>{song.query}</span>
+                {song.asian_campuses_only && (
+                  <Badge variant="muted">{t("admin.instagramPublishing.songs.asianCampuses")}</Badge>
+                )}
+              </Stack>
+            </TableCell>
             <TableCell>
               {new Date(song.created_at).toLocaleDateString(i18n.language || "en-US")}
             </TableCell>
