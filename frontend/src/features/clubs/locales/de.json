@@ -59,7 +59,6 @@
       "saveFailed": "Diese Organisation konnte nicht gefolgt werden",
       "unsaveFailed": "Diese Organisation konnte nicht entfolgt werden"
     },
-    "viewProfile": "Clubprofil von {{name}} ansehen",
     "allClubs": "Alle Organisationen",
     "activityTabsLabel": "Organisationsaktivität",
     "submittedForReview": "Zur Überprüfung eingereicht. Ihre Organisation wird live geschaltet, sobald ein Administrator sie genehmigt.",

@@ -15,7 +15,7 @@ import {
   EventCardContentFrame,
 } from "@/shared/ui/event-card-content";
 import type { CardBadge } from "@/shared/ui/event-card-content";
-import { ClubBadgeDropdown } from "@/features/clubs/components/ClubBadgeDropdown";
+import { ClubBadgeLink } from "@/features/clubs/components/ClubBadgeLink";
 import { CARD_GRID_IMAGE_SIZES, EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 export interface PreviewEventData {
@@ -107,7 +107,7 @@ export function PreviewStyleEventCard({
 
         {event.org && (
           <BadgeMask variant="bottom-left">
-            <ClubBadgeDropdown
+            <ClubBadgeLink
               clubName={event.org}
               clubType={event.clubType}
               school={event.school}

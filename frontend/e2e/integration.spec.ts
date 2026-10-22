@@ -2752,12 +2752,8 @@ test.describe("Events Page", () => {
     await expect(imageDialog.getByRole("img", { name: "Poster Dialog Event" })).toBeVisible();
     await imageDialog.getByRole("button", { name: "Close" }).click();
 
-    await eventDrawer.getByRole("button", { name: "UW Tech Club" }).last().click();
-    await page
-      .getByRole("menuitem", { name: "View club profile for UW Tech Club" })
-      .click();
-
-    // The host menu leads to the club's own Wat2Do profile.
+    // The host badge leads straight to the club's own Wat2Do profile.
+    await eventDrawer.getByRole("link", { name: "UW Tech Club" }).last().click();
     await expect(eventDrawer).not.toBeVisible();
     await expect(page).toHaveURL(/\/clubs\/\d+$/);
   });

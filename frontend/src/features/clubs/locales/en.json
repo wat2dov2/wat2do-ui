@@ -59,7 +59,6 @@
       "saveFailed": "Couldn't follow this club",
       "unsaveFailed": "Couldn't unfollow this club"
     },
-    "viewProfile": "View club profile for {{name}}",
     "allClubs": "All clubs",
     "activityTabsLabel": "Club activity",
     "submittedForReview": "Submitted for review. Your club goes live once an admin approves it.",

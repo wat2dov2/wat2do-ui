@@ -59,7 +59,6 @@
       "saveFailed": "Nie udało się obserwować tej organizacji",
       "unsaveFailed": "Nie udało się przestać obserwować tej organizacji"
     },
-    "viewProfile": "Zobacz profil klubu {{name}}",
     "allClubs": "Wszystkie organizacje",
     "activityTabsLabel": "Aktywność organizacji",
     "submittedForReview": "Przesłano do oceny. Twoja organizacja zostanie opublikowana po zatwierdzeniu przez administratora.",

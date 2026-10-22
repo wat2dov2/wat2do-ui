@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/shared/ui/badge";
 import { BadgeMask } from "@/shared/ui/badge-mask";
-import { ClubBadgeDropdown } from "@/features/clubs/components/ClubBadgeDropdown";
+import { ClubBadgeLink } from "@/features/clubs/components/ClubBadgeLink";
 import {
   EventImageCutout,
   useEventImageCutouts,
@@ -98,7 +98,7 @@ export function PositionCardImage({
         cutout
         containerRef={registerCorner("bottom-left")}
       >
-        <ClubBadgeDropdown
+        <ClubBadgeLink
           clubId={position.club_id}
           clubName={position.club_name}
           clubLogoUrl={position.club_logo_url}

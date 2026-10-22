@@ -45,7 +45,7 @@ import { EventCalendarDownloadMenu } from "@/features/events/components/EventCal
 import { EventCard } from "@/features/events/components/EventCard";
 import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
-import { ClubBadgeDropdown } from "@/features/clubs";
+import { ClubBadgeLink } from "@/features/clubs";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
@@ -624,7 +624,7 @@ export function EventDetailsBody({
 
       <Stack gap={6} className="order-2 md:col-start-1">
         <Section variant="divided" title={t("events.hostedBy")} data-slot="event-host">
-            <ClubBadgeDropdown
+            <ClubBadgeLink
               clubId={event.club_id}
               clubName={event.club}
               clubLogoUrl={event.club_logo_url}

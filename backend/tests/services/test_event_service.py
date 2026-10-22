@@ -660,64 +660,67 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
 
     patch_sb("services.event_query")
     monkeypatch.setattr(event_query.school_service, "get_school_id", lambda _school: 1)
-    fake_sb.set_response(
-        data=[
-            {
-                "event_id": 1,
-                "dtstart_utc": "2026-06-05T23:30:00+00:00",
-                "dtend_utc": None,
-                "tz": "America/Toronto",
-                "events": {
-                    "id": 1,
-                    "title": "Alpha Hack Night",
-                    "location": "SLC Great Hall",
-                    "club": "UW Blueprint",
-                    "school_record": {"slug": "uwaterloo", "timezone": "America/Toronto"},
-                    "category": "Technology",
-                    "price": 0,
-                    "food": ["Pizza"],
-                    "registration": True,
-                    "added_at": "2026-05-01T12:00:00+00:00",
+    fake_sb.queue_responses(
+        [
+            [{"id": 1}, {"id": 2}, {"id": 3}],
+            [
+                {
+                    "event_id": 1,
+                    "dtstart_utc": "2026-06-05T23:30:00+00:00",
+                    "dtend_utc": None,
+                    "tz": "America/Toronto",
+                    "events": {
+                        "id": 1,
+                        "title": "Alpha Hack Night",
+                        "location": "SLC Great Hall",
+                        "club": "UW Blueprint",
+                        "school_record": {"slug": "uwaterloo", "timezone": "America/Toronto"},
+                        "category": "Technology",
+                        "price": 0,
+                        "food": ["Pizza"],
+                        "registration": True,
+                        "added_at": "2026-05-01T12:00:00+00:00",
+                    },
                 },
-            },
-            {
-                # UTC Saturday, but Friday in the event timezone. This matches
-                # the browser's old day filter intent instead of UTC weekday.
-                "event_id": 2,
-                "dtstart_utc": "2026-06-06T00:30:00+00:00",
-                "dtend_utc": None,
-                "tz": "America/Toronto",
-                "events": {
-                    "id": 2,
-                    "title": "Beta Hack Night",
-                    "location": "SLC Great Hall",
-                    "club": "UW Blueprint",
-                    "school_record": {"slug": "uwaterloo", "timezone": "America/Toronto"},
-                    "category": "Technology",
-                    "price": 0,
-                    "food": ["Pizza"],
-                    "registration": True,
-                    "added_at": "2026-05-02T12:00:00+00:00",
+                {
+                    # UTC Saturday, but Friday in the event timezone. This matches
+                    # the browser's old day filter intent instead of UTC weekday.
+                    "event_id": 2,
+                    "dtstart_utc": "2026-06-06T00:30:00+00:00",
+                    "dtend_utc": None,
+                    "tz": "America/Toronto",
+                    "events": {
+                        "id": 2,
+                        "title": "Beta Hack Night",
+                        "location": "SLC Great Hall",
+                        "club": "UW Blueprint",
+                        "school_record": {"slug": "uwaterloo", "timezone": "America/Toronto"},
+                        "category": "Technology",
+                        "price": 0,
+                        "food": ["Pizza"],
+                        "registration": True,
+                        "added_at": "2026-05-02T12:00:00+00:00",
+                    },
                 },
-            },
-            {
-                "event_id": 3,
-                "dtstart_utc": "2026-06-06T19:00:00+00:00",
-                "dtend_utc": None,
-                "tz": "America/Toronto",
-                "events": {
-                    "id": 3,
-                    "title": "Library Talk",
-                    "location": "DC Library",
-                    "club": "Library Club",
-                    "school_record": {"slug": "uwaterloo", "timezone": "America/Toronto"},
-                    "category": "Academic",
-                    "price": 0,
-                    "food": [],
-                    "registration": False,
-                    "added_at": "2026-05-03T12:00:00+00:00",
+                {
+                    "event_id": 3,
+                    "dtstart_utc": "2026-06-06T19:00:00+00:00",
+                    "dtend_utc": None,
+                    "tz": "America/Toronto",
+                    "events": {
+                        "id": 3,
+                        "title": "Library Talk",
+                        "location": "DC Library",
+                        "club": "Library Club",
+                        "school_record": {"slug": "uwaterloo", "timezone": "America/Toronto"},
+                        "category": "Academic",
+                        "price": 0,
+                        "food": [],
+                        "registration": False,
+                        "added_at": "2026-05-03T12:00:00+00:00",
+                    },
                 },
-            },
+            ],
         ]
     )
     list_for_events = MagicMock(
@@ -763,11 +766,58 @@ def test_load_events_page_filters_counts_slices_and_hydrates(monkeypatch, fake_s
     fake_sb.eq.assert_any_call("events.school_id", 1)
     fake_sb.in_.assert_any_call("events.category", ["Technology"])
     fake_sb.ilike.assert_any_call("events.club_names", "%UW Blueprint%")
-    fake_sb.or_.assert_any_call("club_id.eq.7,cohost_club_ids.cs.{7}", reference_table="events")
+    fake_sb.or_.assert_any_call("club_id.eq.7,cohost_club_ids.cs.{7}")
+    fake_sb.eq.assert_any_call("school_id", 1)
+    fake_sb.in_.assert_any_call("event_id", [1, 2, 3])
     fake_sb.eq.assert_any_call("events.registration", True)
     fake_sb.gte.assert_any_call("events.price", 0)
     fake_sb.lte.assert_any_call("events.price", 0)
     fake_sb.range.assert_any_call(0, 49)
+
+
+def test_club_filter_narrows_occurrence_scan_by_hosted_event_ids(fake_sb, patch_sb):
+    """Club pages resolve hosted events on ``events`` before scanning occurrences.
+
+    The occurrence scan then filters its own ``event_id`` column instead of the
+    embedded event, so an unbounded ``include_past`` history stays index-driven.
+    """
+    patch_sb("services.event_query")
+    fake_sb.queue_responses([[{"id": 5}, {"id": 9}], []])
+
+    items, total = event_query.load_events_page(
+        start_utc=None,
+        end_utc=None,
+        school=None,
+        offset=0,
+        limit=100,
+        cap=100,
+        model=EventSummaryResponse,
+        club_ids=[22647],
+        ids=[9, 11],
+    )
+
+    assert (items, total) == ([], 0)
+    fake_sb.table.assert_any_call("events")
+    fake_sb.or_.assert_called_once_with("club_id.eq.22647,cohost_club_ids.cs.{22647}")
+    fake_sb.in_.assert_called_once_with("event_id", [9])
+    fake_sb.gte.assert_not_called()
+
+
+def test_club_filter_without_hosted_events_skips_occurrence_scan(fake_sb, patch_sb):
+    patch_sb("services.event_query")
+    fake_sb.queue_responses([[]])
+
+    assert event_query.load_events_page(
+        start_utc=None,
+        end_utc=None,
+        school=None,
+        offset=0,
+        limit=100,
+        cap=100,
+        model=EventSummaryResponse,
+        club_ids=[22647],
+    ) == ([], 0)
+    assert fake_sb.execute.call_count == 1
 
 
 def test_event_search_matches_description_and_food():

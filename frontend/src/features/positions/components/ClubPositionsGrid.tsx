@@ -1,9 +1,11 @@
+"use client";
+
 import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getClubPositions } from "@/features/positions/api/positions.api";
 import { PositionDetailsDrawer } from "@/features/positions/components/PositionDetailsDrawer";
-import { PositionList } from "@/features/positions/components/PositionList";
+import { PositionList, PositionListSkeleton } from "@/features/positions/components/PositionList";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import type { Position } from "@/shared/types";
 
@@ -11,6 +13,11 @@ interface ClubPositionsGridProps {
   clubId: number;
   school: string;
   initialPositions: Position[];
+}
+
+/** Shown while the club's open positions stream in from the server. */
+export function ClubPositionsGridSkeleton() {
+  return <PositionListSkeleton />;
 }
 
 export function ClubPositionsGrid({

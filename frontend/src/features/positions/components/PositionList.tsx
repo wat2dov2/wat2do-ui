@@ -40,6 +40,17 @@ function PositionCardSkeleton() {
   );
 }
 
+/** The grid's loading face, also used while a server-streamed list arrives. */
+export function PositionListSkeleton() {
+  return (
+    <div className={CARD_GRID_CLASS} aria-busy="true">
+      {Array.from({ length: 8 }).map((_, index) => (
+        <PositionCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+}
+
 export function PositionList({
   positions,
   isLoading,
@@ -66,11 +77,7 @@ export function PositionList({
     return (
       <>
         {dateWheel}
-        <div className={CARD_GRID_CLASS} aria-busy="true">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <PositionCardSkeleton key={index} />
-          ))}
-        </div>
+        <PositionListSkeleton />
       </>
     );
   }

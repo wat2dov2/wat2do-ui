@@ -45,7 +45,7 @@ function loadComponent(path: string): Record<string, React.ComponentType<Record<
       }
       if (id === "@/app/client-providers") return { useRequestSchool: () => requestSchool };
       if (id === "@/features/events/hooks/useGoingEvents") return { useGoingEvents: () => ({ data: goingSelections }) };
-      if (id === "@/features/clubs/components/ClubBadgeDropdown") return { ClubBadgeDropdown: () => null };
+      if (id === "@/features/clubs/components/ClubBadgeLink") return { ClubBadgeLink: () => null };
       if (id.endsWith(".png")) return { src: "/logo.png", width: 136, height: 96 };
       if (id.endsWith(".webp")) return { src: `/_next/static/media/${id.split("/").pop()}`, width: 1280, height: 960, blurDataURL: "data:image/webp;base64,UklGRg==" };
       if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };

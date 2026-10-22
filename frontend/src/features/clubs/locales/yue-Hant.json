@@ -59,7 +59,6 @@
       "saveFailed": "無法追蹤此組織",
       "unsaveFailed": "無法取消追蹤此組織"
     },
-    "viewProfile": "查看 {{name}} 嘅學會簡介",
     "allClubs": "所有組織",
     "activityTabsLabel": "組織活動",
     "submittedForReview": "已提交審核。你的組織在管理員批准後將上線。",

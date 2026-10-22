@@ -24,6 +24,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import BaseModel
 
 from core.database import get_sb
+from core.pagination import fetch_all_pages
 from core.sanitize import sanitize_postgrest_value
 from core.tables import EVENT_DATES, EVENTS, INSTAGRAM_PUBLISH_ITEMS
 from schemas.event import EventSummaryResponse
@@ -286,26 +287,25 @@ def load_events_page(
         q = q.gte("dtstart_utc", start_utc.isoformat())
     if end_utc is not None:
         q = q.lte("dtstart_utc", end_utc.isoformat())
+    school_id = school_service.get_school_id(school) if school else None
     if school:
-        school_id = school_service.get_school_id(school)
         if school_id is None:
             return [], 0
         q = q.eq("events.school_id", school_id)
+    event_ids = _narrowed_event_ids(ids=ids, club_ids=club_ids, school_id=school_id)
+    if event_ids is not None:
+        if not event_ids:
+            return [], 0
+        q = q.in_("event_id", event_ids)
     if added_within_24h:
         cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
         q = q.gte("events.added_at", cutoff)
-    if ids is not None:
-        q = q.in_("events.id", ids)
     if categories:
         q = q.in_("events.category", categories)
     for club in clubs or []:
         term = sanitize_postgrest_value(club.strip())
         if term:
             q = q.ilike("events.club_names", f"%{term}%")
-    for club_id in club_ids or []:
-        q = q.or_(
-            f"club_id.eq.{club_id},cohost_club_ids.cs.{{{club_id}}}", reference_table="events"
-        )
     if registration is not None:
         q = q.eq("events.registration", registration)
     if min_price is not None:
@@ -330,6 +330,38 @@ def load_events_page(
     page_rows = [candidate.row for candidate in page_candidates]
     occ_by_event = event_date_service.list_for_events([row["id"] for row in page_rows])
     return [hydrate_event(row, occ_by_event.get(row["id"], []), model) for row in page_rows], total
+
+
+def _narrowed_event_ids(
+    *, ids: list[int] | None, club_ids: list[int] | None, school_id: int | None
+) -> list[int] | None:
+    """Event IDs the page is restricted to, or ``None`` when unrestricted.
+
+    Club hosting is resolved against the indexed ``events`` columns first so
+    the occurrence scan can filter on ``event_dates.event_id``. Filtering the
+    embedded event instead makes Postgres walk every occurrence in date order
+    and probe its event, which is the whole history when ``include_past``
+    drops the lower bound. Each club must host or cohost the event.
+    """
+    if not club_ids:
+        return ids
+    club_event_ids = _load_club_event_ids(club_ids, school_id=school_id)
+    if ids is None:
+        return club_event_ids
+    allowed = set(ids)
+    return [event_id for event_id in club_event_ids if event_id in allowed]
+
+
+def _load_club_event_ids(club_ids: list[int], *, school_id: int | None) -> list[int]:
+    def page(offset: int, page_size: int) -> list[dict]:
+        q = get_sb().table(EVENTS).select("id")
+        for club_id in club_ids:
+            q = q.or_(f"club_id.eq.{club_id},cohost_club_ids.cs.{{{club_id}}}")
+        if school_id is not None:
+            q = q.eq("school_id", school_id)
+        return q.order("id").range(offset, offset + page_size - 1).execute().data or []
+
+    return [int(row["id"]) for row in fetch_all_pages(page)]
 
 
 def _can_use_lightweight_date_page(

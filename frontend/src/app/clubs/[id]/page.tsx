@@ -1,4 +1,4 @@
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -8,6 +8,8 @@ import { getClubPositionsSnapshot } from "@/features/positions/api/positionDirec
 import { getClubDetailSnapshot } from "@/features/clubs/api/clubDirectory.server";
 import { isClubIndexable } from "@/features/clubs/lib/clubSeo";
 import { ClubDetailsPage as ClubDetailsPageContent } from "@/features/clubs/pages/ClubDetailsPage";
+import { ClubEventsGrid, ClubEventsGridSkeleton } from "@/features/events/components/ClubEventsGrid";
+import { ClubPositionsGrid, ClubPositionsGridSkeleton } from "@/features/positions/components/ClubPositionsGrid";
 import { getSchool } from "@/shared/api/schools.server";
 import { clubPagePath } from "@/shared/constants/routes";
 import {
@@ -43,6 +45,20 @@ async function loadClub(
     console.error("Club SEO detail fetch failed:", error);
     return null;
   }
+}
+
+/*
+ * The header renders as soon as the club is known; each activity list streams
+ * in behind its own boundary so the slowest feed never holds up the page.
+ */
+async function ClubEvents({ club }: { club: Club }) {
+  const initialEvents = await getClubEventsSnapshot(club.id, club.school);
+  return <ClubEventsGrid clubId={club.id} school={club.school} initialEvents={initialEvents} />;
+}
+
+async function ClubPositions({ club }: { club: Club }) {
+  const initialPositions = await getClubPositionsSnapshot(club.id, club.school);
+  return <ClubPositionsGrid clubId={club.id} school={club.school} initialPositions={initialPositions} />;
 }
 
 export async function generateMetadata({
@@ -112,18 +128,22 @@ export default async function ClubDetailsPage({
     permanentRedirect(canonicalUrl);
   }
 
-  const [schoolRecord, initialEvents, initialPositions] = await Promise.all([
-    getSchool(club.school),
-    getClubEventsSnapshot(club.id, club.school),
-    getClubPositionsSnapshot(club.id, club.school),
-  ]);
+  const schoolRecord = await getSchool(club.school);
   return (
     <ClubDetailsPageContent
       clubId={club.id}
       initialClub={club}
-      initialEvents={initialEvents}
-      initialPositions={initialPositions}
       schoolName={schoolRecord?.name ?? club.school}
+      events={
+        <Suspense fallback={<ClubEventsGridSkeleton />}>
+          <ClubEvents club={club} />
+        </Suspense>
+      }
+      positions={
+        <Suspense fallback={<ClubPositionsGridSkeleton />}>
+          <ClubPositions club={club} />
+        </Suspense>
+      }
     />
   );
 }

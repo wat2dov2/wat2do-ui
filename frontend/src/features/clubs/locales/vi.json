@@ -59,7 +59,6 @@
       "saveFailed": "Không thể theo dõi tổ chức này",
       "unsaveFailed": "Không thể hủy theo dõi tổ chức này"
     },
-    "viewProfile": "Xem hồ sơ câu lạc bộ {{name}}",
     "allClubs": "Tất cả các tổ chức",
     "activityTabsLabel": "Hoạt động của tổ chức",
     "submittedForReview": "Đã gửi để xem xét. Tổ chức của bạn sẽ hiển thị trực tuyến khi một quản trị viên phê duyệt.",

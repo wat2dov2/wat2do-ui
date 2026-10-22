@@ -6,7 +6,7 @@
 // Components
 export { ClubInput } from "./components/ClubInput";
 export { AddClubModal } from "./components/AddClubModal";
-export { ClubBadgeDropdown } from "./components/ClubBadgeDropdown";
+export { ClubBadgeLink } from "./components/ClubBadgeLink";
 
 // API
 export {

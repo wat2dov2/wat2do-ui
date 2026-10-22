@@ -59,7 +59,6 @@
       "saveFailed": "Impossible de suivre cette organisation",
       "unsaveFailed": "Impossible de ne plus suivre cette organisation"
     },
-    "viewProfile": "Voir le profil du club {{name}}",
     "allClubs": "Toutes les organisations",
     "activityTabsLabel": "Activité de l'organisation",
     "submittedForReview": "Soumis pour révision. Votre organisation sera en ligne une fois qu'un administrateur l'aura approuvée.",

@@ -59,7 +59,6 @@
       "saveFailed": "이 조직을 팔로우할 수 없습니다",
       "unsaveFailed": "이 조직 팔로우를 취소할 수 없습니다"
     },
-    "viewProfile": "{{name}} 클럽 프로필 보기",
     "allClubs": "모든 조직",
     "activityTabsLabel": "조직 활동",
     "submittedForReview": "검토를 위해 제출되었습니다. 관리자가 승인하면 조직이 공개됩니다.",

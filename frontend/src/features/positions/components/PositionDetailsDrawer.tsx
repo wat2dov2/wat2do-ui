@@ -29,7 +29,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/shared/ui/item";
-import { ClubBadgeDropdown } from "@/features/clubs";
+import { ClubBadgeLink } from "@/features/clubs";
 import { AddedAt } from "@/shared/ui/added-at";
 import { Separator } from "@/shared/ui/separator";
 import { DrawerBody, FormGrid, Section, Stack } from "@/shared/layout";
@@ -134,7 +134,7 @@ export function PositionDetailsDrawer({
                     onClubNavigate={onClose}
                   />
                   <Section variant="divided" title={t("common.postedBy")}>
-                    <ClubBadgeDropdown
+                    <ClubBadgeLink
                       clubId={position.club_id}
                       clubName={position.club_name}
                       clubLogoUrl={position.club_logo_url}

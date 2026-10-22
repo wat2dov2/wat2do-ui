@@ -59,7 +59,6 @@
       "saveFailed": "无法关注此组织",
       "unsaveFailed": "无法取消关注此组织"
     },
-    "viewProfile": "查看 {{name}} 的社团主页",
     "allClubs": "所有组织",
     "activityTabsLabel": "组织动态",
     "submittedForReview": "已提交审核。管理员批准后，您的组织将会上线。",
