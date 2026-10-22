@@ -41,8 +41,11 @@ _SHARE = labels("Send post", "Share")
 _COPY_LINK = labels("Copy link")
 _POST_LINK = re.compile(r"^https://www\.instagram\.com/(?:p|reel)/([A-Za-z0-9_-]+)/")
 _USERNAME = re.compile(r"^[a-z0-9._]{1,30}$")
-# Day-and-time separators between messages, such as "MON 11:36 PM" or "SEP 21, 5:53 PM".
-_TIMESTAMP = re.compile(r"^(?:[A-Z]{3}|TODAY|YESTERDAY)\b.*\d{1,2}:\d{2}")
+# Full-width separators between messages, such as "MON 11:36 PM", "SEP 21, 5:53 PM" or
+# just "11:26 PM" for today.
+_TIMESTAMP = re.compile(r"^(?:(?:[A-Z]{3}|TODAY|YESTERDAY)\b.*)?\d{1,2}:\d{2}\s?[AP]M$")
+# The last rows of the profile card at the top of a thread, when it is scrolled into view.
+_PROFILE_CARD_END = labels("View profile", "Learn about business chats")
 _NOT_A_MESSAGE = labels(
     "Tap and hold to react",
     "Seen",
@@ -232,15 +235,17 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
     if message_list is None:
         raise EmulatorError("The DM thread is not on screen")
     inside = [node for node in nodes if node.inside(message_list)]
-    # Everything above the first day-and-time separator is the thread's profile header.
-    first_separator = min(
-        (node.bounds[1] for node in inside if _TIMESTAMP.match(node.text)), default=None
+    # The profile card sits above the first message until the thread scrolls past it.
+    top = max(
+        (node.bounds[3] for node in inside if node.labelled(_PROFILE_CARD_END)),
+        default=message_list.bounds[1],
     )
-    if first_separator is None:
-        return []
+    separators = [node for node in inside if _is_separator(node, message_list)]
     bubbles = [node for node in inside if node.resource_id == "xma_bubble_container"]
     found: list[tuple[int, dict[str, Any]]] = []
     for bubble in bubbles:
+        if bubble.bounds[1] < top:
+            continue
         parts = [node for node in inside if node.inside(bubble)]
         owner = next((node.text for node in parts if node.resource_id == "title"), "")
         caption = next((node.text for node in parts if node.resource_id == "caption_title"), "")
@@ -262,8 +267,8 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
         if (
             node.resource_id
             or not node.text
-            or node.bounds[1] < first_separator
-            or _TIMESTAMP.match(node.text)
+            or node.bounds[1] < top
+            or node in separators
             or _NOT_A_MESSAGE.match(node.text)
             or any(node.inside(bubble) for bubble in bubbles)
         ):
@@ -282,6 +287,13 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
             )
         )
     return [message for _top, message in sorted(found, key=lambda pair: pair[0])]
+
+
+def _is_separator(node: Node, message_list: Node) -> bool:
+    spans_list = (
+        node.bounds[0] == message_list.bounds[0] and node.bounds[2] == message_list.bounds[2]
+    )
+    return spans_list and bool(_TIMESTAMP.match(node.text))
 
 
 def _side(node: Node) -> str:

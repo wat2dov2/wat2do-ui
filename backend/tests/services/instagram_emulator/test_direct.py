@@ -216,6 +216,23 @@ def test_a_personal_chat_takes_the_username_and_tells_our_side_apart() -> None:
     assert module._our_texts(PERSONAL_CHAT) == ["Sure!"]
 
 
+def test_a_scrolled_chat_still_reads_our_replies_after_a_time_only_separator() -> None:
+    # The profile card and the dated separator have scrolled away while typing.
+    chat = [
+        _node("spihc.waterloo", (304, 156, 569, 204), "header_title"),
+        _node("", (0, 275, 1080, 1340), "message_list"),
+        _node("Hey! Could you share it to your story?", (179, 570, 882, 1020)),
+        _node("Tap and hold to react", (147, 1057, 455, 1095)),
+        _node("11:26 PM", (0, 1127, 1080, 1210)),
+        _node("Sure thing!", (813, 1268, 1027, 1318)),
+    ]
+    assert [(m["from"], m["text"]) for m in module._messages(chat)] == [
+        ("them", "Hey! Could you share it to your story?"),
+        ("us", "Sure thing!"),
+    ]
+    assert module._our_texts(chat) == ["Sure thing!"]
+
+
 def test_a_display_name_alone_is_not_taken_as_a_username() -> None:
     chat = [
         _node("UWaterloo ViVA Club", (304, 156, 600, 204), "header_title"),

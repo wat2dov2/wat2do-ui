@@ -13,6 +13,7 @@ from services.instagram_emulator.device import (
     CONTROL,
     EmulatorDevice,
     EmulatorError,
+    Node,
     exclusive,
     labels,
 )
@@ -24,6 +25,9 @@ _STORY_EDITOR = labels("Add a caption", "Close Friends")
 _POST_TO_STORY = labels("Your story")
 # First use of the story camera asks for these once per Android user.
 _PERMISSION = labels("While using the app", "Allow all")
+# Shown once per account after the first story; Wat2Do never cross-posts to Facebook.
+_FACEBOOK_SHARING = labels("Share your stories to Facebook")
+_NOT_NOW = re.compile(r"^Not now$")
 
 
 def share_to_story(school: str, account_username: str, media_url: str) -> None:
@@ -43,8 +47,22 @@ def share_to_story(school: str, account_username: str, media_url: str) -> None:
         device.tap_when(_ADD_TO_STORY)
         _open_story_editor(device)
         device.tap_when(_POST_TO_STORY)
+        _decline_facebook_sharing(device)
         # The editor closes once Instagram has taken the story for upload.
         device.wait_until_gone(_STORY_EDITOR, seconds=CONTROL.story_upload_wait_seconds)
+
+
+def _decline_facebook_sharing(device: EmulatorDevice) -> None:
+    device.pause()
+    nodes = device.screen()
+    if device.find(_FACEBOOK_SHARING, nodes) is not None:
+        device.tap(_required(device.find(_NOT_NOW, nodes)))
+
+
+def _required(node: Node | None) -> Node:
+    if node is None:
+        raise EmulatorError("Instagram's Facebook sharing prompt has no Not now button")
+    return node
 
 
 def _open_story_editor(device: EmulatorDevice) -> None:

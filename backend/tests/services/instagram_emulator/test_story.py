@@ -23,6 +23,7 @@ POST_PAGE = _screen("Profile picture of club", "Send post. Button.", "Like")
 SHARE_SHEET = _screen("Search", "Add to story", "Copy link")
 CAMERA_PROMPT = _screen("Allow Instagram to take pictures?", "While using the app")
 EDITOR = _screen("Add a caption…", "Your story", "Close Friends")
+FACEBOOK_PROMPT = _screen("Share your stories to Facebook too", "Always share stories", "Not now")
 
 
 class _Device(EmulatorDevice):
@@ -86,6 +87,13 @@ def test_switches_account_then_posts_the_shared_post_to_the_story(screens) -> No
         "While using the app",
         "Your story",
     ]
+
+
+def test_the_facebook_cross_posting_prompt_is_declined(screens) -> None:
+    device = screens(HOME_UBC, HOME_UBC, POST_PAGE, SHARE_SHEET, EDITOR, FACEBOOK_PROMPT, POST_PAGE)
+    module.share_to_story("columbia", "wat2do.ubc", POST)
+    assert device.taps[-2:] == ["Your story", "Not now"]
+    assert "Always share stories" not in device.taps
 
 
 def test_an_editor_that_never_closes_is_not_reported_as_posted(screens) -> None:
