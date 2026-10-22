@@ -41,7 +41,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.competitor_pain_points.model == "claude-haiku-5-5"
     assert controlbox.competitor_pain_points.sweep_interval_hours == 24
     assert {"eventbrite", "meetup", "fable"} <= set(controlbox.competitor_pain_points.competitors)
-    assert "x" not in controlbox.competitor_pain_points.lanes
+    assert not {"x", "reddit"} & set(controlbox.competitor_pain_points.lanes)
     assert controlbox.competitor_pain_points.sources["forum"] == []
     assert controlbox.notification_defaults.morning_email is False
     assert controlbox.email_delivery.notification_consent_version == "2026-10"
@@ -891,7 +891,7 @@ def test_pain_points_need_an_about_line_for_every_competitor() -> None:
     raw = controlbox.competitor_pain_points.model_dump()
     with pytest.raises(ValidationError, match="about must describe"):
         type(controlbox.competitor_pain_points).model_validate({**raw, "about": {}})
-    with pytest.raises(ValidationError, match="x lane is built in"):
+    with pytest.raises(ValidationError, match="reddit lanes are built in"):
         type(controlbox.competitor_pain_points).model_validate(
-            {**raw, "lanes": {**raw["lanes"], "x": "X posts"}}
+            {**raw, "lanes": {**raw["lanes"], "reddit": "Reddit threads"}}
         )

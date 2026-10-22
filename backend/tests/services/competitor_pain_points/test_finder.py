@@ -13,6 +13,12 @@ GOOD = {
     "audience": "organizer",
     "posted_at": "2026-10-18",
 }
+REDDIT_POST = {
+    "url": "https://www.reddit.com/r/toronto/comments/abc/meetup/def/",
+    "author": "someone",
+    "thread": "Meetup alternatives?",
+    "text": "meetup is too expensive",
+}
 X_POST = {"url": "https://x.com/someone/status/1", "author": "someone", "text": "eventbrite fees"}
 
 
@@ -24,7 +30,7 @@ def test_findings_are_checked_and_invented_or_known_links_dropped(monkeypatch):
     calls = []
 
     def run_agent(prompt, **kwargs):
-        written = json.loads((Path(kwargs["workdir"]) / "x_posts.json").read_text())
+        written = json.loads((Path(kwargs["workdir"]) / "posts.json").read_text())
         calls.append((prompt, kwargs, written))
         return _answer(
             GOOD,
@@ -39,9 +45,7 @@ def test_findings_are_checked_and_invented_or_known_links_dropped(monkeypatch):
 
     monkeypatch.setattr(finder, "run_agent", run_agent)
 
-    findings = finder.find(
-        "eventbrite", finder.X_LANE, ["https://www.reddit.com/r/known/"], [X_POST]
-    )
+    findings = finder.find("eventbrite", "x", ["https://www.reddit.com/r/known/"], [X_POST])
 
     assert [f.url.split("#")[0] for f in findings] == [
         GOOD["url"],
@@ -53,7 +57,7 @@ def test_findings_are_checked_and_invented_or_known_links_dropped(monkeypatch):
     assert findings[0].competitor == "eventbrite"
     assert findings[0].quote == "Eventbrite charges us for free tickets."
     prompt, kwargs, written = calls[0]
-    assert written == [X_POST] and "x_posts.json" in prompt
+    assert written == [X_POST] and "posts.json" in prompt
     assert "Eventbrite" in prompt and "https://www.reddit.com/r/known/" in prompt
     assert "{{" not in prompt
     assert kwargs["tools"] == ("Read",)
@@ -73,7 +77,7 @@ def test_web_lanes_search_only_their_part_of_the_web(monkeypatch):
     assert kwargs["tools"] == kwargs["allowed_tools"] == ("WebSearch", "WebFetch")
     assert "App Store and Google Play reviews of the Fable Social app" in prompt
     assert finder.CONTROL.about["fable"] in prompt
-    assert "x_posts.json" not in prompt and "{{" not in prompt
+    assert "posts.json" not in prompt and "{{" not in prompt
 
 
 def test_sweep_reads_x_in_turn_stores_unique_links_and_reports_failures(monkeypatch):
@@ -85,11 +89,15 @@ def test_sweep_reads_x_in_turn_stores_unique_links_and_reports_failures(monkeypa
         finder.service, "save_findings", lambda findings: saved.extend(findings) or len(findings)
     )
 
-    def read_posts(name):
-        read.append(name)
+    def read_x(name):
+        read.append(("x", name))
         if name == finder.CONTROL.competitors["fable"]:
-            raise finder.x_browser.XUnavailable("Safari is not logged in to X")
+            raise finder.safari.SafariUnavailable("Safari is not logged in to X")
         return [X_POST] if name == "Eventbrite" else []
+
+    def read_reddit(name):
+        read.append(("reddit", name))
+        return [REDDIT_POST] if name == "Meetup" else []
 
     def run_agent(prompt, **kwargs):
         lanes.append(kwargs["tools"])
@@ -98,16 +106,17 @@ def test_sweep_reads_x_in_turn_stores_unique_links_and_reports_failures(monkeypa
         return _answer(GOOD)
 
     lanes = []
-    monkeypatch.setattr(finder.x_browser, "read_posts", read_posts)
+    monkeypatch.setitem(finder.BROWSER_LANES, "x", ("X (Twitter)", read_x))
+    monkeypatch.setitem(finder.BROWSER_LANES, "reddit", ("Reddit", read_reddit))
     monkeypatch.setattr(finder, "run_agent", run_agent)
 
     assert finder.sweep() == {"saved": 1, "failed": ["meetup/review_sites"]}
     assert [f.url for f in saved] == [GOOD["url"]]
-    # Every competitor gets every web lane; only Eventbrite had X posts to read.
+    # Every competitor gets every web lane; only Eventbrite's X and Meetup's
+    # Reddit had posts for an agent to read.
     competitors, web_lanes = len(finder.CONTROL.competitors), len(finder.CONTROL.lanes)
     assert lanes.count(("WebSearch", "WebFetch")) == competitors * web_lanes
-    assert lanes.count(("Read",)) == 1
-    # X is read one competitor at a time; a logged-out Safari only skips X.
-    assert read == [
-        finder.CONTROL.x_names.get(c, name) for c, name in finder.CONTROL.competitors.items()
-    ]
+    assert lanes.count(("Read",)) == 2
+    # Safari reads one site at a time; a logged-out Safari only skips that site.
+    names = [finder.CONTROL.search_names.get(c, n) for c, n in finder.CONTROL.competitors.items()]
+    assert read == [(lane, name) for name in names for lane in ("x", "reddit")]

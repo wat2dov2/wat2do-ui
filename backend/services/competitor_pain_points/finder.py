@@ -2,9 +2,10 @@
 
 Each competitor gets one agent per configured lane (Reddit, app stores and so
 on), all sharing one pool, so the search fans out instead of one agent
-covering every site. While they run, X posts are read one competitor at a time
-in Safari (``x_browser``), since X shows nothing logged out, and an X agent
-picks out the complaints among them. Agents have no secrets or accounts of
+covering every site. While they run, X and Reddit search results are read one
+competitor at a time in Safari (``x_browser``, ``reddit_browser``), since
+neither can be read by Claude's WebFetch, and one agent per site picks out the
+complaints among them. Agents have no secrets or accounts of
 their own. Their findings are validated, links outside the reported source's
 hosts are dropped as likely invented, and new links are stored for the admin
 page. Nothing is ever posted.
@@ -17,6 +18,7 @@ import json
 import logging
 import shutil
 import tempfile
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
@@ -28,14 +30,18 @@ from pydantic import ValidationError
 from core.controlbox import controlbox
 from schemas.competitor_pain_point import FoundPainPoint
 from services.claude_code import ClaudeCodeError, remove_leftovers, run_agent
-from services.competitor_pain_points import service, x_browser
+from services.competitor_pain_points import reddit_browser, safari, service, x_browser
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.competitor_pain_points
 PROMPT = (Path(__file__).with_name("prompt.md")).read_text()
-X_PROMPT = (Path(__file__).with_name("x_prompt.md")).read_text()
+BROWSER_PROMPT = (Path(__file__).with_name("browser_prompt.md")).read_text()
 REPORT = (Path(__file__).with_name("report.md")).read_text()
-X_LANE = "x"
+# Lanes read in Safari before an agent runs: lane -> (site name, reader).
+BROWSER_LANES: dict[str, tuple[str, Callable[[str], list[dict[str, Any]]]]] = {
+    "x": ("X (Twitter)", x_browser.read_posts),
+    "reddit": ("Reddit", reddit_browser.read_posts),
+}
 WORKDIR_PREFIX = "wat2do-pain-points-"
 _PAGE_SHARED_SOURCES = frozenset({"app_store", "google_play"})
 ANSWER_SCHEMA: dict[str, Any] = {
@@ -72,51 +78,51 @@ def sweep() -> dict[str, Any]:
             for competitor in CONTROL.competitors
             for lane in CONTROL.lanes
         }
-        # Safari is one shared browser, so X is read one competitor at a time
-        # while the web lanes already run.
+        # Safari is one shared browser, so its sites are read one search at a
+        # time while the web lanes already run.
         for competitor in CONTROL.competitors:
-            if posts := _x_posts(competitor):
-                searches[competitor, X_LANE] = pool.submit(
-                    _find_safely, competitor, X_LANE, known, posts
-                )
+            for lane in BROWSER_LANES:
+                if posts := _browser_posts(competitor, lane):
+                    searches[competitor, lane] = pool.submit(
+                        _find_safely, competitor, lane, known, posts
+                    )
         found = {search: future.result() for search, future in searches.items()}
     failed = sorted(f"{c}/{lane}" for (c, lane), findings in found.items() if findings is None)
     unique = {f.url: f for findings in found.values() if findings for f in findings}
     return {"saved": service.save_findings(list(unique.values())), "failed": failed}
 
 
-def _x_posts(competitor: str) -> list[dict[str, Any]]:
+def _browser_posts(competitor: str, lane: str) -> list[dict[str, Any]]:
+    site, read_posts = BROWSER_LANES[lane]
     try:
-        return x_browser.read_posts(
-            CONTROL.x_names.get(competitor, CONTROL.competitors[competitor])
-        )
-    except x_browser.XUnavailable as exc:
-        log.warning("Skipping X for %s: %s", competitor, exc)
+        return read_posts(CONTROL.search_names.get(competitor, CONTROL.competitors[competitor]))
+    except safari.SafariUnavailable as exc:
+        log.warning("Skipping %s for %s: %s", site, competitor, exc)
         return []
 
 
 def _find_safely(
-    competitor: str, lane: str, known: list[str], x_posts: list[dict[str, Any]]
+    competitor: str, lane: str, known: list[str], posts: list[dict[str, Any]]
 ) -> list[FoundPainPoint] | None:
     try:
-        return find(competitor, lane, known, x_posts)
+        return find(competitor, lane, known, posts)
     except ClaudeCodeError:
         log.exception("Pain point sweep failed for %s/%s", competitor, lane)
         return None
 
 
 def find(
-    competitor: str, lane: str, known: list[str], x_posts: list[dict[str, Any]]
+    competitor: str, lane: str, known: list[str], posts: list[dict[str, Any]]
 ) -> list[FoundPainPoint]:
     """One lane's complaints about a competitor, checked; links already stored are left out.
 
-    The X lane only reads ``x_posts``; every other lane searches the web.
+    A Safari lane only reads ``posts``; every other lane searches the web.
     """
-    tools = ("Read",) if lane == X_LANE else ("WebSearch", "WebFetch")
+    tools = ("Read",) if lane in BROWSER_LANES else ("WebSearch", "WebFetch")
     workdir = tempfile.mkdtemp(prefix=WORKDIR_PREFIX)
     try:
-        if lane == X_LANE:
-            (Path(workdir) / "x_posts.json").write_text(json.dumps(x_posts, ensure_ascii=False))
+        if lane in BROWSER_LANES:
+            (Path(workdir) / "posts.json").write_text(json.dumps(posts, ensure_ascii=False))
         answer = run_agent(
             _prompt(competitor, lane, known),
             workdir=workdir,
@@ -155,7 +161,8 @@ def _prompt(competitor: str, lane: str, known: list[str]) -> str:
     # Pieces that hold placeholders of their own go in first.
     values = {
         "report": REPORT,
-        "lane": CONTROL.lanes.get(lane, ""),
+        "lane": CONTROL.lanes.get(lane, lane),
+        "site": BROWSER_LANES[lane][0] if lane in BROWSER_LANES else "",
         "competitor_name": CONTROL.competitors[competitor],
         "competitor_about": CONTROL.about[competitor],
         "lookback_days": str(CONTROL.lookback_days),
@@ -164,7 +171,7 @@ def _prompt(competitor: str, lane: str, known: list[str]) -> str:
         "known_urls": json.dumps(known),
         "limit": str(CONTROL.findings_per_search),
     }
-    prompt = X_PROMPT if lane == X_LANE else PROMPT
+    prompt = BROWSER_PROMPT if lane in BROWSER_LANES else PROMPT
     for key, value in values.items():
         prompt = prompt.replace("{{" + key + "}}", value)
     return prompt

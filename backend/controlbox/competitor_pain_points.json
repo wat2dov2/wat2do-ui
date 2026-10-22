@@ -12,9 +12,14 @@
     "{name} fees",
     "{name} alternative"
   ],
-  "x_scrolls": 3,
-  "x_page_wait_seconds": 6,
-  "x_posts_per_query": 40,
+  "reddit_queries": [
+    "{name}",
+    "{name} fees",
+    "{name} alternative"
+  ],
+  "scrolls": 3,
+  "page_wait_seconds": 8,
+  "posts_per_query": 40,
   "competitors": {
     "eventbrite": "Eventbrite",
     "meetup": "Meetup",
@@ -51,7 +56,7 @@
     "partiful": "Partiful, the party invite and RSVP app popular with college students",
     "posh": "Posh (posh.vip), the event ticketing and discovery app for college nightlife and parties"
   },
-  "x_names": {
+  "search_names": {
     "fable": "fable.social",
     "what2do_utm": "what2docampus",
     "what2do_jhu": "joinwhat2do",
@@ -66,7 +71,7 @@
   "lanes": {
     "app_stores": "App Store and Google Play reviews of the {{competitor_name}} app; open its listing pages and read the reviews",
     "review_sites": "review sites such as Trustpilot, Google reviews, G2 and Capterra",
-    "forums": "student, organizer and community forums, blogs, Quora, Hacker News, student newspapers and news comments; anywhere except X, app stores and review sites (Reddit cannot be opened from here, so skip it)"
+    "forums": "student, organizer and community forums, blogs, Quora, Hacker News, student newspapers and news comments; anywhere except X, Reddit, app stores and review sites"
   },
   "sources": {
     "reddit": [

@@ -982,19 +982,21 @@ class CompetitorPainPointsControl(_ControlModel):
     findings_per_search: int = Field(ge=1, le=100)
     known_urls_in_prompt: int = Field(ge=0, le=2000)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
-    # X searches read in Safari; "{name}" becomes the competitor's display name.
+    # X and Reddit searches read in Safari; "{name}" becomes the competitor's
+    # search name.
     x_queries: list[Annotated[str, Field(pattern=r"\{name\}")]] = Field(max_length=10)
-    x_scrolls: int = Field(ge=0, le=10)
-    x_page_wait_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
-    x_posts_per_query: int = Field(ge=1, le=200)
+    reddit_queries: list[Annotated[str, Field(pattern=r"\{name\}")]] = Field(max_length=10)
+    scrolls: int = Field(ge=0, le=10)
+    page_wait_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
+    posts_per_query: int = Field(ge=1, le=200)
     # Competitor slug -> display name.
     competitors: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")], Annotated[str, Field(min_length=1)]
     ] = Field(min_length=1)
     # One line per competitor that tells it apart from products with a similar name.
     about: dict[str, Annotated[str, Field(min_length=1)]]
-    # X search term when the display name alone is not one, e.g. "What2Do (JHU)".
-    x_names: dict[str, Annotated[str, Field(min_length=1)]] = Field(default_factory=dict)
+    # X and Reddit search term when the display name is not one, e.g. "What2Do (UTM)".
+    search_names: dict[str, Annotated[str, Field(min_length=1)]] = Field(default_factory=dict)
     # Lane slug -> where that lane's agent looks; every competitor gets each lane.
     lanes: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")], Annotated[str, Field(min_length=1)]
@@ -1010,10 +1012,10 @@ class CompetitorPainPointsControl(_ControlModel):
     def _every_competitor_described(self) -> CompetitorPainPointsControl:
         if set(self.about) != set(self.competitors):
             raise ValueError("about must describe exactly the configured competitors")
-        if not set(self.x_names) <= set(self.competitors):
-            raise ValueError("x_names may only name configured competitors")
-        if "x" in self.lanes:
-            raise ValueError("the x lane is built in; configure X through x_queries")
+        if not set(self.search_names) <= set(self.competitors):
+            raise ValueError("search_names may only name configured competitors")
+        if {"x", "reddit"} & set(self.lanes):
+            raise ValueError("the x and reddit lanes are built in; configure their queries")
         return self
 
 
