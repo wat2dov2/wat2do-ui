@@ -2754,12 +2754,12 @@ test.describe("Events Page", () => {
 
     await eventDrawer.getByRole("button", { name: "UW Tech Club" }).last().click();
     await page
-      .getByRole("menuitem", { name: "See more events by UW Tech Club" })
+      .getByRole("menuitem", { name: "View club profile for UW Tech Club" })
       .click();
 
+    // The host menu leads to the club's own Wat2Do profile.
     await expect(eventDrawer).not.toBeVisible();
-    await expect(page).toHaveURL(BASE + "/events");
-    await expect(page.locator('article[data-event-id="1"]:visible')).toBeVisible();
+    await expect(page).toHaveURL(/\/clubs\/\d+$/);
   });
 
   test("lets admins delete events from the drawer and dedicated page", async ({ page, next }) => {

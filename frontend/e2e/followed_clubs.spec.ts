@@ -478,9 +478,7 @@ test.describe("Followed Clubs Flow", () => {
     await expect(page.getByRole("combobox", { name: "All" })).toBeVisible();
 
     const techCard = page.locator('[data-club-card][data-club-id="1"]');
-    const instagramMetadata = techCard.locator('[data-slot="event-card-instagram"]');
-    await expect(instagramMetadata).toHaveText("@uwtechclub");
-    await expect(techCard.locator('[data-slot="event-card-location"]')).toHaveCount(0);
+    await expect(techCard.locator('[data-slot="club-card-handle"]')).toHaveText("@uwtechclub");
 
     // Switch to Followed Clubs tab, should show empty state
     await selectClubScope(page, "Followed");
@@ -491,10 +489,10 @@ test.describe("Followed Clubs Flow", () => {
 
     // Following on the card updates immediately and never navigates.
     await techCard.getByRole("button", { name: "Follow club", exact: true }).click();
-    await expect(techCard.getByText("Followed", { exact: true })).toBeVisible();
+    await expect(techCard.getByText("Following", { exact: true })).toBeVisible();
     await expect(page).toHaveURL(`${BASE}/clubs`);
     await techCard.getByRole("button", { name: "Followed club", exact: true }).click();
-    await expect(techCard.getByText("Followed", { exact: true })).toHaveCount(0);
+    await expect(techCard.getByText("Following", { exact: true })).toHaveCount(0);
 
     // Open the dedicated details page for the first club.
     await page.getByText("UW Tech Club").click();
