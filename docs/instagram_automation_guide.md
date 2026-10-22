@@ -503,7 +503,7 @@ The worker answers as the school in the Instagram app on the Mac's Android emula
 A dry-run job only reads, so rerunning its notification reads a failed thread again; a live DM job is never retried.
 Haiku only classifies the request; it never writes the reply.
 Code then requires the shared post's owner to be the sender, requires a story repost's sender to be a known club at the school, and picks the reply from `replies` and `done_replies` in the controlbox.
-A thread that cannot be read fails with the screen the app never showed, for example `Instagram never showed ^Message…$`.
+A thread that cannot be read fails with the screen the app never showed, for example `Instagram never showed ^row_thread_composer_edittext$`.
 Review those results before setting it to `false`.
 Each typed reply is confirmed by seeing it appear in the thread.
 A reply or story repost that cannot be confirmed pauses the worker for a person to check the thread and story, and it is never sent twice.

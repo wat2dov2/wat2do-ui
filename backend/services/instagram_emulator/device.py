@@ -139,20 +139,16 @@ class EmulatorDevice:
     def screen(self) -> list[Node]:
         for attempt in range(_SCREEN_READ_ATTEMPTS):
             try:
-                dump = self.adb("exec-out", "uiautomator", "dump", "/dev/tty")
+                root = self._read_screen()
                 break
             except EmulatorError:
-                # The dump fails while the app is still animating, such as a playing video.
+                # The dump fails while the app is still animating, such as a playing video,
+                # and sometimes prints an error in place of the screen.
                 if attempt == _SCREEN_READ_ATTEMPTS - 1:
                     raise
                 self._sleep(1)
-        dump = dump.split(_DUMP_SUFFIX, 1)[0].strip()
-        if not dump:
+        if root is None:
             return []
-        try:
-            root = ElementTree.fromstring(dump)
-        except ElementTree.ParseError as exc:
-            raise EmulatorError("Emulator screen could not be read") from exc
         nodes = []
         for element in root.iter("node"):
             match = _BOUNDS.fullmatch(element.get("bounds", ""))
@@ -169,6 +165,16 @@ class EmulatorDevice:
                     )
                 )
         return nodes
+
+    def _read_screen(self) -> ElementTree.Element | None:
+        dump = self.adb("exec-out", "uiautomator", "dump", "/dev/tty")
+        dump = dump.split(_DUMP_SUFFIX, 1)[0].strip()
+        if not dump:
+            return None
+        try:
+            return ElementTree.fromstring(dump)
+        except ElementTree.ParseError as exc:
+            raise EmulatorError("Emulator screen could not be read") from exc
 
     def find(self, pattern: re.Pattern[str], nodes: Iterable[Node] | None = None) -> Node | None:
         return next(

@@ -34,8 +34,8 @@ from services.instagram_notifications.browser_session import (
 
 CONTROL = controlbox.instagram_dms
 _THREAD_ID = re.compile(r"^[0-9]{1,40}$")
+# Found by its view ID: its placeholder text rotates between hints like "Message…".
 _COMPOSER = re.compile(r"^row_thread_composer_edittext$")
-_COMPOSER_PLACEHOLDER = "Message…"
 _SEND = re.compile(r"^Send$")
 _SHARE = labels("Send post", "Share")
 _COPY_LINK = labels("Copy link")
@@ -177,7 +177,7 @@ class _ThreadReader:
         self._device.open_instagram(
             self._user, f"instagram://direct-thread?thread_id={self._thread_id}"
         )
-        self._device.wait_for(re.compile(rf"^{re.escape(_COMPOSER_PLACEHOLDER)}$"))
+        self._device.wait_for(_COMPOSER)
         self._device.pause()
         return self._device.screen()
 

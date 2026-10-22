@@ -37,6 +37,13 @@ def test_screen_retries_while_the_app_is_animating() -> None:
     assert len(nodes) == 2 and len(commands) == 3
 
 
+def test_screen_retries_when_the_dump_prints_an_error_instead() -> None:
+    commands = []
+    error = "ERROR: null root node returned by UiTestAutomationBridge."
+    nodes = _device([(0, error), (0, SCREEN)], commands).screen()
+    assert len(nodes) == 2 and len(commands) == 2
+
+
 def test_a_screen_that_never_settles_raises() -> None:
     attempts = [(1, "")] * module._SCREEN_READ_ATTEMPTS
     with pytest.raises(module.EmulatorError):
