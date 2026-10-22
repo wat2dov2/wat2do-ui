@@ -62,6 +62,5 @@
   "keystroke_delay_min_seconds": 0.08,
   "keystroke_delay_max_seconds": 0.35,
   "story_upload_wait_seconds": 60,
-  "story_job_timeout_seconds": 600,
   "audio_save_wait_seconds": 60
 }

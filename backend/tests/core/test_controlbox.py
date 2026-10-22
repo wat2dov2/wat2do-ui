@@ -847,26 +847,25 @@ def test_event_view_controls_require_a_campus_center_per_school(tmp_path, change
         load_controlbox(directory)
 
 
-def test_instagram_dms_start_in_dry_run_with_a_human_reply_window() -> None:
+def test_instagram_dms_answer_live_from_a_waking_hours_sweep() -> None:
     control = load_controlbox().instagram_dms
-    assert control.dry_run is True
-    assert set(control.categories) == {
-        "direct_v2_text",
-        "direct_v2_media_share",
-        "direct_v2_clips_share",
-    }
-    assert control.reply_delay_min_seconds <= control.reply_delay_max_seconds
+    assert control.dry_run is False
+    assert control.sweep_gap_min_minutes <= control.sweep_gap_max_minutes
+    assert control.sweep_start_hour < control.sweep_end_hour
 
 
-def test_instagram_dms_reject_an_inverted_reply_window(tmp_path: Path) -> None:
-    path = _write_control(
-        tmp_path,
-        "instagram_dms",
-        lambda payload: payload.update(
-            {"reply_delay_min_seconds": 600, "reply_delay_max_seconds": 60}
-        ),
-    )
-    with pytest.raises(ValidationError, match="reply_delay_min_seconds"):
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        ({"sweep_gap_min_minutes": 300, "sweep_gap_max_minutes": 60}, "sweep_gap_min_minutes"),
+        ({"sweep_start_hour": 22, "sweep_end_hour": 9}, "sweep_start_hour"),
+    ],
+)
+def test_instagram_dms_reject_an_inverted_sweep_window(
+    tmp_path: Path, change: dict, message: str
+) -> None:
+    path = _write_control(tmp_path, "instagram_dms", lambda payload: payload.update(change))
+    with pytest.raises(ValidationError, match=message):
         load_controlbox(path)
 
 

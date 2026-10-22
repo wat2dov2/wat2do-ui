@@ -6,9 +6,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-import random
 import sys
-import time
 import urllib.parse
 from dataclasses import dataclass
 
@@ -19,7 +17,6 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv()
 
 import core.logging  # noqa: F401, E402
-from core.controlbox import controlbox  # noqa: E402
 from schemas.school import validate_recipient_id  # noqa: E402
 from services import school_service  # noqa: E402
 from services.instagram_notifications.browser_digest import (  # noqa: E402
@@ -27,7 +24,6 @@ from services.instagram_notifications.browser_digest import (  # noqa: E402
     digest_media_count_shortfall,
 )
 from services.instagram_notifications.browser_queue import (  # noqa: E402
-    BrowserJobQueue,
     QueuedInstagramDigestResolver,
 )
 from services.instagram_notifications.browser_session import (  # noqa: E402
@@ -49,8 +45,6 @@ _CACHE_ID_KEY = "cache_ent_id"
 _TOTAL_MEDIA_COUNT_KEY = "total_non_mmc_media_count"
 _ACTIONABLE_CATEGORIES = frozenset({"post", "subscription_daily_digest"})
 _ACTIONABLE_ACTION_PATH = "clips_home"
-_DIRECT_ACTION_PATH = "direct_v2"
-_DM_CONTROL = controlbox.instagram_dms
 
 
 class NotificationPayloadError(ValueError):
@@ -198,37 +192,6 @@ def _resolve_recipient(payload: dict[str, object]) -> str:
     return intended_recipient_id
 
 
-def _is_direct_message(payload: dict[str, object]) -> bool:
-    return payload.get(_PUSH_CATEGORY_KEY) in _DM_CONTROL.categories
-
-
-def _queue_direct_message(payload: dict[str, object]) -> int:
-    """Hand one DM to the Mac's browser worker, which answers it as the school."""
-    action_path, query = _action_query(payload)
-    thread_id = _metadata_value(payload, query, "id")
-    item_id = _metadata_value(payload, query, "x")
-    if action_path != _DIRECT_ACTION_PATH or not thread_id or not item_id:
-        raise NotificationPayloadError("DM notification is missing its thread or message.")
-    intended_recipient_id = _resolve_recipient(payload)
-    school = school_service.get_school_by_recipient_id(intended_recipient_id)
-    if school is None:
-        raise NotificationPayloadError("No school mapping exists for the notification recipient.")
-    BrowserJobQueue().enqueue_direct(
-        school=school.slug,
-        school_name=school.name,
-        recipient_id=intended_recipient_id,
-        account_username=school_account_username(school.slug),
-        thread_id=thread_id,
-        item_id=item_id,
-        dry_run=_DM_CONTROL.dry_run,
-        not_before=time.time()
-        + random.uniform(_DM_CONTROL.reply_delay_min_seconds, _DM_CONTROL.reply_delay_max_seconds),
-    )
-    # Never log the message itself: only that a DM was queued.
-    log.info("Queued an Instagram DM for the school's browser worker.")
-    return 0
-
-
 def _is_supported_category(payload: dict[str, object]) -> bool:
     category = payload.get(_PUSH_CATEGORY_KEY)
     return isinstance(category, str) and category in _ACTIONABLE_CATEGORIES
@@ -316,16 +279,6 @@ def main() -> int:
     if not isinstance(payload, dict):
         log.error("NOTIFICATION_JSON must contain a JSON object.")
         return 1
-
-    if _is_direct_message(payload):
-        try:
-            return _queue_direct_message(payload)
-        except (NotificationPayloadError, ValueError) as exc:
-            log.error("%s", exc)
-            return 1
-        except Exception:  # noqa: BLE001 - do not expose database or queue internals
-            log.error("Instagram DM routing failed unexpectedly.")
-            return 1
 
     if not _is_supported_category(payload):
         log.info("Ignoring unsupported Instagram notification.")

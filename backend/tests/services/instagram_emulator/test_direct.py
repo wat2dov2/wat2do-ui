@@ -1,10 +1,9 @@
-from contextlib import nullcontext
-
 import pytest
 
 from services.instagram_dms.decide import DmDecision
 from services.instagram_emulator import direct as module
 from services.instagram_emulator.device import Node
+from services.instagram_emulator.inbox import InboxRow
 from services.instagram_notifications.browser_session import (
     BrowserEngagementUncertain,
     BrowserSessionError,
@@ -42,7 +41,7 @@ class _Reader:
     fail_read = False
     fail_send = False
 
-    def __init__(self, device, user, thread_id):
+    def __init__(self, device, opener):
         pass
 
     def read(self):
@@ -61,7 +60,6 @@ def emulator(monkeypatch):
     _Reader.sent = []
     _Reader.fail_read = _Reader.fail_send = False
     monkeypatch.setattr(module, "_ThreadReader", _Reader)
-    monkeypatch.setattr(module, "exclusive", nullcontext)
     monkeypatch.setattr(module.time, "sleep", lambda _seconds: None)
 
 
@@ -81,12 +79,20 @@ def stories(monkeypatch):
     return shared
 
 
-def _handle(monkeypatch, decision, *, dry_run, school="ubc"):
+@pytest.fixture
+def accepted(monkeypatch):
+    calls = []
+    monkeypatch.setattr(module, "accept_request", lambda device: calls.append(device))
+    return calls
+
+
+def _handle(monkeypatch, decision, *, dry_run, request=False):
     monkeypatch.setattr(module, "decide", lambda thread, **_: decision)
+    row = InboxRow("Club", "Could you share this?", 0.1, unread=True, request=request)
     return module.EmulatorDirectExecutor(device=_Device()).handle(
-        "wat2do.ubc",
-        "340282366841710300949128",
-        school=school,
+        row,
+        account_username="wat2do.ubc",
+        school="ubc",
         school_name="UBC",
         dry_run=dry_run,
     )
@@ -146,15 +152,16 @@ def test_ignored_threads_get_no_reply(monkeypatch, queued, stories) -> None:
     assert _Reader.sent == [] and stories == [] and queued == []
 
 
-def test_a_school_without_an_emulator_account_is_refused(monkeypatch) -> None:
-    with pytest.raises(BrowserSessionError, match="not logged in"):
-        _handle(monkeypatch, DmDecision("ignore"), dry_run=False, school="not-a-school")
+def test_a_request_is_accepted_only_when_we_answer_it(monkeypatch, queued, accepted) -> None:
+    _handle(monkeypatch, DmDecision("ignore"), dry_run=False, request=True)
+    assert accepted == []
+    _handle(monkeypatch, DmDecision("add_to_post", POST, "Sure!"), dry_run=False, request=True)
+    assert len(accepted) == 1 and _Reader.sent == ["Sure!"]
 
 
-@pytest.mark.parametrize("thread_id", ["", "12a", "1" * 41, None])
-def test_thread_ids_are_validated(thread_id) -> None:
-    with pytest.raises(ValueError):
-        module.validate_thread_id(thread_id)
+def test_an_inbox_thread_is_never_accepted(monkeypatch, queued, accepted) -> None:
+    _handle(monkeypatch, DmDecision("add_to_post", POST, "Sure!"), dry_run=False)
+    assert accepted == []
 
 
 def _node(text, bounds, resource_id="", description=""):
@@ -239,3 +246,28 @@ def test_a_display_name_alone_is_not_taken_as_a_username() -> None:
         _node("", (304, 204, 650, 246), "header_subtitle", "Active 18m ago"),
     ]
     assert module._sender(chat) is None
+
+
+# sightandsmile_utsc's chat: a reel drawn as a bare media card, then their request.
+REEL_CARD_CHAT = [
+    _node("Sight & Smile @ UTSC", (304, 156, 650, 204), "header_title"),
+    _node("sightandsmile_utsc", (304, 204, 650, 246), "header_subtitle"),
+    _node("", (0, 275, 1080, 2251), "message_list"),
+    _node("YESTERDAY 6:14 PM", (0, 942, 1080, 1025)),
+    _node("", (147, 1057, 593, 1859), "media_container"),
+    _node("", (179, 1089, 242, 1152), "profile_attribution_picture", "Profile picture"),
+    _node("sightandsmile_utsc", (263, 1098, 561, 1142), "title_text"),
+    _node("", (614, 1363, 698, 1447), "forwarding_shortcut_button", "Forward message"),
+    _node("We just posted, could you repost it on your story?", (179, 1889, 882, 2089)),
+    _node("Tap and hold to react", (147, 2126, 455, 2164)),
+]
+
+
+def test_a_reel_drawn_as_a_bare_card_is_a_shared_post_with_its_forward_button() -> None:
+    messages = module._messages(REEL_CARD_CHAT)
+    assert [(m["from"], m["type"], m["shared_owner"]) for m in messages] == [
+        ("them", "media_share", "sightandsmile_utsc"),
+        ("them", "text", None),
+    ]
+    forward = module._forward_button(REEL_CARD_CHAT, messages[0]["media"])
+    assert forward is not None and forward.resource_id == "forwarding_shortcut_button"

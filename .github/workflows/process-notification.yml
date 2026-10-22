@@ -42,9 +42,8 @@ jobs:
           POSTER_ID: ${{ inputs.poster_id }}
           NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
         run: |
-          # Digests and DMs need the Mac's browser worker; DMs are answered as the school there.
+          # Digests need the Mac's browser worker. DMs are answered by its inbox sweep instead.
           if echo "$NOTIFICATION_JSON" | grep -q "cache_ent_id" \
-            || echo "$NOTIFICATION_JSON" | grep -Eq '"com\.instagram\.android\.igns\.logging\.push_category": *"direct_v2_' \
             || [[ -n "$POSTER_ID" ]]; then
             echo 'runner=["self-hosted", "wat2do-macmini-browser"]' >> "$GITHUB_OUTPUT"
           else
