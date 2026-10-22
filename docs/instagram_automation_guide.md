@@ -396,9 +396,9 @@ If no recommendation can be substantiated, save `suggested_song: null` and repor
 The recommendation remains fixed with the batch and is displayed read-only in the admin drawer.
 It is not attached to the published carousel by the API; the admin searches for the title and artist in Instagram and checks availability for that account.
 
-Draft selection has no event-count quota.
-Keep every eligible event with visibly high-effort, appealing artwork or a genuinely compelling student experience.
-Exclude routine administrative meetings, generic information sessions and low-value listings unless the artwork or the activity clearly meets that bar.
+Draft selection has no event-count quota, but it is selective.
+It favors cool, exciting, high-status events students would brag about attending: formals, galas, parties, concerts, big shows, varsity games, trips, prestigious speakers or companies, and events with polished artwork.
+It leaves out boring and low-status events, such as meetings, elections, study sessions, routine club meetings, generic workshops, information sessions, executive recruitment, bake sales and plainly promoted events, unless the event itself is clearly exciting.
 Review the actual poster before relying on artwork quality; an image URL alone is not evidence.
 Clubs that asked not to be posted are rows in `public.instagram_excluded_clubs`, keyed by lowercase Instagram handle without `@`.
 Add a row by hand when a club asks.
