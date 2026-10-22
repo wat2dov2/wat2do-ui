@@ -99,9 +99,12 @@ It finds every control by its accessibility label, taps at a random point inside
 after a random pause, and never types a password.
 A story repost that fails or cannot be confirmed pauses the worker for a person and
 is never retried, since it may already be posted.
-Code, not the model, checks that the post was shared in the thread and that a reply
-is short, has no links or mentions, and is never sent when our message is already the
-newest.
+Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
+message, impersonation, login codes, money, follow-for-follow, pressure).
+Code, not the model, has the final say: the post must be shared by its own owner, a
+story repost also needs that owner to be a known club at the school, replies come only
+from the vetted lists in controlbox, and nothing is sent when our message is already
+the newest.
 Each reply waits a random human-like delay first.
 A reply whose delivery is uncertain pauses the worker for a person and is never retried.
 `dry_run` decides and records every DM without replying, reposting or queueing anything.

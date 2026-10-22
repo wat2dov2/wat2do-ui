@@ -952,6 +952,10 @@ class IngestionControl(_ControlModel):
         return self
 
 
+# One line, short, and nothing that links or tags anyone.
+_DmReply = Annotated[str, Field(min_length=1, max_length=40, pattern=r"^[^\n@/]+$")]
+
+
 class InstagramDmsControl(_ControlModel):
     # Dry run reads, decides and logs each DM without replying or queueing anything.
     dry_run: bool
@@ -962,7 +966,10 @@ class InstagramDmsControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     agent_timeout_seconds: int = Field(gt=0, le=600)
     thread_item_limit: int = Field(ge=1, le=50)
-    reply_max_characters: int = Field(ge=4, le=200)
+    # Every reply comes from these vetted lists, never from the model, so a DM written to
+    # trick the model can never put words in the school account's mouth.
+    replies: list[_DmReply] = Field(min_length=1, max_length=20)
+    done_replies: list[_DmReply] = Field(min_length=1, max_length=20)
     # A reply waits a random human-like interval inside this window.
     reply_delay_min_seconds: int = Field(ge=0, le=86_400)
     reply_delay_max_seconds: int = Field(ge=0, le=86_400)

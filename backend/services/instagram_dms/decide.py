@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import random
-import re
 import shutil
 import tempfile
 from dataclasses import dataclass
@@ -12,6 +11,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from core.controlbox import controlbox
+from services import club_service
 from services.claude_code import ClaudeCodeError, run_agent
 
 CONTROL = controlbox.instagram_dms
@@ -25,19 +25,11 @@ ANSWER_SCHEMA: dict[str, Any] = {
     "properties": {
         "outcome": {"type": "string", "enum": ["story_repost", "add_to_post", "ignore"]},
         "media_url": {"type": ["string", "null"]},
-        "reply": {"type": "string"},
-        "done_reply": {"type": "string"},
         "reason": {"type": "string"},
     },
-    "required": ["outcome", "media_url", "reply", "done_reply", "reason"],
+    "required": ["outcome", "media_url", "reason"],
     "additionalProperties": False,
 }
-
-# Used only when the model's wording fails the checks below, so a valid request still
-# gets a natural, varied answer instead of being dropped.
-_FALLBACK_REPLIES = ("Sure!", "Of course!", "Sure thing!", "Yep, on it!")
-_FALLBACK_DONE_REPLIES = ("Done!", "All set!", "Posted!", "Done :)")
-_UNSAFE_REPLY = re.compile(r"https?://|www\.|@")
 
 
 @dataclass(frozen=True)
@@ -52,7 +44,9 @@ class DmDecision:
 IGNORE = DmDecision("ignore")
 
 
-def decide(thread: list[dict[str, Any]], *, account: str, school_name: str) -> DmDecision:
+def decide(
+    thread: list[dict[str, Any]], *, account: str, school: str, school_name: str
+) -> DmDecision:
     """One outcome for the club's latest messages; anything doubtful is ignored."""
     if not thread or thread[-1].get("from") != "them":
         # Nothing new from the club, or we already answered last.
@@ -73,45 +67,55 @@ def decide(thread: list[dict[str, Any]], *, account: str, school_name: str) -> D
         return IGNORE
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
-    return checked(answer, thread)
+    return checked(answer, thread, school=school)
 
 
-def checked(answer: dict[str, Any], thread: list[dict[str, Any]]) -> DmDecision:
-    """Never trust the model's links or wording without checking them against the thread."""
+def checked(answer: dict[str, Any], thread: list[dict[str, Any]], *, school: str) -> DmDecision:
+    """The model only proposes; code decides whether a stranger's message may act at all.
+
+    A message can be written to trick the model, so every action needs proof from the
+    thread itself: the post was shared by its own owner, and a story repost also needs
+    that owner to be a club Wat2Do already knows at this school. Replies never come from
+    the model, so nothing a message says can end up in our answer.
+    """
+    reason = " ".join(str(answer.get("reason") or "").split())[:200]
     outcome = answer.get("outcome")
     if outcome not in ("story_repost", "add_to_post"):
-        return DmDecision("ignore", reason=str(answer.get("reason") or "")[:200])
-    shared = {
-        item["shared_url"]
-        for item in thread
-        if item.get("from") == "them" and item.get("shared_url")
-    }
+        return DmDecision("ignore", reason=reason)
     media_url = answer.get("media_url")
-    if media_url not in shared:
-        return DmDecision("ignore", reason="Requested post was not shared in the thread")
+    owners = {
+        _handle(item.get("shared_owner"))
+        for item in thread
+        if item.get("from") == "them"
+        and item.get("shared_url") == media_url
+        and _handle(item.get("sender"))
+        and _handle(item.get("shared_owner")) == _handle(item.get("sender"))
+    }
+    if not media_url or len(owners) != 1:
+        return DmDecision("ignore", reason="Requested post was not shared by its own owner")
+    owner = owners.pop()
+    if (
+        outcome == "story_repost"
+        and club_service.lookup_club_by_school_and_ig(school, owner) is None
+    ):
+        return DmDecision("ignore", reason=f"@{owner} is not a known club at this school")
     return DmDecision(
         outcome,
         media_url=media_url,
-        reply=_safe(answer.get("reply"), _FALLBACK_REPLIES),
-        done_reply=_safe(answer.get("done_reply"), _FALLBACK_DONE_REPLIES)
-        if outcome == "story_repost"
-        else "",
-        reason=str(answer.get("reason") or "")[:200],
+        reply=random.choice(CONTROL.replies),
+        done_reply=random.choice(CONTROL.done_replies) if outcome == "story_repost" else "",
+        reason=reason,
     )
 
 
-def _safe(text: object, fallbacks: tuple[str, ...]) -> str:
-    value = " ".join(str(text or "").split())
-    if not value or len(value) > CONTROL.reply_max_characters or _UNSAFE_REPLY.search(value):
-        return random.choice(fallbacks)
-    return value
+def _handle(value: object) -> str:
+    return str(value or "").strip().lstrip("@").casefold()
 
 
 def _prompt(account: str, school_name: str) -> str:
     values = {
         "account": account,
         "school_name": school_name,
-        "reply_max_characters": str(CONTROL.reply_max_characters),
     }
     prompt = PROMPT
     for key, value in values.items():
