@@ -17,8 +17,8 @@ const { SLIDE_WIDTH, SLIDE_HEIGHT, buildCoverSlideModel, buildEventSlideModel } 
 const output = path.resolve(process.argv[2] ?? path.join(frontendRoot, "verify-out/instagram-library"));
 await mkdir(output, { recursive: true });
 const fonts = await Promise.all(([400, 500, 600, 700] as const).map(async weight => ({
-  name: "Satoshi", weight, style: "normal" as const,
-  data: await readFile(path.join(frontendRoot, `public/fonts/slides/Satoshi-${weight}.ttf`)),
+  name: "Inter Tight", weight, style: "normal" as const,
+  data: await readFile(path.join(frontendRoot, `public/fonts/slides/InterTight-${weight}.ttf`)),
 })));
 await initWasm(await readFile(path.join(frontendRoot, "node_modules/@resvg/resvg-wasm/index_bg.wasm")));
 
@@ -38,16 +38,16 @@ const posters = await Promise.all([
   { title: "MEET YOUR PEOPLE", detail: "Clubs. Friends. New plans.", color: "#D1ECF5", ink: "#23393D", width: 700, height: 900 },
   { title: "AFTER CLASS", detail: "Film night + conversation", color: "#ECC2F0", ink: "#31204C", width: 1200, height: 800 },
 ].map(async ({ title, detail, color, ink, width, height }) => {
-  const element = createElement("div", { style: { display: "flex", flexDirection: "column", justifyContent: "space-between", width, height, backgroundColor: color, color: ink, padding: 48, fontFamily: "Satoshi" } },
+  const element = createElement("div", { style: { display: "flex", flexDirection: "column", justifyContent: "space-between", width, height, backgroundColor: color, color: ink, padding: 48, fontFamily: "Inter Tight" } },
     createElement("div", { style: { display: "flex", fontSize: 25, letterSpacing: 5 } }, "CAMPUS / SAMPLE"),
     createElement("div", { style: { display: "flex", width: 260, height: 260, border: `45px solid ${ink}`, borderRadius: 130 } }),
-    createElement("div", { style: { display: "flex", fontSize: 94, fontWeight: 700, lineHeight: 0.98, letterSpacing: -5 } }, title),
+    createElement("div", { style: { display: "flex", fontSize: 94, fontWeight: 700, lineHeight: 0.98, letterSpacing: -2 } }, title),
     createElement("div", { style: { display: "flex", fontSize: 29 } }, detail));
   return `data:image/png;base64,${(await png(element, width, height)).toString("base64")}`;
 }));
 const tiles = posters.slice(0, 3);
 const avatar = `data:image/png;base64,${(await png(createElement("div", {
-  style: { display: "flex", alignItems: "center", justifyContent: "center", width: 176, height: 176, backgroundColor: "#31204C", color: "#ECC2F0", fontFamily: "Satoshi", fontSize: 64, fontWeight: 700 },
+  style: { display: "flex", alignItems: "center", justifyContent: "center", width: 176, height: 176, backgroundColor: "#31204C", color: "#ECC2F0", fontFamily: "Inter Tight", fontSize: 64, fontWeight: 700 },
 }, "CF"), 176, 176)).toString("base64")}`;
 
 const event = {
