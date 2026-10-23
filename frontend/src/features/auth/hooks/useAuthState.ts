@@ -157,6 +157,12 @@ export function useAuthState(): AuthState {
   return useSyncExternalStore(subscribe, getSnapshot, () => SERVER_AUTH_STATE);
 }
 
+/** The club the club panel acts for: the one picked in the account menu, else the first. */
+export function useActiveClub(): UserClubSummary | null {
+  const { clubs, clubId } = useAuthState();
+  return clubs.find((club) => club.id === clubId) ?? clubs[0] ?? null;
+}
+
 /** Primitive selector - re-renders only when the email changes. */
 export function useUserEmail(): string | null {
   return useSyncExternalStore(

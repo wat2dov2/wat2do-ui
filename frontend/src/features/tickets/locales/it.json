@@ -1,0 +1,174 @@
+{
+  "tickets": {
+    "title": "I miei biglietti",
+    "description": "I biglietti che hai comprato su Wat2Do. Mostra il codice QR all'ingresso.",
+    "upcoming": "Prossimi",
+    "past": "Passati",
+    "manage": "Gestisci biglietti",
+    "sellTickets": "Vendi biglietti",
+    "empty": {
+      "title": "Ancora nessun biglietto",
+      "description": "Quando compri un biglietto per un evento, lo trovi qui.",
+      "action": "Trova eventi"
+    },
+    "notFound": {
+      "title": "Questo biglietto non esiste",
+      "description": "Controlla il link, oppure trova i tuoi biglietti in I miei biglietti."
+    },
+    "status": {
+      "valid": "Valido",
+      "checkedIn": "Ingresso registrato",
+      "refunded": "Rimborsato"
+    },
+    "card": {
+      "title": "Biglietti",
+      "price": "{{price}} a biglietto",
+      "noFees": "Nessuna commissione",
+      "quantity": "Quanti biglietti",
+      "left": "Ne resta {{count}}",
+      "left_one": "Ne resta {{count}}",
+      "left_many": "Ne restano {{count}}",
+      "left_other": "Ne restano {{count}}",
+      "buy": "Acquista biglietti · {{total}}",
+      "continueToPayment": "Procedi al pagamento",
+      "payNote": "Pagamento sicuro con Stripe. {{club}} riceve il tuo nome e la tua email per registrare il tuo ingresso.",
+      "youHave": "Hai {{count}} biglietto",
+      "youHave_one": "Hai {{count}} biglietto",
+      "youHave_many": "Hai {{count}} biglietti",
+      "youHave_other": "Hai {{count}} biglietti",
+      "viewTickets": "Vedi i miei biglietti",
+      "unavailable": {
+        "cancelled": "Questo evento è stato annullato.",
+        "paused": "La vendita dei biglietti è in pausa per ora.",
+        "soldOut": "Biglietti esauriti per questo evento.",
+        "closed": "La vendita dei biglietti è chiusa.",
+        "notOnSale": "I biglietti non sono ancora in vendita."
+      }
+    },
+    "pass": {
+      "when": "Quando",
+      "where": "Dove",
+      "holder": "Titolare del biglietto",
+      "code": "Codice",
+      "locationTba": "Luogo da confermare",
+      "qrLabel": "Codice QR di questo biglietto",
+      "showAtDoor": "Mostra questo codice QR all'ingresso.",
+      "refundedNote": "Questo biglietto è stato rimborsato e non si può più usare.",
+      "viewEvent": "Vedi evento"
+    },
+    "door": {
+      "checkIn": "Registra ingresso",
+      "undo": "Annulla ingresso",
+      "officerNote": "Gestisci {{club}}, quindi puoi convalidare questo biglietto.",
+      "checkedInAt": "Ingresso registrato alle {{time}}",
+      "results": {
+        "checked_in": "Ingresso registrato. Fai entrare.",
+        "already_checked_in": "Ingresso già registrato",
+        "undone": "Ingresso annullato",
+        "refunded": "Biglietto rimborsato. Non far entrare.",
+        "not_for_this_event": "Questo biglietto è per un altro evento",
+        "not_found": "Nessun biglietto corrisponde a questo codice"
+      }
+    },
+    "order": {
+      "confirming": "Stiamo confermando il pagamento",
+      "confirmingDescription": "Di solito ci vuole qualche secondo. I biglietti ti arriveranno anche via email.",
+      "paidTitle": "Sei dentro!",
+      "paidDescription": "Hai {{count}} biglietto: lo trovi qui sotto e nella tua email.",
+      "paidDescription_one": "Hai {{count}} biglietto: lo trovi qui sotto e nella tua email.",
+      "paidDescription_many": "Hai {{count}} biglietti: li trovi qui sotto e nella tua email.",
+      "paidDescription_other": "Hai {{count}} biglietti: li trovi qui sotto e nella tua email.",
+      "shareNote": "Ogni biglietto ha il suo codice QR. Manda il link di ogni biglietto a chi lo userà.",
+      "failedTitle": "Il pagamento non è andato a buon fine",
+      "failedDescription": "Non ti è stato addebitato nulla e i biglietti sono stati rimessi in vendita.",
+      "notFound": "Non abbiamo trovato questo ordine",
+      "backToEvent": "Torna all'evento",
+      "allTickets": "Tutti i miei biglietti"
+    },
+    "desk": {
+      "title": "Biglietteria",
+      "notFound": "Questo evento non esiste più",
+      "setupTitle": "Vendi biglietti",
+      "setupDescription": "Chi compra paga con Stripe e riceve via email un biglietto con codice QR. I soldi vanno direttamente alla tua organizzazione.",
+      "settingsTitle": "Impostazioni biglietti",
+      "settingsDescription": "Cambia quanti biglietti vendi, oppure metti in pausa le vendite per un po'.",
+      "price": "Prezzo del biglietto ({{currency}})",
+      "priceLocked": "Il prezzo non si può più cambiare dopo che qualcuno ha comprato un biglietto.",
+      "priceRange": "Scrivi un prezzo tra {{minimum}} e {{maximum}}.",
+      "capacity": "Biglietti per data",
+      "capacityPlaceholder": "Nessun limite",
+      "pause": "Metti in pausa le vendite",
+      "pauseHint": "Nasconde il pulsante di acquisto finché non riattivi le vendite.",
+      "fees": "Stripe trattiene circa il 2,9% + 30¢ di ogni ordine. Wat2Do non prende nulla.",
+      "payoutsNeeded": "Imposta prima gli accrediti, così i soldi avranno dove arrivare.",
+      "setUpPayouts": "Imposta gli accrediti",
+      "startSelling": "Inizia a vendere",
+      "save": "Salva modifiche",
+      "saved": "Impostazioni biglietti salvate",
+      "stopSelling": "Smetti di vendere biglietti",
+      "stopped": "Questo evento non vende più biglietti",
+      "openScanner": "Apri lo scanner d'ingresso",
+      "attendees": "Lista partecipanti",
+      "attendeesEmpty": "Nessun biglietto venduto per ora",
+      "search": "Cerca per nome, email o codice",
+      "columns": {
+        "holder": "Titolare del biglietto",
+        "date": "Data",
+        "status": "Stato",
+        "actions": "Azioni"
+      },
+      "stats": {
+        "sold": "Venduti",
+        "revenue": "Incassi",
+        "checkedIn": "Ingressi",
+        "remaining": "Rimasti",
+        "unlimited": "Nessun limite"
+      },
+      "refund": "Rimborsa",
+      "refundTitle": "Rimborsare questo biglietto?",
+      "refundDescription": "{{name}} riceve {{amount}} sulla carta, più un'email. Stripe non restituisce la sua commissione alla tua organizzazione.",
+      "refundConfirm": "Rimborsa {{amount}}",
+      "refundRequested": "Rimborso richiesto",
+      "decline": "Rifiuta",
+      "declineTitle": "Rifiutare questa richiesta di rimborso?",
+      "declineDescription": "{{name}} riceve un'email che comunica il rifiuto della tua organizzazione. Il biglietto resta valido.",
+      "declineConfirm": "Rifiuta richiesta",
+      "declined": "Richiesta di rimborso rifiutata",
+      "cancelledTitle": "Questo evento è stato annullato",
+      "cancelledDescription": "Ogni biglietto viene rimborsato in automatico. Se alcuni sono ancora validi, Stripe non era raggiungibile per un attimo: completa i rimborsi qui.",
+      "refundRemaining": "Rimborsa i biglietti rimasti",
+      "refundedCount": "{{count}} biglietto rimborsato",
+      "refundedCount_one": "{{count}} biglietto rimborsato",
+      "refundedCount_many": "{{count}} biglietti rimborsati",
+      "refundedCount_other": "{{count}} biglietti rimborsati"
+    },
+    "refund": {
+      "prompt": "Non riesci più a venire?",
+      "promptDescription": "Puoi chiedere un rimborso: decide {{club}}, e in ogni caso riceverai un'email.",
+      "request": "Chiedi un rimborso",
+      "signIn": "Accedi per chiedere un rimborso",
+      "title": "Vuoi che {{club}} ti rimborsi?",
+      "description": "Se {{club}} accetta, l'intero importo torna sulla tua carta. Riceverai un'email in ogni caso.",
+      "noteLabel": "Qualcosa che l'organizzazione dovrebbe sapere? (facoltativo)",
+      "notePlaceholder": "Ad esempio: non posso esserci nella nuova data.",
+      "send": "Invia richiesta",
+      "sent": "Richiesta di rimborso inviata: ora decide {{club}}",
+      "pending": "Il {{date}} hai chiesto un rimborso. Riceverai un'email quando {{club}} avrà deciso.",
+      "declined": "Il {{date}}, {{club}} ha rifiutato la tua richiesta di rimborso. Il tuo biglietto è ancora valido.",
+      "theClub": "l'organizzazione"
+    },
+    "scanner": {
+      "title": "Scanner d'ingresso",
+      "description": "Inquadra con la fotocamera il codice QR di un biglietto.",
+      "admitted": "Ingressi: {{checkedIn}} su {{sold}}",
+      "startCamera": "Avvia la fotocamera",
+      "cameraLabel": "Vista della fotocamera per scansionare i biglietti",
+      "cameraBlocked": "Consenti l'accesso alla fotocamera per scansionare i biglietti, oppure scrivi il codice qui sotto.",
+      "manual": "Codice del biglietto",
+      "manualPlaceholder": "Scrivi il codice sotto il codice QR"
+    },
+    "errors": {
+      "generic": "Qualcosa è andato storto. Riprova."
+    }
+  }
+}

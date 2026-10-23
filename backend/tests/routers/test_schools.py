@@ -53,6 +53,7 @@ def test_get_school_route_is_public_and_delegates(client, monkeypatch, city):
             "primary_color": "#A31F34",
             "secondary_color": "#FFFFFF",
             "timezone": "America/New_York",
+            "country": "US",
         }
     )
     monkeypatch.setattr(school_service, "get_school", mock)
@@ -75,6 +76,7 @@ def test_get_school_route_is_public_and_delegates(client, monkeypatch, city):
         "faculties": [],
         "location_examples": [],
         "event_seasons": [],
+        "country": "US",
     }
     mock.assert_called_once_with("mit")
 

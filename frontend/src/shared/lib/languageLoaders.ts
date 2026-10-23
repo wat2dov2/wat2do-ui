@@ -17,6 +17,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/zh.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/zh.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/zh.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/zh.json", { with: { type: "json" } }),
   ],
   "fr": [
     () => import("@/shared/locales/fr.json", { with: { type: "json" } }),
@@ -30,6 +31,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/fr.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/fr.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/fr.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/fr.json", { with: { type: "json" } }),
   ],
   "es": [
     () => import("@/shared/locales/es.json", { with: { type: "json" } }),
@@ -43,6 +45,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/es.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/es.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/es.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/es.json", { with: { type: "json" } }),
   ],
   "pa-Guru": [
     () => import("@/shared/locales/pa-Guru.json", { with: { type: "json" } }),
@@ -56,6 +59,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/pa-Guru.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/pa-Guru.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/pa-Guru.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/pa-Guru.json", { with: { type: "json" } }),
   ],
   "ar": [
     () => import("@/shared/locales/ar.json", { with: { type: "json" } }),
@@ -69,6 +73,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/ar.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/ar.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/ar.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/ar.json", { with: { type: "json" } }),
   ],
   "hi": [
     () => import("@/shared/locales/hi.json", { with: { type: "json" } }),
@@ -82,6 +87,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/hi.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/hi.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/hi.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/hi.json", { with: { type: "json" } }),
   ],
   "fil": [
     () => import("@/shared/locales/fil.json", { with: { type: "json" } }),
@@ -95,6 +101,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/fil.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/fil.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/fil.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/fil.json", { with: { type: "json" } }),
   ],
   "yue-Hant": [
     () => import("@/shared/locales/yue-Hant.json", { with: { type: "json" } }),
@@ -108,6 +115,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/yue-Hant.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/yue-Hant.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/yue-Hant.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/yue-Hant.json", { with: { type: "json" } }),
   ],
   "it": [
     () => import("@/shared/locales/it.json", { with: { type: "json" } }),
@@ -121,6 +129,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/it.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/it.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/it.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/it.json", { with: { type: "json" } }),
   ],
   "de": [
     () => import("@/shared/locales/de.json", { with: { type: "json" } }),
@@ -134,6 +143,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/de.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/de.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/de.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/de.json", { with: { type: "json" } }),
   ],
   "ur": [
     () => import("@/shared/locales/ur.json", { with: { type: "json" } }),
@@ -147,6 +157,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/ur.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/ur.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/ur.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/ur.json", { with: { type: "json" } }),
   ],
   "pt": [
     () => import("@/shared/locales/pt.json", { with: { type: "json" } }),
@@ -160,6 +171,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/pt.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/pt.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/pt.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/pt.json", { with: { type: "json" } }),
   ],
   "ru": [
     () => import("@/shared/locales/ru.json", { with: { type: "json" } }),
@@ -173,6 +185,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/ru.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/ru.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/ru.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/ru.json", { with: { type: "json" } }),
   ],
   "ta": [
     () => import("@/shared/locales/ta.json", { with: { type: "json" } }),
@@ -186,6 +199,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/ta.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/ta.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/ta.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/ta.json", { with: { type: "json" } }),
   ],
   "vi": [
     () => import("@/shared/locales/vi.json", { with: { type: "json" } }),
@@ -199,6 +213,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/vi.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/vi.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/vi.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/vi.json", { with: { type: "json" } }),
   ],
   "fa": [
     () => import("@/shared/locales/fa.json", { with: { type: "json" } }),
@@ -212,6 +227,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/fa.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/fa.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/fa.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/fa.json", { with: { type: "json" } }),
   ],
   "gu": [
     () => import("@/shared/locales/gu.json", { with: { type: "json" } }),
@@ -225,6 +241,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/gu.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/gu.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/gu.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/gu.json", { with: { type: "json" } }),
   ],
   "pl": [
     () => import("@/shared/locales/pl.json", { with: { type: "json" } }),
@@ -238,6 +255,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/pl.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/pl.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/pl.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/pl.json", { with: { type: "json" } }),
   ],
   "ko": [
     () => import("@/shared/locales/ko.json", { with: { type: "json" } }),
@@ -251,6 +269,7 @@ const LANGUAGE_LOADERS: Record<LazyLanguage, readonly TranslationLoader[]> = {
     () => import("@/features/onboarding-demo/locales/ko.json", { with: { type: "json" } }),
     () => import("@/features/posters/locales/ko.json", { with: { type: "json" } }),
     () => import("@/features/positions/locales/ko.json", { with: { type: "json" } }),
+    () => import("@/features/tickets/locales/ko.json", { with: { type: "json" } }),
   ],
 };
 

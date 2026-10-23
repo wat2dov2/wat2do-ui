@@ -1,0 +1,170 @@
+{
+  "tickets": {
+    "title": "Meine Tickets",
+    "description": "Tickets, die du bei Wat2Do gekauft hast. Zeig den QR-Code am Einlass.",
+    "upcoming": "Bevorstehend",
+    "past": "Vergangen",
+    "manage": "Tickets verwalten",
+    "sellTickets": "Tickets verkaufen",
+    "empty": {
+      "title": "Noch keine Tickets",
+      "description": "Wenn du ein Ticket für eine Veranstaltung kaufst, erscheint es hier.",
+      "action": "Veranstaltungen finden"
+    },
+    "notFound": {
+      "title": "Dieses Ticket gibt es nicht",
+      "description": "Prüf den Link oder finde deine Tickets unter Meine Tickets."
+    },
+    "status": {
+      "valid": "Gültig",
+      "checkedIn": "Eingelassen",
+      "refunded": "Erstattet"
+    },
+    "card": {
+      "title": "Tickets",
+      "price": "{{price}} pro Ticket",
+      "noFees": "Keine Buchungsgebühren",
+      "quantity": "Anzahl Tickets",
+      "left": "Noch {{count}} übrig",
+      "left_one": "Noch {{count}} übrig",
+      "left_other": "Noch {{count}} übrig",
+      "buy": "Tickets kaufen · {{total}}",
+      "continueToPayment": "Weiter zur Zahlung",
+      "payNote": "Sichere Zahlung über Stripe. {{club}} erhält deinen Namen und deine E-Mail-Adresse für den Einlass.",
+      "youHave": "Du hast {{count}} Ticket",
+      "youHave_one": "Du hast {{count}} Ticket",
+      "youHave_other": "Du hast {{count}} Tickets",
+      "viewTickets": "Meine Tickets ansehen",
+      "unavailable": {
+        "cancelled": "Diese Veranstaltung wurde abgesagt.",
+        "paused": "Der Ticketverkauf ist gerade pausiert.",
+        "soldOut": "Diese Veranstaltung ist ausverkauft.",
+        "closed": "Der Ticketverkauf ist beendet.",
+        "notOnSale": "Der Ticketverkauf hat noch nicht begonnen."
+      }
+    },
+    "pass": {
+      "when": "Wann",
+      "where": "Wo",
+      "holder": "Ticketinhaber",
+      "code": "Code",
+      "locationTba": "Ort wird noch bekannt gegeben",
+      "qrLabel": "QR-Code für dieses Ticket",
+      "showAtDoor": "Zeig diesen QR-Code am Einlass.",
+      "refundedNote": "Dieses Ticket wurde erstattet und kann nicht mehr verwendet werden.",
+      "viewEvent": "Veranstaltung ansehen"
+    },
+    "door": {
+      "checkIn": "Einlassen",
+      "undo": "Einlass rückgängig machen",
+      "officerNote": "Du verwaltest {{club}}, also kannst du die Person mit diesem Ticket einlassen.",
+      "checkedInAt": "Eingelassen um {{time}}",
+      "results": {
+        "checked_in": "Eingelassen. Die Person darf rein.",
+        "already_checked_in": "Bereits eingelassen",
+        "undone": "Einlass rückgängig gemacht",
+        "refunded": "Erstattetes Ticket. Nicht einlassen.",
+        "not_for_this_event": "Dieses Ticket gilt für eine andere Veranstaltung",
+        "not_found": "Kein Ticket passt zu diesem Code"
+      }
+    },
+    "order": {
+      "confirming": "Deine Zahlung wird bestätigt",
+      "confirmingDescription": "Das dauert meist nur ein paar Sekunden. Deine Tickets kommen außerdem per E-Mail.",
+      "paidTitle": "Du bist dabei!",
+      "paidDescription": "Du hast {{count}} Ticket. Du findest es unten und in deinem Postfach.",
+      "paidDescription_one": "Du hast {{count}} Ticket. Du findest es unten und in deinem Postfach.",
+      "paidDescription_other": "Du hast {{count}} Tickets. Du findest sie unten und in deinem Postfach.",
+      "shareNote": "Jedes Ticket hat einen eigenen QR-Code. Schick den Link zu jedem Ticket an die Person, die es nutzt.",
+      "failedTitle": "Diese Zahlung hat nicht geklappt",
+      "failedDescription": "Dir wurde nichts berechnet, und die Tickets wurden wieder freigegeben.",
+      "notFound": "Wir konnten diese Bestellung nicht finden",
+      "backToEvent": "Zurück zur Veranstaltung",
+      "allTickets": "Alle meine Tickets"
+    },
+    "desk": {
+      "title": "Ticketverwaltung",
+      "notFound": "Diese Veranstaltung gibt es nicht mehr",
+      "setupTitle": "Tickets verkaufen",
+      "setupDescription": "Käufer zahlen über Stripe und bekommen ein QR-Ticket per E-Mail. Das Geld geht direkt an deine Organisation.",
+      "settingsTitle": "Ticketeinstellungen",
+      "settingsDescription": "Ändere, wie viele Tickets du verkaufst, oder pausiere den Verkauf eine Weile.",
+      "price": "Ticketpreis ({{currency}})",
+      "priceLocked": "Der Preis lässt sich nicht mehr ändern, sobald jemand ein Ticket gekauft hat.",
+      "priceRange": "Gib einen Preis zwischen {{minimum}} und {{maximum}} ein.",
+      "capacity": "Tickets pro Termin",
+      "capacityPlaceholder": "Kein Limit",
+      "pause": "Verkauf pausieren",
+      "pauseHint": "Blendet den Kaufen-Button aus, bis du den Verkauf wieder startest.",
+      "fees": "Stripe behält etwa 2,9 % + 30 ¢ pro Bestellung ein. Wat2Do nimmt nichts.",
+      "payoutsNeeded": "Richte zuerst Auszahlungen ein, damit das Geld irgendwo ankommen kann.",
+      "setUpPayouts": "Auszahlungen einrichten",
+      "startSelling": "Verkauf starten",
+      "save": "Änderungen speichern",
+      "saved": "Ticketeinstellungen gespeichert",
+      "stopSelling": "Ticketverkauf beenden",
+      "stopped": "Für diese Veranstaltung werden keine Tickets mehr verkauft",
+      "openScanner": "Einlass-Scanner öffnen",
+      "attendees": "Gästeliste",
+      "attendeesEmpty": "Noch keine Tickets verkauft",
+      "search": "Nach Name, E-Mail oder Code suchen",
+      "columns": {
+        "holder": "Ticketinhaber",
+        "date": "Datum",
+        "status": "Status",
+        "actions": "Aktionen"
+      },
+      "stats": {
+        "sold": "Verkauft",
+        "revenue": "Einnahmen",
+        "checkedIn": "Eingelassen",
+        "remaining": "Übrig",
+        "unlimited": "Unbegrenzt"
+      },
+      "refund": "Erstatten",
+      "refundTitle": "Dieses Ticket erstatten?",
+      "refundDescription": "{{name}} bekommt {{amount}} auf die Karte zurück, dazu eine E-Mail. Stripe erstattet deiner Organisation seine Gebühr nicht.",
+      "refundConfirm": "{{amount}} erstatten",
+      "refundRequested": "Erstattung angefragt",
+      "decline": "Ablehnen",
+      "declineTitle": "Diese Erstattungsanfrage ablehnen?",
+      "declineDescription": "{{name}} bekommt eine E-Mail, dass deine Organisation die Anfrage abgelehnt hat. Das Ticket bleibt gültig.",
+      "declineConfirm": "Anfrage ablehnen",
+      "declined": "Erstattungsanfrage abgelehnt",
+      "cancelledTitle": "Diese Veranstaltung wurde abgesagt",
+      "cancelledDescription": "Alle Tickets werden automatisch erstattet. Wenn einige noch gültig sind, war Stripe kurz nicht erreichbar: Erstatte den Rest hier.",
+      "refundRemaining": "Restliche Tickets erstatten",
+      "refundedCount": "{{count}} Ticket erstattet",
+      "refundedCount_one": "{{count}} Ticket erstattet",
+      "refundedCount_other": "{{count}} Tickets erstattet"
+    },
+    "refund": {
+      "prompt": "Klappt es doch nicht?",
+      "promptDescription": "Bitte {{club}} um eine Erstattung. Die Entscheidung bekommst du in jedem Fall per E-Mail.",
+      "request": "Erstattung anfragen",
+      "signIn": "Melde dich an, um eine Erstattung anzufragen",
+      "title": "Erstattungsanfrage an {{club}} senden?",
+      "description": "Wenn {{club}} zustimmt, bekommst du den vollen Preis auf deine Karte zurück. Eine E-Mail bekommst du in jedem Fall.",
+      "noteLabel": "Sollte die Organisation etwas wissen? (optional)",
+      "notePlaceholder": "Zum Beispiel: Am neuen Termin kann ich nicht.",
+      "send": "Anfrage senden",
+      "sent": "Erstattungsanfrage an {{club}} gesendet",
+      "pending": "Du hast {{club}} am {{date}} um eine Erstattung gebeten. Du bekommst eine E-Mail, sobald die Entscheidung gefallen ist.",
+      "declined": "Am {{date}} hat {{club}} deine Erstattungsanfrage abgelehnt. Dein Ticket ist weiterhin gültig.",
+      "theClub": "die Organisation"
+    },
+    "scanner": {
+      "title": "Einlass-Scanner",
+      "description": "Halte die Kamera auf den QR-Code eines Tickets.",
+      "admitted": "{{checkedIn}} von {{sold}} eingelassen",
+      "startCamera": "Kamera starten",
+      "cameraLabel": "Kameraansicht zum Scannen von Tickets",
+      "cameraBlocked": "Erlaube den Kamerazugriff, um Tickets zu scannen, oder gib den Code unten ein.",
+      "manual": "Ticketcode",
+      "manualPlaceholder": "Gib den Code unter dem QR-Code ein"
+    },
+    "errors": {
+      "generic": "Etwas ist schiefgelaufen. Bitte versuch es noch einmal."
+    }
+  }
+}

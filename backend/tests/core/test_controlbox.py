@@ -983,3 +983,30 @@ def test_outreach_rejects_a_submit_link_without_the_school(tmp_path: Path) -> No
     )
     with pytest.raises(ValidationError, match="submit_url_template"):
         load_controlbox(path)
+
+
+def test_ticketing_ships_switched_off_with_a_currency_per_country() -> None:
+    control = load_controlbox().ticketing
+    assert control.enabled is False
+    assert control.currency_by_country == {"CA": "cad", "US": "usd"}
+    assert control.minimum_price_cents <= control.maximum_price_cents
+
+
+def test_ticketing_rejects_a_minimum_price_above_the_maximum(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "ticketing",
+        lambda payload: payload.update({"minimum_price_cents": 900, "maximum_price_cents": 800}),
+    )
+    with pytest.raises(ValidationError, match="minimum_price_cents"):
+        load_controlbox(path)
+
+
+def test_ticketing_needs_a_currency_for_every_country(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "ticketing",
+        lambda payload: payload.update({"currency_by_country": {"CA": "cad"}}),
+    )
+    with pytest.raises(ValidationError, match="currency_by_country"):
+        load_controlbox(path)

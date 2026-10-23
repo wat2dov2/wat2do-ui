@@ -85,6 +85,11 @@ class Settings(BaseSettings):
     automate_webhook_key: str = ""
     # Bearer key Supabase's pg_cron job sends to the event change alerts webhook.
     event_change_alerts_key: str = ""
+    # Stripe Connect for club ticket sales: the platform's secret key, and the
+    # signing secret of the Connect webhook endpoint that reports club payments.
+    # Ticketing refuses to run while either is empty.
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
 
     @model_validator(mode="after")
     def validate_database_region(self) -> "Settings":

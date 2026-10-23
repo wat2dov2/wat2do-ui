@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "સંસ્થાના પેનલ પર પાછા જાઓ",
     "title": "સંસ્થા પેનલ",
-    "description": "તમારી સંસ્થાના પોસ્ટર્સ, ઈન્ટિગ્રેશન્સ અને સભ્યોનું મેનેજ કરો",
     "posters": "પોસ્ટર્સ",
     "postersDesc": "QR કોડ પોસ્ટર્સને મેનેજ કરો",
     "integrations": "ઈન્ટિગ્રેશન્સ",
@@ -16,8 +15,6 @@
       "joined": "જોડાયા",
       "requested": "વિનંતી કરી"
     },
-    "recentActivity": "તાજેતરની પ્રવૃત્તિ",
-    "noRecentActivity": "તાજેતરની કોઈ પ્રવૃત્તિ નથી",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "ઈવેન્ટ સૂચનાઓ WhatsApp મારફતે મોકલો",
     "discord": "Discord",
@@ -65,7 +62,60 @@
     "addManagerFailed": "મેનેજર ઉમેરવામાં અથવા આમંત્રણ મોકલવામાં નિષ્ફળ.",
     "invitationRevokedSuccess": "આમંત્રણ સફળતાપૂર્વક રદ કરવામાં આવ્યું!",
     "revokeInvitationFailed": "આમંત્રણ રદ કરવામાં નિષ્ફળ.",
-    "loadManagementFailed": "મેનેજમેન્ટ વિગતો લોડ કરવામાં નિષ્ફળ."
+    "loadManagementFailed": "મેનેજમેન્ટ વિગતો લોડ કરવામાં નિષ્ફળ.",
+    "events": "ઇવેન્ટ્સ",
+    "eventsDesc": "તમારી સંસ્થાની ઇવેન્ટ્સ અને તેમની ટિકિટોનું વેચાણ કેવું ચાલે છે.",
+    "payoutsDesc": "Stripe દ્વારા ટિકિટોના પૈસા મેળવો.",
+    "createEvent": "ઇવેન્ટ બનાવો",
+    "upcomingEvents": "આવનારી ઇવેન્ટ્સ",
+    "pastEvents": "પાછલી ઇવેન્ટ્સ",
+    "viewAllEvents": "બધી ઇવેન્ટ્સ",
+    "noUpcomingEvents": "કોઈ આવનારી ઇવેન્ટ નથી",
+    "noUpcomingEventsDesc": "ઇવેન્ટ બનાવો, તે અહીં દેખાશે.",
+    "noPastEvents": "હજુ કોઈ પાછલી ઇવેન્ટ નથી",
+    "eventsList": {
+      "cancelled": "રદ",
+      "notSelling": "ટિકિટ વિના",
+      "salesPaused": "વેચાણ થોભાવેલું",
+      "ticketsSold": "{{count}} વેચાઈ · {{revenue}}",
+      "ticketsSold_one": "{{count}} વેચાઈ · {{revenue}}",
+      "ticketsSold_other": "{{count}} વેચાઈ · {{revenue}}",
+      "refundRequests": "રિફંડની {{count}} વિનંતી",
+      "refundRequests_one": "રિફંડની {{count}} વિનંતી",
+      "refundRequests_other": "રિફંડની {{count}} વિનંતીઓ"
+    },
+    "payouts": {
+      "title": "ચુકવણીઓ",
+      "intro": "જ્યારે તમારી સંસ્થા Wat2Do પર ટિકિટો વેચે છે, ત્યારે પૈસા Stripe દ્વારા સીધા તમારી સંસ્થાના બેંક ખાતામાં જાય છે.",
+      "fees": "Stripe દરેક ઓર્ડરમાંથી આશરે 2.9% + 30¢ રાખે છે. Wat2Do કંઈ લેતું નથી.",
+      "timing": "Stripe પૈસા આપમેળે તમારા બેંક ખાતામાં મોકલે છે, સામાન્ય રીતે દરેક વેચાણના થોડા કામકાજના દિવસો પછી. પહેલી ચુકવણીમાં 7થી 14 દિવસ લાગી શકે છે.",
+      "currency": "તમારી ટિકિટોની કિંમત {{currency}}માં છે.",
+      "setUp": "ચુકવણી મેળવવાનું સેટ કરો",
+      "continueSetup": "સેટઅપ ચાલુ રાખો",
+      "openDashboard": "Stripe ડેશબોર્ડ ખોલો",
+      "states": {
+        "unavailable": {
+          "label": "ટૂંક સમયમાં",
+          "description": "ટિકિટ વેચાણ હજુ ઉપલબ્ધ નથી. થોડા સમય પછી ફરી જુઓ."
+        },
+        "notConnected": {
+          "label": "સેટઅપ થયું નથી",
+          "description": "Stripeના સુરક્ષિત પેજ પર આશરે 5 મિનિટ: તમારી સંસ્થાનું બેંક ખાતું અને કોઈ એક હોદ્દેદારનું ઓળખપત્ર."
+        },
+        "inProgress": {
+          "label": "બસ થોડું બાકી",
+          "description": "તમારી સંસ્થા ચુકવણી સ્વીકારી શકે તે પહેલાં Stripeને થોડી વધુ વિગતો જોઈએ છે."
+        },
+        "payoutsPaused": {
+          "label": "પગલું જરૂરી",
+          "description": "તમારી સંસ્થા ટિકિટો વેચી શકે છે, પરંતુ તમારી બેંકમાં પૈસા મોકલતા પહેલાં Stripeને વધુ વિગતો જોઈએ છે."
+        },
+        "ready": {
+          "label": "તૈયાર",
+          "description": "તમારી સંસ્થા ટિકિટો વેચી શકે છે. ચુકવણીઓ આપમેળે તમારા બેંક ખાતામાં પહોંચે છે."
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "તમારા પ્લેટફોર્મ્સને ઇવેન્ટ્સ આપમેળે આયાત કરવા માટે કનેક્ટ કરો",

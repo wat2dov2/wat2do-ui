@@ -58,6 +58,16 @@ export async function fetchClubEvents(clubId: number, school: string): Promise<E
   return directory.items;
 }
 
+/** One club's whole record, shared by its public page and its club panel. */
+export function clubEventsQueryOptions(clubId: number, school: string) {
+  return queryOptions({
+    queryKey: queryKeys.events.byClub(clubId, school),
+    queryFn: () => fetchClubEvents(clubId, school),
+    enabled: clubId > 0 && Boolean(school),
+    staleTime: controlBox.clientCache.liveEventDataStaleMs,
+  });
+}
+
 /** The complete school feed is shared by browsing and related-event surfaces. */
 export function eventFeedQueryOptions(school: string) {
   const resolvedSchool = resolveSchool(school);

@@ -4,12 +4,10 @@ import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { EventList } from "@/features/events/components/EventList";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
-import { fetchClubEvents } from "@/features/events/api/events.api";
+import { clubEventsQueryOptions } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime } from "@/features/events/hooks/useGoingEvents";
 import { orderClubEvents } from "@/features/events/lib/clubEventOrder";
-import { controlBox } from "@/shared/config/controlBox";
-import { queryKeys } from "@/shared/lib/queryKeys";
 import type { Event } from "@/shared/types";
 
 interface ClubEventsGridProps {
@@ -37,11 +35,8 @@ export function ClubEventsGrid({
   initialEvents,
 }: ClubEventsGridProps) {
   const { data: events, isPending } = useQuery({
-    queryKey: queryKeys.events.byClub(clubId, school),
-    queryFn: () => fetchClubEvents(clubId, school),
-    enabled: clubId > 0 && Boolean(school),
+    ...clubEventsQueryOptions(clubId, school),
     initialData: initialEvents,
-    staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });
   const { data: eventStatsData, isSuccess: eventStatsReady } = useEventStats(school);
   const currentTimeMs = useCurrentTime();

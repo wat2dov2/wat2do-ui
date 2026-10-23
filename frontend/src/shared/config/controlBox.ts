@@ -6,6 +6,7 @@ import interactionTracking from "../../../../backend/controlbox/interaction_trac
 import clubManagement from "../../../../backend/controlbox/club_management.json" with { type: "json" };
 import schoolLogos from "../../../../backend/controlbox/school_logos.json" with { type: "json" };
 import socialPreviews from "../../../../backend/controlbox/social_previews.json" with { type: "json" };
+import ticketing from "../../../../backend/controlbox/ticketing.json" with { type: "json" };
 import uploads from "../../../../backend/controlbox/uploads.json" with { type: "json" };
 
 const serializedEventDiscovery = process.env.NEXT_PUBLIC_EVENT_DISCOVERY;
@@ -73,6 +74,13 @@ export const controlBox = {
   schoolLogos: {
     outputWidth: schoolLogos.output_width,
     outputHeight: schoolLogos.output_height,
+  },
+  ticketing: {
+    // Ticket buttons, payouts and "My tickets" stay hidden until clubs can sell.
+    enabled: ticketing.enabled,
+    minimumPriceCents: ticketing.minimum_price_cents,
+    maximumPriceCents: ticketing.maximum_price_cents,
+    maximumCapacity: ticketing.maximum_capacity,
   },
   socialPreviews: {
     outputWidth:

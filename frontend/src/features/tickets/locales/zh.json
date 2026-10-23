@@ -1,0 +1,166 @@
+{
+  "tickets": {
+    "title": "我的门票",
+    "description": "你在 Wat2Do 上购买的门票。入场时请出示二维码。",
+    "upcoming": "即将到来",
+    "past": "已结束",
+    "manage": "管理门票",
+    "sellTickets": "出售门票",
+    "empty": {
+      "title": "还没有门票",
+      "description": "购买组织活动的门票后，门票会显示在这里。",
+      "action": "查找活动"
+    },
+    "notFound": {
+      "title": "该门票不存在",
+      "description": "请检查链接，或在“我的门票”中查找你的门票。"
+    },
+    "status": {
+      "valid": "有效",
+      "checkedIn": "已签到",
+      "refunded": "已退款"
+    },
+    "card": {
+      "title": "门票",
+      "price": "每张 {{price}}",
+      "noFees": "无手续费",
+      "quantity": "门票数量",
+      "left": "剩余 {{count}} 张",
+      "left_other": "剩余 {{count}} 张",
+      "buy": "购买门票 · {{total}}",
+      "continueToPayment": "继续付款",
+      "payNote": "通过 Stripe 安全付款。{{club}} 会获得你的姓名和邮箱，用于签到。",
+      "youHave": "你有 {{count}} 张门票",
+      "youHave_other": "你有 {{count}} 张门票",
+      "viewTickets": "查看我的门票",
+      "unavailable": {
+        "cancelled": "该活动已取消。",
+        "paused": "门票暂时停售。",
+        "soldOut": "该活动门票已售罄。",
+        "closed": "售票已截止。",
+        "notOnSale": "门票尚未开售。"
+      }
+    },
+    "pass": {
+      "when": "时间",
+      "where": "地点",
+      "holder": "持票人",
+      "code": "票码",
+      "locationTba": "地点待定",
+      "qrLabel": "此门票的二维码",
+      "showAtDoor": "入场时请出示此二维码。",
+      "refundedNote": "此门票已退款，无法使用。",
+      "viewEvent": "查看活动"
+    },
+    "door": {
+      "checkIn": "签到",
+      "undo": "撤销签到",
+      "officerNote": "你管理 {{club}}，可以为这张门票办理签到。",
+      "checkedInAt": "已于 {{time}} 签到",
+      "results": {
+        "checked_in": "已签到，请放行。",
+        "already_checked_in": "已经签到过了",
+        "undone": "已撤销签到",
+        "refunded": "门票已退款，请勿放行。",
+        "not_for_this_event": "这张门票属于其他活动",
+        "not_found": "没有与该票码匹配的门票"
+      }
+    },
+    "order": {
+      "confirming": "正在确认你的付款",
+      "confirmingDescription": "通常只需几秒钟。你的门票也会通过邮件发送给你。",
+      "paidTitle": "购票成功！",
+      "paidDescription": "你的 {{count}} 张门票就在下方，也已发送到你的邮箱。",
+      "paidDescription_other": "你的 {{count}} 张门票就在下方，也已发送到你的邮箱。",
+      "shareNote": "每张门票都有独立的二维码。请把每张门票的链接发给使用它的朋友。",
+      "failedTitle": "本次付款未成功",
+      "failedDescription": "你没有被扣款，门票也已释放。",
+      "notFound": "找不到这笔订单",
+      "backToEvent": "返回活动",
+      "allTickets": "我的全部门票"
+    },
+    "desk": {
+      "title": "票务管理",
+      "notFound": "该活动已不存在",
+      "setupTitle": "出售门票",
+      "setupDescription": "购票者通过 Stripe 付款，并通过邮件收到二维码门票。款项直接转给你的组织。",
+      "settingsTitle": "门票设置",
+      "settingsDescription": "修改售票数量，或暂时暂停售票。",
+      "price": "票价 ({{currency}})",
+      "priceLocked": "有人购票后，票价就不能再修改。",
+      "priceRange": "输入 {{minimum}} 至 {{maximum}} 之间的票价。",
+      "capacity": "每场门票数量",
+      "capacityPlaceholder": "不限",
+      "pause": "暂停售票",
+      "pauseHint": "隐藏购票按钮，直到你重新开启售票。",
+      "fees": "Stripe 每笔订单约收取 2.9% + 30¢。Wat2Do 不收取任何费用。",
+      "payoutsNeeded": "请先设置收款，这样款项才有地方转入。",
+      "setUpPayouts": "设置收款",
+      "startSelling": "开始售票",
+      "save": "保存更改",
+      "saved": "门票设置已保存",
+      "stopSelling": "停止售票",
+      "stopped": "该活动已停止售票",
+      "openScanner": "打开入场扫码",
+      "attendees": "入场名单",
+      "attendeesEmpty": "还没有售出门票",
+      "search": "按姓名、邮箱或票码搜索",
+      "columns": {
+        "holder": "持票人",
+        "date": "日期",
+        "status": "状态",
+        "actions": "操作"
+      },
+      "stats": {
+        "sold": "已售",
+        "revenue": "收入",
+        "checkedIn": "已签到",
+        "remaining": "剩余",
+        "unlimited": "不限"
+      },
+      "refund": "退款",
+      "refundTitle": "要为这张门票退款吗？",
+      "refundDescription": "{{name}} 会收到退回银行卡的 {{amount}}，以及一封邮件。Stripe 不会把手续费退还给你的组织。",
+      "refundConfirm": "退款 {{amount}}",
+      "refundRequested": "已申请退款",
+      "decline": "拒绝",
+      "declineTitle": "要拒绝这个退款申请吗？",
+      "declineDescription": "{{name}} 会收到一封邮件，告知你的组织拒绝了退款。这张门票仍然有效。",
+      "declineConfirm": "拒绝申请",
+      "declined": "已拒绝退款申请",
+      "cancelledTitle": "该活动已取消",
+      "cancelledDescription": "所有门票都会自动退款。如果仍有门票显示有效，说明 Stripe 曾短暂无法连接：请在这里完成剩余的退款。",
+      "refundRemaining": "为剩余门票退款",
+      "refundedCount": "已为 {{count}} 张门票退款",
+      "refundedCount_other": "已为 {{count}} 张门票退款"
+    },
+    "refund": {
+      "prompt": "无法参加？",
+      "promptDescription": "可以向 {{club}} 申请退款。是否退款由对方决定，无论结果如何，你都会收到邮件通知。",
+      "request": "申请退款",
+      "signIn": "登录后申请退款",
+      "title": "要向 {{club}} 申请退款吗？",
+      "description": "如果 {{club}} 同意，全额票款会退回你的银行卡。无论结果如何，你都会收到邮件通知。",
+      "noteLabel": "有什么想告诉组织的吗？（选填）",
+      "notePlaceholder": "例如：活动改期后我去不了。",
+      "send": "发送申请",
+      "sent": "已向 {{club}} 发送退款申请",
+      "pending": "你已于 {{date}} 向 {{club}} 申请退款。对方做出决定后，你会收到邮件通知。",
+      "declined": "{{club}} 已于 {{date}} 拒绝你的退款申请。你的门票仍然有效。",
+      "theClub": "主办组织"
+    },
+    "scanner": {
+      "title": "入场扫码",
+      "description": "将摄像头对准门票上的二维码。",
+      "admitted": "已签到 {{checkedIn}} / {{sold}}",
+      "startCamera": "打开摄像头",
+      "cameraLabel": "用于扫描门票的摄像头画面",
+      "cameraBlocked": "请允许访问摄像头以扫描门票，或在下方输入票码。",
+      "manual": "票码",
+      "manualPlaceholder": "输入二维码下方的票码"
+    },
+    "errors": {
+      "generic": "出错了，请重试。"
+    }
+  }
+}

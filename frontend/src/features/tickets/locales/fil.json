@@ -1,0 +1,170 @@
+{
+  "tickets": {
+    "title": "Aking mga tiket",
+    "description": "Mga tiket na binili mo sa Wat2Do. Ipakita ang QR code sa pasukan.",
+    "upcoming": "Paparating",
+    "past": "Nakaraan",
+    "manage": "Pamahalaan ang mga tiket",
+    "sellTickets": "Magbenta ng tiket",
+    "empty": {
+      "title": "Wala ka pang tiket",
+      "description": "Kapag bumili ka ng tiket sa kaganapan ng isang organisasyon, lalabas ito rito.",
+      "action": "Maghanap ng mga kaganapan"
+    },
+    "notFound": {
+      "title": "Walang ganitong tiket",
+      "description": "Tingnan ang link, o hanapin ang mga tiket mo sa Aking mga tiket."
+    },
+    "status": {
+      "valid": "Valid",
+      "checkedIn": "Naka-check in",
+      "refunded": "Na-refund"
+    },
+    "card": {
+      "title": "Mga tiket",
+      "price": "{{price}} bawat tiket",
+      "noFees": "Walang booking fee",
+      "quantity": "Ilang tiket",
+      "left": "{{count}} na lang ang natitira",
+      "left_one": "{{count}} na lang ang natitira",
+      "left_other": "{{count}} na lang ang natitira",
+      "buy": "Bumili ng tiket · {{total}}",
+      "continueToPayment": "Magpatuloy sa pagbabayad",
+      "payNote": "Ligtas na pagbabayad sa Stripe. Makukuha ng {{club}} ang pangalan at email mo para sa check-in.",
+      "youHave": "May {{count}} tiket ka",
+      "youHave_one": "May {{count}} tiket ka",
+      "youHave_other": "May {{count}} tiket ka",
+      "viewTickets": "Tingnan ang aking mga tiket",
+      "unavailable": {
+        "cancelled": "Kinansela ang kaganapang ito.",
+        "paused": "Naka-pause muna ang pagbebenta ng tiket.",
+        "soldOut": "Sold out na ang kaganapang ito.",
+        "closed": "Sarado na ang pagbebenta ng tiket.",
+        "notOnSale": "Hindi pa ibinebenta ang mga tiket."
+      }
+    },
+    "pass": {
+      "when": "Kailan",
+      "where": "Saan",
+      "holder": "May-ari ng tiket",
+      "code": "Code",
+      "locationTba": "Iaanunsyo pa ang lugar",
+      "qrLabel": "QR code ng tiket na ito",
+      "showAtDoor": "Ipakita ang QR code na ito sa pasukan.",
+      "refundedNote": "Na-refund na ang tiket na ito at hindi na ito magagamit.",
+      "viewEvent": "Tingnan ang kaganapan"
+    },
+    "door": {
+      "checkIn": "I-check in",
+      "undo": "I-undo ang check-in",
+      "officerNote": "Namamahala ka sa {{club}}, kaya puwede mong i-check in ang tiket na ito.",
+      "checkedInAt": "Na-check in noong {{time}}",
+      "results": {
+        "checked_in": "Na-check in na. Papasukin na sila.",
+        "already_checked_in": "Naka-check in na dati",
+        "undone": "Na-undo ang check-in",
+        "refunded": "Na-refund na ang tiket. Huwag papasukin.",
+        "not_for_this_event": "Para sa ibang kaganapan ang tiket na ito",
+        "not_found": "Walang tiket na tugma sa code na iyan"
+      }
+    },
+    "order": {
+      "confirming": "Kinukumpirma ang bayad mo",
+      "confirmingDescription": "Karaniwang ilang segundo lang ito. Papunta na rin sa email mo ang mga tiket mo.",
+      "paidTitle": "Pasok ka na!",
+      "paidDescription": "Nasa ibaba ang {{count}} tiket mo, at nasa email mo rin.",
+      "paidDescription_one": "Nasa ibaba ang {{count}} tiket mo, at nasa email mo rin.",
+      "paidDescription_other": "Nasa ibaba ang {{count}} tiket mo, at nasa email mo rin.",
+      "shareNote": "May sariling QR code ang bawat tiket. Ipadala ang link ng bawat tiket sa kaibigang gagamit nito.",
+      "failedTitle": "Hindi natuloy ang checkout na ito",
+      "failedDescription": "Hindi ka siningil, at ibinalik na ang mga tiket.",
+      "notFound": "Hindi namin mahanap ang order na ito",
+      "backToEvent": "Bumalik sa kaganapan",
+      "allTickets": "Lahat ng aking tiket"
+    },
+    "desk": {
+      "title": "Pamamahala ng tiket",
+      "notFound": "Wala na ang kaganapang ito",
+      "setupTitle": "Magbenta ng tiket",
+      "setupDescription": "Magbabayad ang mga mamimili sa Stripe at makakatanggap sila ng tiket na may QR code sa email. Diretso sa organisasyon mo ang pera.",
+      "settingsTitle": "Mga setting ng tiket",
+      "settingsDescription": "Baguhin kung ilang tiket ang ibebenta mo, o i-pause muna ang pagbebenta.",
+      "price": "Presyo ng tiket ({{currency}})",
+      "priceLocked": "Hindi na mababago ang presyo kapag may nakabili na ng tiket.",
+      "priceRange": "Maglagay ng presyo mula {{minimum}} hanggang {{maximum}}.",
+      "capacity": "Tiket bawat petsa",
+      "capacityPlaceholder": "Walang limit",
+      "pause": "I-pause ang pagbebenta",
+      "pauseHint": "Itinatago ang buy button hanggang buksan mo ulit ang pagbebenta.",
+      "fees": "Kinukuha ng Stripe ang mga 2.9% + 30¢ sa bawat order. Walang kinukuha ang Wat2Do.",
+      "payoutsNeeded": "I-set up muna ang mga payout para may mapupuntahan ang pera.",
+      "setUpPayouts": "I-set up ang mga payout",
+      "startSelling": "Simulan ang pagbebenta",
+      "save": "I-save ang mga pagbabago",
+      "saved": "Na-save ang mga setting ng tiket",
+      "stopSelling": "Itigil ang pagbebenta ng tiket",
+      "stopped": "Hindi na nagbebenta ng tiket ang kaganapang ito",
+      "openScanner": "Buksan ang scanner sa pasukan",
+      "attendees": "Listahan sa pasukan",
+      "attendeesEmpty": "Wala pang nabentang tiket",
+      "search": "Maghanap ayon sa pangalan, email o code",
+      "columns": {
+        "holder": "May-ari ng tiket",
+        "date": "Petsa",
+        "status": "Katayuan",
+        "actions": "Mga aksyon"
+      },
+      "stats": {
+        "sold": "Nabenta",
+        "revenue": "Kita",
+        "checkedIn": "Naka-check in",
+        "remaining": "Natitira",
+        "unlimited": "Walang limit"
+      },
+      "refund": "I-refund",
+      "refundTitle": "I-refund ang tiket na ito?",
+      "refundDescription": "Maibabalik kay {{name}} ang {{amount}} sa card niya, kasama ang isang email. Hindi ibinabalik ng Stripe ang fee nito sa organisasyon mo.",
+      "refundConfirm": "I-refund ang {{amount}}",
+      "refundRequested": "Humiling ng refund",
+      "decline": "Tanggihan",
+      "declineTitle": "Tanggihan ang kahilingan sa refund na ito?",
+      "declineDescription": "Makakatanggap si {{name}} ng email na nagsasabing tumanggi ang organisasyon mo. Valid pa rin ang tiket niya.",
+      "declineConfirm": "Tanggihan ang kahilingan",
+      "declined": "Tinanggihan ang kahilingan sa refund",
+      "cancelledTitle": "Kinansela ang kaganapang ito",
+      "cancelledDescription": "Awtomatikong nire-refund ang bawat tiket. Kung may valid pa, saglit na hindi maabot ang Stripe: tapusin ang natitira rito.",
+      "refundRemaining": "I-refund ang natitirang tiket",
+      "refundedCount": "Na-refund ang {{count}} tiket",
+      "refundedCount_one": "Na-refund ang {{count}} tiket",
+      "refundedCount_other": "Na-refund ang {{count}} tiket"
+    },
+    "refund": {
+      "prompt": "Hindi ka makakapunta?",
+      "promptDescription": "Humingi ng refund sa {{club}}. Sila ang magpapasya, at makakatanggap ka ng email anuman ang maging desisyon.",
+      "request": "Humingi ng refund",
+      "signIn": "Mag-sign in para humingi ng refund",
+      "title": "Humingi ng refund sa {{club}}?",
+      "description": "Kapag pumayag ang {{club}}, ibabalik sa card mo ang buong presyo. Makakatanggap ka ng email anuman ang maging desisyon.",
+      "noteLabel": "May dapat bang malaman ang organisasyon? (opsyonal)",
+      "notePlaceholder": "Halimbawa: Hindi ako makakapunta sa bagong petsa.",
+      "send": "Ipadala ang kahilingan",
+      "sent": "Naipadala sa {{club}} ang kahilingan sa refund",
+      "pending": "Humingi ka ng refund sa {{club}} noong {{date}}. Makakatanggap ka ng email kapag nakapagpasya na sila.",
+      "declined": "Tinanggihan ng {{club}} ang kahilingan mo sa refund noong {{date}}. Valid pa rin ang tiket mo.",
+      "theClub": "organisasyon"
+    },
+    "scanner": {
+      "title": "Scanner sa pasukan",
+      "description": "Itutok ang camera sa QR code ng tiket.",
+      "admitted": "{{checkedIn}} sa {{sold}} ang naka-check in",
+      "startCamera": "Buksan ang camera",
+      "cameraLabel": "Camera view para sa pag-scan ng tiket",
+      "cameraBlocked": "Payagan ang access sa camera para ma-scan ang mga tiket, o i-type ang code sa ibaba.",
+      "manual": "Code ng tiket",
+      "manualPlaceholder": "I-type ang code sa ilalim ng QR code"
+    },
+    "errors": {
+      "generic": "May nagkamali. Pakisubukang muli."
+    }
+  }
+}

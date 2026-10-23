@@ -1,0 +1,166 @@
+{
+  "tickets": {
+    "title": "My tickets",
+    "description": "Tickets you bought on Wat2Do. Show the QR code at the door.",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "manage": "Manage tickets",
+    "sellTickets": "Sell tickets",
+    "empty": {
+      "title": "No tickets yet",
+      "description": "When you buy a ticket to a club event, it shows up here.",
+      "action": "Find events"
+    },
+    "notFound": {
+      "title": "This ticket doesn't exist",
+      "description": "Check the link, or find your tickets in My tickets."
+    },
+    "status": {
+      "valid": "Valid",
+      "checkedIn": "Checked in",
+      "refunded": "Refunded"
+    },
+    "card": {
+      "title": "Tickets",
+      "price": "{{price}} per ticket",
+      "noFees": "No booking fees",
+      "quantity": "How many tickets",
+      "left": "{{count}} left",
+      "left_other": "{{count}} left",
+      "buy": "Get tickets · {{total}}",
+      "continueToPayment": "Continue to payment",
+      "payNote": "Secure payment through Stripe. {{club}} gets your name and email for check-in.",
+      "youHave": "You have {{count}} ticket",
+      "youHave_other": "You have {{count}} tickets",
+      "viewTickets": "View my tickets",
+      "unavailable": {
+        "cancelled": "This event was cancelled.",
+        "paused": "Ticket sales are paused for now.",
+        "soldOut": "This event is sold out.",
+        "closed": "Ticket sales have closed.",
+        "notOnSale": "Tickets aren't on sale yet."
+      }
+    },
+    "pass": {
+      "when": "When",
+      "where": "Where",
+      "holder": "Ticket holder",
+      "code": "Code",
+      "locationTba": "Location to be announced",
+      "qrLabel": "QR code for this ticket",
+      "showAtDoor": "Show this QR code at the door.",
+      "refundedNote": "This ticket was refunded and can't be used.",
+      "viewEvent": "View event"
+    },
+    "door": {
+      "checkIn": "Check in",
+      "undo": "Undo check-in",
+      "officerNote": "You manage {{club}}, so you can admit this ticket.",
+      "checkedInAt": "Checked in at {{time}}",
+      "results": {
+        "checked_in": "Checked in. Let them in.",
+        "already_checked_in": "Already checked in",
+        "undone": "Check-in undone",
+        "refunded": "Refunded ticket. Don't admit.",
+        "not_for_this_event": "This ticket is for a different event",
+        "not_found": "No ticket matches that code"
+      }
+    },
+    "order": {
+      "confirming": "Confirming your payment",
+      "confirmingDescription": "This usually takes a few seconds. Your tickets are also on their way by email.",
+      "paidTitle": "You're in!",
+      "paidDescription": "You have {{count}} ticket. It's below and in your email.",
+      "paidDescription_other": "You have {{count}} tickets. They're below and in your email.",
+      "shareNote": "Each ticket has its own QR code. Send a ticket’s link to the friend who’s using it.",
+      "failedTitle": "This checkout didn't go through",
+      "failedDescription": "You weren't charged, and the tickets were released.",
+      "notFound": "We couldn't find this order",
+      "backToEvent": "Back to the event",
+      "allTickets": "All my tickets"
+    },
+    "desk": {
+      "title": "Ticket desk",
+      "notFound": "This event doesn't exist anymore",
+      "setupTitle": "Sell tickets",
+      "setupDescription": "Buyers pay through Stripe and get a QR ticket by email. The money goes straight to your club.",
+      "settingsTitle": "Ticket settings",
+      "settingsDescription": "Change how many tickets you sell, or pause sales for a while.",
+      "price": "Ticket price ({{currency}})",
+      "priceLocked": "The price can't change once someone has bought a ticket.",
+      "priceRange": "Enter a price between {{minimum}} and {{maximum}}.",
+      "capacity": "Tickets per date",
+      "capacityPlaceholder": "No limit",
+      "pause": "Pause sales",
+      "pauseHint": "Hides the buy button until you turn sales back on.",
+      "fees": "Stripe keeps about 2.9% + 30¢ of each order. Wat2Do takes nothing.",
+      "payoutsNeeded": "Set up payouts first, so the money has somewhere to go.",
+      "setUpPayouts": "Set up payouts",
+      "startSelling": "Start selling",
+      "save": "Save changes",
+      "saved": "Ticket settings saved",
+      "stopSelling": "Stop selling tickets",
+      "stopped": "This event no longer sells tickets",
+      "openScanner": "Open door scanner",
+      "attendees": "Door list",
+      "attendeesEmpty": "No tickets sold yet",
+      "search": "Search by name, email or code",
+      "columns": {
+        "holder": "Ticket holder",
+        "date": "Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "stats": {
+        "sold": "Sold",
+        "revenue": "Revenue",
+        "checkedIn": "Checked in",
+        "remaining": "Left",
+        "unlimited": "No limit"
+      },
+      "refund": "Refund",
+      "refundTitle": "Refund this ticket?",
+      "refundDescription": "{{name}} gets {{amount}} back on their card, plus an email. Stripe doesn't return its fee to your club.",
+      "refundConfirm": "Refund {{amount}}",
+      "refundRequested": "Refund requested",
+      "decline": "Decline",
+      "declineTitle": "Decline this refund request?",
+      "declineDescription": "{{name}} gets an email saying the club declined. Their ticket still works.",
+      "declineConfirm": "Decline request",
+      "declined": "Refund request declined",
+      "cancelledTitle": "This event was cancelled",
+      "cancelledDescription": "Every ticket is refunded automatically. If some are still valid, Stripe was briefly unreachable: finish the rest here.",
+      "refundRemaining": "Refund remaining tickets",
+      "refundedCount": "{{count}} ticket refunded",
+      "refundedCount_other": "{{count}} tickets refunded"
+    },
+    "refund": {
+      "prompt": "Can’t make it?",
+      "promptDescription": "Ask {{club}} for a refund. They decide, and you’ll get an email either way.",
+      "request": "Request a refund",
+      "signIn": "Sign in to request a refund",
+      "title": "Ask {{club}} for a refund?",
+      "description": "If {{club}} agrees, the full price goes back to your card. You’ll get an email either way.",
+      "noteLabel": "Anything the club should know? (optional)",
+      "notePlaceholder": "For example: I can’t make the new date.",
+      "send": "Send request",
+      "sent": "Refund request sent to {{club}}",
+      "pending": "You asked {{club}} for a refund on {{date}}. You’ll get an email when they decide.",
+      "declined": "{{club}} declined your refund request on {{date}}. Your ticket still works.",
+      "theClub": "the club"
+    },
+    "scanner": {
+      "title": "Door scanner",
+      "description": "Point the camera at a ticket's QR code.",
+      "admitted": "{{checkedIn}} of {{sold}} checked in",
+      "startCamera": "Start camera",
+      "cameraLabel": "Camera view for scanning tickets",
+      "cameraBlocked": "Allow camera access to scan tickets, or type the code below.",
+      "manual": "Ticket code",
+      "manualPlaceholder": "Type the code under the QR code"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  }
+}

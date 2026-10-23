@@ -2,7 +2,6 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
-import { queryKeys } from "../src/shared/lib/queryKeys";
 import { filterClubs, normalizeClub, resolveClubByInstagramHandle } from "../src/features/clubs/api/clubService";
 import { normalizeInstagramHandle } from "../src/shared/utils/url";
 import type { ApiClubResponse } from "../src/shared/generated";
@@ -55,8 +54,7 @@ test("switching managed clubs hides old rows immediately and ignores late roster
       if (id === "react-i18next") return { useTranslation: () => ({ t, i18n: { language: "en" } }) };
       if (id === "@/features/auth") return { useAuthState: () => ({ clubId }) };
       if (id === "next/navigation") return { useRouter: () => ({ push: () => undefined }) };
-      if (id === "@tanstack/react-query") return { useQuery: () => ({ data: { school: "uwaterloo" } }) };
-      if (id === "@/shared/lib/queryKeys") return { queryKeys };
+      if (id === "@/features/club-panel/hooks/useClubRecord") return { useClubRecord: () => ({ data: { school: "uwaterloo" } }) };
       if (id === "@/shared/hooks/useSchoolDirectory") return { useSchoolDirectory: () => ({ getSchoolTimezone: () => "America/Toronto" }) };
       if (id === "../api/members.api") return {
         fetchClubMembers: (requestedClubId: number) => new Promise((resolve) => pending.set(requestedClubId, resolve)),

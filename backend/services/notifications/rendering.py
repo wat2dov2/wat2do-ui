@@ -94,7 +94,7 @@ def render_event_reminder_text(
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
-    day, times = _local_occurrence(event, tz)
+    day, times = local_occurrence(event, tz)
     return "\n".join(
         [
             subject,
@@ -124,7 +124,7 @@ def render_event_reminder_html(
     preferences_url: str,
     unsubscribe_url: str,
 ) -> str:
-    day, times = _local_occurrence(event, tz)
+    day, times = local_occurrence(event, tz)
     return email_shell(
         heading=subject,
         content=_event_spotlight(
@@ -304,6 +304,7 @@ def render_event_change_text(
     frontend_url: str,
     preferences_url: str,
     unsubscribe_url: str,
+    refund_url: str | None = None,
 ) -> str:
     lines = [subject, "", "You're going to this event. Here's what changed:", ""]
     for label, old, new in _describe_changes(diff, tz):
@@ -311,6 +312,8 @@ def render_event_change_text(
             lines.append(f"- {label}: {old} -> {new}")
         else:
             lines.append(f"- {label}: {new or f'{old} (removed)'}")
+    if refund_url:
+        lines.extend(["", f"{_REFUND_OFFER} Request a refund: {refund_url}"])
     lines.extend(
         [
             "",
@@ -335,7 +338,15 @@ def render_event_change_html(
     frontend_url: str,
     preferences_url: str,
     unsubscribe_url: str,
+    refund_url: str | None = None,
 ) -> str:
+    refund = (
+        '<div style="height:24px;"></div>'
+        + email_paragraph(escape(_REFUND_OFFER))
+        + email_button(refund_url, "Request a refund")
+        if refund_url
+        else ""
+    )
     return email_shell(
         heading=subject,
         content=_event_spotlight(
@@ -344,12 +355,19 @@ def render_event_change_html(
             image_src=image_src,
             frontend_url=frontend_url,
             rows=_describe_changes(diff, tz),
-        ),
+        )
+        + refund,
         footer_links=[
             ("Manage email preferences", preferences_url),
             ("Unsubscribe", unsubscribe_url),
         ],
     )
+
+
+# Shown to ticket holders when an event's time or place changes.
+_REFUND_OFFER = (
+    "Your ticket still works. If the change doesn't suit you, ask the club for a refund."
+)
 
 
 def _event_spotlight(
@@ -376,13 +394,13 @@ def _event_spotlight(
         f'<a href="{event_url}" style="color:{EMAIL_THEME["foreground"]};'
         f'text-decoration:none;"><h2 style="margin:0 0 8px;font:700 19px sans-serif;">'
         f"{title}</h2></a>"
-        + "".join(_detail_row_html(label, old, new) for label, old, new in rows)
+        + "".join(detail_row_html(label, old, new) for label, old, new in rows)
         + '<div style="height:16px;"></div>'
         + email_button(_event_url(event, frontend_url), "View event on wat2do")
     )
 
 
-def _detail_row_html(label: str, old: str | None, new: str | None) -> str:
+def detail_row_html(label: str, old: str | None, new: str | None) -> str:
     muted = EMAIL_THEME["muted_foreground"]
     struck = (
         f'<span style="color:{muted};text-decoration:line-through;">{escape(old)}</span>'
@@ -426,8 +444,8 @@ def _describe_changes(diff: dict, tz: ZoneInfo) -> list[tuple[str, str | None, s
 
 
 def _describe_date_changes(change: dict, tz: ZoneInfo) -> list[tuple[str, str | None, str | None]]:
-    old = [_local_occurrence(item, tz) for item in change.get("old") or []]
-    new = [_local_occurrence(item, tz) for item in change.get("new") or []]
+    old = [local_occurrence(item, tz) for item in change.get("old") or []]
+    new = [local_occurrence(item, tz) for item in change.get("new") or []]
     removed = [item for item in old if item not in new]
     added = [item for item in new if item not in old]
     rows: list[tuple[str, str | None, str | None]] = []
@@ -442,7 +460,7 @@ def _describe_date_changes(change: dict, tz: ZoneInfo) -> list[tuple[str, str | 
     return rows
 
 
-def _local_occurrence(item: dict, tz: ZoneInfo) -> tuple[str, str]:
+def local_occurrence(item: dict, tz: ZoneInfo) -> tuple[str, str]:
     """(local day label, local time range) for one occurrence."""
     day, start = _format_event_date_time(item, tz)
     if not item.get("dtend_utc"):

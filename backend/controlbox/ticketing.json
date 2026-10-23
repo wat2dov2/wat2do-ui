@@ -1,0 +1,17 @@
+{
+  "enabled": false,
+  "currency_by_country": {
+    "CA": "cad",
+    "US": "usd"
+  },
+  "minimum_price_cents": 100,
+  "maximum_price_cents": 50000,
+  "maximum_capacity": 10000,
+  "maximum_tickets_per_order": 6,
+  "checkout_minutes": 30,
+  "reservation_grace_minutes": 15,
+  "checkout_rate_limit": {
+    "maximum_requests": 10,
+    "window_seconds": 600
+  }
+}

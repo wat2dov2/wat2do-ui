@@ -1,61 +1,120 @@
+import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
-import { Megaphone, Link, Users, Building2 } from "lucide-react";
+import { useActiveClub } from "@/features/auth";
+import { ClubEventList } from "@/features/club-panel/components/ClubEventList";
+import { ClubPayoutsCard } from "@/features/club-panel/components/ClubPayoutsCard";
+import { useClubEvents } from "@/features/club-panel/hooks/useClubEvents";
+import { useClubRecord } from "@/features/club-panel/hooks/useClubRecord";
+import { useClubPayouts } from "@/features/club-panel/hooks/useClubTicketing";
+import { controlBox } from "@/shared/config/controlBox";
+import type { ClubPanelRouteKey } from "@/shared/constants/routes";
+import { ROUTES } from "@/shared/constants/routes";
+import { EmptyState } from "@/shared/feedback";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import { FormGrid, PageHeader, Section, Stack } from "@/shared/layout";
 import { AdminCard } from "@/shared/ui/AdminCard";
+import { Button } from "@/shared/ui/button";
+import {
+  Building2,
+  Calendar,
+  Coins,
+  Link,
+  Megaphone,
+  Plus,
+  ShieldAlert,
+  Users,
+} from "lucide-react";
+import { Skeleton } from "@/shared/ui/skeleton";
+
+// The dashboard previews a few upcoming events; the events page lists them all.
+const DASHBOARD_EVENT_COUNT = 4;
 
 interface ClubPanelProps {
-  onNavigate: (page: "club-panel-posters" | "club-panel-integrations" | "club-panel-members") => void;
+  onNavigate: (page: ClubPanelRouteKey) => void;
 }
 
+/** A club's home: payouts, what's coming up and how tickets are selling, and every tool. */
 export function ClubPanel({ onNavigate }: ClubPanelProps) {
   const { t } = useTranslation();
+  const activeClub = useActiveClub();
+  const { data: club } = useClubRecord(activeClub?.id);
+  const { data: payouts } = useClubPayouts(controlBox.ticketing.enabled ? activeClub?.id : null);
+  const { getSchoolTimezone } = useSchoolDirectory();
+  const { upcoming, sales, isLoading } = useClubEvents(activeClub?.id, club?.school);
+
+  if (!activeClub) {
+    return (
+      <EmptyState
+        icon={<ShieldAlert />}
+        title={t("clubPanel.noActiveClubSelected")}
+        description={t("clubPanel.noActiveClubSelectedDesc")}
+      />
+    );
+  }
+
+  const tools: Array<{ page: ClubPanelRouteKey; icon: typeof Users; title: string; description: string }> = [
+    { page: "club-panel-events", icon: Calendar, title: t("clubPanel.events"), description: t("clubPanel.eventsDesc") },
+    ...(controlBox.ticketing.enabled
+      ? [{ page: "club-panel-payouts" as const, icon: Coins, title: t("clubPanel.payouts.title"), description: t("clubPanel.payoutsDesc") }]
+      : []),
+    { page: "club-panel-members", icon: Users, title: t("clubPanel.members"), description: t("clubPanel.membersDesc") },
+    { page: "club-panel-posters", icon: Megaphone, title: t("clubPanel.posters"), description: t("clubPanel.postersDesc") },
+    { page: "club-panel-integrations", icon: Link, title: t("clubPanel.integrations"), description: t("clubPanel.integrationsDesc") },
+  ];
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Building2 className="size-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">{t("clubPanel.title")}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t("clubPanel.description")}
-          </p>
-        </div>
-      </div>
+    <Stack gap={6}>
+      <PageHeader
+        icon={Building2}
+        title={activeClub.club_name}
+        actions={
+          <Button asChild>
+            <NextLink href={ROUTES.EVENT_SUBMIT}>
+              <Plus className="size-4" />
+              {t("clubPanel.createEvent")}
+            </NextLink>
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <AdminCard
-          icon={Megaphone}
-          title={t("clubPanel.posters")}
-          description={t("clubPanel.postersDesc")}
-          onClick={() => onNavigate("club-panel-posters")}
-        />
-        <AdminCard
-          icon={Link}
-          title={t("clubPanel.integrations")}
-          description={t("clubPanel.integrationsDesc")}
-          onClick={() => onNavigate("club-panel-integrations")}
-        />
-        <AdminCard
-          icon={Users}
-          title={t("clubPanel.members")}
-          description={t("clubPanel.membersDesc")}
-          onClick={() => onNavigate("club-panel-members")}
-        />
-      </div>
+      {payouts?.ticketing_enabled ? <ClubPayoutsCard clubId={activeClub.id} status={payouts} /> : null}
 
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-1">{t("clubPanel.recentActivity")}</h2>
-          <p className="text-sm text-muted-foreground">
-            {t("admin.recentActivityDesc")}
-          </p>
-        </div>
+      <Section
+        title={t("clubPanel.upcomingEvents")}
+        action={
+          <Button variant="link" size="inline" onClick={() => onNavigate("club-panel-events")}>
+            {t("clubPanel.viewAllEvents")}
+          </Button>
+        }
+      >
+        {isLoading ? (
+          <Skeleton className="h-32 w-full rounded-xl" />
+        ) : upcoming.length ? (
+          <ClubEventList
+            events={upcoming.slice(0, DASHBOARD_EVENT_COUNT)}
+            sales={sales}
+            timeZone={getSchoolTimezone(club?.school)}
+          />
+        ) : (
+          <EmptyState
+            icon={<Calendar />}
+            title={t("clubPanel.noUpcomingEvents")}
+            description={t("clubPanel.noUpcomingEventsDesc")}
+          />
+        )}
+      </Section>
 
-        <div className="bg-surface border border-border rounded-xl p-8 text-center">
-          <p className="text-sm text-muted-foreground">{t("clubPanel.noRecentActivity")}</p>
-        </div>
-      </div>
-    </div>
+      <FormGrid columns={3}>
+        {tools.map(({ page, icon, title, description }) => (
+          <AdminCard
+            key={page}
+            icon={icon}
+            title={title}
+            description={description}
+            onClick={() => onNavigate(page)}
+          />
+        ))}
+      </FormGrid>
+    </Stack>
   );
 }

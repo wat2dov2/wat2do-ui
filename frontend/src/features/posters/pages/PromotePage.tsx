@@ -30,7 +30,7 @@ import {
 } from "@/shared/ui/card";
 import { DollarSign, MapPin, QrCode } from "lucide-react";
 import { PosterMapSkeleton } from "@/features/posters/components/PosterMapSkeleton";
-import { formatCadCents } from "@/shared/utils/currency";
+import { formatCents } from "@/shared/utils/currency";
 
 const STEP_ICONS = [QrCode, MapPin, DollarSign] as const;
 
@@ -54,7 +54,7 @@ export function PromotePage() {
             school,
           })}
           description={t("posters.promote.description", {
-            rate: formatCadCents(promoterProgram.rateCents, i18n.language),
+            rate: formatCents(promoterProgram.rateCents, "cad", i18n.language),
           })}
         />
 
@@ -78,9 +78,8 @@ export function PromotePage() {
                         </CardTitle>
                         <CardDescription>
                           {t(`posters.promote.step${step}Description`, {
-                            rate: formatCadCents(
-                              promoterProgram.rateCents,
-                              i18n.language,
+                            rate: formatCents(
+                              promoterProgram.rateCents, "cad", i18n.language,
                             ),
                           })}
                         </CardDescription>

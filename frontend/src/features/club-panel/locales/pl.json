@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "Powrót do panelu organizacji",
     "title": "Panel organizacji",
-    "description": "Zarządzaj plakatami, integracjami i członkami swojej organizacji",
     "posters": "Plakaty",
     "postersDesc": "Zarządzaj plakatami kodu QR ",
     "integrations": "Integracje",
@@ -16,8 +15,6 @@
       "joined": "Dołączył",
       "requested": "Poproszono"
     },
-    "recentActivity": "Ostatnia aktywność",
-    "noRecentActivity": "Brak ostatniej aktywności",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Wyślij powiadomienia o zdarzeniach za pomocą WhatsApp",
     "discord": "Discord",
@@ -65,7 +62,64 @@
     "addManagerFailed": "Nie udało się dodać menedżera ani wysłać zaproszenia.",
     "invitationRevokedSuccess": "Zaproszenie cofnięto pomyślnie!",
     "revokeInvitationFailed": "Nie udało się cofnąć zaproszenia.",
-    "loadManagementFailed": "Nie udało się załadować szczegółów zarządzania."
+    "loadManagementFailed": "Nie udało się załadować szczegółów zarządzania.",
+    "events": "Wydarzenia",
+    "eventsDesc": "Wydarzenia Twojej organizacji i sprzedaż biletów na nie.",
+    "payoutsDesc": "Otrzymuj pieniądze za bilety przez Stripe.",
+    "createEvent": "Utwórz wydarzenie",
+    "upcomingEvents": "Nadchodzące wydarzenia",
+    "pastEvents": "Minione wydarzenia",
+    "viewAllEvents": "Wszystkie wydarzenia",
+    "noUpcomingEvents": "Brak nadchodzących wydarzeń",
+    "noUpcomingEventsDesc": "Utwórz wydarzenie, a pojawi się tutaj.",
+    "noPastEvents": "Nie ma jeszcze minionych wydarzeń",
+    "eventsList": {
+      "cancelled": "Odwołane",
+      "notSelling": "Bez biletów",
+      "salesPaused": "Sprzedaż wstrzymana",
+      "ticketsSold": "Sprzedano {{count}} · {{revenue}}",
+      "ticketsSold_one": "Sprzedano {{count}} · {{revenue}}",
+      "ticketsSold_few": "Sprzedano {{count}} · {{revenue}}",
+      "ticketsSold_many": "Sprzedano {{count}} · {{revenue}}",
+      "ticketsSold_other": "Sprzedano {{count}} · {{revenue}}",
+      "refundRequests": "{{count}} prośba o zwrot",
+      "refundRequests_one": "{{count}} prośba o zwrot",
+      "refundRequests_few": "{{count}} prośby o zwrot",
+      "refundRequests_many": "{{count}} próśb o zwrot",
+      "refundRequests_other": "{{count}} prośby o zwrot"
+    },
+    "payouts": {
+      "title": "Wypłaty",
+      "intro": "Gdy Twoja organizacja sprzedaje bilety na Wat2Do, pieniądze trafiają przez Stripe prosto na jej konto bankowe.",
+      "fees": "Stripe pobiera około 2,9% + 30¢ od każdego zamówienia. Wat2Do nie bierze nic.",
+      "timing": "Stripe automatycznie przesyła pieniądze na konto bankowe Twojej organizacji, zwykle kilka dni roboczych po każdej sprzedaży. Pierwsza wypłata może potrwać od 7 do 14 dni.",
+      "currency": "Ceny Twoich biletów są w {{currency}}.",
+      "setUp": "Skonfiguruj wypłaty",
+      "continueSetup": "Kontynuuj konfigurację",
+      "openDashboard": "Otwórz panel Stripe",
+      "states": {
+        "unavailable": {
+          "label": "Wkrótce",
+          "description": "Sprzedaż biletów nie jest jeszcze dostępna. Zajrzyj tu wkrótce."
+        },
+        "notConnected": {
+          "label": "Nieskonfigurowane",
+          "description": "Około 5 minut na bezpiecznej stronie Stripe: konto bankowe Twojej organizacji i dokument tożsamości jednej osoby z zarządu."
+        },
+        "inProgress": {
+          "label": "Prawie gotowe",
+          "description": "Stripe potrzebuje jeszcze kilku informacji, zanim Twoja organizacja będzie mogła przyjmować płatności."
+        },
+        "payoutsPaused": {
+          "label": "Wymagane działanie",
+          "description": "Twoja organizacja może sprzedawać bilety, ale Stripe potrzebuje więcej informacji, zanim prześle pieniądze na jej konto bankowe."
+        },
+        "ready": {
+          "label": "Gotowe",
+          "description": "Twoja organizacja może sprzedawać bilety. Wypłaty trafiają automatycznie na jej konto bankowe."
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "Połącz swoje platformy, aby automatycznie importować wydarzenia",

@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "返回組織面板",
     "title": "組織面板",
-    "description": "管理你組織的海報、整合以及成員",
     "posters": "海報",
     "postersDesc": "管理 QR 海報",
     "integrations": "整合",
@@ -16,8 +15,6 @@
       "joined": "加入時間",
       "requested": "已申請"
     },
-    "recentActivity": "最近活動",
-    "noRecentActivity": "最近無活動",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "透過 WhatsApp 發送事件通知",
     "discord": "Discord",
@@ -65,7 +62,58 @@
     "addManagerFailed": "新增管理員或發送邀請失敗。",
     "invitationRevokedSuccess": "邀請已成功撤回！",
     "revokeInvitationFailed": "撤回邀請失敗。",
-    "loadManagementFailed": "無法加載管理詳情。"
+    "loadManagementFailed": "無法加載管理詳情。",
+    "events": "活動",
+    "eventsDesc": "你組織嘅活動同門票銷售情況。",
+    "payoutsDesc": "經 Stripe 收門票錢。",
+    "createEvent": "建立活動",
+    "upcomingEvents": "即將舉行嘅活動",
+    "pastEvents": "過往活動",
+    "viewAllEvents": "所有活動",
+    "noUpcomingEvents": "冇即將舉行嘅活動",
+    "noUpcomingEventsDesc": "建立活動之後，就會喺呢度出現。",
+    "noPastEvents": "未有過往活動",
+    "eventsList": {
+      "cancelled": "已取消",
+      "notSelling": "冇賣門票",
+      "salesPaused": "暫停發售",
+      "ticketsSold": "賣出 {{count}} 張 · {{revenue}}",
+      "ticketsSold_other": "賣出 {{count}} 張 · {{revenue}}",
+      "refundRequests": "{{count}} 個退款申請",
+      "refundRequests_other": "{{count}} 個退款申請"
+    },
+    "payouts": {
+      "title": "收款",
+      "intro": "你嘅組織喺 Wat2Do 賣門票，啲錢會經 Stripe 直接入組織嘅銀行戶口。",
+      "fees": "Stripe 每張訂單大約收 2.9% + 30¢。Wat2Do 一蚊都唔收。",
+      "timing": "Stripe 會自動將啲錢轉入你嘅銀行戶口，通常每次賣出門票之後幾個工作天就會到。第一次收款可能要 7 至 14 日。",
+      "currency": "你嘅門票以 {{currency}} 定價。",
+      "setUp": "設定收款",
+      "continueSetup": "繼續設定",
+      "openDashboard": "打開 Stripe 控制台",
+      "states": {
+        "unavailable": {
+          "label": "即將推出",
+          "description": "暫時未可以賣門票，遲啲再嚟睇下。"
+        },
+        "notConnected": {
+          "label": "未設定",
+          "description": "喺 Stripe 嘅安全頁面大約用 5 分鐘：準備好組織嘅銀行戶口同一位幹事嘅身份證明文件。"
+        },
+        "inProgress": {
+          "label": "就快搞掂",
+          "description": "Stripe 仲需要多啲資料，你嘅組織先可以收款。"
+        },
+        "payoutsPaused": {
+          "label": "需要處理",
+          "description": "你嘅組織可以賣門票，但 Stripe 要多啲資料先可以將錢轉去你嘅銀行戶口。"
+        },
+        "ready": {
+          "label": "已準備好",
+          "description": "你嘅組織可以賣門票。啲錢會自動轉入你嘅銀行戶口。"
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "連接你的平台以自動導入活動",

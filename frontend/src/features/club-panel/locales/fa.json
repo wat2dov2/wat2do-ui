@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "بازگشت به پنل سازمان",
     "title": "پنل سازمان",
-    "description": "پوسترها، یکپارچه‌سازی‌ها و اعضای سازمان خود را مدیریت کنید",
     "posters": "پوسترها",
     "postersDesc": "مدیریت پوسترهای کد QR",
     "integrations": "ادغام‌ها",
@@ -16,8 +15,6 @@
       "joined": "عضو شده از",
       "requested": "درخواست شده"
     },
-    "recentActivity": "فعالیت‌های اخیر",
-    "noRecentActivity": "هیچ فعالیت اخیر",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "ارسال اعلان‌های رویداد از طریق WhatsApp",
     "discord": "Discord",
@@ -65,7 +62,60 @@
     "addManagerFailed": "افزودن مدیر یا ارسال دعوت‌نامه شکست خورد.",
     "invitationRevokedSuccess": "دعوت‌نامه با موفقیت لغو شد!",
     "revokeInvitationFailed": "لغو دعوت‌نامه شکست خورد.",
-    "loadManagementFailed": "بارگذاری جزئیات مدیریت شکست خورد."
+    "loadManagementFailed": "بارگذاری جزئیات مدیریت شکست خورد.",
+    "events": "رویدادها",
+    "eventsDesc": "رویدادهای سازمان شما و وضعیت فروش بلیت‌هایشان.",
+    "payoutsDesc": "پول بلیت‌ها را از طریق Stripe دریافت کنید.",
+    "createEvent": "ایجاد رویداد",
+    "upcomingEvents": "رویدادهای پیش رو",
+    "pastEvents": "رویدادهای گذشته",
+    "viewAllEvents": "همه رویدادها",
+    "noUpcomingEvents": "رویداد پیش رویی ندارید",
+    "noUpcomingEventsDesc": "یک رویداد بسازید تا اینجا نمایش داده شود.",
+    "noPastEvents": "هنوز رویداد گذشته‌ای ندارید",
+    "eventsList": {
+      "cancelled": "لغو شده",
+      "notSelling": "بدون بلیت",
+      "salesPaused": "فروش متوقف شده",
+      "ticketsSold": "{{count}} فروخته‌شده · {{revenue}}",
+      "ticketsSold_one": "{{count}} فروخته‌شده · {{revenue}}",
+      "ticketsSold_other": "{{count}} فروخته‌شده · {{revenue}}",
+      "refundRequests": "{{count}} درخواست بازپرداخت",
+      "refundRequests_one": "{{count}} درخواست بازپرداخت",
+      "refundRequests_other": "{{count}} درخواست بازپرداخت"
+    },
+    "payouts": {
+      "title": "واریز وجه",
+      "intro": "وقتی سازمان شما در Wat2Do بلیت می‌فروشد، پول از طریق Stripe مستقیم به حساب بانکی سازمانتان واریز می‌شود.",
+      "fees": "Stripe حدود 2.9% + 30¢ از هر سفارش را برمی‌دارد. Wat2Do هیچ سهمی نمی‌گیرد.",
+      "timing": "Stripe پول را به‌طور خودکار به حساب بانکی‌تان واریز می‌کند، معمولاً چند روز کاری پس از هر فروش. اولین واریز ممکن است 7 تا 14 روز طول بکشد.",
+      "currency": "قیمت بلیت‌های شما به {{currency}} است.",
+      "setUp": "راه‌اندازی واریز وجه",
+      "continueSetup": "ادامه راه‌اندازی",
+      "openDashboard": "باز کردن داشبورد Stripe",
+      "states": {
+        "unavailable": {
+          "label": "به‌زودی",
+          "description": "فروش بلیت هنوز در دسترس نیست. به‌زودی دوباره سر بزنید."
+        },
+        "notConnected": {
+          "label": "راه‌اندازی نشده",
+          "description": "حدود 5 دقیقه در صفحه امن Stripe: حساب بانکی سازمان شما و مدرک شناسایی یکی از مسئولان آن."
+        },
+        "inProgress": {
+          "label": "تقریباً آماده",
+          "description": "Stripe پیش از آنکه سازمان شما بتواند پرداخت دریافت کند، به کمی اطلاعات بیشتر نیاز دارد."
+        },
+        "payoutsPaused": {
+          "label": "نیاز به اقدام",
+          "description": "سازمان شما می‌تواند بلیت بفروشد، اما Stripe پیش از واریز پول به حساب بانکی‌تان به اطلاعات بیشتری نیاز دارد."
+        },
+        "ready": {
+          "label": "آماده",
+          "description": "سازمان شما می‌تواند بلیت بفروشد. پول به‌طور خودکار به حساب بانکی‌تان واریز می‌شود."
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "پلتفرم‌های خود را متصل کنید تا رویدادها به‌طور خودکار وارد شوند",

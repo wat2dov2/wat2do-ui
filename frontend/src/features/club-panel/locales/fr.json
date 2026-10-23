@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "Retour au panneau de l'organisation",
     "title": "Panneau de l'organisation",
-    "description": "Gérez les affiches, intégrations et membres de votre organisation",
     "posters": "Affiches",
     "postersDesc": "Gérer les affiches de code QR",
     "integrations": "Intégrations",
@@ -16,8 +15,6 @@
       "joined": "Rejoint",
       "requested": "Demandé"
     },
-    "recentActivity": "Activité récente",
-    "noRecentActivity": "Aucune activité récente",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Envoyer des notifications d'événements via WhatsApp",
     "discord": "Discord",
@@ -65,7 +62,62 @@
     "addManagerFailed": "Échec de l'ajout du responsable ou de l'envoi de l'invitation.",
     "invitationRevokedSuccess": "Invitation révoquée avec succès !",
     "revokeInvitationFailed": "Échec de la révocation de l'invitation.",
-    "loadManagementFailed": "Échec du chargement des détails de gestion."
+    "loadManagementFailed": "Échec du chargement des détails de gestion.",
+    "events": "Événements",
+    "eventsDesc": "Les événements de votre organisation et leurs ventes de billets.",
+    "payoutsDesc": "Recevez l'argent des billets via Stripe.",
+    "createEvent": "Créer un événement",
+    "upcomingEvents": "Événements à venir",
+    "pastEvents": "Événements passés",
+    "viewAllEvents": "Tous les événements",
+    "noUpcomingEvents": "Aucun événement à venir",
+    "noUpcomingEventsDesc": "Créez un événement et il apparaîtra ici.",
+    "noPastEvents": "Aucun événement passé pour l'instant",
+    "eventsList": {
+      "cancelled": "Annulé",
+      "notSelling": "Pas de billets",
+      "salesPaused": "Ventes en pause",
+      "ticketsSold": "{{count}} vendu · {{revenue}}",
+      "ticketsSold_one": "{{count}} vendu · {{revenue}}",
+      "ticketsSold_many": "{{count}} vendus · {{revenue}}",
+      "ticketsSold_other": "{{count}} vendus · {{revenue}}",
+      "refundRequests": "{{count}} demande de remboursement",
+      "refundRequests_one": "{{count}} demande de remboursement",
+      "refundRequests_many": "{{count}} demandes de remboursement",
+      "refundRequests_other": "{{count}} demandes de remboursement"
+    },
+    "payouts": {
+      "title": "Versements",
+      "intro": "Quand votre organisation vend des billets sur Wat2Do, l'argent arrive directement sur son compte bancaire via Stripe.",
+      "fees": "Stripe garde environ 2,9 % + 30 ¢ par commande. Wat2Do ne prend rien.",
+      "timing": "Stripe envoie automatiquement l'argent sur votre compte bancaire, généralement quelques jours ouvrés après chaque vente. Le premier versement peut prendre de 7 à 14 jours.",
+      "currency": "Vos billets sont vendus en {{currency}}.",
+      "setUp": "Configurer les versements",
+      "continueSetup": "Continuer la configuration",
+      "openDashboard": "Ouvrir le tableau de bord Stripe",
+      "states": {
+        "unavailable": {
+          "label": "Bientôt disponible",
+          "description": "La vente de billets n'est pas encore disponible. Revenez bientôt."
+        },
+        "notConnected": {
+          "label": "Non configuré",
+          "description": "Environ 5 minutes sur la page sécurisée de Stripe : le compte bancaire de votre organisation et la pièce d'identité d'un responsable."
+        },
+        "inProgress": {
+          "label": "Presque fini",
+          "description": "Stripe a besoin de quelques informations de plus avant que votre organisation puisse accepter des paiements."
+        },
+        "payoutsPaused": {
+          "label": "Action requise",
+          "description": "Votre organisation peut vendre des billets, mais Stripe a besoin de plus d'informations avant de pouvoir envoyer l'argent sur votre compte bancaire."
+        },
+        "ready": {
+          "label": "Prêt",
+          "description": "Votre organisation peut vendre des billets. Les versements arrivent automatiquement sur votre compte bancaire."
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "Connectez vos plateformes pour importer automatiquement les événements",

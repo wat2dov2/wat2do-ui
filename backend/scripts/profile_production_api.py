@@ -44,6 +44,9 @@ SKIPPED_GET_ROUTES = {
     "/notification-preferences/unsubscribe": "Requires a private unsubscribe token.",
     "/clubs/invitations/{token}": "Requires a private invitation token.",
     "/qr/{qr_code_id}": "Records a scan and is intentionally excluded from profiling.",
+    "/tickets/{code}": "Requires a private ticket code.",
+    "/tickets/orders/{order_id}": "Requires the caller's own ticket order.",
+    "/events/{event_id}/ticketing/sales": "Requires a ticketed event the caller's club runs.",
 }
 
 
@@ -98,6 +101,7 @@ AUTHENTICATED_ENDPOINTS = (
     Endpoint("/discovery-queries/", "/discovery-queries/?page=1&page_size=20", True),
     Endpoint("/events/admin", "/events/admin?page=1&page_size=20", True),
     Endpoint("/going-events/", "/going-events/", True),
+    Endpoint("/tickets/mine", "/tickets/mine", True),
     Endpoint("/ingestion-latency/", "/ingestion-latency/?days=7", True),
     Endpoint(
         "/instagram-publishing/batches/",
@@ -315,13 +319,20 @@ def discover_dynamic_endpoints(
                     f"/going-events/{event_id}/attendees",
                     False,
                 ),
+                Endpoint(
+                    "/events/{event_id}/ticketing",
+                    f"/events/{event_id}/ticketing",
+                    False,
+                ),
             )
         )
     else:
-        skipped["/events/{event_id}"] = "No event was available for a path parameter."
-        skipped["/going-events/{event_id}/attendees"] = (
-            "No event was available for a path parameter."
-        )
+        for route in (
+            "/events/{event_id}",
+            "/going-events/{event_id}/attendees",
+            "/events/{event_id}/ticketing",
+        ):
+            skipped[route] = "No event was available for a path parameter."
 
     positions = _get_json(
         client,
@@ -357,6 +368,8 @@ def discover_dynamic_endpoints(
         "/clubs/{club_id}/integrations/{platform}",
         "/clubs/{club_id}/invitations",
         "/clubs/{club_id}/members",
+        "/clubs/{club_id}/payouts",
+        "/clubs/{club_id}/ticket-sales",
     )
     if club_id:
         endpoints.extend(
@@ -379,6 +392,16 @@ def discover_dynamic_endpoints(
                 Endpoint(
                     "/clubs/{club_id}/members",
                     f"/clubs/{club_id}/members",
+                    True,
+                ),
+                Endpoint(
+                    "/clubs/{club_id}/payouts",
+                    f"/clubs/{club_id}/payouts",
+                    True,
+                ),
+                Endpoint(
+                    "/clubs/{club_id}/ticket-sales",
+                    f"/clubs/{club_id}/ticket-sales",
                     True,
                 ),
             )
@@ -460,11 +483,14 @@ def _known_get_paths() -> set[str]:
         "/events/{event_id}",
         "/positions/{position_id}",
         "/going-events/{event_id}/attendees",
+        "/events/{event_id}/ticketing",
         "/instagram-publishing/batches/{batch_id}",
         "/clubs/{club_id}",
         "/clubs/{club_id}/integrations/{platform}",
         "/clubs/{club_id}/invitations",
         "/clubs/{club_id}/members",
+        "/clubs/{club_id}/payouts",
+        "/clubs/{club_id}/ticket-sales",
         "/payouts/admin/{payout_id}",
         "/submissions/{submission_id}",
         "/users/{user_id}",

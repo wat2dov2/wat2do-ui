@@ -38,7 +38,7 @@ import {
   CardHeader,
 } from "@/shared/ui/card";
 import { Coins, DollarSign, MapPin, QrCode, ShieldAlert, Users } from "lucide-react";
-import { formatCadCents } from "@/shared/utils/currency";
+import { formatCents } from "@/shared/utils/currency";
 
 export function PromoterPostersPage() {
   const { t, i18n } = useTranslation();
@@ -81,7 +81,7 @@ export function PromoterPostersPage() {
       key: "pending",
       icon: DollarSign,
       label: t("posters.dashboard.pendingEarnings"),
-      value: earnings ? formatCadCents(earnings.pendingCents, i18n.language) : null,
+      value: earnings ? formatCents(earnings.pendingCents, "cad", i18n.language) : null,
     },
     {
       key: "visitors",
@@ -99,7 +99,7 @@ export function PromoterPostersPage() {
       key: "paid",
       icon: Coins,
       label: t("posters.dashboard.lifetimePaid"),
-      value: earnings ? formatCadCents(earnings.lifetimePaidCents, i18n.language) : null,
+      value: earnings ? formatCents(earnings.lifetimePaidCents, "cad", i18n.language) : null,
     },
     {
       key: "slots",

@@ -46,6 +46,8 @@ class School(BaseModel):
     semester_start: date | None = None
     semester_end: date | None = None
     social_preview_image_url: str | None = None
+    # Picks the Stripe account country and ticket currency for the school's clubs.
+    country: Literal["CA", "US"] = "CA"
 
     @field_validator("recipient_id")
     @classmethod

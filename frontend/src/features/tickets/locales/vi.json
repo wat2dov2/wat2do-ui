@@ -1,0 +1,166 @@
+{
+  "tickets": {
+    "title": "Vé của tôi",
+    "description": "Những vé bạn đã mua trên Wat2Do. Hãy đưa mã QR khi vào cửa.",
+    "upcoming": "Sắp tới",
+    "past": "Đã qua",
+    "manage": "Quản lý vé",
+    "sellTickets": "Bán vé",
+    "empty": {
+      "title": "Chưa có vé nào",
+      "description": "Khi bạn mua vé sự kiện của một tổ chức, vé sẽ hiện ở đây.",
+      "action": "Tìm sự kiện"
+    },
+    "notFound": {
+      "title": "Vé này không tồn tại",
+      "description": "Hãy kiểm tra lại đường link, hoặc tìm vé trong mục Vé của tôi."
+    },
+    "status": {
+      "valid": "Hợp lệ",
+      "checkedIn": "Đã check-in",
+      "refunded": "Đã hoàn tiền"
+    },
+    "card": {
+      "title": "Vé",
+      "price": "{{price}} mỗi vé",
+      "noFees": "Không phí đặt vé",
+      "quantity": "Số lượng vé",
+      "left": "Còn {{count}} vé",
+      "left_other": "Còn {{count}} vé",
+      "buy": "Mua vé · {{total}}",
+      "continueToPayment": "Tiếp tục thanh toán",
+      "payNote": "Thanh toán an toàn qua Stripe. {{club}} sẽ nhận tên và email của bạn để check-in.",
+      "youHave": "Bạn có {{count}} vé",
+      "youHave_other": "Bạn có {{count}} vé",
+      "viewTickets": "Xem vé của tôi",
+      "unavailable": {
+        "cancelled": "Sự kiện này đã bị hủy.",
+        "paused": "Việc bán vé đang tạm dừng.",
+        "soldOut": "Sự kiện này đã hết vé.",
+        "closed": "Đã hết thời gian bán vé.",
+        "notOnSale": "Vé chưa được mở bán."
+      }
+    },
+    "pass": {
+      "when": "Thời gian",
+      "where": "Địa điểm",
+      "holder": "Người giữ vé",
+      "code": "Mã",
+      "locationTba": "Địa điểm sẽ được thông báo sau",
+      "qrLabel": "Mã QR của vé này",
+      "showAtDoor": "Hãy đưa mã QR này khi vào cửa.",
+      "refundedNote": "Vé này đã được hoàn tiền và không thể sử dụng.",
+      "viewEvent": "Xem sự kiện"
+    },
+    "door": {
+      "checkIn": "Check-in",
+      "undo": "Hủy check-in",
+      "officerNote": "Bạn quản lý {{club}} nên có thể check-in cho vé này.",
+      "checkedInAt": "Đã check-in lúc {{time}}",
+      "results": {
+        "checked_in": "Đã check-in. Cho họ vào.",
+        "already_checked_in": "Vé này đã check-in rồi",
+        "undone": "Đã hủy check-in",
+        "refunded": "Vé đã hoàn tiền. Không cho vào.",
+        "not_for_this_event": "Vé này dành cho sự kiện khác",
+        "not_found": "Không có vé nào khớp với mã này"
+      }
+    },
+    "order": {
+      "confirming": "Đang xác nhận thanh toán của bạn",
+      "confirmingDescription": "Thường chỉ mất vài giây. Vé cũng đang được gửi đến email của bạn.",
+      "paidTitle": "Bạn đã có vé!",
+      "paidDescription": "{{count}} vé của bạn ở bên dưới và đã được gửi qua email.",
+      "paidDescription_other": "{{count}} vé của bạn ở bên dưới và đã được gửi qua email.",
+      "shareNote": "Mỗi vé có mã QR riêng. Hãy gửi đường link của từng vé cho người bạn sẽ dùng vé đó.",
+      "failedTitle": "Thanh toán chưa thành công",
+      "failedDescription": "Bạn không bị trừ tiền, và vé đã được trả lại.",
+      "notFound": "Không tìm thấy đơn hàng này",
+      "backToEvent": "Quay lại sự kiện",
+      "allTickets": "Tất cả vé của tôi"
+    },
+    "desk": {
+      "title": "Quầy vé",
+      "notFound": "Sự kiện này không còn tồn tại",
+      "setupTitle": "Bán vé",
+      "setupDescription": "Người mua thanh toán qua Stripe và nhận vé QR qua email. Tiền được chuyển thẳng cho tổ chức của bạn.",
+      "settingsTitle": "Cài đặt vé",
+      "settingsDescription": "Thay đổi số vé bạn bán, hoặc tạm dừng bán một thời gian.",
+      "price": "Giá vé ({{currency}})",
+      "priceLocked": "Không thể đổi giá sau khi đã có người mua vé.",
+      "priceRange": "Nhập giá từ {{minimum}} đến {{maximum}}.",
+      "capacity": "Số vé mỗi buổi",
+      "capacityPlaceholder": "Không giới hạn",
+      "pause": "Tạm dừng bán",
+      "pauseHint": "Ẩn nút mua vé cho đến khi bạn mở bán lại.",
+      "fees": "Stripe giữ lại khoảng 2,9% + 30¢ mỗi đơn hàng. Wat2Do không lấy gì cả.",
+      "payoutsNeeded": "Hãy thiết lập nhận tiền trước để tiền có nơi chuyển đến.",
+      "setUpPayouts": "Thiết lập nhận tiền",
+      "startSelling": "Bắt đầu bán",
+      "save": "Lưu thay đổi",
+      "saved": "Đã lưu cài đặt vé",
+      "stopSelling": "Ngừng bán vé",
+      "stopped": "Sự kiện này đã ngừng bán vé",
+      "openScanner": "Mở máy quét vé",
+      "attendees": "Danh sách vào cửa",
+      "attendeesEmpty": "Chưa bán được vé nào",
+      "search": "Tìm theo tên, email hoặc mã",
+      "columns": {
+        "holder": "Người giữ vé",
+        "date": "Ngày",
+        "status": "Trạng thái",
+        "actions": "Thao tác"
+      },
+      "stats": {
+        "sold": "Đã bán",
+        "revenue": "Doanh thu",
+        "checkedIn": "Đã check-in",
+        "remaining": "Còn lại",
+        "unlimited": "Không giới hạn"
+      },
+      "refund": "Hoàn tiền",
+      "refundTitle": "Hoàn tiền vé này?",
+      "refundDescription": "{{name}} sẽ được hoàn {{amount}} vào thẻ, kèm một email thông báo. Stripe không trả lại phí cho tổ chức của bạn.",
+      "refundConfirm": "Hoàn {{amount}}",
+      "refundRequested": "Đã yêu cầu hoàn tiền",
+      "decline": "Từ chối",
+      "declineTitle": "Từ chối yêu cầu hoàn tiền này?",
+      "declineDescription": "{{name}} sẽ nhận được email báo rằng tổ chức của bạn đã từ chối. Vé của họ vẫn hợp lệ.",
+      "declineConfirm": "Từ chối yêu cầu",
+      "declined": "Đã từ chối yêu cầu hoàn tiền",
+      "cancelledTitle": "Sự kiện này đã bị hủy",
+      "cancelledDescription": "Tất cả vé được hoàn tiền tự động. Nếu vẫn còn vé hợp lệ, nghĩa là Stripe tạm thời không kết nối được: hãy hoàn tất phần còn lại tại đây.",
+      "refundRemaining": "Hoàn tiền các vé còn lại",
+      "refundedCount": "Đã hoàn tiền {{count}} vé",
+      "refundedCount_other": "Đã hoàn tiền {{count}} vé"
+    },
+    "refund": {
+      "prompt": "Không thể tham dự?",
+      "promptDescription": "Hãy yêu cầu {{club}} hoàn tiền. Họ sẽ quyết định, và dù kết quả thế nào bạn cũng sẽ nhận được email.",
+      "request": "Yêu cầu hoàn tiền",
+      "signIn": "Đăng nhập để yêu cầu hoàn tiền",
+      "title": "Yêu cầu {{club}} hoàn tiền?",
+      "description": "Nếu {{club}} đồng ý, toàn bộ tiền vé sẽ được hoàn vào thẻ của bạn. Dù kết quả thế nào, bạn cũng sẽ nhận được email.",
+      "noteLabel": "Có điều gì tổ chức cần biết không? (không bắt buộc)",
+      "notePlaceholder": "Ví dụ: Sự kiện đổi ngày nên tôi không đến được.",
+      "send": "Gửi yêu cầu",
+      "sent": "Đã gửi yêu cầu hoàn tiền tới {{club}}",
+      "pending": "Bạn đã yêu cầu {{club}} hoàn tiền vào ngày {{date}}. Bạn sẽ nhận được email khi họ có quyết định.",
+      "declined": "Yêu cầu hoàn tiền của bạn đã bị {{club}} từ chối vào ngày {{date}}. Vé của bạn vẫn hợp lệ.",
+      "theClub": "ban tổ chức"
+    },
+    "scanner": {
+      "title": "Máy quét vé",
+      "description": "Hướng camera vào mã QR trên vé.",
+      "admitted": "{{checkedIn}}/{{sold}} vé đã check-in",
+      "startCamera": "Bật camera",
+      "cameraLabel": "Khung hình camera để quét vé",
+      "cameraBlocked": "Cho phép truy cập camera để quét vé, hoặc nhập mã bên dưới.",
+      "manual": "Mã vé",
+      "manualPlaceholder": "Nhập mã nằm dưới mã QR"
+    },
+    "errors": {
+      "generic": "Đã xảy ra lỗi. Vui lòng thử lại."
+    }
+  }
+}

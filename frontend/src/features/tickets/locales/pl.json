@@ -1,0 +1,178 @@
+{
+  "tickets": {
+    "title": "Moje bilety",
+    "description": "Bilety kupione na Wat2Do. Pokaż kod QR przy wejściu.",
+    "upcoming": "Nadchodzące",
+    "past": "Minione",
+    "manage": "Zarządzaj biletami",
+    "sellTickets": "Sprzedawaj bilety",
+    "empty": {
+      "title": "Nie masz jeszcze biletów",
+      "description": "Gdy kupisz bilet na wydarzenie, pojawi się tutaj.",
+      "action": "Znajdź wydarzenia"
+    },
+    "notFound": {
+      "title": "Ten bilet nie istnieje",
+      "description": "Sprawdź link albo znajdź swoje bilety w zakładce Moje bilety."
+    },
+    "status": {
+      "valid": "Ważny",
+      "checkedIn": "Wykorzystany",
+      "refunded": "Zwrócony"
+    },
+    "card": {
+      "title": "Bilety",
+      "price": "{{price}} za bilet",
+      "noFees": "Bez opłat serwisowych",
+      "quantity": "Liczba biletów",
+      "left": "Został {{count}} bilet",
+      "left_one": "Został {{count}} bilet",
+      "left_few": "Zostały {{count}} bilety",
+      "left_many": "Zostało {{count}} biletów",
+      "left_other": "Zostało {{count}} biletu",
+      "buy": "Kup bilety · {{total}}",
+      "continueToPayment": "Przejdź do płatności",
+      "payNote": "Bezpieczna płatność przez Stripe. {{club}} otrzymuje Twoje imię i nazwisko oraz e-mail, aby wpuścić Cię na wydarzenie.",
+      "youHave": "Masz {{count}} bilet",
+      "youHave_one": "Masz {{count}} bilet",
+      "youHave_few": "Masz {{count}} bilety",
+      "youHave_many": "Masz {{count}} biletów",
+      "youHave_other": "Masz {{count}} biletu",
+      "viewTickets": "Zobacz moje bilety",
+      "unavailable": {
+        "cancelled": "To wydarzenie zostało odwołane.",
+        "paused": "Sprzedaż biletów jest na razie wstrzymana.",
+        "soldOut": "Bilety na to wydarzenie są wyprzedane.",
+        "closed": "Sprzedaż biletów została zakończona.",
+        "notOnSale": "Bilety nie są jeszcze w sprzedaży."
+      }
+    },
+    "pass": {
+      "when": "Kiedy",
+      "where": "Gdzie",
+      "holder": "Właściciel biletu",
+      "code": "Kod",
+      "locationTba": "Miejsce zostanie ogłoszone",
+      "qrLabel": "Kod QR tego biletu",
+      "showAtDoor": "Pokaż ten kod QR przy wejściu.",
+      "refundedNote": "Pieniądze za ten bilet zostały zwrócone, więc nie można go już użyć.",
+      "viewEvent": "Zobacz wydarzenie"
+    },
+    "door": {
+      "checkIn": "Wpuść",
+      "undo": "Cofnij wejście",
+      "officerNote": "Zarządzasz organizacją {{club}}, więc możesz wpuścić osobę z tym biletem.",
+      "checkedInAt": "Wpuszczono o {{time}}",
+      "results": {
+        "checked_in": "Wejście zarejestrowane. Wpuść tę osobę.",
+        "already_checked_in": "Ta osoba już weszła",
+        "undone": "Cofnięto wejście",
+        "refunded": "Bilet zwrócony. Nie wpuszczaj.",
+        "not_for_this_event": "Ten bilet jest na inne wydarzenie",
+        "not_found": "Żaden bilet nie pasuje do tego kodu"
+      }
+    },
+    "order": {
+      "confirming": "Potwierdzamy Twoją płatność",
+      "confirmingDescription": "Zwykle trwa to kilka sekund. Bilety wysyłamy też e-mailem.",
+      "paidTitle": "Gotowe!",
+      "paidDescription": "Masz {{count}} bilet: znajdziesz go poniżej i w e-mailu.",
+      "paidDescription_one": "Masz {{count}} bilet: znajdziesz go poniżej i w e-mailu.",
+      "paidDescription_few": "Masz {{count}} bilety: znajdziesz je poniżej i w e-mailu.",
+      "paidDescription_many": "Masz {{count}} biletów: znajdziesz je poniżej i w e-mailu.",
+      "paidDescription_other": "Masz {{count}} biletu: znajdziesz je poniżej i w e-mailu.",
+      "shareNote": "Każdy bilet ma własny kod QR. Wyślij link do każdego biletu osobie, która z niego skorzysta.",
+      "failedTitle": "Ta płatność nie przeszła",
+      "failedDescription": "Nie pobrano żadnej opłaty, a bilety wróciły do sprzedaży.",
+      "notFound": "Nie znaleźliśmy tego zamówienia",
+      "backToEvent": "Wróć do wydarzenia",
+      "allTickets": "Wszystkie moje bilety"
+    },
+    "desk": {
+      "title": "Kasa biletowa",
+      "notFound": "To wydarzenie już nie istnieje",
+      "setupTitle": "Sprzedawaj bilety",
+      "setupDescription": "Kupujący płacą przez Stripe i dostają e-mailem bilet z kodem QR. Pieniądze trafiają prosto do Twojej organizacji.",
+      "settingsTitle": "Ustawienia biletów",
+      "settingsDescription": "Zmień liczbę biletów w sprzedaży albo wstrzymaj sprzedaż na jakiś czas.",
+      "price": "Cena biletu ({{currency}})",
+      "priceLocked": "Ceny nie można zmienić, gdy ktoś już kupił bilet.",
+      "priceRange": "Wpisz cenę od {{minimum}} do {{maximum}}.",
+      "capacity": "Liczba biletów na termin",
+      "capacityPlaceholder": "Bez limitu",
+      "pause": "Wstrzymaj sprzedaż",
+      "pauseHint": "Ukrywa przycisk zakupu, dopóki nie wznowisz sprzedaży.",
+      "fees": "Stripe pobiera około 2,9% + 30¢ od każdego zamówienia. Wat2Do nie bierze nic.",
+      "payoutsNeeded": "Najpierw skonfiguruj wypłaty, żeby pieniądze miały dokąd trafić.",
+      "setUpPayouts": "Skonfiguruj wypłaty",
+      "startSelling": "Rozpocznij sprzedaż",
+      "save": "Zapisz zmiany",
+      "saved": "Zapisano ustawienia biletów",
+      "stopSelling": "Zakończ sprzedaż biletów",
+      "stopped": "Na to wydarzenie nie są już sprzedawane bilety",
+      "openScanner": "Otwórz skaner biletów",
+      "attendees": "Lista gości",
+      "attendeesEmpty": "Nie sprzedano jeszcze żadnych biletów",
+      "search": "Szukaj po imieniu, e-mailu lub kodzie",
+      "columns": {
+        "holder": "Właściciel biletu",
+        "date": "Data",
+        "status": "Status",
+        "actions": "Działania"
+      },
+      "stats": {
+        "sold": "Sprzedane",
+        "revenue": "Przychód",
+        "checkedIn": "Wejścia",
+        "remaining": "Pozostało",
+        "unlimited": "Bez limitu"
+      },
+      "refund": "Zwróć pieniądze",
+      "refundTitle": "Zwrócić pieniądze za ten bilet?",
+      "refundDescription": "{{name}} dostanie {{amount}} z powrotem na kartę oraz e-mail. Stripe nie oddaje swojej prowizji Twojej organizacji.",
+      "refundConfirm": "Zwróć {{amount}}",
+      "refundRequested": "Prośba o zwrot",
+      "decline": "Odrzuć",
+      "declineTitle": "Odrzucić tę prośbę o zwrot?",
+      "declineDescription": "{{name}} dostanie e-mail z informacją, że Twoja organizacja odmówiła zwrotu. Bilet nadal będzie ważny.",
+      "declineConfirm": "Odrzuć prośbę",
+      "declined": "Odrzucono prośbę o zwrot",
+      "cancelledTitle": "To wydarzenie zostało odwołane",
+      "cancelledDescription": "Każdy bilet jest zwracany automatycznie. Jeśli część biletów jest nadal ważna, Stripe był przez chwilę niedostępny: dokończ zwroty tutaj.",
+      "refundRemaining": "Zwróć pozostałe bilety",
+      "refundedCount": "Zwrócono pieniądze za {{count}} bilet",
+      "refundedCount_one": "Zwrócono pieniądze za {{count}} bilet",
+      "refundedCount_few": "Zwrócono pieniądze za {{count}} bilety",
+      "refundedCount_many": "Zwrócono pieniądze za {{count}} biletów",
+      "refundedCount_other": "Zwrócono pieniądze za {{count}} biletu"
+    },
+    "refund": {
+      "prompt": "Nie możesz jednak przyjść?",
+      "promptDescription": "Wyślij do {{club}} prośbę o zwrot pieniędzy. Niezależnie od decyzji dostaniesz e-mail.",
+      "request": "Poproś o zwrot",
+      "signIn": "Zaloguj się, aby poprosić o zwrot",
+      "title": "Wysłać do {{club}} prośbę o zwrot pieniędzy?",
+      "description": "Jeśli decyzja {{club}} będzie pozytywna, cała kwota wróci na Twoją kartę. W obu przypadkach dostaniesz e-mail.",
+      "noteLabel": "Czy organizacja powinna o czymś wiedzieć? (opcjonalnie)",
+      "notePlaceholder": "Na przykład: nie mogę przyjść w nowym terminie.",
+      "send": "Wyślij prośbę",
+      "sent": "Wysłano do {{club}} prośbę o zwrot pieniędzy",
+      "pending": "Twoja prośba o zwrot pieniędzy z {{date}} czeka na decyzję {{club}}. Gdy zapadnie, dostaniesz e-mail.",
+      "declined": "Twoja prośba o zwrot pieniędzy wysłana do {{club}} została odrzucona {{date}}. Twój bilet nadal jest ważny.",
+      "theClub": "organizacji"
+    },
+    "scanner": {
+      "title": "Skaner biletów",
+      "description": "Skieruj aparat na kod QR biletu.",
+      "admitted": "Wpuszczono {{checkedIn}} z {{sold}}",
+      "startCamera": "Włącz aparat",
+      "cameraLabel": "Podgląd z aparatu do skanowania biletów",
+      "cameraBlocked": "Zezwól na dostęp do aparatu, aby skanować bilety, albo wpisz kod poniżej.",
+      "manual": "Kod biletu",
+      "manualPlaceholder": "Wpisz kod, który jest pod kodem QR"
+    },
+    "errors": {
+      "generic": "Coś poszło nie tak. Spróbuj ponownie."
+    }
+  }
+}

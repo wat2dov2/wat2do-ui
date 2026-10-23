@@ -221,7 +221,7 @@ def test_morning_html_lays_cards_out_two_per_row():
     assert "Esports" in positions_table
 
 
-def _change_email(diff, image_src=None, **event_fields):
+def _change_email(diff, image_src=None, refund_url=None, **event_fields):
     args = {
         "subject": "Changed: Tea Tasting",
         "event": _event(**event_fields),
@@ -231,6 +231,7 @@ def _change_email(diff, image_src=None, **event_fields):
         "frontend_url": "https://uwaterloo.wat2do.io",
         "preferences_url": "https://uwaterloo.wat2do.io/settings",
         "unsubscribe_url": "https://uwaterloo.wat2do.io/unsubscribe",
+        "refund_url": refund_url,
     }
     html = rendering.render_event_change_html(**args)
     del args["image_src"]
@@ -865,3 +866,44 @@ def test_due_alert_clears_rows_whose_event_is_gone(alerts, fake_sb, monkeypatch)
     assert event_change.send_due_alerts() == 0
     alerts.assert_not_called()
     fake_sb.delete.assert_called_once()
+
+
+def test_a_ticket_holder_is_offered_a_refund_when_the_place_changes():
+    refund = "https://uwaterloo.wat2do.io/tickets/AAAA?refund=1"
+    html, text = _change_email(
+        {"location": {"old": "RCH 208", "new": "DC 1301"}}, refund_url=refund
+    )
+
+    assert f'href="{refund}"' in html and "Request a refund" in html
+    assert f"ask the club for a refund. Request a refund: {refund}" in text
+    plain_html, plain_text = _change_email({"location": {"old": "RCH 208", "new": "DC 1301"}})
+    assert "Request a refund" not in plain_html and "refund" not in plain_text
+
+
+@pytest.mark.parametrize(
+    ("diff", "offered"),
+    [
+        ({"location": {"old": "RCH 208", "new": "DC 1301"}}, True),
+        ({"occurrences": {"old": [], "new": []}}, True),
+        ({"title": {"old": "Old", "new": "New"}}, False),
+        ({"cancelled": {"old": False, "new": True}, "location": {"old": "A", "new": "B"}}, False),
+    ],
+)
+def test_only_a_new_time_or_place_offers_ticket_holders_a_refund(
+    monkeypatch, fake_sb, patch_sb, diff, offered
+):
+    patch_sb("services.notifications.event_change")
+    fake_sb.set_response(data=[{"id": str(USER_ID), "email": "sam@uwaterloo.ca"}])
+    monkeypatch.setattr(
+        event_change, "get_enabled_user_ids", MagicMock(return_value={str(USER_ID)})
+    )
+    links = MagicMock(return_value={str(USER_ID): "https://uwaterloo.wat2do.io/tickets"})
+    monkeypatch.setattr(event_change.ticketing_service, "refund_request_links", links)
+    send = MagicMock(return_value=True)
+    monkeypatch.setattr(event_change, "_send_event_change", send)
+
+    event_change.enqueue_event_change(EventResponse.model_validate(_event()), diff, [USER_ID])
+
+    assert links.called is offered
+    expected = "https://uwaterloo.wat2do.io/tickets" if offered else None
+    assert send.call_args.kwargs["refund_url"] == expected

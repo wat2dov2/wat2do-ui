@@ -135,6 +135,15 @@ Other notification workflow runs must remain independently processable.
 Secrets and Instagram credentials must still follow the repository's existing
 secret-storage rules and must never be committed.
 
+### Club ticketing and money
+
+Clubs sell tickets through their own Stripe Connect Express accounts.
+Every charge is a direct charge on the club's account, so ticket money never sits with Wat2Do.
+`backend/services/stripe_gateway.py` is the only code that calls Stripe, and each call names the club's connected account.
+Never use live Stripe keys outside production, never log or store card details, and keep Stripe keys in `backend/.env` locally and AWS Secrets Manager in production.
+Webhooks are trusted only with a valid Stripe signature, and every charge and refund carries an idempotency key so a retry can never charge or refund twice.
+Read `docs/stripe_ticketing_runbook.md` before changing ticketing or rolling it out.
+
 ### Bug fixes and testing
 
 When doing bug fixes, always start with reproducing the bug in an E2E setting as

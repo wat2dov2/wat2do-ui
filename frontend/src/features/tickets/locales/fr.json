@@ -1,0 +1,174 @@
+{
+  "tickets": {
+    "title": "Mes billets",
+    "description": "Vos billets achetés sur Wat2Do. Présentez le code QR à l'entrée.",
+    "upcoming": "À venir",
+    "past": "Passés",
+    "manage": "Gérer les billets",
+    "sellTickets": "Vendre des billets",
+    "empty": {
+      "title": "Aucun billet pour le moment",
+      "description": "Quand vous achetez un billet pour un événement, il apparaît ici.",
+      "action": "Trouver des événements"
+    },
+    "notFound": {
+      "title": "Ce billet n'existe pas",
+      "description": "Vérifiez le lien, ou retrouvez vos billets dans Mes billets."
+    },
+    "status": {
+      "valid": "Valide",
+      "checkedIn": "Entrée validée",
+      "refunded": "Remboursé"
+    },
+    "card": {
+      "title": "Billets",
+      "price": "{{price}} par billet",
+      "noFees": "Sans frais de réservation",
+      "quantity": "Nombre de billets",
+      "left": "{{count}} billet restant",
+      "left_one": "{{count}} billet restant",
+      "left_many": "{{count}} billets restants",
+      "left_other": "{{count}} billets restants",
+      "buy": "Acheter des billets · {{total}}",
+      "continueToPayment": "Continuer vers le paiement",
+      "payNote": "Paiement sécurisé par Stripe. {{club}} reçoit votre nom et votre adresse e-mail pour valider votre entrée.",
+      "youHave": "Vous avez {{count}} billet",
+      "youHave_one": "Vous avez {{count}} billet",
+      "youHave_many": "Vous avez {{count}} billets",
+      "youHave_other": "Vous avez {{count}} billets",
+      "viewTickets": "Voir mes billets",
+      "unavailable": {
+        "cancelled": "Cet événement a été annulé.",
+        "paused": "La vente de billets est en pause pour le moment.",
+        "soldOut": "Cet événement est complet.",
+        "closed": "La vente de billets est terminée.",
+        "notOnSale": "Les billets ne sont pas encore en vente."
+      }
+    },
+    "pass": {
+      "when": "Quand",
+      "where": "Où",
+      "holder": "Titulaire du billet",
+      "code": "Code",
+      "locationTba": "Lieu à confirmer",
+      "qrLabel": "Code QR de ce billet",
+      "showAtDoor": "Présentez ce code QR à l'entrée.",
+      "refundedNote": "Ce billet a été remboursé et ne peut plus être utilisé.",
+      "viewEvent": "Voir l'événement"
+    },
+    "door": {
+      "checkIn": "Valider l'entrée",
+      "undo": "Annuler la validation",
+      "officerNote": "Vous gérez {{club}}, vous pouvez donc valider ce billet.",
+      "checkedInAt": "Entrée validée à {{time}}",
+      "results": {
+        "checked_in": "Entrée validée. Laissez passer.",
+        "already_checked_in": "Entrée déjà validée",
+        "undone": "Validation annulée",
+        "refunded": "Billet remboursé. Ne pas laisser entrer.",
+        "not_for_this_event": "Ce billet est pour un autre événement",
+        "not_found": "Aucun billet ne correspond à ce code"
+      }
+    },
+    "order": {
+      "confirming": "Confirmation de votre paiement",
+      "confirmingDescription": "Cela prend généralement quelques secondes. Vos billets vous sont aussi envoyés par e-mail.",
+      "paidTitle": "C'est confirmé !",
+      "paidDescription": "Vous avez {{count}} billet : retrouvez-le ci-dessous et dans vos e-mails.",
+      "paidDescription_one": "Vous avez {{count}} billet : retrouvez-le ci-dessous et dans vos e-mails.",
+      "paidDescription_many": "Vous avez {{count}} billets : retrouvez-les ci-dessous et dans vos e-mails.",
+      "paidDescription_other": "Vous avez {{count}} billets : retrouvez-les ci-dessous et dans vos e-mails.",
+      "shareNote": "Chaque billet a son propre code QR. Envoyez le lien de chaque billet à la personne qui l'utilisera.",
+      "failedTitle": "Ce paiement n'a pas abouti",
+      "failedDescription": "Aucun montant n'a été débité, et les billets ont été remis en vente.",
+      "notFound": "Nous n'avons pas trouvé cette commande",
+      "backToEvent": "Retour à l'événement",
+      "allTickets": "Tous mes billets"
+    },
+    "desk": {
+      "title": "Billetterie",
+      "notFound": "Cet événement n'existe plus",
+      "setupTitle": "Vendre des billets",
+      "setupDescription": "Les acheteurs paient via Stripe et reçoivent leur billet avec code QR par e-mail. L'argent va directement à votre organisation.",
+      "settingsTitle": "Paramètres des billets",
+      "settingsDescription": "Modifiez le nombre de billets en vente, ou mettez les ventes en pause un moment.",
+      "price": "Prix du billet ({{currency}})",
+      "priceLocked": "Le prix ne peut plus changer une fois qu'un billet a été acheté.",
+      "priceRange": "Saisissez un prix entre {{minimum}} et {{maximum}}.",
+      "capacity": "Billets par date",
+      "capacityPlaceholder": "Sans limite",
+      "pause": "Mettre les ventes en pause",
+      "pauseHint": "Masque le bouton d'achat jusqu'à ce que vous relanciez les ventes.",
+      "fees": "Stripe garde environ 2,9 % + 30 ¢ par commande. Wat2Do ne prend rien.",
+      "payoutsNeeded": "Configurez d'abord les versements pour pouvoir recevoir l'argent.",
+      "setUpPayouts": "Configurer les versements",
+      "startSelling": "Lancer la vente",
+      "save": "Enregistrer les modifications",
+      "saved": "Paramètres des billets enregistrés",
+      "stopSelling": "Arrêter la vente de billets",
+      "stopped": "Cet événement ne vend plus de billets",
+      "openScanner": "Ouvrir le scanner d'entrée",
+      "attendees": "Liste des participants",
+      "attendeesEmpty": "Aucun billet vendu pour l'instant",
+      "search": "Rechercher par nom, e-mail ou code",
+      "columns": {
+        "holder": "Titulaire du billet",
+        "date": "Date",
+        "status": "Statut",
+        "actions": "Actions"
+      },
+      "stats": {
+        "sold": "Vendus",
+        "revenue": "Recettes",
+        "checkedIn": "Entrées validées",
+        "remaining": "Restants",
+        "unlimited": "Sans limite"
+      },
+      "refund": "Rembourser",
+      "refundTitle": "Rembourser ce billet ?",
+      "refundDescription": "{{name}} récupère {{amount}} sur sa carte et reçoit un e-mail. Stripe ne rembourse pas ses frais à votre organisation.",
+      "refundConfirm": "Rembourser {{amount}}",
+      "refundRequested": "Remboursement demandé",
+      "decline": "Refuser",
+      "declineTitle": "Refuser cette demande de remboursement ?",
+      "declineDescription": "{{name}} reçoit un e-mail l'informant que votre organisation a refusé le remboursement. Son billet reste valide.",
+      "declineConfirm": "Refuser la demande",
+      "declined": "Demande de remboursement refusée",
+      "cancelledTitle": "Cet événement a été annulé",
+      "cancelledDescription": "Tous les billets sont remboursés automatiquement. Si certains sont encore valides, c'est que Stripe était brièvement injoignable : terminez les remboursements ici.",
+      "refundRemaining": "Rembourser les billets restants",
+      "refundedCount": "{{count}} billet remboursé",
+      "refundedCount_one": "{{count}} billet remboursé",
+      "refundedCount_many": "{{count}} billets remboursés",
+      "refundedCount_other": "{{count}} billets remboursés"
+    },
+    "refund": {
+      "prompt": "Vous ne pouvez plus venir ?",
+      "promptDescription": "Demandez à {{club}} de vous rembourser. La décision lui revient, et vous recevrez un e-mail dans tous les cas.",
+      "request": "Demander un remboursement",
+      "signIn": "Connectez-vous pour demander un remboursement",
+      "title": "Demander un remboursement à {{club}} ?",
+      "description": "Si {{club}} accepte, la totalité du prix est remboursée sur votre carte. Vous recevrez un e-mail dans tous les cas.",
+      "noteLabel": "Quelque chose que l'organisation devrait savoir ? (facultatif)",
+      "notePlaceholder": "Par exemple : je ne peux pas venir à la nouvelle date.",
+      "send": "Envoyer la demande",
+      "sent": "Demande de remboursement envoyée à {{club}}",
+      "pending": "Le {{date}}, vous avez demandé un remboursement à {{club}}. Vous recevrez un e-mail dès que la décision sera prise.",
+      "declined": "Le {{date}}, {{club}} a refusé votre demande de remboursement. Votre billet reste valide.",
+      "theClub": "l'organisation"
+    },
+    "scanner": {
+      "title": "Scanner d'entrée",
+      "description": "Pointez la caméra vers le code QR d'un billet.",
+      "admitted": "Entrées validées : {{checkedIn}} sur {{sold}}",
+      "startCamera": "Activer la caméra",
+      "cameraLabel": "Vue de la caméra pour scanner les billets",
+      "cameraBlocked": "Autorisez l'accès à la caméra pour scanner les billets, ou saisissez le code ci-dessous.",
+      "manual": "Code du billet",
+      "manualPlaceholder": "Saisissez le code sous le code QR"
+    },
+    "errors": {
+      "generic": "Une erreur s'est produite. Veuillez réessayer."
+    }
+  }
+}
