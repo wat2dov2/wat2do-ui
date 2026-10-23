@@ -37,6 +37,8 @@ function loadComponent(path: string, overrides?: Record<string, object>): object
       if (id.endsWith(".css")) return {};
       if (id === "@/features/positions/hooks/usePositionStats") return { usePositionStats: () => ({ data: undefined }) };
       if (id === "next/navigation") return { useRouter: () => ({ replace() {}, push() {} }) };
+      if (id === "@/app/client-providers") return { useRequestSchool: () => "uwaterloo" };
+      if (id === "@/shared/ui/brand-logo") return { BrandLogo: () => null };
       if (id.endsWith(".png")) return { src: "/logo.png", width: 57, height: 40 };
       if (id === "@/features/auth/hooks/useAuthState") return { useAuthState: () => ({ isAuthenticated: false }) };
       if (id === "@/features/auth/hooks/useEmailOtpFlow") return {

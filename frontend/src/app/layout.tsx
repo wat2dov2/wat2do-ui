@@ -6,9 +6,14 @@ import type { ReactNode } from "react";
 import { AppShell } from "@/app/app-shell";
 import { ClientProviders } from "@/app/client-providers";
 import { SiteBanner } from "@/app/SiteBanner";
-import { getRequestSchool, getSchoolDirectory } from "@/shared/api/schools.server";
+import {
+  getRequestSchool,
+  getRequestSchoolSummary,
+  getSchoolDirectory,
+} from "@/shared/api/schools.server";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { getSchoolThemeStyle } from "@/shared/lib/schoolBranding";
+import { getSchoolLogoImage } from "@/shared/lib/schoolLogo";
 import { PageBackground } from "@/shared/layout";
 import "../index.css";
 
@@ -67,7 +72,7 @@ const themeInitScript = `
 })();
 `;
 
-export const metadata: Metadata = {
+const BASE_METADATA: Metadata = {
   metadataBase: new URL("https://wat2do.io"),
   title: "Wat2Do | Campus Events",
   description: APP_DESCRIPTION,
@@ -78,10 +83,6 @@ export const metadata: Metadata = {
   },
   applicationName: "Wat2Do",
   manifest: "/manifest.json",
-  icons: {
-    icon: "/wat2do-logo.svg",
-    apple: "/wat2do-logo.svg",
-  },
   openGraph: {
     type: "website",
     title: "Wat2Do | Campus Events",
@@ -96,6 +97,12 @@ export const metadata: Metadata = {
     description: APP_DESCRIPTION,
   },
 };
+
+/** Tab and home-screen icons follow the school's logo, built from its posters when it has one. */
+export async function generateMetadata(): Promise<Metadata> {
+  const logo = getSchoolLogoImage(await getRequestSchoolSummary());
+  return { ...BASE_METADATA, icons: { icon: logo.src, apple: logo.src } };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

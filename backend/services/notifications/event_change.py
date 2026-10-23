@@ -22,7 +22,7 @@ from core.database import get_sb
 from core.tables import EVENT_CHANGE_ALERTS, USERS
 from schemas.event import EventResponse
 from services import event_service
-from services.email_layout import EMAIL_LOGO
+from services.email_layout import email_logo
 from services.email_service import EmailMessage, InlineImage
 from services.notifications.delivery_log import (
     claim_delivery,
@@ -229,5 +229,5 @@ def _event_change_message(
             "List-Unsubscribe": f"<{unsubscribe}>",
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
-        inline_images=[EMAIL_LOGO, image] if image else [EMAIL_LOGO],
+        inline_images=[email_logo(school), *([image] if image else [])],
     )

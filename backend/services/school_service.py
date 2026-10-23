@@ -9,7 +9,7 @@ from typing import Final, cast
 
 from core.controlbox import controlbox
 from core.database import get_sb
-from core.tables import SCHOOLS
+from core.tables import EVENTS, SCHOOLS
 from schemas.school import (
     CampusSeasonWindow,
     SchoolEventSeason,
@@ -21,7 +21,7 @@ from schemas.school import (
 DEFAULT_SEARCH_LIMIT: Final[int] = 10
 SCHOOL_COLUMNS: Final[str] = (
     "id, slug, name, city, primary_color, secondary_color, timezone, language, faculties, location_examples, "
-    "recipient_id, semester_start, semester_end, social_preview_image_url, "
+    "recipient_id, semester_start, semester_end, social_preview_image_url, poster_logo_url, "
     "social_preview_revision, social_preview_rendered_revision, social_preview_rendered_at"
 )
 SCHOOL_SLUG_EMBED: Final[str] = "school_record:schools(slug)"
@@ -136,6 +136,39 @@ def get_school_id(slug_or_name: str | None) -> int | None:
     return school.id if school is not None else None
 
 
+def count_school_events(school_id: int) -> int:
+    """Every event ever recorded for the school, leaving out cancelled ones."""
+    response = (
+        get_sb()
+        .table(EVENTS)
+        .select("id", count="exact")
+        .eq("school_id", school_id)
+        .eq("cancelled", False)
+        .limit(0)
+        .execute()
+    )
+    return int(response.count or 0)
+
+
+def latest_school_poster_urls(school_id: int, limit: int) -> list[str]:
+    """The school's newest event poster images, newest first."""
+    response = (
+        get_sb()
+        .table(EVENTS)
+        .select("id,source_image_url,added_at")
+        .eq("school_id", school_id)
+        .eq("cancelled", False)
+        .not_.is_("source_image_url", "null")
+        .order("added_at", desc=True)
+        .order("id", desc=True)
+        .range(0, limit - 1)
+        .execute()
+    )
+    return [
+        str(row["source_image_url"]) for row in (response.data or []) if row.get("source_image_url")
+    ]
+
+
 def with_school_slug(row: dict, *, relation: str = "school_record") -> dict:
     """Flatten an embedded schools row into the public ``school`` slug."""
     normalized = dict(row)
@@ -198,7 +231,7 @@ def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[School
         get_sb()
         .table(SCHOOLS)
         .select(
-            "slug, name, city, primary_color, secondary_color, timezone, language, faculties, location_examples, school_email_domains(domain, is_primary)"
+            "slug, name, city, primary_color, secondary_color, timezone, language, faculties, location_examples, poster_logo_url, school_email_domains(domain, is_primary)"
         )
         .order("name")
         .execute()

@@ -493,19 +493,6 @@ def _load_term_events(school_id: int, event_ids: set[int]) -> list[dict[str, Any
     return rows
 
 
-def _load_total_event_count(school_id: int) -> int:
-    response = (
-        get_sb()
-        .table(EVENTS)
-        .select("id", count="exact")
-        .eq("school_id", school_id)
-        .eq("cancelled", False)
-        .limit(0)
-        .execute()
-    )
-    return int(response.count or 0)
-
-
 def _load_observed_club_count(school_id: int, clubs: list[dict[str, Any]]) -> int:
     identities = {f"id:{int(club['id'])}" for club in clubs if club.get("id") is not None}
     event_rows = fetch_all_pages(
@@ -528,24 +515,6 @@ def _load_observed_club_count(school_id: int, clubs: list[dict[str, Any]]) -> in
     return len(identities)
 
 
-def _load_background_images(school_id: int) -> list[str]:
-    response = (
-        get_sb()
-        .table(EVENTS)
-        .select("id,source_image_url,added_at")
-        .eq("school_id", school_id)
-        .eq("cancelled", False)
-        .not_.is_("source_image_url", "null")
-        .order("added_at", desc=True)
-        .order("id", desc=True)
-        .range(0, _BACKGROUND_IMAGE_LIMIT - 1)
-        .execute()
-    )
-    return [
-        str(row["source_image_url"]) for row in (response.data or []) if row.get("source_image_url")
-    ]
-
-
 def load_school_poster_data(school_slug: str) -> dict[str, Any]:
     school = school_service.get_school(school_slug)
     if school is None:
@@ -559,9 +528,11 @@ def load_school_poster_data(school_slug: str) -> dict[str, Any]:
         clubs=clubs,
         term_events=term_events,
         occurrences=occurrences,
-        total_event_count=_load_total_event_count(school.id),
+        total_event_count=school_service.count_school_events(school.id),
         observed_club_count=_load_observed_club_count(school.id, clubs),
-        background_images=_load_background_images(school.id),
+        background_images=school_service.latest_school_poster_urls(
+            school.id, _BACKGROUND_IMAGE_LIMIT
+        ),
         site_url=f"https://{school.slug}.wat2do.io",
     )
 

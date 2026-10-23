@@ -518,6 +518,23 @@ class PublicAttendanceControl(_ControlModel):
     maximum_display_names: int = Field(gt=0)
 
 
+class SchoolLogosControl(_ControlModel):
+    minimum_event_count: int = Field(ge=1)
+    poster_count: int = Field(ge=1, le=500)
+    output_width: int = Field(ge=256, le=4096)
+    output_height: int = Field(ge=256, le=4096)
+    tile_width: int = Field(ge=8, le=512)
+    outline_width: int = Field(ge=0, le=128)
+    outline_color: str = Field(pattern=r"^#[0-9a-f]{6}$")
+    email_width: int = Field(ge=32, le=640)
+
+    @model_validator(mode="after")
+    def validate_email_width(self) -> "SchoolLogosControl":
+        if self.email_width > self.output_width:
+            raise ValueError("email width must not exceed the output width")
+        return self
+
+
 class SocialPreviewsControl(_ControlModel):
     stale_check_interval_minutes: int = Field(ge=5, le=1440)
     capture_path: Literal["/"]
@@ -1142,6 +1159,7 @@ class ControlBox(_ControlModel):
     uploads: UploadsControl
     public_attendance: PublicAttendanceControl
     social_previews: SocialPreviewsControl
+    school_logos: SchoolLogosControl
     instagram_browser: InstagramBrowserControl
     notification_workflow: NotificationWorkflowControl
     runner_setup: RunnerSetupControl

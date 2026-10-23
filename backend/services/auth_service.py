@@ -28,9 +28,9 @@ from schemas.auth import (
 )
 from services import school_service
 from services.email_layout import (
-    EMAIL_LOGO,
     EMAIL_THEME,
     email_button,
+    email_logo,
     email_note,
     email_paragraph,
     email_shell,
@@ -540,5 +540,5 @@ def _login_email(email: str, code: str, callback_url: str) -> EmailMessage:
                 expiry,
             ]
         ),
-        inline_images=[EMAIL_LOGO],
+        inline_images=[email_logo(school_from_frontend_url(callback_url))],
     )

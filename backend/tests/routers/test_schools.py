@@ -37,6 +37,7 @@ def test_search_schools_route_is_public_and_delegates(client, monkeypatch):
             "faculties": [],
             "location_examples": [],
             "event_seasons": [],
+            "poster_logo_url": None,
         }
     ]
     mock.assert_called_once_with("mit", limit=10)

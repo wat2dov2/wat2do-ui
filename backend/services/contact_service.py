@@ -4,7 +4,7 @@ from html import escape
 
 from core.controlbox import controlbox
 from schemas.contact import ContactCreate
-from services.email_layout import EMAIL_LOGO, EMAIL_THEME, email_paragraph, email_shell
+from services.email_layout import EMAIL_THEME, email_logo, email_paragraph, email_shell
 from services.email_service import EmailMessage
 
 
@@ -28,5 +28,6 @@ def build_contact_email(data: ContactCreate) -> EmailMessage:
             ),
         ),
         body_text=f"New wat2do contact message\n\nFrom: {sender}\n{data.message}",
-        inline_images=[EMAIL_LOGO],
+        # Contact messages go to the wat2do team, so they keep the standard logo.
+        inline_images=[email_logo(None)],
     )

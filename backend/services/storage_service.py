@@ -17,6 +17,7 @@ from core.constants import (
     BUCKET_EVENT_IMAGES,
     BUCKET_EVENT_VIDEOS,
     BUCKET_QR_ASSETS,
+    BUCKET_SCHOOL_LOGOS,
     MAX_AVATAR_SIZE_BYTES,
     MAX_IMAGE_SIZE_BYTES,
 )
@@ -66,6 +67,10 @@ _DEFAULT_BUCKETS: dict[str, dict] = {
     BUCKET_CLAIM_PROOFS: {
         "file_size_limit": MAX_IMAGE_SIZE_BYTES,
         "allowed_mime_types": ["image/jpeg", "image/png", "image/webp"],
+    },
+    BUCKET_SCHOOL_LOGOS: {
+        "file_size_limit": MAX_IMAGE_SIZE_BYTES,
+        "allowed_mime_types": ["image/png"],
     },
 }
 

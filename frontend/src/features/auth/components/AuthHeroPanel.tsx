@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useTranslation } from "react-i18next";
-import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
+import { useRequestSchool } from "@/app/client-providers";
+import { BrandLogo } from "@/shared/ui/brand-logo";
 import { EventCard } from "@/features/events/components/EventCard";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import { controlBox } from "@/shared/config/controlBox";
@@ -16,6 +16,7 @@ interface AuthHeroPanelProps {
 
 export function AuthHeroPanel({ events = [], isLoading = false }: AuthHeroPanelProps) {
   const { t } = useTranslation();
+  const requestSchool = useRequestSchool();
 
   return (
     <section className="hidden lg:flex flex-1 min-h-full bg-gradient-to-br from-primary/[0.06] via-secondary/30 to-secondary/60 border-l border-border px-8 py-10 justify-center items-center overflow-hidden">
@@ -42,13 +43,7 @@ export function AuthHeroPanel({ events = [], isLoading = false }: AuthHeroPanelP
           </>
         ) : (
           <div className="flex flex-col items-center text-center space-y-4 py-12">
-            <Image
-              alt={t("common.logo")}
-              width={57}
-              height={40}
-              className="h-10 w-[57px] object-contain opacity-90"
-              src={imgLogo}
-            />
+            <BrandLogo school={requestSchool} size="hero" alt={t("common.logo")} />
             <p className="text-sm text-muted-foreground max-w-[280px]">
               {t("auth.heroEmpty")}
             </p>

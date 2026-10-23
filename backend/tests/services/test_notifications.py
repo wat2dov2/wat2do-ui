@@ -601,6 +601,7 @@ def test_event_reminder_dispatch_uses_preferences_and_selected_occurrences(monke
 
 
 def test_event_reminder_send_is_idempotent_per_occurrence_start(monkeypatch):
+    monkeypatch.setattr("services.email_layout.school_service.get_school", lambda _slug: None)
     monkeypatch.setattr(settings, "frontend_url", "https://wat2do.io")
     monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
     claim = MagicMock(return_value="row-1")
@@ -654,6 +655,7 @@ _DIGEST = morning_email._SchoolDigest(
 
 
 def test_send_prepared_email_adds_unsubscribe_headers_and_embedded_cards(monkeypatch):
+    monkeypatch.setattr("services.email_layout.school_service.get_school", lambda _slug: None)
     monkeypatch.setattr(settings, "frontend_url", "https://wat2do.io")
     monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
     monkeypatch.setattr(morning_email, "claim_delivery", lambda **_kwargs: "row-1")

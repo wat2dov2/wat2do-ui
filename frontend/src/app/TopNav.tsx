@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import Image from "next/image";
 import NextLink from "next/link";
 import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -12,6 +11,7 @@ import {
 } from "@/shared/ui/tooltip";
 import { Button } from "@/shared/ui/button";
 import { LazyImage } from "@/shared/ui/lazy-image";
+import { BrandLogo } from "@/shared/ui/brand-logo";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
 import { SearchCombobox } from "@/shared/ui/search-combobox";
 import { LanguageSelector } from "@/shared/ui/language-selector";
@@ -31,7 +31,6 @@ import { prefetchPublicPage } from "@/app/hooks/useAppNavigation";
 import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
 import { PUBLIC_PAGE_ROUTES, ROUTES } from "@/shared/constants/routes";
 import { getSchoolOrigin } from "@/shared/constants/schools";
-import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 
 type NavClub = AuthState["clubs"][number];
 
@@ -42,6 +41,7 @@ interface Wat2DoLogoLinkProps {
 
 function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
   const router = useRouter();
+  const requestSchool = useRequestSchool();
   const prefetch = () => prefetchPublicPage(router, ROUTES.EVENTS);
   return (
     <Link
@@ -55,13 +55,7 @@ function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
       className="flex h-8 w-10 shrink-0 cursor-pointer items-center justify-center transition-opacity hover:opacity-80"
       aria-label={label}
     >
-      <Image
-        alt=""
-        width={34}
-        height={24}
-        className="h-6 w-[34px] object-contain"
-        src={imgImage1}
-      />
+      <BrandLogo school={requestSchool} size="nav" alt="" />
     </Link>
   );
 }
