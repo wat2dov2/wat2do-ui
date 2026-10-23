@@ -40,6 +40,7 @@ class _Reader:
     sent: list[str] = []
     fail_read = False
     fail_send = False
+    stale = False
 
     def __init__(self, device, opener):
         pass
@@ -58,7 +59,7 @@ class _Reader:
 @pytest.fixture(autouse=True)
 def emulator(monkeypatch):
     _Reader.sent = []
-    _Reader.fail_read = _Reader.fail_send = False
+    _Reader.fail_read = _Reader.fail_send = _Reader.stale = False
     monkeypatch.setattr(module, "_ThreadReader", _Reader)
     monkeypatch.setattr(module.time, "sleep", lambda _seconds: None)
 
@@ -271,3 +272,27 @@ def test_a_reel_drawn_as_a_bare_card_is_a_shared_post_with_its_forward_button() 
     ]
     forward = module._forward_button(REEL_CARD_CHAT, messages[0]["media"])
     assert forward is not None and forward.resource_id == "forwarding_shortcut_button"
+
+
+def test_a_thread_whose_newest_message_is_over_a_week_old_is_left_alone(
+    monkeypatch, queued, stories
+) -> None:
+    _Reader.stale = True
+    result = _handle(monkeypatch, DmDecision("story_repost", POST, "Sure!", "Done!"), dry_run=False)
+    assert (result["status"], result["outcome"]) == ("decided", "ignore")
+    assert _Reader.sent == [] and stories == [] and queued == []
+
+
+def test_dates_tell_a_week_old_thread_from_a_recent_one() -> None:
+    assert not module._newest_message_is_old(BUSINESS_CHAT)  # "MON 11:36 PM"
+    assert module._newest_message_is_old(PERSONAL_CHAT)  # "OCT 4, 11:43 PM"
+    assert not module._newest_message_is_old(REEL_CARD_CHAT)  # "YESTERDAY 6:14 PM"
+
+
+def test_an_online_sender_is_named_by_their_header_avatar() -> None:
+    chat = [
+        _node("UTSC AfterHours", (304, 156, 600, 204), "header_title"),
+        _node("", (304, 204, 650, 246), "header_subtitle", "Active now"),
+        _node("", (178, 154, 273, 249), "header_avatar", "Open story of utscafterhours"),
+    ]
+    assert module._sender(chat) == "utscafterhours"

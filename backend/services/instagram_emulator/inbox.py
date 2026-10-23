@@ -26,8 +26,9 @@ _ACCEPT = re.compile(r"^Accept$")
 _MOVE_TO_PRIMARY = re.compile(r"^igds_alert_dialog_primary_button$")
 _AGE = re.compile(r"^(now|\d+)([smhdw]?)$")
 _DAYS_PER_UNIT = {"s": 1 / 86_400, "m": 1 / 1440, "h": 1 / 24, "d": 1, "w": 7, "": 0}
-# Previews that show our side or a status instead of their latest message.
-_NOT_THEIRS = re.compile(r"^(?:You:|You sent|Sent\b|Seen\b|Active\b|Typing)")
+# Previews that show our message was the latest. Once a thread is read, Instagram may
+# show who is active ("Active 2h ago") instead, which says nothing about who wrote last.
+_OURS = re.compile(r"^(?:You:|You sent|Sent\b|Seen\b)")
 # A thread row spans the screen from its left edge and is about one avatar tall.
 _ROW_HEIGHT = (150, 260)
 
@@ -41,9 +42,9 @@ class InboxRow:
     request: bool
 
     @property
-    def from_them(self) -> bool:
-        """Whether the preview is their message rather than ours or a status line."""
-        return not _NOT_THEIRS.match(self.preview)
+    def ours(self) -> bool:
+        """Whether the preview shows our message as the latest."""
+        return bool(_OURS.match(self.preview))
 
 
 def read_inbox(device: EmulatorDevice, user: int, *, requests: bool) -> list[InboxRow]:

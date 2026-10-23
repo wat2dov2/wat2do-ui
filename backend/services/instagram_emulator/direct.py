@@ -19,7 +19,7 @@ from typing import Any
 
 from core.controlbox import controlbox
 from services.ingestion import items
-from services.instagram_dms.decide import decide
+from services.instagram_dms.decide import DmDecision, decide
 from services.instagram_emulator.device import CONTROL as EMULATOR
 from services.instagram_emulator.device import (
     EmulatorDevice,
@@ -45,6 +45,8 @@ _USERNAME = re.compile(r"^[a-z0-9._]{1,30}$")
 # Full-width separators between messages, such as "MON 11:36 PM", "SEP 21, 5:53 PM" or
 # just "11:26 PM" for today.
 _TIMESTAMP = re.compile(r"^(?:(?:[A-Z]{3}|TODAY|YESTERDAY)\b.*)?\d{1,2}:\d{2}\s?[AP]M$")
+# Instagram names the weekday for the last week and the date ("OCT 6, 8:26 PM") before it.
+_OLDER_THAN_A_WEEK = re.compile(r"^[A-Z]{3} \d{1,2},")
 # The last rows of the profile card at the top of a thread, when it is scrolled into view.
 _PROFILE_CARD_END = labels("View profile", "Learn about business chats")
 _NOT_A_MESSAGE = labels(
@@ -83,7 +85,11 @@ class EmulatorDirectExecutor:
             thread = reader.read()
         except EmulatorError as exc:
             raise BrowserSessionError(f"Instagram DM thread could not be read: {exc}") from None
-        decision = decide(thread, account=account_username, school=school, school_name=school_name)
+        decision = (
+            DmDecision("ignore", reason="Newest message is over a week old")
+            if reader.stale
+            else decide(thread, account=account_username, school=school, school_name=school_name)
+        )
         result: dict[str, Any] = {
             "outcome": decision.outcome,
             "reason": decision.reason,
@@ -132,10 +138,13 @@ class _ThreadReader:
         self._device = device
         # Brings the thread back on screen, e.g. after a story repost leaves it.
         self._opener = opener
+        # Whether the newest dated message on screen is over a week old; set by read.
+        self.stale = False
 
     def read(self) -> list[dict[str, Any]]:
         """The thread's visible messages, oldest first, with each shared post's link."""
         nodes = self._open()
+        self.stale = _newest_message_is_old(nodes)
         sender = _sender(nodes)
         messages = _messages(nodes)[-CONTROL.thread_item_limit :]
         # When our message is the newest there is nothing to answer, so no link is needed.
@@ -187,8 +196,9 @@ class _ThreadReader:
         if from_bottom >= len(shares) or shares[-1 - from_bottom]["shared_owner"] != owner:
             raise EmulatorError("The DM thread changed while it was being read")
         message = shares[-1 - from_bottom]
-        # A shared reel has a Forward button beside it that opens the share sheet directly.
-        forward = _forward_button(nodes, message["media"])
+        # A reel drawn as a bare card is shared through the Forward button beside it, whose
+        # sheet has Copy link; a post bubble's own sheet does not, so it is opened instead.
+        forward = _forward_button(nodes, message["media"]) if message["card"] else None
         self._device.tap(forward or message["media"])
         try:
             if forward is None:
@@ -215,7 +225,13 @@ class _ThreadReader:
 
 
 def _their_shares(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [m for m in messages if m["from"] == "them" and m["type"] == "media_share"]
+    """Their shared posts whose owner is readable; one cut off at the top has no owner on
+    screen, and a post with no owner can never be acted on."""
+    return [
+        m
+        for m in messages
+        if m["from"] == "them" and m["type"] == "media_share" and m["shared_owner"]
+    ]
 
 
 def _forward_button(nodes: list[Node], media: Node) -> Node | None:
@@ -240,7 +256,9 @@ def _sender(nodes: list[Node]) -> str | None:
     """The other person's username, from the header of a one-to-one thread."""
     title = next((node.label for node in nodes if node.resource_id == "header_title"), "")
     subtitle = next((node.label for node in nodes if node.resource_id == "header_subtitle"), "")
-    for candidate in (subtitle, title):
+    # While they are online the subtitle says "Active now"; their avatar still names them.
+    avatar = next((node.label for node in nodes if node.resource_id == "header_avatar"), "")
+    for candidate in (subtitle, title, avatar.removeprefix("Open story of ")):
         if _USERNAME.fullmatch(candidate):
             return candidate
     return None
@@ -284,6 +302,7 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
                     "shared_url": None,
                     "shared_owner": owner if _USERNAME.fullmatch(owner) else None,
                     "media": media,
+                    "card": False,
                 },
             )
         )
@@ -308,6 +327,7 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
                     "shared_url": None,
                     "shared_owner": owner if _USERNAME.fullmatch(owner) else None,
                     "media": card,
+                    "card": True,
                 },
             )
         )
@@ -331,10 +351,20 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
                     "shared_url": None,
                     "shared_owner": None,
                     "media": None,
+                    "card": False,
                 },
             )
         )
     return [message for _top, message in sorted(found, key=lambda pair: pair[0])]
+
+
+def _newest_message_is_old(nodes: list[Node]) -> bool:
+    message_list = next((node for node in nodes if node.resource_id == "message_list"), None)
+    if message_list is None:
+        return False
+    separators = [node for node in nodes if _is_separator(node, message_list)]
+    newest = max(separators, key=lambda node: node.bounds[1], default=None)
+    return newest is not None and bool(_OLDER_THAN_A_WEEK.match(newest.text))
 
 
 def _is_separator(node: Node, message_list: Node) -> bool:

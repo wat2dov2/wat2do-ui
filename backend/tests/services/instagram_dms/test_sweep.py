@@ -12,6 +12,8 @@ from services.instagram_notifications.browser_session import BrowserEngagementUn
 THEIRS = InboxRow("club", "Could you share this?", 0.5, unread=True, request=False)
 OURS = InboxRow("friend", "You: Sure!", 0.5, unread=False, request=False)
 OLD = InboxRow("old", "Share this?", 30, unread=True, request=False)
+# A read thread shows who is active, not its latest message.
+ACTIVE = InboxRow("quiet", "Active 2h ago", None, unread=False, request=False)
 REQUEST = InboxRow("stranger", "Hi! Can you post our event?", 1, unread=True, request=True)
 
 
@@ -43,7 +45,7 @@ def emulator(monkeypatch, tmp_path):
         "read_inbox",
         # The "All" tab lists the request too, as a plain thread.
         lambda device, user, requests: (
-            [REQUEST] if requests else [THEIRS, OURS, OLD, replace(REQUEST, request=False)]
+            [REQUEST] if requests else [THEIRS, OURS, OLD, ACTIVE, replace(REQUEST, request=False)]
         ),
     )
 
@@ -59,10 +61,12 @@ def emulator(monkeypatch, tmp_path):
 
 def test_a_sweep_answers_new_threads_once_and_schedules_the_next(emulator) -> None:
     result = module.sweep()
-    assert result == {"status": "swept", "replied": 4, "failed": []}
+    assert result == {"status": "swept", "replied": 6, "failed": []}
     assert sorted(name for _school, name, _dry in emulator) == [
         "club",
         "club",
+        "quiet",
+        "quiet",
         "stranger",
         "stranger",
     ]
@@ -107,3 +111,13 @@ def test_the_next_run_always_lands_in_waking_hours(hour) -> None:
         later = module._next_run(moment)
         assert later > moment
         assert module._waking_hours(later)
+
+
+def test_a_read_thread_is_opened_once_and_again_only_when_unread() -> None:
+    read = InboxRow("club", "Active now", None, unread=False, request=False)
+    assert module._needs_answer(read, {})
+    assert not module._needs_answer(read, {"club": "Could you share this?"})
+    assert not module._needs_answer(OURS, {})
+    assert module._needs_answer(THEIRS, {"club": "an older message"})
+    assert not module._needs_answer(THEIRS, {"club": THEIRS.preview})
+    assert not module._needs_answer(OLD, {})
