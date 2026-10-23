@@ -30,25 +30,6 @@ interface ClubCardProps {
   onCategoryClick?: (category: string) => void;
 }
 
-/** A followed club's outline carries a highlight that travels around it. */
-function FollowedTrace() {
-  // Inset by half the stroke so the outline sits exactly on the card's border.
-  const outline = { x: 0, y: 0, width: "100%", height: "100%", rx: 15.25, fill: "none", stroke: "currentColor" } as const;
-  return (
-    <svg aria-hidden="true" className="pointer-events-none absolute inset-[0.75px] size-[calc(100%-1.5px)] overflow-visible text-badge-new">
-      <rect {...outline} strokeOpacity={0.45} strokeWidth={1.5} />
-      <rect
-        {...outline}
-        pathLength={100}
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        strokeDasharray="18 82"
-        className="animate-border-trace motion-reduce:animate-none"
-      />
-    </svg>
-  );
-}
-
 function ClubCardComponent({
   club,
   isSaved = false,
@@ -125,7 +106,6 @@ function ClubCardComponent({
       }}
       className="group relative flex h-full cursor-pointer flex-col gap-4 rounded-2xl border border-border bg-surface p-4 text-foreground transition-[border-color,box-shadow] duration-200 hover:border-border-hover hover:shadow-[0_10px_30px_-18px_rgb(0_0_0/0.35)]"
     >
-      {isSaved ? <FollowedTrace /> : null}
 
       <div className="flex items-start justify-between gap-3">
         <AvatarStack size="lg" avatars={[{ src: club.logo_url ?? "", name: club.club_name }]} />
