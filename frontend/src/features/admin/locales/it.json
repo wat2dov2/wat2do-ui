@@ -479,11 +479,12 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Organizzatori da invitare a pubblicare i loro eventi.",
-      "description": "Organizzatori di hackathon ed eventi a pagamento trovati ogni giorno dalla ricerca in ogni ateneo, ciascuno con contesto, copione video ed email. Registra il video, apri l'email in Gmail e inviala tu.",
+      "description": "Organizzatori trovati due volte a settimana dalla ricerca in ogni ateneo, prima sindacati e associazioni studentesche, ciascuno con contesto, copione video ed email. Registra il video, apri l'email in Gmail e inviala tu.",
       "leadType": "Tipo di evento",
       "leadTypes": {
+        "student_association": "Sindacati e associazioni studentesche",
         "hackathon": "Hackathon",
-        "ticketed_event": "Eventi a pagamento"
+        "ticketed_event": "Eventi a pagamento dei club"
       },
       "statuses": {
         "new": "Nuovo",
@@ -494,7 +495,7 @@
         "dismissed": "Scartato"
       },
       "emptyTitle": "Ancora nessun organizzatore",
-      "emptyDescription": "La ricerca quotidiana aggiunge qui gli organizzatori man mano che li trova.",
+      "emptyDescription": "La ricerca aggiunge qui nuovi organizzatori due volte a settimana.",
       "event": "Evento",
       "organizer": "Organizzatore",
       "details": "Dettagli",

@@ -479,11 +479,12 @@
     "outreach": {
       "title": "外展邀請",
       "cardDescription": "邀請呢啲搞手喺度發佈佢哋嘅活動。",
-      "description": "每日搜尋喺每間學校搵到嘅黑客松同收費活動主辦方，每個都有背景、影片稿同電郵。錄好影片，喺 Gmail 打開電郵再自己寄出。",
+      "description": "每星期兩次嘅搜尋喺每間學校搵到嘅主辦方，學生會同學生組織排先，每個都有背景、影片稿同電郵。錄好影片，喺 Gmail 打開電郵再自己寄出。",
       "leadType": "活動類型",
       "leadTypes": {
+        "student_association": "學生會同學生組織",
         "hackathon": "黑客松",
-        "ticketed_event": "售票活動"
+        "ticketed_event": "學會收費活動"
       },
       "statuses": {
         "new": "新",
@@ -494,7 +495,7 @@
         "dismissed": "已略過"
       },
       "emptyTitle": "暫時未有搞手",
-      "emptyDescription": "每日搜尋一搵到主辦方就會加喺呢度。",
+      "emptyDescription": "搜尋每星期兩次會將新主辦方加喺呢度。",
       "event": "活動",
       "organizer": "搞手",
       "details": "詳情",

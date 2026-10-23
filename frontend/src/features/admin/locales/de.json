@@ -479,11 +479,12 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Organisatoren, die eingeladen werden sollen, ihre Events zu veröffentlichen.",
-      "description": "Veranstalter von Hackathons und Ticket-Events, die die tägliche Recherche an jeder Hochschule gefunden hat, jeweils mit Kontext, Videoskript und E-Mail. Nimm das Video auf, öffne die E-Mail in Gmail und sende sie selbst.",
+      "description": "Veranstalter, die die zweimal wöchentliche Recherche an jeder Hochschule gefunden hat, Studierendenvertretungen und -vereine zuerst, jeweils mit Kontext, Videoskript und E-Mail. Nimm das Video auf, öffne die E-Mail in Gmail und sende sie selbst.",
       "leadType": "Veranstaltungsart",
       "leadTypes": {
+        "student_association": "Studierendenvertretungen & -vereine",
         "hackathon": "Hackathons",
-        "ticketed_event": "Ticket-Events"
+        "ticketed_event": "Ticket-Events von Clubs"
       },
       "statuses": {
         "new": "Neu",
@@ -494,7 +495,7 @@
         "dismissed": "Verworfen"
       },
       "emptyTitle": "Noch keine Organisatoren",
-      "emptyDescription": "Die tägliche Recherche fügt Veranstalter hier hinzu, sobald sie sie findet.",
+      "emptyDescription": "Die Recherche fügt hier zweimal pro Woche neue Veranstalter hinzu.",
       "event": "Event",
       "organizer": "Organisator",
       "details": "Details",

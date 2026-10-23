@@ -479,11 +479,12 @@
     "outreach": {
       "title": "Difusión",
       "cardDescription": "Organizadores a quienes invitar a publicar sus eventos.",
-      "description": "Organizadores de hackatones y eventos con entrada que la búsqueda diaria encontró en cada universidad, cada uno con contexto, guion de video y correo. Graba el video, abre el correo en Gmail y envíalo tú.",
+      "description": "Organizadores que la búsqueda de dos veces por semana encontró en cada universidad, primero sindicatos y asociaciones estudiantiles, cada uno con contexto, guion de video y correo. Graba el video, abre el correo en Gmail y envíalo tú.",
       "leadType": "Tipo de evento",
       "leadTypes": {
+        "student_association": "Sindicatos y asociaciones estudiantiles",
         "hackathon": "Hackathons",
-        "ticketed_event": "Eventos con entrada"
+        "ticketed_event": "Eventos con entrada de clubes"
       },
       "statuses": {
         "new": "Nuevo",
@@ -494,7 +495,7 @@
         "dismissed": "Descartado"
       },
       "emptyTitle": "Aún no hay organizadores",
-      "emptyDescription": "La búsqueda diaria añade organizadores aquí a medida que los encuentra.",
+      "emptyDescription": "La búsqueda añade organizadores aquí dos veces por semana.",
       "event": "Evento",
       "organizer": "Organizador",
       "details": "Detalles",

@@ -479,11 +479,12 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Mga organizer na iimbitahang mag-post ng kanilang mga event.",
-      "description": "Mga organizer ng hackathon at ticketed na event na nahanap ng araw-araw na research sa bawat school, bawat isa may konteksto, video script at email. I-record ang video, buksan ang email sa Gmail at ikaw ang magpadala.",
+      "description": "Mga organizer na nahanap ng research na tumatakbo dalawang beses kada linggo sa bawat school, una ang mga student union at asosasyon, bawat isa may konteksto, video script at email. I-record ang video, buksan ang email sa Gmail at ikaw ang magpadala.",
       "leadType": "Uri ng event",
       "leadTypes": {
+        "student_association": "Mga student union at asosasyon",
         "hackathon": "Mga hackathon",
-        "ticketed_event": "Mga event na may tiket"
+        "ticketed_event": "Ticketed na event ng mga club"
       },
       "statuses": {
         "new": "Bago",
@@ -494,7 +495,7 @@
         "dismissed": "Inalis"
       },
       "emptyTitle": "Wala pang mga organizer",
-      "emptyDescription": "Idinadagdag dito ng araw-araw na research ang mga organizer habang nahahanap sila.",
+      "emptyDescription": "Nagdaragdag dito ang research ng mga organizer dalawang beses kada linggo.",
       "event": "Event",
       "organizer": "Organizer",
       "details": "Mga detalye",

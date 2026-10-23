@@ -941,9 +941,9 @@ def test_instagram_emulator_rejects_an_inverted_keystroke_window(tmp_path: Path)
         load_controlbox(path)
 
 
-def test_outreach_targets_hackathons_and_ticketed_events_with_a_school_submit_link() -> None:
+def test_outreach_puts_student_associations_first_with_a_school_submit_link() -> None:
     control = load_controlbox().outreach
-    assert set(control.lead_types) == {"hackathon", "ticketed_event"}
+    assert list(control.lead_types) == ["student_association", "hackathon", "ticketed_event"]
     assert "{school}" in control.submit_url_template
 
 

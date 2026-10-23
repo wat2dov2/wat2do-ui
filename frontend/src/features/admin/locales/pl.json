@@ -479,11 +479,12 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Organizatorzy, których warto zaprosić do publikowania wydarzeń.",
-      "description": "Organizatorzy hackathonów i biletowanych wydarzeń znalezieni przez codzienne wyszukiwanie na każdej uczelni, każdy z kontekstem, scenariuszem wideo i e-mailem. Nagraj wideo, otwórz e-mail w Gmailu i wyślij go sam.",
+      "description": "Organizatorzy znalezieni przez wyszukiwanie dwa razy w tygodniu na każdej uczelni, najpierw samorządy i stowarzyszenia studenckie, każdy z kontekstem, scenariuszem wideo i e-mailem. Nagraj wideo, otwórz e-mail w Gmailu i wyślij go sam.",
       "leadType": "Rodzaj wydarzenia",
       "leadTypes": {
+        "student_association": "Samorządy i stowarzyszenia studenckie",
         "hackathon": "Hackathony",
-        "ticketed_event": "Wydarzenia biletowane"
+        "ticketed_event": "Biletowane wydarzenia klubów"
       },
       "statuses": {
         "new": "Nowy",
@@ -494,7 +495,7 @@
         "dismissed": "Odrzucony"
       },
       "emptyTitle": "Brak organizatorów",
-      "emptyDescription": "Codzienne wyszukiwanie dodaje tu organizatorów, gdy tylko ich znajdzie.",
+      "emptyDescription": "Wyszukiwanie dodaje tu nowych organizatorów dwa razy w tygodniu.",
       "event": "Wydarzenie",
       "organizer": "Organizator",
       "details": "Szczegóły",

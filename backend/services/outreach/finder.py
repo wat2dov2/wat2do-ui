@@ -78,8 +78,9 @@ def sweep() -> dict[str, Any]:
     with ThreadPoolExecutor(max_workers=CONTROL.parallel_agents) as pool:
         searches = {
             (school["slug"], lead_type): pool.submit(_find_safely, lead_type, school, known)
-            for school in schools
+            # Lead types run in control box order, so the priority one covers every school first.
             for lead_type in CONTROL.lead_types
+            for school in schools
         }
         found = {search: future.result() for search, future in searches.items()}
     ids = {school["slug"]: school["id"] for school in schools}

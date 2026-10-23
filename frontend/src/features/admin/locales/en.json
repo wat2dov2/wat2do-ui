@@ -479,11 +479,12 @@
     "outreach": {
       "title": "Outreach",
       "cardDescription": "Organizers to invite to post their events.",
-      "description": "Hackathon and ticketed-event organizers the daily research run found at every school, each with context, a video script and an email. Record the video, open the email in Gmail and send it yourself.",
+      "description": "Organizers the twice-weekly research run found at every school, student unions and associations first, each with context, a video script and an email. Record the video, open the email in Gmail and send it yourself.",
       "leadType": "Event type",
       "leadTypes": {
+        "student_association": "Student unions & associations",
         "hackathon": "Hackathons",
-        "ticketed_event": "Ticketed events"
+        "ticketed_event": "Club ticketed events"
       },
       "statuses": {
         "new": "New",
@@ -494,7 +495,7 @@
         "dismissed": "Dismissed"
       },
       "emptyTitle": "No organizers yet",
-      "emptyDescription": "The daily research run adds organizers here as it finds them.",
+      "emptyDescription": "The research run adds organizers here twice a week as it finds them.",
       "event": "Event",
       "organizer": "Organizer",
       "details": "Details",

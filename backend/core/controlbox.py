@@ -1051,7 +1051,8 @@ class OutreachControl(_ControlModel):
     gmail_account: EmailStr
     # "{school}" becomes the school's slug.
     submit_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*$")
-    # Lead type slug -> who and what the research agent looks for at every school.
+    # Lead type slug -> who and what the research agent looks for at every school,
+    # highest priority first: the sweep researches each type across all schools in turn.
     lead_types: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")], Annotated[str, Field(min_length=1)]
     ] = Field(min_length=1)

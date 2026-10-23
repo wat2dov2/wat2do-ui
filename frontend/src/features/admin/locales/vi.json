@@ -479,11 +479,12 @@
     "outreach": {
       "title": "Tiếp cận",
       "cardDescription": "Những nhà tổ chức cần mời đăng sự kiện của họ.",
-      "description": "Ban tổ chức hackathon và sự kiện bán vé mà đợt tìm kiếm hằng ngày tìm thấy ở mỗi trường, mỗi người kèm bối cảnh, kịch bản video và email. Quay video, mở email trong Gmail và tự gửi.",
+      "description": "Ban tổ chức mà đợt tìm kiếm hai lần mỗi tuần tìm thấy ở mỗi trường, ưu tiên hội sinh viên và các hiệp hội, mỗi người kèm bối cảnh, kịch bản video và email. Quay video, mở email trong Gmail và tự gửi.",
       "leadType": "Loại sự kiện",
       "leadTypes": {
+        "student_association": "Hội sinh viên và các hiệp hội",
         "hackathon": "Hackathon",
-        "ticketed_event": "Sự kiện bán vé"
+        "ticketed_event": "Sự kiện bán vé của câu lạc bộ"
       },
       "statuses": {
         "new": "Mới",
@@ -494,7 +495,7 @@
         "dismissed": "Đã loại"
       },
       "emptyTitle": "Chưa có nhà tổ chức nào",
-      "emptyDescription": "Đợt tìm kiếm hằng ngày thêm ban tổ chức vào đây khi tìm thấy.",
+      "emptyDescription": "Đợt tìm kiếm thêm ban tổ chức mới vào đây hai lần mỗi tuần.",
       "event": "Sự kiện",
       "organizer": "Nhà tổ chức",
       "details": "Chi tiết",

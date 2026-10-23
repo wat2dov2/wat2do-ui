@@ -479,11 +479,12 @@
     "outreach": {
       "title": "Prospection",
       "cardDescription": "Organisateurs à inviter à publier leurs événements.",
-      "description": "Organisateurs de hackathons et d'événements payants trouvés chaque jour par la recherche dans chaque établissement, chacun avec un contexte, un script vidéo et un courriel. Enregistrez la vidéo, ouvrez le courriel dans Gmail et envoyez-le vous-même.",
+      "description": "Organisateurs trouvés deux fois par semaine par la recherche dans chaque établissement, associations et syndicats étudiants en premier, chacun avec un contexte, un script vidéo et un courriel. Enregistrez la vidéo, ouvrez le courriel dans Gmail et envoyez-le vous-même.",
       "leadType": "Type d'événement",
       "leadTypes": {
+        "student_association": "Associations et syndicats étudiants",
         "hackathon": "Hackathons",
-        "ticketed_event": "Événements payants"
+        "ticketed_event": "Événements payants des clubs"
       },
       "statuses": {
         "new": "Nouveau",
@@ -494,7 +495,7 @@
         "dismissed": "Écarté"
       },
       "emptyTitle": "Aucun organisateur pour l'instant",
-      "emptyDescription": "La recherche quotidienne ajoute ici les organisateurs au fur et à mesure.",
+      "emptyDescription": "La recherche ajoute ici des organisateurs deux fois par semaine.",
       "event": "Événement",
       "organizer": "Organisateur",
       "details": "Détails",

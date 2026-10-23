@@ -479,11 +479,12 @@
     "outreach": {
       "title": "아웃리치",
       "cardDescription": "행사를 올리도록 초대할 주최자입니다.",
-      "description": "매일 조사로 각 학교에서 찾은 해커톤과 유료 티켓 이벤트 주최자이며, 각각 배경, 영상 스크립트, 이메일이 있습니다. 영상을 녹화하고 Gmail에서 이메일을 열어 직접 보내세요.",
+      "description": "주 2회 조사로 각 학교에서 찾은 주최자이며, 학생회와 학생 단체가 먼저 나오고 각각 배경, 영상 스크립트, 이메일이 있습니다. 영상을 녹화하고 Gmail에서 이메일을 열어 직접 보내세요.",
       "leadType": "이벤트 유형",
       "leadTypes": {
+        "student_association": "학생회 및 학생 단체",
         "hackathon": "해커톤",
-        "ticketed_event": "유료 행사"
+        "ticketed_event": "동아리 유료 이벤트"
       },
       "statuses": {
         "new": "신규",
@@ -494,7 +495,7 @@
         "dismissed": "제외됨"
       },
       "emptyTitle": "아직 주최자가 없습니다",
-      "emptyDescription": "매일 조사가 주최자를 찾는 대로 여기에 추가합니다.",
+      "emptyDescription": "조사가 주 2회 새 주최자를 여기에 추가합니다.",
       "event": "행사",
       "organizer": "주최자",
       "details": "세부 정보",

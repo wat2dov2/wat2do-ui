@@ -479,11 +479,12 @@
     "outreach": {
       "title": "推广邀约",
       "cardDescription": "邀请这些组织者发布他们的活动。",
-      "description": "每日检索在每所学校找到的黑客松和售票活动组织者，每位都附有背景、视频脚本和邮件。录好视频，在 Gmail 中打开邮件并亲自发送。",
+      "description": "每周两次检索在每所学校找到的组织者，学生会和学生组织优先，每位都附有背景、视频脚本和邮件。录好视频，在 Gmail 中打开邮件并亲自发送。",
       "leadType": "活动类型",
       "leadTypes": {
+        "student_association": "学生会与学生组织",
         "hackathon": "黑客松",
-        "ticketed_event": "售票活动"
+        "ticketed_event": "社团售票活动"
       },
       "statuses": {
         "new": "新",
@@ -494,7 +495,7 @@
         "dismissed": "已忽略"
       },
       "emptyTitle": "暂无组织者",
-      "emptyDescription": "每日检索找到组织者后会添加到这里。",
+      "emptyDescription": "检索每周两次在这里添加新的组织者。",
       "event": "活动",
       "organizer": "组织者",
       "details": "详情",
