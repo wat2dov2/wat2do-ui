@@ -11,13 +11,14 @@ Use WebSearch and WebFetch to find upcoming events of this kind at {{school_name
 Search with several phrasings (the school's name with "hackathon", "gala", "formal", "tickets", "conference", "Devpost", "Eventbrite", "student union events", and so on), and open pages to read what they actually say.
 Run at least six different searches before you answer.
 Report up to {{limit}} organizers, each tied to one specific upcoming event.
+Only student-run events count: a student club, society, union, residence council or student hackathon team organizes it. Leave out events run by faculty, research labs, university departments or outside companies.
 
 ## The email address is the hard rule
 
 - Report an email only if you read it, character for character, on a public page you opened: the event's site, the organizer's contact page, the union or society page, or the event listing.
 - `source_url` is that exact page. The email is checked against it, and a lead whose email is not on that page is thrown away.
 - Never guess, construct or complete an email (no `firstname@school.ca` patterns). If you cannot find one, leave that event out.
-- Prefer the organizing team's own address (for example `hello@`, `events@`, `sponsorship@` or the event's own domain) over a personal one.
+- Use the organizing team's own address (for example `hello@`, `events@`, `sponsorship@`, the club's address or the event's own domain). Use a personal address only when it belongs to a student organizer and the page lists it as the event's contact; never a professor's or staff member's.
 - Skip anyone Wat2Do has already found: {{known_emails}}
 - `contact_name` and `contact_role` are only a person and role a page actually names; otherwise leave them empty.
 
