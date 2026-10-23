@@ -101,6 +101,12 @@ class EmulatorDirectExecutor:
         if dry_run or decision.outcome == "ignore":
             # A request we do not answer stays unaccepted, so its sender never sees it read.
             return {**result, "status": "decided"}
+        if (
+            decision.outcome == "story_repost"
+            and self._device.free_data_megabytes() < EMULATOR.min_free_data_megabytes
+        ):
+            # A story upload can fail halfway on a full device; wait for space instead.
+            raise BrowserSessionError("The emulator is low on storage; story reposts wait")
         if row.request:
             _confirmed("request accept", lambda: accept_request(self._device))
         if decision.outcome == "story_repost":

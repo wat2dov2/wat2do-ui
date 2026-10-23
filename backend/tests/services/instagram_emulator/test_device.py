@@ -135,3 +135,26 @@ def test_an_account_below_the_switcher_fold_is_scrolled_into_view(monkeypatch) -
     monkeypatch.setattr(device, "scroll_down", lambda: scrolls.append(1))
     assert device._account_in_switcher("wat2do.dalhousie") == name
     assert len(scrolls) == 2
+
+
+LOW_STORAGE = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
+<node text="Low device storage" content-desc="" bounds="[370,1000][710,1060]" />
+<node text="Close" content-desc="" bounds="[490,1440][590,1500]" />
+</hierarchy>UI hierchary dumped to: /dev/tty"""
+
+
+def test_waiting_closes_the_low_storage_warning() -> None:
+    commands = []
+    tap = (0, "")
+    node = _device([(0, LOW_STORAGE), tap, (0, SCREEN)], commands).wait_for(
+        re.compile("^Your story$")
+    )
+    assert node.text == "Your story"
+    assert commands[1][-3:-2] == ["tap"]
+
+
+def test_free_space_is_read_from_the_data_partition() -> None:
+    df = "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/block/dm-44 10167132 9541120 626012 94% /data\n"
+    commands = []
+    assert _device([(0, df)], commands).free_data_megabytes() == 611
+    assert commands[0][-3:] == ["df", "-k", "/data"]

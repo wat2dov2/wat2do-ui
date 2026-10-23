@@ -1034,6 +1034,8 @@ class InstagramEmulatorControl(_ControlModel):
     story_upload_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
     # How long an edited post may take to save after Done, once a song is chosen.
     audio_save_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
+    # A story repost needs room to upload; below this much free space it waits.
+    min_free_data_megabytes: int = Field(ge=0, le=10_000)
 
     @model_validator(mode="after")
     def validate_timing(self) -> "InstagramEmulatorControl":
