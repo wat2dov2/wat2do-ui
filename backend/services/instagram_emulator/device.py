@@ -74,6 +74,8 @@ _PROFILE_TAB = re.compile(r"^Profile$")
 _SAVE_LOGIN = labels("Save your login info")
 _SAVE = re.compile(r"^Save$")
 _NOT_NOW = re.compile(r"^Not now$")
+_LOW_STORAGE = labels("Low device storage")
+_CLOSE = re.compile(r"^Close$")
 # Rows in the account switcher read "wat2do.school, 3 follows and 2 more".
 _SWITCHER_ROW = re.compile(r"^wat2do\.[a-z0-9._]+(?:, .*)?$")
 _SWITCHER_SCROLLS = 3
@@ -197,9 +199,11 @@ class EmulatorDevice:
             node = self.find(pattern, nodes)
             if node is not None:
                 return node
-            # One-time announcements ("Introducing instants" and the like) cover the app
-            # until answered; declining is always the safe answer.
+            # One-time announcements ("Introducing instants" and the like) and the low
+            # storage warning cover the app until answered; declining is always safe.
             prompt = self.find(_NOT_NOW, nodes)
+            if prompt is None and self.find(_LOW_STORAGE, nodes) is not None:
+                prompt = self.find(_CLOSE, nodes)
             if prompt is not None and not pattern.match(prompt.label):
                 self.tap(prompt)
                 continue
@@ -274,6 +278,11 @@ class EmulatorDevice:
             str(end),
             str(duration),
         )
+
+    def free_data_megabytes(self) -> int:
+        """Free space on the device's data partition, where the app keeps everything."""
+        line = self.adb("shell", "df", "-k", "/data").strip().splitlines()[-1]
+        return int(line.split()[3]) // 1024
 
     def wake(self) -> None:
         self.adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")

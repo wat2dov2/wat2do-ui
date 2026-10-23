@@ -125,6 +125,8 @@ The sweep's random timing is the reply's human-like delay.
 A reply or story repost that fails or cannot be confirmed pauses the sweep for a
 person (`answer_instagram_dms.py resume` once checked) and is never retried, since it
 may already have reached Instagram.
+A story repost waits, without accepting or answering the thread, while the emulator has
+less free storage than `controlbox/instagram_emulator.json` `min_free_data_megabytes`.
 `dry_run` decides and records every DM without replying, reposting or queueing anything.
 Never log DM text.
 

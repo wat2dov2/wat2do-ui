@@ -23,8 +23,13 @@ THREAD = [
 
 
 class _Device:
+    free = 5000
+
     def __init__(self):
         self.users = []
+
+    def free_data_megabytes(self):
+        return _Device.free
 
     def wake(self):
         pass
@@ -60,6 +65,7 @@ class _Reader:
 def emulator(monkeypatch):
     _Reader.sent = []
     _Reader.fail_read = _Reader.fail_send = _Reader.stale = False
+    _Device.free = 5000
     monkeypatch.setattr(module, "_ThreadReader", _Reader)
     monkeypatch.setattr(module.time, "sleep", lambda _seconds: None)
 
@@ -296,3 +302,14 @@ def test_an_online_sender_is_named_by_their_header_avatar() -> None:
         _node("", (178, 154, 273, 249), "header_avatar", "Open story of utscafterhours"),
     ]
     assert module._sender(chat) == "utscafterhours"
+
+
+def test_a_story_request_waits_while_the_emulator_is_low_on_storage(
+    monkeypatch, queued, stories, accepted
+) -> None:
+    _Device.free = 100
+    decision = DmDecision("story_repost", POST, "Sure!", "Done!")
+    with pytest.raises(BrowserSessionError, match="low on storage") as raised:
+        _handle(monkeypatch, decision, dry_run=False, request=True)
+    assert not isinstance(raised.value, BrowserEngagementUncertain)
+    assert stories == [] and accepted == [] and _Reader.sent == []
