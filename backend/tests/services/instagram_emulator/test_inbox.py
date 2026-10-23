@@ -41,7 +41,7 @@ def test_rows_read_name_preview_age_and_unread() -> None:
         ("erica", "might be worth a try", 3, False),
         ("Tony Qiu", "You: Sure!", pytest.approx(5 / 24), False),
     ]
-    assert [r.from_them for r in rows] == [True, False, True, False]
+    assert [r.ours for r in rows] == [False, True, False, True]
 
 
 def test_tabs_and_notes_are_not_rows() -> None:

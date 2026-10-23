@@ -88,9 +88,11 @@ The emulator holds every school account, logged in once outside this automation 
 spread across Android users because the app keeps at most ten accounts each.
 For each account the sweep holds the emulator's lock, switches to the school's Android
 user and account, and lists the main inbox and message requests.
-It opens each recent thread whose newest message is theirs and that it has not handled
-since that message, by tapping its row, and reads who sent each message, its text and
-any shared post from the screen the app draws.
+It opens, by tapping its row, each unread thread with a message it has not handled,
+and each read thread it has never handled (a read thread may show who is active
+instead of its latest message), skipping threads whose newest message is over a week
+old, and reads who sent each message, its text and any shared post from the screen
+the app draws.
 A message request is accepted only when we answer it, or when reading a post it shares
 needs the composer.
 It then asks Claude Haiku (`backend/services/instagram_dms/prompt.md`) for one outcome.

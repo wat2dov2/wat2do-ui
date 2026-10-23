@@ -130,9 +130,17 @@ def _threads(device: EmulatorDevice, user: int) -> list[InboxRow]:
 
 
 def _needs_answer(row: InboxRow, handled: dict[str, str]) -> bool:
-    """A recent thread whose newest message is theirs and has not been handled yet."""
-    recent = row.age_days is None or row.age_days <= CONTROL.max_thread_age_days
-    return recent and (row.unread or row.from_them) and handled.get(row.name) != row.preview
+    """An unread thread with a message not handled yet, or a read thread never handled.
+
+    A read thread often shows who is active instead of its latest message, so it is
+    opened once to see; after that only a new message (which makes it unread) brings
+    it back. The reader checks the thread's own dates when the row shows no age.
+    """
+    if row.age_days is not None and row.age_days > CONTROL.max_thread_age_days:
+        return False
+    if row.unread:
+        return handled.get(row.name) != row.preview
+    return row.name not in handled and not row.ours
 
 
 def _schools_in_visit_order() -> list[str]:
