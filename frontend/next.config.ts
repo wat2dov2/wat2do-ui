@@ -127,10 +127,10 @@ const nextConfig: NextConfig = {
   // image would ship without them.
   outputFileTracingIncludes: {
     "/api/render-instagram-slide": [
-      "./public/fonts/slides/InterTight-400.ttf",
-      "./public/fonts/slides/InterTight-500.ttf",
-      "./public/fonts/slides/InterTight-600.ttf",
-      "./public/fonts/slides/InterTight-700.ttf",
+      "./public/fonts/slides/Satoshi-400.ttf",
+      "./public/fonts/slides/Satoshi-500.ttf",
+      "./public/fonts/slides/Satoshi-600.ttf",
+      "./public/fonts/slides/Satoshi-700.ttf",
       "./node_modules/@resvg/resvg-wasm/index_bg.wasm",
     ],
   },

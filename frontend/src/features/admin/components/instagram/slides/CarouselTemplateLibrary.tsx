@@ -21,7 +21,7 @@ const flex: CSSProperties = { display: "flex" };
 const column: CSSProperties = { ...flex, flexDirection: "column" };
 
 function Frame({ palette, children }: { palette: Palette; children: ReactNode }) {
-  return <div style={{ ...column, position: "relative", width: SLIDE_WIDTH, height: SLIDE_HEIGHT, overflow: "hidden", fontFamily: "Inter Tight", backgroundColor: palette.paper, color: palette.ink }}>{children}</div>;
+  return <div style={{ ...column, position: "relative", width: SLIDE_WIDTH, height: SLIDE_HEIGHT, overflow: "hidden", fontFamily: "Satoshi", backgroundColor: palette.paper, color: palette.ink }}>{children}</div>;
 }
 
 function CoverHeader({ model, palette }: { model: CoverSlideModel; palette: Palette }) {
@@ -49,7 +49,7 @@ function Poster({ src, width, height, style }: { src: string; width: number; hei
 
 function CoverCopy({ model, size = 100 }: { model: CoverSlideModel; size?: number }) {
   return <div style={{ ...column, gap: 24 }}>
-    <div style={{ ...flex, fontWeight: 700, fontSize: size, lineHeight: 0.97, letterSpacing: -1 }}>{model.headline}</div>
+    <div style={{ ...flex, fontWeight: 700, fontSize: size, lineHeight: 0.97, letterSpacing: -3 }}>{model.headline}</div>
     <div style={{ ...flex, fontSize: 32, lineHeight: 1.25 }}>{model.body}</div>
   </div>;
 }
@@ -61,7 +61,7 @@ export function LibraryCoverSlide({ model, template }: { model: CoverSlideModel;
   return <Frame palette={palette}>
     <CoverHeader model={model} palette={palette} />
     {template === "signal" ? <>
-      <div style={{ ...flex, position: "absolute", top: 170, left: 60, fontSize: 280, lineHeight: 1, letterSpacing: -7, fontWeight: 700, color: palette.accent }}>{count}</div>
+      <div style={{ ...flex, position: "absolute", top: 170, left: 60, fontSize: 280, lineHeight: 1, letterSpacing: -18, fontWeight: 700, color: palette.accent }}>{count}</div>
       <div style={{ ...column, position: "absolute", top: 474, left: 64, width: 850 }}><CoverCopy model={model} size={112} /></div>
       <div style={{ ...flex, position: "absolute", top: 862, left: 64, gap: 20 }}>
         {model.tiles.slice(0, 3).map((src, index) => <Poster key={index} src={src} width={294} height={244} style={{ border: `2px solid ${palette.accent}`, borderRadius: 12 }} />)}
@@ -78,7 +78,7 @@ export function LibraryCoverSlide({ model, template }: { model: CoverSlideModel;
     {template === "editorial" ? <>
       <div style={{ ...flex, position: "absolute", left: 64, top: 182, width: 952, gap: 44 }}>
         <div style={{ ...column, width: 595 }}><CoverCopy model={model} size={98} /></div>
-        <div style={{ ...flex, width: 313, justifyContent: "flex-end", fontSize: 160, fontWeight: 500, lineHeight: 1, letterSpacing: -4 }}>{count}</div>
+        <div style={{ ...flex, width: 313, justifyContent: "flex-end", fontSize: 160, fontWeight: 500, lineHeight: 1, letterSpacing: -10 }}>{count}</div>
       </div>
       <div style={{ ...flex, position: "absolute", left: 64, top: 666, gap: 26 }}>
         {model.tiles.slice(0, 2).map((src, index) => <Poster key={index} src={src} width={463} height={440} style={{ borderTop: `6px solid ${palette.ink}` }} />)}
@@ -87,7 +87,7 @@ export function LibraryCoverSlide({ model, template }: { model: CoverSlideModel;
     {template === "ticket" ? <>
       <div style={{ ...column, position: "absolute", left: 64, top: 191, width: 952, height: 884, backgroundColor: palette.accent, color: palette.accentInk, borderRadius: 38, padding: 48 }}>
         <div style={{ ...flex, alignItems: "center", gap: 30, marginBottom: 30 }}>
-          <div style={{ ...flex, fontSize: 190, fontWeight: 700, lineHeight: 1, letterSpacing: -5 }}>{count}</div>
+          <div style={{ ...flex, fontSize: 190, fontWeight: 700, lineHeight: 1, letterSpacing: -12 }}>{count}</div>
           <div style={{ ...flex, width: 2, height: 145, backgroundColor: palette.accentInk }} />
           <div style={{ ...flex, flex: 1, fontSize: 27, lineHeight: 1.3 }}>{model.dateLine}</div>
         </div>

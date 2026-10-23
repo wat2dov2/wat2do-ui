@@ -59,17 +59,17 @@ const MAX_SOURCE_IMAGE_BYTES = 15 * 1024 * 1024;
 // medium, semibold, and bold. satori substitutes the nearest weight it has, so
 // every weight the templates ask for is loaded here.
 //
-// Inter Tight, so a published slide is set in the same face as the site. These
-// are static instances rather than the variable font the app loads through
-// next/font, because satori renders a variable font at a single instance rather
-// than honouring the weight axis. Generated from Google Fonts'
-// InterTight[wght].ttf with fontTools:
+// Satoshi, so a published slide is set in the same face as the site. These are
+// static instances rather than the variable `Satoshi-Variable.woff2` the app
+// itself loads, for two reasons: satori reads ttf/otf/woff and not woff2, and
+// it renders a variable font at a single instance rather than honouring the
+// weight axis. Generated from that same source file with fontTools:
 //   instantiateVariableFont(TTFont(src), {"wght": w}) for w in 400/500/600/700.
 const FONT_FILES = [
-  { file: "InterTight-400.ttf", weight: 400 as const },
-  { file: "InterTight-500.ttf", weight: 500 as const },
-  { file: "InterTight-600.ttf", weight: 600 as const },
-  { file: "InterTight-700.ttf", weight: 700 as const },
+  { file: "Satoshi-400.ttf", weight: 400 as const },
+  { file: "Satoshi-500.ttf", weight: 500 as const },
+  { file: "Satoshi-600.ttf", weight: 600 as const },
+  { file: "Satoshi-700.ttf", weight: 700 as const },
 ];
 
 type SlideFontWeight = (typeof FONT_FILES)[number]["weight"];
@@ -86,7 +86,7 @@ const rendererState = globalThis as typeof globalThis & {
 function loadFonts() {
   fontsPromise ??= Promise.all(
     FONT_FILES.map(async ({ file, weight }) => ({
-      name: "Inter Tight",
+      name: "Satoshi",
       data: await readFile(
         path.join(process.cwd(), "public", "fonts", "slides", file),
       ),

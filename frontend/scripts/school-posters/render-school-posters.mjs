@@ -87,10 +87,10 @@ const posterSchema = z
   .strict();
 
 const FONT_FILES = [
-  { file: "InterTight-400.ttf", weight: 400 },
-  { file: "InterTight-500.ttf", weight: 500 },
-  { file: "InterTight-600.ttf", weight: 600 },
-  { file: "InterTight-700.ttf", weight: 700 },
+  { file: "Satoshi-400.ttf", weight: 400 },
+  { file: "Satoshi-500.ttf", weight: 500 },
+  { file: "Satoshi-600.ttf", weight: 600 },
+  { file: "Satoshi-700.ttf", weight: 700 },
 ];
 
 function parseArguments(argv) {
@@ -182,7 +182,7 @@ async function inlineModelImages(model) {
 async function loadFonts() {
   return Promise.all(
     FONT_FILES.map(async ({ file, weight }) => ({
-      name: "Inter Tight",
+      name: "Satoshi",
       data: await readFile(path.join(frontendRoot, "public", "fonts", "slides", file)),
       weight,
       style: "normal",

@@ -39,7 +39,7 @@ const slideFrame: React.CSSProperties = {
   flexDirection: "column",
   width: SLIDE_WIDTH,
   height: SLIDE_HEIGHT,
-  fontFamily: "Inter Tight",
+  fontFamily: "Satoshi",
   position: "relative",
 };
 
