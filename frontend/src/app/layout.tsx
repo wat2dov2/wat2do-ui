@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import googleAnalytics from "../../../backend/controlbox/google_analytics.json";
-import localFont from "next/font/local";
+import { Inter_Tight } from "next/font/google";
 import type { ReactNode } from "react";
 import { AppShell } from "@/app/app-shell";
 import { ClientProviders } from "@/app/client-providers";
@@ -12,23 +12,13 @@ import { getSchoolThemeStyle } from "@/shared/lib/schoolBranding";
 import { PageBackground } from "@/shared/layout";
 import "../index.css";
 
-// Satoshi ships as a single variable file per style, so one declaration covers
-// every weight the UI asks for. Self-hosted rather than fetched: the licence
-// requires it, and it removes a third-party request from the critical path.
-const satoshi = localFont({
-  src: [
-    {
-      path: "../../public/fonts/WEB/fonts/Satoshi-Variable.woff2",
-      weight: "300 900",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/WEB/fonts/Satoshi-VariableItalic.woff2",
-      weight: "300 900",
-      style: "italic",
-    },
-  ],
-  variable: "--font-satoshi",
+// Inter Tight is a variable font, so one declaration covers every weight the UI
+// asks for. next/font downloads it at build time and serves it from our own
+// domain, so pages make no third-party font request.
+const interTight = Inter_Tight({
+  subsets: ["latin", "latin-ext", "cyrillic", "vietnamese"],
+  style: ["normal", "italic"],
+  variable: "--font-inter-tight",
   display: "swap",
 });
 
@@ -120,7 +110,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html
       lang={school?.language ?? "en"}
-      className={`no-transitions ${satoshi.variable}`}
+      className={`no-transitions ${interTight.variable}`}
       style={getSchoolThemeStyle(school)}
       suppressHydrationWarning
     >

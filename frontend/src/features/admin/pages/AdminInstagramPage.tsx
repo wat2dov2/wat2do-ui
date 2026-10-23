@@ -9,7 +9,7 @@ import { Container, DrawerBody, Section, Stack } from "@/shared/layout";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { Button } from "@/shared/ui/button";
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/shared/ui/drawer";
-import { Instagram } from "@/shared/ui/doodle-icons";
+import { Instagram } from "lucide-react";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { toast } from "@/shared/hooks/use-toast";

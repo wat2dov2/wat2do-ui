@@ -14,17 +14,8 @@ import {
   getPrimaryOccurrence,
   hasActiveEventOccurrence,
 } from "@/shared/utils/date";
-import {
-  Calendar,
-  DollarSign,
-  Edit,
-  Flag,
-  LocationPin,
-  Share2,
-  Trash2,
-  Utensils,
-} from "@/shared/ui/doodle-icons";
-import type { LucideIcon } from "@/shared/ui/doodle-icons";
+import { Calendar, DollarSign, Edit, Flag, MapPin, Share2, Trash2, Utensils } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import {
@@ -173,7 +164,7 @@ function EventLocationCell({ event }: { event: Event }) {
   if (!event.location) return null;
   return (
     <Stack direction="horizontal" gap={3} align="center">
-      <EventInfoTile icon={LocationPin} />
+      <EventInfoTile icon={MapPin} />
       <p className="min-w-0 text-sm font-semibold text-foreground">{event.location}</p>
     </Stack>
   );

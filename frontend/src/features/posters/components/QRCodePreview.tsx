@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
-import { Check } from "@/shared/ui/doodle-icons";
+import { Check } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 
 interface QRCodePreviewProps {

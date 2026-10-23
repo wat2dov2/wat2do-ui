@@ -8,7 +8,7 @@ import { Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
-import { FileText } from "@/shared/ui/doodle-icons";
+import { FileText } from "lucide-react";
 import { Pagination } from "@/shared/ui/Pagination";
 import { Skeleton } from "@/shared/ui/skeleton";
 

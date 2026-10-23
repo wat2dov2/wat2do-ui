@@ -1,5 +1,5 @@
 import React from "react";
-import { X } from "@/shared/ui/doodle-icons";
+import { X } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,

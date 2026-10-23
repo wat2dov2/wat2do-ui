@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { X, ImagePlus } from "@/shared/ui/doodle-icons";
+import { X, ImagePlus } from "lucide-react";
 import { Button, OUTLINE_CONTROL_STYLES } from "@/shared/ui/button";
 import { Field, FieldLabel, FieldError } from "@/shared/ui/field";
 import { cn } from "@/shared/lib/utils";

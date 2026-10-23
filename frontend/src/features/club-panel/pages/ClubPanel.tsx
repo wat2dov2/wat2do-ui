@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Megaphone, Link, Users, Building2 } from "@/shared/ui/doodle-icons";
+import { Megaphone, Link, Users, Building2 } from "lucide-react";
 import { AdminCard } from "@/shared/ui/AdminCard";
 
 interface ClubPanelProps {

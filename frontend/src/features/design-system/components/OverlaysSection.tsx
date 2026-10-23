@@ -17,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
-import { ChevronDown } from "@/shared/ui/doodle-icons";
+import { ChevronDown } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,

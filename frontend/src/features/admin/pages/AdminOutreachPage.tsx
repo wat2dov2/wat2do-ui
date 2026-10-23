@@ -17,7 +17,7 @@ import { AdminTableFilters } from "@/features/admin/components/shared/AdminTable
 import { Stack } from "@/shared/layout";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { Button } from "@/shared/ui/button";
-import { ExternalLink, Mail } from "@/shared/ui/doodle-icons";
+import { ExternalLink, Mail } from "lucide-react";
 import { ItemContent, ItemDescription, ItemTitle } from "@/shared/ui/item";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { TableCell, TableRow } from "@/shared/ui/table";

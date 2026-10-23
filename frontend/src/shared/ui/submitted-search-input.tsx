@@ -1,4 +1,4 @@
-import { Search, X } from "@/shared/ui/doodle-icons";
+import { Search, X } from "lucide-react";
 import { useEnterKeySubmit } from "@/shared/hooks";
 import { createAdaptivePressHandlers } from "@/shared/hooks/useMouseDownPress";
 import { cn } from "@/shared/lib/utils";

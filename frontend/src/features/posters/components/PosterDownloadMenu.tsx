@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/shared/ui/dropdown-menu";
-import { Download } from "@/shared/ui/doodle-icons";
+import { Download } from "lucide-react";
 import { LoadingButton } from "@/shared/ui/loading-button";
 
 interface PosterDownloadMenuProps {

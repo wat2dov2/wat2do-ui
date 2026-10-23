@@ -4,16 +4,7 @@ import NextLink from "next/link";
 import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import {
-  HelpCircle,
-  LogOut,
-  MoreHorizontal,
-  ClubChart,
-  Settings,
-  Shield,
-  Ticket,
-  Users,
-} from "@/shared/ui/doodle-icons";
+import { HelpCircle, LogOut, MoreHorizontal, Shapes, Settings, Shield, Ticket, Users } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
@@ -85,7 +76,7 @@ const PRIMARY_NAV_ITEMS = [
   {
     labelKey: "navigation.clubs",
     href: ROUTES.CLUBS,
-    Icon: ClubChart,
+    Icon: Shapes,
   },
   { labelKey: "navigation.about", href: ROUTES.ABOUT, Icon: HelpCircle },
 ] as const;

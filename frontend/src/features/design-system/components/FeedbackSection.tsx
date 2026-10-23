@@ -3,7 +3,7 @@ import { EmptyState } from "@/shared/feedback";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { Button } from "@/shared/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
-import { Search } from "@/shared/ui/doodle-icons";
+import { Search } from "lucide-react";
 import { ShowcaseBlock } from "./ShowcaseBlock";
 
 export function FeedbackSection() {

@@ -11,7 +11,7 @@ import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptySt
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { Button } from "@/shared/ui/button";
-import { Building2 } from "@/shared/ui/doodle-icons";
+import { Building2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { TableCell, TableRow } from "@/shared/ui/table";
 import { Stack } from "@/shared/layout";

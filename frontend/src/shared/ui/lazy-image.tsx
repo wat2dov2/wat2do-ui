@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import Image, { getImageProps } from "next/image";
 import imageDelivery from "../../../../backend/controlbox/image_delivery.json" with { type: "json" };
-import { ImageOff } from "@/shared/ui/doodle-icons";
+import { ImageOff } from "lucide-react";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
 

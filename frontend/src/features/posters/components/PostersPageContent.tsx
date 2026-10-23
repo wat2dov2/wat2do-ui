@@ -1,7 +1,7 @@
 import { Suspense, useMemo } from "react";
 import type { ComponentType } from "react";
 import { useTranslation } from "react-i18next";
-import { MapPin } from "@/shared/ui/doodle-icons";
+import { MapPin } from "lucide-react";
 import { PosterMapSkeleton } from "@/features/posters/components/PosterMapSkeleton";
 import { FormGrid, Stack } from "@/shared/layout";
 import { Card, CardContent } from "@/shared/ui/card";

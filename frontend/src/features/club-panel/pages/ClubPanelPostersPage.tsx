@@ -8,7 +8,7 @@ import {
 import { useEventsStore } from "@/features/events/store/events.store";
 import { useUserEmail } from "@/features/auth/hooks/useAuthState";
 import { PageHeader, Stack } from "@/shared/layout";
-import { Megaphone } from "@/shared/ui/doodle-icons";
+import { Megaphone } from "lucide-react";
 
 const QRScanMap = lazy(() =>
   import("@/features/posters").then((module) => ({ default: module.QRScanMap })),

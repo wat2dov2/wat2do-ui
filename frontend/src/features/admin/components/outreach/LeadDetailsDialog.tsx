@@ -5,7 +5,7 @@ import { gmailComposeUrl } from "@/features/admin/components/outreach/gmailCompo
 import { DialogBody, FormActions, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
-import { ExternalLink, Mail } from "@/shared/ui/doodle-icons";
+import { ExternalLink, Mail } from "lucide-react";
 import { FormTextarea } from "@/shared/ui/form-field";
 import { ItemContent, ItemDescription, ItemTitle } from "@/shared/ui/item";
 import { LoadingButton } from "@/shared/ui/loading-button";

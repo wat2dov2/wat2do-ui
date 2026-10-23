@@ -1,4 +1,4 @@
-import type { LucideIcon } from "@/shared/ui/doodle-icons";
+import type { LucideIcon } from "lucide-react";
 
 interface AdminEmptyStateProps {
   icon: LucideIcon;

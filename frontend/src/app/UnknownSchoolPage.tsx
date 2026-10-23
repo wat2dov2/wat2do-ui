@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Search } from "@/shared/ui/doodle-icons";
+import { Search } from "lucide-react";
 import { Container, PageFrame, PageHeader, Stack } from "@/shared/layout";
 
 interface UnknownSchoolPageProps {

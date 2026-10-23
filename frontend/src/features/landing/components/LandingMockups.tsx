@@ -10,18 +10,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";
-import {
-  ArrowRight,
-  Calendar,
-  Clock,
-  DollarSign,
-  Instagram,
-  LocationPin,
-  Mail,
-  Search,
-  Sparkles,
-  type LucideIcon,
-} from "@/shared/ui/doodle-icons";
+import { ArrowRight, Calendar, Clock, DollarSign, Instagram, MapPin, Mail, Search, Sparkles, type LucideIcon } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 
 /** The white card every mockup sets its product surface on. */
@@ -67,7 +56,7 @@ export function CaptureMockup() {
           </p>
           <Stack gap={1}>
             <MockLine icon={Calendar}>{t("landing.features.capture.mockDate")}</MockLine>
-            <MockLine icon={LocationPin}>{t("landing.features.capture.mockPlace")}</MockLine>
+            <MockLine icon={MapPin}>{t("landing.features.capture.mockPlace")}</MockLine>
             <MockLine icon={DollarSign}>{t("landing.features.capture.mockPrice")}</MockLine>
           </Stack>
           <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">

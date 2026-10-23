@@ -1,4 +1,4 @@
-import { Circle } from "@/shared/ui/doodle-icons";
+import { Circle } from "lucide-react";
 import { OUTLINE_CONTROL_STYLES } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
 

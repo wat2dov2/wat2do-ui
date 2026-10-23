@@ -5,7 +5,7 @@ import { COARSE_POINTER_MEDIA } from "@/shared/hooks/useCoarsePointer"
 import { cn } from "@/shared/lib/utils"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/shared/ui/button"
-import { ChevronLeft, ChevronRight, type LucideIcon } from "@/shared/ui/doodle-icons"
+import { ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react"
 
 /**
  * The open drawer's content element, or null outside a drawer.

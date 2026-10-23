@@ -2,15 +2,8 @@ import { usePositionView } from "@/features/positions/hooks/usePositionStats";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  CalendarDays,
-  Clock,
-  DollarSign,
-  Instagram,
-  LocationPin,
-  Mail,
-} from "@/shared/ui/doodle-icons";
-import type { LucideIcon } from "@/shared/ui/doodle-icons";
+import { CalendarDays, Clock, DollarSign, Instagram, MapPin, Mail } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { PositionList } from "@/features/positions/components/PositionList";
 import { PositionCardImage } from "@/features/positions/components/PositionCardImage";
 import { formatPositionDeadline } from "@/features/positions/lib/positionDates";
@@ -172,7 +165,7 @@ export function PositionDetailsDrawer({
                     ) : null}
                     {position.location ? (
                       <PositionDetailItem
-                        icon={LocationPin}
+                        icon={MapPin}
                         label={t("positions.locationLabel")}
                         value={position.location}
                       />

@@ -11,7 +11,7 @@ import { formatLandingCount } from "@/features/landing/lib/landingStats";
 import { ROUTES } from "@/shared/constants/routes";
 import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
-import { ArrowRight } from "@/shared/ui/doodle-icons";
+import { ArrowRight } from "lucide-react";
 import { Highlighter } from "@/shared/ui/highlighter";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";

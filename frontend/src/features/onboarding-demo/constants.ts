@@ -1,5 +1,5 @@
 import type { PreviewEventData } from "@/features/auth/components/PreviewStyleEventCard";
-import { Utensils } from "@/shared/ui/doodle-icons";
+import { Utensils } from "lucide-react";
 import type { OnboardingDemoStep } from "./types";
 
 export const ONBOARDING_DEMO_STEPS: OnboardingDemoStep[] = [

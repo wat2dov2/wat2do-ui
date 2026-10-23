@@ -26,10 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import {
-  Download,
-  ShieldAlert,
-} from "@/shared/ui/doodle-icons";
+import { Download, ShieldAlert } from "lucide-react";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { LoadingButton } from "@/shared/ui/loading-button";

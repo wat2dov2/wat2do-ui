@@ -5,7 +5,7 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { ImageOff } from "@/shared/ui/doodle-icons";
+import { ImageOff } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { BadgeMask } from "@/shared/ui/badge-mask";

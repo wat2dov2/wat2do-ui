@@ -3,18 +3,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { LandingRedacted } from "@/features/landing/components/LandingRedacted";
-import {
-  AlertTriangle,
-  Bell,
-  CalendarDays,
-  Download,
-  Eye,
-  Grid3x3,
-  Settings,
-  Shield,
-  Users,
-  type LucideIcon,
-} from "@/shared/ui/doodle-icons";
+import { AlertTriangle, Bell, CalendarDays, Download, Eye, Grid3x3, Settings, Shield, Users, type LucideIcon } from "lucide-react";
 
 /**
  * A simplified, animated picture of how a club's post becomes a listing.

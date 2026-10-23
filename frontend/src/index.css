@@ -89,10 +89,8 @@
   --font-sans: var(--font-family-sans);
   --font-mono: var(--font-family-mono);
 
-  /* Satoshi reads thin at its stock 300/400, so the lighter steps sit a touch
-     heavier, closer to the Instagram carousel stickers. Medium and up are unchanged. */
+  /* Light text stays at regular weight so small copy never reads thin. */
   --font-weight-light: 400;
-  --font-weight-normal: 475;
 
   /* Compact heading sizes share one line-height across the application. */
   --text-2xl--line-height: 0.95;

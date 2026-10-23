@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ShieldAlert, CheckCircle, MailOpen, ArrowRight, UserCheck } from "@/shared/ui/doodle-icons";
+import { ShieldAlert, CheckCircle, MailOpen, ArrowRight, UserCheck } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Card, CardTitle, CardDescription, CardContent } from "@/shared/ui/card";
 import { LoadingButton } from "@/shared/ui/loading-button";

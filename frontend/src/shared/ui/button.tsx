@@ -4,7 +4,7 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
-import { Check } from "@/shared/ui/doodle-icons"
+import { Check } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { createAdaptivePressHandlers } from "@/shared/hooks/useMouseDownPress"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip"

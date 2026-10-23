@@ -1,4 +1,4 @@
-import type { LucideIcon } from "@/shared/ui/doodle-icons";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { PageHeader } from "@/shared/layout";
 import { useTranslation } from "react-i18next";

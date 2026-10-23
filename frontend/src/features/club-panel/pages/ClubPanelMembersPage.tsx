@@ -5,14 +5,7 @@ import { getClubById } from "@/features/clubs";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useRouter } from "next/navigation";
-import {
-  Users,
-  UserMinus,
-  UserPlus,
-  ShieldAlert,
-  Search,
-  MailOpen,
-} from "@/shared/ui/doodle-icons";
+import { Users, UserMinus, UserPlus, ShieldAlert, Search, MailOpen } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { TableSkeletonRows } from "@/shared/ui/table";

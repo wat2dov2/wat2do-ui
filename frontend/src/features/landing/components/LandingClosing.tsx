@@ -6,7 +6,7 @@ import { LandingHeading } from "@/features/landing/components/LandingSection";
 import { ROUTES } from "@/shared/constants/routes";
 import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
-import { ArrowRight } from "@/shared/ui/doodle-icons";
+import { ArrowRight } from "lucide-react";
 
 /** The last push back to the feed, restating the problem it ends. */
 export function LandingClosing({ schoolName }: { schoolName: string }) {

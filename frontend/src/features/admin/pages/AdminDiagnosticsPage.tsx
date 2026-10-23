@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { Container, Stack } from "@/shared/layout";
-import { Settings } from "@/shared/ui/doodle-icons";
+import { Settings } from "lucide-react";
 import {
   Tabs,
   TabsContent,

@@ -7,7 +7,7 @@ import { useSearchStore } from "@/features/search/store/search.store";
 import { LandingRuledGrid, LandingRuledItem, LandingSection } from "@/features/landing/components/LandingSection";
 import { ROUTES } from "@/shared/constants/routes";
 import { Button } from "@/shared/ui/button";
-import { ArrowRight } from "@/shared/ui/doodle-icons";
+import { ArrowRight } from "lucide-react";
 import type { FilterState } from "@/shared/types";
 
 /**

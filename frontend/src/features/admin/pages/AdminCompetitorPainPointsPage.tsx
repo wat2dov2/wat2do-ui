@@ -15,7 +15,7 @@ import { PainPointDailyReports } from "@/features/admin/components/painPoints/Pa
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { ExternalLink, MessageCircle } from "@/shared/ui/doodle-icons";
+import { ExternalLink, MessageCircle } from "lucide-react";
 import { ItemContent, ItemDescription, ItemTitle } from "@/shared/ui/item";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { TableCell, TableRow } from "@/shared/ui/table";

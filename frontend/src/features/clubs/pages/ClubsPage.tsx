@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
-import { Bookmark, Building2, Search } from "@/shared/ui/doodle-icons";
+import { Bookmark, Building2, Search } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { NewlyAddedFilterButton } from "@/shared/ui/newly-added-filter-button";
 import { IntegerFilter } from "@/shared/ui/integer-filter";

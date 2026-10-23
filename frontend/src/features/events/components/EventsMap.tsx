@@ -9,7 +9,7 @@ import { useEventMapMarkers } from "@/features/events/hooks/useEventMapMarkers";
 import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
-import { GraduationCap, X } from "@/shared/ui/doodle-icons";
+import { GraduationCap, X } from "lucide-react";
 import { formatCardDate, formatCardTime, isEventHappeningNow } from "@/shared/utils/date";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useDarkMode } from "@/shared/hooks/useDarkMode";

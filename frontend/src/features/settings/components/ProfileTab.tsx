@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { UserProfile } from "@/features/auth";
-import { Mail, Camera } from "@/shared/ui/doodle-icons";
+import { Mail, Camera } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Label } from "@/shared/ui/label";

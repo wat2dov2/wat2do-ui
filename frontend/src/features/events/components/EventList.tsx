@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Search } from "@/shared/ui/doodle-icons";
+import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
 import type { Event } from "@/shared/types";

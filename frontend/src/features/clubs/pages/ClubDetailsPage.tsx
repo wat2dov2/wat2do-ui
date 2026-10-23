@@ -3,13 +3,8 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import {
-  Bookmark,
-  Discord,
-  ExternalLink,
-  HelpCircle,
-  Instagram,
-} from "@/shared/ui/doodle-icons";
+import { Bookmark, ExternalLink, HelpCircle, Instagram } from "lucide-react";
+import { DiscordIcon } from "@/shared/ui/platform-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { Link } from "@/shared/ui/link";
@@ -153,7 +148,7 @@ function ClubDetailsContent({
                   rel="noopener noreferrer"
                   className={CLUB_LINK_CLASS}
                 >
-                  <Discord className="size-4 text-muted-foreground" />
+                  <DiscordIcon className="size-4 text-muted-foreground" />
                   <span>{t("clubPanel.joinDiscord")}</span>
                 </Link>
               ) : null}

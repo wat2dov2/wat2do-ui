@@ -8,7 +8,7 @@ import { toast } from "@/shared/hooks/use-toast";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
-import { Trash2 } from "@/shared/ui/doodle-icons";
+import { Trash2 } from "lucide-react";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { LoadingButton } from "@/shared/ui/loading-button";

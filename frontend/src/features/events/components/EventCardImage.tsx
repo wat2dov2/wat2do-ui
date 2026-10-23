@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { EventImageCutout, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
-import { Calendar } from "@/shared/ui/doodle-icons";
+import { Calendar } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import {
   Dialog,

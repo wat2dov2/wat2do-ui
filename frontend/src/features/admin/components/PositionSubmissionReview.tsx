@@ -8,7 +8,7 @@ import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatusBadge";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { PositionSubmissionDrawer } from "@/features/admin/components/PositionSubmissionDrawer";
-import { FileText } from "@/shared/ui/doodle-icons";
+import { FileText } from "lucide-react";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { Button } from "@/shared/ui/button";
 import { TableRow, TableCell } from "@/shared/ui/table";

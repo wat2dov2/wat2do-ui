@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type MutableRefObject } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Plus } from "@/shared/ui/doodle-icons";
+import { Plus } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { LoadingButton } from "@/shared/ui/loading-button";

@@ -6,7 +6,7 @@ import { format } from "date-fns"
 import { cn } from "@/shared/lib/utils"
 import { Button } from "@/shared/ui/button"
 import { Calendar } from "@/shared/ui/calendar"
-import { CalendarDays } from "@/shared/ui/doodle-icons"
+import { CalendarDays } from "lucide-react"
 import { parseLocalDateValue } from "@/shared/utils/date"
 import {
   Popover,

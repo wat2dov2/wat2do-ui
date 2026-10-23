@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronUp } from "@/shared/ui/doodle-icons";
+import { ChevronUp } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { MAIN_CONTENT_SCROLL_ROOT_SELECTOR } from "@/shared/constants/ui";
 

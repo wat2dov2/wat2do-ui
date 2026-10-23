@@ -8,7 +8,7 @@ import { CardEntrance } from "@/shared/ui/card-entrance";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { CardImageSkeleton } from "@/shared/ui/card-image-skeleton";
 import { EventCardContentFrame } from "@/shared/ui/event-card-content";
-import { Users } from "@/shared/ui/doodle-icons";
+import { Users } from "lucide-react";
 import { EmptyState } from "@/shared/feedback/empty-state";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { PositionCard } from "@/features/positions/components/PositionCard";

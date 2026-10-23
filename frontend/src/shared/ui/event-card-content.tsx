@@ -4,13 +4,7 @@
  */
 
 import { Badge } from "@/shared/ui/badge";
-import {
-  Calendar,
-  Clock,
-  Instagram,
-  LocationPin,
-  type LucideIcon,
-} from "@/shared/ui/doodle-icons";
+import { Calendar, Clock, Instagram, MapPin, type LucideIcon } from "lucide-react";
 import { Link } from "@/shared/ui/link";
 import { cn } from "@/shared/lib/utils";
 import type { ComponentProps } from "react";
@@ -180,7 +174,7 @@ export function EventCardContent({
               ) : null}
               {location ? (
                 <EventCardMetadataLine
-                  icon={LocationPin}
+                  icon={MapPin}
                   slot="location"
                   text={location}
                   textClassName={secondaryTextClassName}

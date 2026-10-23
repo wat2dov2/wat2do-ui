@@ -20,7 +20,7 @@ function loadUI(name: string, disclosure?: { open: boolean; setOpen: (open: bool
       if (id === "react" && disclosure) return { ...require("react"), useContext: () => disclosure };
       if (id === "@/shared/hooks/useMouseDownPress") return { createAdaptivePressHandlers, isNestedInteractiveTarget };
       if (["@/shared/layout/stack", "@/shared/ui/Pagination", "@/shared/ui/skeleton"].includes(id)) return {};
-      if (id === "@/shared/ui/doodle-icons") return { Check: () => null };
+      if (id === "lucide-react") return { Check: () => null };
       if (id === "@/shared/ui/button") return { OUTLINE_CONTROL_STYLES: "" };
       if (id === "@/shared/ui/tooltip") return { Tooltip: "Tooltip", TooltipContent: "TooltipContent", TooltipTrigger: "TooltipTrigger" };
       if (id === "@/shared/ui/drawer" || id === "@/shared/hooks/useExclusiveDisclosure") return {};

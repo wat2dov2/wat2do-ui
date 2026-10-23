@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Building2, Users, Calendar, Instagram, Mail, Megaphone, MessageCircle, Settings, Shield } from "@/shared/ui/doodle-icons";
+import { Building2, Users, Calendar, Instagram, Mail, Megaphone, MessageCircle, Settings, Shield } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { AdminCard } from "@/shared/ui/AdminCard";
 import { Stack } from "@/shared/layout/stack";
