@@ -103,7 +103,7 @@ class EmulatorDirectExecutor:
             return {**result, "status": "decided"}
         if (
             decision.outcome == "story_repost"
-            and self._device.free_data_megabytes() < EMULATOR.min_free_data_megabytes
+            and self._device.reclaim_data() < EMULATOR.min_free_data_megabytes
         ):
             # A story upload can fail halfway on a full device; wait for space instead.
             raise BrowserSessionError("The emulator is low on storage; story reposts wait")

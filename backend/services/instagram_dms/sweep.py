@@ -102,6 +102,7 @@ def _sweep_account(
     statuses = []
     with exclusive():
         device.wake()
+        device.reclaim_data()
         device.use_android_user(user)
         device.use_account(user, account)
         for row in _threads(device, user):

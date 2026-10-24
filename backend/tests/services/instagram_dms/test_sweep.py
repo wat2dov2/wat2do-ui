@@ -18,6 +18,9 @@ REQUEST = InboxRow("stranger", "Hi! Can you post our event?", 1, unread=True, re
 
 
 class _Device:
+    def reclaim_data(self):
+        return 5000
+
     def wake(self):
         pass
 

@@ -1019,6 +1019,10 @@ class InstagramEmulatorControl(_ControlModel):
     audio_save_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
     # A story repost needs room to upload; below this much free space it waits.
     min_free_data_megabytes: int = Field(ge=0, le=10_000)
+    # Below this much free space, these apps' data is cleared on these Android users.
+    reclaim_below_data_megabytes: int = Field(ge=0, le=10_000)
+    reclaim_android_users: tuple[Annotated[int, Field(ge=1)], ...]
+    reclaim_packages: tuple[Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.]+$")], ...]
 
     @model_validator(mode="after")
     def validate_timing(self) -> "InstagramEmulatorControl":
@@ -1028,6 +1032,8 @@ class InstagramEmulatorControl(_ControlModel):
             raise ValueError(
                 "keystroke_delay_min_seconds cannot exceed keystroke_delay_max_seconds"
             )
+        if self.instagram_package in self.reclaim_packages:
+            raise ValueError("Clearing Instagram's data would log its accounts out")
         if (
             Counter(self.android_user_by_school.values()).most_common(1)[0][1]
             > _INSTAGRAM_ACCOUNTS_PER_APP

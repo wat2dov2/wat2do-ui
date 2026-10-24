@@ -28,7 +28,7 @@ class _Device:
     def __init__(self):
         self.users = []
 
-    def free_data_megabytes(self):
+    def reclaim_data(self):
         return _Device.free
 
     def wake(self):
