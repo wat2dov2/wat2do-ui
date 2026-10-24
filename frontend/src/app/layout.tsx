@@ -6,14 +6,9 @@ import type { ReactNode } from "react";
 import { AppShell } from "@/app/app-shell";
 import { ClientProviders } from "@/app/client-providers";
 import { SiteBanner } from "@/app/SiteBanner";
-import {
-  getRequestSchool,
-  getRequestSchoolSummary,
-  getSchoolDirectory,
-} from "@/shared/api/schools.server";
+import { getRequestSchool, getSchoolDirectory } from "@/shared/api/schools.server";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { getSchoolThemeStyle } from "@/shared/lib/schoolBranding";
-import { getSchoolLogoImage } from "@/shared/lib/schoolLogo";
 import "../index.css";
 
 // Satoshi ships as a single variable file per style, so one declaration covers
@@ -71,7 +66,7 @@ const themeInitScript = `
 })();
 `;
 
-const BASE_METADATA: Metadata = {
+export const metadata: Metadata = {
   metadataBase: new URL("https://wat2do.io"),
   title: "Wat2Do | Campus Events",
   description: APP_DESCRIPTION,
@@ -82,6 +77,15 @@ const BASE_METADATA: Metadata = {
   },
   applicationName: "Wat2Do",
   manifest: "/manifest.json",
+  // Square raster icons: the wide wordmark SVG was squeezed and cropped as an icon.
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+  },
   openGraph: {
     type: "website",
     title: "Wat2Do | Campus Events",
@@ -96,12 +100,6 @@ const BASE_METADATA: Metadata = {
     description: APP_DESCRIPTION,
   },
 };
-
-/** Tab and home-screen icons follow the school's logo, built from its posters when it has one. */
-export async function generateMetadata(): Promise<Metadata> {
-  const logo = getSchoolLogoImage(await getRequestSchoolSummary());
-  return { ...BASE_METADATA, icons: { icon: logo.src, apple: logo.src } };
-}
 
 export const viewport: Viewport = {
   width: "device-width",

@@ -6,7 +6,6 @@ BUCKET_AVATARS = "avatars"
 BUCKET_CLUB_LOGOS = "organization-logos"
 BUCKET_QR_ASSETS = "qr-assets"
 BUCKET_CLAIM_PROOFS = "claim-proofs"
-BUCKET_SCHOOL_LOGOS = "school-logos"
 
 # Keep these in sync with supabase/migrations bucket file_size_limit values.
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024

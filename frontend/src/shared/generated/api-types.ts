@@ -4589,8 +4589,6 @@ export interface components {
             event_seasons?: components["schemas"]["SchoolEventSeason"][];
             /** Email Domains */
             email_domains?: string[];
-            /** Poster Logo Url */
-            poster_logo_url?: string | null;
         };
         /** SendOtpRequest */
         SendOtpRequest: {

@@ -11,7 +11,7 @@ from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import USER_GOING_EVENTS, USERS
 from services import school_service
-from services.email_layout import email_logo
+from services.email_layout import EMAIL_LOGO
 from services.email_service import EmailMessage, InlineImage
 from services.notifications.delivery_log import claim_delivery, deliver_claimed_email
 from services.notifications.email_images import event_hero_image
@@ -188,7 +188,7 @@ def _send_event_reminder(*, user: dict, reminder: dict, image: InlineImage | Non
             "List-Unsubscribe": f"<{unsubscribe}>",
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
-        inline_images=[email_logo(user.get("school")), *([image] if image else [])],
+        inline_images=[EMAIL_LOGO, image] if image else [EMAIL_LOGO],
     )
     # Render before claiming, so a rendering failure cannot strand a pending delivery.
     row_id = claim_delivery(

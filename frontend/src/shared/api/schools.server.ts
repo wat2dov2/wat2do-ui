@@ -76,14 +76,3 @@ export async function getSchoolDirectory(): Promise<SchoolSummary[]> {
     buildSchoolDirectorySnapshot,
   );
 }
-
-/** The request school's directory entry; undefined when the directory is unavailable. */
-export async function getRequestSchoolSummary(): Promise<SchoolSummary | undefined> {
-  // headers() must throw freely so Next.js can mark the route dynamic.
-  const school = await getRequestSchool();
-  const schools = await getSchoolDirectory().catch((error: unknown) => {
-    console.error("Failed to load the school directory:", error);
-    return undefined;
-  });
-  return schools?.find((entry) => entry.slug === school);
-}

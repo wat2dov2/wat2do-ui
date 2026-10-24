@@ -1,10 +1,8 @@
 """The light wat2do email layout shared by every email the app sends."""
 
-from dataclasses import replace
 from html import escape
 from pathlib import Path
 
-from services import school_logo_service, school_service
 from services.email_service import InlineImage
 
 # Email clients do not reliably support CSS custom properties or OKLCH.
@@ -18,24 +16,13 @@ EMAIL_THEME = {
     "border": "#d6d6d6",
 }
 
-# The shell always shows cid:wat2do-logo; email_logo picks which image fills it.
-_WAT2DO_LOGO = InlineImage(
+# Embedded in every email; the shell shows it as cid:wat2do-logo.
+EMAIL_LOGO = InlineImage(
     content_id="wat2do-logo",
     filename="wat2do-logo.png",
     content_type="image/png",
     content=Path(__file__).with_name("wat2do-logo.png").read_bytes(),
 )
-
-
-def email_logo(school: str | None) -> InlineImage:
-    """The school's poster logo when it has one, otherwise the standard wat2do logo."""
-    record = school_service.get_school(school)
-    poster_logo = (
-        school_logo_service.email_poster_logo(record.poster_logo_url)
-        if record is not None and record.poster_logo_url
-        else None
-    )
-    return replace(_WAT2DO_LOGO, content=poster_logo) if poster_logo else _WAT2DO_LOGO
 
 
 def email_shell(
@@ -44,7 +31,7 @@ def email_shell(
     content: str,
     footer_links: list[tuple[str, str]] | None = None,
 ) -> str:
-    """Logo, heading, content, and footer on the light card. Send with ``email_logo`` inline."""
+    """Logo, heading, content, and footer on the light card. Send with ``EMAIL_LOGO`` inline."""
     links = " &middot; ".join(
         f'<a style="color:{EMAIL_THEME["foreground"]};" href="{escape(url, quote=True)}">'
         f"{escape(label)}</a>"
@@ -54,7 +41,7 @@ def email_shell(
         f'<div style="margin:0;background:{EMAIL_THEME["background"]};padding:28px 16px;">'
         f'<div style="max-width:640px;margin:0 auto;background:{EMAIL_THEME["surface"]};'
         f'border:1px solid {EMAIL_THEME["border"]};border-radius:16px;padding:24px;">'
-        f'<img src="cid:{_WAT2DO_LOGO.content_id}" alt="wat2do" width="80" height="57" '
+        f'<img src="cid:{EMAIL_LOGO.content_id}" alt="wat2do" width="80" height="57" '
         'style="display:block;margin:0 0 16px;border:0;">'
         f'<h1 style="margin:0 0 24px;color:{EMAIL_THEME["foreground"]};'
         f'font:800 28px sans-serif;">{escape(heading)}</h1>'

@@ -104,7 +104,6 @@ def test_create_invitation_enforces_school_matching_for_non_admins(monkeypatch, 
     )
     monkeypatch.setattr(user_service, "get_user", MagicMock(return_value=mock_inviter))
     monkeypatch.setattr(user_service, "get_user_by_email", MagicMock(return_value=None))
-    monkeypatch.setattr("services.email_layout.school_service.get_school", lambda _slug: None)
     send = MagicMock(return_value=True)
     monkeypatch.setattr("services.email_service.email_service.send", send)
     monkeypatch.setattr(

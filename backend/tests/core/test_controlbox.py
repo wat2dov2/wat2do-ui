@@ -78,8 +78,6 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.social_previews.jpeg_quality == 90
     assert controlbox.social_previews.reserved_concurrency == 2
     assert controlbox.social_previews.asset_retention_days == 30
-    assert controlbox.school_logos.minimum_event_count == 250
-    assert controlbox.school_logos.outline_color == "#ffffff"
     assert str(controlbox.authentication.legacy_frontend_origins[0]) == "https://wat2do.ca/"
     assert controlbox.club_management.directory_page_size == 20
     assert [str(email) for email in controlbox.contact.recipient_emails] == [
@@ -218,32 +216,6 @@ def test_social_preview_navigation_must_fit_inside_function_timeout(
     )
 
     with pytest.raises(ValidationError, match="navigation timeout"):
-        load_controlbox(path)
-
-
-@pytest.mark.parametrize(
-    ("field", "value"),
-    [("minimum_event_count", 0), ("outline_color", "white"), ("tile_width", 4)],
-)
-def test_invalid_school_logo_control_is_rejected(
-    tmp_path: Path,
-    field: str,
-    value: int | str,
-) -> None:
-    path = _write_control(tmp_path, "school_logos", lambda payload: payload.update({field: value}))
-
-    with pytest.raises(ValidationError, match=field):
-        load_controlbox(path)
-
-
-def test_school_logo_email_rendition_must_fit_inside_the_logo(tmp_path: Path) -> None:
-    path = _write_control(
-        tmp_path,
-        "school_logos",
-        lambda payload: payload.update({"output_width": 256, "email_width": 320}),
-    )
-
-    with pytest.raises(ValidationError, match="email width"):
         load_controlbox(path)
 
 

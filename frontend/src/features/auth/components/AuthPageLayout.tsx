@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
-import { useRequestSchool } from "@/app/client-providers";
-import { BrandLogo } from "@/shared/ui/brand-logo";
+import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { Card, CardContent } from "@/shared/ui/card";
 import { PageHeader, type PageHeaderBack } from "@/shared/layout";
@@ -23,7 +23,6 @@ export function AuthPageLayout({
   children,
 }: AuthPageLayoutProps) {
   const { t } = useTranslation();
-  const requestSchool = useRequestSchool();
 
   return (
     <main className="min-h-screen">
@@ -34,7 +33,13 @@ export function AuthPageLayout({
             <CardContent className="space-y-6 p-8">
               {back ? <PageHeader back={back} /> : null}
 
-              <BrandLogo school={requestSchool} size="card" alt={t("common.logo")} />
+              <Image
+                alt={t("common.logo")}
+                width={40}
+                height={28}
+                className="h-7 w-[40px] object-contain"
+                src={imgLogo}
+              />
 
               <div className="space-y-2">
                 <h1 className="font-sans font-semibold text-[28px] text-foreground leading-tight text-balance">

@@ -1,11 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { useRequestSchool } from "@/app/client-providers";
+import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { EXTERNAL_LINKS, schoolInstagramHandle } from "@/shared/constants/links";
 import { ROUTES } from "@/shared/constants/routes";
 import { Container, Stack } from "@/shared/layout";
-import { BrandLogo } from "@/shared/ui/brand-logo";
 import { Link } from "@/shared/ui/link";
 
 const FOOTER_LINK_GROUPS = [
@@ -34,8 +35,7 @@ const FOOTER_LINK_GROUPS = [
  */
 export function SiteFooter() {
   const { t } = useTranslation();
-  const requestSchool = useRequestSchool();
-  const handle = schoolInstagramHandle(requestSchool);
+  const handle = schoolInstagramHandle(useRequestSchool());
   const socials = [
     { label: "Instagram", href: `https://www.instagram.com/${handle}/` },
     { label: "LinkedIn", href: EXTERNAL_LINKS.LINKEDIN },
@@ -47,7 +47,13 @@ export function SiteFooter() {
         <div className="grid gap-12 py-12 sm:py-16 md:grid-cols-[minmax(0,1fr)_auto] md:gap-24">
           <Stack gap={4}>
             <Stack direction="horizontal" gap={2} align="center">
-              <BrandLogo school={requestSchool} size="nav" alt={t("common.logo")} />
+              <Image
+                alt={t("common.logo")}
+                width={34}
+                height={24}
+                className="h-6 w-[34px] select-none object-contain"
+                src={imgLogo}
+              />
               <span className="text-lg font-semibold tracking-tight text-foreground">@{handle}</span>
             </Stack>
             <nav aria-label={t("footer.social")}>

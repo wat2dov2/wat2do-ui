@@ -55,7 +55,6 @@ class School(BaseModel):
 
 class SchoolRecord(School):
     id: int
-    poster_logo_url: str | None = None
     social_preview_revision: int = 0
     social_preview_rendered_revision: int = 0
     social_preview_rendered_at: datetime | None = None
@@ -75,5 +74,3 @@ class SchoolSummary(BaseModel):
     location_examples: list[str] = Field(default_factory=list)
     event_seasons: list[SchoolEventSeason] = Field(default_factory=list)
     email_domains: list[str] = Field(default_factory=list)
-    # The wat2do logo built from this school's posters; null shows the standard logo.
-    poster_logo_url: str | None = None

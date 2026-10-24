@@ -9,7 +9,6 @@ on:
       - Process Notifications
       - Scheduled notification emails
       - Terraform
-      - Weekly school poster logos
     branches: [main]
     types: [completed]
 
