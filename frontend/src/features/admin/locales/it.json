@@ -381,10 +381,38 @@
       "coverBody": "Testo del corpo copertina",
       "slideOf": "Diapositiva {{index}} di {{count}}",
       "undoRemoveSlide": "Annulla rimozione diapositiva",
-      "suggestedSong": "Brano suggerito",
-      "songChart": "{{chart}} · Verificato il {{date}}",
-      "songInstructions": "Cerca questo titolo e artista su Instagram quando pubblichi. La musica non viene aggiunta automaticamente.",
-      "noSuggestedSong": "Nessun brano suggerito salvato per questo gruppo."
+      "tabs": {
+        "carousels": "Caroselli",
+        "songs": "Brani"
+      },
+      "songs": {
+        "query": "Brano",
+        "placeholder": "es. the weeknd after hours",
+        "add": "Aggiungi brano",
+        "asianCampusesOnly": "Solo campus asiatici",
+        "asianCampuses": "Campus asiatici",
+        "help": "Qualche minuto dopo la pubblicazione di un carosello, l'emulatore aggiunge uno di questi brani al post, provandoli in ordine casuale.",
+        "label": "brani",
+        "columns": {
+          "song": "Brano",
+          "added": "Aggiunto"
+        },
+        "delete": "Elimina",
+        "deleteSong": "Elimina {{song}}",
+        "empty": "Ancora nessun brano. Aggiungine uno perché i nuovi caroselli abbiano musica.",
+        "addError": "Impossibile aggiungere il brano",
+        "deleteError": "Impossibile eliminare il brano",
+        "loadError": "Impossibile caricare i brani."
+      },
+      "music": {
+        "title": "Musica",
+        "afterPublish": "Un brano della lista viene aggiunto qualche minuto dopo la pubblicazione di questo carosello.",
+        "pending": "In attesa che l'emulatore aggiunga un brano.",
+        "added": "Aggiunto {{track}}",
+        "failed": "Nessun brano aggiunto: {{reason}}",
+        "none": "Questo carosello è stato pubblicato prima che i brani venissero aggiunti automaticamente.",
+        "viewPost": "Vedi su Instagram"
+      }
     },
     "clubSubmissions": "Proposte di club",
     "noClubSubmissions": "Nessuna proposta di club",
@@ -397,7 +425,7 @@
     },
     "painPoints": {
       "title": "Criticità dei concorrenti",
-      "cardDescription": "Lamentele su Eventbrite, Meetup e Fable Social.",
+      "cardDescription": "Lamentele sulle app di eventi concorrenti.",
       "description": "Recensioni e post pubblici in cui le persone si lamentano dei concorrenti. Sola lettura; wat2do non risponde mai.",
       "competitor": "Concorrente",
       "source": "Fonte",
@@ -427,7 +455,60 @@
         "new": "Nuovo",
         "seen": "Visto",
         "dismissed": "Ignorato"
+      },
+      "tabs": {
+        "label": "Viste dei problemi",
+        "complaints": "Lamentele",
+        "reports": "Report giornalieri"
+      },
+      "reports": {
+        "meta": "Lamentele: {{count}} · {{model}}",
+        "suggestions": "Modifiche suggerite a wat2do",
+        "themes": "Temi ricorrenti ({{count}})",
+        "where": "Dove:",
+        "evidence": "Basato su:",
+        "priorities": {
+          "high": "Alta",
+          "medium": "Media",
+          "low": "Bassa"
+        },
+        "emptyTitle": "Ancora nessun report",
+        "emptyDescription": "Dopo ogni ricerca giornaliera che trova nuove lamentele viene scritto un report."
       }
+    },
+    "outreach": {
+      "title": "Outreach",
+      "cardDescription": "Organizzatori da invitare a pubblicare i loro eventi.",
+      "description": "Organizzatori trovati due volte a settimana dalla ricerca in ogni ateneo, prima sindacati e associazioni studentesche, ciascuno con contesto, copione video ed email. Registra il video, apri l'email in Gmail e inviala tu.",
+      "leadType": "Tipo di evento",
+      "leadTypes": {
+        "student_association": "Sindacati e associazioni studentesche",
+        "hackathon": "Hackathon",
+        "ticketed_event": "Eventi a pagamento dei club"
+      },
+      "statuses": {
+        "new": "Nuovo",
+        "contacted": "Contattato",
+        "replied": "Ha risposto",
+        "submitted": "Inviato",
+        "not_interested": "Non interessato",
+        "dismissed": "Scartato"
+      },
+      "emptyTitle": "Ancora nessun organizzatore",
+      "emptyDescription": "La ricerca aggiunge qui nuovi organizzatori due volte a settimana.",
+      "event": "Evento",
+      "organizer": "Organizzatore",
+      "details": "Dettagli",
+      "openEmail": "Apri l'email in Gmail",
+      "openFollowUp": "Apri il follow-up in Gmail",
+      "openEvent": "Apri la pagina dell'evento",
+      "source": "Dove è stata trovata l'email",
+      "context": "Contesto",
+      "videoScript": "Script del video",
+      "email": "Email",
+      "followUp": "Follow-up",
+      "notes": "Note",
+      "saveNotes": "Salva note"
     },
     "clubSubmissionDetails": {
       "records": "Dettagli del record",

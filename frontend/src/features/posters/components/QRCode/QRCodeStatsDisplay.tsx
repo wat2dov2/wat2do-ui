@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Eye, Users } from "@/shared/ui/doodle-icons";
+import { Eye, Users } from "lucide-react";
 import { Skeleton } from "@/shared/ui/skeleton";
 
 interface QRCodeStatsDisplayProps {

@@ -717,6 +717,10 @@ def test_publish_batch_renders_the_slides_from_live_event_data(
         def publish(self, user_id, carousel_id):
             return "media-1"
 
+        def get_permalink(self, media_id):
+            assert media_id == "media-1"
+            return "https://www.instagram.com/p/ABC123/"
+
     monkeypatch.setattr(service, "MetaInstagramClient", _FakeClient)
 
     batch = service.claim_batch_for_publishing("batch-1", InstagramPublishBatchPublish(version=3))
@@ -744,7 +748,12 @@ def test_publish_batch_renders_the_slides_from_live_event_data(
         "https://a/outro.png",
     ]
     published = [call for call in table_calls if call[0] == "update"]
-    assert any(fields.get("meta_media_id") == "media-1" for _, (fields,), _ in published)
+    assert any(
+        fields.get("meta_media_id") == "media-1"
+        and fields["permalink"] == "https://www.instagram.com/p/ABC123/"
+        and fields["music_status"] == "pending"
+        for _, (fields,), _ in published
+    )
     # A published run keeps the images it posted; the events behind them move on.
     assert any(
         fields.get("published_cover_url") == "https://a/cover.png"
@@ -756,6 +765,12 @@ def test_publish_batch_renders_the_slides_from_live_event_data(
         for _, (fields,), _ in published
         if "published_asset_url" in fields
     } == {"https://a/7.png", "https://a/8.png"}
+
+
+def test_a_missing_permalink_skips_music_without_failing_the_publish():
+    client = Mock()
+    client.get_permalink.side_effect = RuntimeError("Graph API timeout")
+    assert service._permalink(client, "media-1") is None
 
 
 def test_background_publish_records_failure(monkeypatch):
@@ -1116,7 +1131,6 @@ def codex_draft(monkeypatch):
     )
     monkeypatch.setattr(service, "_draft_schools", lambda: [{"id": 1, "slug": "uwaterloo"}])
     monkeypatch.setattr(service, "_daily_batch", lambda *_: None)
-    monkeypatch.setattr(service, "_recent_song_suggestions", lambda *_: [])
     monkeypatch.setattr(service, "_last_successful_cutoff", lambda *_: None)
     monkeypatch.setattr(service, "default_caption_intro", lambda *_: "Campus picks")
     monkeypatch.setattr(service, "_load_candidates", lambda **_: [event])
@@ -1125,13 +1139,6 @@ def codex_draft(monkeypatch):
         window_end=now,
         caption_intro="Your next campus plans",
         cover_body="Film and conversation",
-        suggested_song={
-            "title": "Example Song",
-            "artist": "Example Artist",
-            "chart_name": "Top 100: Canada",
-            "chart_url": str(service._CONTROL.music_charts["canada"].url),
-            "checked_on": "2026-09-28",
-        },
         picks=[{"event_id": 17, "sticker_labels": ["Movie Night"]}],
     )
 
@@ -1145,8 +1152,6 @@ def test_codex_reads_candidates_without_writing(monkeypatch, codex_draft, exclud
     assert packets[0]["status"] == "needs_review"
     assert packets[0]["requires_reauthorization"] is True
     assert "allowed_sticker_labels" not in packets[0]["events"][0]
-    assert packets[0]["music_chart"]["name"] == "Top 100: Canada"
-    assert packets[0]["recent_songs"] == []
     assert packets[0]["events"][0]["id"] == 17
     assert packets[0]["excluded_clubs"] == ["v1vaclub"]
     database.assert_not_called()
@@ -1166,7 +1171,6 @@ def test_codex_saves_choices_and_reads_back_admin_draft(monkeypatch, codex_draft
     assert result["outcome"] == "saved"
     readback.assert_called_once_with("draft-1")
     batch = next(args[0] for name, args, _ in calls if name == "insert")
-    assert batch["suggested_song"] == codex_draft.suggested_song.model_dump(mode="json")
     assert batch["cover_body"] == codex_draft.cover_body
     assert batch["school_id"] == 1
     updates = [args[0] for name, args, _ in calls if name == "update"]
@@ -1296,33 +1300,6 @@ def test_codex_draft_save_never_reads_publishing_tokens(monkeypatch, codex_draft
     )
     assert service.save_review_draft(codex_draft)["outcome"] == "saved"
     credentials.assert_not_called()
-
-
-def test_recent_music_is_scoped_to_account_and_successful_prior_batches(monkeypatch):
-    calls = []
-    song = {"title": "A Song", "artist": "An Artist"}
-    monkeypatch.setattr(
-        service,
-        "get_sb",
-        lambda: SimpleNamespace(table=lambda _: _FakeQuery([{"suggested_song": song}], calls)),
-    )
-    now = datetime(2026, 10, 6, 13, tzinfo=timezone.utc)
-    assert service._recent_song_suggestions("uwaterloo", now) == [song]
-    assert ("eq", ("account_key", "uwaterloo"), {}) in calls
-    assert ("eq", ("batch_kind", "events"), {}) in calls
-    assert ("in_", ("status", ["ready_for_review", "published"]), {}) in calls
-    assert ("lt", ("window_end", now.isoformat()), {}) in calls
-    assert ("is_", ("suggested_song", "null"), {}) in calls
-    assert ("limit", (service._CONTROL.music_history_batch_count,), {}) in calls
-
-
-def test_song_cannot_claim_a_future_chart_check(monkeypatch, codex_draft):
-    codex_draft.suggested_song.checked_on = datetime(2026, 10, 1).date()
-    database = Mock()
-    monkeypatch.setattr(service, "get_sb", database)
-    with pytest.raises(service.ValidationError, match="future"):
-        service.save_review_draft(codex_draft)
-    database.assert_not_called()
 
 
 def test_all_registered_schools_get_candidates_without_connected_accounts(monkeypatch, codex_draft):

@@ -7,4 +7,10 @@ export const EXTERNAL_LINKS = {
   ATLASSIAN: "https://www.atlassian.com/",
   BLOOMBERG: "https://www.bloomberg.com/",
   POINT72: "https://www.point72.com/",
+  LINKEDIN: "https://www.linkedin.com/company/wat2do/",
 } as const;
+
+/** Every school has its own Wat2Do Instagram account, named after its subdomain. */
+export function schoolInstagramHandle(school: string): string {
+  return `wat2do.${school}`;
+}

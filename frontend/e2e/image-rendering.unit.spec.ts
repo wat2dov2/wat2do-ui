@@ -9,7 +9,7 @@ import sharp from "sharp";
 import imageDelivery from "../../backend/controlbox/image_delivery.json" with { type: "json" };
 import instagramPublishing from "../../backend/controlbox/instagram_publishing.json" with { type: "json" };
 
-let renderedSlide: ReactElement<{ model: { imageSrc?: string; avatarSrc?: string; siteName?: string; tiles?: string[]; rows?: { title: string; detail: string }[]; moreLine?: string; poster: { width: number; height: number } } }> | undefined;
+let renderedSlide: ReactElement<{ model: { imageSrc?: string; avatarSrc?: string; siteName?: string; tiles?: string[]; cards?: { title: string; club: string; when: string; location: string; posterSrc: string }[]; hiddenCount?: number; poster: { width: number; height: number } } }> | undefined;
 let requestSchool = "uwaterloo";
 let goingSelections: { event_id: number }[] = [];
 
@@ -45,7 +45,7 @@ function loadComponent(path: string): Record<string, React.ComponentType<Record<
       }
       if (id === "@/app/client-providers") return { useRequestSchool: () => requestSchool };
       if (id === "@/features/events/hooks/useGoingEvents") return { useGoingEvents: () => ({ data: goingSelections }) };
-      if (id === "@/features/clubs/components/ClubBadgeDropdown") return { ClubBadgeDropdown: () => null };
+      if (id === "@/features/clubs/components/ClubBadgeLink") return { ClubBadgeLink: () => null };
       if (id.endsWith(".png")) return { src: "/logo.png", width: 136, height: 96 };
       if (id.endsWith(".webp")) return { src: `/_next/static/media/${id.split("/").pop()}`, width: 1280, height: 960, blurDataURL: "data:image/webp;base64,UklGRg==" };
       if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
@@ -72,6 +72,9 @@ const require = createRequire(import.meta.url);
 const { NextRequest } = require("next/server");
 const { ImageConfigContext } = require("next/dist/shared/lib/image-config-context.shared-runtime");
 const { imageConfigDefault } = require("next/dist/shared/lib/image-config");
+// Loaded on use: the slide module reads its logo source once the tests have configured it.
+const slideLayout = (): typeof import("../src/features/admin/lib/instagramSlides") =>
+  require("../src/features/admin/lib/instagramSlides");
 const imageConfig = {
   ...imageConfigDefault,
   formats: [imageDelivery.optimized_format],
@@ -534,18 +537,24 @@ test.describe("Instagram raster preparation", () => {
     });
   }
 
-  test("the outro lists the scrape's other events and counts the ones that do not fit", async () => {
-    globalThis.fetch = async () => { throw new Error("The outro downloads no artwork"); };
-    const events = Array.from({ length: instagramPublishing.outro_event_rows + 2 }, (_, index) => ({
+  test("the outro shows every other event as a miniature card when they all fit", async () => {
+    const poster = await sharp({ create: { width: 1600, height: 2000, channels: 3, background: "#ef5014" } }).webp().toBuffer();
+    globalThis.fetch = async () => new Response(poster, { headers: { "content-type": "image/webp" } });
+    const { OUTRO_GRID_COLUMNS, OUTRO_GRID_ROWS, SLIDE_POSTER_REGIONS } = slideLayout();
+    const events = Array.from({ length: OUTRO_GRID_COLUMNS * OUTRO_GRID_ROWS }, (_, index) => ({
       id: index + 1, tz: "America/Toronto", title: `Other event ${index + 1}`, ig_handle: "uwclub",
-      dtstart_utc: "2026-10-23T02:00:00Z",
+      location: "SLC Great Hall", dtstart_utc: "2026-10-23T02:00:00Z", source_image_url: posterUrl,
     }));
     const response = await POST(request({ kind: "outro", school: "uwaterloo", events }));
     expect(response.status).toBe(200);
     const model = renderedSlide!.props.model;
-    expect(model.rows).toHaveLength(instagramPublishing.outro_event_rows);
-    expect(model.rows![0]).toEqual({ title: "Other event 1", detail: "Thu, Oct 22, 10:00 PM · @uwclub" });
-    expect(model.moreLine).toBe(`+2 more on ${model.siteName}`);
+    expect(model.cards).toHaveLength(events.length);
+    expect(model.hiddenCount).toBe(0);
+    expect(model.cards![0]).toMatchObject({
+      title: "Other event 1", club: "@uwclub", when: "Thu, Oct 22 · 10:00 PM", location: "SLC Great Hall",
+    });
+    const prepared = await sharp(Buffer.from(model.cards![0].posterSrc.split(",")[1], "base64")).metadata();
+    expect([prepared.width, prepared.height]).toEqual([SLIDE_POSTER_REGIONS.outro.width, SLIDE_POSTER_REGIONS.outro.height]);
     const output = Buffer.from(await response.arrayBuffer());
     expect(await sharp(output).metadata()).toMatchObject({ width: 1080, height: 1350 });
     const artifact = test.info().outputPath("outro-slide.png");
@@ -553,11 +562,58 @@ test.describe("Instagram raster preparation", () => {
     await test.info().attach("outro-slide", { path: artifact, contentType: "image/png" });
   });
 
+  test("outro cards grow as there are fewer events, ending at the densest two-column grid", async () => {
+    const { outroGridLayout }: typeof import("../src/features/admin/components/instagram/slides/SlideTemplates") =
+      require("../src/features/admin/components/instagram/slides/SlideTemplates");
+    const { OUTRO_GRID_COLUMNS, OUTRO_GRID_ROWS, OUTRO_CARD_MAX_SCALE } = slideLayout();
+    const layouts = Array.from({ length: OUTRO_GRID_COLUMNS * OUTRO_GRID_ROWS }, (_, index) => outroGridLayout(index + 1));
+    expect(layouts[0]).toMatchObject({ columns: 1, scale: OUTRO_CARD_MAX_SCALE });
+    for (let index = 1; index < layouts.length; index += 1) expect(layouts[index].scale).toBeLessThanOrEqual(layouts[index - 1].scale);
+    expect(layouts.at(-1)).toMatchObject({ columns: OUTRO_GRID_COLUMNS, scale: 1 });
+
+    globalThis.fetch = async () => new Response(null, { status: 404 });
+    for (const count of [1, 3, 6]) {
+      const events = Array.from({ length: count }, (_, index) => ({
+        id: index + 1, tz: "America/Toronto", title: `Other event ${index + 1}`, ig_handle: "uwclub",
+        location: "SLC Great Hall", dtstart_utc: "2026-10-23T02:00:00Z",
+      }));
+      const response = await POST(request({ kind: "outro", school: "uwaterloo", events }));
+      expect(response.status).toBe(200);
+      const artifact = test.info().outputPath(`outro-${count}-slide.png`);
+      writeFileSync(artifact, Buffer.from(await response.arrayBuffer()));
+      await test.info().attach(`outro-${count}-slide`, { path: artifact, contentType: "image/png" });
+    }
+  });
+
+  test("an overfull outro gives its last cell to counting the rest, and a missing poster becomes a monogram", async () => {
+    globalThis.fetch = async () => new Response(null, { status: 404 });
+    const { OUTRO_GRID_COLUMNS, OUTRO_GRID_ROWS } = slideLayout();
+    const cells = OUTRO_GRID_COLUMNS * OUTRO_GRID_ROWS;
+    const events = Array.from({ length: cells + 3 }, (_, index) => ({
+      id: index + 1, tz: "America/Toronto", title: `Other event ${index + 1}`, club: "UW Club",
+      dtstart_utc: "2026-10-23T02:00:00Z", source_image_url: posterUrl,
+    }));
+    const response = await POST(request({ kind: "outro", school: "uwaterloo", events }));
+    expect(response.status).toBe(200);
+    const model = renderedSlide!.props.model;
+    expect(model.cards).toHaveLength(cells - 1);
+    expect(model.cards!.every(card => card.posterSrc === "")).toBe(true);
+    expect(model.hiddenCount).toBe(4);
+    const markup = renderToStaticMarkup(renderedSlide!);
+    expect(markup).toContain("+4 more");
+    // Poster-less cards print the club's monogram instead of an empty well.
+    expect(markup).toContain(">UW</div>");
+    expect(markup).toContain(model.siteName!);
+    const artifact = test.info().outputPath("outro-overfull-slide.png");
+    writeFileSync(artifact, Buffer.from(await response.arrayBuffer()));
+    await test.info().attach("outro-overfull-slide", { path: artifact, contentType: "image/png" });
+  });
+
   test("an outro with no other events points to the school's site", async () => {
     const response = await POST(request({ kind: "outro", school: "uwaterloo", events: [] }));
     expect(response.status).toBe(200);
     const model = renderedSlide!.props.model;
-    expect(model.rows).toEqual([]);
+    expect(model.cards).toEqual([]);
     expect(renderToStaticMarkup(renderedSlide!)).toContain(model.siteName!);
     const artifact = test.info().outputPath("outro-empty-slide.png");
     writeFileSync(artifact, Buffer.from(await response.arrayBuffer()));
@@ -699,19 +755,37 @@ for (const variant of ["card", "detail"]) {
 }
 
 
-test("saved music recommendations show search copy and provenance without editing controls", () => {
-  const { InstagramSongSuggestion } = loadComponent("features/admin/components/instagram/InstagramSongSuggestion");
-  const html = render(InstagramSongSuggestion, { song: {
-    title: "Example Song", artist: "Example Artist", chart_name: "Top 25: Toronto",
-    chart_url: "https://music.apple.com/ca/playlist/top-25-toronto/pl.example", checked_on: "2026-10-05",
+test("a published carousel shows the song the emulator added and links the live post", () => {
+  const { InstagramMusicStatus } = loadComponent("features/admin/components/instagram/InstagramMusicStatus");
+  const html = render(InstagramMusicStatus, { batch: {
+    status: "published", permalink: "https://www.instagram.com/p/ABC123/",
+    music_status: "added", music_track: "After Hours by The Weeknd,6:01", music_error: null,
   } });
-  expect(html).toContain("Example Song · Example Artist");
-  expect(html).toContain('href="https://music.apple.com/ca/playlist/top-25-toronto/pl.example"');
-  expect(html).toContain("admin.instagramPublishing.songInstructions");
+  expect(html).toContain("admin.instagramPublishing.music.added");
+  expect(html).toContain('href="https://www.instagram.com/p/ABC123/"');
   expect(html).not.toMatch(/<(input|select|textarea|button)\b/);
 });
 
-test("older batches explicitly show when no music recommendation was saved", () => {
-  const { InstagramSongSuggestion } = loadComponent("features/admin/components/instagram/InstagramSongSuggestion");
-  expect(render(InstagramSongSuggestion, { song: null })).toContain("admin.instagramPublishing.noSuggestedSong");
+test("a draft explains that music is added after it publishes", () => {
+  const { InstagramMusicStatus } = loadComponent("features/admin/components/instagram/InstagramMusicStatus");
+  const html = render(InstagramMusicStatus, { batch: {
+    status: "ready_for_review", permalink: null, music_status: null, music_track: null, music_error: null,
+  } });
+  expect(html).toContain("admin.instagramPublishing.music.afterPublish");
+  expect(html).not.toContain("href=");
+});
+
+test("the cover fan draws its cards right to left so the first event sits on top", () => {
+  const { CoverSlideTemplate } = loadComponent("features/admin/components/instagram/slides/SlideTemplates");
+  const tiles = ["https://a/first.png", "https://a/second.png", "https://a/third.png"];
+  const html = render(CoverSlideTemplate, { model: {
+    colors: { primary: "#000000", secondary: "#ffd54f" }, logoSrc: "https://a/logo.svg", doodleIcons: [],
+    dateLine: "Wednesday, October 21st", newEventCount: 3, headline: "New events", body: "",
+    swipeLine: "Swipe", siteLine: "uwaterloo.wat2do.io", tiles,
+  } });
+  const drawn = tiles.map((tile) => html.indexOf(tile));
+  expect(drawn.every((position) => position >= 0)).toBe(true);
+  // satori paints in document order, so the last card drawn covers the others.
+  expect(drawn[2]).toBeLessThan(drawn[1]);
+  expect(drawn[1]).toBeLessThan(drawn[0]);
 });

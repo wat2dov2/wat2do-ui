@@ -14,7 +14,7 @@ import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { Stack } from "@/shared/layout";
-import { Users } from "@/shared/ui/doodle-icons";
+import { Users } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { TableCell, TableRow } from "@/shared/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";

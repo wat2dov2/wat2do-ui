@@ -533,6 +533,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/competitor-pain-points/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Reports */
+        get: operations["list_reports_competitor_pain_points_reports_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/competitor-pain-points/{pain_point_id}": {
         parameters: {
             query?: never;
@@ -800,6 +817,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instagram-publishing/songs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Instagram Songs */
+        get: operations["list_instagram_songs_instagram_publishing_songs__get"];
+        put?: never;
+        /** Add Instagram Song */
+        post: operations["add_instagram_song_instagram_publishing_songs__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/songs/{song_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Instagram Song */
+        delete: operations["delete_instagram_song_instagram_publishing_songs__song_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/interactions/batch": {
         parameters: {
             query?: never;
@@ -891,6 +943,40 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/outreach/leads/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Leads */
+        get: operations["list_leads_outreach_leads__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/outreach/leads/{lead_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Lead */
+        patch: operations["update_lead_outreach_leads__lead_id__patch"];
         trace?: never;
     };
     "/payouts/": {
@@ -2268,6 +2354,34 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** DailyReportResponse */
+        DailyReportResponse: {
+            /**
+             * Report Date
+             * Format: date
+             */
+            report_date: string;
+            /** Model */
+            model: string;
+            /** Complaint Count */
+            complaint_count: number;
+            /** Summary */
+            summary: string;
+            /** Themes */
+            themes?: components["schemas"]["ReportTheme"][];
+            /** Suggestions */
+            suggestions?: components["schemas"]["ReportSuggestion"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** DiscordChannelOption */
         DiscordChannelOption: {
             /** Id */
@@ -2371,7 +2485,7 @@ export interface components {
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description True only when employer representatives participate physically on this school's campus for recruiting, employer career information, or career networking with their employees. Company employees discussing career paths qualify without current vacancies. Require event-specific evidence of an employment purpose. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Student-club hiring, online-only sessions and off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
+             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -2502,7 +2616,7 @@ export interface components {
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description True only when employer representatives participate physically on this school's campus for recruiting, employer career information, or career networking with their employees. Company employees discussing career paths qualify without current vacancies. Require event-specific evidence of an employment purpose. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Student-club hiring, online-only sessions and off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
+             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -2605,7 +2719,7 @@ export interface components {
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description True only when employer representatives participate physically on this school's campus for recruiting, employer career information, or career networking with their employees. Company employees discussing career paths qualify without current vacancies. Require event-specific evidence of an employment purpose. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Student-club hiring, online-only sessions and off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
+             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -2732,7 +2846,7 @@ export interface components {
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description True only when employer representatives participate physically on this school's campus for recruiting, employer career information, or career networking with their employees. Company employees discussing career paths qualify without current vacancies. Require event-specific evidence of an employment purpose. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Student-club hiring, online-only sessions and off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
+             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -2830,7 +2944,7 @@ export interface components {
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description True only when employer representatives participate physically on this school's campus for recruiting, employer career information, or career networking with their employees. Company employees discussing career paths qualify without current vacancies. Require event-specific evidence of an employment purpose. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Student-club hiring, online-only sessions and off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
+             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -2989,13 +3103,20 @@ export interface components {
              * @default
              */
             cover_body: string;
-            suggested_song?: components["schemas"]["InstagramSongSuggestion"] | null;
             /** Version */
             version: number;
             /** Error Message */
             error_message?: string | null;
             /** Meta Media Id */
             meta_media_id?: string | null;
+            /** Permalink */
+            permalink?: string | null;
+            /** Music Status */
+            music_status?: ("pending" | "added" | "failed") | null;
+            /** Music Track */
+            music_track?: string | null;
+            /** Music Error */
+            music_error?: string | null;
             /** Published Cover Url */
             published_cover_url?: string | null;
             /** Published Outro Url */
@@ -3077,13 +3198,20 @@ export interface components {
              * @default
              */
             cover_body: string;
-            suggested_song?: components["schemas"]["InstagramSongSuggestion"] | null;
             /** Version */
             version: number;
             /** Error Message */
             error_message?: string | null;
             /** Meta Media Id */
             meta_media_id?: string | null;
+            /** Permalink */
+            permalink?: string | null;
+            /** Music Status */
+            music_status?: ("pending" | "added" | "failed") | null;
+            /** Music Track */
+            music_track?: string | null;
+            /** Music Error */
+            music_error?: string | null;
             /** Published Cover Url */
             published_cover_url?: string | null;
             /** Published Outro Url */
@@ -3162,24 +3290,32 @@ export interface components {
              */
             updated_at: string;
         };
-        /** InstagramSongSuggestion */
-        InstagramSongSuggestion: {
-            /** Title */
-            title: string;
-            /** Artist */
-            artist: string;
-            /** Chart Name */
-            chart_name: string;
+        /** InstagramSongCreate */
+        InstagramSongCreate: {
+            /** Query */
+            query: string;
             /**
-             * Chart Url
-             * Format: uri
+             * Asian Campuses Only
+             * @default false
              */
-            chart_url: string;
+            asian_campuses_only: boolean;
+        };
+        /** InstagramSongResponse */
+        InstagramSongResponse: {
             /**
-             * Checked On
-             * Format: date
+             * Id
+             * Format: uuid
              */
-            checked_on: string;
+            id: string;
+            /** Query */
+            query: string;
+            /** Asian Campuses Only */
+            asian_campuses_only: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * InteractionBatch
@@ -3372,6 +3508,71 @@ export interface components {
             /** Id */
             id?: string | null;
         };
+        /** OutreachLeadResponse */
+        OutreachLeadResponse: {
+            /** Event Name */
+            event_name: string;
+            /** Event Url */
+            event_url: string;
+            /** Event Date */
+            event_date?: string | null;
+            /** Organization */
+            organization: string;
+            /**
+             * Contact Name
+             * @default
+             */
+            contact_name: string;
+            /**
+             * Contact Role
+             * @default
+             */
+            contact_role: string;
+            /** Email */
+            email: string;
+            /** Source Url */
+            source_url: string;
+            /** Context */
+            context: string;
+            /** Video Script */
+            video_script: string;
+            /** Email Subject */
+            email_subject: string;
+            /** Email Body */
+            email_body: string;
+            /** Follow Up */
+            follow_up: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lead Type */
+            lead_type: string;
+            /** School Slug */
+            school_slug: string;
+            /** School Name */
+            school_name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "contacted" | "replied" | "submitted" | "not_interested" | "dismissed";
+            /** Notes */
+            notes: string;
+            /**
+             * Found At
+             * Format: date-time
+             */
+            found_at: string;
+        };
+        /** OutreachLeadUpdate */
+        OutreachLeadUpdate: {
+            /** Status */
+            status?: ("new" | "contacted" | "replied" | "submitted" | "not_interested" | "dismissed") | null;
+            /** Notes */
+            notes?: string | null;
+        };
         /** PaginatedResponse[ClubClaimResponse] */
         PaginatedResponse_ClubClaimResponse_: {
             /** Items */
@@ -3424,6 +3625,19 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        /** PaginatedResponse[DailyReportResponse] */
+        PaginatedResponse_DailyReportResponse_: {
+            /** Items */
+            items: components["schemas"]["DailyReportResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         /** PaginatedResponse[DiscoveryQueryResponse] */
         PaginatedResponse_DiscoveryQueryResponse_: {
             /** Items */
@@ -3454,6 +3668,19 @@ export interface components {
         PaginatedResponse_InstagramPublishBatchSummaryResponse_: {
             /** Items */
             items: components["schemas"]["InstagramPublishBatchSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[OutreachLeadResponse] */
+        PaginatedResponse_OutreachLeadResponse_: {
+            /** Items */
+            items: components["schemas"]["OutreachLeadResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -4220,6 +4447,41 @@ export interface components {
             reported_at: string;
             /** Resolved At */
             resolved_at?: string | null;
+        };
+        /**
+         * ReportSuggestion
+         * @description One change to wat2do.io the report suggests, and the complaints behind it.
+         */
+        ReportSuggestion: {
+            /** Title */
+            title: string;
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "high" | "medium" | "low";
+            /** Problem */
+            problem: string;
+            /** Change */
+            change: string;
+            /** Where */
+            where?: string[];
+            /** Complaint Urls */
+            complaint_urls?: string[];
+        };
+        /**
+         * ReportTheme
+         * @description A complaint that keeps coming up in one day's findings.
+         */
+        ReportTheme: {
+            /** Theme */
+            theme: string;
+            /** Detail */
+            detail: string;
+            /** Competitors */
+            competitors?: string[];
+            /** Complaint Urls */
+            complaint_urls?: string[];
         };
         /** ReportUpdate */
         ReportUpdate: {
@@ -5764,6 +6026,40 @@ export interface operations {
             };
         };
     };
+    list_reports_competitor_pain_points_reports_get: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_DailyReportResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     review_pain_point_competitor_pain_points__pain_point_id__patch: {
         parameters: {
             query?: never;
@@ -6435,6 +6731,88 @@ export interface operations {
             };
         };
     };
+    list_instagram_songs_instagram_publishing_songs__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramSongResponse"][];
+                };
+            };
+        };
+    };
+    add_instagram_song_instagram_publishing_songs__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstagramSongCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramSongResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_instagram_song_instagram_publishing_songs__song_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                song_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     record_interactions_interactions_batch_post: {
         parameters: {
             query?: never;
@@ -6588,6 +6966,79 @@ export interface operations {
                 };
                 content: {
                     "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_leads_outreach_leads__get: {
+        parameters: {
+            query?: {
+                lead_type?: string | null;
+                lead_status?: ("new" | "contacted" | "replied" | "submitted" | "not_interested" | "dismissed") | null;
+                school?: string | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_OutreachLeadResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_lead_outreach_leads__lead_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OutreachLeadUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutreachLeadResponse"];
                 };
             };
             /** @description Validation Error */

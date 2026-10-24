@@ -37,14 +37,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/shared/ui/card";
-import {
-  Coins,
-  DollarSign,
-  MapPin,
-  QrCode,
-  ShieldAlert,
-  Users,
-} from "@/shared/ui/doodle-icons";
+import { Coins, DollarSign, MapPin, QrCode, ShieldAlert, Users } from "lucide-react";
 import { formatCadCents } from "@/shared/utils/currency";
 
 export function PromoterPostersPage() {

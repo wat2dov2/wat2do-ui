@@ -35,6 +35,8 @@ export const SLIDE_POSTER_REGIONS = {
   event: { width: SLIDE_WIDTH - 128, height: 960 },
   cover: { width: 280, height: 392 },
   avatar: { width: 88, height: 88 },
+  // Downloaded at the largest card's size; smaller cards print it scaled down.
+  outro: { width: 224, height: 280 },
 } as const;
 
 /** Event fields a slide reads. Mirrors the backend's stored event snapshot. */
@@ -105,15 +107,33 @@ export interface CoverSlideModel {
   tiles: string[];
 }
 
+/** The outro's densest grid: ten miniature event cards, two to a row. */
+export const OUTRO_GRID_COLUMNS = 2;
+export const OUTRO_GRID_ROWS = 5;
+/** Fewer events print larger cards, up to this multiple of the densest card. */
+export const OUTRO_CARD_MAX_SCALE = 1.8;
+const OUTRO_GRID_CELLS = OUTRO_GRID_COLUMNS * OUTRO_GRID_ROWS;
+
+export interface OutroSlideCard {
+  title: string;
+  club: string;
+  /** "Thu, Oct 22 · 10:00 PM" in the event's own zone. */
+  when: string;
+  location: string;
+  /** Poster to print; empty shows the card's blank poster well. */
+  posterSrc: string;
+}
+
 export interface OutroSlideModel {
   colors: SchoolColors;
   logoSrc: string;
   doodleIcons: string[];
   headline: string;
   /** The scrape's other events, soonest first; empty when it found none. */
-  rows: { title: string; detail: string }[];
-  /** How many more events the slide had no room to list, as a sentence. */
-  moreLine: string;
+  cards: OutroSlideCard[];
+  /** Events without a card; the grid's last cell counts them when non-zero. */
+  hiddenCount: number;
+  moreLabel: string;
   /** The school's own origin, which the slide points to in either case. */
   siteName: string;
   siteLine: string;
@@ -334,11 +354,23 @@ export function buildCoverSlideModel({
 }
 
 /**
+ * The events that get a card on the outro, in order.
+ *
+ * Every event fits when there are no more than the grid holds. Otherwise the
+ * last cell is given up to count the rest, so one fewer event is shown.
+ */
+export function selectOutroEvents<T>(events: T[]): T[] {
+  return events.length <= OUTRO_GRID_CELLS ? events : events.slice(0, OUTRO_GRID_CELLS - 1);
+}
+
+/**
  * The carousel's last slide, compiled from the scrape's other events.
  *
  * The backend sends every upcoming event from the cover's scrape window that did
- * not get a slide of its own, soonest first. The slide lists as many as fit and
- * counts the rest; with none it simply points to the school's site.
+ * not get a slide of its own, soonest first. The slide shows them as a grid of
+ * miniature cards and counts any that do not fit; with none it simply points to
+ * the school's site. `posters` aligns with `selectOutroEvents(events)`; without
+ * it each card prints its event's own poster URL, as the browser preview does.
  */
 export function buildOutroSlideModel({
   school,
@@ -346,53 +378,54 @@ export function buildOutroSlideModel({
   colors,
   batchKind = "events",
   events,
+  posters,
 }: {
   school: string;
   language: "en" | "fr";
   colors: SchoolColors;
   batchKind?: ApiInstagramPublishBatchResponse["batch_kind"];
   events: SlideEvent[];
+  posters?: string[];
 }): OutroSlideModel {
   const siteName = getSchoolPublicUrl(school);
-  const rows = events.slice(0, instagramPublishing.outro_event_rows).map(event => {
+  const cards = selectOutroEvents(events).map((event, index): OutroSlideCard => {
     const handle = normalizeInstagramHandle(event.ig_handle) || normalizeInstagramHandle(event.club_ig);
     return {
       title: text(event.title),
-      detail: [formatOutroWhen(event, language), handle ? `@${handle}` : text(event.club)].filter(Boolean).join(" · "),
+      club: handle ? `@${handle}` : text(event.club),
+      when: formatOutroWhen(event, language),
+      location: text(event.location),
+      posterSrc: posters ? posters[index] ?? "" : text(event.source_image_url),
     };
   });
-  const hidden = events.length - rows.length;
+  const hiddenCount = events.length - cards.length;
   const employers = batchKind === "employers_on_campus";
   return {
     colors,
     logoSrc: buildInstagramCoverLogo(colors),
     doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),
-    headline: rows.length
+    headline: cards.length
       ? employers
         ? (language === "fr" ? "AUTRES EMPLOYEURS SUR LE CAMPUS" : "MORE EMPLOYERS ON CAMPUS")
         : (language === "fr" ? "AUSSI AJOUTÉS AUJOURD’HUI" : "ALSO NEW TODAY")
       : employers
         ? (language === "fr" ? "DÉCOUVREZ TOUS LES EMPLOYEURS" : "CHECK OUT EVERY EMPLOYER")
         : (language === "fr" ? "DÉCOUVREZ TOUS LES ÉVÉNEMENTS" : "CHECK OUT EVERY EVENT"),
-    rows,
-    moreLine: hidden > 0 ? (language === "fr" ? `+${hidden} autres sur ${siteName}` : `+${hidden} more on ${siteName}`) : "",
+    cards,
+    hiddenCount,
+    moreLabel: language === "fr" ? `+${hiddenCount} autres` : `+${hiddenCount} more`,
     siteName,
     siteLine: `${language === "fr" ? "Plus d’infos sur" : "More info on"} ${siteName}`,
   };
 }
 
-/** "Thu, Oct 22, 10:00 PM": only the start, since each outro row has one detail line. */
+/** "Thu, Oct 22 · 10:00 PM": the start only, in the event's own zone. */
 function formatOutroWhen(event: SlideEvent, locale: string): string {
   const start = event.dtstart_utc ? new Date(event.dtstart_utc) : null;
   if (!start || Number.isNaN(start.getTime())) return "";
-  return new Intl.DateTimeFormat(locale, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: event.tz,
-  }).format(start).replace(/[\u2009\u202f]/g, " ");
+  const format = (options: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat(locale, { ...options, timeZone: event.tz }).format(start).replace(/[\u2009\u202f]/g, " ");
+  return `${format({ weekday: "short", month: "short", day: "numeric" })} · ${format({ hour: "numeric", minute: "2-digit" })}`;
 }
 
 export function defaultCoverBody(eventCount: number, language: "en" | "fr"): string {

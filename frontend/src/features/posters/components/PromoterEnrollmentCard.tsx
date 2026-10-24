@@ -25,7 +25,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
-import { ExternalLink, QrCode } from "@/shared/ui/doodle-icons";
+import { ExternalLink, QrCode } from "lucide-react";
 import {
   Field,
   FieldDescription,

@@ -1,17 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
-import {
-  Search,
-  SlidersHorizontal,
-  Plus,
-  X,
-  User,
-  Bell,
-  Heart,
-  LogIn,
-  Palette,
-  HelpCircle,
-} from "@/shared/ui/doodle-icons";
+import { Search, SlidersHorizontal, Plus, X, User, Bell, Heart, LogIn, Palette, HelpCircle } from "lucide-react";
 import {
   CommandDialog,
   CommandInput,

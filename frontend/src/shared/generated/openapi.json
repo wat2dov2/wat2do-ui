@@ -2079,6 +2079,72 @@
         }
       }
     },
+    "/competitor-pain-points/reports": {
+      "get": {
+        "tags": [
+          "competitor-pain-points"
+        ],
+        "summary": "List Reports",
+        "operationId": "list_reports_competitor_pain_points_reports_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_DailyReportResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/competitor-pain-points/{pain_point_id}": {
       "patch": {
         "tags": [
@@ -3533,6 +3599,121 @@
         }
       }
     },
+    "/instagram-publishing/songs/": {
+      "get": {
+        "tags": [
+          "instagram-publishing"
+        ],
+        "summary": "List Instagram Songs",
+        "operationId": "list_instagram_songs_instagram_publishing_songs__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InstagramSongResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Instagram Songs Instagram Publishing Songs  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "instagram-publishing"
+        ],
+        "summary": "Add Instagram Song",
+        "operationId": "add_instagram_song_instagram_publishing_songs__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstagramSongCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstagramSongResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/instagram-publishing/songs/{song_id}": {
+      "delete": {
+        "tags": [
+          "instagram-publishing"
+        ],
+        "summary": "Delete Instagram Song",
+        "operationId": "delete_instagram_song_instagram_publishing_songs__song_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "song_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Song Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/interactions/batch": {
       "post": {
         "tags": [
@@ -3731,6 +3912,206 @@
               "text/html": {
                 "schema": {
                   "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outreach/leads/": {
+      "get": {
+        "tags": [
+          "outreach"
+        ],
+        "summary": "List Leads",
+        "operationId": "list_leads_outreach_leads__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64,
+                  "pattern": "^[a-z0-9_]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Lead Type"
+            }
+          },
+          {
+            "name": "lead_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "new",
+                    "contacted",
+                    "replied",
+                    "submitted",
+                    "not_interested",
+                    "dismissed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Lead Status"
+            }
+          },
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z0-9-]{1,80}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_OutreachLeadResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outreach/leads/{lead_id}": {
+      "patch": {
+        "tags": [
+          "outreach"
+        ],
+        "summary": "Update Lead",
+        "operationId": "update_lead_outreach_leads__lead_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Lead Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutreachLeadUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutreachLeadResponse"
                 }
               }
             }
@@ -8846,6 +9227,66 @@
         ],
         "title": "ContactCreate"
       },
+      "DailyReportResponse": {
+        "properties": {
+          "report_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Report Date"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "complaint_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Complaint Count"
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Summary"
+          },
+          "themes": {
+            "items": {
+              "$ref": "#/components/schemas/ReportTheme"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Themes"
+          },
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/ReportSuggestion"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Suggestions"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_date",
+          "model",
+          "complaint_count",
+          "summary",
+          "id",
+          "created_at"
+        ],
+        "title": "DailyReportResponse"
+      },
       "DiscordChannelOption": {
         "properties": {
           "id": {
@@ -9078,7 +9519,7 @@
               }
             ],
             "title": "Employers On Campus",
-            "description": "True only when employer representatives participate physically on this school's campus for recruiting, employer career information, or career networking with their employees. Company employees discussing career paths qualify without current vacancies. Require event-specific evidence of an employment purpose. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Student-club hiring, online-only sessions and off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed."
+            "description": "True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed."
           },
           "sports_game": {
             "anyOf": [
@@ -9405,7 +9846,7 @@
               }
             ],
             "title": "Employers On Campus",
-            "description": "True only when employer representatives participate physically on this school's campus for recruiting, employer career information, or career networking with their employees. Company employees discussing career paths qualify without current vacancies. Require event-specific evidence of an employment purpose. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Student-club hiring, online-only sessions and off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed."
+            "description": "True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed."
           },
           "sports_game": {
             "anyOf": [
@@ -9710,7 +10151,7 @@
               }
             ],
             "title": "Employers On Campus",
-            "description": "True only when employer representatives participate physically on this school's campus for recruiting, employer career information, or career networking with their employees. Company employees discussing career paths qualify without current vacancies. Require event-specific evidence of an employment purpose. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Student-club hiring, online-only sessions and off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed."
+            "description": "True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed."
           },
           "sports_game": {
             "anyOf": [
@@ -10043,7 +10484,7 @@
               }
             ],
             "title": "Employers On Campus",
-            "description": "True only when employer representatives participate physically on this school's campus for recruiting, employer career information, or career networking with their employees. Company employees discussing career paths qualify without current vacancies. Require event-specific evidence of an employment purpose. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Student-club hiring, online-only sessions and off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed."
+            "description": "True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed."
           },
           "sports_game": {
             "anyOf": [
@@ -10381,7 +10822,7 @@
               }
             ],
             "title": "Employers On Campus",
-            "description": "True only when employer representatives participate physically on this school's campus for recruiting, employer career information, or career networking with their employees. Company employees discussing career paths qualify without current vacancies. Require event-specific evidence of an employment purpose. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Student-club hiring, online-only sessions and off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed."
+            "description": "True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed."
           },
           "sports_game": {
             "anyOf": [
@@ -10836,16 +11277,6 @@
             "title": "Cover Body",
             "default": ""
           },
-          "suggested_song": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/InstagramSongSuggestion"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "version": {
             "type": "integer",
             "title": "Version"
@@ -10871,6 +11302,55 @@
               }
             ],
             "title": "Meta Media Id"
+          },
+          "permalink": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permalink"
+          },
+          "music_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "added",
+                  "failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Status"
+          },
+          "music_track": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Track"
+          },
+          "music_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Error"
           },
           "published_cover_url": {
             "anyOf": [
@@ -11039,16 +11519,6 @@
             "title": "Cover Body",
             "default": ""
           },
-          "suggested_song": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/InstagramSongSuggestion"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "version": {
             "type": "integer",
             "title": "Version"
@@ -11074,6 +11544,55 @@
               }
             ],
             "title": "Meta Media Id"
+          },
+          "permalink": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permalink"
+          },
+          "music_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "added",
+                  "failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Status"
+          },
+          "music_track": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Track"
+          },
+          "music_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Error"
           },
           "published_cover_url": {
             "anyOf": [
@@ -11270,49 +11789,57 @@
         ],
         "title": "InstagramPublishItemResponse"
       },
-      "InstagramSongSuggestion": {
+      "InstagramSongCreate": {
         "properties": {
-          "title": {
+          "query": {
             "type": "string",
             "maxLength": 200,
             "minLength": 1,
-            "title": "Title"
+            "pattern": "\\S",
+            "title": "Query"
           },
-          "artist": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Artist"
-          },
-          "chart_name": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Chart Name"
-          },
-          "chart_url": {
-            "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
-            "title": "Chart Url"
-          },
-          "checked_on": {
-            "type": "string",
-            "format": "date",
-            "title": "Checked On"
+          "asian_campuses_only": {
+            "type": "boolean",
+            "title": "Asian Campuses Only",
+            "default": false
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "title",
-          "artist",
-          "chart_name",
-          "chart_url",
-          "checked_on"
+          "query"
         ],
-        "title": "InstagramSongSuggestion"
+        "title": "InstagramSongCreate"
+      },
+      "InstagramSongResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "asian_campuses_only": {
+            "type": "boolean",
+            "title": "Asian Campuses Only"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "query",
+          "asian_campuses_only",
+          "created_at"
+        ],
+        "title": "InstagramSongResponse"
       },
       "InteractionBatch": {
         "properties": {
@@ -11798,6 +12325,191 @@
         "title": "OccurrenceUpdate",
         "description": "Occurrence payload for event edits.\n\nAn ID retains an existing occurrence. A missing ID creates a new one."
       },
+      "OutreachLeadResponse": {
+        "properties": {
+          "event_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Event Name"
+          },
+          "event_url": {
+            "type": "string",
+            "maxLength": 2000,
+            "pattern": "^https://\\S+$",
+            "title": "Event Url"
+          },
+          "event_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Date"
+          },
+          "organization": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Organization"
+          },
+          "contact_name": {
+            "type": "string",
+            "maxLength": 120,
+            "title": "Contact Name",
+            "default": ""
+          },
+          "contact_role": {
+            "type": "string",
+            "maxLength": 120,
+            "title": "Contact Role",
+            "default": ""
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Email"
+          },
+          "source_url": {
+            "type": "string",
+            "maxLength": 2000,
+            "pattern": "^https://\\S+$",
+            "title": "Source Url"
+          },
+          "context": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Context"
+          },
+          "video_script": {
+            "type": "string",
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Video Script"
+          },
+          "email_subject": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Email Subject"
+          },
+          "email_body": {
+            "type": "string",
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Email Body"
+          },
+          "follow_up": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Follow Up"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "lead_type": {
+            "type": "string",
+            "title": "Lead Type"
+          },
+          "school_slug": {
+            "type": "string",
+            "title": "School Slug"
+          },
+          "school_name": {
+            "type": "string",
+            "title": "School Name"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "contacted",
+              "replied",
+              "submitted",
+              "not_interested",
+              "dismissed"
+            ],
+            "title": "Status"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "found_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Found At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_name",
+          "event_url",
+          "organization",
+          "email",
+          "source_url",
+          "context",
+          "video_script",
+          "email_subject",
+          "email_body",
+          "follow_up",
+          "id",
+          "lead_type",
+          "school_slug",
+          "school_name",
+          "status",
+          "notes",
+          "found_at"
+        ],
+        "title": "OutreachLeadResponse"
+      },
+      "OutreachLeadUpdate": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "new",
+                  "contacted",
+                  "replied",
+                  "submitted",
+                  "not_interested",
+                  "dismissed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "OutreachLeadUpdate"
+      },
       "PaginatedResponse_ClubClaimResponse_": {
         "properties": {
           "items": {
@@ -11942,6 +12654,42 @@
         ],
         "title": "PaginatedResponse[CompetitorPainPointResponse]"
       },
+      "PaginatedResponse_DailyReportResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DailyReportResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[DailyReportResponse]"
+      },
       "PaginatedResponse_DiscoveryQueryResponse_": {
         "properties": {
           "items": {
@@ -12049,6 +12797,42 @@
           "total_pages"
         ],
         "title": "PaginatedResponse[InstagramPublishBatchSummaryResponse]"
+      },
+      "PaginatedResponse_OutreachLeadResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OutreachLeadResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[OutreachLeadResponse]"
       },
       "PaginatedResponse_PositionSubmissionResponse_": {
         "properties": {
@@ -14319,6 +15103,101 @@
           "reported_at"
         ],
         "title": "ReportResponse"
+      },
+      "ReportSuggestion": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Priority"
+          },
+          "problem": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Problem"
+          },
+          "change": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Change"
+          },
+          "where": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Where"
+          },
+          "complaint_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Complaint Urls"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "priority",
+          "problem",
+          "change"
+        ],
+        "title": "ReportSuggestion",
+        "description": "One change to wat2do.io the report suggests, and the complaints behind it."
+      },
+      "ReportTheme": {
+        "properties": {
+          "theme": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Theme"
+          },
+          "detail": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Detail"
+          },
+          "competitors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Competitors"
+          },
+          "complaint_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Complaint Urls"
+          }
+        },
+        "type": "object",
+        "required": [
+          "theme",
+          "detail"
+        ],
+        "title": "ReportTheme",
+        "description": "A complaint that keeps coming up in one day's findings."
       },
       "ReportUpdate": {
         "properties": {

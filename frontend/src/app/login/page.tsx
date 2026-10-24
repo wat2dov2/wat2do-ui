@@ -1,11 +1,10 @@
 import { cache, Suspense } from "react";
+import { getRequestSchool } from "@/shared/api/schools.server";
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import imgAuthLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { AuthEntryPage } from "@/features/auth/pages/AuthEntryPage";
 import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { getSchoolPreviewEvents } from "@/features/events/api/eventFeed.server";
-import { getSchoolFromRequestHost } from "@/shared/constants/schools";
 import { QP } from "@/shared/constants/queryParams";
 import { buildNoIndexPageMetadata } from "@/shared/lib/seo";
 import type { Event } from "@/shared/types";
@@ -49,10 +48,7 @@ async function LoginPreview({ school }: { school: string }) {
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const requestHeaders = await headers();
-  const school = getSchoolFromRequestHost(
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
-  );
+  const school = await getRequestSchool();
   const query = await searchParams;
 
   return (

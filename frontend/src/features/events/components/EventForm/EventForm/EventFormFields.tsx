@@ -1,6 +1,6 @@
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import { LocationPin, DollarSign, Utensils, Plus, Trash2, ExternalLink } from "@/shared/ui/doodle-icons";
+import { MapPin, DollarSign, Utensils, Plus, Trash2, ExternalLink } from "lucide-react";
 import {
   Field,
   FieldGroup,
@@ -132,7 +132,7 @@ export function EventFormFields() {
             onChange={(value) => updateField("location", value as string)}
             onBlur={() => handleBlur("location")}
             placeholder={t("forms.locationPlaceholder")}
-            labelIcon={<LocationPin className="size-4" />}
+            labelIcon={<MapPin className="size-4" />}
             error={errors.location}
             touched={touched.location}
           />
@@ -145,7 +145,7 @@ export function EventFormFields() {
             onChange={(value) => updateField("map_location", value as string)}
             onBlur={() => handleBlur("map_location")}
             placeholder={t("forms.mapLocationPlaceholder")}
-            labelIcon={<LocationPin className="size-4" />}
+            labelIcon={<MapPin className="size-4" />}
             error={errors.map_location}
             touched={touched.map_location}
           />

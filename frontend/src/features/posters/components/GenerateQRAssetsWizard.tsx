@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { QrCode, ArrowLeft, ArrowRight, Download } from "@/shared/ui/doodle-icons";
+import { QrCode, ArrowLeft, ArrowRight, Download } from "lucide-react";
 import { FormActions, FormGrid, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
 import {

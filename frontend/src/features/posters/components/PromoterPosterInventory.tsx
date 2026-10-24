@@ -27,7 +27,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
-import { QrCode } from "@/shared/ui/doodle-icons";
+import { QrCode } from "lucide-react";
 
 interface PromoterPosterInventoryProps {
   posters: PromoterPosterEarnings[];

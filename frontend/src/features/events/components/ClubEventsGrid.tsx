@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { EventList } from "@/features/events/components/EventList";
@@ -14,6 +16,11 @@ interface ClubEventsGridProps {
   clubId: number;
   school: string;
   initialEvents: Event[];
+}
+
+/** Shown while the club's events stream in from the server. */
+export function ClubEventsGridSkeleton() {
+  return <EventList events={[]} eventStats={null} isLoading groupByDateSections={false} />;
 }
 
 /**

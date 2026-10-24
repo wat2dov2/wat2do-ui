@@ -1,126 +1,33 @@
-import { memo, useMemo, useCallback, useState } from "react";
+import { memo, useMemo, useCallback } from "react";
+import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
-import { Bookmark, Instagram } from "@/shared/ui/doodle-icons";
-import { Badge } from "@/shared/ui/badge";
-import { EventCardContent } from "@/shared/ui/event-card-content";
-import { sanitizeHref } from "@/shared/utils/url";
+import { AvatarStack } from "@/shared/ui/avatar-stack";
+import { Button } from "@/shared/ui/button";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
-import { ClubCategoryBadge } from "@/shared/components/ClubCategoryBadge";
+import { getClubCategoryConfig } from "@/shared/data/clubCategoryStyles";
+import { translateCategory } from "@/shared/utils/event";
 import {
   useCardMouseDownActivate,
   useMobileClickActivation,
 } from "@/shared/hooks";
-import { ClubOverflowMenu } from "@/features/clubs/components/ClubOverflowMenu";
 import {
   getClubCountBadges,
   getClubSocialHandle,
 } from "@/features/clubs/utils/clubCardContent";
-import { useClubCardFrame } from "@/features/clubs/hooks/useClubCardFrame";
 import type { Club } from "@/shared/types";
 import { toast } from "@/shared/hooks/use-toast";
 import { clubPagePath, ROUTES } from "@/shared/constants/routes";
+
+/** Controls inside the card act on their own and never open the club. */
+const CARD_ACTION_SELECTOR = "[data-club-card-action]";
 
 interface ClubCardProps {
   club: Club;
   isSaved?: boolean;
   onClubClick?: (club: Club) => void;
   onCategoryClick?: (category: string) => void;
-}
-
-function getClubPrimaryCategory(club: Club): string {
-  return club.categories[0] ?? "";
-}
-
-interface FollowClubButtonProps {
-  clubId: number;
-  isAuthenticated: boolean;
-  isSaved: boolean;
-  onToggleSave: (clubId: number) => void;
-  onLoginRequired: () => void;
-  t: (key: string, options?: Record<string, unknown>) => string;
-}
-
-function FollowClubButton({
-  clubId,
-  isAuthenticated,
-  isSaved,
-  onToggleSave,
-  onLoginRequired,
-  t,
-}: FollowClubButtonProps) {
-  return (
-    <button
-      type="button"
-      aria-pressed={isSaved}
-      onClick={() => isAuthenticated ? onToggleSave(clubId) : onLoginRequired()}
-      aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
-      className="flex min-h-12 w-full items-center justify-center rounded-bl-xl bg-transparent px-2 text-muted-foreground transition-colors hover:bg-surface-hover"
-    >
-      <Bookmark
-        className={`size-5 shrink-0 ${isSaved ? "fill-current" : ""}`}
-        fill={isSaved ? "currentColor" : "none"}
-      />
-    </button>
-  );
-}
-
-interface ClubFooterActionsProps {
-  club: Club;
-  followButton: React.ReactNode;
-  preferClickPress: boolean;
-  t: (key: string, options?: Record<string, unknown>) => string;
-}
-
-function ClubFooterActions({
-  club,
-  followButton,
-  preferClickPress,
-  t,
-}: ClubFooterActionsProps) {
-  const instagramHref = sanitizeHref(
-    club.ig
-      ? `https://instagram.com/${club.ig.replace(/^@/, "")}`
-      : null,
-  );
-  return (
-    <div
-      data-club-card-footer
-      onMouseDown={
-        preferClickPress ? undefined : (event) => event.stopPropagation()
-      }
-      onClick={(event) => event.stopPropagation()}
-      className={`grid grid-cols-3 border-t border-border`}
-    >
-      {followButton}
-
-      {instagramHref ? (
-        <a
-          href={instagramHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          onMouseDown={
-            preferClickPress ? undefined : (event) => event.stopPropagation()
-          }
-          onClick={(event) => event.stopPropagation()}
-          aria-label={t("clubs.instagram")}
-          className="flex min-h-12 items-center justify-center border-l border-border px-2 text-muted-foreground transition-colors hover:bg-surface-hover"
-        >
-          <Instagram className="size-5" />
-        </a>
-      ) : (
-        <span
-          aria-hidden="true"
-          className="flex min-h-12 items-center justify-center border-l border-border px-2 text-muted-foreground opacity-35"
-        >
-          <Instagram className="size-5" />
-        </span>
-      )}
-
-      <ClubOverflowMenu club={club} stopPropagation />
-    </div>
-  );
 }
 
 function ClubCardComponent({
@@ -132,62 +39,22 @@ function ClubCardComponent({
   const { t } = useTranslation();
   const router = useRouter();
   const { isAuthenticated } = useAuthState();
-  const toggleSaveClub = useSavedClubsStore(
-    (state) => state.toggleSaveClub,
-  );
-  const [isHoveringBadge, setIsHoveringBadge] = useState(false);
-
-  const { cardRef, badgeRef, paths } = useClubCardFrame();
-
-  const primaryCategory = useMemo(
-    () => getClubPrimaryCategory(club),
-    [club],
-  );
-  const countBadges = useMemo(
-    () => getClubCountBadges(club, t),
-    [club, t],
-  );
-  const socialHandle = useMemo(
-    () => getClubSocialHandle(club),
-    [club],
-  );
-
-  const badgeHoverProps = useMemo(
-    () => ({
-      onMouseEnter: () => setIsHoveringBadge(true),
-      onMouseLeave: () => setIsHoveringBadge(false),
-    }),
-    [],
-  );
-
+  const toggleSaveClub = useSavedClubsStore((state) => state.toggleSaveClub);
   const preferClickPress = useMobileClickActivation();
 
-  const handleCategoryClick = useCallback(
-    (event: React.MouseEvent) => {
-      event.stopPropagation();
-      event.preventDefault();
-      if (primaryCategory) {
-        onCategoryClick?.(primaryCategory);
-      }
-    },
-    [onCategoryClick, primaryCategory],
-  );
+  const category = club.categories[0] ?? "";
+  const categoryColor = getClubCategoryConfig(category).color;
+  const socialHandle = useMemo(() => getClubSocialHandle(club), [club]);
+  // Many clubs are named by their handle; the handle line only adds something when it differs.
+  const showHandle = socialHandle !== undefined && socialHandle !== club.club_name;
+  const counts = useMemo(() => getClubCountBadges(club, t).map((badge) => badge.text), [club, t]);
 
-  const handleCardActivate = useCallback(() => {
-    onClubClick?.(club);
-  }, [onClubClick, club]);
-
-  const runMouseDownActivate = useCardMouseDownActivate(
-    handleCardActivate,
-    "[data-club-card-footer]",
-  );
+  const handleCardActivate = useCallback(() => onClubClick?.(club), [onClubClick, club]);
+  const runMouseDownActivate = useCardMouseDownActivate(handleCardActivate, CARD_ACTION_SELECTOR);
 
   const handleCardMouseDown = useCallback(
     (mouseEvent: React.MouseEvent<HTMLElement>) => {
-      if (preferClickPress) {
-        return;
-      }
-      runMouseDownActivate(mouseEvent);
+      if (!preferClickPress) runMouseDownActivate(mouseEvent);
     },
     [preferClickPress, runMouseDownActivate],
   );
@@ -198,35 +65,28 @@ function ClubCardComponent({
         runMouseDownActivate(mouseEvent);
         return;
       }
-      if (
-        mouseEvent.target instanceof Element &&
-        mouseEvent.target.closest("a")
-      ) {
-        return;
-      }
+      if (mouseEvent.target instanceof Element && mouseEvent.target.closest("a")) return;
       mouseEvent.preventDefault();
     },
     [runMouseDownActivate, preferClickPress],
   );
 
-  const followButton = (
-    <FollowClubButton
-      clubId={club.id}
-      isAuthenticated={isAuthenticated}
-      isSaved={isSaved}
-      onToggleSave={toggleSaveClub}
-      onLoginRequired={() =>
-        toast({
-          description: t("clubs.signInToFollow"),
-          action: {
-            label: t("events.signIn"),
-            onClick: () => router.push(ROUTES.LOGIN),
-          },
-        })
-      }
-      t={t}
-    />
-  );
+  const toggleFollow = () => {
+    if (isAuthenticated) {
+      toggleSaveClub(club.id);
+      return;
+    }
+    toast({
+      description: t("clubs.signInToFollow"),
+      action: { label: t("events.signIn"), onClick: () => router.push(ROUTES.LOGIN) },
+    });
+  };
+
+  // Card controls keep their own presses: the card opens on mouse down, so they stop it there too.
+  const stopCardActivation = {
+    onMouseDown: preferClickPress ? undefined : (event: React.MouseEvent) => event.stopPropagation(),
+    onClick: (event: React.MouseEvent) => event.stopPropagation(),
+  };
 
   return (
     <article
@@ -244,90 +104,57 @@ function ClubCardComponent({
           handleCardActivate();
         }
       }}
-      className={`relative isolate flex flex-col h-full rounded-xl cursor-pointer transition-all duration-300 group text-foreground ${
-        isHoveringBadge ? "" : "hover:opacity-90 hover:shadow-lg"
-      }`}
-      ref={cardRef}
+      className="group relative flex h-full cursor-pointer flex-col gap-4 rounded-2xl border border-border bg-surface p-4 text-foreground transition-[border-color,box-shadow] duration-200 hover:border-border-hover hover:shadow-[0_10px_30px_-18px_rgb(0_0_0/0.35)]"
     >
-      {/* 1. Custom Background with clip-path (including -webkit support for Safari compatibility) */}
-      <div
-        className="absolute inset-0 rounded-xl bg-surface"
-        style={{
-          clipPath: paths.clip ? `path('${paths.clip}')` : undefined,
-          WebkitClipPath: paths.clip ? `path('${paths.clip}')` : undefined,
-        }}
-      />
 
-      {/* 2. Custom Border SVG overlay */}
-      {paths.borderOuter && (
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
-          <path
-            d={paths.borderOuter}
-            fill="none"
-            stroke="currentColor"
-            style={{ stroke: "currentColor", opacity: 0.25 }}
-            className="text-muted-foreground"
-            strokeWidth={1}
-          />
-        </svg>
-      )}
-      {paths.borderCutout && (
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-40">
-          <path
-            d={paths.borderCutout}
-            fill="none"
-            stroke="currentColor"
-            style={{ stroke: "currentColor", opacity: 0.38 }}
-            className="text-muted-foreground"
-            strokeWidth={1}
-          />
-        </svg>
-      )}
-
-      {/* 3. The Badge (rendered outside the clipped background, matching Event Card badge style) */}
-      {primaryCategory && (
-        <div ref={badgeRef} className="absolute top-0 left-0 z-30">
-          <ClubCategoryBadge type={primaryCategory}>
-            {(content) => (
-              <button
-                type="button"
-                onMouseDown={handleCategoryClick}
-                className="flex cursor-pointer active:scale-95"
-                {...badgeHoverProps}
-              >
-                {content}
-              </button>
-            )}
-          </ClubCategoryBadge>
+      <div className="flex items-start justify-between gap-3">
+        <AvatarStack size="lg" avatars={[{ src: club.logo_url ?? "", name: club.club_name }]} />
+        <div data-club-card-action {...stopCardActivation}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            selected={isSaved}
+            onClick={toggleFollow}
+            aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
+          >
+            {isSaved ? t("clubs.following") : t("clubs.follow")}
+          </Button>
         </div>
-      )}
+      </div>
 
-      {isSaved && (
-        <Badge variant="new" size="md" className="absolute top-0 right-0 z-30">
-          {t("clubs.followedClubs")}
-        </Badge>
-      )}
+      <div className="flex min-w-0 flex-col gap-1">
+        <h3 className="line-clamp-2 text-base leading-snug font-medium tracking-[-0.01em] text-balance">
+          <NextLink href={clubPagePath(club.id)} className="outline-none">
+            {club.club_name}
+          </NextLink>
+        </h3>
+        {showHandle ? (
+          <p data-slot="club-card-handle" className="truncate text-sm text-muted-foreground">
+            {socialHandle}
+          </p>
+        ) : null}
+      </div>
 
-      {/* 4. Card Content (rendered on top of background) */}
-      <div className="relative z-10 flex flex-col flex-1">
-        <EventCardContent
-          title={club.club_name}
-          titleHref={clubPagePath(club.id)}
-          instagram={socialHandle}
-          badges={countBadges}
-          horizontalPadding="inset"
-          className="pt-8 sm:pt-9"
-          textClassName="text-foreground"
-          secondaryTextClassName="text-muted-foreground"
-          badgeClassName="border-border text-muted-foreground"
-        />
-
-        <ClubFooterActions
-          club={club}
-          followButton={followButton}
-          preferClickPress={preferClickPress}
-          t={t}
-        />
+      <div className="mt-auto flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+        {category ? (
+          <button
+            type="button"
+            data-club-card-action
+            {...stopCardActivation}
+            onClick={(event) => {
+              event.stopPropagation();
+              onCategoryClick?.(category);
+            }}
+            className="flex min-w-0 shrink-0 cursor-pointer items-center gap-1.5 transition-colors hover:text-foreground"
+          >
+            <span aria-hidden="true" className="size-2 shrink-0 rounded-full" style={{ backgroundColor: categoryColor }} />
+            {translateCategory(category, t)}
+          </button>
+        ) : null}
+        {counts.map((count) => (
+          <span key={count} className="whitespace-nowrap">{count}</span>
+        ))}
       </div>
     </article>
   );

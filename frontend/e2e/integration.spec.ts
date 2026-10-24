@@ -2752,14 +2752,10 @@ test.describe("Events Page", () => {
     await expect(imageDialog.getByRole("img", { name: "Poster Dialog Event" })).toBeVisible();
     await imageDialog.getByRole("button", { name: "Close" }).click();
 
-    await eventDrawer.getByRole("button", { name: "UW Tech Club" }).last().click();
-    await page
-      .getByRole("menuitem", { name: "See more events by UW Tech Club" })
-      .click();
-
+    // The host badge leads straight to the club's own Wat2Do profile.
+    await eventDrawer.getByRole("link", { name: "UW Tech Club" }).last().click();
     await expect(eventDrawer).not.toBeVisible();
-    await expect(page).toHaveURL(BASE + "/events");
-    await expect(page.locator('article[data-event-id="1"]:visible')).toBeVisible();
+    await expect(page).toHaveURL(/\/clubs\/\d+$/);
   });
 
   test("lets admins delete events from the drawer and dedicated page", async ({ page, next }) => {
@@ -5228,6 +5224,26 @@ test.describe("Navigation", () => {
     const html = await response.text();
     expect(html).toContain('rel="canonical" href="https://uwaterloo.wat2do.io/events"');
     expect(html).toContain('property="og:url" content="https://uwaterloo.wat2do.io/events"');
+  });
+
+  test("the unlisted landing preview leads with the problem and sends students to the feed", async ({ page }) => {
+    await page.goto(`${BASE}/preview-62182b6ad5`, { waitUntil: "domcontentloaded" });
+    // The preview is shared by link only, so search engines must never index it.
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("before it's over.");
+    await expect(page.getByRole("heading", { name: "Campus is NOT boring. Its events are just hidden." })).toBeVisible();
+    // The hero is the school's live event map, and the stats are counted from its feeds.
+    await expect(page.getByLabel("Map", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("upcoming events right now")).toBeVisible();
+
+    await page.getByRole("link", { name: "How it works" }).click();
+    await expect(page).toHaveURL(/#how-it-works$/);
+    await expect(page.getByRole("heading", { name: "So how is this different from other event sites?" })).toBeInViewport();
+
+    await page.getByRole("link", { name: "See what's on" }).first().click();
+    await expect(page).toHaveURL(`${BASE}/events`);
+    await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
   });
 
   test("default and alternate school routes load without event feed errors", async ({ page }) => {

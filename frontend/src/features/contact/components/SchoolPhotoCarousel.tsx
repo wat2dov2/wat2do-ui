@@ -9,7 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import { EventImageCutout, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
-import { ChevronLeft, ChevronRight } from "@/shared/ui/doodle-icons";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import photo0 from "@/assets/utsg-university-college.webp";
 import photo1 from "@/assets/york-stadium-selfie.webp";
 import photo2 from "@/assets/ocad-sharp-centre.webp";

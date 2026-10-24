@@ -5,7 +5,7 @@ import { buildPreviewEvent } from "@/features/events/lib/previewEvent";
 import { clubDirectoryQueryOptions } from "@/features/clubs";
 import { useQuery } from "@tanstack/react-query";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { ArrowLeft } from "@/shared/ui/doodle-icons";
+import { ArrowLeft } from "lucide-react";
 import { FormInput } from "@/shared/ui/form-field";
 import { Button } from "@/shared/ui/button";
 import { FormActions, FormLayout } from "@/shared/layout";

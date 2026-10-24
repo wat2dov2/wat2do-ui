@@ -100,6 +100,8 @@ INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT = "Instagram publishing batch was chang
 INSTAGRAM_PUBLISH_BATCH_NOT_EDITABLE = "Instagram publishing batch is not editable"
 INSTAGRAM_PUBLISHING_NOT_CONFIGURED = "Instagram publishing is not configured"
 INSTAGRAM_REAUTHORIZATION_REQUIRED = "Instagram account requires reauthorization"
+INSTAGRAM_SONG_EXISTS = "This song is already on the list"
+INSTAGRAM_SONG_NOT_FOUND = "Song not found"
 EVENT_IMAGE_NO_EVENT = (
     "No event could be read from this image. Try a clearer poster or enter the details manually."
 )
@@ -137,3 +139,4 @@ REGISTRATION_FAILED = "Unable to complete registration. Please try again later."
 
 SPONSOR_SUBMISSION_NOT_FOUND = "Sponsor submission not found"
 COMPETITOR_PAIN_POINT_NOT_FOUND = "Competitor pain point not found"
+OUTREACH_LEAD_NOT_FOUND = "Outreach lead not found"

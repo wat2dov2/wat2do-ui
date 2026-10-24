@@ -27,3 +27,8 @@ INSTAGRAM_BATCH_STATUSES = (
     INSTAGRAM_BATCH_EMPTY,
     INSTAGRAM_BATCH_FAILED,
 )
+
+# A published carousel waits for the emulator to add a song, then records how it went.
+INSTAGRAM_MUSIC_PENDING: Final = "pending"
+INSTAGRAM_MUSIC_ADDED: Final = "added"
+INSTAGRAM_MUSIC_FAILED: Final = "failed"

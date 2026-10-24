@@ -89,6 +89,11 @@
   --font-sans: var(--font-family-sans);
   --font-mono: var(--font-family-mono);
 
+  /* Satoshi reads thin at its stock 300/400, so the lighter steps sit a touch
+     heavier, closer to the Instagram carousel stickers. Medium and up are unchanged. */
+  --font-weight-light: 400;
+  --font-weight-normal: 475;
+
   /* Compact heading sizes share one line-height across the application. */
   --text-2xl--line-height: 0.95;
   --text-3xl--line-height: 0.95;
@@ -164,15 +169,6 @@
   mix-blend-mode: normal;
 }
 
-@utility bg-page-glow {
-  background-image: radial-gradient(
-    circle at bottom left,
-    var(--page-glow-secondary-inner) 0%,
-    var(--page-glow-secondary-middle) 28%,
-    transparent 68%
-  );
-}
-
 @layer base {
   *:not(.animate-pulse-live) {
     @apply border-border outline-ring/50;
@@ -194,7 +190,7 @@
     box-shadow: var(--app-shadow-control) !important;
   }
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans font-normal antialiased;
   }
   button,
   [role="button"] {

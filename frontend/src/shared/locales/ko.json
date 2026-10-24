@@ -54,7 +54,6 @@
     "share": "공유",
     "export": "내보내기",
     "addToCalendar": "캘린더에 추가",
-    "moreOptions": "더 많은 옵션",
     "report": "신고",
     "download": "다운로드",
     "done": "끝",
@@ -154,7 +153,7 @@
     "added_at": "최근 추가",
     "category": "카테고리",
     "food": "음식",
-    "employersOnCampus": "캠퍼스 채용 행사",
+    "employersOnCampus": "채용 행사",
     "freeFoodOnCampus": "무료 음식",
     "competitions": "대회",
     "featured": "추천",
@@ -416,7 +415,7 @@
       "title": "왜 우리가 Wat2Do를 만들었는가",
       "origin": "Wat2Do은 우리 공동 창립자들이 University of Waterloo에서 일어나는 이벤트에 대한 공개 Instagram 게시물을 수집하는 방법을 발견하면서 시작되었습니다. 우리는 새로운 것을 시도하는 것을 좋아했기 때문에 우리 자신을 위해 이것을 만들었고, 학생들은 항상 새롭고 흥미로운 활동을 만들어내고 있었습니다.",
       "belief": "우리는 대학이 새로운 것을 시도하기에 가장 좋은 시기이자 환경 중 하나라고 믿습니다. 문제는 이벤트가 부족한 것이 아니라, 그것이 끝나기 전에 찾아내는 것이었습니다.",
-      "scale": "2025년 8월 이후, Wat2Do은 3,000개 이상의 이벤트를 포착했습니다. 우리는 알고리즘을 계속 개선하여 평균적으로 Instagram 게시물이 올라간 지 약 1분 만에 이벤트를 찾아낼 수 있게 되었습니다.",
+      "scale": "2025년 8월 이후, Wat2Do은 28,900개 이상의 이벤트를 포착했습니다. 이후 알고리즘을 400개 계정에서 19,600개 계정으로 확장했으며, 매주 3,340개의 새로운 이벤트를 처리하고 있습니다(2026년 10월 19일 기준).",
       "mission": "그 발견 문제를 해결한 것은 우리 자신의 대학 경험을 바꾸어 놓았습니다. 이제 우리는 우리가 만든 것을 공유하고, 학생들이 주변에서 일어나는 새로운 멋진 것들을 더 많이 발견할 수 있도록 돕고 싶습니다.",
       "signature": "- Tony & Erica"
     },
@@ -483,11 +482,6 @@
       "browse": "이벤트 탐색",
       "explore": "기관 탐색"
     },
-    "footer": {
-      "about": "우리는 Wat2Do를 구축하여 Waterloo 학생들을 과소평가된 캠퍼스 생활 이벤트와 연결했습니다. 제안이나 피드백이 있으면 연락주세요.",
-      "title": "Wat2Do",
-      "copyright": "© {{year}} Wat2Do"
-    },
     "photos": {
       "label": "우리의 캠퍼스 방문",
       "alt": "{{school}}에 방문한 Wat2Do 팀",
@@ -545,5 +539,210 @@
         "messageTooLong": "추천 내용이 너무 깁니다. 답변을 줄여 주세요."
       }
     }
+  },
+  "landing": {
+    "hero": {
+      "note": "모두에게 무료 · 학생 임팩트 어워드 지원",
+      "titleLead": "캠퍼스의 모든 이벤트,",
+      "titleHighlight": "끝나기 전에.",
+      "description": "조직 이벤트는 수백 개의 Instagram 계정 속에 묻혀 버려요. Wat2Do는 모두 하나의 피드에 모아 드려요.",
+      "primaryAction": "지금 뭐 하는지 보기",
+      "secondaryAction": "작동 방식",
+      "mapTitle": "{{school}}에서 예정된 이벤트 {{total}}개",
+      "mapTitle_other": "{{school}}에서 예정된 이벤트 {{total}}개"
+    },
+    "problem": {
+      "title": "캠퍼스가 지루한 게 아니에요. 이벤트가 숨어 있을 뿐이죠.",
+      "description": "{{school}}에서는 늘 뭔가가 열리고 있어요. 문제는 그걸 알리는 곳이에요.",
+      "points": {
+        "buried": {
+          "title": "피드 속에 묻혀요",
+          "description": "조직을 팔로우해도 게시물을 보여줄지는 Instagram이 정해요. 대부분의 이벤트 포스터는 피드 속 다른 게시물에 묻혀 버리죠."
+        },
+        "scattered": {
+          "title": "수백 개의 조직, 모아 볼 피드는 없음",
+          "description": "모든 조직, 학회, 팀이 각자 계정에 글을 올려요. 전부 팔로우하는 사람은 없으니, 친구가 리포스트한 것만 알게 되죠."
+        },
+        "late": {
+          "title": "다음 날에야 알게 돼요",
+          "description": "무료 음식, 채용 설명회, $5 쿠킹 클래스. 후기 게시물을 보고 나서야 어제였다는 걸 깨닫죠."
+        },
+        "quiet": {
+          "title": "그래서 아무 일도 없는 것 같아요",
+          "description": "이벤트가 수백 개의 계정에 흩어져 있으면 캠퍼스가 조용해 보여요. 사실은 아니에요. 그냥 안 보일 뿐이에요."
+        }
+      },
+      "story": "Tony는 단돈 $5짜리 이탈리안 요리 수업 Instagram 스토리를 발견했어요. 그런데 3일 전에 올라온 거였죠.",
+      "storyOver": "이벤트는 이미 끝나 있었어요.",
+      "storyEnd": "그래서 우리가 바라던 바로 그곳을 직접 만들었어요.",
+      "signature": "Tony & Erica, Wat2Do 창업자"
+    },
+    "solution": {
+      "title": "하나의 피드. 모든 조직. 검색할 필요 없이.",
+      "description": "Wat2Do가 대신 계정들을 팔로우하고, 모든 포스터를 검색하고 필터링하고 저장할 수 있는 이벤트로 바꿔 드려요.",
+      "stats": {
+        "clubsLabel": "{{school}}에서 추적 중인 조직",
+        "clubsLabel_other": "{{school}}에서 추적 중인 조직",
+        "upcomingLabel": "지금 예정된 이벤트",
+        "upcomingLabel_other": "지금 예정된 이벤트",
+        "newLabel": "최근 7일간 새로 올라온 이벤트",
+        "newLabel_other": "최근 7일간 새로 올라온 이벤트"
+      }
+    },
+    "different": {
+      "title": "그럼 다른 이벤트 사이트와 무엇이 다른 걸까요?",
+      "description": "다른 사이트는 조직이 이벤트를 등록해 주길 기다려요. 나머지는 봇을 차단하는 Instagram 안에 갇혀 있어요. 그래도 Wat2Do는 꺼내 와요.",
+      "points": {
+        "relay": {
+          "cost": "수백 시간"
+        },
+        "alwaysOn": {
+          "title": "잠들지 않는 Mac mini",
+          "description": "저희가 구입한 M4 Mac mini가 표시된 게시물을 하나하나 익명으로 열어 데이터로 바꿔요. 24시간 내내요.",
+          "cost": "$899"
+        },
+        "claude": {
+          "title": "Claude가 모든 포스터를 읽어요",
+          "description": "Claude Haiku가 안전장치를 갖추고 포스터를 이벤트로 바꿔요. 지어내는 건 없고, 중복은 확인하고, 데이터베이스 계정은 이벤트 테이블에만 묶여 있어요.",
+          "cost": "$200 / 월"
+        },
+        "cloud": {
+          "title": "모든 학교를 위해 온라인",
+          "description": "AWS가 백업과 함께 피드를 호스팅해서, 버그 하나로 실제 학생들이 불편을 겪는 일은 없어요.",
+          "cost": "$100 / 월"
+        }
+      },
+      "costNote": "이 비용은 University of Waterloo의 학생 임팩트 어워드와 장학금으로 충당해요. 학생 생활을 더 좋게 만들기 위한 지원금이라, Wat2Do는 모든 학생에게 계속 무료예요.",
+      "diagramLabel": "조직의 Instagram 게시물이 Wat2Do 이벤트가 되는 과정: 조직 계정이 가려진 단계에 알림을 보내고, 항상 켜진 Mac mini의 브라우저 워커와 게시물 수집기가 게시물을 읽고, 안전장치를 갖춘 Claude 에이전트가 이를 이벤트로 만들고, 검문 단계를 통과하면 내 피드 뒤의 접근이 제한된 이벤트 데이터베이스에 들어갑니다. 문제가 생기면 Mac mini가 개인 휴대폰을 호출하고, 저희가 노트북으로 고칩니다.",
+      "diagram": {
+        "zoneInstagram": "Instagram",
+        "zoneMac": "Mac mini · 항상 켜짐",
+        "zoneWat2do": "Wat2Do",
+        "accounts": "조직 계정",
+        "browser": "브라우저 워커",
+        "fetcher": "익명 수집기",
+        "agents": "Claude 에이전트",
+        "database": "이벤트 데이터베이스",
+        "feed": "내 피드",
+        "guardrails": "안전장치",
+        "zoneOnCall": "당직",
+        "laptop": "저희 개인 노트북",
+        "laptopNote": "(Mac mini 원격 제어)",
+        "pager": "개인 휴대폰"
+      },
+      "redacted": "가려짐"
+    },
+    "useCases": {
+      "title": "캠퍼스 생활, 내 방식대로",
+      "description": "{{school}} 학생들이 Wat2Do를 활용하는 여섯 가지 방법.",
+      "items": {
+        "freeFood": {
+          "title": "수업 사이 무료 음식",
+          "description": "설명회 피자, 베이크 세일, 간식 있는 친목 모임. 무료 음식으로 필터링하고 점심 계획을 세워 보세요.",
+          "action": "무료 음식 보기"
+        },
+        "employers": {
+          "title": "캠퍼스에서 기업 만나기",
+          "description": "채용 담당자가 직접 오는 설명회와 네트워킹 나이트. 좋은 기회는 대화 한 번에서 시작되곤 해요.",
+          "action": "기업 이벤트 보기"
+        },
+        "competitions": {
+          "title": "공모전과 해커톤",
+          "description": "케이스 대회, 해커톤, 피칭 나이트까지. 상품도 받고 이력서에 쓸 진짜 경험도 쌓아 보세요.",
+          "action": "대회 보기"
+        },
+        "newToCampus": {
+          "title": "캠퍼스가 처음인가요?",
+          "description": "학교의 모든 조직을 둘러보고 나와 관심사가 같은 사람들을 찾아보세요.",
+          "action": "조직 둘러보기"
+        },
+        "getInvolved": {
+          "title": "운영진 되기",
+          "description": "조직들이 신입생 대표부터 회장까지 모집 중인 자리를 여기에 올려요. 참석만 하지 말고 직접 참여해 보세요.",
+          "action": "모집 중인 자리 보기"
+        },
+        "bored": {
+          "title": "오늘 밤 할 게 없나요?",
+          "description": "피드에서 'random'을 검색하면 Wat2Do가 곧 열리는 이벤트를 골라 드려요.",
+          "action": "깜짝 추천 받기"
+        }
+      }
+    },
+    "features": {
+      "capture": {
+        "title": "Instagram 포스터가 자동으로 이벤트로",
+        "description": "조직은 늘 하던 대로 글을 올리면 돼요. Wat2Do가 포스터를 읽고 날짜, 시간, 장소, 가격을 뽑아내서, 아무도 양식을 채우지 않아도 이벤트가 피드에 올라가요.",
+        "mockHandle": "@italian.club",
+        "mockTitle": "이탈리안 요리 수업",
+        "mockDate": "목요일 오후 6:00",
+        "mockPlace": "학생회관 주방",
+        "mockPrice": "$5",
+        "mockAdded": "조직 게시물에서 추가됨"
+      },
+      "filters": {
+        "title": "두 번 탭하면 무료 음식",
+        "description": "무료 음식, 캠퍼스 채용 행사, 대회를 빠르게 필터링하세요. 날짜, 가격, 조직, 위치로 더 좁힐 수도 있어요.",
+        "mockQuery": "피자"
+      },
+      "reminders": {
+        "title": "가기로 한 걸 잊을 일 없게",
+        "description": "'참여 예정'을 누르면 Wat2Do가 시작 약 1시간 전에 이메일을 보내 드려요. 이벤트를 Google Calendar나 iCal에 저장하거나, 그날의 이벤트를 담은 오전 9시 이메일을 켤 수도 있어요.",
+        "mockSubject": "1시간 후 시작: 이탈리안 요리 수업",
+        "mockBody": "오후 6:00, 학생회관 주방. 거기서 만나요!",
+        "mockMorning": "매일 오전 9시 이메일"
+      },
+      "clubs": {
+        "title": "몰랐던 조직을 찾아보세요",
+        "description": "{{school}}의 모든 조직을 둘러보고, 마음에 드는 곳을 팔로우하고, 참여하고 싶을 땐 모집 중인 자리도 찾아보세요.",
+        "mockClubOne": "수리 동아리",
+        "mockClubTwo": "살사 동호회",
+        "mockClubThree": "클라이밍 동아리",
+        "mockUpcoming": "다가오는 이벤트 {{count}}개",
+        "mockUpcoming_other": "다가오는 이벤트 {{count}}개",
+        "mockFollow": "팔로우",
+        "mockFollowing": "팔로잉"
+      }
+    },
+    "faq": {
+      "title": "학생들이 자주 묻는 질문",
+      "items": {
+        "free": {
+          "question": "Wat2Do는 무료인가요?",
+          "answer": "네. Wat2Do는 학생에게 무료이고, 계정 없이도 모든 이벤트를 둘러볼 수 있어요. 로그인하면 이벤트를 '참여 예정'으로 표시하고 알림을 받을 수 있어요."
+        },
+        "clubs": {
+          "question": "우리 조직도 가입해야 하나요?",
+          "answer": "아니요. 조직이 공개 Instagram 계정에 이벤트를 올리면 Wat2Do가 자동으로 가져와요. 조직 페이지 소유권을 신청해서 직접 관리할 수도 있어요."
+        },
+        "speed": {
+          "question": "새 이벤트는 얼마나 빨리 올라오나요?",
+          "answer": "대부분의 새 이벤트는 조직이 글을 올린 뒤 19시간 안에 올라와요."
+        },
+        "submit": {
+          "question": "이벤트를 직접 추가할 수 있나요?",
+          "answer": "네. 이벤트 페이지에서 제출하세요. 포스터를 업로드하면 Wat2Do가 세부 정보를 채워 드려요."
+        },
+        "schools": {
+          "question": "Wat2Do는 어느 학교에 있나요?",
+          "answer": "Wat2Do는 캐나다와 미국의 {{count}}개 학교에서 운영 중이에요. 학교마다 피드가 따로 있고, 페이지 상단에서 학교를 바꿀 수 있어요.",
+          "answer_other": "Wat2Do는 캐나다와 미국의 {{count}}개 학교에서 운영 중이에요. 학교마다 피드가 따로 있고, 페이지 상단에서 학교를 바꿀 수 있어요."
+        }
+      }
+    },
+    "closing": {
+      "title": "이제 다음 날 알게 되는 일은 그만.",
+      "description": "{{school}}에서 열리는 모든 걸 한곳에서 확인하세요.",
+      "action": "지금 뭐 하는지 보기"
+    }
+  },
+  "footer": {
+    "tagline": "캠퍼스의 모든 일정을 하나의 캘린더에.",
+    "explore": "둘러보기",
+    "company": "회사",
+    "promote": "포스터로 수익 올리기",
+    "supportLocal": "지역 업체 응원하기",
+    "copyright": "© {{year}} Wat2Do",
+    "madeBy": "학생이 만들고, 학생을 위해.",
+    "social": "소셜"
   }
 }

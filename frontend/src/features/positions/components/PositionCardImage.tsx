@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/shared/ui/badge";
 import { BadgeMask } from "@/shared/ui/badge-mask";
-import { ClubBadgeDropdown } from "@/features/clubs/components/ClubBadgeDropdown";
+import { ClubBadgeLink } from "@/features/clubs/components/ClubBadgeLink";
 import {
   EventImageCutout,
   useEventImageCutouts,
@@ -16,14 +16,14 @@ import type { Position } from "@/shared/types";
 interface PositionCardImageProps {
   position: Position;
   variant: "card" | "detail";
-  onClubFilterSelect?: () => void;
+  onClubNavigate?: () => void;
   priority?: boolean;
 }
 
 export function PositionCardImage({
   position,
   variant,
-  onClubFilterSelect,
+  onClubNavigate,
   priority = false,
 }: PositionCardImageProps) {
   const imageSrc = position.source_image_url || position.club_logo_url;
@@ -98,16 +98,14 @@ export function PositionCardImage({
         cutout
         containerRef={registerCorner("bottom-left")}
       >
-        <ClubBadgeDropdown
+        <ClubBadgeLink
+          clubId={position.club_id}
           clubName={position.club_name}
           clubLogoUrl={position.club_logo_url}
           cohosts={position.cohosts}
           clubType={position.club_type}
           school={position.school}
-          clubPage={position.club_page}
-          clubIg={position.club_ig}
-          clubDiscord={position.club_discord}
-          onFilterSelect={onClubFilterSelect}
+          onNavigate={onClubNavigate}
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         />

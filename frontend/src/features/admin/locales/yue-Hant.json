@@ -381,10 +381,38 @@
       "coverBody": "封面正文",
       "slideOf": "第 {{index}} 張幻燈片，共 {{count}} 張",
       "undoRemoveSlide": "復原移除投影片",
-      "suggestedSong": "建議歌曲",
-      "songChart": "{{chart}} · 核實日期 {{date}}",
-      "songInstructions": "發帖時喺 Instagram 搜尋呢個歌名同歌手。音樂唔會自動加入。",
-      "noSuggestedSong": "呢批帖子未有儲存建議歌曲。"
+      "tabs": {
+        "carousels": "輪播帖",
+        "songs": "歌曲"
+      },
+      "songs": {
+        "query": "歌曲",
+        "placeholder": "例如 the weeknd after hours",
+        "add": "加歌",
+        "asianCampusesOnly": "只限亞裔校園",
+        "asianCampuses": "亞裔校園",
+        "help": "輪播帖發佈幾分鐘之後，模擬器會用隨機次序試呢啲歌，幫帖子加其中一首。",
+        "label": "首歌",
+        "columns": {
+          "song": "歌曲",
+          "added": "加入時間"
+        },
+        "delete": "刪除",
+        "deleteSong": "刪除 {{song}}",
+        "empty": "仲未有歌。加一首，等新嘅輪播帖有音樂。",
+        "addError": "加唔到首歌",
+        "deleteError": "刪唔到首歌",
+        "loadError": "載入唔到歌曲。"
+      },
+      "music": {
+        "title": "音樂",
+        "afterPublish": "呢個輪播帖發佈幾分鐘之後，會由清單加一首歌。",
+        "pending": "等緊模擬器加歌。",
+        "added": "已加入 {{track}}",
+        "failed": "冇加到歌：{{reason}}",
+        "none": "呢個輪播帖喺自動加歌之前已經發佈。",
+        "viewPost": "喺 Instagram 睇"
+      }
     },
     "clubSubmissions": "社團提交",
     "noClubSubmissions": "暫無社團提交",
@@ -397,7 +425,7 @@
     },
     "painPoints": {
       "title": "競爭對手痛點",
-      "cardDescription": "關於 Eventbrite、Meetup 同 Fable Social 嘅投訴。",
+      "cardDescription": "關於競爭對手活動 app 嘅投訴。",
       "description": "大家喺公開評論同帖文入面投訴競爭對手。只供閱讀；wat2do 從來唔會回覆。",
       "competitor": "競爭對手",
       "source": "來源",
@@ -427,7 +455,60 @@
         "new": "新",
         "seen": "已睇",
         "dismissed": "已略過"
+      },
+      "tabs": {
+        "label": "痛點檢視",
+        "complaints": "投訴",
+        "reports": "每日報告"
+      },
+      "reports": {
+        "meta": "投訴：{{count}} · {{model}}",
+        "suggestions": "建議 wat2do 嘅改動",
+        "themes": "經常出現嘅主題（{{count}}）",
+        "where": "位置：",
+        "evidence": "根據：",
+        "priorities": {
+          "high": "高",
+          "medium": "中",
+          "low": "低"
+        },
+        "emptyTitle": "暫時未有報告",
+        "emptyDescription": "每次每日搜尋搵到新投訴之後都會寫一份報告。"
       }
+    },
+    "outreach": {
+      "title": "外展邀請",
+      "cardDescription": "邀請呢啲搞手喺度發佈佢哋嘅活動。",
+      "description": "每星期兩次嘅搜尋喺每間學校搵到嘅主辦方，學生會同學生組織排先，每個都有背景、影片稿同電郵。錄好影片，喺 Gmail 打開電郵再自己寄出。",
+      "leadType": "活動類型",
+      "leadTypes": {
+        "student_association": "學生會同學生組織",
+        "hackathon": "黑客松",
+        "ticketed_event": "學會收費活動"
+      },
+      "statuses": {
+        "new": "新",
+        "contacted": "已聯絡",
+        "replied": "已回覆",
+        "submitted": "已提交",
+        "not_interested": "冇興趣",
+        "dismissed": "已略過"
+      },
+      "emptyTitle": "暫時未有搞手",
+      "emptyDescription": "搜尋每星期兩次會將新主辦方加喺呢度。",
+      "event": "活動",
+      "organizer": "搞手",
+      "details": "詳情",
+      "openEmail": "喺 Gmail 打開電郵",
+      "openFollowUp": "喺 Gmail 打開跟進電郵",
+      "openEvent": "打開活動頁面",
+      "source": "電郵喺邊度搵到",
+      "context": "背景",
+      "videoScript": "影片稿",
+      "email": "電郵",
+      "followUp": "跟進",
+      "notes": "筆記",
+      "saveNotes": "儲存筆記"
     },
     "clubSubmissionDetails": {
       "records": "記錄詳情",

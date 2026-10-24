@@ -381,10 +381,38 @@
       "coverBody": "Texte principal de la couverture",
       "slideOf": "Diapositive {{index}} sur {{count}}",
       "undoRemoveSlide": "Annuler le retrait de la diapositive",
-      "suggestedSong": "Chanson suggérée",
-      "songChart": "{{chart}} · Vérifié le {{date}}",
-      "songInstructions": "Recherchez ce titre et cet artiste dans Instagram lors de la publication. La musique n’est pas ajoutée automatiquement.",
-      "noSuggestedSong": "Aucune chanson suggérée enregistrée pour ce lot."
+      "tabs": {
+        "carousels": "Carrousels",
+        "songs": "Chansons"
+      },
+      "songs": {
+        "query": "Chanson",
+        "placeholder": "p. ex. the weeknd after hours",
+        "add": "Ajouter une chanson",
+        "asianCampusesOnly": "Campus asiatiques seulement",
+        "asianCampuses": "Campus asiatiques",
+        "help": "Quelques minutes après la publication d'un carrousel, l'émulateur ajoute une de ces chansons à la publication, en les essayant dans un ordre aléatoire.",
+        "label": "chansons",
+        "columns": {
+          "song": "Chanson",
+          "added": "Ajoutée"
+        },
+        "delete": "Supprimer",
+        "deleteSong": "Supprimer {{song}}",
+        "empty": "Aucune chanson. Ajoutez-en une pour que les nouveaux carrousels aient de la musique.",
+        "addError": "Impossible d'ajouter la chanson",
+        "deleteError": "Impossible de supprimer la chanson",
+        "loadError": "Impossible de charger les chansons."
+      },
+      "music": {
+        "title": "Musique",
+        "afterPublish": "Une chanson de la liste est ajoutée quelques minutes après la publication de ce carrousel.",
+        "pending": "En attente de l'ajout d'une chanson par l'émulateur.",
+        "added": "{{track}} ajoutée",
+        "failed": "Aucune chanson ajoutée : {{reason}}",
+        "none": "Ce carrousel a été publié avant l'ajout automatique des chansons.",
+        "viewPost": "Voir sur Instagram"
+      }
     },
     "clubSubmissions": "Soumissions de clubs",
     "noClubSubmissions": "Aucune soumission de club",
@@ -397,7 +425,7 @@
     },
     "painPoints": {
       "title": "Irritants des concurrents",
-      "cardDescription": "Plaintes sur Eventbrite, Meetup et Fable Social.",
+      "cardDescription": "Plaintes sur les applis d'événements concurrentes.",
       "description": "Avis et publications publics où des gens se plaignent des concurrents. Lecture seule; wat2do ne répond jamais.",
       "competitor": "Concurrent",
       "source": "Source",
@@ -427,7 +455,60 @@
         "new": "Nouveau",
         "seen": "Vu",
         "dismissed": "Ignoré"
+      },
+      "tabs": {
+        "label": "Vues des irritants",
+        "complaints": "Plaintes",
+        "reports": "Rapports quotidiens"
+      },
+      "reports": {
+        "meta": "Plaintes : {{count}} · {{model}}",
+        "suggestions": "Changements suggérés pour wat2do",
+        "themes": "Thèmes récurrents ({{count}})",
+        "where": "Où :",
+        "evidence": "D'après :",
+        "priorities": {
+          "high": "Haute",
+          "medium": "Moyenne",
+          "low": "Basse"
+        },
+        "emptyTitle": "Aucun rapport pour l'instant",
+        "emptyDescription": "Un rapport est rédigé après chaque recherche quotidienne qui trouve de nouvelles plaintes."
       }
+    },
+    "outreach": {
+      "title": "Prospection",
+      "cardDescription": "Organisateurs à inviter à publier leurs événements.",
+      "description": "Organisateurs trouvés deux fois par semaine par la recherche dans chaque établissement, associations et syndicats étudiants en premier, chacun avec un contexte, un script vidéo et un courriel. Enregistrez la vidéo, ouvrez le courriel dans Gmail et envoyez-le vous-même.",
+      "leadType": "Type d'événement",
+      "leadTypes": {
+        "student_association": "Associations et syndicats étudiants",
+        "hackathon": "Hackathons",
+        "ticketed_event": "Événements payants des clubs"
+      },
+      "statuses": {
+        "new": "Nouveau",
+        "contacted": "Contacté",
+        "replied": "A répondu",
+        "submitted": "Soumis",
+        "not_interested": "Pas intéressé",
+        "dismissed": "Écarté"
+      },
+      "emptyTitle": "Aucun organisateur pour l'instant",
+      "emptyDescription": "La recherche ajoute ici des organisateurs deux fois par semaine.",
+      "event": "Événement",
+      "organizer": "Organisateur",
+      "details": "Détails",
+      "openEmail": "Ouvrir l'e-mail dans Gmail",
+      "openFollowUp": "Ouvrir la relance dans Gmail",
+      "openEvent": "Ouvrir la page de l'événement",
+      "source": "Où l'adresse e-mail a été trouvée",
+      "context": "Contexte",
+      "videoScript": "Script vidéo",
+      "email": "E-mail",
+      "followUp": "Relance",
+      "notes": "Notes",
+      "saveNotes": "Enregistrer les notes"
     },
     "clubSubmissionDetails": {
       "records": "Détails du dossier",

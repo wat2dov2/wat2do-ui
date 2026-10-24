@@ -1,22 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import {
-  Bookmark,
-  Discord,
-  ExternalLink,
-  HelpCircle,
-  Instagram,
-} from "@/shared/ui/doodle-icons";
+import { Bookmark, ExternalLink, HelpCircle, Instagram } from "lucide-react";
+import { DiscordIcon } from "@/shared/ui/platform-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { Link } from "@/shared/ui/link";
 import { Separator } from "@/shared/ui/separator";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
-import { ClubEventsGrid } from "@/features/events/components/ClubEventsGrid";
-import { ClubPositionsGrid } from "@/features/positions/components/ClubPositionsGrid";
 import { ClaimClubModal } from "@/features/clubs/components/ClaimClubModal";
 import { ClubCategoryBadges } from "@/features/clubs/components/ClubCategoryBadges";
 import { getClubById } from "@/features/clubs/api/clubs.api";
@@ -26,20 +19,22 @@ import { Container, PageHeader, Stack } from "@/shared/layout";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { sanitizeHref } from "@/shared/utils/url";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import type { Event, Club, Position } from "@/shared/types";
+import type { Club } from "@/shared/types";
 
-interface ClubDetailsPageProps {
+/** Activity lists arrive as server-streamed slots, one per tab. */
+interface ClubActivitySlots {
+  events: ReactNode;
+  positions: ReactNode;
+}
+
+interface ClubDetailsPageProps extends ClubActivitySlots {
   clubId: number;
   initialClub: Club;
-  initialEvents: Event[];
-  initialPositions: Position[];
   schoolName: string;
 }
 
-interface ClubDetailsContentProps {
+interface ClubDetailsContentProps extends ClubActivitySlots {
   club: Club;
-  initialEvents: Event[];
-  initialPositions: Position[];
   schoolName: string;
 }
 
@@ -49,9 +44,9 @@ const CLUB_LINK_CLASS = "flex items-center gap-2 text-sm";
 
 function ClubDetailsContent({
   club,
-  initialEvents,
-  initialPositions,
   schoolName,
+  events,
+  positions,
 }: ClubDetailsContentProps) {
   const { t } = useTranslation();
   const { isAuthenticated, userId, clubs } = useAuthState();
@@ -103,7 +98,11 @@ function ClubDetailsContent({
                   </Button>
                 ) : null}
                 {isAuthenticated && !managesClub ? (
-                  <Button type="button" onClick={() => setShowClaimModal(true)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowClaimModal(true)}
+                  >
                     {t("clubs.claimOwnership")}
                   </Button>
                 ) : null}
@@ -149,7 +148,7 @@ function ClubDetailsContent({
                   rel="noopener noreferrer"
                   className={CLUB_LINK_CLASS}
                 >
-                  <Discord className="size-4 text-muted-foreground" />
+                  <DiscordIcon className="size-4 text-muted-foreground" />
                   <span>{t("clubPanel.joinDiscord")}</span>
                 </Link>
               ) : null}
@@ -177,18 +176,10 @@ function ClubDetailsContent({
               </TabsTrigger>
             </TabsList>
             <TabsContent value="events" className="mt-6">
-              <ClubEventsGrid
-                clubId={club.id}
-                school={club.school}
-                initialEvents={initialEvents}
-              />
+              {events}
             </TabsContent>
             <TabsContent value="positions" className="mt-6">
-              <ClubPositionsGrid
-                clubId={club.id}
-                school={club.school}
-                initialPositions={initialPositions}
-              />
+              {positions}
             </TabsContent>
           </Tabs>
         </Stack>
@@ -206,9 +197,9 @@ function ClubDetailsContent({
 export function ClubDetailsPage({
   clubId,
   initialClub,
-  initialEvents,
-  initialPositions,
   schoolName,
+  events,
+  positions,
 }: ClubDetailsPageProps) {
   const { t } = useTranslation();
   const {
@@ -241,9 +232,9 @@ export function ClubDetailsPage({
   return (
     <ClubDetailsContent
       club={club}
-      initialEvents={initialEvents}
-      initialPositions={initialPositions}
       schoolName={schoolName}
+      events={events}
+      positions={positions}
     />
   );
 }

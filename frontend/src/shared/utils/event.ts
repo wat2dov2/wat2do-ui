@@ -3,7 +3,7 @@ import { getDefaultEventCategory } from "@/shared/data/eventCategories";
 import { toLocalDateTimeInput, wasAddedWithinLast24Hours } from "@/shared/utils/date";
 import type { TFunction } from "i18next";
 import type { CardBadge } from "@/shared/ui/event-card-content";
-import { Ticket, Utensils, X } from "@/shared/ui/doodle-icons";
+import { Ticket, Utensils, X } from "lucide-react";
 import { translateFood } from "@/shared/utils/foodTranslation";
 
 /** Attendance takes precedence over the newly added treatment on event artwork. */

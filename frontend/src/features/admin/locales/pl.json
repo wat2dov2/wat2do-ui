@@ -381,10 +381,38 @@
       "coverBody": "Tekst główny na okładce",
       "slideOf": "Slajd {{index}} z {{count}}",
       "undoRemoveSlide": "Cofnij usunięcie slajdu",
-      "suggestedSong": "Sugerowany utwór",
-      "songChart": "{{chart}} · Sprawdzono {{date}}",
-      "songInstructions": "Podczas publikowania wyszukaj ten tytuł i wykonawcę na Instagramie. Muzyka nie jest dodawana automatycznie.",
-      "noSuggestedSong": "Dla tej partii nie zapisano sugerowanego utworu."
+      "tabs": {
+        "carousels": "Karuzele",
+        "songs": "Utwory"
+      },
+      "songs": {
+        "query": "Utwór",
+        "placeholder": "np. the weeknd after hours",
+        "add": "Dodaj utwór",
+        "asianCampusesOnly": "Tylko kampusy azjatyckie",
+        "asianCampuses": "Kampusy azjatyckie",
+        "help": "Kilka minut po opublikowaniu karuzeli emulator dodaje do posta jeden z tych utworów, próbując ich w losowej kolejności.",
+        "label": "utwory",
+        "columns": {
+          "song": "Utwór",
+          "added": "Dodano"
+        },
+        "delete": "Usuń",
+        "deleteSong": "Usuń {{song}}",
+        "empty": "Brak utworów. Dodaj jeden, aby nowe karuzele miały muzykę.",
+        "addError": "Nie udało się dodać utworu",
+        "deleteError": "Nie udało się usunąć utworu",
+        "loadError": "Nie udało się wczytać utworów."
+      },
+      "music": {
+        "title": "Muzyka",
+        "afterPublish": "Kilka minut po opublikowaniu tej karuzeli dodawany jest utwór z listy.",
+        "pending": "Czekam, aż emulator doda utwór.",
+        "added": "Dodano {{track}}",
+        "failed": "Nie dodano utworu: {{reason}}",
+        "none": "Ta karuzela została opublikowana, zanim utwory były dodawane automatycznie.",
+        "viewPost": "Zobacz na Instagramie"
+      }
     },
     "clubSubmissions": "Zgłoszenia klubów",
     "noClubSubmissions": "Brak zgłoszeń klubów",
@@ -397,7 +425,7 @@
     },
     "painPoints": {
       "title": "Problemy konkurencji",
-      "cardDescription": "Skargi na Eventbrite, Meetup i Fable Social.",
+      "cardDescription": "Skargi na konkurencyjne aplikacje z wydarzeniami.",
       "description": "Publiczne recenzje i posty, w których ludzie narzekają na konkurencję. Tylko do odczytu; wat2do nigdy nie odpowiada.",
       "competitor": "Konkurent",
       "source": "Źródło",
@@ -427,7 +455,60 @@
         "new": "Nowe",
         "seen": "Przejrzane",
         "dismissed": "Odrzucone"
+      },
+      "tabs": {
+        "label": "Widoki problemów",
+        "complaints": "Skargi",
+        "reports": "Raporty dzienne"
+      },
+      "reports": {
+        "meta": "Skargi: {{count}} · {{model}}",
+        "suggestions": "Sugerowane zmiany w wat2do",
+        "themes": "Powracające tematy ({{count}})",
+        "where": "Gdzie:",
+        "evidence": "Na podstawie:",
+        "priorities": {
+          "high": "Wysoki",
+          "medium": "Średni",
+          "low": "Niski"
+        },
+        "emptyTitle": "Brak raportów",
+        "emptyDescription": "Raport powstaje po każdym codziennym przeszukaniu, które znajdzie nowe skargi."
       }
+    },
+    "outreach": {
+      "title": "Outreach",
+      "cardDescription": "Organizatorzy, których warto zaprosić do publikowania wydarzeń.",
+      "description": "Organizatorzy znalezieni przez wyszukiwanie dwa razy w tygodniu na każdej uczelni, najpierw samorządy i stowarzyszenia studenckie, każdy z kontekstem, scenariuszem wideo i e-mailem. Nagraj wideo, otwórz e-mail w Gmailu i wyślij go sam.",
+      "leadType": "Rodzaj wydarzenia",
+      "leadTypes": {
+        "student_association": "Samorządy i stowarzyszenia studenckie",
+        "hackathon": "Hackathony",
+        "ticketed_event": "Biletowane wydarzenia klubów"
+      },
+      "statuses": {
+        "new": "Nowy",
+        "contacted": "Skontaktowano",
+        "replied": "Odpowiedział",
+        "submitted": "Zgłoszono",
+        "not_interested": "Brak zainteresowania",
+        "dismissed": "Odrzucony"
+      },
+      "emptyTitle": "Brak organizatorów",
+      "emptyDescription": "Wyszukiwanie dodaje tu nowych organizatorów dwa razy w tygodniu.",
+      "event": "Wydarzenie",
+      "organizer": "Organizator",
+      "details": "Szczegóły",
+      "openEmail": "Otwórz e-mail w Gmailu",
+      "openFollowUp": "Otwórz follow-up w Gmailu",
+      "openEvent": "Otwórz stronę wydarzenia",
+      "source": "Gdzie znaleziono e-mail",
+      "context": "Kontekst",
+      "videoScript": "Skrypt wideo",
+      "email": "E-mail",
+      "followUp": "Follow-up",
+      "notes": "Notatki",
+      "saveNotes": "Zapisz notatki"
     },
     "clubSubmissionDetails": {
       "records": "Szczegóły rekordu",

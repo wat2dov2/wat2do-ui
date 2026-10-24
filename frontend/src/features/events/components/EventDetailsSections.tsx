@@ -14,17 +14,8 @@ import {
   getPrimaryOccurrence,
   hasActiveEventOccurrence,
 } from "@/shared/utils/date";
-import {
-  Calendar,
-  DollarSign,
-  Edit,
-  Flag,
-  LocationPin,
-  Share2,
-  Trash2,
-  Utensils,
-} from "@/shared/ui/doodle-icons";
-import type { LucideIcon } from "@/shared/ui/doodle-icons";
+import { Calendar, DollarSign, Edit, Flag, MapPin, Share2, Trash2, Utensils } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import {
@@ -45,7 +36,7 @@ import { EventCalendarDownloadMenu } from "@/features/events/components/EventCal
 import { EventCard } from "@/features/events/components/EventCard";
 import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
-import { ClubBadgeDropdown } from "@/features/clubs";
+import { ClubBadgeLink } from "@/features/clubs";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { GoingOccurrencePickerContent } from "@/features/events/components/GoingOccurrencePickerContent";
@@ -173,7 +164,7 @@ function EventLocationCell({ event }: { event: Event }) {
   if (!event.location) return null;
   return (
     <Stack direction="horizontal" gap={3} align="center">
-      <EventInfoTile icon={LocationPin} />
+      <EventInfoTile icon={MapPin} />
       <p className="min-w-0 text-sm font-semibold text-foreground">{event.location}</p>
     </Stack>
   );
@@ -568,7 +559,7 @@ export function EventDetailsBody({
   school,
   isFetchingDetails = false,
   renderTitle,
-  onClubFilterSelect,
+  onClubNavigate,
 }: {
   event: Event;
   school: string | null | undefined;
@@ -576,7 +567,7 @@ export function EventDetailsBody({
   /** Override the title element (the drawer supplies its DrawerTitle). */
   renderTitle?: (title: string) => React.ReactNode;
   /** Lets drawer composition close after its club filter is applied. */
-  onClubFilterSelect?: () => void;
+  onClubNavigate?: () => void;
 }) {
   useEventView(event.id, event.school);
   const { t } = useTranslation();
@@ -590,7 +581,7 @@ export function EventDetailsBody({
         <EventCardImage
           event={event}
           variant="detail"
-          onClubFilterSelect={onClubFilterSelect}
+          onClubNavigate={onClubNavigate}
         />
       </div>
 
@@ -624,16 +615,14 @@ export function EventDetailsBody({
 
       <Stack gap={6} className="order-2 md:col-start-1">
         <Section variant="divided" title={t("events.hostedBy")} data-slot="event-host">
-            <ClubBadgeDropdown
+            <ClubBadgeLink
+              clubId={event.club_id}
               clubName={event.club}
               clubLogoUrl={event.club_logo_url}
               cohosts={event.cohosts}
               clubType={event.club_type}
               school={event.school}
-              clubPage={event.club_page}
-              clubIg={event.club_ig}
-              clubDiscord={event.club_discord}
-              onFilterSelect={onClubFilterSelect}
+              onNavigate={onClubNavigate}
             />
         </Section>
 

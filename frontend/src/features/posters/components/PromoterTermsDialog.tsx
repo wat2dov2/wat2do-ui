@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { ExternalLink } from "@/shared/ui/doodle-icons";
+import { ExternalLink } from "lucide-react";
 import { formatCadCents } from "@/shared/utils/currency";
 
 interface PromoterTermsDialogProps {

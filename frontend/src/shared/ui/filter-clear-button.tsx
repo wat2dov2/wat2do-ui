@@ -1,5 +1,5 @@
 import * as React from "react";
-import { X } from "@/shared/ui/doodle-icons";
+import { X } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 
 interface FilterClearButtonProps

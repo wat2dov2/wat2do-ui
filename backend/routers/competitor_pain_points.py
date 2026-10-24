@@ -8,6 +8,7 @@ from core.pagination import PaginatedResponse, PaginationParams, paginated_respo
 from schemas.competitor_pain_point import (
     CompetitorPainPointResponse,
     CompetitorPainPointReview,
+    DailyReportResponse,
     PainPointAudience,
     PainPointStatus,
 )
@@ -36,6 +37,15 @@ def list_pain_points(
         offset=pagination.offset,
         limit=pagination.page_size,
     )
+    return paginated_response(items, total, pagination)
+
+
+@router.get("/reports", response_model=PaginatedResponse[DailyReportResponse])
+def list_reports(
+    pagination: PaginationParams = Depends(),
+    _: UserResponse = Depends(get_admin_user),
+):
+    items, total = service.list_reports(offset=pagination.offset, limit=pagination.page_size)
     return paginated_response(items, total, pagination)
 
 

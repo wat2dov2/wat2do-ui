@@ -16,7 +16,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/shared/ui/tabs";
-import { Coins, Megaphone } from "@/shared/ui/doodle-icons";
+import { Coins, Megaphone } from "lucide-react";
 
 const QRScanMap = lazy(() =>
   import("@/features/posters").then((module) => ({ default: module.QRScanMap })),

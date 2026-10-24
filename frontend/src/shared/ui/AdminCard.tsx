@@ -2,8 +2,8 @@ import { useTranslation } from "react-i18next";
 import { Stack } from "@/shared/layout/stack";
 import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
-import type { LucideIcon } from "@/shared/ui/doodle-icons";
-import { ArrowRight } from "@/shared/ui/doodle-icons";
+import type { LucideIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 interface AdminCardProps {
   icon: LucideIcon;

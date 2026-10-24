@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { Button } from "@/shared/ui/button";
-import { ChevronDown } from "@/shared/ui/doodle-icons";
+import { ChevronDown } from "lucide-react";
 import { Calendar } from "@/shared/ui/calendar";
 import {
   Popover,

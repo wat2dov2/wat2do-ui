@@ -86,8 +86,6 @@ export function PositionsPage({
       ) : (
         <PositionList
           positions={positionsPage.positions}
-          hasActiveFilters={positionsPage.hasActiveFilters}
-          showDateWheel
           isLoading={positionsPage.isLoading}
           onPositionClick={(position) => {
             setHasOpenedDetails(true);

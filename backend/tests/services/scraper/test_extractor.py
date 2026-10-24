@@ -296,6 +296,8 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     assert "Student unions and university publishers do not qualify merely by organizing" in prompt
     assert "Food or affordable produce distributions, Sexpectations, queer life" in prompt
     assert "current vacancies" in prompt
+    assert "co-op or internship information" in prompt
+    assert "link-in-bio or weekly roundup post, establishes nothing" in prompt
     assert "Classify this individual event, not other events in a shared caption" in prompt
     assert "Organization booths, sponsorship, professional status" in prompt
     assert "off-campus events do not qualify" in prompt

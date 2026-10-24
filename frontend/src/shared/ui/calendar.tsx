@@ -9,7 +9,7 @@ import {
 
 import { cn } from "@/shared/lib/utils"
 import { Button, buttonVariants } from "@/shared/ui/button"
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDown } from "@/shared/ui/doodle-icons"
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDown } from "lucide-react"
 
 function Calendar({
   className,

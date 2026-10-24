@@ -42,11 +42,14 @@ _AVAILABLE_ACCOUNT_SQL = (
 )
 
 
-_QUEUE_SCHEMA = """
+# Every job kind the queue accepts; a stored table missing any of them is rebuilt.
+_JOB_KINDS = ("digest", "retrieval", "engagement")
+
+_QUEUE_SCHEMA = f"""
     CREATE TABLE IF NOT EXISTS jobs (
         id TEXT PRIMARY KEY,
         dedupe_key TEXT NOT NULL UNIQUE,
-        kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement')),
+        kind TEXT NOT NULL CHECK(kind IN ({", ".join(f"'{kind}'" for kind in _JOB_KINDS)})),
         school TEXT NOT NULL,
         recipient_id TEXT NOT NULL,
         account_username TEXT NOT NULL,
@@ -171,7 +174,7 @@ class BrowserJobQueue:
             # Rebuild atomically while preserving every job and its history.
             db.execute("BEGIN IMMEDIATE")
             existing = db.execute("SELECT sql FROM sqlite_master WHERE name='jobs'").fetchone()
-            if existing and "'retrieval'" not in existing[0]:
+            if existing and any(f"'{kind}'" not in existing[0] for kind in _JOB_KINDS):
                 db.execute("ALTER TABLE jobs RENAME TO jobs_previous")
                 db.execute(_QUEUE_SCHEMA.split(";")[0])
                 db.execute("INSERT INTO jobs SELECT * FROM jobs_previous")
@@ -613,7 +616,8 @@ class BrowserJobQueue:
                 "SELECT id,state FROM jobs WHERE dedupe_key=?", (dedupe_key,)
             ).fetchone()
             if existing:
-                # Digest retries are reads. Engagement retries always require an explicit retry.
+                # Digest retries are reads. Engagement retries always require an explicit
+                # retry, because they may already have acted on Instagram.
                 if kind == "digest" and existing["state"] in {"failed", "cancelled"}:
                     db.execute(
                         "UPDATE jobs SET state='pending',created_at=?,started_at=NULL,finished_at=NULL,error=NULL,result=NULL,attempts=0 WHERE id=?",

@@ -14,7 +14,7 @@ import { controlBox } from "@/shared/config/controlBox";
 import { Stack } from "@/shared/layout/stack";
 import { Button } from "@/shared/ui/button";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
-import { ChevronLeft, ChevronRight } from "@/shared/ui/doodle-icons";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { TruncatedText } from "@/shared/ui/truncated-text";
 import type { Event } from "@/shared/types";

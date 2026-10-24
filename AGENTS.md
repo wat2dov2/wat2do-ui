@@ -44,7 +44,7 @@ maintainability.
 Collect Instagram notifications through the official Instagram app on a physical
 Android phone running Automate, whose `NotificationListenerService` flow triggers
 the GitHub `process-notification` workflow directly.
-Do not use Android emulators.
+Do not use Android emulators for notification collection.
 Budget no more than three Instagram accounts per device and scale horizontally by
 adding devices.
 The workflow records exact post URLs in the Supabase notification ledger, and a
@@ -76,6 +76,60 @@ Exception: after Instagram logs Brave out, the worker may log back in by clickin
 saved wat2do profile on Instagram's own logged-out page and accepting "Save info",
 spaced and capped by controlbox. It never types passwords, and a password prompt or
 challenge waits for a person.
+School accounts' direct messages are not taken from notifications.
+A Mac LaunchAgent (`backend/jobs/answer_instagram_dms.py`, `io.wat2do.instagram.dms`) sweeps
+every school account's inbox at random times during waking hours, a random gap set in
+`controlbox/instagram_dms.json` after each sweep.
+The sweep never touches Brave.
+It runs in the official Instagram app on the Mac's Android emulator
+(`controlbox/instagram_emulator.json`), because Instagram's website cannot add another
+account's post to a story and the app is the one place that can do every step.
+The emulator holds every school account, logged in once outside this automation and
+spread across Android users because the app keeps at most ten accounts each.
+For each account the sweep holds the emulator's lock, switches to the school's Android
+user and account, and lists the main inbox and message requests.
+It opens, by tapping its row, each unread thread with a message it has not handled,
+and each read thread it has never handled (a read thread may show who is active
+instead of its latest message), skipping threads whose newest message is over a week
+old, and reads who sent each message, its text and any shared post from the screen
+the app draws.
+A message request is accepted only when we answer it, or when reading a post it shares
+needs the composer.
+It then asks Claude Haiku (`backend/services/instagram_dms/prompt.md`) for one outcome.
+Only two requests get an answer: sharing the club's post or reel to our story, and
+adding it to our posts.
+Everything else is ignored without a reply.
+An "add it to our posts" request queues the shared post in `public.ingestion_items`
+and gets one short reply.
+A story request is shared first and answered after: the app adds the shared post to
+the school's story, and only then does the thread get the reply and a short "done"
+message.
+The emulator finds every control by its accessibility label, taps at a random point
+inside it after a random pause, types one character at a time, and never types a
+password.
+Each reply is confirmed by seeing it appear in the thread.
+The emulator also adds music to our own carousels after the API publishes them, since
+the API cannot attach a song: a Mac LaunchAgent opens the live post, Edit, Add audio,
+searches the admin's song list in random order, and Claude Haiku picks the matching
+track or none.
+A song the admin marks as Asian or K-pop is tried only at the campuses in
+`controlbox/instagram_publishing.json` `asian_song_schools`.
+Every job that drives the emulator holds its lock, so no two ever tap at once.
+Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
+message, impersonation, login codes, money, follow-for-follow, pressure).
+Code, not the model, has the final say: the post must be shared by its own owner, a
+story repost also needs that owner to be a known club at the school, replies come only
+from the vetted lists in controlbox, and nothing is sent when our message is already
+the newest.
+The sweep's random timing is the reply's human-like delay.
+A reply or story repost that fails or cannot be confirmed pauses the sweep for a
+person (`answer_instagram_dms.py resume` once checked) and is never retried, since it
+may already have reached Instagram.
+A story repost waits, without accepting or answering the thread, while the emulator has
+less free storage than `controlbox/instagram_emulator.json` `min_free_data_megabytes`.
+`dry_run` decides and records every DM without replying, reposting or queueing anything.
+Never log DM text.
+
 If serialized browser expansion cannot complete, fail before recording that
 notification's media so the workflow can be rerun safely.
 Other notification workflow runs must remain independently processable.

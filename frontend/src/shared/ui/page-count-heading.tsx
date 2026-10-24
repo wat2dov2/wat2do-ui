@@ -37,8 +37,10 @@ export function PageCountHeading({ count, label, latest, currentTimeMs, level = 
               <AvatarStack size="sm" avatars={[{ src: latest.item.club_logo_url, name: latest.item.club_name ?? latest.item.title }]} />
             ) : null}
             <Button type="button" variant="link" size="inline" onClick={latest.onSelect} className="min-w-0 shrink text-left leading-tight sm:leading-normal">
-              <span>
-                <Trans i18nKey="common.latestAddedItem" values={{ title: latest.item.title, time: formatRelativeTime(latest.item.added_at, t, { alwaysAgo: true, locale: i18n.language, now: currentTimeMs ?? undefined }) }} components={{ addedPrefix: <span />, eventTitle: <span />, addedTime: <span /> }} />
+              {/* One line: a long title ellipsizes so the arrival age always stays in full. Flex drops the
+                  translation's spaces between parts, so the gap stands in for them. */}
+              <span className="flex min-w-0 items-baseline gap-[0.3em] whitespace-nowrap">
+                <Trans i18nKey="common.latestAddedItem" values={{ title: latest.item.title, time: formatRelativeTime(latest.item.added_at, t, { alwaysAgo: true, locale: i18n.language, now: currentTimeMs ?? undefined }) }} components={{ addedPrefix: <span className="shrink-0 empty:hidden" />, eventTitle: <span className="min-w-0 truncate" />, addedTime: <span className="shrink-0" /> }} />
               </span>
             </Button>
           </Stack>

@@ -37,7 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { ExternalLink, Plus, QrCode } from "@/shared/ui/doodle-icons";
+import { ExternalLink, Plus, QrCode } from "lucide-react";
 import {
   Field,
   FieldDescription,

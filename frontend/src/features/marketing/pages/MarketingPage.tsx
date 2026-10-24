@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Megaphone,
-  Plus,
-  Eye,
-  QrCode,
-  Users,
-} from "@/shared/ui/doodle-icons";
+import { Megaphone, Plus, Eye, QrCode, Users } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import {
   CreateQRCodeModal,

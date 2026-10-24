@@ -11,9 +11,12 @@ from schemas.instagram_publishing import (
     InstagramPublishBatchStatus,
     InstagramPublishBatchSummaryResponse,
     InstagramPublishBatchUpdate,
+    InstagramSongCreate,
+    InstagramSongResponse,
 )
 from schemas.user import UserResponse
 from services import instagram_publishing
+from services.instagram_publishing import music
 
 router = APIRouter(prefix="/instagram-publishing", tags=["instagram-publishing"])
 
@@ -68,3 +71,28 @@ def publish_instagram_batch(
     batch = instagram_publishing.claim_batch_for_publishing(batch_id, data)
     background_tasks.add_task(instagram_publishing.publish_claimed_batch, batch)
     return batch
+
+
+@router.get("/songs/", response_model=list[InstagramSongResponse])
+def list_instagram_songs(_: UserResponse = Depends(get_admin_user)):
+    return music.list_songs()
+
+
+@router.post(
+    "/songs/",
+    response_model=InstagramSongResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_instagram_song(
+    data: InstagramSongCreate,
+    _: UserResponse = Depends(get_admin_user),
+):
+    return music.add_song(data.query, asian_campuses_only=data.asian_campuses_only)
+
+
+@router.delete("/songs/{song_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_instagram_song(
+    song_id: UUID,
+    _: UserResponse = Depends(get_admin_user),
+):
+    music.delete_song(song_id)

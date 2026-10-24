@@ -381,10 +381,38 @@
       "coverBody": "Cover body text",
       "slideOf": "Slide {{index}} of {{count}}",
       "undoRemoveSlide": "Undo remove slide",
-      "suggestedSong": "Suggested song",
-      "songChart": "{{chart}} · Checked {{date}}",
-      "songInstructions": "Search this title and artist in Instagram when posting. Music is not attached automatically.",
-      "noSuggestedSong": "No song suggestion saved for this batch."
+      "tabs": {
+        "carousels": "Carousels",
+        "songs": "Songs"
+      },
+      "songs": {
+        "query": "Song",
+        "placeholder": "e.g. the weeknd after hours",
+        "add": "Add song",
+        "asianCampusesOnly": "Asian campuses only",
+        "asianCampuses": "Asian campuses",
+        "help": "A few minutes after a carousel publishes, the emulator adds one of these songs to the live post, trying them in random order.",
+        "label": "songs",
+        "columns": {
+          "song": "Song",
+          "added": "Added"
+        },
+        "delete": "Delete",
+        "deleteSong": "Delete {{song}}",
+        "empty": "No songs yet. Add one so new carousels get music.",
+        "addError": "Could not add the song",
+        "deleteError": "Could not delete the song",
+        "loadError": "Could not load songs."
+      },
+      "music": {
+        "title": "Music",
+        "afterPublish": "A song from the song list is added a few minutes after this carousel publishes.",
+        "pending": "Waiting for the emulator to add a song.",
+        "added": "Added {{track}}",
+        "failed": "No song added: {{reason}}",
+        "none": "This carousel was published before songs were added automatically.",
+        "viewPost": "View on Instagram"
+      }
     },
     "clubSubmissions": "Club submissions",
     "noClubSubmissions": "No club submissions",
@@ -397,7 +425,7 @@
     },
     "painPoints": {
       "title": "Competitor pain points",
-      "cardDescription": "Complaints about Eventbrite, Meetup and Fable Social.",
+      "cardDescription": "Complaints about competing event apps.",
       "description": "Public reviews and posts where people complain about competitors. Read only; wat2do never replies.",
       "competitor": "Competitor",
       "source": "Source",
@@ -427,7 +455,60 @@
         "new": "New",
         "seen": "Seen",
         "dismissed": "Dismissed"
+      },
+      "tabs": {
+        "label": "Pain point views",
+        "complaints": "Complaints",
+        "reports": "Daily reports"
+      },
+      "reports": {
+        "meta": "Complaints: {{count}} · {{model}}",
+        "suggestions": "Suggested changes to wat2do",
+        "themes": "Recurring themes ({{count}})",
+        "where": "Where:",
+        "evidence": "Based on:",
+        "priorities": {
+          "high": "High",
+          "medium": "Medium",
+          "low": "Low"
+        },
+        "emptyTitle": "No reports yet",
+        "emptyDescription": "A report is written after each daily sweep that finds new complaints."
       }
+    },
+    "outreach": {
+      "title": "Outreach",
+      "cardDescription": "Organizers to invite to post their events.",
+      "description": "Organizers the twice-weekly research run found at every school, student unions and associations first, each with context, a video script and an email. Record the video, open the email in Gmail and send it yourself.",
+      "leadType": "Event type",
+      "leadTypes": {
+        "student_association": "Student unions & associations",
+        "hackathon": "Hackathons",
+        "ticketed_event": "Club ticketed events"
+      },
+      "statuses": {
+        "new": "New",
+        "contacted": "Contacted",
+        "replied": "Replied",
+        "submitted": "Submitted",
+        "not_interested": "Not interested",
+        "dismissed": "Dismissed"
+      },
+      "emptyTitle": "No organizers yet",
+      "emptyDescription": "The research run adds organizers here twice a week as it finds them.",
+      "event": "Event",
+      "organizer": "Organizer",
+      "details": "Details",
+      "openEmail": "Open email in Gmail",
+      "openFollowUp": "Open follow-up in Gmail",
+      "openEvent": "Open event page",
+      "source": "Where the email was found",
+      "context": "Context",
+      "videoScript": "Video script",
+      "email": "Email",
+      "followUp": "Follow-up",
+      "notes": "Notes",
+      "saveNotes": "Save notes"
     },
     "clubSubmissionDetails": {
       "records": "Record details",

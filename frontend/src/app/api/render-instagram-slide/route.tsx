@@ -17,6 +17,7 @@ import {
   buildEventSlideModel,
   buildOutroSlideModel,
   fitEventSlidePoster,
+  selectOutroEvents,
   type SlideEvent,
 } from "@/features/admin/lib/instagramSlides";
 import { getSchool } from "@/shared/api/schools.server";
@@ -185,6 +186,10 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
   }
 
   if (slide.kind === "outro") {
+    // An unavailable poster leaves only its own card's poster well blank.
+    const posters = await Promise.all(
+      selectOutroEvents(slide.events).map(event => inlineImage(event.source_image_url, "outro").catch(() => "")),
+    );
     return (
       <OutroSlideTemplate
         model={buildOutroSlideModel({
@@ -193,6 +198,7 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
           colors: getSchoolColors(schoolRecord),
           batchKind: slide.batch_kind,
           events: slide.events,
+          posters,
         })}
       />
     );

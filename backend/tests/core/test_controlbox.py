@@ -1,5 +1,6 @@
 import json
 import shutil
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -39,8 +40,9 @@ def test_google_analytics_rejects_invalid_measurement_ids(measurement_id):
 
 def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.competitor_pain_points.model == "claude-haiku-5-5"
-    assert controlbox.competitor_pain_points.sweep_interval_hours == 6
-    assert set(controlbox.competitor_pain_points.competitors) == {"eventbrite", "meetup", "fable"}
+    assert controlbox.competitor_pain_points.sweep_interval_hours == 24
+    assert {"eventbrite", "meetup", "fable"} <= set(controlbox.competitor_pain_points.competitors)
+    assert not {"x", "reddit"} & set(controlbox.competitor_pain_points.lanes)
     assert controlbox.competitor_pain_points.sources["forum"] == []
     assert controlbox.notification_defaults.morning_email is False
     assert controlbox.email_delivery.notification_consent_version == "2026-10"
@@ -93,7 +95,6 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert not hasattr(controlbox.instagram_publishing, "accounts")
     assert controlbox.instagram_publishing.new_event_window_hours == 24
     assert controlbox.instagram_publishing.maximum_event_slides == 8
-    assert controlbox.instagram_publishing.outro_event_rows == 10
     assert controlbox.instagram_publishing.status_poll_interval_seconds == 3
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
     assert controlbox.scraping.instagram_web_app_id == "936619743392459"
@@ -775,24 +776,6 @@ def test_business_nomination_limits_must_be_positive(tmp_path: Path, field: str)
         load_controlbox(directory)
 
 
-def test_instagram_music_chart_mappings_and_history():
-    music = controlbox.instagram_publishing
-    assert music.music_history_batch_count == 10
-    assert music.music_charts[music.music_chart_by_school["tmu"]].name == "Top 25: Toronto"
-    assert music.music_charts[music.music_chart_by_school["ulaval"]].name == "Top 25: Québec City"
-    assert music.music_charts[music.default_music_chart].name == "Top 100: Canada"
-
-
-def test_instagram_music_rejects_missing_chart_mapping(tmp_path):
-    directory = _write_control(
-        tmp_path,
-        "instagram_publishing",
-        lambda data: data["music_chart_by_school"].update(tmu="missing"),
-    )
-    with pytest.raises(ValidationError, match="music mappings"):
-        load_controlbox(directory)
-
-
 @pytest.mark.parametrize(
     "field,value",
     [
@@ -862,3 +845,113 @@ def test_event_view_controls_require_a_campus_center_per_school(tmp_path, change
     directory = _write_control(tmp_path, "event_discovery", change)
     with pytest.raises(ValidationError, match="map campus center"):
         load_controlbox(directory)
+
+
+def test_instagram_dms_answer_live_from_a_waking_hours_sweep() -> None:
+    control = load_controlbox().instagram_dms
+    assert control.dry_run is False
+    assert control.sweep_gap_min_minutes <= control.sweep_gap_max_minutes
+    assert control.sweep_start_hour < control.sweep_end_hour
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        ({"sweep_gap_min_minutes": 300, "sweep_gap_max_minutes": 60}, "sweep_gap_min_minutes"),
+        ({"sweep_start_hour": 22, "sweep_end_hour": 9}, "sweep_start_hour"),
+    ],
+)
+def test_instagram_dms_reject_an_inverted_sweep_window(
+    tmp_path: Path, change: dict, message: str
+) -> None:
+    path = _write_control(tmp_path, "instagram_dms", lambda payload: payload.update(change))
+    with pytest.raises(ValidationError, match=message):
+        load_controlbox(path)
+
+
+def test_instagram_dms_reject_an_inverted_done_reply_window(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_dms",
+        lambda payload: payload.update(
+            {"done_reply_delay_min_seconds": 90, "done_reply_delay_max_seconds": 10}
+        ),
+    )
+    with pytest.raises(ValidationError, match="done_reply_delay_min_seconds"):
+        load_controlbox(path)
+
+
+@pytest.mark.parametrize("reply", ["see https://x.co", "ask @someone", "two\nlines", "", "x" * 41])
+def test_instagram_dms_reject_an_unsafe_vetted_reply(tmp_path: Path, reply: str) -> None:
+    path = _write_control(
+        tmp_path, "instagram_dms", lambda payload: payload.update({"replies": [reply]})
+    )
+    with pytest.raises(ValidationError, match="replies"):
+        load_controlbox(path)
+
+
+def test_instagram_emulator_spreads_accounts_within_the_app_limit() -> None:
+    control = load_controlbox().instagram_emulator
+    per_user = Counter(control.android_user_by_school.values())
+    assert max(per_user.values()) <= 10
+    assert control.step_delay_min_seconds <= control.step_delay_max_seconds
+
+
+def test_instagram_emulator_rejects_more_than_ten_accounts_on_one_user(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_emulator",
+        lambda payload: payload.update(
+            {"android_user_by_school": {f"school-{index}": 0 for index in range(11)}}
+        ),
+    )
+    with pytest.raises(ValidationError, match="at most ten"):
+        load_controlbox(path)
+
+
+def test_instagram_emulator_rejects_an_inverted_step_window(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_emulator",
+        lambda payload: payload.update({"step_delay_min_seconds": 5, "step_delay_max_seconds": 1}),
+    )
+    with pytest.raises(ValidationError, match="step_delay_min_seconds"):
+        load_controlbox(path)
+
+
+def test_pain_points_need_an_about_line_for_every_competitor() -> None:
+    raw = controlbox.competitor_pain_points.model_dump()
+    with pytest.raises(ValidationError, match="about must describe"):
+        type(controlbox.competitor_pain_points).model_validate({**raw, "about": {}})
+    with pytest.raises(ValidationError, match="reddit lanes are built in"):
+        type(controlbox.competitor_pain_points).model_validate(
+            {**raw, "lanes": {**raw["lanes"], "reddit": "Reddit threads"}}
+        )
+
+
+def test_instagram_emulator_rejects_an_inverted_keystroke_window(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_emulator",
+        lambda payload: payload.update(
+            {"keystroke_delay_min_seconds": 2, "keystroke_delay_max_seconds": 1}
+        ),
+    )
+    with pytest.raises(ValidationError, match="keystroke_delay_min_seconds"):
+        load_controlbox(path)
+
+
+def test_outreach_puts_student_associations_first_with_a_school_submit_link() -> None:
+    control = load_controlbox().outreach
+    assert list(control.lead_types) == ["student_association", "hackathon", "ticketed_event"]
+    assert "{school}" in control.submit_url_template
+
+
+def test_outreach_rejects_a_submit_link_without_the_school(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "outreach",
+        lambda payload: payload.update({"submit_url_template": "https://wat2do.io/events/submit"}),
+    )
+    with pytest.raises(ValidationError, match="submit_url_template"):
+        load_controlbox(path)

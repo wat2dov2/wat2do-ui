@@ -381,10 +381,38 @@
       "coverBody": "표지 본문 텍스트",
       "slideOf": "슬라이드 {{index}} / {{count}}",
       "undoRemoveSlide": "슬라이드 삭제 취소",
-      "suggestedSong": "추천 노래",
-      "songChart": "{{chart}} · {{date}} 확인",
-      "songInstructions": "게시할 때 Instagram에서 이 제목과 아티스트를 검색하세요. 음악은 자동으로 추가되지 않습니다.",
-      "noSuggestedSong": "이 배치에 저장된 추천 노래가 없습니다."
+      "tabs": {
+        "carousels": "캐러셀",
+        "songs": "노래"
+      },
+      "songs": {
+        "query": "노래",
+        "placeholder": "예: the weeknd after hours",
+        "add": "노래 추가",
+        "asianCampusesOnly": "아시아계 캠퍼스 전용",
+        "asianCampuses": "아시아계 캠퍼스",
+        "help": "캐러셀이 게시되고 몇 분 뒤 에뮬레이터가 이 노래 중 하나를 무작위 순서로 시도해 게시물에 추가합니다.",
+        "label": "곡",
+        "columns": {
+          "song": "노래",
+          "added": "추가됨"
+        },
+        "delete": "삭제",
+        "deleteSong": "{{song}} 삭제",
+        "empty": "아직 노래가 없습니다. 새 캐러셀에 음악이 들어가도록 하나 추가하세요.",
+        "addError": "노래를 추가하지 못했습니다",
+        "deleteError": "노래를 삭제하지 못했습니다",
+        "loadError": "노래를 불러오지 못했습니다."
+      },
+      "music": {
+        "title": "음악",
+        "afterPublish": "이 캐러셀이 게시되고 몇 분 뒤 목록에서 노래 하나가 추가됩니다.",
+        "pending": "에뮬레이터가 노래를 추가하기를 기다리는 중입니다.",
+        "added": "{{track}} 추가됨",
+        "failed": "추가된 노래 없음: {{reason}}",
+        "none": "이 캐러셀은 노래가 자동으로 추가되기 전에 게시되었습니다.",
+        "viewPost": "Instagram에서 보기"
+      }
     },
     "clubSubmissions": "동아리 제출",
     "noClubSubmissions": "동아리 제출 없음",
@@ -397,7 +425,7 @@
     },
     "painPoints": {
       "title": "경쟁사 불만 사항",
-      "cardDescription": "Eventbrite, Meetup, Fable Social에 대한 불만.",
+      "cardDescription": "경쟁 이벤트 앱에 대한 불만.",
       "description": "사람들이 경쟁사에 대해 불평하는 공개 리뷰와 게시물입니다. 읽기 전용이며 wat2do는 절대 답글을 달지 않습니다.",
       "competitor": "경쟁사",
       "source": "출처",
@@ -427,7 +455,60 @@
         "new": "새 항목",
         "seen": "확인함",
         "dismissed": "무시함"
+      },
+      "tabs": {
+        "label": "불만 사항 보기",
+        "complaints": "불만",
+        "reports": "일일 보고서"
+      },
+      "reports": {
+        "meta": "불만: {{count}} · {{model}}",
+        "suggestions": "wat2do 변경 제안",
+        "themes": "반복되는 주제 ({{count}})",
+        "where": "위치:",
+        "evidence": "근거:",
+        "priorities": {
+          "high": "높음",
+          "medium": "보통",
+          "low": "낮음"
+        },
+        "emptyTitle": "아직 보고서가 없습니다",
+        "emptyDescription": "새 불만을 찾은 매일의 검색이 끝나면 보고서가 작성됩니다."
       }
+    },
+    "outreach": {
+      "title": "아웃리치",
+      "cardDescription": "행사를 올리도록 초대할 주최자입니다.",
+      "description": "주 2회 조사로 각 학교에서 찾은 주최자이며, 학생회와 학생 단체가 먼저 나오고 각각 배경, 영상 스크립트, 이메일이 있습니다. 영상을 녹화하고 Gmail에서 이메일을 열어 직접 보내세요.",
+      "leadType": "이벤트 유형",
+      "leadTypes": {
+        "student_association": "학생회 및 학생 단체",
+        "hackathon": "해커톤",
+        "ticketed_event": "동아리 유료 이벤트"
+      },
+      "statuses": {
+        "new": "신규",
+        "contacted": "연락함",
+        "replied": "답장함",
+        "submitted": "제출함",
+        "not_interested": "관심 없음",
+        "dismissed": "제외됨"
+      },
+      "emptyTitle": "아직 주최자가 없습니다",
+      "emptyDescription": "조사가 주 2회 새 주최자를 여기에 추가합니다.",
+      "event": "행사",
+      "organizer": "주최자",
+      "details": "세부 정보",
+      "openEmail": "Gmail에서 이메일 열기",
+      "openFollowUp": "Gmail에서 후속 메일 열기",
+      "openEvent": "행사 페이지 열기",
+      "source": "이메일을 찾은 곳",
+      "context": "맥락",
+      "videoScript": "영상 스크립트",
+      "email": "이메일",
+      "followUp": "후속 메일",
+      "notes": "메모",
+      "saveNotes": "메모 저장"
     },
     "clubSubmissionDetails": {
       "records": "기록 상세 정보",

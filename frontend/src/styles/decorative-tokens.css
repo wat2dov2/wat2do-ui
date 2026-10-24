@@ -61,6 +61,10 @@
   --easter-mcmaster-3: hsl(331 100% 24%);
 
   /* Decorative gradients & glows */
+  /* The crayon burst on the landing hero. A fixed hue, since school colours
+     range from near-black to white and would vanish in one theme. */
+  --scribble-yellow: hsl(45 95% 58%);
+
   --gradient-brand: linear-gradient(135deg, hsl(0 0% 20%), hsl(0 0% 12%));
   --gradient-accent: linear-gradient(
     135deg,
@@ -69,20 +73,9 @@
   );
   --glow-primary: 0 0 24px hsl(0 0% 96% / 0.08);
 
-  /* Global page background decoration, mounted once via <PageBackground />. */
   /* Wat2Do defaults. Real school hosts override these from the school directory. */
   --page-school-primary: #ffc629;
   --page-school-secondary: #111111;
   --school-marker: var(--page-school-primary);
   --school-marker-foreground: var(--page-school-secondary);
-  --page-glow-secondary-inner: color-mix(
-    in srgb,
-    var(--page-school-secondary) 12%,
-    transparent
-  );
-  --page-glow-secondary-middle: color-mix(
-    in srgb,
-    var(--page-school-secondary) 4%,
-    transparent
-  );
 }

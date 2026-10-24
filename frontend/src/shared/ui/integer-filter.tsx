@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { Button } from "@/shared/ui/button";
-import { ChevronDown } from "@/shared/ui/doodle-icons";
+import { ChevronDown } from "lucide-react";
 import { Field, FieldLabel } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";

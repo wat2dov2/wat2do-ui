@@ -381,10 +381,38 @@
       "coverBody": "Teksto ng katawan ng pabalat",
       "slideOf": "Slide {{index}} ng {{count}}",
       "undoRemoveSlide": "Ibalik ang inalis na slide",
-      "suggestedSong": "Iminungkahing kanta",
-      "songChart": "{{chart}} · Sinuri noong {{date}}",
-      "songInstructions": "Hanapin ang pamagat at artist na ito sa Instagram kapag nag-post. Hindi awtomatikong idinadagdag ang musika.",
-      "noSuggestedSong": "Walang naka-save na mungkahing kanta para sa batch na ito."
+      "tabs": {
+        "carousels": "Mga carousel",
+        "songs": "Mga kanta"
+      },
+      "songs": {
+        "query": "Kanta",
+        "placeholder": "hal. the weeknd after hours",
+        "add": "Magdagdag ng kanta",
+        "asianCampusesOnly": "Asian na campus lang",
+        "asianCampuses": "Asian na campus",
+        "help": "Ilang minuto matapos mailathala ang carousel, idinadagdag ng emulator ang isa sa mga kantang ito sa post, sinusubukan ang mga ito nang random.",
+        "label": "kanta",
+        "columns": {
+          "song": "Kanta",
+          "added": "Idinagdag"
+        },
+        "delete": "Burahin",
+        "deleteSong": "Burahin ang {{song}}",
+        "empty": "Wala pang kanta. Magdagdag ng isa para may musika ang mga bagong carousel.",
+        "addError": "Hindi maidagdag ang kanta",
+        "deleteError": "Hindi mabura ang kanta",
+        "loadError": "Hindi ma-load ang mga kanta."
+      },
+      "music": {
+        "title": "Musika",
+        "afterPublish": "May idinadagdag na kanta mula sa listahan ilang minuto matapos mailathala ang carousel na ito.",
+        "pending": "Hinihintay ang emulator na magdagdag ng kanta.",
+        "added": "Idinagdag ang {{track}}",
+        "failed": "Walang naidagdag na kanta: {{reason}}",
+        "none": "Nailathala ang carousel na ito bago awtomatikong idinagdag ang mga kanta.",
+        "viewPost": "Tingnan sa Instagram"
+      }
     },
     "clubSubmissions": "Mga pagsusumite ng club",
     "noClubSubmissions": "Walang pagsusumite ng club",
@@ -397,7 +425,7 @@
     },
     "painPoints": {
       "title": "Mga reklamo sa kakumpitensya",
-      "cardDescription": "Mga reklamo tungkol sa Eventbrite, Meetup at Fable Social.",
+      "cardDescription": "Mga reklamo tungkol sa mga kakumpitensyang event app.",
       "description": "Mga pampublikong review at post kung saan nagrereklamo ang mga tao tungkol sa mga kakumpitensya. Basahin lang; hindi kailanman sumasagot ang wat2do.",
       "competitor": "Kakumpitensya",
       "source": "Pinagmulan",
@@ -427,7 +455,60 @@
         "new": "Bago",
         "seen": "Nakita",
         "dismissed": "Binalewala"
+      },
+      "tabs": {
+        "label": "Mga view ng problema",
+        "complaints": "Mga reklamo",
+        "reports": "Mga pang-araw-araw na ulat"
+      },
+      "reports": {
+        "meta": "Mga reklamo: {{count}} · {{model}}",
+        "suggestions": "Mga mungkahing pagbabago sa wat2do",
+        "themes": "Mga paulit-ulit na tema ({{count}})",
+        "where": "Saan:",
+        "evidence": "Batay sa:",
+        "priorities": {
+          "high": "Mataas",
+          "medium": "Katamtaman",
+          "low": "Mababa"
+        },
+        "emptyTitle": "Wala pang ulat",
+        "emptyDescription": "May isinusulat na ulat pagkatapos ng bawat araw-araw na paghahanap na may bagong reklamo."
       }
+    },
+    "outreach": {
+      "title": "Outreach",
+      "cardDescription": "Mga organizer na iimbitahang mag-post ng kanilang mga event.",
+      "description": "Mga organizer na nahanap ng research na tumatakbo dalawang beses kada linggo sa bawat school, una ang mga student union at asosasyon, bawat isa may konteksto, video script at email. I-record ang video, buksan ang email sa Gmail at ikaw ang magpadala.",
+      "leadType": "Uri ng event",
+      "leadTypes": {
+        "student_association": "Mga student union at asosasyon",
+        "hackathon": "Mga hackathon",
+        "ticketed_event": "Ticketed na event ng mga club"
+      },
+      "statuses": {
+        "new": "Bago",
+        "contacted": "Nakontak na",
+        "replied": "Sumagot",
+        "submitted": "Nag-submit",
+        "not_interested": "Hindi interesado",
+        "dismissed": "Inalis"
+      },
+      "emptyTitle": "Wala pang mga organizer",
+      "emptyDescription": "Nagdaragdag dito ang research ng mga organizer dalawang beses kada linggo.",
+      "event": "Event",
+      "organizer": "Organizer",
+      "details": "Mga detalye",
+      "openEmail": "Buksan ang email sa Gmail",
+      "openFollowUp": "Buksan ang follow-up sa Gmail",
+      "openEvent": "Buksan ang page ng event",
+      "source": "Saan nakita ang email",
+      "context": "Konteksto",
+      "videoScript": "Video script",
+      "email": "Email",
+      "followUp": "Follow-up",
+      "notes": "Mga tala",
+      "saveNotes": "I-save ang mga tala"
     },
     "clubSubmissionDetails": {
       "records": "Mga detalye ng tala",

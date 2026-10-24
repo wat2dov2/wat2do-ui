@@ -6,7 +6,7 @@ import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { Stack } from "@/shared/layout/stack";
 import { Button } from "@/shared/ui/button";
-import { AlertTriangle } from "@/shared/ui/doodle-icons";
+import { AlertTriangle } from "lucide-react";
 import { TableCell, TableRow } from "@/shared/ui/table";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 

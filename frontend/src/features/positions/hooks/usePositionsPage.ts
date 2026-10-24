@@ -64,7 +64,6 @@ export function usePositionsPage({
   return {
     appliedQueryKey: JSON.stringify({ submittedSearch, positionType, addedSince }),
     positions,
-    hasActiveFilters: submittedSearch.query.length > 0 || positionType !== "all" || addedSince !== null,
     total,
     latestAddedPosition: query.data?.latest_added_position ?? null,
     searchLatest: () => {

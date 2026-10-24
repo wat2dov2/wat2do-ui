@@ -3,7 +3,7 @@ import Map, { Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { PosterMapMarker } from "@/features/posters/types";
-import { MapPin } from "@/shared/ui/doodle-icons";
+import { MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { Stack } from "@/shared/layout";

@@ -407,3 +407,23 @@ def test_non_object_notification_json_fails(monkeypatch, caplog) -> None:
         assert process_notification.main() == 1
 
     assert "must contain a JSON object" in caplog.text
+
+
+def _dm_payload(action: str) -> dict[str, object]:
+    return {
+        "android.text": "must-never-reach-logs",
+        "com.instagram.android.igns.logging.ig_action": action,
+        "com.instagram.android.igns.logging.push_category": "direct_v2_clips_share",
+        "com.instagram.android.igns.logging.push_id": PUSH_ID,
+        "com.instagram.android.igns.logging.intended_recipient_id": RECIPIENT_ID,
+    }
+
+
+def test_a_dm_notification_is_left_to_the_inbox_sweep(monkeypatch, caplog) -> None:
+    _set_payload(
+        monkeypatch, _dm_payload("direct_v2?id=340282366841710300949128&x=31337&clip_id=9")
+    )
+    with caplog.at_level(logging.INFO):
+        assert process_notification.main() == 0
+    assert "Ignoring unsupported Instagram notification." in caplog.text
+    assert "must-never-reach-logs" not in caplog.text

@@ -381,10 +381,38 @@
       "coverBody": "Văn bản nội dung bìa",
       "slideOf": "Slide {{index}} của {{count}}",
       "undoRemoveSlide": "Hoàn tác xóa trang chiếu",
-      "suggestedSong": "Bài hát gợi ý",
-      "songChart": "{{chart}} · Đã kiểm tra {{date}}",
-      "songInstructions": "Tìm tên bài hát và nghệ sĩ này trên Instagram khi đăng. Nhạc không được thêm tự động.",
-      "noSuggestedSong": "Chưa lưu bài hát gợi ý cho nhóm bài đăng này."
+      "tabs": {
+        "carousels": "Băng chuyền",
+        "songs": "Bài hát"
+      },
+      "songs": {
+        "query": "Bài hát",
+        "placeholder": "vd: the weeknd after hours",
+        "add": "Thêm bài hát",
+        "asianCampusesOnly": "Chỉ các trường đông sinh viên châu Á",
+        "asianCampuses": "Trường đông sinh viên châu Á",
+        "help": "Vài phút sau khi băng chuyền được đăng, trình giả lập thêm một trong các bài hát này vào bài đăng, thử chúng theo thứ tự ngẫu nhiên.",
+        "label": "bài hát",
+        "columns": {
+          "song": "Bài hát",
+          "added": "Đã thêm"
+        },
+        "delete": "Xóa",
+        "deleteSong": "Xóa {{song}}",
+        "empty": "Chưa có bài hát nào. Hãy thêm một bài để băng chuyền mới có nhạc.",
+        "addError": "Không thể thêm bài hát",
+        "deleteError": "Không thể xóa bài hát",
+        "loadError": "Không thể tải bài hát."
+      },
+      "music": {
+        "title": "Âm nhạc",
+        "afterPublish": "Một bài hát trong danh sách được thêm vài phút sau khi băng chuyền này được đăng.",
+        "pending": "Đang chờ trình giả lập thêm bài hát.",
+        "added": "Đã thêm {{track}}",
+        "failed": "Chưa thêm bài hát nào: {{reason}}",
+        "none": "Băng chuyền này được đăng trước khi bài hát được thêm tự động.",
+        "viewPost": "Xem trên Instagram"
+      }
     },
     "clubSubmissions": "Đề xuất câu lạc bộ",
     "noClubSubmissions": "Chưa có đề xuất câu lạc bộ",
@@ -397,7 +425,7 @@
     },
     "painPoints": {
       "title": "Điểm yếu của đối thủ",
-      "cardDescription": "Phàn nàn về Eventbrite, Meetup và Fable Social.",
+      "cardDescription": "Phàn nàn về các ứng dụng sự kiện đối thủ.",
       "description": "Đánh giá và bài đăng công khai nơi mọi người phàn nàn về đối thủ. Chỉ đọc; wat2do không bao giờ trả lời.",
       "competitor": "Đối thủ",
       "source": "Nguồn",
@@ -427,7 +455,60 @@
         "new": "Mới",
         "seen": "Đã xem",
         "dismissed": "Đã bỏ qua"
+      },
+      "tabs": {
+        "label": "Các chế độ xem vấn đề",
+        "complaints": "Phàn nàn",
+        "reports": "Báo cáo hằng ngày"
+      },
+      "reports": {
+        "meta": "Phàn nàn: {{count}} · {{model}}",
+        "suggestions": "Thay đổi đề xuất cho wat2do",
+        "themes": "Chủ đề lặp lại ({{count}})",
+        "where": "Ở đâu:",
+        "evidence": "Dựa trên:",
+        "priorities": {
+          "high": "Cao",
+          "medium": "Trung bình",
+          "low": "Thấp"
+        },
+        "emptyTitle": "Chưa có báo cáo",
+        "emptyDescription": "Một báo cáo được viết sau mỗi lần quét hằng ngày tìm thấy phàn nàn mới."
       }
+    },
+    "outreach": {
+      "title": "Tiếp cận",
+      "cardDescription": "Những nhà tổ chức cần mời đăng sự kiện của họ.",
+      "description": "Ban tổ chức mà đợt tìm kiếm hai lần mỗi tuần tìm thấy ở mỗi trường, ưu tiên hội sinh viên và các hiệp hội, mỗi người kèm bối cảnh, kịch bản video và email. Quay video, mở email trong Gmail và tự gửi.",
+      "leadType": "Loại sự kiện",
+      "leadTypes": {
+        "student_association": "Hội sinh viên và các hiệp hội",
+        "hackathon": "Hackathon",
+        "ticketed_event": "Sự kiện bán vé của câu lạc bộ"
+      },
+      "statuses": {
+        "new": "Mới",
+        "contacted": "Đã liên hệ",
+        "replied": "Đã trả lời",
+        "submitted": "Đã gửi sự kiện",
+        "not_interested": "Không quan tâm",
+        "dismissed": "Đã loại"
+      },
+      "emptyTitle": "Chưa có nhà tổ chức nào",
+      "emptyDescription": "Đợt tìm kiếm thêm ban tổ chức mới vào đây hai lần mỗi tuần.",
+      "event": "Sự kiện",
+      "organizer": "Nhà tổ chức",
+      "details": "Chi tiết",
+      "openEmail": "Mở email trong Gmail",
+      "openFollowUp": "Mở email theo dõi trong Gmail",
+      "openEvent": "Mở trang sự kiện",
+      "source": "Nơi tìm thấy email",
+      "context": "Bối cảnh",
+      "videoScript": "Kịch bản video",
+      "email": "Email",
+      "followUp": "Email theo dõi",
+      "notes": "Ghi chú",
+      "saveNotes": "Lưu ghi chú"
     },
     "clubSubmissionDetails": {
       "records": "Chi tiết bản ghi",

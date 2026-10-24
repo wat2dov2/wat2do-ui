@@ -54,7 +54,6 @@
     "share": "Share",
     "export": "Export",
     "addToCalendar": "Save to calendar",
-    "moreOptions": "More options",
     "report": "Report",
     "download": "Download",
     "done": "Done",
@@ -154,7 +153,7 @@
     "added_at": "Newly added",
     "category": "Category",
     "food": "Food",
-    "employersOnCampus": "Employers on campus",
+    "employersOnCampus": "Employers",
     "freeFoodOnCampus": "Free food",
     "competitions": "Competitions",
     "featured": "Featured",
@@ -416,7 +415,7 @@
       "title": "Why we built Wat2Do",
       "origin": "Wat2Do began when we, its co-founders, discovered a way to scrape public Instagram posts about events happening at the University of Waterloo. We built it for ourselves because we loved trying new things, and students were constantly creating new and interesting things to do.",
       "belief": "We believe university is one of the best times and environments to try something new. The problem was never a lack of things happening. It was finding them before they were over.",
-      "scale": "Since August 2025, Wat2Do has captured more than 3,000 events. We since scaled the algorithm from 400 accounts to 8,000 and process 1000 new events a week (as of September 13th, 2026).",
+      "scale": "Since August 2025, Wat2Do has captured more than 28,900 events. We since scaled the algorithm from 400 accounts to 19,600 and process 3,340 new events a week (as of October 19th, 2026).",
       "mission": "Solving that discovery problem changed our own university experience. Now we want to share what we built and help students everywhere discover more of the new, cool things happening around them.",
       "signature": "- Tony & Erica"
     },
@@ -483,11 +482,6 @@
       "browse": "Browse Events",
       "explore": "Explore Clubs"
     },
-    "footer": {
-      "about": "We built Wat2Do to connect Waterloo students to underrated campus life events. For suggestions or feedback, get in touch.",
-      "title": "Wat2Do",
-      "copyright": "© {{year}} Wat2Do"
-    },
     "photos": {
       "label": "Our school visits",
       "alt": "Wat2Do team visiting {{school}}",
@@ -545,5 +539,210 @@
         "messageTooLong": "Your nomination is too long. Please shorten your answers."
       }
     }
+  },
+  "landing": {
+    "hero": {
+      "note": "Free for everyone · Funded by student impact awards",
+      "titleLead": "Every campus event,",
+      "titleHighlight": "before it's over.",
+      "description": "Club events get buried across hundreds of Instagram accounts. Wat2Do puts them all in one feed.",
+      "primaryAction": "See what's on",
+      "secondaryAction": "How it works",
+      "mapTitle": "{{total}} upcoming event at {{school}}",
+      "mapTitle_other": "{{total}} upcoming events at {{school}}"
+    },
+    "problem": {
+      "title": "Campus is NOT boring. Its events are just hidden.",
+      "description": "There's always something happening at {{school}}. The problem is where it gets announced.",
+      "points": {
+        "buried": {
+          "title": "Buried in your feed",
+          "description": "Even when you follow a club, Instagram decides whether you see its post. Most event flyers sink under everything else in your feed."
+        },
+        "scattered": {
+          "title": "Hundreds of clubs, no shared feed",
+          "description": "Every club, society and team posts on its own account. Nobody follows all of them, so you only hear about what your friends repost."
+        },
+        "late": {
+          "title": "You find out the day after",
+          "description": "Free food, a recruiter night, a $5 cooking class. You see the recap post and realize it was yesterday."
+        },
+        "quiet": {
+          "title": "So it feels like nothing happens",
+          "description": "When events are scattered across hundreds of accounts, campus feels quiet. It isn't. You just can't see it."
+        }
+      },
+      "story": "Tony found an Instagram story for Italian cooking lessons, just $5. It had been posted three days earlier.",
+      "storyOver": "The event was already over.",
+      "storyEnd": "So we built the one place we wished existed.",
+      "signature": "Tony & Erica, founders of Wat2Do"
+    },
+    "solution": {
+      "title": "One feed. Every club. No searching.",
+      "description": "Wat2Do follows the accounts so you don't have to, and turns every flyer into an event you can search, filter and save.",
+      "stats": {
+        "clubsLabel": "club tracked at {{school}}",
+        "clubsLabel_other": "clubs tracked at {{school}}",
+        "upcomingLabel": "upcoming event right now",
+        "upcomingLabel_other": "upcoming events right now",
+        "newLabel": "new event in the last 7 days",
+        "newLabel_other": "new events in the last 7 days"
+      }
+    },
+    "different": {
+      "title": "So how is this different from other event sites?",
+      "description": "Other sites wait for clubs to submit events. The rest stay locked inside Instagram, which bans bots. Wat2Do gets them out anyway.",
+      "points": {
+        "relay": {
+          "cost": "100s of hours"
+        },
+        "alwaysOn": {
+          "title": "A Mac mini that never sleeps",
+          "description": "An M4 Mac mini we bought opens each flagged post anonymously and turns it into data, 24/7.",
+          "cost": "$899"
+        },
+        "claude": {
+          "title": "Claude reads every flyer",
+          "description": "Claude Haiku turns flyers into events with guardrails: nothing invented, duplicates checked, and a database login locked to event tables.",
+          "cost": "$200 / month"
+        },
+        "cloud": {
+          "title": "Online for every school",
+          "description": "AWS hosts the feed with backups, so a bug never breaks things for real students.",
+          "cost": "$100 / month"
+        }
+      },
+      "costNote": "We cover these costs with student impact awards and bursaries at the University of Waterloo, funding meant to improve student life, so Wat2Do stays free for every student.",
+      "diagramLabel": "How a club's Instagram post becomes a Wat2Do listing: club accounts notify a redacted step, an always-on Mac mini's browser worker and anonymous fetcher read the post, Claude agents with guardrails turn it into an event, and a checkpoint lets it into a locked-down event database behind your feed. If anything breaks, the Mac mini pages a personal phone and we fix it from a laptop.",
+      "diagram": {
+        "zoneInstagram": "Instagram",
+        "zoneMac": "Mac mini · always on",
+        "zoneWat2do": "Wat2Do",
+        "accounts": "Club accounts",
+        "browser": "Browser worker",
+        "fetcher": "Anonymous fetcher",
+        "agents": "Claude agents",
+        "database": "Event database",
+        "feed": "Your feed",
+        "guardrails": "Guardrails",
+        "zoneOnCall": "On call",
+        "laptop": "Our personal laptop",
+        "laptopNote": "(remote control to the Mac mini)",
+        "pager": "Personal phone"
+      },
+      "redacted": "Redacted"
+    },
+    "useCases": {
+      "title": "However you do campus",
+      "description": "Six ways students at {{school}} use Wat2Do.",
+      "items": {
+        "freeFood": {
+          "title": "Free food between classes",
+          "description": "Pizza at info sessions, bake sales, socials with snacks. Filter to free food and plan lunch around it.",
+          "action": "See free food"
+        },
+        "employers": {
+          "title": "Meet employers on campus",
+          "description": "Info sessions and networking nights where recruiters show up in person. Good leads often start with one conversation.",
+          "action": "See employer events"
+        },
+        "competitions": {
+          "title": "Competitions and hackathons",
+          "description": "Case comps, hackathons and pitch nights, with prizes and something real for your resume.",
+          "action": "See competitions"
+        },
+        "newToCampus": {
+          "title": "New to campus?",
+          "description": "Browse every club at your school and find people who are into the same things you are.",
+          "action": "Browse clubs"
+        },
+        "getInvolved": {
+          "title": "Join an exec team",
+          "description": "Clubs post open roles here, from first-year reps to presidents. Get involved beyond showing up.",
+          "action": "See open positions"
+        },
+        "bored": {
+          "title": "Nothing to do tonight?",
+          "description": "Search \"random\" in the feed and Wat2Do picks something happening soon for you.",
+          "action": "Surprise me"
+        }
+      }
+    },
+    "features": {
+      "capture": {
+        "title": "From Instagram flyer to event, automatically",
+        "description": "Clubs keep posting the way they always have. Wat2Do reads each flyer and pulls out the date, time, place and price, so the event lands in the feed without anyone filling out a form.",
+        "mockHandle": "@italian.club",
+        "mockTitle": "Italian cooking class",
+        "mockDate": "Thursday, 6:00 PM",
+        "mockPlace": "Student centre kitchen",
+        "mockPrice": "$5",
+        "mockAdded": "Added from the club's post"
+      },
+      "filters": {
+        "title": "Free food in two taps",
+        "description": "Quick filters for free food, employers on campus and competitions. Or narrow it down by day, price, club and location.",
+        "mockQuery": "pizza"
+      },
+      "reminders": {
+        "title": "Never forget you were going",
+        "description": "Tap Going and Wat2Do emails you about an hour before it starts. Save events to Google Calendar or iCal, or turn on a 9 AM email with the day's events.",
+        "mockSubject": "Starts in 1 hour: Italian cooking class",
+        "mockBody": "Student centre kitchen at 6:00 PM. See you there.",
+        "mockMorning": "9 AM daily email"
+      },
+      "clubs": {
+        "title": "Find the clubs you didn't know existed",
+        "description": "Browse every club at {{school}}, follow the ones you like, and find open positions when you want to get involved.",
+        "mockClubOne": "Repair Club",
+        "mockClubTwo": "Salsa Society",
+        "mockClubThree": "Climbing Club",
+        "mockUpcoming": "{{count}} upcoming event",
+        "mockUpcoming_other": "{{count}} upcoming events",
+        "mockFollow": "Follow",
+        "mockFollowing": "Following"
+      }
+    },
+    "faq": {
+      "title": "Questions students ask",
+      "items": {
+        "free": {
+          "question": "Is Wat2Do free?",
+          "answer": "Yes. Wat2Do is free for students, and you can browse every event without an account. Sign in to mark events as Going and get reminders."
+        },
+        "clubs": {
+          "question": "Does my club need to sign up?",
+          "answer": "No. If your club posts events on a public Instagram account, Wat2Do picks them up automatically. You can also claim your club's page to manage it."
+        },
+        "speed": {
+          "question": "How fast do new events show up?",
+          "answer": "Most new events show up within 19 hours of the club posting them."
+        },
+        "submit": {
+          "question": "Can I add an event myself?",
+          "answer": "Yes. Submit it from the events page. Upload the poster and Wat2Do fills in the details for you."
+        },
+        "schools": {
+          "question": "Which schools is Wat2Do at?",
+          "answer": "Wat2Do is at {{count}} school. Each school has its own feed, and you can switch schools from the top of the page.",
+          "answer_other": "Wat2Do is at {{count}} schools across Canada and the US. Each school has its own feed, and you can switch schools from the top of the page."
+        }
+      }
+    },
+    "closing": {
+      "title": "Stop finding out the day after.",
+      "description": "See everything happening at {{school}}, all in one place.",
+      "action": "See what's on"
+    }
+  },
+  "footer": {
+    "tagline": "The whole campus, in one calendar.",
+    "explore": "Explore",
+    "company": "Company",
+    "promote": "Earn with posters",
+    "supportLocal": "Support a local business",
+    "copyright": "© {{year}} Wat2Do",
+    "madeBy": "Made by students, for students.",
+    "social": "Social"
   }
 }

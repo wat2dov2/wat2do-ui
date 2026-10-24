@@ -381,10 +381,38 @@
       "coverBody": "封面正文",
       "slideOf": "第 {{index}} 张，共 {{count}} 张",
       "undoRemoveSlide": "撤销移除幻灯片",
-      "suggestedSong": "推荐歌曲",
-      "songChart": "{{chart}} · 核查日期 {{date}}",
-      "songInstructions": "发布时在 Instagram 搜索此歌曲名称和歌手。音乐不会自动添加。",
-      "noSuggestedSong": "此批次尚未保存推荐歌曲。"
+      "tabs": {
+        "carousels": "轮播帖",
+        "songs": "歌曲"
+      },
+      "songs": {
+        "query": "歌曲",
+        "placeholder": "例如 the weeknd after hours",
+        "add": "添加歌曲",
+        "asianCampusesOnly": "仅限亚裔校园",
+        "asianCampuses": "亚裔校园",
+        "help": "轮播帖发布几分钟后，模拟器会按随机顺序尝试这些歌曲，并为帖子添加其中一首。",
+        "label": "首歌曲",
+        "columns": {
+          "song": "歌曲",
+          "added": "添加时间"
+        },
+        "delete": "删除",
+        "deleteSong": "删除 {{song}}",
+        "empty": "还没有歌曲。添加一首，让新的轮播帖有音乐。",
+        "addError": "无法添加歌曲",
+        "deleteError": "无法删除歌曲",
+        "loadError": "无法加载歌曲。"
+      },
+      "music": {
+        "title": "音乐",
+        "afterPublish": "此轮播帖发布几分钟后，会从列表中添加一首歌曲。",
+        "pending": "正在等待模拟器添加歌曲。",
+        "added": "已添加 {{track}}",
+        "failed": "未添加歌曲：{{reason}}",
+        "none": "此轮播帖发布时还未自动添加歌曲。",
+        "viewPost": "在 Instagram 上查看"
+      }
     },
     "clubSubmissions": "社团提交",
     "noClubSubmissions": "暂无社团提交",
@@ -397,7 +425,7 @@
     },
     "painPoints": {
       "title": "竞品痛点",
-      "cardDescription": "关于 Eventbrite、Meetup 和 Fable Social 的投诉。",
+      "cardDescription": "关于竞品活动应用的投诉。",
       "description": "人们在公开评论和帖子中对竞品的抱怨。仅供阅读；wat2do 从不回复。",
       "competitor": "竞品",
       "source": "来源",
@@ -427,7 +455,60 @@
         "new": "新",
         "seen": "已看",
         "dismissed": "已忽略"
+      },
+      "tabs": {
+        "label": "痛点视图",
+        "complaints": "投诉",
+        "reports": "每日报告"
+      },
+      "reports": {
+        "meta": "投诉：{{count}} · {{model}}",
+        "suggestions": "建议对 wat2do 的改动",
+        "themes": "反复出现的主题（{{count}}）",
+        "where": "位置：",
+        "evidence": "依据：",
+        "priorities": {
+          "high": "高",
+          "medium": "中",
+          "low": "低"
+        },
+        "emptyTitle": "暂无报告",
+        "emptyDescription": "每次每日搜索发现新投诉后都会撰写一份报告。"
       }
+    },
+    "outreach": {
+      "title": "推广邀约",
+      "cardDescription": "邀请这些组织者发布他们的活动。",
+      "description": "每周两次检索在每所学校找到的组织者，学生会和学生组织优先，每位都附有背景、视频脚本和邮件。录好视频，在 Gmail 中打开邮件并亲自发送。",
+      "leadType": "活动类型",
+      "leadTypes": {
+        "student_association": "学生会与学生组织",
+        "hackathon": "黑客松",
+        "ticketed_event": "社团售票活动"
+      },
+      "statuses": {
+        "new": "新",
+        "contacted": "已联系",
+        "replied": "已回复",
+        "submitted": "已提交",
+        "not_interested": "不感兴趣",
+        "dismissed": "已忽略"
+      },
+      "emptyTitle": "暂无组织者",
+      "emptyDescription": "检索每周两次在这里添加新的组织者。",
+      "event": "活动",
+      "organizer": "组织者",
+      "details": "详情",
+      "openEmail": "在 Gmail 中打开邮件",
+      "openFollowUp": "在 Gmail 中打开跟进邮件",
+      "openEvent": "打开活动页面",
+      "source": "邮箱来源",
+      "context": "背景",
+      "videoScript": "视频脚本",
+      "email": "邮件",
+      "followUp": "跟进",
+      "notes": "备注",
+      "saveNotes": "保存备注"
     },
     "clubSubmissionDetails": {
       "records": "记录详情",

@@ -43,7 +43,7 @@ class FakeSession:
         self.calls.append((recipient_id, username))
         return username.lower()
 
-    def query(self, source):
+    def query(self, source, *, read_only):
         self.calls.append(source)
         return self.payload
 
@@ -85,7 +85,7 @@ def test_digest_preserves_recoverable_session_failure_type(error_type):
     error = error_type("Recoverable browser failure")
 
     class BrokenSession(FakeSession):
-        def query(self, _source):
+        def query(self, _source, *, read_only):
             raise error
 
     with pytest.raises(error_type) as raised:
@@ -132,7 +132,7 @@ def test_deferred_digest_429_keeps_original_human_account_and_interrupt_causes(o
     )
 
     class PendingSession(FakeSession):
-        def query(self, source):
+        def query(self, source, *, read_only):
             raise pending
 
     with pytest.raises(_BrowserReadCleanupPending) as raised:

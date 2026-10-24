@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
-import { Link, MessageCircle, Discord } from "@/shared/ui/doodle-icons";
+import { Link, MessageCircle } from "lucide-react";
+import { DiscordIcon } from "@/shared/ui/platform-icons";
 import { ROUTES } from "@/shared/constants/routes";
 import { PageHeader, Stack } from "@/shared/layout";
 import { InstagramIcon, SlackIcon, TelegramIcon, LinkedInIcon, FacebookIcon } from "@/shared/ui/platform-icons";
@@ -51,7 +52,7 @@ export function ClubPanelIntegrationsPage() {
         <IntegrationCard
           integration={integrations.getIntegration("discord")}
           platform="discord"
-          icon={<Discord className="size-6 text-primary" />}
+          icon={<DiscordIcon className="size-6 text-primary" />}
           iconBgClassName="bg-primary/15"
           titleKey="clubPanel.discord"
           descriptionKey="integrations.discordScrapeDesc"

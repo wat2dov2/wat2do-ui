@@ -33,6 +33,11 @@ export const EMPTY_FILTER_STATE: FilterState = {
   customDate: "",
 };
 
+/** "Free food" means an event that has food and costs nothing; one definition for every entry point. */
+export function freeFoodFilterPatch(value: boolean): Pick<FilterState, "hasFood" | "minPrice" | "maxPrice"> {
+  return { hasFood: value, minPrice: "", maxPrice: value ? "0" : "" };
+}
+
 /** UI filter names, independent of the store implementation. */
 export interface SearchStoreFilterValues extends Omit<
   FilterState,

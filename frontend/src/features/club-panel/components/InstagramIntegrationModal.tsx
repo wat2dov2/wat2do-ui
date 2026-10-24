@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { AtSign } from "@/shared/ui/doodle-icons";
+import { AtSign } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import {

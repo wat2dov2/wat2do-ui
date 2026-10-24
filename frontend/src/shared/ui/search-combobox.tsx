@@ -9,7 +9,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { Check, Search } from "@/shared/ui/doodle-icons";
+import { Check, Search } from "lucide-react";
 import { OUTLINE_CONTROL_STYLES } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
 import { useEnterKeySubmit } from "@/shared/hooks";

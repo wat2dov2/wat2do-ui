@@ -225,7 +225,7 @@ test.describe("Positions UI", () => {
     expect(filterRequests).toEqual([]);
   });
 
-  test("shared club badges overlap logos and keep the extra-club count visible", async ({ page }) => {
+  test("shared club badges overlap logos, keep the extra-club count visible, and open the host club page", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/positions");
     const card = page.getByRole("button", { name: "View Design Lead position details" });
@@ -236,8 +236,9 @@ test.describe("Positions UI", () => {
     const badgeBox = (await badge.boundingBox())!;
     const countBox = (await count.boundingBox())!;
     expect(countBox.x + countBox.width).toBeLessThanOrEqual(badgeBox.x + badgeBox.width);
+    await expect(badge).toHaveAttribute("href", "/clubs/4");
     await badge.click();
-    await expect(page.getByRole("menuitem", { name: /UW Operations Club/ })).toBeVisible();
+    await expect(page).toHaveURL(/\/clubs\/4$/);
   });
 
   test("keeps filters click-based and navigates more positions on mouse down", async ({ page }) => {

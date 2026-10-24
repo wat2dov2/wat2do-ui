@@ -16,6 +16,9 @@ import {
   SLIDE_WIDTH,
   SLIDE_POSTER_REGIONS,
   SLIDE_STICKER_SIZE,
+  OUTRO_GRID_COLUMNS,
+  OUTRO_GRID_ROWS,
+  OUTRO_CARD_MAX_SCALE,
   type CoverSlideModel,
   type EventSlideModel,
   type OutroSlideModel,
@@ -68,9 +71,14 @@ const renderSlidePoster: PosterRenderer = ({ src, width, height }) => (
   <img src={src} width={width} height={height} style={{ width, height, objectFit: "cover" }} alt="" />
 );
 
+/** The two-letter monogram that stands in for a missing logo or poster. */
+function slideInitials(name: string): string {
+  return name.replace(/^@/, "").slice(0, 2).toUpperCase();
+}
+
 /** Avatars share one crop and initials fallback in headers and comments. */
 function SlideAvatar({ src, author, size, renderPoster }: { src: string; author: string; size: number; renderPoster: PosterRenderer }) {
-  const initials = author.slice(0, 2).toUpperCase();
+  const initials = slideInitials(author);
   return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: size, height: size, borderRadius: size / 2, overflow: "hidden", flexShrink: 0, backgroundColor: LIGHT.secondary, fontSize: size / 3, fontWeight: 700 }}>
     {src ? renderPoster({ src, width: size, height: size, fallback: initials }) : initials}
   </div>;
@@ -159,7 +167,9 @@ const FAN_MIN_OVERLAP = 50;
  * tilt runs from `-FAN_MAX_TILT` on the left to `+FAN_MAX_TILT` on the right so
  * the middle of the fan stays upright. The row is centred, and its lowest card
  * clears the footer by design: `FAN_TOP + FAN_CARD_HEIGHT + FAN_MAX_DIP` must
- * stay above `SLIDE_HEIGHT - COVER_MARGIN`.
+ * stay above `SLIDE_HEIGHT - COVER_MARGIN`. satori has no z-index either, so the
+ * cards are drawn right to left: each lands on the one to its right, leaving the
+ * first event on top.
  */
 function CoverPosterFan({ tiles, secondary, renderPoster }: { tiles: string[]; secondary: string; renderPoster: PosterRenderer }) {
   if (tiles.length === 0) return null;
@@ -186,7 +196,7 @@ function CoverPosterFan({ tiles, secondary, renderPoster }: { tiles: string[]; s
         height: SLIDE_HEIGHT,
       }}
     >
-      {tiles.map((tile, index) => {
+      {tiles.map((tile, index) => ({ tile, index })).reverse().map(({ tile, index }) => {
         const offset = middle === 0 ? 0 : (index - middle) / middle;
         return (
           <div
@@ -378,17 +388,117 @@ export function CoverSlideTemplate({ model, renderPoster = renderSlidePoster }: 
   );
 }
 
-/** Ten rows of these fill the card between the outro's header and footer. */
-const OUTRO_ROW_PADDING = 12;
+// The outro grid fills the space between the cover-style header and footer.
+const OUTRO_GRID_TOP = COVER_MARGIN + COVER_LOGO_SIZE + 28;
+const OUTRO_GRID_HEIGHT = SLIDE_HEIGHT - OUTRO_GRID_TOP - (COVER_MARGIN + 64);
+const OUTRO_GRID_GAP = 16;
+/** The densest card: the size each of ten cards gets in a full two-column grid. */
+const OUTRO_BASE_CARD = {
+  width: (COVER_CONTENT_WIDTH - OUTRO_GRID_GAP * (OUTRO_GRID_COLUMNS - 1)) / OUTRO_GRID_COLUMNS,
+  height: (OUTRO_GRID_HEIGHT - OUTRO_GRID_GAP * (OUTRO_GRID_ROWS - 1)) / OUTRO_GRID_ROWS,
+};
+/**
+ * The narrowest card the contents may scale into. A densest card's longest
+ * line ("Thu, Oct 22 · 10:00 PM") still fits up to about 1.15x its width, so a
+ * two-column card may grow that far when the rows have height to spare.
+ */
+const OUTRO_MIN_CARD_WIDTH = OUTRO_BASE_CARD.width / 1.15;
+const OUTRO_BASE_POSTER = {
+  width: SLIDE_POSTER_REGIONS.outro.width / OUTRO_CARD_MAX_SCALE,
+  height: SLIDE_POSTER_REGIONS.outro.height / OUTRO_CARD_MAX_SCALE,
+};
+
+export interface OutroGridLayout {
+  columns: number;
+  /** Every card's size, and how much its contents scale from the densest card. */
+  cardWidth: number;
+  cardHeight: number;
+  scale: number;
+}
+
+/**
+ * The largest cards that fit `cells` in the grid area.
+ *
+ * One column is tried before two, and a layout only wins with strictly larger
+ * cards, so short lists read as a single column of big cards and ten cells end
+ * at the densest two-column grid.
+ */
+export function outroGridLayout(cells: number): OutroGridLayout {
+  let best: OutroGridLayout | null = null;
+  for (let columns = 1; columns <= OUTRO_GRID_COLUMNS; columns += 1) {
+    const rows = Math.ceil(cells / columns);
+    if (rows > OUTRO_GRID_ROWS) continue;
+    const cardWidth = (COVER_CONTENT_WIDTH - OUTRO_GRID_GAP * (columns - 1)) / columns;
+    const rowHeight = (OUTRO_GRID_HEIGHT - OUTRO_GRID_GAP * (rows - 1)) / rows;
+    const scale = Math.min(OUTRO_CARD_MAX_SCALE, rowHeight / OUTRO_BASE_CARD.height, cardWidth / OUTRO_MIN_CARD_WIDTH);
+    if (!best || scale > best.scale) best = { columns, cardWidth, cardHeight: Math.floor(OUTRO_BASE_CARD.height * scale), scale };
+  }
+  return best!;
+}
+
+/** The white tile every outro cell sits on, at the layout's card size. */
+function outroCell(layout: OutroGridLayout): React.CSSProperties {
+  const posterHeight = OUTRO_BASE_POSTER.height * layout.scale;
+  return {
+    display: "flex",
+    width: layout.cardWidth,
+    height: layout.cardHeight,
+    padding: (layout.cardHeight - posterHeight) / 2,
+    gap: 14 * layout.scale,
+    backgroundColor: LIGHT.surface,
+    color: LIGHT.foreground,
+    borderRadius: 20 * layout.scale,
+    overflow: "hidden",
+  };
+}
+
+/** One miniature event card: poster, then club, title, when and where. */
+function OutroCard({ card, colors, layout, renderPoster }: { card: OutroSlideModel["cards"][number]; colors: OutroSlideModel["colors"]; layout: OutroGridLayout; renderPoster: PosterRenderer }) {
+  const { scale } = layout;
+  const poster = { width: Math.round(OUTRO_BASE_POSTER.width * scale), height: Math.round(OUTRO_BASE_POSTER.height * scale) };
+  const detail: React.CSSProperties = { ...clampText(1), fontSize: 20 * scale, fontWeight: 500, lineHeight: 1.2, maxHeight: 24 * scale, color: LIGHT.mutedForeground };
+  return (
+    <div style={outroCell(layout)}>
+      {/* About one event in six has no poster; a monogram in the school's
+          colours keeps that card intentional instead of an empty grey well. */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: poster.width,
+          height: poster.height,
+          flexShrink: 0,
+          borderRadius: 12 * scale,
+          overflow: "hidden",
+          backgroundColor: colors.primary,
+          color: colors.secondary,
+          fontSize: poster.width * 0.36,
+          fontWeight: 700,
+        }}
+      >
+        {card.posterSrc ? renderPoster({ src: card.posterSrc, width: poster.width, height: poster.height }) : slideInitials(card.club || card.title)}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 5 * scale, flex: 1, minWidth: 0 }}>
+        <p style={{ ...detail, fontWeight: 700 }}>{card.club}</p>
+        <p style={{ ...clampText(2), fontSize: 26 * scale, fontWeight: 700, lineHeight: 1.15, maxHeight: 60 * scale }}>{card.title}</p>
+        {card.when ? <p style={detail}>{card.when}</p> : null}
+        {card.location ? <p style={detail}>{card.location}</p> : null}
+      </div>
+    </div>
+  );
+}
 
 /**
  * The carousel's last slide: the scrape's other events, or the school's site.
  *
- * It shares the cover's colours, doodles and logo, and lists events on the
- * event slides' white card so the rows read like the rest of the carousel.
+ * It shares the cover's colours, doodles and logo, and shows each event as a
+ * miniature card in a two-column grid; any events that do not fit are counted
+ * in the grid's last cell.
  */
-export function OutroSlideTemplate({ model }: { model: OutroSlideModel }) {
+export function OutroSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: OutroSlideModel; renderPoster?: PosterRenderer }) {
   const { primary, secondary } = model.colors;
+  const layout = outroGridLayout(model.cards.length + (model.hiddenCount > 0 ? 1 : 0));
 
   return (
     <div style={{ ...slideFrame, backgroundColor: primary, color: secondary, overflow: "hidden" }}>
@@ -408,34 +518,30 @@ export function OutroSlideTemplate({ model }: { model: OutroSlideModel }) {
         <CoverLogo src={model.logoSrc} />
       </div>
 
-      {model.rows.length ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              margin: `28px ${COVER_MARGIN}px 0 ${COVER_MARGIN}px`,
-              padding: `8px ${SLIDE_CARD_INSET + 4}px`,
-              backgroundColor: LIGHT.surface,
-              color: LIGHT.foreground,
-              borderRadius: 28,
-            }}
-          >
-            {model.rows.map((row, index) => (
-              <div
-                key={index}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 3,
-                  padding: `${OUTRO_ROW_PADDING}px 0`,
-                  borderTop: index ? `2px solid ${LIGHT.secondary}` : "none",
-                }}
-              >
-                <p style={{ ...clampText(1), fontSize: 32, fontWeight: 700, lineHeight: 1.2, maxHeight: 39 }}>{row.title}</p>
-                {row.detail ? <p style={{ ...clampText(1), fontSize: 24, fontWeight: 500, lineHeight: 1.2, maxHeight: 29, color: LIGHT.mutedForeground }}>{row.detail}</p> : null}
+      {model.cards.length ? (
+        // A short list is centred in the grid area rather than hanging from its top.
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            position: "absolute",
+            top: OUTRO_GRID_TOP,
+            left: COVER_MARGIN,
+            width: COVER_CONTENT_WIDTH,
+            height: OUTRO_GRID_HEIGHT,
+          }}
+        >
+          <div style={{ display: "flex", flexWrap: "wrap", gap: OUTRO_GRID_GAP }}>
+            {model.cards.map((card, index) => <OutroCard key={index} card={card} colors={model.colors} layout={layout} renderPoster={renderPoster} />)}
+            {model.hiddenCount > 0 ? (
+              <div style={{ ...outroCell(layout), flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 * layout.scale }}>
+                <div style={{ display: "flex", fontSize: 56 * layout.scale, fontWeight: 700, lineHeight: 1 }}>{model.moreLabel}</div>
+                <div style={{ display: "flex", fontSize: 22 * layout.scale, fontWeight: 500, color: LIGHT.mutedForeground }}>{model.siteName}</div>
               </div>
-            ))}
+            ) : null}
           </div>
+        </div>
       ) : (
         <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", padding: `0 ${COVER_MARGIN}px ${COVER_MARGIN}px` }}>
           <div
@@ -456,9 +562,9 @@ export function OutroSlideTemplate({ model }: { model: OutroSlideModel }) {
       )}
 
       {/* Pinned to the corner the cover's footer uses. */}
-      {model.rows.length ? (
+      {model.cards.length ? (
         <div style={{ display: "flex", position: "absolute", left: COVER_MARGIN, bottom: COVER_MARGIN, fontSize: 30, fontWeight: 700 }}>
-          {model.moreLine || model.siteLine}
+          {model.siteLine}
         </div>
       ) : null}
     </div>

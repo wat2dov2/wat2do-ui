@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
-import { CheckCircle } from "@/shared/ui/doodle-icons";
+import { CheckCircle } from "lucide-react";
 import {
   Field,
   FieldDescription,

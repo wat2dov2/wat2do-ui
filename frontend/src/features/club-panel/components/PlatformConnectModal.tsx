@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Check, ExternalLink } from "@/shared/ui/doodle-icons";
+import { Check, ExternalLink } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,

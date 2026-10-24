@@ -28,7 +28,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
-import { DollarSign, MapPin, QrCode } from "@/shared/ui/doodle-icons";
+import { DollarSign, MapPin, QrCode } from "lucide-react";
 import { PosterMapSkeleton } from "@/features/posters/components/PosterMapSkeleton";
 import { formatCadCents } from "@/shared/utils/currency";
 

@@ -2,12 +2,7 @@ import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useMemo, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
-import {
-  Check,
-  Facebook,
-  Linkedin,
-  Mail,
-} from "@/shared/ui/doodle-icons";
+import { Check, Facebook, Linkedin, Mail } from "lucide-react";
 import {
   DiscordIcon,
   LineIcon,

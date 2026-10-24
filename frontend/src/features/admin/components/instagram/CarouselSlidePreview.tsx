@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { X } from "@/shared/ui/doodle-icons";
+import { X } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { CoverSlideTemplate, EventSlideTemplate, OutroSlideTemplate, type SlidePosterProps } from "@/features/admin/components/instagram/slides/SlideTemplates";
 import { LazyImage } from "@/shared/ui/lazy-image";
@@ -161,7 +161,7 @@ export function CarouselSlidePreview({
                   batchKind: cover.batchKind,
                   // Publishing lists each event's first stored occurrence, as event slides do.
                   events: outroEvents.map(event => ({ ...event, ...event.occurrences[0], id: event.id, tz: getSchoolTimezone(event.school) })),
-                })} />
+                })} renderPoster={renderPoster} />
                 : slideModel ? <EventSlideTemplate model={slideModel} renderPoster={renderPoster} /> : null}
           </div>}
         </div>

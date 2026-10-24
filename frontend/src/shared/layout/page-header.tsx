@@ -4,8 +4,8 @@ import Link from "next/link"
 import { Stack } from "@/shared/layout/stack"
 import { cn } from "@/shared/lib/utils"
 import { Button } from "@/shared/ui/button"
-import { ArrowLeft } from "@/shared/ui/doodle-icons"
-import type { LucideIcon } from "@/shared/ui/doodle-icons"
+import { ArrowLeft } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
 type PageHeaderBack =
   | {

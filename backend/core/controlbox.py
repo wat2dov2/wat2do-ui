@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections import Counter
 from datetime import date
 from pathlib import Path
 from typing import Annotated, Literal
@@ -11,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, model_vali
 
 _CONTROLBOX_DIRECTORY = Path(__file__).resolve().parents[1] / "controlbox"
 _INTERACTION_TYPES = {"click", "detail_view", "going", "ungoing", "share"}
+_INSTAGRAM_ACCOUNTS_PER_APP = 10
 
 
 class _ControlModel(BaseModel):
@@ -596,24 +598,7 @@ class UploadsControl(_ControlModel):
         return self
 
 
-class InstagramMusicChartControl(_ControlModel):
-    name: str = Field(min_length=1)
-    url: HttpUrl
-
-
 class InstagramPublishingControl(_ControlModel):
-    music_history_batch_count: int = Field(gt=0)
-    music_charts: dict[str, InstagramMusicChartControl]
-    music_chart_by_school: dict[str, str]
-    default_music_chart: str
-
-    @model_validator(mode="after")
-    def validate_music_charts(self) -> "InstagramPublishingControl":
-        chart_keys = {self.default_music_chart, *self.music_chart_by_school.values()}
-        if not chart_keys <= self.music_charts.keys():
-            raise ValueError("instagram music mappings must reference configured charts")
-        return self
-
     cover_body_character_limit: int = Field(gt=0, le=280)
     maximum_stickers_per_event: int = Field(ge=1, le=4)
     sticker_line_character_limit: int = Field(ge=8, le=12)
@@ -628,7 +613,6 @@ class InstagramPublishingControl(_ControlModel):
     maximum_lead_days: int = Field(gt=0)
     # Instagram takes ten images: the cover, the event slides and the outro.
     maximum_event_slides: int = Field(gt=0, le=8)
-    outro_event_rows: int = Field(ge=1, le=10)
     status_poll_interval_seconds: float = Field(gt=0, le=60)
     meta_poll_attempts: int = Field(gt=0, le=30)
     meta_poll_interval_seconds: float = Field(gt=0, le=30)
@@ -643,7 +627,19 @@ class InstagramPublishingControl(_ControlModel):
     curation_poster_pixels: int = Field(ge=128, le=2048)
     curation_hour: int = Field(ge=0, le=23)
     curation_minute: int = Field(ge=0, le=59)
-    chart_timeout_seconds: float = Field(gt=0, le=120)
+    poster_timeout_seconds: float = Field(gt=0, le=120)
+    # Some minutes after a carousel publishes, the Mac's emulator adds a song to it.
+    music_model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    music_agent_timeout_seconds: int = Field(gt=0, le=600)
+    music_delay_minutes: int = Field(ge=1, le=120)
+    music_max_age_hours: int = Field(ge=1, le=72)
+    music_attempts: int = Field(ge=1, le=10)
+    # Campuses with large Asian student communities, the only ones that get a song an
+    # admin marked as Asian or K-pop.
+    asian_song_schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(
+        max_length=100
+    )
+    music_interval_seconds: int = Field(ge=60, le=3600)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120)
 
     @model_validator(mode="after")
@@ -951,29 +947,172 @@ class IngestionControl(_ControlModel):
         return self
 
 
+# One line, short, and nothing that links or tags anyone.
+_DmReply = Annotated[str, Field(min_length=1, max_length=40, pattern=r"^[^\n@/]+$")]
+
+
+class InstagramDmsControl(_ControlModel):
+    # Dry run reads, decides and logs each DM without replying or queueing anything.
+    dry_run: bool
+    model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    agent_timeout_seconds: int = Field(gt=0, le=600)
+    thread_item_limit: int = Field(ge=1, le=50)
+    # Every reply comes from these vetted lists, never from the model, so a DM written to
+    # trick the model can never put words in the school account's mouth.
+    replies: list[_DmReply] = Field(min_length=1, max_length=20)
+    done_replies: list[_DmReply] = Field(min_length=1, max_length=20)
+
+    # After a story repost, "Done!" follows the first reply after this human-like gap.
+    done_reply_delay_min_seconds: int = Field(ge=0, le=600)
+    done_reply_delay_max_seconds: int = Field(ge=0, le=600)
+
+    # The inbox sweep: a LaunchAgent checks this often, and a sweep runs once a random
+    # gap in this window has passed since the last one, only between these local hours.
+    sweep_check_interval_seconds: int = Field(ge=60, le=3600)
+    sweep_gap_min_minutes: int = Field(ge=10, le=1440)
+    sweep_gap_max_minutes: int = Field(ge=10, le=1440)
+    sweep_start_hour: int = Field(ge=0, le=23)
+    sweep_end_hour: int = Field(ge=1, le=24)
+    # Threads whose newest message is older than this are left alone: the event is
+    # likely over. The inbox is scrolled at most this many screens to find them.
+    max_thread_age_days: int = Field(ge=1, le=60)
+    inbox_scrolls: int = Field(ge=0, le=10)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def validate_windows(self) -> "InstagramDmsControl":
+        if self.done_reply_delay_min_seconds > self.done_reply_delay_max_seconds:
+            raise ValueError(
+                "done_reply_delay_min_seconds cannot exceed done_reply_delay_max_seconds"
+            )
+        if self.sweep_gap_min_minutes > self.sweep_gap_max_minutes:
+            raise ValueError("sweep_gap_min_minutes cannot exceed sweep_gap_max_minutes")
+        if self.sweep_start_hour >= self.sweep_end_hour:
+            raise ValueError("sweep_start_hour must be before sweep_end_hour")
+        return self
+
+
+class InstagramEmulatorControl(_ControlModel):
+    # The Android emulator whose Instagram app shares posts to school stories.
+    serial: str = Field(pattern=r"^emulator-[0-9]{4,5}$")
+    instagram_package: str = Field(pattern=r"^[a-z][a-z0-9_.]+$")
+    # The always-on LaunchAgent boots this virtual device with these arguments
+    # whenever adb cannot see it, checking again after this many seconds.
+    avd_name: str = Field(pattern=r"^[A-Za-z0-9_.-]+$")
+    emulator_arguments: tuple[Annotated[str, Field(pattern=r"^[A-Za-z0-9_.-]+$")], ...]
+    keep_alive_check_seconds: int = Field(ge=10, le=3600)
+    # The Instagram app holds at most ten accounts per Android user, so school
+    # accounts are spread across the emulator's users.
+    android_user_by_school: dict[
+        Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")], Annotated[int, Field(ge=0)]
+    ] = Field(min_length=1)
+    adb_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    user_switch_wait_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    screen_wait_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
+    # Every tap and keystroke waits a random human-like pause inside this window.
+    step_delay_min_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
+    step_delay_max_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
+    keystroke_delay_min_seconds: float = Field(ge=0, le=5, allow_inf_nan=False)
+    keystroke_delay_max_seconds: float = Field(ge=0, le=5, allow_inf_nan=False)
+    story_upload_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
+    # How long an edited post may take to save after Done, once a song is chosen.
+    audio_save_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
+    # A story repost needs room to upload; below this much free space it waits.
+    min_free_data_megabytes: int = Field(ge=0, le=10_000)
+
+    @model_validator(mode="after")
+    def validate_timing(self) -> "InstagramEmulatorControl":
+        if self.step_delay_min_seconds > self.step_delay_max_seconds:
+            raise ValueError("step_delay_min_seconds cannot exceed step_delay_max_seconds")
+        if self.keystroke_delay_min_seconds > self.keystroke_delay_max_seconds:
+            raise ValueError(
+                "keystroke_delay_min_seconds cannot exceed keystroke_delay_max_seconds"
+            )
+        if (
+            Counter(self.android_user_by_school.values()).most_common(1)[0][1]
+            > _INSTAGRAM_ACCOUNTS_PER_APP
+        ):
+            raise ValueError("An Android user can hold at most ten Instagram accounts")
+        return self
+
+
+class OutreachControl(_ControlModel):
+    model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    agent_timeout_seconds: int = Field(gt=0, le=3600)
+    # Research agents run at once, one per school and lead type.
+    parallel_agents: int = Field(ge=1, le=16)
+    sweep_interval_hours: int = Field(ge=1, le=720)
+    leads_per_search: int = Field(ge=1, le=20)
+    known_emails_in_prompt: int = Field(ge=0, le=5000)
+    # Each lead's email must appear on the page it was found on, fetched within this time.
+    page_fetch_timeout_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # Who signs the video script and email.
+    sender_name: str = Field(min_length=1, max_length=60)
+    # The Gmail account the admin page opens each draft in.
+    gmail_account: EmailStr
+    # "{school}" becomes the school's slug.
+    submit_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*$")
+    # Lead type slug -> who and what the research agent looks for at every school,
+    # highest priority first: the sweep researches each type across all schools in turn.
+    lead_types: dict[
+        Annotated[str, Field(pattern=r"^[a-z0-9_]+$")], Annotated[str, Field(min_length=1)]
+    ] = Field(min_length=1)
+    # What Wat2Do offers an organizer, in plain words the scripts build on.
+    offer: str = Field(min_length=1, max_length=1000)
+
+
 class CompetitorPainPointsControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     agent_timeout_seconds: int = Field(gt=0, le=3600)
-    parallel_agents: int = Field(ge=1, le=8)
+    # Agents run at once; each competitor gets one per search lane, plus X.
+    parallel_agents: int = Field(ge=1, le=32)
     sweep_interval_hours: int = Field(ge=1, le=24)
     lookback_days: int = Field(ge=1, le=30)
-    findings_per_competitor: int = Field(ge=1, le=100)
+    findings_per_search: int = Field(ge=1, le=100)
     known_urls_in_prompt: int = Field(ge=0, le=2000)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
-    # X searches read in Safari; "{name}" becomes the competitor's display name.
+    # The daily report: a stronger model reads the complaints found in the last
+    # window and suggests changes to wat2do.io.
+    report_model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    report_timeout_seconds: int = Field(gt=0, le=7200)
+    report_window_hours: int = Field(ge=1, le=168)
+    report_max_complaints: int = Field(ge=1, le=2000)
+    # X and Reddit searches read in Safari; "{name}" becomes the competitor's
+    # search name.
     x_queries: list[Annotated[str, Field(pattern=r"\{name\}")]] = Field(max_length=10)
-    x_scrolls: int = Field(ge=0, le=10)
-    x_page_wait_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
-    x_posts_per_query: int = Field(ge=1, le=200)
-    # Competitor slug -> display name, and source slug -> the hosts its links
-    # may use; a source with no hosts (forums) accepts any public host.
+    reddit_queries: list[Annotated[str, Field(pattern=r"\{name\}")]] = Field(max_length=10)
+    scrolls: int = Field(ge=0, le=10)
+    page_wait_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
+    posts_per_query: int = Field(ge=1, le=200)
+    # Competitor slug -> display name.
     competitors: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")], Annotated[str, Field(min_length=1)]
     ] = Field(min_length=1)
+    # One line per competitor that tells it apart from products with a similar name.
+    about: dict[str, Annotated[str, Field(min_length=1)]]
+    # X and Reddit search term when the display name is not one, e.g. "What2Do (UTM)".
+    search_names: dict[str, Annotated[str, Field(min_length=1)]] = Field(default_factory=dict)
+    # Lane slug -> where that lane's agent looks; every competitor gets each lane.
+    lanes: dict[
+        Annotated[str, Field(pattern=r"^[a-z0-9_]+$")], Annotated[str, Field(min_length=1)]
+    ] = Field(min_length=1)
+    # Source slug -> the hosts its links may use; a source with no hosts
+    # (forums) accepts any public host.
     sources: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")],
         list[Annotated[str, Field(pattern=r"^[a-z0-9.-]+$")]],
     ] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _every_competitor_described(self) -> CompetitorPainPointsControl:
+        if set(self.about) != set(self.competitors):
+            raise ValueError("about must describe exactly the configured competitors")
+        if not set(self.search_names) <= set(self.competitors):
+            raise ValueError("search_names may only name configured competitors")
+        if {"x", "reddit"} & set(self.lanes):
+            raise ValueError("the x and reddit lanes are built in; configure their queries")
+        return self
 
 
 class ControlBox(_ControlModel):
@@ -1012,6 +1151,9 @@ class ControlBox(_ControlModel):
     instagram_digest: InstagramDigestControl
     instagram_publishing: InstagramPublishingControl
     competitor_pain_points: CompetitorPainPointsControl
+    outreach: OutreachControl
+    instagram_dms: InstagramDmsControl
+    instagram_emulator: InstagramEmulatorControl
     workflow_failure_alerts: WorkflowFailureAlertsControl
     promoter_program: PromoterProgramControl
 

@@ -2,7 +2,7 @@ import { ClubSubmissionDetailsDrawer } from "@/features/admin/components/ClubSub
 import { ClaimDetailsDrawer } from "@/features/admin/components/ClaimDetailsDrawer";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Building2, ExternalLink, ShieldAlert } from "@/shared/ui/doodle-icons";
+import { Building2, ExternalLink, ShieldAlert } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import {

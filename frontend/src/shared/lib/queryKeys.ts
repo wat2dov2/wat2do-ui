@@ -44,6 +44,11 @@ export const queryKeys = {
   competitorPainPoints: {
     all: ["competitor-pain-points"] as const,
     list: (page: number, filters: object) => [...queryKeys.competitorPainPoints.all, page, filters] as const,
+    reports: (page: number) => [...queryKeys.competitorPainPoints.all, "reports", page] as const,
+  },
+  outreach: {
+    all: ["outreach"] as const,
+    leads: (page: number, filters: object) => [...queryKeys.outreach.all, "leads", page, filters] as const,
   },
   sponsorSubmissions: {
     all: ["sponsor-submissions"] as const,
@@ -120,6 +125,7 @@ export const queryKeys = {
       [...queryKeys.instagramPublishing.batches(), page, pageSize] as const,
     batch: (batchId: string) =>
       [...queryKeys.instagramPublishing.all, "batch", batchId] as const,
+    songs: () => [...queryKeys.instagramPublishing.all, "songs"] as const,
   },
   automateLogs: {
     all: ["automateLogs"] as const,

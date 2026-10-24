@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from core.database import get_sb
 from core.errors import COMPETITOR_PAIN_POINT_NOT_FOUND
 from core.exceptions import NotFoundError
 from core.sanitize import sanitize_postgrest_value
-from core.tables import COMPETITOR_PAIN_POINTS
-from schemas.competitor_pain_point import CompetitorPainPointResponse, FoundPainPoint
+from core.tables import COMPETITOR_PAIN_POINT_REPORTS, COMPETITOR_PAIN_POINTS
+from schemas.competitor_pain_point import (
+    CompetitorPainPointResponse,
+    DailyReport,
+    DailyReportResponse,
+    FoundPainPoint,
+)
 
 
 def list_pain_points(
@@ -82,3 +89,38 @@ def save_findings(findings: list[FoundPainPoint]) -> int:
         .execute()
     )
     return len(result.data or [])
+
+
+def found_since(since: datetime, limit: int) -> list[CompetitorPainPointResponse]:
+    """Complaints stored since ``since`` that an admin has not dismissed, newest first."""
+    result = (
+        get_sb()
+        .table(COMPETITOR_PAIN_POINTS)
+        .select("*")
+        .gte("found_at", since.isoformat())
+        .neq("status", "dismissed")
+        .order("found_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return [CompetitorPainPointResponse.model_validate(row) for row in result.data or []]
+
+
+def save_report(report: DailyReport) -> None:
+    """Store the day's report; running it again the same day replaces it."""
+    get_sb().table(COMPETITOR_PAIN_POINT_REPORTS).upsert(
+        report.model_dump(mode="json"), on_conflict="report_date"
+    ).execute()
+
+
+def list_reports(*, offset: int, limit: int) -> tuple[list[DailyReportResponse], int]:
+    result = (
+        get_sb()
+        .table(COMPETITOR_PAIN_POINT_REPORTS)
+        .select("*", count="exact")
+        .order("report_date", desc=True)
+        .range(offset, offset + limit - 1)
+        .execute()
+    )
+    rows = [DailyReportResponse.model_validate(row) for row in result.data or []]
+    return rows, result.count or 0

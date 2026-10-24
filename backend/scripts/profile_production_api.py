@@ -104,6 +104,7 @@ AUTHENTICATED_ENDPOINTS = (
         "/instagram-publishing/batches/?page=1&page_size=10",
         True,
     ),
+    Endpoint("/instagram-publishing/songs/", "/instagram-publishing/songs/", True),
     Endpoint("/notification-preferences", "/notification-preferences", True),
     Endpoint("/clubs/claims", "/clubs/claims", True),
     Endpoint(
@@ -137,6 +138,12 @@ AUTHENTICATED_ENDPOINTS = (
     Endpoint("/position-submissions/", "/position-submissions/?page=1&page_size=10", True),
     Endpoint("/sponsor-submissions/", "/sponsor-submissions/?page=1&page_size=10", True),
     Endpoint("/competitor-pain-points/", "/competitor-pain-points/?page=1&page_size=10", True),
+    Endpoint(
+        "/competitor-pain-points/reports",
+        "/competitor-pain-points/reports?page=1&page_size=7",
+        True,
+    ),
+    Endpoint("/outreach/leads/", "/outreach/leads/?page=1&page_size=10", True),
     Endpoint("/submissions/", "/submissions/?page=1&page_size=10", True),
     Endpoint("/users/", "/users/?skip=0&limit=20", True),
     Endpoint("/users/me", "/users/me", True),

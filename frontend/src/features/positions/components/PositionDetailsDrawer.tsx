@@ -2,15 +2,8 @@ import { usePositionView } from "@/features/positions/hooks/usePositionStats";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  CalendarDays,
-  Clock,
-  DollarSign,
-  Instagram,
-  LocationPin,
-  Mail,
-} from "@/shared/ui/doodle-icons";
-import type { LucideIcon } from "@/shared/ui/doodle-icons";
+import { CalendarDays, Clock, DollarSign, Instagram, MapPin, Mail } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { PositionList } from "@/features/positions/components/PositionList";
 import { PositionCardImage } from "@/features/positions/components/PositionCardImage";
 import { formatPositionDeadline } from "@/features/positions/lib/positionDates";
@@ -29,7 +22,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/shared/ui/item";
-import { ClubBadgeDropdown } from "@/features/clubs";
+import { ClubBadgeLink } from "@/features/clubs";
 import { AddedAt } from "@/shared/ui/added-at";
 import { Separator } from "@/shared/ui/separator";
 import { DrawerBody, FormGrid, Section, Stack } from "@/shared/layout";
@@ -131,19 +124,17 @@ export function PositionDetailsDrawer({
                   <PositionCardImage
                     position={position}
                     variant="detail"
-                    onClubFilterSelect={onClose}
+                    onClubNavigate={onClose}
                   />
                   <Section variant="divided" title={t("common.postedBy")}>
-                    <ClubBadgeDropdown
+                    <ClubBadgeLink
+                      clubId={position.club_id}
                       clubName={position.club_name}
                       clubLogoUrl={position.club_logo_url}
                       cohosts={position.cohosts}
                       clubType={position.club_type}
                       school={position.school}
-                      clubPage={position.club_page}
-                      clubIg={position.club_ig}
-                      clubDiscord={position.club_discord}
-                      onFilterSelect={onClose}
+                      onNavigate={onClose}
                     />
                   </Section>
                 </Stack>
@@ -174,7 +165,7 @@ export function PositionDetailsDrawer({
                     ) : null}
                     {position.location ? (
                       <PositionDetailItem
-                        icon={LocationPin}
+                        icon={MapPin}
                         label={t("positions.locationLabel")}
                         value={position.location}
                       />

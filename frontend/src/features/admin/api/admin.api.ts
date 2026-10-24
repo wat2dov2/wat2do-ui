@@ -20,6 +20,8 @@ import type {
   ApiInstagramPublishBatchPublish,
   ApiInstagramPublishBatchResponse,
   ApiInstagramPublishBatchUpdate,
+  ApiInstagramSongCreate,
+  ApiInstagramSongResponse,
   ApiPaginatedInstagramPublishBatchSummaryResponse,
   ApiPaginatedPosterPayoutResponse,
   ApiPayoutCsvExportResponse,
@@ -218,6 +220,20 @@ export async function publishInstagramBatch(
   );
 }
 
+export async function getInstagramSongs(): Promise<ApiInstagramSongResponse[]> {
+  return api.get<ApiInstagramSongResponse[]>("/instagram-publishing/songs/");
+}
+
+export async function addInstagramSong(
+  data: ApiInstagramSongCreate,
+): Promise<ApiInstagramSongResponse> {
+  return api.post<ApiInstagramSongResponse>("/instagram-publishing/songs/", data);
+}
+
+export async function deleteInstagramSong(id: string): Promise<void> {
+  return api.delete<void>(`/instagram-publishing/songs/${id}`);
+}
+
 
 // ── Admin Clubs API ─────────────────────────────────────────
 
@@ -373,6 +389,37 @@ export function getCompetitorPainPoints(page: number, filters: CompetitorPainPoi
   return api.get<components["schemas"]["PaginatedResponse_CompetitorPainPointResponse_"]>("/competitor-pain-points/?" + params);
 }
 
+export type OutreachLead = components["schemas"]["OutreachLeadResponse"];
+export type OutreachLeadUpdate = components["schemas"]["OutreachLeadUpdate"];
+
+/** Empty values mean "all"; the page keeps them as plain strings for its selects. */
+export interface OutreachLeadFilters {
+  leadType: string;
+  status: string;
+  school: string;
+  search: string;
+}
+
+export function getOutreachLeads(page: number, filters: OutreachLeadFilters) {
+  const params = new URLSearchParams({ page: String(page), page_size: String(ADMIN_ITEMS_PER_PAGE) });
+  if (filters.leadType) params.set("lead_type", filters.leadType);
+  if (filters.status) params.set("lead_status", filters.status);
+  if (filters.school) params.set("school", filters.school);
+  if (filters.search) params.set("search", filters.search);
+  return api.get<components["schemas"]["PaginatedResponse_OutreachLeadResponse_"]>("/outreach/leads/?" + params);
+}
+
+export function updateOutreachLead(id: string, update: OutreachLeadUpdate) {
+  return api.patch<OutreachLead>("/outreach/leads/" + id, update);
+}
+
 export function reviewCompetitorPainPoint(id: string, status: CompetitorPainPoint["status"]) {
   return api.patch<CompetitorPainPoint>("/competitor-pain-points/" + id, { status });
+}
+
+export type CompetitorPainPointReport = components["schemas"]["DailyReportResponse"];
+
+export function getCompetitorPainPointReports(page: number) {
+  const params = new URLSearchParams({ page: String(page), page_size: "7" });
+  return api.get<components["schemas"]["PaginatedResponse_DailyReportResponse_"]>("/competitor-pain-points/reports?" + params);
 }

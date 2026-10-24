@@ -54,7 +54,6 @@
     "share": "分享",
     "export": "導出",
     "addToCalendar": "加入行事曆",
-    "moreOptions": "更多選項",
     "report": "舉報",
     "download": "下載",
     "done": "完成",
@@ -154,7 +153,7 @@
     "added_at": "最新加入",
     "category": "類別",
     "food": "食物",
-    "employersOnCampus": "僱主到校",
+    "employersOnCampus": "僱主",
     "freeFoodOnCampus": "免費餐飲",
     "competitions": "比賽",
     "featured": "精選",
@@ -416,7 +415,7 @@
       "title": "我哋點解建立 Wat2Do",
       "origin": "Wat2Do開始於我哋呢班共同創辦人，發現咗一個方法可以抓取公開嘅 Instagram 貼文，關於 University of Waterloo 發生嘅活動。我哋為自己建立咗呢個工具，因為我哋鍾意嘗試新嘢，而學生亦不斷創造新鮮同有趣嘅活動。",
       "belief": "我哋相信大學係嘗試新事物嘅最好時光同環境之一。問題從來唔係冇活動，而係要喺活動結束之前搵到佢哋。",
-      "scale": "自2025年8月以來，Wat2Do 已經收集咗超過3,000個活動。我哋持續改進算法，直到平均能夠喺 Instagram 貼文上線後大約一分鐘內就顯示到相關活動。",
+      "scale": "自2025年8月以來，Wat2Do 已經收集咗超過28,900個活動。之後我哋將算法由400個帳戶擴展到19,600個，而家每星期處理3,340個新活動（截至2026年10月19日）。",
       "mission": "解決嗰個發現問題改變咗我哋自己嘅大學經歷。而家我哋想分享我哋建立嘅嘢，幫助學生喺世界各地發現更多周圍發生嘅新同型嘢。",
       "signature": "- Tony & Erica"
     },
@@ -483,11 +482,6 @@
       "browse": "瀏覽活動",
       "explore": "探索組織"
     },
-    "footer": {
-      "about": "我們建立了 Wat2Do 以連接 Waterloo 學生到被低估的校園生活活動。如有建議或反饋，請聯絡我們。",
-      "title": "Wat2Do",
-      "copyright": "© {{year}} Wat2Do"
-    },
     "photos": {
       "label": "我哋嘅校園之旅",
       "alt": "Wat2Do 團隊參觀 {{school}}",
@@ -545,5 +539,210 @@
         "messageTooLong": "你嘅推薦內容太長，請縮短答案。"
       }
     }
+  },
+  "landing": {
+    "hero": {
+      "note": "全部免費 · 由學生影響力獎項資助",
+      "titleLead": "校園每一個活動，",
+      "titleHighlight": "趁未完就睇到。",
+      "description": "組織嘅活動散落喺幾百個 Instagram 帳戶，好易就沉咗落去。Wat2Do 將佢哋全部放埋喺同一個 feed。",
+      "primaryAction": "睇吓有咩搞",
+      "secondaryAction": "點樣運作",
+      "mapTitle": "{{school}} 有 {{total}} 個就嚟舉行嘅活動",
+      "mapTitle_other": "{{school}} 有 {{total}} 個就嚟舉行嘅活動"
+    },
+    "problem": {
+      "title": "校園唔悶，只係啲活動收埋咗。",
+      "description": "{{school}} 成日都有嘢搞。問題係啲活動喺邊度公佈。",
+      "points": {
+        "buried": {
+          "title": "喺你個 feed 度沉咗",
+          "description": "就算你 follow 咗個組織，睇唔睇到佢個 post 都係 Instagram 話事。大部分活動海報都會沉喺你 feed 入面其他嘢下面。"
+        },
+        "scattered": {
+          "title": "幾百個組織，冇一個共用 feed",
+          "description": "每個組織、學會同校隊都喺自己帳戶出 post。冇人會 follow 晒，所以你淨係知道朋友 share 過嘅嘢。"
+        },
+        "late": {
+          "title": "第二日先知",
+          "description": "免費餐飲、招聘之夜、$5 煮食班。你睇到活動回顧 post 先發覺原來係琴日。"
+        },
+        "quiet": {
+          "title": "所以好似咩都冇發生",
+          "description": "活動散晒喺幾百個帳戶，校園就顯得好靜。其實唔係，只係你睇唔到。"
+        }
+      },
+      "story": "Tony 見到一個意大利煮食班嘅 Instagram 限時動態，只係 $5。點知佢三日前已經 post 咗。",
+      "storyOver": "個活動早就完咗。",
+      "storyEnd": "所以我哋就整咗一個自己一直想有嘅地方。",
+      "signature": "Tony & Erica，Wat2Do 創辦人"
+    },
+    "solution": {
+      "title": "一個 feed。所有組織。唔使搵。",
+      "description": "Wat2Do 幫你 follow 晒啲帳戶，將每張海報變成可以搜尋、篩選同儲存嘅活動。",
+      "stats": {
+        "clubsLabel": "{{school}} 追蹤緊嘅組織",
+        "clubsLabel_other": "{{school}} 追蹤緊嘅組織",
+        "upcomingLabel": "就嚟舉行嘅活動",
+        "upcomingLabel_other": "就嚟舉行嘅活動",
+        "newLabel": "過去 7 日新增嘅活動",
+        "newLabel_other": "過去 7 日新增嘅活動"
+      }
+    },
+    "different": {
+      "title": "咁同其他活動網站有咩唔同？",
+      "description": "其他網站都係等組織自己交活動上去。其餘嘅就困喺會封鎖 bot 嘅 Instagram 入面。Wat2Do 照樣將佢哋攞出嚟。",
+      "points": {
+        "relay": {
+          "cost": "幾百個鐘"
+        },
+        "alwaysOn": {
+          "title": "一部永不休息嘅 Mac mini",
+          "description": "一部我哋買嘅 M4 Mac mini 24/7 用匿名方式打開每個被標記嘅 post，再將佢變成數據。",
+          "cost": "$899"
+        },
+        "claude": {
+          "title": "Claude 睇晒每張海報",
+          "description": "Claude Haiku 有防護咁將海報變成活動：唔會作嘢、會查重複，資料庫帳號仲鎖死得活動資料表。",
+          "cost": "$200 / 月"
+        },
+        "cloud": {
+          "title": "每間學校都上線",
+          "description": "AWS 連埋備份 host 住個 feed，所以一個 bug 都唔會搞壞真學生嘅體驗。",
+          "cost": "$100 / 月"
+        }
+      },
+      "costNote": "呢啲費用由 University of Waterloo 嘅學生影響力獎同助學金支付，呢啲資助本身就係用嚟改善學生生活，所以 Wat2Do 對每個學生都一直免費。",
+      "diagramLabel": "組織嘅 Instagram post 點樣變成 Wat2Do 活動：組織帳戶通知一個已遮蔽嘅步驟，一部長開嘅 Mac mini 上面嘅 browser worker 同 post fetcher 讀取個 post，有防護規則嘅 Claude agent 將佢變成活動，再經過一個檢查點先入到你嘅 feed 背後限制存取嘅活動資料庫。如果有嘢出事，Mac mini 會 call 一部私人手機，我哋就用手提電腦修好佢。",
+      "diagram": {
+        "zoneInstagram": "Instagram",
+        "zoneMac": "Mac mini · 長開",
+        "zoneWat2do": "Wat2Do",
+        "accounts": "組織帳戶",
+        "browser": "Browser worker",
+        "fetcher": "匿名 fetcher",
+        "agents": "Claude agent",
+        "database": "活動資料庫",
+        "feed": "你嘅 feed",
+        "guardrails": "防護規則",
+        "zoneOnCall": "值班",
+        "laptop": "我哋自己部手提電腦",
+        "laptopNote": "（遙距控制 Mac mini）",
+        "pager": "私人手機"
+      },
+      "redacted": "已遮蔽"
+    },
+    "useCases": {
+      "title": "校園生活，隨你點過",
+      "description": "{{school}} 同學用 Wat2Do 嘅六個方法。",
+      "items": {
+        "freeFood": {
+          "title": "堂與堂之間搵免費嘢食",
+          "description": "講座有 pizza、義賣有蛋糕、social 有小食。篩選免費嘢食，順便計埋晏晝食咩。",
+          "action": "睇免費嘢食"
+        },
+        "employers": {
+          "title": "喺校園識僱主",
+          "description": "招聘人員親身到場嘅講座同 networking 夜。好機會通常由一次傾偈開始。",
+          "action": "睇僱主活動"
+        },
+        "competitions": {
+          "title": "比賽同 hackathon",
+          "description": "Case comp、hackathon 同 pitch night，有獎品，仲可以為你份 CV 加啲真材實料。",
+          "action": "睇比賽"
+        },
+        "newToCampus": {
+          "title": "啱啱嚟到校園？",
+          "description": "睇晒你學校所有組織，搵到同你有共同興趣嘅人。",
+          "action": "瀏覽組織"
+        },
+        "getInvolved": {
+          "title": "加入幹事會",
+          "description": "組織喺度出招募職位，由一年級代表到會長都有。唔止出席，仲可以落手參與。",
+          "action": "睇招募職位"
+        },
+        "bored": {
+          "title": "今晚冇嘢做？",
+          "description": "喺 feed 度搜尋「random」，Wat2Do 就幫你揀一個就嚟開始嘅活動。",
+          "action": "嚟個驚喜"
+        }
+      }
+    },
+    "features": {
+      "capture": {
+        "title": "Instagram 海報自動變活動",
+        "description": "組織照舊 post 就得。Wat2Do 會讀每張海報，抽出日期、時間、地點同價錢，活動自動出現喺 feed，唔使任何人填表。",
+        "mockHandle": "@italian.club",
+        "mockTitle": "意大利煮食班",
+        "mockDate": "星期四 下午 6:00",
+        "mockPlace": "學生中心廚房",
+        "mockPrice": "$5",
+        "mockAdded": "由組織嘅 post 加入"
+      },
+      "filters": {
+        "title": "撳兩下就搵到免費餐飲",
+        "description": "一撳就篩選免費餐飲、僱主到校同比賽。或者按日子、價錢、組織同地點再收窄範圍。",
+        "mockQuery": "薄餅"
+      },
+      "reminders": {
+        "title": "唔會再唔記得自己話要去",
+        "description": "撳「會參加」，Wat2Do 會喺活動開始前大約一個鐘 email 你。你可以將活動儲存到 Google Calendar 或 iCal，或者開啟每朝 9 點嘅當日活動 email。",
+        "mockSubject": "1 個鐘後開始：意大利煮食班",
+        "mockBody": "下午 6:00 喺學生中心廚房。到時見！",
+        "mockMorning": "每朝 9 點 email"
+      },
+      "clubs": {
+        "title": "發掘你從來唔知有嘅組織",
+        "description": "瀏覽 {{school}} 所有組織，follow 你鍾意嘅，想參與嘅時候仲可以搵到開放緊嘅職位。",
+        "mockClubOne": "維修會",
+        "mockClubTwo": "騷莎舞學會",
+        "mockClubThree": "攀石會",
+        "mockUpcoming": "{{count}} 個即將舉行嘅活動",
+        "mockUpcoming_other": "{{count}} 個即將舉行嘅活動",
+        "mockFollow": "追蹤",
+        "mockFollowing": "已追蹤"
+      }
+    },
+    "faq": {
+      "title": "同學成日問嘅問題",
+      "items": {
+        "free": {
+          "question": "Wat2Do 使唔使錢？",
+          "answer": "唔使。Wat2Do 對學生完全免費，唔使開帳戶都可以瀏覽所有活動。登入之後就可以將活動標記為「會參加」同收提醒。"
+        },
+        "clubs": {
+          "question": "我嘅組織要唔要登記？",
+          "answer": "唔使。只要你嘅組織喺公開 Instagram 帳戶公佈活動，Wat2Do 就會自動擷取。你都可以認領組織專頁嚟管理。"
+        },
+        "speed": {
+          "question": "新活動幾快會出現？",
+          "answer": "大部分新活動喺組織 post 完 19 個鐘之內就會出現。"
+        },
+        "submit": {
+          "question": "我可唔可以自己加活動？",
+          "answer": "可以。喺活動頁面提交就得。上載海報，Wat2Do 會幫你填好詳細資料。"
+        },
+        "schools": {
+          "question": "Wat2Do 喺邊啲學校有？",
+          "answer": "Wat2Do 而家覆蓋加拿大同美國 {{count}} 間學校。每間學校都有自己嘅 feed，你可以喺頁面頂部切換學校。",
+          "answer_other": "Wat2Do 而家覆蓋加拿大同美國 {{count}} 間學校。每間學校都有自己嘅 feed，你可以喺頁面頂部切換學校。"
+        }
+      }
+    },
+    "closing": {
+      "title": "唔好再第二日先知。",
+      "description": "{{school}} 發生緊嘅所有嘢，一個地方睇晒。",
+      "action": "睇吓有咩搞"
+    }
+  },
+  "footer": {
+    "tagline": "成個校園，一個日曆睇晒。",
+    "explore": "探索",
+    "company": "公司",
+    "promote": "貼海報賺錢",
+    "supportLocal": "支持本地小店",
+    "copyright": "© {{year}} Wat2Do",
+    "madeBy": "學生整，為學生而整。",
+    "social": "社交平台"
   }
 }

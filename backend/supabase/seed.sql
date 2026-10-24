@@ -694,6 +694,21 @@ VALUES
      'The app keeps logging me out.', 'Unreliable login', 'other', NULL, 'dismissed')
 ON CONFLICT (id) DO NOTHING;
 
+-- Local example for the admin Outreach page: one researched hackathon organizer.
+INSERT INTO public.outreach_leads
+    (id, school_id, lead_type, event_name, event_url, event_date, organization,
+     contact_name, contact_role, email, source_url, context, video_script,
+     email_subject, email_body, follow_up, status)
+SELECT
+    '99999999-9999-4999-8999-999999999992', id, 'hackathon',
+    'Example Hacks 2026', 'https://example.com/hacks', current_date + 30, 'Example Hacks',
+    'Sam Organizer', 'Co-director', 'team@example.com', 'https://example.com/hacks/contact',
+    'A 36-hour student hackathon whose registration closes in two weeks.',
+    'Hey Sam, I saw Example Hacks opens registration soon...',
+    'Example Hacks on Wat2Do', 'Hi Sam, ...', 'Hi Sam, one more thing...', 'new'
+FROM public.schools WHERE slug = 'uwaterloo'
+ON CONFLICT (id) DO NOTHING;
+
 COMMIT;
 
 -- Give seeded draft carousels a safe, non-time-sensitive example sticker.
@@ -720,15 +735,15 @@ WHERE position.club_id = owner.id AND owner.club_name = 'UW Board Games Club'
 UPDATE public.events SET featured = true, competition = true
 WHERE id = (SELECT id FROM public.events WHERE ingestion_source = 'seed' AND title LIKE '%Board Games%' ORDER BY id LIMIT 1);
 
--- Offline music display fixture; this is not a live chart recommendation.
-UPDATE public.instagram_publish_batches
-SET suggested_song = jsonb_build_object(
-    'title', 'Example Song', 'artist', 'Example Artist',
-    'chart_name', 'Local preview fixture',
-    'chart_url', 'https://music.apple.com/ca/playlist/top-100-canada/pl.79bac9045a2540e0b195e983df8ba569',
-    'checked_on', CURRENT_DATE::text
-)
-WHERE account_key = 'uwaterloo' AND status = 'ready_for_review';
+-- Songs the Mac's emulator job tries, in random order, on newly published carousels;
+-- an Asian or K-pop song plays only at the controlbox's asian_song_schools.
+INSERT INTO public.instagram_songs (query, asian_campuses_only)
+VALUES
+    ('the weeknd after hours', false),
+    ('dua lipa houdini', false),
+    ('sabrina carpenter espresso', false),
+    ('bts spring day', true)
+ON CONFLICT DO NOTHING;
 
 -- The existing ULaval draft exercises review before an Instagram account is connected.
 UPDATE public.instagram_publish_batches

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { FormGrid } from "@/shared/layout/form-grid";
 import { Stack } from "@/shared/layout/stack";
 import { Button } from "@/shared/ui/button";
-import { ChevronDown } from "@/shared/ui/doodle-icons";
+import { ChevronDown } from "lucide-react";
 import { Field, FieldLabel } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";

@@ -11,11 +11,13 @@ type EventsBrowseViewsProps = ComponentProps<typeof EventList> & {
   view: EventBrowseView;
   school: string;
   onEventClick: NonNullable<ComponentProps<typeof EventList>["onEventClick"]>;
+  /** Set when the views sit inside a scrolling page rather than filling the viewport. */
+  embedded?: boolean;
 };
 
-export function EventsBrowseViews({ view, school, ...listProps }: EventsBrowseViewsProps) {
+export function EventsBrowseViews({ view, school, embedded = false, ...listProps }: EventsBrowseViewsProps) {
   if (view === "grid") return <EventList {...listProps} />;
   if (listProps.isLoading) return <EventViewSkeleton variant={view} />;
-  if (view === "map") return <EventsMap key={school} school={school} events={listProps.events} onEventClick={listProps.onEventClick} />;
+  if (view === "map") return <EventsMap key={school} school={school} events={listProps.events} onEventClick={listProps.onEventClick} embedded={embedded} />;
   return <EventsCalendar key={school} school={school} events={listProps.events} onEventClick={listProps.onEventClick} />;
 }

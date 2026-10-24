@@ -54,7 +54,6 @@
     "share": "分享",
     "export": "导出",
     "addToCalendar": "添加到日历",
-    "moreOptions": "更多选项",
     "report": "举报",
     "download": "下载",
     "done": "完成",
@@ -154,7 +153,7 @@
     "added_at": "最新添加",
     "category": "类别",
     "food": "食物",
-    "employersOnCampus": "雇主进校园",
+    "employersOnCampus": "雇主",
     "freeFoodOnCampus": "免费餐饮",
     "competitions": "竞赛",
     "featured": "精选",
@@ -416,7 +415,7 @@
       "title": "我们为什么打造 Wat2Do",
       "origin": "Wat2Do 的起点，是我们两位联合创始人发现了一种方法，可以抓取滑铁卢大学公开发布在 Instagram 上的校园活动。我们最初为自己打造了这个平台，因为我们喜欢尝试新事物，而学生们也一直在创造新鲜、有趣的体验。",
       "belief": "我们相信，大学是尝试新事物最好的阶段和环境之一。问题从来不是校园里没有活动，而是如何在活动结束之前发现它们。",
-      "scale": "自 2025 年 8 月以来，Wat2Do 已收录超过 3,000 场活动。我们持续改进算法，直到它平均能够在 Instagram 帖子发布约一分钟后发现并呈现对应活动。",
+      "scale": "自 2025 年 8 月以来，Wat2Do 已收录超过 28,900 场活动。此后，我们将算法从 400 个账号扩展到 19,600 个，每周处理 3,340 场新活动（截至 2026 年 10 月 19 日）。",
       "mission": "解决这个发现难题改变了我们自己的大学体验。现在，我们希望把这个成果分享出去，帮助各地学生发现身边更多新鲜、有趣的事情。",
       "signature": "- Tony & Erica"
     },
@@ -483,11 +482,6 @@
       "browse": "浏览活动",
       "explore": "探索组织"
     },
-    "footer": {
-      "about": "我们打造 Wat2Do 旨在连接滑铁卢大学学生，丰富校园生活。如有任何建议或反馈，欢迎联系我们。",
-      "title": "Wat2Do",
-      "copyright": "© {{year}} Wat2Do"
-    },
     "photos": {
       "label": "我们的校园之旅",
       "alt": "Wat2Do 团队参观 {{school}}",
@@ -545,5 +539,210 @@
         "messageTooLong": "你的推荐内容过长，请缩短回答。"
       }
     }
+  },
+  "landing": {
+    "hero": {
+      "note": "所有人免费 · 由学生影响力奖项资助",
+      "titleLead": "校园里的每一场活动，",
+      "titleHighlight": "赶在结束之前。",
+      "description": "组织的活动淹没在上百个 Instagram 账号里。Wat2Do 把它们全部汇总到一个信息流。",
+      "primaryAction": "看看有什么活动",
+      "secondaryAction": "如何运作",
+      "mapTitle": "{{school}} 有 {{total}} 场即将举行的活动",
+      "mapTitle_other": "{{school}} 有 {{total}} 场即将举行的活动"
+    },
+    "problem": {
+      "title": "校园并不无聊，只是活动都藏起来了。",
+      "description": "{{school}} 每天都有事情发生。问题出在活动发布的地方。",
+      "points": {
+        "buried": {
+          "title": "淹没在信息流里",
+          "description": "即使你关注了某个组织，能不能看到它的帖子也由 Instagram 决定。大多数活动海报都会被信息流里的其他内容淹没。"
+        },
+        "scattered": {
+          "title": "上百个组织，没有统一的信息流",
+          "description": "每个组织、协会和队伍都在自己的账号上发帖。没人会全部关注，所以你只能看到朋友转发的那些。"
+        },
+        "late": {
+          "title": "第二天才知道",
+          "description": "免费餐饮、招聘之夜、$5 的烹饪课。等你刷到回顾帖，才发现那已经是昨天的事了。"
+        },
+        "quiet": {
+          "title": "所以感觉什么都没发生",
+          "description": "活动分散在上百个账号里，校园就显得冷冷清清。其实并不是，只是你看不到而已。"
+        }
+      },
+      "story": "Tony 刷到一条意大利烹饪课的 Instagram 快拍，只要 $5。可它三天前就发出来了。",
+      "storyOver": "活动早就结束了。",
+      "storyEnd": "于是我们做了一个自己一直想要的地方。",
+      "signature": "Tony & Erica，Wat2Do 创始人"
+    },
+    "solution": {
+      "title": "一个信息流。所有组织。无需搜索。",
+      "description": "Wat2Do 替你关注所有账号，把每张海报变成可以搜索、筛选和收藏的活动。",
+      "stats": {
+        "clubsLabel": "{{school}} 已收录的组织",
+        "clubsLabel_other": "{{school}} 已收录的组织",
+        "upcomingLabel": "即将举行的活动",
+        "upcomingLabel_other": "即将举行的活动",
+        "newLabel": "过去 7 天新增的活动",
+        "newLabel_other": "过去 7 天新增的活动"
+      }
+    },
+    "different": {
+      "title": "那么它和其他活动网站有什么不同？",
+      "description": "其他网站都在等组织提交活动。其余的活动被锁在会封禁机器人的 Instagram 里。Wat2Do 照样能把它们找出来。",
+      "points": {
+        "relay": {
+          "cost": "数百小时"
+        },
+        "alwaysOn": {
+          "title": "一台从不休眠的 Mac mini",
+          "description": "我们购买的一台 M4 Mac mini 全天候以匿名方式打开每条被标记的帖子，并把它变成数据。",
+          "cost": "$899"
+        },
+        "claude": {
+          "title": "Claude 读懂每张海报",
+          "description": "Claude Haiku 在防护下把海报变成活动：不编造、查重复，数据库账号只能访问活动数据表。",
+          "cost": "$200 / 月"
+        },
+        "cloud": {
+          "title": "每所学校都在线",
+          "description": "AWS 托管信息流并有备份，任何 bug 都不会坏了真实学生的体验。",
+          "cost": "$100 / 月"
+        }
+      },
+      "costNote": "这些费用由 University of Waterloo 的学生影响力奖和助学金支付，这些资金本就用于改善学生生活，所以 Wat2Do 对每位学生始终免费。",
+      "diagramLabel": "组织的 Instagram 帖子如何变成 Wat2Do 上的活动：组织账号通知一个已隐去的步骤，一台常开的 Mac mini 上的浏览器工作进程和帖子抓取器读取帖子，带防护规则的 Claude 智能体把它变成活动，再经过一道检查点进入你的信息流背后受限访问的活动数据库。如果出了问题，Mac mini 会呼叫一部私人手机，我们用笔记本电脑修复。",
+      "diagram": {
+        "zoneInstagram": "Instagram",
+        "zoneMac": "Mac mini · 始终在线",
+        "zoneWat2do": "Wat2Do",
+        "accounts": "组织账号",
+        "browser": "浏览器工作进程",
+        "fetcher": "匿名抓取器",
+        "agents": "Claude 智能体",
+        "database": "活动数据库",
+        "feed": "你的信息流",
+        "guardrails": "防护规则",
+        "zoneOnCall": "值班",
+        "laptop": "我们的个人笔记本",
+        "laptopNote": "（远程控制 Mac mini）",
+        "pager": "私人手机"
+      },
+      "redacted": "已隐去"
+    },
+    "useCases": {
+      "title": "校园生活，随你怎么过",
+      "description": "{{school}} 的同学们使用 Wat2Do 的六种方式。",
+      "items": {
+        "freeFood": {
+          "title": "课间免费吃的",
+          "description": "宣讲会上的披萨、义卖烘焙、带零食的社交活动。筛选免费餐饮，围着它安排午饭。",
+          "action": "查看免费餐饮"
+        },
+        "employers": {
+          "title": "在校园里认识雇主",
+          "description": "招聘方亲自到场的宣讲会和社交之夜。好机会往往从一次对话开始。",
+          "action": "查看雇主活动"
+        },
+        "competitions": {
+          "title": "比赛和黑客松",
+          "description": "案例赛、黑客松和路演之夜，有奖品，还能给简历添上实打实的经历。",
+          "action": "查看比赛"
+        },
+        "newToCampus": {
+          "title": "刚来学校？",
+          "description": "浏览你学校的所有组织，找到和你兴趣相同的人。",
+          "action": "浏览组织"
+        },
+        "getInvolved": {
+          "title": "加入干事团队",
+          "description": "组织会在这里发布招募职位，从新生代表到会长都有。不只是去参加，更要参与其中。",
+          "action": "查看招募职位"
+        },
+        "bored": {
+          "title": "今晚没事做？",
+          "description": "在信息流里搜索“random”，Wat2Do 会帮你挑一个马上就要开始的活动。",
+          "action": "给我个惊喜"
+        }
+      }
+    },
+    "features": {
+      "capture": {
+        "title": "Instagram 海报自动变成活动",
+        "description": "组织照常发帖就行。Wat2Do 会读取每张海报，提取日期、时间、地点和价格，活动直接出现在信息流里，没人需要填表。",
+        "mockHandle": "@italian.club",
+        "mockTitle": "意大利烹饪课",
+        "mockDate": "周四 下午 6:00",
+        "mockPlace": "学生中心厨房",
+        "mockPrice": "$5",
+        "mockAdded": "从组织的帖子添加"
+      },
+      "filters": {
+        "title": "点两下就找到免费餐饮",
+        "description": "一键筛选免费餐饮、雇主进校园和竞赛。也可以按日期、价格、组织和地点进一步缩小范围。",
+        "mockQuery": "披萨"
+      },
+      "reminders": {
+        "title": "再也不会忘了要去",
+        "description": "点一下“参加中”，Wat2Do 会在活动开始前大约一小时给你发邮件。你可以把活动保存到 Google Calendar 或 iCal，也可以开启每天早上 9 点的当日活动邮件。",
+        "mockSubject": "1 小时后开始：意大利烹饪课",
+        "mockBody": "下午 6:00，学生中心厨房。到时见！",
+        "mockMorning": "每天早上 9 点的邮件"
+      },
+      "clubs": {
+        "title": "发现你从没听说过的组织",
+        "description": "浏览 {{school}} 的所有组织，关注你喜欢的，想参与的时候还能找到正在招人的职位。",
+        "mockClubOne": "维修俱乐部",
+        "mockClubTwo": "萨尔萨舞协会",
+        "mockClubThree": "攀岩俱乐部",
+        "mockUpcoming": "{{count}} 个即将到来的活动",
+        "mockUpcoming_other": "{{count}} 个即将到来的活动",
+        "mockFollow": "关注",
+        "mockFollowing": "已关注"
+      }
+    },
+    "faq": {
+      "title": "同学们常问的问题",
+      "items": {
+        "free": {
+          "question": "Wat2Do 免费吗？",
+          "answer": "免费。Wat2Do 对学生完全免费，不用注册账号就能浏览所有活动。登录后可以把活动标记为“参加中”并接收提醒。"
+        },
+        "clubs": {
+          "question": "我的组织需要注册吗？",
+          "answer": "不需要。只要你的组织在公开的 Instagram 账号上发布活动，Wat2Do 就会自动抓取。你也可以认领组织主页来管理它。"
+        },
+        "speed": {
+          "question": "新活动多快能出现？",
+          "answer": "大多数新活动会在组织发帖后 19 小时内出现。"
+        },
+        "submit": {
+          "question": "我可以自己添加活动吗？",
+          "answer": "可以。在活动页面提交就行。上传海报，Wat2Do 会帮你填好详细信息。"
+        },
+        "schools": {
+          "question": "Wat2Do 覆盖哪些学校？",
+          "answer": "Wat2Do 已覆盖加拿大和美国的 {{count}} 所学校。每所学校都有自己的信息流，你可以在页面顶部切换学校。",
+          "answer_other": "Wat2Do 已覆盖加拿大和美国的 {{count}} 所学校。每所学校都有自己的信息流，你可以在页面顶部切换学校。"
+        }
+      }
+    },
+    "closing": {
+      "title": "别再第二天才知道了。",
+      "description": "{{school}} 的所有活动，尽在一处。",
+      "action": "看看有什么活动"
+    }
+  },
+  "footer": {
+    "tagline": "整个校园，尽在一个日历中。",
+    "explore": "探索",
+    "company": "公司",
+    "promote": "用海报赚钱",
+    "supportLocal": "支持本地商家",
+    "copyright": "© {{year}} Wat2Do",
+    "madeBy": "由学生打造，为学生而生。",
+    "social": "社交媒体"
   }
 }

@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { Button } from "@/shared/ui/button";
-import { Moon, Sun } from "@/shared/ui/doodle-icons";
+import { Moon, Sun } from "lucide-react";
 
 export function ThemeToggle() {
   const { t } = useTranslation();

@@ -1,4 +1,4 @@
-import { Check, Sparkles } from "@/shared/ui/doodle-icons";
+import { Check, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";

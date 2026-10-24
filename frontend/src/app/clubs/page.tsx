@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import { cache } from "react";
-import { headers } from "next/headers";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.server";
 import type { PaginatedClubsResponse } from "@/features/clubs/api/clubs.api";
 import { ClubsPage as ClubsPageContent } from "@/features/clubs/pages/ClubsPage";
-import { getSchool } from "@/shared/api/schools.server";
-import { getSchoolFromRequestHost } from "@/shared/constants/schools";
+import { getRequestSchool, getSchool } from "@/shared/api/schools.server";
 import {
   buildPublicPageMetadata,
   getSchoolCanonicalUrl,
@@ -24,15 +22,8 @@ const loadInitialDirectory = cache(async (
   }
 });
 
-async function resolveRequestSchool(): Promise<string> {
-  const requestHeaders = await headers();
-  return getSchoolFromRequestHost(
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
-  );
-}
-
 export async function generateMetadata(): Promise<Metadata> {
-  const school = await resolveRequestSchool();
+  const school = await getRequestSchool();
   const [schoolRecord, directory] = await Promise.all([
     getSchool(school),
     loadInitialDirectory(school),
@@ -66,7 +57,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ClubsPage() {
-  const school = await resolveRequestSchool();
+  const school = await getRequestSchool();
   const initialDirectory = await loadInitialDirectory(school);
 
   return (

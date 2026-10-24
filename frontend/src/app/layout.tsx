@@ -2,16 +2,13 @@ import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import googleAnalytics from "../../../backend/controlbox/google_analytics.json";
 import localFont from "next/font/local";
-import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { AppShell } from "@/app/app-shell";
 import { ClientProviders } from "@/app/client-providers";
 import { SiteBanner } from "@/app/SiteBanner";
-import { getSchoolDirectory } from "@/shared/api/schools.server";
-import { getSchoolFromRequestHost } from "@/shared/constants/schools";
+import { getRequestSchool, getSchoolDirectory } from "@/shared/api/schools.server";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { getSchoolThemeStyle } from "@/shared/lib/schoolBranding";
-import { PageBackground } from "@/shared/layout";
 import "../index.css";
 
 // Satoshi ships as a single variable file per style, so one declaration covers
@@ -80,9 +77,14 @@ export const metadata: Metadata = {
   },
   applicationName: "Wat2Do",
   manifest: "/manifest.json",
+  // Square raster icons: the wide wordmark SVG was squeezed and cropped as an icon.
   icons: {
-    icon: "/wat2do-logo.svg",
-    apple: "/wat2do-logo.svg",
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
   },
   openGraph: {
     type: "website",
@@ -110,16 +112,13 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const [requestHeaders, initialSchools] = await Promise.all([
-    headers(),
+  const [initialSchool, initialSchools] = await Promise.all([
+    getRequestSchool(),
     getSchoolDirectory().catch((error: unknown) => {
       console.error("Failed to preload the school directory:", error);
       return undefined;
     }),
   ]);
-  const initialSchool = getSchoolFromRequestHost(
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
-  );
   const school = initialSchools?.find((school) => school.slug === initialSchool);
 
   return (
@@ -136,7 +135,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         />
       </head>
       <body>
-        <PageBackground />
         {/* Inside the providers so the strip's own controls can be translated;
             it is still a server component, rendered on the server as a child. */}
         <ClientProviders

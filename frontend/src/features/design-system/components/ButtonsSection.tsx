@@ -1,6 +1,6 @@
 import { Section, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
-import { Plus } from "@/shared/ui/doodle-icons";
+import { Plus } from "lucide-react";
 import { ShowcaseBlock } from "./ShowcaseBlock";
 
 const BUTTON_VARIANTS = [

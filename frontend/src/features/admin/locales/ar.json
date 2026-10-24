@@ -381,10 +381,38 @@
       "coverBody": "نص جسم الغلاف",
       "slideOf": "الشريحة {{index}} من {{count}}",
       "undoRemoveSlide": "التراجع عن إزالة الشريحة",
-      "suggestedSong": "الأغنية المقترحة",
-      "songChart": "{{chart}} · تم التحقق في {{date}}",
-      "songInstructions": "ابحث عن هذا العنوان والفنان في Instagram عند النشر. لا تتم إضافة الموسيقى تلقائيًا.",
-      "noSuggestedSong": "لا توجد أغنية مقترحة محفوظة لهذه الدفعة."
+      "tabs": {
+        "carousels": "المنشورات الدوّارة",
+        "songs": "الأغاني"
+      },
+      "songs": {
+        "query": "الأغنية",
+        "placeholder": "مثال: the weeknd after hours",
+        "add": "إضافة أغنية",
+        "asianCampusesOnly": "الجامعات الآسيوية فقط",
+        "asianCampuses": "جامعات آسيوية",
+        "help": "بعد دقائق من نشر المنشور الدوّار، يضيف المحاكي إحدى هذه الأغاني إلى المنشور، مجرّبًا إياها بترتيب عشوائي.",
+        "label": "أغانٍ",
+        "columns": {
+          "song": "الأغنية",
+          "added": "أُضيفت"
+        },
+        "delete": "حذف",
+        "deleteSong": "حذف {{song}}",
+        "empty": "لا توجد أغانٍ بعد. أضف أغنية لتحصل المنشورات الجديدة على موسيقى.",
+        "addError": "تعذّرت إضافة الأغنية",
+        "deleteError": "تعذّر حذف الأغنية",
+        "loadError": "تعذّر تحميل الأغاني."
+      },
+      "music": {
+        "title": "الموسيقى",
+        "afterPublish": "تُضاف أغنية من القائمة بعد دقائق من نشر هذا المنشور الدوّار.",
+        "pending": "بانتظار أن يضيف المحاكي أغنية.",
+        "added": "أُضيفت {{track}}",
+        "failed": "لم تُضف أي أغنية: {{reason}}",
+        "none": "نُشر هذا المنشور الدوّار قبل إضافة الأغاني تلقائيًا.",
+        "viewPost": "عرض على Instagram"
+      }
     },
     "clubSubmissions": "طلبات الأندية",
     "noClubSubmissions": "لا توجد طلبات أندية",
@@ -397,7 +425,7 @@
     },
     "painPoints": {
       "title": "شكاوى المنافسين",
-      "cardDescription": "شكاوى حول Eventbrite وMeetup وFable Social.",
+      "cardDescription": "شكاوى حول تطبيقات الفعاليات المنافسة.",
       "description": "مراجعات ومنشورات عامة يشتكي فيها الناس من المنافسين. للقراءة فقط؛ لا ترد wat2do أبدًا.",
       "competitor": "المنافس",
       "source": "المصدر",
@@ -427,7 +455,60 @@
         "new": "جديد",
         "seen": "مقروء",
         "dismissed": "متجاهل"
+      },
+      "tabs": {
+        "label": "عروض نقاط الألم",
+        "complaints": "الشكاوى",
+        "reports": "التقارير اليومية"
+      },
+      "reports": {
+        "meta": "الشكاوى: {{count}} · {{model}}",
+        "suggestions": "تغييرات مقترحة على wat2do",
+        "themes": "موضوعات متكررة ({{count}})",
+        "where": "المكان:",
+        "evidence": "استنادًا إلى:",
+        "priorities": {
+          "high": "عالية",
+          "medium": "متوسطة",
+          "low": "منخفضة"
+        },
+        "emptyTitle": "لا توجد تقارير بعد",
+        "emptyDescription": "يُكتب تقرير بعد كل مسح يومي يعثر على شكاوى جديدة."
       }
+    },
+    "outreach": {
+      "title": "التواصل",
+      "cardDescription": "منظمون لدعوتهم لنشر فعالياتهم.",
+      "description": "المنظمون الذين وجدهم البحث مرتين أسبوعيًا في كل جامعة، بدءًا بالاتحادات والجمعيات الطلابية، مع السياق ونص الفيديو والبريد الإلكتروني لكل منهم. سجّل الفيديو، وافتح البريد في Gmail وأرسله بنفسك.",
+      "leadType": "نوع الفعالية",
+      "leadTypes": {
+        "student_association": "الاتحادات والجمعيات الطلابية",
+        "hackathon": "هاكاثونات",
+        "ticketed_event": "فعاليات الأندية المدفوعة"
+      },
+      "statuses": {
+        "new": "جديد",
+        "contacted": "تم التواصل",
+        "replied": "ردّ",
+        "submitted": "أرسل فعاليته",
+        "not_interested": "غير مهتم",
+        "dismissed": "مستبعد"
+      },
+      "emptyTitle": "لا يوجد منظمون بعد",
+      "emptyDescription": "يضيف البحث المنظمين هنا مرتين أسبوعيًا فور العثور عليهم.",
+      "event": "الفعالية",
+      "organizer": "المنظم",
+      "details": "التفاصيل",
+      "openEmail": "فتح البريد في Gmail",
+      "openFollowUp": "فتح رسالة المتابعة في Gmail",
+      "openEvent": "فتح صفحة الفعالية",
+      "source": "مكان العثور على البريد",
+      "context": "السياق",
+      "videoScript": "نص الفيديو",
+      "email": "البريد الإلكتروني",
+      "followUp": "المتابعة",
+      "notes": "ملاحظات",
+      "saveNotes": "حفظ الملاحظات"
     },
     "clubSubmissionDetails": {
       "records": "تفاصيل السجل",
