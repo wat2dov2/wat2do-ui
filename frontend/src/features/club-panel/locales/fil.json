@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "Bumalik sa panel ng organisasyon",
     "title": "Panel ng organisasyon",
-    "description": "Pamahalaan ang mga poster, integrasyon, at miyembro ng inyong organisasyon",
     "posters": "Mga Poster",
     "postersDesc": "Pamahalaan ang mga poster ng QR code",
     "integrations": "Integrasyon",
@@ -16,8 +15,6 @@
       "joined": "Sumali ng",
       "requested": "Hiningi ng"
     },
-    "recentActivity": "Kamakailang Aktibidad",
-    "noRecentActivity": "Walang kamakailang aktibidad",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Magpadala ng mga abiso ng kaganapan sa pamamagitan ng WhatsApp",
     "discord": "Discord",
@@ -65,7 +62,60 @@
     "addManagerFailed": "Nabigong idagdag ang manager o ipadala ang imbitasyon.",
     "invitationRevokedSuccess": "Matagumpay na nabawi ang imbitasyon!",
     "revokeInvitationFailed": "Nabigong bawiin ang imbitasyon.",
-    "loadManagementFailed": "Nabigong i-load ang detalye ng pamamahala."
+    "loadManagementFailed": "Nabigong i-load ang detalye ng pamamahala.",
+    "events": "Mga kaganapan",
+    "eventsDesc": "Ang mga kaganapan ng organisasyon mo at ang benta ng mga tiket nito.",
+    "payoutsDesc": "Tanggapin ang bayad sa mga tiket sa pamamagitan ng Stripe.",
+    "createEvent": "Gumawa ng kaganapan",
+    "upcomingEvents": "Mga paparating na kaganapan",
+    "pastEvents": "Mga nakaraang kaganapan",
+    "viewAllEvents": "Lahat ng kaganapan",
+    "noUpcomingEvents": "Walang paparating na kaganapan",
+    "noUpcomingEventsDesc": "Gumawa ng kaganapan at lalabas ito rito.",
+    "noPastEvents": "Wala pang nakaraang kaganapan",
+    "eventsList": {
+      "cancelled": "Nakansela",
+      "notSelling": "Walang tiket",
+      "salesPaused": "Naka-pause ang benta",
+      "ticketsSold": "{{count}} nabenta · {{revenue}}",
+      "ticketsSold_one": "{{count}} nabenta · {{revenue}}",
+      "ticketsSold_other": "{{count}} nabenta · {{revenue}}",
+      "refundRequests": "{{count}} kahilingan sa refund",
+      "refundRequests_one": "{{count}} kahilingan sa refund",
+      "refundRequests_other": "{{count}} kahilingan sa refund"
+    },
+    "payouts": {
+      "title": "Mga payout",
+      "intro": "Kapag nagbenta ng tiket ang organisasyon mo sa Wat2Do, diretso ang pera sa bank account ng organisasyon sa pamamagitan ng Stripe.",
+      "fees": "Kinukuha ng Stripe ang mga 2.9% + 30¢ sa bawat order. Walang kinukuha ang Wat2Do.",
+      "timing": "Awtomatikong ipinapadala ng Stripe ang pera sa bangko mo, kadalasan ilang business day pagkatapos ng bawat benta. Puwedeng abutin ng 7 hanggang 14 na araw ang unang payout.",
+      "currency": "Naka-presyo sa {{currency}} ang mga tiket mo.",
+      "setUp": "I-set up ang mga payout",
+      "continueSetup": "Ituloy ang setup",
+      "openDashboard": "Buksan ang Stripe dashboard",
+      "states": {
+        "unavailable": {
+          "label": "Malapit na",
+          "description": "Hindi pa available ang pagbebenta ng tiket. Bumalik ka ulit sa susunod."
+        },
+        "notConnected": {
+          "label": "Hindi pa naka-set up",
+          "description": "Mga 5 minuto sa secure na page ng Stripe: ang bank account ng organisasyon mo at ID ng isang opisyal."
+        },
+        "inProgress": {
+          "label": "Konti na lang",
+          "description": "Kailangan pa ng Stripe ng ilang detalye bago makatanggap ng bayad ang organisasyon mo."
+        },
+        "payoutsPaused": {
+          "label": "Kailangan ng aksyon",
+          "description": "Puwedeng magbenta ng tiket ang organisasyon mo, pero kailangan pa ng Stripe ng mas maraming detalye bago ito makapagpadala ng pera sa bangko mo."
+        },
+        "ready": {
+          "label": "Handa na",
+          "description": "Puwede nang magbenta ng tiket ang organisasyon mo. Awtomatikong napupunta ang mga payout sa bank account mo."
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "Ikonekta ang iyong mga platform upang awtomatikong i-import ang mga kaganapan",

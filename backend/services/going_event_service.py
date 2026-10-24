@@ -97,7 +97,7 @@ def set_going_occurrences(
 MAX_ATTENDEE_NAMES = controlbox.public_attendance.maximum_display_names
 
 
-def _abbreviate_full_name(full_name: str | None) -> str | None:
+def abbreviate_full_name(full_name: str | None) -> str | None:
     """Reduce "First Middle Last" to "First L." for public display."""
     if not full_name:
         return None
@@ -109,8 +109,13 @@ def _abbreviate_full_name(full_name: str | None) -> str | None:
     return f"{parts[0]} {parts[-1][0]}."
 
 
-def get_event_attendees(event_id: int) -> list[EventAttendeeResponse]:
-    """Return distinct profiles, including unnamed users, ordered by first Going time."""
+def get_event_attendees(
+    event_id: int, *, hidden: frozenset[str] | set[str] = frozenset()
+) -> list[EventAttendeeResponse]:
+    """Return distinct profiles, including unnamed users, ordered by first Going time.
+
+    ``hidden`` users still count toward Going but are never listed.
+    """
     rows = fetch_all_pages(
         lambda offset, page_size: (
             (
@@ -125,7 +130,11 @@ def get_event_attendees(event_id: int) -> list[EventAttendeeResponse]:
             or []
         ),
     )
-    user_ids = list(dict.fromkeys(str(row["user_id"]) for row in rows))[:MAX_ATTENDEE_NAMES]
+    user_ids = [
+        user_id
+        for user_id in dict.fromkeys(str(row["user_id"]) for row in rows)
+        if user_id not in hidden
+    ][:MAX_ATTENDEE_NAMES]
     if not user_ids:
         return []
 
@@ -138,7 +147,7 @@ def get_event_attendees(event_id: int) -> list[EventAttendeeResponse]:
         row = users.get(user_id, {})
         attendees.append(
             EventAttendeeResponse(
-                name=_abbreviate_full_name(row.get("full_name")) or "",
+                name=abbreviate_full_name(row.get("full_name")) or "",
                 avatar_url=avatar_url_for_user(user_id, row.get("avatar_url")),
             )
         )

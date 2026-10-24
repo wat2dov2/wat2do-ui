@@ -50,6 +50,11 @@ export const ROUTES = {
   CLUB_PANEL_POSTERS: "/club-panel/posters",
   CLUB_PANEL_INTEGRATIONS: "/club-panel/integrations",
   CLUB_PANEL_MEMBERS: "/club-panel/members",
+  CLUB_PANEL_EVENTS: "/club-panel/events",
+  CLUB_PANEL_PAYOUTS: "/club-panel/payouts",
+
+  // Tickets
+  TICKETS: "/tickets",
 } as const;
 
 /** Only plain public URLs are eligible for full-page navigation warming. */
@@ -64,6 +69,25 @@ export const PUBLIC_PAGE_ROUTES: readonly string[] = [
 
 export function clubPagePath(clubId: number): string {
   return `${ROUTES.CLUBS}/${clubId}`;
+}
+
+/** One ticket's page: its holder's pass, and check-in for the club's officers. */
+export function ticketPath(code: string): string {
+  return `${ROUTES.TICKETS}/${code}`;
+}
+
+/** Where Stripe Checkout returns a buyer while their payment is confirmed. */
+export function ticketOrderPath(orderId: string): string {
+  return `${ROUTES.TICKETS}/orders/${orderId}`;
+}
+
+/** A club's ticket desk for one event: sales, door list and refunds. */
+export function clubPanelEventTicketsPath(eventId: number): string {
+  return `${ROUTES.CLUB_PANEL_EVENTS}/${eventId}`;
+}
+
+export function clubPanelDoorScannerPath(eventId: number): string {
+  return `${clubPanelEventTicketsPath(eventId)}/scan`;
 }
 
 const APP_NAME = "Wat2Do";
@@ -97,6 +121,9 @@ const ROUTE_PAGE_TITLES: Partial<
   [ROUTES.CLUB_PANEL_POSTERS]: "Posters",
   [ROUTES.CLUB_PANEL_INTEGRATIONS]: "Integrations",
   [ROUTES.CLUB_PANEL_MEMBERS]: "Members",
+  [ROUTES.CLUB_PANEL_EVENTS]: "Club Events",
+  [ROUTES.CLUB_PANEL_PAYOUTS]: "Payouts",
+  [ROUTES.TICKETS]: "My Tickets",
 };
 
 function buildDocumentTitle(pageTitle?: string): string {
@@ -115,6 +142,14 @@ export function getRouteDocumentTitle(pathname: string): string {
     normalizedPathname.startsWith(`${ROUTES.CLUBS}/`)
   ) {
     return buildDocumentTitle("Club");
+  }
+
+  if (normalizedPathname.startsWith(`${ROUTES.TICKETS}/`)) {
+    return buildDocumentTitle("Ticket");
+  }
+
+  if (normalizedPathname.startsWith(`${ROUTES.CLUB_PANEL_EVENTS}/`)) {
+    return buildDocumentTitle("Ticket Desk");
   }
 
   if (normalizedPathname.startsWith("/qr/")) {
@@ -161,6 +196,8 @@ export const CLUB_PANEL_ROUTE_MAP = {
   "club-panel-posters": ROUTES.CLUB_PANEL_POSTERS,
   "club-panel-integrations": ROUTES.CLUB_PANEL_INTEGRATIONS,
   "club-panel-members": ROUTES.CLUB_PANEL_MEMBERS,
+  "club-panel-events": ROUTES.CLUB_PANEL_EVENTS,
+  "club-panel-payouts": ROUTES.CLUB_PANEL_PAYOUTS,
 } as const;
 
 export type ClubPanelRouteKey =

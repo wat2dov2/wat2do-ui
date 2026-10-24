@@ -1,0 +1,174 @@
+{
+  "tickets": {
+    "title": "Meus ingressos",
+    "description": "Ingressos que você comprou no Wat2Do. Mostre o código QR na entrada.",
+    "upcoming": "Próximos",
+    "past": "Passados",
+    "manage": "Gerenciar ingressos",
+    "sellTickets": "Vender ingressos",
+    "empty": {
+      "title": "Nenhum ingresso ainda",
+      "description": "Quando você comprar um ingresso para um evento, ele aparece aqui.",
+      "action": "Encontrar eventos"
+    },
+    "notFound": {
+      "title": "Este ingresso não existe",
+      "description": "Confira o link ou encontre seus ingressos em Meus ingressos."
+    },
+    "status": {
+      "valid": "Válido",
+      "checkedIn": "Check-in feito",
+      "refunded": "Reembolsado"
+    },
+    "card": {
+      "title": "Ingressos",
+      "price": "{{price}} por ingresso",
+      "noFees": "Sem taxa de conveniência",
+      "quantity": "Quantos ingressos",
+      "left": "Resta {{count}}",
+      "left_one": "Resta {{count}}",
+      "left_many": "Restam {{count}}",
+      "left_other": "Restam {{count}}",
+      "buy": "Comprar ingressos · {{total}}",
+      "continueToPayment": "Continuar para o pagamento",
+      "payNote": "Pagamento seguro pela Stripe. {{club}} recebe seu nome e e-mail para o check-in.",
+      "youHave": "Você tem {{count}} ingresso",
+      "youHave_one": "Você tem {{count}} ingresso",
+      "youHave_many": "Você tem {{count}} ingressos",
+      "youHave_other": "Você tem {{count}} ingressos",
+      "viewTickets": "Ver meus ingressos",
+      "unavailable": {
+        "cancelled": "Este evento foi cancelado.",
+        "paused": "A venda de ingressos está pausada no momento.",
+        "soldOut": "Este evento está esgotado.",
+        "closed": "A venda de ingressos foi encerrada.",
+        "notOnSale": "Os ingressos ainda não estão à venda."
+      }
+    },
+    "pass": {
+      "when": "Quando",
+      "where": "Onde",
+      "holder": "Titular do ingresso",
+      "code": "Código",
+      "locationTba": "Local a confirmar",
+      "qrLabel": "Código QR deste ingresso",
+      "showAtDoor": "Mostre este código QR na entrada.",
+      "refundedNote": "Este ingresso foi reembolsado e não pode ser usado.",
+      "viewEvent": "Ver evento"
+    },
+    "door": {
+      "checkIn": "Fazer check-in",
+      "undo": "Desfazer check-in",
+      "officerNote": "Você gerencia {{club}}, então pode fazer o check-in deste ingresso.",
+      "checkedInAt": "Check-in feito às {{time}}",
+      "results": {
+        "checked_in": "Check-in feito. Pode liberar a entrada.",
+        "already_checked_in": "Check-in já feito",
+        "undone": "Check-in desfeito",
+        "refunded": "Ingresso reembolsado. Não libere a entrada.",
+        "not_for_this_event": "Este ingresso é de outro evento",
+        "not_found": "Nenhum ingresso corresponde a esse código"
+      }
+    },
+    "order": {
+      "confirming": "Confirmando seu pagamento",
+      "confirmingDescription": "Isso costuma levar alguns segundos. Seus ingressos também estão a caminho por e-mail.",
+      "paidTitle": "Você está dentro!",
+      "paidDescription": "Você tem {{count}} ingresso: ele está aqui embaixo e no seu e-mail.",
+      "paidDescription_one": "Você tem {{count}} ingresso: ele está aqui embaixo e no seu e-mail.",
+      "paidDescription_many": "Você tem {{count}} ingressos: eles estão aqui embaixo e no seu e-mail.",
+      "paidDescription_other": "Você tem {{count}} ingressos: eles estão aqui embaixo e no seu e-mail.",
+      "shareNote": "Cada ingresso tem seu próprio código QR. Envie o link de cada ingresso para quem vai usá-lo.",
+      "failedTitle": "Esta compra não foi concluída",
+      "failedDescription": "Nenhuma cobrança foi feita, e os ingressos foram liberados.",
+      "notFound": "Não encontramos este pedido",
+      "backToEvent": "Voltar ao evento",
+      "allTickets": "Todos os meus ingressos"
+    },
+    "desk": {
+      "title": "Bilheteria",
+      "notFound": "Este evento não existe mais",
+      "setupTitle": "Vender ingressos",
+      "setupDescription": "Os compradores pagam pela Stripe e recebem por e-mail um ingresso com código QR. O dinheiro vai direto para sua organização.",
+      "settingsTitle": "Configurações de ingressos",
+      "settingsDescription": "Altere quantos ingressos você vende ou pause as vendas por um tempo.",
+      "price": "Preço do ingresso ({{currency}})",
+      "priceLocked": "O preço não pode mudar depois que alguém compra um ingresso.",
+      "priceRange": "Digite um preço entre {{minimum}} e {{maximum}}.",
+      "capacity": "Ingressos por data",
+      "capacityPlaceholder": "Sem limite",
+      "pause": "Pausar vendas",
+      "pauseHint": "Esconde o botão de compra até você retomar as vendas.",
+      "fees": "A Stripe fica com cerca de 2,9% + 30¢ de cada pedido. O Wat2Do não fica com nada.",
+      "payoutsNeeded": "Configure os repasses primeiro, para que o dinheiro tenha para onde ir.",
+      "setUpPayouts": "Configurar repasses",
+      "startSelling": "Começar a vender",
+      "save": "Salvar alterações",
+      "saved": "Configurações de ingressos salvas",
+      "stopSelling": "Parar de vender ingressos",
+      "stopped": "Este evento não vende mais ingressos",
+      "openScanner": "Abrir leitor de ingressos",
+      "attendees": "Lista de participantes",
+      "attendeesEmpty": "Nenhum ingresso vendido ainda",
+      "search": "Buscar por nome, e-mail ou código",
+      "columns": {
+        "holder": "Titular do ingresso",
+        "date": "Data",
+        "status": "Status",
+        "actions": "Ações"
+      },
+      "stats": {
+        "sold": "Vendidos",
+        "revenue": "Receita",
+        "checkedIn": "Check-ins",
+        "remaining": "Restantes",
+        "unlimited": "Sem limite"
+      },
+      "refund": "Reembolsar",
+      "refundTitle": "Reembolsar este ingresso?",
+      "refundDescription": "{{name}} recebe {{amount}} de volta no cartão, além de um e-mail. A Stripe não devolve a taxa dela para sua organização.",
+      "refundConfirm": "Reembolsar {{amount}}",
+      "refundRequested": "Reembolso solicitado",
+      "decline": "Recusar",
+      "declineTitle": "Recusar este pedido de reembolso?",
+      "declineDescription": "{{name}} recebe um e-mail avisando que sua organização recusou o pedido. O ingresso continua válido.",
+      "declineConfirm": "Recusar pedido",
+      "declined": "Pedido de reembolso recusado",
+      "cancelledTitle": "Este evento foi cancelado",
+      "cancelledDescription": "Todos os ingressos são reembolsados automaticamente. Se alguns ainda estiverem válidos, a Stripe ficou fora do ar por um instante: termine o resto aqui.",
+      "refundRemaining": "Reembolsar ingressos restantes",
+      "refundedCount": "{{count}} ingresso reembolsado",
+      "refundedCount_one": "{{count}} ingresso reembolsado",
+      "refundedCount_many": "{{count}} ingressos reembolsados",
+      "refundedCount_other": "{{count}} ingressos reembolsados"
+    },
+    "refund": {
+      "prompt": "Não vai mais poder ir?",
+      "promptDescription": "Peça para {{club}} reembolsar seu ingresso. Seja qual for a decisão, você recebe um e-mail.",
+      "request": "Pedir reembolso",
+      "signIn": "Faça login para pedir um reembolso",
+      "title": "Pedir um reembolso para {{club}}?",
+      "description": "Se {{club}} aceitar, o valor total volta para o seu cartão. Você recebe um e-mail de qualquer forma.",
+      "noteLabel": "Algo que a organização precise saber? (opcional)",
+      "notePlaceholder": "Por exemplo: não vou conseguir ir na nova data.",
+      "send": "Enviar pedido",
+      "sent": "Pedido de reembolso enviado para {{club}}",
+      "pending": "Em {{date}}, você pediu um reembolso para {{club}}. Assim que houver uma decisão, você recebe um e-mail.",
+      "declined": "Em {{date}}, {{club}} recusou seu pedido de reembolso. Seu ingresso continua válido.",
+      "theClub": "a organização"
+    },
+    "scanner": {
+      "title": "Leitor de ingressos",
+      "description": "Aponte a câmera para o código QR de um ingresso.",
+      "admitted": "Check-ins: {{checkedIn}} de {{sold}}",
+      "startCamera": "Ligar a câmera",
+      "cameraLabel": "Imagem da câmera para ler ingressos",
+      "cameraBlocked": "Permita o acesso à câmera para ler ingressos, ou digite o código abaixo.",
+      "manual": "Código do ingresso",
+      "manualPlaceholder": "Digite o código que fica abaixo do código QR"
+    },
+    "errors": {
+      "generic": "Algo deu errado. Tente novamente."
+    }
+  }
+}

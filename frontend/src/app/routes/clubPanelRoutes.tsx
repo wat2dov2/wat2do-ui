@@ -25,6 +25,18 @@ const ClubPanelIntegrationsPage = lazy(() =>
 const ClubPanelMembersPage = lazy(() =>
   import("@/features/club-panel").then((m) => ({ default: m.ClubPanelMembersPage }))
 );
+const ClubPanelEventsPage = lazy(() =>
+  import("@/features/club-panel").then((m) => ({ default: m.ClubPanelEventsPage }))
+);
+const ClubPanelEventTicketsPage = lazy(() =>
+  import("@/features/club-panel").then((m) => ({ default: m.ClubPanelEventTicketsPage }))
+);
+const ClubPanelDoorScannerPage = lazy(() =>
+  import("@/features/club-panel").then((m) => ({ default: m.ClubPanelDoorScannerPage }))
+);
+const ClubPanelPayoutsPage = lazy(() =>
+  import("@/features/club-panel").then((m) => ({ default: m.ClubPanelPayoutsPage }))
+);
 
 function useClubPanelNavigation() {
   const router = useRouter();
@@ -81,6 +93,38 @@ export function ClubPanelMembersRoute() {
   return (
     <ClubPanelSuspense>
       <ClubPanelMembersPage />
+    </ClubPanelSuspense>
+  );
+}
+
+export function ClubPanelEventsRoute() {
+  return (
+    <ClubPanelSuspense>
+      <ClubPanelEventsPage />
+    </ClubPanelSuspense>
+  );
+}
+
+export function ClubPanelEventTicketsRoute() {
+  return (
+    <ClubPanelSuspense>
+      <ClubPanelEventTicketsPage />
+    </ClubPanelSuspense>
+  );
+}
+
+export function ClubPanelDoorScannerRoute() {
+  return (
+    <ClubPanelSuspense>
+      <ClubPanelDoorScannerPage />
+    </ClubPanelSuspense>
+  );
+}
+
+export function ClubPanelPayoutsRoute() {
+  return (
+    <ClubPanelSuspense>
+      <ClubPanelPayoutsPage />
     </ClubPanelSuspense>
   );
 }

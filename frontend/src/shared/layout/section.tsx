@@ -7,12 +7,15 @@ import { cn } from "@/shared/lib/utils"
 type SectionProps = React.ComponentProps<"section"> & {
   title?: React.ReactNode
   description?: React.ReactNode
+  /** A control beside the title, such as a "View all" link. */
+  action?: React.ReactNode
   variant?: "plain" | "surface" | "divided"
 }
 
 function Section({
   title,
   description,
+  action,
   variant = "plain",
   className,
   children,
@@ -35,12 +38,15 @@ function Section({
       {hasHeader ? (
         <Stack direction="vertical" gap={variant === "divided" ? 2 : 1}>
           {title ? (
-            <h2
-              data-slot="section-title"
-              className={cn("font-semibold text-foreground", variant === "divided" ? "text-sm" : "text-lg")}
-            >
-              {title}
-            </h2>
+            <Stack direction="horizontal" justify="between" align="center" gap={3}>
+              <h2
+                data-slot="section-title"
+                className={cn("font-semibold text-foreground", variant === "divided" ? "text-sm" : "text-lg")}
+              >
+                {title}
+              </h2>
+              {action}
+            </Stack>
           ) : null}
           {variant === "divided" && title ? <Separator /> : null}
           {description ? (

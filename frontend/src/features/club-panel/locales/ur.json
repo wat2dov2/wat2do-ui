@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "تنظیم پینل پر واپس جائیں",
     "title": "تنظیم کا پینل",
-    "description": "اپنی تنظیم کے پوسٹرز، انٹیگریشنز اور ممبرز کا انتظام کریں",
     "posters": "پوسٹرز",
     "postersDesc": "QR کوڈ پوسٹرز کا انتظام کریں",
     "integrations": "انٹیگریشنز",
@@ -16,8 +15,6 @@
       "joined": "شامل ہوئے",
       "requested": "درخواست کی گئی"
     },
-    "recentActivity": "حال کی سرگرمی",
-    "noRecentActivity": "کوئی حالیہ سرگرمی نہیں",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "ایونٹ نوٹیفکیشن WhatsApp کے ذریعے بھیجیں",
     "discord": "Discord",
@@ -65,7 +62,60 @@
     "addManagerFailed": "مینجر شامل کرنے یا دعوت بھیجنے میں ناکامی۔",
     "invitationRevokedSuccess": "دعوت کامیابی کے ساتھ واپس لے لی گئی!",
     "revokeInvitationFailed": "دعوت واپس لینے میں ناکامی۔",
-    "loadManagementFailed": "انتظامی تفصیلات لوڈ کرنے میں ناکامی۔"
+    "loadManagementFailed": "انتظامی تفصیلات لوڈ کرنے میں ناکامی۔",
+    "events": "ایونٹس",
+    "eventsDesc": "آپ کی تنظیم کے ایونٹس اور ان کے ٹکٹوں کی فروخت کا حال۔",
+    "payoutsDesc": "Stripe کے ذریعے ٹکٹوں کی رقم وصول کریں۔",
+    "createEvent": "ایونٹ بنائیں",
+    "upcomingEvents": "آنے والے ایونٹس",
+    "pastEvents": "گزشتہ ایونٹس",
+    "viewAllEvents": "تمام ایونٹس",
+    "noUpcomingEvents": "کوئی آنے والا ایونٹ نہیں",
+    "noUpcomingEventsDesc": "ایونٹ بنائیں، وہ یہاں نظر آئے گا۔",
+    "noPastEvents": "ابھی تک کوئی گزشتہ ایونٹ نہیں",
+    "eventsList": {
+      "cancelled": "منسوخ",
+      "notSelling": "بغیر ٹکٹ",
+      "salesPaused": "فروخت رکی ہوئی",
+      "ticketsSold": "{{count}} بکا · {{revenue}}",
+      "ticketsSold_one": "{{count}} بکا · {{revenue}}",
+      "ticketsSold_other": "{{count}} بکے · {{revenue}}",
+      "refundRequests": "ریفنڈ کی {{count}} درخواست",
+      "refundRequests_one": "ریفنڈ کی {{count}} درخواست",
+      "refundRequests_other": "ریفنڈ کی {{count}} درخواستیں"
+    },
+    "payouts": {
+      "title": "رقم کی وصولی",
+      "intro": "جب آپ کی تنظیم Wat2Do پر ٹکٹ بیچتی ہے تو رقم Stripe کے ذریعے سیدھی آپ کی تنظیم کے بینک اکاؤنٹ میں جاتی ہے۔",
+      "fees": "Stripe ہر آرڈر سے تقریباً 2.9% + 30¢ رکھتا ہے۔ Wat2Do کچھ نہیں لیتا۔",
+      "timing": "Stripe رقم خود بخود آپ کے بینک اکاؤنٹ میں بھیجتا ہے، عموماً ہر فروخت کے چند کاروباری دن بعد۔ پہلی بار رقم پہنچنے میں 7 سے 14 دن لگ سکتے ہیں۔",
+      "currency": "آپ کے ٹکٹوں کی قیمت {{currency}} میں ہے۔",
+      "setUp": "رقم کی وصولی سیٹ اپ کریں",
+      "continueSetup": "سیٹ اپ جاری رکھیں",
+      "openDashboard": "Stripe ڈیش بورڈ کھولیں",
+      "states": {
+        "unavailable": {
+          "label": "جلد ہی دستیاب",
+          "description": "ٹکٹوں کی فروخت ابھی دستیاب نہیں۔ جلد دوبارہ دیکھیں۔"
+        },
+        "notConnected": {
+          "label": "سیٹ اپ نہیں ہوا",
+          "description": "Stripe کے محفوظ صفحے پر تقریباً 5 منٹ: آپ کی تنظیم کا بینک اکاؤنٹ اور کسی ایک عہدیدار کی شناختی دستاویز۔"
+        },
+        "inProgress": {
+          "label": "بس تھوڑا سا باقی",
+          "description": "آپ کی تنظیم کے ادائیگیاں قبول کرنے سے پہلے Stripe کو کچھ مزید تفصیلات درکار ہیں۔"
+        },
+        "payoutsPaused": {
+          "label": "کارروائی درکار",
+          "description": "آپ کی تنظیم ٹکٹ بیچ سکتی ہے، لیکن آپ کے بینک میں رقم بھیجنے سے پہلے Stripe کو مزید تفصیلات درکار ہیں۔"
+        },
+        "ready": {
+          "label": "تیار",
+          "description": "آپ کی تنظیم ٹکٹ بیچ سکتی ہے۔ رقم خود بخود آپ کے بینک اکاؤنٹ میں پہنچ جاتی ہے۔"
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "اپنے پلیٹ فارمز کو خودکار طور پر ایونٹس درآمد کرنے کے لیے جوڑیں",

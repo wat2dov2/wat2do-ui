@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "Back to club panel",
     "title": "Club Panel",
-    "description": "Manage your club's posters, integrations, and members",
     "posters": "Posters",
     "postersDesc": "Manage QR code posters",
     "integrations": "Integrations",
@@ -16,8 +15,6 @@
       "joined": "Joined",
       "requested": "Requested"
     },
-    "recentActivity": "Recent Activity",
-    "noRecentActivity": "No recent activity",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Send event notifications via WhatsApp",
     "discord": "Discord",
@@ -65,7 +62,58 @@
     "addManagerFailed": "Failed to add manager or send invitation.",
     "invitationRevokedSuccess": "Invitation revoked successfully!",
     "revokeInvitationFailed": "Failed to revoke invitation.",
-    "loadManagementFailed": "Failed to load management details."
+    "loadManagementFailed": "Failed to load management details.",
+    "events": "Events",
+    "eventsDesc": "Your club's events and how their tickets are selling.",
+    "payoutsDesc": "Get paid for tickets through Stripe.",
+    "createEvent": "Create event",
+    "upcomingEvents": "Upcoming events",
+    "pastEvents": "Past events",
+    "viewAllEvents": "All events",
+    "noUpcomingEvents": "No upcoming events",
+    "noUpcomingEventsDesc": "Create an event and it shows up here.",
+    "noPastEvents": "No past events yet",
+    "eventsList": {
+      "cancelled": "Cancelled",
+      "notSelling": "No tickets",
+      "salesPaused": "Sales paused",
+      "ticketsSold": "{{count}} sold · {{revenue}}",
+      "ticketsSold_other": "{{count}} sold · {{revenue}}",
+      "refundRequests": "{{count}} refund request",
+      "refundRequests_other": "{{count}} refund requests"
+    },
+    "payouts": {
+      "title": "Payouts",
+      "intro": "When your club sells tickets on Wat2Do, the money goes straight to your club's bank account through Stripe.",
+      "fees": "Stripe keeps about 2.9% + 30¢ of each order. Wat2Do takes nothing.",
+      "timing": "Stripe sends the money to your bank automatically, usually a few business days after each sale. The first payout can take 7 to 14 days.",
+      "currency": "Your tickets are priced in {{currency}}.",
+      "setUp": "Set up payouts",
+      "continueSetup": "Continue setup",
+      "openDashboard": "Open Stripe dashboard",
+      "states": {
+        "unavailable": {
+          "label": "Coming soon",
+          "description": "Ticket sales aren't available yet. Check back soon."
+        },
+        "notConnected": {
+          "label": "Not set up",
+          "description": "About 5 minutes on Stripe's secure page: your club's bank account and one officer's ID."
+        },
+        "inProgress": {
+          "label": "Almost there",
+          "description": "Stripe needs a few more details before your club can take payments."
+        },
+        "payoutsPaused": {
+          "label": "Action needed",
+          "description": "Your club can sell tickets, but Stripe needs more details before it can send money to your bank."
+        },
+        "ready": {
+          "label": "Ready",
+          "description": "Your club can sell tickets. Payouts reach your bank account automatically."
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "Connect your platforms to auto-import events",

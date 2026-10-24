@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
-import { getClubById } from "@/features/clubs";
-import { queryKeys } from "@/shared/lib/queryKeys";
+import { useClubRecord } from "@/features/club-panel/hooks/useClubRecord";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useRouter } from "next/navigation";
 import { Users, UserMinus, UserPlus, ShieldAlert, Search, MailOpen } from "lucide-react";
@@ -54,11 +52,7 @@ export function ClubPanelMembersPage() {
   const router = useRouter();
   const { clubId } = useAuthState();
   const { getSchoolTimezone } = useSchoolDirectory();
-  const { data: club } = useQuery({
-    queryKey: queryKeys.clubs.detail(clubId ?? 0),
-    queryFn: () => getClubById(clubId!),
-    enabled: clubId != null,
-  });
+  const { data: club } = useClubRecord(clubId);
   const formatDate = (value: string) => club
     ? new Date(value).toLocaleDateString(i18n.language, { dateStyle: "medium", timeZone: getSchoolTimezone(club.school) })
     : "";

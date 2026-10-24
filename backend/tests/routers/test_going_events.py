@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from services import event_service, going_event_service
+from services import event_service, going_event_service, ticketing_service
 
 OCCURRENCE_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
@@ -89,9 +89,12 @@ def test_attendees_uses_aggregate_count_rpc(client, monkeypatch):
         ),
     )
 
+    monkeypatch.setattr(ticketing_service, "ticket_buyer_ids", MagicMock(return_value={"buyer-1"}))
+
     response = client.get("/going-events/42/attendees")
 
     assert response.status_code == 200
+    going_event_service.get_event_attendees.assert_called_once_with(42, hidden={"buyer-1"})
     assert response.json() == {
         "going_count": 4,
         "attendees": [{"name": "Sean Y.", "avatar_url": "https://example.com/avatar.jpg"}],

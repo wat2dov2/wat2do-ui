@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "العودة إلى لوحة المنظمة",
     "title": "لوحة المنظمة",
-    "description": "إدارة ملصقات المنظمة والتكاملات والأعضاء",
     "posters": "الملصقات",
     "postersDesc": "إدارة ملصقات رمز QR",
     "integrations": "التكاملات",
@@ -16,8 +15,6 @@
       "joined": "انضم في",
       "requested": "مطلوب"
     },
-    "recentActivity": "النشاط الأخير",
-    "noRecentActivity": "لا يوجد نشاط حديث",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "إرسال إشعارات الأحداث عبر WhatsApp",
     "discord": "Discord",
@@ -65,7 +62,68 @@
     "addManagerFailed": "فشل في إضافة المدير أو إرسال الدعوة.",
     "invitationRevokedSuccess": "تم سحب الدعوة بنجاح!",
     "revokeInvitationFailed": "فشل في سحب الدعوة.",
-    "loadManagementFailed": "فشل في تحميل تفاصيل الإدارة."
+    "loadManagementFailed": "فشل في تحميل تفاصيل الإدارة.",
+    "events": "الفعاليات",
+    "eventsDesc": "فعاليات منظمتك وأداء مبيعات تذاكرها.",
+    "payoutsDesc": "استلم أموال التذاكر عبر Stripe.",
+    "createEvent": "إنشاء فعالية",
+    "upcomingEvents": "الفعاليات القادمة",
+    "pastEvents": "الفعاليات السابقة",
+    "viewAllEvents": "كل الفعاليات",
+    "noUpcomingEvents": "لا توجد فعاليات قادمة",
+    "noUpcomingEventsDesc": "أنشئ فعالية وستظهر هنا.",
+    "noPastEvents": "لا توجد فعاليات سابقة بعد",
+    "eventsList": {
+      "cancelled": "ملغاة",
+      "notSelling": "بلا تذاكر",
+      "salesPaused": "البيع متوقف مؤقتًا",
+      "ticketsSold": "بيعت {{count}} تذكرة · {{revenue}}",
+      "ticketsSold_zero": "بيعت {{count}} تذكرة · {{revenue}}",
+      "ticketsSold_one": "بيعت {{count}} تذكرة · {{revenue}}",
+      "ticketsSold_two": "بيعت {{count}} تذكرتان · {{revenue}}",
+      "ticketsSold_few": "بيعت {{count}} تذاكر · {{revenue}}",
+      "ticketsSold_many": "بيعت {{count}} تذكرة · {{revenue}}",
+      "ticketsSold_other": "بيعت {{count}} تذكرة · {{revenue}}",
+      "refundRequests": "{{count}} طلب استرداد",
+      "refundRequests_zero": "{{count}} طلب استرداد",
+      "refundRequests_one": "{{count}} طلب استرداد",
+      "refundRequests_two": "{{count}} طلبا استرداد",
+      "refundRequests_few": "{{count}} طلبات استرداد",
+      "refundRequests_many": "{{count}} طلب استرداد",
+      "refundRequests_other": "{{count}} طلب استرداد"
+    },
+    "payouts": {
+      "title": "المدفوعات",
+      "intro": "عندما تبيع منظمتك تذاكر على Wat2Do، يذهب المال مباشرةً إلى الحساب البنكي لمنظمتك عبر Stripe.",
+      "fees": "يحتفظ Stripe بنحو 2.9% + 30¢ من كل طلب، ولا يأخذ Wat2Do شيئًا.",
+      "timing": "يرسل Stripe المال إلى حسابك البنكي تلقائيًا، عادةً بعد بضعة أيام عمل من كل عملية بيع. وقد تستغرق الدفعة الأولى من 7 إلى 14 يومًا.",
+      "currency": "أسعار تذاكرك بعملة {{currency}}.",
+      "setUp": "إعداد استلام المدفوعات",
+      "continueSetup": "متابعة الإعداد",
+      "openDashboard": "فتح لوحة تحكم Stripe",
+      "states": {
+        "unavailable": {
+          "label": "قريبًا",
+          "description": "بيع التذاكر غير متاح بعد. عُد قريبًا."
+        },
+        "notConnected": {
+          "label": "لم يُعدّ بعد",
+          "description": "نحو 5 دقائق على صفحة Stripe الآمنة: الحساب البنكي لمنظمتك وإثبات هوية أحد المسؤولين."
+        },
+        "inProgress": {
+          "label": "على وشك الاكتمال",
+          "description": "يحتاج Stripe إلى بعض التفاصيل الإضافية قبل أن تتمكن منظمتك من قبول المدفوعات."
+        },
+        "payoutsPaused": {
+          "label": "مطلوب إجراء",
+          "description": "يمكن لمنظمتك بيع التذاكر، لكن Stripe يحتاج إلى مزيد من التفاصيل قبل أن يرسل المال إلى حسابك البنكي."
+        },
+        "ready": {
+          "label": "جاهز",
+          "description": "يمكن لمنظمتك بيع التذاكر. تصل المدفوعات إلى حسابك البنكي تلقائيًا."
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "قم بتوصيل منصاتك لاستيراد الأحداث تلقائيًا",

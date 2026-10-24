@@ -12,6 +12,7 @@ export { PreviewStyleEventCard } from "./components/PreviewStyleEventCard";
 
 // Hooks
 export {
+  useActiveClub,
   useAuthState,
   useUserEmail,
 } from "./hooks/useAuthState";

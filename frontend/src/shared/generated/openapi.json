@@ -444,6 +444,198 @@
         }
       }
     },
+    "/clubs/{club_id}/payouts": {
+      "get": {
+        "tags": [
+          "club-ticketing"
+        ],
+        "summary": "Get Payout Status",
+        "operationId": "get_payout_status_clubs__club_id__payouts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClubPayoutStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clubs/{club_id}/payouts/onboarding": {
+      "post": {
+        "tags": [
+          "club-ticketing"
+        ],
+        "summary": "Start Payout Onboarding",
+        "operationId": "start_payout_onboarding_clubs__club_id__payouts_onboarding_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StripeRedirectResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clubs/{club_id}/payouts/dashboard": {
+      "post": {
+        "tags": [
+          "club-ticketing"
+        ],
+        "summary": "Open Payout Dashboard",
+        "operationId": "open_payout_dashboard_clubs__club_id__payouts_dashboard_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StripeRedirectResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clubs/{club_id}/ticket-sales": {
+      "get": {
+        "tags": [
+          "club-ticketing"
+        ],
+        "summary": "List Club Ticket Sales",
+        "operationId": "list_club_ticket_sales_clubs__club_id__ticket_sales_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClubEventTicketSummary"
+                  },
+                  "title": "Response List Club Ticket Sales Clubs  Club Id  Ticket Sales Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/clubs/": {
       "get": {
         "tags": [
@@ -2365,6 +2557,483 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PaginatedResponse_DiscoveryQueryResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{event_id}/ticketing": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Get Event Ticketing",
+        "description": "Public: what the event sells, or null when it doesn't sell tickets.",
+        "operationId": "get_event_ticketing_events__event_id__ticketing_get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/EventTicketingResponse"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Event Ticketing Events  Event Id  Ticketing Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Configure Event Ticketing",
+        "operationId": "configure_event_ticketing_events__event_id__ticketing_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventTicketingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventTicketingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Stop Selling Tickets",
+        "operationId": "stop_selling_tickets_events__event_id__ticketing_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{event_id}/ticketing/checkout": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Start Ticket Checkout",
+        "operationId": "start_ticket_checkout_events__event_id__ticketing_checkout_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketCheckoutCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketCheckoutResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{event_id}/ticketing/sales": {
+      "get": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Get Ticket Sales",
+        "operationId": "get_ticket_sales_events__event_id__ticketing_sales_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventTicketSalesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{event_id}/ticketing/check-ins/{code}": {
+      "put": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Set Ticket Check In",
+        "operationId": "set_ticket_check_in_events__event_id__ticketing_check_ins__code__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          },
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketCheckInUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketCheckInResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{event_id}/ticketing/tickets/{ticket_id}/refund": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Refund Ticket",
+        "operationId": "refund_ticket_events__event_id__ticketing_tickets__ticket_id__refund_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          },
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketAttendee"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{event_id}/ticketing/tickets/{ticket_id}/refund-request/decline": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Decline Refund Request",
+        "description": "The club keeps the money; the holder gets an email and keeps the ticket.",
+        "operationId": "decline_refund_request_events__event_id__ticketing_tickets__ticket_id__refund_request_decline_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          },
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketAttendee"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{event_id}/ticketing/refunds": {
+      "post": {
+        "tags": [
+          "ticketing"
+        ],
+        "summary": "Refund Remaining Tickets",
+        "description": "Refund every ticket still valid on a cancelled event.",
+        "operationId": "refund_remaining_tickets_events__event_id__ticketing_refunds_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRefundsResponse"
                 }
               }
             }
@@ -6767,6 +7436,190 @@
         }
       }
     },
+    "/tickets/mine": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "List My Tickets",
+        "operationId": "list_my_tickets_tickets_mine_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TicketResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List My Tickets Tickets Mine Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/tickets/orders/{order_id}": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Get My Order",
+        "operationId": "get_my_order_tickets_orders__order_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOrderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets/{code}/refund-request": {
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Request Refund",
+        "description": "The holder asks the club for a refund; its officers get an email.",
+        "operationId": "request_refund_tickets__code__refund_request_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketRefundRequestCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets/{code}": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Get Ticket",
+        "description": "Anyone holding the code sees the ticket; the club's officers can also admit it.",
+        "operationId": "get_ticket_tickets__code__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/uploads/event-image": {
       "post": {
         "tags": [
@@ -7625,6 +8478,26 @@
         ]
       }
     },
+    "/webhooks/stripe": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Receive Stripe Event",
+        "description": "Stripe Connect events for club ticket sales, trusted only with a valid signature.\n\nStripe waits for this answer, so the receipt email runs after it is sent.",
+        "operationId": "receive_stripe_event_webhooks_stripe_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/webhooks/automate/logs": {
       "get": {
         "tags": [
@@ -8415,6 +9288,71 @@
         ],
         "title": "ClubCreate"
       },
+      "ClubEventTicketSummary": {
+        "properties": {
+          "event_id": {
+            "type": "integer",
+            "title": "Event Id"
+          },
+          "price_cents": {
+            "type": "integer",
+            "title": "Price Cents"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "cad",
+              "usd"
+            ],
+            "title": "Currency"
+          },
+          "capacity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "sales_paused": {
+            "type": "boolean",
+            "title": "Sales Paused"
+          },
+          "sold": {
+            "type": "integer",
+            "title": "Sold"
+          },
+          "checked_in": {
+            "type": "integer",
+            "title": "Checked In"
+          },
+          "revenue_cents": {
+            "type": "integer",
+            "title": "Revenue Cents"
+          },
+          "refund_requests": {
+            "type": "integer",
+            "title": "Refund Requests"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "price_cents",
+          "currency",
+          "capacity",
+          "sales_paused",
+          "sold",
+          "checked_in",
+          "revenue_cents",
+          "refund_requests"
+        ],
+        "title": "ClubEventTicketSummary",
+        "description": "One ticketed event on a club's dashboard."
+      },
       "ClubIntegrationResponse": {
         "properties": {
           "club_id": {
@@ -8680,6 +9618,66 @@
           "joined_at"
         ],
         "title": "ClubMemberResponse"
+      },
+      "ClubPayoutStatus": {
+        "properties": {
+          "ticketing_enabled": {
+            "type": "boolean",
+            "title": "Ticketing Enabled"
+          },
+          "connected": {
+            "type": "boolean",
+            "title": "Connected"
+          },
+          "charges_enabled": {
+            "type": "boolean",
+            "title": "Charges Enabled"
+          },
+          "payouts_enabled": {
+            "type": "boolean",
+            "title": "Payouts Enabled"
+          },
+          "details_submitted": {
+            "type": "boolean",
+            "title": "Details Submitted"
+          },
+          "requirements_due": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Requirements Due"
+          },
+          "country": {
+            "type": "string",
+            "enum": [
+              "CA",
+              "US"
+            ],
+            "title": "Country"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "cad",
+              "usd"
+            ],
+            "title": "Currency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticketing_enabled",
+          "connected",
+          "charges_enabled",
+          "payouts_enabled",
+          "details_submitted",
+          "requirements_due",
+          "country",
+          "currency"
+        ],
+        "title": "ClubPayoutStatus",
+        "description": "Whether a club can sell tickets, and what Stripe still needs from it."
       },
       "ClubResponse": {
         "properties": {
@@ -10797,6 +11795,159 @@
         ],
         "title": "EventSummaryResponse",
         "description": "Payload for list/card views.\n\nDescription is included because the feed search matches event copy as well\nas titles, hosts, locations, and food.\n\nThe owning club's display/link/social fields (``club_logo_url``,\n``club_type``, ``club_page``, ``club_ig``,\n``club_discord``) are\nembedded read-time from the ``clubs`` row via the\n``events.club_id`` FK so the event card can render without a second\nfetch.\n\n``created_by`` is intentionally omitted - this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers."
+      },
+      "EventTicketSalesResponse": {
+        "properties": {
+          "ticketing": {
+            "$ref": "#/components/schemas/EventTicketingResponse"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "cad",
+              "usd"
+            ],
+            "title": "Currency"
+          },
+          "sold": {
+            "type": "integer",
+            "title": "Sold"
+          },
+          "checked_in": {
+            "type": "integer",
+            "title": "Checked In"
+          },
+          "refunded": {
+            "type": "integer",
+            "title": "Refunded"
+          },
+          "revenue_cents": {
+            "type": "integer",
+            "title": "Revenue Cents"
+          },
+          "dates": {
+            "items": {
+              "$ref": "#/components/schemas/TicketDateSales"
+            },
+            "type": "array",
+            "title": "Dates"
+          },
+          "attendees": {
+            "items": {
+              "$ref": "#/components/schemas/TicketAttendee"
+            },
+            "type": "array",
+            "title": "Attendees"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticketing",
+          "currency",
+          "sold",
+          "checked_in",
+          "refunded",
+          "revenue_cents",
+          "dates",
+          "attendees"
+        ],
+        "title": "EventTicketSalesResponse",
+        "description": "Everything a club needs at its desk and at the door for one event."
+      },
+      "EventTicketingResponse": {
+        "properties": {
+          "event_id": {
+            "type": "integer",
+            "title": "Event Id"
+          },
+          "price_cents": {
+            "type": "integer",
+            "title": "Price Cents"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "cad",
+              "usd"
+            ],
+            "title": "Currency"
+          },
+          "capacity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "sales_paused": {
+            "type": "boolean",
+            "title": "Sales Paused"
+          },
+          "on_sale": {
+            "type": "boolean",
+            "title": "On Sale"
+          },
+          "maximum_per_order": {
+            "type": "integer",
+            "title": "Maximum Per Order"
+          },
+          "dates": {
+            "items": {
+              "$ref": "#/components/schemas/TicketDateAvailability"
+            },
+            "type": "array",
+            "title": "Dates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "price_cents",
+          "currency",
+          "capacity",
+          "sales_paused",
+          "on_sale",
+          "maximum_per_order",
+          "dates"
+        ],
+        "title": "EventTicketingResponse",
+        "description": "What a ticketed event sells, as anyone viewing the event sees it."
+      },
+      "EventTicketingUpdate": {
+        "properties": {
+          "price_cents": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Price Cents"
+          },
+          "capacity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "sales_paused": {
+            "type": "boolean",
+            "title": "Sales Paused",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "price_cents"
+        ],
+        "title": "EventTicketingUpdate"
       },
       "EventUpdate": {
         "properties": {
@@ -15344,6 +16495,15 @@
               }
             ],
             "title": "Social Preview Image Url"
+          },
+          "country": {
+            "type": "string",
+            "enum": [
+              "CA",
+              "US"
+            ],
+            "title": "Country",
+            "default": "CA"
           }
         },
         "type": "object",
@@ -15709,6 +16869,20 @@
         ],
         "title": "SponsorSubmissionReview"
       },
+      "StripeRedirectResponse": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "StripeRedirectResponse",
+        "description": "A one-time Stripe URL the browser opens: onboarding or the Express dashboard."
+      },
       "SubmissionCreate": {
         "properties": {
           "submitted_by_email": {
@@ -15862,6 +17036,550 @@
           "status"
         ],
         "title": "SubmissionUpdate"
+      },
+      "TicketAttendee": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "refunded"
+            ],
+            "title": "Status"
+          },
+          "event_date_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Event Date Id"
+          },
+          "holder_name": {
+            "type": "string",
+            "title": "Holder Name"
+          },
+          "holder_email": {
+            "type": "string",
+            "title": "Holder Email"
+          },
+          "purchased_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Purchased At"
+          },
+          "checked_in_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked In At"
+          },
+          "refunded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refunded At"
+          },
+          "amount_cents": {
+            "type": "integer",
+            "title": "Amount Cents"
+          },
+          "refund_requested_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refund Requested At"
+          },
+          "refund_request_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refund Request Note"
+          },
+          "refund_declined_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refund Declined At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "status",
+          "event_date_id",
+          "holder_name",
+          "holder_email",
+          "purchased_at",
+          "amount_cents"
+        ],
+        "title": "TicketAttendee",
+        "description": "One ticket on a club's door list."
+      },
+      "TicketCheckInResponse": {
+        "properties": {
+          "result": {
+            "type": "string",
+            "enum": [
+              "checked_in",
+              "already_checked_in",
+              "undone",
+              "refunded",
+              "not_for_this_event",
+              "not_found"
+            ],
+            "title": "Result"
+          },
+          "attendee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketAttendee"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "result"
+        ],
+        "title": "TicketCheckInResponse"
+      },
+      "TicketCheckInUpdate": {
+        "properties": {
+          "checked_in": {
+            "type": "boolean",
+            "title": "Checked In",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "TicketCheckInUpdate"
+      },
+      "TicketCheckoutCreate": {
+        "properties": {
+          "event_date_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Event Date Id"
+          },
+          "quantity": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Quantity"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "event_date_id",
+          "quantity"
+        ],
+        "title": "TicketCheckoutCreate"
+      },
+      "TicketCheckoutResponse": {
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Order Id"
+          },
+          "checkout_url": {
+            "type": "string",
+            "title": "Checkout Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_id",
+          "checkout_url"
+        ],
+        "title": "TicketCheckoutResponse"
+      },
+      "TicketDateAvailability": {
+        "properties": {
+          "event_date_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Event Date Id"
+          },
+          "dtstart_utc": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dtstart Utc"
+          },
+          "dtend_utc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtend Utc"
+          },
+          "remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining"
+          },
+          "sales_open": {
+            "type": "boolean",
+            "title": "Sales Open"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_date_id",
+          "dtstart_utc",
+          "remaining",
+          "sales_open"
+        ],
+        "title": "TicketDateAvailability"
+      },
+      "TicketDateSales": {
+        "properties": {
+          "event_date_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Event Date Id"
+          },
+          "dtstart_utc": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dtstart Utc"
+          },
+          "sold": {
+            "type": "integer",
+            "title": "Sold"
+          },
+          "checked_in": {
+            "type": "integer",
+            "title": "Checked In"
+          },
+          "remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_date_id",
+          "dtstart_utc",
+          "sold",
+          "checked_in",
+          "remaining"
+        ],
+        "title": "TicketDateSales"
+      },
+      "TicketOrderResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "expired",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "event_id": {
+            "type": "integer",
+            "title": "Event Id"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "unit_amount_cents": {
+            "type": "integer",
+            "title": "Unit Amount Cents"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "cad",
+              "usd"
+            ],
+            "title": "Currency"
+          },
+          "tickets": {
+            "items": {
+              "$ref": "#/components/schemas/TicketResponse"
+            },
+            "type": "array",
+            "title": "Tickets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "event_id",
+          "quantity",
+          "unit_amount_cents",
+          "currency",
+          "tickets"
+        ],
+        "title": "TicketOrderResponse",
+        "description": "A buyer's own checkout, polled after Stripe sends them back."
+      },
+      "TicketRefundRequestCreate": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "TicketRefundRequestCreate",
+        "description": "A holder asking the club for their money back."
+      },
+      "TicketRefundsResponse": {
+        "properties": {
+          "refunded": {
+            "type": "integer",
+            "title": "Refunded"
+          }
+        },
+        "type": "object",
+        "required": [
+          "refunded"
+        ],
+        "title": "TicketRefundsResponse"
+      },
+      "TicketResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "refunded"
+            ],
+            "title": "Status"
+          },
+          "checked_in_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked In At"
+          },
+          "event_id": {
+            "type": "integer",
+            "title": "Event Id"
+          },
+          "event_title": {
+            "type": "string",
+            "title": "Event Title"
+          },
+          "event_date_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Event Date Id"
+          },
+          "dtstart_utc": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dtstart Utc"
+          },
+          "dtend_utc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtend Utc"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "club_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Id"
+          },
+          "club_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Name"
+          },
+          "school": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "holder_name": {
+            "type": "string",
+            "title": "Holder Name"
+          },
+          "can_check_in": {
+            "type": "boolean",
+            "title": "Can Check In",
+            "default": false
+          },
+          "refund_requested_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refund Requested At"
+          },
+          "refund_declined_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refund Declined At"
+          },
+          "can_request_refund": {
+            "type": "boolean",
+            "title": "Can Request Refund",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "status",
+          "event_id",
+          "event_title",
+          "event_date_id",
+          "dtstart_utc",
+          "holder_name"
+        ],
+        "title": "TicketResponse",
+        "description": "One admission as its holder (or a club officer opening its link) sees it."
       },
       "TokenResponse": {
         "properties": {

@@ -16,6 +16,7 @@ import { EventFormFields } from "@/features/events/components/EventForm/EventFor
 import { EventFormProvider } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import type { useEventForm } from "@/features/events/hooks/useEventForm";
 import { getCurrentSchool } from "@/shared/constants/schools";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 
 const NO_CLUBS: Club[] = [];
 
@@ -83,10 +84,17 @@ export function EventFormStep({
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const clubSchool = previewBase?.school ?? schoolFilter;
 
-  const { data: clubs = NO_CLUBS } = useQuery({
+  const { data: schoolClubs = NO_CLUBS } = useQuery({
     ...clubDirectoryQueryOptions(clubSchool),
     select: (directory) => directory.items,
   });
+  const { isAdmin, clubs: managedClubs } = useAuthState();
+  // Officers publish only for the clubs they run; admins and public submitters pick any club.
+  const clubs = useMemo(() => {
+    if (!canCreateEvents || isAdmin || managedClubs.length === 0) return schoolClubs;
+    const managed = new Set(managedClubs.map((club) => club.id));
+    return schoolClubs.filter((club) => managed.has(club.id));
+  }, [canCreateEvents, isAdmin, managedClubs, schoolClubs]);
 
   const selectedClubName = useMemo(() => {
     const id = eventForm.formData.club_id;

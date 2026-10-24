@@ -7,6 +7,19 @@ export const queryKeys = {
     submission: (id: string | null) => [...queryKeys.admin.all, "submission", id] as const,
     ingestionLatency: (days: number) => [...queryKeys.admin.all, "ingestion-latency", days] as const,
   },
+  tickets: {
+    all: ["tickets"] as const,
+    event: (eventId: number) => [...queryKeys.tickets.all, "event", eventId] as const,
+    sales: (eventId: number) => [...queryKeys.tickets.all, "sales", eventId] as const,
+    mine: (userId: string | null) => [...queryKeys.tickets.all, "mine", userId ?? ""] as const,
+    order: (orderId: string) => [...queryKeys.tickets.all, "order", orderId] as const,
+    ticket: (code: string) => [...queryKeys.tickets.all, "ticket", code] as const,
+  },
+  clubTicketing: {
+    all: ["club-ticketing"] as const,
+    payouts: (clubId: number) => [...queryKeys.clubTicketing.all, "payouts", clubId] as const,
+    sales: (clubId: number) => [...queryKeys.clubTicketing.all, "sales", clubId] as const,
+  },
   meta: {
     all: ["meta"] as const,
     constants: () => [...queryKeys.meta.all, "constants"] as const,

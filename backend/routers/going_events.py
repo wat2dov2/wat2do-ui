@@ -12,7 +12,7 @@ from schemas.going_event import (
     GoingEventSelectionUpdate,
     GoingEventStatusResponse,
 )
-from services import event_service, going_event_service
+from services import event_service, going_event_service, ticketing_service
 
 router = APIRouter(prefix="/going-events", tags=["going-events"])
 log = logging.getLogger(__name__)
@@ -34,9 +34,13 @@ def list_event_attendees(event_id: int):
         raise NotFoundError(EVENT_NOT_FOUND)
 
     counts = going_event_service.get_going_counts_for_events([event_id])
+    # Ticket buyers count toward Going but are never named: buying a ticket
+    # shouldn't put anyone's name and face on a public list.
     return {
         "going_count": counts.get(event_id, 0),
-        "attendees": going_event_service.get_event_attendees(event_id),
+        "attendees": going_event_service.get_event_attendees(
+            event_id, hidden=ticketing_service.ticket_buyer_ids(event_id)
+        ),
     }
 
 

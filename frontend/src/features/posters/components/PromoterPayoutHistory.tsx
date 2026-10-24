@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import type { PromoterPayout } from "@/features/posters/types";
-import { formatCadCents } from "@/shared/utils/currency";
+import { formatCents } from "@/shared/utils/currency";
 import { Badge } from "@/shared/ui/badge";
 import {
   Table,
@@ -57,10 +57,10 @@ export function PromoterPayoutHistory({
                 <TableCell>{payout.period}</TableCell>
                 <TableCell>{payout.visitorCount}</TableCell>
                 <TableCell>
-                  {formatCadCents(payout.rateCents, i18n.language)}
+                  {formatCents(payout.rateCents, "cad", i18n.language)}
                 </TableCell>
                 <TableCell>
-                  {formatCadCents(payout.amountCents, i18n.language)}
+                  {formatCents(payout.amountCents, "cad", i18n.language)}
                 </TableCell>
                 <TableCell>
                   <Badge

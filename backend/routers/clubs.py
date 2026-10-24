@@ -15,12 +15,11 @@ from core.constants import (
     MAX_CLUB_TYPE_LENGTH,
     MAX_SCHOOL_LENGTH,
     MAX_SEARCH_QUERY_LENGTH,
-    ROLE_ADMIN,
     SUBMISSION_RATE_LIMIT_MAX_REQUESTS,
     SUBMISSION_RATE_LIMIT_WINDOW_SECONDS,
 )
-from core.errors import CLUB_NOT_FOUND, NOT_AUTHORIZED
-from core.exceptions import AuthorizationError, NotFoundError, ValidationError, get_or_404
+from core.errors import CLUB_NOT_FOUND
+from core.exceptions import NotFoundError, ValidationError, get_or_404
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from core.rate_limit import RateLimiter
 from schemas.claim import (
@@ -62,24 +61,9 @@ _submission_limiter = RateLimiter(
 INTEGRATION_NOT_FOUND = "Integration not found"
 
 
-def _get_club_or_403(club_id: int, db_user: UserResponse) -> ClubResponse:
-    """Fetch club by ID (404 if missing); require club_members membership or admin."""
-    club = club_service.get_club(club_id)
-    if club is None:
-        raise NotFoundError(CLUB_NOT_FOUND)
-
-    if db_user.role == ROLE_ADMIN:
-        return club
-
-    if club_service.is_club_member(club_id, str(db_user.id)):
-        return club
-
-    raise AuthorizationError(NOT_AUTHORIZED)
-
-
 def _authorize_and_exec(club_id: int, db_user: UserResponse, action):
     """Require membership (or admin), run *action*, and 404 if the result is missing."""
-    _get_club_or_403(club_id, db_user)
+    club_service.get_managed_club(club_id, db_user)
     return get_or_404(action(), INTEGRATION_NOT_FOUND)
 
 
@@ -266,7 +250,7 @@ def update_club(
     data: ClubUpdate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_club_or_403(club_id, db_user)
+    club_service.get_managed_club(club_id, db_user)
     updated = club_service.update_club(club_id, data)
     return updated
 
@@ -276,7 +260,7 @@ def delete_club(
     club_id: int,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_club_or_403(club_id, db_user)
+    club_service.get_managed_club(club_id, db_user)
     club_service.delete_club(club_id)
 
 
@@ -285,7 +269,7 @@ def list_club_members(
     club_id: int,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_club_or_403(club_id, db_user)
+    club_service.get_managed_club(club_id, db_user)
     return club_service.list_club_members(club_id)
 
 
@@ -300,7 +284,7 @@ def add_club_member(
     db_user: UserResponse = Depends(get_db_user),
 ):
     """Add by email: existing users join club_members directly; otherwise invite."""
-    _get_club_or_403(club_id, db_user)
+    club_service.get_managed_club(club_id, db_user)
 
     from services import user_service
 
@@ -317,7 +301,7 @@ def remove_club_member(
     user_id: str,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_club_or_403(club_id, db_user)
+    club_service.get_managed_club(club_id, db_user)
 
     from uuid import UUID
 
@@ -341,7 +325,7 @@ def create_invitation(
     data: ClubInvitationCreate,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_club_or_403(club_id, db_user)
+    club_service.get_managed_club(club_id, db_user)
     return club_service.create_invitation(club_id, data.email, db_user.id)
 
 
@@ -350,7 +334,7 @@ def list_invitations(
     club_id: int,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_club_or_403(club_id, db_user)
+    club_service.get_managed_club(club_id, db_user)
     return club_service.list_invitations(club_id)
 
 
@@ -360,7 +344,7 @@ def revoke_invitation(
     invitation_id: str,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_club_or_403(club_id, db_user)
+    club_service.get_managed_club(club_id, db_user)
     success = club_service.revoke_invitation(club_id, invitation_id)
     if not success:
         raise NotFoundError("Invitation not found")

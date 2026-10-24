@@ -93,7 +93,8 @@
     "primary": "기본 탐색",
     "openMenu": "탐색 메뉴 열기",
     "switchToLightMode": "라이트 모드로 전환",
-    "switchToDarkMode": "다크 모드로 전환"
+    "switchToDarkMode": "다크 모드로 전환",
+    "myTickets": "내 티켓"
   },
   "siteBanner": {
     "businessSupport": {

@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "Quay lại bảng điều khiển tổ chức",
     "title": "Bảng điều khiển tổ chức",
-    "description": "Quản lý áp phích, tích hợp và thành viên của tổ chức bạn",
     "posters": "Áp Phích",
     "postersDesc": "Quản lý những người đăng mã QR",
     "integrations": "Tích hợp",
@@ -16,8 +15,6 @@
       "joined": "Tham gia từ",
       "requested": "Yêu cầu từ"
     },
-    "recentActivity": "Hoạt động gần đây",
-    "noRecentActivity": "Không có hoạt động gần đây",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Gửi thông báo sự kiện qua WhatsApp",
     "discord": "Discord",
@@ -65,7 +62,58 @@
     "addManagerFailed": "Thêm quản lý hoặc gửi lời mời không thành công.",
     "invitationRevokedSuccess": "Thu hồi lời mời thành công!",
     "revokeInvitationFailed": "Thu hồi lời mời không thành công.",
-    "loadManagementFailed": "Tải chi tiết quản lý không thành công."
+    "loadManagementFailed": "Tải chi tiết quản lý không thành công.",
+    "events": "Sự kiện",
+    "eventsDesc": "Các sự kiện của tổ chức bạn và tình hình bán vé.",
+    "payoutsDesc": "Nhận tiền bán vé qua Stripe.",
+    "createEvent": "Tạo sự kiện",
+    "upcomingEvents": "Sự kiện sắp tới",
+    "pastEvents": "Sự kiện đã qua",
+    "viewAllEvents": "Tất cả sự kiện",
+    "noUpcomingEvents": "Chưa có sự kiện sắp tới",
+    "noUpcomingEventsDesc": "Tạo một sự kiện và nó sẽ hiện ở đây.",
+    "noPastEvents": "Chưa có sự kiện đã qua",
+    "eventsList": {
+      "cancelled": "Đã hủy",
+      "notSelling": "Không bán vé",
+      "salesPaused": "Tạm dừng bán",
+      "ticketsSold": "Đã bán {{count}} vé · {{revenue}}",
+      "ticketsSold_other": "Đã bán {{count}} vé · {{revenue}}",
+      "refundRequests": "{{count}} yêu cầu hoàn tiền",
+      "refundRequests_other": "{{count}} yêu cầu hoàn tiền"
+    },
+    "payouts": {
+      "title": "Nhận tiền",
+      "intro": "Khi tổ chức của bạn bán vé trên Wat2Do, tiền được chuyển thẳng vào tài khoản ngân hàng của tổ chức qua Stripe.",
+      "fees": "Stripe giữ lại khoảng 2,9% + 30¢ mỗi đơn hàng. Wat2Do không lấy gì cả.",
+      "timing": "Stripe tự động chuyển tiền vào tài khoản ngân hàng của bạn, thường là vài ngày làm việc sau mỗi lần bán. Lần nhận tiền đầu tiên có thể mất từ 7 đến 14 ngày.",
+      "currency": "Vé của bạn được định giá bằng {{currency}}.",
+      "setUp": "Thiết lập nhận tiền",
+      "continueSetup": "Tiếp tục thiết lập",
+      "openDashboard": "Mở bảng điều khiển Stripe",
+      "states": {
+        "unavailable": {
+          "label": "Sắp ra mắt",
+          "description": "Chưa thể bán vé. Hãy quay lại sau nhé."
+        },
+        "notConnected": {
+          "label": "Chưa thiết lập",
+          "description": "Mất khoảng 5 phút trên trang bảo mật của Stripe: tài khoản ngân hàng của tổ chức và giấy tờ tùy thân của một cán bộ."
+        },
+        "inProgress": {
+          "label": "Sắp xong rồi",
+          "description": "Stripe cần thêm một vài thông tin trước khi tổ chức của bạn có thể nhận thanh toán."
+        },
+        "payoutsPaused": {
+          "label": "Cần xử lý",
+          "description": "Tổ chức của bạn có thể bán vé, nhưng Stripe cần thêm thông tin trước khi chuyển tiền vào ngân hàng của bạn."
+        },
+        "ready": {
+          "label": "Sẵn sàng",
+          "description": "Tổ chức của bạn có thể bán vé. Tiền sẽ tự động về tài khoản ngân hàng."
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "Kết nối các nền tảng của bạn để tự động nhập sự kiện",

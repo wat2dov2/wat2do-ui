@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "Zurück zum Organisationspanel",
     "title": "Organisationspanel",
-    "description": "Verwalten Sie die Poster, Integrationen und Mitglieder Ihrer Organisation",
     "posters": "Poster",
     "postersDesc": "Verwalten QR Code-Plakate",
     "integrations": "Integrationen",
@@ -16,8 +15,6 @@
       "joined": "Beigetreten",
       "requested": "Angefragt"
     },
-    "recentActivity": "Neueste Aktivität",
-    "noRecentActivity": "Keine kürzliche Aktivität",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Ereignisbenachrichtigungen über WhatsApp senden",
     "discord": "Discord",
@@ -65,7 +62,60 @@
     "addManagerFailed": "Manager konnte nicht hinzugefügt oder Einladung nicht gesendet werden.",
     "invitationRevokedSuccess": "Einladung erfolgreich zurückgezogen!",
     "revokeInvitationFailed": "Einladung konnte nicht zurückgezogen werden.",
-    "loadManagementFailed": "Verwaltungsdetails konnten nicht geladen werden."
+    "loadManagementFailed": "Verwaltungsdetails konnten nicht geladen werden.",
+    "events": "Veranstaltungen",
+    "eventsDesc": "Die Veranstaltungen der Organisation und wie sich ihre Tickets verkaufen.",
+    "payoutsDesc": "Ticketeinnahmen über Stripe erhalten.",
+    "createEvent": "Veranstaltung erstellen",
+    "upcomingEvents": "Bevorstehende Veranstaltungen",
+    "pastEvents": "Vergangene Veranstaltungen",
+    "viewAllEvents": "Alle Veranstaltungen",
+    "noUpcomingEvents": "Keine bevorstehenden Veranstaltungen",
+    "noUpcomingEventsDesc": "Erstelle eine Veranstaltung, dann erscheint sie hier.",
+    "noPastEvents": "Noch keine vergangenen Veranstaltungen",
+    "eventsList": {
+      "cancelled": "Abgesagt",
+      "notSelling": "Keine Tickets",
+      "salesPaused": "Verkauf pausiert",
+      "ticketsSold": "{{count}} verkauft · {{revenue}}",
+      "ticketsSold_one": "{{count}} verkauft · {{revenue}}",
+      "ticketsSold_other": "{{count}} verkauft · {{revenue}}",
+      "refundRequests": "{{count}} Erstattungsanfrage",
+      "refundRequests_one": "{{count}} Erstattungsanfrage",
+      "refundRequests_other": "{{count}} Erstattungsanfragen"
+    },
+    "payouts": {
+      "title": "Auszahlungen",
+      "intro": "Wenn deine Organisation Tickets auf Wat2Do verkauft, geht das Geld über Stripe direkt auf ihr Bankkonto.",
+      "fees": "Stripe behält etwa 2,9 % + 30 ¢ pro Bestellung ein. Wat2Do nimmt nichts.",
+      "timing": "Stripe überweist das Geld automatisch auf das Bankkonto deiner Organisation, meist ein paar Werktage nach jedem Verkauf. Die erste Auszahlung kann 7 bis 14 Tage dauern.",
+      "currency": "Die Preise deiner Tickets sind in {{currency}} angegeben.",
+      "setUp": "Auszahlungen einrichten",
+      "continueSetup": "Einrichtung fortsetzen",
+      "openDashboard": "Stripe-Dashboard öffnen",
+      "states": {
+        "unavailable": {
+          "label": "Demnächst verfügbar",
+          "description": "Der Ticketverkauf ist noch nicht verfügbar. Schau bald wieder vorbei."
+        },
+        "notConnected": {
+          "label": "Nicht eingerichtet",
+          "description": "Etwa 5 Minuten auf der sicheren Seite von Stripe: das Bankkonto deiner Organisation und der Ausweis einer verantwortlichen Person."
+        },
+        "inProgress": {
+          "label": "Fast geschafft",
+          "description": "Stripe braucht noch ein paar Angaben, bevor deine Organisation Zahlungen annehmen kann."
+        },
+        "payoutsPaused": {
+          "label": "Aktion erforderlich",
+          "description": "Deine Organisation kann Tickets verkaufen, aber Stripe braucht noch weitere Angaben, bevor Geld auf ihr Bankkonto fließen kann."
+        },
+        "ready": {
+          "label": "Bereit",
+          "description": "Deine Organisation kann Tickets verkaufen. Auszahlungen gehen automatisch auf ihr Bankkonto."
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "Verbinden Sie Ihre Plattformen, um Ereignisse automatisch zu importieren",

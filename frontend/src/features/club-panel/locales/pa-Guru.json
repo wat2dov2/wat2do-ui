@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "ਸੰਗਠਨ ਪੈਨਲ 'ਤੇ ਵਾਪਸ ਜਾਓ",
     "title": "ਸੰਸਥਾ ਪੈਨਲ",
-    "description": "ਆਪਣੀ ਸੰਸਥਾ ਦੇ ਪੋਸਟਰਾਂ, ਏਕੀਕਰਣਾਂ ਅਤੇ ਮੈਂਬਰਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ",
     "posters": "ਪੋਸਟਰ",
     "postersDesc": "QR ਕੋਡ ਪੋਸਟਰਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ",
     "integrations": "ਏਕੀਕਰਣ",
@@ -16,8 +15,6 @@
       "joined": "ਸ਼ਾਮਲ ਹੋਏ",
       "requested": "ਬੇਨਤੀ ਕੀਤੀ"
     },
-    "recentActivity": "ਹਾਲੀਆ ਗਤੀਵਿਧੀ",
-    "noRecentActivity": "ਕੋਈ ਹਾਲੀਆ ਸਰਗਰਮੀ ਨਹੀਂ",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "WhatsApp ਰਾਹੀਂ ਇਵੈਂਟ ਸੂਚਨਾਵਾਂ ਭੇਜੋ",
     "discord": "Discord",
@@ -65,7 +62,60 @@
     "addManagerFailed": "ਪ੍ਰਬੰਧਕ ਨੂੰ ਸ਼ਾਮਲ ਕਰਨ ਜਾਂ ਸੱਦਾ ਭੇਜਣ ਵਿੱਚ ਅਸਫਲ।",
     "invitationRevokedSuccess": "ਸੱਦਾ ਸਫਲਤਾਪੂਰਵਕ ਰੱਦ ਕੀਤਾ ਗਿਆ!",
     "revokeInvitationFailed": "ਸੱਦਾ ਰੱਦ ਕਰਨਾ ਅਸਫਲ ਰਿਹਾ।",
-    "loadManagementFailed": "ਪ੍ਰਬੰਧਨ ਵੇਰਵੇ ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ।"
+    "loadManagementFailed": "ਪ੍ਰਬੰਧਨ ਵੇਰਵੇ ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ।",
+    "events": "ਇਵੈਂਟ",
+    "eventsDesc": "ਤੁਹਾਡੀ ਸੰਸਥਾ ਦੇ ਇਵੈਂਟ ਅਤੇ ਉਹਨਾਂ ਦੀਆਂ ਟਿਕਟਾਂ ਦੀ ਵਿਕਰੀ ਦਾ ਹਾਲ।",
+    "payoutsDesc": "Stripe ਰਾਹੀਂ ਟਿਕਟਾਂ ਦੇ ਪੈਸੇ ਪ੍ਰਾਪਤ ਕਰੋ।",
+    "createEvent": "ਇਵੈਂਟ ਬਣਾਓ",
+    "upcomingEvents": "ਆਗਾਮੀ ਇਵੈਂਟ",
+    "pastEvents": "ਪਿਛਲੇ ਇਵੈਂਟ",
+    "viewAllEvents": "ਸਾਰੇ ਇਵੈਂਟ",
+    "noUpcomingEvents": "ਕੋਈ ਆਗਾਮੀ ਇਵੈਂਟ ਨਹੀਂ",
+    "noUpcomingEventsDesc": "ਇਵੈਂਟ ਬਣਾਓ, ਉਹ ਇੱਥੇ ਦਿਖਾਈ ਦੇਵੇਗਾ।",
+    "noPastEvents": "ਅਜੇ ਕੋਈ ਪਿਛਲਾ ਇਵੈਂਟ ਨਹੀਂ",
+    "eventsList": {
+      "cancelled": "ਰੱਦ",
+      "notSelling": "ਬਿਨਾਂ ਟਿਕਟ",
+      "salesPaused": "ਵਿਕਰੀ ਰੁਕੀ ਹੋਈ",
+      "ticketsSold": "{{count}} ਵਿਕੀ · {{revenue}}",
+      "ticketsSold_one": "{{count}} ਵਿਕੀ · {{revenue}}",
+      "ticketsSold_other": "{{count}} ਵਿਕੀਆਂ · {{revenue}}",
+      "refundRequests": "ਰਿਫੰਡ ਦੀ {{count}} ਬੇਨਤੀ",
+      "refundRequests_one": "ਰਿਫੰਡ ਦੀ {{count}} ਬੇਨਤੀ",
+      "refundRequests_other": "ਰਿਫੰਡ ਦੀਆਂ {{count}} ਬੇਨਤੀਆਂ"
+    },
+    "payouts": {
+      "title": "ਅਦਾਇਗੀਆਂ",
+      "intro": "ਜਦੋਂ ਤੁਹਾਡੀ ਸੰਸਥਾ Wat2Do 'ਤੇ ਟਿਕਟਾਂ ਵੇਚਦੀ ਹੈ, ਤਾਂ ਪੈਸਾ Stripe ਰਾਹੀਂ ਸਿੱਧਾ ਤੁਹਾਡੀ ਸੰਸਥਾ ਦੇ ਬੈਂਕ ਖਾਤੇ ਵਿੱਚ ਜਾਂਦਾ ਹੈ।",
+      "fees": "Stripe ਹਰ ਆਰਡਰ ਦਾ ਲਗਭਗ 2.9% + 30¢ ਰੱਖਦਾ ਹੈ। Wat2Do ਕੁਝ ਨਹੀਂ ਲੈਂਦਾ।",
+      "timing": "Stripe ਪੈਸੇ ਆਪਣੇ ਆਪ ਤੁਹਾਡੇ ਬੈਂਕ ਖਾਤੇ ਵਿੱਚ ਭੇਜਦਾ ਹੈ, ਆਮ ਤੌਰ 'ਤੇ ਹਰ ਵਿਕਰੀ ਤੋਂ ਕੁਝ ਕੰਮਕਾਜੀ ਦਿਨ ਬਾਅਦ। ਪਹਿਲੀ ਅਦਾਇਗੀ ਵਿੱਚ 7 ਤੋਂ 14 ਦਿਨ ਲੱਗ ਸਕਦੇ ਹਨ।",
+      "currency": "ਤੁਹਾਡੀਆਂ ਟਿਕਟਾਂ ਦੀ ਕੀਮਤ {{currency}} ਵਿੱਚ ਹੈ।",
+      "setUp": "ਅਦਾਇਗੀਆਂ ਸੈੱਟ ਕਰੋ",
+      "continueSetup": "ਸੈੱਟਅੱਪ ਜਾਰੀ ਰੱਖੋ",
+      "openDashboard": "Stripe ਡੈਸ਼ਬੋਰਡ ਖੋਲ੍ਹੋ",
+      "states": {
+        "unavailable": {
+          "label": "ਜਲਦੀ ਆ ਰਿਹਾ ਹੈ",
+          "description": "ਟਿਕਟਾਂ ਦੀ ਵਿਕਰੀ ਅਜੇ ਉਪਲਬਧ ਨਹੀਂ ਹੈ। ਜਲਦੀ ਦੁਬਾਰਾ ਦੇਖੋ।"
+        },
+        "notConnected": {
+          "label": "ਸੈੱਟਅੱਪ ਨਹੀਂ ਹੋਇਆ",
+          "description": "Stripe ਦੇ ਸੁਰੱਖਿਅਤ ਪੰਨੇ 'ਤੇ ਲਗਭਗ 5 ਮਿੰਟ: ਤੁਹਾਡੀ ਸੰਸਥਾ ਦਾ ਬੈਂਕ ਖਾਤਾ ਅਤੇ ਕਿਸੇ ਇੱਕ ਅਹੁਦੇਦਾਰ ਦਾ ਪਛਾਣ ਪੱਤਰ।"
+        },
+        "inProgress": {
+          "label": "ਬਸ ਥੋੜ੍ਹਾ ਹੋਰ",
+          "description": "ਤੁਹਾਡੀ ਸੰਸਥਾ ਭੁਗਤਾਨ ਲੈ ਸਕੇ, ਇਸ ਤੋਂ ਪਹਿਲਾਂ Stripe ਨੂੰ ਕੁਝ ਹੋਰ ਵੇਰਵਿਆਂ ਦੀ ਲੋੜ ਹੈ।"
+        },
+        "payoutsPaused": {
+          "label": "ਕਾਰਵਾਈ ਦੀ ਲੋੜ",
+          "description": "ਤੁਹਾਡੀ ਸੰਸਥਾ ਟਿਕਟਾਂ ਵੇਚ ਸਕਦੀ ਹੈ, ਪਰ ਤੁਹਾਡੇ ਬੈਂਕ ਵਿੱਚ ਪੈਸੇ ਭੇਜਣ ਤੋਂ ਪਹਿਲਾਂ Stripe ਨੂੰ ਹੋਰ ਵੇਰਵਿਆਂ ਦੀ ਲੋੜ ਹੈ।"
+        },
+        "ready": {
+          "label": "ਤਿਆਰ",
+          "description": "ਤੁਹਾਡੀ ਸੰਸਥਾ ਟਿਕਟਾਂ ਵੇਚ ਸਕਦੀ ਹੈ। ਅਦਾਇਗੀਆਂ ਆਪਣੇ ਆਪ ਤੁਹਾਡੇ ਬੈਂਕ ਖਾਤੇ ਵਿੱਚ ਪਹੁੰਚਦੀਆਂ ਹਨ।"
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "ਆਪਣੇ ਪਲੇਟਫਾਰਮਾਂ ਨੂੰ ਆਟੋ-ਇੰਪੋਰਟ ਇਵੈਂਟਾਂ ਨਾਲ ਕਨੈਕਟ ਕਰੋ",

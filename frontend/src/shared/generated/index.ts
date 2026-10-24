@@ -97,3 +97,20 @@ export type ApiPayoutStatusUpdate =
   components["schemas"]["PayoutStatusUpdate"];
 export type ApiPaginatedPosterPayoutResponse =
   components["schemas"]["PaginatedResponse_PosterPayoutResponse_"];
+
+// ── Club payouts and ticketing ──────────────────────────────────────
+export type ApiClubPayoutStatus = components["schemas"]["ClubPayoutStatus"];
+export type ApiStripeRedirectResponse = components["schemas"]["StripeRedirectResponse"];
+export type ApiEventTicketingResponse = components["schemas"]["EventTicketingResponse"];
+export type ApiEventTicketingUpdate = components["schemas"]["EventTicketingUpdate"];
+export type ApiTicketDateAvailability = components["schemas"]["TicketDateAvailability"];
+export type ApiTicketCheckoutCreate = components["schemas"]["TicketCheckoutCreate"];
+export type ApiTicketCheckoutResponse = components["schemas"]["TicketCheckoutResponse"];
+export type ApiTicketResponse = components["schemas"]["TicketResponse"];
+export type ApiTicketOrderResponse = components["schemas"]["TicketOrderResponse"];
+export type ApiTicketAttendee = components["schemas"]["TicketAttendee"];
+export type ApiEventTicketSalesResponse = components["schemas"]["EventTicketSalesResponse"];
+export type ApiTicketCheckInResponse = components["schemas"]["TicketCheckInResponse"];
+export type ApiTicketRefundsResponse = components["schemas"]["TicketRefundsResponse"];
+export type ApiTicketRefundRequestCreate = components["schemas"]["TicketRefundRequestCreate"];
+export type ApiClubEventTicketSummary = components["schemas"]["ClubEventTicketSummary"];

@@ -1,0 +1,174 @@
+{
+  "tickets": {
+    "title": "Mis boletos",
+    "description": "Los boletos que compraste en Wat2Do. Muestra el código QR en la entrada.",
+    "upcoming": "Próximos",
+    "past": "Pasados",
+    "manage": "Gestionar boletos",
+    "sellTickets": "Vender boletos",
+    "empty": {
+      "title": "Aún no tienes boletos",
+      "description": "Cuando compres un boleto para un evento, aparecerá aquí.",
+      "action": "Buscar eventos"
+    },
+    "notFound": {
+      "title": "Este boleto no existe",
+      "description": "Revisa el enlace o busca tus boletos en Mis boletos."
+    },
+    "status": {
+      "valid": "Válido",
+      "checkedIn": "Entrada registrada",
+      "refunded": "Reembolsado"
+    },
+    "card": {
+      "title": "Boletos",
+      "price": "{{price}} por boleto",
+      "noFees": "Sin cargos por servicio",
+      "quantity": "Cantidad de boletos",
+      "left": "Queda {{count}}",
+      "left_one": "Queda {{count}}",
+      "left_many": "Quedan {{count}}",
+      "left_other": "Quedan {{count}}",
+      "buy": "Comprar boletos · {{total}}",
+      "continueToPayment": "Continuar al pago",
+      "payNote": "Pago seguro con Stripe. {{club}} recibe tu nombre y tu correo para registrar tu entrada.",
+      "youHave": "Tienes {{count}} boleto",
+      "youHave_one": "Tienes {{count}} boleto",
+      "youHave_many": "Tienes {{count}} boletos",
+      "youHave_other": "Tienes {{count}} boletos",
+      "viewTickets": "Ver mis boletos",
+      "unavailable": {
+        "cancelled": "Este evento fue cancelado.",
+        "paused": "La venta de boletos está en pausa por ahora.",
+        "soldOut": "Este evento está agotado.",
+        "closed": "La venta de boletos ya cerró.",
+        "notOnSale": "Los boletos aún no están a la venta."
+      }
+    },
+    "pass": {
+      "when": "Cuándo",
+      "where": "Dónde",
+      "holder": "Titular del boleto",
+      "code": "Código",
+      "locationTba": "Lugar por confirmar",
+      "qrLabel": "Código QR de este boleto",
+      "showAtDoor": "Muestra este código QR en la entrada.",
+      "refundedNote": "Este boleto fue reembolsado y ya no se puede usar.",
+      "viewEvent": "Ver evento"
+    },
+    "door": {
+      "checkIn": "Registrar entrada",
+      "undo": "Anular entrada",
+      "officerNote": "Administras {{club}}, así que puedes registrar la entrada de este boleto.",
+      "checkedInAt": "Entrada registrada: {{time}}",
+      "results": {
+        "checked_in": "Entrada registrada. Puede pasar.",
+        "already_checked_in": "Entrada ya registrada",
+        "undone": "Entrada anulada",
+        "refunded": "Boleto reembolsado. No dejar pasar.",
+        "not_for_this_event": "Este boleto es de otro evento",
+        "not_found": "Ningún boleto coincide con ese código"
+      }
+    },
+    "order": {
+      "confirming": "Confirmando tu pago",
+      "confirmingDescription": "Esto suele tardar unos segundos. Tus boletos también van en camino a tu correo.",
+      "paidTitle": "¡Estás dentro!",
+      "paidDescription": "Tienes {{count}} boleto: está aquí abajo y en tu correo.",
+      "paidDescription_one": "Tienes {{count}} boleto: está aquí abajo y en tu correo.",
+      "paidDescription_many": "Tienes {{count}} boletos: están aquí abajo y en tu correo.",
+      "paidDescription_other": "Tienes {{count}} boletos: están aquí abajo y en tu correo.",
+      "shareNote": "Cada boleto tiene su propio código QR. Envía el enlace de cada boleto a quien lo vaya a usar.",
+      "failedTitle": "Este pago no se completó",
+      "failedDescription": "No se te cobró nada y los boletos se liberaron.",
+      "notFound": "No encontramos este pedido",
+      "backToEvent": "Volver al evento",
+      "allTickets": "Todos mis boletos"
+    },
+    "desk": {
+      "title": "Taquilla",
+      "notFound": "Este evento ya no existe",
+      "setupTitle": "Vender boletos",
+      "setupDescription": "Los compradores pagan con Stripe y reciben por correo un boleto con código QR. El dinero va directo a tu organización.",
+      "settingsTitle": "Configuración de boletos",
+      "settingsDescription": "Cambia cuántos boletos vendes o pausa las ventas por un tiempo.",
+      "price": "Precio del boleto ({{currency}})",
+      "priceLocked": "El precio no se puede cambiar una vez que alguien compra un boleto.",
+      "priceRange": "Escribe un precio entre {{minimum}} y {{maximum}}.",
+      "capacity": "Boletos por fecha",
+      "capacityPlaceholder": "Sin límite",
+      "pause": "Pausar ventas",
+      "pauseHint": "Oculta el botón de compra hasta que vuelvas a activar las ventas.",
+      "fees": "Stripe se queda con alrededor del 2.9% + 30¢ de cada pedido. Wat2Do no cobra nada.",
+      "payoutsNeeded": "Primero configura los cobros, para que el dinero tenga a dónde llegar.",
+      "setUpPayouts": "Configurar cobros",
+      "startSelling": "Empezar a vender",
+      "save": "Guardar cambios",
+      "saved": "Configuración de boletos guardada",
+      "stopSelling": "Dejar de vender boletos",
+      "stopped": "Este evento ya no vende boletos",
+      "openScanner": "Abrir escáner de entrada",
+      "attendees": "Lista de asistentes",
+      "attendeesEmpty": "Aún no hay boletos vendidos",
+      "search": "Buscar por nombre, correo o código",
+      "columns": {
+        "holder": "Titular del boleto",
+        "date": "Fecha",
+        "status": "Estado",
+        "actions": "Acciones"
+      },
+      "stats": {
+        "sold": "Vendidos",
+        "revenue": "Ingresos",
+        "checkedIn": "Entradas registradas",
+        "remaining": "Restantes",
+        "unlimited": "Sin límite"
+      },
+      "refund": "Reembolsar",
+      "refundTitle": "¿Reembolsar este boleto?",
+      "refundDescription": "{{name}} recibe {{amount}} de vuelta en su tarjeta, más un correo. Stripe no le devuelve su comisión a tu organización.",
+      "refundConfirm": "Reembolsar {{amount}}",
+      "refundRequested": "Reembolso solicitado",
+      "decline": "Rechazar",
+      "declineTitle": "¿Rechazar esta solicitud de reembolso?",
+      "declineDescription": "{{name}} recibe un correo que le avisa que tu organización rechazó la solicitud. Su boleto sigue siendo válido.",
+      "declineConfirm": "Rechazar solicitud",
+      "declined": "Solicitud de reembolso rechazada",
+      "cancelledTitle": "Este evento fue cancelado",
+      "cancelledDescription": "Todos los boletos se reembolsan automáticamente. Si algunos siguen válidos, es que Stripe no estuvo disponible por un momento: termina el resto aquí.",
+      "refundRemaining": "Reembolsar boletos restantes",
+      "refundedCount": "{{count}} boleto reembolsado",
+      "refundedCount_one": "{{count}} boleto reembolsado",
+      "refundedCount_many": "{{count}} boletos reembolsados",
+      "refundedCount_other": "{{count}} boletos reembolsados"
+    },
+    "refund": {
+      "prompt": "¿Ya no puedes ir?",
+      "promptDescription": "Pídele a {{club}} que te reembolse el boleto. La decisión es suya y, en cualquier caso, recibirás un correo.",
+      "request": "Pedir un reembolso",
+      "signIn": "Inicia sesión para pedir un reembolso",
+      "title": "¿Pedirle un reembolso a {{club}}?",
+      "description": "Si {{club}} acepta, el precio completo vuelve a tu tarjeta. En cualquier caso, recibirás un correo.",
+      "noteLabel": "¿Algo que la organización deba saber? (opcional)",
+      "notePlaceholder": "Por ejemplo: no puedo ir en la nueva fecha.",
+      "send": "Enviar solicitud",
+      "sent": "Solicitud de reembolso enviada a {{club}}",
+      "pending": "El {{date}} le pediste un reembolso a {{club}}. Recibirás un correo cuando haya una decisión.",
+      "declined": "El {{date}}, {{club}} rechazó tu solicitud de reembolso. Tu boleto sigue siendo válido.",
+      "theClub": "la organización"
+    },
+    "scanner": {
+      "title": "Escáner de entrada",
+      "description": "Apunta la cámara al código QR de un boleto.",
+      "admitted": "{{checkedIn}} de {{sold}} entradas registradas",
+      "startCamera": "Activar cámara",
+      "cameraLabel": "Vista de la cámara para escanear boletos",
+      "cameraBlocked": "Permite el acceso a la cámara para escanear boletos, o escribe el código abajo.",
+      "manual": "Código del boleto",
+      "manualPlaceholder": "Escribe el código que aparece bajo el código QR"
+    },
+    "errors": {
+      "generic": "Algo salió mal. Inténtalo de nuevo."
+    }
+  }
+}

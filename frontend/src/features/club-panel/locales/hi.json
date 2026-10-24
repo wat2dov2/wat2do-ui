@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "संगठन पैनल पर वापस जाएँ",
     "title": "संगठन पैनल",
-    "description": "अपने संगठन के पोस्टर, एकीकरण और सदस्यों को प्रबंधित करें",
     "posters": "पोस्टर",
     "postersDesc": "QR कोड पोस्टर प्रबंधित करें",
     "integrations": "एकीकरण",
@@ -16,8 +15,6 @@
       "joined": "सम्मिलित हुए",
       "requested": "अनुरोध किया"
     },
-    "recentActivity": "हाल की गतिविधि",
-    "noRecentActivity": "कोई हालिया गतिविधि नहीं",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "WhatsApp के माध्यम से ईवेंट सूचनाएं भेजें",
     "discord": "Discord",
@@ -65,7 +62,60 @@
     "addManagerFailed": "प्रबंधक जोड़ने या आमंत्रण भेजने में विफल.",
     "invitationRevokedSuccess": "आमंत्रण सफलतापूर्वक रद्द कर दिया गया!",
     "revokeInvitationFailed": "आमंत्रण रद्द करने में विफल.",
-    "loadManagementFailed": "प्रबंधन विवरण लोड करने में विफल."
+    "loadManagementFailed": "प्रबंधन विवरण लोड करने में विफल.",
+    "events": "इवेंट",
+    "eventsDesc": "आपके संगठन के इवेंट और उनके टिकटों की बिक्री का हाल।",
+    "payoutsDesc": "Stripe के ज़रिए टिकटों का पैसा पाएँ।",
+    "createEvent": "इवेंट बनाएँ",
+    "upcomingEvents": "आगामी इवेंट",
+    "pastEvents": "पिछले इवेंट",
+    "viewAllEvents": "सभी इवेंट",
+    "noUpcomingEvents": "कोई आगामी इवेंट नहीं",
+    "noUpcomingEventsDesc": "इवेंट बनाएँ, वह यहाँ दिखेगा।",
+    "noPastEvents": "अभी तक कोई पिछला इवेंट नहीं",
+    "eventsList": {
+      "cancelled": "रद्द",
+      "notSelling": "बिना टिकट",
+      "salesPaused": "बिक्री रुकी हुई",
+      "ticketsSold": "{{count}} बिका · {{revenue}}",
+      "ticketsSold_one": "{{count}} बिका · {{revenue}}",
+      "ticketsSold_other": "{{count}} बिके · {{revenue}}",
+      "refundRequests": "रिफ़ंड का {{count}} अनुरोध",
+      "refundRequests_one": "रिफ़ंड का {{count}} अनुरोध",
+      "refundRequests_other": "रिफ़ंड के {{count}} अनुरोध"
+    },
+    "payouts": {
+      "title": "पेआउट",
+      "intro": "जब आपका संगठन Wat2Do पर टिकट बेचता है, तो पैसा Stripe के ज़रिए सीधे आपके संगठन के बैंक खाते में जाता है।",
+      "fees": "Stripe हर ऑर्डर का लगभग 2.9% + 30¢ रखता है। Wat2Do कुछ नहीं लेता।",
+      "timing": "Stripe पैसा अपने आप आपके बैंक खाते में भेजता है, आम तौर पर हर बिक्री के कुछ कार्य दिवस बाद। पहले पेआउट में 7 से 14 दिन लग सकते हैं।",
+      "currency": "आपके टिकटों की कीमत {{currency}} में है।",
+      "setUp": "पेआउट सेट करें",
+      "continueSetup": "सेटअप जारी रखें",
+      "openDashboard": "Stripe डैशबोर्ड खोलें",
+      "states": {
+        "unavailable": {
+          "label": "जल्द आ रहा है",
+          "description": "टिकट बिक्री अभी उपलब्ध नहीं है। जल्द फिर देखें।"
+        },
+        "notConnected": {
+          "label": "सेटअप नहीं हुआ",
+          "description": "Stripe के सुरक्षित पेज पर लगभग 5 मिनट: आपके संगठन का बैंक खाता और किसी एक पदाधिकारी का पहचान पत्र।"
+        },
+        "inProgress": {
+          "label": "बस थोड़ा और",
+          "description": "आपका संगठन भुगतान ले सके, इससे पहले Stripe को कुछ और जानकारी चाहिए।"
+        },
+        "payoutsPaused": {
+          "label": "कार्रवाई ज़रूरी",
+          "description": "आपका संगठन टिकट बेच सकता है, लेकिन आपके बैंक में पैसा भेजने से पहले Stripe को और जानकारी चाहिए।"
+        },
+        "ready": {
+          "label": "तैयार",
+          "description": "आपका संगठन टिकट बेच सकता है। पेआउट अपने आप आपके बैंक खाते में पहुँचते हैं।"
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "अपने प्लेटफ़ॉर्म को ऑटो-इम्पोर्ट इवेंट से कनेक्ट करें",

@@ -2,9 +2,9 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 
-from core.auth import get_admin_user, get_authorized_resource, get_db_user, is_admin
+from core.auth import get_admin_user, get_db_user, is_admin
 from core.constants import (
     MAX_EVENT_PRICE,
     MAX_EVENT_SCHOOL_LENGTH,
@@ -15,6 +15,7 @@ from core.errors import (
     CLUB_NOT_FOUND,
     CLUB_PENDING_REVIEW,
     EVENT_NOT_FOUND,
+    NOT_AUTHORIZED,
 )
 from core.exceptions import AuthorizationError, get_or_404
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
@@ -29,7 +30,7 @@ from schemas.event import (
     EventUpdate,
 )
 from schemas.user import UserResponse
-from services import admin_query, club_service, event_query, event_service
+from services import admin_query, club_service, event_query, event_service, ticketing_service
 
 router = APIRouter(prefix="/events", tags=["events"])
 EventSortBy = Literal["date", "title", "location", "price", "added_at"]
@@ -37,12 +38,13 @@ EventSortOrder = Literal["asc", "desc"]
 
 
 def _get_event_or_404_authorized(event_id: int, db_user: UserResponse) -> EventResponse:
-    """Fetch event by ID (404 if missing); require creator or admin."""
-    return get_authorized_resource(
-        lambda: event_service.get_event(event_id),
-        EVENT_NOT_FOUND,
-        db_user,
-    )
+    """The event, when *db_user* created it, is on its club's management team, or is an admin."""
+    event = get_or_404(event_service.get_event(event_id), EVENT_NOT_FOUND)
+    if is_admin(db_user) or event.created_by == str(db_user.id):
+        return event
+    if event.club_id is not None and club_service.is_club_member(event.club_id, str(db_user.id)):
+        return event
+    raise AuthorizationError(NOT_AUTHORIZED)
 
 
 def _authorize_event_club(club_id: int, db_user: UserResponse) -> None:
@@ -174,14 +176,22 @@ def create_event(
 def update_event(
     event_id: int,
     data: EventUpdate,
+    background_tasks: BackgroundTasks,
     db_user: UserResponse = Depends(get_db_user),
 ):
-    _get_event_or_404_authorized(event_id, db_user)
+    existing = _get_event_or_404_authorized(event_id, db_user)
     # Reassigning orgs requires management-team membership (or admin), same as create.
     if data.club_id is not None:
         _authorize_event_club(data.club_id, db_user)
+    ticketing_service.ensure_edit_keeps_tickets(existing, data)
     # People going hear about material changes through event_change_alerts.
-    return get_or_404(event_service.update_event(event_id, data), EVENT_NOT_FOUND)
+    updated = get_or_404(event_service.update_event(event_id, data), EVENT_NOT_FOUND)
+    if updated.cancelled and not existing.cancelled:
+        # Every ticket holder of a cancelled event gets their money back, then an email.
+        background_tasks.add_task(
+            ticketing_service.refund_cancelled_event, event_id, refunded_by=str(db_user.id)
+        )
+    return updated
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -190,4 +200,5 @@ def delete_event(
     db_user: UserResponse = Depends(get_db_user),
 ):
     _get_event_or_404_authorized(event_id, db_user)
+    ticketing_service.ensure_event_deletable(event_id)
     event_service.delete_event(event_id)

@@ -2,13 +2,14 @@ import logging
 import secrets
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from core.auth import get_admin_user
 from core.config import settings
-from services import school_service
+from services import school_service, stripe_gateway, ticketing_service
 from services.automate_log_service import create_automate_log
 from services.automate_log_service import get_automate_logs as fetch_logs
 from services.notifications import event_change
@@ -77,6 +78,21 @@ async def receive_automate_log(
 def send_event_change_alerts(_: str = Depends(verify_event_change_alerts_token)):
     """Called every minute by Supabase pg_cron while event changes are pending."""
     return {"sent": event_change.send_due_alerts()}
+
+
+@router.post("/stripe")
+async def receive_stripe_event(request: Request, background_tasks: BackgroundTasks):
+    """Stripe Connect events for club ticket sales, trusted only with a valid signature.
+
+    Stripe waits for this answer, so the receipt email runs after it is sent.
+    """
+    event = stripe_gateway.verified_event(
+        await request.body(), request.headers.get("stripe-signature")
+    )
+    after_response = await run_in_threadpool(ticketing_service.handle_stripe_event, event)
+    if after_response is not None:
+        background_tasks.add_task(after_response)
+    return {"received": True}
 
 
 @router.get("/automate/logs")

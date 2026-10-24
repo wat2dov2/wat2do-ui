@@ -190,3 +190,18 @@ def test_going_counts_merge_batches_with_integer_results(fake_sb, patch_sb):
         1: 3,
         501: 2,
     }
+
+
+def test_get_event_attendees_never_names_hidden_ticket_buyers(fake_sb, patch_sb):
+    patch_sb("services.going_event_service")
+    fake_sb.queue_responses(
+        [
+            [{"user_id": "buyer"}, {"user_id": "u1"}],
+            [{"id": "u1", "full_name": "Jesse Lee"}],
+        ]
+    )
+
+    attendees = going_event_service.get_event_attendees(42, hidden={"buyer"})
+
+    assert [attendee.name for attendee in attendees] == ["Jesse L."]
+    fake_sb.in_.assert_called_once_with("id", ["u1"])

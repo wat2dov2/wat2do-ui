@@ -11,10 +11,10 @@ from uuid import UUID
 
 from postgrest.exceptions import APIError
 
-from core.constants import DEFAULT_LIST_LIMIT, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
+from core.constants import DEFAULT_LIST_LIMIT, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, ROLE_ADMIN
 from core.controlbox import controlbox
 from core.database import get_sb
-from core.errors import NOT_AUTHORIZED
+from core.errors import CLUB_NOT_FOUND, NOT_AUTHORIZED
 from core.exceptions import AuthorizationError, ConflictError, NotFoundError, ValidationError
 from core.pagination import apply_stable_order
 from core.sanitize import sanitize_postgrest_value
@@ -38,6 +38,7 @@ from schemas.club import (
     ClubUpdate,
     IntegrationPlatform,
 )
+from schemas.user import UserResponse
 from services import admin_query, position_service, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
 from services.school_context import school_frontend_url
@@ -249,6 +250,16 @@ def remove_club_member(club_id: int, user_id: UUID) -> bool:
         .execute()
     )
     return bool(r.data)
+
+
+def get_managed_club(club_id: int, db_user: UserResponse) -> ClubResponse:
+    """The club, when *db_user* is on its management team or an admin; 404 or 403 otherwise."""
+    club = get_club(club_id)
+    if club is None:
+        raise NotFoundError(CLUB_NOT_FOUND)
+    if db_user.role == ROLE_ADMIN or is_club_member(club_id, str(db_user.id)):
+        return club
+    raise AuthorizationError(NOT_AUTHORIZED)
 
 
 def get_club(club_id: int) -> ClubResponse | None:

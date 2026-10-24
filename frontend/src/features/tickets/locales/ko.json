@@ -1,0 +1,166 @@
+{
+  "tickets": {
+    "title": "내 티켓",
+    "description": "Wat2Do에서 구매한 티켓이에요. 입장할 때 QR 코드를 보여 주세요.",
+    "upcoming": "다가오는 일정",
+    "past": "지난 일정",
+    "manage": "티켓 관리",
+    "sellTickets": "티켓 판매",
+    "empty": {
+      "title": "아직 티켓이 없어요",
+      "description": "조직 이벤트 티켓을 구매하면 여기에 표시돼요.",
+      "action": "이벤트 찾기"
+    },
+    "notFound": {
+      "title": "존재하지 않는 티켓이에요",
+      "description": "링크를 확인하거나 '내 티켓'에서 티켓을 찾아보세요."
+    },
+    "status": {
+      "valid": "유효",
+      "checkedIn": "체크인 완료",
+      "refunded": "환불됨"
+    },
+    "card": {
+      "title": "티켓",
+      "price": "티켓당 {{price}}",
+      "noFees": "예매 수수료 없음",
+      "quantity": "티켓 수량",
+      "left": "{{count}}장 남음",
+      "left_other": "{{count}}장 남음",
+      "buy": "티켓 구매 · {{total}}",
+      "continueToPayment": "결제 계속하기",
+      "payNote": "Stripe로 안전하게 결제돼요. 체크인을 위해 {{club}}에 이름과 이메일이 전달돼요.",
+      "youHave": "티켓 {{count}}장 보유 중",
+      "youHave_other": "티켓 {{count}}장 보유 중",
+      "viewTickets": "내 티켓 보기",
+      "unavailable": {
+        "cancelled": "취소된 이벤트예요.",
+        "paused": "티켓 판매가 잠시 중단됐어요.",
+        "soldOut": "매진된 이벤트예요.",
+        "closed": "티켓 판매가 마감됐어요.",
+        "notOnSale": "아직 티켓 판매 전이에요."
+      }
+    },
+    "pass": {
+      "when": "일시",
+      "where": "장소",
+      "holder": "티켓 소지자",
+      "code": "코드",
+      "locationTba": "장소 추후 공지",
+      "qrLabel": "이 티켓의 QR 코드",
+      "showAtDoor": "입장할 때 이 QR 코드를 보여 주세요.",
+      "refundedNote": "환불된 티켓이라 사용할 수 없어요.",
+      "viewEvent": "이벤트 보기"
+    },
+    "door": {
+      "checkIn": "체크인",
+      "undo": "체크인 취소",
+      "officerNote": "{{club}} 관리자라서 이 티켓을 체크인할 수 있어요.",
+      "checkedInAt": "{{time}}에 체크인 완료",
+      "results": {
+        "checked_in": "체크인 완료. 입장시켜 주세요.",
+        "already_checked_in": "이미 체크인된 티켓이에요",
+        "undone": "체크인을 취소했어요",
+        "refunded": "환불된 티켓이에요. 입장시키지 마세요.",
+        "not_for_this_event": "다른 이벤트의 티켓이에요",
+        "not_found": "이 코드와 일치하는 티켓이 없어요"
+      }
+    },
+    "order": {
+      "confirming": "결제를 확인하고 있어요",
+      "confirmingDescription": "보통 몇 초면 끝나요. 티켓은 이메일로도 보내 드려요.",
+      "paidTitle": "구매 완료!",
+      "paidDescription": "티켓 {{count}}장은 아래에서 확인할 수 있고, 이메일로도 보내 드렸어요.",
+      "paidDescription_other": "티켓 {{count}}장은 아래에서 확인할 수 있고, 이메일로도 보내 드렸어요.",
+      "shareNote": "티켓마다 QR 코드가 따로 있어요. 각 티켓 링크를 그 티켓을 사용할 친구에게 보내 주세요.",
+      "failedTitle": "결제가 완료되지 않았어요",
+      "failedDescription": "요금은 청구되지 않았고, 티켓도 다시 풀렸어요.",
+      "notFound": "주문을 찾을 수 없어요",
+      "backToEvent": "이벤트로 돌아가기",
+      "allTickets": "내 티켓 전체 보기"
+    },
+    "desk": {
+      "title": "티켓 관리",
+      "notFound": "더 이상 존재하지 않는 이벤트예요",
+      "setupTitle": "티켓 판매",
+      "setupDescription": "구매자는 Stripe로 결제하고 이메일로 QR 티켓을 받아요. 판매 금액은 조직으로 바로 들어가요.",
+      "settingsTitle": "티켓 설정",
+      "settingsDescription": "판매할 티켓 수를 바꾸거나 잠시 판매를 멈출 수 있어요.",
+      "price": "티켓 가격({{currency}})",
+      "priceLocked": "누군가 티켓을 구매한 뒤에는 가격을 바꿀 수 없어요.",
+      "priceRange": "{{minimum}}에서 {{maximum}} 사이의 가격을 입력하세요.",
+      "capacity": "날짜별 티켓 수",
+      "capacityPlaceholder": "제한 없음",
+      "pause": "판매 일시 중지",
+      "pauseHint": "판매를 다시 켤 때까지 구매 버튼이 숨겨져요.",
+      "fees": "Stripe가 주문마다 약 2.9% + 30¢를 가져가요. Wat2Do는 아무것도 받지 않아요.",
+      "payoutsNeeded": "판매 금액을 받을 수 있도록 먼저 정산을 설정하세요.",
+      "setUpPayouts": "정산 설정",
+      "startSelling": "판매 시작",
+      "save": "변경 사항 저장",
+      "saved": "티켓 설정을 저장했어요",
+      "stopSelling": "티켓 판매 중단",
+      "stopped": "이 이벤트는 이제 티켓을 판매하지 않아요",
+      "openScanner": "입장 스캐너 열기",
+      "attendees": "입장 명단",
+      "attendeesEmpty": "아직 판매된 티켓이 없어요",
+      "search": "이름, 이메일 또는 코드로 검색",
+      "columns": {
+        "holder": "티켓 소지자",
+        "date": "날짜",
+        "status": "상태",
+        "actions": "작업"
+      },
+      "stats": {
+        "sold": "판매",
+        "revenue": "매출",
+        "checkedIn": "체크인",
+        "remaining": "잔여",
+        "unlimited": "제한 없음"
+      },
+      "refund": "환불",
+      "refundTitle": "이 티켓을 환불할까요?",
+      "refundDescription": "{{name}} 님의 카드로 {{amount}} 환불이 진행되고 이메일도 발송돼요. Stripe는 수수료를 조직에 돌려주지 않아요.",
+      "refundConfirm": "{{amount}} 환불",
+      "refundRequested": "환불 요청됨",
+      "decline": "거절",
+      "declineTitle": "이 환불 요청을 거절할까요?",
+      "declineDescription": "{{name}} 님에게 조직이 환불을 거절했다는 이메일이 발송돼요. 티켓은 계속 사용할 수 있어요.",
+      "declineConfirm": "요청 거절",
+      "declined": "환불 요청을 거절했어요",
+      "cancelledTitle": "취소된 이벤트예요",
+      "cancelledDescription": "모든 티켓은 자동으로 환불돼요. 아직 유효한 티켓이 있다면 Stripe에 잠시 연결되지 않았던 거예요. 나머지는 여기서 마무리해 주세요.",
+      "refundRemaining": "남은 티켓 환불",
+      "refundedCount": "티켓 {{count}}장을 환불했어요",
+      "refundedCount_other": "티켓 {{count}}장을 환불했어요"
+    },
+    "refund": {
+      "prompt": "참석이 어려우세요?",
+      "promptDescription": "{{club}}에 환불을 요청해 보세요. 환불 여부는 조직에서 결정하며, 결과와 관계없이 이메일로 알려 드려요.",
+      "request": "환불 요청하기",
+      "signIn": "로그인하고 환불 요청하기",
+      "title": "{{club}}에 환불을 요청할까요?",
+      "description": "{{club}}에서 동의하면 티켓 금액 전액이 카드로 환불돼요. 결과와 관계없이 이메일로 알려 드려요.",
+      "noteLabel": "조직에 전할 내용이 있나요? (선택)",
+      "notePlaceholder": "예: 변경된 날짜에는 참석할 수 없어요.",
+      "send": "요청 보내기",
+      "sent": "{{club}}에 환불 요청을 보냈어요",
+      "pending": "{{date}}에 {{club}}에 환불을 요청했어요. 결정이 나면 이메일로 알려 드려요.",
+      "declined": "{{club}}에서 {{date}}에 환불 요청을 거절했어요. 티켓은 계속 사용할 수 있어요.",
+      "theClub": "주최 조직"
+    },
+    "scanner": {
+      "title": "입장 스캐너",
+      "description": "카메라를 티켓의 QR 코드에 맞춰 주세요.",
+      "admitted": "{{sold}}장 중 {{checkedIn}}장 체크인",
+      "startCamera": "카메라 켜기",
+      "cameraLabel": "티켓 스캔용 카메라 화면",
+      "cameraBlocked": "티켓을 스캔하려면 카메라 접근을 허용하거나, 아래에 코드를 입력해 주세요.",
+      "manual": "티켓 코드",
+      "manualPlaceholder": "QR 코드 아래에 있는 코드를 입력하세요"
+    },
+    "errors": {
+      "generic": "문제가 발생했어요. 다시 시도해 주세요."
+    }
+  }
+}

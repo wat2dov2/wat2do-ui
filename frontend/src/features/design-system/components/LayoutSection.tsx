@@ -8,6 +8,7 @@ import {
   Section,
   Stack,
 } from "@/shared/layout";
+import { Button } from "@/shared/ui/button";
 import { ShowcaseBlock } from "./ShowcaseBlock";
 
 const STACK_GAPS = [1, 2, 4, 6, 8, 12] as const;
@@ -107,6 +108,19 @@ export function LayoutSection() {
             >
               <p className="text-sm text-muted-foreground">
                 Useful for grouped showcase content.
+              </p>
+            </Section>
+            <Section
+              title="Section with an action"
+              description="A control beside the title, such as a View all link."
+              action={
+                <Button variant="link" size="inline">
+                  View all
+                </Button>
+              }
+            >
+              <p className="text-sm text-muted-foreground">
+                Used where a section previews a longer list.
               </p>
             </Section>
           </Stack>

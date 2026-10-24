@@ -9,8 +9,16 @@ from core.constants import ROLE_ADMIN
 from core.pagination import LatestAddedItem
 from schemas.club import ClubResponse
 from schemas.event import EventResponse
-from services import admin_query, club_service, event_query, event_service
-from tests.conftest import ADMIN_USER, FAKE_USER
+from services import admin_query, club_service, event_query, event_service, ticketing_service
+from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
+
+
+@pytest.fixture(autouse=True)
+def _no_ticketing_or_club_lookups(monkeypatch):
+    """Router tests never reach Supabase: no event sells tickets and nobody manages a club."""
+    monkeypatch.setattr(ticketing_service, "ensure_edit_keeps_tickets", MagicMock())
+    monkeypatch.setattr(ticketing_service, "ensure_event_deletable", MagicMock())
+    monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=False))
 
 
 def _mock_event(**overrides) -> EventResponse:
@@ -209,6 +217,47 @@ def test_update_event_non_owner_rejected(other_user_client, monkeypatch):
 
     resp = other_user_client.patch("/events/1", json={"title": "Hacked"})
     assert resp.status_code == 403
+
+
+def test_update_event_by_another_manager_of_its_club_is_allowed(other_user_client, monkeypatch):
+    """Any member of the hosting club manages its events, not only whoever created them."""
+    event = _mock_event(created_by=FAKE_USER["id"])
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=event))
+    is_member = MagicMock(return_value=True)
+    monkeypatch.setattr(club_service, "is_club_member", is_member)
+
+    resp = other_user_client.patch("/events/1", json={"title": "Fixed typo"})
+
+    assert resp.status_code == 200
+    is_member.assert_called_once_with(7, OTHER_USER["id"])
+
+
+def test_cancelling_an_event_refunds_its_tickets_after_responding(
+    authenticated_client, monkeypatch
+):
+    before = _mock_event(created_by=FAKE_USER["id"])
+    after = _mock_event(created_by=FAKE_USER["id"], cancelled=True)
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=before))
+    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=after))
+    refund = MagicMock(return_value=2)
+    monkeypatch.setattr(ticketing_service, "refund_cancelled_event", refund)
+
+    resp = authenticated_client.patch("/events/1", json={"cancelled": True})
+
+    assert resp.status_code == 200
+    refund.assert_called_once_with(1, refunded_by=FAKE_USER["id"])
+
+
+def test_editing_without_cancelling_refunds_nothing(authenticated_client, monkeypatch):
+    event = _mock_event(created_by=FAKE_USER["id"])
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=event))
+    refund = MagicMock()
+    monkeypatch.setattr(ticketing_service, "refund_cancelled_event", refund)
+
+    assert authenticated_client.patch("/events/1", json={"title": "New"}).status_code == 200
+    refund.assert_not_called()
 
 
 def test_update_event_admin_allowed(admin_client, monkeypatch):

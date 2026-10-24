@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "Volver al panel de la organización",
     "title": "Panel de la organización",
-    "description": "Administra los carteles, integraciones y miembros de tu organización",
     "posters": "Carteles",
     "postersDesc": "Gestionar los carteles de código QR ",
     "integrations": "Integraciones",
@@ -16,8 +15,6 @@
       "joined": "Se unió",
       "requested": "Solicitado"
     },
-    "recentActivity": "Actividad reciente",
-    "noRecentActivity": "No hay actividad reciente",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Enviar notificaciones de eventos a través de WhatsApp",
     "discord": "Discord",
@@ -65,7 +62,62 @@
     "addManagerFailed": "Error al agregar al gerente o enviar la invitación.",
     "invitationRevokedSuccess": "¡Invitación revocada con éxito!",
     "revokeInvitationFailed": "Error al revocar la invitación.",
-    "loadManagementFailed": "Error al cargar los detalles de gestión."
+    "loadManagementFailed": "Error al cargar los detalles de gestión.",
+    "events": "Eventos",
+    "eventsDesc": "Los eventos de tu organización y cómo se venden sus boletos.",
+    "payoutsDesc": "Recibe el dinero de los boletos a través de Stripe.",
+    "createEvent": "Crear evento",
+    "upcomingEvents": "Próximos eventos",
+    "pastEvents": "Eventos pasados",
+    "viewAllEvents": "Todos los eventos",
+    "noUpcomingEvents": "No hay eventos próximos",
+    "noUpcomingEventsDesc": "Crea un evento y aparecerá aquí.",
+    "noPastEvents": "Aún no hay eventos pasados",
+    "eventsList": {
+      "cancelled": "Cancelado",
+      "notSelling": "Sin boletos",
+      "salesPaused": "Ventas en pausa",
+      "ticketsSold": "{{count}} vendido · {{revenue}}",
+      "ticketsSold_one": "{{count}} vendido · {{revenue}}",
+      "ticketsSold_many": "{{count}} vendidos · {{revenue}}",
+      "ticketsSold_other": "{{count}} vendidos · {{revenue}}",
+      "refundRequests": "{{count}} solicitud de reembolso",
+      "refundRequests_one": "{{count}} solicitud de reembolso",
+      "refundRequests_many": "{{count}} solicitudes de reembolso",
+      "refundRequests_other": "{{count}} solicitudes de reembolso"
+    },
+    "payouts": {
+      "title": "Cobros",
+      "intro": "Cuando tu organización vende boletos en Wat2Do, el dinero va directo a su cuenta bancaria a través de Stripe.",
+      "fees": "Stripe se queda con alrededor del 2.9% + 30¢ de cada pedido. Wat2Do no cobra nada.",
+      "timing": "Stripe envía el dinero a tu banco automáticamente, por lo general unos días hábiles después de cada venta. El primer cobro puede tardar de 7 a 14 días.",
+      "currency": "Tus boletos se venden en {{currency}}.",
+      "setUp": "Configurar cobros",
+      "continueSetup": "Continuar configuración",
+      "openDashboard": "Abrir el panel de Stripe",
+      "states": {
+        "unavailable": {
+          "label": "Próximamente",
+          "description": "La venta de boletos aún no está disponible. Vuelve pronto."
+        },
+        "notConnected": {
+          "label": "Sin configurar",
+          "description": "Unos 5 minutos en la página segura de Stripe: la cuenta bancaria de tu organización y la identificación de un responsable."
+        },
+        "inProgress": {
+          "label": "Casi listo",
+          "description": "Stripe necesita algunos datos más antes de que tu organización pueda recibir pagos."
+        },
+        "payoutsPaused": {
+          "label": "Acción necesaria",
+          "description": "Tu organización puede vender boletos, pero Stripe necesita más datos antes de poder enviar dinero a tu banco."
+        },
+        "ready": {
+          "label": "Listo",
+          "description": "Tu organización puede vender boletos. Los cobros llegan a tu cuenta bancaria automáticamente."
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "Conecta tus plataformas para importar eventos automáticamente",

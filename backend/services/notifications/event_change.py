@@ -21,7 +21,7 @@ from core.controlbox import controlbox
 from core.database import get_sb
 from core.tables import EVENT_CHANGE_ALERTS, USERS
 from schemas.event import EventResponse
-from services import event_service
+from services import event_service, ticketing_service
 from services.email_layout import email_logo
 from services.email_service import EmailMessage, InlineImage
 from services.notifications.delivery_log import (
@@ -132,6 +132,9 @@ def enqueue_event_change(
     change_hash = _compute_change_hash(diff)
     target_id = f"{event_id}:{change_hash}"
     image = event_hero_image(event.source_image_url)
+    refund_links = (
+        ticketing_service.refund_request_links(event, user_ids) if _offers_refund(diff) else {}
+    )
 
     sent = 0
     for user_id in user_ids:
@@ -147,9 +150,17 @@ def enqueue_event_change(
             diff=diff,
             image=image,
             target_id=target_id,
+            refund_url=refund_links.get(user_id),
         ):
             sent += 1
     return sent
+
+
+def _offers_refund(diff: dict[str, dict[str, Any]]) -> bool:
+    """A new time or place can leave ticket holders unable to go; a cancellation refunds itself."""
+    if diff.get("cancelled", {}).get("new") is True:
+        return False
+    return "location" in diff or "occurrences" in diff
 
 
 def _send_event_change(
@@ -160,6 +171,7 @@ def _send_event_change(
     diff: dict,
     image: InlineImage | None,
     target_id: str,
+    refund_url: str | None = None,
 ) -> bool:
     # Render before claiming, so a rendering failure cannot strand a pending delivery.
     message = _event_change_message(
@@ -169,6 +181,7 @@ def _send_event_change(
         diff=diff,
         image=image,
         target_id=target_id,
+        refund_url=refund_url,
     )
     row_id = claim_delivery(
         user_id=user_id,
@@ -194,6 +207,7 @@ def _event_change_message(
     diff: dict,
     image: InlineImage | None,
     target_id: str,
+    refund_url: str | None = None,
 ) -> EmailMessage:
     school = event_summary.get("school")
     frontend_url = school_frontend_url(school)
@@ -214,6 +228,7 @@ def _event_change_message(
             frontend_url=frontend_url,
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
+            refund_url=refund_url,
         ),
         body_text=render_event_change_text(
             subject=subject,
@@ -223,6 +238,7 @@ def _event_change_message(
             frontend_url=frontend_url,
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
+            refund_url=refund_url,
         ),
         idempotency_key=f"{NOTIFICATION_TYPE_EVENT_CHANGE}:{user_id}:{target_id}",
         headers={

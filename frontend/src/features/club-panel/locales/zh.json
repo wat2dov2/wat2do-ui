@@ -2,7 +2,6 @@
   "clubPanel": {
     "backToPanel": "返回组织面板",
     "title": "组织面板",
-    "description": "管理您组织的二维码海报、第三方集成和成员",
     "posters": "二维码海报",
     "postersDesc": "管理二维码海报",
     "integrations": "第三方集成",
@@ -16,8 +15,6 @@
       "joined": "加入时间",
       "requested": "申请时间"
     },
-    "recentActivity": "近期活动",
-    "noRecentActivity": "暂无近期活动",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "通过 WhatsApp 发送活动通知",
     "discord": "Discord",
@@ -65,7 +62,58 @@
     "addManagerFailed": "添加管理员或发送邀请失败。",
     "invitationRevokedSuccess": "邀请已成功撤销！",
     "revokeInvitationFailed": "撤销邀请失败。",
-    "loadManagementFailed": "加载管理团队信息失败。"
+    "loadManagementFailed": "加载管理团队信息失败。",
+    "events": "活动",
+    "eventsDesc": "你组织的活动及门票销售情况。",
+    "payoutsDesc": "通过 Stripe 收取门票款项。",
+    "createEvent": "创建活动",
+    "upcomingEvents": "即将到来的活动",
+    "pastEvents": "过往活动",
+    "viewAllEvents": "全部活动",
+    "noUpcomingEvents": "暂无即将到来的活动",
+    "noUpcomingEventsDesc": "创建活动后，它会显示在这里。",
+    "noPastEvents": "还没有过往活动",
+    "eventsList": {
+      "cancelled": "已取消",
+      "notSelling": "不售票",
+      "salesPaused": "售票已暂停",
+      "ticketsSold": "已售 {{count}} 张 · {{revenue}}",
+      "ticketsSold_other": "已售 {{count}} 张 · {{revenue}}",
+      "refundRequests": "{{count}} 个退款申请",
+      "refundRequests_other": "{{count}} 个退款申请"
+    },
+    "payouts": {
+      "title": "收款",
+      "intro": "你的组织在 Wat2Do 上售票后，款项会通过 Stripe 直接转入组织的银行账户。",
+      "fees": "Stripe 每笔订单约收取 2.9% + 30¢。Wat2Do 不收取任何费用。",
+      "timing": "Stripe 会自动把款项转入你的银行账户，通常在每笔订单完成后的几个工作日内到账。首次收款可能需要 7 到 14 天。",
+      "currency": "你的门票以 {{currency}} 定价。",
+      "setUp": "设置收款",
+      "continueSetup": "继续设置",
+      "openDashboard": "打开 Stripe 控制台",
+      "states": {
+        "unavailable": {
+          "label": "即将推出",
+          "description": "售票功能暂未开放，请稍后再来看看。"
+        },
+        "notConnected": {
+          "label": "未设置",
+          "description": "在 Stripe 的安全页面上大约需要 5 分钟：填写组织的银行账户，并提供一位干事的身份证件。"
+        },
+        "inProgress": {
+          "label": "快完成了",
+          "description": "Stripe 还需要一些信息，你的组织才能收款。"
+        },
+        "payoutsPaused": {
+          "label": "需要处理",
+          "description": "你的组织可以售票，但 Stripe 需要更多信息才能把钱转到你的银行账户。"
+        },
+        "ready": {
+          "label": "已就绪",
+          "description": "你的组织可以售票了。款项会自动转入你的银行账户。"
+        }
+      }
+    }
   },
   "integrations": {
     "pageDescription": "连接您的平台以自动导入活动",

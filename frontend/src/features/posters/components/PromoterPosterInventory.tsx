@@ -16,7 +16,7 @@ import { getPosterLifecycle } from "@/features/posters/utils/posterLifecycle";
 import { promoterProgram } from "@/shared/config/promoterProgram";
 import { FormGrid, Stack } from "@/shared/layout";
 import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
-import { formatCadCents } from "@/shared/utils/currency";
+import { formatCents } from "@/shared/utils/currency";
 import { toast } from "@/shared/hooks/use-toast";
 import { Badge } from "@/shared/ui/badge";
 import { LazyImage } from "@/shared/ui/lazy-image";
@@ -195,7 +195,7 @@ export function PromoterPosterInventory({
                       {t("posters.inventory.periodEarnings")}
                     </dt>
                     <dd className="font-semibold text-foreground">
-                      {formatCadCents(poster.pendingCents, i18n.language)}
+                      {formatCents(poster.pendingCents, "cad", i18n.language)}
                     </dd>
                   </Stack>
                 </FormGrid>

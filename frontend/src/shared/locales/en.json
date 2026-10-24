@@ -93,7 +93,8 @@
     "primary": "Primary navigation",
     "openMenu": "Open navigation menu",
     "switchToLightMode": "Switch to light mode",
-    "switchToDarkMode": "Switch to dark mode"
+    "switchToDarkMode": "Switch to dark mode",
+    "myTickets": "My tickets"
   },
   "siteBanner": {
     "businessSupport": {

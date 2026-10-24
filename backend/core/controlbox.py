@@ -1132,6 +1132,37 @@ class CompetitorPainPointsControl(_ControlModel):
         return self
 
 
+TicketCountry = Literal["CA", "US"]
+TicketCurrency = Literal["cad", "usd"]
+
+
+class TicketingControl(_ControlModel):
+    # Off until the Stripe keys and the Connect webhook exist in an environment.
+    enabled: bool
+    # A school's country picks both its clubs' Stripe account country and its ticket currency.
+    currency_by_country: dict[TicketCountry, TicketCurrency]
+    # Stripe refuses card charges under 50 cents.
+    minimum_price_cents: int = Field(ge=50, le=100_000)
+    maximum_price_cents: int = Field(gt=0, le=1_000_000)
+    # Capacity is per date of an event.
+    maximum_capacity: int = Field(gt=0, le=100_000)
+    maximum_tickets_per_order: int = Field(gt=0, le=20)
+    # Stripe Checkout sessions last 30 minutes to 24 hours.
+    checkout_minutes: int = Field(ge=30, le=1440)
+    # Seats stay held this long after the session ends, so a payment Stripe
+    # reports late never loses its seats to another buyer.
+    reservation_grace_minutes: int = Field(ge=0, le=120)
+    checkout_rate_limit: RateLimitControl
+
+    @model_validator(mode="after")
+    def _prices_and_countries(self) -> TicketingControl:
+        if self.minimum_price_cents > self.maximum_price_cents:
+            raise ValueError("minimum_price_cents cannot exceed maximum_price_cents")
+        if set(self.currency_by_country) != {"CA", "US"}:
+            raise ValueError("currency_by_country must cover every school country")
+        return self
+
+
 class ControlBox(_ControlModel):
     positions: PositionsControl
     database: DatabaseControl
@@ -1174,6 +1205,7 @@ class ControlBox(_ControlModel):
     instagram_emulator: InstagramEmulatorControl
     workflow_failure_alerts: WorkflowFailureAlertsControl
     promoter_program: PromoterProgramControl
+    ticketing: TicketingControl
 
 
 def load_controlbox(directory: Path = _CONTROLBOX_DIRECTORY) -> ControlBox:
