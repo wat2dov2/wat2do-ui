@@ -158,3 +158,29 @@ def test_free_space_is_read_from_the_data_partition() -> None:
     commands = []
     assert _device([(0, df)], commands).free_data_megabytes() == 611
     assert commands[0][-3:] == ["df", "-k", "/data"]
+
+
+def _df(free_kilobytes):
+    return f"Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/block/dm-44 10167132 0 {free_kilobytes} 0% /data\n"
+
+
+def test_reclaiming_leaves_a_device_with_room_alone() -> None:
+    commands = []
+    assert _device([(0, _df(2_000_000))], commands).reclaim_data() == 1953
+    assert len(commands) == 1
+
+
+def test_reclaiming_clears_only_the_listed_apps_on_the_listed_users() -> None:
+    clears = [(0, "Success\n")] * (
+        len(module.CONTROL.reclaim_android_users) * len(module.CONTROL.reclaim_packages)
+    )
+    commands = []
+    device = _device([(0, _df(200_000)), *clears, (0, _df(800_000))], commands)
+    assert device.reclaim_data() == 781
+    cleared = [command[-4:] for command in commands[1:-1]]
+    assert cleared == [
+        ["clear", "--user", str(user), package]
+        for user in module.CONTROL.reclaim_android_users
+        for package in module.CONTROL.reclaim_packages
+    ]
+    assert all(module.CONTROL.instagram_package not in command for command in commands)

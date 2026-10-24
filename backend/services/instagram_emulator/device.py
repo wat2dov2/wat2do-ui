@@ -284,6 +284,22 @@ class EmulatorDevice:
         line = self.adb("shell", "df", "-k", "/data").strip().splitlines()[-1]
         return int(line.split()[3]) // 1024
 
+    def reclaim_data(self) -> int:
+        """Once space runs low, clear app data the school accounts never need.
+
+        Only apps listed in the controlbox are cleared, on Android users without a
+        Google account, so nothing is lost: Google Play services rebuilds what it needs.
+        Instagram's own data is never cleared, since that would log its accounts out.
+        Returns the free space afterwards.
+        """
+        free = self.free_data_megabytes()
+        if free >= CONTROL.reclaim_below_data_megabytes:
+            return free
+        for user in CONTROL.reclaim_android_users:
+            for package in CONTROL.reclaim_packages:
+                self.adb("shell", "pm", "clear", "--user", str(user), package)
+        return self.free_data_megabytes()
+
     def wake(self) -> None:
         self.adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
         self.adb("shell", "wm", "dismiss-keyguard")
