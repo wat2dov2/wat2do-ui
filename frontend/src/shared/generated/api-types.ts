@@ -852,6 +852,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instagram-publishing/accounts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Instagram Account Stats */
+        get: operations["list_instagram_account_stats_instagram_publishing_accounts__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/interactions/batch": {
         parameters: {
             query?: never;
@@ -3046,6 +3063,74 @@ export interface components {
             schools: components["schemas"]["SchoolIngestionLatency"][];
             /** Hourly */
             hourly: components["schemas"]["HourlyIngestionLatency"][];
+        };
+        /** InstagramAccountPostResponse */
+        InstagramAccountPostResponse: {
+            /** Media Id */
+            media_id: string;
+            /** Media Type */
+            media_type: string;
+            /** Media Product Type */
+            media_product_type?: string | null;
+            /** Caption */
+            caption?: string | null;
+            /** Image Url */
+            image_url?: string | null;
+            /** Permalink */
+            permalink: string;
+            /**
+             * Posted At
+             * Format: date-time
+             */
+            posted_at: string;
+            /** Like Count */
+            like_count?: number | null;
+            /** Comments Count */
+            comments_count?: number | null;
+            /** Music Status */
+            music_status?: ("pending" | "added" | "failed") | null;
+            /** Music Track */
+            music_track?: string | null;
+        };
+        /** InstagramAccountStatsResponse */
+        InstagramAccountStatsResponse: {
+            /** Account Key */
+            account_key: string;
+            /** Username */
+            username: string;
+            /** Name */
+            name?: string | null;
+            /** Profile Picture Url */
+            profile_picture_url?: string | null;
+            /** Followers Count */
+            followers_count?: number | null;
+            /** Follows Count */
+            follows_count?: number | null;
+            /** Media Count */
+            media_count?: number | null;
+            /** Captured At */
+            captured_at?: string | null;
+            /** Requires Reauthorization */
+            requires_reauthorization: boolean;
+            /**
+             * Token Expires At
+             * Format: date-time
+             */
+            token_expires_at: string;
+            /** Followers History */
+            followers_history: components["schemas"]["InstagramFollowerCountResponse"][];
+            /** Posts */
+            posts: components["schemas"]["InstagramAccountPostResponse"][];
+        };
+        /** InstagramFollowerCountResponse */
+        InstagramFollowerCountResponse: {
+            /**
+             * Captured On
+             * Format: date
+             */
+            captured_on: string;
+            /** Followers Count */
+            followers_count: number;
         };
         /** InstagramPublishBatchPublish */
         InstagramPublishBatchPublish: {
@@ -6809,6 +6894,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_instagram_account_stats_instagram_publishing_accounts__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramAccountStatsResponse"][];
                 };
             };
         };

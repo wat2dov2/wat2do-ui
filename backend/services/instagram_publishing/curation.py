@@ -25,7 +25,6 @@ from core.controlbox import controlbox
 from core.exceptions import ValidationError
 from services import school_service
 from services.claude_code import ClaudeCodeError, remove_leftovers, run_agent
-from services.instagram_publishing.credentials import refresh_expiring_tokens
 from services.instagram_publishing.selection import DraftSelection
 from services.instagram_publishing.service import list_draft_candidates, save_review_draft
 
@@ -84,11 +83,8 @@ class CurationError(RuntimeError):
 
 
 def curate_all() -> dict[str, int]:
-    """Refresh tokens, then draft every school that has no draft for today yet."""
+    """Draft every school that has no draft for today yet."""
     remove_leftovers(WORKDIR_PREFIX)
-    tokens = refresh_expiring_tokens()
-    if tokens.get("failed"):
-        log.warning("Instagram token refresh failed for %s accounts", tokens["failed"])
     packets = [packet for packet in list_draft_candidates() if packet["status"] == "needs_review"]
     with ThreadPoolExecutor(max_workers=_CONTROL.curation_parallel_agents) as pool:
         outcomes = list(pool.map(_curate_safely, packets))

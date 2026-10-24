@@ -414,6 +414,69 @@
         "viewPost": "在 Instagram 上查看"
       }
     },
+    "socialAccounts": {
+      "title": "社交账号",
+      "description": "每个 wat2do Instagram 账号的粉丝、互动、帖子和歌曲，每日读取。",
+      "cardDescription": "所有账号的互动、帖子和歌曲",
+      "updated": "更新于{{time}}",
+      "emptyTitle": "暂无统计",
+      "emptyDescription": "每日 Instagram 账号统计工作流每天早上填充此页面。",
+      "openPost": "在 Instagram 打开帖子",
+      "openProfile": "在 Instagram 打开主页",
+      "likes": "点赞",
+      "comments": "评论",
+      "music": {
+        "pending": "歌曲待添加",
+        "added": "已添加歌曲",
+        "failed": "未添加歌曲"
+      },
+      "followers": "粉丝：{{value}}",
+      "change": "自 {{date}}：{{value}}",
+      "postCount": "帖子：{{value}}",
+      "averages": "每帖：{{likes}} 赞，{{comments}} 评论",
+      "rate": "互动率：{{value}}%",
+      "lastPost": "最近发帖 {{time}}",
+      "reconnect": "需要重新连接",
+      "tokenExpires": "令牌到期：{{date}}",
+      "noPosts": "暂无帖子。",
+      "notRead": "尚未读取。下一次每日运行会填充。",
+      "summary": {
+        "accounts": "账号",
+        "needingAttention": "需要处理：{{value}}",
+        "followers": "粉丝总数",
+        "recentPosts": "最近 7 天的帖子",
+        "averageLikes": "每帖平均点赞"
+      },
+      "tabs": {
+        "label": "社交账号视图",
+        "accounts": "账号",
+        "posts": "全部帖子",
+        "songs": "歌曲"
+      },
+      "sortLabel": "排序",
+      "accountLabel": "账号",
+      "accountSorts": {
+        "followers": "粉丝最多",
+        "growth": "增长最快",
+        "engagement": "互动最高",
+        "latest": "最近发帖"
+      },
+      "postSorts": {
+        "newest": "最新",
+        "likes": "点赞最多",
+        "comments": "评论最多"
+      },
+      "songs": {
+        "track": "歌曲",
+        "posts": "帖子",
+        "averageLikes": "平均点赞",
+        "averageComments": "平均评论",
+        "accounts": "账号",
+        "summary": "已添加歌曲：{{added}} · 未找到歌曲：{{failed}} · 等待中：{{pending}}",
+        "emptyTitle": "暂无歌曲",
+        "emptyDescription": "模拟器为已发布的轮播添加歌曲后，会显示在这里。"
+      }
+    },
     "clubSubmissions": "社团提交",
     "noClubSubmissions": "暂无社团提交",
     "noClubSubmissionsDesc": "新提交的社团将在此显示，等待批准。",

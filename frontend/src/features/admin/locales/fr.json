@@ -414,6 +414,69 @@
         "viewPost": "Voir sur Instagram"
       }
     },
+    "socialAccounts": {
+      "title": "Comptes sociaux",
+      "description": "Abonnés, engagement, publications et chansons de chaque compte Instagram wat2do, relevés chaque jour.",
+      "cardDescription": "Engagement, publications et chansons de tous les comptes",
+      "updated": "Mis à jour {{time}}",
+      "emptyTitle": "Aucune statistique pour l'instant",
+      "emptyDescription": "Le relevé quotidien des comptes Instagram remplit cette page chaque matin.",
+      "openPost": "Ouvrir la publication sur Instagram",
+      "openProfile": "Ouvrir le profil sur Instagram",
+      "likes": "J'aime",
+      "comments": "Commentaires",
+      "music": {
+        "pending": "Chanson en attente",
+        "added": "Chanson ajoutée",
+        "failed": "Aucune chanson ajoutée"
+      },
+      "followers": "Abonnés : {{value}}",
+      "change": "Depuis le {{date}} : {{value}}",
+      "postCount": "Publications : {{value}}",
+      "averages": "Par publication : {{likes}} j'aime, {{comments}} commentaires",
+      "rate": "Engagement : {{value}} %",
+      "lastPost": "Dernière publication {{time}}",
+      "reconnect": "Reconnexion nécessaire",
+      "tokenExpires": "Le jeton expire le {{date}}",
+      "noPosts": "Aucune publication pour l'instant.",
+      "notRead": "Pas encore relevé. Le prochain relevé quotidien le remplira.",
+      "summary": {
+        "accounts": "Comptes",
+        "needingAttention": "À vérifier : {{value}}",
+        "followers": "Abonnés au total",
+        "recentPosts": "Publications des 7 derniers jours",
+        "averageLikes": "J'aime moyens par publication"
+      },
+      "tabs": {
+        "label": "Vues des comptes sociaux",
+        "accounts": "Comptes",
+        "posts": "Toutes les publications",
+        "songs": "Chansons"
+      },
+      "sortLabel": "Trier",
+      "accountLabel": "Compte",
+      "accountSorts": {
+        "followers": "Plus d'abonnés",
+        "growth": "Croissance la plus rapide",
+        "engagement": "Meilleur engagement",
+        "latest": "Publication la plus récente"
+      },
+      "postSorts": {
+        "newest": "Plus récentes",
+        "likes": "Plus aimées",
+        "comments": "Plus commentées"
+      },
+      "songs": {
+        "track": "Chanson",
+        "posts": "Publications",
+        "averageLikes": "J'aime moyens",
+        "averageComments": "Commentaires moyens",
+        "accounts": "Comptes",
+        "summary": "Chansons ajoutées : {{added}} · Aucune chanson trouvée : {{failed}} · En attente : {{pending}}",
+        "emptyTitle": "Aucune chanson pour l'instant",
+        "emptyDescription": "Les chansons apparaissent ici dès que l'émulateur les ajoute aux carrousels publiés."
+      }
+    },
     "clubSubmissions": "Soumissions de clubs",
     "noClubSubmissions": "Aucune soumission de club",
     "noClubSubmissionsDesc": "Les nouvelles soumissions de clubs apparaîtront ici pour approbation.",

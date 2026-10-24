@@ -43,6 +43,7 @@ export const ROUTES = {
   ADMIN_CLUBS: "/admin/clubs",
   ADMIN_POSTERS: "/admin/posters",
   ADMIN_INSTAGRAM: "/admin/instagram",
+  ADMIN_SOCIAL: "/admin/social",
   ADMIN_DIAGNOSTICS: "/admin/diagnostics",
 
   // Club Panel
@@ -92,6 +93,7 @@ const ROUTE_PAGE_TITLES: Partial<
   [ROUTES.ADMIN_CLUBS]: "Admin Clubs",
   [ROUTES.ADMIN_POSTERS]: "Admin Posters",
   [ROUTES.ADMIN_INSTAGRAM]: "Instagram Publishing",
+  [ROUTES.ADMIN_SOCIAL]: "Social Accounts",
   [ROUTES.ADMIN_DIAGNOSTICS]: "App Diagnostics",
   [ROUTES.CLUB_PANEL]: "Club Panel",
   [ROUTES.CLUB_PANEL_POSTERS]: "Posters",
@@ -151,6 +153,7 @@ export const ADMIN_ROUTE_MAP = {
   "admin-clubs": ROUTES.ADMIN_CLUBS,
   "admin-posters": ROUTES.ADMIN_POSTERS,
   "admin-instagram": ROUTES.ADMIN_INSTAGRAM,
+  "admin-social": ROUTES.ADMIN_SOCIAL,
   "admin-diagnostics": ROUTES.ADMIN_DIAGNOSTICS,
 } as const;
 

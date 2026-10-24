@@ -76,3 +76,36 @@ def test_refresh_access_token_uses_unversioned_refresh_endpoint(monkeypatch):
             {"timeout": 30.0},
         )
     ]
+
+
+def test_account_stats_read_profile_and_newest_media(monkeypatch):
+    requests = []
+
+    class _Client:
+        def __init__(self, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def get(self, url, params):
+            requests.append((url, params))
+            if url.endswith("/me/media"):
+                return httpx.Response(200, json={"data": [{"id": "1790"}]})
+            return httpx.Response(200, json={"id": "1784", "followers_count": 12})
+
+    monkeypatch.setattr(meta.httpx, "Client", _Client)
+    client = meta.MetaInstagramClient("secret-token")
+
+    assert client.get_profile()["followers_count"] == 12
+    assert client.list_recent_media(25) == [{"id": "1790"}]
+    assert requests == [
+        ("https://graph.instagram.com/v25.0/me", {"fields": meta.PROFILE_FIELDS}),
+        (
+            "https://graph.instagram.com/v25.0/me/media",
+            {"fields": meta.MEDIA_FIELDS, "limit": "25"},
+        ),
+    ]

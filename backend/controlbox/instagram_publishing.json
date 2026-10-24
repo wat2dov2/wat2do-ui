@@ -32,5 +32,7 @@
   "music_max_age_hours": 24,
   "music_attempts": 3,
   "music_interval_seconds": 120,
+  "stats_media_limit": 25,
+  "stats_history_days": 30,
   "asian_song_schools": ["ubc", "utm", "utsc", "utsg", "uwaterloo"]
 }

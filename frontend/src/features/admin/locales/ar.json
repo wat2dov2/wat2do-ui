@@ -414,6 +414,69 @@
         "viewPost": "عرض على Instagram"
       }
     },
+    "socialAccounts": {
+      "title": "الحسابات الاجتماعية",
+      "description": "المتابعون والتفاعل والمنشورات والأغاني لكل حسابات wat2do على Instagram، تُقرأ يوميًا.",
+      "cardDescription": "التفاعل والمنشورات والأغاني عبر كل الحسابات",
+      "updated": "آخر تحديث {{time}}",
+      "emptyTitle": "لا توجد إحصاءات بعد",
+      "emptyDescription": "يملأ سير عمل إحصاءات Instagram اليومي هذه الصفحة كل صباح.",
+      "openPost": "فتح المنشور على Instagram",
+      "openProfile": "فتح الملف الشخصي على Instagram",
+      "likes": "الإعجابات",
+      "comments": "التعليقات",
+      "music": {
+        "pending": "الأغنية قيد الانتظار",
+        "added": "أُضيفت أغنية",
+        "failed": "لم تُضف أغنية"
+      },
+      "followers": "المتابعون: {{value}}",
+      "change": "منذ {{date}}: {{value}}",
+      "postCount": "المنشورات: {{value}}",
+      "averages": "لكل منشور: {{likes}} إعجاب، {{comments}} تعليق",
+      "rate": "التفاعل: {{value}}%",
+      "lastPost": "آخر منشور {{time}}",
+      "reconnect": "يلزم إعادة الربط",
+      "tokenExpires": "ينتهي الرمز في {{date}}",
+      "noPosts": "لا توجد منشورات بعد.",
+      "notRead": "لم يُقرأ بعد. سيملؤه التشغيل اليومي القادم.",
+      "summary": {
+        "accounts": "الحسابات",
+        "needingAttention": "تحتاج إلى متابعة: {{value}}",
+        "followers": "إجمالي المتابعين",
+        "recentPosts": "منشورات آخر 7 أيام",
+        "averageLikes": "متوسط الإعجابات لكل منشور"
+      },
+      "tabs": {
+        "label": "عروض الحسابات الاجتماعية",
+        "accounts": "الحسابات",
+        "posts": "كل المنشورات",
+        "songs": "الأغاني"
+      },
+      "sortLabel": "ترتيب",
+      "accountLabel": "الحساب",
+      "accountSorts": {
+        "followers": "الأكثر متابعين",
+        "growth": "الأسرع نموًا",
+        "engagement": "الأعلى تفاعلًا",
+        "latest": "الأحدث نشرًا"
+      },
+      "postSorts": {
+        "newest": "الأحدث",
+        "likes": "الأكثر إعجابًا",
+        "comments": "الأكثر تعليقًا"
+      },
+      "songs": {
+        "track": "الأغنية",
+        "posts": "المنشورات",
+        "averageLikes": "متوسط الإعجابات",
+        "averageComments": "متوسط التعليقات",
+        "accounts": "الحسابات",
+        "summary": "أغانٍ مضافة: {{added}} · لم يُعثر على أغنية: {{failed}} · قيد الانتظار: {{pending}}",
+        "emptyTitle": "لا توجد أغانٍ بعد",
+        "emptyDescription": "تظهر الأغاني هنا بعد أن يضيفها المحاكي إلى المنشورات الدائرية المنشورة."
+      }
+    },
     "clubSubmissions": "طلبات الأندية",
     "noClubSubmissions": "لا توجد طلبات أندية",
     "noClubSubmissionsDesc": "ستظهر طلبات الأندية الجديدة هنا للموافقة عليها.",

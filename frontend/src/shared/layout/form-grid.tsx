@@ -10,6 +10,7 @@ const columnClasses = {
   withAction: "grid-cols-1 items-end sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]",
   split: "grid-cols-2 items-start [&>*]:min-w-0",
   gallery: "grid-cols-[repeat(auto-fit,minmax(min(100%,288px),1fr))] items-start",
+  thumbnails: "grid-cols-[repeat(auto-fill,minmax(160px,1fr))] items-start",
   sidebar:
     "[&>:last-child]:order-first lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:[&>:last-child]:order-none",
 } as const

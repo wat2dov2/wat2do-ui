@@ -414,6 +414,69 @@
         "viewPost": "View on Instagram"
       }
     },
+    "socialAccounts": {
+      "title": "Social accounts",
+      "description": "Followers, engagement, posts and songs for every wat2do Instagram account, read daily.",
+      "cardDescription": "Engagement, posts and songs across every account",
+      "updated": "Updated {{time}}",
+      "emptyTitle": "No stats yet",
+      "emptyDescription": "The daily Instagram account stats workflow fills this page every morning.",
+      "openPost": "Open post on Instagram",
+      "openProfile": "Open profile on Instagram",
+      "likes": "Likes",
+      "comments": "Comments",
+      "music": {
+        "pending": "Song pending",
+        "added": "Song added",
+        "failed": "No song added"
+      },
+      "followers": "Followers: {{value}}",
+      "change": "Since {{date}}: {{value}}",
+      "postCount": "Posts: {{value}}",
+      "averages": "Per post: {{likes}} likes, {{comments}} comments",
+      "rate": "Engagement: {{value}}%",
+      "lastPost": "Last post {{time}}",
+      "reconnect": "Reconnect needed",
+      "tokenExpires": "Token expires {{date}}",
+      "noPosts": "No posts yet.",
+      "notRead": "Not read yet. The next daily run fills this in.",
+      "summary": {
+        "accounts": "Accounts",
+        "needingAttention": "Need attention: {{value}}",
+        "followers": "Total followers",
+        "recentPosts": "Posts in the last 7 days",
+        "averageLikes": "Average likes per post"
+      },
+      "tabs": {
+        "label": "Social account views",
+        "accounts": "Accounts",
+        "posts": "All posts",
+        "songs": "Songs"
+      },
+      "sortLabel": "Sort",
+      "accountLabel": "Account",
+      "accountSorts": {
+        "followers": "Most followers",
+        "growth": "Fastest growing",
+        "engagement": "Highest engagement",
+        "latest": "Posted most recently"
+      },
+      "postSorts": {
+        "newest": "Newest",
+        "likes": "Most liked",
+        "comments": "Most comments"
+      },
+      "songs": {
+        "track": "Song",
+        "posts": "Posts",
+        "averageLikes": "Avg. likes",
+        "averageComments": "Avg. comments",
+        "accounts": "Accounts",
+        "summary": "Songs added: {{added}} · No song found: {{failed}} · Waiting: {{pending}}",
+        "emptyTitle": "No songs yet",
+        "emptyDescription": "Songs appear here once the emulator adds them to published carousels."
+      }
+    },
     "clubSubmissions": "Club submissions",
     "noClubSubmissions": "No club submissions",
     "noClubSubmissionsDesc": "New club submissions will appear here for approval.",

@@ -20,6 +20,7 @@ import type {
   ApiInstagramPublishBatchPublish,
   ApiInstagramPublishBatchResponse,
   ApiInstagramPublishBatchUpdate,
+  ApiInstagramAccountStatsResponse,
   ApiInstagramSongCreate,
   ApiInstagramSongResponse,
   ApiPaginatedInstagramPublishBatchSummaryResponse,
@@ -218,6 +219,11 @@ export async function publishInstagramBatch(
     `/instagram-publishing/batches/${id}/publish`,
     data,
   );
+}
+
+/** Every wat2do Instagram account with its follower history and newest posts, read daily. */
+export async function getInstagramAccountStats(): Promise<ApiInstagramAccountStatsResponse[]> {
+  return api.get<ApiInstagramAccountStatsResponse[]>("/instagram-publishing/accounts/");
 }
 
 export async function getInstagramSongs(): Promise<ApiInstagramSongResponse[]> {

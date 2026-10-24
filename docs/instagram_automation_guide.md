@@ -441,8 +441,7 @@ launchd runs a missed time once the Mac wakes, and a skipped day is not lost: th
 The job keeps no logs and exits non-zero when any school fails; failed schools are retried by running `curate` again, which skips schools already drafted today.
 The model, parallel agents, attempts, timeout and poster size are the `curation_*` controlbox settings.
 The job uses the repository's existing production configuration and authenticated AWS access without printing or persisting credentials.
-It calls `refresh-tokens` before reviewing candidates, so encrypted account token maintenance remains part of the daily operation.
-Token-refresh failures are reported separately and do not prevent reviewing other healthy accounts.
+It does not refresh tokens: the Mac has no token encryption key, so the daily `Instagram account stats` GitHub workflow refreshes expiring tokens (see below).
 
 The command interface never selects events itself and never publishes them.
 Each selection JSON contains `account_key`, the candidate packet's timezone-aware `window_end`, `caption_intro`, `cover_body`, and ordered `picks` with `event_id` and `sticker_labels`.
@@ -469,6 +468,16 @@ The admin drawer shows the outcome and links the live post.
 
 The emulator is kept running by the `io.wat2do.instagram-emulator` LaunchAgent (`scripts/instagram_emulator.py install-schedule`), which boots the virtual device in `controlbox/instagram_emulator.json` whenever adb cannot see it.
 Every job that drives the emulator holds its lock (`exclusive()` in `services/instagram_emulator/device.py`), so a story repost and a music edit never tap at once.
+
+### Account stats and token refresh
+
+The `Instagram account stats` GitHub workflow (`.github/workflows/instagram-account-stats.yml`) runs `backend/jobs/snapshot_instagram_accounts.py` daily at 11:00 UTC.
+It reads `INSTAGRAM_TOKEN_ENCRYPTION_KEY` from the production runtime secret, which the Mac does not hold, so it is also where expiring tokens are refreshed.
+It then reads every account with a working token through the Graph API, using only `instagram_business_basic`: followers, follows and post counts, plus the newest `stats_media_limit` posts with their like and comment counts.
+`instagram_account_snapshots` keeps one row per account per day, and `instagram_account_media` holds each account's newest posts, replaced on every run.
+Reach, views, saves and shares need the `instagram_business_manage_insights` permission, which the stored tokens were not granted.
+The admin's Social accounts page shows every account at once, with `stats_history_days` of follower history and the song the emulator added to each carousel wat2do published.
+One account's failure never stops the others, but it fails the run, which posts to Discord.
 
 ### Browser worker diagnostics
 

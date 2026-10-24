@@ -414,6 +414,69 @@
         "viewPost": "Instagram에서 보기"
       }
     },
+    "socialAccounts": {
+      "title": "소셜 계정",
+      "description": "wat2do의 모든 Instagram 계정의 팔로워, 참여, 게시물, 노래를 매일 읽어 옵니다.",
+      "cardDescription": "모든 계정의 참여, 게시물, 노래",
+      "updated": "{{time}} 업데이트",
+      "emptyTitle": "아직 통계가 없습니다",
+      "emptyDescription": "매일 실행되는 Instagram 통계 워크플로가 매일 아침 이 페이지를 채웁니다.",
+      "openPost": "Instagram에서 게시물 열기",
+      "openProfile": "Instagram에서 프로필 열기",
+      "likes": "좋아요",
+      "comments": "댓글",
+      "music": {
+        "pending": "노래 대기 중",
+        "added": "노래 추가됨",
+        "failed": "노래 추가 안 됨"
+      },
+      "followers": "팔로워: {{value}}",
+      "change": "{{date}} 이후: {{value}}",
+      "postCount": "게시물: {{value}}",
+      "averages": "게시물당: 좋아요 {{likes}}, 댓글 {{comments}}",
+      "rate": "참여율: {{value}}%",
+      "lastPost": "마지막 게시물 {{time}}",
+      "reconnect": "다시 연결 필요",
+      "tokenExpires": "토큰 만료: {{date}}",
+      "noPosts": "아직 게시물이 없습니다.",
+      "notRead": "아직 읽지 않았습니다. 다음 일일 실행에서 채워집니다.",
+      "summary": {
+        "accounts": "계정",
+        "needingAttention": "확인 필요: {{value}}",
+        "followers": "총 팔로워",
+        "recentPosts": "최근 7일 게시물",
+        "averageLikes": "게시물당 평균 좋아요"
+      },
+      "tabs": {
+        "label": "소셜 계정 보기",
+        "accounts": "계정",
+        "posts": "모든 게시물",
+        "songs": "노래"
+      },
+      "sortLabel": "정렬",
+      "accountLabel": "계정",
+      "accountSorts": {
+        "followers": "팔로워 많은 순",
+        "growth": "빠르게 성장하는 순",
+        "engagement": "참여율 높은 순",
+        "latest": "최근 게시 순"
+      },
+      "postSorts": {
+        "newest": "최신순",
+        "likes": "좋아요 많은 순",
+        "comments": "댓글 많은 순"
+      },
+      "songs": {
+        "track": "노래",
+        "posts": "게시물",
+        "averageLikes": "평균 좋아요",
+        "averageComments": "평균 댓글",
+        "accounts": "계정",
+        "summary": "추가된 노래: {{added}} · 노래 없음: {{failed}} · 대기 중: {{pending}}",
+        "emptyTitle": "아직 노래가 없습니다",
+        "emptyDescription": "에뮬레이터가 게시된 캐러셀에 노래를 추가하면 여기에 표시됩니다."
+      }
+    },
     "clubSubmissions": "동아리 제출",
     "noClubSubmissions": "동아리 제출 없음",
     "noClubSubmissionsDesc": "새로운 동아리 제출이 승인을 위해 여기에 표시됩니다.",

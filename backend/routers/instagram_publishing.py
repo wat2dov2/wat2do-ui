@@ -6,6 +6,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from core.auth import get_admin_user
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from schemas.instagram_publishing import (
+    InstagramAccountStatsResponse,
     InstagramPublishBatchPublish,
     InstagramPublishBatchResponse,
     InstagramPublishBatchStatus,
@@ -16,7 +17,7 @@ from schemas.instagram_publishing import (
 )
 from schemas.user import UserResponse
 from services import instagram_publishing
-from services.instagram_publishing import music
+from services.instagram_publishing import music, stats
 
 router = APIRouter(prefix="/instagram-publishing", tags=["instagram-publishing"])
 
@@ -96,3 +97,8 @@ def delete_instagram_song(
     _: UserResponse = Depends(get_admin_user),
 ):
     music.delete_song(song_id)
+
+
+@router.get("/accounts/", response_model=list[InstagramAccountStatsResponse])
+def list_instagram_account_stats(_: UserResponse = Depends(get_admin_user)):
+    return stats.list_account_stats()

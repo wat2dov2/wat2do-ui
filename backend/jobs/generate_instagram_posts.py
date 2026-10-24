@@ -22,7 +22,6 @@ from core.controlbox import controlbox  # noqa: E402
 from core.launch_agents import CLAUDE_CODE_PATH, install_launch_agent  # noqa: E402
 from services.instagram_publishing import (  # noqa: E402
     list_draft_candidates,
-    refresh_expiring_tokens,
     save_review_draft,
 )
 from services.instagram_publishing.selection import DraftSelection  # noqa: E402
@@ -50,9 +49,6 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("candidates", help="Read enabled accounts and eligible event data")
-    commands.add_parser(
-        "refresh-tokens", help="Refresh expiring tokens without displaying credentials"
-    )
     save = commands.add_parser("save", help="Validate and save one account's editorial choices")
     save.add_argument("selection_file", type=Path)
     commands.add_parser("curate", help="Have Claude draft every school's carousel for today")
@@ -75,13 +71,11 @@ def main() -> int:
         return 1 if result.get("failed") else 0
     if args.command == "candidates":
         result = list_draft_candidates()
-    elif args.command == "refresh-tokens":
-        result = refresh_expiring_tokens()
     else:
         selection = DraftSelection.model_validate_json(args.selection_file.read_text())
         result = save_review_draft(selection)
     print(json.dumps(jsonable_encoder(result), sort_keys=True))
-    return 1 if args.command == "refresh-tokens" and result["failed"] else 0
+    return 0
 
 
 if __name__ == "__main__":

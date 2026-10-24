@@ -414,6 +414,69 @@
         "viewPost": "Открыть в Instagram"
       }
     },
+    "socialAccounts": {
+      "title": "Соцсети",
+      "description": "Подписчики, вовлечённость, публикации и песни всех аккаунтов Instagram wat2do, обновляются ежедневно.",
+      "cardDescription": "Вовлечённость, публикации и песни всех аккаунтов",
+      "updated": "Обновлено {{time}}",
+      "emptyTitle": "Статистики пока нет",
+      "emptyDescription": "Ежедневный сбор статистики Instagram заполняет эту страницу каждое утро.",
+      "openPost": "Открыть публикацию в Instagram",
+      "openProfile": "Открыть профиль в Instagram",
+      "likes": "Отметки «Нравится»",
+      "comments": "Комментарии",
+      "music": {
+        "pending": "Песня в очереди",
+        "added": "Песня добавлена",
+        "failed": "Песня не добавлена"
+      },
+      "followers": "Подписчики: {{value}}",
+      "change": "С {{date}}: {{value}}",
+      "postCount": "Публикации: {{value}}",
+      "averages": "На публикацию: лайки {{likes}}, комментарии {{comments}}",
+      "rate": "Вовлечённость: {{value}}%",
+      "lastPost": "Последняя публикация: {{time}}",
+      "reconnect": "Нужно переподключить",
+      "tokenExpires": "Токен истекает: {{date}}",
+      "noPosts": "Публикаций пока нет.",
+      "notRead": "Ещё не прочитано. Следующий ежедневный запуск заполнит это.",
+      "summary": {
+        "accounts": "Аккаунты",
+        "needingAttention": "Требуют внимания: {{value}}",
+        "followers": "Всего подписчиков",
+        "recentPosts": "Публикации за 7 дней",
+        "averageLikes": "Среднее число лайков на публикацию"
+      },
+      "tabs": {
+        "label": "Представления аккаунтов",
+        "accounts": "Аккаунты",
+        "posts": "Все публикации",
+        "songs": "Песни"
+      },
+      "sortLabel": "Сортировка",
+      "accountLabel": "Аккаунт",
+      "accountSorts": {
+        "followers": "Больше подписчиков",
+        "growth": "Быстрее растут",
+        "engagement": "Выше вовлечённость",
+        "latest": "Недавно публиковали"
+      },
+      "postSorts": {
+        "newest": "Новые",
+        "likes": "Больше лайков",
+        "comments": "Больше комментариев"
+      },
+      "songs": {
+        "track": "Песня",
+        "posts": "Публикации",
+        "averageLikes": "Ср. лайки",
+        "averageComments": "Ср. комментарии",
+        "accounts": "Аккаунты",
+        "summary": "Добавлено песен: {{added}} · Песня не найдена: {{failed}} · В ожидании: {{pending}}",
+        "emptyTitle": "Песен пока нет",
+        "emptyDescription": "Песни появятся здесь, когда эмулятор добавит их в опубликованные карусели."
+      }
+    },
     "clubSubmissions": "Заявки клубов",
     "noClubSubmissions": "Нет заявок клубов",
     "noClubSubmissionsDesc": "Новые заявки клубов появятся здесь для одобрения.",

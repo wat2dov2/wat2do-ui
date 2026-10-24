@@ -414,6 +414,69 @@
         "viewPost": "Instagram पर देखें"
       }
     },
+    "socialAccounts": {
+      "title": "सोशल अकाउंट",
+      "description": "wat2do के हर Instagram अकाउंट के फ़ॉलोअर, एंगेजमेंट, पोस्ट और गाने, रोज़ पढ़े जाते हैं।",
+      "cardDescription": "सभी अकाउंट का एंगेजमेंट, पोस्ट और गाने",
+      "updated": "अपडेट {{time}}",
+      "emptyTitle": "अभी कोई आँकड़े नहीं",
+      "emptyDescription": "Instagram आँकड़ों का दैनिक वर्कफ़्लो हर सुबह यह पेज भरता है।",
+      "openPost": "Instagram पर पोस्ट खोलें",
+      "openProfile": "Instagram पर प्रोफ़ाइल खोलें",
+      "likes": "लाइक",
+      "comments": "कमेंट",
+      "music": {
+        "pending": "गाना बाकी",
+        "added": "गाना जोड़ा गया",
+        "failed": "कोई गाना नहीं जोड़ा गया"
+      },
+      "followers": "फ़ॉलोअर: {{value}}",
+      "change": "{{date}} से: {{value}}",
+      "postCount": "पोस्ट: {{value}}",
+      "averages": "प्रति पोस्ट: {{likes}} लाइक, {{comments}} कमेंट",
+      "rate": "एंगेजमेंट: {{value}}%",
+      "lastPost": "आख़िरी पोस्ट {{time}}",
+      "reconnect": "फिर से जोड़ना ज़रूरी",
+      "tokenExpires": "टोकन की समय-सीमा: {{date}}",
+      "noPosts": "अभी कोई पोस्ट नहीं।",
+      "notRead": "अभी पढ़ा नहीं गया। अगला दैनिक रन इसे भर देगा।",
+      "summary": {
+        "accounts": "अकाउंट",
+        "needingAttention": "ध्यान चाहिए: {{value}}",
+        "followers": "कुल फ़ॉलोअर",
+        "recentPosts": "पिछले 7 दिनों की पोस्ट",
+        "averageLikes": "प्रति पोस्ट औसत लाइक"
+      },
+      "tabs": {
+        "label": "सोशल अकाउंट के दृश्य",
+        "accounts": "अकाउंट",
+        "posts": "सभी पोस्ट",
+        "songs": "गाने"
+      },
+      "sortLabel": "क्रम",
+      "accountLabel": "अकाउंट",
+      "accountSorts": {
+        "followers": "सबसे ज़्यादा फ़ॉलोअर",
+        "growth": "सबसे तेज़ बढ़त",
+        "engagement": "सबसे ज़्यादा एंगेजमेंट",
+        "latest": "हाल में पोस्ट किया"
+      },
+      "postSorts": {
+        "newest": "सबसे नए",
+        "likes": "सबसे ज़्यादा लाइक",
+        "comments": "सबसे ज़्यादा कमेंट"
+      },
+      "songs": {
+        "track": "गाना",
+        "posts": "पोस्ट",
+        "averageLikes": "औसत लाइक",
+        "averageComments": "औसत कमेंट",
+        "accounts": "अकाउंट",
+        "summary": "जोड़े गए गाने: {{added}} · गाना नहीं मिला: {{failed}} · प्रतीक्षा में: {{pending}}",
+        "emptyTitle": "अभी कोई गाना नहीं",
+        "emptyDescription": "एम्युलेटर जब प्रकाशित कैरोसेल में गाने जोड़ेगा, तब वे यहाँ दिखेंगे।"
+      }
+    },
     "clubSubmissions": "क्लब सबमिशन",
     "noClubSubmissions": "कोई क्लब सबमिशन नहीं",
     "noClubSubmissionsDesc": "नए क्लब सबमिशन स्वीकृति के लिए यहाँ दिखाई देंगे।",

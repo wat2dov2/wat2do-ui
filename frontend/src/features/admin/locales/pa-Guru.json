@@ -414,6 +414,69 @@
         "viewPost": "Instagram 'ਤੇ ਵੇਖੋ"
       }
     },
+    "socialAccounts": {
+      "title": "ਸੋਸ਼ਲ ਖਾਤੇ",
+      "description": "wat2do ਦੇ ਹਰ Instagram ਖਾਤੇ ਦੇ ਫਾਲੋਅਰ, ਐਂਗੇਜਮੈਂਟ, ਪੋਸਟਾਂ ਅਤੇ ਗੀਤ, ਰੋਜ਼ਾਨਾ ਪੜ੍ਹੇ ਜਾਂਦੇ ਹਨ।",
+      "cardDescription": "ਸਾਰੇ ਖਾਤਿਆਂ ਦੀ ਐਂਗੇਜਮੈਂਟ, ਪੋਸਟਾਂ ਅਤੇ ਗੀਤ",
+      "updated": "ਅੱਪਡੇਟ {{time}}",
+      "emptyTitle": "ਹਾਲੇ ਕੋਈ ਅੰਕੜੇ ਨਹੀਂ",
+      "emptyDescription": "Instagram ਅੰਕੜਿਆਂ ਦਾ ਰੋਜ਼ਾਨਾ ਵਰਕਫਲੋ ਹਰ ਸਵੇਰ ਇਹ ਪੰਨਾ ਭਰਦਾ ਹੈ।",
+      "openPost": "Instagram 'ਤੇ ਪੋਸਟ ਖੋਲ੍ਹੋ",
+      "openProfile": "Instagram 'ਤੇ ਪ੍ਰੋਫਾਈਲ ਖੋਲ੍ਹੋ",
+      "likes": "ਲਾਈਕ",
+      "comments": "ਟਿੱਪਣੀਆਂ",
+      "music": {
+        "pending": "ਗੀਤ ਬਾਕੀ",
+        "added": "ਗੀਤ ਜੋੜਿਆ ਗਿਆ",
+        "failed": "ਕੋਈ ਗੀਤ ਨਹੀਂ ਜੋੜਿਆ ਗਿਆ"
+      },
+      "followers": "ਫਾਲੋਅਰ: {{value}}",
+      "change": "{{date}} ਤੋਂ: {{value}}",
+      "postCount": "ਪੋਸਟਾਂ: {{value}}",
+      "averages": "ਹਰ ਪੋਸਟ: {{likes}} ਲਾਈਕ, {{comments}} ਟਿੱਪਣੀਆਂ",
+      "rate": "ਐਂਗੇਜਮੈਂਟ: {{value}}%",
+      "lastPost": "ਆਖਰੀ ਪੋਸਟ {{time}}",
+      "reconnect": "ਮੁੜ ਜੋੜਨਾ ਲੋੜੀਂਦਾ",
+      "tokenExpires": "ਟੋਕਨ ਦੀ ਮਿਆਦ: {{date}}",
+      "noPosts": "ਹਾਲੇ ਕੋਈ ਪੋਸਟ ਨਹੀਂ।",
+      "notRead": "ਹਾਲੇ ਪੜ੍ਹਿਆ ਨਹੀਂ ਗਿਆ। ਅਗਲਾ ਰੋਜ਼ਾਨਾ ਰਨ ਇਸਨੂੰ ਭਰ ਦੇਵੇਗਾ।",
+      "summary": {
+        "accounts": "ਖਾਤੇ",
+        "needingAttention": "ਧਿਆਨ ਲੋੜੀਂਦਾ: {{value}}",
+        "followers": "ਕੁੱਲ ਫਾਲੋਅਰ",
+        "recentPosts": "ਪਿਛਲੇ 7 ਦਿਨਾਂ ਦੀਆਂ ਪੋਸਟਾਂ",
+        "averageLikes": "ਹਰ ਪੋਸਟ ਦੇ ਔਸਤ ਲਾਈਕ"
+      },
+      "tabs": {
+        "label": "ਸੋਸ਼ਲ ਖਾਤਿਆਂ ਦੇ ਦ੍ਰਿਸ਼",
+        "accounts": "ਖਾਤੇ",
+        "posts": "ਸਾਰੀਆਂ ਪੋਸਟਾਂ",
+        "songs": "ਗੀਤ"
+      },
+      "sortLabel": "ਕ੍ਰਮ",
+      "accountLabel": "ਖਾਤਾ",
+      "accountSorts": {
+        "followers": "ਸਭ ਤੋਂ ਵੱਧ ਫਾਲੋਅਰ",
+        "growth": "ਸਭ ਤੋਂ ਤੇਜ਼ ਵਾਧਾ",
+        "engagement": "ਸਭ ਤੋਂ ਵੱਧ ਐਂਗੇਜਮੈਂਟ",
+        "latest": "ਹਾਲ ਹੀ ਵਿੱਚ ਪੋਸਟ ਕੀਤਾ"
+      },
+      "postSorts": {
+        "newest": "ਸਭ ਤੋਂ ਨਵੀਆਂ",
+        "likes": "ਸਭ ਤੋਂ ਵੱਧ ਲਾਈਕ",
+        "comments": "ਸਭ ਤੋਂ ਵੱਧ ਟਿੱਪਣੀਆਂ"
+      },
+      "songs": {
+        "track": "ਗੀਤ",
+        "posts": "ਪੋਸਟਾਂ",
+        "averageLikes": "ਔਸਤ ਲਾਈਕ",
+        "averageComments": "ਔਸਤ ਟਿੱਪਣੀਆਂ",
+        "accounts": "ਖਾਤੇ",
+        "summary": "ਜੋੜੇ ਗੀਤ: {{added}} · ਗੀਤ ਨਹੀਂ ਮਿਲਿਆ: {{failed}} · ਉਡੀਕ ਵਿੱਚ: {{pending}}",
+        "emptyTitle": "ਹਾਲੇ ਕੋਈ ਗੀਤ ਨਹੀਂ",
+        "emptyDescription": "ਜਦੋਂ ਇਮੂਲੇਟਰ ਪ੍ਰਕਾਸ਼ਿਤ ਕੈਰੋਸਲਾਂ ਵਿੱਚ ਗੀਤ ਜੋੜੇਗਾ, ਉਹ ਇੱਥੇ ਦਿਖਣਗੇ।"
+      }
+    },
     "clubSubmissions": "ਕਲੱਬ ਸਬਮਿਸ਼ਨ",
     "noClubSubmissions": "ਕੋਈ ਕਲੱਬ ਸਬਮਿਸ਼ਨ ਨਹੀਂ",
     "noClubSubmissionsDesc": "ਨਵੇਂ ਕਲੱਬ ਸਬਮਿਸ਼ਨ ਮਨਜ਼ੂਰੀ ਲਈ ਇੱਥੇ ਦਿਖਾਈ ਦੇਣਗੇ।",

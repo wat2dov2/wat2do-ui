@@ -414,6 +414,69 @@
         "viewPost": "喺 Instagram 睇"
       }
     },
+    "socialAccounts": {
+      "title": "社交帳戶",
+      "description": "每個 wat2do Instagram 帳戶嘅追蹤者、互動、帖子同歌曲，每日讀取。",
+      "cardDescription": "所有帳戶嘅互動、帖子同歌曲",
+      "updated": "更新於{{time}}",
+      "emptyTitle": "暫時未有統計",
+      "emptyDescription": "每日 Instagram 帳戶統計工作流程每朝都會填好呢頁。",
+      "openPost": "喺 Instagram 打開帖子",
+      "openProfile": "喺 Instagram 打開個人檔案",
+      "likes": "讚好",
+      "comments": "留言",
+      "music": {
+        "pending": "歌曲待加",
+        "added": "已加歌曲",
+        "failed": "未有加到歌曲"
+      },
+      "followers": "追蹤者：{{value}}",
+      "change": "自 {{date}}：{{value}}",
+      "postCount": "帖子：{{value}}",
+      "averages": "每個帖子：{{likes}} 個讚，{{comments}} 個留言",
+      "rate": "互動率：{{value}}%",
+      "lastPost": "最近發帖 {{time}}",
+      "reconnect": "需要重新連接",
+      "tokenExpires": "權杖到期：{{date}}",
+      "noPosts": "暫時未有帖子。",
+      "notRead": "仲未讀取。下次每日運行會填好。",
+      "summary": {
+        "accounts": "帳戶",
+        "needingAttention": "需要處理：{{value}}",
+        "followers": "追蹤者總數",
+        "recentPosts": "過去 7 日嘅帖子",
+        "averageLikes": "每個帖子平均讚好"
+      },
+      "tabs": {
+        "label": "社交帳戶檢視",
+        "accounts": "帳戶",
+        "posts": "所有帖子",
+        "songs": "歌曲"
+      },
+      "sortLabel": "排序",
+      "accountLabel": "帳戶",
+      "accountSorts": {
+        "followers": "追蹤者最多",
+        "growth": "增長最快",
+        "engagement": "互動最高",
+        "latest": "最近發帖"
+      },
+      "postSorts": {
+        "newest": "最新",
+        "likes": "讚好最多",
+        "comments": "留言最多"
+      },
+      "songs": {
+        "track": "歌曲",
+        "posts": "帖子",
+        "averageLikes": "平均讚好",
+        "averageComments": "平均留言",
+        "accounts": "帳戶",
+        "summary": "已加歌曲：{{added}} · 搵唔到歌曲：{{failed}} · 等緊：{{pending}}",
+        "emptyTitle": "暫時未有歌曲",
+        "emptyDescription": "模擬器幫已發佈嘅旋轉木馬加咗歌之後，就會喺度顯示。"
+      }
+    },
     "clubSubmissions": "社團提交",
     "noClubSubmissions": "暫無社團提交",
     "noClubSubmissionsDesc": "新提交嘅社團會喺呢度顯示，等候批准。",

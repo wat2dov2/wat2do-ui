@@ -414,6 +414,69 @@
         "viewPost": "Zobacz na Instagramie"
       }
     },
+    "socialAccounts": {
+      "title": "Konta społecznościowe",
+      "description": "Obserwujący, zaangażowanie, posty i utwory każdego konta Instagram wat2do, odczytywane codziennie.",
+      "cardDescription": "Zaangażowanie, posty i utwory wszystkich kont",
+      "updated": "Zaktualizowano {{time}}",
+      "emptyTitle": "Brak statystyk",
+      "emptyDescription": "Codzienny proces statystyk Instagrama wypełnia tę stronę każdego ranka.",
+      "openPost": "Otwórz post na Instagramie",
+      "openProfile": "Otwórz profil na Instagramie",
+      "likes": "Polubienia",
+      "comments": "Komentarze",
+      "music": {
+        "pending": "Utwór oczekuje",
+        "added": "Dodano utwór",
+        "failed": "Nie dodano utworu"
+      },
+      "followers": "Obserwujący: {{value}}",
+      "change": "Od {{date}}: {{value}}",
+      "postCount": "Posty: {{value}}",
+      "averages": "Na post: polubienia {{likes}}, komentarze {{comments}}",
+      "rate": "Zaangażowanie: {{value}}%",
+      "lastPost": "Ostatni post {{time}}",
+      "reconnect": "Wymaga ponownego połączenia",
+      "tokenExpires": "Token wygasa: {{date}}",
+      "noPosts": "Brak postów.",
+      "notRead": "Jeszcze nie odczytano. Uzupełni to następne codzienne uruchomienie.",
+      "summary": {
+        "accounts": "Konta",
+        "needingAttention": "Wymagają uwagi: {{value}}",
+        "followers": "Obserwujący łącznie",
+        "recentPosts": "Posty z ostatnich 7 dni",
+        "averageLikes": "Średnio polubień na post"
+      },
+      "tabs": {
+        "label": "Widoki kont społecznościowych",
+        "accounts": "Konta",
+        "posts": "Wszystkie posty",
+        "songs": "Utwory"
+      },
+      "sortLabel": "Sortuj",
+      "accountLabel": "Konto",
+      "accountSorts": {
+        "followers": "Najwięcej obserwujących",
+        "growth": "Najszybszy wzrost",
+        "engagement": "Najwyższe zaangażowanie",
+        "latest": "Najnowszy post"
+      },
+      "postSorts": {
+        "newest": "Najnowsze",
+        "likes": "Najwięcej polubień",
+        "comments": "Najwięcej komentarzy"
+      },
+      "songs": {
+        "track": "Utwór",
+        "posts": "Posty",
+        "averageLikes": "Śr. polubień",
+        "averageComments": "Śr. komentarzy",
+        "accounts": "Konta",
+        "summary": "Dodane utwory: {{added}} · Nie znaleziono utworu: {{failed}} · Oczekujące: {{pending}}",
+        "emptyTitle": "Brak utworów",
+        "emptyDescription": "Utwory pojawią się tutaj, gdy emulator doda je do opublikowanych karuzel."
+      }
+    },
     "clubSubmissions": "Zgłoszenia klubów",
     "noClubSubmissions": "Brak zgłoszeń klubów",
     "noClubSubmissionsDesc": "Nowe zgłoszenia klubów pojawią się tutaj do zatwierdzenia.",

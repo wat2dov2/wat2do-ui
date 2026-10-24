@@ -1082,7 +1082,7 @@ Never select or display `encrypted_access_token` during routine verification.
 
 The daily Claude job (`backend/jobs/generate_instagram_posts.py curate`) reads eligible events and saves reviewed editorial choices for every school.
 
-Its separate `refresh-tokens` command maintains expiring tokens using the existing credentials service.
+The daily `Instagram account stats` GitHub workflow (`backend/jobs/snapshot_instagram_accounts.py`) refreshes expiring tokens with the production encryption key, then reads every account's followers and recent posts.
 
 The token lifetime and refresh lead are controlled by `backend/controlbox/instagram_publishing.json`.
 
@@ -1090,7 +1090,7 @@ Do not hardcode those values in the playbook or a new script.
 
 After the account configuration is deployed and the token is imported:
 
-1. Run `refresh-tokens` in the approved production-equivalent environment, then have Claude review the school’s candidate packet and save a draft using the documented JSON contract.
+1. Run the `Instagram account stats` workflow from GitHub Actions, then have Claude review the school’s candidate packet and save a draft using the documented JSON contract.
 2. Confirm the account appears in token refresh statistics.
 3. Confirm no identity mismatch or reauthorization error is recorded.
 4. Seed or identify eligible upcoming events for the school.

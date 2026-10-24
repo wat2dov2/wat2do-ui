@@ -414,6 +414,69 @@
         "viewPost": "Ver no Instagram"
       }
     },
+    "socialAccounts": {
+      "title": "Contas sociais",
+      "description": "Seguidores, engajamento, publicações e músicas de cada conta do Instagram da wat2do, lidos diariamente.",
+      "cardDescription": "Engajamento, publicações e músicas de todas as contas",
+      "updated": "Atualizado {{time}}",
+      "emptyTitle": "Ainda não há estatísticas",
+      "emptyDescription": "O fluxo diário de estatísticas do Instagram preenche esta página toda manhã.",
+      "openPost": "Abrir publicação no Instagram",
+      "openProfile": "Abrir perfil no Instagram",
+      "likes": "Curtidas",
+      "comments": "Comentários",
+      "music": {
+        "pending": "Música pendente",
+        "added": "Música adicionada",
+        "failed": "Nenhuma música adicionada"
+      },
+      "followers": "Seguidores: {{value}}",
+      "change": "Desde {{date}}: {{value}}",
+      "postCount": "Publicações: {{value}}",
+      "averages": "Por publicação: {{likes}} curtidas, {{comments}} comentários",
+      "rate": "Engajamento: {{value}}%",
+      "lastPost": "Última publicação {{time}}",
+      "reconnect": "É preciso reconectar",
+      "tokenExpires": "O token expira em {{date}}",
+      "noPosts": "Ainda não há publicações.",
+      "notRead": "Ainda não lida. A próxima execução diária preenche isto.",
+      "summary": {
+        "accounts": "Contas",
+        "needingAttention": "Precisam de atenção: {{value}}",
+        "followers": "Total de seguidores",
+        "recentPosts": "Publicações nos últimos 7 dias",
+        "averageLikes": "Média de curtidas por publicação"
+      },
+      "tabs": {
+        "label": "Visões das contas sociais",
+        "accounts": "Contas",
+        "posts": "Todas as publicações",
+        "songs": "Músicas"
+      },
+      "sortLabel": "Ordenar",
+      "accountLabel": "Conta",
+      "accountSorts": {
+        "followers": "Mais seguidores",
+        "growth": "Crescimento mais rápido",
+        "engagement": "Maior engajamento",
+        "latest": "Publicou mais recentemente"
+      },
+      "postSorts": {
+        "newest": "Mais recentes",
+        "likes": "Mais curtidas",
+        "comments": "Mais comentários"
+      },
+      "songs": {
+        "track": "Música",
+        "posts": "Publicações",
+        "averageLikes": "Média de curtidas",
+        "averageComments": "Média de comentários",
+        "accounts": "Contas",
+        "summary": "Músicas adicionadas: {{added}} · Nenhuma música encontrada: {{failed}} · Aguardando: {{pending}}",
+        "emptyTitle": "Ainda não há músicas",
+        "emptyDescription": "As músicas aparecem aqui quando o emulador as adiciona aos carrosséis publicados."
+      }
+    },
     "clubSubmissions": "Submissões de clubes",
     "noClubSubmissions": "Nenhuma submissão de clube",
     "noClubSubmissionsDesc": "Novas submissões de clubes aparecerão aqui para aprovação.",

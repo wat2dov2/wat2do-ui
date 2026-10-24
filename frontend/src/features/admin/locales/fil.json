@@ -414,6 +414,69 @@
         "viewPost": "Tingnan sa Instagram"
       }
     },
+    "socialAccounts": {
+      "title": "Mga social account",
+      "description": "Mga follower, engagement, post at kanta ng bawat Instagram account ng wat2do, binabasa araw-araw.",
+      "cardDescription": "Engagement, mga post at kanta ng lahat ng account",
+      "updated": "Na-update {{time}}",
+      "emptyTitle": "Wala pang stats",
+      "emptyDescription": "Pinupunan ng araw-araw na workflow ng Instagram stats ang page na ito tuwing umaga.",
+      "openPost": "Buksan ang post sa Instagram",
+      "openProfile": "Buksan ang profile sa Instagram",
+      "likes": "Mga like",
+      "comments": "Mga komento",
+      "music": {
+        "pending": "Naghihintay ang kanta",
+        "added": "Naidagdag ang kanta",
+        "failed": "Walang naidagdag na kanta"
+      },
+      "followers": "Mga follower: {{value}}",
+      "change": "Mula {{date}}: {{value}}",
+      "postCount": "Mga post: {{value}}",
+      "averages": "Bawat post: {{likes}} like, {{comments}} komento",
+      "rate": "Engagement: {{value}}%",
+      "lastPost": "Huling post {{time}}",
+      "reconnect": "Kailangang ikonekta muli",
+      "tokenExpires": "Mag-e-expire ang token: {{date}}",
+      "noPosts": "Wala pang post.",
+      "notRead": "Hindi pa nababasa. Pupunan ito ng susunod na araw-araw na run.",
+      "summary": {
+        "accounts": "Mga account",
+        "needingAttention": "Kailangang tingnan: {{value}}",
+        "followers": "Kabuuang follower",
+        "recentPosts": "Mga post sa nakaraang 7 araw",
+        "averageLikes": "Average na like bawat post"
+      },
+      "tabs": {
+        "label": "Mga view ng social account",
+        "accounts": "Mga account",
+        "posts": "Lahat ng post",
+        "songs": "Mga kanta"
+      },
+      "sortLabel": "Ayusin",
+      "accountLabel": "Account",
+      "accountSorts": {
+        "followers": "Pinakamaraming follower",
+        "growth": "Pinakamabilis lumago",
+        "engagement": "Pinakamataas na engagement",
+        "latest": "Pinakahuling nag-post"
+      },
+      "postSorts": {
+        "newest": "Pinakabago",
+        "likes": "Pinakamaraming like",
+        "comments": "Pinakamaraming komento"
+      },
+      "songs": {
+        "track": "Kanta",
+        "posts": "Mga post",
+        "averageLikes": "Average na like",
+        "averageComments": "Average na komento",
+        "accounts": "Mga account",
+        "summary": "Naidagdag na kanta: {{added}} · Walang nahanap na kanta: {{failed}} · Naghihintay: {{pending}}",
+        "emptyTitle": "Wala pang kanta",
+        "emptyDescription": "Lalabas dito ang mga kanta kapag naidagdag na ng emulator sa mga na-publish na carousel."
+      }
+    },
     "clubSubmissions": "Mga pagsusumite ng club",
     "noClubSubmissions": "Walang pagsusumite ng club",
     "noClubSubmissionsDesc": "Lalabas dito ang mga bagong pagsusumite ng club para sa pag-apruba.",

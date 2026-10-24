@@ -4,6 +4,7 @@ on:
   workflow_run:
     workflows:
       - CI/CD
+      - Instagram account stats
       - Monthly promoter poster payouts
       - Nightly recommendation compute
       - Process Notifications

@@ -414,6 +414,69 @@
         "viewPost": "Auf Instagram ansehen"
       }
     },
+    "socialAccounts": {
+      "title": "Social-Media-Konten",
+      "description": "Follower, Interaktionen, Beiträge und Songs aller wat2do-Instagram-Konten, täglich gelesen.",
+      "cardDescription": "Interaktionen, Beiträge und Songs aller Konten",
+      "updated": "Aktualisiert {{time}}",
+      "emptyTitle": "Noch keine Statistiken",
+      "emptyDescription": "Der tägliche Instagram-Statistik-Workflow füllt diese Seite jeden Morgen.",
+      "openPost": "Beitrag auf Instagram öffnen",
+      "openProfile": "Profil auf Instagram öffnen",
+      "likes": "Likes",
+      "comments": "Kommentare",
+      "music": {
+        "pending": "Song ausstehend",
+        "added": "Song hinzugefügt",
+        "failed": "Kein Song hinzugefügt"
+      },
+      "followers": "Follower: {{value}}",
+      "change": "Seit {{date}}: {{value}}",
+      "postCount": "Beiträge: {{value}}",
+      "averages": "Pro Beitrag: {{likes}} Likes, {{comments}} Kommentare",
+      "rate": "Interaktionsrate: {{value}} %",
+      "lastPost": "Letzter Beitrag {{time}}",
+      "reconnect": "Neu verbinden",
+      "tokenExpires": "Token läuft ab: {{date}}",
+      "noPosts": "Noch keine Beiträge.",
+      "notRead": "Noch nicht gelesen. Der nächste tägliche Lauf füllt das aus.",
+      "summary": {
+        "accounts": "Konten",
+        "needingAttention": "Brauchen Aufmerksamkeit: {{value}}",
+        "followers": "Follower gesamt",
+        "recentPosts": "Beiträge der letzten 7 Tage",
+        "averageLikes": "Durchschnittliche Likes pro Beitrag"
+      },
+      "tabs": {
+        "label": "Ansichten der Social-Media-Konten",
+        "accounts": "Konten",
+        "posts": "Alle Beiträge",
+        "songs": "Songs"
+      },
+      "sortLabel": "Sortieren",
+      "accountLabel": "Konto",
+      "accountSorts": {
+        "followers": "Meiste Follower",
+        "growth": "Schnellstes Wachstum",
+        "engagement": "Höchste Interaktion",
+        "latest": "Zuletzt gepostet"
+      },
+      "postSorts": {
+        "newest": "Neueste",
+        "likes": "Meiste Likes",
+        "comments": "Meiste Kommentare"
+      },
+      "songs": {
+        "track": "Song",
+        "posts": "Beiträge",
+        "averageLikes": "Ø Likes",
+        "averageComments": "Ø Kommentare",
+        "accounts": "Konten",
+        "summary": "Songs hinzugefügt: {{added}} · Kein Song gefunden: {{failed}} · Wartend: {{pending}}",
+        "emptyTitle": "Noch keine Songs",
+        "emptyDescription": "Songs erscheinen hier, sobald der Emulator sie zu veröffentlichten Karussells hinzufügt."
+      }
+    },
     "clubSubmissions": "Club-Einreichungen",
     "noClubSubmissions": "Keine Club-Einreichungen",
     "noClubSubmissionsDesc": "Neue Club-Einreichungen erscheinen hier zur Genehmigung.",

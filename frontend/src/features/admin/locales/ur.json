@@ -414,6 +414,69 @@
         "viewPost": "Instagram پر دیکھیں"
       }
     },
+    "socialAccounts": {
+      "title": "سوشل اکاؤنٹس",
+      "description": "wat2do کے ہر Instagram اکاؤنٹ کے فالوورز، انگیجمنٹ، پوسٹس اور گانے، روزانہ پڑھے جاتے ہیں۔",
+      "cardDescription": "تمام اکاؤنٹس کی انگیجمنٹ، پوسٹس اور گانے",
+      "updated": "اپ ڈیٹ {{time}}",
+      "emptyTitle": "ابھی کوئی اعداد و شمار نہیں",
+      "emptyDescription": "Instagram کے روزانہ اعداد و شمار کا ورک فلو ہر صبح یہ صفحہ بھرتا ہے۔",
+      "openPost": "Instagram پر پوسٹ کھولیں",
+      "openProfile": "Instagram پر پروفائل کھولیں",
+      "likes": "لائکس",
+      "comments": "تبصرے",
+      "music": {
+        "pending": "گانا زیر التوا",
+        "added": "گانا شامل ہو گیا",
+        "failed": "کوئی گانا شامل نہیں ہوا"
+      },
+      "followers": "فالوورز: {{value}}",
+      "change": "{{date}} سے: {{value}}",
+      "postCount": "پوسٹس: {{value}}",
+      "averages": "فی پوسٹ: {{likes}} لائکس، {{comments}} تبصرے",
+      "rate": "انگیجمنٹ: {{value}}%",
+      "lastPost": "آخری پوسٹ {{time}}",
+      "reconnect": "دوبارہ جوڑنا ضروری ہے",
+      "tokenExpires": "ٹوکن کی میعاد ختم: {{date}}",
+      "noPosts": "ابھی کوئی پوسٹ نہیں۔",
+      "notRead": "ابھی پڑھا نہیں گیا۔ اگلا روزانہ رن اسے بھر دے گا۔",
+      "summary": {
+        "accounts": "اکاؤنٹس",
+        "needingAttention": "توجہ درکار: {{value}}",
+        "followers": "کل فالوورز",
+        "recentPosts": "پچھلے 7 دنوں کی پوسٹس",
+        "averageLikes": "فی پوسٹ اوسط لائکس"
+      },
+      "tabs": {
+        "label": "سوشل اکاؤنٹس کے منظر",
+        "accounts": "اکاؤنٹس",
+        "posts": "تمام پوسٹس",
+        "songs": "گانے"
+      },
+      "sortLabel": "ترتیب",
+      "accountLabel": "اکاؤنٹ",
+      "accountSorts": {
+        "followers": "سب سے زیادہ فالوورز",
+        "growth": "سب سے تیز ترقی",
+        "engagement": "سب سے زیادہ انگیجمنٹ",
+        "latest": "حال ہی میں پوسٹ کیا"
+      },
+      "postSorts": {
+        "newest": "تازہ ترین",
+        "likes": "سب سے زیادہ لائکس",
+        "comments": "سب سے زیادہ تبصرے"
+      },
+      "songs": {
+        "track": "گانا",
+        "posts": "پوسٹس",
+        "averageLikes": "اوسط لائکس",
+        "averageComments": "اوسط تبصرے",
+        "accounts": "اکاؤنٹس",
+        "summary": "شامل گانے: {{added}} · گانا نہیں ملا: {{failed}} · منتظر: {{pending}}",
+        "emptyTitle": "ابھی کوئی گانا نہیں",
+        "emptyDescription": "جب ایمولیٹر شائع شدہ کیروسلز میں گانے شامل کرے گا تو وہ یہاں نظر آئیں گے۔"
+      }
+    },
     "clubSubmissions": "کلب کی درخواستیں",
     "noClubSubmissions": "کلب کی کوئی درخواست نہیں",
     "noClubSubmissionsDesc": "کلب کی نئی درخواستیں منظوری کے لیے یہاں ظاہر ہوں گی۔",

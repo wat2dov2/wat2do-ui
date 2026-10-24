@@ -3714,6 +3714,36 @@
         }
       }
     },
+    "/instagram-publishing/accounts/": {
+      "get": {
+        "tags": [
+          "instagram-publishing"
+        ],
+        "summary": "List Instagram Account Stats",
+        "operationId": "list_instagram_account_stats_instagram_publishing_accounts__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InstagramAccountStatsResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Instagram Account Stats Instagram Publishing Accounts  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/interactions/batch": {
       "post": {
         "tags": [
@@ -11185,6 +11215,248 @@
           "hourly"
         ],
         "title": "IngestionLatencyResponse"
+      },
+      "InstagramAccountPostResponse": {
+        "properties": {
+          "media_id": {
+            "type": "string",
+            "title": "Media Id"
+          },
+          "media_type": {
+            "type": "string",
+            "title": "Media Type"
+          },
+          "media_product_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Product Type"
+          },
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caption"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "permalink": {
+            "type": "string",
+            "title": "Permalink"
+          },
+          "posted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Posted At"
+          },
+          "like_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Like Count"
+          },
+          "comments_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comments Count"
+          },
+          "music_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "added",
+                  "failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Status"
+          },
+          "music_track": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Music Track"
+          }
+        },
+        "type": "object",
+        "required": [
+          "media_id",
+          "media_type",
+          "permalink",
+          "posted_at"
+        ],
+        "title": "InstagramAccountPostResponse"
+      },
+      "InstagramAccountStatsResponse": {
+        "properties": {
+          "account_key": {
+            "type": "string",
+            "title": "Account Key"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "profile_picture_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Picture Url"
+          },
+          "followers_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Followers Count"
+          },
+          "follows_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follows Count"
+          },
+          "media_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Count"
+          },
+          "captured_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Captured At"
+          },
+          "requires_reauthorization": {
+            "type": "boolean",
+            "title": "Requires Reauthorization"
+          },
+          "token_expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Token Expires At"
+          },
+          "followers_history": {
+            "items": {
+              "$ref": "#/components/schemas/InstagramFollowerCountResponse"
+            },
+            "type": "array",
+            "title": "Followers History"
+          },
+          "posts": {
+            "items": {
+              "$ref": "#/components/schemas/InstagramAccountPostResponse"
+            },
+            "type": "array",
+            "title": "Posts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_key",
+          "username",
+          "requires_reauthorization",
+          "token_expires_at",
+          "followers_history",
+          "posts"
+        ],
+        "title": "InstagramAccountStatsResponse"
+      },
+      "InstagramFollowerCountResponse": {
+        "properties": {
+          "captured_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Captured On"
+          },
+          "followers_count": {
+            "type": "integer",
+            "title": "Followers Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "captured_on",
+          "followers_count"
+        ],
+        "title": "InstagramFollowerCountResponse"
       },
       "InstagramPublishBatchPublish": {
         "properties": {

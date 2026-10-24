@@ -414,6 +414,69 @@
         "viewPost": "Xem trên Instagram"
       }
     },
+    "socialAccounts": {
+      "title": "Tài khoản mạng xã hội",
+      "description": "Người theo dõi, tương tác, bài đăng và bài hát của mọi tài khoản Instagram wat2do, đọc hằng ngày.",
+      "cardDescription": "Tương tác, bài đăng và bài hát của mọi tài khoản",
+      "updated": "Cập nhật {{time}}",
+      "emptyTitle": "Chưa có số liệu",
+      "emptyDescription": "Quy trình số liệu Instagram hằng ngày điền trang này mỗi sáng.",
+      "openPost": "Mở bài đăng trên Instagram",
+      "openProfile": "Mở hồ sơ trên Instagram",
+      "likes": "Lượt thích",
+      "comments": "Bình luận",
+      "music": {
+        "pending": "Bài hát đang chờ",
+        "added": "Đã thêm bài hát",
+        "failed": "Chưa thêm bài hát"
+      },
+      "followers": "Người theo dõi: {{value}}",
+      "change": "Từ {{date}}: {{value}}",
+      "postCount": "Bài đăng: {{value}}",
+      "averages": "Mỗi bài: {{likes}} lượt thích, {{comments}} bình luận",
+      "rate": "Tương tác: {{value}}%",
+      "lastPost": "Bài gần nhất {{time}}",
+      "reconnect": "Cần kết nối lại",
+      "tokenExpires": "Token hết hạn: {{date}}",
+      "noPosts": "Chưa có bài đăng.",
+      "notRead": "Chưa đọc. Lần chạy hằng ngày tiếp theo sẽ điền vào.",
+      "summary": {
+        "accounts": "Tài khoản",
+        "needingAttention": "Cần chú ý: {{value}}",
+        "followers": "Tổng người theo dõi",
+        "recentPosts": "Bài đăng trong 7 ngày qua",
+        "averageLikes": "Lượt thích trung bình mỗi bài"
+      },
+      "tabs": {
+        "label": "Các chế độ xem tài khoản",
+        "accounts": "Tài khoản",
+        "posts": "Tất cả bài đăng",
+        "songs": "Bài hát"
+      },
+      "sortLabel": "Sắp xếp",
+      "accountLabel": "Tài khoản",
+      "accountSorts": {
+        "followers": "Nhiều người theo dõi nhất",
+        "growth": "Tăng nhanh nhất",
+        "engagement": "Tương tác cao nhất",
+        "latest": "Đăng gần đây nhất"
+      },
+      "postSorts": {
+        "newest": "Mới nhất",
+        "likes": "Nhiều lượt thích nhất",
+        "comments": "Nhiều bình luận nhất"
+      },
+      "songs": {
+        "track": "Bài hát",
+        "posts": "Bài đăng",
+        "averageLikes": "TB lượt thích",
+        "averageComments": "TB bình luận",
+        "accounts": "Tài khoản",
+        "summary": "Đã thêm: {{added}} · Không tìm thấy bài hát: {{failed}} · Đang chờ: {{pending}}",
+        "emptyTitle": "Chưa có bài hát",
+        "emptyDescription": "Bài hát xuất hiện ở đây khi trình giả lập thêm chúng vào các carousel đã đăng."
+      }
+    },
     "clubSubmissions": "Đề xuất câu lạc bộ",
     "noClubSubmissions": "Chưa có đề xuất câu lạc bộ",
     "noClubSubmissionsDesc": "Các đề xuất câu lạc bộ mới sẽ xuất hiện tại đây để phê duyệt.",

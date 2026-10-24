@@ -139,3 +139,42 @@ class InstagramSongResponse(BaseModel):
     query: str
     asian_campuses_only: bool
     created_at: datetime
+
+
+class InstagramAccountPostResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    media_id: str
+    media_type: str
+    media_product_type: str | None = None
+    caption: str | None = None
+    image_url: str | None = None
+    permalink: str
+    posted_at: datetime
+    # Null when the account hides like counts.
+    like_count: int | None = None
+    comments_count: int | None = None
+    # Set only on carousels wat2do published, where the Mac's emulator adds the song.
+    music_status: InstagramMusicStatus | None = None
+    music_track: str | None = None
+
+
+class InstagramFollowerCountResponse(BaseModel):
+    captured_on: date
+    followers_count: int
+
+
+class InstagramAccountStatsResponse(BaseModel):
+    account_key: str
+    username: str
+    name: str | None = None
+    profile_picture_url: str | None = None
+    # Null until the daily stats run first reads the account.
+    followers_count: int | None = None
+    follows_count: int | None = None
+    media_count: int | None = None
+    captured_at: datetime | None = None
+    requires_reauthorization: bool
+    token_expires_at: datetime
+    followers_history: list[InstagramFollowerCountResponse]
+    posts: list[InstagramAccountPostResponse]

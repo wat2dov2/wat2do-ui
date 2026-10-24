@@ -54,6 +54,10 @@ export type ApiInstagramSongCreate =
   components["schemas"]["InstagramSongCreate"];
 export type ApiInstagramSongResponse =
   components["schemas"]["InstagramSongResponse"];
+export type ApiInstagramAccountStatsResponse =
+  components["schemas"]["InstagramAccountStatsResponse"];
+export type ApiInstagramAccountPostResponse =
+  components["schemas"]["InstagramAccountPostResponse"];
 
 // ── Event Submissions ───────────────────────────────────────────────
 export type ApiSubmissionResponse = components["schemas"]["SubmissionResponse"];

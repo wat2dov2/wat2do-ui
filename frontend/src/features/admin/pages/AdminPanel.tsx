@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Building2, Users, Calendar, Instagram, Mail, Megaphone, MessageCircle, Settings, Shield } from "lucide-react";
+import { BarChart3, Building2, Users, Calendar, Instagram, Mail, Megaphone, MessageCircle, Settings, Shield } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { AdminCard } from "@/shared/ui/AdminCard";
 import { Stack } from "@/shared/layout/stack";
@@ -53,6 +53,8 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
           onClick={() => onNavigate("admin-outreach")} />
         <AdminCard icon={Instagram} title={t("admin.instagramPublishing.title")} description={t("admin.instagramPublishing.cardDescription")}
           onClick={() => onNavigate("admin-instagram")} />
+        <AdminCard icon={BarChart3} title={t("admin.socialAccounts.title")} description={t("admin.socialAccounts.cardDescription")}
+          onClick={() => onNavigate("admin-social")} />
         <AdminCard icon={Settings} title={t("admin.diagnostics.title")} description={t("admin.diagnostics.cardDescription")}
           onClick={() => onNavigate("admin-diagnostics")} />
       </FormGrid>

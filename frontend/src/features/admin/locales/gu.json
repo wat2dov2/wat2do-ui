@@ -414,6 +414,69 @@
         "viewPost": "Instagram પર જુઓ"
       }
     },
+    "socialAccounts": {
+      "title": "સોશિયલ એકાઉન્ટ્સ",
+      "description": "wat2doના દરેક Instagram એકાઉન્ટના ફોલોઅર્સ, એન્ગેજમેન્ટ, પોસ્ટ્સ અને ગીતો, દરરોજ વાંચવામાં આવે છે.",
+      "cardDescription": "બધા એકાઉન્ટ્સનું એન્ગેજમેન્ટ, પોસ્ટ્સ અને ગીતો",
+      "updated": "અપડેટ {{time}}",
+      "emptyTitle": "હજી કોઈ આંકડા નથી",
+      "emptyDescription": "Instagram આંકડાનો દૈનિક વર્કફ્લો દરરોજ સવારે આ પેજ ભરે છે.",
+      "openPost": "Instagram પર પોસ્ટ ખોલો",
+      "openProfile": "Instagram પર પ્રોફાઇલ ખોલો",
+      "likes": "લાઇક્સ",
+      "comments": "કોમેન્ટ્સ",
+      "music": {
+        "pending": "ગીત બાકી",
+        "added": "ગીત ઉમેરાયું",
+        "failed": "કોઈ ગીત ઉમેરાયું નથી"
+      },
+      "followers": "ફોલોઅર્સ: {{value}}",
+      "change": "{{date}}થી: {{value}}",
+      "postCount": "પોસ્ટ્સ: {{value}}",
+      "averages": "દરેક પોસ્ટ: {{likes}} લાઇક્સ, {{comments}} કોમેન્ટ્સ",
+      "rate": "એન્ગેજમેન્ટ: {{value}}%",
+      "lastPost": "છેલ્લી પોસ્ટ {{time}}",
+      "reconnect": "ફરી જોડવું જરૂરી",
+      "tokenExpires": "ટોકનની મુદત: {{date}}",
+      "noPosts": "હજી કોઈ પોસ્ટ નથી.",
+      "notRead": "હજી વાંચ્યું નથી. આગલો દૈનિક રન તેને ભરી દેશે.",
+      "summary": {
+        "accounts": "એકાઉન્ટ્સ",
+        "needingAttention": "ધ્યાન જરૂરી: {{value}}",
+        "followers": "કુલ ફોલોઅર્સ",
+        "recentPosts": "છેલ્લા 7 દિવસની પોસ્ટ્સ",
+        "averageLikes": "દરેક પોસ્ટના સરેરાશ લાઇક્સ"
+      },
+      "tabs": {
+        "label": "સોશિયલ એકાઉન્ટ્સના દૃશ્યો",
+        "accounts": "એકાઉન્ટ્સ",
+        "posts": "બધી પોસ્ટ્સ",
+        "songs": "ગીતો"
+      },
+      "sortLabel": "ક્રમ",
+      "accountLabel": "એકાઉન્ટ",
+      "accountSorts": {
+        "followers": "સૌથી વધુ ફોલોઅર્સ",
+        "growth": "સૌથી ઝડપી વૃદ્ધિ",
+        "engagement": "સૌથી વધુ એન્ગેજમેન્ટ",
+        "latest": "તાજેતરમાં પોસ્ટ કર્યું"
+      },
+      "postSorts": {
+        "newest": "સૌથી નવી",
+        "likes": "સૌથી વધુ લાઇક્સ",
+        "comments": "સૌથી વધુ કોમેન્ટ્સ"
+      },
+      "songs": {
+        "track": "ગીત",
+        "posts": "પોસ્ટ્સ",
+        "averageLikes": "સરેરાશ લાઇક્સ",
+        "averageComments": "સરેરાશ કોમેન્ટ્સ",
+        "accounts": "એકાઉન્ટ્સ",
+        "summary": "ઉમેરાયેલાં ગીતો: {{added}} · ગીત મળ્યું નથી: {{failed}} · રાહમાં: {{pending}}",
+        "emptyTitle": "હજી કોઈ ગીત નથી",
+        "emptyDescription": "ઇમ્યુલેટર પ્રકાશિત કારોઝલ્સમાં ગીતો ઉમેરશે ત્યારે તે અહીં દેખાશે."
+      }
+    },
     "clubSubmissions": "ક્લબ સબમિશન",
     "noClubSubmissions": "કોઈ ક્લબ સબમિશન નથી",
     "noClubSubmissionsDesc": "નવા ક્લબ સબમિશન મંજૂરી માટે અહીં દેખાશે.",

@@ -414,6 +414,69 @@
         "viewPost": "مشاهده در Instagram"
       }
     },
+    "socialAccounts": {
+      "title": "حساب‌های اجتماعی",
+      "description": "دنبال‌کنندگان، تعامل، پست‌ها و آهنگ‌های همهٔ حساب‌های Instagram wat2do که هر روز خوانده می‌شوند.",
+      "cardDescription": "تعامل، پست‌ها و آهنگ‌های همهٔ حساب‌ها",
+      "updated": "به‌روزرسانی {{time}}",
+      "emptyTitle": "هنوز آماری نیست",
+      "emptyDescription": "گردش کار روزانهٔ آمار Instagram هر صبح این صفحه را پر می‌کند.",
+      "openPost": "باز کردن پست در Instagram",
+      "openProfile": "باز کردن نمایه در Instagram",
+      "likes": "پسندها",
+      "comments": "دیدگاه‌ها",
+      "music": {
+        "pending": "آهنگ در انتظار",
+        "added": "آهنگ افزوده شد",
+        "failed": "آهنگی افزوده نشد"
+      },
+      "followers": "دنبال‌کنندگان: {{value}}",
+      "change": "از {{date}}: {{value}}",
+      "postCount": "پست‌ها: {{value}}",
+      "averages": "برای هر پست: {{likes}} پسند، {{comments}} دیدگاه",
+      "rate": "تعامل: {{value}}٪",
+      "lastPost": "آخرین پست {{time}}",
+      "reconnect": "نیاز به اتصال دوباره",
+      "tokenExpires": "توکن در {{date}} منقضی می‌شود",
+      "noPosts": "هنوز پستی نیست.",
+      "notRead": "هنوز خوانده نشده. اجرای روزانهٔ بعدی آن را پر می‌کند.",
+      "summary": {
+        "accounts": "حساب‌ها",
+        "needingAttention": "نیازمند رسیدگی: {{value}}",
+        "followers": "مجموع دنبال‌کنندگان",
+        "recentPosts": "پست‌های ۷ روز گذشته",
+        "averageLikes": "میانگین پسند هر پست"
+      },
+      "tabs": {
+        "label": "نماهای حساب‌های اجتماعی",
+        "accounts": "حساب‌ها",
+        "posts": "همهٔ پست‌ها",
+        "songs": "آهنگ‌ها"
+      },
+      "sortLabel": "مرتب‌سازی",
+      "accountLabel": "حساب",
+      "accountSorts": {
+        "followers": "بیشترین دنبال‌کننده",
+        "growth": "سریع‌ترین رشد",
+        "engagement": "بیشترین تعامل",
+        "latest": "تازه‌ترین پست"
+      },
+      "postSorts": {
+        "newest": "تازه‌ترین",
+        "likes": "بیشترین پسند",
+        "comments": "بیشترین دیدگاه"
+      },
+      "songs": {
+        "track": "آهنگ",
+        "posts": "پست‌ها",
+        "averageLikes": "میانگین پسند",
+        "averageComments": "میانگین دیدگاه",
+        "accounts": "حساب‌ها",
+        "summary": "آهنگ‌های افزوده: {{added}} · آهنگی پیدا نشد: {{failed}} · در انتظار: {{pending}}",
+        "emptyTitle": "هنوز آهنگی نیست",
+        "emptyDescription": "وقتی شبیه‌ساز آهنگ‌ها را به پست‌های اسلایدی منتشرشده بیفزاید، این‌جا نمایش داده می‌شوند."
+      }
+    },
     "clubSubmissions": "درخواست‌های باشگاه",
     "noClubSubmissions": "هیچ درخواست باشگاهی وجود ندارد",
     "noClubSubmissionsDesc": "درخواست‌های جدید باشگاه‌ها برای تأیید در اینجا نمایش داده می‌شوند.",

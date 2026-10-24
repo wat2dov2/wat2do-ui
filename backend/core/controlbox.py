@@ -640,6 +640,9 @@ class InstagramPublishingControl(_ControlModel):
         max_length=100
     )
     music_interval_seconds: int = Field(ge=60, le=3600)
+    # The daily stats run keeps each account's newest posts and this many days of follower counts.
+    stats_media_limit: int = Field(ge=1, le=100)
+    stats_history_days: int = Field(ge=2, le=365)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120)
 
     @model_validator(mode="after")

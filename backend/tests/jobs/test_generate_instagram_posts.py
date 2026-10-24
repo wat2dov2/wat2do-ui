@@ -17,14 +17,6 @@ def test_candidate_command_reads_without_saving(monkeypatch, capsys):
     save.assert_not_called()
 
 
-@pytest.mark.parametrize("failed", [0, 1])
-def test_refresh_command_exposes_counts_only(monkeypatch, capsys, failed):
-    monkeypatch.setattr(sys, "argv", ["job", "refresh-tokens"])
-    monkeypatch.setattr(job, "refresh_expiring_tokens", lambda: {"failed": failed})
-    assert job.main() == failed
-    assert json.loads(capsys.readouterr().out) == {"failed": failed}
-
-
 def test_save_command_validates_external_choices(monkeypatch, tmp_path, capsys):
     path = tmp_path / "selection.json"
     path.write_text(

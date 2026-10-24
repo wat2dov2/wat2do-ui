@@ -71,7 +71,6 @@ def test_school_without_events_saves_empty_draft_without_claude(monkeypatch, sav
 
 def test_curate_all_counts_outcomes_and_skips_existing_drafts(monkeypatch):
     monkeypatch.setattr(curation, "remove_leftovers", lambda prefix: None)
-    monkeypatch.setattr(curation, "refresh_expiring_tokens", lambda: {"failed": 0})
     monkeypatch.setattr(
         curation,
         "list_draft_candidates",

@@ -7,9 +7,16 @@ import httpx
 
 from core.controlbox import controlbox
 
+# Everything instagram_business_basic reads about an account and its posts.
+PROFILE_FIELDS = "id,username,name,profile_picture_url,followers_count,follows_count,media_count"
+MEDIA_FIELDS = (
+    "id,caption,media_type,media_product_type,media_url,thumbnail_url,"
+    "permalink,timestamp,like_count,comments_count"
+)
+
 
 class MetaInstagramClient:
-    """Small Graph API client for resumable carousel publishing."""
+    """Small Graph API client for carousel publishing and each account's own stats."""
 
     def __init__(self, access_token: str):
         config = controlbox.instagram_publishing
@@ -26,6 +33,16 @@ class MetaInstagramClient:
             "id": _required_string(payload, "id"),
             "username": _required_string(payload, "username"),
         }
+
+    def get_profile(self) -> dict[str, Any]:
+        return self._get("/me", {"fields": PROFILE_FIELDS})
+
+    def list_recent_media(self, limit: int) -> list[dict[str, Any]]:
+        payload = self._get("/me/media", {"fields": MEDIA_FIELDS, "limit": str(limit)})
+        media = payload.get("data")
+        if not isinstance(media, list):
+            raise RuntimeError("Instagram API response did not include media")
+        return media
 
     def refresh_access_token(self) -> dict[str, Any]:
         with httpx.Client(timeout=self._timeout) as client:

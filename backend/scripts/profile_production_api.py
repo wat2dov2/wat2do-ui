@@ -105,6 +105,7 @@ AUTHENTICATED_ENDPOINTS = (
         True,
     ),
     Endpoint("/instagram-publishing/songs/", "/instagram-publishing/songs/", True),
+    Endpoint("/instagram-publishing/accounts/", "/instagram-publishing/accounts/", True),
     Endpoint("/notification-preferences", "/notification-preferences", True),
     Endpoint("/clubs/claims", "/clubs/claims", True),
     Endpoint(

@@ -47,6 +47,9 @@ const AdminCompetitorPainPointsPage = lazy(() =>
 const AdminOutreachPage = lazy(() =>
   import("@/features/admin/pages/AdminOutreachPage").then(m => ({ default: m.AdminOutreachPage }))
 );
+const AdminSocialAccountsPage = lazy(() =>
+  import("@/features/admin/pages/AdminSocialAccountsPage").then(m => ({ default: m.AdminSocialAccountsPage }))
+);
 const AdminSponsorsPage = lazy(() =>
   import("@/features/admin/pages/AdminSponsorsPage").then(m => ({ default: m.AdminSponsorsPage }))
 );
@@ -158,4 +161,10 @@ export function AdminSponsorsRoute() {
   const router = useRouter();
   const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
   return <AdminSuspense><AdminSponsorsPage onBack={onBack} /></AdminSuspense>;
+}
+
+export function AdminSocialAccountsRoute() {
+  const router = useRouter();
+  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
+  return <AdminSuspense><AdminSocialAccountsPage onBack={onBack} /></AdminSuspense>;
 }

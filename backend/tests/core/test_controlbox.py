@@ -97,6 +97,8 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.instagram_publishing.maximum_event_slides == 8
     assert controlbox.instagram_publishing.status_poll_interval_seconds == 3
     assert controlbox.instagram_publishing.token_refresh_lead_days == 14
+    assert controlbox.instagram_publishing.stats_media_limit == 25
+    assert controlbox.instagram_publishing.stats_history_days == 30
     assert controlbox.scraping.instagram_web_app_id == "936619743392459"
     assert controlbox.positions.undated_visibility_months == 4
     assert controlbox.scraping.directory_minimum_image_dimension_pixels == 160
