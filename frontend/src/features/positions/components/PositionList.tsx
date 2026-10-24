@@ -1,8 +1,4 @@
 import { usePositionStats } from "@/features/positions/hooks/usePositionStats";
-import { useMemo } from "react";
-import { ScrollDateWheel } from "@/shared/ui/scroll-date-wheel";
-import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { positionDeadlineCalendarDate } from "@/features/positions/lib/positionDates";
 import { useTranslation } from "react-i18next";
 import { CardEntrance } from "@/shared/ui/card-entrance";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -19,8 +15,6 @@ interface PositionListProps {
   positions: Position[];
   isLoading: boolean;
   onPositionClick: (position: Position) => void;
-  showDateWheel?: boolean;
-  hasActiveFilters?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
 }
@@ -55,72 +49,48 @@ export function PositionList({
   positions,
   isLoading,
   onPositionClick,
-  showDateWheel = false,
-  hasActiveFilters = false,
   emptyTitle,
   emptyDescription,
 }: PositionListProps) {
   const { t } = useTranslation();
   const { data: stats } = usePositionStats(positions[0]?.school ?? "");
-  const { getSchoolTimezone } = useSchoolDirectory();
-  const wheelGroups = useMemo(
-    () => !showDateWheel || hasActiveFilters ? undefined : [{
-      key: "positions",
-      dates: positions.map(position => positionDeadlineCalendarDate(position, getSchoolTimezone(position.school)) ?? ""),
-    }],
-    [positions, getSchoolTimezone, hasActiveFilters, showDateWheel],
-  );
-  const dateWheel = showDateWheel
-    ? <ScrollDateWheel undatedLabel={t("positions.noDeadline")} groups={wheelGroups} />
-    : null;
   if (isLoading) {
-    return (
-      <>
-        {dateWheel}
-        <PositionListSkeleton />
-      </>
-    );
+    return <PositionListSkeleton />;
   }
 
   if (positions.length === 0) {
     return (
-      <>
-        {dateWheel}
-        <EmptyState
-          icon={<Users />}
-          title={emptyTitle ?? t("positions.emptyTitle")}
-          description={emptyDescription ?? t("positions.emptyDescription")}
-        />
-      </>
+      <EmptyState
+        icon={<Users />}
+        title={emptyTitle ?? t("positions.emptyTitle")}
+        description={emptyDescription ?? t("positions.emptyDescription")}
+      />
     );
   }
 
   return (
-    <>
-      {dateWheel}
-      <div
-        data-slot="card-grid"
-        data-scroll-date-group="positions"
-        className={CARD_GRID_CLASS}
-        role="list"
-        aria-label={t("positions.resultsLabel", { count: positions.length })}
-      >
-        {positions.map((position, index) => (
-          <CardEntrance
-            key={position.id}
-            index={index}
-            role="listitem"
-            className="h-full min-w-0"
-          >
-            <PositionCard
-              position={position}
-              onPositionClick={onPositionClick}
-              clickCount={stats?.[String(position.id)]?.click_count}
-              imagePriority={index < imageDelivery.first_row_image_count}
-            />
-          </CardEntrance>
-        ))}
-      </div>
-    </>
+    <div
+      data-slot="card-grid"
+      data-scroll-date-group="positions"
+      className={CARD_GRID_CLASS}
+      role="list"
+      aria-label={t("positions.resultsLabel", { count: positions.length })}
+    >
+      {positions.map((position, index) => (
+        <CardEntrance
+          key={position.id}
+          index={index}
+          role="listitem"
+          className="h-full min-w-0"
+        >
+          <PositionCard
+            position={position}
+            onPositionClick={onPositionClick}
+            clickCount={stats?.[String(position.id)]?.click_count}
+            imagePriority={index < imageDelivery.first_row_image_count}
+          />
+        </CardEntrance>
+      ))}
+    </div>
   );
 }

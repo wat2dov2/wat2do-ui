@@ -73,20 +73,9 @@
   );
   --glow-primary: 0 0 24px hsl(0 0% 96% / 0.08);
 
-  /* Global page background decoration, mounted once via <PageBackground />. */
   /* Wat2Do defaults. Real school hosts override these from the school directory. */
   --page-school-primary: #ffc629;
   --page-school-secondary: #111111;
   --school-marker: var(--page-school-primary);
   --school-marker-foreground: var(--page-school-secondary);
-  --page-glow-secondary-inner: color-mix(
-    in srgb,
-    var(--page-school-secondary) 12%,
-    transparent
-  );
-  --page-glow-secondary-middle: color-mix(
-    in srgb,
-    var(--page-school-secondary) 4%,
-    transparent
-  );
 }

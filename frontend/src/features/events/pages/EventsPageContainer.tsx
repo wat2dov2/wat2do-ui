@@ -208,7 +208,6 @@ export function EventsPageContainer({
               onEventClick={handleEventClick}
               onClearFilters={filters.clearAllFilters}
               hasActiveFilters={filters.filterCount > 0 || filters.searchQuery.trim().length > 0}
-              showDateWheel
               eventStats={eventStats}
               isLoading={isLoading}
               groupByDateSections={
