@@ -55,6 +55,8 @@ locals {
     "INSTAGRAM_SLIDE_RENDER_SECRET",
     "POSTER_HASH_SECRET",
     "POSTER_CONFIRMATION_SECRET",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
   ]
 
   runtime_secret_references = [
