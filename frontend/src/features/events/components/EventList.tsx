@@ -4,14 +4,12 @@ import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
 import type { Event } from "@/shared/types";
 import {
-  eventCalendarDate,
   eventDateSectionKey,
   eventDateSectionOrder,
   formatEventDateSectionRange,
   getEventDateSection,
   type EventDateSection,
 } from "@/shared/utils/date";
-import { ScrollDateWheel } from "@/shared/ui/scroll-date-wheel";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import type { EventStats } from "@/features/events/api/events.api";
@@ -34,11 +32,9 @@ interface EventListProps {
   eventStats: Record<string, EventStats> | null;
   isLoading?: boolean;
   groupByDateSections?: boolean;
-  showDateWheel?: boolean;
 }
 
 interface EventCardsGridProps {
-  dateGroupKey?: string;
   events: Event[];
   eventStats: Record<string, EventStats> | null;
   priorityImageIds: ReadonlySet<number>;
@@ -46,14 +42,13 @@ interface EventCardsGridProps {
 }
 
 function EventCardsGrid({
-  dateGroupKey,
   events,
   eventStats,
   priorityImageIds,
   onEventClick,
 }: EventCardsGridProps) {
   return (
-    <div data-slot="card-grid" data-scroll-date-group={dateGroupKey} className={CARD_GRID_CLASS}>
+    <div data-slot="card-grid" className={CARD_GRID_CLASS}>
       {events.map((event, index) => (
         <CardEntrance
           key={event.id}
@@ -123,7 +118,6 @@ export function EventList({
   eventStats,
   isLoading = false,
   groupByDateSections = true,
-  showDateWheel = false,
 }: EventListProps) {
   const { getSchoolTimezone } = useSchoolDirectory();
   const { t, i18n } = useTranslation();
@@ -131,15 +125,6 @@ export function EventList({
   const dateSectionGroups = useMemo(
     () => groupByDateSections ? groupEventsByDateSection(events, getSchoolTimezone) : [],
     [events, getSchoolTimezone, groupByDateSections],
-  );
-  const wheelGroups = useMemo(
-    () => showDateWheel && !hasActiveFilters && groupByDateSections
-      ? dateSectionGroups.map(group => ({
-          key: group.key,
-          dates: group.events.map(event => eventCalendarDate(event, getSchoolTimezone(event.school))),
-        }))
-      : undefined,
-    [dateSectionGroups, getSchoolTimezone, groupByDateSections, hasActiveFilters, showDateWheel],
   );
   const sectionOrderedEvents = useMemo(
     () =>
@@ -178,26 +163,19 @@ export function EventList({
     return formatEventDateSectionRange(section.startMs, section.endMs, t, locale);
   };
 
-  const dateWheel = showDateWheel
-    ? <ScrollDateWheel undatedLabel={t("events.upcoming")} groups={wheelGroups} />
-    : null;
-
   // Early returns AFTER all hooks
   if (isLoading) {
     return (
-      <>
-        {dateWheel}
-        <div className="space-y-5" aria-busy="true">
-          <section className="space-y-2.5">
-            <Skeleton className="h-5 w-28 rounded-lg" />
-            <div className={CARD_GRID_CLASS}>
-              {Array.from({ length: 12 }).map((_, i) => (
-                <EventCardSkeleton key={i} />
-              ))}
-            </div>
-          </section>
-        </div>
-      </>
+      <div className="space-y-5" aria-busy="true">
+        <section className="space-y-2.5">
+          <Skeleton className="h-5 w-28 rounded-lg" />
+          <div className={CARD_GRID_CLASS}>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <EventCardSkeleton key={i} />
+            ))}
+          </div>
+        </section>
+      </div>
     );
   }
 
@@ -206,79 +184,71 @@ export function EventList({
   // zero cards with no empty state at all.
   if (sectionOrderedEvents.length === 0) {
     return (
-      <>
-        {dateWheel}
-        <EmptyState
-          icon={<Search />}
-          title={
-            hasActiveFilters
-              ? t("events.noEventsFound")
-              : t("events.noEventsScheduled")
-          }
-          description={
-            hasActiveFilters
-              ? t("events.noEventsFoundDesc")
-              : t("events.noEventsScheduledDesc")
-          }
-          action={
-            hasActiveFilters && onClearFilters ? (
-              <Button variant="outline" onMouseDown={onClearFilters}>
-                {t("events.clearAllFilters")}
-              </Button>
-            ) : undefined
-          }
-          className="py-24"
-        />
-      </>
+      <EmptyState
+        icon={<Search />}
+        title={
+          hasActiveFilters
+            ? t("events.noEventsFound")
+            : t("events.noEventsScheduled")
+        }
+        description={
+          hasActiveFilters
+            ? t("events.noEventsFoundDesc")
+            : t("events.noEventsScheduledDesc")
+        }
+        action={
+          hasActiveFilters && onClearFilters ? (
+            <Button variant="outline" onMouseDown={onClearFilters}>
+              {t("events.clearAllFilters")}
+            </Button>
+          ) : undefined
+        }
+        className="py-24"
+      />
     );
   }
 
   return (
-    <>
-      {dateWheel}
-      <div className="space-y-5" role="list" aria-label={`${events.length} events found`}>
-
-        {groupByDateSections ? (
-          visibleDateSectionGroups.map((group) => {
-            const label = sectionLabel(group.section);
-            return (
-              <section key={group.key} data-scroll-date-section className="space-y-2.5" aria-label={label}>
-                <h2 className="text-base font-normal tracking-normal text-foreground">
-                  {label}
-                </h2>
-                <EventCardsGrid
-                  dateGroupKey={group.key}
-                  events={group.events}
-                  eventStats={eventStats}
-                  priorityImageIds={priorityImageIds}
-                  onEventClick={onEventClick}
-                />
-              </section>
-            );
-          })
-        ) : (
-          <section className="space-y-2.5" aria-label={t("events.upcoming")}>
-            <EventCardsGrid
-              events={visibleEvents}
-              eventStats={eventStats}
-              priorityImageIds={priorityImageIds}
-              onEventClick={onEventClick}
-            />
-          </section>
-        )}
-        {hasMoreEvents ? (
-          <div
-            ref={loadMoreRef}
-            data-testid="event-list-sentinel"
-            className={CARD_GRID_CLASS}
-            role="status"
-            aria-live="polite"
-            aria-label={t("common.loading")}
-          >
-            {Array.from({ length: 4 }, (_, index) => <EventCardSkeleton key={index} />)}
-          </div>
-        ) : null}
-      </div>
-    </>
+    <div className="space-y-5" role="list" aria-label={`${events.length} events found`}>
+      {groupByDateSections ? (
+        visibleDateSectionGroups.map((group) => {
+          const label = sectionLabel(group.section);
+          return (
+            <section key={group.key} className="space-y-2.5" aria-label={label}>
+              <h2 className="text-base font-normal tracking-normal text-foreground">
+                {label}
+              </h2>
+              <EventCardsGrid
+                events={group.events}
+                eventStats={eventStats}
+                priorityImageIds={priorityImageIds}
+                onEventClick={onEventClick}
+              />
+            </section>
+          );
+        })
+      ) : (
+        <section className="space-y-2.5" aria-label={t("events.upcoming")}>
+          <EventCardsGrid
+            events={visibleEvents}
+            eventStats={eventStats}
+            priorityImageIds={priorityImageIds}
+            onEventClick={onEventClick}
+          />
+        </section>
+      )}
+      {hasMoreEvents ? (
+        <div
+          ref={loadMoreRef}
+          data-testid="event-list-sentinel"
+          className={CARD_GRID_CLASS}
+          role="status"
+          aria-live="polite"
+          aria-label={t("common.loading")}
+        >
+          {Array.from({ length: 4 }, (_, index) => <EventCardSkeleton key={index} />)}
+        </div>
+      ) : null}
+    </div>
   );
 }

@@ -169,15 +169,6 @@
   mix-blend-mode: normal;
 }
 
-@utility bg-page-glow {
-  background-image: radial-gradient(
-    circle at bottom left,
-    var(--page-glow-secondary-inner) 0%,
-    var(--page-glow-secondary-middle) 28%,
-    transparent 68%
-  );
-}
-
 @layer base {
   *:not(.animate-pulse-live) {
     @apply border-border outline-ring/50;

@@ -7,7 +7,7 @@ import {
   EventCardContentFrame,
 } from "@/shared/ui/event-card-content";
 import { EventCardImage } from "@/features/events/components/EventCardImage";
-import { formatCardDate, formatCardTime, eventCalendarDate } from "@/shared/utils/date";
+import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
 import { useCardMouseDownActivate, useMobileClickActivation } from "@/shared/hooks";
 import { cn } from "@/shared/lib/utils";
@@ -140,7 +140,6 @@ function EventCardComponent({
     ? {
         "data-event-card": true,
         "data-event-id": event.id,
-        "data-scroll-date": eventCalendarDate(event, getSchoolTimezone(event.school)),
         role: "button",
         tabIndex: 0,
         "aria-label": `Event: ${event.title}`,

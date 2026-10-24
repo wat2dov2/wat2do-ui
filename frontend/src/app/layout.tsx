@@ -14,7 +14,6 @@ import {
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { getSchoolThemeStyle } from "@/shared/lib/schoolBranding";
 import { getSchoolLogoImage } from "@/shared/lib/schoolLogo";
-import { PageBackground } from "@/shared/layout";
 import "../index.css";
 
 // Satoshi ships as a single variable file per style, so one declaration covers
@@ -138,7 +137,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         />
       </head>
       <body>
-        <PageBackground />
         {/* Inside the providers so the strip's own controls can be translated;
             it is still a server component, rendered on the server as a child. */}
         <ClientProviders
