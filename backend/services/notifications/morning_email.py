@@ -17,7 +17,7 @@ from core.database import get_sb
 from core.pagination import fetch_all_pages
 from core.tables import EVENT_DATES, EVENTS, POSITIONS, USERS
 from services import school_service
-from services.email_layout import email_logo
+from services.email_layout import EMAIL_LOGO
 from services.email_service import EmailMessage, InlineImage
 from services.notifications.delivery_log import (
     claim_delivery,
@@ -318,7 +318,7 @@ def _send_prepared_email(
             "List-Unsubscribe": f"<{unsubscribe}>",
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
-        inline_images=[email_logo(user.get("school")), *digest.images],
+        inline_images=[EMAIL_LOGO, *digest.images],
     )
     return deliver_claimed_email(
         row_id=row_id,

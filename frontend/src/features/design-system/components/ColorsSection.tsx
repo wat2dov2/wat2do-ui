@@ -1,6 +1,5 @@
 import { Section, Stack } from "@/shared/layout";
 import { cn } from "@/shared/lib/utils";
-import { BrandLogo } from "@/shared/ui/brand-logo";
 import { ShowcaseBlock } from "./ShowcaseBlock";
 
 const COLOR_FAMILIES = [
@@ -99,13 +98,6 @@ export function ColorsSection() {
           <div className="rounded-xl bg-primary p-4">
             <p className="text-primary-foreground">text-primary-foreground on bg-primary</p>
           </div>
-        </Stack>
-      </ShowcaseBlock>
-      <ShowcaseBlock label="Brand logo sizes (poster-built for schools with enough events)">
-        <Stack direction="horizontal" gap={4} align="center">
-          <BrandLogo school="uwaterloo" size="nav" alt="Wat2Do" />
-          <BrandLogo school="uwaterloo" size="card" alt="Wat2Do" />
-          <BrandLogo school="uwaterloo" size="hero" alt="Wat2Do" />
         </Stack>
       </ShowcaseBlock>
     </Section>

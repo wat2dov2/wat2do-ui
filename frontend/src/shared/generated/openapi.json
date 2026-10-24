@@ -15501,17 +15501,6 @@
             },
             "type": "array",
             "title": "Email Domains"
-          },
-          "poster_logo_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Poster Logo Url"
           }
         },
         "type": "object",

@@ -1,11 +1,11 @@
 import { cache, Suspense } from "react";
-import { getRequestSchool, getRequestSchoolSummary } from "@/shared/api/schools.server";
+import { getRequestSchool } from "@/shared/api/schools.server";
 import type { Metadata } from "next";
+import imgAuthLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
 import { AuthEntryPage } from "@/features/auth/pages/AuthEntryPage";
 import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { getSchoolPreviewEvents } from "@/features/events/api/eventFeed.server";
 import { QP } from "@/shared/constants/queryParams";
-import { getSchoolLogoImage } from "@/shared/lib/schoolLogo";
 import { buildNoIndexPageMetadata } from "@/shared/lib/seo";
 import type { Event } from "@/shared/types";
 
@@ -30,21 +30,18 @@ const loadPreviewEvents = cache(async (school: string): Promise<Event[]> => {
   }
 });
 
-export async function generateMetadata(): Promise<Metadata> {
-  const logo = getSchoolLogoImage(await getRequestSchoolSummary());
-  return buildNoIndexPageMetadata({
-    title: "Sign In to Wat2Do",
-    description:
-      "Sign in or create a Wat2Do account to save campus events, follow student clubs, and personalize your event feed.",
-    image: {
-      url: logo.src,
-      alt: "Wat2Do campus event discovery",
-      width: logo.width,
-      height: logo.height,
-      type: "image/png",
-    },
-  });
-}
+export const metadata: Metadata = buildNoIndexPageMetadata({
+  title: "Sign In to Wat2Do",
+  description:
+    "Sign in or create a Wat2Do account to save campus events, follow student clubs, and personalize your event feed.",
+  image: {
+    url: imgAuthLogo.src,
+    alt: "Wat2Do campus event discovery",
+    width: imgAuthLogo.width,
+    height: imgAuthLogo.height,
+    type: "image/png",
+  },
+});
 
 async function LoginPreview({ school }: { school: string }) {
   return <AuthHeroPanel events={await loadPreviewEvents(school)} />;

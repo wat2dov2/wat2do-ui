@@ -4,7 +4,6 @@ import contact from "../../../../backend/controlbox/contact.json" with { type: "
 import type eventDiscoveryControl from "../../../../backend/controlbox/event_discovery.json";
 import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json" with { type: "json" };
 import clubManagement from "../../../../backend/controlbox/club_management.json" with { type: "json" };
-import schoolLogos from "../../../../backend/controlbox/school_logos.json" with { type: "json" };
 import socialPreviews from "../../../../backend/controlbox/social_previews.json" with { type: "json" };
 import uploads from "../../../../backend/controlbox/uploads.json" with { type: "json" };
 
@@ -69,10 +68,6 @@ export const controlBox = {
   uploads: {
     eventImageAllowedMimeTypes: uploads.event_image_allowed_mime_types,
     eventImageMaxSizeBytes: uploads.event_image_max_size_bytes,
-  },
-  schoolLogos: {
-    outputWidth: schoolLogos.output_width,
-    outputHeight: schoolLogos.output_height,
   },
   socialPreviews: {
     outputWidth:
