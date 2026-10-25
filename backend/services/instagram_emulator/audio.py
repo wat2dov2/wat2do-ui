@@ -1,8 +1,9 @@
-"""Add a song to a school's published carousel from the Instagram app.
+"""Like, repost and add a song to a school's published carousel from the Instagram app.
 
-Instagram's API publishes a carousel without music, so the app on the emulator
-edits the live post the way a person would: More actions, Edit, Add audio, search
-for a song, pick a track, keep the suggested clip, then Done.
+Instagram's API publishes a carousel without music and cannot like or repost, so the
+app on the emulator opens the live post the way a person would: it likes and reposts
+it, then edits it: More actions, Edit, Add audio, search for a song, pick a track,
+keep the suggested clip, then Done.
 """
 
 from __future__ import annotations
@@ -38,6 +39,13 @@ _DONE = re.compile(r"^Done$")
 _DISCARD = re.compile(r"^Discard$")
 _MIN_ROW_HEIGHT = 45
 _KEEP_CLIP = re.compile(r"^action_bar_button_action$")
+_LIKE = re.compile(r"^Like$")
+_LIKED = re.compile(r"^Liked$")
+_REPOST = re.compile(r"^Repost$")
+# Shown once per account, the first time it reposts anything.
+_FIRST_REPOST_NOTE = re.compile(r"^You reposted ")
+_CLOSE = re.compile(r"^Close$")
+_REPOST_CHECKS = 5
 
 
 class SongNotFound(EmulatorError):
@@ -54,14 +62,15 @@ class AddedTrack:
 ChooseTrack = Callable[[str, Sequence[str]], int | None]
 
 
-def add_audio(
+def finish_post(
     school: str,
     account_username: str,
     permalink: str,
     queries: Sequence[str],
     choose: ChooseTrack,
 ) -> AddedTrack:
-    """Add the first song in ``queries`` that Instagram has, and return the track used."""
+    """Like and repost the post, then add the first song in ``queries`` that Instagram
+    has, and return the track used. A retry only does what is still missing."""
     if not _POST_URL.fullmatch(permalink):
         raise EmulatorError("Only an exact Instagram post can get audio")
     user = CONTROL.android_user_by_school.get(school)
@@ -73,6 +82,7 @@ def add_audio(
         device.use_android_user(user)
         device.use_account(user, account_username)
         device.open_instagram(user, permalink)
+        _like_and_repost(device)
         device.tap_when(_POST_OPTIONS)
         device.tap_when(_EDIT)
         device.wait_for(_EDIT_INFO)
@@ -87,6 +97,31 @@ def add_audio(
         device.tap_when(_DONE)
         device.wait_until_gone(_EDIT_INFO, seconds=CONTROL.audio_save_wait_seconds)
         return added
+
+
+def _like_and_repost(device: EmulatorDevice) -> None:
+    """Like the post and share it to our followers' feeds, each only if not done yet.
+
+    Tapping Repost again would take the repost back, and its label never changes, so
+    the check mark Instagram draws in the icon decides whether to tap.
+    """
+    device.wait_for(_POST_OPTIONS)
+    if device.find(_LIKED) is None:
+        device.tap_when(_LIKE)
+        device.wait_for(_LIKED)
+    if device.marked(device.wait_for(_REPOST)):
+        return
+    device.tap_when(_REPOST)
+    for _ in range(_REPOST_CHECKS):
+        device.pause()
+        nodes = device.screen()
+        if device.find(_FIRST_REPOST_NOTE, nodes) is not None:
+            device.tap_when(_CLOSE)
+            continue
+        repost = device.find(_REPOST, nodes)
+        if repost is not None and device.marked(repost):
+            return
+    raise EmulatorError("Instagram did not show the post as reposted")
 
 
 def _pick_track(device: EmulatorDevice, queries: Sequence[str], choose: ChooseTrack) -> AddedTrack:

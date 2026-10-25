@@ -110,8 +110,10 @@ The emulator finds every control by its accessibility label, taps at a random po
 inside it after a random pause, types one character at a time, and never types a
 password.
 Each reply is confirmed by seeing it appear in the thread.
-The emulator also adds music to our own carousels after the API publishes them, since
-the API cannot attach a song: a Mac LaunchAgent opens the live post, Edit, Add audio,
+The emulator also likes, reposts and adds music to our own carousels after the API
+publishes them, since the API can do none of these: a Mac LaunchAgent opens the live
+post, likes it, reposts it unless the Repost icon already shows its check mark, then
+Edit, Add audio,
 searches the admin's song list in random order, and Claude Haiku picks the matching
 track or none.
 A song the admin marks as Asian or K-pop is tried only at the campuses in

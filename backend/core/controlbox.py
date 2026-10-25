@@ -631,12 +631,14 @@ class InstagramPublishingControl(_ControlModel):
     curation_hour: int = Field(ge=0, le=23)
     curation_minute: int = Field(ge=0, le=59)
     poster_timeout_seconds: float = Field(gt=0, le=120)
-    # Some minutes after a carousel publishes, the Mac's emulator adds a song to it.
+    # Some minutes after a carousel publishes, the Mac's emulator likes, reposts and adds
+    # a song to it, waiting music_retry_minutes after a failed try.
     music_model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     music_agent_timeout_seconds: int = Field(gt=0, le=600)
     music_delay_minutes: int = Field(ge=1, le=120)
     music_max_age_hours: int = Field(ge=1, le=72)
     music_attempts: int = Field(ge=1, le=10)
+    music_retry_minutes: int = Field(ge=1, le=720)
     # Campuses with large Asian student communities, the only ones that get a song an
     # admin marked as Asian or K-pop.
     asian_song_schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(
