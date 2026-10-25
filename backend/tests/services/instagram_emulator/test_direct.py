@@ -304,7 +304,8 @@ def _thread(*messages):
 def test_a_reply_is_confirmed_even_when_older_messages_scroll_away() -> None:
     older = _node("Sure!", (850, 400, 1040, 450))
     request = _node("could you share our post?", (179, 600, 882, 700))
-    sent = _node("just shared it!", (700, 1200, 1040, 1250))
+    # The keyboard capitalized the first letter.
+    sent = _node("Just shared it!", (700, 1200, 1040, 1250))
     device = _ThreadDevice([_thread(older, request), _thread(request), _thread(request, sent)])
     THREAD_READER(device, lambda: None).send("just shared it!")
     assert device.typed == ["just shared it!"]
