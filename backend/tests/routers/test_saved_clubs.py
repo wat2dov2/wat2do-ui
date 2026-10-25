@@ -110,7 +110,21 @@ def test_unsave_club_succeeds(authenticated_client, monkeypatch):
     db_user = _mock_db_user()
     monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(saved_club_service, "unsave_club", MagicMock(return_value=True))
+    monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=False))
 
     resp = authenticated_client.delete("/saved-clubs/42")
     assert resp.status_code == 200
     assert resp.json()["status"] == "unsaved"
+
+
+def test_club_member_cannot_unfollow_their_own_club(authenticated_client, monkeypatch):
+    db_user = _mock_db_user()
+    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    unsave = MagicMock(return_value=True)
+    monkeypatch.setattr(saved_club_service, "unsave_club", unsave)
+    monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=True))
+
+    resp = authenticated_client.delete("/saved-clubs/42")
+
+    assert resp.status_code == 400
+    unsave.assert_not_called()

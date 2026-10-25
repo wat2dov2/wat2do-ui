@@ -5,7 +5,7 @@ from postgrest.exceptions import APIError
 
 from core.auth import get_db_user
 from core.constants import MAX_SAVED_CLUBS_PER_USER
-from core.errors import CLUB_NOT_FOUND, SAVED_CLUBS_CAP_REACHED
+from core.errors import CLUB_NOT_FOUND, MEMBERS_ALWAYS_FOLLOW_CLUB, SAVED_CLUBS_CAP_REACHED
 from core.exceptions import NotFoundError, ValidationError
 from schemas.saved_club import SaveClubStatusResponse
 from services import club_service, saved_club_service
@@ -51,5 +51,8 @@ def save_club(club_id: int, user=Depends(get_db_user)):
     response_model=SaveClubStatusResponse,
 )
 def unsave_club(club_id: int, user=Depends(get_db_user)):
+    """Unfollow a club. 400 for the club's own members, who always follow it."""
+    if club_service.is_club_member(club_id, str(user.id)):
+        raise ValidationError(MEMBERS_ALWAYS_FOLLOW_CLUB)
     saved_club_service.unsave_club(str(user.id), club_id)
     return {"status": "unsaved"}

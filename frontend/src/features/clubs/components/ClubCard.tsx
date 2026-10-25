@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { Button } from "@/shared/ui/button";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
+import { useOpenClubPanel } from "@/features/clubs/hooks/useOpenClubPanel";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { getClubCategoryConfig } from "@/shared/data/clubCategoryStyles";
 import { translateCategory } from "@/shared/utils/event";
@@ -38,7 +39,9 @@ function ClubCardComponent({
 }: ClubCardProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { isAuthenticated } = useAuthState();
+  const { isAuthenticated, clubs } = useAuthState();
+  const managesClub = clubs.some((managedClub) => managedClub.id === club.id);
+  const openClubPanel = useOpenClubPanel();
   const toggleSaveClub = useSavedClubsStore((state) => state.toggleSaveClub);
   const preferClickPress = useMobileClickActivation();
 
@@ -110,16 +113,23 @@ function ClubCardComponent({
       <div className="flex items-start justify-between gap-3">
         <AvatarStack size="lg" avatars={[{ src: club.logo_url ?? "", name: club.club_name }]} />
         <div data-club-card-action {...stopCardActivation}>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            selected={isSaved}
-            onClick={toggleFollow}
-            aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
-          >
-            {isSaved ? t("clubs.following") : t("clubs.follow")}
-          </Button>
+          {managesClub ? (
+            // Members always follow their club, so they see their role instead of a follow toggle.
+            <Button type="button" variant="outline" size="sm" selected onClick={() => openClubPanel(club)}>
+              {t("clubPanel.roleOwner")}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              selected={isSaved}
+              onClick={toggleFollow}
+              aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
+            >
+              {isSaved ? t("clubs.following") : t("clubs.follow")}
+            </Button>
+          )}
         </div>
       </div>
 

@@ -19,3 +19,4 @@ export {
 } from "./api/clubs.api";
 
 // Hooks
+export { useOpenClubPanel } from "./hooks/useOpenClubPanel";

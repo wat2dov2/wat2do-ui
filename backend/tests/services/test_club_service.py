@@ -693,3 +693,24 @@ def test_public_club_response_preserves_creation_time():
     assert club.created_at == timestamp
     assert club.model_dump(mode="json")["created_at"] == "2026-10-02T12:00:00Z"
     assert club_service._club_response({"id": 2, "club_name": "Older Club"}).created_at is None
+
+
+def test_new_club_member_follows_the_club(monkeypatch, fake_sb, patch_sb):
+    from uuid import UUID
+
+    from services import saved_club_service, user_service
+
+    patch_sb("services.club_service")
+    user_id = UUID("11111111-1111-1111-1111-111111111111")
+    monkeypatch.setattr(
+        user_service,
+        "get_user",
+        lambda _id: SimpleNamespace(email="lead@uwo.ca", full_name=None, avatar_url=None),
+    )
+    follow = MagicMock()
+    monkeypatch.setattr(saved_club_service, "save_club", follow)
+    fake_sb.set_response(data=[{"joined_at": "2026-10-25T12:00:00+00:00"}])
+
+    club_service.add_club_member(7, user_id)
+
+    follow.assert_called_once_with(str(user_id), 7)

@@ -5479,7 +5479,9 @@ test.describe("Navigation", () => {
     await expect(topNavigation.getByRole("button", { name: "UW Tech Club", exact: true })).toHaveCount(0);
     await topNavigation.getByRole("button", { name: "Open navigation menu" }).click();
     const drawer = page.getByRole("dialog", { name: "Primary navigation" });
-    await expect(drawer.getByRole("button", { name: "UW Tech Club", exact: true })).toBeVisible();
+    // One club: a plain Club Panel link, no picker to switch clubs.
+    await expect(drawer.getByRole("button", { name: "Club Panel", exact: true })).toBeVisible();
+    await expect(drawer.getByRole("button", { name: "UW Tech Club", exact: true })).toHaveCount(0);
     await expect(drawer.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
     await drawer.getByRole("button", { name: "Admin", exact: true }).click();
     await expect(page).toHaveURL(/\/admin$/);
@@ -5489,7 +5491,7 @@ test.describe("Navigation", () => {
     await expect(topNavigation.getByRole("button", { name: "UW Tech Club", exact: true })).toHaveCount(0);
     await expect(topNavigation.getByRole("button", { name: "Log out", exact: true })).toHaveCount(0);
     await topNavigation.getByRole("button", { name: "Open navigation menu" }).click();
-    await expect(drawer.getByRole("button", { name: "UW Tech Club", exact: true })).toBeVisible();
+    await expect(drawer.getByRole("button", { name: "Club Panel", exact: true })).toBeVisible();
     await expect(drawer.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
   });
 

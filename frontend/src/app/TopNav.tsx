@@ -4,7 +4,7 @@ import NextLink from "next/link";
 import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { HelpCircle, LogOut, MoreHorizontal, Shapes, Settings, Shield, Ticket, Users } from "lucide-react";
+import { Crown, HelpCircle, LogOut, MoreHorizontal, Shapes, Settings, Shield, Ticket, Users } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
@@ -28,7 +28,8 @@ import { DrawerBody, Stack } from "@/shared/layout";
 import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { useRequestSchool } from "@/app/client-providers";
 import { prefetchPublicPage } from "@/app/hooks/useAppNavigation";
-import { getUserProfile, logoutAPI, updateUserProfile } from "@/features/auth/api/auth.api";
+import { logoutAPI } from "@/features/auth/api/auth.api";
+import { useOpenClubPanel } from "@/features/clubs";
 import { PUBLIC_PAGE_ROUTES, ROUTES } from "@/shared/constants/routes";
 import { getSchoolOrigin } from "@/shared/constants/schools";
 import imgImage1 from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
@@ -115,18 +116,11 @@ export function TopNav() {
     router.push(ROUTES.ADMIN);
   }, [router]);
 
+  const openClubPanel = useOpenClubPanel();
   const handleClubSelect = useCallback((org: NavClub) => {
     setNavigationOpen(false);
-    const profile = getUserProfile();
-    if (profile) {
-      updateUserProfile({
-        ...profile,
-        clubId: org.id,
-        clubName: org.club_name,
-      });
-    }
-    router.push(ROUTES.CLUB_PANEL);
-  }, [router]);
+    openClubPanel(org);
+  }, [openClubPanel]);
 
   const handleSignOut = useCallback(async () => {
     setNavigationOpen(false);
@@ -276,6 +270,16 @@ export function TopNav() {
                 })}
               </nav>
               {canOpenClubPanel && (
+                <Button
+                  variant={isRouteActive(pathname, ROUTES.CLUB_PANEL) ? "outline" : "ghost"}
+                  size="navigation"
+                  onClick={() => handleClubSelect(activeClub)}
+                >
+                  <Crown />
+                  {t("clubPanel.title")}
+                </Button>
+              )}
+              {canOpenClubPanel && clubs.length > 1 && (
                 <SearchCombobox
                   selectedKey={activeClub.id}
                   onSelect={handleClubSelect}

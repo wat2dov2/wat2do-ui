@@ -204,12 +204,13 @@ def list_club_members(club_id: int) -> list[ClubMemberResponse]:
 
 
 def add_club_member(club_id: int, user_id: UUID) -> ClubMemberResponse:
-    """Add a user as a member of the club."""
-    from services import user_service
+    """Add a user as a member of the club. Members always follow their club."""
+    from services import saved_club_service, user_service
 
     user = user_service.get_user(user_id)
     if not user:
         raise NotFoundError("User not found")
+    saved_club_service.save_club(str(user_id), club_id)
 
     now = datetime.now(timezone.utc).isoformat()
     payload = {

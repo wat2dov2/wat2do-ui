@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Bookmark, ExternalLink, HelpCircle, Instagram } from "lucide-react";
+import { Bookmark, Crown, ExternalLink, HelpCircle, Instagram } from "lucide-react";
 import { DiscordIcon } from "@/shared/ui/platform-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
@@ -14,6 +14,7 @@ import { ClaimClubModal } from "@/features/clubs/components/ClaimClubModal";
 import { ClubCategoryBadges } from "@/features/clubs/components/ClubCategoryBadges";
 import { getClubById } from "@/features/clubs/api/clubs.api";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
+import { useOpenClubPanel } from "@/features/clubs/hooks/useOpenClubPanel";
 import { ROUTES } from "@/shared/constants/routes";
 import { Container, PageHeader, Stack } from "@/shared/layout";
 import { queryKeys } from "@/shared/lib/queryKeys";
@@ -59,6 +60,7 @@ function ClubDetailsContent({
   );
   const isSaved = savedClubIds.includes(club.id);
   const managesClub = club.created_by === userId || clubs.some((managedClub) => managedClub.id === club.id);
+  const openClubPanel = useOpenClubPanel();
   const clubPageHref = sanitizeHref(club.club_page);
   const discordHref = sanitizeHref(club.discord ?? "");
 
@@ -82,7 +84,13 @@ function ClubDetailsContent({
                 wrap
                 justify="end"
               >
-                {isAuthenticated ? (
+                {managesClub ? (
+                  // Members always follow their club, so they see their role instead of a follow toggle.
+                  <Button type="button" variant="outline" selected onClick={() => openClubPanel(club)}>
+                    <Crown className="size-4" />
+                    {t("clubPanel.roleOwner")}
+                  </Button>
+                ) : isAuthenticated ? (
                   <Button
                     type="button"
                     variant="outline"
