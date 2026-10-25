@@ -511,8 +511,8 @@ The worker answers as the school in the Instagram app on the Mac's Android emula
 
 `controlbox/instagram_dms.json` starts with `dry_run: true`, which records each decision in the worker's job results without replying or queueing.
 A dry-run job only reads, so rerunning its notification reads a failed thread again; a live DM job is never retried.
-The model sees which shared posts come from a club we list, so it does not promise a repost code would refuse.
-Code then requires the shared post's owner to be the sender and a story repost's sender to be a known club at the school.
+Any account's post may go to the story; the model judges whether it is appropriate and still current.
+Code then requires the post to be shared in the thread, and a post added to our posts to be shared by its own owner.
 A reply is folded to one line of plain ASCII the emulator can type, and one with a tag, a link outside wat2do.io, an email address other than `contact_email`, a long number or more than `reply_max_characters` is not sent at all.
 A thread that cannot be read fails with the screen the app never showed, for example `Instagram never showed ^row_thread_composer_edittext$`.
 Review those results before setting it to `false`.

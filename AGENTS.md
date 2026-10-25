@@ -98,7 +98,8 @@ needs the composer.
 It then asks Claude (`backend/services/instagram_dms/prompt.md`) for one outcome and
 writes our reply the way a student running the account would, from the facts about
 Wat2Do the prompt lists.
-The outcomes are sharing the club's post or reel to our story, adding it to our posts,
+The outcomes are sharing a post or reel to our story (any account's, if it is
+appropriate and not out of date), adding it to our posts,
 a plain reply (questions, a story request with no post shared, an event already over),
 or ignoring it with no reply (traps, spam, "thanks").
 An "add it to our posts" request queues the shared post in `public.ingestion_items`
@@ -118,8 +119,8 @@ A song the admin marks as Asian or K-pop is tried only at the campuses in
 Every job that drives the emulator holds its lock, so no two ever tap at once.
 Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
 message, impersonation, login codes, money, follow-for-follow, pressure).
-Code, not the model, has the final say: the post must be shared by its own owner, a
-story repost also needs that owner to be a known club at the school, a reply with a
+Code, not the model, has the final say: the post must be shared in the thread, a post
+added to our posts must be shared by its own owner, a reply with a
 tag, a link outside wat2do.io, an email address other than the controlbox's
 `contact_email` or a long number is not sent at all, and nothing is sent when our
 message is already the newest.

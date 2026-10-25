@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any, Literal
 
 from core.controlbox import controlbox
-from services import club_service
 from services.claude_code import ClaudeCodeError, run_agent
 
 CONTROL = controlbox.instagram_dms
@@ -62,9 +61,7 @@ def decide(
         return IGNORE
     workdir = tempfile.mkdtemp(prefix=WORKDIR_PREFIX)
     try:
-        (Path(workdir) / "thread.json").write_text(
-            json.dumps(_with_club_flags(thread, school), ensure_ascii=False)
-        )
+        (Path(workdir) / "thread.json").write_text(json.dumps(thread, ensure_ascii=False))
         answer = run_agent(
             _prompt(account, school, school_name),
             workdir=workdir,
@@ -78,16 +75,17 @@ def decide(
         return IGNORE
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
-    return checked(answer, thread, school=school)
+    return checked(answer, thread)
 
 
-def checked(answer: dict[str, Any], thread: list[dict[str, Any]], *, school: str) -> DmDecision:
+def checked(answer: dict[str, Any], thread: list[dict[str, Any]]) -> DmDecision:
     """The model only proposes; code decides whether a stranger's message may act at all.
 
     A message can be written to trick the model, so every action needs proof from the
-    thread itself: the post was shared by its own owner, and a story repost also needs
-    that owner to be a club Wat2Do already knows at this school. The reply must pass
-    ``safe_reply``, so nothing a message smuggles in can link, tag or leak anything.
+    thread itself: the post was shared right here, and a post added to the site was shared
+    by its own owner. Any account may get its post onto our story; the model judges
+    whether the post is fit to share. The reply must pass ``safe_reply``, so nothing a
+    message smuggles in can link, tag or leak anything.
     Anything that fails a check is not answered at all.
     """
     reason = " ".join(str(answer.get("reason") or "").split())[:200]
@@ -100,19 +98,20 @@ def checked(answer: dict[str, Any], thread: list[dict[str, Any]], *, school: str
     if outcome == "reply":
         return DmDecision("reply", reply=reply, reason=reason)
     media_url = answer.get("media_url")
-    owners = {
-        _handle(item.get("shared_owner"))
+    shares = [
+        item
         for item in thread
         if item.get("from") == "them"
         and item.get("shared_url") == media_url
         and _handle(item.get("sender"))
-        and _handle(item.get("shared_owner")) == _handle(item.get("sender"))
-    }
-    if not media_url or len(owners) != 1:
-        return DmDecision("ignore", reason="Requested post was not shared by its own owner")
-    owner = owners.pop()
-    if outcome == "story_repost" and not _is_club_here(school, owner):
-        return DmDecision("ignore", reason=f"@{owner} is not a known club at this school")
+        and _handle(item.get("shared_owner"))
+    ]
+    if not media_url or not shares:
+        return DmDecision("ignore", reason="Requested post was not shared in this thread")
+    if outcome == "add_to_post" and not any(
+        _handle(item["shared_owner"]) == _handle(item["sender"]) for item in shares
+    ):
+        return DmDecision("ignore", reason="Only a club's own post is added to the site")
     return DmDecision(outcome, media_url=media_url, reply=reply, reason=reason)
 
 
@@ -134,21 +133,6 @@ def safe_reply(text: object) -> str | None:
     if any(not _OUR_ADDRESS.match(address.rstrip(".,!?)")) for address in _ADDRESS.findall(reply)):
         return None
     return reply
-
-
-def _with_club_flags(thread: list[dict[str, Any]], school: str) -> list[dict[str, Any]]:
-    """Tell the model which shared posts belong to a club we list, so it knows a story
-    repost will be refused before it promises one."""
-    return [
-        {**item, "shared_owner_is_club_here": _is_club_here(school, _handle(item["shared_owner"]))}
-        if item.get("shared_owner")
-        else item
-        for item in thread
-    ]
-
-
-def _is_club_here(school: str, owner: str) -> bool:
-    return bool(owner) and club_service.lookup_club_by_school_and_ig(school, owner) is not None
 
 
 def _handle(value: object) -> str:
