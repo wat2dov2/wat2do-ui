@@ -383,5 +383,15 @@ def _side(node: Node) -> str:
 
 
 def _newest_is_ours(nodes: list[Node], text: str) -> bool:
+    """Whether our reply is the newest message; the keyboard capitalizes sentences on its
+    own, so case and spacing do not count."""
     messages = _messages(nodes)
-    return bool(messages) and (messages[-1]["from"], messages[-1]["text"]) == ("us", text)
+    return (
+        bool(messages)
+        and messages[-1]["from"] == "us"
+        and _as_typed(messages[-1]["text"]) == _as_typed(text)
+    )
+
+
+def _as_typed(text: str) -> str:
+    return " ".join(text.casefold().split())
