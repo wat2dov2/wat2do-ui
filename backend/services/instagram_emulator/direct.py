@@ -58,6 +58,8 @@ _NOT_A_MESSAGE = labels(
 )
 # Their bubbles start right after the avatar column; ours sit against the right edge.
 _THEIR_BUBBLE_MAX_LEFT = 240
+# A text message is usually an unnamed view, but one with a link preview names its text.
+_TEXT_VIEW = "direct_text_message_text_view"
 _SHARES_TO_READ = 2
 
 
@@ -331,7 +333,7 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
         )
     for node in inside:
         if (
-            node.resource_id
+            node.resource_id not in ("", _TEXT_VIEW)
             or not node.text
             or node.bounds[1] < top
             or node in separators
