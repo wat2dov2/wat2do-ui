@@ -311,6 +311,13 @@ def test_a_reply_is_confirmed_even_when_older_messages_scroll_away() -> None:
     assert device.typed == ["just shared it!"]
 
 
+def test_a_hint_under_our_reply_is_not_a_message() -> None:
+    request = _node("could you share our post?", (179, 600, 882, 700))
+    sent = _node("Just shared it!", (700, 1200, 1040, 1250))
+    hint = _node("Tap and hold to imagine with AI. Try it", (600, 1270, 1040, 1310))
+    assert module._newest_is_ours(_thread(request, sent, hint), "just shared it!")
+
+
 def test_a_reply_that_never_appears_is_not_confirmed() -> None:
     request = _node("could you share our post?", (179, 600, 882, 700))
     device = _ThreadDevice([_thread(request)])
