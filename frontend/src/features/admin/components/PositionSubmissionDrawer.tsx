@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { reviewPositionSubmission } from "@/features/admin/api/admin.api";
@@ -11,6 +12,7 @@ import { Link } from "@/shared/ui/link";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import type { ApiPositionSubmissionResponse } from "@/shared/generated";
 import { getClubById } from "@/features/clubs";
+import { RejectSubmissionDialog } from "@/features/admin/components/submissions/RejectSubmissionDialog";
 
 
 interface PositionSubmissionDrawerProps {
@@ -23,8 +25,10 @@ export function PositionSubmissionDrawer({ submission: selected, onClose }: Posi
   const data = selected.position_data;
   const club = useQuery({ queryKey: queryKeys.clubs.detail(data.club_id), queryFn: () => getClubById(data.club_id) });
   const queryClient = useQueryClient();
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const review = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: "approved" | "rejected" }) => reviewPositionSubmission(id, status),
+    mutationFn: ({ id, status, reason }: { id: string; status: "approved" | "rejected"; reason?: string }) =>
+      reviewPositionSubmission(id, status, reason),
     onSuccess: async () => {
       onClose();
       await Promise.all([
@@ -55,9 +59,17 @@ export function PositionSubmissionDrawer({ submission: selected, onClose }: Posi
           </DrawerBody>
           {selected.status === "pending" && <DrawerFooter><Stack direction="horizontal" gap={2}>
               <Button disabled={review.isPending} onClick={() => review.mutate({ id: selected.id, status: "approved" })}>{t("admin.approve")}</Button>
-              <Button variant="outline" disabled={review.isPending} onClick={() => review.mutate({ id: selected.id, status: "rejected" })}>{t("admin.reject")}</Button>
+              <Button variant="outline" disabled={review.isPending} onClick={() => setRejectionReason("")}>{t("admin.reject")}</Button>
           </Stack></DrawerFooter>}
         </DrawerContent>
+        <RejectSubmissionDialog
+          isOpen={rejectionReason !== null}
+          rejectionReason={rejectionReason ?? ""}
+          onClose={() => setRejectionReason(null)}
+          onConfirm={() => review.mutate({ id: selected.id, status: "rejected", reason: rejectionReason?.trim() })}
+          onRejectionReasonChange={setRejectionReason}
+          isRejecting={review.isPending}
+        />
       </Drawer>
   );
 }

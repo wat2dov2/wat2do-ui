@@ -345,7 +345,9 @@ def create_club(
     return club
 
 
-def set_club_status(club_id: int, status: ClubStatus) -> ClubResponse | None:
+def set_club_status(
+    club_id: int, status: ClubStatus, rejection_reason: str | None = None
+) -> ClubResponse | None:
     """Admin review decision. Approving publishes the club and unlocks
     event creation for its members."""
     existing = get_club(club_id)
@@ -368,6 +370,7 @@ def set_club_status(club_id: int, status: ClubStatus) -> ClubResponse | None:
             recipient=r.data[0].get("submitted_by_email"),
             school=updated.school,
             path=f"/clubs/{updated.id}",
+            rejection_reason=rejection_reason,
         )
     return updated
 

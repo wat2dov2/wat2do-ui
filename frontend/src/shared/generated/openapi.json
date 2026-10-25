@@ -1345,7 +1345,7 @@
           "clubs"
         ],
         "summary": "Review Club",
-        "description": "Approve or reject a submitted club.",
+        "description": "Approve or reject a submitted club; the submitter is emailed the decision and reason.",
         "operationId": "review_club_clubs__club_id__review_post",
         "security": [
           {
@@ -1361,22 +1361,18 @@
               "type": "integer",
               "title": "Club Id"
             }
-          },
-          {
-            "name": "club_status",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "enum": [
-                "pending",
-                "approved",
-                "rejected"
-              ],
-              "type": "string",
-              "title": "Club Status"
-            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmissionUpdate"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",

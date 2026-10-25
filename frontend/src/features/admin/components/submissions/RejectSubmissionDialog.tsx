@@ -32,7 +32,7 @@ export function RejectSubmissionDialog({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("admin.rejectEventSubmission")}</DialogTitle>
+          <DialogTitle>{t("admin.rejectSubmission")}</DialogTitle>
           <DialogDescription>
             {t("admin.rejectSubmissionDescription")}
           </DialogDescription>

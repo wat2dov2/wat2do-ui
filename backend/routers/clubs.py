@@ -47,6 +47,7 @@ from schemas.invitation import (
     ClubInvitationPublicResponse,
     ClubInvitationResponse,
 )
+from schemas.submission import SubmissionUpdate
 from schemas.user import UserResponse
 from services import club_service
 
@@ -250,12 +251,12 @@ def create_club(
 @router.post("/{club_id}/review", response_model=ClubResponse)
 def review_club(
     club_id: int,
-    club_status: ClubStatus,
+    data: SubmissionUpdate,
     _: UserResponse = Depends(get_admin_user),
 ):
-    """Approve or reject a submitted club."""
+    """Approve or reject a submitted club; the submitter is emailed the decision and reason."""
     return get_or_404(
-        club_service.set_club_status(club_id, club_status),
+        club_service.set_club_status(club_id, data.status, data.rejection_reason),
         CLUB_NOT_FOUND,
     )
 

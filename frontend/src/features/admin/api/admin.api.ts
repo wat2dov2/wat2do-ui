@@ -47,8 +47,8 @@ export async function getPositionSubmissions(page = 1, status?: string, school?:
   return api.get<ApiPositionSubmissionPage>("/position-submissions/?" + params.toString());
 }
 
-export function reviewPositionSubmission(id: string, status: "approved" | "rejected") {
-  return api.patch<ApiPositionSubmissionResponse>("/position-submissions/" + id, { status });
+export function reviewPositionSubmission(id: string, status: "approved" | "rejected", rejectionReason?: string) {
+  return api.patch<ApiPositionSubmissionResponse>("/position-submissions/" + id, { status, rejection_reason: rejectionReason });
 }
 
 // Re-export types for convenience
@@ -258,12 +258,13 @@ export function getClubSubmissions(filters: AdminListFilters) {
 
 export async function resolveClubReview(
   clubId: number,
-  status: ClubStatus
+  status: ClubStatus,
+  rejectionReason?: string
 ): Promise<Club> {
-  return api.post<Club>(
-    `/clubs/${clubId}/review?club_status=${status}`,
-    {}
-  );
+  return api.post<Club>(`/clubs/${clubId}/review`, {
+    status,
+    rejection_reason: rejectionReason,
+  });
 }
 
 export async function resolveClaim(

@@ -363,7 +363,7 @@ export interface paths {
         put?: never;
         /**
          * Review Club
-         * @description Approve or reject a submitted club.
+         * @description Approve or reject a submitted club; the submitter is emailed the decision and reason.
          */
         post: operations["review_club_clubs__club_id__review_post"];
         delete?: never;
@@ -5719,16 +5719,18 @@ export interface operations {
     };
     review_club_clubs__club_id__review_post: {
         parameters: {
-            query: {
-                club_status: "pending" | "approved" | "rejected";
-            };
+            query?: never;
             header?: never;
             path: {
                 club_id: number;
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionUpdate"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

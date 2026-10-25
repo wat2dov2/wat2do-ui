@@ -519,6 +519,7 @@ def test_club_status_change_refreshes_visibility_dependencies(monkeypatch, fake_
         recipient="lead@uwaterloo.ca",
         school="uwaterloo",
         path="/clubs/7",
+        rejection_reason=None,
     )
 
 

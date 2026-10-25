@@ -501,7 +501,7 @@ def test_create_club_from_admin_is_auto_approved(admin_client, monkeypatch):
 
 
 def test_review_club_requires_admin(authenticated_client):
-    resp = authenticated_client.post("/clubs/1/review", params={"club_status": "approved"})
+    resp = authenticated_client.post("/clubs/1/review", json={"status": "approved"})
     assert resp.status_code == 403
 
 
@@ -509,11 +509,24 @@ def test_review_club_approves(admin_client, monkeypatch):
     mock_set_status = MagicMock(return_value=_mock_club(status="approved"))
     monkeypatch.setattr(club_service, "set_club_status", mock_set_status)
 
-    resp = admin_client.post("/clubs/1/review", params={"club_status": "approved"})
+    resp = admin_client.post("/clubs/1/review", json={"status": "approved"})
 
     assert resp.status_code == 200
     assert resp.json()["status"] == "approved"
-    mock_set_status.assert_called_once_with(1, "approved")
+    mock_set_status.assert_called_once_with(1, "approved", None)
+
+
+def test_review_club_passes_the_rejection_reason(admin_client, monkeypatch):
+    mock_set_status = MagicMock(return_value=_mock_club(status="rejected"))
+    monkeypatch.setattr(club_service, "set_club_status", mock_set_status)
+
+    resp = admin_client.post(
+        "/clubs/1/review",
+        json={"status": "rejected", "rejection_reason": "We already list your club."},
+    )
+
+    assert resp.status_code == 200
+    mock_set_status.assert_called_once_with(1, "rejected", "We already list your club.")
 
 
 def test_club_review_queue_requires_admin(authenticated_client):

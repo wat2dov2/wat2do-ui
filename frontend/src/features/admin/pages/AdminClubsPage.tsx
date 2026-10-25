@@ -1,5 +1,6 @@
 import { ClubSubmissionDetailsDrawer } from "@/features/admin/components/ClubSubmissionDetailsDrawer";
 import { ClaimDetailsDrawer } from "@/features/admin/components/ClaimDetailsDrawer";
+import { RejectSubmissionDialog } from "@/features/admin/components/submissions/RejectSubmissionDialog";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Building2, ExternalLink, ShieldAlert } from "lucide-react";
@@ -115,16 +116,28 @@ export function AdminClubsPage({
     refreshClubs(),
   ]);
 
+  const [rejectClub, setRejectClub] = useState<{ id: number; reason: string } | null>(null);
+  const [rejectingClub, setRejectingClub] = useState(false);
+
   const handleReviewClub = async (
     clubId: number,
     status: ClubStatus,
+    rejectionReason?: string,
   ) => {
     try {
-      await resolveClubReview(clubId, status);
+      await resolveClubReview(clubId, status, rejectionReason);
       await refreshClubQueries();
     } catch (error) {
       console.error("Failed to review club:", error);
     }
+  };
+
+  const handleRejectClubConfirm = async () => {
+    if (!rejectClub) return;
+    setRejectingClub(true);
+    await handleReviewClub(rejectClub.id, "rejected", rejectClub.reason.trim());
+    setRejectingClub(false);
+    setRejectClub(null);
   };
 
   const handleDelete = async (clubId: number) => {
@@ -349,7 +362,7 @@ export function AdminClubsPage({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => void handleReviewClub(club.id, "rejected")}
+                          onClick={() => setRejectClub({ id: club.id, reason: "" })}
                           className="text-destructive hover:bg-surface-hover border border-transparent"
                         >
                           {t("admin.reject")}
@@ -569,6 +582,14 @@ export function AdminClubsPage({
         </>
       )}
 
+      <RejectSubmissionDialog
+        isOpen={rejectClub !== null}
+        rejectionReason={rejectClub?.reason ?? ""}
+        onClose={() => setRejectClub(null)}
+        onConfirm={handleRejectClubConfirm}
+        onRejectionReasonChange={reason => setRejectClub(current => current && { ...current, reason })}
+        isRejecting={rejectingClub}
+      />
       {selectedSubmission && <ClubSubmissionDetailsDrawer submission={selectedSubmission} onClose={() => setSelectedSubmissionId(null)} />}
       {selectedClaim && <ClaimDetailsDrawer claim={selectedClaim} onClose={() => setSelectedClaimId(null)} />}
       <AdminDeleteDialog
