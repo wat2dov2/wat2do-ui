@@ -10,14 +10,11 @@
 import { lazy, Suspense, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { ROUTES, CLUB_PANEL_ROUTE_MAP, type ClubPanelRouteKey } from "@/shared/constants/routes";
+import { CLUB_PANEL_ROUTE_MAP, type ClubPanelRouteKey } from "@/shared/constants/routes";
 import { RouteLoading } from "@/app/routes/RouteLoading";
 
 const ClubPanel = lazy(() =>
   import("@/features/club-panel").then((m) => ({ default: m.ClubPanel }))
-);
-const ClubPanelPostersPage = lazy(() =>
-  import("@/features/club-panel").then((m) => ({ default: m.ClubPanelPostersPage }))
 );
 const ClubPanelIntegrationsPage = lazy(() =>
   import("@/features/club-panel").then((m) => ({ default: m.ClubPanelIntegrationsPage }))
@@ -51,20 +48,6 @@ export function ClubPanelRoute() {
   return (
     <ClubPanelSuspense>
       <ClubPanel onNavigate={handleNavigate} />
-    </ClubPanelSuspense>
-  );
-}
-
-export function ClubPanelPostersRoute() {
-  const router = useRouter();
-
-  const onBack = useCallback(() => router.push(ROUTES.CLUB_PANEL), [router]);
-
-  return (
-    <ClubPanelSuspense>
-      <ClubPanelPostersPage
-        onBack={onBack}
-      />
     </ClubPanelSuspense>
   );
 }

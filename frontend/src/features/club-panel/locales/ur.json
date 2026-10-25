@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "تنظیم پینل پر واپس جائیں",
     "title": "تنظیم کا پینل",
-    "description": "اپنی تنظیم کے پوسٹرز، انٹیگریشنز اور ممبرز کا انتظام کریں",
-    "posters": "پوسٹرز",
-    "postersDesc": "QR کوڈ پوسٹرز کا انتظام کریں",
+    "description": "اپنی تنظیم کے انٹیگریشنز اور ممبرز کا انتظام کریں",
     "integrations": "انٹیگریشنز",
     "integrationsDesc": "WhatsApp اور Discord کو منسلک کریں",
     "members": "انتظامی ٹیم",
@@ -16,8 +14,6 @@
       "joined": "شامل ہوئے",
       "requested": "درخواست کی گئی"
     },
-    "recentActivity": "حال کی سرگرمی",
-    "noRecentActivity": "کوئی حالیہ سرگرمی نہیں",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "ایونٹ نوٹیفکیشن WhatsApp کے ذریعے بھیجیں",
     "discord": "Discord",

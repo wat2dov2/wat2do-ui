@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "조직 패널로 돌아가기",
     "title": "조직 패널",
-    "description": "조직의 포스터, 통합 및 구성원을 관리하십시오",
-    "posters": "포스터",
-    "postersDesc": "QR 코드 포스터 관리",
+    "description": "조직의 통합 및 구성원을 관리하십시오",
     "integrations": "통합",
     "integrationsDesc": "WhatsApp 및 Discord 연결",
     "members": "관리 팀",
@@ -16,8 +14,6 @@
       "joined": "가입일",
       "requested": "요청됨"
     },
-    "recentActivity": "최근 활동",
-    "noRecentActivity": "최근 활동이 없습니다",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "이벤트 알림을 WhatsApp을 통해 전송",
     "discord": "Discord",

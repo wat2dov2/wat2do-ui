@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "ਸੰਗਠਨ ਪੈਨਲ 'ਤੇ ਵਾਪਸ ਜਾਓ",
     "title": "ਸੰਸਥਾ ਪੈਨਲ",
-    "description": "ਆਪਣੀ ਸੰਸਥਾ ਦੇ ਪੋਸਟਰਾਂ, ਏਕੀਕਰਣਾਂ ਅਤੇ ਮੈਂਬਰਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ",
-    "posters": "ਪੋਸਟਰ",
-    "postersDesc": "QR ਕੋਡ ਪੋਸਟਰਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ",
+    "description": "ਆਪਣੀ ਸੰਸਥਾ ਦੇ ਏਕੀਕਰਣਾਂ ਅਤੇ ਮੈਂਬਰਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ",
     "integrations": "ਏਕੀਕਰਣ",
     "integrationsDesc": "WhatsApp ਅਤੇ Discord ਨੂੰ ਕਨੈਕਟ ਕਰੋ",
     "members": "ਪ੍ਰਬੰਧਨ ਟੀਮ",
@@ -16,8 +14,6 @@
       "joined": "ਸ਼ਾਮਲ ਹੋਏ",
       "requested": "ਬੇਨਤੀ ਕੀਤੀ"
     },
-    "recentActivity": "ਹਾਲੀਆ ਗਤੀਵਿਧੀ",
-    "noRecentActivity": "ਕੋਈ ਹਾਲੀਆ ਸਰਗਰਮੀ ਨਹੀਂ",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "WhatsApp ਰਾਹੀਂ ਇਵੈਂਟ ਸੂਚਨਾਵਾਂ ਭੇਜੋ",
     "discord": "Discord",

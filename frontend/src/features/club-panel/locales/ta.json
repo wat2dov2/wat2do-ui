@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "அமைப்புப் பலகை மீள்",
     "title": "அமைப்பு நிர்வாகம்",
-    "description": "உங்கள் அமைப்பின் போஸ்டர், ஒருங்கிணைப்புகள் மற்றும் உறுப்பினர்களை நிர்வகிக்கவும்",
-    "posters": "போஸ்டர்கள்",
-    "postersDesc": "QR குறியீட்டு போஸ்டர்களை நிர்வகிக்கவும்",
+    "description": "உங்கள் அமைப்பின் ஒருங்கிணைப்புகள் மற்றும் உறுப்பினர்களை நிர்வகிக்கவும்",
     "integrations": "ஒருங்கிணைப்புகள்",
     "integrationsDesc": "WhatsApp மற்றும் Discord ஐ இணைக்கவும்",
     "members": "மேலாண்மை குழு",
@@ -16,8 +14,6 @@
       "joined": "சேர்ந்தார்",
       "requested": "கோரப்பட்டது"
     },
-    "recentActivity": "சமீபத்திய நடவடிக்கைகள்",
-    "noRecentActivity": "சமீபத்திய நடவடிக்கை இல்லை",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "நிகழ்வு அறிவிப்புகளை WhatsApp மூலம் அனுப்பவும்",
     "discord": "Discord",

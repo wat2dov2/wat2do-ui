@@ -19,7 +19,7 @@ from core.constants import (
     SUBMISSION_RATE_LIMIT_MAX_REQUESTS,
     SUBMISSION_RATE_LIMIT_WINDOW_SECONDS,
 )
-from core.errors import CLUB_NOT_FOUND, NOT_AUTHORIZED
+from core.errors import CANNOT_REMOVE_YOURSELF, CLUB_NOT_FOUND, NOT_AUTHORIZED
 from core.exceptions import AuthorizationError, NotFoundError, ValidationError, get_or_404
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from core.rate_limit import RateLimiter
@@ -326,6 +326,8 @@ def remove_club_member(
         uuid_user_id = UUID(user_id)
     except ValueError:
         raise ValidationError("Invalid user ID format")
+    if str(uuid_user_id) == str(db_user.id):
+        raise ValidationError(CANNOT_REMOVE_YOURSELF)
 
     success = club_service.remove_club_member(club_id, uuid_user_id)
     if not success:

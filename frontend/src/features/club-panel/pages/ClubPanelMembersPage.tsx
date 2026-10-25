@@ -52,7 +52,7 @@ function RosterTableHeader({ columns }: RosterTableHeaderProps) {
 export function ClubPanelMembersPage() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const { clubId } = useAuthState();
+  const { clubId, userId } = useAuthState();
   const { getSchoolTimezone } = useSchoolDirectory();
   const { data: club } = useQuery({
     queryKey: queryKeys.clubs.detail(clubId ?? 0),
@@ -367,7 +367,7 @@ export function ClubPanelMembersPage() {
                             {formatDate(member.joined_at)}
                           </td>
                           <td className="px-6 py-4 text-right">
-                            {member.role.toLowerCase() !== "owner" && (
+                            {member.role.toLowerCase() !== "owner" && member.user_id !== userId && (
                               <Button
                                 variant="ghost"
                                 size="sm"

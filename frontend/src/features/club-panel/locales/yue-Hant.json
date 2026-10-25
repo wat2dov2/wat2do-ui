@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "返回組織面板",
     "title": "組織面板",
-    "description": "管理你組織的海報、整合以及成員",
-    "posters": "海報",
-    "postersDesc": "管理 QR 海報",
+    "description": "管理你組織的整合以及成員",
     "integrations": "整合",
     "integrationsDesc": "連接 WhatsApp 與 Discord",
     "members": "管理團隊",
@@ -16,8 +14,6 @@
       "joined": "加入時間",
       "requested": "已申請"
     },
-    "recentActivity": "最近活動",
-    "noRecentActivity": "最近無活動",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "透過 WhatsApp 發送事件通知",
     "discord": "Discord",

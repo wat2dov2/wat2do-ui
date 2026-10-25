@@ -4,7 +4,7 @@ import NextLink from "next/link";
 import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Crown, HelpCircle, LogOut, MoreHorizontal, Shapes, Settings, Shield, Ticket, Users } from "lucide-react";
+import { Check, ChevronDown, Crown, HelpCircle, LogOut, MoreHorizontal, Shapes, Settings, Shield, Ticket, Users } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
@@ -13,7 +13,12 @@ import {
 import { Button } from "@/shared/ui/button";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
-import { SearchCombobox } from "@/shared/ui/search-combobox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { Separator } from "@/shared/ui/separator";
@@ -270,27 +275,27 @@ export function TopNav() {
                 })}
               </nav>
               {canOpenClubPanel && (
-                <Button
-                  variant={isRouteActive(pathname, ROUTES.CLUB_PANEL) ? "outline" : "ghost"}
-                  size="navigation"
-                  onClick={() => handleClubSelect(activeClub)}
-                >
-                  <Crown />
-                  {t("clubPanel.title")}
-                </Button>
-              )}
-              {canOpenClubPanel && clubs.length > 1 && (
-                <SearchCombobox
-                  selectedKey={activeClub.id}
-                  onSelect={handleClubSelect}
-                  items={clubs}
-                  getKey={(club) => club.id}
-                  getLabel={(club) => club.club_name}
-                  displayValue={activeClub.club_name}
-                  variant="field"
-                  searchPlaceholder={t("clubs.searchPlaceholder")}
-                  emptyLabel={t("clubs.noClubsFound")}
-                />
+                // One entry for every club the user manages: pick which one the club panel opens on.
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={isRouteActive(pathname, ROUTES.CLUB_PANEL) ? "outline" : "ghost"}
+                      size="navigation"
+                    >
+                      <Crown />
+                      {t("clubPanel.title")}
+                      <ChevronDown className="ms-auto" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {clubs.map((club) => (
+                      <DropdownMenuItem key={club.id} onSelect={() => handleClubSelect(club)}>
+                        {club.club_name}
+                        {club.id === activeClub.id ? <Check className="ms-auto" /> : null}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               {profileCompleted && isAdmin && (
                 <Button variant="ghost" size="navigation" onClick={handleAdminClick}>

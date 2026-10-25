@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "संगठन पैनल पर वापस जाएँ",
     "title": "संगठन पैनल",
-    "description": "अपने संगठन के पोस्टर, एकीकरण और सदस्यों को प्रबंधित करें",
-    "posters": "पोस्टर",
-    "postersDesc": "QR कोड पोस्टर प्रबंधित करें",
+    "description": "अपने संगठन के एकीकरण और सदस्यों को प्रबंधित करें",
     "integrations": "एकीकरण",
     "integrationsDesc": "WhatsApp और Discord को कनेक्ट करें",
     "members": "प्रबंधन टीम",
@@ -16,8 +14,6 @@
       "joined": "सम्मिलित हुए",
       "requested": "अनुरोध किया"
     },
-    "recentActivity": "हाल की गतिविधि",
-    "noRecentActivity": "कोई हालिया गतिविधि नहीं",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "WhatsApp के माध्यम से ईवेंट सूचनाएं भेजें",
     "discord": "Discord",

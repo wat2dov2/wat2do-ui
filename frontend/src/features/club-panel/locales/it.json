@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "Torna al pannello dell'organizzazione",
     "title": "Pannello dell'organizzazione",
-    "description": "Gestisci i poster, le integrazioni e i membri della tua organizzazione",
-    "posters": "Manifesti",
-    "postersDesc": "Gestisci QR i poster del codice",
+    "description": "Gestisci le integrazioni e i membri della tua organizzazione",
     "integrations": "Integrazioni",
     "integrationsDesc": "Collega WhatsApp e Discord",
     "members": "Team di gestione",
@@ -16,8 +14,6 @@
       "joined": "Iscritto",
       "requested": "Richiesto"
     },
-    "recentActivity": "Attività recente",
-    "noRecentActivity": "Nessuna attività recente",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Invia notifiche di eventi tramite WhatsApp",
     "discord": "Discord",

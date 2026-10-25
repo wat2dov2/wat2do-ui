@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "Back to club panel",
     "title": "Club Panel",
-    "description": "Manage your club's posters, integrations, and members",
-    "posters": "Posters",
-    "postersDesc": "Manage QR code posters",
+    "description": "Manage your club's integrations and members",
     "integrations": "Integrations",
     "integrationsDesc": "Connect WhatsApp and Discord",
     "members": "Management Team",
@@ -16,8 +14,6 @@
       "joined": "Joined",
       "requested": "Requested"
     },
-    "recentActivity": "Recent Activity",
-    "noRecentActivity": "No recent activity",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Send event notifications via WhatsApp",
     "discord": "Discord",

@@ -90,6 +90,7 @@ INVALID_EVENT_OCCURRENCE = "One or more occurrences do not belong to this event"
 OCCURRENCE_NOT_SELECTABLE = "One or more occurrences can no longer be selected"
 SAVED_CLUBS_CAP_REACHED = "Maximum saved clubs limit reached"
 MEMBERS_ALWAYS_FOLLOW_CLUB = "Club members always follow their own club"
+CANNOT_REMOVE_YOURSELF = "You cannot remove yourself from the club"
 
 INVALID_ROLE = "Role must be 'user' or 'admin'"
 CANNOT_DELETE_SELF = "Admins cannot delete their own account"

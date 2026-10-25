@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "返回组织面板",
     "title": "组织面板",
-    "description": "管理您组织的二维码海报、第三方集成和成员",
-    "posters": "二维码海报",
-    "postersDesc": "管理二维码海报",
+    "description": "管理您组织的第三方集成和成员",
     "integrations": "第三方集成",
     "integrationsDesc": "连接 WhatsApp 和 Discord",
     "members": "管理团队",
@@ -16,8 +14,6 @@
       "joined": "加入时间",
       "requested": "申请时间"
     },
-    "recentActivity": "近期活动",
-    "noRecentActivity": "暂无近期活动",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "通过 WhatsApp 发送活动通知",
     "discord": "Discord",

@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "Retour au panneau de l'organisation",
     "title": "Panneau de l'organisation",
-    "description": "Gérez les affiches, intégrations et membres de votre organisation",
-    "posters": "Affiches",
-    "postersDesc": "Gérer les affiches de code QR",
+    "description": "Gérez les intégrations et les membres de votre organisation",
     "integrations": "Intégrations",
     "integrationsDesc": "Connecter WhatsApp et Discord",
     "members": "Équipe de direction",
@@ -16,8 +14,6 @@
       "joined": "Rejoint",
       "requested": "Demandé"
     },
-    "recentActivity": "Activité récente",
-    "noRecentActivity": "Aucune activité récente",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Envoyer des notifications d'événements via WhatsApp",
     "discord": "Discord",

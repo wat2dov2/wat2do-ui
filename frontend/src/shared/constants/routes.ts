@@ -48,7 +48,6 @@ export const ROUTES = {
 
   // Club Panel
   CLUB_PANEL: "/club-panel",
-  CLUB_PANEL_POSTERS: "/club-panel/posters",
   CLUB_PANEL_INTEGRATIONS: "/club-panel/integrations",
   CLUB_PANEL_MEMBERS: "/club-panel/members",
 } as const;
@@ -96,7 +95,6 @@ const ROUTE_PAGE_TITLES: Partial<
   [ROUTES.ADMIN_SOCIAL]: "Social Accounts",
   [ROUTES.ADMIN_DIAGNOSTICS]: "App Diagnostics",
   [ROUTES.CLUB_PANEL]: "Club Panel",
-  [ROUTES.CLUB_PANEL_POSTERS]: "Posters",
   [ROUTES.CLUB_PANEL_INTEGRATIONS]: "Integrations",
   [ROUTES.CLUB_PANEL_MEMBERS]: "Members",
 };
@@ -161,7 +159,6 @@ export type AdminRouteKey = keyof typeof ADMIN_ROUTE_MAP;
 
 // ── Club Panel sub-route map ───────────────────────────────────────
 export const CLUB_PANEL_ROUTE_MAP = {
-  "club-panel-posters": ROUTES.CLUB_PANEL_POSTERS,
   "club-panel-integrations": ROUTES.CLUB_PANEL_INTEGRATIONS,
   "club-panel-members": ROUTES.CLUB_PANEL_MEMBERS,
 } as const;

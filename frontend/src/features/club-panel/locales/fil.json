@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "Bumalik sa panel ng organisasyon",
     "title": "Panel ng organisasyon",
-    "description": "Pamahalaan ang mga poster, integrasyon, at miyembro ng inyong organisasyon",
-    "posters": "Mga Poster",
-    "postersDesc": "Pamahalaan ang mga poster ng QR code",
+    "description": "Pamahalaan ang mga integrasyon at miyembro ng inyong organisasyon",
     "integrations": "Integrasyon",
     "integrationsDesc": "Ikonekta ang WhatsApp at Discord",
     "members": "Koponan sa Pamamahala",
@@ -16,8 +14,6 @@
       "joined": "Sumali ng",
       "requested": "Hiningi ng"
     },
-    "recentActivity": "Kamakailang Aktibidad",
-    "noRecentActivity": "Walang kamakailang aktibidad",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Magpadala ng mga abiso ng kaganapan sa pamamagitan ng WhatsApp",
     "discord": "Discord",

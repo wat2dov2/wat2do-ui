@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "Quay lại bảng điều khiển tổ chức",
     "title": "Bảng điều khiển tổ chức",
-    "description": "Quản lý áp phích, tích hợp và thành viên của tổ chức bạn",
-    "posters": "Áp Phích",
-    "postersDesc": "Quản lý những người đăng mã QR",
+    "description": "Quản lý tích hợp và thành viên của tổ chức bạn",
     "integrations": "Tích hợp",
     "integrationsDesc": "Kết nối WhatsApp và Discord",
     "members": "Đội Quản Lý",
@@ -16,8 +14,6 @@
       "joined": "Tham gia từ",
       "requested": "Yêu cầu từ"
     },
-    "recentActivity": "Hoạt động gần đây",
-    "noRecentActivity": "Không có hoạt động gần đây",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Gửi thông báo sự kiện qua WhatsApp",
     "discord": "Discord",

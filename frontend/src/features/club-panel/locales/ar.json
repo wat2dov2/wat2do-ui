@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "العودة إلى لوحة المنظمة",
     "title": "لوحة المنظمة",
-    "description": "إدارة ملصقات المنظمة والتكاملات والأعضاء",
-    "posters": "الملصقات",
-    "postersDesc": "إدارة ملصقات رمز QR",
+    "description": "إدارة تكاملات المنظمة وأعضائها",
     "integrations": "التكاملات",
     "integrationsDesc": "ربط WhatsApp و Discord",
     "members": "فريق الإدارة",
@@ -16,8 +14,6 @@
       "joined": "انضم في",
       "requested": "مطلوب"
     },
-    "recentActivity": "النشاط الأخير",
-    "noRecentActivity": "لا يوجد نشاط حديث",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "إرسال إشعارات الأحداث عبر WhatsApp",
     "discord": "Discord",

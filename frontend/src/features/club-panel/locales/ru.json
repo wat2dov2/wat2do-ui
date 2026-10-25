@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "Вернуться в панель организации",
     "title": "Панель организации",
-    "description": "Управляйте постерами, интеграциями и участниками вашей организации",
-    "posters": "Плакаты",
-    "postersDesc": "Управление постерами кода QR ",
+    "description": "Управляйте интеграциями и участниками вашей организации",
     "integrations": "Интеграции",
     "integrationsDesc": "Подключить WhatsApp и Discord",
     "members": "Управленческая команда",
@@ -16,8 +14,6 @@
       "joined": "Присоединился",
       "requested": "Запрошено"
     },
-    "recentActivity": "Последние события",
-    "noRecentActivity": "Нет недавней активности",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Отправлять уведомления о событиях через WhatsApp",
     "discord": "Discord",

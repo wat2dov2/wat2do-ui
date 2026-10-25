@@ -100,7 +100,6 @@ export function RouteLoading() {
     [ROUTES.CLUB_PANEL]: "clubPanel.title",
     [ROUTES.CLUB_PANEL_MEMBERS]: "clubPanel.members",
     [ROUTES.CLUB_PANEL_INTEGRATIONS]: "clubPanel.integrations",
-    [ROUTES.CLUB_PANEL_POSTERS]: "admin.qrAssets.title",
     [ROUTES.POSTERS]: "posters.dashboard.title",
   }[pathname];
   const formRoutes: readonly string[] = [ROUTES.SETTINGS, ROUTES.EVENT_SUBMIT, ROUTES.POSITION_SUBMIT, ROUTES.CLUB_CREATE, ROUTES.CLUB_PANEL_INTEGRATIONS];

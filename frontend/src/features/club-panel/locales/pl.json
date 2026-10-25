@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "Powrót do panelu organizacji",
     "title": "Panel organizacji",
-    "description": "Zarządzaj plakatami, integracjami i członkami swojej organizacji",
-    "posters": "Plakaty",
-    "postersDesc": "Zarządzaj plakatami kodu QR ",
+    "description": "Zarządzaj integracjami i członkami swojej organizacji",
     "integrations": "Integracje",
     "integrationsDesc": "Połącz WhatsApp i Discord",
     "members": "Zespół zarządzający",
@@ -16,8 +14,6 @@
       "joined": "Dołączył",
       "requested": "Poproszono"
     },
-    "recentActivity": "Ostatnia aktywność",
-    "noRecentActivity": "Brak ostatniej aktywności",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "Wyślij powiadomienia o zdarzeniach za pomocą WhatsApp",
     "discord": "Discord",

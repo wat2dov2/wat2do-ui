@@ -2,9 +2,7 @@
   "clubPanel": {
     "backToPanel": "بازگشت به پنل سازمان",
     "title": "پنل سازمان",
-    "description": "پوسترها، یکپارچه‌سازی‌ها و اعضای سازمان خود را مدیریت کنید",
-    "posters": "پوسترها",
-    "postersDesc": "مدیریت پوسترهای کد QR",
+    "description": "یکپارچه‌سازی‌ها و اعضای سازمان خود را مدیریت کنید",
     "integrations": "ادغام‌ها",
     "integrationsDesc": "اتصال WhatsApp و Discord",
     "members": "تیم مدیریت",
@@ -16,8 +14,6 @@
       "joined": "عضو شده از",
       "requested": "درخواست شده"
     },
-    "recentActivity": "فعالیت‌های اخیر",
-    "noRecentActivity": "هیچ فعالیت اخیر",
     "whatsapp": "WhatsApp",
     "whatsappDesc": "ارسال اعلان‌های رویداد از طریق WhatsApp",
     "discord": "Discord",

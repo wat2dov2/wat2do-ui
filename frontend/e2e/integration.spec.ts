@@ -1248,10 +1248,6 @@ test.describe("Posters & QR Analytics", () => {
     // Admin posters page: shows same QR code data
     await page.goto(`${BASE}/admin/posters`);
     await expect(page.getByText("Test Poster 1").first()).toBeVisible();
-
-    // Club panel posters page reuses same posters view
-    await page.goto(`${BASE}/club-panel/posters`);
-    await expect(page.getByText("Test Poster 1").first()).toBeVisible();
   });
 });
 
@@ -5479,9 +5475,10 @@ test.describe("Navigation", () => {
     await expect(topNavigation.getByRole("button", { name: "UW Tech Club", exact: true })).toHaveCount(0);
     await topNavigation.getByRole("button", { name: "Open navigation menu" }).click();
     const drawer = page.getByRole("dialog", { name: "Primary navigation" });
-    // One club: a plain Club Panel link, no picker to switch clubs.
-    await expect(drawer.getByRole("button", { name: "Club Panel", exact: true })).toBeVisible();
-    await expect(drawer.getByRole("button", { name: "UW Tech Club", exact: true })).toHaveCount(0);
+    // The Club Panel dropdown lists each club the user manages.
+    await drawer.getByRole("button", { name: "Club Panel", exact: true }).click();
+    await expect(page.getByRole("menuitem", { name: "UW Tech Club" })).toBeVisible();
+    await page.keyboard.press("Escape");
     await expect(drawer.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
     await drawer.getByRole("button", { name: "Admin", exact: true }).click();
     await expect(page).toHaveURL(/\/admin$/);

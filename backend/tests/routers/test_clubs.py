@@ -338,6 +338,19 @@ def test_remove_club_member_allowed_for_member(authenticated_client, monkeypatch
     assert mock_remove.call_count == 1
 
 
+def test_member_cannot_remove_themselves(authenticated_client, monkeypatch):
+    club = _mock_club(created_by=OTHER_USER["id"])
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
+    monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=True))
+    mock_remove = MagicMock(return_value=True)
+    monkeypatch.setattr(club_service, "remove_club_member", mock_remove)
+
+    resp = authenticated_client.delete(f"/clubs/1/members/{FAKE_USER['id']}")
+
+    assert resp.status_code == 400
+    mock_remove.assert_not_called()
+
+
 # --- Invitation Tests ---
 
 
