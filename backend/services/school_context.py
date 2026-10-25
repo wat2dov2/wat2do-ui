@@ -61,6 +61,20 @@ def campus_season_prompt(school: str) -> str:
     return "\n".join(lines)
 
 
+def building_code_prompt(school: str) -> str:
+    """List one school's building codes so extraction never guesses what a code stands for."""
+    codes = controlbox.event_discovery.map_geocoding.building_codes.get(
+        canonical_school_key(school)
+    )
+    if not codes:
+        return "No building codes are listed for this school."
+    listed = "; ".join(f"{code} = {name}" for code, name in codes.items())
+    return (
+        f"Building codes at {canonical_school_key(school)}: {listed}. "
+        "When a listed code appears, its map_location building is exactly this name; never expand it any other way."
+    )
+
+
 def resolve_school_timezone(school: str | None) -> str:
     """Return the IANA timezone for a school slug, falling back to UTC."""
     slug = canonical_school_key(school)

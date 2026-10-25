@@ -215,3 +215,15 @@ def test_current_semester_end_uses_waterloo_only():
     )
     assert school_context.current_semester_end("upenn", now=datetime(2026, 3, 15)) is None
     assert school_context.current_semester_end("Unknown", now=datetime(2026, 5, 1)) is None
+
+
+def test_building_code_prompt_names_each_code_exactly():
+    prompt = school_context.building_code_prompt("uwaterloo")
+
+    assert "EV3 = Environment 3" in prompt
+    assert "E3 = Engineering 3" in prompt
+    assert "never expand it any other way" in prompt
+    assert (
+        school_context.building_code_prompt("mit")
+        == "No building codes are listed for this school."
+    )

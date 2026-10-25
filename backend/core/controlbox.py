@@ -258,6 +258,11 @@ class MapGeocodingControl(_ControlModel):
             ],
         ],
     ]
+    # Each school's official building codes, so extraction expands a code to the right building.
+    building_codes: dict[
+        Annotated[str, Field(pattern=r"^[a-z][a-z0-9-]*$")],
+        dict[Annotated[str, Field(pattern=r"^[A-Z0-9]+$")], Annotated[str, Field(pattern=r"\S")]],
+    ]
 
 
 class EventDiscoveryControl(_ControlModel):
@@ -276,6 +281,8 @@ class EventDiscoveryControl(_ControlModel):
             raise ValueError("every school must have exactly one map campus center")
         if not set(self.map_geocoding.known_places) <= set(self.campus_seasons.schools):
             raise ValueError("known map places must belong to configured schools")
+        if not set(self.map_geocoding.building_codes) <= set(self.campus_seasons.schools):
+            raise ValueError("building codes must belong to configured schools")
         return self
 
 

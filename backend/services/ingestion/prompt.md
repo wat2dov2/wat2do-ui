@@ -222,6 +222,7 @@ When no registered club hosts a position, skip that position.
   Drop rooms, floors and directions ("SN-2109, Science Building" becomes "Science Building, Memorial University, 230 Elizabeth Ave, St. John's, NL").
   Keep the venue in the source's words: expand only an abbreviation or room code ("SLC 2156" is "Student Life Centre"), never lengthen a name already written out, and never swap it for a different building.
   Use your own knowledge of {{school}} for its building names and addresses; never place the event anywhere the source does not say.
+  {{building_codes}}
   For several venues, use the first physical one.
   For a named venue you cannot place, write its name with the school and city.
   Use NULL for an online event, a TBA venue, a whole city or region, or a short code you cannot decode.

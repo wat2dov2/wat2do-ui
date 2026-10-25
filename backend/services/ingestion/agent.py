@@ -28,6 +28,7 @@ from services.claude_code import ClaudeCodeError, claude_environment, run_agent
 from services.ingestion import changes
 from services.ingestion.items import CONTROL
 from services.school_context import (
+    building_code_prompt,
     campus_season_prompt,
     current_semester_end,
     resolve_school_timezone,
@@ -301,6 +302,7 @@ def _render(
         "categories": ", ".join(f"'{category}'" for category in EVENT_CATEGORIES),
         "discovery_rules": EVENT_DISCOVERY_RULES,
         "campus_seasons": campus_season_prompt(school.slug),
+        "building_codes": building_code_prompt(school.slug),
     }
     prompt = PROMPT
     for key, value in values.items():

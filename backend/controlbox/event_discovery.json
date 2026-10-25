@@ -108,6 +108,46 @@
         "Social Science Building": [-81.27511, 43.00931],
         "University Community Centre": [-81.27617, 43.00866]
       }
+    },
+    "building_codes": {
+      "uwaterloo": {
+        "AL": "Arts Lecture Hall",
+        "B1": "Biology 1",
+        "B2": "Biology 2",
+        "BMH": "Burt Matthews Hall",
+        "C2": "Chemistry 2",
+        "CIF": "Columbia Icefield",
+        "CPH": "Carl A. Pollock Hall",
+        "DC": "Davis Centre",
+        "DP": "Dana Porter Library",
+        "DWE": "Douglas Wright Engineering Building",
+        "E2": "Engineering 2",
+        "E3": "Engineering 3",
+        "E5": "Engineering 5",
+        "E6": "Engineering 6",
+        "E7": "Engineering 7",
+        "EIT": "Centre for Environmental and Information Technology",
+        "ESC": "Earth Sciences & Chemistry",
+        "EV1": "Environment 1",
+        "EV2": "Environment 2",
+        "EV3": "Environment 3",
+        "HH": "Hagey Hall",
+        "LHI": "Lyle S. Hallman Institute",
+        "M3": "Mathematics 3",
+        "MC": "Mathematics & Computer",
+        "ML": "Modern Languages",
+        "NH": "Needles Hall",
+        "OPT": "Optometry",
+        "PAC": "Physical Activities Complex",
+        "PAS": "PAS Building",
+        "PHY": "Physics",
+        "QNC": "Quantum-Nano Centre",
+        "RCH": "Rod Coutts Hall",
+        "SCH": "South Campus Hall",
+        "SLC": "Student Life Centre",
+        "STC": "Science Teaching Complex",
+        "TC": "Tatham Centre"
+      }
     }
   },
   "campus_seasons": {
