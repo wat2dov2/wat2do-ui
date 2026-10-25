@@ -34,6 +34,7 @@ def test_claim_approval_never_replaces_an_existing_owner(monkeypatch, fake_sb, p
     fake_sb.set_response(data=[{"club_id": 1, "user_id": str(user_id)}])
     add_manager = MagicMock()
     monkeypatch.setattr(club_service, "add_club_member", add_manager)
+    monkeypatch.setattr(club_service, "_send_claim_decision", MagicMock())
 
     club_service.update_claim(user_id, "approved")
 
@@ -48,11 +49,59 @@ def test_rejected_claim_does_not_grant_access(monkeypatch, fake_sb, patch_sb):
     fake_sb.set_response(data=[{"club_id": 1, "user_id": "applicant"}])
     add_manager = MagicMock()
     monkeypatch.setattr(club_service, "add_club_member", add_manager)
+    monkeypatch.setattr(club_service, "_send_claim_decision", MagicMock())
 
     club_service.update_claim(UUID("11111111-1111-1111-1111-111111111111"), "rejected")
 
     add_manager.assert_not_called()
     fake_sb.is_.assert_not_called()
+
+
+@pytest.mark.parametrize(("previous", "emails"), [("pending", 1), ("approved", 0)])
+def test_claim_decision_is_emailed_only_when_the_status_changes(
+    monkeypatch, fake_sb, patch_sb, previous, emails
+):
+    from uuid import UUID
+
+    patch_sb("services.club_service")
+    fake_sb.set_response(
+        data=[{"club_id": 7, "user_id": "11111111-1111-1111-1111-111111111111", "status": previous}]
+    )
+    monkeypatch.setattr(club_service, "add_club_member", MagicMock())
+    notify = MagicMock()
+    monkeypatch.setattr(club_service, "_send_claim_decision", notify)
+
+    club_service.update_claim(UUID("11111111-1111-1111-1111-111111111111"), "approved")
+
+    assert notify.call_count == emails
+
+
+def test_claim_decision_email_goes_to_the_claimant_with_the_club_panel(
+    monkeypatch, fake_sb, patch_sb
+):
+    patch_sb("services.club_service")
+    monkeypatch.setattr(
+        club_service,
+        "get_club",
+        lambda _id: ClubResponse(id=7, club_name="Tea Club", school="uwo"),
+    )
+    fake_sb.set_response(data=[{"email": "lead@uwo.ca"}])
+    notify = MagicMock()
+    monkeypatch.setattr(club_service, "send_review_decision", notify)
+
+    club_service._send_claim_decision(
+        {"club_id": 7, "user_id": "applicant"}, "rejected", "Proof does not show the role."
+    )
+
+    notify.assert_called_once_with(
+        kind="claim",
+        title="Tea Club",
+        status="rejected",
+        recipient="lead@uwo.ca",
+        school="uwo",
+        path="/club-panel",
+        rejection_reason="Proof does not show the role.",
+    )
 
 
 @pytest.fixture(autouse=True)

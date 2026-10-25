@@ -991,6 +991,9 @@ def _clubs_with_owner_emails(rows: list[dict]) -> list[ClubResponse]:
 
 def update_claim(claim_id: UUID, status: str, rejection_reason: str | None = None) -> dict:
     now = datetime.now(timezone.utc).isoformat()
+    previous = (
+        get_sb().table("club_claims").select("status").eq("id", str(claim_id)).execute()
+    ).data
     r = (
         get_sb()
         .table("club_claims")
@@ -1012,4 +1015,23 @@ def update_claim(claim_id: UUID, status: str, rejection_reason: str | None = Non
         except ConflictError:
             pass
 
+    if previous and previous[0].get("status") != status:
+        _send_claim_decision(claim, status, rejection_reason)
     return claim
+
+
+def _send_claim_decision(claim: dict, status: str, rejection_reason: str | None) -> None:
+    """Email the claimant the decision; a missing club or account just skips the email."""
+    club = get_club(int(claim["club_id"]))
+    claimant = (get_sb().table(USERS).select("email").eq("id", claim["user_id"]).execute()).data
+    if club is None or not claimant:
+        return
+    send_review_decision(
+        kind="claim",
+        title=club.club_name,
+        status=status,
+        recipient=claimant[0].get("email"),
+        school=club.school,
+        path="/club-panel",
+        rejection_reason=rejection_reason,
+    )

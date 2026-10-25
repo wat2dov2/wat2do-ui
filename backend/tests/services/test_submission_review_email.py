@@ -74,3 +74,18 @@ def test_decision_is_sent_with_the_school_url_and_trimmed_reason(monkeypatch):
     message = send.call_args.args[0]
     assert message.subject == "We could not approve your position Design Lead"
     assert "Reason" not in message.body_text
+
+
+def test_claim_approval_points_to_the_club_panel():
+    message = _email(kind="claim", url="https://uwo.wat2do.io/club-panel")
+
+    assert message.subject == "You can now manage Tea Club on wat2do"
+    assert "Open the club panel: https://uwo.wat2do.io/club-panel" in message.body_text
+
+
+def test_claim_rejection_says_the_role_was_not_verified():
+    message = _email(kind="claim", approved=False, rejection_reason="Proof is blurry")
+
+    assert message.subject == "We could not verify your claim for Tea Club"
+    assert "could not verify your role" in message.body_text
+    assert "Reason: Proof is blurry" in message.body_text
