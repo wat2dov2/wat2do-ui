@@ -2,7 +2,9 @@
   "clubPanel": {
     "backToPanel": "返回組織面板",
     "title": "組織面板",
-    "description": "管理你組織的整合以及成員",
+    "description": "管理你組織嘅活動、職位同成員",
+    "eventsDesc": "你組織即將舉行同過往嘅活動",
+    "positionsDesc": "你組織開放緊嘅職位",
     "members": "管理團隊",
     "membersDesc": "管理組織成員",
     "memberColumns": {

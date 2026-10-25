@@ -2,7 +2,9 @@
   "clubPanel": {
     "backToPanel": "조직 패널로 돌아가기",
     "title": "조직 패널",
-    "description": "조직의 통합 및 구성원을 관리하십시오",
+    "description": "조직의 이벤트, 포지션 및 구성원을 관리하십시오",
+    "eventsDesc": "조직의 예정된 이벤트와 지난 이벤트",
+    "positionsDesc": "조직의 모집 중인 포지션",
     "members": "관리 팀",
     "membersDesc": "조직 구성원 관리",
     "memberColumns": {

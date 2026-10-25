@@ -1,36 +1,57 @@
 import { useTranslation } from "react-i18next";
-import { Users, Building2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Briefcase, Building2, Calendar, Users } from "lucide-react";
+import { fetchClubPanelSummary } from "@/features/club-panel/api/summary.api";
+import { useActiveClub } from "@/features/club-panel/hooks/useActiveClub";
+import { FormGrid, PageHeader, Stack } from "@/shared/layout";
+import { queryKeys } from "@/shared/lib/queryKeys";
 import { AdminCard } from "@/shared/ui/AdminCard";
+import type { ClubPanelRouteKey } from "@/shared/constants/routes";
 
 interface ClubPanelProps {
-  onNavigate: (page: "club-panel-members") => void;
+  onNavigate: (page: ClubPanelRouteKey) => void;
 }
 
 export function ClubPanel({ onNavigate }: ClubPanelProps) {
   const { t } = useTranslation();
+  const { clubId, club } = useActiveClub();
+  const summary = useQuery({
+    queryKey: queryKeys.clubs.panelSummary(clubId ?? 0),
+    queryFn: () => fetchClubPanelSummary(clubId!),
+    enabled: clubId != null,
+  });
+  // Public submissions naming this club that still wait for wat2do's review.
+  const pending = (count: number | undefined) => (summary.isError ? 0 : count ?? null);
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center">
-          <Building2 className="size-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">{t("clubPanel.title")}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t("clubPanel.description")}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <Stack gap={5}>
+      <PageHeader
+        icon={Building2}
+        title={club?.club_name ?? t("clubPanel.title")}
+        description={t("clubPanel.description")}
+      />
+      <FormGrid columns={3}>
+        <AdminCard
+          icon={Calendar}
+          title={t("navigation.events")}
+          description={t("clubPanel.eventsDesc")}
+          pendingCounts={[{ label: t("admin.eventSubmissions"), count: pending(summary.data?.pending_event_submissions) }]}
+          onClick={() => onNavigate("club-panel-events")}
+        />
+        <AdminCard
+          icon={Briefcase}
+          title={t("navigation.positions")}
+          description={t("clubPanel.positionsDesc")}
+          pendingCounts={[{ label: t("positions.submissions"), count: pending(summary.data?.pending_position_submissions) }]}
+          onClick={() => onNavigate("club-panel-positions")}
+        />
         <AdminCard
           icon={Users}
           title={t("clubPanel.members")}
           description={t("clubPanel.membersDesc")}
           onClick={() => onNavigate("club-panel-members")}
         />
-      </div>
-    </div>
+      </FormGrid>
+    </Stack>
   );
 }

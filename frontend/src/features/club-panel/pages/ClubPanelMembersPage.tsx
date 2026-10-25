@@ -1,18 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
-import { getClubById } from "@/features/clubs";
-import { queryKeys } from "@/shared/lib/queryKeys";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { useRouter } from "next/navigation";
-import { Users, UserMinus, UserPlus, ShieldAlert, Search, MailOpen } from "lucide-react";
+import { Users, UserMinus, UserPlus, Search, MailOpen } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { TableSkeletonRows } from "@/shared/ui/table";
 import { Spinner } from "@/shared/ui/spinner";
 import { ROUTES } from "@/shared/constants/routes";
 import { PageHeader, Stack } from "@/shared/layout";
-import { EmptyState } from "@/shared/feedback";
 import { useAuthState } from "@/features/auth";
 import { toast } from "@/shared/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -25,6 +21,8 @@ import {
   type ClubMember,
   type ClubInvitation,
 } from "../api/members.api";
+import { useActiveClub } from "@/features/club-panel/hooks/useActiveClub";
+import { NoActiveClub } from "@/features/club-panel/pages/NoActiveClub";
 
 interface RosterTableHeaderProps {
   columns: string[];
@@ -54,11 +52,7 @@ export function ClubPanelMembersPage() {
   const router = useRouter();
   const { clubId, userId } = useAuthState();
   const { getSchoolTimezone } = useSchoolDirectory();
-  const { data: club } = useQuery({
-    queryKey: queryKeys.clubs.detail(clubId ?? 0),
-    queryFn: () => getClubById(clubId!),
-    enabled: clubId != null,
-  });
+  const { club } = useActiveClub();
   const formatDate = (value: string) => club
     ? new Date(value).toLocaleDateString(i18n.language, { dateStyle: "medium", timeZone: getSchoolTimezone(club.school) })
     : "";
@@ -246,15 +240,7 @@ export function ClubPanelMembersPage() {
     }
   };
 
-  if (!clubId) {
-    return (
-      <EmptyState
-        icon={<ShieldAlert />}
-        title={t("clubPanel.noActiveClubSelected")}
-        description={t("clubPanel.noActiveClubSelectedDesc")}
-      />
-    );
-  }
+  if (!clubId) return <NoActiveClub />;
 
   return (
     <Stack gap={5}>

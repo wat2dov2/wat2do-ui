@@ -197,6 +197,13 @@ class ClubSubmissionResponse(ClubResponse):
     submitted_by_email: str | None = None
 
 
+class ClubPanelSummaryResponse(BaseModel):
+    """Public submissions naming one club that still wait for admin review."""
+
+    pending_event_submissions: int
+    pending_position_submissions: int
+
+
 class ClubMemberResponse(BaseModel):
     user_id: UUID
     email: str

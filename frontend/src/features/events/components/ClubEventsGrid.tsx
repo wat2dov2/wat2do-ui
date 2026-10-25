@@ -15,7 +15,8 @@ import type { Event } from "@/shared/types";
 interface ClubEventsGridProps {
   clubId: number;
   school: string;
-  initialEvents: Event[];
+  /** Server-rendered events; without them the grid fetches on mount. */
+  initialEvents?: Event[];
 }
 
 /** Shown while the club's events stream in from the server. */

@@ -347,6 +347,7 @@ def discover_dynamic_endpoints(
         "/clubs/{club_id}",
         "/clubs/{club_id}/invitations",
         "/clubs/{club_id}/members",
+        "/clubs/{club_id}/panel-summary",
     )
     if club_id:
         endpoints.extend(
@@ -364,6 +365,11 @@ def discover_dynamic_endpoints(
                 Endpoint(
                     "/clubs/{club_id}/members",
                     f"/clubs/{club_id}/members",
+                    True,
+                ),
+                Endpoint(
+                    "/clubs/{club_id}/panel-summary",
+                    f"/clubs/{club_id}/panel-summary",
                     True,
                 ),
             )
@@ -449,6 +455,7 @@ def _known_get_paths() -> set[str]:
         "/clubs/{club_id}",
         "/clubs/{club_id}/invitations",
         "/clubs/{club_id}/members",
+        "/clubs/{club_id}/panel-summary",
         "/payouts/admin/{payout_id}",
         "/submissions/{submission_id}",
         "/users/{user_id}",

@@ -2,7 +2,9 @@
   "clubPanel": {
     "backToPanel": "返回组织面板",
     "title": "组织面板",
-    "description": "管理您组织的第三方集成和成员",
+    "description": "管理您组织的活动、职位和成员",
+    "eventsDesc": "您组织即将举行和过往的活动",
+    "positionsDesc": "您组织正在招募的职位",
     "members": "管理团队",
     "membersDesc": "管理组织成员",
     "memberColumns": {

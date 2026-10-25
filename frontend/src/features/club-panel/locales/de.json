@@ -2,7 +2,9 @@
   "clubPanel": {
     "backToPanel": "Zurück zum Organisationspanel",
     "title": "Organisationspanel",
-    "description": "Verwalten Sie die Integrationen und Mitglieder Ihrer Organisation",
+    "description": "Verwalten Sie die Veranstaltungen, Stellen und Mitglieder Ihrer Organisation",
+    "eventsDesc": "Kommende und vergangene Veranstaltungen Ihrer Organisation",
+    "positionsDesc": "Offene Stellen Ihrer Organisation",
     "members": "Management-Team",
     "membersDesc": "Organisationmitglieder verwalten",
     "memberColumns": {

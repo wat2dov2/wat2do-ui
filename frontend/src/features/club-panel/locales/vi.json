@@ -2,7 +2,9 @@
   "clubPanel": {
     "backToPanel": "Quay lại bảng điều khiển tổ chức",
     "title": "Bảng điều khiển tổ chức",
-    "description": "Quản lý tích hợp và thành viên của tổ chức bạn",
+    "description": "Quản lý sự kiện, vị trí và thành viên của tổ chức bạn",
+    "eventsDesc": "Các sự kiện sắp tới và đã qua của tổ chức bạn",
+    "positionsDesc": "Các vị trí đang tuyển của tổ chức bạn",
     "members": "Đội Quản Lý",
     "membersDesc": "Quản lý thành viên tổ chức",
     "memberColumns": {

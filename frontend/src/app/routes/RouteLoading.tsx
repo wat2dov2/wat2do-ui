@@ -98,6 +98,8 @@ export function RouteLoading() {
     [ROUTES.ADMIN_INSTAGRAM]: "admin.instagramPublishing.title",
     [ROUTES.ADMIN_DIAGNOSTICS]: "admin.diagnostics.title",
     [ROUTES.CLUB_PANEL]: "clubPanel.title",
+    [ROUTES.CLUB_PANEL_EVENTS]: "navigation.events",
+    [ROUTES.CLUB_PANEL_POSITIONS]: "navigation.positions",
     [ROUTES.CLUB_PANEL_MEMBERS]: "clubPanel.members",
     [ROUTES.POSTERS]: "posters.dashboard.title",
   }[pathname];

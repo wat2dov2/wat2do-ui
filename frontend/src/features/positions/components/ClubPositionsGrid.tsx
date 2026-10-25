@@ -12,7 +12,8 @@ import type { Position } from "@/shared/types";
 interface ClubPositionsGridProps {
   clubId: number;
   school: string;
-  initialPositions: Position[];
+  /** Server-rendered positions; without them the grid fetches on mount. */
+  initialPositions?: Position[];
 }
 
 /** Shown while the club's open positions stream in from the server. */
@@ -26,12 +27,13 @@ export function ClubPositionsGrid({
   initialPositions,
 }: ClubPositionsGridProps) {
   const { t } = useTranslation();
-  const { data: positions, isPending } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: queryKeys.positions.byClub(clubId, school),
     queryFn: () => getClubPositions(clubId, school),
     enabled: clubId > 0 && Boolean(school),
     initialData: initialPositions,
   });
+  const positions = useMemo(() => data ?? [], [data]);
   const [selectedPositionId, setSelectedPositionId] = useState<number | null>(
     null,
   );

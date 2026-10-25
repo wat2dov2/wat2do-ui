@@ -2,7 +2,9 @@
   "clubPanel": {
     "backToPanel": "Bumalik sa panel ng organisasyon",
     "title": "Panel ng organisasyon",
-    "description": "Pamahalaan ang mga integrasyon at miyembro ng inyong organisasyon",
+    "description": "Pamahalaan ang mga kaganapan, posisyon, at miyembro ng inyong organisasyon",
+    "eventsDesc": "Mga paparating at nakaraang kaganapan ng inyong organisasyon",
+    "positionsDesc": "Mga bukas na posisyon ng inyong organisasyon",
     "members": "Koponan sa Pamamahala",
     "membersDesc": "Pamahalaan ang mga miyembro ng organisasyon",
     "memberColumns": {

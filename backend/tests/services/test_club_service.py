@@ -637,3 +637,15 @@ def test_new_club_member_follows_the_club(monkeypatch, fake_sb, patch_sb):
     club_service.add_club_member(7, user_id)
 
     follow.assert_called_once_with(str(user_id), 7)
+
+
+def test_panel_summary_counts_pending_submissions_naming_the_club(fake_sb, patch_sb):
+    patch_sb("services.club_service")
+    fake_sb.set_response(data=[], count=4)
+
+    summary = club_service.get_panel_summary(7)
+
+    assert summary.pending_event_submissions == 4
+    assert summary.pending_position_submissions == 4
+    fake_sb.eq.assert_any_call("event_data->>club_id", "7")
+    fake_sb.eq.assert_any_call("position_data->>club_id", "7")

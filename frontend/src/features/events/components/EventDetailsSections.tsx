@@ -456,7 +456,9 @@ export function EventActions({
   const [reportOpen, setReportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { isAdmin } = useAuthState();
+  const { isAdmin, clubs } = useAuthState();
+  // Admins and the hosting club's own members can edit and delete it; the server checks the same.
+  const canManage = isAdmin || clubs.some((club) => club.id === event.club_id);
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
 
   const handleEdit = useCallback(() => {
@@ -493,7 +495,7 @@ export function EventActions({
           {t("common.addToCalendar")}
         </Button>
       </EventCalendarDownloadMenu>
-      {isAdmin && (
+      {canManage && (
         <>
           <Button type="button" variant="outline" size="sm" onClick={handleEdit}>
             <Edit className="size-4" />
@@ -533,7 +535,7 @@ export function EventActions({
           />
         </Suspense>
       )}
-      {isAdmin && deleteOpen && (
+      {canManage && deleteOpen && (
         <Suspense fallback={null}>
           <AdminDeleteDialog
             isOpen={deleteOpen}

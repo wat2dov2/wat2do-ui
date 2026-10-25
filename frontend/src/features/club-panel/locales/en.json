@@ -2,7 +2,9 @@
   "clubPanel": {
     "backToPanel": "Back to club panel",
     "title": "Club Panel",
-    "description": "Manage your club's integrations and members",
+    "description": "Manage your club's events, positions, and members",
+    "eventsDesc": "Your club's upcoming and past events",
+    "positionsDesc": "Your club's open positions",
     "members": "Management Team",
     "membersDesc": "Manage club members",
     "memberColumns": {

@@ -31,6 +31,7 @@ from schemas.club import (
     ClubCreate,
     ClubMemberAdd,
     ClubMemberResponse,
+    ClubPanelSummaryResponse,
     ClubResponse,
     ClubStatus,
     ClubSubmissionResponse,
@@ -191,6 +192,13 @@ def delete_club(
 ):
     _get_club_or_403(club_id, db_user)
     club_service.delete_club(club_id)
+
+
+@router.get("/{club_id}/panel-summary", response_model=ClubPanelSummaryResponse)
+def get_panel_summary(club_id: int, db_user: UserResponse = Depends(get_db_user)):
+    """Pending submission counts for the club panel's cards; members and admins only."""
+    _get_club_or_403(club_id, db_user)
+    return club_service.get_panel_summary(club_id)
 
 
 @router.get("/{club_id}/members", response_model=list[ClubMemberResponse])

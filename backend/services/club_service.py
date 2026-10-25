@@ -11,7 +11,12 @@ from uuid import UUID
 
 from postgrest.exceptions import APIError
 
-from core.constants import DEFAULT_LIST_LIMIT, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
+from core.constants import (
+    DEFAULT_LIST_LIMIT,
+    DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+    SUBMISSION_PENDING,
+)
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import NOT_AUTHORIZED
@@ -23,6 +28,8 @@ from core.tables import (
     CLUB_INVITATIONS,
     CLUB_MEMBERS,
     CLUBS,
+    EVENT_SUBMISSIONS,
+    POSITION_SUBMISSIONS,
     USERS,
 )
 from schemas.club import (
@@ -30,6 +37,7 @@ from schemas.club import (
     CLUB_STATUS_PENDING,
     ClubCreate,
     ClubMemberResponse,
+    ClubPanelSummaryResponse,
     ClubResponse,
     ClubStatus,
     ClubSubmissionResponse,
@@ -151,6 +159,26 @@ def list_clubs_by_owner(owner_id: str) -> list[ClubResponse]:
         log.warning("Failed to query club_members for owner_id %s: %s", owner_id, e)
 
     return list(clubs_dict.values())
+
+
+def get_panel_summary(club_id: int) -> ClubPanelSummaryResponse:
+    """Count public submissions naming the club that still wait for admin review."""
+
+    def pending(table: str, data_field: str) -> int:
+        return (
+            get_sb()
+            .table(table)
+            .select("id", count="exact")
+            .eq("status", SUBMISSION_PENDING)
+            .eq(f"{data_field}->>club_id", str(club_id))
+            .limit(1)
+            .execute()
+        ).count or 0
+
+    return ClubPanelSummaryResponse(
+        pending_event_submissions=pending(EVENT_SUBMISSIONS, "event_data"),
+        pending_position_submissions=pending(POSITION_SUBMISSIONS, "position_data"),
+    )
 
 
 def is_club_member(club_id: int, user_id: str) -> bool:

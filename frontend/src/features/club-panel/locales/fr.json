@@ -2,7 +2,9 @@
   "clubPanel": {
     "backToPanel": "Retour au panneau de l'organisation",
     "title": "Panneau de l'organisation",
-    "description": "Gérez les intégrations et les membres de votre organisation",
+    "description": "Gérez les événements, les postes et les membres de votre organisation",
+    "eventsDesc": "Les événements à venir et passés de votre organisation",
+    "positionsDesc": "Les postes ouverts de votre organisation",
     "members": "Équipe de direction",
     "membersDesc": "Gérer les membres de l'organisation",
     "memberColumns": {

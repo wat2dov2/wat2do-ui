@@ -319,6 +319,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/clubs/{club_id}/panel-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Panel Summary
+         * @description Pending submission counts for the club panel's cards; members and admins only.
+         */
+        get: operations["get_panel_summary_clubs__club_id__panel_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/clubs/{club_id}/members": {
         parameters: {
             query?: never;
@@ -2103,6 +2123,16 @@ export interface components {
              * Format: date-time
              */
             joined_at: string;
+        };
+        /**
+         * ClubPanelSummaryResponse
+         * @description Public submissions naming one club that still wait for admin review.
+         */
+        ClubPanelSummaryResponse: {
+            /** Pending Event Submissions */
+            pending_event_submissions: number;
+            /** Pending Position Submissions */
+            pending_position_submissions: number;
         };
         /** ClubResponse */
         ClubResponse: {
@@ -5450,6 +5480,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_panel_summary_clubs__club_id__panel_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubPanelSummaryResponse"];
                 };
             };
             /** @description Validation Error */
