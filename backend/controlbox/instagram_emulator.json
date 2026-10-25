@@ -1,7 +1,7 @@
 {
   "serial": "emulator-5554",
   "instagram_package": "com.instagram.android",
-  "avd_name": "ig_node_1",
+  "avd_name": "ig_node_2",
   "emulator_arguments": [
     "-no-window",
     "-no-audio",
@@ -64,7 +64,17 @@
   "story_upload_wait_seconds": 60,
   "audio_save_wait_seconds": 60,
   "min_free_data_megabytes": 600,
-  "reclaim_below_data_megabytes": 1000,
+  "instagram_cache_paths": [
+    "cache/*",
+    "code_cache/*",
+    "files/one_cache_path",
+    "files/ard_fe",
+    "files/ard_fm",
+    "files/ard_sc",
+    "files/ras_blobs",
+    "app_models_data",
+    "app_odin_models_data"
+  ],
   "reclaim_android_users": [10, 11, 12],
   "reclaim_packages": ["com.google.android.gms"],
   "reclaim_interval_hours": 24

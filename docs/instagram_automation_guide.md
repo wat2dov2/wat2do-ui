@@ -468,6 +468,10 @@ The admin drawer shows the outcome and links the live post.
 
 The emulator is kept running by the `io.wat2do.instagram-emulator` LaunchAgent (`scripts/instagram_emulator.py install-schedule`), which boots the virtual device in `controlbox/instagram_emulator.json` whenever adb cannot see it.
 Every job that drives the emulator holds its lock (`exclusive()` in `services/instagram_emulator/device.py`), so a story repost and a music edit never tap at once.
+The virtual device runs the Google APIs system image, not the Play Store one, so adb can act as root; the Play Store and unused Google apps are disabled on every Android user so nothing updates or downloads in the background.
+Its data partition is 10 GB, and Instagram never trims its own image cache, camera effects or downloaded models.
+Once every `reclaim_interval_hours`, the DM sweep's `reclaim_data()` stops Instagram on each Android user and deletes the folders in `instagram_cache_paths` as root; the controlbox refuses paths that hold its login, databases or settings, so no account is logged out.
+A device moved to another system image keeps its data only if the emulator's rebuilt data files are replaced with the old ones before the second boot; do it on a copy (`cp -c` clones the AVD for free) and keep the original until every account is confirmed.
 
 ### Account stats and token refresh
 
