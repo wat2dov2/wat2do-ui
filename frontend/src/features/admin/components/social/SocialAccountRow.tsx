@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, ExternalLink } from "lucide-react";
-import { engagement, followerChange, needsAttention, type SocialAccount } from "@/features/admin/lib/socialAccounts";
-import { SocialPostStrip } from "@/features/admin/components/social/SocialPostStrip";
-import { Stack } from "@/shared/layout";
+import { CARD_POST_COUNT, engagement, followerChange, needsAttention, type SocialAccount } from "@/features/admin/lib/socialAccounts";
+import { SocialPostTile } from "@/features/admin/components/social/SocialPostTile";
+import { FormGrid, Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -10,7 +10,7 @@ import { LazyImage } from "@/shared/ui/lazy-image";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
 
-/** One account on one row: who it is, how it is growing, and every recent post side by side. */
+/** One account card: who it is, how it is growing, and its newest posts side by side. */
 export function SocialAccountRow({ account, readAt }: { account: SocialAccount; readAt: number }) {
   const { t, i18n } = useTranslation();
   const { getSchoolName } = useSchoolDirectory();
@@ -63,7 +63,9 @@ export function SocialAccountRow({ account, readAt }: { account: SocialAccount; 
       </CardHeader>
       <CardContent>
         {account.posts.length ? (
-          <SocialPostStrip posts={account.posts} />
+          <FormGrid columns={3} collapse={false} className="gap-3">
+            {account.posts.slice(0, CARD_POST_COUNT).map(post => <SocialPostTile key={post.media_id} post={post} />)}
+          </FormGrid>
         ) : (
           <p className="text-sm text-muted-foreground">
             {account.captured_at ? t("admin.socialAccounts.noPosts") : t("admin.socialAccounts.notRead")}

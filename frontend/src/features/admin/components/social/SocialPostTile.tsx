@@ -9,12 +9,10 @@ interface SocialPostTileProps {
   post: ApiInstagramAccountPostResponse;
   /** Shown in mixed feeds, where the post's account is not obvious from its row. */
   username?: string;
-  /** Strip tiles keep one width so every account's row lines up; gallery tiles fill their column. */
-  layout: "strip" | "gallery";
 }
 
 /** One post: its picture, likes, comments and the song the emulator added; opens the live post. */
-export function SocialPostTile({ post, username, layout }: SocialPostTileProps) {
+export function SocialPostTile({ post, username }: SocialPostTileProps) {
   const { t, i18n } = useTranslation();
   const count = (value: number | null | undefined) => (typeof value === "number" ? value.toLocaleString(i18n.language) : "-");
 
@@ -24,17 +22,17 @@ export function SocialPostTile({ post, username, layout }: SocialPostTileProps) 
       target="_blank"
       rel="noopener noreferrer"
       aria-label={t("admin.socialAccounts.openPost")}
-      className={`${layout === "strip" ? "w-36 shrink-0" : "min-w-0"} rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+      className="min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Stack gap={1}>
         <LazyImage
           src={post.image_url}
           alt={post.caption?.slice(0, 120) ?? ""}
-          sizes={layout === "strip" ? "144px" : "(min-width: 1024px) 220px, 45vw"}
+          sizes="(min-width: 1024px) 220px, 45vw"
           className="aspect-square w-full rounded-lg border border-border"
         />
         {username ? <span className="truncate text-xs font-semibold">@{username}</span> : null}
-        <Stack direction="horizontal" gap={3} align="center">
+        <Stack direction="horizontal" gap={2} align="center" wrap>
           <span className="inline-flex items-center gap-1 text-sm font-semibold">
             <Heart className="size-3.5" aria-hidden />
             <span className="sr-only">{t("admin.socialAccounts.likes")}</span>

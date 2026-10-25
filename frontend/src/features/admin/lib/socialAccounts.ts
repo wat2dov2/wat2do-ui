@@ -18,6 +18,8 @@ export type PostSort = (typeof POST_SORTS)[number];
 
 export const DAY_MS = 86_400_000;
 export const RECENT_POST_DAYS = 7;
+/** Posts each account card shows; the All posts tab lists the rest. */
+export const CARD_POST_COUNT = 3;
 /** Tokens this close to expiring need a person before the daily refresh gives up on them. */
 const TOKEN_WARNING_DAYS = 7;
 

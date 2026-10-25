@@ -93,7 +93,9 @@ export function AdminSocialAccountsPage({ onBack }: { onBack: () => void }) {
                   </SelectContent>
                 </Select>
               </FilterBar>
-              {sortAccounts(accounts, accountSort).map(account => <SocialAccountRow key={account.account_key} account={account} readAt={readAt} />)}
+              <FormGrid columns="gallery" className="items-stretch">
+                {sortAccounts(accounts, accountSort).map(account => <SocialAccountRow key={account.account_key} account={account} readAt={readAt} />)}
+              </FormGrid>
             </Stack>
           </TabsContent>
           <TabsContent value="posts">
@@ -114,7 +116,7 @@ export function AdminSocialAccountsPage({ onBack }: { onBack: () => void }) {
                 </Select>
               </FilterBar>
               <FormGrid columns="thumbnails">
-                {shownPosts.map(post => <SocialPostTile key={post.media_id} post={post} username={post.username} layout="gallery" />)}
+                {shownPosts.map(post => <SocialPostTile key={post.media_id} post={post} username={post.username} />)}
               </FormGrid>
             </Stack>
           </TabsContent>
