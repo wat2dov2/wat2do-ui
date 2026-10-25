@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
-import random
+import re
 import shutil
 import tempfile
+import unicodedata
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any, Literal
 
@@ -18,18 +20,26 @@ CONTROL = controlbox.instagram_dms
 WORKDIR_PREFIX = "wat2do-dm-"
 PROMPT = (Path(__file__).parent / "prompt.md").read_text()
 
-Outcome = Literal["story_repost", "add_to_post", "ignore"]
+Outcome = Literal["story_repost", "add_to_post", "reply", "ignore"]
+_ACTIONS = ("story_repost", "add_to_post")
 
 ANSWER_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
-        "outcome": {"type": "string", "enum": ["story_repost", "add_to_post", "ignore"]},
+        "outcome": {"type": "string", "enum": ["story_repost", "add_to_post", "reply", "ignore"]},
         "media_url": {"type": ["string", "null"]},
+        "reply": {"type": ["string", "null"]},
         "reason": {"type": "string"},
     },
-    "required": ["outcome", "media_url", "reason"],
+    "required": ["outcome", "media_url", "reply", "reason"],
     "additionalProperties": False,
 }
+# Any web address in a reply must be one of ours.
+_ADDRESS = re.compile(r"(?:https?://)?(?:[a-z0-9-]+\.)+[a-z]{2,}\S*", re.IGNORECASE)
+_OUR_ADDRESS = re.compile(r"^(?:https?://)?(?:[a-z0-9-]+\.)?wat2do\.io(?:/\S*)?$", re.IGNORECASE)
+# Long digit runs are phone numbers or codes, never something we need to say.
+_DIGITS = re.compile(r"\d{5,}")
+_PLAIN_QUOTES = str.maketrans({"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"'})
 
 
 @dataclass(frozen=True)
@@ -37,7 +47,6 @@ class DmDecision:
     outcome: Outcome
     media_url: str | None = None
     reply: str = ""
-    done_reply: str = ""
     reason: str = ""
 
 
@@ -47,15 +56,17 @@ IGNORE = DmDecision("ignore")
 def decide(
     thread: list[dict[str, Any]], *, account: str, school: str, school_name: str
 ) -> DmDecision:
-    """One outcome for the club's latest messages; anything doubtful is ignored."""
+    """The model reads the thread, picks an outcome and writes the reply; code checks both."""
     if not thread or thread[-1].get("from") != "them":
-        # Nothing new from the club, or we already answered last.
+        # Nothing new from them, or we already answered last.
         return IGNORE
     workdir = tempfile.mkdtemp(prefix=WORKDIR_PREFIX)
     try:
-        (Path(workdir) / "thread.json").write_text(json.dumps(thread, ensure_ascii=False))
+        (Path(workdir) / "thread.json").write_text(
+            json.dumps(_with_club_flags(thread, school), ensure_ascii=False)
+        )
         answer = run_agent(
-            _prompt(account, school_name),
+            _prompt(account, school, school_name),
             workdir=workdir,
             model=CONTROL.model,
             tools=("Read",),
@@ -75,13 +86,19 @@ def checked(answer: dict[str, Any], thread: list[dict[str, Any]], *, school: str
 
     A message can be written to trick the model, so every action needs proof from the
     thread itself: the post was shared by its own owner, and a story repost also needs
-    that owner to be a club Wat2Do already knows at this school. Replies never come from
-    the model, so nothing a message says can end up in our answer.
+    that owner to be a club Wat2Do already knows at this school. The reply must pass
+    ``safe_reply``, so nothing a message smuggles in can link, tag or leak anything.
+    Anything that fails a check is not answered at all.
     """
     reason = " ".join(str(answer.get("reason") or "").split())[:200]
     outcome = answer.get("outcome")
-    if outcome not in ("story_repost", "add_to_post"):
+    if outcome not in (*_ACTIONS, "reply"):
         return DmDecision("ignore", reason=reason)
+    reply = safe_reply(answer.get("reply"))
+    if reply is None:
+        return DmDecision("ignore", reason="The reply did not pass the checks")
+    if outcome == "reply":
+        return DmDecision("reply", reply=reply, reason=reason)
     media_url = answer.get("media_url")
     owners = {
         _handle(item.get("shared_owner"))
@@ -94,28 +111,57 @@ def checked(answer: dict[str, Any], thread: list[dict[str, Any]], *, school: str
     if not media_url or len(owners) != 1:
         return DmDecision("ignore", reason="Requested post was not shared by its own owner")
     owner = owners.pop()
-    if (
-        outcome == "story_repost"
-        and club_service.lookup_club_by_school_and_ig(school, owner) is None
-    ):
+    if outcome == "story_repost" and not _is_club_here(school, owner):
         return DmDecision("ignore", reason=f"@{owner} is not a known club at this school")
-    return DmDecision(
-        outcome,
-        media_url=media_url,
-        reply=random.choice(CONTROL.replies),
-        done_reply=random.choice(CONTROL.done_replies) if outcome == "story_repost" else "",
-        reason=reason,
-    )
+    return DmDecision(outcome, media_url=media_url, reply=reply, reason=reason)
+
+
+def safe_reply(text: object) -> str | None:
+    """The reply as one line of plain text the emulator can type, or None if unsafe.
+
+    Accents are folded to plain letters and anything else outside printable ASCII is
+    dropped, since the emulator types through adb. A tag, an email address other than
+    ours, a link to anywhere but Wat2Do, or a long number rejects the reply instead of
+    being trimmed.
+    """
+    plain = str(text or "").translate(_PLAIN_QUOTES)
+    folded = unicodedata.normalize("NFKD", plain).encode("ascii", "ignore").decode()
+    reply = " ".join("".join(ch for ch in folded if ch.isprintable()).split())
+    if not reply or len(reply) > CONTROL.reply_max_characters:
+        return None
+    if "@" in reply.replace(CONTROL.contact_email, "") or _DIGITS.search(reply):
+        return None
+    if any(not _OUR_ADDRESS.match(address.rstrip(".,!?)")) for address in _ADDRESS.findall(reply)):
+        return None
+    return reply
+
+
+def _with_club_flags(thread: list[dict[str, Any]], school: str) -> list[dict[str, Any]]:
+    """Tell the model which shared posts belong to a club we list, so it knows a story
+    repost will be refused before it promises one."""
+    return [
+        {**item, "shared_owner_is_club_here": _is_club_here(school, _handle(item["shared_owner"]))}
+        if item.get("shared_owner")
+        else item
+        for item in thread
+    ]
+
+
+def _is_club_here(school: str, owner: str) -> bool:
+    return bool(owner) and club_service.lookup_club_by_school_and_ig(school, owner) is not None
 
 
 def _handle(value: object) -> str:
     return str(value or "").strip().lstrip("@").casefold()
 
 
-def _prompt(account: str, school_name: str) -> str:
+def _prompt(account: str, school: str, school_name: str) -> str:
     values = {
         "account": account,
         "school_name": school_name,
+        "school_url": f"https://{school}.wat2do.io",
+        "contact_email": CONTROL.contact_email,
+        "today": date.today().strftime("%A, %B %-d, %Y"),
     }
     prompt = PROMPT
     for key, value in values.items():

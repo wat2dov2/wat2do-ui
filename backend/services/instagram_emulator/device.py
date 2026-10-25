@@ -75,6 +75,9 @@ _SAVE_LOGIN = labels("Save your login info")
 _SAVE = re.compile(r"^Save$")
 _NOT_NOW = re.compile(r"^Not now$")
 _LOW_STORAGE = labels("Low device storage")
+# Android's own dialog when the app freezes for a few seconds on a busy emulator.
+_NOT_RESPONDING = re.compile(r"^.+ isn't responding$")
+_WAIT = labels("Wait")
 _CLOSE = re.compile(r"^Close$")
 # Rows in the account switcher read "wat2do.school, 3 follows and 2 more".
 _SWITCHER_ROW = re.compile(r"^wat2do\.[a-z0-9._]+(?:, .*)?$")
@@ -199,11 +202,14 @@ class EmulatorDevice:
             node = self.find(pattern, nodes)
             if node is not None:
                 return node
-            # One-time announcements ("Introducing instants" and the like) and the low
-            # storage warning cover the app until answered; declining is always safe.
+            # One-time announcements ("Introducing instants" and the like), the low
+            # storage warning and Android's not-responding dialog cover the app until
+            # answered; declining, closing or waiting is always safe.
             prompt = self.find(_NOT_NOW, nodes)
             if prompt is None and self.find(_LOW_STORAGE, nodes) is not None:
                 prompt = self.find(_CLOSE, nodes)
+            if prompt is None and self.find(_NOT_RESPONDING, nodes) is not None:
+                prompt = self.find(_WAIT, nodes)
             if prompt is not None and not pattern.match(prompt.label):
                 self.tap(prompt)
                 continue
@@ -313,6 +319,10 @@ class EmulatorDevice:
         self.wake()
         if self.adb("shell", "am", "get-current-user").strip() != str(user):
             raise EmulatorError("Emulator did not switch Android users")
+        # Every user left running keeps its apps in memory, and four of them swap the
+        # emulator until Instagram stops responding. The system user cannot be stopped.
+        for other in sorted(set(CONTROL.android_user_by_school.values()) - {0, user}):
+            self.adb("shell", "am", "stop-user", str(other))
 
     def use_account(self, user: int, account_username: str) -> None:
         """Switch the app to the account, confirmed by its own story bubble on the home feed."""

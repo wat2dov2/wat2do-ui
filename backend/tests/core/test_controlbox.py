@@ -871,27 +871,6 @@ def test_instagram_dms_reject_an_inverted_sweep_window(
         load_controlbox(path)
 
 
-def test_instagram_dms_reject_an_inverted_done_reply_window(tmp_path: Path) -> None:
-    path = _write_control(
-        tmp_path,
-        "instagram_dms",
-        lambda payload: payload.update(
-            {"done_reply_delay_min_seconds": 90, "done_reply_delay_max_seconds": 10}
-        ),
-    )
-    with pytest.raises(ValidationError, match="done_reply_delay_min_seconds"):
-        load_controlbox(path)
-
-
-@pytest.mark.parametrize("reply", ["see https://x.co", "ask @someone", "two\nlines", "", "x" * 41])
-def test_instagram_dms_reject_an_unsafe_vetted_reply(tmp_path: Path, reply: str) -> None:
-    path = _write_control(
-        tmp_path, "instagram_dms", lambda payload: payload.update({"replies": [reply]})
-    )
-    with pytest.raises(ValidationError, match="replies"):
-        load_controlbox(path)
-
-
 def test_instagram_emulator_spreads_accounts_within_the_app_limit() -> None:
     control = load_controlbox().instagram_emulator
     per_user = Counter(control.android_user_by_school.values())

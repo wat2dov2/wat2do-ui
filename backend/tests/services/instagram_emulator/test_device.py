@@ -75,6 +75,15 @@ def test_switching_android_users_is_confirmed() -> None:
         _device(outputs, []).use_android_user(10)
 
 
+def test_switching_stops_the_other_secondary_users() -> None:
+    commands = []
+    others = sorted(set(module.CONTROL.android_user_by_school.values()) - {0, 11})
+    outputs = [(0, "0\n"), (0, ""), (0, ""), (0, ""), (0, "11\n")] + [(0, "")] * len(others)
+    _device(outputs, commands).use_android_user(11)
+    stopped = [command[-1] for command in commands if "stop-user" in command]
+    assert stopped == [str(user) for user in others] and "0" not in stopped
+
+
 def test_the_current_android_user_is_not_switched_again() -> None:
     commands = []
     _device([(0, "10\n")], commands).use_android_user(10)
@@ -151,6 +160,24 @@ def test_waiting_closes_the_low_storage_warning() -> None:
     )
     assert node.text == "Your story"
     assert commands[1][-3:-2] == ["tap"]
+
+
+NOT_RESPONDING = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
+<node text="Instagram isn't responding" content-desc="" bounds="[90,1300][990,1380]" />
+<node text="Close app" content-desc="" bounds="[90,1420][990,1520]" />
+<node text="Wait" content-desc="" bounds="[90,1560][990,1660]" />
+</hierarchy>UI hierchary dumped to: /dev/tty"""
+
+
+def test_waiting_answers_the_not_responding_dialog_with_wait() -> None:
+    commands = []
+    tap = (0, "")
+    node = _device([(0, NOT_RESPONDING), tap, (0, SCREEN)], commands).wait_for(
+        re.compile("^Your story$")
+    )
+    assert node.text == "Your story"
+    x, y = int(commands[1][-2]), int(commands[1][-1])
+    assert 90 <= x <= 990 and 1560 <= y <= 1660
 
 
 def test_free_space_is_read_from_the_data_partition() -> None:

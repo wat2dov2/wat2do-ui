@@ -2,8 +2,8 @@
 
 The scheduled inbox sweep opens the thread by tapping its row, and it is read from
 the screen the app draws: who sent each message, its text, and any post or reel
-shared in it. Claude Haiku decides the outcome. A message request is accepted only
-once there is something to send. A story repost happens in the same app, and replies are typed into the
+shared in it. Claude decides the outcome and writes the reply. A message request is
+accepted only once there is something to send. A story repost happens in the same app, and replies are typed into the
 thread at a person's pace, each confirmed on screen before the next step. Anything
 that may already have reached Instagram but cannot be confirmed pauses the worker
 for a person instead of risking a second send.
@@ -11,9 +11,7 @@ for a person instead of risking a second send.
 
 from __future__ import annotations
 
-import random
 import re
-import time
 from collections.abc import Callable
 from typing import Any
 
@@ -95,7 +93,6 @@ class EmulatorDirectExecutor:
             "reason": decision.reason,
             "media_url": decision.media_url,
             "reply": decision.reply,
-            "done_reply": decision.done_reply,
             "dry_run": dry_run,
         }
         if dry_run or decision.outcome == "ignore":
@@ -116,15 +113,10 @@ class EmulatorDirectExecutor:
                 lambda: share_to_story(school, account_username, decision.media_url),
             )
             _confirmed("reply", lambda: reader.send(decision.reply))
-            time.sleep(
-                random.uniform(
-                    CONTROL.done_reply_delay_min_seconds, CONTROL.done_reply_delay_max_seconds
-                )
-            )
-            _confirmed("reply", lambda: reader.send(decision.done_reply))
             return {**result, "status": "reposted"}
-        # The ingestion queue deduplicates, so a post Wat2Do already has is a no-op.
-        items.queue_instagram([decision.media_url], school=school)
+        if decision.outcome == "add_to_post":
+            # The ingestion queue deduplicates, so a post Wat2Do already has is a no-op.
+            items.queue_instagram([decision.media_url], school=school)
         _confirmed("reply", lambda: reader.send(decision.reply))
         return {**result, "status": "replied"}
 
