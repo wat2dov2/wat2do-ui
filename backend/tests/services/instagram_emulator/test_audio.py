@@ -18,7 +18,9 @@ def _screen(*labels):
 
 
 INBOX = [Node("wat2do.uwaterloo", "", (0, 0, 100, 100), "igds_action_bar_title")]
-POST_PAGE = _screen("More actions for this post", "Like")
+POST_PAGE = _screen("More actions for this post", "Like", "Repost")
+LIKED_PAGE = _screen("More actions for this post", "Liked", "Repost")
+FIRST_REPOST = _screen("You reposted wat2do.uwaterloo's post", "Close", "Undo")
 MENU = _screen("Archive", "Edit", "Delete")
 EDIT_INFO = _screen("Edit info", "Done", "Tag people")
 EDIT_INFO_AUDIO = _screen("Edit info", "Done", "Add audio")
@@ -38,18 +40,23 @@ DISCARD = _screen("Discard changes?", "Discard", "Cancel")
 class _Device(EmulatorDevice):
     """Shows each screen in turn, moving on after every tap, typed text or opened post."""
 
-    def __init__(self, screens):
+    def __init__(self, screens, reposted=(False, True)):
         clock = iter(range(0, 10_000))
         super().__init__(sleep=lambda _seconds: None, monotonic=lambda: next(clock))
         self.screens = list(screens)
         self.taps = []
         self.typed = []
+        # What the Repost icon's check mark shows each time it is read.
+        self.reposted = list(reposted)
 
     def adb(self, *args):
         return "0\n" if args[:3] == ("shell", "am", "get-current-user") else ""
 
     def screen(self):
         return self.screens[0]
+
+    def marked(self, icon):
+        return self.reposted.pop(0)
 
     def _advance(self):
         if len(self.screens) > 1:
@@ -77,8 +84,8 @@ class _Device(EmulatorDevice):
 
 @pytest.fixture
 def screens(monkeypatch):
-    def use(*sequence):
-        device = _Device(sequence)
+    def use(*sequence, reposted=(False, True)):
+        device = _Device(sequence, reposted)
         monkeypatch.setattr(module, "EmulatorDevice", lambda: device)
         monkeypatch.setattr(module, "exclusive", nullcontext)
         return device
@@ -91,6 +98,8 @@ def test_tries_songs_until_one_matches_then_saves_the_post(screens) -> None:
         INBOX,
         INBOX,
         POST_PAGE,
+        LIKED_PAGE,
+        LIKED_PAGE,
         MENU,
         EDIT_INFO,
         EDIT_INFO_AUDIO,
@@ -109,13 +118,15 @@ def test_tries_songs_until_one_matches_then_saves_the_post(screens) -> None:
         seen.append((query, list(tracks)))
         return 1 if query == "the weeknd after hours" else None
 
-    added = module.add_audio(
+    added = module.finish_post(
         "uwaterloo", "wat2do.uwaterloo", POST, ["Beyoncé  halo", "the weeknd after hours"], choose
     )
     assert added == module.AddedTrack("the weeknd after hours", "After Hours by The Weeknd,6:01")
     assert device.typed == ["Beyonce halo", "the weeknd after hours"]
     assert seen[1][1] == ["After Hours (Live) by The Weeknd,4:27", "After Hours by The Weeknd,6:01"]
     assert device.taps == [
+        "Like",
+        "Repost",
         "More actions for this post",
         "Edit",
         "Add audio",
@@ -131,7 +142,7 @@ def test_no_matching_song_discards_the_edit(screens) -> None:
     device = screens(
         INBOX,
         INBOX,
-        POST_PAGE,
+        LIKED_PAGE,
         MENU,
         EDIT_INFO_AUDIO,
         SUGGESTIONS,
@@ -140,8 +151,11 @@ def test_no_matching_song_discards_the_edit(screens) -> None:
         DISCARD,
         POST_PAGE,
     )
+    device.reposted = [True]
     with pytest.raises(module.SongNotFound):
-        module.add_audio("uwaterloo", "wat2do.uwaterloo", POST, ["halo"], lambda *_: None)
+        module.finish_post("uwaterloo", "wat2do.uwaterloo", POST, ["halo"], lambda *_: None)
+    # Already liked and reposted on an earlier try, so neither is tapped again.
+    assert "Like" not in device.taps and "Repost" not in device.taps
     assert device.taps[-2:] == ["back", "Discard"]
     assert "Done" not in device.taps
 
@@ -149,7 +163,7 @@ def test_no_matching_song_discards_the_edit(screens) -> None:
 def test_a_school_without_an_emulator_account_is_refused(screens) -> None:
     device = screens(INBOX)
     with pytest.raises(EmulatorError, match="not logged in"):
-        module.add_audio("not-a-school", "wat2do.x", POST, ["halo"], lambda *_: 0)
+        module.finish_post("not-a-school", "wat2do.x", POST, ["halo"], lambda *_: 0)
     assert device.taps == []
 
 
@@ -159,5 +173,18 @@ def test_a_school_without_an_emulator_account_is_refused(screens) -> None:
 def test_only_exact_post_urls_get_audio(screens, url) -> None:
     device = screens(INBOX)
     with pytest.raises(EmulatorError, match="exact Instagram post"):
-        module.add_audio("uwaterloo", "wat2do.uwaterloo", url, ["halo"], lambda *_: 0)
+        module.finish_post("uwaterloo", "wat2do.uwaterloo", url, ["halo"], lambda *_: 0)
     assert device.taps == []
+
+
+def test_an_accounts_first_repost_closes_instagrams_note(screens) -> None:
+    device = screens(LIKED_PAGE, FIRST_REPOST, LIKED_PAGE, reposted=(False, True))
+    module._like_and_repost(device)
+    assert device.taps == ["Repost", "Close"]
+
+
+def test_a_repost_that_never_shows_is_an_error(screens) -> None:
+    device = screens(LIKED_PAGE, LIKED_PAGE, reposted=(False,) * 10)
+    with pytest.raises(EmulatorError, match="reposted"):
+        module._like_and_repost(device)
+    assert device.taps == ["Repost"]

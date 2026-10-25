@@ -1,8 +1,8 @@
 """Songs for published carousels, added on the Mac from the Instagram app.
 
 Admins keep a list of songs, typed loosely. Some minutes after a carousel
-publishes, ``add_pending_music`` opens the live post on the emulator and tries
-the songs in random order: Instagram's music search finds candidates and Claude
+publishes, ``add_pending_music`` opens the live post on the emulator, likes and
+reposts it, and tries the songs in random order: Instagram's music search finds candidates and Claude
 Haiku picks the track the admin meant, or none so the next song is tried. A song
 marked Asian or K-pop is tried only at the control box's ``asian_song_schools``.
 """
@@ -37,7 +37,7 @@ from core.exceptions import ConflictError, NotFoundError
 from core.tables import INSTAGRAM_PUBLISH_BATCHES, INSTAGRAM_PUBLISHING_ACCOUNTS, INSTAGRAM_SONGS
 from services import school_service
 from services.claude_code import ClaudeCodeError, run_agent
-from services.instagram_emulator.audio import SongNotFound, add_audio
+from services.instagram_emulator.audio import SongNotFound, finish_post
 
 log = logging.getLogger(__name__)
 
@@ -106,7 +106,9 @@ def _pending_batches(now: datetime) -> list[dict[str, Any]]:
     response = (
         get_sb()
         .table(INSTAGRAM_PUBLISH_BATCHES)
-        .select(f"id,account_key,permalink,music_attempts,{school_service.SCHOOL_SLUG_EMBED}")
+        .select(
+            f"id,account_key,permalink,music_attempts,updated_at,{school_service.SCHOOL_SLUG_EMBED}"
+        )
         .eq("status", INSTAGRAM_BATCH_PUBLISHED)
         .eq("music_status", INSTAGRAM_MUSIC_PENDING)
         .lte("published_at", (now - timedelta(minutes=_CONTROL.music_delay_minutes)).isoformat())
@@ -114,13 +116,20 @@ def _pending_batches(now: datetime) -> list[dict[str, Any]]:
         .order("published_at")
         .execute()
     )
-    return [school_service.with_school_slug(row) for row in response.data or []]
+    # A failed try waits before the next, so one bad spell on the emulator cannot use
+    # up every attempt.
+    retry_after = now - timedelta(minutes=_CONTROL.music_retry_minutes)
+    return [
+        school_service.with_school_slug(row)
+        for row in response.data or []
+        if not row["music_attempts"] or datetime.fromisoformat(row["updated_at"]) <= retry_after
+    ]
 
 
 def _add_music(batch: dict[str, Any], songs: Sequence[str]) -> str:
     attempts = int(batch["music_attempts"]) + 1
     try:
-        added = add_audio(
+        added = finish_post(
             batch["school"],
             _username(batch["account_key"]),
             batch["permalink"],
@@ -191,5 +200,7 @@ def _record(
             "music_track": track,
             "music_error": error,
             "music_attempts": attempts,
+            # When this try ended, which the next try waits from.
+            "updated_at": datetime.now(timezone.utc).isoformat(),
         }
     ).eq("id", batch_id).execute()

@@ -458,12 +458,13 @@ Instagram's API publishes a carousel without music, so the Mac adds a song from 
 Admins keep the song list in the Songs tab of the Instagram publishing admin page, typed loosely the way they would say it, such as "the weeknd after hours".
 Publishing stores the live post's `permalink` and sets the batch's `music_status` to `pending`.
 The `io.wat2do.instagram.music` LaunchAgent runs `jobs/add_instagram_music.py run` every `music_interval_seconds`; install or update it with `add_instagram_music.py install-schedule`.
-Each run takes every published batch that has waited `music_delay_minutes` and is younger than `music_max_age_hours`, and edits the live post: More actions, Edit, Add audio.
+Each run takes every published batch that has waited `music_delay_minutes` and is younger than `music_max_age_hours`, opens the live post, likes it and reposts it, then edits it: More actions, Edit, Add audio.
+Instagram's Repost label never changes and a second tap takes the repost back, so the job reads the check mark drawn inside the Repost icon from a screenshot and taps only when it is missing; the one-time "You reposted" note is closed.
 It searches the songs in random order.
 For each search, Claude Haiku (`music_model`, prompt in `backend/services/instagram_publishing/music_prompt.md`) reads the visible tracks and picks the one the admin meant, or none so the next song is tried.
 The suggested clip is kept, the edit is saved with Done, and the batch records `added` with the track.
 When Instagram has none of the songs the edit is discarded and the batch records `failed`.
-An emulator error discards the edit and leaves the batch `pending` for the next run, until `music_attempts` runs out.
+An emulator error discards the edit and leaves the batch `pending`; it is tried again no sooner than `music_retry_minutes` later, until `music_attempts` runs out.
 The admin drawer shows the outcome and links the live post.
 
 The emulator is kept running by the `io.wat2do.instagram-emulator` LaunchAgent (`scripts/instagram_emulator.py install-schedule`), which boots the virtual device in `controlbox/instagram_emulator.json` whenever adb cannot see it.

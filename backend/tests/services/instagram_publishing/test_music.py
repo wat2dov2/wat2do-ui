@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import Mock
 from uuid import uuid4
@@ -18,6 +18,7 @@ BATCH = {
     "account_key": "uwaterloo",
     "permalink": POST,
     "music_attempts": 0,
+    "updated_at": "2026-10-21T17:00:00+00:00",
     "school_record": {"slug": "uwaterloo"},
 }
 
@@ -57,14 +58,18 @@ def database(monkeypatch):
 
 
 def _updates(calls):
-    return [args[0] for name, args, _ in calls if name == "update"]
+    return [
+        {key: value for key, value in args[0].items() if key != "updated_at"}
+        for name, args, _ in calls
+        if name == "update"
+    ]
 
 
 def test_pending_carousels_get_a_song_in_random_order(monkeypatch, database):
-    add_audio = Mock(return_value=AddedTrack("dua lipa houdini", "Houdini by Dua Lipa,3:05"))
-    monkeypatch.setattr(music, "add_audio", add_audio)
+    finish_post = Mock(return_value=AddedTrack("dua lipa houdini", "Houdini by Dua Lipa,3:05"))
+    monkeypatch.setattr(music, "finish_post", finish_post)
     assert music.add_pending_music(NOW) == {"added": 1}
-    school, username, permalink, songs, choose = add_audio.call_args.args
+    school, username, permalink, songs, choose = finish_post.call_args.args
     assert (school, username, permalink) == ("uwaterloo", "wat2do.uwaterloo", POST)
     assert sorted(songs) == ["dua lipa houdini", "the weeknd after hours"]
     assert choose is music.choose_track
@@ -78,17 +83,18 @@ def test_pending_carousels_get_a_song_in_random_order(monkeypatch, database):
     ]
     # Only published carousels that have settled, and not ones too old to touch.
     assert ("lte", ("published_at", "2026-10-21T17:55:00+00:00"), {}) in database.calls
-    assert ("gte", ("published_at", "2026-10-20T18:00:00+00:00"), {}) in database.calls
+    oldest = (NOW - timedelta(hours=music._CONTROL.music_max_age_hours)).isoformat()
+    assert ("gte", ("published_at", oldest), {}) in database.calls
 
 
 def test_no_matching_song_fails_at_once(monkeypatch, database):
-    monkeypatch.setattr(music, "add_audio", Mock(side_effect=SongNotFound("none")))
+    monkeypatch.setattr(music, "finish_post", Mock(side_effect=SongNotFound("none")))
     assert music.add_pending_music(NOW) == {"failed": 1}
     assert _updates(database.calls)[0]["music_status"] == "failed"
 
 
 def test_an_emulator_error_is_retried_until_the_attempts_run_out(monkeypatch, database):
-    monkeypatch.setattr(music, "add_audio", Mock(side_effect=RuntimeError("adb went away")))
+    monkeypatch.setattr(music, "finish_post", Mock(side_effect=RuntimeError("adb went away")))
     assert music.add_pending_music(NOW) == {"pending": 1}
     assert _updates(database.calls)[0]["music_error"] == "adb went away"
     database.tables["instagram_publish_batches"] = [
@@ -97,12 +103,29 @@ def test_an_emulator_error_is_retried_until_the_attempts_run_out(monkeypatch, da
     assert music.add_pending_music(NOW) == {"failed": 1}
 
 
+def test_a_failed_try_waits_before_the_next(monkeypatch, database):
+    finish_post = Mock(return_value=AddedTrack("dua lipa houdini", "Houdini by Dua Lipa,3:05"))
+    monkeypatch.setattr(music, "finish_post", finish_post)
+    just_tried = (NOW - timedelta(minutes=music._CONTROL.music_retry_minutes - 1)).isoformat()
+    database.tables["instagram_publish_batches"] = [
+        {**BATCH, "music_attempts": 1, "updated_at": just_tried}
+    ]
+    assert music.add_pending_music(NOW) == {}
+    finish_post.assert_not_called()
+    waited = (NOW - timedelta(minutes=music._CONTROL.music_retry_minutes)).isoformat()
+    database.tables["instagram_publish_batches"] = [
+        {**BATCH, "music_attempts": 1, "updated_at": waited}
+    ]
+    assert music.add_pending_music(NOW) == {"added": 1}
+    assert "updated_at" in [args[0] for name, args, _ in database.calls if name == "update"][0]
+
+
 def test_nothing_runs_without_songs(monkeypatch, database):
     database.tables["instagram_songs"] = []
-    add_audio = Mock()
-    monkeypatch.setattr(music, "add_audio", add_audio)
+    finish_post = Mock()
+    monkeypatch.setattr(music, "finish_post", finish_post)
     assert music.add_pending_music(NOW) == {}
-    add_audio.assert_not_called()
+    finish_post.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -163,7 +186,7 @@ def _tried_songs(monkeypatch, database, school):
     tried = []
     monkeypatch.setattr(
         music,
-        "add_audio",
+        "finish_post",
         lambda _school, _user, _post, songs, _choose: (
             tried.append(sorted(songs)) or AddedTrack(songs[0], "After Hours by The Weeknd")
         ),
@@ -186,7 +209,7 @@ def test_a_campus_with_no_playable_song_is_left_pending(monkeypatch, database):
     database.tables["instagram_publish_batches"] = [
         {**BATCH, "account_key": "queensu", "school_record": {"slug": "queensu"}}
     ]
-    monkeypatch.setattr(music, "add_audio", Mock(side_effect=AssertionError("no song to try")))
+    monkeypatch.setattr(music, "finish_post", Mock(side_effect=AssertionError("no song to try")))
     assert music.add_pending_music(NOW) == {}
     assert _updates(database.calls) == []
 

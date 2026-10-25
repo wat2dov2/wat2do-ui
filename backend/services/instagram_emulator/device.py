@@ -8,6 +8,7 @@ a random pause, so the app sees a person's rhythm rather than a script's.
 from __future__ import annotations
 
 import fcntl
+import io
 import os
 import random
 import re
@@ -21,6 +22,8 @@ from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+
+from PIL import Image
 
 from core.controlbox import controlbox
 
@@ -36,6 +39,8 @@ _LOCK_PATH = Path.home() / ".local/state/wat2do/instagram-emulator.lock"
 _RECLAIMED_PATH = Path.home() / ".local/state/wat2do/instagram-emulator-reclaimed"
 _held = threading.local()
 _SELECT_ALL = ("113", "29")  # KEYCODE_CTRL_LEFT + KEYCODE_A
+# Share of dark pixels in an icon's middle that means a check mark is drawn there.
+_MARKED_DARK_SHARE = 0.2
 
 
 class EmulatorError(RuntimeError):
@@ -192,6 +197,30 @@ class EmulatorDevice:
             return ElementTree.fromstring(dump)
         except ElementTree.ParseError as exc:
             raise EmulatorError("Emulator screen could not be read") from exc
+
+    def marked(self, icon: Node) -> bool:
+        """Whether the icon shows a check mark in its middle.
+
+        Instagram draws a few states, such as a post we reposted, only as a check mark
+        inside the icon and leaves its label unchanged, so the screen's pixels are read.
+        """
+        try:
+            completed = self._run(
+                [self._adb, "-s", CONTROL.serial, "exec-out", "screencap", "-p"],
+                capture_output=True,
+                timeout=CONTROL.adb_timeout_seconds,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise EmulatorError("adb screencap did not complete") from exc
+        if completed.returncode != 0:
+            raise EmulatorError("adb screencap failed")
+        x1, y1, x2, y2 = icon.bounds
+        x, y, half = (x1 + x2) // 2, (y1 + y2) // 2, max(1, (x2 - x1) // 6)
+        with Image.open(io.BytesIO(completed.stdout)) as screenshot:
+            middle = screenshot.convert("L").crop((x - half, y - half, x + half, y + half))
+            shades = middle.histogram()
+        return sum(shades[:128]) / sum(shades) > _MARKED_DARK_SHARE
 
     def find(self, pattern: re.Pattern[str], nodes: Iterable[Node] | None = None) -> Node | None:
         return next(

@@ -1,9 +1,11 @@
 import fcntl
+import io
 import random
 import re
 import subprocess
 
 import pytest
+from PIL import Image, ImageDraw
 
 from services.instagram_emulator import device as module
 
@@ -307,3 +309,26 @@ def test_waiting_saves_login_info_when_offered() -> None:
     commands = []
     _device([(0, SAVE_LOGIN), (0, ""), (0, SCREEN)], commands).wait_for(re.compile("^Your story$"))
     assert 1420 <= int(commands[1][-1]) <= 1520
+
+
+def _screenshot(checked):
+    image = Image.new("RGB", (300, 300), "white")
+    draw = ImageDraw.Draw(image)
+    # The repost arrows run around the icon's edge; a check mark fills its middle.
+    draw.rectangle((100, 100, 200, 200), outline="black", width=6)
+    if checked:
+        draw.line((130, 150, 148, 172, 175, 125), fill="black", width=14)
+    buffer = io.BytesIO()
+    image.save(buffer, "PNG")
+    return buffer.getvalue()
+
+
+@pytest.mark.parametrize("checked", [True, False])
+def test_a_check_mark_is_read_from_the_icons_middle(checked) -> None:
+    def run(command, **kwargs):
+        assert command[-3:] == ["exec-out", "screencap", "-p"] and "text" not in kwargs
+        return subprocess.CompletedProcess(command, 0, stdout=_screenshot(checked), stderr=b"")
+
+    device = module.EmulatorDevice(run=run, sleep=lambda _seconds: None)
+    icon = module.Node("", "Repost", (100, 100, 200, 200))
+    assert device.marked(icon) is checked
