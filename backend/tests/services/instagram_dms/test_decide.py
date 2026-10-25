@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from services.instagram_dms import decide as module
@@ -26,17 +24,6 @@ THREAD = [
 ]
 
 
-@pytest.fixture(autouse=True)
-def known_clubs(monkeypatch):
-    clubs = {("ubc", CLUB)}
-    monkeypatch.setattr(
-        module.club_service,
-        "lookup_club_by_school_and_ig",
-        lambda school, handle: {"ig": handle} if (school, handle) in clubs else None,
-    )
-    return clubs
-
-
 def _answer(**overrides):
     return {
         "outcome": "story_repost",
@@ -48,14 +35,14 @@ def _answer(**overrides):
 
 
 def _checked(answer, thread=THREAD):
-    return module.checked(answer, thread, school="ubc")
+    return module.checked(answer, thread)
 
 
 def _shared_by(sender, owner):
     return [{**THREAD[0], "sender": sender, "shared_owner": owner}, {**THREAD[1], "sender": sender}]
 
 
-def test_a_known_clubs_own_post_is_reposted_with_the_models_reply() -> None:
+def test_a_shared_post_is_reposted_with_the_models_reply() -> None:
     decision = _checked(_answer())
     assert (decision.outcome, decision.media_url) == ("story_repost", POST)
     assert decision.reply == "just shared it, good luck!"
@@ -79,26 +66,28 @@ def test_a_post_the_club_never_shared_is_ignored() -> None:
     assert _checked(_answer(media_url="https://www.instagram.com/p/OTHER/")).outcome == "ignore"
 
 
-@pytest.mark.parametrize("outcome", ["story_repost", "add_to_post"])
-def test_someone_elses_post_is_never_shared_even_when_the_model_says_so(outcome) -> None:
-    # A stranger forwards another account's post and asks us to share it.
-    assert _checked(_answer(outcome=outcome), _shared_by(CLUB, "randommeme")).outcome == "ignore"
+def test_any_account_can_reach_the_schools_story() -> None:
+    # An exec forwards their club's post, or an account we do not list shares its own.
+    for sender, owner in [("someexec", CLUB), ("newaccount", "newaccount")]:
+        assert _checked(_answer(), _shared_by(sender, owner)).outcome == "story_repost"
 
 
-@pytest.mark.parametrize(("sender", "owner"), [(None, CLUB), (CLUB, None), ("", "")])
-def test_a_post_without_a_proven_owner_is_ignored(sender, owner) -> None:
-    assert _checked(_answer(outcome="add_to_post"), _shared_by(sender, owner)).outcome == "ignore"
-
-
-def test_an_unknown_account_cannot_reach_the_schools_story(known_clubs) -> None:
-    thread = _shared_by("newaccount", "newaccount")
-    assert _checked(_answer(), thread).outcome == "ignore"
+def test_only_a_clubs_own_post_is_added_to_the_site() -> None:
+    thread = _shared_by("someexec", CLUB)
+    assert _checked(_answer(outcome="add_to_post"), thread).outcome == "ignore"
     # Adding to posts only queues it for the ingestion agent, which checks it is an event.
-    assert _checked(_answer(outcome="add_to_post"), thread).outcome == "add_to_post"
+    assert _checked(_answer(outcome="add_to_post")).outcome == "add_to_post"
+
+
+@pytest.mark.parametrize("outcome", ["story_repost", "add_to_post"])
+@pytest.mark.parametrize(("sender", "owner"), [(None, CLUB), (CLUB, None), ("", "")])
+def test_a_post_without_a_known_sender_and_owner_is_ignored(outcome, sender, owner) -> None:
+    assert _checked(_answer(outcome=outcome), _shared_by(sender, owner)).outcome == "ignore"
 
 
 def test_handles_match_regardless_of_case_or_at_sign() -> None:
-    assert _checked(_answer(), _shared_by("@UBCClub", "ubcclub")).outcome == "story_repost"
+    thread = _shared_by("@UBCClub", "ubcclub")
+    assert _checked(_answer(outcome="add_to_post"), thread).outcome == "add_to_post"
 
 
 @pytest.mark.parametrize(
@@ -134,20 +123,6 @@ def test_an_unsafe_reply_means_no_answer_at_all(reply) -> None:
 )
 def test_a_safe_reply_is_one_typeable_line(reply, typed) -> None:
     assert module.safe_reply(reply) == typed
-
-
-def test_the_model_learns_which_shared_posts_are_from_a_club_here(monkeypatch) -> None:
-    seen = {}
-
-    def run(prompt, *, workdir, **_kwargs):
-        seen["thread"] = json.loads((module.Path(workdir) / "thread.json").read_text())
-        return _answer()
-
-    monkeypatch.setattr(module, "run_agent", run)
-    stranger = _shared_by("newaccount", "newaccount")
-    module.decide(THREAD + stranger, account="wat2do.ubc", school="ubc", school_name="UBC")
-    flags = [item.get("shared_owner_is_club_here") for item in seen["thread"]]
-    assert flags == [True, None, False, None]
 
 
 def test_nothing_new_from_the_club_never_reaches_the_model(monkeypatch) -> None:
