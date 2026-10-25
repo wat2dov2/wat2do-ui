@@ -160,7 +160,7 @@ NOT_RESPONDING = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hie
 </hierarchy>UI hierchary dumped to: /dev/tty"""
 
 
-def test_waiting_answers_the_not_responding_dialog_with_wait() -> None:
+def test_waiting_closes_a_frozen_instagram() -> None:
     commands = []
     tap = (0, "")
     node = _device([(0, NOT_RESPONDING), tap, (0, SCREEN)], commands).wait_for(
@@ -168,7 +168,15 @@ def test_waiting_answers_the_not_responding_dialog_with_wait() -> None:
     )
     assert node.text == "Your story"
     x, y = int(commands[1][-2]), int(commands[1][-1])
-    assert 90 <= x <= 990 and 1560 <= y <= 1660
+    assert 90 <= x <= 990 and 1420 <= y <= 1520
+
+
+def test_waiting_waits_for_a_frozen_android_process() -> None:
+    commands = []
+    tap = (0, "")
+    dialog = NOT_RESPONDING.replace("Instagram isn't", "System UI isn't")
+    _device([(0, dialog), tap, (0, SCREEN)], commands).wait_for(re.compile("^Your story$"))
+    assert 1560 <= int(commands[1][-1]) <= 1660
 
 
 def test_free_space_is_read_from_the_data_partition() -> None:

@@ -83,7 +83,9 @@ _NOT_NOW = re.compile(r"^Not now$")
 _LOW_STORAGE = labels("Low device storage")
 # Android's own dialog when the app freezes for a few seconds on a busy emulator.
 _NOT_RESPONDING = re.compile(r"^.+ isn't responding$")
+_INSTAGRAM_NOT_RESPONDING = re.compile(r"^Instagram isn't responding$")
 _WAIT = labels("Wait")
+_CLOSE_APP = labels("Close app")
 _CLOSE = re.compile(r"^Close$")
 # Rows in the account switcher read "wat2do.school, 3 follows and 2 more".
 _SWITCHER_ROW = re.compile(r"^wat2do\.[a-z0-9._]+(?:, .*)?$")
@@ -221,7 +223,9 @@ class EmulatorDevice:
 
         One-time announcements ("Introducing instants" and the like), the low storage
         warning and Android's not-responding dialog cover the app until answered;
-        declining, closing or waiting is always safe. Login info is saved when offered
+        declining, closing or waiting is always safe. A frozen Instagram rarely comes
+        back, so it is closed and the next step reopens it; Android's own processes
+        are waited for. Login info is saved when offered
         after an account switch, so a later logout can come back without a password.
         """
         if self.find(_SAVE_LOGIN, nodes) is not None:
@@ -229,6 +233,8 @@ class EmulatorDevice:
         prompt = self.find(_NOT_NOW, nodes)
         if prompt is None and self.find(_LOW_STORAGE, nodes) is not None:
             prompt = self.find(_CLOSE, nodes)
+        if prompt is None and self.find(_INSTAGRAM_NOT_RESPONDING, nodes) is not None:
+            prompt = self.find(_CLOSE_APP, nodes)
         if prompt is None and self.find(_NOT_RESPONDING, nodes) is not None:
             prompt = self.find(_WAIT, nodes)
         return prompt
