@@ -66,5 +66,6 @@
   "min_free_data_megabytes": 300,
   "reclaim_below_data_megabytes": 1000,
   "reclaim_android_users": [10, 11, 12],
-  "reclaim_packages": ["com.google.android.gms"]
+  "reclaim_packages": ["com.google.android.gms"],
+  "reclaim_interval_hours": 24
 }
