@@ -213,16 +213,56 @@ def test_reclaiming_clears_only_the_listed_apps_on_the_listed_users() -> None:
     assert all(module.CONTROL.instagram_package not in command for command in commands)
 
 
-HOME = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
-<node text="" content-desc="Home" bounds="[0,2200][216,2340]" />
+def _inbox(account):
+    return [module.Node(account, "", (293, 167, 787, 236), "igds_action_bar_title")]
+
+
+def test_the_account_already_open_is_confirmed_from_the_inbox_title(monkeypatch) -> None:
+    device = _device([], [])
+    opened, taps = [], []
+    monkeypatch.setattr(device, "open_instagram", lambda user, url=None: opened.append(url))
+    monkeypatch.setattr(device, "screen", lambda: _inbox("wat2do.ubc"))
+    monkeypatch.setattr(device, "tap", lambda node, hold_ms=0: taps.append(node))
+    device.use_account(11, "wat2do.ubc")
+    assert opened == [module.INBOX_URL] and taps == []
+
+
+def test_switching_accounts_is_confirmed_from_the_inbox_title(monkeypatch) -> None:
+    device = _device([], [])
+    profile = module.Node("", "Profile", (933, 2172, 1012, 2251), "profile_tab")
+    row = module.Node("", "wat2do.ubc, 2 follows", (42, 1130, 1038, 1303))
+    name = module.Node("wat2do.ubc", "", (221, 1300, 534, 1355))
+    screens = iter([_inbox("wat2do.sfu") + [profile]] * 2 + [[row, name]] * 2)
+    after = _inbox("wat2do.ubc")
+    taps = []
+    monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
+    monkeypatch.setattr(device, "screen", lambda: next(screens, after))
+    monkeypatch.setattr(device, "tap", lambda node, hold_ms=0: taps.append((node, hold_ms)))
+    device.use_account(11, "wat2do.ubc")
+    assert taps == [(profile, 1200), (name, 0)]
+
+
+def test_a_switch_that_does_not_land_on_the_account_fails(monkeypatch) -> None:
+    device = _device([], [])
+    profile = module.Node("", "Profile", (933, 2172, 1012, 2251), "profile_tab")
+    name = module.Node("wat2do.ubc", "", (221, 1300, 534, 1355))
+    row = module.Node("", "wat2do.ubc, 2 follows", (42, 1130, 1038, 1303))
+    screens = iter([_inbox("wat2do.sfu") + [profile]] * 2 + [[row, name]] * 2)
+    monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
+    monkeypatch.setattr(device, "screen", lambda: next(screens, _inbox("wat2do.sfu")))
+    monkeypatch.setattr(device, "tap", lambda node, hold_ms=0: None)
+    with pytest.raises(module.EmulatorError, match="did not switch"):
+        device.use_account(11, "wat2do.ubc")
+
+
+SAVE_LOGIN = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
+<node text="Save your login info?" content-desc="" bounds="[90,1300][990,1380]" />
+<node text="Save" content-desc="" bounds="[90,1420][990,1520]" />
+<node text="Not now" content-desc="" bounds="[90,1560][990,1660]" />
 </hierarchy>UI hierchary dumped to: /dev/tty"""
 
 
-def test_going_home_answers_a_not_responding_dialog_instead_of_pressing_back() -> None:
+def test_waiting_saves_login_info_when_offered() -> None:
     commands = []
-    dialog = NOT_RESPONDING.replace("Instagram isn't", "System UI isn't")
-    _device([(0, dialog), (0, ""), (0, HOME), (0, "")], commands)._go_home()
-    keys = [command for command in commands if "keyevent" in command]
-    assert keys == []
-    wait_tap = commands[1]
-    assert 1560 <= int(wait_tap[-1]) <= 1660
+    _device([(0, SAVE_LOGIN), (0, ""), (0, SCREEN)], commands).wait_for(re.compile("^Your story$"))
+    assert 1420 <= int(commands[1][-1]) <= 1520
