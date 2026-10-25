@@ -950,24 +950,16 @@ class IngestionControl(_ControlModel):
         return self
 
 
-# One line, short, and nothing that links or tags anyone.
-_DmReply = Annotated[str, Field(min_length=1, max_length=40, pattern=r"^[^\n@/]+$")]
-
-
 class InstagramDmsControl(_ControlModel):
     # Dry run reads, decides and logs each DM without replying or queueing anything.
     dry_run: bool
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     agent_timeout_seconds: int = Field(gt=0, le=600)
     thread_item_limit: int = Field(ge=1, le=50)
-    # Every reply comes from these vetted lists, never from the model, so a DM written to
-    # trick the model can never put words in the school account's mouth.
-    replies: list[_DmReply] = Field(min_length=1, max_length=20)
-    done_replies: list[_DmReply] = Field(min_length=1, max_length=20)
-
-    # After a story repost, "Done!" follows the first reply after this human-like gap.
-    done_reply_delay_min_seconds: int = Field(ge=0, le=600)
-    done_reply_delay_max_seconds: int = Field(ge=0, le=600)
+    # The model writes each reply; code refuses any longer than this.
+    reply_max_characters: int = Field(ge=20, le=1000)
+    # The one email address a reply may give, for anything the model cannot answer.
+    contact_email: str = Field(pattern=r"^[a-z0-9._-]+@wat2do\.io$")
 
     # The inbox sweep: a LaunchAgent checks this often, and a sweep runs once a random
     # gap in this window has passed since the last one, only between these local hours.
@@ -984,10 +976,6 @@ class InstagramDmsControl(_ControlModel):
 
     @model_validator(mode="after")
     def validate_windows(self) -> "InstagramDmsControl":
-        if self.done_reply_delay_min_seconds > self.done_reply_delay_max_seconds:
-            raise ValueError(
-                "done_reply_delay_min_seconds cannot exceed done_reply_delay_max_seconds"
-            )
         if self.sweep_gap_min_minutes > self.sweep_gap_max_minutes:
             raise ValueError("sweep_gap_min_minutes cannot exceed sweep_gap_max_minutes")
         if self.sweep_start_hour >= self.sweep_end_hour:

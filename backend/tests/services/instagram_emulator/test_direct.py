@@ -67,7 +67,6 @@ def emulator(monkeypatch):
     _Reader.fail_read = _Reader.fail_send = _Reader.stale = False
     _Device.free = 5000
     monkeypatch.setattr(module, "_ThreadReader", _Reader)
-    monkeypatch.setattr(module.time, "sleep", lambda _seconds: None)
 
 
 @pytest.fixture
@@ -108,7 +107,7 @@ def _handle(monkeypatch, decision, *, dry_run, request=False):
 def test_dry_run_decides_without_replying_reposting_or_queueing(
     monkeypatch, queued, stories
 ) -> None:
-    result = _handle(monkeypatch, DmDecision("story_repost", POST, "Sure!", "Done!"), dry_run=True)
+    result = _handle(monkeypatch, DmDecision("story_repost", POST, "just shared it!"), dry_run=True)
     assert result["status"] == "decided"
     assert _Reader.sent == [] and stories == [] and queued == []
 
@@ -120,13 +119,23 @@ def test_add_to_post_queues_the_post_then_replies_once(monkeypatch, queued) -> N
     assert _Reader.sent == ["Sure!"]
 
 
-def test_a_story_request_is_reposted_before_both_replies(monkeypatch, queued, stories) -> None:
-    decision = DmDecision("story_repost", POST, "Sure!", "Done!")
+def test_a_story_request_is_reposted_before_its_reply(monkeypatch, queued, stories) -> None:
+    decision = DmDecision("story_repost", POST, "just shared it!")
     result = _handle(monkeypatch, decision, dry_run=False)
     assert result["status"] == "reposted"
     assert stories == [("ubc", "wat2do.ubc", POST)]
-    assert _Reader.sent == ["Sure!", "Done!"]
+    assert _Reader.sent == ["just shared it!"]
     assert queued == []
+
+
+def test_a_plain_reply_is_sent_without_queueing_or_reposting(
+    monkeypatch, queued, stories, accepted
+) -> None:
+    decision = DmDecision("reply", reply="send us the post here and we'll take a look")
+    result = _handle(monkeypatch, decision, dry_run=False, request=True)
+    assert result["status"] == "replied"
+    assert _Reader.sent == ["send us the post here and we'll take a look"]
+    assert stories == [] and queued == [] and len(accepted) == 1
 
 
 def test_a_failed_story_repost_pauses_without_replying(monkeypatch) -> None:
@@ -135,7 +144,7 @@ def test_a_failed_story_repost_pauses_without_replying(monkeypatch) -> None:
 
     monkeypatch.setattr(module, "share_to_story", fail)
     with pytest.raises(BrowserEngagementUncertain, match="story repost"):
-        _handle(monkeypatch, DmDecision("story_repost", POST, "Sure!", "Done!"), dry_run=False)
+        _handle(monkeypatch, DmDecision("story_repost", POST, "just shared it!"), dry_run=False)
     assert _Reader.sent == []
 
 
@@ -284,7 +293,9 @@ def test_a_thread_whose_newest_message_is_over_a_week_old_is_left_alone(
     monkeypatch, queued, stories
 ) -> None:
     _Reader.stale = True
-    result = _handle(monkeypatch, DmDecision("story_repost", POST, "Sure!", "Done!"), dry_run=False)
+    result = _handle(
+        monkeypatch, DmDecision("story_repost", POST, "just shared it!"), dry_run=False
+    )
     assert (result["status"], result["outcome"]) == ("decided", "ignore")
     assert _Reader.sent == [] and stories == [] and queued == []
 
@@ -308,7 +319,7 @@ def test_a_story_request_waits_while_the_emulator_is_low_on_storage(
     monkeypatch, queued, stories, accepted
 ) -> None:
     _Device.free = 100
-    decision = DmDecision("story_repost", POST, "Sure!", "Done!")
+    decision = DmDecision("story_repost", POST, "just shared it!")
     with pytest.raises(BrowserSessionError, match="low on storage") as raised:
         _handle(monkeypatch, decision, dry_run=False, request=True)
     assert not isinstance(raised.value, BrowserEngagementUncertain)

@@ -502,16 +502,18 @@ The workflow routes these to the Mac runner, and `jobs/process_notification.py` 
 The worker answers as the school in the Instagram app on the Mac's Android emulator, never in Brave, holding the emulator's lock for the whole job:
 
 1. It switches to the Android user that holds the school's account (`android_user_by_school` in `controlbox/instagram_emulator.json`), switches the app to that account, opens `instagram://direct-thread?thread_id=<thread>`, and reads the latest `thread_item_limit` messages from the screen: who sent each one, its text, and the owner and link of any shared post (copied with the post's own Copy link).
-2. Claude Haiku follows `backend/services/instagram_dms/prompt.md` and picks one outcome: `story_repost`, `add_to_post` or `ignore`.
-3. Code checks the answer against the thread, as described below, and picks the reply.
-4. `add_to_post` queues the shared post in `public.ingestion_items`, where the normal processor deduplicates it, and sends one short reply.
-5. `story_repost` opens the shared post, taps Share, Add to story and Your story, waits for the editor to close, and only then types the reply and, after a random `done_reply_delay` gap, the done reply.
-6. `ignore` does nothing.
+2. Claude follows `backend/services/instagram_dms/prompt.md`, picks one outcome (`story_repost`, `add_to_post`, `reply` or `ignore`) and writes the reply.
+3. Code checks the answer against the thread and the reply against `safe_reply`, as described below.
+4. `add_to_post` queues the shared post in `public.ingestion_items`, where the normal processor deduplicates it, and sends the reply.
+5. `story_repost` opens the shared post, taps Share, Add to story and Your story, waits for the editor to close, and only then types the reply.
+6. `reply` only sends the reply.
+7. `ignore` does nothing.
 
 `controlbox/instagram_dms.json` starts with `dry_run: true`, which records each decision in the worker's job results without replying or queueing.
 A dry-run job only reads, so rerunning its notification reads a failed thread again; a live DM job is never retried.
-Haiku only classifies the request; it never writes the reply.
-Code then requires the shared post's owner to be the sender, requires a story repost's sender to be a known club at the school, and picks the reply from `replies` and `done_replies` in the controlbox.
+The model sees which shared posts come from a club we list, so it does not promise a repost code would refuse.
+Code then requires the shared post's owner to be the sender and a story repost's sender to be a known club at the school.
+A reply is folded to one line of plain ASCII the emulator can type, and one with a tag, a link outside wat2do.io, an email address other than `contact_email`, a long number or more than `reply_max_characters` is not sent at all.
 A thread that cannot be read fails with the screen the app never showed, for example `Instagram never showed ^row_thread_composer_edittext$`.
 Review those results before setting it to `false`.
 Each typed reply is confirmed by seeing it appear in the thread.

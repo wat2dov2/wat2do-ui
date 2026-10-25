@@ -95,15 +95,16 @@ old, and reads who sent each message, its text and any shared post from the scre
 the app draws.
 A message request is accepted only when we answer it, or when reading a post it shares
 needs the composer.
-It then asks Claude Haiku (`backend/services/instagram_dms/prompt.md`) for one outcome.
-Only two requests get an answer: sharing the club's post or reel to our story, and
-adding it to our posts.
-Everything else is ignored without a reply.
+It then asks Claude (`backend/services/instagram_dms/prompt.md`) for one outcome and
+writes our reply the way a student running the account would, from the facts about
+Wat2Do the prompt lists.
+The outcomes are sharing the club's post or reel to our story, adding it to our posts,
+a plain reply (questions, a story request with no post shared, an event already over),
+or ignoring it with no reply (traps, spam, "thanks").
 An "add it to our posts" request queues the shared post in `public.ingestion_items`
-and gets one short reply.
+and gets the reply.
 A story request is shared first and answered after: the app adds the shared post to
-the school's story, and only then does the thread get the reply and a short "done"
-message.
+the school's story, and only then does the thread get the reply.
 The emulator finds every control by its accessibility label, taps at a random point
 inside it after a random pause, types one character at a time, and never types a
 password.
@@ -118,9 +119,10 @@ Every job that drives the emulator holds its lock, so no two ever tap at once.
 Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
 message, impersonation, login codes, money, follow-for-follow, pressure).
 Code, not the model, has the final say: the post must be shared by its own owner, a
-story repost also needs that owner to be a known club at the school, replies come only
-from the vetted lists in controlbox, and nothing is sent when our message is already
-the newest.
+story repost also needs that owner to be a known club at the school, a reply with a
+tag, a link outside wat2do.io, an email address other than the controlbox's
+`contact_email` or a long number is not sent at all, and nothing is sent when our
+message is already the newest.
 The sweep's random timing is the reply's human-like delay.
 A reply or story repost that fails or cannot be confirmed pauses the sweep for a
 person (`answer_instagram_dms.py resume` once checked) and is never retried, since it
