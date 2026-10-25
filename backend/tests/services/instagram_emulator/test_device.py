@@ -197,7 +197,21 @@ def test_reclaiming_leaves_a_device_with_room_alone() -> None:
     assert len(commands) == 1
 
 
-def test_reclaiming_clears_only_the_listed_apps_on_the_listed_users() -> None:
+@pytest.fixture(autouse=True)
+def reclaimed_path(monkeypatch, tmp_path):
+    path = tmp_path / "reclaimed"
+    monkeypatch.setattr(module, "_RECLAIMED_PATH", path)
+    return path
+
+
+def test_reclaiming_waits_a_day_after_the_last_one(reclaimed_path) -> None:
+    reclaimed_path.touch()
+    commands = []
+    assert _device([(0, _df(200_000))], commands).reclaim_data() == 195
+    assert len(commands) == 1
+
+
+def test_reclaiming_clears_only_the_listed_apps_on_the_listed_users(reclaimed_path) -> None:
     clears = [(0, "Success\n")] * (
         len(module.CONTROL.reclaim_android_users) * len(module.CONTROL.reclaim_packages)
     )
@@ -211,6 +225,7 @@ def test_reclaiming_clears_only_the_listed_apps_on_the_listed_users() -> None:
         for package in module.CONTROL.reclaim_packages
     ]
     assert all(module.CONTROL.instagram_package not in command for command in commands)
+    assert reclaimed_path.exists()
 
 
 def _inbox(account):

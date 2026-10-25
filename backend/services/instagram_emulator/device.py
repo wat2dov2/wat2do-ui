@@ -31,6 +31,9 @@ _LAUNCHER_ACTIVITY = "com.instagram.mainactivity.LauncherActivity"
 _SCREEN_READ_ATTEMPTS = 5
 # Every job that drives the emulator holds this lock, so two never tap at once.
 _LOCK_PATH = Path.home() / ".local/state/wat2do/instagram-emulator.lock"
+# Touched after each reclaim; Google Play services rebuilds its data, so clearing it
+# on every visit only keeps the disk busy.
+_RECLAIMED_PATH = Path.home() / ".local/state/wat2do/instagram-emulator-reclaimed"
 _held = threading.local()
 _SELECT_ALL = ("113", "29")  # KEYCODE_CTRL_LEFT + KEYCODE_A
 
@@ -308,14 +311,16 @@ class EmulatorDevice:
         Only apps listed in the controlbox are cleared, on Android users without a
         Google account, so nothing is lost: Google Play services rebuilds what it needs.
         Instagram's own data is never cleared, since that would log its accounts out.
-        Returns the free space afterwards.
+        It runs at most once per ``reclaim_interval_hours``. Returns the free space.
         """
         free = self.free_data_megabytes()
-        if free >= CONTROL.reclaim_below_data_megabytes:
+        if free >= CONTROL.reclaim_below_data_megabytes or _reclaimed_recently():
             return free
         for user in CONTROL.reclaim_android_users:
             for package in CONTROL.reclaim_packages:
                 self.adb("shell", "pm", "clear", "--user", str(user), package)
+        _RECLAIMED_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _RECLAIMED_PATH.touch()
         return self.free_data_megabytes()
 
     def wake(self) -> None:
@@ -388,6 +393,14 @@ class EmulatorDevice:
                 CONTROL.instagram_package,
             ]
         self.adb("shell", "am", "start", "--user", str(user), *target)
+
+
+def _reclaimed_recently() -> bool:
+    try:
+        age = time.time() - _RECLAIMED_PATH.stat().st_mtime
+    except FileNotFoundError:
+        return False
+    return age < CONTROL.reclaim_interval_hours * 3600
 
 
 @contextmanager

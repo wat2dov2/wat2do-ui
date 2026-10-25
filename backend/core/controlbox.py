@@ -1014,6 +1014,7 @@ class InstagramEmulatorControl(_ControlModel):
     reclaim_below_data_megabytes: int = Field(ge=0, le=10_000)
     reclaim_android_users: tuple[Annotated[int, Field(ge=1)], ...]
     reclaim_packages: tuple[Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.]+$")], ...]
+    reclaim_interval_hours: float = Field(gt=0, le=168, allow_inf_nan=False)
 
     @model_validator(mode="after")
     def validate_timing(self) -> "InstagramEmulatorControl":
