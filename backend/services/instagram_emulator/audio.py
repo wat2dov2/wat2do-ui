@@ -27,6 +27,8 @@ _POST_OPTIONS = labels("More actions for this post")
 _EDIT = re.compile(r"^Edit$")
 _EDIT_INFO = re.compile(r"^Edit info$")
 _ADD_AUDIO = re.compile(r"^Add audio$")
+# A post that already has a song shows it in place of Add audio.
+_AUDIO_ROW = re.compile(r"^(?:Add audio|m2_audio_primary_text)$")
 _SEARCH = re.compile(r"^Search\.\.\.$")
 _CLEAR_SEARCH = re.compile(r"^Clear text$")
 # Suggestions show before a search; result filters replace them once it runs.
@@ -41,6 +43,7 @@ _MIN_ROW_HEIGHT = 45
 _KEEP_CLIP = re.compile(r"^action_bar_button_action$")
 _LIKE = re.compile(r"^Like$")
 _LIKED = re.compile(r"^Liked$")
+_LIKE_BUTTON = re.compile(r"^Liked?$")
 _REPOST = re.compile(r"^Repost$")
 # Shown once per account, the first time it reposts anything.
 _FIRST_REPOST_NOTE = re.compile(r"^You reposted ")
@@ -83,11 +86,17 @@ def finish_post(
         device.use_account(user, account_username)
         device.open_instagram(user, permalink)
         _like_and_repost(device)
+        # Liking may have scrolled a tall post; open it again so its menu is in view.
+        device.open_instagram(user, permalink)
         device.tap_when(_POST_OPTIONS)
         device.tap_when(_EDIT)
         device.wait_for(_EDIT_INFO)
-        _scroll_to(device, _ADD_AUDIO)
-        device.tap_when(_ADD_AUDIO)
+        audio = _scroll_to(device, _AUDIO_ROW)
+        if not audio.labelled(_ADD_AUDIO):
+            # An earlier try saved a song but failed before it was recorded.
+            _discard(device)
+            return AddedTrack("", audio.text)
+        device.tap(audio)
         try:
             added = _pick_track(device, queries, choose)
         except EmulatorError:
@@ -106,8 +115,10 @@ def _like_and_repost(device: EmulatorDevice) -> None:
     the check mark Instagram draws in the icon decides whether to tap.
     """
     device.wait_for(_POST_OPTIONS)
-    if device.find(_LIKED) is None:
-        device.tap_when(_LIKE)
+    # A tall first slide can push the buttons below the screen.
+    like = _scroll_to(device, _LIKE_BUTTON)
+    if like.labelled(_LIKE):
+        device.tap(like)
         device.wait_for(_LIKED)
     if device.marked(device.wait_for(_REPOST)):
         return
@@ -168,12 +179,12 @@ def _select(device: EmulatorDevice, track: Node) -> None:
     raise EmulatorError("Instagram did not open the track's clip")
 
 
-def _scroll_to(device: EmulatorDevice, pattern: re.Pattern[str]) -> None:
+def _scroll_to(device: EmulatorDevice, pattern: re.Pattern[str]) -> Node:
     for _ in range(4):
         node = device.find(pattern)
         # A control cut off at the screen's edge is scrolled fully into view first.
         if node is not None and node.bounds[3] - node.bounds[1] >= _MIN_ROW_HEIGHT:
-            return
+            return node
         device.scroll_down()
     raise EmulatorError(f"Instagram never showed {pattern.pattern}")
 

@@ -100,6 +100,7 @@ def test_tries_songs_until_one_matches_then_saves_the_post(screens) -> None:
         POST_PAGE,
         LIKED_PAGE,
         LIKED_PAGE,
+        LIKED_PAGE,
         MENU,
         EDIT_INFO,
         EDIT_INFO_AUDIO,
@@ -142,6 +143,7 @@ def test_no_matching_song_discards_the_edit(screens) -> None:
     device = screens(
         INBOX,
         INBOX,
+        LIKED_PAGE,
         LIKED_PAGE,
         MENU,
         EDIT_INFO_AUDIO,
@@ -188,3 +190,22 @@ def test_a_repost_that_never_shows_is_an_error(screens) -> None:
     with pytest.raises(EmulatorError, match="reposted"):
         module._like_and_repost(device)
     assert device.taps == ["Repost"]
+
+
+def test_a_post_that_already_has_a_song_is_left_as_it_is(screens) -> None:
+    with_song = [
+        *_screen("Edit info", "Done"),
+        Node("These Nights", "", (0, 0, 100, 100), "m2_audio_primary_text"),
+    ]
+    device = screens(INBOX, INBOX, LIKED_PAGE, LIKED_PAGE, MENU, with_song, LIKED_PAGE)
+    device.reposted = [True]
+    added = module.finish_post("uwaterloo", "wat2do.uwaterloo", POST, ["halo"], lambda *_: 0)
+    assert added == module.AddedTrack("", "These Nights")
+    assert "Done" not in device.taps and "Add audio" not in device.taps
+
+
+def test_buttons_below_a_tall_first_slide_are_scrolled_into_view(screens) -> None:
+    tall = _screen("More actions for this post")
+    device = screens(tall, POST_PAGE, LIKED_PAGE, LIKED_PAGE, reposted=(False, True))
+    module._like_and_repost(device)
+    assert device.taps == ["Like", "Repost"]
