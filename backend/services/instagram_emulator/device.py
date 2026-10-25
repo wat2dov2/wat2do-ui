@@ -337,10 +337,6 @@ class EmulatorDevice:
         self.wake()
         if self.adb("shell", "am", "get-current-user").strip() != str(user):
             raise EmulatorError("Emulator did not switch Android users")
-        # Every user left running keeps its apps in memory, and four of them swap the
-        # emulator until Instagram stops responding. The system user cannot be stopped.
-        for other in sorted(set(CONTROL.android_user_by_school.values()) - {0, user}):
-            self.adb("shell", "am", "stop-user", str(other))
 
     def use_account(self, user: int, account_username: str) -> None:
         """Switch the app to the account, confirmed by the DM inbox's title.
