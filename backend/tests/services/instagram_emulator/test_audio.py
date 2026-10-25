@@ -17,7 +17,7 @@ def _screen(*labels):
     ]
 
 
-HOME = _screen("wat2do.uwaterloo's story, 0 of 3", "Home", "Profile")
+INBOX = [Node("wat2do.uwaterloo", "", (0, 0, 100, 100), "igds_action_bar_title")]
 POST_PAGE = _screen("More actions for this post", "Like")
 MENU = _screen("Archive", "Edit", "Delete")
 EDIT_INFO = _screen("Edit info", "Done", "Tag people")
@@ -88,8 +88,8 @@ def screens(monkeypatch):
 
 def test_tries_songs_until_one_matches_then_saves_the_post(screens) -> None:
     device = screens(
-        HOME,
-        HOME,
+        INBOX,
+        INBOX,
         POST_PAGE,
         MENU,
         EDIT_INFO,
@@ -116,7 +116,6 @@ def test_tries_songs_until_one_matches_then_saves_the_post(screens) -> None:
     assert device.typed == ["Beyonce halo", "the weeknd after hours"]
     assert seen[1][1] == ["After Hours (Live) by The Weeknd,4:27", "After Hours by The Weeknd,6:01"]
     assert device.taps == [
-        "Home",
         "More actions for this post",
         "Edit",
         "Add audio",
@@ -130,8 +129,8 @@ def test_tries_songs_until_one_matches_then_saves_the_post(screens) -> None:
 
 def test_no_matching_song_discards_the_edit(screens) -> None:
     device = screens(
-        HOME,
-        HOME,
+        INBOX,
+        INBOX,
         POST_PAGE,
         MENU,
         EDIT_INFO_AUDIO,
@@ -148,7 +147,7 @@ def test_no_matching_song_discards_the_edit(screens) -> None:
 
 
 def test_a_school_without_an_emulator_account_is_refused(screens) -> None:
-    device = screens(HOME)
+    device = screens(INBOX)
     with pytest.raises(EmulatorError, match="not logged in"):
         module.add_audio("not-a-school", "wat2do.x", POST, ["halo"], lambda *_: 0)
     assert device.taps == []
@@ -158,7 +157,7 @@ def test_a_school_without_an_emulator_account_is_refused(screens) -> None:
     "url", ["https://www.instagram.com/reel/ABC/", "https://evil.example/p/ABC/", POST + "x"]
 )
 def test_only_exact_post_urls_get_audio(screens, url) -> None:
-    device = screens(HOME)
+    device = screens(INBOX)
     with pytest.raises(EmulatorError, match="exact Instagram post"):
         module.add_audio("uwaterloo", "wat2do.uwaterloo", url, ["halo"], lambda *_: 0)
     assert device.taps == []

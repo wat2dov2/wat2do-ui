@@ -16,10 +16,8 @@ from core.controlbox import controlbox
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError, Node
 
 CONTROL = controlbox.instagram_dms
-INBOX_URL = "instagram://direct-inbox"
 _REQUESTS_TAB = re.compile(r"^Requests(?:, .*)?$")
 _TABS = re.compile(r"^(?:All|Primary|General|Requests)(?:, .*)?$")
-_MESSAGES_TAB = re.compile(r"^direct_tab$")
 _COMPOSER = re.compile(r"^row_thread_composer_edittext$")
 _REQUEST_PROMPT = re.compile(r"^thread_disabled_title$")
 _ACCEPT = re.compile(r"^Accept$")
@@ -99,14 +97,8 @@ def accept_request(device: EmulatorDevice) -> None:
 
 
 def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> None:
-    device.open_instagram(user, INBOX_URL)
-    try:
-        device.wait_for(_TABS)
-    except EmulatorError:
-        # Right after an account switch the link can land before the app is ready;
-        # the Messages tab always leads to the inbox.
-        device.tap_when(_MESSAGES_TAB)
-        device.wait_for(_TABS)
+    device.open_inbox(user)
+    device.wait_for(_TABS)
     device.pause()
     if requests:
         device.tap_when(_REQUESTS_TAB)

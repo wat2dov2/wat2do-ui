@@ -69,7 +69,9 @@ def labels(*names: str) -> re.Pattern[str]:
     return re.compile("^(?:" + "|".join(re.escape(name) for name in names) + r")(?:\b|$)")
 
 
-_HOME_TAB = re.compile(r"^Home$")
+INBOX_URL = "instagram://direct-inbox"
+_INBOX_TITLE = re.compile(r"^igds_action_bar_title$")
+_MESSAGES_TAB = re.compile(r"^direct_tab$")
 _PROFILE_TAB = re.compile(r"^Profile$")
 _SAVE_LOGIN = labels("Save your login info")
 _SAVE = re.compile(r"^Save$")
@@ -215,8 +217,11 @@ class EmulatorDevice:
 
         One-time announcements ("Introducing instants" and the like), the low storage
         warning and Android's not-responding dialog cover the app until answered;
-        declining, closing or waiting is always safe.
+        declining, closing or waiting is always safe. Login info is saved when offered
+        after an account switch, so a later logout can come back without a password.
         """
+        if self.find(_SAVE_LOGIN, nodes) is not None:
+            return self.find(_SAVE, nodes)
         prompt = self.find(_NOT_NOW, nodes)
         if prompt is None and self.find(_LOW_STORAGE, nodes) is not None:
             prompt = self.find(_CLOSE, nodes)
@@ -332,18 +337,31 @@ class EmulatorDevice:
             self.adb("shell", "am", "stop-user", str(other))
 
     def use_account(self, user: int, account_username: str) -> None:
-        """Switch the app to the account, confirmed by its own story bubble on the home feed."""
-        own_story = labels(f"{account_username}'s story")
-        self.open_instagram(user)
-        self._go_home()
-        if self.find(own_story) is not None:
+        """Switch the app to the account, confirmed by the DM inbox's title.
+
+        The inbox is read rather than the home feed: an autoplaying video there keeps
+        the screen from ever going idle, and the screen reader gives up on it.
+        """
+        if self.open_inbox(user) == account_username:
             return
         self.tap(self.wait_for(_PROFILE_TAB), hold_ms=1200)
         self.tap(self._account_in_switcher(account_username))
-        switched = self.wait_for(labels(f"{account_username}'s story", "Save your login info"))
-        if switched.labelled(_SAVE_LOGIN):
-            self.tap_when(_SAVE)
-            self.wait_for(own_story)
+        # The switch lands on the home feed; give it time before leaving for the inbox.
+        self._sleep(CONTROL.screen_wait_seconds)
+        if self.open_inbox(user) != account_username:
+            raise EmulatorError("Instagram did not switch to the account")
+
+    def open_inbox(self, user: int) -> str:
+        """Open the DM inbox and return the username it belongs to."""
+        self.open_instagram(user, INBOX_URL)
+        try:
+            title = self.wait_for(_INBOX_TITLE)
+        except EmulatorError:
+            # Right after an account switch the link can land before the app is ready;
+            # the Messages tab always leads to the inbox.
+            self.tap_when(_MESSAGES_TAB)
+            title = self.wait_for(_INBOX_TITLE)
+        return title.text.strip()
 
     def _account_in_switcher(self, account_username: str) -> Node:
         """The account's row in the switcher, scrolled into view: a full Android user's
@@ -356,20 +374,6 @@ class EmulatorDevice:
                 return node
             self.scroll_down()
         return self.wait_for(account)
-
-    def _go_home(self) -> None:
-        for _ in range(6):
-            nodes = self.screen()
-            home = self.find(_HOME_TAB, nodes)
-            if home is not None:
-                self.tap(home)
-                return
-            prompt = self._prompt(nodes)
-            if prompt is not None:
-                self.tap(prompt)
-            else:
-                self.back()
-        raise EmulatorError("Instagram's home feed could not be reached")
 
     def open_instagram(self, user: int, url: str | None = None) -> None:
         if url is None:
