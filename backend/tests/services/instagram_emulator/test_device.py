@@ -257,12 +257,40 @@ def test_switching_accounts_is_confirmed_from_the_inbox_title(monkeypatch) -> No
     assert taps == [(profile, 1200), (name, 0)]
 
 
+def test_a_missed_switch_is_tried_again(monkeypatch) -> None:
+    device = _device([], [])
+    profile = module.Node("", "Profile", (933, 2172, 1012, 2251), "profile_tab")
+    row = module.Node("", "wat2do.ubc, 2 follows", (42, 1130, 1038, 1303))
+    name = module.Node("wat2do.ubc", "", (221, 1300, 534, 1355))
+    sfu = _inbox("wat2do.sfu") + [profile]
+    screens = iter([sfu, sfu, [row, name], [row, name]] * 2)
+    taps = []
+    monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
+    monkeypatch.setattr(device, "screen", lambda: next(screens, _inbox("wat2do.ubc")))
+    monkeypatch.setattr(device, "tap", lambda node, hold_ms=0: taps.append(node))
+    device.use_account(11, "wat2do.ubc")
+    assert taps == [profile, name, profile, name]
+
+
+def test_an_inbox_covered_by_a_sheet_is_reopened_after_back(monkeypatch) -> None:
+    device = _device([], [])
+    sheet = [module.Node("", "wat2do.ubc, 2 follows", (42, 1130, 1038, 1303))]
+    backs = []
+    clock = iter(range(0, 10_000, 5))
+    monkeypatch.setattr(device, "_monotonic", lambda: next(clock))
+    monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
+    monkeypatch.setattr(device, "back", lambda: backs.append(1))
+    monkeypatch.setattr(device, "screen", lambda: _inbox("wat2do.ubc") if backs else sheet)
+    assert device.open_inbox(11) == "wat2do.ubc"
+    assert backs == [1]
+
+
 def test_a_switch_that_does_not_land_on_the_account_fails(monkeypatch) -> None:
     device = _device([], [])
     profile = module.Node("", "Profile", (933, 2172, 1012, 2251), "profile_tab")
     name = module.Node("wat2do.ubc", "", (221, 1300, 534, 1355))
     row = module.Node("", "wat2do.ubc, 2 follows", (42, 1130, 1038, 1303))
-    screens = iter([_inbox("wat2do.sfu") + [profile]] * 2 + [[row, name]] * 2)
+    screens = iter(([_inbox("wat2do.sfu") + [profile]] * 2 + [[row, name]] * 2) * 2)
     monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
     monkeypatch.setattr(device, "screen", lambda: next(screens, _inbox("wat2do.sfu")))
     monkeypatch.setattr(device, "tap", lambda node, hold_ms=0: None)
