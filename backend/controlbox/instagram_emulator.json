@@ -63,7 +63,7 @@
   "keystroke_delay_max_seconds": 0.35,
   "story_upload_wait_seconds": 60,
   "audio_save_wait_seconds": 60,
-  "min_free_data_megabytes": 300,
+  "min_free_data_megabytes": 600,
   "reclaim_below_data_megabytes": 1000,
   "reclaim_android_users": [10, 11, 12],
   "reclaim_packages": ["com.google.android.gms"],
