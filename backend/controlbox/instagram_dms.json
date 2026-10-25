@@ -1,6 +1,6 @@
 {
   "dry_run": false,
-  "model": "claude-sonnet-5-5",
+  "model": "claude-haiku-5-5",
   "agent_timeout_seconds": 120,
   "thread_item_limit": 12,
   "reply_max_characters": 300,
