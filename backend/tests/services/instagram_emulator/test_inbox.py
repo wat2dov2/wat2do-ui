@@ -96,3 +96,52 @@ def test_accepting_a_request_moves_it_to_primary_when_asked(asks_inbox) -> None:
     inbox.accept_request(device)
     expected = ["^Accept$", "igds_alert_dialog_primary_button"] if asks_inbox else ["^Accept$"]
     assert device.tapped == expected
+
+
+class _InboxDevice:
+    """One inbox screen, with or without a Requests link."""
+
+    def __init__(self, screen):
+        self.screen_nodes = screen
+        self.tapped = []
+
+    def open_inbox(self, user):
+        return "wat2do.queensu"
+
+    def screen(self):
+        return self.screen_nodes
+
+    def find(self, pattern, nodes=None):
+        return next((n for n in self.screen_nodes if n.labelled(pattern)), None)
+
+    def tap(self, node):
+        self.tapped.append(node.description)
+
+    def pause(self):
+        pass
+
+    def scroll_down(self):
+        pass
+
+
+# wat2do.queensu's short inbox on 2026-10-25: one thread, no tabs and no Requests link.
+SHORT_INBOX = _row(
+    880,
+    "ESAQ, Thanks a lot for featuring our event ·, 3d",
+    "ESAQ",
+    "Thanks a lot for featuring our event ·",
+    "3d",
+)
+
+
+def test_a_short_inbox_without_tabs_is_read_and_has_no_requests() -> None:
+    device = _InboxDevice(SHORT_INBOX)
+    assert [row.name for row in inbox.read_inbox(device, 0, requests=False)] == ["ESAQ"]
+    assert inbox.read_inbox(device, 0, requests=True) == []
+    assert device.tapped == []
+
+
+def test_requests_are_opened_from_their_link_when_there_is_one() -> None:
+    device = _InboxDevice(INBOX)
+    inbox.read_inbox(device, 0, requests=True)
+    assert device.tapped == ["Requests, 2 unread messages"]

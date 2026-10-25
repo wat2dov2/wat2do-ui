@@ -50,7 +50,8 @@ def read_inbox(device: EmulatorDevice, user: int, *, requests: bool) -> list[Inb
 
     Scrolls until the oldest row is past ``max_thread_age_days`` or the list ends.
     """
-    _open_list(device, user, requests=requests)
+    if not _open_list(device, user, requests=requests):
+        return []
     found: dict[str, InboxRow] = {}
     for scroll in range(CONTROL.inbox_scrolls + 1):
         rows = _rows(device.screen(), request=requests)
@@ -71,7 +72,8 @@ def open_row(device: EmulatorDevice, user: int, name: str) -> None:
     A request moves to the main inbox once accepted, so both lists are searched.
     """
     for requests in (False, True):
-        _open_list(device, user, requests=requests)
+        if not _open_list(device, user, requests=requests):
+            continue
         for _scroll in range(CONTROL.inbox_scrolls + 1):
             row = next((node for node in _row_nodes(device.screen()) if _name(node) == name), None)
             if row is not None:
@@ -96,13 +98,21 @@ def accept_request(device: EmulatorDevice) -> None:
     device.pause()
 
 
-def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> None:
+def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> bool:
+    """Open the main inbox, or its message requests; False when there are no requests.
+
+    A short inbox shows neither the All/Primary tabs nor a Requests link.
+    """
     device.open_inbox(user)
-    device.wait_for(_TABS)
     device.pause()
-    if requests:
-        device.tap_when(_REQUESTS_TAB)
-        device.pause()
+    if not requests:
+        return True
+    link = device.find(_REQUESTS_TAB)
+    if link is None:
+        return False
+    device.tap(link)
+    device.pause()
+    return True
 
 
 def _rows(nodes: list[Node], *, request: bool) -> list[InboxRow]:
