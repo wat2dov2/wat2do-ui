@@ -79,7 +79,7 @@ Apply exactly the change the source supports, in one transaction per logical cha
 
 - **New event:** insert one `events` row and one `event_dates` row per date.
 - **Reminder, repost or extra details for a listed event:** update that row instead of inserting a duplicate.
-  Fill fields that are empty or vaguer, such as a TBA location, a missing poster, a price or food.
+  Fill fields that are empty or vaguer, such as a TBA location, a price or food, and give it this source's image (see `source_image_url`).
   Keep its existing `source_url`, `description` and dates unless the source changes them.
 - **One date moved** (for example from Wednesday to Thursday): update that single `event_dates` row's start and end.
 - **One date cancelled:** delete only that `event_dates` row.
@@ -144,7 +144,8 @@ Columns:
   Prefer the image that best shows this event, such as its poster.
   When none is a poster (photos, memes, recaps), use the image that matches this event, such as its slide in a carousel of several events, or else the first image.
   The system stores that image (and its video, for a video slide) and replaces the reference.
-  On a listed event, set it only when this source has a clearly better poster.
+  On a listed event this source is about, set it to this source's image of the event too, since the newest post usually shows its current poster or details.
+  Keep the listed image only when none of this source's images is clearly of this event (a recap photo, a meme, an unrelated slide, another event's poster).
   Never write any other image URL, and never set `source_video_url`.
 - `price`: registration cost only, preferring the general admission or non-member price; 0 for free, NULL when not mentioned.
 - `food`: what this event gives attendees to eat or drink at no extra charge, free or included in its entry price, as the caption or poster states it: a JSON array such as `'["Pizza", "Drinks"]'`, or `'["Food"]'` for a generic "food provided".
@@ -167,7 +168,7 @@ When a co-host club belongs to a different school, also create the event at that
 
 ## Writing positions
 
-Columns: `club_id` (required; a registered club at the school), `school_id`, `title` (at most 200 characters), `description` (one short sentence; replaced with the caption for new rows), `position_type` (`executive`, `committee`, `volunteer`, `staff`, `internship` or `general`), `requirements` (JSON array of explicit qualifications, `'[]'` when none), `commitment`, `compensation`, `location`, `contact_email`, `is_paid` (true only when explicitly paid, false when explicitly unpaid or volunteer, otherwise NULL), `deadline_date` (`YYYY-MM-DD`), `deadline_at` (only with an explicit time, as local time plus timezone), `source_url` = `'{{source_url}}'`, `source_image_url` (a poster reference, as for events), `ingestion_source` = `'{{ingestion_source}}'`, `is_active` = true.
+Columns: `club_id` (required; a registered club at the school), `school_id`, `title` (at most 200 characters), `description` (one short sentence; replaced with the caption for new rows), `position_type` (`executive`, `committee`, `volunteer`, `staff`, `internship` or `general`), `requirements` (JSON array of explicit qualifications, `'[]'` when none), `commitment`, `compensation`, `location`, `contact_email`, `is_paid` (true only when explicitly paid, false when explicitly unpaid or volunteer, otherwise NULL), `deadline_date` (`YYYY-MM-DD`), `deadline_at` (only with an explicit time, as local time plus timezone), `source_url` = `'{{source_url}}'`, `source_image_url` (a poster reference, as for events, including replacing a listed position's image with this source's image of the role), `ingestion_source` = `'{{ingestion_source}}'`, `is_active` = true.
 When no registered club hosts a position, skip that position.
 
 ## What counts as an event

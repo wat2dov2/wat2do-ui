@@ -313,6 +313,7 @@ def test_only_the_posters_the_agent_chose_are_stored(monkeypatch):
 
     module._store_chosen_posters("abc", images)
 
+    # A listed row that gets a new poster without a video also drops its old video.
     # Image 0 was never chosen, so it is never uploaded; image 1 is uploaded once.
     assert stored == [b"one"]
     assert updates == [
@@ -325,7 +326,7 @@ def test_only_the_posters_the_agent_chose_are_stored(monkeypatch):
             "pending:abc/image-1",
         ),
         # A reference to an image that does not exist leaves no poster.
-        (POSITIONS, {"source_image_url": None}, "pending:abc/image-9"),
+        (POSITIONS, {"source_image_url": None, "source_video_url": None}, "pending:abc/image-9"),
     ]
 
 
@@ -374,7 +375,12 @@ def test_events_left_without_a_poster_get_the_cover_image(monkeypatch):
         ("eq", "source_url", _POST["url"], None),
         ("gte", "added_at", since.isoformat(), None),
         ("is_", "source_image_url", "null", None),
-        ("in_", "id", [1, 2], {"source_image_url": "https://wat2do.io/media/c.jpg"}),
+        (
+            "in_",
+            "id",
+            [1, 2],
+            {"source_image_url": "https://wat2do.io/media/c.jpg", "source_video_url": None},
+        ),
     ]
 
 

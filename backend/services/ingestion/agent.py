@@ -234,9 +234,10 @@ def _cover_posterless_events(source_url: str, images: list[_Image], *, since: da
 
 
 def _store_poster(image: _Image | None) -> dict[str, str | None]:
+    """The stored poster and its video; a row's old video goes with its old poster."""
     poster = store_image(image.data, image.content_type) if image else None
     video = upload_video_from_url(image.video_url) if image and poster and image.video_url else None
-    return {"source_image_url": poster, **({"source_video_url": video} if video else {})}
+    return {"source_image_url": poster, "source_video_url": video}
 
 
 def _owner_club(post: dict, *, school: str, publisher_ig: str | None, image_count: int) -> str:
