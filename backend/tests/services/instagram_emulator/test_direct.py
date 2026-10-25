@@ -256,6 +256,18 @@ def test_a_scrolled_chat_still_reads_our_replies_after_a_time_only_separator() -
     assert module._our_texts(chat) == ["Sure thing!"]
 
 
+def test_a_reply_with_a_link_preview_is_still_read_as_our_text() -> None:
+    reply = "you can submit it at wat2do.io/events/submit"
+    chat = [
+        _node("faithinsmiles", (304, 177, 582, 225), "header_title"),
+        _node("", (0, 275, 1080, 1431), "message_list"),
+        _node("", (419, 275, 1049, 909), "xma_bubble_container"),
+        _node("Wat2Do | Campus Events", (454, 714, 881, 761), "caption_title"),
+        _node(reply, (298, 930, 1059, 1344), "direct_text_message_text_view"),
+    ]
+    assert module._our_texts(chat) == [reply]
+
+
 def test_a_display_name_alone_is_not_taken_as_a_username() -> None:
     chat = [
         _node("UWaterloo ViVA Club", (304, 156, 600, 204), "header_title"),

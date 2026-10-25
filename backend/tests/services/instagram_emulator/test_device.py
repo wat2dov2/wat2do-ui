@@ -211,3 +211,18 @@ def test_reclaiming_clears_only_the_listed_apps_on_the_listed_users() -> None:
         for package in module.CONTROL.reclaim_packages
     ]
     assert all(module.CONTROL.instagram_package not in command for command in commands)
+
+
+HOME = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
+<node text="" content-desc="Home" bounds="[0,2200][216,2340]" />
+</hierarchy>UI hierchary dumped to: /dev/tty"""
+
+
+def test_going_home_answers_a_not_responding_dialog_instead_of_pressing_back() -> None:
+    commands = []
+    dialog = NOT_RESPONDING.replace("Instagram isn't", "System UI isn't")
+    _device([(0, dialog), (0, ""), (0, HOME), (0, "")], commands)._go_home()
+    keys = [command for command in commands if "keyevent" in command]
+    assert keys == []
+    wait_tap = commands[1]
+    assert 1560 <= int(wait_tap[-1]) <= 1660

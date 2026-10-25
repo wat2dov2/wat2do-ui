@@ -202,20 +202,27 @@ class EmulatorDevice:
             node = self.find(pattern, nodes)
             if node is not None:
                 return node
-            # One-time announcements ("Introducing instants" and the like), the low
-            # storage warning and Android's not-responding dialog cover the app until
-            # answered; declining, closing or waiting is always safe.
-            prompt = self.find(_NOT_NOW, nodes)
-            if prompt is None and self.find(_LOW_STORAGE, nodes) is not None:
-                prompt = self.find(_CLOSE, nodes)
-            if prompt is None and self.find(_NOT_RESPONDING, nodes) is not None:
-                prompt = self.find(_WAIT, nodes)
+            prompt = self._prompt(nodes)
             if prompt is not None and not pattern.match(prompt.label):
                 self.tap(prompt)
                 continue
             if self._monotonic() >= deadline:
                 raise EmulatorError(f"Instagram never showed {pattern.pattern}")
             self._sleep(1)
+
+    def _prompt(self, nodes: list[Node]) -> Node | None:
+        """The safe answer to a dialog covering the app, if one is showing.
+
+        One-time announcements ("Introducing instants" and the like), the low storage
+        warning and Android's not-responding dialog cover the app until answered;
+        declining, closing or waiting is always safe.
+        """
+        prompt = self.find(_NOT_NOW, nodes)
+        if prompt is None and self.find(_LOW_STORAGE, nodes) is not None:
+            prompt = self.find(_CLOSE, nodes)
+        if prompt is None and self.find(_NOT_RESPONDING, nodes) is not None:
+            prompt = self.find(_WAIT, nodes)
+        return prompt
 
     def wait_until_gone(self, pattern: re.Pattern[str], *, seconds: float) -> None:
         deadline = self._monotonic() + seconds
@@ -352,11 +359,16 @@ class EmulatorDevice:
 
     def _go_home(self) -> None:
         for _ in range(6):
-            home = self.find(_HOME_TAB)
+            nodes = self.screen()
+            home = self.find(_HOME_TAB, nodes)
             if home is not None:
                 self.tap(home)
                 return
-            self.back()
+            prompt = self._prompt(nodes)
+            if prompt is not None:
+                self.tap(prompt)
+            else:
+                self.back()
         raise EmulatorError("Instagram's home feed could not be reached")
 
     def open_instagram(self, user: int, url: str | None = None) -> None:
