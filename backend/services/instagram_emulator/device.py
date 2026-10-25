@@ -74,7 +74,8 @@ def labels(*names: str) -> re.Pattern[str]:
 
 INBOX_URL = "instagram://direct-inbox"
 _INBOX_TITLE = re.compile(r"^igds_action_bar_title$")
-_MESSAGES_TAB = re.compile(r"^direct_tab$")
+_INBOX_ATTEMPTS = 2
+_SWITCH_ATTEMPTS = 2
 _PROFILE_TAB = re.compile(r"^Profile$")
 _SAVE_LOGIN = labels("Save your login info")
 _SAVE = re.compile(r"^Save$")
@@ -347,26 +348,29 @@ class EmulatorDevice:
         The inbox is read rather than the home feed: an autoplaying video there keeps
         the screen from ever going idle, and the screen reader gives up on it.
         """
-        if self.open_inbox(user) == account_username:
-            return
-        self.tap(self.wait_for(_PROFILE_TAB), hold_ms=1200)
-        self.tap(self._account_in_switcher(account_username))
-        # The switch lands on the home feed; give it time before leaving for the inbox.
-        self._sleep(CONTROL.screen_wait_seconds)
+        for _ in range(_SWITCH_ATTEMPTS):
+            if self.open_inbox(user) == account_username:
+                return
+            self.tap(self.wait_for(_PROFILE_TAB), hold_ms=1200)
+            # A tap while the account sheet is still sliding up can miss, leaving the
+            # sheet open; the next attempt notices and switches again.
+            self.tap(self._account_in_switcher(account_username))
+            # The switch lands on the home feed; give it time before leaving for the inbox.
+            self._sleep(CONTROL.screen_wait_seconds)
         if self.open_inbox(user) != account_username:
             raise EmulatorError("Instagram did not switch to the account")
 
     def open_inbox(self, user: int) -> str:
         """Open the DM inbox and return the username it belongs to."""
-        self.open_instagram(user, INBOX_URL)
-        try:
-            title = self.wait_for(_INBOX_TITLE)
-        except EmulatorError:
-            # Right after an account switch the link can land before the app is ready;
-            # the Messages tab always leads to the inbox.
-            self.tap_when(_MESSAGES_TAB)
-            title = self.wait_for(_INBOX_TITLE)
-        return title.text.strip()
+        for _ in range(_INBOX_ATTEMPTS):
+            self.open_instagram(user, INBOX_URL)
+            try:
+                return self.wait_for(_INBOX_TITLE).text.strip()
+            except EmulatorError:
+                # The link can land before the app is ready right after a switch, or an
+                # account sheet left open can cover the inbox; Back closes either.
+                self.back()
+        raise EmulatorError("Instagram's DM inbox could not be opened")
 
     def _account_in_switcher(self, account_username: str) -> Node:
         """The account's row in the switcher, scrolled into view: a full Android user's
