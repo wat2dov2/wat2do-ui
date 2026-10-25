@@ -891,6 +891,21 @@ def test_instagram_emulator_rejects_more_than_ten_accounts_on_one_user(tmp_path:
         load_controlbox(path)
 
 
+@pytest.mark.parametrize(
+    "paths", [["databases"], ["shared_prefs/x"], ["../etc"], ["files/../databases"], []]
+)
+def test_instagram_emulator_never_deletes_what_keeps_accounts_logged_in(
+    tmp_path: Path, paths
+) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_emulator",
+        lambda payload: payload.update({"instagram_cache_paths": paths}),
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(path)
+
+
 def test_instagram_emulator_rejects_an_inverted_step_window(tmp_path: Path) -> None:
     path = _write_control(
         tmp_path,

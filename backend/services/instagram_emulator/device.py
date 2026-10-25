@@ -31,8 +31,8 @@ _LAUNCHER_ACTIVITY = "com.instagram.mainactivity.LauncherActivity"
 _SCREEN_READ_ATTEMPTS = 5
 # Every job that drives the emulator holds this lock, so two never tap at once.
 _LOCK_PATH = Path.home() / ".local/state/wat2do/instagram-emulator.lock"
-# Touched after each reclaim; Google Play services rebuilds its data, so clearing it
-# on every visit only keeps the disk busy.
+# Touched after each reclaim; the caches it deletes refill as the app is used, so
+# clearing them on every visit only keeps the disk busy.
 _RECLAIMED_PATH = Path.home() / ".local/state/wat2do/instagram-emulator-reclaimed"
 _held = threading.local()
 _SELECT_ALL = ("113", "29")  # KEYCODE_CTRL_LEFT + KEYCODE_A
@@ -313,19 +313,32 @@ class EmulatorDevice:
         return int(line.split()[3]) // 1024
 
     def reclaim_data(self) -> int:
-        """Once space runs low, clear app data the school accounts never need.
+        """Delete what Instagram and unused apps keep piling up; returns the free space.
 
-        Only apps listed in the controlbox are cleared, on Android users without a
-        Google account, so nothing is lost: Google Play services rebuilds what it needs.
-        Instagram's own data is never cleared, since that would log its accounts out.
-        It runs at most once per ``reclaim_interval_hours``. Returns the free space.
+        Instagram never trims its own image cache, downloaded camera effects or models,
+        so on every Android user that holds accounts the app is stopped and those
+        folders, listed in the controlbox, are deleted as root. Its login, databases and
+        settings stay, so no account is logged out. Apps listed in ``reclaim_packages``
+        are cleared on Android users without a Google account. It runs at most once per
+        ``reclaim_interval_hours``.
         """
-        free = self.free_data_megabytes()
-        if free >= CONTROL.reclaim_below_data_megabytes or _reclaimed_recently():
-            return free
+        if _reclaimed_recently():
+            return self.free_data_megabytes()
+        package = CONTROL.instagram_package
+        for user in sorted(set(CONTROL.android_user_by_school.values())):
+            folder = f"/data/user/{user}/{package}"
+            paths = " ".join(f"{folder}/{path}" for path in CONTROL.instagram_cache_paths)
+            self.adb(
+                "shell",
+                "su",
+                "0",
+                "sh",
+                "-c",
+                shlex.quote(f"am force-stop --user {user} {package} && rm -rf {paths}"),
+            )
         for user in CONTROL.reclaim_android_users:
-            for package in CONTROL.reclaim_packages:
-                self.adb("shell", "pm", "clear", "--user", str(user), package)
+            for cleared in CONTROL.reclaim_packages:
+                self.adb("shell", "pm", "clear", "--user", str(user), cleared)
         _RECLAIMED_PATH.parent.mkdir(parents=True, exist_ok=True)
         _RECLAIMED_PATH.touch()
         return self.free_data_megabytes()

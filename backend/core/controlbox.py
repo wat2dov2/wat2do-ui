@@ -13,6 +13,8 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, model_vali
 _CONTROLBOX_DIRECTORY = Path(__file__).resolve().parents[1] / "controlbox"
 _INTERACTION_TYPES = {"click", "detail_view", "going", "ungoing", "share"}
 _INSTAGRAM_ACCOUNTS_PER_APP = 10
+# Instagram keeps its sessions and messages here; deleting them logs accounts out.
+_INSTAGRAM_LOGIN_FOLDERS = frozenset({"databases", "shared_prefs", "app_light_prefs", "no_backup"})
 
 
 class _ControlModel(BaseModel):
@@ -1011,8 +1013,12 @@ class InstagramEmulatorControl(_ControlModel):
     audio_save_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
     # A story repost needs room to upload; below this much free space it waits.
     min_free_data_megabytes: int = Field(ge=0, le=10_000)
-    # Below this much free space, these apps' data is cleared on these Android users.
-    reclaim_below_data_megabytes: int = Field(ge=0, le=10_000)
+    # Once per interval, Instagram is stopped on every Android user and these folders
+    # inside its data are deleted as root (the emulator runs a rooted Google APIs
+    # image), and these apps' data is cleared on these Android users.
+    instagram_cache_paths: tuple[
+        Annotated[str, Field(pattern=r"^[a-z_]+(?:/[a-z_]+)*(?:/\*)?$")], ...
+    ] = Field(min_length=1)
     reclaim_android_users: tuple[Annotated[int, Field(ge=1)], ...]
     reclaim_packages: tuple[Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.]+$")], ...]
     reclaim_interval_hours: float = Field(gt=0, le=168, allow_inf_nan=False)
@@ -1027,6 +1033,8 @@ class InstagramEmulatorControl(_ControlModel):
             )
         if self.instagram_package in self.reclaim_packages:
             raise ValueError("Clearing Instagram's data would log its accounts out")
+        if {path.split("/")[0] for path in self.instagram_cache_paths} & _INSTAGRAM_LOGIN_FOLDERS:
+            raise ValueError("Deleting Instagram's settings or databases would log it out")
         if (
             Counter(self.android_user_by_school.values()).most_common(1)[0][1]
             > _INSTAGRAM_ACCOUNTS_PER_APP

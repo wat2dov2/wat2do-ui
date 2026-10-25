@@ -130,6 +130,8 @@ person (`answer_instagram_dms.py resume` once checked) and is never retried, sin
 may already have reached Instagram.
 A story repost waits, without accepting or answering the thread, while the emulator has
 less free storage than `controlbox/instagram_emulator.json` `min_free_data_megabytes`.
+Once a day the sweep deletes Instagram's caches on every Android user as root
+(`instagram_cache_paths`), never its login, databases or settings.
 `dry_run` decides and records every DM without replying, reposting or queueing anything.
 Never log DM text.
 

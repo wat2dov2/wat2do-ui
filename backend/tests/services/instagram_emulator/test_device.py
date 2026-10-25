@@ -190,12 +190,6 @@ def _df(free_kilobytes):
     return f"Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/block/dm-44 10167132 0 {free_kilobytes} 0% /data\n"
 
 
-def test_reclaiming_leaves_a_device_with_room_alone() -> None:
-    commands = []
-    assert _device([(0, _df(2_000_000))], commands).reclaim_data() == 1953
-    assert len(commands) == 1
-
-
 @pytest.fixture(autouse=True)
 def reclaimed_path(monkeypatch, tmp_path):
     path = tmp_path / "reclaimed"
@@ -210,20 +204,25 @@ def test_reclaiming_waits_a_day_after_the_last_one(reclaimed_path) -> None:
     assert len(commands) == 1
 
 
-def test_reclaiming_clears_only_the_listed_apps_on_the_listed_users(reclaimed_path) -> None:
-    clears = [(0, "Success\n")] * (
-        len(module.CONTROL.reclaim_android_users) * len(module.CONTROL.reclaim_packages)
-    )
+def test_reclaiming_deletes_instagram_caches_and_clears_the_listed_apps(reclaimed_path) -> None:
+    users = sorted(set(module.CONTROL.android_user_by_school.values()))
+    clears = len(module.CONTROL.reclaim_android_users) * len(module.CONTROL.reclaim_packages)
     commands = []
-    device = _device([(0, _df(200_000)), *clears, (0, _df(800_000))], commands)
-    assert device.reclaim_data() == 781
-    cleared = [command[-4:] for command in commands[1:-1]]
+    outputs = [(0, "")] * len(users) + [(0, "Success\n")] * clears + [(0, _df(800_000))]
+    assert _device(outputs, commands).reclaim_data() == 781
+    deletes = commands[: len(users)]
+    for user, command in zip(users, deletes, strict=True):
+        assert command[3:8] == ["shell", "su", "0", "sh", "-c"]
+        script = command[-1]
+        assert f"am force-stop --user {user} com.instagram.android" in script
+        assert f"/data/user/{user}/com.instagram.android/files/one_cache_path" in script
+        assert "databases" not in script and "shared_prefs" not in script
+    cleared = [command[-4:] for command in commands[len(users) : -1]]
     assert cleared == [
         ["clear", "--user", str(user), package]
         for user in module.CONTROL.reclaim_android_users
         for package in module.CONTROL.reclaim_packages
     ]
-    assert all(module.CONTROL.instagram_package not in command for command in commands)
     assert reclaimed_path.exists()
 
 
