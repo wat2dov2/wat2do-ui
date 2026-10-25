@@ -263,40 +263,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/clubs/integrations/discord/options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Discord Options */
-        get: operations["get_discord_options_clubs_integrations_discord_options_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/clubs/integrations/{platform}/options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Platform Options */
-        get: operations["get_platform_options_clubs_integrations__platform__options_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/clubs/claims": {
         parameters: {
             query?: never;
@@ -331,25 +297,6 @@ export interface paths {
         head?: never;
         /** Update Club */
         patch: operations["update_club_clubs__club_id__patch"];
-        trace?: never;
-    };
-    "/clubs/{club_id}/integrations/{platform}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Platform Integration */
-        get: operations["get_platform_integration_clubs__club_id__integrations__platform__get"];
-        /** Upsert Platform Integration */
-        put: operations["upsert_platform_integration_clubs__club_id__integrations__platform__put"];
-        post?: never;
-        /** Disconnect Platform Integration */
-        delete: operations["disconnect_platform_integration_clubs__club_id__integrations__platform__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/clubs/{club_id}/review": {
@@ -1361,7 +1308,10 @@ export interface paths {
          */
         put: operations["save_club_saved_clubs__club_id__put"];
         post?: never;
-        /** Unsave Club */
+        /**
+         * Unsave Club
+         * @description Unfollow a club. 400 for the club's own members, who always follow it.
+         */
         delete: operations["unsave_club_saved_clubs__club_id__delete"];
         options?: never;
         head?: never;
@@ -2074,52 +2024,6 @@ export interface components {
              */
             school: string;
         };
-        /** ClubIntegrationResponse */
-        ClubIntegrationResponse: {
-            /** Club Id */
-            club_id: number;
-            /**
-             * Platform
-             * @enum {string}
-             */
-            platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
-            /** Connected */
-            connected: boolean;
-            /** Name */
-            name?: string | null;
-            /** Last Sync */
-            last_sync?: string | null;
-            /** Metadata */
-            metadata?: {
-                [key: string]: string;
-            } | null;
-        };
-        /**
-         * ClubIntegrationUpdate
-         * @description Update request for a club's integration configuration.
-         *
-         *     The ``metadata`` dict is now bounded on three axes:
-         *     - max key count (``MAX_INTEGRATION_METADATA_KEYS``)
-         *     - max per-key length (``MAX_INTEGRATION_METADATA_KEY_LENGTH``)
-         *     - max per-value length (``MAX_INTEGRATION_METADATA_VALUE_LENGTH``)
-         *
-         *     Unknown envelope fields are rejected via ``extra="forbid"`` so future
-         *     refactors that accidentally echo request data back to the DB do not
-         *     introduce a mass-assignment surface.
-         */
-        ClubIntegrationUpdate: {
-            /**
-             * Connected
-             * @default true
-             */
-            connected: boolean;
-            /** Name */
-            name?: string | null;
-            /** Metadata */
-            metadata?: {
-                [key: string]: string;
-            } | null;
-        };
         /** ClubInvitationCreate */
         ClubInvitationCreate: {
             /**
@@ -2398,29 +2302,6 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
-        };
-        /** DiscordChannelOption */
-        DiscordChannelOption: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-        };
-        /** DiscordIntegrationOptionsResponse */
-        DiscordIntegrationOptionsResponse: {
-            /** Oauth Url */
-            oauth_url: string;
-            /** Servers */
-            servers: components["schemas"]["DiscordServerOption"][];
-        };
-        /** DiscordServerOption */
-        DiscordServerOption: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Channels */
-            channels: components["schemas"]["DiscordChannelOption"][];
         };
         /** DiscoveryQueryCreate */
         DiscoveryQueryCreate: {
@@ -3944,25 +3825,6 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
-        /**
-         * PlatformIntegrationOptionsResponse
-         * @description Generic options for any integration platform.
-         *
-         *     The Discord-specific response above keeps the tightest types for the
-         *     ``/integrations/discord/options`` endpoint; this looser model lets
-         *     the ``/integrations/{platform}/options`` endpoint lock its OpenAPI
-         *     contract without over-constraining platforms whose OAuth URLs are
-         *     still placeholders.
-         */
-        PlatformIntegrationOptionsResponse: {
-            /** Oauth Url */
-            oauth_url?: string | null;
-            /**
-             * Servers
-             * @default []
-             */
-            servers: components["schemas"]["DiscordServerOption"][];
-        };
         /** PositionCreate */
         PositionCreate: {
             /** Title */
@@ -5434,57 +5296,6 @@ export interface operations {
             };
         };
     };
-    get_discord_options_clubs_integrations_discord_options_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DiscordIntegrationOptionsResponse"];
-                };
-            };
-        };
-    };
-    get_platform_options_clubs_integrations__platform__options_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PlatformIntegrationOptionsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_claims_clubs_claims_get: {
         parameters: {
             query?: {
@@ -5604,106 +5415,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClubResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_platform_integration_clubs__club_id__integrations__platform__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubIntegrationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upsert_platform_integration_clubs__club_id__integrations__platform__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClubIntegrationUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubIntegrationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    disconnect_platform_integration_clubs__club_id__integrations__platform__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-                platform: "whatsapp" | "discord" | "instagram" | "slack" | "telegram" | "linkedin" | "facebook";
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubIntegrationResponse"];
                 };
             };
             /** @description Validation Error */

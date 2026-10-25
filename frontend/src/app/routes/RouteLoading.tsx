@@ -99,10 +99,9 @@ export function RouteLoading() {
     [ROUTES.ADMIN_DIAGNOSTICS]: "admin.diagnostics.title",
     [ROUTES.CLUB_PANEL]: "clubPanel.title",
     [ROUTES.CLUB_PANEL_MEMBERS]: "clubPanel.members",
-    [ROUTES.CLUB_PANEL_INTEGRATIONS]: "clubPanel.integrations",
     [ROUTES.POSTERS]: "posters.dashboard.title",
   }[pathname];
-  const formRoutes: readonly string[] = [ROUTES.SETTINGS, ROUTES.EVENT_SUBMIT, ROUTES.POSITION_SUBMIT, ROUTES.CLUB_CREATE, ROUTES.CLUB_PANEL_INTEGRATIONS];
+  const formRoutes: readonly string[] = [ROUTES.SETTINGS, ROUTES.EVENT_SUBMIT, ROUTES.POSITION_SUBMIT, ROUTES.CLUB_CREATE];
   const back = pathname.startsWith(`${ROUTES.ADMIN}/`)
     ? { href: ROUTES.ADMIN, label: t("admin.backToDashboard") }
     : pathname.startsWith(`${ROUTES.CLUB_PANEL}/`)

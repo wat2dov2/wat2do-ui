@@ -400,63 +400,6 @@ async function seedAuthenticatedSession(page: Page, next: NextFixture) {
     });
   });
 
-  // Mock integrations endpoints
-  const platforms = ["whatsapp", "discord", "slack", "telegram", "linkedin", "facebook", "instagram"];
-  for (const p of platforms) {
-    await mockApi(page, next, url => apiPath(url)?.match(new RegExp(`^/clubs/\\d+/integrations/${p}$`)) != null, async (request) => {
-      const method = request.method;
-      if (method === "GET") {
-        return ({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            platform: p,
-            connected: false,
-            name: null,
-            last_sync: null,
-            metadata: null,
-          }),
-        });
-      } else if (method === "POST" || method === "PUT") {
-        const body = (await request.json()) || {};
-        return ({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            platform: p,
-            connected: true,
-            name: body.name || "Mock Connection",
-            last_sync: new Date().toISOString(),
-            metadata: body.metadata || {},
-          }),
-        });
-      } else if (method === "DELETE") {
-        return ({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            platform: p,
-            connected: false,
-            name: null,
-            last_sync: null,
-            metadata: null,
-          }),
-        });
-      }
-      throw new Error(`Unexpected integration method: ${method}`);
-    });
-
-    await mockApi(page, next, url => apiPath(url) === `/clubs/integrations/${p}/options`, async () => {
-      return ({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          servers: p === "discord" || p === "slack" ? [{ id: "srv-1", name: "UW Tech Club" }] : [],
-          oauth_url: `https://example.com/oauth/${p}`,
-        }),
-      });
-    });
-  }
 
   // Mock saved clubs
   await mockApi(page, next, url => apiPath(url) === "/saved-clubs", async () => {
@@ -1812,60 +1755,6 @@ test.describe("Admin Instagram publishing", () => {
     await expect(drawer.locator('img[src="https://example.com/published-0.png"]')).toBeVisible();
   });
   }
-});
-
-// ── Workflow 8: Club Integrations ─────────────────────────────
-
-test.describe("Club Integrations", () => {
-  test("can connect WhatsApp integration end to end", async ({ page, next }) => {
-    await seedAuthenticatedSession(page, next);
-    await page.goto(`${BASE}/club-panel/integrations`);
-
-    // WhatsApp card
-    const whatsappCard = page
-      .locator("div.bg-surface", { hasText: "WhatsApp" })
-      .first();
-
-    await expect(whatsappCard.getByRole("heading", { name: "WhatsApp" })).toBeVisible();
-    await whatsappCard.getByRole("button", { name: "Connect" }).click();
-
-    // WhatsApp modal
-    await expect(page.getByRole("heading", { name: "Connect WhatsApp" })).toBeVisible();
-    await page.getByRole("button", { name: "Done" }).click();
-
-    // Card shows connected state and last sync
-    await expect(
-      whatsappCard.getByText("Connected", { exact: false }),
-    ).toBeVisible();
-    await expect(
-      whatsappCard.getByText("Last sync", { exact: false }),
-    ).toBeVisible();
-  });
-
-  test("can connect Discord integration with channel selection", async ({ page, next }) => {
-    await seedAuthenticatedSession(page, next);
-    await page.goto(`${BASE}/club-panel/integrations`);
-
-    const discordCard = page
-      .locator("div.bg-surface", { hasText: "Discord" })
-      .first();
-
-    await expect(discordCard.getByRole("heading", { name: "Discord" })).toBeVisible();
-    await discordCard.getByRole("button", { name: "Connect" }).click();
-
-    // Step 1: add bot — clicking immediately transitions to step 2
-    await expect(page.getByRole("heading", { name: "Connect Discord" })).toBeVisible();
-    await page.getByRole("button", { name: "Add to Discord" }).click();
-
-    // Step 2: select server and channel (handleAddBot transitions instantly)
-    const dialog = page.getByRole("dialog", { name: "Connect Discord" });
-    await expect(dialog.getByRole("combobox")).toBeVisible();
-
-    // Activate button should be disabled until server + channel are selected
-    await expect(dialog.getByRole("button", { name: "Activate" })).toBeDisabled();
-
-    await dialog.getByRole("button", { name: "Cancel" }).click();
-  });
 });
 
 // ── Workflow 2: Home / Events Page ────────────────────────────────────

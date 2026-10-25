@@ -16,9 +16,6 @@ import { RouteLoading } from "@/app/routes/RouteLoading";
 const ClubPanel = lazy(() =>
   import("@/features/club-panel").then((m) => ({ default: m.ClubPanel }))
 );
-const ClubPanelIntegrationsPage = lazy(() =>
-  import("@/features/club-panel").then((m) => ({ default: m.ClubPanelIntegrationsPage }))
-);
 const ClubPanelMembersPage = lazy(() =>
   import("@/features/club-panel").then((m) => ({ default: m.ClubPanelMembersPage }))
 );
@@ -48,14 +45,6 @@ export function ClubPanelRoute() {
   return (
     <ClubPanelSuspense>
       <ClubPanel onNavigate={handleNavigate} />
-    </ClubPanelSuspense>
-  );
-}
-
-export function ClubPanelIntegrationsRoute() {
-  return (
-    <ClubPanelSuspense>
-      <ClubPanelIntegrationsPage />
     </ClubPanelSuspense>
   );
 }

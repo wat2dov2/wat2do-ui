@@ -69,42 +69,6 @@ def test_delete_club_requires_auth(client):
     assert response.status_code == 401
 
 
-def test_get_discord_integration_requires_auth(client):
-    response = client.get("/clubs/1/integrations/discord")
-    assert response.status_code == 401
-
-
-def test_upsert_discord_integration_requires_auth(client):
-    response = client.put(
-        "/clubs/1/integrations/discord",
-        json={
-            "connected": True,
-            "server_id": "1",
-            "server_name": "Test Server",
-            "channel_id": "101",
-            "channel_name": "#events",
-        },
-    )
-    assert response.status_code == 401
-
-
-def test_get_slack_integration_requires_auth(client):
-    response = client.get("/clubs/1/integrations/slack")
-    assert response.status_code == 401
-
-
-def test_upsert_instagram_integration_requires_auth(client):
-    response = client.put(
-        "/clubs/1/integrations/instagram",
-        json={
-            "connected": True,
-            "name": "@testclub",
-            "metadata": {"handle": "testclub"},
-        },
-    )
-    assert response.status_code == 401
-
-
 def test_create_club_sets_current_user_as_owner(authenticated_client, monkeypatch):
     """Authenticated users create clubs owned by themselves."""
     created_club = _mock_club(created_by=FAKE_USER["id"])
@@ -178,14 +142,6 @@ def test_update_club_owner_allowed(authenticated_client, monkeypatch):
     [
         ("PATCH", "/clubs/1", {"club_name": "Changed"}, "update_club"),
         ("DELETE", "/clubs/1", None, "delete_club"),
-        ("GET", "/clubs/1/integrations/discord", None, "get_platform_integration"),
-        (
-            "PUT",
-            "/clubs/1/integrations/discord",
-            {"connected": True, "name": "Test Club", "metadata": {"channel_id": "101"}},
-            "upsert_platform_integration",
-        ),
-        ("DELETE", "/clubs/1/integrations/discord", None, "disconnect_platform_integration"),
         ("GET", "/clubs/1/members", None, "list_club_members"),
         ("POST", "/clubs/1/members", {"email": "target@example.com"}, "add_club_member"),
         ("DELETE", f"/clubs/1/members/{FAKE_USER['id']}", None, "remove_club_member"),
@@ -219,32 +175,6 @@ def test_delete_club_owner_allowed(authenticated_client, monkeypatch):
 
     resp = authenticated_client.delete("/clubs/1")
     assert resp.status_code == 204
-
-
-@pytest.mark.parametrize("platform", ["discord", "slack", "telegram"])
-@pytest.mark.parametrize(
-    "method,action",
-    [("GET", "get_platform_integration"), ("DELETE", "disconnect_platform_integration")],
-)
-def test_integration_owner_allowed(authenticated_client, monkeypatch, platform, method, action):
-    club = _mock_club(created_by=FAKE_USER["id"])
-    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=club))
-    monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=True))
-    operation = MagicMock(return_value=club_service._empty_integration_response(1, platform))
-    monkeypatch.setattr(club_service, action, operation)
-
-    response = authenticated_client.request(method, f"/clubs/1/integrations/{platform}")
-
-    assert response.status_code == 200
-    assert response.json() == {
-        "club_id": 1,
-        "platform": platform,
-        "connected": False,
-        "name": None,
-        "last_sync": None,
-        "metadata": {},
-    }
-    operation.assert_called_once_with(1, platform)
 
 
 def test_list_club_members_requires_auth(client):

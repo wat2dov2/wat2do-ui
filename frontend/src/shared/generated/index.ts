@@ -65,11 +65,6 @@ export type ApiSubmissionResponse = components["schemas"]["SubmissionResponse"];
 // ── Clubs ───────────────────────────────────────────────────
 export type ApiClubResponse = components["schemas"]["ClubResponse"];
 export type ApiPaginatedClubsResponse = components["schemas"]["PaginatedResponse_ClubResponse_"];
-export type ApiClubIntegrationResponse = components["schemas"]["ClubIntegrationResponse"];
-
-// ── Club Integrations (Discord) ─────────────────────────────────────
-export type ApiDiscordChannelOption = components["schemas"]["DiscordChannelOption"];
-export type ApiDiscordServerOption = components["schemas"]["DiscordServerOption"];
 
 // ── Reports ─────────────────────────────────────────────────────────
 export type ApiReportResponse = components["schemas"]["ReportResponse"];

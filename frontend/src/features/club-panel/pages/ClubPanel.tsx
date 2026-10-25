@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { Link, Users, Building2 } from "lucide-react";
+import { Users, Building2 } from "lucide-react";
 import { AdminCard } from "@/shared/ui/AdminCard";
 
 interface ClubPanelProps {
-  onNavigate: (page: "club-panel-integrations" | "club-panel-members") => void;
+  onNavigate: (page: "club-panel-members") => void;
 }
 
 export function ClubPanel({ onNavigate }: ClubPanelProps) {
@@ -24,12 +24,6 @@ export function ClubPanel({ onNavigate }: ClubPanelProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <AdminCard
-          icon={Link}
-          title={t("clubPanel.integrations")}
-          description={t("clubPanel.integrationsDesc")}
-          onClick={() => onNavigate("club-panel-integrations")}
-        />
         <AdminCard
           icon={Users}
           title={t("clubPanel.members")}

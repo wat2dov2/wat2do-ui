@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, Query, status
 
 from core.auth import (
     get_admin_user,
-    get_current_user,
     get_db_user,
     get_optional_user,
     is_admin,
@@ -30,17 +29,12 @@ from schemas.claim import (
 )
 from schemas.club import (
     ClubCreate,
-    ClubIntegrationResponse,
-    ClubIntegrationUpdate,
     ClubMemberAdd,
     ClubMemberResponse,
     ClubResponse,
     ClubStatus,
     ClubSubmissionResponse,
     ClubUpdate,
-    DiscordIntegrationOptionsResponse,
-    IntegrationPlatform,
-    PlatformIntegrationOptionsResponse,
 )
 from schemas.invitation import (
     ClubInvitationCreate,
@@ -60,9 +54,6 @@ _submission_limiter = RateLimiter(
 )
 
 
-INTEGRATION_NOT_FOUND = "Integration not found"
-
-
 def _get_club_or_403(club_id: int, db_user: UserResponse) -> ClubResponse:
     """Fetch club by ID (404 if missing); require club_members membership or admin."""
     club = club_service.get_club(club_id)
@@ -76,12 +67,6 @@ def _get_club_or_403(club_id: int, db_user: UserResponse) -> ClubResponse:
         return club
 
     raise AuthorizationError(NOT_AUTHORIZED)
-
-
-def _authorize_and_exec(club_id: int, db_user: UserResponse, action):
-    """Require membership (or admin), run *action*, and 404 if the result is missing."""
-    _get_club_or_403(club_id, db_user)
-    return get_or_404(action(), INTEGRATION_NOT_FOUND)
 
 
 @router.get("/", response_model=PaginatedResponse[ClubResponse])
@@ -137,25 +122,6 @@ def list_my_clubs(db_user: UserResponse = Depends(get_db_user)):
     return club_service.list_clubs_by_owner(str(db_user.id))
 
 
-@router.get(
-    "/integrations/discord/options",
-    response_model=DiscordIntegrationOptionsResponse,
-)
-def get_discord_options(_=Depends(get_current_user)):
-    return club_service.get_discord_options()
-
-
-@router.get(
-    "/integrations/{platform}/options",
-    response_model=PlatformIntegrationOptionsResponse,
-)
-def get_platform_options(
-    platform: IntegrationPlatform,
-    _=Depends(get_current_user),
-):
-    return club_service.get_integration_options(platform)
-
-
 @router.get("/claims", response_model=PaginatedResponse[ClubClaimResponse])
 def list_claims(
     status: str | None = Query(default=None),
@@ -177,60 +143,6 @@ def list_claims(
 @router.get("/{club_id}", response_model=ClubResponse)
 def get_club(club_id: int):
     return get_or_404(club_service.get_club(club_id), CLUB_NOT_FOUND)
-
-
-@router.get(
-    "/{club_id}/integrations/{platform}",
-    response_model=ClubIntegrationResponse,
-)
-def get_platform_integration(
-    club_id: int,
-    platform: IntegrationPlatform,
-    db_user: UserResponse = Depends(get_db_user),
-):
-    return _authorize_and_exec(
-        club_id,
-        db_user,
-        lambda: club_service.get_platform_integration(club_id, platform),
-    )
-
-
-@router.put(
-    "/{club_id}/integrations/{platform}",
-    response_model=ClubIntegrationResponse,
-)
-def upsert_platform_integration(
-    club_id: int,
-    platform: IntegrationPlatform,
-    data: ClubIntegrationUpdate,
-    db_user: UserResponse = Depends(get_db_user),
-):
-    return _authorize_and_exec(
-        club_id,
-        db_user,
-        lambda: club_service.upsert_platform_integration(
-            club_id=club_id,
-            platform=platform,
-            name=data.name,
-            metadata=data.metadata,
-        ),
-    )
-
-
-@router.delete(
-    "/{club_id}/integrations/{platform}",
-    response_model=ClubIntegrationResponse,
-)
-def disconnect_platform_integration(
-    club_id: int,
-    platform: IntegrationPlatform,
-    db_user: UserResponse = Depends(get_db_user),
-):
-    return _authorize_and_exec(
-        club_id,
-        db_user,
-        lambda: club_service.disconnect_platform_integration(club_id, platform),
-    )
 
 
 @router.post("/", response_model=ClubResponse, status_code=status.HTTP_201_CREATED)

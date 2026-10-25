@@ -108,16 +108,6 @@ AUTHENTICATED_ENDPOINTS = (
     Endpoint("/instagram-publishing/accounts/", "/instagram-publishing/accounts/", True),
     Endpoint("/notification-preferences", "/notification-preferences", True),
     Endpoint("/clubs/claims", "/clubs/claims", True),
-    Endpoint(
-        "/clubs/integrations/discord/options",
-        "/clubs/integrations/discord/options",
-        True,
-    ),
-    Endpoint(
-        "/clubs/integrations/{platform}/options",
-        "/clubs/integrations/slack/options",
-        True,
-    ),
     Endpoint("/clubs/mine", "/clubs/mine", True),
     Endpoint(
         "/clubs/review",
@@ -355,7 +345,6 @@ def discover_dynamic_endpoints(
     club_id = _first_id(school_owned_clubs) or _first_id(clubs)
     club_routes = (
         "/clubs/{club_id}",
-        "/clubs/{club_id}/integrations/{platform}",
         "/clubs/{club_id}/invitations",
         "/clubs/{club_id}/members",
     )
@@ -366,11 +355,6 @@ def discover_dynamic_endpoints(
                     "/clubs/{club_id}",
                     f"/clubs/{club_id}",
                     False,
-                ),
-                Endpoint(
-                    "/clubs/{club_id}/integrations/{platform}",
-                    f"/clubs/{club_id}/integrations/slack",
-                    True,
                 ),
                 Endpoint(
                     "/clubs/{club_id}/invitations",
@@ -463,7 +447,6 @@ def _known_get_paths() -> set[str]:
         "/going-events/{event_id}/attendees",
         "/instagram-publishing/batches/{batch_id}",
         "/clubs/{club_id}",
-        "/clubs/{club_id}/integrations/{platform}",
         "/clubs/{club_id}/invitations",
         "/clubs/{club_id}/members",
         "/payouts/admin/{payout_id}",

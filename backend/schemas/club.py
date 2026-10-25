@@ -12,7 +12,6 @@ from pydantic import (
     Field,
     StringConstraints,
     field_validator,
-    model_validator,
 )
 
 from core.constants import (
@@ -22,10 +21,6 @@ from core.constants import (
     MAX_CLUB_CATEGORY_LENGTH,
     MAX_CLUB_NAME_LENGTH,
     MAX_CLUB_TYPE_LENGTH,
-    MAX_INTEGRATION_METADATA_KEY_LENGTH,
-    MAX_INTEGRATION_METADATA_KEYS,
-    MAX_INTEGRATION_METADATA_VALUE_LENGTH,
-    MAX_INTEGRATION_NAME_LENGTH,
     MAX_SCHOOL_LENGTH,
     MAX_URL_LENGTH,
 )
@@ -200,94 +195,6 @@ class ClubResponse(BaseModel):
 
 class ClubSubmissionResponse(ClubResponse):
     submitted_by_email: str | None = None
-
-
-class DiscordChannelOption(BaseModel):
-    id: str
-    name: str
-
-
-class DiscordServerOption(BaseModel):
-    id: str
-    name: str
-    channels: list[DiscordChannelOption]
-
-
-class DiscordIntegrationOptionsResponse(BaseModel):
-    oauth_url: str
-    servers: list[DiscordServerOption]
-
-
-class PlatformIntegrationOptionsResponse(BaseModel):
-    """Generic options for any integration platform.
-
-    The Discord-specific response above keeps the tightest types for the
-    ``/integrations/discord/options`` endpoint; this looser model lets
-    the ``/integrations/{platform}/options`` endpoint lock its OpenAPI
-    contract without over-constraining platforms whose OAuth URLs are
-    still placeholders.
-    """
-
-    oauth_url: str | None = None
-    servers: list[DiscordServerOption] = []
-
-
-IntegrationPlatform = Literal[
-    "whatsapp",
-    "discord",
-    "instagram",
-    "slack",
-    "telegram",
-    "linkedin",
-    "facebook",
-]
-
-
-class ClubIntegrationUpdate(BaseModel):
-    """Update request for a club's integration configuration.
-
-    The ``metadata`` dict is now bounded on three axes:
-    - max key count (``MAX_INTEGRATION_METADATA_KEYS``)
-    - max per-key length (``MAX_INTEGRATION_METADATA_KEY_LENGTH``)
-    - max per-value length (``MAX_INTEGRATION_METADATA_VALUE_LENGTH``)
-
-    Unknown envelope fields are rejected via ``extra="forbid"`` so future
-    refactors that accidentally echo request data back to the DB do not
-    introduce a mass-assignment surface.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    connected: bool = True
-    name: str | None = Field(default=None, max_length=MAX_INTEGRATION_NAME_LENGTH)
-    metadata: dict[str, str] | None = None
-
-    @model_validator(mode="after")
-    def _metadata_bounds(self):
-        m = self.metadata
-        if m is None:
-            return self
-        if len(m) > MAX_INTEGRATION_METADATA_KEYS:
-            raise ValueError(f"metadata exceeds maximum of {MAX_INTEGRATION_METADATA_KEYS} keys")
-        for k, v in m.items():
-            if len(k) > MAX_INTEGRATION_METADATA_KEY_LENGTH:
-                raise ValueError(
-                    f"metadata key length exceeds {MAX_INTEGRATION_METADATA_KEY_LENGTH}"
-                )
-            if not isinstance(v, str) or len(v) > MAX_INTEGRATION_METADATA_VALUE_LENGTH:
-                raise ValueError(
-                    f"metadata value length exceeds {MAX_INTEGRATION_METADATA_VALUE_LENGTH}"
-                )
-        return self
-
-
-class ClubIntegrationResponse(BaseModel):
-    club_id: int
-    platform: IntegrationPlatform
-    connected: bool
-    name: str | None = None
-    last_sync: datetime | None = None
-    metadata: dict[str, str] | None = None
 
 
 class ClubMemberResponse(BaseModel):
