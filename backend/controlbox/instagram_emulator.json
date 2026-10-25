@@ -11,9 +11,9 @@
     "-gpu",
     "host",
     "-memory",
-    "2048",
+    "4096",
     "-cores",
-    "2"
+    "4"
   ],
   "keep_alive_check_seconds": 60,
   "android_user_by_school": {

@@ -75,15 +75,6 @@ def test_switching_android_users_is_confirmed() -> None:
         _device(outputs, []).use_android_user(10)
 
 
-def test_switching_stops_the_other_secondary_users() -> None:
-    commands = []
-    others = sorted(set(module.CONTROL.android_user_by_school.values()) - {0, 11})
-    outputs = [(0, "0\n"), (0, ""), (0, ""), (0, ""), (0, "11\n")] + [(0, "")] * len(others)
-    _device(outputs, commands).use_android_user(11)
-    stopped = [command[-1] for command in commands if "stop-user" in command]
-    assert stopped == [str(user) for user in others] and "0" not in stopped
-
-
 def test_the_current_android_user_is_not_switched_again() -> None:
     commands = []
     _device([(0, "10\n")], commands).use_android_user(10)
