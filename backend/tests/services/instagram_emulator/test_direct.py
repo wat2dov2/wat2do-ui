@@ -318,6 +318,16 @@ def test_a_hint_under_our_reply_is_not_a_message() -> None:
     assert module._newest_is_ours(_thread(request, sent, hint), "just shared it!")
 
 
+def test_a_banner_over_the_thread_is_not_a_message() -> None:
+    request = _node("could you share our post?", (179, 400, 882, 550))
+    sent = _node("Sure, send it here!", (354, 798, 1057, 1048))
+    tray = _node("", (0, 1189, 1080, 1344), "message_composer_tray_container")
+    banner = _node("Your notifications are off.", (364, 1238, 716, 1280))
+    turn_on = _node("Turn on", (487, 1291, 593, 1333))
+    chat = _thread(request, sent, tray, banner, turn_on)
+    assert module._newest_is_ours(chat, "sure, send it here!")
+
+
 def test_a_reply_that_never_appears_is_not_confirmed() -> None:
     request = _node("could you share our post?", (179, 600, 882, 700))
     device = _ThreadDevice([_thread(request)])

@@ -281,6 +281,8 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
         default=message_list.bounds[1],
     )
     separators = [node for node in inside if _is_separator(node, message_list)]
+    # Banners such as "Your notifications are off. Turn on" sit in a tray over the list.
+    trays = [node for node in inside if node.resource_id == "message_composer_tray_container"]
     bubbles = [node for node in inside if node.resource_id == "xma_bubble_container"]
     # A shared reel can also be drawn as a bare media card, its owner above the video.
     cards = [
@@ -343,7 +345,7 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
             or node.bounds[1] < top
             or node in separators
             or _NOT_A_MESSAGE.match(node.text)
-            or any(node.inside(container) for container in [*bubbles, *cards])
+            or any(node.inside(container) for container in [*bubbles, *cards, *trays])
         ):
             continue
         found.append(
