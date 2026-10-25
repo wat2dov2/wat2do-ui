@@ -1,5 +1,5 @@
 {
-  "morning_email": false,
+  "morning_email": true,
   "event_reminder": true,
   "event_change": true
 }

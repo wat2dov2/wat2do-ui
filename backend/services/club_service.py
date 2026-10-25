@@ -40,6 +40,7 @@ from schemas.club import (
 )
 from services import admin_query, position_service, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
+from services.notifications.submission_review import send_review_decision
 from services.school_context import school_frontend_url
 
 _CLUB_SELECT = f"*,event_count,{school_service.SCHOOL_SLUG_EMBED}"
@@ -359,6 +360,14 @@ def set_club_status(club_id: int, status: ClubStatus) -> ClubResponse | None:
     if existing.status != updated.status:
         event_feed_revalidation_service.revalidate_school(
             updated.school, resources=("events", "positions", "clubs")
+        )
+        send_review_decision(
+            kind="club",
+            title=updated.club_name,
+            status=updated.status,
+            recipient=r.data[0].get("submitted_by_email"),
+            school=updated.school,
+            path=f"/clubs/{updated.id}",
         )
     return updated
 

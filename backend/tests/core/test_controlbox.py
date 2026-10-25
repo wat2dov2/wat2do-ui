@@ -44,8 +44,9 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert {"eventbrite", "meetup", "fable"} <= set(controlbox.competitor_pain_points.competitors)
     assert not {"x", "reddit"} & set(controlbox.competitor_pain_points.lanes)
     assert controlbox.competitor_pain_points.sources["forum"] == []
-    assert controlbox.notification_defaults.morning_email is False
+    assert controlbox.notification_defaults.morning_email is True
     assert controlbox.email_delivery.notification_consent_version == "2026-10"
+    assert controlbox.email_delivery.team_sender == "wat2do <team@wat2do.io>"
     assert controlbox.reel_transcription.model == "gpt-4o-mini-transcribe"
     assert controlbox.recommendations.snapshot.candidate_events_per_school == 1000
     assert controlbox.morning_email.new_event_window_hours == 24

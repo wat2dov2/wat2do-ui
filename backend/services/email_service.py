@@ -54,6 +54,8 @@ class EmailMessage:
     body_html: str
     body_text: str
     reply_to: str | None = None
+    # Overrides ``settings.email_from``, e.g. review decisions come from the team inbox.
+    sender: str | None = None
     # Stable per-send key, logged so a dispatch can be traced to its
     # notifications log row. SES has no idempotency key; the log's
     # (user, type, target, channel) UNIQUE claim guarantees one dispatch.
@@ -104,7 +106,7 @@ class EmailService:
 
     @staticmethod
     def _validate_v2_identity(msg: EmailMessage) -> None:
-        sender = settings.email_from.casefold()
+        sender = (msg.sender or settings.email_from).casefold()
         if "@wat2do.ca" in sender:
             raise RuntimeError("EMAIL_FROM must use wat2do.io, not wat2do.ca")
         if _LEGACY_WAT2DO_URL.search(msg.body_html) or _LEGACY_WAT2DO_URL.search(msg.body_text):
@@ -128,7 +130,7 @@ def _mime_message(msg: EmailMessage, recipients: list[str]) -> bytes:
     multipart/related container, so the message is assembled here rather than by SES.
     """
     mime = MimeMessage()
-    mime["From"] = settings.email_from
+    mime["From"] = msg.sender or settings.email_from
     mime["To"] = ", ".join(recipients)
     mime["Subject"] = msg.subject
     if msg.reply_to:

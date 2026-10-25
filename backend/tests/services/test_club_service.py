@@ -502,12 +502,24 @@ def test_club_status_change_refreshes_visibility_dependencies(monkeypatch, fake_
     patch_sb("services.club_service")
     row = {"id": 7, "club_name": "Tea Club", "school": "uwaterloo", "status": "pending"}
     monkeypatch.setattr(club_service, "get_club", lambda _: ClubResponse(**row))
-    fake_sb.set_response(data=[{**row, "status": "approved"}])
+    fake_sb.set_response(
+        data=[{**row, "status": "approved", "submitted_by_email": "lead@uwaterloo.ca"}]
+    )
     refresh = MagicMock()
     monkeypatch.setattr(club_service.event_feed_revalidation_service, "revalidate_school", refresh)
+    notify = MagicMock()
+    monkeypatch.setattr(club_service, "send_review_decision", notify)
 
     club_service.set_club_status(7, "approved")
     refresh.assert_called_once_with("uwaterloo", resources=("events", "positions", "clubs"))
+    notify.assert_called_once_with(
+        kind="club",
+        title="Tea Club",
+        status="approved",
+        recipient="lead@uwaterloo.ca",
+        school="uwaterloo",
+        path="/clubs/7",
+    )
 
 
 @pytest.mark.parametrize("database_fails", [False, True])

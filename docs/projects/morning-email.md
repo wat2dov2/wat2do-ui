@@ -23,7 +23,8 @@ Going is occurrence-aware so the reminder targets the showing the user intends t
 - Keep old `notifications_log` rows as inert history.
 - Use `morning_email` as the new type.
 - Use `event_reminder` as the one-hour Going reminder type.
-- Default `morning_email` to disabled and require an explicit settings opt-in.
+- Default `morning_email` to enabled: every user with an email gets it unless they turn it off in Settings or unsubscribe.
+- It was opt-in until 2026-10-25, when the owner asked for every signed-up user to receive it.
 - Default `event_reminder` to enabled.
 - Send a morning email only when the school has at least one new event or position.
 - Use the user's school timezone.

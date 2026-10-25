@@ -192,8 +192,10 @@ def test_submission_service_approval_publishes_event(monkeypatch):
         "get_submission_by_id",
         MagicMock(return_value=existing),
     )
-    mock_create_event = MagicMock()
+    mock_create_event = MagicMock(return_value=MagicMock(id=42))
     monkeypatch.setattr(event_service, "create_event", mock_create_event)
+    notify = MagicMock()
+    monkeypatch.setattr(submission_service, "send_review_decision", notify)
 
     mock_sb = MagicMock()
     mock_sb.table.return_value.update.return_value.eq.return_value.execute.return_value.data = [
@@ -212,6 +214,8 @@ def test_submission_service_approval_publishes_event(monkeypatch):
     mock_create_event.assert_called_once()
     _, kwargs = mock_create_event.call_args
     assert kwargs["created_by"] == "33333333-3333-3333-3333-333333333333"
+    assert notify.call_args.kwargs["kind"] == "event"
+    assert notify.call_args.kwargs["path"] == "/events/42"
 
 
 @pytest.mark.parametrize(

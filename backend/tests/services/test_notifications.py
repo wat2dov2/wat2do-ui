@@ -80,7 +80,7 @@ def test_preferences_resolve_only_active_defaults(fake_sb, patch_sb):
         NOTIFICATION_TYPE_EVENT_REMINDER,
         NOTIFICATION_TYPE_EVENT_CHANGE,
     ]
-    assert result[0].enabled is False
+    assert result[0].enabled is True
     assert result[1].enabled is True
     assert result[2].enabled is False
 
@@ -106,13 +106,13 @@ def test_set_preferences_atomically_records_choice_and_source(fake_sb, patch_sb)
     fake_sb.upsert.assert_not_called()
 
 
-def test_morning_email_missing_choice_never_enrolls_user(fake_sb, patch_sb):
+def test_morning_email_reaches_everyone_who_has_not_turned_it_off(fake_sb, patch_sb):
     patch_sb("services.notifications.preferences")
     fake_sb.set_response(data=[])
-    assert preferences.is_enabled(USER_ID, NOTIFICATION_TYPE_MORNING_EMAIL) is False
-    assert preferences.get_enabled_user_ids([USER_ID], NOTIFICATION_TYPE_MORNING_EMAIL) == set()
-    fake_sb.set_response(data=[{"user_id": USER_ID, "enabled": True}])
+    assert preferences.is_enabled(USER_ID, NOTIFICATION_TYPE_MORNING_EMAIL) is True
     assert preferences.get_enabled_user_ids([USER_ID], NOTIFICATION_TYPE_MORNING_EMAIL) == {USER_ID}
+    fake_sb.set_response(data=[{"user_id": USER_ID, "enabled": False}])
+    assert preferences.get_enabled_user_ids([USER_ID], NOTIFICATION_TYPE_MORNING_EMAIL) == set()
 
 
 def test_unsubscribe_records_withdrawal_for_signed_user(monkeypatch):

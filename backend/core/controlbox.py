@@ -544,6 +544,7 @@ class SocialPreviewsControl(_ControlModel):
 
 class EmailDeliveryControl(_ControlModel):
     provider_timeout_seconds: float = Field(gt=0)
+    team_sender: str = Field(min_length=1)
     notification_consent_version: str = Field(min_length=1)
     image_timeout_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
     image_max_bytes: int = Field(gt=0, le=20_000_000)

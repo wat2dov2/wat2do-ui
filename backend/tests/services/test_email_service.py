@@ -74,6 +74,16 @@ _LOGO = InlineImage(
 )
 
 
+def test_message_sender_overrides_the_default_from(monkeypatch):
+    monkeypatch.setattr(email_module.settings, "email_delivery_enabled", True)
+    monkeypatch.setattr(email_module.settings, "email_from", "wat2do <notifications@wat2do.io>")
+    ses = MagicMock()
+
+    EmailService(ses_client=ses).send(_message(sender="wat2do <team@wat2do.io>"))
+
+    assert _sent_mime(ses)["From"] == "wat2do <team@wat2do.io>"
+
+
 def test_inline_images_ride_inside_the_html_part(monkeypatch):
     monkeypatch.setattr(email_module.settings, "email_delivery_enabled", True)
     ses = MagicMock()

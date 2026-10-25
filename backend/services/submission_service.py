@@ -24,6 +24,7 @@ from schemas.event import EventCreate
 from schemas.position import PositionCreate
 from schemas.submission import PositionSubmissionResponse, SubmissionResponse
 from services import admin_query, club_service, event_service, school_service
+from services.notifications.submission_review import send_review_decision
 
 log = logging.getLogger(__name__)
 
@@ -207,9 +208,18 @@ def update_submission(
                 submission_id,
                 exc_info=True,
             )
-    if r.data:
-        return SubmissionResponse.model_validate(r.data[0])
-    return None
+    if not r.data:
+        return None
+    send_review_decision(
+        kind="event",
+        title=existing.event_data["title"],
+        status=status,
+        recipient=existing.submitted_by_email,
+        school=existing.school,
+        path=f"/events/{created_event_id}" if created_event_id is not None else "/events",
+        rejection_reason=rejection_reason,
+    )
+    return SubmissionResponse.model_validate(r.data[0])
 
 
 def review_position_submission(
@@ -248,6 +258,16 @@ def review_position_submission(
         raise
     if not result.data:
         return None
+    if status != existing.status:
+        send_review_decision(
+            kind="position",
+            title=existing.position_data.title,
+            status=status,
+            recipient=existing.submitted_by_email,
+            school=existing.school,
+            path="/positions",
+            rejection_reason=rejection_reason,
+        )
     if status == SUBMISSION_APPROVED:
         club = club_service.get_club(existing.position_data.club_id)
         if club:

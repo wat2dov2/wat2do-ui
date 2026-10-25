@@ -153,11 +153,17 @@ def test_approved_position_refreshes_positions_and_clubs_after_commit(
     refresh = Mock(side_effect=lambda *args, **kwargs: fake_sb.execute.assert_called_once())
     monkeypatch.setattr(event_feed_revalidation_service, "revalidate_school", refresh)
 
+    notify = Mock()
+    monkeypatch.setattr(submission_service, "send_review_decision", notify)
+
     submission_service.review_position_submission(
         row()["id"], "approved", None, reviewed_by="admin"
     )
 
     refresh.assert_called_once_with("uwaterloo", resources=("positions", "clubs"))
+    assert notify.call_args.kwargs["kind"] == "position"
+    assert notify.call_args.kwargs["recipient"] == "submitter@example.com"
+    assert notify.call_args.kwargs["status"] == "approved"
 
 
 @pytest.mark.parametrize(

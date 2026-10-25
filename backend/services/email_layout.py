@@ -68,6 +68,15 @@ def email_note(html: str) -> str:
     )
 
 
+def email_quote(html: str) -> str:
+    """Someone's own words, such as a contact message or a rejection reason; ``html`` must already be escaped."""
+    return (
+        f'<div style="margin:0 0 18px;padding:16px;background:{EMAIL_THEME["surface_elevated"]};'
+        f"border:1px solid {EMAIL_THEME['border']};border-radius:12px;"
+        f'color:{EMAIL_THEME["foreground"]};font:15px/1.6 sans-serif;">{html}</div>'
+    )
+
+
 def email_button(href: str, label: str) -> str:
     return (
         f'<a href="{escape(href, quote=True)}" style="display:inline-block;margin:4px 0 20px;'
