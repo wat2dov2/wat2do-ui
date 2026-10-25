@@ -10,6 +10,8 @@ from services.instagram_notifications.browser_session import (
 )
 
 POST = "https://www.instagram.com/p/ABC123/"
+# The executor tests swap in _Reader; the reader's own tests use the real one.
+THREAD_READER = module._ThreadReader
 THREAD = [
     {
         "from": "them",
@@ -236,7 +238,7 @@ def test_a_personal_chat_takes_the_username_and_tells_our_side_apart() -> None:
         ("them", "text", None),
         ("us", "text", None),
     ]
-    assert module._our_texts(PERSONAL_CHAT) == ["Sure!"]
+    assert module._newest_is_ours(PERSONAL_CHAT, "Sure!")
 
 
 def test_a_scrolled_chat_still_reads_our_replies_after_a_time_only_separator() -> None:
@@ -253,7 +255,7 @@ def test_a_scrolled_chat_still_reads_our_replies_after_a_time_only_separator() -
         ("them", "Hey! Could you share it to your story?"),
         ("us", "Sure thing!"),
     ]
-    assert module._our_texts(chat) == ["Sure thing!"]
+    assert module._newest_is_ours(chat, "Sure thing!")
 
 
 def test_a_reply_with_a_link_preview_is_still_read_as_our_text() -> None:
@@ -265,7 +267,54 @@ def test_a_reply_with_a_link_preview_is_still_read_as_our_text() -> None:
         _node("Wat2Do | Campus Events", (454, 714, 881, 761), "caption_title"),
         _node(reply, (298, 930, 1059, 1344), "direct_text_message_text_view"),
     ]
-    assert module._our_texts(chat) == [reply]
+    assert module._newest_is_ours(chat, reply)
+
+
+class _ThreadDevice:
+    """Serves screens in order, the last one forever, and records what was typed."""
+
+    def __init__(self, screens):
+        self.screens = screens
+        self.typed = []
+
+    def screen(self):
+        return self.screens.pop(0) if len(self.screens) > 1 else self.screens[0]
+
+    def find(self, pattern, nodes):
+        return next((node for node in nodes if node.labelled(pattern)), None)
+
+    def tap(self, node):
+        pass
+
+    def tap_when(self, pattern):
+        pass
+
+    def type_text(self, text):
+        self.typed.append(text)
+
+    def pause(self):
+        pass
+
+
+def _thread(*messages):
+    composer = _node("Message…", (158, 1365, 621, 1496), "row_thread_composer_edittext")
+    return [_node("", (0, 275, 1080, 1431), "message_list"), *messages, composer]
+
+
+def test_a_reply_is_confirmed_even_when_older_messages_scroll_away() -> None:
+    older = _node("Sure!", (850, 400, 1040, 450))
+    request = _node("could you share our post?", (179, 600, 882, 700))
+    sent = _node("just shared it!", (700, 1200, 1040, 1250))
+    device = _ThreadDevice([_thread(older, request), _thread(request), _thread(request, sent)])
+    THREAD_READER(device, lambda: None).send("just shared it!")
+    assert device.typed == ["just shared it!"]
+
+
+def test_a_reply_that_never_appears_is_not_confirmed() -> None:
+    request = _node("could you share our post?", (179, 600, 882, 700))
+    device = _ThreadDevice([_thread(request)])
+    with pytest.raises(module.EmulatorError, match="did not appear"):
+        THREAD_READER(device, lambda: None).send("just shared it!")
 
 
 def test_a_display_name_alone_is_not_taken_as_a_username() -> None:

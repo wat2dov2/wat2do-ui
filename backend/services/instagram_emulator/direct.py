@@ -61,6 +61,8 @@ _THEIR_BUBBLE_MAX_LEFT = 240
 # A text message is usually an unnamed view, but one with a link preview names its text.
 _TEXT_VIEW = "direct_text_message_text_view"
 _SHARES_TO_READ = 2
+# A sent reply can take a few screen reads to appear.
+_SEND_CHECKS = 4
 
 
 class EmulatorDirectExecutor:
@@ -167,14 +169,16 @@ class _ThreadReader:
 
     def send(self, text: str) -> None:
         nodes = self._screen_in_thread()
-        before = _our_texts(nodes)
         self._device.tap(_required(self._device.find(_COMPOSER, nodes)))
         self._device.type_text(text)
         self._device.tap_when(_SEND)
-        self._device.pause()
-        after = _our_texts(self._screen_in_thread())
-        if len(after) <= len(before) or after[-1] != text:
-            raise EmulatorError("The reply did not appear in the thread")
+        # The thread scrolls as the reply lands and older messages leave the screen, so
+        # the reply is confirmed by being the newest message, not by a count.
+        for _ in range(_SEND_CHECKS):
+            self._device.pause()
+            if _newest_is_ours(self._screen_in_thread(), text):
+                return
+        raise EmulatorError("The reply did not appear in the thread")
 
     def _open(self) -> list[Node]:
         self._opener()
@@ -378,9 +382,6 @@ def _side(node: Node) -> str:
     return "them" if node.bounds[0] < _THEIR_BUBBLE_MAX_LEFT else "us"
 
 
-def _our_texts(nodes: list[Node]) -> list[str]:
-    return [
-        message["text"]
-        for message in _messages(nodes)
-        if message["from"] == "us" and message["type"] == "text"
-    ]
+def _newest_is_ours(nodes: list[Node], text: str) -> bool:
+    messages = _messages(nodes)
+    return bool(messages) and (messages[-1]["from"], messages[-1]["text"]) == ("us", text)
