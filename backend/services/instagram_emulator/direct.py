@@ -48,7 +48,8 @@ _OLDER_THAN_A_WEEK = re.compile(r"^[A-Z]{3} \d{1,2},")
 # The last rows of the profile card at the top of a thread, when it is scrolled into view.
 _PROFILE_CARD_END = labels("View profile", "Learn about business chats")
 _NOT_A_MESSAGE = labels(
-    "Tap and hold to react",
+    # Hints under a message, such as "to react" or "to imagine with AI. Try it".
+    "Tap and hold to",
     "Seen",
     "Sent",
     "Delivered",
