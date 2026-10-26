@@ -11,7 +11,7 @@
     "club": "Organisasyon",
     "status": "Katayuan",
     "dayOfWeek": "Araw ng Linggo",
-    "createEvent": "Magsumite ng event",
+    "createEvent": "Magdagdag ng event",
     "submitEventSchoolDescription": "Tanging mga organisasyon mula sa {{school}} ang ipinapakita.",
     "submitEventForReview": "Isumite ang Kaganapan para sa Pagsusuri",
     "submitForReview": "Isumite para sa Pagsusuri",

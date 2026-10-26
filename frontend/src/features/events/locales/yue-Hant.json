@@ -11,7 +11,7 @@
     "club": "組織",
     "status": "狀態",
     "dayOfWeek": "星期",
-    "createEvent": "提交活動",
+    "createEvent": "新增活動",
     "submitEventSchoolDescription": "只顯示 {{school}} 的組織。",
     "submitEventForReview": "提交活動以供審核",
     "submitForReview": "提交以供審核",

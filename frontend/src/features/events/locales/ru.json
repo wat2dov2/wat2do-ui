@@ -11,7 +11,7 @@
     "club": "Организация",
     "status": "Статус",
     "dayOfWeek": "День недели",
-    "createEvent": "Отправить событие",
+    "createEvent": "Добавить событие",
     "submitEventSchoolDescription": "Показываются только организации из {{school}}.",
     "submitEventForReview": "Отправить событие на проверку",
     "submitForReview": "Отправить на проверку",

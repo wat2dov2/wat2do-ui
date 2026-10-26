@@ -11,7 +11,7 @@
     "club": "संगठन",
     "status": "स्थिति",
     "dayOfWeek": "सप्ताह का दिन",
-    "createEvent": "इवेंट जमा करें",
+    "createEvent": "इवेंट जोड़ें",
     "submitEventSchoolDescription": "केवल {{school}} के संगठन दिखाए गए हैं।",
     "submitEventForReview": "समीक्षा के लिए इवेंट सबमिट करें",
     "submitForReview": "समीक्षा के लिए सबमिट करें",

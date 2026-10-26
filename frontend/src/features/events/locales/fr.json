@@ -11,7 +11,7 @@
     "club": "Organisation",
     "status": "Statut",
     "dayOfWeek": "Jour de la semaine",
-    "createEvent": "Soumettre l'événement",
+    "createEvent": "Ajouter un événement",
     "submitEventSchoolDescription": "Seules les organisations de {{school}} sont affichées.",
     "submitEventForReview": "Soumettre l'événement pour révision",
     "submitForReview": "Soumettre pour révision",

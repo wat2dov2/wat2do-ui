@@ -11,7 +11,7 @@
     "club": "Club",
     "status": "Status",
     "dayOfWeek": "Day of Week",
-    "createEvent": "Submit Event",
+    "createEvent": "Add event",
     "submitEventSchoolDescription": "Only clubs from {{school}} are shown.",
     "submitEventForReview": "Submit Event for Review",
     "submitForReview": "Submit for Review",

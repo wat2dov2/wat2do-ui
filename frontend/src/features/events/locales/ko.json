@@ -11,7 +11,7 @@
     "club": "조직",
     "status": "상태",
     "dayOfWeek": "요일",
-    "createEvent": "이벤트 제출",
+    "createEvent": "이벤트 추가",
     "submitEventSchoolDescription": "{{school}} 소속 조직만 표시됩니다.",
     "submitEventForReview": "검토를 위해 이벤트 제출",
     "submitForReview": "검토를 위해 제출",

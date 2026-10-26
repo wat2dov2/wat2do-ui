@@ -11,7 +11,7 @@
     "club": "Organizacja",
     "status": "Status",
     "dayOfWeek": "Dzień tygodnia",
-    "createEvent": "Prześlij wydarzenie",
+    "createEvent": "Dodaj wydarzenie",
     "submitEventSchoolDescription": "Wyświetlane są tylko organizacje z {{school}}.",
     "submitEventForReview": "Prześlij wydarzenie do zatwierdzenia",
     "submitForReview": "Prześlij do zatwierdzenia",

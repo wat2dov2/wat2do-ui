@@ -11,7 +11,7 @@
     "club": "منظمة",
     "status": "الحالة",
     "dayOfWeek": "يوم الأسبوع",
-    "createEvent": "إرسال فعالية",
+    "createEvent": "إضافة فعالية",
     "submitEventSchoolDescription": "يتم عرض المؤسسات من {{school}} فقط.",
     "submitEventForReview": "إرسال الحدث للمراجعة",
     "submitForReview": "إرسال للمراجعة",

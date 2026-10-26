@@ -4,21 +4,16 @@ import NextLink from "next/link";
 import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronDown, Crown, HelpCircle, LogOut, MoreHorizontal, Shapes, Settings, Shield, Ticket, Users } from "lucide-react";
+import { ChevronDown, Crown, HelpCircle, LogOut, MoreHorizontal, Shapes, Settings, Shield, Ticket, Users } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@/shared/ui/tooltip";
-import { Button } from "@/shared/ui/button";
+import { Button, buttonVariants } from "@/shared/ui/button";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/ui/dropdown-menu";
+import { SearchCombobox } from "@/shared/ui/search-combobox";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { Separator } from "@/shared/ui/separator";
@@ -108,6 +103,7 @@ export function TopNav() {
   const pathname = usePathname();
   const activeClub = clubs.find((club) => club.id === clubId) ?? clubs[0];
   const canOpenClubPanel = profileCompleted && Boolean(activeClub);
+  const onClubPanel = isRouteActive(pathname, ROUTES.CLUB_PANEL);
   const userInitial = (userEmail?.[0] ?? "?").toUpperCase();
   const userAvatar = userAvatarUrl ? (
     <LazyImage src={userAvatarUrl} alt="" width={32} height={32} fallback={userInitial} className="size-full" />
@@ -275,27 +271,32 @@ export function TopNav() {
                 })}
               </nav>
               {canOpenClubPanel && (
-                // One entry for every club the user manages: pick which one the club panel opens on.
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant={isRouteActive(pathname, ROUTES.CLUB_PANEL) ? "outline" : "ghost"}
-                      size="navigation"
-                    >
-                      <Crown />
-                      {t("clubPanel.title")}
-                      <ChevronDown className="ms-auto" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    {clubs.map((club) => (
-                      <DropdownMenuItem key={club.id} onSelect={() => handleClubSelect(club)}>
-                        {club.club_name}
-                        {club.id === activeClub.id ? <Check className="ms-auto" /> : null}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <>
+                  <Separator />
+                  {/* One entry for every club the user manages: pick which one the club panel opens on. */}
+                  <SearchCombobox<NavClub>
+                    // Marks a club only while its panel is open.
+                    selectedKey={onClubPanel ? activeClub.id : ""}
+                    onSelect={handleClubSelect}
+                    items={clubs}
+                    getKey={(club) => club.id}
+                    getLabel={(club) => club.club_name}
+                    displayValue={t("clubPanel.title")}
+                    renderTriggerLabel={(label) => (
+                      <>
+                        <Crown />
+                        <span className="min-w-0 flex-1 truncate text-start">{label}</span>
+                        <ChevronDown />
+                      </>
+                    )}
+                    triggerClassName={buttonVariants({
+                      variant: onClubPanel ? "outline" : "ghost",
+                      size: "navigation",
+                    })}
+                    searchPlaceholder={t("forms.searchClubPlaceholder")}
+                    emptyLabel={t("forms.noClubFound")}
+                  />
+                </>
               )}
               {profileCompleted && isAdmin && (
                 <Button variant="ghost" size="navigation" onClick={handleAdminClick}>

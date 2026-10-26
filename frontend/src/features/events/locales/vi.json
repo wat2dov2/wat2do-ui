@@ -11,7 +11,7 @@
     "club": "Tổ chức",
     "status": "Trạng thái",
     "dayOfWeek": "Ngày trong tuần",
-    "createEvent": "Gửi sự kiện",
+    "createEvent": "Thêm sự kiện",
     "submitEventSchoolDescription": "Chỉ các tổ chức từ {{school}} được hiển thị.",
     "submitEventForReview": "Gửi sự kiện để xem xét",
     "submitForReview": "Gửi để xem xét",

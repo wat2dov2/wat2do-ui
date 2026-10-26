@@ -11,7 +11,7 @@
     "club": "سازمان",
     "status": "وضعیت",
     "dayOfWeek": "روز هفته",
-    "createEvent": "ثبت رویداد",
+    "createEvent": "افزودن رویداد",
     "submitEventSchoolDescription": "فقط سازمان‌های {{school}} نمایش داده می‌شوند.",
     "submitEventForReview": "ارسال رویداد برای بررسی",
     "submitForReview": "ارسال برای بررسی",
