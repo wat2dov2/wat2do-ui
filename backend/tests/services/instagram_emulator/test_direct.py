@@ -436,3 +436,126 @@ def test_a_story_request_waits_while_the_emulator_is_low_on_storage(
         _handle(monkeypatch, decision, dry_run=False, request=True)
     assert not isinstance(raised.value, BrowserEngagementUncertain)
     assert stories == [] and accepted == [] and _Reader.sent == []
+
+
+# Laurier Audiology Association's chat: their post bubble cut off at the top of the
+# screen, with no owner and no media, under it their request, then our answer.
+CUT_OFF_CHAT = [
+    _node("Laurier Audiology Association", (304, 156, 650, 204), "header_title"),
+    _node("", (304, 204, 650, 246), "header_subtitle", "Active 24m ago"),
+    _node("", (0, 275, 1080, 2188), "message_list"),
+    _node("", (147, 275, 777, 431), "xma_bubble_container"),
+    _node("laurier_audiology_association HEAR ME OUT", (182, 305, 742, 396), "caption_title"),
+    _node("Could you repost this on your story?", (179, 461, 882, 611)),
+    _node("YESTERDAY 6:53 AM", (0, 718, 1080, 801)),
+    _node("Sure, which post?", (850, 900, 1040, 950)),
+    _node("This one!", (179, 1000, 400, 1050)),
+]
+# The same chat scrolled up: the post in full; our answer and the newest message are
+# now below the screen.
+REVEALED_CHAT = [
+    _node("Laurier Audiology Association", (304, 156, 650, 204), "header_title"),
+    _node("", (0, 275, 1080, 2188), "message_list"),
+    _node("", (147, 581, 777, 1655), "xma_bubble_container"),
+    _node("laurier_audiology_association", (289, 622, 751, 676), "title"),
+    _node("", (147, 717, 777, 1494), "media_container"),
+    _node("laurier_audiology_association HEAR ME OUT", (182, 1529, 742, 1620), "caption_title"),
+    _node("Could you repost this on your story?", (179, 1685, 882, 1835)),
+    _node("YESTERDAY 6:53 AM", (0, 1942, 1080, 2025)),
+    _node("Sure, which post?", (850, 2124, 1040, 2174)),
+]
+
+
+class _ScrollingDevice:
+    """Serves the thread's screen, each upward scroll showing the next screen up."""
+
+    def __init__(self, *screens):
+        self.screens = list(screens)
+        self.scrolls = 0
+
+    def screen(self):
+        return self.screens[min(self.scrolls, len(self.screens) - 1)]
+
+    def scroll_up(self):
+        self.scrolls += 1
+
+
+def _reader(device, monkeypatch):
+    reader = THREAD_READER(device, lambda: None)
+    links = []
+
+    def shared_link(from_bottom, owner):
+        links.append((device.scrolls, from_bottom, owner))
+        return POST
+
+    monkeypatch.setattr(reader, "_shared_link", shared_link)
+    monkeypatch.setattr(reader, "_profile_username", lambda: "laurier_audiology_association")
+    return reader, links
+
+
+def test_a_share_cut_off_at_the_top_is_scrolled_into_view_and_read(monkeypatch) -> None:
+    device = _ScrollingDevice(CUT_OFF_CHAT, CUT_OFF_CHAT, REVEALED_CHAT)
+    reader, links = _reader(device, monkeypatch)
+    thread = reader.read()
+    assert [(m["from"], m["type"], m["text"]) for m in thread] == [
+        ("them", "media_share", "HEAR ME OUT"),
+        ("them", "text", "Could you repost this on your story?"),
+        ("us", "text", "Sure, which post?"),
+        ("them", "text", "This one!"),
+    ]
+    assert thread[0]["shared_owner"] == "laurier_audiology_association"
+    assert thread[0]["shared_url"] == POST
+    # Copied once the post shows its owner, as the newest share on that screen.
+    assert links == [(2, 0, "laurier_audiology_association")]
+    assert thread[-1]["sender"] == "laurier_audiology_association"
+
+
+def test_a_share_that_never_shows_its_owner_is_left_unread(monkeypatch) -> None:
+    device = _ScrollingDevice(CUT_OFF_CHAT)
+    reader, links = _reader(device, monkeypatch)
+    thread = reader.read()
+    assert device.scrolls == module._REVEAL_SCROLLS and links == []
+    assert len(thread) == 4 and thread[0]["shared_owner"] is None
+
+
+def test_screens_join_where_the_lower_one_begins() -> None:
+    lower = module._messages(CUT_OFF_CHAT)[1:]
+    upper = module._messages(REVEALED_CHAT)
+    assert module._start_of(lower, upper) == 1
+    # Scrolled so far that nothing of the lower screen is left: nowhere to join.
+    assert module._start_of(lower, upper[:1]) is None
+
+
+class _ProfileDevice:
+    def __init__(self, *, group=False):
+        self.group = group
+        self.backs = 0
+
+    def find(self, pattern, nodes=None):
+        return _node("Laurier Audiology Association", (304, 156, 650, 204), "header_title")
+
+    def tap(self, node):
+        pass
+
+    def tap_when(self, pattern):
+        if self.group:
+            raise module.EmulatorError("no profile")
+
+    def wait_for(self, pattern):
+        return _node("laurier_audiology_association", (169, 128, 805, 275), "action_bar_title")
+
+    def back(self):
+        self.backs += 1
+
+
+def test_an_online_sender_is_named_by_their_profile() -> None:
+    device = _ProfileDevice()
+    username = THREAD_READER(device, lambda: None)._profile_username()
+    assert username == "laurier_audiology_association"
+    assert device.backs == 2
+
+
+def test_a_group_chat_has_no_one_sender() -> None:
+    device = _ProfileDevice(group=True)
+    assert THREAD_READER(device, lambda: None)._profile_username() is None
+    assert device.backs == 1

@@ -100,6 +100,17 @@ def test_typing_sends_one_escaped_character_at_a_time() -> None:
     assert [command[-1] for command in commands] == ["a", "%s", "b", "\\'", "\\&"]
 
 
+def test_scrolling_drags_the_way_the_content_should_move() -> None:
+    commands = []
+    device = _device([(0, ""), (0, "")], commands)
+    device.scroll_down()
+    device.scroll_up()
+    down, up = ([int(value) for value in command[-5:-1]] for command in commands)
+    # Older content is above: scrolling down drags up, scrolling up drags a little down.
+    assert down[3] < down[1] and up[3] > up[1]
+    assert up[3] - up[1] < down[1] - down[3]
+
+
 def test_holding_the_emulator_is_reentrant_but_exclusive(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(module, "_LOCK_PATH", tmp_path / "emulator.lock")
     with module.exclusive():
