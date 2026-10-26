@@ -20,6 +20,7 @@ import { toast } from "@/shared/hooks/use-toast";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import { getSchoolColors } from "@/shared/lib/schoolBranding";
 import { InstagramMusicStatus } from "./InstagramMusicStatus";
 import { InstagramEventEditor } from "./InstagramEventEditor";
 import { fetchEventById, updateEventAPI } from "@/features/events/api/events.api";
@@ -88,6 +89,7 @@ export function InstagramCarouselDrawer({
   const currentEventId = slideIndex === COVER_INDEX ? null : (eventIds[slideIndex - 1] ?? null);
   const busy = isSaving || isPublishing || isSavingSlide;
   const school = schoolBySlug.get(batch.school);
+  const coverColors = school ? getSchoolColors(school) : null;
 
   // Slides render from the saved carousel, so an event edited here shows up in
   // the preview once the draft is saved and the batch comes back.
@@ -296,6 +298,7 @@ export function InstagramCarouselDrawer({
                 slideCount={slideCount}
                 event={eventId == null ? null : liveSlides[eventId] ?? slideEvents[eventId] ?? null}
                 stickerLabels={eventId == null ? undefined : batch.sticker_selections?.[String(eventId)]}
+                coverColors={coverColors}
                 cover={cover}
                 outroEvents={batch.published_outro_url && index === publishedAssets.length - 1 ? [] : undefined}
                 publishedAssetUrl={publishedAssets[index] ?? null}
@@ -308,6 +311,7 @@ export function InstagramCarouselDrawer({
                   slideIndex={slideCount}
                   slideCount={slideCount}
                   event={null}
+                  coverColors={coverColors}
                   cover={cover}
                   outroEvents={batch.other_events ?? []}
                 />

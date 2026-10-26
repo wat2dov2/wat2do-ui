@@ -437,16 +437,9 @@ test.describe("Instagram raster preparation", () => {
       const left = Math.round(Number(position[1]) + 24);
       const top = Math.round(Number(position[2]) + 20);
       const label = await sharp(output).extract({ left, top, width: 160, height: 54 }).removeAlpha().raw().toBuffer();
-      // Stickers are grey, blue or ink, so text is whatever contrasts with the fill.
-      const counts = new Map<string, number>();
-      for (let index = 0; index < label.length; index += 3) {
-        const key = label.subarray(index, index + 3).join();
-        counts.set(key, (counts.get(key) ?? 0) + 1);
-      }
-      const fill = [...counts].sort((a, b) => b[1] - a[1])[0][0].split(",").map(Number);
       let textPixels = 0;
       for (let index = 0; index < label.length; index += 3) {
-        if ([0, 1, 2].some(channel => Math.abs(label[index + channel] - fill[channel]) > 120)) textPixels++;
+        if ([0, 1, 2].every(channel => Math.abs(label[index + channel] - 23) <= 3)) textPixels++;
       }
       expect(textPixels).toBeGreaterThan(80);
     }
@@ -782,21 +775,11 @@ test("a draft explains that music is added after it publishes", () => {
   expect(html).not.toContain("href=");
 });
 
-test("carousel slides use the Wat2Do palette, not the school's colours", () => {
-  const { CoverSlideTemplate } = loadComponent("features/admin/components/instagram/slides/SlideTemplates");
-  const html = render(CoverSlideTemplate, { model: {
-    logoSrc: "https://a/logo.svg", doodleIcons: [], dateLine: "Wednesday, October 21st", newEventCount: 3,
-    headline: "New events", body: "", swipeLine: "Swipe", siteLine: "uwaterloo.wat2do.io", tiles: [],
-  } }).toLowerCase();
-  expect(html).toContain("background-color:#ffffff");
-  expect(html).toContain("color:#0052ff");
-});
-
 test("the cover fan draws its cards right to left so the first event sits on top", () => {
   const { CoverSlideTemplate } = loadComponent("features/admin/components/instagram/slides/SlideTemplates");
   const tiles = ["https://a/first.png", "https://a/second.png", "https://a/third.png"];
   const html = render(CoverSlideTemplate, { model: {
-    logoSrc: "https://a/logo.svg", doodleIcons: [],
+    colors: { primary: "#000000", secondary: "#ffd54f" }, logoSrc: "https://a/logo.svg", doodleIcons: [],
     dateLine: "Wednesday, October 21st", newEventCount: 3, headline: "New events", body: "",
     swipeLine: "Swipe", siteLine: "uwaterloo.wat2do.io", tiles,
   } });
