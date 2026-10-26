@@ -72,22 +72,39 @@ def test_any_account_can_reach_the_schools_story() -> None:
         assert _checked(_answer(), _shared_by(sender, owner)).outcome == "story_repost"
 
 
-def test_only_a_clubs_own_post_is_added_to_the_site() -> None:
-    thread = _shared_by("someexec", CLUB)
-    assert _checked(_answer(outcome="add_to_post"), thread).outcome == "ignore"
-    # Adding to posts only queues it for the ingestion agent, which checks it is an event.
-    assert _checked(_answer(outcome="add_to_post")).outcome == "add_to_post"
+def test_any_account_can_ask_for_a_carousel_spot() -> None:
+    # The admin reviews every carousel, so a forwarded post is as good as the club's own.
+    for sender, owner in [("someexec", CLUB), (None, CLUB)]:
+        assert _checked(_answer(outcome="feature"), _shared_by(sender, owner)).outcome == "feature"
 
 
-@pytest.mark.parametrize("outcome", ["story_repost", "add_to_post"])
-@pytest.mark.parametrize(("sender", "owner"), [(None, CLUB), (CLUB, None), ("", "")])
-def test_a_post_without_a_known_sender_and_owner_is_ignored(outcome, sender, owner) -> None:
-    assert _checked(_answer(outcome=outcome), _shared_by(sender, owner)).outcome == "ignore"
+@pytest.mark.parametrize("outcome", ["story_repost", "feature"])
+@pytest.mark.parametrize("owner", [None, ""])
+def test_a_post_without_a_readable_owner_is_ignored(outcome, owner) -> None:
+    assert _checked(_answer(outcome=outcome), _shared_by(CLUB, owner)).outcome == "ignore"
 
 
-def test_handles_match_regardless_of_case_or_at_sign() -> None:
-    thread = _shared_by("@UBCClub", "ubcclub")
-    assert _checked(_answer(outcome="add_to_post"), thread).outcome == "add_to_post"
+def test_a_correction_needs_no_shared_post() -> None:
+    decision = _checked(_answer(outcome="correction", media_url=None, reply="thanks, will fix it"))
+    assert (decision.outcome, decision.media_url) == ("correction", None)
+
+
+def test_an_opt_out_needs_to_know_whose_club_to_leave_out() -> None:
+    opt_out = _answer(outcome="opt_out", media_url=None, reply="got it, we will stop")
+    assert _checked(opt_out, _shared_by("@UBCClub", CLUB)).outcome == "opt_out"
+    assert module.sender(_shared_by("@UBCClub", CLUB)) == "ubcclub"
+    assert _checked(opt_out, _shared_by(None, CLUB)).outcome == "ignore"
+
+
+def test_a_correction_carries_only_what_they_wrote_since_our_last_message() -> None:
+    thread = [
+        {"from": "them", "text": "old news"},
+        {"from": "us", "text": "done!"},
+        {"from": "them", "text": "the swap moved to oct 21"},
+        {"from": "them", "text": "", "shared_url": POST},
+        {"from": "them", "text": "10am to 2:30pm"},
+    ]
+    assert module.their_latest_words(thread) == "the swap moved to oct 21\n10am to 2:30pm"
 
 
 @pytest.mark.parametrize(

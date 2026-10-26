@@ -85,7 +85,7 @@ def run(monkeypatch, tmp_path):
 
 
 def test_ingest_runs_haiku_with_psql_only_then_settles_its_changes(run):
-    assert module.ingest(dict(_POST), school="uwaterloo") is True
+    assert module.ingest(dict(_POST), school="uwaterloo", source="instagram") is True
 
     [(args, kwargs)] = run.calls
     assert args[:2] == ["/usr/local/bin/claude", "-p"]
@@ -111,7 +111,7 @@ def test_ingest_runs_haiku_with_psql_only_then_settles_its_changes(run):
 
 def test_ingest_gives_the_agent_a_scoped_login_and_no_application_secrets(run, monkeypatch):
     monkeypatch.setenv("SUPABASE_SECRET_KEY", "service-key")
-    module.ingest(dict(_POST), school="uwaterloo")
+    module.ingest(dict(_POST), school="uwaterloo", source="instagram")
 
     environment = run.calls[0][1]["env"]
     assert "SUPABASE_SECRET_KEY" not in environment
@@ -122,7 +122,7 @@ def test_ingest_gives_the_agent_a_scoped_login_and_no_application_secrets(run, m
 
 
 def test_ingest_renders_every_prompt_placeholder(run):
-    module.ingest(dict(_POST), school="uwaterloo")
+    module.ingest(dict(_POST), school="uwaterloo", source="instagram")
 
     prompt = run.calls[0][1]["input"]
     assert "{{" not in prompt
@@ -139,9 +139,25 @@ def test_ingest_renders_every_prompt_placeholder(run):
     assert "Current semester ends: 2026-12-22" in prompt
 
 
+def test_a_post_a_club_asked_us_to_feature_tells_the_agent_to_mark_its_events(run):
+    module.ingest(dict(_POST), school="uwaterloo", source="instagram", carousel_requested=True)
+    assert module.CAROUSEL_NOTE in run.calls[0][1]["input"]
+    module.ingest(dict(_POST), school="uwaterloo", source="instagram")
+    assert module.CAROUSEL_NOTE not in run.calls[1][1]["input"]
+
+
+def test_a_clubs_dm_is_read_as_a_correction_to_its_listings(run):
+    url = "https://wat2do.io/dm/uwaterloo/abc"
+    message = {"url": url, "caption": "our karaoke night costs $5", "ownerUsername": "remul"}
+    module.ingest(message, school="uwaterloo", source="dm")
+    prompt = run.calls[0][1]["input"]
+    assert module.DM_NOTE in prompt and "our karaoke night costs $5" in prompt
+    assert "Source kind: direct message from a club" in prompt
+
+
 def test_ingest_lets_directory_pages_fall_back_to_the_publishing_club(run):
     page = {"url": "https://wusa.ca/event/jam/", "text": "Jam night", "images": []}
-    module.ingest(page, school="uwaterloo", publisher_ig="yourwusa")
+    module.ingest(page, school="uwaterloo", source="directory", publisher_ig="yourwusa")
 
     assert run.resolved == [
         {
@@ -161,7 +177,7 @@ def test_ingest_still_drains_when_the_agent_fails(run):
     run.result = subprocess.CompletedProcess([], 1, stdout="")
 
     with pytest.raises(module.AgentError, match="exit 1"):
-        module.ingest(dict(_POST), school="uwaterloo")
+        module.ingest(dict(_POST), school="uwaterloo", source="instagram")
     assert run.drains == [
         ("posters", 1),
         ("cover", _POST["url"], 1),
@@ -172,13 +188,13 @@ def test_ingest_still_drains_when_the_agent_fails(run):
 
 def test_ingest_skips_sources_already_listed(run, monkeypatch):
     monkeypatch.setattr(module, "already_imported", lambda _url: True)
-    assert module.ingest(dict(_POST), school="uwaterloo") is True
+    assert module.ingest(dict(_POST), school="uwaterloo", source="instagram") is True
     assert run.calls == [] and run.drains == []
 
 
 def test_ingest_reports_a_source_that_changed_nothing(run):
     run.outcome = "nothing"
-    assert module.ingest(dict(_POST), school="uwaterloo") is False
+    assert module.ingest(dict(_POST), school="uwaterloo", source="instagram") is False
     assert module.DIRECTORY_NOTE not in run.calls[0][1]["input"]
 
 
@@ -186,14 +202,14 @@ def test_an_agent_without_an_outcome_fails_and_still_cleans_up(run):
     run.result = subprocess.CompletedProcess([], 0, stdout="Inserted event 1")
 
     with pytest.raises(module.AgentError, match="gave no answer"):
-        module.ingest(dict(_POST), school="uwaterloo")
+        module.ingest(dict(_POST), school="uwaterloo", source="instagram")
     assert run.removed and run.drains[-1] == "drain"
 
 
 def test_ingest_requires_the_scoped_login(run, monkeypatch):
     monkeypatch.setattr(module.settings, "ingest_agent_database_url", "")
     with pytest.raises(module.AgentError, match="INGEST_AGENT_DATABASE_URL"):
-        module.ingest(dict(_POST), school="uwaterloo")
+        module.ingest(dict(_POST), school="uwaterloo", source="instagram")
 
 
 def test_candidate_handles_puts_the_owner_first_once():

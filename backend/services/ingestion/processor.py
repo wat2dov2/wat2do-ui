@@ -123,7 +123,11 @@ class _Processor:
         with self._club_locks[_club_key(item)]:
             try:
                 changed = agent.ingest(
-                    item.post or {}, school=item.school, publisher_ig=self._publisher(item)
+                    item.post or {},
+                    school=item.school,
+                    source=item.source,
+                    publisher_ig=self._publisher(item),
+                    carousel_requested=item.carousel_requested,
                 )
             except Exception:
                 # Source content stays out of logs; the row is retried, then given up.

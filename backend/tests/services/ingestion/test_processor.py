@@ -17,8 +17,18 @@ class FakeQueue:
         self.rows: dict[str, dict] = {}
         self.lock = threading.Lock()
 
-    def add(self, url, *, status="ready", post=None, source="instagram", directory_source_id=None):
+    def add(
+        self,
+        url,
+        *,
+        status="ready",
+        post=None,
+        source="instagram",
+        directory_source_id=None,
+        carousel_requested=False,
+    ):
         self.rows[url] = {
+            "carousel_requested": carousel_requested,
             "status": status,
             "post": post if post is not None or status == "fetch" else {"url": url},
             "source": source,
@@ -41,6 +51,7 @@ class FakeQueue:
                         post=row["post"],
                         directory_source_id=row["directory_source_id"],
                         attempts=row["attempts"],
+                        carousel_requested=row["carousel_requested"],
                     )
         return None
 
@@ -91,7 +102,7 @@ def test_rows_end_done_not_event_or_retried(queue, monkeypatch, caplog):
     queue.add("https://example.edu/events/meme")
     queue.add("https://example.edu/events/broken", post={"url": "x", "caption": "Secret text"})
 
-    def ingest(post, *, school, publisher_ig):
+    def ingest(post, *, school, publisher_ig, **_):
         if post["url"] == "x":
             raise RuntimeError("agent failed")
         return post["url"].endswith("listed")
@@ -167,7 +178,7 @@ def test_publishers_are_looked_up_only_for_directory_rows(queue, monkeypatch):
     monkeypatch.setattr(
         module.agent,
         "ingest",
-        lambda post, *, school, publisher_ig: publishers.update({post["url"]: publisher_ig}),
+        lambda post, *, school, publisher_ig, **_: publishers.update({post["url"]: publisher_ig}),
     )
 
     module.process_queue(wait_for_work=False)
@@ -244,3 +255,22 @@ def test_a_running_processor_wakes_when_the_queue_changes(queue, monkeypatch):
         runner.join(5)
     assert not runner.is_alive()
     assert queue.statuses() == {"https://example.edu/events/new": "done"}
+
+
+def test_the_agent_hears_each_rows_kind_and_carousel_request(queue, monkeypatch):
+    queue.add("https://www.instagram.com/p/POST/", carousel_requested=True)
+    queue.add("https://wat2do.io/dm/upenn/abc", source="dm")
+    monkeypatch.setattr(module, "CONTROL", module.CONTROL.model_copy(update={"parallel_agents": 1}))
+    seen = {}
+    monkeypatch.setattr(
+        module.agent,
+        "ingest",
+        lambda post, *, source, carousel_requested, **_: seen.update(
+            {post["url"]: (source, carousel_requested)}
+        ),
+    )
+    module.process_queue(wait_for_work=False)
+    assert seen == {
+        "https://www.instagram.com/p/POST/": ("instagram", True),
+        "https://wat2do.io/dm/upenn/abc": ("dm", False),
+    }

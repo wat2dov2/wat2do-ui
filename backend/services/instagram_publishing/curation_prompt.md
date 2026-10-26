@@ -4,6 +4,8 @@ Read `packet.json` in this folder. It has the school, its language (`en` or `fr`
 
 ## Which events
 
+Events with a `carousel_requested_at` time were asked for by their own club in our DMs. Pick every one of them unless it breaks a rule below (an excluded club) or is clearly inappropriate to promote, even when it would otherwise be too plain to make the cut, and rank them before the other picks. The rest of these rules choose among the other events.
+
 Never pick an event whose `ig_handle` (ignoring `@` and case) is in `excluded_clubs`, or whose club is clearly one of those accounts. Those clubs asked not to be posted.
 
 Pick the events that make students want to go and make this account look worth following: the cool, exciting, high-status ones people would brag about attending or post on their story. There is no quota, but be selective; a short carousel of great events beats a long one with filler.
@@ -28,7 +30,7 @@ The carousel should show the whole range of what is happening, so a student with
 
 ## Order
 
-`picks` is the carousel's slide order, so rank them. Put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The weaker picks go last. Never order by date, club or the packet's order. Within that ranking, avoid placing two very similar events next to each other, so each swipe shows something new.
+`picks` is the carousel's slide order, so rank them. Requested events come first, the most exciting of them leading. After them, put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The weaker picks go last. Never order by date, club or the packet's order. Within that ranking, avoid placing two very similar events next to each other, so each swipe shows something new.
 
 ## Stickers
 

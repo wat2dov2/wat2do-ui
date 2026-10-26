@@ -12,15 +12,24 @@ from services.instagram_notifications.browser_session import (
 POST = "https://www.instagram.com/p/ABC123/"
 # The executor tests swap in _Reader; the reader's own tests use the real one.
 THREAD_READER = module._ThreadReader
+CLUB = "club"
 THREAD = [
     {
         "from": "them",
         "type": "media_share",
         "text": "",
         "shared_url": POST,
-        "sender": "club",
-        "shared_owner": "club",
-    }
+        "sender": CLUB,
+        "shared_owner": CLUB,
+    },
+    {
+        "from": "them",
+        "type": "text",
+        "text": "could you add this to your story?",
+        "shared_url": None,
+        "sender": CLUB,
+        "shared_owner": None,
+    },
 ]
 
 
@@ -73,9 +82,20 @@ def emulator(monkeypatch):
 
 @pytest.fixture
 def queued(monkeypatch):
+    """Everything the executor records for later: carousel requests, corrections, opt-outs."""
     calls = []
     monkeypatch.setattr(
-        module.items, "queue_instagram", lambda urls, school: calls.append((urls, school))
+        module.items,
+        "request_carousel",
+        lambda url, *, school: calls.append(("carousel", url, school)),
+    )
+    monkeypatch.setattr(
+        module.items,
+        "queue_dm",
+        lambda text, *, school, sender: calls.append(("correction", text, school, sender)),
+    )
+    monkeypatch.setattr(
+        module, "exclude_club", lambda handle, *, reason: calls.append(("opt_out", handle))
     )
     return calls
 
@@ -114,11 +134,23 @@ def test_dry_run_decides_without_replying_reposting_or_queueing(
     assert _Reader.sent == [] and stories == [] and queued == []
 
 
-def test_add_to_post_queues_the_post_then_replies_once(monkeypatch, queued) -> None:
-    result = _handle(monkeypatch, DmDecision("add_to_post", POST, "Sure!"), dry_run=False)
+def test_a_carousel_request_is_recorded_then_replied_to_once(monkeypatch, queued) -> None:
+    result = _handle(monkeypatch, DmDecision("feature", POST, "Sure!"), dry_run=False)
     assert result["status"] == "replied"
-    assert queued == [([POST], "ubc")]
+    assert queued == [("carousel", POST, "ubc")]
     assert _Reader.sent == ["Sure!"]
+
+
+def test_a_correction_hands_their_words_to_the_ingestion_agent(monkeypatch, queued) -> None:
+    decision = DmDecision("correction", reply="thanks, we'll update it")
+    _handle(monkeypatch, decision, dry_run=False)
+    assert queued == [("correction", "could you add this to your story?", "ubc", CLUB)]
+    assert _Reader.sent == ["thanks, we'll update it"]
+
+
+def test_an_opt_out_leaves_the_senders_club_out_of_carousels(monkeypatch, queued) -> None:
+    _handle(monkeypatch, DmDecision("opt_out", reply="got it, we'll stop"), dry_run=False)
+    assert queued == [("opt_out", CLUB)]
 
 
 def test_a_story_request_is_reposted_before_its_reply(monkeypatch, queued, stories) -> None:
@@ -127,7 +159,8 @@ def test_a_story_request_is_reposted_before_its_reply(monkeypatch, queued, stori
     assert result["status"] == "reposted"
     assert stories == [("ubc", "wat2do.ubc", POST)]
     assert _Reader.sent == ["just shared it!"]
-    assert queued == []
+    # A story repost also puts the event in an upcoming carousel.
+    assert queued == [("carousel", POST, "ubc")]
 
 
 def test_a_plain_reply_is_sent_without_queueing_or_reposting(
@@ -140,7 +173,7 @@ def test_a_plain_reply_is_sent_without_queueing_or_reposting(
     assert stories == [] and queued == [] and len(accepted) == 1
 
 
-def test_a_failed_story_repost_pauses_without_replying(monkeypatch) -> None:
+def test_a_failed_story_repost_pauses_without_replying(monkeypatch, queued) -> None:
     def fail(*_args):
         raise RuntimeError("emulator offline")
 
@@ -153,13 +186,13 @@ def test_a_failed_story_repost_pauses_without_replying(monkeypatch) -> None:
 def test_an_unconfirmed_reply_pauses_for_a_person(monkeypatch, queued) -> None:
     _Reader.fail_send = True
     with pytest.raises(BrowserEngagementUncertain, match="reply"):
-        _handle(monkeypatch, DmDecision("add_to_post", POST, "Sure!"), dry_run=False)
+        _handle(monkeypatch, DmDecision("feature", POST, "Sure!"), dry_run=False)
 
 
 def test_an_unreadable_thread_fails_without_pausing(monkeypatch, queued) -> None:
     _Reader.fail_read = True
     with pytest.raises(BrowserSessionError, match="could not be read") as raised:
-        _handle(monkeypatch, DmDecision("add_to_post", POST, "Sure!"), dry_run=False)
+        _handle(monkeypatch, DmDecision("feature", POST, "Sure!"), dry_run=False)
     assert not isinstance(raised.value, BrowserEngagementUncertain)
     assert queued == []
 
@@ -173,12 +206,12 @@ def test_ignored_threads_get_no_reply(monkeypatch, queued, stories) -> None:
 def test_a_request_is_accepted_only_when_we_answer_it(monkeypatch, queued, accepted) -> None:
     _handle(monkeypatch, DmDecision("ignore"), dry_run=False, request=True)
     assert accepted == []
-    _handle(monkeypatch, DmDecision("add_to_post", POST, "Sure!"), dry_run=False, request=True)
+    _handle(monkeypatch, DmDecision("feature", POST, "Sure!"), dry_run=False, request=True)
     assert len(accepted) == 1 and _Reader.sent == ["Sure!"]
 
 
 def test_an_inbox_thread_is_never_accepted(monkeypatch, queued, accepted) -> None:
-    _handle(monkeypatch, DmDecision("add_to_post", POST, "Sure!"), dry_run=False)
+    _handle(monkeypatch, DmDecision("feature", POST, "Sure!"), dry_run=False)
     assert accepted == []
 
 

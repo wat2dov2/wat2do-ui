@@ -56,7 +56,7 @@ def emulator(monkeypatch, tmp_path):
         def handle(self, row, **kwargs):
             assert row.request == (row.name == "stranger")
             handled.append((kwargs["school"], row.name, kwargs["dry_run"]))
-            return {"status": "replied", "outcome": "add_to_post"}
+            return {"status": "replied", "outcome": "feature"}
 
     monkeypatch.setattr(module, "EmulatorDirectExecutor", _Executor)
     return handled
