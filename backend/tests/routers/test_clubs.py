@@ -177,37 +177,6 @@ def test_delete_club_owner_allowed(authenticated_client, monkeypatch):
     assert resp.status_code == 204
 
 
-def test_panel_summary_is_for_members_only(other_user_client, monkeypatch):
-    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=_mock_club()))
-    monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=False))
-    summary = MagicMock()
-    monkeypatch.setattr(club_service, "get_panel_summary", summary)
-
-    assert other_user_client.get("/clubs/1/panel-summary").status_code == 403
-    summary.assert_not_called()
-
-
-def test_panel_summary_returns_the_counts(authenticated_client, monkeypatch):
-    from schemas.club import ClubPanelSummaryResponse
-
-    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=_mock_club()))
-    monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=True))
-    monkeypatch.setattr(
-        club_service,
-        "get_panel_summary",
-        MagicMock(
-            return_value=ClubPanelSummaryResponse(
-                pending_event_submissions=1, pending_position_submissions=0
-            )
-        ),
-    )
-
-    resp = authenticated_client.get("/clubs/1/panel-summary")
-
-    assert resp.status_code == 200
-    assert resp.json() == {"pending_event_submissions": 1, "pending_position_submissions": 0}
-
-
 def test_list_club_members_requires_auth(client):
     resp = client.get("/clubs/1/members")
     assert resp.status_code == 401

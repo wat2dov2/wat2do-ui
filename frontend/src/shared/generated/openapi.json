@@ -1114,54 +1114,6 @@
         }
       }
     },
-    "/clubs/{club_id}/panel-summary": {
-      "get": {
-        "tags": [
-          "clubs"
-        ],
-        "summary": "Get Panel Summary",
-        "description": "Pending submission counts for the club panel's cards; members and admins only.",
-        "operationId": "get_panel_summary_clubs__club_id__panel_summary_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClubPanelSummaryResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/clubs/{club_id}/members": {
       "get": {
         "tags": [
@@ -8364,25 +8316,6 @@
           "joined_at"
         ],
         "title": "ClubMemberResponse"
-      },
-      "ClubPanelSummaryResponse": {
-        "properties": {
-          "pending_event_submissions": {
-            "type": "integer",
-            "title": "Pending Event Submissions"
-          },
-          "pending_position_submissions": {
-            "type": "integer",
-            "title": "Pending Position Submissions"
-          }
-        },
-        "type": "object",
-        "required": [
-          "pending_event_submissions",
-          "pending_position_submissions"
-        ],
-        "title": "ClubPanelSummaryResponse",
-        "description": "Public submissions naming one club that still wait for admin review."
       },
       "ClubResponse": {
         "properties": {
