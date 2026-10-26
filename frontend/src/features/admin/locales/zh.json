@@ -429,10 +429,8 @@
         "added": "已添加歌曲",
         "failed": "未添加歌曲"
       },
-      "followers": "粉丝：{{value}}",
+      "followersChart": "粉丝",
       "change": "自 {{date}}：{{value}}",
-      "postCount": "帖子：{{value}}",
-      "averages": "每帖：{{likes}} 赞，{{comments}} 评论",
       "rate": "互动率：{{value}}%",
       "lastPost": "最近发帖 {{time}}",
       "reconnect": "需要重新连接",
@@ -440,11 +438,11 @@
       "noPosts": "暂无帖子。",
       "notRead": "尚未读取。下一次每日运行会填充。",
       "summary": {
-        "accounts": "账号",
         "needingAttention": "需要处理：{{value}}",
         "followers": "粉丝总数",
-        "recentPosts": "最近 7 天的帖子",
-        "averageLikes": "每帖平均点赞"
+        "averageLikes": "每帖平均点赞",
+        "followerGains": "每日新增粉丝",
+        "postsPerDay": "每日帖子"
       },
       "tabs": {
         "label": "社交账号视图",

@@ -429,10 +429,8 @@
         "added": "गाना जोड़ा गया",
         "failed": "कोई गाना नहीं जोड़ा गया"
       },
-      "followers": "फ़ॉलोअर: {{value}}",
+      "followersChart": "फ़ॉलोअर",
       "change": "{{date}} से: {{value}}",
-      "postCount": "पोस्ट: {{value}}",
-      "averages": "प्रति पोस्ट: {{likes}} लाइक, {{comments}} कमेंट",
       "rate": "एंगेजमेंट: {{value}}%",
       "lastPost": "आख़िरी पोस्ट {{time}}",
       "reconnect": "फिर से जोड़ना ज़रूरी",
@@ -440,11 +438,11 @@
       "noPosts": "अभी कोई पोस्ट नहीं।",
       "notRead": "अभी पढ़ा नहीं गया। अगला दैनिक रन इसे भर देगा।",
       "summary": {
-        "accounts": "अकाउंट",
         "needingAttention": "ध्यान चाहिए: {{value}}",
         "followers": "कुल फ़ॉलोअर",
-        "recentPosts": "पिछले 7 दिनों की पोस्ट",
-        "averageLikes": "प्रति पोस्ट औसत लाइक"
+        "averageLikes": "प्रति पोस्ट औसत लाइक",
+        "followerGains": "प्रति दिन नए फ़ॉलोअर",
+        "postsPerDay": "प्रति दिन पोस्ट"
       },
       "tabs": {
         "label": "सोशल अकाउंट के दृश्य",

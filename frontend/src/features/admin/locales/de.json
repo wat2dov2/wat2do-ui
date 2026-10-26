@@ -429,10 +429,8 @@
         "added": "Song hinzugefügt",
         "failed": "Kein Song hinzugefügt"
       },
-      "followers": "Follower: {{value}}",
+      "followersChart": "Follower",
       "change": "Seit {{date}}: {{value}}",
-      "postCount": "Beiträge: {{value}}",
-      "averages": "Pro Beitrag: {{likes}} Likes, {{comments}} Kommentare",
       "rate": "Interaktionsrate: {{value}} %",
       "lastPost": "Letzter Beitrag {{time}}",
       "reconnect": "Neu verbinden",
@@ -440,11 +438,11 @@
       "noPosts": "Noch keine Beiträge.",
       "notRead": "Noch nicht gelesen. Der nächste tägliche Lauf füllt das aus.",
       "summary": {
-        "accounts": "Konten",
         "needingAttention": "Brauchen Aufmerksamkeit: {{value}}",
         "followers": "Follower gesamt",
-        "recentPosts": "Beiträge der letzten 7 Tage",
-        "averageLikes": "Durchschnittliche Likes pro Beitrag"
+        "averageLikes": "Durchschnittliche Likes pro Beitrag",
+        "followerGains": "Neue Follower pro Tag",
+        "postsPerDay": "Beiträge pro Tag"
       },
       "tabs": {
         "label": "Ansichten der Social-Media-Konten",

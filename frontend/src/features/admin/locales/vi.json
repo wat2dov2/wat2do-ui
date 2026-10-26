@@ -429,10 +429,8 @@
         "added": "Đã thêm bài hát",
         "failed": "Chưa thêm bài hát"
       },
-      "followers": "Người theo dõi: {{value}}",
+      "followersChart": "Người theo dõi",
       "change": "Từ {{date}}: {{value}}",
-      "postCount": "Bài đăng: {{value}}",
-      "averages": "Mỗi bài: {{likes}} lượt thích, {{comments}} bình luận",
       "rate": "Tương tác: {{value}}%",
       "lastPost": "Bài gần nhất {{time}}",
       "reconnect": "Cần kết nối lại",
@@ -440,11 +438,11 @@
       "noPosts": "Chưa có bài đăng.",
       "notRead": "Chưa đọc. Lần chạy hằng ngày tiếp theo sẽ điền vào.",
       "summary": {
-        "accounts": "Tài khoản",
         "needingAttention": "Cần chú ý: {{value}}",
         "followers": "Tổng người theo dõi",
-        "recentPosts": "Bài đăng trong 7 ngày qua",
-        "averageLikes": "Lượt thích trung bình mỗi bài"
+        "averageLikes": "Lượt thích trung bình mỗi bài",
+        "followerGains": "Người theo dõi mới mỗi ngày",
+        "postsPerDay": "Bài đăng mỗi ngày"
       },
       "tabs": {
         "label": "Các chế độ xem tài khoản",

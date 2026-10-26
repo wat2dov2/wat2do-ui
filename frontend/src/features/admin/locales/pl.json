@@ -429,10 +429,8 @@
         "added": "Dodano utwór",
         "failed": "Nie dodano utworu"
       },
-      "followers": "Obserwujący: {{value}}",
+      "followersChart": "Obserwujący",
       "change": "Od {{date}}: {{value}}",
-      "postCount": "Posty: {{value}}",
-      "averages": "Na post: polubienia {{likes}}, komentarze {{comments}}",
       "rate": "Zaangażowanie: {{value}}%",
       "lastPost": "Ostatni post {{time}}",
       "reconnect": "Wymaga ponownego połączenia",
@@ -440,11 +438,11 @@
       "noPosts": "Brak postów.",
       "notRead": "Jeszcze nie odczytano. Uzupełni to następne codzienne uruchomienie.",
       "summary": {
-        "accounts": "Konta",
         "needingAttention": "Wymagają uwagi: {{value}}",
         "followers": "Obserwujący łącznie",
-        "recentPosts": "Posty z ostatnich 7 dni",
-        "averageLikes": "Średnio polubień na post"
+        "averageLikes": "Średnio polubień na post",
+        "followerGains": "Nowi obserwujący dziennie",
+        "postsPerDay": "Posty dziennie"
       },
       "tabs": {
         "label": "Widoki kont społecznościowych",

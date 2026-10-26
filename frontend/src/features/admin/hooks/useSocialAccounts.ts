@@ -1,10 +1,18 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getInstagramAccountStats } from "@/features/admin/api/admin.api";
-import { average, DAY_MS, followerChange, needsAttention, RECENT_POST_DAYS, type SocialPost, type SocialSong } from "@/features/admin/lib/socialAccounts";
+import {
+  average,
+  dailyChange,
+  needsAttention,
+  postingTrends,
+  totalFollowerTrend,
+  type SocialPost,
+  type SocialSong,
+} from "@/features/admin/lib/socialAccounts";
 import { queryKeys } from "@/shared/lib/queryKeys";
 
-/** Every account's daily stats, plus the totals, mixed post feed and song results built from them. */
+/** Every account's daily stats, plus the totals, trends, mixed post feed and song results built from them. */
 export function useSocialAccounts() {
   const query = useQuery({
     queryKey: queryKeys.instagramPublishing.accounts(),
@@ -22,7 +30,7 @@ export function useSocialAccounts() {
     for (const post of posts) {
       if (post.music_track) songs.set(post.music_track, [...(songs.get(post.music_track) ?? []), post]);
     }
-    const changes = accounts.map(account => followerChange(account)?.value).filter((change): change is number => change !== undefined);
+    const followers = totalFollowerTrend(accounts);
     const capturedAt = accounts.map(account => account.captured_at).filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
 
     return {
@@ -30,13 +38,11 @@ export function useSocialAccounts() {
       posts,
       capturedAt,
       summary: {
-        accounts: accounts.length,
         needingAttention: accounts.filter(account => needsAttention(account, now)).length,
         followers: accounts.reduce((sum, account) => sum + (account.followers_count ?? 0), 0),
-        followerChange: changes.length ? changes.reduce((sum, change) => sum + change, 0) : null,
-        recentPosts: posts.filter(post => now - new Date(post.posted_at).getTime() < RECENT_POST_DAYS * DAY_MS).length,
         averageLikes: average(posts.map(post => post.like_count)),
       },
+      trends: { followers, followerGains: dailyChange(followers), ...postingTrends(posts, now) },
       music: {
         added: posts.filter(post => post.music_status === "added").length,
         failed: posts.filter(post => post.music_status === "failed").length,

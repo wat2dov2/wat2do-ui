@@ -429,10 +429,8 @@
         "added": "أُضيفت أغنية",
         "failed": "لم تُضف أغنية"
       },
-      "followers": "المتابعون: {{value}}",
+      "followersChart": "المتابعون",
       "change": "منذ {{date}}: {{value}}",
-      "postCount": "المنشورات: {{value}}",
-      "averages": "لكل منشور: {{likes}} إعجاب، {{comments}} تعليق",
       "rate": "التفاعل: {{value}}%",
       "lastPost": "آخر منشور {{time}}",
       "reconnect": "يلزم إعادة الربط",
@@ -440,11 +438,11 @@
       "noPosts": "لا توجد منشورات بعد.",
       "notRead": "لم يُقرأ بعد. سيملؤه التشغيل اليومي القادم.",
       "summary": {
-        "accounts": "الحسابات",
         "needingAttention": "تحتاج إلى متابعة: {{value}}",
         "followers": "إجمالي المتابعين",
-        "recentPosts": "منشورات آخر 7 أيام",
-        "averageLikes": "متوسط الإعجابات لكل منشور"
+        "averageLikes": "متوسط الإعجابات لكل منشور",
+        "followerGains": "المتابعون الجدد يوميًا",
+        "postsPerDay": "المنشورات يوميًا"
       },
       "tabs": {
         "label": "عروض الحسابات الاجتماعية",

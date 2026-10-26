@@ -15,10 +15,10 @@ import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptySt
 import { SocialAccountRow } from "@/features/admin/components/social/SocialAccountRow";
 import { SocialPostTile } from "@/features/admin/components/social/SocialPostTile";
 import { SocialSongsTable } from "@/features/admin/components/social/SocialSongsTable";
+import { SocialTrendChart } from "@/features/admin/components/social/SocialTrendChart";
 import { FormGrid, Stack } from "@/shared/layout";
 import { FilterBar } from "@/shared/layout/filter-bar";
 import { Button } from "@/shared/ui/button";
-import { Item, ItemContent, ItemDescription, ItemTitle } from "@/shared/ui/item";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
@@ -27,7 +27,7 @@ import { formatRelativeTime } from "@/shared/utils/relativeTime";
 /** Every wat2do Instagram account at once: followers, engagement, each post and its song, read daily. */
 export function AdminSocialAccountsPage({ onBack }: { onBack: () => void }) {
   const { t, i18n } = useTranslation();
-  const { query, readAt, accounts, posts, songs, summary, music, capturedAt } = useSocialAccounts();
+  const { query, readAt, accounts, posts, songs, summary, trends, music, capturedAt } = useSocialAccounts();
   const [accountSort, setAccountSort] = useState<AccountSort>("followers");
   const [postSort, setPostSort] = useState<PostSort>("newest");
   const [postAccount, setPostAccount] = useState("all");
@@ -37,7 +37,10 @@ export function AdminSocialAccountsPage({ onBack }: { onBack: () => void }) {
     <AdminPageHeader
       icon={BarChart3}
       title={t("admin.socialAccounts.title")}
-      description={capturedAt ? t("admin.socialAccounts.updated", { time: formatRelativeTime(capturedAt, t) }) : t("admin.socialAccounts.description")}
+      description={capturedAt ? [
+        t("admin.socialAccounts.updated", { time: formatRelativeTime(capturedAt, t) }),
+        summary.needingAttention ? t("admin.socialAccounts.summary.needingAttention", { value: number(summary.needingAttention) }) : null,
+      ].filter(Boolean).join(" · ") : t("admin.socialAccounts.description")}
       onBack={onBack}
     />
   );
@@ -54,11 +57,12 @@ export function AdminSocialAccountsPage({ onBack }: { onBack: () => void }) {
     );
   }
 
-  const tiles = [
-    { label: t("admin.socialAccounts.summary.accounts"), value: number(summary.accounts), detail: summary.needingAttention ? t("admin.socialAccounts.summary.needingAttention", { value: number(summary.needingAttention) }) : null },
-    { label: t("admin.socialAccounts.summary.followers"), value: number(summary.followers), detail: summary.followerChange === null ? null : `${summary.followerChange > 0 ? "+" : ""}${number(summary.followerChange)}` },
-    { label: t("admin.socialAccounts.summary.recentPosts"), value: number(summary.recentPosts), detail: null },
-    { label: t("admin.socialAccounts.summary.averageLikes"), value: number(summary.averageLikes), detail: null },
+  const gained = trends.followerGains.reduce((sum, point) => sum + point.value, 0);
+  const charts = [
+    { title: t("admin.socialAccounts.summary.followers"), value: number(summary.followers), detail: trends.followerGains.length ? `${gained > 0 ? "+" : ""}${number(gained)}` : null, trend: trends.followers },
+    { title: t("admin.socialAccounts.summary.followerGains"), value: number(trends.followerGains.at(-1)?.value ?? null), trend: trends.followerGains },
+    { title: t("admin.socialAccounts.summary.postsPerDay"), value: number(trends.posts.at(-1)?.value ?? null), trend: trends.posts },
+    { title: t("admin.socialAccounts.summary.averageLikes"), value: number(summary.averageLikes), trend: trends.likes },
   ];
   const shownPosts = sortPosts(postAccount === "all" ? posts : posts.filter(post => post.account_key === postAccount), postSort);
 
@@ -66,15 +70,7 @@ export function AdminSocialAccountsPage({ onBack }: { onBack: () => void }) {
     <Stack gap={5}>
       {header}
       <FormGrid columns={4}>
-        {tiles.map(tile => (
-          <Item key={tile.label} variant="outline" size="sm">
-            <ItemContent>
-              <ItemDescription>{tile.label}</ItemDescription>
-              <ItemTitle>{tile.value}</ItemTitle>
-              {tile.detail ? <ItemDescription>{tile.detail}</ItemDescription> : null}
-            </ItemContent>
-          </Item>
-        ))}
+        {charts.map(chart => <SocialTrendChart key={chart.title} {...chart} />)}
       </FormGrid>
       <Tabs defaultValue="accounts">
         <Stack gap={5}>

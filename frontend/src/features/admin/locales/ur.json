@@ -429,10 +429,8 @@
         "added": "گانا شامل ہو گیا",
         "failed": "کوئی گانا شامل نہیں ہوا"
       },
-      "followers": "فالوورز: {{value}}",
+      "followersChart": "فالوورز",
       "change": "{{date}} سے: {{value}}",
-      "postCount": "پوسٹس: {{value}}",
-      "averages": "فی پوسٹ: {{likes}} لائکس، {{comments}} تبصرے",
       "rate": "انگیجمنٹ: {{value}}%",
       "lastPost": "آخری پوسٹ {{time}}",
       "reconnect": "دوبارہ جوڑنا ضروری ہے",
@@ -440,11 +438,11 @@
       "noPosts": "ابھی کوئی پوسٹ نہیں۔",
       "notRead": "ابھی پڑھا نہیں گیا۔ اگلا روزانہ رن اسے بھر دے گا۔",
       "summary": {
-        "accounts": "اکاؤنٹس",
         "needingAttention": "توجہ درکار: {{value}}",
         "followers": "کل فالوورز",
-        "recentPosts": "پچھلے 7 دنوں کی پوسٹس",
-        "averageLikes": "فی پوسٹ اوسط لائکس"
+        "averageLikes": "فی پوسٹ اوسط لائکس",
+        "followerGains": "روزانہ نئے فالوورز",
+        "postsPerDay": "روزانہ پوسٹس"
       },
       "tabs": {
         "label": "سوشل اکاؤنٹس کے منظر",
