@@ -637,4 +637,3 @@ def test_new_club_member_follows_the_club(monkeypatch, fake_sb, patch_sb):
     club_service.add_club_member(7, user_id)
 
     follow.assert_called_once_with(str(user_id), 7)
-
