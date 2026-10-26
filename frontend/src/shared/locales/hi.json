@@ -280,7 +280,10 @@
     "registration": "पंजीकरण आवश्यक है",
     "coverImage": "कवर इमेज",
     "jsonEditor": "JSON संपादक",
-    "loadingEditor": "संपादक लोड हो रहा है..."
+    "loadingEditor": "संपादक लोड हो रहा है...",
+    "clickToUploadOrPasteImage": "छवि अपलोड करने या चिपकाने के लिए क्लिक करें",
+    "imageTypeError": "JPEG, PNG, WebP, या GIF छवि का उपयोग करें।",
+    "skipImageUpload": "छोड़ें और खुद भरें"
   },
   "categories": {
     "artsAndCulture": "कला",

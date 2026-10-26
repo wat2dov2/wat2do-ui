@@ -277,7 +277,10 @@
     "registration": "회원 가입 필요",
     "coverImage": "표지 이미지",
     "jsonEditor": "JSON 편집기",
-    "loadingEditor": "편집기 로딩 중..."
+    "loadingEditor": "편집기 로딩 중...",
+    "clickToUploadOrPasteImage": "이미지 업로드 또는 붙여넣기 클릭",
+    "imageTypeError": "JPEG, PNG, WebP, 또는 GIF 이미지를 사용하세요.",
+    "skipImageUpload": "건너뛰고 직접 입력하기"
   },
   "categories": {
     "artsAndCulture": "예술",

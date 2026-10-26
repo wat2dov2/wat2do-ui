@@ -277,7 +277,10 @@
     "registration": "需要註冊",
     "coverImage": "封面圖片",
     "jsonEditor": "JSON 編輯器",
-    "loadingEditor": "正在加載編輯器…"
+    "loadingEditor": "正在加載編輯器…",
+    "clickToUploadOrPasteImage": "點擊上傳圖片或貼上",
+    "imageTypeError": "使用 JPEG、PNG、WebP 或 GIF 圖片。",
+    "skipImageUpload": "略過，自己填寫"
   },
   "categories": {
     "artsAndCulture": "藝術",

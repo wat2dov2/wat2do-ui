@@ -280,7 +280,10 @@
     "registration": "રજિસ્ટ્રેશન જરૂરી છે",
     "coverImage": "કવર છબી",
     "jsonEditor": "JSON સંપાદક",
-    "loadingEditor": "સંપાદક લોડ થઈ રહ્યું છે..."
+    "loadingEditor": "સંપાદક લોડ થઈ રહ્યું છે...",
+    "clickToUploadOrPasteImage": "ઇમેજ અપલોડ કરવા માટે ક્લિક કરો અથવા પેસ્ટ કરો",
+    "imageTypeError": "એક JPEG, PNG, WebP, અથવા GIF ઇમેજનો ઉપયોગ કરો.",
+    "skipImageUpload": "છોડો અને જાતે ભરો"
   },
   "categories": {
     "artsAndCulture": "કલા",

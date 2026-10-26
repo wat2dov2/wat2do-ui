@@ -44,6 +44,12 @@
       "commitment": "hal. 3-5 oras bawat linggo, Setyembre hanggang Disyembre",
       "contact": "hal. hiring@example.com",
       "requirements": "Isang kinakailangan bawat linya, halimbawa:\nKomportableng makipagtulungan sa pangkat\nMaaaring dumalo sa lingguhang pulong"
-    }
+    },
+    "uploadImage": "Mag-upload ng Poster ng Posisyon",
+    "uploadImageDescription": "Mag-upload o mag-paste ng larawan ng posisyon, at awtomatikong pupunan ng AI ang mga detalye.",
+    "processingImage": "Pinoproseso ang larawan ng posisyon",
+    "imageParseFailed": "Hindi nabasa ang larawan",
+    "imageParseFailedDescription": "Hindi namin nabasa ang mga detalye ng posisyon mula sa larawan.",
+    "imageExtracted": "Matagumpay na nakuha ang mga detalye ng posisyon."
   }
 }

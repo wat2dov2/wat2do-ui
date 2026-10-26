@@ -283,7 +283,10 @@
     "registration": "Nécessite une inscription",
     "coverImage": "Image de couverture",
     "jsonEditor": "Éditeur JSON",
-    "loadingEditor": "Chargement de l'éditeur..."
+    "loadingEditor": "Chargement de l'éditeur...",
+    "clickToUploadOrPasteImage": "Cliquez pour télécharger l'image ou coller",
+    "imageTypeError": "Utilisez une image JPEG, PNG, WebP, ou GIF.",
+    "skipImageUpload": "Passer et remplir manuellement"
   },
   "categories": {
     "artsAndCulture": "Arts",

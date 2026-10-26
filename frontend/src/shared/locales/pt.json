@@ -283,7 +283,10 @@
     "registration": "Requer cadastro",
     "coverImage": "Imagem de capa",
     "jsonEditor": "Editor JSON",
-    "loadingEditor": "Carregando editor..."
+    "loadingEditor": "Carregando editor...",
+    "clickToUploadOrPasteImage": "Clique para carregar imagem ou colar",
+    "imageTypeError": "Use uma imagem JPEG, PNG, WebP ou GIF.",
+    "skipImageUpload": "Pular e preencher manualmente"
   },
   "categories": {
     "artsAndCulture": "Artes",

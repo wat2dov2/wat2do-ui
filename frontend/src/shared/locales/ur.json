@@ -280,7 +280,10 @@
     "registration": "رجسٹریشن ضروری ہے",
     "coverImage": "کور امیج",
     "jsonEditor": "JSON ایڈیٹر",
-    "loadingEditor": "ایڈیٹر لوڈ ہو رہا ہے..."
+    "loadingEditor": "ایڈیٹر لوڈ ہو رہا ہے...",
+    "clickToUploadOrPasteImage": "تصویر اپلوڈ کرنے کے لیے کلک کریں یا چسپاں کریں",
+    "imageTypeError": "JPEG, PNG, WebP, یا GIF تصویر استعمال کریں۔",
+    "skipImageUpload": "چھوڑیں اور خود بھریں"
   },
   "categories": {
     "artsAndCulture": "فن",

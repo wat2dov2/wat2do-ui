@@ -280,7 +280,10 @@
     "registration": "نیاز به ثبت‌نام دارد",
     "coverImage": "تصویر روی جلد",
     "jsonEditor": "ویرایشگر JSON",
-    "loadingEditor": "در حال بارگذاری ویرایشگر..."
+    "loadingEditor": "در حال بارگذاری ویرایشگر...",
+    "clickToUploadOrPasteImage": "برای بارگذاری تصویر کلیک کنید یا جای‌گذاری کنید",
+    "imageTypeError": "از یک تصویر JPEG, PNG, WebP یا GIF استفاده کنید.",
+    "skipImageUpload": "رد شدن و تکمیل دستی"
   },
   "categories": {
     "artsAndCulture": "هنر",

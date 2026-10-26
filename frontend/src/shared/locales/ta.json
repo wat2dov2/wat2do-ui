@@ -280,7 +280,10 @@
     "registration": "பதிவு தேவை",
     "coverImage": "முகப்புப் படம்",
     "jsonEditor": "JSON எடிட்டர்",
-    "loadingEditor": "எடிட்டரை ஏற்றுகிறது..."
+    "loadingEditor": "எடிட்டரை ஏற்றுகிறது...",
+    "clickToUploadOrPasteImage": "படத்தை பதிவேற்ற கிளிக் செய்யவும் அல்லது ஒட்டவும்",
+    "imageTypeError": "ஒரு JPEG, PNG, WebP, அல்லது GIF படத்தை பயன்படுத்தவும்.",
+    "skipImageUpload": "தவிர்த்து நீங்களே நிரப்புங்கள்"
   },
   "categories": {
     "artsAndCulture": "கலை",

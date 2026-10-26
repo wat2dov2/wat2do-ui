@@ -286,7 +286,10 @@
     "registration": "Требуется регистрация",
     "coverImage": "Обложка",
     "jsonEditor": "Редактор JSON",
-    "loadingEditor": "Загрузка редактора..."
+    "loadingEditor": "Загрузка редактора...",
+    "clickToUploadOrPasteImage": "Нажмите, чтобы загрузить изображение или вставить",
+    "imageTypeError": "Используйте изображение формата JPEG, PNG, WebP или GIF.",
+    "skipImageUpload": "Пропустить и заполнить вручную"
   },
   "categories": {
     "artsAndCulture": "Искусство",

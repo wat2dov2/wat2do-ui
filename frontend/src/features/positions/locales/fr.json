@@ -45,6 +45,12 @@
       "commitment": "p. ex. 3 à 5 heures par semaine, de septembre à décembre",
       "contact": "p. ex. hiring@example.com",
       "requirements": "Une exigence par ligne, par exemple :\nAimer travailler en équipe\nÊtre disponible pour les réunions hebdomadaires"
-    }
+    },
+    "uploadImage": "Télécharger l'affiche du poste",
+    "uploadImageDescription": "Téléchargez ou collez une image du poste, et l'IA remplira automatiquement les détails.",
+    "processingImage": "Traitement de l'image du poste",
+    "imageParseFailed": "Échec de la lecture de l'image",
+    "imageParseFailedDescription": "Nous n'avons pas pu lire les détails du poste dans l'image.",
+    "imageExtracted": "Détails du poste extraits avec succès."
   }
 }

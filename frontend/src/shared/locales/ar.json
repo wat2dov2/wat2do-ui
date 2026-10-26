@@ -292,7 +292,10 @@
     "registration": "يتطلب التسجيل",
     "coverImage": "صورة الغلاف",
     "jsonEditor": "محرر JSON",
-    "loadingEditor": "جارٍ تحميل المحرر..."
+    "loadingEditor": "جارٍ تحميل المحرر...",
+    "clickToUploadOrPasteImage": "انقر لرفع صورة أو للصق",
+    "imageTypeError": "استخدم صورة JPEG, PNG, WebP، أو GIF.",
+    "skipImageUpload": "تخطَّ واملأ يدويًا"
   },
   "categories": {
     "artsAndCulture": "الفنون",

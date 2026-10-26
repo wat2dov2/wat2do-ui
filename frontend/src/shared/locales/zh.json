@@ -277,7 +277,10 @@
     "registration": "需要报名",
     "coverImage": "封面图片",
     "jsonEditor": "JSON 编辑器",
-    "loadingEditor": "加载编辑器中..."
+    "loadingEditor": "加载编辑器中...",
+    "clickToUploadOrPasteImage": "点击上传图片或粘贴",
+    "imageTypeError": "请使用 JPEG、PNG、WebP 或 GIF 图片。",
+    "skipImageUpload": "跳过，手动填写"
   },
   "categories": {
     "artsAndCulture": "艺术",

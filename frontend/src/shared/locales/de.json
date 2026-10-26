@@ -280,7 +280,10 @@
     "registration": "Erfordert Registrierung",
     "coverImage": "Titelbild",
     "jsonEditor": "JSON-Editor",
-    "loadingEditor": "Editor wird geladen..."
+    "loadingEditor": "Editor wird geladen...",
+    "clickToUploadOrPasteImage": "Klicken Sie, um ein Bild hochzuladen oder einzufügen",
+    "imageTypeError": "Verwenden Sie ein JPEG, PNG, WebP oder GIF Bild.",
+    "skipImageUpload": "Überspringen und manuell ausfüllen"
   },
   "categories": {
     "artsAndCulture": "Kunst",

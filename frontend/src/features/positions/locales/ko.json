@@ -43,6 +43,12 @@
       "commitment": "예: 9월부터 12월까지 주 3~5시간",
       "contact": "예: hiring@example.com",
       "requirements": "한 줄에 하나씩 입력하세요. 예:\n팀 활동에 익숙한 분\n매주 회의에 참석할 수 있는 분"
-    }
+    },
+    "uploadImage": "모집 포스터 업로드",
+    "uploadImageDescription": "모집 이미지를 업로드하거나 붙여넣으면 AI가 세부 정보를 자동으로 채워 줍니다.",
+    "processingImage": "모집 이미지 처리 중",
+    "imageParseFailed": "이미지를 읽지 못했어요",
+    "imageParseFailedDescription": "이미지에서 모집 세부 정보를 읽지 못했어요.",
+    "imageExtracted": "모집 세부 정보를 가져왔어요."
   }
 }

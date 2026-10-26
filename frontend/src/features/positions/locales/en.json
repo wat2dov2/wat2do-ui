@@ -43,6 +43,12 @@
     "unknown": "Payment unspecified",
     "addPosition": "Add position",
     "submitted": "Position submitted for review.",
-    "submissions": "Position submissions"
+    "submissions": "Position submissions",
+    "uploadImage": "Upload Position Poster",
+    "uploadImageDescription": "Upload or paste an image of the role, and AI will automatically prefill the details.",
+    "processingImage": "Processing position image",
+    "imageParseFailed": "Image parsing failed",
+    "imageParseFailedDescription": "We could not read position details from the image.",
+    "imageExtracted": "Position details extracted successfully."
   }
 }

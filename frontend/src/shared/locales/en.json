@@ -277,7 +277,10 @@
     "registration": "Requires registration",
     "coverImage": "Cover Image",
     "jsonEditor": "JSON Editor",
-    "loadingEditor": "Loading editor..."
+    "loadingEditor": "Loading editor...",
+    "clickToUploadOrPasteImage": "Click to upload image or paste",
+    "imageTypeError": "Use a JPEG, PNG, WebP, or GIF image.",
+    "skipImageUpload": "Skip and fill in manually"
   },
   "categories": {
     "artsAndCulture": "Arts",

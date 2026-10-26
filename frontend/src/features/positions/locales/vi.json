@@ -43,6 +43,12 @@
       "commitment": "Ví dụ: 3-5 giờ mỗi tuần, từ tháng 9 đến tháng 12",
       "contact": "Ví dụ: hiring@example.com",
       "requirements": "Mỗi dòng một yêu cầu, ví dụ:\nThoải mái làm việc nhóm\nCó thể tham gia họp hằng tuần"
-    }
+    },
+    "uploadImage": "Tải lên poster vị trí",
+    "uploadImageDescription": "Tải lên hoặc dán ảnh về vị trí, AI sẽ tự động điền thông tin.",
+    "processingImage": "Đang xử lý ảnh vị trí",
+    "imageParseFailed": "Không đọc được ảnh",
+    "imageParseFailedDescription": "Chúng tôi không đọc được thông tin vị trí từ ảnh.",
+    "imageExtracted": "Đã trích xuất thông tin vị trí thành công."
   }
 }
