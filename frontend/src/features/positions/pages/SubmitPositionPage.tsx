@@ -11,6 +11,7 @@ import { Field, FieldError, FieldLabel } from "@/shared/ui/field";
 import { Input } from "@/shared/ui/input";
 import { ClubInput } from "@/features/clubs";
 import { ImageUploadField } from "@/shared/ui/image-upload-field";
+import { ImageParseStep } from "@/shared/components/ImageParseStep";
 import { ROUTES } from "@/shared/constants/routes";
 import type { PositionType } from "@/shared/types";
 import { POSITION_TYPES } from "@/features/positions/api/positions.api";
@@ -26,6 +27,14 @@ export function SubmitPositionPage() {
         <PageHeader title={t("positions.addPosition")} back={{ href: ROUTES.POSITIONS, label: t("navigation.positions") }} />
         {form.submitted ? (
           <Stack gap={3}><p role="status">{t("positions.submitted")}</p><Button asChild><Link href={ROUTES.POSITIONS}>{t("navigation.positions")}</Link></Button></Stack>
+        ) : !form.formOpen ? (
+          <ImageParseStep
+            title={t("positions.uploadImage")}
+            description={t("positions.uploadImageDescription")}
+            processingLabel={t("positions.processingImage")}
+            imageParse={form.imageParse}
+            onSkip={form.openForm}
+          />
         ) : (
           <form onSubmit={form.submit}>
             <fieldset disabled={form.busy}>
@@ -39,7 +48,7 @@ export function SubmitPositionPage() {
                   value={form.submittedByEmail}
                   onChange={value => form.setEmail(String(value))}
                 />
-                <ImageUploadField label={t("forms.clickToUploadImage")} imagePreview={data.source_image_url ?? undefined} onImageUpload={form.upload} onRemoveImage={() => form.edit({ source_image_url: null })} previewVariant="poster" />
+                <ImageUploadField label={t("forms.clickToUploadImage")} imagePreview={form.image.imagePreview || undefined} onImageUpload={form.image.onImageUpload} onRemoveImage={form.image.onRemoveImage} previewVariant="poster" />
                 <Field>
                   <ClubInput value={data.club_id || null} clubs={clubs} onChange={clubId => form.edit({ club_id: clubId ?? 0 })} touched />
                   {form.clubs.isError ? <Button type="button" variant="outline" onClick={() => void form.clubs.refetch()}>{t("common.tryAgain")}</Button> : null}

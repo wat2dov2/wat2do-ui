@@ -280,7 +280,10 @@
     "registration": "Kinakailangan ang pagpaparehistro",
     "coverImage": "Pangunahing Larawan",
     "jsonEditor": "Editor ng JSON",
-    "loadingEditor": "Ilo-load ang editor..."
+    "loadingEditor": "Ilo-load ang editor...",
+    "clickToUploadOrPasteImage": "I-click para mag-upload ng imahe o i-paste",
+    "imageTypeError": "Gumamit ng JPEG, PNG, WebP, o GIF na imahe.",
+    "skipImageUpload": "Laktawan at punan nang mano-mano"
   },
   "categories": {
     "artsAndCulture": "Sining",

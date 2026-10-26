@@ -1,7 +1,7 @@
-import React, {
+import {
   useCallback,
   useEffect,
-  useRef,
+  useMemo,
   useState,
   type MutableRefObject,
 } from "react";
@@ -13,10 +13,10 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/shared/ui/drawer";
-import { ImageUploadField } from "@/shared/ui/image-upload-field";
+import { ImageParseStep } from "@/shared/components/ImageParseStep";
+import { useImageParse } from "@/shared/hooks/useImageParse";
 import { parseEventImage } from "@/shared/services/uploadService";
 import { getCurrentSchool } from "@/shared/constants/schools";
-import { toast } from "@/shared/hooks/use-toast";
 import { useEventForm } from "@/features/events/hooks/useEventForm";
 import { mapEventInputToFormData } from "@/features/events/hooks/useEventForm.utils";
 import {
@@ -24,26 +24,15 @@ import {
   type SubmitEventResult,
 } from "@/features/events/hooks/useSubmitEvent";
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
-import { controlBox } from "@/shared/config/controlBox";
 import { EventFormStep } from "@/features/events/components/EventFormStep";
 import { EventSuccessScreen } from "@/features/events/components/EventForm/EventForm/EventSuccessScreen";
 import {
   EventFormProvider,
   type EventFormContextValue,
 } from "@/features/events/components/EventForm/EventForm/EventFormContext";
-import { DrawerBody, Section, Stack } from "@/shared/layout";
+import { DrawerBody, Section } from "@/shared/layout";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import type { Event, EventFormData } from "@/shared/types";
-
-// The picker, the paste handler, and the server all read the same control-box
-// contract, so a file the browser lets through is one the server will accept.
-const EVENT_IMAGE_ALLOWED_MIME_TYPES =
-  controlBox.uploads.eventImageAllowedMimeTypes;
-const EVENT_IMAGE_MAX_SIZE_BYTES = controlBox.uploads.eventImageMaxSizeBytes;
-const EVENT_IMAGE_ACCEPT = EVENT_IMAGE_ALLOWED_MIME_TYPES.join(",");
-
-const isAllowedEventImageType = (type: string): boolean =>
-  (EVENT_IMAGE_ALLOWED_MIME_TYPES as readonly string[]).includes(type);
 
 interface SubmitEventSharedProps {
   /** Absent when the form is an always-present panel with nothing to dismiss. */
@@ -127,8 +116,15 @@ export function SubmitEventFlow({
     createdEventId: number | null;
   } | null>(null);
   const [hasInitiated, setHasInitiated] = useState(isEditMode);
-  const [isParsingImage, setIsParsingImage] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const openForm = useCallback(() => setHasInitiated(true), []);
+  const flyerParseCopy = useMemo(
+    () => ({
+      failedTitle: t("events.flyerParseFailed"),
+      failedDescription: t("events.flyerParseFailedDescription"),
+      extracted: t("events.flyerExtracted"),
+    }),
+    [t],
+  );
 
   const eventForm = useEventForm({
     initialData,
@@ -136,102 +132,32 @@ export function SubmitEventFlow({
     isOpen: true,
   });
 
-  const handleImageFileParse = useCallback(
+  const parseFlyer = useCallback(
     async (file: File) => {
-      if (!isAllowedEventImageType(file.type)) {
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-        toast({
-          title: t("events.flyerParseFailed"),
-          description: t("events.flyerTypeError"),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (file.size > EVENT_IMAGE_MAX_SIZE_BYTES) {
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-        toast({
-          title: t("events.flyerParseFailed"),
-          description: t("qrCode.imageSizeError"),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setIsParsingImage(true);
-      try {
-        const parsedData = await parseEventImage(file, getCurrentSchool());
-        eventForm.setFormData((previous) =>
-          mapEventInputToFormData(
-            parsedData as unknown as Record<string, unknown>,
-            {
-              timeZone: previous.timeZone,
-              occurrences: previous.occurrences,
-              source_image_url: previous.source_image_url,
-            },
-          ),
-        );
-
-        if (parsedData.source_image_url) {
-          eventForm.setImagePreview(parsedData.source_image_url);
-        }
-
-        toast({
-          title: t("common.success"),
-          description: t("events.flyerExtracted"),
-        });
-        setHasInitiated(true);
-      } catch (error) {
-        console.error("AI image parse error:", error);
-        setHasInitiated(true);
-        toast({
-          title: t("events.flyerParseFailed"),
-          description:
-            error instanceof Error
-              ? error.message
-              : t("events.flyerParseFailedDescription"),
-          variant: "destructive",
-        });
-      } finally {
-        setIsParsingImage(false);
+      const parsedData = await parseEventImage(file, getCurrentSchool());
+      eventForm.setFormData((previous) =>
+        mapEventInputToFormData(
+          parsedData as unknown as Record<string, unknown>,
+          {
+            timeZone: previous.timeZone,
+            occurrences: previous.occurrences,
+            source_image_url: previous.source_image_url,
+          },
+        ),
+      );
+      if (parsedData.source_image_url) {
+        eventForm.resetImage(parsedData.source_image_url);
       }
     },
-    [eventForm, t],
+    [eventForm],
   );
 
-  const handleImageParseSelect = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      await handleImageFileParse(file);
-    },
-    [handleImageFileParse],
-  );
-
-  useEffect(() => {
-    if (!active || isParsingImage) return;
-
-    const handlePaste = async (event: ClipboardEvent) => {
-      const items = event.clipboardData?.items;
-      if (!items) return;
-
-      for (const item of Array.from(items)) {
-        if (!isAllowedEventImageType(item.type)) continue;
-        const file = item.getAsFile();
-        if (!file) continue;
-        event.preventDefault();
-        await handleImageFileParse(file);
-        break;
-      }
-    };
-
-    window.addEventListener("paste", handlePaste);
-    return () => window.removeEventListener("paste", handlePaste);
-  }, [active, isParsingImage, handleImageFileParse]);
+  const imageParse = useImageParse({
+    active,
+    copy: flyerParseCopy,
+    parse: parseFlyer,
+    onSettled: openForm,
+  });
 
   const handleSubmitted = useCallback((eventId: number | null) => {
     setSubmitResult({ createdEventId: eventId });
@@ -303,36 +229,12 @@ export function SubmitEventFlow({
 
   if (currentStep === "image-parse") {
     return (
-      <Section variant="surface" className="mx-auto w-full max-w-2xl">
-        <Stack align="center" gap={4}>
-          <Stack align="center" gap={1} className="text-center">
-            <h2 className="text-lg font-semibold text-foreground">
-              {t("events.uploadEventFlyer")}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {t("events.uploadEventFlyerDescription")}
-            </p>
-          </Stack>
-
-          {isParsingImage ? (
-            <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-secondary/30 py-8">
-              <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="text-sm font-medium text-foreground">
-                {t("events.processingEventImage")}
-              </p>
-            </div>
-          ) : (
-            <div className="w-full">
-              <ImageUploadField
-                fileInputRef={fileInputRef}
-                label={t("events.clickToUploadOrPasteImage")}
-                accept={EVENT_IMAGE_ACCEPT}
-                onImageUpload={handleImageParseSelect}
-              />
-            </div>
-          )}
-        </Stack>
-      </Section>
+      <ImageParseStep
+        title={t("events.uploadEventFlyer")}
+        description={t("events.uploadEventFlyerDescription")}
+        processingLabel={t("events.processingEventImage")}
+        imageParse={imageParse}
+      />
     );
   }
 

@@ -277,7 +277,10 @@
     "registration": "Yêu cầu đăng ký",
     "coverImage": "Ảnh bìa",
     "jsonEditor": "Trình chỉnh sửa JSON",
-    "loadingEditor": "Đang tải trình chỉnh sửa..."
+    "loadingEditor": "Đang tải trình chỉnh sửa...",
+    "clickToUploadOrPasteImage": "Nhấp để tải lên hình ảnh hoặc dán",
+    "imageTypeError": "Sử dụng hình ảnh JPEG, PNG, WebP, hoặc GIF.",
+    "skipImageUpload": "Bỏ qua và điền thủ công"
   },
   "categories": {
     "artsAndCulture": "Nghệ thuật",

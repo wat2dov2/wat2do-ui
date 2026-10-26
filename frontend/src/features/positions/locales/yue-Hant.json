@@ -43,6 +43,12 @@
       "commitment": "例如：9月至12月，每星期3至5小時",
       "contact": "例如：hiring@example.com",
       "requirements": "每行填一項要求，例如：\n樂意同團隊合作\n可以參加每星期嘅會議"
-    }
+    },
+    "uploadImage": "上載職位海報",
+    "uploadImageDescription": "上載或者貼上職位圖片，AI 會自動幫你填好資料。",
+    "processingImage": "處理緊職位圖片",
+    "imageParseFailed": "讀唔到圖片",
+    "imageParseFailedDescription": "我哋喺圖片入面讀唔到職位資料。",
+    "imageExtracted": "成功擷取職位資料。"
   }
 }

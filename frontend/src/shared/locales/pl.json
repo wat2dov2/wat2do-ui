@@ -286,7 +286,10 @@
     "registration": "Wymagana rejestracja",
     "coverImage": "Okładka",
     "jsonEditor": "Edytor JSON",
-    "loadingEditor": "Ładowanie edytora..."
+    "loadingEditor": "Ładowanie edytora...",
+    "clickToUploadOrPasteImage": "Kliknij, aby przesłać obraz lub wkleić",
+    "imageTypeError": "Użyj obrazu JPEG, PNG, WebP, lub GIF.",
+    "skipImageUpload": "Pomiń i wypełnij ręcznie"
   },
   "categories": {
     "artsAndCulture": "Sztuka",

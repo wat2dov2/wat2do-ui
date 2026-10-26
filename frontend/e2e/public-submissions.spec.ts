@@ -13,7 +13,12 @@ for (const path of ["/events/submit", "/clubs/new", "/positions/submit"]) {
       source_image_url: "https://example.com/flyer.png", occurrences: [],
     } }));
     await page.goto(path);
+    if (path === "/positions/submit") {
+      await page.getByRole("button", { name: "Skip and fill in manually" }).click();
+    }
     if (path === "/events/submit") {
+      // Events always start from a flyer, so only positions offer a skip.
+      await expect(page.getByRole("button", { name: "Skip and fill in manually" })).toHaveCount(0);
       await page.locator('input[type="file"]').setInputFiles({
         name: "flyer.png", mimeType: "image/png",
         buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64"),
@@ -67,6 +72,7 @@ test("an anonymous position submission requires email and returns review confirm
     return { status: 201, json: { id: "visitor-submission", status: "pending", ...payload } };
   });
   await page.goto("/positions/submit");
+  await page.getByRole("button", { name: "Skip and fill in manually" }).click();
   await page.getByRole("textbox", { name: "Instagram handle" }).fill("visitorclub");
   await page.getByRole("textbox", { name: "Position title" }).fill("Outreach Lead");
   await page.getByRole("textbox", { name: /^Description/ }).fill("Coordinate club outreach.");
@@ -79,4 +85,36 @@ test("an anonymous position submission requires email and returns review confirm
   expect(submissions).toHaveLength(1);
   expect(submissions[0]).toMatchObject({ submitted_by_email: "visitor@example.com", position_data: { club_id: 7, title: "Outreach Lead" } });
   expect(submissions[0]).not.toHaveProperty("user_id");
+});
+
+test("a position poster prefills the form and is submitted with the position", async ({ page, next }) => {
+  await page.addInitScript(key => localStorage.setItem(key, "en"), STORAGE_KEYS.LANGUAGE);
+  await mockApi(page, next, url => url.pathname === "/api/auth/refresh", async () => ({ status: 401, json: {} }));
+  await page.route("**/api/discovery?**", route => route.fulfill({ json: {
+    items: [{ id: 7, club_name: "Visitor Club", club_type: "independent", status: "approved", school: "uwaterloo", ig: "visitorclub", categories: [], club_page: "" }],
+    generated_at: 1, total: 1, page: 1, page_size: 1, total_pages: 1,
+  } }));
+  await mockApi(page, next, url => url.pathname === "/api/ai/parse-position-image", async () => ({ json: {
+    title: "Outreach Lead", description: "Coordinate club outreach.", position_type: "committee", requirements: [],
+    source_image_url: "https://example.com/poster.png",
+  } }));
+  const submissions: Record<string, unknown>[] = [];
+  await mockApi(page, next, url => url.pathname === "/api/position-submissions/", async request => {
+    const payload = await request.json();
+    submissions.push(payload);
+    return { status: 201, json: { id: "poster-submission", status: "pending", ...payload } };
+  });
+  await page.goto("/positions/submit");
+  await expect(page.getByRole("heading", { name: "Upload Position Poster" })).toBeVisible();
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "poster.png", mimeType: "image/png",
+    buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64"),
+  });
+  await expect(page.getByRole("textbox", { name: "Position title" })).toHaveValue("Outreach Lead");
+  await page.getByRole("textbox", { name: "Instagram handle" }).fill("visitorclub");
+  await page.getByRole("textbox", { name: "Source link" }).fill("https://example.com/role");
+  await page.getByRole("textbox", { name: "Email address" }).fill("visitor@example.com");
+  await page.getByRole("button", { name: "Submit for Review", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Position submitted for review." })).toBeVisible();
+  expect(submissions[0]).toMatchObject({ position_data: { club_id: 7, title: "Outreach Lead", source_image_url: "https://example.com/poster.png" } });
 });

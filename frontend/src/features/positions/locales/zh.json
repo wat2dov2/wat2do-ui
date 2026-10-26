@@ -43,6 +43,12 @@
       "commitment": "例如：9月至12月，每周3至5小时",
       "contact": "例如：hiring@example.com",
       "requirements": "每行填写一项要求，例如：\n乐于团队合作\n能够参加每周例会"
-    }
+    },
+    "uploadImage": "上传职位海报",
+    "uploadImageDescription": "上传或粘贴职位图片，AI 会自动填写详细信息。",
+    "processingImage": "正在处理职位图片",
+    "imageParseFailed": "图片读取失败",
+    "imageParseFailedDescription": "我们无法从图片中读取职位信息。",
+    "imageExtracted": "已成功提取职位信息。"
   }
 }

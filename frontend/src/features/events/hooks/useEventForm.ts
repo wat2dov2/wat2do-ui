@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useMemo, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { EventFormData, EventFormOccurrence } from "@/shared/types";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@/shared/services/validationService";
 import { useForm } from "@/shared/hooks/useForm";
 import { useTagInput } from "@/shared/hooks/useTagInput";
+import { useImageFile } from "@/shared/hooks/useImageFile";
 import { getEventFormDefaults } from "@/features/events/hooks/useEventForm.utils";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { getCurrentSchool } from "@/shared/constants/schools";
@@ -106,24 +107,8 @@ export function useEventForm(options: UseEventFormOptions) {
   );
 
   // Preserve the current poster until a replacement is uploaded.
-  const [imagePreview, setImagePreview] = useState(
-    () => initialData?.source_image_url ?? "",
-  );
-  const [imageFile, setImageFile] = useState<File | null>(null);
-
-  const onImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setImagePreview((ev.target?.result as string) || "");
-    reader.readAsDataURL(file);
-  }, []);
-
-  const onRemoveImage = useCallback(() => {
-    setImagePreview("");
-    setImageFile(null);
-  }, []);
+  const { imagePreview, imageFile, onImageUpload, onRemoveImage, resetImage } =
+    useImageFile(initialData?.source_image_url ?? "");
 
   // Reset extras (food/image) on modal open; useForm owns formData/touched.
   const prevIsOpenRef = useRef(isOpen);
@@ -132,8 +117,7 @@ export function useEventForm(options: UseEventFormOptions) {
   useEffect(() => {
     if (isOpen && !prevIsOpenRef.current) {
       foodTag.reset();
-      setImagePreview(initialData?.source_image_url ?? "");
-      setImageFile(null);
+      resetImage(initialData?.source_image_url ?? "");
       prevInitialDataRef.current = initialData;
     }
     prevIsOpenRef.current = isOpen;
@@ -153,8 +137,7 @@ export function useEventForm(options: UseEventFormOptions) {
 
     if (shouldReseed && initialData) {
       form.setFormData(initialData);
-      setImagePreview(initialData.source_image_url ?? "");
-      setImageFile(null);
+      resetImage(initialData.source_image_url ?? "");
       prevInitialDataRef.current = initialData;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -197,8 +180,7 @@ export function useEventForm(options: UseEventFormOptions) {
     imageFile,
     onImageUpload,
     onRemoveImage,
-    setImagePreview,
-    setImageFile,
+    resetImage,
 
     markAllFieldsTouched,
   };
