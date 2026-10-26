@@ -5,7 +5,7 @@ import pytest
 
 from routers.position_submissions import _limiter
 from schemas.submission import PositionSubmissionResponse
-from services import submission_service
+from services import club_service, submission_service
 
 
 @pytest.fixture(autouse=True)
@@ -53,6 +53,12 @@ def test_anonymous_creation_uses_position_resource(client, monkeypatch):
 def test_authenticated_creation_uses_position_resource(authenticated_client, monkeypatch):
     create = Mock(return_value=submission())
     monkeypatch.setattr(submission_service, "create_submission", create)
+    monkeypatch.setattr(club_service, "get_club", Mock(return_value=Mock()))
+    monkeypatch.setattr(
+        club_service, "publish_refusal", Mock(return_value="Only approved club owners")
+    )
+    review = Mock()
+    monkeypatch.setattr(submission_service, "review_position_submission", review)
     response = authenticated_client.post(
         "/position-submissions/",
         json={"submitted_by_email": "submitter@example.com", "position_data": POSITION},
@@ -64,6 +70,25 @@ def test_authenticated_creation_uses_position_resource(authenticated_client, mon
         "submitted_by_email": "submitter@example.com",
     }
     assert create.call_args.args[0] is not None
+    review.assert_not_called()
+
+
+def test_club_team_creation_publishes_without_review(authenticated_client, monkeypatch):
+    monkeypatch.setattr(submission_service, "create_submission", Mock(return_value=submission()))
+    monkeypatch.setattr(club_service, "get_club", Mock(return_value=Mock()))
+    monkeypatch.setattr(club_service, "publish_refusal", Mock(return_value=None))
+    review = Mock(return_value=submission("approved"))
+    monkeypatch.setattr(submission_service, "review_position_submission", review)
+
+    response = authenticated_client.post(
+        "/position-submissions/",
+        json={"submitted_by_email": "submitter@example.com", "position_data": POSITION},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "approved"
+    assert review.call_args.args == (SUBMISSION_ID, "approved", None)
+    assert review.call_args.kwargs["notify_submitter"] is False
 
 
 @pytest.mark.parametrize(

@@ -35,6 +35,7 @@
     "unknown": "보수 미지정",
     "addPosition": "직책 추가",
     "submitted": "검토를 위해 제출했습니다.",
+    "published": "직책을 추가했습니다.",
     "submissions": "제출된 직책",
     "placeholders": {
       "title": "예: 마케팅 코디네이터",

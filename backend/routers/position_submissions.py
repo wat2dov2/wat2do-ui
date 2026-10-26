@@ -6,6 +6,7 @@ from core.auth import get_admin_user, get_optional_user, resolve_db_user
 from core.constants import (
     MAX_SCHOOL_LENGTH,
     MAX_SEARCH_QUERY_LENGTH,
+    SUBMISSION_APPROVED,
     SUBMISSION_RATE_LIMIT_MAX_REQUESTS,
     SUBMISSION_RATE_LIMIT_WINDOW_SECONDS,
 )
@@ -20,7 +21,7 @@ from schemas.submission import (
     SubmissionUpdate,
 )
 from schemas.user import UserResponse
-from services import submission_service
+from services import club_service, submission_service
 
 router = APIRouter(prefix="/position-submissions", tags=["position-submissions"])
 _limiter = RateLimiter(
@@ -36,12 +37,23 @@ def create_submission(
     _rl: None = Depends(_limiter.dependency()),
 ):
     user = resolve_db_user(auth_user) if auth_user else None
-    return submission_service.create_submission(
+    submission = submission_service.create_submission(
         str(user.id) if user else None,
         data.position_data,
         submitted_by_email=str(data.submitted_by_email),
         kind="position",
     )
+    # The club's own management team publishes straight away, as with events.
+    club = club_service.get_club(data.position_data.club_id) if user else None
+    if club and club_service.publish_refusal(club, user) is None:
+        return submission_service.review_position_submission(
+            str(submission.id),
+            SUBMISSION_APPROVED,
+            None,
+            reviewed_by=str(user.id),
+            notify_submitter=False,
+        )
+    return submission
 
 
 @router.get("/", response_model=PaginatedResponse[PositionSubmissionResponse])

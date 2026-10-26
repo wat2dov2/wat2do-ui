@@ -19,6 +19,8 @@ interface SubmissionState {
   busy: boolean;
   error: string | null;
   submitted: boolean;
+  /** The club's own team published it straight away; anyone else's waits for review. */
+  published: boolean;
   /** The form opens once an image was read or the upload was skipped. */
   formOpen: boolean;
 }
@@ -36,7 +38,7 @@ export function usePositionSubmission() {
   const [state, dispatch] = useReducer(reducer, {
     data: { club_id: 0, title: "", description: "", position_type: "general", requirements: [], source_url: "", is_paid: null },
     submittedByEmail: userEmail ?? "",
-    busy: false, error: null, submitted: false, formOpen: false,
+    busy: false, error: null, submitted: false, published: false, formOpen: false,
   });
   const clubs = useQuery({
     ...clubDirectoryQueryOptions(school),
@@ -63,9 +65,10 @@ export function usePositionSubmission() {
     dispatch({ type: "state", value: { busy: true, error: null } });
     try {
       const sourceImageUrl = image.imageFile ? await uploadEventImageUnsigned(image.imageFile) : image.imagePreview || null;
-      await submitPosition({ ...state.data, source_image_url: sourceImageUrl, requirements: state.data.requirements?.map(value => value.trim()).filter(Boolean) }, state.submittedByEmail.trim());
-      await queryClient.invalidateQueries({ queryKey: queryKeys.positionSubmissions.all });
-      dispatch({ type: "state", value: { submitted: true } });
+      const submission = await submitPosition({ ...state.data, source_image_url: sourceImageUrl, requirements: state.data.requirements?.map(value => value.trim()).filter(Boolean) }, state.submittedByEmail.trim());
+      const published = submission.status === "approved";
+      await queryClient.invalidateQueries({ queryKey: published ? queryKeys.positions.all : queryKeys.positionSubmissions.all });
+      dispatch({ type: "state", value: { submitted: true, published } });
     } catch (error) {
       dispatch({ type: "state", value: { error: getApiErrorMessage(error) } });
     } finally {

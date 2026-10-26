@@ -11,15 +11,12 @@ from core.constants import (
     MAX_SEARCH_QUERY_LENGTH,
 )
 from core.errors import (
-    CLUB_EVENT_CREATION_REQUIRED,
     CLUB_NOT_FOUND,
-    CLUB_PENDING_REVIEW,
     EVENT_NOT_FOUND,
     NOT_AUTHORIZED,
 )
 from core.exceptions import AuthorizationError, get_or_404
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
-from schemas.club import CLUB_STATUS_APPROVED
 from schemas.event import (
     EventCreate,
     EventFeedResponse,
@@ -50,20 +47,11 @@ def _get_event_or_404_authorized(event_id: int, db_user: UserResponse) -> EventR
 
 
 def _authorize_event_club(club_id: int, db_user: UserResponse) -> None:
-    """Require management-team membership (or admin) to publish under this club.
-
-    Membership alone is not enough: the club itself must have cleared
-    admin review, so submitting a club is never a route to publishing
-    events without moderation. Display fields are derived server-side; this only
-    enforces who may post.
-    """
+    """Require the right to publish under this club; display fields are derived server-side."""
     club = get_or_404(club_service.get_club(club_id), CLUB_NOT_FOUND)
-    if not is_admin(db_user):
-        if club.status != CLUB_STATUS_APPROVED:
-            raise AuthorizationError(CLUB_PENDING_REVIEW)
-        owned_clubs = club_service.list_clubs_by_owner(str(db_user.id))
-        if not any(c.id == club.id for c in owned_clubs):
-            raise AuthorizationError(CLUB_EVENT_CREATION_REQUIRED)
+    refusal = club_service.publish_refusal(club, db_user)
+    if refusal:
+        raise AuthorizationError(refusal)
 
 
 @router.get("/admin", response_model=PaginatedResponse[EventSummaryResponse])

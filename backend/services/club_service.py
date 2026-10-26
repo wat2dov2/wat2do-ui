@@ -11,6 +11,7 @@ from uuid import UUID
 
 from postgrest.exceptions import APIError
 
+from core.auth import is_admin
 from core.constants import (
     DEFAULT_LIST_LIMIT,
     DEFAULT_PAGE_SIZE,
@@ -18,7 +19,7 @@ from core.constants import (
 )
 from core.controlbox import controlbox
 from core.database import get_sb
-from core.errors import NOT_AUTHORIZED
+from core.errors import CLUB_EVENT_CREATION_REQUIRED, CLUB_PENDING_REVIEW, NOT_AUTHORIZED
 from core.exceptions import AuthorizationError, ConflictError, NotFoundError, ValidationError
 from core.pagination import apply_stable_order
 from core.sanitize import sanitize_postgrest_value
@@ -39,6 +40,7 @@ from schemas.club import (
     ClubSubmissionResponse,
     ClubUpdate,
 )
+from schemas.user import UserResponse
 from services import admin_query, position_service, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
 from services.notifications.submission_review import send_review_decision
@@ -155,6 +157,22 @@ def list_clubs_by_owner(owner_id: str) -> list[ClubResponse]:
         log.warning("Failed to query club_members for owner_id %s: %s", owner_id, e)
 
     return list(clubs_dict.values())
+
+
+def publish_refusal(club: ClubResponse, db_user: UserResponse) -> str | None:
+    """Why *db_user* may not publish under *club* without review, or None when they may.
+
+    Admins may. Otherwise management-team membership alone is not enough: the
+    club itself must have cleared admin review, so submitting a club is never a
+    route to publishing events or positions without moderation.
+    """
+    if is_admin(db_user):
+        return None
+    if club.status != CLUB_STATUS_APPROVED:
+        return CLUB_PENDING_REVIEW
+    if not any(c.id == club.id for c in list_clubs_by_owner(str(db_user.id))):
+        return CLUB_EVENT_CREATION_REQUIRED
+    return None
 
 
 def is_club_member(club_id: int, user_id: str) -> bool:

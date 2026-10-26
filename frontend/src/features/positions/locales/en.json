@@ -43,6 +43,7 @@
     "unknown": "Payment unspecified",
     "addPosition": "Add position",
     "submitted": "Position submitted for review.",
+    "published": "Position added.",
     "submissions": "Position submissions",
     "uploadImage": "Upload Position Poster",
     "uploadImageDescription": "Upload or paste an image of the role, and AI will automatically prefill the details.",

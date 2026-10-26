@@ -35,6 +35,7 @@
     "unknown": "未注明薪酬",
     "addPosition": "添加职位",
     "submitted": "职位已提交审核。",
+    "published": "职位已添加。",
     "submissions": "职位提交",
     "placeholders": {
       "title": "例如：市场营销协调员",

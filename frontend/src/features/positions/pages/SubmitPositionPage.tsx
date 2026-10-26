@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
+import { useAuthState } from "@/features/auth";
 import { usePositionSubmission } from "@/features/positions/hooks/usePositionSubmission";
 import { Container, FormActions, FormGrid, PageHeader, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
@@ -21,12 +22,15 @@ export function SubmitPositionPage() {
   const form = usePositionSubmission();
   const data = form.data;
   const clubs = form.clubs.data ?? [];
+  const { isAdmin, clubs: managedClubs } = useAuthState();
+  // Admins and the club's own team publish straight away; the server decides the same.
+  const canPublish = isAdmin || managedClubs.some(club => club.id === data.club_id);
   return (
     <Container size="lg">
       <Stack gap={6}>
         <PageHeader title={t("positions.addPosition")} back={{ href: ROUTES.POSITIONS, label: t("navigation.positions") }} />
         {form.submitted ? (
-          <Stack gap={3}><p role="status">{t("positions.submitted")}</p><Button asChild><Link href={ROUTES.POSITIONS}>{t("navigation.positions")}</Link></Button></Stack>
+          <Stack gap={3}><p role="status">{t(form.published ? "positions.published" : "positions.submitted")}</p><Button asChild><Link href={ROUTES.POSITIONS}>{t("navigation.positions")}</Link></Button></Stack>
         ) : !form.formOpen ? (
           <ImageParseStep
             title={t("positions.uploadImage")}
@@ -67,7 +71,7 @@ export function SubmitPositionPage() {
                 </FormGrid>
                 <FormTextarea name="position-requirements" placeholder={t("positions.placeholders.requirements")} label={t("positions.requirements")} value={(data.requirements ?? []).join("\n")} onChange={value => form.edit({ requirements: value.split("\n") })} />
                 {form.error ? <FieldError role="alert">{form.error}</FieldError> : null}
-                <FormActions><LoadingButton type="submit" isLoading={form.busy} disabled={!clubs.some(club => club.id === data.club_id)}>{t("events.submitForReview")}</LoadingButton></FormActions>
+                <FormActions><LoadingButton type="submit" isLoading={form.busy} disabled={!clubs.some(club => club.id === data.club_id)}>{t(canPublish ? "positions.addPosition" : "events.submitForReview")}</LoadingButton></FormActions>
               </Stack>
             </fieldset>
           </form>

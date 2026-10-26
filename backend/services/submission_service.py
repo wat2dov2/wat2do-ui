@@ -223,7 +223,12 @@ def update_submission(
 
 
 def review_position_submission(
-    submission_id: str, status: str, rejection_reason: str | None, *, reviewed_by: str
+    submission_id: str,
+    status: str,
+    rejection_reason: str | None,
+    *,
+    reviewed_by: str,
+    notify_submitter: bool = True,
 ):
     from postgrest.exceptions import APIError
 
@@ -258,7 +263,7 @@ def review_position_submission(
         raise
     if not result.data:
         return None
-    if status != existing.status:
+    if notify_submitter and status != existing.status:
         send_review_decision(
             kind="position",
             title=existing.position_data.title,
