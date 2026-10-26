@@ -4,7 +4,9 @@ import { mockApi } from "./api-fixture";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 
 for (const path of ["/events/submit", "/clubs/new", "/positions/submit"]) {
-  test(`signed-out visitors can open ${path} and must provide an email`, async ({ page, next }) => {
+  // Adding a club takes an optional email; event and position submissions require one.
+  const emailRequired = path !== "/clubs/new";
+  test(`signed-out visitors can open ${path} with ${emailRequired ? "a required" : "an optional"} email`, async ({ page, next }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(key => localStorage.setItem(key, "en"), STORAGE_KEYS.LANGUAGE);
     await mockApi(page, next, url => url.pathname === "/api/auth/refresh", async () => ({ status: 401, json: {} }));
@@ -26,7 +28,8 @@ for (const path of ["/events/submit", "/clubs/new", "/positions/submit"]) {
     }
     const email = page.getByRole("textbox", { name: "Email address" });
     await expect(email).toBeVisible();
-    await expect(email).toHaveAttribute("required", "");
+    if (emailRequired) await expect(email).toHaveAttribute("required", "");
+    else await expect(email).not.toHaveAttribute("required");
     // Check actual mobile geometry after parsing, including nested field groups.
     // Email and title used to touch because the spacing owner wrapped the form.
     const layout = await page.locator("form").filter({ has: email }).evaluate(form => {
@@ -47,7 +50,7 @@ for (const path of ["/events/submit", "/clubs/new", "/positions/submit"]) {
     // Every consecutive field must still have the shared 20px minimum rhythm.
     for (const gap of layout.gaps) expect(gap).toBeGreaterThanOrEqual(19);
 
-    expect(await email.evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(false);
+    expect(await email.evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(!emailRequired);
     await email.fill("invalid");
     expect(await email.evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(false);
     await email.fill("visitor@example.com");

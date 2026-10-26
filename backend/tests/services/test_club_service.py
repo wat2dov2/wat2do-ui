@@ -602,6 +602,7 @@ def test_anonymous_club_contact_does_not_grant_membership_or_leak_publicly(
     assert payload["created_by"] is None
     assert payload["status"] == "pending"
     assert payload["submitted_by_email"] == "visitor@example.com"
+    assert payload["submitted"] is True
     membership.assert_not_called()
     assert "submitted_by_email" not in result.model_dump()
 

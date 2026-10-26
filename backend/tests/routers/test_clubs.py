@@ -45,6 +45,22 @@ def test_create_club_anonymous_remains_pending_without_owner(client, monkeypatch
     assert create.call_args.kwargs == {"created_by": None, "auto_approve": False}
 
 
+def test_create_club_accepts_submission_without_email(client, monkeypatch):
+    create = MagicMock(return_value=_mock_club(status="pending", created_by=None))
+    monkeypatch.setattr(club_service, "create_club", create)
+    response = client.post("/clubs/", json={"club_name": "Test Club", "club_type": "wusa"})
+    assert response.status_code == 201
+    assert create.call_args.args[0].submitted_by_email is None
+
+
+@pytest.mark.parametrize("email", ["", "not-an-email", "person@example.com\r\nInjected: header"])
+def test_create_club_rejects_invalid_email(client, email):
+    response = client.post(
+        "/clubs/", json={"club_name": "Test Club", "club_type": "wusa", "submitted_by_email": email}
+    )
+    assert response.status_code == 422
+
+
 def test_club_contract_has_no_organization_aliases(client):
     schema = client.app.openapi()
     assert "/clubs/" in schema["paths"]

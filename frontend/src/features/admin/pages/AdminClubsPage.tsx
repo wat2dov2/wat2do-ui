@@ -153,7 +153,7 @@ export function AdminClubsPage({
     }
   };
 
-  const handleSave = async (club: Club, submittedByEmail: string) => {
+  const handleSave = async (club: Club, submittedByEmail: string | null) => {
     try {
       if (editingClub) {
         await adminUpdateClub(club);

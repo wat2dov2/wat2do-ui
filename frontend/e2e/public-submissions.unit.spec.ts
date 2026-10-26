@@ -42,3 +42,22 @@ test("public submission APIs send explicit email without inventing ownership", a
     api.post = original;
   }
 });
+
+test("a club submission without an email sends a null submitter email", async () => {
+  const original = api.post;
+  const requests: unknown[] = [];
+  api.post = async <T>(_path: string, data?: unknown) => {
+    requests.push(data);
+    return { id: 7, club_name: "Visitor Club", status: "pending" } as T;
+  };
+  try {
+    await createClubAPI({
+      club_name: "Visitor Club", school: "uwaterloo", categories: ["Arts & Culture"],
+      club_page: "", ig: null, discord: null, club_type: "independent",
+      submitted_by_email: null,
+    });
+    expect(requests).toEqual([expect.objectContaining({ submitted_by_email: null })]);
+  } finally {
+    api.post = original;
+  }
+});

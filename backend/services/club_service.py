@@ -331,6 +331,7 @@ def create_club(
         raise ValidationError("School is not registered")
     payload["school_id"] = school_record.id
     payload["created_by"] = created_by
+    payload["submitted"] = True
     payload["status"] = CLUB_STATUS_APPROVED if auto_approve else CLUB_STATUS_PENDING
     r = get_sb().table(CLUBS).insert(payload).execute()
     club = get_club(int(r.data[0]["id"]))

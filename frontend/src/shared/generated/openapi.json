@@ -8061,8 +8061,15 @@
       "ClubCreate": {
         "properties": {
           "submitted_by_email": {
-            "type": "string",
-            "format": "email",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Submitted By Email"
           },
           "club_name": {
@@ -8154,7 +8161,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "submitted_by_email",
           "club_name"
         ],
         "title": "ClubCreate"

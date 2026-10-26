@@ -237,7 +237,6 @@ def test_submission_service_approval_publishes_event(monkeypatch):
                 }
             },
         ),
-        ("/clubs/", {"club_name": "Test Club", "club_type": "wusa"}),
     ],
 )
 def test_public_submission_requires_valid_email(client, path, payload, email):

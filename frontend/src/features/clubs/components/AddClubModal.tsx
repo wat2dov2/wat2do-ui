@@ -55,7 +55,7 @@ interface ClubFormData {
 
 type SaveClub = (
   club: Club,
-  submittedByEmail: string,
+  submittedByEmail: string | null,
 ) => Club | void | Promise<Club | void>;
 
 interface ClubFormProps {
@@ -165,7 +165,7 @@ export function ClubForm({
     setIsSubmitting(true);
     try {
       const savedClub =
-        (await Promise.resolve(onSave(club, submittedByEmail.trim()))) || club;
+        (await Promise.resolve(onSave(club, submittedByEmail.trim() || null))) || club;
       toast({
         title: isEditMode
           ? t("clubs.clubUpdated")
@@ -230,7 +230,6 @@ export function ClubForm({
         {!isEditMode ? <FormInput
                   name="submitter-email"
                   type="email"
-                  required
                   label={t("contact.form.email")}
                   placeholder={t("contact.form.emailPlaceholder")}
                   value={submittedByEmail}

@@ -35,7 +35,7 @@ export function CreateClubPage() {
   );
   const saveClub = async (
     club: Club,
-    submittedByEmail: string,
+    submittedByEmail: string | null,
   ): Promise<Club> => {
     const created = await createClubAPI({
       submitted_by_email: submittedByEmail,
