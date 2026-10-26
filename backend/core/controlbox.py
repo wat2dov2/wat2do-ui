@@ -1065,8 +1065,6 @@ class OutreachControl(_ControlModel):
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
     # Who signs the video script and email.
     sender_name: str = Field(min_length=1, max_length=60)
-    # The Gmail account the admin page opens each draft in.
-    gmail_account: EmailStr
     # "{school}" becomes the school's slug.
     submit_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*$")
     # Lead type slug -> who and what the research agent looks for at every school,

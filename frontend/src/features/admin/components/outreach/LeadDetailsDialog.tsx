@@ -49,7 +49,7 @@ function LeadDetails({ lead, isSaving, onSaveNotes }: Omit<LeadDetailsDialogProp
           {sections.map(section => (
             <ItemContent key={section.title}>
               <ItemTitle>{section.title}</ItemTitle>
-              <ItemDescription className="whitespace-pre-line">{section.text}</ItemDescription>
+              <ItemDescription length="full">{section.text}</ItemDescription>
             </ItemContent>
           ))}
           <FormTextarea name="notes" label={t("admin.outreach.notes")} rows={3} value={notes} onChange={setNotes} />
@@ -58,11 +58,6 @@ function LeadDetails({ lead, isSaving, onSaveNotes }: Omit<LeadDetailsDialogProp
               <Button asChild variant="outline">
                 <a href={gmailComposeUrl({ to: lead.email, subject: lead.email_subject, body: lead.email_body })} target="_blank" rel="noopener noreferrer">
                   <Mail />{t("admin.outreach.openEmail")}
-                </a>
-              </Button>
-              <Button asChild variant="outline">
-                <a href={gmailComposeUrl({ to: lead.email, subject: `Re: ${lead.email_subject}`, body: lead.follow_up })} target="_blank" rel="noopener noreferrer">
-                  <Mail />{t("admin.outreach.openFollowUp")}
                 </a>
               </Button>
               <Button asChild variant="ghost">
