@@ -9,6 +9,7 @@
  */
 
 import {
+  CAROUSEL_COLORS,
   SLIDE_HEIGHT,
   SLIDE_CARD_INSET,
   SLIDE_EVENT_HEADER_HEIGHT,
@@ -84,11 +85,17 @@ function SlideAvatar({ src, author, size, renderPoster }: { src: string; author:
   </div>;
 }
 
+/** Sticker fills stay in the carousel palette: grey, blue or ink, never the white footer. */
+const STICKER_STYLES = [
+  { fill: CAROUSEL_COLORS.secondary, ink: CAROUSEL_COLORS.foreground },
+  { fill: CAROUSEL_COLORS.accent, ink: CAROUSEL_COLORS.background },
+  { fill: CAROUSEL_COLORS.foreground, ink: CAROUSEL_COLORS.background },
+] as const;
+
 /** One reusable, deliberately playful sticker silhouette, chosen by the label’s meaning. */
 function SlideSticker({ sticker }: { sticker: EventSlideModel["stickers"][number] }) {
-  const colors = ["#FFE45E", "#C5EDFF", "#FFB8D2", "#CFF5B2", "#DDD0FF", "#FFD4A8", "#B8EEE4", "#FFC8B8", "#E8EDAD", "#CDD9FF"];
   const shape = sticker.shape;
-  const fill = colors[sticker.styleSeed % colors.length];
+  const { fill, ink } = STICKER_STYLES[sticker.styleSeed % STICKER_STYLES.length];
   const star = Array.from({ length: 24 }, (_, i) => {
     const angle = i * Math.PI / 12;
     const radius = i % 2 ? 0.84 : 1;
@@ -108,19 +115,19 @@ function SlideSticker({ sticker }: { sticker: EventSlideModel["stickers"][number
         : <path d="M4 10H256V94H152L130 104L108 94H4Z" fill={fill} stroke="white" strokeWidth="6" />}
     </svg>
     {/* Keep the label above the positioned silhouette in both preview and artwork. */}
-    <div style={{ display: "flex", position: "relative", flexDirection: "column", width: 174, padding: "12px 8px", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: 23, lineHeight: 1.15, fontWeight: 700, color: LIGHT.foreground }}>
+    <div style={{ display: "flex", position: "relative", flexDirection: "column", width: 174, padding: "12px 8px", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: 23, lineHeight: 1.15, fontWeight: 700, color: ink }}>
       {sticker.lines.map((line, lineIndex) => <div key={lineIndex} style={{ display: "flex", whiteSpace: "nowrap" }}>{line}</div>)}
     </div>
   </div>;
 }
 
-/** Inset Instagram post on the cover's shared school-colored doodle backdrop. */
+/** Inset Instagram post on the cover's doodle backdrop, set on light grey. */
 export function EventSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: EventSlideModel; renderPoster?: PosterRenderer }) {
   const poster = model.poster;
   const cardWidth = poster.width + SLIDE_CARD_INSET * 2;
   const schedule = [model.dateLine, model.timeLine].filter(Boolean).join(" · ");
   return (
-    <div style={{ ...slideFrame, backgroundColor: model.colors.primary, color: LIGHT.foreground, overflow: "hidden", padding: 64, alignItems: "center", justifyContent: "center" }}>
+    <div style={{ ...slideFrame, backgroundColor: CAROUSEL_COLORS.secondary, color: LIGHT.foreground, overflow: "hidden", padding: 64, alignItems: "center", justifyContent: "center" }}>
       <CoverDoodleField icons={model.doodleIcons} />
       <div style={{ display: "flex", flexDirection: "column", position: "relative", width: cardWidth, height: SLIDE_EVENT_HEADER_HEIGHT + poster.height + SLIDE_EVENT_FOOTER_HEIGHT, flexShrink: 0, backgroundColor: LIGHT.surface, borderRadius: 28, overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 20, height: SLIDE_EVENT_HEADER_HEIGHT, padding: `12px ${SLIDE_CARD_INSET}px`, flexShrink: 0 }}>
@@ -171,7 +178,7 @@ const FAN_MIN_OVERLAP = 50;
  * cards are drawn right to left: each lands on the one to its right, leaving the
  * first event on top.
  */
-function CoverPosterFan({ tiles, secondary, renderPoster }: { tiles: string[]; secondary: string; renderPoster: PosterRenderer }) {
+function CoverPosterFan({ tiles, renderPoster }: { tiles: string[]; renderPoster: PosterRenderer }) {
   if (tiles.length === 0) return null;
 
   const step =
@@ -209,7 +216,7 @@ function CoverPosterFan({ tiles, secondary, renderPoster }: { tiles: string[]; s
               width: FAN_CARD_WIDTH,
               height: FAN_CARD_HEIGHT,
               borderRadius: 22,
-              border: `3px solid ${secondary}`,
+              border: `3px solid ${CAROUSEL_COLORS.foreground}`,
               overflow: "hidden",
               transform: `rotate(${(offset * FAN_MAX_TILT).toFixed(2)}deg)`,
             }}
@@ -222,13 +229,13 @@ function CoverPosterFan({ tiles, secondary, renderPoster }: { tiles: string[]; s
   );
 }
 
-/** The canonical Wat2Do cover mark, recoloured by the cover model. */
+/** The canonical Wat2Do cover mark, recoloured to the carousel palette. */
 const COVER_LOGO_SIZE = 132;
 
 /*
  * The mark sits centred in a 1080 square with 195 units of padding either side
- * and 297 above and below. That square is filled with the school colour, which
- * on the cover matches the background - so only the goose reads, and it looks
+ * and 297 above and below. That square is filled with the slide background, so
+ * on the cover it disappears - so only the goose reads, and it looks
  * pushed down and left of every other edge on the slide by exactly that
  * padding. Pulling the box out by it puts the goose's own edges on the margin
  * the rest of the content uses.
@@ -298,16 +305,13 @@ function CoverDoodleField({ icons }: { icons: string[] }) {
 /**
  * The carousel cover.
  *
- * Every value on it comes from the batch - the school's colours, its local
- * date, how many events the scrape found, and the posters of the events on the
+ * Every value on it comes from the batch - its local date, how many events the scrape found, and the posters of the events on the
  * carousel - so the same batch always draws the same cover and nothing about it
  * is stored. The admin editor renders this exact component, scaled down.
  */
 export function CoverSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: CoverSlideModel; renderPoster?: PosterRenderer }) {
-  const { primary, secondary } = model.colors;
-
   return (
-    <div style={{ ...slideFrame, backgroundColor: primary, color: secondary, overflow: "hidden" }}>
+    <div style={{ ...slideFrame, backgroundColor: CAROUSEL_COLORS.background, color: CAROUSEL_COLORS.foreground, overflow: "hidden" }}>
       <CoverDoodleField icons={model.doodleIcons} />
 
       <div
@@ -340,7 +344,7 @@ export function CoverSlideTemplate({ model, renderPoster = renderSlidePoster }: 
           marginTop: 24,
         }}
       >
-        <div style={{ display: "flex", fontSize: 240, fontWeight: 700, lineHeight: 1 }}>
+        <div style={{ display: "flex", fontSize: 240, fontWeight: 700, lineHeight: 1, color: CAROUSEL_COLORS.accent }}>
           {String(model.newEventCount)}
         </div>
         <div
@@ -360,7 +364,7 @@ export function CoverSlideTemplate({ model, renderPoster = renderSlidePoster }: 
         </div>
       </div>
 
-      <CoverPosterFan tiles={model.tiles} secondary={secondary} renderPoster={renderPoster} />
+      <CoverPosterFan tiles={model.tiles} renderPoster={renderPoster} />
 
       <div
         style={{
@@ -453,14 +457,14 @@ function outroCell(layout: OutroGridLayout): React.CSSProperties {
 }
 
 /** One miniature event card: poster, then club, title, when and where. */
-function OutroCard({ card, colors, layout, renderPoster }: { card: OutroSlideModel["cards"][number]; colors: OutroSlideModel["colors"]; layout: OutroGridLayout; renderPoster: PosterRenderer }) {
+function OutroCard({ card, layout, renderPoster }: { card: OutroSlideModel["cards"][number]; layout: OutroGridLayout; renderPoster: PosterRenderer }) {
   const { scale } = layout;
   const poster = { width: Math.round(OUTRO_BASE_POSTER.width * scale), height: Math.round(OUTRO_BASE_POSTER.height * scale) };
   const detail: React.CSSProperties = { ...clampText(1), fontSize: 20 * scale, fontWeight: 500, lineHeight: 1.2, maxHeight: 24 * scale, color: LIGHT.mutedForeground };
   return (
     <div style={outroCell(layout)}>
-      {/* About one event in six has no poster; a monogram in the school's
-          colours keeps that card intentional instead of an empty grey well. */}
+      {/* About one event in six has no poster; a blue monogram on grey
+          keeps that card intentional instead of an empty grey well. */}
       <div
         style={{
           display: "flex",
@@ -471,8 +475,8 @@ function OutroCard({ card, colors, layout, renderPoster }: { card: OutroSlideMod
           flexShrink: 0,
           borderRadius: 12 * scale,
           overflow: "hidden",
-          backgroundColor: colors.primary,
-          color: colors.secondary,
+          backgroundColor: CAROUSEL_COLORS.secondary,
+          color: CAROUSEL_COLORS.accent,
           fontSize: poster.width * 0.36,
           fontWeight: 700,
         }}
@@ -492,16 +496,15 @@ function OutroCard({ card, colors, layout, renderPoster }: { card: OutroSlideMod
 /**
  * The carousel's last slide: the scrape's other events, or the school's site.
  *
- * It shares the cover's colours, doodles and logo, and shows each event as a
- * miniature card in a two-column grid; any events that do not fit are counted
- * in the grid's last cell.
+ * It shares the cover's doodles and logo on the event slides' grey, and shows
+ * each event as a miniature card in a two-column grid; any events that do not
+ * fit are counted in the grid's last cell.
  */
 export function OutroSlideTemplate({ model, renderPoster = renderSlidePoster }: { model: OutroSlideModel; renderPoster?: PosterRenderer }) {
-  const { primary, secondary } = model.colors;
   const layout = outroGridLayout(model.cards.length + (model.hiddenCount > 0 ? 1 : 0));
 
   return (
-    <div style={{ ...slideFrame, backgroundColor: primary, color: secondary, overflow: "hidden" }}>
+    <div style={{ ...slideFrame, backgroundColor: CAROUSEL_COLORS.secondary, color: CAROUSEL_COLORS.foreground, overflow: "hidden" }}>
       <CoverDoodleField icons={model.doodleIcons} />
 
       <div
@@ -533,7 +536,7 @@ export function OutroSlideTemplate({ model, renderPoster = renderSlidePoster }: 
           }}
         >
           <div style={{ display: "flex", flexWrap: "wrap", gap: OUTRO_GRID_GAP }}>
-            {model.cards.map((card, index) => <OutroCard key={index} card={card} colors={model.colors} layout={layout} renderPoster={renderPoster} />)}
+            {model.cards.map((card, index) => <OutroCard key={index} card={card} layout={layout} renderPoster={renderPoster} />)}
             {model.hiddenCount > 0 ? (
               <div style={{ ...outroCell(layout), flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 * layout.scale }}>
                 <div style={{ display: "flex", fontSize: 56 * layout.scale, fontWeight: 700, lineHeight: 1 }}>{model.moreLabel}</div>
