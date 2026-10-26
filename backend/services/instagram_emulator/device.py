@@ -320,19 +320,28 @@ class EmulatorDevice:
 
     def scroll_down(self) -> None:
         """Swipe up through the middle of the screen with a slightly uneven hand."""
+        self._swipe(start=(1600, 1800), end=(800, 1000))
+
+    def scroll_up(self) -> None:
+        """Drag down a little through the middle of the screen, back towards older content.
+
+        A shorter drag than ``scroll_down``, so content just above the screen comes into
+        view without what is on screen leaving it.
+        """
+        self._swipe(start=(850, 950), end=(1250, 1350))
+
+    def _swipe(self, *, start: tuple[int, int], end: tuple[int, int]) -> None:
         self.pause()
         x = round(self._rng.uniform(400, 680))
-        start = round(self._rng.uniform(1600, 1800))
-        end = round(self._rng.uniform(800, 1000))
         duration = round(self._rng.uniform(500, 900))
         self.adb(
             "shell",
             "input",
             "swipe",
             str(x),
-            str(start),
+            str(round(self._rng.uniform(*start))),
             str(x + self._rng.randint(-20, 20)),
-            str(end),
+            str(round(self._rng.uniform(*end))),
             str(duration),
         )
 

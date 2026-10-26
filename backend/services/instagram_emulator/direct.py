@@ -41,6 +41,10 @@ _SHARE = labels("Send post", "Share")
 _COPY_LINK = labels("Copy link")
 _POST_LINK = re.compile(r"^https://www\.instagram\.com/(?:p|reel)/([A-Za-z0-9_-]+)/")
 _USERNAME = re.compile(r"^[a-z0-9._]{1,30}$")
+# Tapping the thread's header opens its details, whose Profile shortcut opens their profile.
+_HEADER_TITLE = re.compile(r"^header_title$")
+_PROFILE_SHORTCUT = re.compile(r"^Profile$")
+_PROFILE_USERNAME = re.compile(r"^action_bar_title$")
 # Full-width separators between messages, such as "MON 11:36 PM", "SEP 21, 5:53 PM" or
 # just "11:26 PM" for today.
 _TIMESTAMP = re.compile(r"^(?:(?:[A-Z]{3}|TODAY|YESTERDAY)\b.*)?\d{1,2}:\d{2}\s?[AP]M$")
@@ -63,6 +67,8 @@ _THEIR_BUBBLE_MAX_LEFT = 240
 # A text message is usually an unnamed view, but one with a link preview names its text.
 _TEXT_VIEW = "direct_text_message_text_view"
 _SHARES_TO_READ = 2
+# Upward swipes allowed to bring a share cut off at the top of the thread fully on screen.
+_REVEAL_SCROLLS = 4
 # A sent reply can take a few screen reads to appear.
 _SEND_CHECKS = 4
 
@@ -150,17 +156,16 @@ class _ThreadReader:
         self.stale = False
 
     def read(self) -> list[dict[str, Any]]:
-        """The thread's visible messages, oldest first, with each shared post's link."""
+        """The thread's newest messages, oldest first, with each shared post's link."""
         nodes = self._open()
         self.stale = _newest_message_is_old(nodes)
         sender = _sender(nodes)
         messages = _messages(nodes)[-CONTROL.thread_item_limit :]
         # When our message is the newest there is nothing to answer, so no link is needed.
         if messages and messages[-1]["from"] == "them":
-            # A request is about the post just shared, so only the newest few need a link.
-            shares = _their_shares(messages)[-_SHARES_TO_READ:]
-            for from_bottom, message in enumerate(reversed(shares)):
-                message["shared_url"] = self._shared_link(from_bottom, message["shared_owner"])
+            messages = self._with_shared_links(messages)
+            # While they are online the header shows only their display name.
+            sender = sender or self._profile_username()
         return [
             {
                 "from": message["from"],
@@ -194,6 +199,55 @@ class _ThreadReader:
         nodes = self._device.screen()
         in_thread = any(node.resource_id == "message_list" for node in nodes)
         return nodes if in_thread else self._open()
+
+    def _with_shared_links(self, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Copy the links of their newest few shared posts.
+
+        A request is about the post just shared, so only the newest few need a link. When
+        one of them is cut off at the top of the screen, the thread is scrolled up to bring
+        it fully into view, and the messages from both screens are returned.
+        """
+        shares = _their_shares(messages)[-_SHARES_TO_READ:]
+        for from_bottom, message in enumerate(reversed(shares)):
+            message["shared_url"] = self._shared_link(from_bottom, message["shared_owner"])
+        if len(shares) == _SHARES_TO_READ or not _cut_off(messages[0]):
+            return messages
+        if shares:
+            # Reading a link leaves the thread wherever the app put it; start again from
+            # its newest messages, with the share cut off at the top as before.
+            self._open()
+        return self._revealed(messages)
+
+    def _revealed(self, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Scroll up until the share cut off at the top of ``messages`` shows its owner, then
+        copy its link; the messages under it, already read, are kept as they were."""
+        below = messages[1:]
+        for _scroll in range(_REVEAL_SCROLLS):
+            self._device.scroll_up()
+            above = _messages(self._device.screen())
+            start = _start_of(below, above)
+            share = above[start - 1] if start else None
+            if share is None or not _their_shares([share]):
+                continue
+            newer_shares = len(_their_shares(above[start:]))
+            share["shared_url"] = self._shared_link(newer_shares, share["shared_owner"])
+            return [*above[:start], *below][-CONTROL.thread_item_limit :]
+        # A post that never shows its owner, such as a deleted one, cannot be acted on.
+        return messages
+
+    def _profile_username(self) -> str | None:
+        """Their username, from the profile their thread's details open."""
+        self._device.tap(_required(self._device.find(_HEADER_TITLE)))
+        try:
+            self._device.tap_when(_PROFILE_SHORTCUT)
+        except EmulatorError:
+            # A group chat's details have no one profile.
+            self._device.back()
+            return None
+        username = self._device.wait_for(_PROFILE_USERNAME).text
+        self._device.back()
+        self._device.back()
+        return username if _USERNAME.fullmatch(username) else None
 
     def _shared_link(self, from_bottom: int, owner: str | None) -> str | None:
         """Copy the shared post's link, then read it back through the thread's composer.
@@ -244,6 +298,30 @@ def _their_shares(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
+def _cut_off(message: dict[str, Any]) -> bool:
+    """Whether the message is their share cut off at the top of the screen, its owner above it."""
+    return message["from"] == "them" and message["cut_off"] and not message["shared_owner"]
+
+
+def _start_of(below: list[dict[str, Any]], above: list[dict[str, Any]]) -> int | None:
+    """Where ``below`` begins in ``above``, a screen scrolled up from it: after the longest
+    run at the end of ``above`` that also starts ``below``. None when they do not meet."""
+    above_keys = [_identity(message) for message in above]
+    below_keys = [_identity(message) for message in below]
+    if not below_keys:
+        return len(above_keys)
+    for overlap in range(min(len(above_keys), len(below_keys)), 0, -1):
+        if above_keys[-overlap:] == below_keys[:overlap]:
+            return len(above_keys) - overlap
+    return None
+
+
+def _identity(message: dict[str, Any]) -> tuple[str, str, str | None]:
+    # A share at the bottom edge of the screen may hide its caption, but never its owner.
+    detail = message["shared_owner"] if message["type"] == "media_share" else message["text"]
+    return message["from"], message["type"], detail
+
+
 def _forward_button(nodes: list[Node], media: Node) -> Node | None:
     return next(
         (
@@ -263,10 +341,11 @@ def _required(node: Node | None) -> Node:
 
 
 def _sender(nodes: list[Node]) -> str | None:
-    """The other person's username, from the header of a one-to-one thread."""
+    """The other person's username, from the header of a one-to-one thread, if it shows."""
     title = next((node.label for node in nodes if node.resource_id == "header_title"), "")
     subtitle = next((node.label for node in nodes if node.resource_id == "header_subtitle"), "")
-    # While they are online the subtitle says "Active now"; their avatar still names them.
+    # While they are online the subtitle says "Active now"; a story ring on their avatar
+    # still names them.
     avatar = next((node.label for node in nodes if node.resource_id == "header_avatar"), "")
     for candidate in (subtitle, title, avatar.removeprefix("Open story of ")):
         if _USERNAME.fullmatch(candidate):
@@ -315,6 +394,7 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
                     "shared_owner": owner if _USERNAME.fullmatch(owner) else None,
                     "media": media,
                     "card": False,
+                    "cut_off": bubble.bounds[1] <= message_list.bounds[1],
                 },
             )
         )
@@ -340,6 +420,7 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
                     "shared_owner": owner if _USERNAME.fullmatch(owner) else None,
                     "media": card,
                     "card": True,
+                    "cut_off": card.bounds[1] <= message_list.bounds[1],
                 },
             )
         )
@@ -364,6 +445,7 @@ def _messages(nodes: list[Node]) -> list[dict[str, Any]]:
                     "shared_owner": None,
                     "media": None,
                     "card": False,
+                    "cut_off": False,
                 },
             )
         )
