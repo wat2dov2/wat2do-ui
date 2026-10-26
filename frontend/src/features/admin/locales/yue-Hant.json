@@ -429,10 +429,8 @@
         "added": "已加歌曲",
         "failed": "未有加到歌曲"
       },
-      "followers": "追蹤者：{{value}}",
+      "followersChart": "追蹤者",
       "change": "自 {{date}}：{{value}}",
-      "postCount": "帖子：{{value}}",
-      "averages": "每個帖子：{{likes}} 個讚，{{comments}} 個留言",
       "rate": "互動率：{{value}}%",
       "lastPost": "最近發帖 {{time}}",
       "reconnect": "需要重新連接",
@@ -440,11 +438,11 @@
       "noPosts": "暫時未有帖子。",
       "notRead": "仲未讀取。下次每日運行會填好。",
       "summary": {
-        "accounts": "帳戶",
         "needingAttention": "需要處理：{{value}}",
         "followers": "追蹤者總數",
-        "recentPosts": "過去 7 日嘅帖子",
-        "averageLikes": "每個帖子平均讚好"
+        "averageLikes": "每個帖子平均讚好",
+        "followerGains": "每日新增追蹤者",
+        "postsPerDay": "每日帖子"
       },
       "tabs": {
         "label": "社交帳戶檢視",

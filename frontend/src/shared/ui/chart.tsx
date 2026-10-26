@@ -23,6 +23,7 @@ type ChartContextProps = {
 const aspectClasses = {
   video: "aspect-video",
   wide: "aspect-video md:aspect-[3/1]",
+  strip: "aspect-[5/2]",
 } as const
 
 const ChartContext = React.createContext<ChartContextProps | null>(null)

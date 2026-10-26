@@ -429,10 +429,8 @@
         "added": "Song added",
         "failed": "No song added"
       },
-      "followers": "Followers: {{value}}",
+      "followersChart": "Followers",
       "change": "Since {{date}}: {{value}}",
-      "postCount": "Posts: {{value}}",
-      "averages": "Per post: {{likes}} likes, {{comments}} comments",
       "rate": "Engagement: {{value}}%",
       "lastPost": "Last post {{time}}",
       "reconnect": "Reconnect needed",
@@ -440,11 +438,11 @@
       "noPosts": "No posts yet.",
       "notRead": "Not read yet. The next daily run fills this in.",
       "summary": {
-        "accounts": "Accounts",
         "needingAttention": "Need attention: {{value}}",
         "followers": "Total followers",
-        "recentPosts": "Posts in the last 7 days",
-        "averageLikes": "Average likes per post"
+        "averageLikes": "Average likes per post",
+        "followerGains": "Followers gained per day",
+        "postsPerDay": "Posts per day"
       },
       "tabs": {
         "label": "Social account views",

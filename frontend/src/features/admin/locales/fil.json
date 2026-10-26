@@ -429,10 +429,8 @@
         "added": "Naidagdag ang kanta",
         "failed": "Walang naidagdag na kanta"
       },
-      "followers": "Mga follower: {{value}}",
+      "followersChart": "Mga follower",
       "change": "Mula {{date}}: {{value}}",
-      "postCount": "Mga post: {{value}}",
-      "averages": "Bawat post: {{likes}} like, {{comments}} komento",
       "rate": "Engagement: {{value}}%",
       "lastPost": "Huling post {{time}}",
       "reconnect": "Kailangang ikonekta muli",
@@ -440,11 +438,11 @@
       "noPosts": "Wala pang post.",
       "notRead": "Hindi pa nababasa. Pupunan ito ng susunod na araw-araw na run.",
       "summary": {
-        "accounts": "Mga account",
         "needingAttention": "Kailangang tingnan: {{value}}",
         "followers": "Kabuuang follower",
-        "recentPosts": "Mga post sa nakaraang 7 araw",
-        "averageLikes": "Average na like bawat post"
+        "averageLikes": "Average na like bawat post",
+        "followerGains": "Mga bagong follower bawat araw",
+        "postsPerDay": "Mga post bawat araw"
       },
       "tabs": {
         "label": "Mga view ng social account",

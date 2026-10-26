@@ -429,10 +429,8 @@
         "added": "ગીત ઉમેરાયું",
         "failed": "કોઈ ગીત ઉમેરાયું નથી"
       },
-      "followers": "ફોલોઅર્સ: {{value}}",
+      "followersChart": "ફોલોઅર્સ",
       "change": "{{date}}થી: {{value}}",
-      "postCount": "પોસ્ટ્સ: {{value}}",
-      "averages": "દરેક પોસ્ટ: {{likes}} લાઇક્સ, {{comments}} કોમેન્ટ્સ",
       "rate": "એન્ગેજમેન્ટ: {{value}}%",
       "lastPost": "છેલ્લી પોસ્ટ {{time}}",
       "reconnect": "ફરી જોડવું જરૂરી",
@@ -440,11 +438,11 @@
       "noPosts": "હજી કોઈ પોસ્ટ નથી.",
       "notRead": "હજી વાંચ્યું નથી. આગલો દૈનિક રન તેને ભરી દેશે.",
       "summary": {
-        "accounts": "એકાઉન્ટ્સ",
         "needingAttention": "ધ્યાન જરૂરી: {{value}}",
         "followers": "કુલ ફોલોઅર્સ",
-        "recentPosts": "છેલ્લા 7 દિવસની પોસ્ટ્સ",
-        "averageLikes": "દરેક પોસ્ટના સરેરાશ લાઇક્સ"
+        "averageLikes": "દરેક પોસ્ટના સરેરાશ લાઇક્સ",
+        "followerGains": "દરરોજ નવા ફોલોઅર્સ",
+        "postsPerDay": "દરરોજની પોસ્ટ"
       },
       "tabs": {
         "label": "સોશિયલ એકાઉન્ટ્સના દૃશ્યો",

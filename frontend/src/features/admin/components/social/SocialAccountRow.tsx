@@ -1,7 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, ExternalLink } from "lucide-react";
-import { CARD_POST_COUNT, engagement, followerChange, needsAttention, type SocialAccount } from "@/features/admin/lib/socialAccounts";
+import { CARD_POST_COUNT, engagement, followerChange, followerTrend, needsAttention, postingTrends, type SocialAccount } from "@/features/admin/lib/socialAccounts";
 import { SocialPostTile } from "@/features/admin/components/social/SocialPostTile";
+import { SocialTrendChart } from "@/features/admin/components/social/SocialTrendChart";
 import { FormGrid, Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -10,27 +11,40 @@ import { LazyImage } from "@/shared/ui/lazy-image";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
 
-/** One account card: who it is, how it is growing, and its newest posts side by side. */
+/** One account card: who it is, charts of how it is growing, and its newest posts side by side. */
 export function SocialAccountRow({ account, readAt }: { account: SocialAccount; readAt: number }) {
   const { t, i18n } = useTranslation();
   const { getSchoolName } = useSchoolDirectory();
   const number = (value: number) => value.toLocaleString(i18n.language, { maximumFractionDigits: 1 });
   const change = followerChange(account);
-  const { likes, comments, rate } = engagement(account);
+  const { likes, rate } = engagement(account);
   const latest = account.posts[0];
 
-  const facts = [
-    account.followers_count === null ? null : t("admin.socialAccounts.followers", { value: number(account.followers_count) }),
-    // captured_on is a calendar day; read it at noon so no time zone moves it.
-    change === null ? null : t("admin.socialAccounts.change", {
-      value: `${change.value > 0 ? "+" : ""}${number(change.value)}`,
-      date: new Date(`${change.since}T12:00:00`).toLocaleDateString(i18n.language, { month: "short", day: "numeric" }),
-    }),
-    account.media_count === null ? null : t("admin.socialAccounts.postCount", { value: number(account.media_count) }),
-    likes === null ? null : t("admin.socialAccounts.averages", { likes: number(likes), comments: number(comments ?? 0) }),
-    rate === null ? null : t("admin.socialAccounts.rate", { value: (rate * 100).toLocaleString(i18n.language, { maximumFractionDigits: 1 }) }),
-    latest ? t("admin.socialAccounts.lastPost", { time: formatRelativeTimeCompact(latest.posted_at, t) }) : null,
-  ].filter(Boolean);
+  const { posts: activity, likes: likesTrend } = postingTrends(account.posts, readAt);
+  const charts = [
+    {
+      title: t("admin.socialAccounts.followersChart"),
+      value: account.followers_count === null ? "-" : number(account.followers_count),
+      // captured_on is a calendar day; read it at noon so no time zone moves it.
+      detail: change === null ? null : t("admin.socialAccounts.change", {
+        value: `${change.value > 0 ? "+" : ""}${number(change.value)}`,
+        date: new Date(`${change.since}T12:00:00`).toLocaleDateString(i18n.language, { month: "short", day: "numeric" }),
+      }),
+      trend: followerTrend(account),
+    },
+    {
+      title: t("admin.socialAccounts.summary.averageLikes"),
+      value: likes === null ? "-" : number(likes),
+      detail: rate === null ? null : t("admin.socialAccounts.rate", { value: (rate * 100).toLocaleString(i18n.language, { maximumFractionDigits: 1 }) }),
+      trend: likesTrend,
+    },
+    {
+      title: t("admin.socialAccounts.summary.postsPerDay"),
+      value: number(activity.at(-1)?.value ?? 0),
+      detail: latest ? t("admin.socialAccounts.lastPost", { time: formatRelativeTimeCompact(latest.posted_at, t) }) : null,
+      trend: activity,
+    },
+  ];
 
   return (
     <Card>
@@ -44,7 +58,6 @@ export function SocialAccountRow({ account, readAt }: { account: SocialAccount; 
             </Stack>
           </Stack>
         </CardTitle>
-        <CardDescription>{facts.join(" · ")}</CardDescription>
         <CardAction>
           <Stack direction="horizontal" gap={2} align="center">
             {needsAttention(account, readAt) ? (
@@ -62,6 +75,8 @@ export function SocialAccountRow({ account, readAt }: { account: SocialAccount; 
         </CardAction>
       </CardHeader>
       <CardContent>
+        <Stack gap={3}>
+          {charts.map(chart => <SocialTrendChart key={chart.title} {...chart} />)}
         {account.posts.length ? (
           <FormGrid columns={3} collapse={false} className="gap-3">
             {account.posts.slice(0, CARD_POST_COUNT).map(post => <SocialPostTile key={post.media_id} post={post} />)}
@@ -71,6 +86,7 @@ export function SocialAccountRow({ account, readAt }: { account: SocialAccount; 
             {account.captured_at ? t("admin.socialAccounts.noPosts") : t("admin.socialAccounts.notRead")}
           </p>
         )}
+        </Stack>
       </CardContent>
     </Card>
   );

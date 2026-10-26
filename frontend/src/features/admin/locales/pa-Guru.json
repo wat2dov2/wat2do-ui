@@ -429,10 +429,8 @@
         "added": "ਗੀਤ ਜੋੜਿਆ ਗਿਆ",
         "failed": "ਕੋਈ ਗੀਤ ਨਹੀਂ ਜੋੜਿਆ ਗਿਆ"
       },
-      "followers": "ਫਾਲੋਅਰ: {{value}}",
+      "followersChart": "ਫਾਲੋਅਰ",
       "change": "{{date}} ਤੋਂ: {{value}}",
-      "postCount": "ਪੋਸਟਾਂ: {{value}}",
-      "averages": "ਹਰ ਪੋਸਟ: {{likes}} ਲਾਈਕ, {{comments}} ਟਿੱਪਣੀਆਂ",
       "rate": "ਐਂਗੇਜਮੈਂਟ: {{value}}%",
       "lastPost": "ਆਖਰੀ ਪੋਸਟ {{time}}",
       "reconnect": "ਮੁੜ ਜੋੜਨਾ ਲੋੜੀਂਦਾ",
@@ -440,11 +438,11 @@
       "noPosts": "ਹਾਲੇ ਕੋਈ ਪੋਸਟ ਨਹੀਂ।",
       "notRead": "ਹਾਲੇ ਪੜ੍ਹਿਆ ਨਹੀਂ ਗਿਆ। ਅਗਲਾ ਰੋਜ਼ਾਨਾ ਰਨ ਇਸਨੂੰ ਭਰ ਦੇਵੇਗਾ।",
       "summary": {
-        "accounts": "ਖਾਤੇ",
         "needingAttention": "ਧਿਆਨ ਲੋੜੀਂਦਾ: {{value}}",
         "followers": "ਕੁੱਲ ਫਾਲੋਅਰ",
-        "recentPosts": "ਪਿਛਲੇ 7 ਦਿਨਾਂ ਦੀਆਂ ਪੋਸਟਾਂ",
-        "averageLikes": "ਹਰ ਪੋਸਟ ਦੇ ਔਸਤ ਲਾਈਕ"
+        "averageLikes": "ਹਰ ਪੋਸਟ ਦੇ ਔਸਤ ਲਾਈਕ",
+        "followerGains": "ਹਰ ਦਿਨ ਨਵੇਂ ਫਾਲੋਅਰ",
+        "postsPerDay": "ਹਰ ਦਿਨ ਪੋਸਟਾਂ"
       },
       "tabs": {
         "label": "ਸੋਸ਼ਲ ਖਾਤਿਆਂ ਦੇ ਦ੍ਰਿਸ਼",

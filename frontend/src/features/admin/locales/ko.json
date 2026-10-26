@@ -429,10 +429,8 @@
         "added": "노래 추가됨",
         "failed": "노래 추가 안 됨"
       },
-      "followers": "팔로워: {{value}}",
+      "followersChart": "팔로워",
       "change": "{{date}} 이후: {{value}}",
-      "postCount": "게시물: {{value}}",
-      "averages": "게시물당: 좋아요 {{likes}}, 댓글 {{comments}}",
       "rate": "참여율: {{value}}%",
       "lastPost": "마지막 게시물 {{time}}",
       "reconnect": "다시 연결 필요",
@@ -440,11 +438,11 @@
       "noPosts": "아직 게시물이 없습니다.",
       "notRead": "아직 읽지 않았습니다. 다음 일일 실행에서 채워집니다.",
       "summary": {
-        "accounts": "계정",
         "needingAttention": "확인 필요: {{value}}",
         "followers": "총 팔로워",
-        "recentPosts": "최근 7일 게시물",
-        "averageLikes": "게시물당 평균 좋아요"
+        "averageLikes": "게시물당 평균 좋아요",
+        "followerGains": "일별 신규 팔로워",
+        "postsPerDay": "일별 게시물"
       },
       "tabs": {
         "label": "소셜 계정 보기",

@@ -429,10 +429,8 @@
         "added": "آهنگ افزوده شد",
         "failed": "آهنگی افزوده نشد"
       },
-      "followers": "دنبال‌کنندگان: {{value}}",
+      "followersChart": "دنبال‌کنندگان",
       "change": "از {{date}}: {{value}}",
-      "postCount": "پست‌ها: {{value}}",
-      "averages": "برای هر پست: {{likes}} پسند، {{comments}} دیدگاه",
       "rate": "تعامل: {{value}}٪",
       "lastPost": "آخرین پست {{time}}",
       "reconnect": "نیاز به اتصال دوباره",
@@ -440,11 +438,11 @@
       "noPosts": "هنوز پستی نیست.",
       "notRead": "هنوز خوانده نشده. اجرای روزانهٔ بعدی آن را پر می‌کند.",
       "summary": {
-        "accounts": "حساب‌ها",
         "needingAttention": "نیازمند رسیدگی: {{value}}",
         "followers": "مجموع دنبال‌کنندگان",
-        "recentPosts": "پست‌های ۷ روز گذشته",
-        "averageLikes": "میانگین پسند هر پست"
+        "averageLikes": "میانگین پسند هر پست",
+        "followerGains": "دنبال‌کنندگان جدید در روز",
+        "postsPerDay": "پست‌ها در روز"
       },
       "tabs": {
         "label": "نماهای حساب‌های اجتماعی",

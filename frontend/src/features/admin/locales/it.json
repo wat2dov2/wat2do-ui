@@ -429,10 +429,8 @@
         "added": "Brano aggiunto",
         "failed": "Nessun brano aggiunto"
       },
-      "followers": "Follower: {{value}}",
+      "followersChart": "Follower",
       "change": "Dal {{date}}: {{value}}",
-      "postCount": "Post: {{value}}",
-      "averages": "Per post: {{likes}} mi piace, {{comments}} commenti",
       "rate": "Coinvolgimento: {{value}}%",
       "lastPost": "Ultimo post {{time}}",
       "reconnect": "Serve ricollegare",
@@ -440,11 +438,11 @@
       "noPosts": "Ancora nessun post.",
       "notRead": "Non ancora letto. La prossima lettura giornaliera lo completerà.",
       "summary": {
-        "accounts": "Account",
         "needingAttention": "Da controllare: {{value}}",
         "followers": "Follower totali",
-        "recentPosts": "Post negli ultimi 7 giorni",
-        "averageLikes": "Mi piace medi per post"
+        "averageLikes": "Mi piace medi per post",
+        "followerGains": "Nuovi follower al giorno",
+        "postsPerDay": "Post al giorno"
       },
       "tabs": {
         "label": "Viste degli account social",

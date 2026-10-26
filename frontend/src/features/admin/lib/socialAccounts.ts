@@ -17,7 +17,8 @@ export const POST_SORTS = ["newest", "likes", "comments"] as const;
 export type PostSort = (typeof POST_SORTS)[number];
 
 export const DAY_MS = 86_400_000;
-export const RECENT_POST_DAYS = 7;
+/** Days of posting activity the charts plot, matching the follower history the API returns. */
+const ACTIVITY_DAYS = 30;
 /** Posts each account card shows; the All posts tab lists the rest. */
 export const CARD_POST_COUNT = 3;
 /** Tokens this close to expiring need a person before the daily refresh gives up on them. */
@@ -33,6 +34,56 @@ export function followerChange(account: SocialAccount): { value: number; since: 
   const history = account.followers_history;
   if (history.length < 2) return null;
   return { value: history[history.length - 1].followers_count - history[0].followers_count, since: history[0].captured_on };
+}
+
+/** One day's value on a trend chart; day is a calendar day, YYYY-MM-DD. */
+export interface TrendPoint {
+  day: string;
+  value: number;
+}
+
+/** A moment's calendar day in the viewer's time zone, as YYYY-MM-DD. */
+function calendarDay(time: number): string {
+  const date = new Date(time);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+export function followerTrend(account: SocialAccount): TrendPoint[] {
+  return account.followers_history.map(point => ({ day: point.captured_on, value: point.followers_count }));
+}
+
+/** Followers across every account each day; an account missing a day counts its last known value. */
+export function totalFollowerTrend(accounts: SocialAccount[]): TrendPoint[] {
+  const days = [...new Set(accounts.flatMap(account => account.followers_history.map(point => point.captured_on)))].sort();
+  return days.map(day => ({
+    day,
+    value: accounts.reduce(
+      (sum, account) => sum + (account.followers_history.findLast(point => point.captured_on <= day)?.followers_count ?? 0),
+      0,
+    ),
+  }));
+}
+
+/** Each day's change from the day before. */
+export function dailyChange(trend: TrendPoint[]): TrendPoint[] {
+  return trend.slice(1).map((point, index) => ({ day: point.day, value: point.value - trend[index].value }));
+}
+
+/** Posts made each day of the last month (zero days included) and the average likes on days with posts. */
+export function postingTrends(posts: ApiInstagramAccountPostResponse[], now: number) {
+  const byDay = new Map<string, ApiInstagramAccountPostResponse[]>();
+  for (const post of posts) {
+    const day = calendarDay(new Date(post.posted_at).getTime());
+    byDay.set(day, [...(byDay.get(day) ?? []), post]);
+  }
+  const days = Array.from({ length: ACTIVITY_DAYS }, (_, index) => calendarDay(now - (ACTIVITY_DAYS - 1 - index) * DAY_MS));
+  return {
+    posts: days.map(day => ({ day, value: byDay.get(day)?.length ?? 0 })),
+    likes: days.flatMap(day => {
+      const likes = average((byDay.get(day) ?? []).map(post => post.like_count));
+      return likes === null ? [] : [{ day, value: likes }];
+    }),
+  };
 }
 
 /** Average likes and comments per post, and how that compares to the follower count. */

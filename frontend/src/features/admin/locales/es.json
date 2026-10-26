@@ -429,10 +429,8 @@
         "added": "Canción agregada",
         "failed": "No se agregó canción"
       },
-      "followers": "Seguidores: {{value}}",
+      "followersChart": "Seguidores",
       "change": "Desde el {{date}}: {{value}}",
-      "postCount": "Publicaciones: {{value}}",
-      "averages": "Por publicación: {{likes}} me gusta, {{comments}} comentarios",
       "rate": "Interacción: {{value}} %",
       "lastPost": "Última publicación {{time}}",
       "reconnect": "Hay que reconectar",
@@ -440,11 +438,11 @@
       "noPosts": "Aún no hay publicaciones.",
       "notRead": "Aún no se ha leído. La próxima ejecución diaria lo completará.",
       "summary": {
-        "accounts": "Cuentas",
         "needingAttention": "Requieren atención: {{value}}",
         "followers": "Seguidores en total",
-        "recentPosts": "Publicaciones de los últimos 7 días",
-        "averageLikes": "Me gusta promedio por publicación"
+        "averageLikes": "Me gusta promedio por publicación",
+        "followerGains": "Seguidores nuevos por día",
+        "postsPerDay": "Publicaciones por día"
       },
       "tabs": {
         "label": "Vistas de cuentas sociales",
