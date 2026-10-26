@@ -17,7 +17,6 @@ import {
 } from "@/features/admin/lib/instagramSlides";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import type { Event } from "@/shared/types";
-import type { SchoolColors } from "@/shared/lib/schoolBranding";
 
 interface CarouselSlidePreviewProps {
   onRemove?: () => void;
@@ -32,8 +31,7 @@ interface CarouselSlidePreviewProps {
   /** The slide's event, or `null` on the cover and on an unloadable slide. */
   event: Event | null;
   stickerLabels?: string[];
-  cover: Omit<Parameters<typeof buildCoverSlideModel>[0], "colors">;
-  coverColors: SchoolColors | null;
+  cover: Parameters<typeof buildCoverSlideModel>[0];
   /** Set on the draft's last slide: the scrape's other events it lists. */
   outroEvents?: Event[];
   /**
@@ -56,7 +54,6 @@ export function CarouselSlidePreview({
   event,
   stickerLabels,
   cover,
-  coverColors,
   outroEvents,
   publishedAssetUrl,
   selected,
@@ -100,7 +97,7 @@ export function CarouselSlidePreview({
     if (isCover || publishedAssetUrl || !event || !school) return;
     let active = true;
     // Publishing uses the first stored occurrence, including for recurring events.
-    buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, sticker_labels: stickerLabels, tz: getSchoolTimezone(event.school) }, cover.language, undefined, undefined, { school, poster: poster ? fitEventSlidePoster(poster.width, poster.height) : undefined }).then(
+    buildEventSlideModel({ ...event, ...event.occurrences[0], id: event.id, sticker_labels: stickerLabels, tz: getSchoolTimezone(event.school) }, cover.language, undefined, undefined, { poster: poster ? fitEventSlidePoster(poster.width, poster.height) : undefined }).then(
       model => { if (active) setModelResult({ event, language: cover.language, school, poster, stickerLabels, model }); },
       () => { if (active) setModelResult({ event, language: cover.language, school, poster, stickerLabels, model: null }); },
     );
@@ -136,7 +133,7 @@ export function CarouselSlidePreview({
       className={cn("relative z-0 flex max-w-full flex-col items-center gap-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring", onSelect && "cursor-pointer", selected && "ring-2 ring-primary")}
       style={{ width: "100%" }}
     >
-      {publishedAssetUrl || ((isCover || isOutro) && coverColors) || (!isCover && slideModel) ? (
+      {publishedAssetUrl || ((isCover || isOutro) && school) || (!isCover && slideModel) ? (
         <div
           className="relative overflow-hidden rounded-xl border border-border bg-surface"
           style={{ width: "100%", height: SLIDE_HEIGHT * previewScale }}
@@ -151,13 +148,12 @@ export function CarouselSlidePreview({
               transformOrigin: "top left",
             }}
           >
-            {isCover && coverColors
-              ? <CoverSlideTemplate model={buildCoverSlideModel({ ...cover, colors: coverColors })} renderPoster={renderPoster} />
-              : isOutro && coverColors
+            {isCover && school
+              ? <CoverSlideTemplate model={buildCoverSlideModel(cover)} renderPoster={renderPoster} />
+              : isOutro && school
                 ? <OutroSlideTemplate model={buildOutroSlideModel({
                   school: cover.school,
                   language: cover.language,
-                  colors: coverColors,
                   batchKind: cover.batchKind,
                   // Publishing lists each event's first stored occurrence, as event slides do.
                   events: outroEvents.map(event => ({ ...event, ...event.occurrences[0], id: event.id, tz: getSchoolTimezone(event.school) })),

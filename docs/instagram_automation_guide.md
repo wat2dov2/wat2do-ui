@@ -423,7 +423,7 @@ When there are none, the outro points to the school's site instead.
 Cover, event slides and outro must fit Instagram's ten-image carousel, so `maximum_event_slides` is eight.
 The admin drawer previews the outro from the batch's `other_events`, and a published batch keeps the posted image in `published_outro_url`.
 
-The event artwork and cover share school colors and the translucent doodle field.
+The cover, event and outro slides use one Wat2Do light palette for every school (white, near-black ink, grey neutrals and the brand blue `#0052FF` as the single accent), never the school's own colours, plus the translucent doodle field.
 Event frames are inset on all four sides, and the former comment footer remains white with only the selected stickers.
 The ten sticker silhouettes and ten colors double the former visual variety.
 Similar labels share a silhouette and color across events, including registration, food and entry cost.

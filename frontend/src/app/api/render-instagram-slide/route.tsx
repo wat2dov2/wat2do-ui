@@ -21,7 +21,6 @@ import {
   type SlideEvent,
 } from "@/features/admin/lib/instagramSlides";
 import { getSchool } from "@/shared/api/schools.server";
-import { getSchoolColors } from "@/shared/lib/schoolBranding";
 import instagramPublishing from "../../../../../backend/controlbox/instagram_publishing.json" with { type: "json" };
 
 export const runtime = "nodejs";
@@ -179,7 +178,6 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
     ]);
     const dimensions = imageSrc ? await sharp(Buffer.from(imageSrc.split(",")[1], "base64")).metadata() : null;
     const model = await buildEventSlideModel({ ...slide.event, school }, schoolRecord.language, imageSrc, avatarSrc, {
-      school: schoolRecord,
       poster: dimensions?.width && dimensions.height ? fitEventSlidePoster(dimensions.width, dimensions.height) : undefined,
     });
     return <EventSlideTemplate model={model} />;
@@ -195,7 +193,6 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
         model={buildOutroSlideModel({
           school,
           language: schoolRecord.language ?? "en",
-          colors: getSchoolColors(schoolRecord),
           batchKind: slide.batch_kind,
           events: slide.events,
           posters,
@@ -216,7 +213,6 @@ async function buildSlide(slide: SlideRequest): Promise<React.ReactElement> {
       model={buildCoverSlideModel({
         school,
         language: schoolRecord.language ?? "en",
-        colors: getSchoolColors(schoolRecord),
         localDate: slide.local_date ?? "",
         batchKind: slide.batch_kind,
         // A cover always has at least one event, so the carousel size is the
