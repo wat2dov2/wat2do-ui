@@ -8,7 +8,6 @@
   "page_fetch_timeout_seconds": 15,
   "launch_agent_timeout_seconds": 30,
   "sender_name": "Tony",
-  "gmail_account": "team@wat2do.io",
   "submit_url_template": "https://{school}.wat2do.io/events/submit",
   "lead_types": {
     "student_association": "Student unions and student associations at the school that run paid, ticketed student events: the student union's events or programming team, faculty and engineering societies, residence councils, graduate student associations and large cultural or faculty associations. Look for their upcoming paid events (formals, galas, semi-formals, concerts, pub nights, ski or bus trips, cultural shows, conferences) and their events, programming or VP Events contact. These organizers run many events a year, so the ask is to list their upcoming paid events on Wat2Do. This is the top priority lead type.",

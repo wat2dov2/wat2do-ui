@@ -103,15 +103,32 @@ function ItemTitle({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function ItemDescription({ className, ...props }: React.ComponentProps<"p">) {
+const itemDescriptionVariants = cva(
+  "text-sm leading-normal font-normal text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
+  {
+    variants: {
+      length: {
+        // A two-line preview, as in lists and table cells.
+        summary: "line-clamp-2 text-balance",
+        // Every word, keeping the text's own line breaks.
+        full: "whitespace-pre-line text-pretty",
+      },
+    },
+    defaultVariants: {
+      length: "summary",
+    },
+  }
+)
+
+function ItemDescription({
+  className,
+  length,
+  ...props
+}: React.ComponentProps<"p"> & VariantProps<typeof itemDescriptionVariants>) {
   return (
     <p
       data-slot="item-description"
-      className={cn(
-        "line-clamp-2 text-sm leading-normal font-normal text-balance text-muted-foreground",
-        "[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
-        className
-      )}
+      className={cn(itemDescriptionVariants({ length, className }))}
       {...props}
     />
   )

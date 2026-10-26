@@ -54,7 +54,7 @@ function PositionDetailItem({
       </ItemMedia>
       <ItemContent className="w-full">
         <ItemTitle>{label}</ItemTitle>
-        <ItemDescription className="line-clamp-none">{value}</ItemDescription>
+        <ItemDescription length="full">{value}</ItemDescription>
       </ItemContent>
     </Item>
   );
