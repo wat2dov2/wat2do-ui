@@ -4,6 +4,7 @@ import type { EventFormData, EventFormOccurrence } from "@/shared/types";
 import {
   validateEventForm,
   isEventFormValid,
+  isMapLocationRequired,
   markAllFieldsTouched as markAllFieldsTouchedFn,
   type EventFormRules,
 } from "@/shared/services/validationService";
@@ -175,6 +176,7 @@ export function useEventForm(options: UseEventFormOptions) {
     touched: form.touched,
     handleBlur: form.handleBlur,
     isValid,
+    isMapLocationRequired: isMapLocationRequired(form.formData, rules),
 
     imagePreview,
     imageFile,

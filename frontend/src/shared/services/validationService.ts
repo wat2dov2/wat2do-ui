@@ -44,14 +44,23 @@ export interface EventFormRules {
 const DEFAULT_RULES: EventFormRules = { requireClub: true, initialLocation: "", initialMapLocation: "" };
 
 /**
- * A physical venue needs a map location, and a changed venue needs a new one:
- * the map location is never left describing the previous venue.
+ * A physical venue needs a map location, except an unchanged venue that never
+ * had one (an event saved with "TBD" stays editable).
  */
-function mapLocationMissing(formData: EventFormData, rules: EventFormRules): boolean {
+export function isMapLocationRequired(formData: EventFormData, rules: EventFormRules): boolean {
   const location = formData.location.trim();
   if (!location || isVirtualLocation(location)) return false;
+  return location !== rules.initialLocation.trim() || rules.initialMapLocation.trim() !== "";
+}
+
+/**
+ * A changed venue needs a new map location: the map location is never left
+ * describing the previous venue.
+ */
+function mapLocationMissing(formData: EventFormData, rules: EventFormRules): boolean {
+  if (!isMapLocationRequired(formData, rules)) return false;
   const mapLocation = formData.map_location.trim();
-  if (location === rules.initialLocation.trim()) return !mapLocation && rules.initialMapLocation.trim() !== "";
+  if (formData.location.trim() === rules.initialLocation.trim()) return !mapLocation;
   return !mapLocation || mapLocation === rules.initialMapLocation.trim();
 }
 

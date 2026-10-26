@@ -4,7 +4,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, status
 
-from core.auth import get_admin_user, get_authorized_resource, get_db_user, is_admin
+from core.auth import get_admin_user, get_db_user, is_admin
 from core.constants import (
     MAX_EVENT_PRICE,
     MAX_EVENT_SCHOOL_LENGTH,
@@ -15,6 +15,7 @@ from core.errors import (
     CLUB_NOT_FOUND,
     CLUB_PENDING_REVIEW,
     EVENT_NOT_FOUND,
+    NOT_AUTHORIZED,
 )
 from core.exceptions import AuthorizationError, get_or_404
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
@@ -37,12 +38,15 @@ EventSortOrder = Literal["asc", "desc"]
 
 
 def _get_event_or_404_authorized(event_id: int, db_user: UserResponse) -> EventResponse:
-    """Fetch event by ID (404 if missing); require creator or admin."""
-    return get_authorized_resource(
-        lambda: event_service.get_event(event_id),
-        EVENT_NOT_FOUND,
-        db_user,
-    )
+    """Fetch event by ID (404 if missing); require its creator, an admin, or its club's management team."""
+    event = get_or_404(event_service.get_event(event_id), EVENT_NOT_FOUND)
+    is_creator = event.created_by is not None and str(event.created_by) == str(db_user.id)
+    if is_creator or is_admin(db_user):
+        return event
+    if event.club_id is None:
+        raise AuthorizationError(NOT_AUTHORIZED)
+    _authorize_event_club(event.club_id, db_user)
+    return event
 
 
 def _authorize_event_club(club_id: int, db_user: UserResponse) -> None:

@@ -37,6 +37,7 @@ export interface EventFormContextValue {
    * it has.
    */
   isImageRequired: boolean;
+  isMapLocationRequired: boolean;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: () => void;
   isDarkMode?: boolean;

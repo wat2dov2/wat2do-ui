@@ -48,6 +48,7 @@ interface EventFormStepProps {
     | "onImageUpload"
     | "onRemoveImage"
     | "isValid"
+    | "isMapLocationRequired"
   >;
   isDarkMode: boolean;
   /** Absent when the form is an always-present panel with nothing to dismiss. */
@@ -141,6 +142,7 @@ export function EventFormStep({
       imagePreview: eventForm.imagePreview,
       imageFile: eventForm.imageFile,
       isImageRequired: !isEditMode,
+      isMapLocationRequired: eventForm.isMapLocationRequired,
       onImageUpload: eventForm.onImageUpload,
       onRemoveImage: eventForm.onRemoveImage,
       isDarkMode,

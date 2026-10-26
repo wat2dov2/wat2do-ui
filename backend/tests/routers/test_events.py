@@ -203,12 +203,26 @@ def test_update_event_owner_allowed(authenticated_client, monkeypatch):
 
 
 def test_update_event_non_owner_rejected(other_user_client, monkeypatch):
-    """Non-owner, non-admin user gets 403 on update."""
+    """Non-owner, non-admin user outside the hosting club gets 403 on update."""
     event = _mock_event(created_by=FAKE_USER["id"])  # owned by FAKE_USER, not OTHER_USER
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=_mock_club()))
+    monkeypatch.setattr(club_service, "list_clubs_by_owner", MagicMock(return_value=[]))
 
     resp = other_user_client.patch("/events/1", json={"title": "Hacked"})
     assert resp.status_code == 403
+
+
+def test_update_event_hosting_club_team_allowed(other_user_client, monkeypatch):
+    """The hosting club's management team can update a scraped event nobody created."""
+    event = _mock_event(created_by=None)
+    monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+    monkeypatch.setattr(event_service, "update_event", MagicMock(return_value=event))
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=_mock_club()))
+    monkeypatch.setattr(club_service, "list_clubs_by_owner", MagicMock(return_value=[_mock_club()]))
+
+    resp = other_user_client.patch("/events/1", json={"title": "Updated"})
+    assert resp.status_code == 200
 
 
 def test_update_event_admin_allowed(admin_client, monkeypatch):
@@ -240,6 +254,8 @@ def test_delete_event_non_owner_rejected(other_user_client, monkeypatch):
     """Non-owner, non-admin user gets 403 on delete."""
     event = _mock_event(created_by=FAKE_USER["id"])
     monkeypatch.setattr(event_service, "get_event", MagicMock(return_value=event))
+    monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=_mock_club()))
+    monkeypatch.setattr(club_service, "list_clubs_by_owner", MagicMock(return_value=[]))
 
     resp = other_user_client.delete("/events/1")
     assert resp.status_code == 403
