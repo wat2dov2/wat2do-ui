@@ -12,6 +12,7 @@ import {
 } from "@/shared/data/clubCategoryStyles";
 import { getAppConstantsSnapshot } from "@/shared/api/metaApi";
 import { getSchoolPublicUrl } from "@/shared/constants/schools";
+import { getSchoolColors, type SchoolColors } from "@/shared/lib/schoolBranding";
 import { buildInstagramCoverLogo } from "@/features/admin/lib/instagramCoverLogo";
 import { createInstance, type i18n } from "i18next";
 import type { School } from "@/shared/api/schools.api";
@@ -23,19 +24,6 @@ import eventsEnglish from "@/features/events/locales/en.json" with { type: "json
 import clubsEnglish from "@/features/clubs/locales/en.json" with { type: "json" };
 import { loadLazyLanguage } from "@/shared/lib/languageLoaders";
 import instagramPublishing from "../../../../../backend/controlbox/instagram_publishing.json" with { type: "json" };
-
-/**
- * Every school's carousel uses the same Wat2Do light palette rather than the
- * school's own colours: white, near-black ink, grey neutrals and one blue
- * accent, from the light theme in styles/design-tokens.css.
- */
-export const CAROUSEL_COLORS = {
-  background: "#FFFFFF",
-  foreground: "#171717",
-  muted: "#737373",
-  secondary: "#F2F2F2",
-  accent: "#0052FF",
-} as const;
 
 export const SLIDE_WIDTH = 1080;
 export const SLIDE_HEIGHT = 1350;
@@ -91,6 +79,7 @@ export interface EventSlideModel {
   poster: { width: number; height: number };
   /** The school's public domain, also used in the artwork review library. */
   siteName: string;
+  colors: SchoolColors;
   doodleIcons: string[];
   stickers: { id: string; label: string; lines: string[]; shape: number; styleSeed: number; left: number; top: number; rotation: number; scale: number }[];
   /** Event facts use the same localized labels as the website's cards. */
@@ -99,9 +88,11 @@ export interface EventSlideModel {
 }
 
 export interface CoverSlideModel {
-  /** The canonical Wat2Do mark in the carousel palette. */
+  /** The school's brand pair; the whole cover is drawn from these two colours. */
+  colors: SchoolColors;
+  /** The canonical Wat2Do mark recoloured from the same school pair. */
   logoSrc: string;
-  /** Stable category doodles in the carousel's ink colour. */
+  /** Stable category doodles recoloured with the school's secondary color. */
   doodleIcons: string[];
   /** The batch date, for example "Sunday, July 26th". */
   dateLine: string;
@@ -134,6 +125,7 @@ export interface OutroSlideCard {
 }
 
 export interface OutroSlideModel {
+  colors: SchoolColors;
   logoSrc: string;
   doodleIcons: string[];
   headline: string;
@@ -265,7 +257,7 @@ export async function buildEventSlideModel(
   language: School["language"],
   imageSrc = event.source_image_url ?? "",
   avatarSrc = event.club_logo_url ?? "",
-  context?: { poster?: { width: number; height: number } },
+  context?: { school: Pick<School, "name" | "primary_color" | "secondary_color">; poster?: { width: number; height: number } },
 ): Promise<EventSlideModel> {
   if (!event.tz) throw new Error("School timezone is required for event slides");
   const categoryName = event.category?.trim() ?? "";
@@ -276,6 +268,7 @@ export async function buildEventSlideModel(
   const { dateLine, timeLine } = formatSlideDate(event, language);
   const category = getClubCategoryConfig(categoryName);
   const siteName = getSchoolPublicUrl(event.school);
+  const colors = context ? getSchoolColors(context.school) : { primary: "#FFD54A", secondary: "#171A16" };
   const labels = [...new Set(event.sticker_labels ?? [])].slice(0, instagramPublishing.maximum_stickers_per_event);
   const poster = context?.poster ?? fitEventSlidePoster(4, 5);
   const positions = stickerPositions(event.id, labels.length, poster);
@@ -302,7 +295,8 @@ export async function buildEventSlideModel(
     avatarSrc,
     poster,
     siteName,
-    doodleIcons: getClubCategoryDoodleDataUris(CAROUSEL_COLORS.foreground, 42),
+    colors,
+    doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),
     stickers,
     badges: computeEventBadges({ ...event, food: event.food ?? [], cancelled: event.cancelled ?? false, registration: event.registration ?? false }, t).map(badge => badge.text),
     imageSrc,
@@ -321,6 +315,7 @@ export async function buildEventSlideModel(
 export function buildCoverSlideModel({
   school,
   language,
+  colors,
   localDate,
   batchKind = "events",
   newEventCount,
@@ -330,6 +325,7 @@ export function buildCoverSlideModel({
 }: {
   school: string;
   language: "en" | "fr";
+  colors: SchoolColors;
   /** The batch's `local_date`, as `YYYY-MM-DD`. */
   localDate: string;
   batchKind?: ApiInstagramPublishBatchResponse["batch_kind"];
@@ -340,8 +336,9 @@ export function buildCoverSlideModel({
   tiles: string[];
 }): CoverSlideModel {
   return {
-    logoSrc: buildInstagramCoverLogo(CAROUSEL_COLORS),
-    doodleIcons: getClubCategoryDoodleDataUris(CAROUSEL_COLORS.foreground, 42),
+    colors,
+    logoSrc: buildInstagramCoverLogo(colors),
+    doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),
     dateLine: formatCoverDate(localDate, language),
     newEventCount,
     headline: batchKind === "employers_on_campus"
@@ -378,12 +375,14 @@ export function selectOutroEvents<T>(events: T[]): T[] {
 export function buildOutroSlideModel({
   school,
   language,
+  colors,
   batchKind = "events",
   events,
   posters,
 }: {
   school: string;
   language: "en" | "fr";
+  colors: SchoolColors;
   batchKind?: ApiInstagramPublishBatchResponse["batch_kind"];
   events: SlideEvent[];
   posters?: string[];
@@ -402,8 +401,9 @@ export function buildOutroSlideModel({
   const hiddenCount = events.length - cards.length;
   const employers = batchKind === "employers_on_campus";
   return {
-    logoSrc: buildInstagramCoverLogo({ background: CAROUSEL_COLORS.secondary, foreground: CAROUSEL_COLORS.foreground }),
-    doodleIcons: getClubCategoryDoodleDataUris(CAROUSEL_COLORS.foreground, 42),
+    colors,
+    logoSrc: buildInstagramCoverLogo(colors),
+    doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),
     headline: cards.length
       ? employers
         ? (language === "fr" ? "AUTRES EMPLOYEURS SUR LE CAMPUS" : "MORE EMPLOYERS ON CAMPUS")

@@ -226,9 +226,11 @@ test("every supported Instagram category keeps its localized label and colour", 
 
 
 test("Instagram artwork preserves original copy, bounded lines and distinct stable shapes", async () => {
+  const context = { school: { name: "University of Alberta", primary_color: "#154734", secondary_color: "#FFDB05" } };
   const input = { id: 1, category: "Business", tz: timeZone, school: "ualberta", sticker_labels: ["Free Pizza", "Reg. Required", "Cash Prizes", "Meet Friends"] };
-  const en = await buildEventSlideModel(input, "en");
-  const again = await buildEventSlideModel(input, "en");
+  const en = await buildEventSlideModel(input, "en", undefined, undefined, context);
+  const again = await buildEventSlideModel(input, "en", undefined, undefined, context);
+  expect(en.colors).toEqual({ primary: "#154734", secondary: "#FFDB05" });
   expect(en.doodleIcons).toHaveLength(42);
   expect(en.stickers.map(sticker => sticker.label)).toEqual(input.sticker_labels);
   expect(en.stickers[1].lines).toEqual(["Reg.", "Required"]);
@@ -256,8 +258,9 @@ test("Instagram sticker styles follow meaning while placement varies safely by e
     for (const count of [1, 2, 3, 4]) {
       const placements = new Set<string>();
       for (let id = 1; id <= 100; id++) {
+        const context = { school: { name: "University of Alberta", primary_color: "#154734", secondary_color: "#FFDB05" }, poster };
         const labels = ["Free", "Free Pizza", "Reg. Required", "Cash Prizes"].slice(0, count);
-        const model = await buildEventSlideModel({ ...base, id, sticker_labels: labels }, "en", undefined, undefined, { poster });
+        const model = await buildEventSlideModel({ ...base, id, sticker_labels: labels }, "en", undefined, undefined, context);
         const footerTop = (1350 - (132 + poster.height + 130)) / 2 + 132 + poster.height;
         const posterLeft = (1080 - poster.width) / 2;
         const bounds = model.stickers.map(sticker => {
