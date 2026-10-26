@@ -581,12 +581,14 @@ SELECT user_id, user_id::text, email,
 FROM moderation_seed
 ON CONFLICT DO NOTHING;
 
+-- Slot 2 submissions leave the optional submitter email blank.
 INSERT INTO public.clubs (
-    club_name, school_id, categories, club_type, status, created_by, submitted_by_email, club_page
+    club_name, school_id, categories, club_type, status, created_by, submitted_by_email, submitted, club_page
 )
 SELECT format('Demo %s %s Club %s', fixture.slug, kind.label, fixture.slot),
     fixture.school_id, '["Games & Recreation"]'::jsonb, 'independent',
-    kind.status, CASE WHEN kind.status = 'pending' THEN fixture.user_id END, fixture.email,
+    kind.status, CASE WHEN kind.status = 'pending' THEN fixture.user_id END,
+    CASE WHEN fixture.slot = 1 THEN fixture.email END, true,
     format('https://example.invalid/moderation/%s/%s/%s', fixture.slug, kind.label, fixture.slot)
 FROM moderation_seed fixture
 CROSS JOIN (VALUES ('Submission', 'pending'), ('Claim', 'approved')) AS kind(label, status)
@@ -597,7 +599,6 @@ WHERE NOT EXISTS (
 );
 
 -- Directory fixtures remain visible as clubs but are excluded from submission review.
--- Cover both NULL and whitespace-only submission email values.
 INSERT INTO public.clubs (
     club_name, school_id, categories, club_type, status, submitted_by_email
 )

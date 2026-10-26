@@ -1996,11 +1996,8 @@ export interface components {
         };
         /** ClubCreate */
         ClubCreate: {
-            /**
-             * Submitted By Email
-             * Format: email
-             */
-            submitted_by_email: string;
+            /** Submitted By Email */
+            submitted_by_email?: string | null;
             /** Club Name */
             club_name: string;
             /** Categories */
