@@ -389,7 +389,7 @@ It leaves out boring and low-status events, such as meetings, elections, study s
 Picks are ranked by status and energy first and artwork second, so the coolest, best-looking event is the first slide; never by date, club or packet order.
 Review the actual poster before relying on artwork quality; an image URL alone is not evidence.
 Clubs that asked not to be posted are rows in `public.instagram_excluded_clubs`, keyed by lowercase Instagram handle without `@`.
-Add a row by hand when a club asks.
+The DM sweep adds a row when a club asks in our DMs; add one by hand when a club asks anywhere else.
 Each candidate packet carries those handles as `excluded_clubs`, the curation prompt forbids picking their events, and the outro leaves them out.
 An admin can still add such an event to a draft by hand, so check before adding one manually.
 Order retained events for engaging review, without filling slots or discarding good events to fit the publishing limit.
@@ -507,17 +507,21 @@ The workflow routes these to the Mac runner, and `jobs/process_notification.py` 
 The worker answers as the school in the Instagram app on the Mac's Android emulator, never in Brave, holding the emulator's lock for the whole job:
 
 1. It switches to the Android user that holds the school's account (`android_user_by_school` in `controlbox/instagram_emulator.json`), switches the app to that account, opens `instagram://direct-thread?thread_id=<thread>`, and reads the latest `thread_item_limit` messages from the screen: who sent each one, its text, and the owner and link of any shared post (copied with the post's own Copy link).
-2. Claude follows `backend/services/instagram_dms/prompt.md`, picks one outcome (`story_repost`, `add_to_post`, `reply` or `ignore`) and writes the reply.
+2. Claude follows `backend/services/instagram_dms/prompt.md`, picks one outcome (`story_repost`, `feature`, `correction`, `opt_out`, `reply` or `ignore`) and writes the reply.
 3. Code checks the answer against the thread and the reply against `safe_reply`, as described below.
-4. `add_to_post` queues the shared post in `public.ingestion_items`, where the normal processor deduplicates it, and sends the reply.
-5. `story_repost` opens the shared post, taps Share, Add to story and Your story, waits for the editor to close, and only then types the reply.
-6. `reply` only sends the reply.
-7. `ignore` does nothing.
+4. `story_repost` and `feature` request a carousel spot: `events.carousel_requested_at` is set on events already listed from the shared post, or the post is queued in `public.ingestion_items` with `carousel_requested_at`, and the ingestion agent marks the events it describes (a post read before without a listing of its own is read again).
+5. `story_repost` then opens the shared post, taps Share, Add to story and Your story, waits for the editor to close, and only then types the reply; `feature` just replies.
+6. `correction` queues what the club wrote since our last message as a ready `dm` row in `public.ingestion_items`; the ingestion agent corrects only the listings it clearly refers to and never creates one from it.
+7. `opt_out` adds the sender to `public.instagram_excluded_clubs`.
+8. `reply` only sends the reply.
+9. `ignore` does nothing.
+
+Daily carousel drafts always include requested events among the candidates, however long ago they were added, until a carousel publishes them or they pass, and the curation prompt picks them first.
 
 `controlbox/instagram_dms.json` starts with `dry_run: true`, which records each decision in the worker's job results without replying or queueing.
 A dry-run job only reads, so rerunning its notification reads a failed thread again; a live DM job is never retried.
 Any account's post may go to the story; the model judges whether it is appropriate and still current.
-Code then requires the post to be shared in the thread, and a post added to our posts to be shared by its own owner.
+Code then requires the post to be shared in the thread with its owner readable, and an opt-out to have a readable sender.
 A reply is folded to one line of plain ASCII the emulator can type, and one with a tag, a link outside wat2do.io, an email address other than `contact_email`, a long number or more than `reply_max_characters` is not sent at all.
 A thread that cannot be read fails with the screen the app never showed, for example `Instagram never showed ^row_thread_composer_edittext$`.
 Review those results before setting it to `false`.

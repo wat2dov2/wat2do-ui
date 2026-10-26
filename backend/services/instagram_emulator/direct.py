@@ -17,7 +17,7 @@ from typing import Any
 
 from core.controlbox import controlbox
 from services.ingestion import items
-from services.instagram_dms.decide import DmDecision, decide
+from services.instagram_dms.decide import DmDecision, decide, sender, their_latest_words
 from services.instagram_emulator.device import CONTROL as EMULATOR
 from services.instagram_emulator.device import (
     EmulatorDevice,
@@ -31,6 +31,7 @@ from services.instagram_notifications.browser_session import (
     BrowserEngagementUncertain,
     BrowserSessionError,
 )
+from services.instagram_publishing.service import exclude_club
 
 CONTROL = controlbox.instagram_dms
 # Found by its view ID: its placeholder text rotates between hints like "Message…".
@@ -109,6 +110,13 @@ class EmulatorDirectExecutor:
         ):
             # A story upload can fail halfway on a full device; wait for space instead.
             raise BrowserSessionError("The emulator is low on storage; story reposts wait")
+        # What the reply promises is recorded first; each step can safely run again.
+        if decision.outcome in ("story_repost", "feature"):
+            items.request_carousel(decision.media_url, school=school)
+        elif decision.outcome == "correction":
+            items.queue_dm(their_latest_words(thread), school=school, sender=sender(thread))
+        elif decision.outcome == "opt_out":
+            exclude_club(sender(thread), reason=f"Asked in {account_username}'s DMs")
         if row.request:
             _confirmed("request accept", lambda: accept_request(self._device))
         if decision.outcome == "story_repost":
@@ -119,9 +127,6 @@ class EmulatorDirectExecutor:
             )
             _confirmed("reply", lambda: reader.send(decision.reply))
             return {**result, "status": "reposted"}
-        if decision.outcome == "add_to_post":
-            # The ingestion queue deduplicates, so a post Wat2Do already has is a no-op.
-            items.queue_instagram([decision.media_url], school=school)
         _confirmed("reply", lambda: reader.send(decision.reply))
         return {**result, "status": "replied"}
 

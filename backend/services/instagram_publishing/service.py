@@ -77,7 +77,7 @@ _SUCCESSFUL_CUTOFF_STATUSES = (
     INSTAGRAM_BATCH_PUBLISHED,
     INSTAGRAM_BATCH_EMPTY,
 )
-_EVENT_COLUMNS = "id,title,description,location,club,ig_handle,source_image_url,category,employers_on_campus,price,food,registration"
+_EVENT_COLUMNS = "id,title,description,location,club,ig_handle,source_image_url,category,employers_on_campus,price,food,registration,carousel_requested_at"
 _BATCH_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
 
 
@@ -493,8 +493,12 @@ def _load_candidates(
                 .select(_EVENT_COLUMNS)
                 .eq("school_id", school_id)
                 .eq("cancelled", False)
-                .gte("added_at", window_start.isoformat())
-                .lt("added_at", window_end.isoformat())
+                # New in the window, or asked for by its club in our DMs whenever it was added.
+                .or_(
+                    f'and(added_at.gte."{window_start.isoformat()}",'
+                    f'added_at.lt."{window_end.isoformat()}"),'
+                    "carousel_requested_at.not.is.null"
+                )
                 .order("added_at", desc=True)
                 .order("id")
                 .range(offset, offset + limit - 1)
@@ -768,6 +772,15 @@ def _summarize_recent_events(
     ]
     others.sort(key=lambda event: (event.occurrences[0].dtstart_utc, event.id))
     return new_event_count, others
+
+
+def exclude_club(ig_handle: str, *, reason: str) -> None:
+    """Leave a club out of every carousel from now on; asking again changes nothing."""
+    get_sb().table(INSTAGRAM_EXCLUDED_CLUBS).upsert(
+        {"ig_handle": _club_handle(ig_handle), "reason": reason},
+        on_conflict="ig_handle",
+        ignore_duplicates=True,
+    ).execute()
 
 
 def _excluded_club_handles() -> set[str]:

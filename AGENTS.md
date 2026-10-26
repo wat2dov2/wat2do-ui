@@ -99,11 +99,20 @@ It then asks Claude (`backend/services/instagram_dms/prompt.md`) for one outcome
 writes our reply the way a student running the account would, from the facts about
 Wat2Do the prompt lists.
 The outcomes are sharing a post or reel to our story (any account's, if it is
-appropriate and not out of date), adding it to our posts,
+appropriate and not out of date), featuring it in an upcoming carousel, correcting a
+listing the club says is wrong, leaving a club that asks out of carousels,
 a plain reply (questions, a story request with no post shared, an event already over),
 or ignoring it with no reply (traps, spam, "thanks").
-An "add it to our posts" request queues the shared post in `public.ingestion_items`
-and gets the reply.
+Clubs want story reposts and carousel spots, so replies never ask about adding things
+to the site.
+A story repost or carousel request sets `events.carousel_requested_at` on the events
+listed from the shared post; a post not listed yet is queued in `public.ingestion_items`
+with the request, and the ingestion agent marks the events it describes.
+Daily carousel drafts always consider requested events, however long ago they were
+added, and rank them first.
+A correction queues the club's words as a `dm` row in `public.ingestion_items`, and the
+ingestion agent corrects only the listings it clearly refers to.
+An opt-out adds the sender to `public.instagram_excluded_clubs`.
 A story request is shared first and answered after: the app adds the shared post to
 the school's story, and only then does the thread get the reply.
 The emulator finds every control by its accessibility label, taps at a random point
@@ -121,8 +130,8 @@ A song the admin marks as Asian or K-pop is tried only at the campuses in
 Every job that drives the emulator holds its lock, so no two ever tap at once.
 Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
 message, impersonation, login codes, money, follow-for-follow, pressure).
-Code, not the model, has the final say: the post must be shared in the thread, a post
-added to our posts must be shared by its own owner, a reply with a
+Code, not the model, has the final say: the post must be shared in the thread with its
+owner readable, an opt-out needs a readable sender, a reply with a
 tag, a link outside wat2do.io, an email address other than the controlbox's
 `contact_email` or a long number is not sent at all, and nothing is sent when our
 message is already the newest.

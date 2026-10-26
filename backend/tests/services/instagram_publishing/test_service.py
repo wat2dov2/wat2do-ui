@@ -189,6 +189,16 @@ def test_load_candidates_requires_images_and_categories_from_any_source(monkeypa
         assert result[0]["source_image_url"] == "https://example.com/poster.jpg"
     assert ("eq", ("school_id", 10), {}) in event_calls
     assert ("eq", ("cancelled", False), {}) in event_calls
+    # New in the window, or asked for in our DMs however long ago it was added.
+    assert (
+        "or_",
+        (
+            'and(added_at.gte."2026-07-28T04:00:00+00:00",'
+            'added_at.lt."2026-07-28T15:00:00+00:00"),carousel_requested_at.not.is.null',
+        ),
+        {},
+    ) in event_calls
+    assert "carousel_requested_at" in service._EVENT_COLUMNS.split(",")
     assert not any(args and args[0] == "ingestion_source" for _, args, _ in event_calls)
     assert not any(args and args[0] == "source_image_url" for _, args, _ in event_calls)
 
@@ -1366,3 +1376,21 @@ def test_unconnected_draft_cannot_publish(monkeypatch):
     with pytest.raises(service.ValidationError, match="Connect and enable"):
         service.claim_batch_for_publishing("batch-1", InstagramPublishBatchPublish(version=3))
     database.assert_not_called()
+
+
+def test_a_club_that_opts_out_is_left_out_once_by_its_plain_handle(monkeypatch):
+    calls: list[tuple] = []
+    tables: list[str] = []
+
+    def table(name):
+        tables.append(name)
+        return _FakeQuery([], calls)
+
+    monkeypatch.setattr(service, "get_sb", lambda: SimpleNamespace(table=table))
+    service.exclude_club("@UWViVA", reason="Asked in wat2do.uwaterloo's DMs")
+    assert tables == [service.INSTAGRAM_EXCLUDED_CLUBS]
+    assert (
+        "upsert",
+        ({"ig_handle": "uwviva", "reason": "Asked in wat2do.uwaterloo's DMs"},),
+        {"on_conflict": "ig_handle", "ignore_duplicates": True},
+    ) in calls

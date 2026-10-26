@@ -47,6 +47,7 @@ _EVENT_FIELDS = (
     "price",
     "food",
     "registration",
+    "carousel_requested_at",
 )
 
 ANSWER_SCHEMA: dict[str, Any] = {

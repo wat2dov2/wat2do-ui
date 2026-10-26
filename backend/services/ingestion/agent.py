@@ -26,7 +26,7 @@ from core.tables import EVENTS, POSITIONS
 from services import school_service
 from services.claude_code import ClaudeCodeError, claude_environment, run_agent
 from services.ingestion import changes
-from services.ingestion.items import CONTROL
+from services.ingestion.items import CONTROL, Source
 from services.school_context import (
     building_code_prompt,
     campus_season_prompt,
@@ -64,6 +64,26 @@ DIRECTORY_NOTE = (
 )
 
 
+DM_NOTE = (
+    "This source is not a post: it is what a club wrote to our Instagram account in direct "
+    "messages, usually a correction to an event or position already listed (a new date, "
+    "time, place, price or organizer). Find the listings it clearly refers to and correct "
+    "only what the message states. Never create a listing from a message, and change "
+    "nothing if you cannot tell which listing it means."
+)
+CAROUSEL_NOTE = (
+    "The club asked us in our Instagram DMs to feature this post in our carousel. Once the "
+    "listings match the source, set `carousel_requested_at = now()` on every event this "
+    "source describes, including an existing event you matched instead of creating a new one."
+)
+# How each kind of queued source is described to the agent and labels the rows it creates.
+_SOURCE_KINDS = {
+    "instagram": ("Instagram post", "instagram_scraper", ""),
+    "directory": ("official school event-directory page", "directory", DIRECTORY_NOTE),
+    "dm": ("direct message from a club", "instagram_scraper", DM_NOTE),
+}
+
+
 class AgentError(RuntimeError):
     """The agent could not finish; the queued item is retried."""
 
@@ -78,7 +98,14 @@ class _Image:
     video_url: str | None
 
 
-def ingest(post: dict, *, school: str, publisher_ig: str | None = None) -> bool:
+def ingest(
+    post: dict,
+    *,
+    school: str,
+    source: Source,
+    publisher_ig: str | None = None,
+    carousel_requested: bool = False,
+) -> bool:
     """Have the agent bring the database in line with one source; True if it changed anything."""
     source_url = post["url"]
     if already_imported(source_url):
@@ -94,7 +121,14 @@ def ingest(post: dict, *, school: str, publisher_ig: str | None = None) -> bool:
             post, school=school, publisher_ig=publisher_ig, image_count=len(image_urls(post))
         )
         prompt = _render(
-            post, school=record, caption=caption, images=images, token=token, owner=owner
+            post,
+            school=record,
+            source=source,
+            carousel_requested=carousel_requested,
+            caption=caption,
+            images=images,
+            token=token,
+            owner=owner,
         )
         # Allow for clock skew between this Mac and the database's added_at.
         started = datetime.now(UTC) - timedelta(minutes=5)
@@ -266,6 +300,8 @@ def _render(
     post: dict,
     *,
     school,
+    source: Source,
+    carousel_requested: bool,
     caption: str,
     images: list[_Image],
     token: str,
@@ -276,11 +312,11 @@ def _render(
     posted = parse_iso_datetime(post.get("timestamp"))
     posted_local = posted.astimezone(timezone) if posted else now
     semester_end = current_semester_end(school.slug, now=now)
-    instagram = is_instagram(post["url"])
+    source_kind, ingestion_source, note = _SOURCE_KINDS[source]
     values = {
         "source_url": post["url"],
-        "source_kind": "Instagram post" if instagram else "official school event-directory page",
-        "ingestion_source": "instagram_scraper" if instagram else "directory",
+        "source_kind": source_kind,
+        "ingestion_source": ingestion_source,
         "school": school.slug,
         "school_id": str(school.id),
         "timezone": timezone.key,
@@ -292,7 +328,9 @@ def _render(
         "owner_club": owner,
         "coauthors": ", ".join(f"@{h}" for h in candidate_handles(post)[1:]) or "none",
         "caption": caption or "(no text)",
-        "source_note": "" if instagram else DIRECTORY_NOTE,
+        "source_note": "\n\n".join(
+            filter(None, [note, CAROUSEL_NOTE if carousel_requested else ""])
+        ),
         "images": "\n".join(
             f"- Image {index}: ./{image.file}, poster reference `{poster_reference(token, index)}`"
             + (" (a video slide)" if image.video_url else "")
