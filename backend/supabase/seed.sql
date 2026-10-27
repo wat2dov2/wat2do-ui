@@ -35,6 +35,7 @@ SET
     message_translation_key = 'siteBanner.businessSupport.message',
     cta_label_translation_key = 'siteBanner.businessSupport.cta',
     cta_href = '/support-local',
+    enabled = false,
     updated_at = now()
 WHERE id = 1;
 
