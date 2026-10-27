@@ -342,6 +342,7 @@ def test_dispatch_composes_each_school_once_and_sends_everyone_there(monkeypatch
 
     monkeypatch.setattr(morning_email, "_fetch_users", lambda: users)
     monkeypatch.setattr(morning_email, "_eligible_users", lambda found, _now: found)
+    monkeypatch.setattr(morning_email, "_without_todays_email", lambda found, _now: found)
     monkeypatch.setattr(
         morning_email,
         "get_enabled_user_ids",
@@ -385,6 +386,36 @@ def test_morning_email_eligibility_tracks_eastern_dst_and_delayed_starts():
         )
         == []
     )
+
+
+def test_morning_email_catches_up_after_skipped_scheduled_runs():
+    user = _user()
+
+    # 10:59 AM and 8:30 PM Eastern: the 9 AM run never came.
+    assert morning_email._eligible_users(
+        [user], datetime(2026, 10, 26, 14, 59, tzinfo=timezone.utc)
+    ) == [user]
+    assert morning_email._eligible_users(
+        [user], datetime(2026, 10, 27, 0, 30, tzinfo=timezone.utc)
+    ) == [user]
+    # 9:05 PM Eastern is past the last send hour.
+    assert (
+        morning_email._eligible_users([user], datetime(2026, 10, 27, 1, 5, tzinfo=timezone.utc))
+        == []
+    )
+
+
+def test_morning_email_skips_users_already_sent_today(fake_sb, patch_sb):
+    patch_sb("services.notifications.morning_email")
+    sent = _user(id="11111111-1111-1111-1111-111111111111")
+    pending = _user(id="22222222-2222-2222-2222-222222222222")
+    fake_sb.set_response(data=[{"user_id": sent["id"], "target_id": "2026-10-26"}])
+
+    assert morning_email._without_todays_email(
+        [sent, pending], datetime(2026, 10, 26, 18, tzinfo=timezone.utc)
+    ) == [pending]
+    fake_sb.eq.assert_any_call("status", "sent")
+    fake_sb.in_.assert_any_call("target_id", ["2026-10-26"])
 
 
 def test_notification_job_fails_when_any_delivery_fails(monkeypatch):

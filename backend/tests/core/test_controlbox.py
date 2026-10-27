@@ -50,6 +50,7 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert controlbox.reel_transcription.model == "gpt-4o-mini-transcribe"
     assert controlbox.recommendations.snapshot.candidate_events_per_school == 1000
     assert controlbox.morning_email.new_event_window_hours == 24
+    assert controlbox.morning_email.last_local_send_hour == 20
     assert controlbox.event_reminder.lead_minutes == 60
     assert controlbox.event_change_alerts.quiet_minutes == 5
     assert controlbox.email_delivery.image_max_bytes == 5_000_000
