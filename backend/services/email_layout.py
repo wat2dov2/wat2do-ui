@@ -16,6 +16,16 @@ EMAIL_THEME = {
     "border": "#d6d6d6",
 }
 
+# The site's Satoshi, from Fontshare (it allows cross-origin font loads). Clients
+# that ignore web fonts, like Gmail, fall back to the site's system stack.
+EMAIL_FONT = (
+    "Satoshi,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif"
+)
+_EMAIL_FONT_IMPORT = (
+    "<style>@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800"
+    "&display=swap');</style>"
+)
+
 # Embedded in every email; the shell shows it as cid:wat2do-logo.
 EMAIL_LOGO = InlineImage(
     content_id="wat2do-logo",
@@ -38,16 +48,17 @@ def email_shell(
         for label, url in footer_links or []
     )
     return (
+        f"{_EMAIL_FONT_IMPORT}"
         f'<div style="margin:0;background:{EMAIL_THEME["background"]};padding:28px 16px;">'
         f'<div style="max-width:640px;margin:0 auto;background:{EMAIL_THEME["surface"]};'
         f'border:1px solid {EMAIL_THEME["border"]};border-radius:16px;padding:24px;">'
         f'<img src="cid:{EMAIL_LOGO.content_id}" alt="wat2do" width="80" height="57" '
         'style="display:block;margin:0 0 16px;border:0;">'
         f'<h1 style="margin:0 0 24px;color:{EMAIL_THEME["foreground"]};'
-        f'font:800 28px sans-serif;">{escape(heading)}</h1>'
+        f'font:800 28px {EMAIL_FONT};">{escape(heading)}</h1>'
         f"{content}"
         f'<p style="margin:24px 0 0;color:{EMAIL_THEME["muted_foreground"]};'
-        'font:12px/1.6 sans-serif;">'
+        f'font:12px/1.6 {EMAIL_FONT};">'
         f"{links + '<br>' if links else ''}"
         "wat2do helps students discover campus events."
         "</p></div></div>"
@@ -57,14 +68,14 @@ def email_shell(
 def email_paragraph(html: str, *, muted: bool = False) -> str:
     """A body paragraph; ``html`` must already be escaped."""
     color = EMAIL_THEME["muted_foreground" if muted else "foreground"]
-    return f'<p style="margin:0 0 18px;color:{color};font:15px/1.6 sans-serif;">{html}</p>'
+    return f'<p style="margin:0 0 18px;color:{color};font:15px/1.6 {EMAIL_FONT};">{html}</p>'
 
 
 def email_note(html: str) -> str:
     """Small print such as expiry notices; ``html`` must already be escaped."""
     return (
         f'<p style="margin:0;color:{EMAIL_THEME["muted_foreground"]};'
-        f'font:13px/1.6 sans-serif;">{html}</p>'
+        f'font:13px/1.6 {EMAIL_FONT};">{html}</p>'
     )
 
 
@@ -73,7 +84,7 @@ def email_quote(html: str) -> str:
     return (
         f'<div style="margin:0 0 18px;padding:16px;background:{EMAIL_THEME["surface_elevated"]};'
         f"border:1px solid {EMAIL_THEME['border']};border-radius:12px;"
-        f'color:{EMAIL_THEME["foreground"]};font:15px/1.6 sans-serif;">{html}</div>'
+        f'color:{EMAIL_THEME["foreground"]};font:15px/1.6 {EMAIL_FONT};">{html}</div>'
     )
 
 
@@ -81,6 +92,6 @@ def email_button(href: str, label: str) -> str:
     return (
         f'<a href="{escape(href, quote=True)}" style="display:inline-block;margin:4px 0 20px;'
         f"padding:12px 20px;background:{EMAIL_THEME['foreground']};"
-        f"color:{EMAIL_THEME['background']};border-radius:999px;font:700 14px sans-serif;"
+        f"color:{EMAIL_THEME['background']};border-radius:999px;font:700 14px {EMAIL_FONT};"
         f'text-decoration:none;">{escape(label)}</a>'
     )

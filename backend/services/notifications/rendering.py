@@ -5,7 +5,13 @@ from html import escape
 from itertools import batched
 from zoneinfo import ZoneInfo
 
-from services.email_layout import EMAIL_THEME, email_button, email_paragraph, email_shell
+from services.email_layout import (
+    EMAIL_FONT,
+    EMAIL_THEME,
+    email_button,
+    email_paragraph,
+    email_shell,
+)
 
 
 def morning_email_subject(event_count: int, position_count: int) -> str:
@@ -158,7 +164,7 @@ def _grid_section(title: str, cards: list[str]) -> str:
     )
     return (
         f'<h2 style="margin:24px 0 12px;color:{EMAIL_THEME["foreground"]};'
-        f'font:700 19px sans-serif;">{escape(title)}</h2>'
+        f'font:700 19px {EMAIL_FONT};">{escape(title)}</h2>'
         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         f'style="width:100%;border-collapse:collapse;table-layout:fixed;">{rows}</table>'
     )
@@ -206,10 +212,10 @@ def _grid_card(
         image = (
             f'<div style="padding:56px 12px;background:{EMAIL_THEME["surface_elevated"]};'
             f"border-radius:12px;color:{EMAIL_THEME['foreground']};text-align:center;"
-            f'font:600 15px/1.3 sans-serif;">{escape(title)}</div>'
+            f'font:600 15px/1.3 {EMAIL_FONT};">{escape(title)}</div>'
         )
     detail_lines = "".join(
-        f'<br><span style="color:{EMAIL_THEME["muted_foreground"]};font:13px/1.5 sans-serif;">'
+        f'<br><span style="color:{EMAIL_THEME["muted_foreground"]};font:13px/1.5 {EMAIL_FONT};">'
         f"{escape(detail)}</span>"
         for detail in details
     )
@@ -217,7 +223,7 @@ def _grid_card(
         f'<a href="{escape(href, quote=True)}" style="display:block;'
         f'color:{EMAIL_THEME["foreground"]};text-decoration:none;">{image}'
         f"{_club_line(club_name, club_logo_src)}"
-        f'<div style="padding:6px 2px 0;"><strong style="font:700 15px/1.35 sans-serif;">'
+        f'<div style="padding:6px 2px 0;"><strong style="font:700 15px/1.35 {EMAIL_FONT};">'
         f"{escape(title)}</strong>{detail_lines}</div></a>"
     )
 
@@ -237,7 +243,7 @@ def _club_line(club_name: str | None, club_logo_src: str | None) -> str:
         '<table role="presentation" cellpadding="0" cellspacing="0" '
         'style="border-collapse:collapse;margin:10px 2px 0;"><tr>'
         f'{logo}<td valign="middle" style="color:{EMAIL_THEME["muted_foreground"]};'
-        f'font:600 13px/1.3 sans-serif;">{escape(club_name)}</td></tr></table>'
+        f'font:600 13px/1.3 {EMAIL_FONT};">{escape(club_name)}</td></tr></table>'
     )
 
 
@@ -374,7 +380,7 @@ def _event_spotlight(
         f"{email_paragraph(escape(intro), muted=True)}"
         f"{image}"
         f'<a href="{event_url}" style="color:{EMAIL_THEME["foreground"]};'
-        f'text-decoration:none;"><h2 style="margin:0 0 8px;font:700 19px sans-serif;">'
+        f'text-decoration:none;"><h2 style="margin:0 0 8px;font:700 19px {EMAIL_FONT};">'
         f"{title}</h2></a>"
         + "".join(_detail_row_html(label, old, new) for label, old, new in rows)
         + '<div style="height:16px;"></div>'
@@ -397,9 +403,9 @@ def _detail_row_html(label: str, old: str | None, new: str | None) -> str:
         value = f'{struck} <span style="color:{muted};">(removed)</span>'
     return (
         f'<div style="padding:12px 0;border-top:1px solid {EMAIL_THEME["border"]};">'
-        f'<div style="margin:0 0 4px;color:{muted};font:700 12px sans-serif;'
+        f'<div style="margin:0 0 4px;color:{muted};font:700 12px {EMAIL_FONT};'
         f'letter-spacing:.06em;text-transform:uppercase;">{escape(label)}</div>'
-        f'<div style="color:{EMAIL_THEME["foreground"]};font:15px/1.5 sans-serif;">'
+        f'<div style="color:{EMAIL_THEME["foreground"]};font:15px/1.5 {EMAIL_FONT};">'
         f"{value}</div></div>"
     )
 
