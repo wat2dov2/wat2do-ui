@@ -79,7 +79,7 @@
   },
   "navigation": {
     "events": "活動",
-    "create": "提交活動",
+    "submit": "提交",
     "clubs": "組織",
     "positions": "職位",
     "myEvents": "我的活動",

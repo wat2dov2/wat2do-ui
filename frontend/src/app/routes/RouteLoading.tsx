@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { AboutPage } from "@/features/contact/pages/AboutPage";
 import { AuthEntryPage } from "@/features/auth/pages/AuthEntryPage";
@@ -32,22 +31,17 @@ function DiscoveryLoading({ resource }: { resource: "events" | "clubs" | "positi
   const isClubs = resource === "clubs";
   const label = isEvents ? t("events.upcomingEventCount", { count: 2 })
     : isClubs ? t("clubs.clubLabel", { count: 2 }) : t("positions.position", { count: 2 });
-  const addLabel = isEvents ? t("events.submitEvent") : isClubs ? t("clubs.addClub") : t("positions.addPosition");
-  const addHref = isEvents ? ROUTES.EVENT_SUBMIT : isClubs ? ROUTES.CLUB_CREATE : ROUTES.POSITION_SUBMIT;
   const categories = isClubs ? constants.club_categories : getEventFilterCategories(constants.event_categories);
 
   return (
     <Stack gap={2} data-slot="discovery-loading" aria-busy="true">
       <PageHeader variant="listing">
         <PageCountHeading count={null} label={label} latest={isClubs ? undefined : null} />
-        <Stack direction="horizontal" gap={2} align="center">
-          <SubmittedSearchInput
-            size="lg" value="" onChange={ignoreInput} onSubmit={ignoreInput} onClear={ignoreInput} disabled
-            placeholder={isEvents ? t("search.placeholder") : t(`${resource}.searchPlaceholder`)}
-            submitLabel={t("common.search")} clearLabel={t("search.clear")}
-          />
-          <Button asChild variant="outline" size="lg"><Link href={addHref}>{addLabel}</Link></Button>
-        </Stack>
+        <SubmittedSearchInput
+          size="lg" value="" onChange={ignoreInput} onSubmit={ignoreInput} onClear={ignoreInput} disabled
+          placeholder={isEvents ? t("search.placeholder") : t(`${resource}.searchPlaceholder`)}
+          submitLabel={t("common.search")} clearLabel={t("search.clear")}
+        />
         <FilterBar disabled>
           {isEvents ? getEventQuickFilters().map(config => (
             "labelKey" in config ? <Button key={config.id} variant="outline" size="sm" disabled>{config.id === "minGoing" ? `>${t(config.labelKey, { count: 0 })}` : t(config.labelKey)}</Button> : null

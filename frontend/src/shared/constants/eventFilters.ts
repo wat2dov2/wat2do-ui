@@ -18,6 +18,7 @@ const eventQuickFilters = [
   { id: "going", labelKey: "filters.going", value: "goingFilter", action: "setGoingFilter", requiresProfile: true },
   { id: "new", labelKey: "common.newlyAddedFilter.last24Hours" },
   { id: "featured", labelKey: "filters.featured", value: "featured", action: "setFeatured" },
+  { id: "campusSeasons" },
   { id: "employersOnCampus", labelKey: "filters.employersOnCampus", value: "employersOnCampus", action: "setEmployersOnCampus" },
   { id: "freeFoodOnCampus", labelKey: "filters.freeFoodOnCampus", value: "freeFood", action: "setFreeFood" },
   { id: "competitions", labelKey: "filters.competitions", value: "competitions", action: "setCompetitions" },
@@ -25,7 +26,6 @@ const eventQuickFilters = [
   { id: "date", labelKey: "events.dateFilter.any" },
   { id: "minGoing", labelKey: "events.goingCount" },
   { id: "price", labelKey: "filters.anyPrice" },
-  { id: "campusSeasons" },
   { id: "hasFood", labelKey: "filters.food", value: "hasFoodFilter", action: "setHasFoodFilter" },
 ] as const;
 

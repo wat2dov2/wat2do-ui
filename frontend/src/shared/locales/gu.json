@@ -82,7 +82,7 @@
   },
   "navigation": {
     "events": "ઇવેન્ટ્સ",
-    "create": "ઇવેન્ટ સબમિટ કરો",
+    "submit": "સબમિટ કરો",
     "clubs": "સંસ્થાઓ",
     "positions": "હોદ્દાઓ",
     "myEvents": "મારી ઇવેન્ટ",

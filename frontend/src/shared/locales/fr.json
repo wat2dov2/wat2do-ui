@@ -85,7 +85,7 @@
   },
   "navigation": {
     "events": "Événements",
-    "create": "Soumettre l'événement",
+    "submit": "Soumettre",
     "clubs": "Organisations",
     "positions": "Postes",
     "myEvents": "Mes Événements",

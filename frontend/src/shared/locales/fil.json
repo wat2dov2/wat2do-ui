@@ -82,7 +82,7 @@
   },
   "navigation": {
     "events": "Mga Kaganapan",
-    "create": "Magsumite ng event",
+    "submit": "Magsumite",
     "clubs": "Mga organisasyon",
     "positions": "Mga posisyon",
     "myEvents": "Aking mga event",

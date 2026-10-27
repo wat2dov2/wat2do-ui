@@ -82,7 +82,7 @@
   },
   "navigation": {
     "events": "رویدادها",
-    "create": "ثبت رویداد",
+    "submit": "ثبت",
     "clubs": "سازمان‌ها",
     "positions": "موقعیت‌ها",
     "myEvents": "رویدادهای من",

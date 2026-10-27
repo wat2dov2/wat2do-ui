@@ -4,7 +4,7 @@ import NextLink from "next/link";
 import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Crown, HelpCircle, LogOut, MoreHorizontal, Shapes, Settings, Shield, Ticket, Users } from "lucide-react";
+import { ChevronDown, Crown, HelpCircle, LogOut, MoreHorizontal, Plus, Shapes, Settings, Shield, Ticket, Users } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
@@ -17,6 +17,12 @@ import { SearchCombobox } from "@/shared/ui/search-combobox";
 import { LanguageSelector } from "@/shared/ui/language-selector";
 import { ThemeToggle } from "@/shared/ui/theme-toggle";
 import { Separator } from "@/shared/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 import {
   Drawer,
   DrawerContent,
@@ -87,6 +93,45 @@ const SETTINGS_NAV_ITEM = {
   href: ROUTES.SETTINGS,
   Icon: Settings,
 } as const;
+
+const SUBMIT_ITEMS = [
+  { labelKey: "events.submitEvent", href: ROUTES.EVENT_SUBMIT, Icon: Ticket },
+  { labelKey: "positions.addPosition", href: ROUTES.POSITION_SUBMIT, Icon: Users },
+  { labelKey: "clubs.addClub", href: ROUTES.CLUB_CREATE, Icon: Shapes },
+] as const;
+
+/** The one way into every submission form: a menu of what to submit. */
+function SubmitMenu({ size, onNavigate }: { size: "sm" | "navigation"; onNavigate?: () => void }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const pathname = usePathname();
+  const active = SUBMIT_ITEMS.some(({ href }) => isRouteActive(pathname, href));
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant={active ? "outline" : "ghost"} size={size}>
+          {size === "navigation" ? <Plus /> : null}
+          <span className="min-w-0 flex-1 truncate text-start">{t("navigation.submit")}</span>
+          <ChevronDown />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {SUBMIT_ITEMS.map(({ labelKey, href, Icon }) => (
+          <DropdownMenuItem
+            key={href}
+            onSelect={() => {
+              onNavigate?.();
+              router.push(href);
+            }}
+          >
+            <Icon />
+            {t(labelKey)}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 function isRouteActive(pathname: string, href: string): boolean {
   if (href === ROUTES.EVENTS) return pathname === ROUTES.EVENTS;
@@ -188,6 +233,7 @@ export function TopNav() {
               </Button>
             );
           })}
+          <SubmitMenu size="sm" />
         </nav>}
 
         <Drawer
@@ -269,6 +315,7 @@ export function TopNav() {
                     </Button>
                   );
                 })}
+                <SubmitMenu size="navigation" onNavigate={() => setNavigationOpen(false)} />
               </nav>
               {canOpenClubPanel && (
                 <>

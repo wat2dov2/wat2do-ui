@@ -79,7 +79,7 @@
   },
   "navigation": {
     "events": "이벤트",
-    "create": "이벤트 제출",
+    "submit": "제출",
     "clubs": "조직",
     "positions": "직책",
     "myEvents": "내 이벤트",

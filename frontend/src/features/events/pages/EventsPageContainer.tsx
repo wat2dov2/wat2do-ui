@@ -1,5 +1,4 @@
 import { useMemo, useCallback, useState, Fragment } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { PriceFilter } from "@/features/search";
 import { IntegerFilter } from "@/shared/ui/integer-filter";
@@ -18,7 +17,6 @@ import {
   NewlyAddedFilterButton,
 } from "@/shared/ui/newly-added-filter-button";
 import { DateFilterSelect } from "@/features/events/components/DateFilterSelect";
-import { ROUTES } from "@/shared/constants/routes";
 import type { Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { EmptyState } from "@/shared/feedback";
@@ -43,7 +41,6 @@ export function EventsPageContainer({
   const setShowFilterDropdown = useUIStore((s) => s.setShowFilterDropdown);
   const { profileCompleted } = useAuthState();
   const { t } = useTranslation();
-  const router = useRouter();
 
   const {
     appliedQueryKey,
@@ -95,10 +92,6 @@ export function EventsPageContainer({
 
   const quickFilters = getEventQuickFilters({ profileCompleted, sportsGameAvailable: filters.sportsGameAvailable });
 
-  const handleSubmitEventClick = useCallback(() => {
-    router.push(ROUTES.EVENT_SUBMIT);
-  }, [router]);
-
   return (
     <>
       <Stack gap={2} data-page-layout={view === "map" ? "viewport" : undefined}>
@@ -109,42 +102,15 @@ export function EventsPageContainer({
             latest={latestAddedEvent ? { item: latestAddedEvent, onSelect: handleLatestAddedEventSearch } : null}
             currentTimeMs={currentTimeMs}
           />
-          <Stack direction="horizontal" align="center" gap={2}>
-            <div className="min-w-0 flex-1">
-              <SearchBar
-                searchQuery={filters.searchQuery}
-                onSearchChange={(query) => {
-                  filters.setSearchQuery(query);
-                }}
-                onSearchClear={() => filters.setSearchQuery("")}
-              />
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="shrink-0"
-              onMouseDown={handleSubmitEventClick}
-            >
-              {t("events.submitEvent")}
-            </Button>
-          </Stack>
+          <SearchBar
+            searchQuery={filters.searchQuery}
+            onSearchChange={(query) => {
+              filters.setSearchQuery(query);
+            }}
+            onSearchClear={() => filters.setSearchQuery("")}
+          />
 
-          <FilterBar appliedQueryKey={`${view}:${appliedQueryKey}`} disabled={isLoading || Boolean(error)} refreshKey={`${view}:${quickFilters.length}:${filters.categoryOptions.length}:${filters.campusSeasonOptions.map(season => season.id).join(",")}`} data-testid="event-quick-filter-scroll" trailing={<>
-              <MoreFiltersButton
-                open={showFilterDropdown}
-                onOpenChange={setShowFilterDropdown}
-                filterCount={filters.filterCount}
-                onClearFilters={filters.clearAllFilters}
-              >
-                {showFilterDropdown ? (
-                  <FilterDropdown
-                    school={initialSchool}
-                    filters={filters}
-                  />
-                ) : null}
-              </MoreFiltersButton>
-            </>}>
+          <FilterBar appliedQueryKey={`${view}:${appliedQueryKey}`} disabled={isLoading || Boolean(error)} refreshKey={`${view}:${quickFilters.length}:${filters.categoryOptions.length}:${filters.campusSeasonOptions.map(season => season.id).join(",")}`} data-testid="event-quick-filter-scroll">
                 <EventViewSelect value={view} onChange={setView} />
                 {quickFilters.map(config => {
                   switch (config.id) {
@@ -186,6 +152,20 @@ export function EventsPageContainer({
                     {category.label}
                   </Button>
                 ))}
+                {/* Last in the row, so it scrolls with the filters instead of staying pinned. */}
+                <MoreFiltersButton
+                  open={showFilterDropdown}
+                  onOpenChange={setShowFilterDropdown}
+                  filterCount={filters.filterCount}
+                  onClearFilters={filters.clearAllFilters}
+                >
+                  {showFilterDropdown ? (
+                    <FilterDropdown
+                      school={initialSchool}
+                      filters={filters}
+                    />
+                  ) : null}
+                </MoreFiltersButton>
                 </FilterBar>
         </PageHeader>
 

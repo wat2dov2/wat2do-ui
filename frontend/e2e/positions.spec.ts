@@ -176,7 +176,7 @@ test.describe("Positions UI", () => {
       const headerBox = await header.boundingBox();
       return Math.abs(initialHeaderTop - (headerBox?.y ?? 1000));
     }).toBeLessThan(2);
-    await expect(page.getByRole("link", { name: "Add position", exact: true })).toBeVisible();
+    await expect(page.getByPlaceholder("Search roles, skills, or locations...")).toBeVisible();
     const committee = page.getByTestId("position-filter-scroll").getByRole("button", { name: "Committee", exact: true });
     await committee.click();
     await expect(committee).toHaveAttribute("aria-pressed", "true");
