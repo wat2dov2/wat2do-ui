@@ -529,9 +529,9 @@ async function seedQrData(
 
 test.describe("Loading shells", () => {
   for (const listing of [
-    { resource: "events", path: "/events", heading: "upcoming events", search: "Search events", add: "Add event", empty: "No events scheduled" },
-    { resource: "clubs", path: "/clubs", heading: "clubs", search: "Search clubs...", add: "Add club", empty: "No clubs found" },
-    { resource: "positions", path: "/positions", heading: "positions", search: "Search roles, skills, or locations...", add: "Add position", empty: "No open positions found" },
+    { resource: "events", path: "/events", heading: "upcoming events", search: "Search events", empty: "No events scheduled" },
+    { resource: "clubs", path: "/clubs", heading: "clubs", search: "Search clubs...", empty: "No clubs found" },
+    { resource: "positions", path: "/positions", heading: "positions", search: "Search roles, skills, or locations...", empty: "No open positions found" },
   ]) {
     test(`${listing.resource} renders navigation and listing controls before its data arrives`, async ({ page, next }) => {
       await seedAuthenticatedSession(page, next);
@@ -591,7 +591,6 @@ test.describe("Loading shells", () => {
           await expect(shell.locator('[data-slot="latest-added-item"] [data-slot="skeleton"]')).toHaveCount(1);
         }
         await expect(shell.getByPlaceholder(listing.search, { exact: true })).toBeVisible();
-        await expect(shell.getByRole("link", { name: listing.add, exact: true })).toBeVisible();
         await expect(shell.locator('[aria-hidden="true"] [data-slot="skeleton"]').first()).toBeVisible();
         await expect(page.getByRole("heading", { name: `0 ${listing.heading}`, exact: true })).toHaveCount(0);
         await expect(page.getByRole("heading", { name: listing.empty, exact: true })).toHaveCount(0);
@@ -4468,7 +4467,7 @@ test.describe("Clubs Page", () => {
     await scrollRoot.evaluate(element => { element.scrollTop = 600; });
     await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBeGreaterThan(400);
     await expect.poll(async () => (await search.boundingBox())?.y).toBe(initial!.y);
-    await expect(page.getByRole("button", { name: "Add club", exact: true })).toBeInViewport();
+    await expect(search).toBeInViewport();
     const category = page.getByTestId("club-category-filter-scroll").getByRole("button", { name: "Technology", exact: true });
     await category.click();
     await expect(category).toHaveAttribute("aria-pressed", "true");
@@ -4765,6 +4764,30 @@ test.describe("Standalone submission pages", () => {
     await expect(page.getByRole("combobox", { name: "Event date" })).toHaveText("Tomorrow");
     await page.keyboard.press("Escape");
     await expect(page.getByRole("combobox", { name: "Event date" })).toHaveText("Any day");
+  });
+
+  test("More filters scrolls at the end of the filter row instead of staying pinned", async ({ page }) => {
+    await page.goto(BASE);
+    const row = page.getByTestId("event-quick-filter-scroll");
+    const moreFilters = row.getByRole("button", { name: "More filters", exact: true });
+    await expect(moreFilters).toBeAttached();
+    await row.evaluate(element => { element.scrollLeft = element.scrollWidth; });
+    await expect(moreFilters).toBeInViewport();
+  });
+
+  test("the navigation menu's Submit dropdown opens every submission form", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(BASE);
+    await expect(page.getByRole("button", { name: "Add event", exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "Open navigation menu" }).click();
+    const navigation = page.getByRole("dialog", { name: "Primary navigation" });
+    await navigation.getByRole("button", { name: "Submit", exact: true }).click();
+    for (const name of ["Add event", "Add position", "Add club"]) {
+      await expect(page.getByRole("menuitem", { name, exact: true })).toBeVisible();
+    }
+    await page.getByRole("menuitem", { name: "Add position", exact: true }).click();
+    await expect(page).toHaveURL(/\/positions\/submit$/);
+    await expect(navigation).toHaveCount(0);
   });
 
   test("stale session can still access event submission as anonymous", async ({

@@ -79,7 +79,7 @@
   },
   "navigation": {
     "events": "Events",
-    "create": "Submit Event",
+    "submit": "Submit",
     "clubs": "Clubs",
     "positions": "Positions",
     "myEvents": "My Events",

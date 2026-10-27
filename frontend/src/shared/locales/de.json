@@ -82,7 +82,7 @@
   },
   "navigation": {
     "events": "Veranstaltungen",
-    "create": "Veranstaltung einreichen",
+    "submit": "Einreichen",
     "clubs": "Organisationen",
     "positions": "Positionen",
     "myEvents": "Meine Veranstaltungen",

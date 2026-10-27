@@ -25,7 +25,7 @@ import { FilterBar } from "@/shared/layout/filter-bar";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
-import { clubPagePath, ROUTES } from "@/shared/constants/routes";
+import { clubPagePath } from "@/shared/constants/routes";
 import type { PaginatedClubsResponse } from "@/features/clubs/api/clubs.api";
 import { PageHeader, Stack } from "@/shared/layout";
 import { EmptyState } from "@/shared/feedback";
@@ -99,29 +99,16 @@ export function ClubsPage({
           }
         />
 
-        <Stack direction="horizontal" align="center" gap={2}>
-          <SubmittedSearchInput
-            size="lg"
-            value={searchQuery}
-            onChange={setSearchQuery}
-            onSubmit={submitSearchQuery}
-            onClear={clearSearchQuery}
-            placeholder={t("clubs.searchPlaceholder")}
-            submitLabel={t("common.search")}
-            clearLabel={t("clubs.clearSearch")}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className="shrink-0"
-            onMouseDown={() => {
-              router.push(ROUTES.CLUB_CREATE);
-            }}
-          >
-            {t("clubs.addClub")}
-          </Button>
-        </Stack>
+        <SubmittedSearchInput
+          size="lg"
+          value={searchQuery}
+          onChange={setSearchQuery}
+          onSubmit={submitSearchQuery}
+          onClear={clearSearchQuery}
+          placeholder={t("clubs.searchPlaceholder")}
+          submitLabel={t("common.search")}
+          clearLabel={t("clubs.clearSearch")}
+        />
 
         <FilterBar appliedQueryKey={appliedQueryKey} disabled={isLoading || isError} refreshKey={allCategories.length} data-testid="club-category-filter-scroll" trailing={<>
             <Select

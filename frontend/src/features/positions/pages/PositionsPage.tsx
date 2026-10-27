@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import Link from "next/link";
-import { ROUTES } from "@/shared/constants/routes";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
 import { PositionList } from "@/features/positions/components/PositionList";
 import { usePositionsPage } from "@/features/positions/hooks/usePositionsPage";
@@ -38,19 +36,16 @@ export function PositionsPage({
           label={t("positions.position", { count: positionsPage.total })}
           latest={positionsPage.latestAddedPosition ? { item: positionsPage.latestAddedPosition, onSelect: positionsPage.searchLatest } : null}
         />
-        <Stack direction="horizontal" gap={2} align="center">
-          <SubmittedSearchInput
-            size="lg"
-            value={positionsPage.searchQuery}
-            onChange={positionsPage.setSearchQuery}
-            onSubmit={positionsPage.submitSearch}
-            onClear={positionsPage.clearSearch}
-            placeholder={t("positions.searchPlaceholder")}
-            submitLabel={t("common.search")}
-            clearLabel={t("positions.clearSearch")}
-          />
-          <Button asChild variant="outline" size="lg"><Link href={ROUTES.POSITION_SUBMIT}>{t("positions.addPosition")}</Link></Button>
-        </Stack>
+        <SubmittedSearchInput
+          size="lg"
+          value={positionsPage.searchQuery}
+          onChange={positionsPage.setSearchQuery}
+          onSubmit={positionsPage.submitSearch}
+          onClear={positionsPage.clearSearch}
+          placeholder={t("positions.searchPlaceholder")}
+          submitLabel={t("common.search")}
+          clearLabel={t("positions.clearSearch")}
+        />
         <FilterBar appliedQueryKey={positionsPage.appliedQueryKey} disabled={positionsPage.isLoading || positionsPage.isError} data-testid="position-filter-scroll" aria-label={t("positions.filterByType")}>
           <NewlyAddedFilterButton
             value={positionsPage.addedSince}

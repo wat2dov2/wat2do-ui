@@ -94,7 +94,7 @@
   },
   "navigation": {
     "events": "الأحداث",
-    "create": "إرسال فعالية",
+    "submit": "إرسال",
     "clubs": "المنظمات",
     "positions": "المناصب",
     "myEvents": "فعالياتي",
