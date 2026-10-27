@@ -1,7 +1,9 @@
 """Batched composition and isolated delivery of the 9 AM morning email.
 
 Every recipient at a school gets the same digest: each event and position added
-there in the last 24 hours, newest first.
+there in the last 24 hours, newest first. GitHub skips many hourly scheduled
+runs, so anyone whose 9 AM has passed today without an email gets it on the next
+run, until the last send hour.
 """
 
 import hashlib
@@ -11,11 +13,11 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from itertools import batched
 
-from core.constants import NOTIFICATION_TYPE_MORNING_EMAIL
+from core.constants import NOTIFICATION_STATUS_SENT, NOTIFICATION_TYPE_MORNING_EMAIL
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.pagination import fetch_all_pages
-from core.tables import EVENT_DATES, EVENTS, POSITIONS, USERS
+from core.tables import EVENT_DATES, EVENTS, NOTIFICATIONS_LOG, POSITIONS, USERS
 from services import school_service
 from services.email_layout import EMAIL_LOGO
 from services.email_service import EmailMessage, InlineImage
@@ -58,6 +60,7 @@ def dispatch_morning_emails(now_utc: datetime) -> dict[str, int]:
             [str(user["id"]) for user in users], NOTIFICATION_TYPE_MORNING_EMAIL
         )
         users = [user for user in users if str(user["id"]) in enabled_ids]
+    users = _without_todays_email(users, window_end)
     if not users:
         return {"eligible": 0, "prepared": 0, "sent": 0, "failed": 0, "skipped": 0}
 
@@ -119,8 +122,32 @@ def _eligible_users(users: list[dict], now_utc: datetime) -> list[dict]:
     return [
         user
         for user in users
-        if now_utc.astimezone(resolve_user_timezone(user)).hour == _CONTROL.local_send_hour
+        if _CONTROL.local_send_hour
+        <= now_utc.astimezone(resolve_user_timezone(user)).hour
+        <= _CONTROL.last_local_send_hour
     ]
+
+
+def _local_date(user: dict, now_utc: datetime) -> str:
+    return now_utc.astimezone(resolve_user_timezone(user)).date().isoformat()
+
+
+def _without_todays_email(users: list[dict], now_utc: datetime) -> list[dict]:
+    """Drop users already sent today's email, before any digest is composed."""
+    sent: set[tuple[str, str]] = set()
+    for chunk in batched([str(user["id"]) for user in users], _CHUNK_SIZE):
+        rows = (
+            get_sb()
+            .table(NOTIFICATIONS_LOG)
+            .select("user_id,target_id")
+            .eq("notification_type", NOTIFICATION_TYPE_MORNING_EMAIL)
+            .eq("status", NOTIFICATION_STATUS_SENT)
+            .in_("user_id", list(chunk))
+            .in_("target_id", sorted({_local_date(user, now_utc) for user in users}))
+            .execute()
+        ).data or []
+        sent.update((str(row["user_id"]), str(row["target_id"])) for row in rows)
+    return [user for user in users if (str(user["id"]), _local_date(user, now_utc)) not in sent]
 
 
 def _load_school_digest(school: str, window_end: datetime) -> _SchoolDigest:
@@ -275,7 +302,7 @@ def _send_prepared_email(
 ) -> bool | None:
     user_id = str(user["id"])
     tz = resolve_user_timezone(user)
-    target_id = window_end.astimezone(tz).date().isoformat()
+    target_id = _local_date(user, window_end)
     row_id = claim_delivery(
         user_id=user_id,
         notification_type=NOTIFICATION_TYPE_MORNING_EMAIL,

@@ -1,5 +1,6 @@
 {
   "local_send_hour": 9,
+  "last_local_send_hour": 20,
   "new_event_window_hours": 24,
   "provider_attempts": 3,
   "card_image_px": 480,

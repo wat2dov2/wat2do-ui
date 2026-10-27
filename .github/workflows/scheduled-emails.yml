@@ -2,7 +2,8 @@ name: Scheduled notification emails
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    # Off the top of the hour, when GitHub drops the most scheduled runs.
+    - cron: '17 * * * *'
   workflow_dispatch:
     inputs:
       now:
@@ -11,7 +12,7 @@ on:
         type: string
 
 concurrency:
-  group: scheduled-notification-emails-${{ github.event.schedule == '0 * * * *' && 'morning' || github.event_name }}
+  group: scheduled-notification-emails-${{ github.event.schedule == '17 * * * *' && 'morning' || github.event_name }}
   cancel-in-progress: false
 
 jobs:
@@ -87,7 +88,7 @@ jobs:
             args+=(--now "$NOW")
           fi
           notification=all
-          if [[ "$SCHEDULE" == "0 * * * *" ]]; then
+          if [[ "$SCHEDULE" == "17 * * * *" ]]; then
             notification=morning_email
           fi
           args+=(--notification "$notification")

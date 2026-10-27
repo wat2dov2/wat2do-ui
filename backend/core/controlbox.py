@@ -444,11 +444,20 @@ class ClubManagementControl(_ControlModel):
 
 class MorningEmailControl(_ControlModel):
     local_send_hour: int = Field(ge=0, le=23)
+    # Catch-up for skipped scheduled runs: send any time from local_send_hour
+    # through this hour, once per local day.
+    last_local_send_hour: int = Field(ge=0, le=23)
     new_event_window_hours: int = Field(gt=0)
     provider_attempts: int = Field(gt=0, le=10)
     card_image_px: int = Field(gt=0, le=1200)
     club_logo_px: int = Field(gt=0, le=512)
     image_download_concurrency: int = Field(gt=0, le=32)
+
+    @model_validator(mode="after")
+    def validate_send_hours(self) -> "MorningEmailControl":
+        if self.last_local_send_hour < self.local_send_hour:
+            raise ValueError("last_local_send_hour must not be before local_send_hour")
+        return self
 
 
 class EventChangeAlertsControl(_ControlModel):
