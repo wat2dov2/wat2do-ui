@@ -340,6 +340,8 @@ def _send_prepared_email(
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
         ),
+        # The digest comes from the team inbox, not the newsletter address.
+        sender=controlbox.email_delivery.team_sender,
         idempotency_key=f"{NOTIFICATION_TYPE_MORNING_EMAIL}:{user_id}:{target_id}",
         headers={
             "List-Unsubscribe": f"<{unsubscribe}>",

@@ -405,6 +405,25 @@ def test_morning_email_catches_up_after_skipped_scheduled_runs():
     )
 
 
+def test_morning_email_comes_from_the_team_inbox(monkeypatch):
+    messages = []
+    monkeypatch.setattr(morning_email, "claim_delivery", lambda **_kwargs: "row-1")
+    monkeypatch.setattr(
+        morning_email,
+        "deliver_claimed_email",
+        lambda **kwargs: messages.append(kwargs["message"]) or True,
+    )
+    monkeypatch.setattr(morning_email, "unsubscribe_url", lambda *_args: "https://x/u")
+
+    morning_email._send_prepared_email(
+        user=_user(),
+        digest=morning_email._SchoolDigest(events=[_event()], positions=[], images=[]),
+        window_end=datetime(2026, 10, 27, 13, tzinfo=timezone.utc),
+    )
+
+    assert messages[0].sender == "wat2do <team@wat2do.io>"
+
+
 def test_morning_email_skips_users_already_sent_today(fake_sb, patch_sb):
     patch_sb("services.notifications.morning_email")
     sent = _user(id="11111111-1111-1111-1111-111111111111")
