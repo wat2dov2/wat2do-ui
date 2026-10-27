@@ -913,3 +913,20 @@ def test_due_alert_clears_rows_whose_event_is_gone(alerts, fake_sb, monkeypatch)
     assert event_change.send_due_alerts() == 0
     alerts.assert_not_called()
     fake_sb.delete.assert_called_once()
+
+
+def test_every_email_uses_the_site_font():
+    html = rendering.render_morning_email_html(
+        subject="Today",
+        events=[_event()],
+        positions=[],
+        tz=ZoneInfo("America/Toronto"),
+        frontend_url="https://uwaterloo.wat2do.io",
+        preferences_url="https://uwaterloo.wat2do.io/settings",
+        unsubscribe_url="https://uwaterloo.wat2do.io/u",
+    )
+
+    assert "api.fontshare.com/v2/css?f[]=satoshi" in html
+    assert "{EMAIL_FONT}" not in html
+    assert " sans-serif;" not in html
+    assert html.count("font:") == html.count("Satoshi,system-ui")
