@@ -16,6 +16,7 @@ export function getFilterCounts(filters: {
   competitions: boolean;
   featured: boolean;
   sportsGame: boolean;
+  recurring: boolean;
   campusSeasonIds: string[];
   goingFilter: boolean;
   addedSince?: string;
@@ -36,6 +37,7 @@ export function getFilterCounts(filters: {
     (filters.competitions ? 1 : 0) +
     (filters.featured ? 1 : 0) +
     (filters.sportsGame ? 1 : 0) +
+    (filters.recurring ? 1 : 0) +
     filters.campusSeasonIds.length +
     (filters.goingFilter ? 1 : 0) +
     (filters.addedSince ? 1 : 0) +

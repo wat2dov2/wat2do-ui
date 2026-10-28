@@ -152,6 +152,44 @@ test("Food plus Free intersects employer/varsity filters", () => {
   expect(discoveryResults()).toEqual([]);
 });
 
+const recurringEvents = [
+  // Weekly series spanning exactly three weeks (21 days): recurring.
+  { id: 31, title: "Weekly yoga", occurrences: [
+    { dtstart_utc: "2026-09-01T16:00:00Z", dtend_utc: "2026-09-01T17:00:00Z" },
+    { dtstart_utc: "2026-09-08T16:00:00Z", dtend_utc: "2026-09-08T17:00:00Z" },
+    { dtstart_utc: "2026-09-22T16:00:00Z", dtend_utc: "2026-09-22T17:00:00Z" },
+  ] },
+  // Single occurrence: not recurring.
+  { id: 32, title: "One-off gala", occurrences: [
+    { dtstart_utc: "2026-09-10T23:00:00Z", dtend_utc: "2026-09-11T02:00:00Z" },
+  ] },
+  // Multi-day conference spanning two days: not recurring.
+  { id: 33, title: "Three-day conference", occurrences: [
+    { dtstart_utc: "2026-09-01T14:00:00Z", dtend_utc: "2026-09-01T18:00:00Z" },
+    { dtstart_utc: "2026-09-02T14:00:00Z", dtend_utc: "2026-09-02T18:00:00Z" },
+    { dtstart_utc: "2026-09-03T14:00:00Z", dtend_utc: "2026-09-03T18:00:00Z" },
+  ] },
+  // Two sessions 20 days apart, just under three weeks: not recurring.
+  { id: 34, title: "Almost recurring", occurrences: [
+    { dtstart_utc: "2026-09-01T16:00:00Z", dtend_utc: "2026-09-01T17:00:00Z" },
+    { dtstart_utc: "2026-09-21T16:00:00Z", dtend_utc: "2026-09-21T17:00:00Z" },
+  ] },
+].map(event => ({ ...event, location: "Student Centre", school: "uwaterloo" }) as unknown as Event);
+
+test("Recurring keeps only events whose occurrences span at least three weeks", () => {
+  const recurringResults = () =>
+    filterEvents(recurringEvents, { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: [] }, () => "America/Toronto")
+      .map(event => event.id);
+
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, recurring: true });
+  expect(recurringResults()).toEqual([31]);
+  expect(getFilterCounts(useSearchStore.getState())).toBe(1);
+
+  useSearchStore.getState().setFilterState(EMPTY_FILTER_STATE);
+  expect(recurringResults()).toEqual([31, 32, 33, 34]);
+  expect(getFilterCounts(useSearchStore.getState())).toBe(0);
+});
+
 const upcomingVarsityGame = {
   ...discoveryEvents[2],
   occurrences: [{ dtstart_utc: "2026-09-29T16:00:00Z", dtend_utc: "2026-09-29T18:00:00Z" }],
@@ -448,11 +486,11 @@ test("Featured reads publication metadata from the cached feed and clears withou
 });
 
 
-test("shared quick-filter order places Competitions before Varsity and campus seasons between Featured and Employers", () => {
+test("shared quick-filter order places Competitions before Varsity and Recurring right after campus seasons", () => {
   const ids = getEventQuickFilters({ sportsGameAvailable: true }).map(filter => filter.id);
   expect(ids.indexOf("competitions")).toBe(ids.indexOf("sportsGame") - 1);
-  expect(ids.slice(ids.indexOf("featured"), ids.indexOf("featured") + 3))
-    .toEqual(["featured", "campusSeasons", "employersOnCampus"]);
+  expect(ids.slice(ids.indexOf("featured"), ids.indexOf("featured") + 4))
+    .toEqual(["featured", "campusSeasons", "recurring", "employersOnCampus"]);
   expect(ids.slice(ids.indexOf("minGoing"), ids.indexOf("minGoing") + 2))
     .toEqual(["minGoing", "price"]);
 });

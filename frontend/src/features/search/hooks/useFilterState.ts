@@ -74,6 +74,7 @@ export function useFilterState() {
       competitions: s.competitions,
       featured: s.featured,
       sportsGame: s.sportsGame,
+      recurring: s.recurring,
       campusSeasonIds: s.campusSeasonIds,
       selectedClubs: s.selectedClubs,
       goingFilter: s.goingFilter,
@@ -152,6 +153,10 @@ export function useFilterState() {
     (value: boolean, source?: FilterUpdateSource) => updateFilterState({ sportsGame: value }, source),
     [updateFilterState],
   );
+  const setRecurring = useCallback(
+    (value: boolean) => updateFilterState({ recurring: value }),
+    [updateFilterState],
+  );
   const setCampusSeasonIds = useCallback(
     (value: string[], source?: FilterUpdateSource) => updateFilterState({ campusSeasonIds: value }, source),
     [updateFilterState],
@@ -200,6 +205,7 @@ export function useFilterState() {
     setCompetitions,
     setFeatured,
     setSportsGame,
+    setRecurring,
     setCampusSeasonIds,
     toggleCampusSeason,
     setGoingFilter,
