@@ -1,6 +1,7 @@
 {
   "clubs": {
     "clubType": "Organisationstyp: {{type}}",
+    "claimClub": "Club beanspruchen",
     "claimOwnership": "Zugang als Inhaber oder Vorstandsmitglied beantragen",
     "claimOwnershipDesc": "Bitte einen Administrator, deine Rolle als Inhaber oder Vorstandsmitglied zu bestätigen bei",
     "executiveRole": "Ihre Führungsrolle",
@@ -55,6 +56,7 @@
     "follow": "Folgen",
     "following": "Folgst du",
     "signInToFollow": "Melden Sie sich an, um Organisationen zu folgen.",
+    "signInToClaim": "Melde dich an, um diesen Club zu beanspruchen.",
     "savedClubs": {
       "saveFailed": "Diese Organisation konnte nicht gefolgt werden",
       "unsaveFailed": "Diese Organisation konnte nicht entfolgt werden"

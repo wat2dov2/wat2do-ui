@@ -1,6 +1,7 @@
 {
   "clubs": {
     "clubType": "组织类型：{{type}}",
+    "claimClub": "认领社团",
     "claimOwnership": "申请负责人或管理人员权限",
     "claimOwnershipDesc": "请管理员验证您在以下社团的负责人或管理人员身份：",
     "executiveRole": "您的执行职位",
@@ -55,6 +56,7 @@
     "follow": "关注",
     "following": "已关注",
     "signInToFollow": "登录后即可关注组织。",
+    "signInToClaim": "登录以认领此社团。",
     "savedClubs": {
       "saveFailed": "无法关注此组织",
       "unsaveFailed": "无法取消关注此组织"

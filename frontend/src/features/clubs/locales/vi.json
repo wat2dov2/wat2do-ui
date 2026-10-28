@@ -1,6 +1,7 @@
 {
   "clubs": {
     "clubType": "Loại tổ chức: {{type}}",
+    "claimClub": "Nhận quản lý câu lạc bộ",
     "claimOwnership": "Yêu cầu quyền chủ sở hữu hoặc điều hành",
     "claimOwnershipDesc": "Yêu cầu quản trị viên xác minh vai trò chủ sở hữu hoặc điều hành của bạn tại",
     "executiveRole": "Vai trò Điều hành của bạn",
@@ -55,6 +56,7 @@
     "follow": "Theo dõi",
     "following": "Đang theo dõi",
     "signInToFollow": "Đăng nhập để theo dõi các tổ chức.",
+    "signInToClaim": "Đăng nhập để nhận quản lý câu lạc bộ này.",
     "savedClubs": {
       "saveFailed": "Không thể theo dõi tổ chức này",
       "unsaveFailed": "Không thể hủy theo dõi tổ chức này"

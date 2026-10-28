@@ -1,6 +1,7 @@
 {
   "clubs": {
     "clubType": "Tipo de organização: {{type}}",
+    "claimClub": "Reivindicar clube",
     "claimOwnership": "Solicitar acesso de proprietário ou executivo",
     "claimOwnershipDesc": "Peça a um administrador para verificar seu cargo de proprietário ou executivo de",
     "executiveRole": "Seu Papel Executivo",
@@ -55,6 +56,7 @@
     "follow": "Seguir",
     "following": "Seguindo",
     "signInToFollow": "Faça login para seguir organizações.",
+    "signInToClaim": "Entre para reivindicar este clube.",
     "savedClubs": {
       "saveFailed": "Não foi possível seguir esta organização",
       "unsaveFailed": "Não foi possível deixar de seguir esta organização"

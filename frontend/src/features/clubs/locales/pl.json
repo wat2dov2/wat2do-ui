@@ -1,6 +1,7 @@
 {
   "clubs": {
     "clubType": "Typ organizacji: {{type}}",
+    "claimClub": "Przejmij klub",
     "claimOwnership": "Poproś o dostęp właściciela lub członka zarządu",
     "claimOwnershipDesc": "Poproś administratora o potwierdzenie roli właściciela lub członka zarządu w",
     "executiveRole": "Twoja rola wykonawcza",
@@ -55,6 +56,7 @@
     "follow": "Obserwuj",
     "following": "Obserwujesz",
     "signInToFollow": "Zaloguj się, aby obserwować organizacje.",
+    "signInToClaim": "Zaloguj się, aby przejąć ten klub.",
     "savedClubs": {
       "saveFailed": "Nie udało się obserwować tej organizacji",
       "unsaveFailed": "Nie udało się przestać obserwować tej organizacji"

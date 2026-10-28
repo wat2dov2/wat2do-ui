@@ -1,6 +1,7 @@
 {
   "clubs": {
     "clubType": "조직 유형: {{type}}",
+    "claimClub": "클럽 소유권 신청",
     "claimOwnership": "소유자 또는 임원 권한 요청",
     "claimOwnershipDesc": "관리자에게 다음 동아리의 소유자 또는 임원 역할 확인을 요청하세요:",
     "executiveRole": "귀하의 임원 역할",
@@ -55,6 +56,7 @@
     "follow": "팔로우",
     "following": "팔로잉",
     "signInToFollow": "조직을 팔로우하려면 로그인하세요.",
+    "signInToClaim": "이 클럽의 소유권을 신청하려면 로그인하세요.",
     "savedClubs": {
       "saveFailed": "이 조직을 팔로우할 수 없습니다",
       "unsaveFailed": "이 조직 팔로우를 취소할 수 없습니다"

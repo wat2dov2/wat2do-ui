@@ -1,6 +1,7 @@
 {
   "clubs": {
     "clubType": "組織類型：{{type}}",
+    "claimClub": "認領學會",
     "claimOwnership": "申請負責人或管理人員權限",
     "claimOwnershipDesc": "請管理員核實你喺以下社團嘅負責人或管理人員身份：",
     "executiveRole": "你的高級職務",
@@ -55,6 +56,7 @@
     "follow": "追蹤",
     "following": "追蹤緊",
     "signInToFollow": "登入以追蹤組織。",
+    "signInToClaim": "登入以認領呢個學會。",
     "savedClubs": {
       "saveFailed": "無法追蹤此組織",
       "unsaveFailed": "無法取消追蹤此組織"

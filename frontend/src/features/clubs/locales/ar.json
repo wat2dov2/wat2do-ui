@@ -1,6 +1,7 @@
 {
   "clubs": {
     "clubType": "نوع المنظمة: {{type}}",
+    "claimClub": "المطالبة بالنادي",
     "claimOwnership": "طلب صلاحية مالك أو مسؤول تنفيذي",
     "claimOwnershipDesc": "اطلب من المشرف التحقق من دورك كمالك أو مسؤول تنفيذي في",
     "executiveRole": "دورك التنفيذي",
@@ -55,6 +56,7 @@
     "follow": "متابعة",
     "following": "تتابعه",
     "signInToFollow": "سجّل الدخول لمتابعة المؤسسات.",
+    "signInToClaim": "سجّل الدخول للمطالبة بهذا النادي.",
     "savedClubs": {
       "saveFailed": "تعذّر متابعة هذه المؤسسة",
       "unsaveFailed": "تعذّر إلغاء متابعة هذه المؤسسة"

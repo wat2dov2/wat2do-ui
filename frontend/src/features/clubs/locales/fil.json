@@ -1,6 +1,7 @@
 {
   "clubs": {
     "clubType": "Uri ng organisasyon: {{type}}",
+    "claimClub": "I-claim ang club",
     "claimOwnership": "Humiling ng access bilang may-ari o opisyal",
     "claimOwnershipDesc": "Hilingin sa admin na patunayan ang tungkulin mo bilang may-ari o opisyal ng",
     "executiveRole": "Iyong Papel bilang Ehekutibo",
@@ -55,6 +56,7 @@
     "follow": "Sundan",
     "following": "Sinusundan",
     "signInToFollow": "Mag-sign in upang sundan ang mga organisasyon.",
+    "signInToClaim": "Mag-sign in para i-claim ang club na ito.",
     "savedClubs": {
       "saveFailed": "Hindi masundan ang organisasyong ito",
       "unsaveFailed": "Hindi ma-unfollow ang organisasyong ito"

@@ -3,7 +3,8 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Bookmark, Crown, ExternalLink, HelpCircle, Instagram } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ExternalLink, HelpCircle, Instagram } from "lucide-react";
 import { DiscordIcon } from "@/shared/ui/platform-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
@@ -16,6 +17,7 @@ import { getClubById } from "@/features/clubs/api/clubs.api";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { useOpenClubPanel } from "@/features/clubs/hooks/useOpenClubPanel";
 import { ROUTES } from "@/shared/constants/routes";
+import { toast } from "@/shared/hooks/use-toast";
 import { Container, PageHeader, Stack } from "@/shared/layout";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { sanitizeHref } from "@/shared/utils/url";
@@ -63,6 +65,19 @@ function ClubDetailsContent({
   const openClubPanel = useOpenClubPanel();
   const clubPageHref = sanitizeHref(club.club_page);
   const discordHref = sanitizeHref(club.discord ?? "");
+  const router = useRouter();
+
+  // Signed-out visitors see the same actions; pressing one asks them to sign in first.
+  const requireSignIn = (action: () => void, message: string) => {
+    if (isAuthenticated) {
+      action();
+      return;
+    }
+    toast({
+      description: t(message),
+      action: { label: t("events.signIn"), onClick: () => router.push(ROUTES.LOGIN) },
+    });
+  };
 
   return (
     <>
@@ -87,33 +102,28 @@ function ClubDetailsContent({
                 {managesClub ? (
                   // Members always follow their club, so they see their role instead of a follow toggle.
                   <Button type="button" variant="outline" selected onClick={() => openClubPanel(club)}>
-                    <Crown className="size-4" />
                     {t("clubPanel.roleOwner")}
                   </Button>
-                ) : isAuthenticated ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    selected={isSaved}
-                    onClick={() => toggleSave(club.id)}
-                  >
-                    <Bookmark
-                      className={isSaved ? "size-4 fill-current" : "size-4"}
-                    />
-                    {isSaved
-                      ? t("clubs.saved")
-                      : t("clubs.save")}
-                  </Button>
-                ) : null}
-                {isAuthenticated && !managesClub ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowClaimModal(true)}
-                  >
-                    {t("clubs.claimOwnership")}
-                  </Button>
-                ) : null}
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      selected={isSaved}
+                      onClick={() => requireSignIn(() => toggleSave(club.id), "clubs.signInToFollow")}
+                      aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
+                    >
+                      {isSaved ? t("clubs.following") : t("clubs.follow")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => requireSignIn(() => setShowClaimModal(true), "clubs.signInToClaim")}
+                    >
+                      {t("clubs.claimClub")}
+                    </Button>
+                  </>
+                )}
               </Stack>
             }
           />

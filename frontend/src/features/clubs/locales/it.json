@@ -1,6 +1,7 @@
 {
   "clubs": {
     "clubType": "Tipo di organizzazione: {{type}}",
+    "claimClub": "Rivendica club",
     "claimOwnership": "Richiedi accesso come proprietario o dirigente",
     "claimOwnershipDesc": "Chiedi a un amministratore di verificare il tuo ruolo di proprietario o dirigente di",
     "executiveRole": "Il tuo ruolo esecutivo",
@@ -55,6 +56,7 @@
     "follow": "Segui",
     "following": "Segui già",
     "signInToFollow": "Accedi per seguire le organizzazioni.",
+    "signInToClaim": "Accedi per rivendicare questo club.",
     "savedClubs": {
       "saveFailed": "Impossibile seguire questa organizzazione",
       "unsaveFailed": "Impossibile smettere di seguire questa organizzazione"
