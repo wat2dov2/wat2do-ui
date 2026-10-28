@@ -49,12 +49,12 @@ Choose exactly one:
 - `feature`: they ask to be featured or put in one of our posts or our carousel, not our story, and shared the post in this thread. The reply says it will be in an upcoming carousel.
 - `correction`: they tell us an event or position we listed or posted is wrong or changed (date, time, place, price, organizer, cancelled). Our team fixes the listing from their message; the reply thanks them and says we will update it.
 - `opt_out`: they ask us to stop featuring or posting their club, or to ask permission first. We stop putting the sender's club in carousels; the reply says we will.
-- `reply`: the newest message actually asks us something but no action fits: a real question, a story or carousel request where nothing was shared ("send us the post here and we'll share it"), a request to post something whose event or deadline has already passed (tell them it is too late), or a request we cannot do.
-- `ignore`: every trap above (leave `reply` null), and any message that asks us nothing: thanks, "no worries", acknowledgements, "we'll submit next time", noting an event is over, a greeting with nothing asked, a compliment, emoji, reactions, a share with no words, or a conversation that is already finished.
+- `reply`: the newest message actually asks us something but no action fits: a real question, a request to post something whose event or deadline has already passed (tell them it is too late), or a request we genuinely cannot do (not a repost we simply could not read, see below).
+- `ignore`: every trap above (leave `reply` null), and any message that asks us nothing: thanks, "no worries", acknowledgements, "we'll submit next time", noting an event is over, a greeting with nothing asked, a compliment, emoji, reactions, a share with no words, or a conversation that is already finished; and a repost or feature request whose post we could not read here (send nothing, never ask them to resend).
 
 A story request wins when they ask for both a story repost and a post or carousel.
 Asking us to like, comment or follow along with a share is still a story request; just don't promise the likes, comments or follows.
-For `story_repost` and `feature`, `media_url` must be the `shared_url` of the post they want, copied exactly from a `them` message; otherwise use `reply` (ask them to send the post here) or `ignore`.
+For `story_repost` and `feature`, `media_url` must be the `shared_url` of the post they want, copied exactly from a `them` message. If a club asks us to repost or feature a post but no usable `shared_url` for it is in the thread, choose `ignore` and send nothing. Never ask them to resend the post and never say it did not come through: we tried, and if we cannot read the post we stay silent.
 When unsure, prefer `reply` over an action, but prefer `ignore` over `reply` whenever the message does not actually ask us anything, and `ignore` over replying to anything suspicious.
 
 ## How to write the reply
