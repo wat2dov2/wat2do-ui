@@ -678,6 +678,11 @@ class InstagramBrowserControl(_ControlModel):
     tab_health_interval_seconds: float = Field(ge=1, le=300)
     ingestion_retry_limit: int = Field(gt=0, le=10)
     profile_post_limit: int = Field(gt=0, le=50)
+    # Club logos come from profile retrievals: a few at a time, capped per day.
+    club_logo_pending_limit: int = Field(gt=0, le=10)
+    club_logo_daily_limit: int = Field(ge=0, le=500)
+    club_logo_retry_days: int = Field(gt=0)
+    club_logo_interval_seconds: int = Field(gt=0)
     school_switcher_username_overrides: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")],
         Annotated[str, Field(pattern=r"^wat2do\.[a-z0-9_]+$", max_length=30)],
