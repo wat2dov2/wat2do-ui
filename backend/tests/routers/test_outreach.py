@@ -11,22 +11,21 @@ LEAD = "99999999-9999-4999-8999-999999999992"
 def lead(status="new"):
     return OutreachLeadResponse(
         id=LEAD,
-        lead_type="hackathon",
+        club_id=10,
+        club_name="Board Games Club",
+        club_url="https://uwaterloo.wat2do.io/clubs/10",
+        listings=4,
         school_slug="uwaterloo",
         school_name="University of Waterloo",
-        event_name="Example Hacks",
-        event_url="https://example.com/hacks",
-        organization="Example Hacks",
-        email="team@example.com",
-        source_url="https://example.com/hacks/contact",
-        context="A student hackathon.",
-        video_script="Hey team...",
-        email_subject="Example Hacks on Wat2Do",
-        email_body="Hi team...",
+        email="boardgames@example.com",
+        email_source_url="https://example.com/clubs/board-games",
+        email_found_by="club_page",
+        email_subject="Board Games Club is on Wat2Do",
+        email_body="Hi Board Games Club team...",
         follow_up="Hi again...",
         status=status,
         notes="",
-        found_at="2026-10-22T00:00:00Z",
+        found_at="2026-10-28T00:00:00Z",
     )
 
 
@@ -48,10 +47,9 @@ def test_admin_lead_list_forwards_every_filter(admin_client, monkeypatch):
     response = admin_client.get(
         "/outreach/leads/",
         params={
-            "lead_type": "hackathon",
             "lead_status": "new",
             "school": "uwaterloo",
-            "search": "hacks",
+            "search": "board",
             "page": 2,
             "page_size": 5,
         },
@@ -61,10 +59,9 @@ def test_admin_lead_list_forwards_every_filter(admin_client, monkeypatch):
     assert response.json()["items"][0]["school_name"] == "University of Waterloo"
     assert calls == [
         {
-            "lead_type": "hackathon",
             "status": "new",
             "school": "uwaterloo",
-            "search": "hacks",
+            "search": "board",
             "offset": 5,
             "limit": 5,
         }
@@ -73,8 +70,8 @@ def test_admin_lead_list_forwards_every_filter(admin_client, monkeypatch):
 
 def test_admin_updates_a_lead_and_unknown_ids_404(admin_client, monkeypatch):
     monkeypatch.setattr(service, "update_lead", lambda _id, data: lead(data.status))
-    response = admin_client.patch(f"/outreach/leads/{LEAD}", json={"status": "submitted"})
-    assert response.status_code == 200 and response.json()["status"] == "submitted"
+    response = admin_client.patch(f"/outreach/leads/{LEAD}", json={"status": "claimed"})
+    assert response.status_code == 200 and response.json()["status"] == "claimed"
 
     def missing(_id, _data):
         raise NotFoundError(OUTREACH_LEAD_NOT_FOUND)

@@ -401,7 +401,6 @@ export type OutreachLeadUpdate = components["schemas"]["OutreachLeadUpdate"];
 
 /** Empty values mean "all"; the page keeps them as plain strings for its selects. */
 export interface OutreachLeadFilters {
-  leadType: string;
   status: string;
   school: string;
   search: string;
@@ -409,7 +408,6 @@ export interface OutreachLeadFilters {
 
 export function getOutreachLeads(page: number, filters: OutreachLeadFilters) {
   const params = new URLSearchParams({ page: String(page), page_size: String(ADMIN_ITEMS_PER_PAGE) });
-  if (filters.leadType) params.set("lead_type", filters.leadType);
   if (filters.status) params.set("lead_status", filters.status);
   if (filters.school) params.set("school", filters.school);
   if (filters.search) params.set("search", filters.search);

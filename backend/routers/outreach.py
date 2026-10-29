@@ -14,7 +14,6 @@ router = APIRouter(prefix="/outreach", tags=["outreach"])
 
 @router.get("/leads/", response_model=PaginatedResponse[OutreachLeadResponse])
 def list_leads(
-    lead_type: str | None = Query(default=None, pattern=r"^[a-z0-9_]+$", max_length=64),
     lead_status: LeadStatus | None = Query(default=None),
     school: str | None = Query(default=None, pattern=r"^[a-z0-9-]{1,80}$"),
     search: str | None = Query(default=None, max_length=MAX_SEARCH_QUERY_LENGTH),
@@ -22,7 +21,6 @@ def list_leads(
     _: UserResponse = Depends(get_admin_user),
 ):
     items, total = service.list_leads(
-        lead_type=lead_type,
         status=lead_status,
         school=school,
         search=search,

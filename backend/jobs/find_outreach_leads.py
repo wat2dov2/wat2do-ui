@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Research event organizers for the admin Outreach page.
+"""Find unclaimed clubs' emails for the admin Outreach page.
 
-``sweep`` has Claude Haiku research every school for every lead type once;
-``install-schedule`` runs it on the control box's interval through a macOS
-LaunchAgent that keeps no logs.
+``sweep`` reads the pages of clubs not seen yet and sends Claude after the emails
+still missing; ``install-schedule`` runs it daily, on the control box's interval,
+through a macOS LaunchAgent that keeps no logs.
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ def launch_agent_payload() -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("sweep", help="Research every school once and store new leads")
+    commands.add_parser("sweep", help="Find new clubs' emails and store them")
     commands.add_parser("install-schedule", help="Run sweep on a schedule via a LaunchAgent")
     args = parser.parse_args()
     if args.command == "install-schedule":
@@ -57,7 +57,7 @@ def main() -> int:
 
     result = sweep()
     print(json.dumps(result, sort_keys=True))
-    return 1 if result["failed"] else 0
+    return 1 if result["research_failed"] else 0
 
 
 if __name__ == "__main__":
