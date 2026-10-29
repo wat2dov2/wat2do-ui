@@ -10810,47 +10810,6 @@
         "title": "FollowCandidateDecisionsSubmit",
         "description": "Every decision an admin staged on the page, sent together."
       },
-      "FollowCandidatePostResponse": {
-        "properties": {
-          "url": {
-            "type": "string",
-            "title": "Url"
-          },
-          "posted_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Posted At"
-          },
-          "caption": {
-            "type": "string",
-            "title": "Caption",
-            "default": ""
-          },
-          "image": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image"
-          }
-        },
-        "type": "object",
-        "required": [
-          "url"
-        ],
-        "title": "FollowCandidatePostResponse"
-      },
       "FollowCandidateResponse": {
         "properties": {
           "id": {
@@ -10953,13 +10912,6 @@
             ],
             "title": "Last Posted At"
           },
-          "recent_posts": {
-            "items": {
-              "$ref": "#/components/schemas/FollowCandidatePostResponse"
-            },
-            "type": "array",
-            "title": "Recent Posts"
-          },
           "score": {
             "anyOf": [
               {
@@ -11017,8 +10969,7 @@
           "handle",
           "source",
           "found_via",
-          "status",
-          "recent_posts"
+          "status"
         ],
         "title": "FollowCandidateResponse",
         "description": "An account a school account might follow, with what its newest posts showed."

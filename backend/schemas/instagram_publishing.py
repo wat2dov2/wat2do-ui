@@ -197,14 +197,6 @@ class InstagramAccountStatsResponse(BaseModel):
     posts: list[InstagramAccountPostResponse]
 
 
-class FollowCandidatePostResponse(BaseModel):
-    url: str
-    posted_at: datetime | None = None
-    caption: str = ""
-    # Instagram's signed CDN image; it stops loading after a few days.
-    image: str | None = None
-
-
 class FollowCandidateResponse(BaseModel):
     """An account a school account might follow, with what its newest posts showed."""
 
@@ -219,7 +211,6 @@ class FollowCandidateResponse(BaseModel):
     followers_count: int | None = None
     is_private: bool | None = None
     last_posted_at: datetime | None = None
-    recent_posts: list[FollowCandidatePostResponse]
     score: int | None = None
     verdict: Literal["approve", "review", "reject"] | None = None
     reason: str | None = None

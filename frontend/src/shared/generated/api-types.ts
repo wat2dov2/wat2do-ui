@@ -2943,20 +2943,6 @@ export interface components {
             /** Decisions */
             decisions: components["schemas"]["FollowCandidateDecision"][];
         };
-        /** FollowCandidatePostResponse */
-        FollowCandidatePostResponse: {
-            /** Url */
-            url: string;
-            /** Posted At */
-            posted_at?: string | null;
-            /**
-             * Caption
-             * @default
-             */
-            caption: string;
-            /** Image */
-            image?: string | null;
-        };
         /**
          * FollowCandidateResponse
          * @description An account a school account might follow, with what its newest posts showed.
@@ -2993,8 +2979,6 @@ export interface components {
             is_private?: boolean | null;
             /** Last Posted At */
             last_posted_at?: string | null;
-            /** Recent Posts */
-            recent_posts: components["schemas"]["FollowCandidatePostResponse"][];
             /** Score */
             score?: number | null;
             /** Verdict */
