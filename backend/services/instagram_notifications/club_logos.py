@@ -114,11 +114,18 @@ def _store_retrieved_logos(queue: BrowserJobQueue, clubs: dict[str, list[dict[st
 
 
 def _queue_profiles(queue: BrowserJobQueue, clubs: dict[str, list[dict[str, Any]]]) -> int:
-    outstanding = [
-        job_id
-        for job_id in queue.get_setting(_JOBS_SETTING, [])
-        if (job := queue.get(job_id)) is not None and job.state in {"pending", "running"}
-    ]
+    outstanding = []
+    for job_id in queue.get_setting(_JOBS_SETTING, []):
+        job = queue.get(job_id)
+        if job is not None and job.state in {"pending", "running"}:
+            outstanding.append(job_id)
+        elif job is not None and job.state == "failed":
+            # A failed read is usually a busy browser: try again in a day, not a month.
+            handle = instagram_handle(job.payload.get("url"))
+            queue.set_setting(
+                f"club_logo_attempted:{handle}",
+                time.time() - (_CONTROL.club_logo_retry_days - 1) * 86400,
+            )
     today = date.today().isoformat()
     day = queue.get_setting(_DAY_SETTING) or {}
     used = int(day.get("count", 0)) if day.get("date") == today else 0

@@ -97,3 +97,17 @@ def test_the_daily_cap_and_retry_wait_hold_back_profiles(queue, monkeypatch):
     queue.set_setting("club_logo_checked_at", 0)
     # "one" was read today, so only "two" is left until the retry wait passes.
     assert module.sync_club_logos(queue)["queued"] == 1
+
+
+def test_a_failed_read_is_retried_after_a_day_not_the_full_wait(queue, monkeypatch):
+    monkeypatch.setattr(module, "_clubs_without_logos", lambda: _waiting("one"))
+
+    assert module.sync_club_logos(queue)["queued"] == 1
+    queue.finish(queue.claim_next(), error="Brave browser automation timed out")
+    queue.set_setting("club_logo_checked_at", 0)
+    assert module.sync_club_logos(queue)["queued"] == 0
+
+    attempted = queue.get_setting("club_logo_attempted:one")
+    queue.set_setting("club_logo_attempted:one", attempted - 86400)
+    queue.set_setting("club_logo_checked_at", 0)
+    assert module.sync_club_logos(queue)["queued"] == 1
