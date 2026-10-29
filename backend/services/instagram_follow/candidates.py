@@ -243,7 +243,6 @@ def save_profile(candidate_id: str, profile: dict[str, Any], score: dict[str, An
         "followers_count": profile.get("followers_count"),
         "posts_count": profile.get("posts_count"),
         "is_private": profile.get("is_private"),
-        "recent_posts": posts,
         "last_posted_at": posts[0]["posted_at"] if posts else None,
         "updated_at": now,
     }

@@ -1,13 +1,11 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, ExternalLink, X } from "lucide-react";
 import type { FollowDecision } from "@/features/admin/lib/followCandidates";
 import type { ApiFollowCandidateResponse } from "@/shared/generated";
-import { FormGrid, Stack } from "@/shared/layout";
+import { Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/shared/ui/card";
-import { LazyImage } from "@/shared/ui/lazy-image";
 import { formatRelativeTimeCompact } from "@/shared/utils/relativeTime";
 
 const VERDICT_BADGES = { approve: "success", review: "warning", reject: "muted" } as const;
@@ -20,10 +18,9 @@ interface FollowCandidateCardProps {
   onDecide?: (decision: FollowDecision) => void;
 }
 
-/** One account a school account might follow: its score, newest posts and live profile. */
+/** One account a school account might follow: its score, context and a link to the live profile. */
 export function FollowCandidateCard({ candidate, schoolName, decision, onDecide }: FollowCandidateCardProps) {
   const { t, i18n } = useTranslation();
-  const [showProfile, setShowProfile] = useState(false);
   const profileUrl = `https://www.instagram.com/${candidate.handle}/`;
   const details = [
     schoolName,
@@ -61,36 +58,12 @@ export function FollowCandidateCard({ candidate, schoolName, decision, onDecide 
             </p>
           ) : null}
           {candidate.follow_error ? <Badge variant="warning">{candidate.follow_error}</Badge> : null}
-          {candidate.recent_posts.length ? (
-            <FormGrid columns={3}>
-              {candidate.recent_posts.map((post) => (
-                <a key={post.url} href={post.url} target="_blank" rel="noopener noreferrer" aria-label={t("admin.socialAccounts.openPost")}>
-                  <Stack gap={1}>
-                    <LazyImage
-                      src={post.image}
-                      alt={post.caption.slice(0, 120)}
-                      sizes="120px"
-                      className="aspect-square w-full rounded-lg border border-border"
-                    />
-                    <span className="line-clamp-3 text-xs text-muted-foreground">{post.caption}</span>
-                  </Stack>
-                </a>
-              ))}
-            </FormGrid>
-          ) : null}
-          {showProfile ? (
-            <iframe
-              src={`${profileUrl}embed/`}
-              title={t("admin.followCandidates.profileTitle", { handle: candidate.handle })}
-              loading="lazy"
-              className="h-110 w-full rounded-lg border border-border bg-background"
-            />
-          ) : (
-            <Button type="button" variant="outline" size="sm" onClick={() => setShowProfile(true)}>
+          <Button asChild variant="outline" size="sm">
+            <a href={profileUrl} target="_blank" rel="noopener noreferrer">
               <ExternalLink aria-hidden />
-              {t("admin.followCandidates.showProfile")}
-            </Button>
-          )}
+              {t("admin.socialAccounts.openProfile")}
+            </a>
+          </Button>
         </Stack>
       </CardContent>
       {onDecide ? (

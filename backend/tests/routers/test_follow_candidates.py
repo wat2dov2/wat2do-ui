@@ -15,14 +15,6 @@ CANDIDATE = {
     "read_status": "ok",
     "followers_count": 436,
     "posts_count": 68,
-    "recent_posts": [
-        {
-            "url": "https://www.instagram.com/p/NEW/",
-            "posted_at": "2026-10-20T00:00:00+00:00",
-            "caption": "Mahjong quiz",
-            "image": None,
-        }
-    ],
     "score": 82,
     "verdict": "approve",
     "reason": "Weekly mahjong nights",
@@ -56,7 +48,7 @@ def test_admin_pages_through_pending_candidates_of_a_school(admin_client, monkey
     assert response.status_code == 200
     body = response.json()
     assert (body["total"], body["total_pages"]) == (41, 3)
-    assert body["items"][0]["recent_posts"][0]["caption"] == "Mahjong quiz"
+    assert (body["items"][0]["handle"], body["items"][0]["score"]) == ("utmaclub", 82)
     assert calls == [{"school": "utsg", "status": "pending", "offset": 20, "limit": 20}]
 
 
