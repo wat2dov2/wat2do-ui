@@ -23,6 +23,7 @@ export interface FilterState {
   competitions: boolean;
   featured: boolean;
   sportsGame: boolean;
+  recurring: boolean;
   campusSeasonIds: string[];
   going: boolean;
   sortBy: string;

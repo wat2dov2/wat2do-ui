@@ -146,6 +146,21 @@ function filterCampusSeasonOccurrences(
   return occurrences.length > 0 ? [{ ...event, occurrences }] : [];
 }
 
+const THREE_WEEKS_MS = 21 * 24 * 60 * 60 * 1000;
+
+/** "Recurring" means a series whose occurrences span at least three weeks. */
+function recursAtLeastThreeWeeks(event: Event): boolean {
+  let earliest = Number.POSITIVE_INFINITY;
+  let latest = Number.NEGATIVE_INFINITY;
+  for (const occurrence of event.occurrences) {
+    const start = Date.parse(occurrence.dtstart_utc);
+    if (Number.isNaN(start)) continue;
+    if (start < earliest) earliest = start;
+    if (start > latest) latest = start;
+  }
+  return latest - earliest >= THREE_WEEKS_MS;
+}
+
 export function filterEvents(
   events: Event[],
   filters: SearchFilters,
@@ -155,6 +170,9 @@ export function filterEvents(
   const q = filters.searchQuery ? normalizeSearchQuery(filters.searchQuery) : "";
   const isRandomSearch = q === RANDOM_EVENT_SEARCH_QUERY;
   const goingSet = filters.goingFilter ? new Set(filters.goingEventIds) : null;
+  const recurringIds = filters.recurring
+    ? new Set(events.filter(recursAtLeastThreeWeeks).map(event => event.id))
+    : null;
   const locations = normalizeSelectedValues(filters.selectedLocations);
   const foods = normalizeSelectedValues(filters.selectedFoods);
   const clubs = normalizeSelectedValues(filters.selectedClubs);
@@ -207,6 +225,7 @@ export function filterEvents(
     if (filters.competitions && event.competition !== true) return false;
     if (filters.featured && event.featured !== true) return false;
     if (filters.sportsGame && event.sports_game !== true) return false;
+    if (recurringIds && !recurringIds.has(event.id)) return false;
 
 
     if (filters.hasFoodFilter && food.length === 0) {

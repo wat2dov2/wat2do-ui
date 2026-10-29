@@ -48,6 +48,7 @@ function toStoreValues(filters: FilterState): SearchStoreFilterValues {
     competitions: normalized.competitions,
     featured: normalized.featured,
     sportsGame: normalized.sportsGame,
+    recurring: normalized.recurring,
     campusSeasonIds: normalized.campusSeasonIds,
     goingFilter: normalized.going,
     sortBy: normalized.sortBy,
