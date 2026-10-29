@@ -1,10 +1,11 @@
 """Songs for published carousels, added on the Mac from the Instagram app.
 
 Admins keep a list of songs, typed loosely. Some minutes after a carousel
-publishes, ``add_pending_music`` opens the live post on the emulator, likes and
-reposts it, and tries the songs in random order: Instagram's music search finds candidates and Claude
-Haiku picks the track the admin meant, or none so the next song is tried. A song
-marked Asian or K-pop is tried only at the control box's ``asian_song_schools``.
+publishes, the emulator worker visits its school's account and ``finish_due`` opens
+the live post, likes and reposts it, and tries the songs in random order: Instagram's
+music search finds candidates and Claude Haiku picks the track the admin meant, or none
+so the next song is tried. A song marked Asian or K-pop is tried only at the control
+box's ``asian_song_schools``.
 """
 
 from __future__ import annotations
@@ -29,15 +30,15 @@ from core.constants import (
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import (
-    INSTAGRAM_PUBLISHING_NOT_CONFIGURED,
     INSTAGRAM_SONG_EXISTS,
     INSTAGRAM_SONG_NOT_FOUND,
 )
 from core.exceptions import ConflictError, NotFoundError
-from core.tables import INSTAGRAM_PUBLISH_BATCHES, INSTAGRAM_PUBLISHING_ACCOUNTS, INSTAGRAM_SONGS
+from core.tables import INSTAGRAM_PUBLISH_BATCHES, INSTAGRAM_SONGS
 from services import school_service
 from services.claude_code import ClaudeCodeError, run_agent
 from services.instagram_emulator.audio import SongNotFound, finish_post
+from services.instagram_emulator.device import EmulatorDevice
 
 log = logging.getLogger(__name__)
 
@@ -80,18 +81,28 @@ def delete_song(song_id: UUID) -> None:
         raise NotFoundError(INSTAGRAM_SONG_NOT_FOUND)
 
 
-def add_pending_music(now: datetime | None = None) -> dict[str, int]:
-    """Add a song to every carousel that has waited long enough since it published."""
-    now = now or datetime.now(timezone.utc)
+def schools_due(now: datetime | None = None) -> list[str]:
+    """Schools with a published carousel waiting for its song, longest waiting first."""
+    if not list_songs():
+        return []
+    schools = [batch["school"] for batch in _pending_batches(now or datetime.now(timezone.utc))]
+    return list(dict.fromkeys(schools))
+
+
+def finish_due(device: EmulatorDevice, school: str, now: datetime | None = None) -> dict[str, int]:
+    """Add a song to each of the school's carousels that has waited long enough.
+
+    The worker calls this with the app already on the school's account.
+    """
     songs = list_songs()
-    if not songs:
-        return {}
     outcomes: dict[str, int] = {}
-    for batch in _pending_batches(now):
-        playable = _songs_for(batch["school"], songs)
+    for batch in _pending_batches(now or datetime.now(timezone.utc)):
+        if batch["school"] != school:
+            continue
+        playable = _songs_for(school, songs)
         if not playable:
             continue
-        outcome = _add_music(batch, random.sample(playable, len(playable)))
+        outcome = _add_music(device, batch, random.sample(playable, len(playable)))
         outcomes[outcome] = outcomes.get(outcome, 0) + 1
     return outcomes
 
@@ -106,9 +117,7 @@ def _pending_batches(now: datetime) -> list[dict[str, Any]]:
     response = (
         get_sb()
         .table(INSTAGRAM_PUBLISH_BATCHES)
-        .select(
-            f"id,account_key,permalink,music_attempts,updated_at,{school_service.SCHOOL_SLUG_EMBED}"
-        )
+        .select(f"id,permalink,music_attempts,updated_at,{school_service.SCHOOL_SLUG_EMBED}")
         .eq("status", INSTAGRAM_BATCH_PUBLISHED)
         .eq("music_status", INSTAGRAM_MUSIC_PENDING)
         .lte("published_at", (now - timedelta(minutes=_CONTROL.music_delay_minutes)).isoformat())
@@ -126,16 +135,10 @@ def _pending_batches(now: datetime) -> list[dict[str, Any]]:
     ]
 
 
-def _add_music(batch: dict[str, Any], songs: Sequence[str]) -> str:
+def _add_music(device: EmulatorDevice, batch: dict[str, Any], songs: Sequence[str]) -> str:
     attempts = int(batch["music_attempts"]) + 1
     try:
-        added = finish_post(
-            batch["school"],
-            _username(batch["account_key"]),
-            batch["permalink"],
-            songs,
-            choose_track,
-        )
+        added = finish_post(device, batch["school"], batch["permalink"], songs, choose_track)
     except SongNotFound as exc:
         _record(batch["id"], INSTAGRAM_MUSIC_FAILED, attempts, error=str(exc))
         return INSTAGRAM_MUSIC_FAILED
@@ -170,20 +173,6 @@ def choose_track(query: str, tracks: Sequence[str]) -> int | None:
         shutil.rmtree(workdir, ignore_errors=True)
     index = answer.get("index")
     return index if isinstance(index, int) and 0 <= index < len(tracks) else None
-
-
-def _username(account_key: str) -> str:
-    response = (
-        get_sb()
-        .table(INSTAGRAM_PUBLISHING_ACCOUNTS)
-        .select("instagram_username")
-        .eq("account_key", account_key)
-        .limit(1)
-        .execute()
-    )
-    if not response.data:
-        raise NotFoundError(INSTAGRAM_PUBLISHING_NOT_CONFIGURED)
-    return str(response.data[0]["instagram_username"])
 
 
 def _record(

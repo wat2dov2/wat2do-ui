@@ -1,5 +1,3 @@
-from contextlib import nullcontext
-
 import pytest
 
 from services.instagram_emulator import story as module
@@ -16,13 +14,8 @@ def _screen(*labels):
     return [_node(label) for label in labels]
 
 
-def _inbox(account):
-    return [Node(account, "", (0, 0, 100, 100), "igds_action_bar_title"), _node("Profile")]
-
-
-INBOX_OTHER = _inbox("wat2do.utsc")
-SWITCHER = _screen("wat2do.utsc", "wat2do.ubc", "Add Instagram account")
-INBOX_UBC = _inbox("wat2do.ubc")
+# The screen the worker leaves the app on after switching accounts.
+HOME = _screen("Home")
 POST_PAGE = _screen("Profile picture of club", "Send post. Button.", "Like")
 SHARE_SHEET = _screen("Search", "Add to story", "Copy link")
 CAMERA_PROMPT = _screen("Allow Instagram to take pictures?", "While using the app")
@@ -62,30 +55,15 @@ def screens(monkeypatch):
     def use(*sequence):
         device = _Device(sequence)
         devices.append(device)
-        monkeypatch.setattr(module, "EmulatorDevice", lambda: device)
-        monkeypatch.setattr(module, "exclusive", nullcontext)
         return device
 
     return use
 
 
-def test_switches_account_then_posts_the_shared_post_to_the_story(screens) -> None:
-    device = screens(
-        INBOX_OTHER,
-        INBOX_OTHER,
-        SWITCHER,
-        INBOX_UBC,
-        INBOX_UBC,
-        POST_PAGE,
-        SHARE_SHEET,
-        CAMERA_PROMPT,
-        EDITOR,
-        POST_PAGE,
-    )
-    module.share_to_story("columbia", "wat2do.ubc", POST)
+def test_posts_the_shared_post_to_the_story(screens) -> None:
+    device = screens(HOME, POST_PAGE, SHARE_SHEET, CAMERA_PROMPT, EDITOR, POST_PAGE)
+    module.share_to_story(device, "columbia", POST)
     assert device.taps == [
-        "Profile",
-        "wat2do.ubc",
         "Send post. Button.",
         "Add to story",
         "While using the app",
@@ -94,25 +72,16 @@ def test_switches_account_then_posts_the_shared_post_to_the_story(screens) -> No
 
 
 def test_the_facebook_cross_posting_prompt_is_declined(screens) -> None:
-    device = screens(
-        INBOX_UBC, INBOX_UBC, POST_PAGE, SHARE_SHEET, EDITOR, FACEBOOK_PROMPT, POST_PAGE
-    )
-    module.share_to_story("columbia", "wat2do.ubc", POST)
+    device = screens(HOME, POST_PAGE, SHARE_SHEET, EDITOR, FACEBOOK_PROMPT, POST_PAGE)
+    module.share_to_story(device, "columbia", POST)
     assert device.taps[-2:] == ["Your story", "Not now"]
     assert "Always share stories" not in device.taps
 
 
 def test_an_editor_that_never_closes_is_not_reported_as_posted(screens) -> None:
-    screens(INBOX_UBC, INBOX_UBC, POST_PAGE, SHARE_SHEET, EDITOR, EDITOR)
+    device = screens(HOME, POST_PAGE, SHARE_SHEET, EDITOR, EDITOR)
     with pytest.raises(EmulatorError, match="kept showing"):
-        module.share_to_story("columbia", "wat2do.ubc", POST)
-
-
-def test_a_school_without_an_emulator_account_is_refused(screens) -> None:
-    device = screens(INBOX_UBC)
-    with pytest.raises(EmulatorError, match="not logged in"):
-        module.share_to_story("not-a-school", "wat2do.ubc", POST)
-    assert device.taps == []
+        module.share_to_story(device, "columbia", POST)
 
 
 @pytest.mark.parametrize(
@@ -120,7 +89,7 @@ def test_a_school_without_an_emulator_account_is_refused(screens) -> None:
     ["https://www.instagram.com/stories/club/1/", "https://evil.example/p/ABC/", POST + "x"],
 )
 def test_only_exact_post_urls_are_shared(screens, url) -> None:
-    device = screens(INBOX_UBC)
+    device = screens(HOME)
     with pytest.raises(EmulatorError, match="exact Instagram post"):
-        module.share_to_story("columbia", "wat2do.ubc", url)
+        module.share_to_story(device, "columbia", url)
     assert device.taps == []

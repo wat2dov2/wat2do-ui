@@ -14,7 +14,6 @@ from services.instagram_emulator.device import (
     EmulatorDevice,
     EmulatorError,
     Node,
-    exclusive,
     labels,
 )
 
@@ -30,26 +29,22 @@ _FACEBOOK_SHARING = labels("Share your stories to Facebook")
 _NOT_NOW = re.compile(r"^Not now$")
 
 
-def share_to_story(school: str, account_username: str, media_url: str) -> None:
-    """Post ``media_url`` to the school's story, or raise without knowing it was not posted."""
+def share_to_story(device: EmulatorDevice, school: str, media_url: str) -> None:
+    """Post ``media_url`` to the school's story, or raise without knowing it was not posted.
+
+    The worker has already switched the app to the school's account and holds the lock.
+    """
     if not _POST_URL.fullmatch(media_url):
         raise EmulatorError("Only an exact Instagram post or reel can go to a story")
-    user = CONTROL.android_user_by_school.get(school)
-    if user is None:
-        raise EmulatorError("This school's account is not logged in on the emulator")
-    device = EmulatorDevice()
-    with exclusive():
-        device.wake()
-        device.use_android_user(user)
-        device.use_account(user, account_username)
-        device.open_instagram(user, media_url)
-        device.tap_when(_SHARE)
-        device.tap_when(_ADD_TO_STORY)
-        _open_story_editor(device)
-        device.tap_when(_POST_TO_STORY)
-        _decline_facebook_sharing(device)
-        # The editor closes once Instagram has taken the story for upload.
-        device.wait_until_gone(_STORY_EDITOR, seconds=CONTROL.story_upload_wait_seconds)
+    user = CONTROL.android_user_by_school[school]
+    device.open_instagram(user, media_url)
+    device.tap_when(_SHARE)
+    device.tap_when(_ADD_TO_STORY)
+    _open_story_editor(device)
+    device.tap_when(_POST_TO_STORY)
+    _decline_facebook_sharing(device)
+    # The editor closes once Instagram has taken the story for upload.
+    device.wait_until_gone(_STORY_EDITOR, seconds=CONTROL.story_upload_wait_seconds)
 
 
 def _decline_facebook_sharing(device: EmulatorDevice) -> None:

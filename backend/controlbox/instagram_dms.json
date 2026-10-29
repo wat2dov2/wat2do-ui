@@ -5,12 +5,8 @@
   "thread_item_limit": 12,
   "reply_max_characters": 300,
   "contact_email": "team@wat2do.io",
-  "sweep_check_interval_seconds": 600,
   "sweep_gap_min_minutes": 90,
   "sweep_gap_max_minutes": 240,
-  "sweep_start_hour": 9,
-  "sweep_end_hour": 23,
   "max_thread_age_days": 7,
-  "inbox_scrolls": 3,
-  "launch_agent_timeout_seconds": 30
+  "inbox_scrolls": 3
 }

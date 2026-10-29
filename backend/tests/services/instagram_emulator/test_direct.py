@@ -117,7 +117,7 @@ def accepted(monkeypatch):
 def _handle(monkeypatch, decision, *, dry_run, request=False):
     monkeypatch.setattr(module, "decide", lambda thread, **_: decision)
     row = InboxRow("Club", "Could you share this?", 0.1, unread=True, request=request)
-    return module.EmulatorDirectExecutor(device=_Device()).handle(
+    return module.EmulatorDirectExecutor(_Device()).handle(
         row,
         account_username="wat2do.ubc",
         school="ubc",
@@ -157,7 +157,7 @@ def test_a_story_request_is_reposted_before_its_reply(monkeypatch, queued, stori
     decision = DmDecision("story_repost", POST, "just shared it!")
     result = _handle(monkeypatch, decision, dry_run=False)
     assert result["status"] == "reposted"
-    assert stories == [("ubc", "wat2do.ubc", POST)]
+    assert [args[1:] for args in stories] == [("ubc", POST)]
     assert _Reader.sent == ["just shared it!"]
     # A story repost also puts the event in an upcoming carousel.
     assert queued == [("carousel", POST, "ubc")]

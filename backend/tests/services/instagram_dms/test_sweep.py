@@ -1,4 +1,3 @@
-from contextlib import nullcontext
 from dataclasses import replace
 from datetime import datetime
 from types import SimpleNamespace
@@ -17,26 +16,13 @@ ACTIVE = InboxRow("quiet", "Active 2h ago", None, unread=False, request=False)
 REQUEST = InboxRow("stranger", "Hi! Can you post our event?", 1, unread=True, request=True)
 
 
-class _Device:
-    def reclaim_data(self):
-        return 5000
-
-    def wake(self):
-        pass
-
-    def use_android_user(self, user):
-        pass
-
-    def use_account(self, user, account):
-        pass
+DEVICE = object()
 
 
 @pytest.fixture
 def emulator(monkeypatch, tmp_path):
     handled = []
     monkeypatch.setattr(module, "STATE_PATH", tmp_path / "sweep.json")
-    monkeypatch.setattr(module, "exclusive", nullcontext)
-    monkeypatch.setattr(module, "EmulatorDevice", _Device)
     monkeypatch.setattr(
         module, "EMULATOR", SimpleNamespace(android_user_by_school={"ubc": 11, "sfu": 11})
     )
@@ -53,6 +39,9 @@ def emulator(monkeypatch, tmp_path):
     )
 
     class _Executor:
+        def __init__(self, device):
+            assert device is DEVICE
+
         def handle(self, row, **kwargs):
             assert row.request == (row.name == "stranger")
             handled.append((kwargs["school"], row.name, kwargs["dry_run"]))
@@ -62,58 +51,36 @@ def emulator(monkeypatch, tmp_path):
     return handled
 
 
-def test_a_sweep_answers_new_threads_once_and_schedules_the_next(emulator) -> None:
-    result = module.sweep()
-    assert result == {"status": "swept", "replied": 6, "failed": []}
-    assert sorted(name for _school, name, _dry in emulator) == [
-        "club",
-        "club",
-        "quiet",
-        "quiet",
-        "stranger",
-        "stranger",
-    ]
+def test_an_account_answers_new_threads_once_and_schedules_its_next_check(emulator) -> None:
+    assert module.due("ubc")
+    assert module.answer(DEVICE, "ubc") == ["replied"] * 3
+    assert sorted(name for _school, name, _dry in emulator) == ["club", "quiet", "stranger"]
     assert all(dry is module.CONTROL.dry_run for _school, _name, dry in emulator)
     emulator.clear()
-    # Nothing new arrived, so a second sweep reads the inboxes but answers nothing.
-    assert module.sweep()["status"] == "swept" and emulator == []
-    assert module._load()["next_run_at"] > datetime.now().timestamp()
+    # Nothing new arrived, so a second check reads the inbox but answers nothing.
+    assert module.answer(DEVICE, "ubc") == [] and emulator == []
+    later = module._load()["next_check_at"]["ubc"]
+    assert later > datetime.now().timestamp()
+    # Each account keeps its own random time.
+    assert not module.due("ubc") and module.due("sfu")
+    assert module.due("ubc", datetime.fromtimestamp(later + 1).astimezone())
 
 
-def test_an_unconfirmed_answer_pauses_every_later_run(emulator, monkeypatch) -> None:
+def test_an_unconfirmed_answer_pauses_every_inbox(emulator, monkeypatch) -> None:
     class _Uncertain:
+        def __init__(self, device):
+            pass
+
         def handle(self, row, **kwargs):
             raise BrowserEngagementUncertain("Instagram DM reply is uncertain")
 
     monkeypatch.setattr(module, "EmulatorDirectExecutor", _Uncertain)
-    assert module.sweep()["status"] == "paused"
-    assert module.run_if_due() == {"status": "paused", "reason": "Instagram DM reply is uncertain"}
+    with pytest.raises(BrowserEngagementUncertain):
+        module.answer(DEVICE, "ubc")
+    assert module.paused() == "Instagram DM reply is uncertain"
+    assert not module.due("sfu")
     module.resume()
-    assert "paused" not in module._load()
-
-
-def test_one_broken_account_does_not_stop_the_others(emulator, monkeypatch) -> None:
-    def read_inbox(device, user, requests):
-        raise module.EmulatorError("Instagram never showed the inbox")
-
-    monkeypatch.setattr(module, "read_inbox", read_inbox)
-    result = module.sweep()
-    assert result["status"] == "swept" and sorted(result["failed"]) == ["sfu", "ubc"]
-
-
-def test_run_waits_for_its_random_time(emulator) -> None:
-    module._save({"next_run_at": datetime.now().timestamp() + 3600})
-    assert module.run_if_due()["status"] == "waiting"
-    assert emulator == []
-
-
-@pytest.mark.parametrize("hour", [0, 8, 23])
-def test_the_next_run_always_lands_in_waking_hours(hour) -> None:
-    moment = datetime(2026, 10, 22, hour, 30).astimezone()
-    for _ in range(50):
-        later = module._next_run(moment)
-        assert later > moment
-        assert module._waking_hours(later)
+    assert module.paused() is None and module.due("sfu")
 
 
 def test_a_read_thread_is_opened_once_and_again_only_when_unread() -> None:

@@ -45,9 +45,14 @@ def search_terms(school: str) -> list[str]:
     return [school, *CONTROL.school_names.get(school, [])]
 
 
+def crawl_running(school: str) -> bool:
+    """Whether the school has a crawl under way, kept in local state between slices."""
+    return _state_path(school).exists()
+
+
 def crawl_due(school: str, now: datetime | None = None) -> bool:
     """Whether the school has a crawl under way, or none started within the interval."""
-    if _state_path(school).exists():
+    if crawl_running(school):
         return True
     school_id = _school_id(school)
     latest = (

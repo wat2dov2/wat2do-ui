@@ -76,8 +76,8 @@ _SEND_CHECKS = 4
 class EmulatorDirectExecutor:
     """Read a thread, decide with the model, and act at most once per request."""
 
-    def __init__(self, *, device: EmulatorDevice | None = None) -> None:
-        self._device = device or EmulatorDevice()
+    def __init__(self, device: EmulatorDevice) -> None:
+        self._device = device
 
     def handle(
         self,
@@ -129,7 +129,7 @@ class EmulatorDirectExecutor:
             # Never promise a repost that might fail: reply only once it is posted.
             _confirmed(
                 "story repost",
-                lambda: share_to_story(school, account_username, decision.media_url),
+                lambda: share_to_story(self._device, school, decision.media_url),
             )
             _confirmed("reply", lambda: reader.send(decision.reply))
             return {**result, "status": "reposted"}

@@ -660,7 +660,6 @@ class InstagramPublishingControl(_ControlModel):
     asian_song_schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(
         max_length=100
     )
-    music_interval_seconds: int = Field(ge=60, le=3600)
     # The daily stats run keeps each account's newest posts and this many days of follower counts.
     stats_media_limit: int = Field(ge=1, le=100)
     stats_history_days: int = Field(ge=2, le=365)
@@ -1028,23 +1027,17 @@ class InstagramDmsControl(_ControlModel):
 
     # The inbox sweep: a LaunchAgent checks this often, and a sweep runs once a random
     # gap in this window has passed since the last one, only between these local hours.
-    sweep_check_interval_seconds: int = Field(ge=60, le=3600)
     sweep_gap_min_minutes: int = Field(ge=10, le=1440)
     sweep_gap_max_minutes: int = Field(ge=10, le=1440)
-    sweep_start_hour: int = Field(ge=0, le=23)
-    sweep_end_hour: int = Field(ge=1, le=24)
     # Threads whose newest message is older than this are left alone: the event is
     # likely over. The inbox is scrolled at most this many screens to find them.
     max_thread_age_days: int = Field(ge=1, le=60)
     inbox_scrolls: int = Field(ge=0, le=10)
-    launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
 
     @model_validator(mode="after")
     def validate_windows(self) -> "InstagramDmsControl":
         if self.sweep_gap_min_minutes > self.sweep_gap_max_minutes:
             raise ValueError("sweep_gap_min_minutes cannot exceed sweep_gap_max_minutes")
-        if self.sweep_start_hour >= self.sweep_end_hour:
-            raise ValueError("sweep_start_hour must be before sweep_end_hour")
         return self
 
 
@@ -1084,9 +1077,22 @@ class InstagramEmulatorControl(_ControlModel):
     reclaim_android_users: tuple[Annotated[int, Field(ge=1)], ...]
     reclaim_packages: tuple[Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.]+$")], ...]
     reclaim_interval_hours: float = Field(gt=0, le=168, allow_inf_nan=False)
+    # The one worker that drives the emulator visits one account at a time. Replies,
+    # follows and post edits happen only between these local hours; outside them it
+    # only reads, crawling Following lists in slices of this length. A visit follows at
+    # most this many accounts, and with nothing due the worker checks again after
+    # idle_seconds.
+    action_start_hour: int = Field(ge=0, le=23)
+    action_end_hour: int = Field(ge=1, le=24)
+    crawl_slice_minutes: int = Field(ge=1, le=120)
+    follows_per_visit: int = Field(ge=1, le=50)
+    idle_seconds: int = Field(ge=10, le=3600)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
 
     @model_validator(mode="after")
     def validate_timing(self) -> "InstagramEmulatorControl":
+        if self.action_start_hour >= self.action_end_hour:
+            raise ValueError("action_start_hour must be before action_end_hour")
         if self.step_delay_min_seconds > self.step_delay_max_seconds:
             raise ValueError("step_delay_min_seconds cannot exceed step_delay_max_seconds")
         if self.keystroke_delay_min_seconds > self.keystroke_delay_max_seconds:

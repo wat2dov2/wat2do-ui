@@ -457,8 +457,8 @@ Publishing remains an explicit action in the admin page.
 Instagram's API publishes a carousel without music, so the Mac adds a song from the Instagram app on the Android emulator after it is live.
 Admins keep the song list in the Songs tab of the Instagram publishing admin page, typed loosely the way they would say it, such as "the weeknd after hours".
 Publishing stores the live post's `permalink` and sets the batch's `music_status` to `pending`.
-The `io.wat2do.instagram.music` LaunchAgent runs `jobs/add_instagram_music.py run` every `music_interval_seconds`; install or update it with `add_instagram_music.py install-schedule`.
-Each run takes every published batch that has waited `music_delay_minutes` and is younger than `music_max_age_hours`, opens the live post, likes it and reposts it, then edits it: More actions, Edit, Add audio.
+The emulator worker (`io.wat2do.instagram.worker`, `jobs/run_instagram_worker.py install-schedule`) visits a school's account first when one of its published batches has waited `music_delay_minutes` and is younger than `music_max_age_hours`.
+On that visit it opens the live post, likes it and reposts it, then edits it: More actions, Edit, Add audio.
 Instagram's Repost label never changes and a second tap takes the repost back, so the job reads the check mark drawn inside the Repost icon from a screenshot and taps only when it is missing; the one-time "You reposted" note is closed.
 It searches the songs in random order.
 For each search, Claude Haiku (`music_model`, prompt in `backend/services/instagram_publishing/music_prompt.md`) reads the visible tracks and picks the one the admin meant, or none so the next song is tried.
@@ -471,7 +471,7 @@ The emulator is kept running by the `io.wat2do.instagram-emulator` LaunchAgent (
 Every job that drives the emulator holds its lock (`exclusive()` in `services/instagram_emulator/device.py`), so a story repost and a music edit never tap at once.
 The virtual device runs the Google APIs system image, not the Play Store one, so adb can act as root; the Play Store and unused Google apps are disabled on every Android user so nothing updates or downloads in the background.
 Its data partition is 10 GB, and Instagram never trims its own image cache, camera effects or downloaded models.
-Once every `reclaim_interval_hours`, the DM sweep's `reclaim_data()` stops Instagram on each Android user and deletes the folders in `instagram_cache_paths` as root; the controlbox refuses paths that hold its login, databases or settings, so no account is logged out.
+Once every `reclaim_interval_hours`, the emulator worker's `reclaim_data()` stops Instagram on each Android user and deletes the folders in `instagram_cache_paths` as root; the controlbox refuses paths that hold its login, databases or settings, so no account is logged out.
 A device moved to another system image keeps its data only if the emulator's rebuilt data files are replaced with the old ones before the second boot; do it on a copy (`cp -c` clones the AVD for free) and keep the original until every account is confirmed.
 
 ### Account stats and token refresh

@@ -18,7 +18,6 @@ from services.instagram_emulator.device import (
     EmulatorDevice,
     EmulatorError,
     Node,
-    exclusive,
     labels,
 )
 
@@ -66,46 +65,42 @@ ChooseTrack = Callable[[str, Sequence[str]], int | None]
 
 
 def finish_post(
+    device: EmulatorDevice,
     school: str,
-    account_username: str,
     permalink: str,
     queries: Sequence[str],
     choose: ChooseTrack,
 ) -> AddedTrack:
     """Like and repost the post, then add the first song in ``queries`` that Instagram
-    has, and return the track used. A retry only does what is still missing."""
+    has, and return the track used. A retry only does what is still missing.
+
+    The worker has already switched the app to the school's account and holds the lock.
+    """
     if not _POST_URL.fullmatch(permalink):
         raise EmulatorError("Only an exact Instagram post can get audio")
-    user = CONTROL.android_user_by_school.get(school)
-    if user is None:
-        raise EmulatorError("This school's account is not logged in on the emulator")
-    device = EmulatorDevice()
-    with exclusive():
-        device.wake()
-        device.use_android_user(user)
-        device.use_account(user, account_username)
-        device.open_instagram(user, permalink)
-        _like_and_repost(device)
-        # Liking may have scrolled a tall post; open it again so its menu is in view.
-        device.open_instagram(user, permalink)
-        device.tap_when(_POST_OPTIONS)
-        device.tap_when(_EDIT)
-        device.wait_for(_EDIT_INFO)
-        audio = _scroll_to(device, _AUDIO_ROW)
-        if not audio.labelled(_ADD_AUDIO):
-            # An earlier try saved a song but failed before it was recorded.
-            _discard(device)
-            return AddedTrack("", audio.text)
-        device.tap(audio)
-        try:
-            added = _pick_track(device, queries, choose)
-        except EmulatorError:
-            # Leave without saving, so the post keeps no half-made edit.
-            _discard(device)
-            raise
-        device.tap_when(_DONE)
-        device.wait_until_gone(_EDIT_INFO, seconds=CONTROL.audio_save_wait_seconds)
-        return added
+    user = CONTROL.android_user_by_school[school]
+    device.open_instagram(user, permalink)
+    _like_and_repost(device)
+    # Liking may have scrolled a tall post; open it again so its menu is in view.
+    device.open_instagram(user, permalink)
+    device.tap_when(_POST_OPTIONS)
+    device.tap_when(_EDIT)
+    device.wait_for(_EDIT_INFO)
+    audio = _scroll_to(device, _AUDIO_ROW)
+    if not audio.labelled(_ADD_AUDIO):
+        # An earlier try saved a song but failed before it was recorded.
+        _discard(device)
+        return AddedTrack("", audio.text)
+    device.tap(audio)
+    try:
+        added = _pick_track(device, queries, choose)
+    except EmulatorError:
+        # Leave without saving, so the post keeps no half-made edit.
+        _discard(device)
+        raise
+    device.tap_when(_DONE)
+    device.wait_until_gone(_EDIT_INFO, seconds=CONTROL.audio_save_wait_seconds)
+    return added
 
 
 def _like_and_repost(device: EmulatorDevice) -> None:

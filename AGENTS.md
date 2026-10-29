@@ -79,17 +79,19 @@ saved wat2do profile on Instagram's own logged-out page and accepting "Save info
 spaced and capped by controlbox. It never types passwords, and a password prompt or
 challenge waits for a person.
 School accounts' direct messages are not taken from notifications.
-A Mac LaunchAgent (`backend/jobs/answer_instagram_dms.py`, `io.wat2do.instagram.dms`) sweeps
-every school account's inbox at random times during waking hours, a random gap set in
-`controlbox/instagram_dms.json` after each sweep.
-The sweep never touches Brave.
+One Mac LaunchAgent (`backend/jobs/run_instagram_worker.py`, `io.wat2do.instagram.worker`) is the only thing that drives the emulator (`backend/services/instagram_worker.py`).
+It visits one school account at a time: it picks the account with the most urgent work (a carousel waiting for its song, then an inbox due a check, then follows, then crawling), switches the app to it once, and does everything that account needs before moving on.
+Each inbox is checked at random times, a random gap set in `controlbox/instagram_dms.json` after each check.
+Replies, follows and post edits happen only between `controlbox/instagram_emulator.json` `action_start_hour` and `action_end_hour`; outside them the worker only reads.
+One failing step never stops the visit's other steps.
+The worker never touches Brave.
 It runs in the official Instagram app on the Mac's Android emulator
 (`controlbox/instagram_emulator.json`), because Instagram's website cannot add another
 account's post to a story and the app is the one place that can do every step.
 The emulator holds every school account, logged in once outside this automation and
 spread across Android users because the app keeps at most ten accounts each.
-For each account the sweep holds the emulator's lock, switches to the school's Android
-user and account, and lists the main inbox and message requests.
+Each visit holds the emulator's lock and switches to the school's Android user and
+account; the DM step then lists the main inbox and message requests.
 It opens, by tapping its row, each unread thread with a message it has not handled,
 and each read thread it has never handled (a read thread may show who is active
 instead of its latest message), skipping threads whose newest message is over a week
@@ -122,8 +124,8 @@ inside it after a random pause, types one character at a time, and never types a
 password.
 Each reply is confirmed by seeing it appear in the thread.
 The emulator also likes, reposts and adds music to our own carousels after the API
-publishes them, since the API can do none of these: a Mac LaunchAgent opens the live
-post, likes it, reposts it unless the Repost icon already shows its check mark, then
+publishes them, since the API can do none of these: on the school's next visit the
+worker opens the live post, likes it, reposts it unless the Repost icon already shows its check mark, then
 Edit, Add audio,
 searches the admin's song list in random order, and Claude Haiku picks the matching
 track or none.
@@ -144,7 +146,7 @@ Approving creates the school's club for the handle unless one exists, and queues
 The emulator worker checks `crawl_due` and `follows_due` from the database, then calls `crawl_slice` and `follow_due` with the emulator on the school's account.
 `follow_due` follows a few approved accounts per visit, at most `follows_per_account_per_day` a day, and sets each one's post notifications to All so ingestion hears about its posts; an account already followed is only marked followed.
 Instagram's "Try again later" pauses that account's follows for a day; it is never pushed through.
-Every job that drives the emulator holds its lock, so no two ever tap at once.
+Only the worker taps the emulator, holding its lock for one visit at a time.
 Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
 message, impersonation, login codes, money, follow-for-follow, pressure).
 Code, not the model, has the final say: the post must be shared in the thread with its
@@ -152,13 +154,13 @@ owner readable, an opt-out needs a readable sender, a reply with a
 tag, a link outside wat2do.io, an email address other than the controlbox's
 `contact_email` or a long number is not sent at all, and nothing is sent when our
 message is already the newest.
-The sweep's random timing is the reply's human-like delay.
-A reply or story repost that fails or cannot be confirmed pauses the sweep for a
-person (`answer_instagram_dms.py resume` once checked) and is never retried, since it
-may already have reached Instagram.
+Each inbox's random check time is the reply's human-like delay.
+A reply or story repost that fails or cannot be confirmed pauses every inbox for a
+person (`run_instagram_worker.py resume-dms` once checked) and is never retried, since it
+may already have reached Instagram; the worker's other steps go on.
 A story repost waits, without accepting or answering the thread, while the emulator has
 less free storage than `controlbox/instagram_emulator.json` `min_free_data_megabytes`.
-Once a day the sweep deletes Instagram's caches on every Android user as root
+Once a day the worker deletes Instagram's caches on every Android user as root
 (`instagram_cache_paths`), never its login, databases or settings.
 `dry_run` decides and records every DM without replying, reposting or queueing anything.
 Never log DM text.

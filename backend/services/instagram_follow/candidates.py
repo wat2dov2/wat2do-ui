@@ -257,13 +257,19 @@ def save_profile(candidate_id: str, profile: dict[str, Any], score: dict[str, An
 
 
 def approved(school_id: int, limit: int) -> list[dict[str, Any]]:
-    """Approved accounts waiting to be followed, in the order they were approved."""
+    """Approved accounts waiting to be followed, in the order they were approved.
+
+    Accounts whose follow failed go after the rest, least recently tried first, so one
+    that keeps failing never holds up the others.
+    """
     response = (
         get_sb()
         .table(INSTAGRAM_FOLLOW_CANDIDATES)
         .select("id,handle")
         .eq("school_id", school_id)
         .eq("status", FOLLOW_CANDIDATE_APPROVED)
+        .order("follow_error", nullsfirst=True)
+        .order("updated_at")
         .order("decided_at")
         .limit(limit)
         .execute()

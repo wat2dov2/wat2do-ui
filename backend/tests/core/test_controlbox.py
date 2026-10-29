@@ -851,24 +851,36 @@ def test_event_view_controls_require_a_campus_center_per_school(tmp_path, change
         load_controlbox(directory)
 
 
-def test_instagram_dms_answer_live_from_a_waking_hours_sweep() -> None:
+def test_instagram_dms_answer_live_with_random_gaps_between_checks() -> None:
     control = load_controlbox().instagram_dms
     assert control.dry_run is False
     assert control.sweep_gap_min_minutes <= control.sweep_gap_max_minutes
-    assert control.sweep_start_hour < control.sweep_end_hour
+
+
+def test_the_emulator_worker_acts_only_in_waking_hours() -> None:
+    control = load_controlbox().instagram_emulator
+    assert control.action_start_hour < control.action_end_hour
 
 
 @pytest.mark.parametrize(
-    ("change", "message"),
+    ("feature", "change", "message"),
     [
-        ({"sweep_gap_min_minutes": 300, "sweep_gap_max_minutes": 60}, "sweep_gap_min_minutes"),
-        ({"sweep_start_hour": 22, "sweep_end_hour": 9}, "sweep_start_hour"),
+        (
+            "instagram_dms",
+            {"sweep_gap_min_minutes": 300, "sweep_gap_max_minutes": 60},
+            "sweep_gap_min_minutes",
+        ),
+        (
+            "instagram_emulator",
+            {"action_start_hour": 22, "action_end_hour": 9},
+            "action_start_hour",
+        ),
     ],
 )
-def test_instagram_dms_reject_an_inverted_sweep_window(
-    tmp_path: Path, change: dict, message: str
+def test_inverted_emulator_windows_are_rejected(
+    tmp_path: Path, feature: str, change: dict, message: str
 ) -> None:
-    path = _write_control(tmp_path, "instagram_dms", lambda payload: payload.update(change))
+    path = _write_control(tmp_path, feature, lambda payload: payload.update(change))
     with pytest.raises(ValidationError, match=message):
         load_controlbox(path)
 

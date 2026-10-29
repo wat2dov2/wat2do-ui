@@ -77,5 +77,11 @@
   ],
   "reclaim_android_users": [10, 11, 12],
   "reclaim_packages": ["com.google.android.gms"],
-  "reclaim_interval_hours": 24
+  "reclaim_interval_hours": 24,
+  "action_start_hour": 9,
+  "action_end_hour": 23,
+  "crawl_slice_minutes": 15,
+  "follows_per_visit": 5,
+  "idle_seconds": 300,
+  "launch_agent_timeout_seconds": 30
 }
