@@ -486,11 +486,12 @@ test("Featured reads publication metadata from the cached feed and clears withou
 });
 
 
-test("shared quick-filter order places Competitions before Varsity and Recurring right after campus seasons", () => {
+test("shared quick-filter order places Competitions before Varsity, Recurring after campus seasons, and Exam de-stress just before the date filter", () => {
   const ids = getEventQuickFilters({ sportsGameAvailable: true }).map(filter => filter.id);
   expect(ids.indexOf("competitions")).toBe(ids.indexOf("sportsGame") - 1);
   expect(ids.slice(ids.indexOf("featured"), ids.indexOf("featured") + 4))
     .toEqual(["featured", "campusSeasons", "recurring", "employersOnCampus"]);
+  expect(ids.indexOf("examDestress")).toBe(ids.indexOf("date") - 1);
   expect(ids.slice(ids.indexOf("minGoing"), ids.indexOf("minGoing") + 2))
     .toEqual(["minGoing", "price"]);
 });

@@ -1,6 +1,7 @@
 import { useMemo, useCallback, useState, Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { PriceFilter } from "@/features/search";
+import type { CampusSeasonFilterOption } from "@/features/search/api/filterService";
 import { IntegerFilter } from "@/shared/ui/integer-filter";
 import { EventsBrowseViews } from "@/features/events/components/EventsBrowseViews";
 import { EventViewSelect, type EventBrowseView } from "@/features/events/components/EventViewSelect";
@@ -91,6 +92,13 @@ export function EventsPageContainer({
   }, [filters, latestAddedEvent]);
 
   const quickFilters = getEventQuickFilters({ profileCompleted, sportsGameAvailable: filters.sportsGameAvailable });
+  // Exam de-stress leaves the season group to sit beside the date filter, where students look during exams.
+  const examDestressSeason = "exam_destress";
+  const renderSeasonChip = (season: CampusSeasonFilterOption) => (
+    <Button activation="click" key={season.id} variant={filters.campusSeasonIds.includes(season.id) ? "primary" : "outline"} size="sm" onClick={() => filters.toggleCampusSeason(season.id)} aria-pressed={filters.campusSeasonIds.includes(season.id)}>
+      {season.label}
+    </Button>
+  );
 
   return (
     <>
@@ -119,11 +127,9 @@ export function EventsPageContainer({
                     case "price":
                       return <PriceFilter key={config.id} minPrice={filters.minPrice} maxPrice={filters.maxPrice} setMinPrice={filters.setMinPrice} setMaxPrice={filters.setMaxPrice} />;
                     case "campusSeasons":
-                      return <Fragment key={config.id}>{filters.campusSeasonOptions.map(season => (
-                        <Button activation="click" key={season.id} variant={filters.campusSeasonIds.includes(season.id) ? "primary" : "outline"} size="sm" onClick={() => filters.toggleCampusSeason(season.id)} aria-pressed={filters.campusSeasonIds.includes(season.id)}>
-                          {season.label}
-                        </Button>
-                      ))}</Fragment>;
+                      return <Fragment key={config.id}>{filters.campusSeasonOptions.filter(season => season.classificationId !== examDestressSeason).map(renderSeasonChip)}</Fragment>;
+                    case "examDestress":
+                      return <Fragment key={config.id}>{filters.campusSeasonOptions.filter(season => season.classificationId === examDestressSeason).map(renderSeasonChip)}</Fragment>;
                     case "date":
                       return <DateFilterSelect key={config.id} school={initialSchool} value={filters.dateFilter} customDate={filters.customDate} onChange={filters.setDateFilter} />;
                     case "minGoing":
