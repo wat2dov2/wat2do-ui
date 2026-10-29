@@ -141,7 +141,20 @@ class BrowserInstagramRetriever:
             ]
         elif media_id_from_url(checked[0]["url"]) != media_id_from_url(target):
             raise BrowserSessionError("Instagram retrieval returned a different media identity")
-        return {"account_username": username, "posts": checked, "target_url": target}
+        picture = result.get("profilePicture") if profile else None
+        if (
+            not profile
+            or str(result.get("profileUsername") or "").casefold() != profile[1].casefold()
+            or not _public_media_url(picture)
+        ):
+            # Only a picture from the requested profile itself may become a club logo.
+            picture = None
+        return {
+            "account_username": username,
+            "posts": checked,
+            "target_url": target,
+            "profile_picture_url": picture,
+        }
 
 
 def _response_failure(reason: object, http_status: object) -> BrowserSessionError:
@@ -255,7 +268,11 @@ def _query_source(endpoint: str, username: str, *, profile: bool) -> str:
    const media = {"body.data?.user?.edge_owner_to_timeline_media?.edges?.map(e => e.node)" if profile else "body.items"};
    if (!Array.isArray(media)) throw new Error();
    reason = "projection_failed";
-   request.result = {{state: "succeeded", posts: media.slice(0,{_CONTROL.profile_post_limit if profile else 1}).map(project)}};
+   const owner = {"body.data?.user" if profile else "null"};
+   request.result = {{state: "succeeded", posts: media.slice(0,{_CONTROL.profile_post_limit if profile else 1}).map(project),
+     profileUsername: owner?.username || null,
+     profilePicture: owner?.has_anonymous_profile_picture ? null :
+       owner?.profile_pic_url_hd || owner?.profile_pic_url || null}};
   }} catch (_error) {{request.result = {{state: "failed", reason, ...(httpStatus === null ? {{}} : {{http_status: httpStatus}})}};}}
   finally {{request.settled = true;}}
  }})();

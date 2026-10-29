@@ -62,6 +62,8 @@ CacheEntID workflow jobs submit through the browser-capable Mac runner to the
 single installed worker.
 The worker owns two Instagram tabs in the existing Brave session.
 The first tab is reserved for account switching and serialized likes/reposts; the second tab owns digest queries and manual profile listings.
+The second tab also reads the Instagram profiles of clubs that have a handle but no logo, to copy each profile picture to S3 as the club's logo.
+These reads never switch accounts, are queued a few at a time every few minutes and capped per day in `controlbox/instagram_browser.json`, and wait behind digests and engagement.
 Brave never opens individual posts for ingestion.
 Account switches wait for every tab request to settle, verify the notification's
 intended recipient, and refresh each selected tab before querying.

@@ -486,3 +486,67 @@ def test_exclusions_apply_to_account_bound_jobs(tmp_path, kind):
 )
 def test_manual_targets_preserve_exact_posts_and_normalize_handles(target, expected):
     assert module.canonical_target_url(target) == expected
+
+
+@pytest.mark.parametrize(
+    "user,expected",
+    [
+        (
+            {"username": "club", "profile_pic_url_hd": "https://s.cdninstagram.com/hd.jpg"},
+            "https://s.cdninstagram.com/hd.jpg",
+        ),
+        (
+            {
+                "username": "club",
+                "has_anonymous_profile_picture": True,
+                "profile_pic_url_hd": "https://s.cdninstagram.com/blank.jpg",
+            },
+            None,
+        ),
+    ],
+)
+def test_profile_projection_carries_the_profile_picture(monkeypatch, user, expected):
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js unavailable")
+    monkeypatch.setattr(module, "_current_account_username_source", lambda: '"wat2do.ca"')
+    source = module._query_source(
+        "/api/v1/users/web_profile_info/?username=club", "wat2do.ca", profile=True
+    )
+    body = {"data": {"user": {**user, "edge_owner_to_timeline_media": {"edges": []}}}}
+    script = f"""globalThis.window = {{}};
+    globalThis.fetch = async () => ({{ok:true,json:async()=>({json.dumps(body)})}});
+    {source};
+    setTimeout(() => console.log(JSON.stringify(window.__wat2doInstagramBrowserRequest.result)),0);
+    """
+    completed = subprocess.run([node, "-e", script], text=True, capture_output=True, check=True)
+    result = json.loads(completed.stdout)
+    assert result["profileUsername"] == "club"
+    assert result["profilePicture"] == expected
+
+
+@pytest.mark.parametrize(
+    "owner,picture,expected",
+    [
+        ("club", "https://s.cdninstagram.com/hd.jpg", "https://s.cdninstagram.com/hd.jpg"),
+        ("someoneelse", "https://s.cdninstagram.com/hd.jpg", None),
+        ("club", "https://evil.com/hd.jpg", None),
+    ],
+)
+def test_profile_picture_is_kept_only_for_the_requested_profile(owner, picture, expected):
+    session = SimpleNamespace(
+        current_page_path=lambda **kwargs: "/club/",
+        current_account_username=lambda: "wat2do.ca",
+        poll_until=lambda predicate: predicate(),
+        navigate=lambda url, *, reload: None,
+        query=lambda *_, **__: {
+            "state": "succeeded",
+            "posts": [],
+            "profileUsername": owner,
+            "profilePicture": picture,
+        },
+    )
+    result = module.BrowserInstagramRetriever(session).retrieve(
+        "https://www.instagram.com/club/", cutoff_days=1
+    )
+    assert result["profile_picture_url"] == expected

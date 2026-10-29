@@ -749,6 +749,7 @@ def _on_signal(
 
 def _source_pollers(queue: BrowserJobQueue, stopping: threading.Event) -> list[threading.Thread]:
     from services.instagram_notifications.carousel_engagement import sync_published_carousels
+    from services.instagram_notifications.club_logos import sync_club_logos
     from services.instagram_notifications.profile_retrieval import queue_retrieved_profiles
 
     def collect_carousels() -> None:
@@ -764,6 +765,7 @@ def _source_pollers(queue: BrowserJobQueue, stopping: threading.Event) -> list[t
     polled = (
         ("diagnostics_status", lambda: queue.publish_diagnostics(should_stop=stopping.is_set)),
         ("source_status", collect_carousels),
+        ("club_logo_status", lambda: sync_club_logos(queue)),
     )
     return [
         threading.Thread(
