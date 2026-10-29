@@ -36,9 +36,16 @@ BLOCKS_PATH = Path.home() / ".local/state/wat2do/instagram-follow/blocked.json"
 BLOCK_HOURS = 24
 
 
+# A visit opens at most this many profiles per follow it may make, so confirming
+# accounts already followed never holds the emulator for long.
+PROFILES_PER_FOLLOW = 4
+
+
 @dataclass(frozen=True)
 class FollowVisit:
     followed: int
+    # Accounts the school already followed: marked followed, their bells checked.
+    confirmed: int
     blocked: bool
 
 
@@ -54,30 +61,37 @@ def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
     """Follow up to ``limit`` of the school's approved accounts, within today's allowance."""
     school_id = school_service.get_school_id(school)
     if school_id is None or _blocked(school):
-        return FollowVisit(0, _blocked(school))
+        return FollowVisit(0, 0, _blocked(school))
     reader = FollowingReader(
         device,
         EMULATOR.android_user_by_school[school],
         profile_wait_seconds=CONTROL.crawl_profile_wait_seconds,
         max_scrolls=CONTROL.crawl_max_scrolls,
     )
-    followed = 0
-    for row in candidates.approved(school_id, min(limit, _allowance(school_id))):
+    # Only a real follow counts toward the visit's limit and today's allowance.
+    allowed = min(limit, _allowance(school_id))
+    followed = confirmed = 0
+    for row in candidates.approved(school_id, allowed * PROFILES_PER_FOLLOW):
+        if followed >= allowed:
+            break
         try:
-            label = reader.follow(row["handle"])
+            outcome = reader.follow(row["handle"])
         except ActionBlocked as exc:
             candidates.mark_follow_failed(row["id"], str(exc))
             _block(school)
-            return FollowVisit(followed, True)
+            return FollowVisit(followed, confirmed, True)
         except EmulatorError as exc:
             candidates.mark_follow_failed(row["id"], str(exc))
             continue
-        if label is None:
+        if outcome is None:
             candidates.mark_follow_failed(row["id"], "Profile is gone or hidden")
             continue
-        candidates.mark_followed(row["id"])
-        followed += 1
-    return FollowVisit(followed, False)
+        candidates.mark_followed(row["id"], tapped=outcome.tapped)
+        if outcome.tapped:
+            followed += 1
+        else:
+            confirmed += 1
+    return FollowVisit(followed, confirmed, False)
 
 
 def _allowance(school_id: int) -> int:

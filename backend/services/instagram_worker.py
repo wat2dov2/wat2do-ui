@@ -101,7 +101,9 @@ def visit(
                     f"follows {school}",
                     lambda: follows.follow_due(device, school, CONTROL.follows_per_visit),
                 )
-                if not getattr(followed, "followed", 0):
+                if not isinstance(followed, follows.FollowVisit) or not (
+                    followed.followed or followed.confirmed
+                ):
                     # Nothing went through, so the next try waits instead of looping here.
                     _follows_rested_until[school] = now + timedelta(
                         seconds=FOLLOW.crawl_rest_seconds

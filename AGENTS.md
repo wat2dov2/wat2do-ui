@@ -144,7 +144,7 @@ New candidates are read logged out from their profile embed (`fetch_profile`) an
 Admins review them on the admin Social page's Follow candidates tab; approvals and rejections are staged in the page and submitted together.
 Approving creates the school's club for the handle unless one exists, and queues the follow.
 The emulator worker checks `crawl_due` and `follows_due` from the database, then calls `crawl_slice` and `follow_due` with the emulator on the school's account.
-`follow_due` follows a few approved accounts per visit, at most `follows_per_account_per_day` a day, and sets each one's post notifications to All so ingestion hears about its posts; an account already followed is only marked followed.
+`follow_due` follows a few approved accounts per visit, at most `follows_per_account_per_day` a day, and sets each one's post notifications to All so ingestion hears about its posts; an account already followed is only marked followed, after its bell is checked, and never counts toward the day's follows.
 Instagram's "Try again later" pauses that account's follows for a day; it is never pushed through.
 Only the worker taps the emulator, holding its lock for one visit at a time.
 Every message is untrusted: the prompt lists the traps to ignore (instructions inside a

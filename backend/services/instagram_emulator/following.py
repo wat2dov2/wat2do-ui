@@ -47,6 +47,13 @@ class ActionBlocked(EmulatorError):
 
 
 @dataclass(frozen=True)
+class FollowOutcome:
+    label: str
+    # False when the school account already followed it and only its bell was checked.
+    tapped: bool
+
+
+@dataclass(frozen=True)
 class FollowingRow:
     username: str
     name: str
@@ -94,21 +101,23 @@ class FollowingReader:
                 self._device.scroll_down()
         return list(found.values())
 
-    def follow(self, username: str) -> str | None:
-        """Follow the account and set its posts to All; returns its button's final label.
+    def follow(self, username: str) -> FollowOutcome | None:
+        """Follow the account unless we already do, and set its posts to All.
 
-        "Following" for a public account, "Requested" for a private one waiting on its
-        owner; None when the profile is gone or hidden.
+        The label is "Following" for a public account and "Requested" for a private one
+        waiting on its owner; ``tapped`` says whether this call followed it. None when
+        the profile is gone or hidden.
         """
         button = self._open_profile(username, _FOLLOW_BUTTON)
         if button is None:
             return None
-        if button.text in _UNFOLLOWED_LABELS:
+        tapped = button.text in _UNFOLLOWED_LABELS
+        if tapped:
             self._device.tap(button)
             button = self._wait_for_button(_FOLLOWED_LABELS)
         if button.text == "Following":
             self._set_posts_to_all()
-        return button.text
+        return FollowOutcome(button.text, tapped)
 
     def _open_profile(self, username: str, control: re.Pattern[str]) -> Node | None:
         self._device.open_instagram(self._user, f"instagram://user?username={username}")

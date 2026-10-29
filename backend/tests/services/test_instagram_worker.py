@@ -53,7 +53,7 @@ def due(monkeypatch):
 
     def follow_due(device, school, limit):
         state.done.append(("follows", school))
-        return FollowVisit(followed=1, blocked=False)
+        return FollowVisit(followed=1, confirmed=0, blocked=False)
 
     monkeypatch.setattr(worker.follows, "follow_due", follow_due)
     monkeypatch.setattr(worker.crawl, "crawl_due", lambda school, now: school in state.crawls)
@@ -134,7 +134,7 @@ def test_follows_that_get_nowhere_rest_instead_of_looping(due, monkeypatch):
     monkeypatch.setattr(
         worker.follows,
         "follow_due",
-        lambda device, school, limit: FollowVisit(followed=0, blocked=False),
+        lambda device, school, limit: FollowVisit(followed=0, confirmed=0, blocked=False),
     )
     device = _Device()
     assert worker.visit_next(device, DAY)

@@ -2,7 +2,12 @@ import pytest
 
 from services.instagram_emulator import following as module
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError, Node
-from services.instagram_emulator.following import ActionBlocked, FollowingReader, FollowingRow
+from services.instagram_emulator.following import (
+    ActionBlocked,
+    FollowingReader,
+    FollowingRow,
+    FollowOutcome,
+)
 
 
 def _node(text="", description="", resource_id="", top=0, bottom=100):
@@ -167,7 +172,7 @@ def test_following_turns_post_notifications_to_all() -> None:
         ]
     )
 
-    assert _reader(device).follow("utmaclub") == "Following"
+    assert _reader(device).follow("utmaclub") == FollowOutcome("Following", tapped=True)
     assert device.actions[1:] == [
         "Follow",
         "Open notification settings",
@@ -182,14 +187,14 @@ def test_an_account_already_on_all_is_left_alone() -> None:
     following = _profile("utmmsa", button="Following")
     device = _Device([HOME, following, _bell("All"), following])
 
-    assert _reader(device).follow("utmmsa") == "Following"
+    assert _reader(device).follow("utmmsa") == FollowOutcome("Following", tapped=False)
     assert device.actions[1:] == ["Open notification settings", "back"]
 
 
 def test_a_private_account_is_requested_without_touching_its_bell() -> None:
     device = _Device([HOME, _profile("private.club"), _profile("private.club", button="Requested")])
 
-    assert _reader(device).follow("private.club") == "Requested"
+    assert _reader(device).follow("private.club") == FollowOutcome("Requested", tapped=True)
     assert "Open notification settings" not in device.actions
 
 

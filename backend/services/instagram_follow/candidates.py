@@ -277,12 +277,14 @@ def approved(school_id: int, limit: int) -> list[dict[str, Any]]:
     return response.data or []
 
 
-def mark_followed(candidate_id: str) -> None:
+def mark_followed(candidate_id: str, *, tapped: bool) -> None:
+    """Record the account as followed; ``followed_at`` only when this run followed it,
+    so accounts the school already followed never use up a day's allowance."""
     now = datetime.now(timezone.utc).isoformat()
     get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(
         {
             "status": FOLLOW_CANDIDATE_FOLLOWED,
-            "followed_at": now,
+            "followed_at": now if tapped else None,
             "follow_error": None,
             "updated_at": now,
         }

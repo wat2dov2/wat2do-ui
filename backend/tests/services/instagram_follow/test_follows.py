@@ -1,7 +1,7 @@
 import pytest
 
 from services.instagram_emulator.device import EmulatorError
-from services.instagram_emulator.following import ActionBlocked
+from services.instagram_emulator.following import ActionBlocked, FollowOutcome
 from services.instagram_follow import follows as module
 from services.instagram_follow.follows import FollowVisit
 
@@ -13,7 +13,7 @@ class _Reader:
 
     def follow(self, handle):
         self.followed.append(handle)
-        result = self.results.get(handle, "Following")
+        result = self.results.get(handle, FollowOutcome("Following", tapped=True))
         if isinstance(result, Exception):
             raise result
         return result
@@ -33,7 +33,9 @@ def world(monkeypatch, tmp_path):
     monkeypatch.setattr(
         module.candidates,
         "mark_followed",
-        lambda candidate_id: marks.append(("followed", candidate_id)),
+        lambda candidate_id, tapped: marks.append(
+            ("followed" if tapped else "confirmed", candidate_id)
+        ),
     )
     monkeypatch.setattr(
         module.candidates,
@@ -52,7 +54,7 @@ def world(monkeypatch, tmp_path):
 def test_a_visit_follows_no_more_than_asked(world):
     reader, marks = world()
 
-    assert module.follow_due(object(), "utsg", 1) == FollowVisit(1, False)
+    assert module.follow_due(object(), "utsg", 1) == FollowVisit(1, 0, False)
     assert reader.followed == ["club0"]
     assert marks == [("followed", "0")]
 
@@ -60,7 +62,7 @@ def test_a_visit_follows_no_more_than_asked(world):
 def test_a_visit_stops_at_what_today_still_allows(world):
     reader, _ = world()
 
-    assert module.follow_due(object(), "utsg", 5) == FollowVisit(2, False)
+    assert module.follow_due(object(), "utsg", 5) == FollowVisit(2, 0, False)
     assert reader.followed == ["club0", "club1"]
 
 
@@ -69,16 +71,17 @@ def test_a_failed_follow_stays_approved_for_the_next_try(world):
         {"club0": EmulatorError("Instagram never confirmed the follow"), "club1": None}
     )
 
-    assert module.follow_due(object(), "utsg", 5) == FollowVisit(0, False)
-    assert marks == [("failed", "0"), ("failed", "1")]
+    # A failure takes no follow slot, so the visit moves on to the next accounts.
+    assert module.follow_due(object(), "utsg", 5) == FollowVisit(2, 0, False)
+    assert marks == [("failed", "0"), ("failed", "1"), ("followed", "2"), ("followed", "3")]
 
 
 def test_try_again_later_pauses_the_account_for_a_day(world):
     reader, _ = world({"club0": ActionBlocked("Instagram asked this account to try again later")})
 
-    assert module.follow_due(object(), "utsg", 5) == FollowVisit(0, True)
+    assert module.follow_due(object(), "utsg", 5) == FollowVisit(0, 0, True)
     assert module.follows_due("utsg") is False
-    assert module.follow_due(object(), "utsg", 5) == FollowVisit(0, True)
+    assert module.follow_due(object(), "utsg", 5) == FollowVisit(0, 0, True)
     assert reader.followed == ["club0"]
 
 
@@ -100,3 +103,22 @@ def test_todays_follows_count_against_the_daily_cap(fake_sb, patch_sb):
 
     assert module._allowance(7) == module.CONTROL.follows_per_account_per_day - 18
     fake_sb.eq.assert_any_call("status", "followed")
+
+
+def test_accounts_already_followed_are_confirmed_without_using_the_allowance(world):
+    already = FollowOutcome("Following", tapped=False)
+    reader, marks = world({"club0": already, "club1": already, "club2": already})
+
+    # Allowance 2: three confirmations, then two real follows.
+    assert module.follow_due(object(), "utsg", 5) == FollowVisit(2, 3, False)
+    assert marks[:3] == [("confirmed", "0"), ("confirmed", "1"), ("confirmed", "2")]
+    assert marks[3:] == [("followed", "3"), ("followed", "4")]
+
+
+def test_a_visit_opens_a_bounded_number_of_profiles(world):
+    already = FollowOutcome("Following", tapped=False)
+    reader, _ = world({f"club{n}": already for n in range(100)})
+
+    visit = module.follow_due(object(), "utsg", 1)
+    assert visit == FollowVisit(0, module.PROFILES_PER_FOLLOW, False)
+    assert len(reader.followed) == module.PROFILES_PER_FOLLOW
