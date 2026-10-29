@@ -448,8 +448,7 @@
         "label": "Social account views",
         "accounts": "Accounts",
         "posts": "All posts",
-        "songs": "Songs",
-        "follow": "Follow candidates"
+        "songs": "Songs"
       },
       "sortLabel": "Sort",
       "accountLabel": "Account",
@@ -621,6 +620,7 @@
       "records": "Record details",
       "clubId": "Club ID: {{id}}",
       "ownerId": "Owner ID: {{id}}"
-    }
+    },
+    "followCandidatesTab": "Follow candidates"
   }
 }

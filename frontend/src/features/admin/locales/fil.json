@@ -448,8 +448,7 @@
         "label": "Mga view ng social account",
         "accounts": "Mga account",
         "posts": "Lahat ng post",
-        "songs": "Mga kanta",
-        "follow": "Mga account na ifa-follow"
+        "songs": "Mga kanta"
       },
       "sortLabel": "Ayusin",
       "accountLabel": "Account",
@@ -621,6 +620,7 @@
       "records": "Mga detalye ng tala",
       "clubId": "ID ng club: {{id}}",
       "ownerId": "ID ng may-ari: {{id}}"
-    }
+    },
+    "followCandidatesTab": "Mga account na ifa-follow"
   }
 }

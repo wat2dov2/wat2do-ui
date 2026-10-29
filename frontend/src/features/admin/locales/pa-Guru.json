@@ -448,8 +448,7 @@
         "label": "ਸੋਸ਼ਲ ਖਾਤਿਆਂ ਦੇ ਦ੍ਰਿਸ਼",
         "accounts": "ਖਾਤੇ",
         "posts": "ਸਾਰੀਆਂ ਪੋਸਟਾਂ",
-        "songs": "ਗੀਤ",
-        "follow": "ਫਾਲੋ ਕਰਨ ਲਈ ਖਾਤੇ"
+        "songs": "ਗੀਤ"
       },
       "sortLabel": "ਕ੍ਰਮ",
       "accountLabel": "ਖਾਤਾ",
@@ -621,6 +620,7 @@
       "records": "ਰਿਕਾਰਡ ਵੇਰਵੇ",
       "clubId": "ਕਲੱਬ ਆਈਡੀ: {{id}}",
       "ownerId": "ਮਾਲਕ ਦੀ ਆਈਡੀ: {{id}}"
-    }
+    },
+    "followCandidatesTab": "ਫਾਲੋ ਕਰਨ ਲਈ ਖਾਤੇ"
   }
 }

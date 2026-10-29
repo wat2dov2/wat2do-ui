@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Building2, ExternalLink, ShieldAlert } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { FollowCandidatesPanel } from "@/features/admin/components/social/FollowCandidatesPanel";
 import {
   Select,
   SelectContent,
@@ -83,7 +84,7 @@ export function AdminClubsPage({
   } = useAdminClubsPage();
 
   const [searchParams] = useMutableSearchParams();
-  const [activeTab, setActiveTab] = useState<"clubs" | "claims" | "submissions">(
+  const [activeTab, setActiveTab] = useState<"clubs" | "claims" | "submissions" | "followCandidates">(
     searchParams.get(QP.TAB) === "claims" ? "claims"
       : searchParams.get(QP.TAB) === "submissions" ? "submissions" : "clubs",
   );
@@ -215,7 +216,7 @@ export function AdminClubsPage({
     <Tabs
       value={activeTab}
       onValueChange={(value) =>
-        setActiveTab(value as "clubs" | "claims" | "submissions")
+        setActiveTab(value as "clubs" | "claims" | "submissions" | "followCandidates")
       }
       className="space-y-5"
     >
@@ -245,9 +246,12 @@ export function AdminClubsPage({
           <TabsTrigger value="submissions" count={pendingSubmissionCount}>
             {t("admin.clubSubmissions")}
           </TabsTrigger>
+          <TabsTrigger value="followCandidates">
+            {t("admin.followCandidatesTab")}
+          </TabsTrigger>
         </TabsList>
 
-        {activeTab === "clubs" ? (
+        {activeTab === "followCandidates" ? null : activeTab === "clubs" ? (
           <>
             <div className="flex gap-3">
               <AdminSearchBar
@@ -312,7 +316,9 @@ export function AdminClubsPage({
         )}
       </div>
 
-      {activeTab === "submissions" ? (
+      {activeTab === "followCandidates" ? (
+        <FollowCandidatesPanel />
+      ) : activeTab === "submissions" ? (
         <>
           {submissionList.isError && !submissionList.data ? <Button onClick={() => void submissionList.refetch()}>{t("common.tryAgain")}</Button> : submissionList.isPending || submissionList.total > 0 ? (
             <AdminTable isLoading={submissionList.isPending} pagination={submissionList.pagination} count={submissionList.total} label={submissionList.total === 1 ? t("admin.submission") : t("admin.submissions")}
