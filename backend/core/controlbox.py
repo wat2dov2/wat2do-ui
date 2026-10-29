@@ -1064,25 +1064,23 @@ class InstagramEmulatorControl(_ControlModel):
 class OutreachControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     agent_timeout_seconds: int = Field(gt=0, le=3600)
-    # Research agents run at once, one per school and lead type.
+    # Research agents run at once, one per club whose own page shows no email.
     parallel_agents: int = Field(ge=1, le=16)
     sweep_interval_hours: int = Field(ge=1, le=720)
-    leads_per_search: int = Field(ge=1, le=20)
-    known_emails_in_prompt: int = Field(ge=0, le=5000)
-    # Each lead's email must appear on the page it was found on, fetched within this time.
+    # New clubs whose own page each sweep reads; reading a page costs one request.
+    clubs_per_sweep: int = Field(ge=1, le=100000)
+    # Clubs without an email on their page that each sweep sends a research agent after.
+    research_per_sweep: int = Field(ge=0, le=5000)
+    # A club research came back empty for is searched again after this long.
+    research_retry_days: int = Field(ge=1, le=365)
+    page_fetch_concurrency: int = Field(ge=1, le=32)
+    # Each email must appear on the page it was found on, fetched within this time.
     page_fetch_timeout_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
-    # Who signs the video script and email.
+    # Who signs the email.
     sender_name: str = Field(min_length=1, max_length=60)
-    # "{school}" becomes the school's slug.
-    submit_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*$")
-    # Lead type slug -> who and what the research agent looks for at every school,
-    # highest priority first: the sweep researches each type across all schools in turn.
-    lead_types: dict[
-        Annotated[str, Field(pattern=r"^[a-z0-9_]+$")], Annotated[str, Field(min_length=1)]
-    ] = Field(min_length=1)
-    # What Wat2Do offers an organizer, in plain words the scripts build on.
-    offer: str = Field(min_length=1, max_length=1000)
+    # "{school}" becomes the school's slug and "{club_id}" the club's id.
+    club_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*\{club_id\}\S*$")
 
 
 class CompetitorPainPointsControl(_ControlModel):

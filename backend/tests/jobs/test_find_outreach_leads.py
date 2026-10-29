@@ -14,11 +14,12 @@ def test_launch_agent_sweeps_on_the_control_box_interval_without_logs():
     assert ".local/bin" in payload["EnvironmentVariables"]["PATH"]
 
 
-@pytest.mark.parametrize(("failed", "code"), [([], 0), (["campaign/uwaterloo"], 1)])
-def test_sweep_prints_its_result_and_fails_when_a_search_failed(monkeypatch, capsys, failed, code):
+@pytest.mark.parametrize(("failed", "code"), [(0, 0), (2, 1)])
+def test_sweep_prints_its_result_and_fails_when_research_failed(monkeypatch, capsys, failed, code):
     from services.outreach import finder
 
+    result = {"page_emails": 4, "research_failed": failed}
     monkeypatch.setattr(sys, "argv", ["job", "sweep"])
-    monkeypatch.setattr(finder, "sweep", lambda: {"saved": 4, "failed": failed})
+    monkeypatch.setattr(finder, "sweep", lambda: result)
     assert job.main() == code
-    assert json.loads(capsys.readouterr().out) == {"saved": 4, "failed": failed}
+    assert json.loads(capsys.readouterr().out) == result

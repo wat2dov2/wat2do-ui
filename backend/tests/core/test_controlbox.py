@@ -939,17 +939,17 @@ def test_instagram_emulator_rejects_an_inverted_keystroke_window(tmp_path: Path)
         load_controlbox(path)
 
 
-def test_outreach_puts_student_associations_first_with_a_school_submit_link() -> None:
+def test_outreach_sweeps_daily_with_a_school_club_link() -> None:
     control = load_controlbox().outreach
-    assert list(control.lead_types) == ["student_association", "hackathon", "ticketed_event"]
-    assert "{school}" in control.submit_url_template
+    assert control.sweep_interval_hours == 24
+    assert "{school}" in control.club_url_template and "{club_id}" in control.club_url_template
 
 
-def test_outreach_rejects_a_submit_link_without_the_school(tmp_path: Path) -> None:
+def test_outreach_rejects_a_club_link_without_the_club(tmp_path: Path) -> None:
     path = _write_control(
         tmp_path,
         "outreach",
-        lambda payload: payload.update({"submit_url_template": "https://wat2do.io/events/submit"}),
+        lambda payload: payload.update({"club_url_template": "https://{school}.wat2do.io/clubs"}),
     )
-    with pytest.raises(ValidationError, match="submit_url_template"):
+    with pytest.raises(ValidationError, match="club_url_template"):
         load_controlbox(path)

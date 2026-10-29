@@ -3686,24 +3686,6 @@
         ],
         "parameters": [
           {
-            "name": "lead_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 64,
-                  "pattern": "^[a-z0-9_]+$"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Lead Type"
-            }
-          },
-          {
             "name": "lead_status",
             "in": "query",
             "required": false,
@@ -3714,7 +3696,7 @@
                     "new",
                     "contacted",
                     "replied",
-                    "submitted",
+                    "claimed",
                     "not_interested",
                     "dismissed"
                   ],
@@ -12146,98 +12128,26 @@
       },
       "OutreachLeadResponse": {
         "properties": {
-          "event_name": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Event Name"
-          },
-          "event_url": {
-            "type": "string",
-            "maxLength": 2000,
-            "pattern": "^https://\\S+$",
-            "title": "Event Url"
-          },
-          "event_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Event Date"
-          },
-          "organization": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Organization"
-          },
-          "contact_name": {
-            "type": "string",
-            "maxLength": 120,
-            "title": "Contact Name",
-            "default": ""
-          },
-          "contact_role": {
-            "type": "string",
-            "maxLength": 120,
-            "title": "Contact Role",
-            "default": ""
-          },
-          "email": {
-            "type": "string",
-            "maxLength": 254,
-            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
-            "title": "Email"
-          },
-          "source_url": {
-            "type": "string",
-            "maxLength": 2000,
-            "pattern": "^https://\\S+$",
-            "title": "Source Url"
-          },
-          "context": {
-            "type": "string",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Context"
-          },
-          "video_script": {
-            "type": "string",
-            "maxLength": 3000,
-            "minLength": 1,
-            "title": "Video Script"
-          },
-          "email_subject": {
-            "type": "string",
-            "maxLength": 150,
-            "minLength": 1,
-            "title": "Email Subject"
-          },
-          "email_body": {
-            "type": "string",
-            "maxLength": 3000,
-            "minLength": 1,
-            "title": "Email Body"
-          },
-          "follow_up": {
-            "type": "string",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Follow Up"
-          },
           "id": {
             "type": "string",
             "format": "uuid",
             "title": "Id"
           },
-          "lead_type": {
+          "club_id": {
+            "type": "integer",
+            "title": "Club Id"
+          },
+          "club_name": {
             "type": "string",
-            "title": "Lead Type"
+            "title": "Club Name"
+          },
+          "club_url": {
+            "type": "string",
+            "title": "Club Url"
+          },
+          "listings": {
+            "type": "integer",
+            "title": "Listings"
           },
           "school_slug": {
             "type": "string",
@@ -12247,13 +12157,41 @@
             "type": "string",
             "title": "School Name"
           },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "email_source_url": {
+            "type": "string",
+            "title": "Email Source Url"
+          },
+          "email_found_by": {
+            "type": "string",
+            "enum": [
+              "club_page",
+              "research"
+            ],
+            "title": "Email Found By"
+          },
+          "email_subject": {
+            "type": "string",
+            "title": "Email Subject"
+          },
+          "email_body": {
+            "type": "string",
+            "title": "Email Body"
+          },
+          "follow_up": {
+            "type": "string",
+            "title": "Follow Up"
+          },
           "status": {
             "type": "string",
             "enum": [
               "new",
               "contacted",
               "replied",
-              "submitted",
+              "claimed",
               "not_interested",
               "dismissed"
             ],
@@ -12271,25 +12209,25 @@
         },
         "type": "object",
         "required": [
-          "event_name",
-          "event_url",
-          "organization",
+          "id",
+          "club_id",
+          "club_name",
+          "club_url",
+          "listings",
+          "school_slug",
+          "school_name",
           "email",
-          "source_url",
-          "context",
-          "video_script",
+          "email_source_url",
+          "email_found_by",
           "email_subject",
           "email_body",
           "follow_up",
-          "id",
-          "lead_type",
-          "school_slug",
-          "school_name",
           "status",
           "notes",
           "found_at"
         ],
-        "title": "OutreachLeadResponse"
+        "title": "OutreachLeadResponse",
+        "description": "One unclaimed club, its email, and what to send it to claim its page."
       },
       "OutreachLeadUpdate": {
         "properties": {
@@ -12301,7 +12239,7 @@
                   "new",
                   "contacted",
                   "replied",
-                  "submitted",
+                  "claimed",
                   "not_interested",
                   "dismissed"
                 ]

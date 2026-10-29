@@ -171,12 +171,12 @@ X shows nothing logged out, so before the agents run the sweep reads X's Latest 
 Checked findings land in `public.competitor_pain_points`, deduplicated by link, and admins triage them on the Competitor pain points admin page; nothing ever replies or posts.
 Competitors, sources and their allowed link hosts, and the schedule live in `backend/controlbox/competitor_pain_points.json`.
 Install its LaunchAgent with `cd backend && .venv/bin/python jobs/find_competitor_pain_points.py install-schedule`, or run one sweep with `sweep`.
-Twice a week a Claude Sonnet agent per school and lead type (student unions and associations first, then hackathons and club ticketed events) researches upcoming student-run events and their organizers, with only WebSearch and WebFetch (`backend/services/outreach/prompt.md`).
-For each organizer it writes a short brief, a 30 to 45 second video script, an email and a follow-up that invite them to submit their event to Wat2Do, in the warm, value-first style of Alex Hormozi's $100M Leads.
-Code keeps a lead only when its email is printed on the page the agent cites, so no address is ever guessed, and each organizer is found only once.
-Leads land in `public.outreach_leads`; on the Outreach admin page an admin reads each lead, opens its email or follow-up as a filled-in Gmail draft in the outreach account, and tracks its status.
+Once a day the outreach sweep finds the emails of unclaimed clubs that have events or positions on Wat2Do, so each can be invited to claim the page Wat2Do made for it.
+It reads each new club's own directory page first, busiest clubs first, and keeps an address only when that page shows it for that club alone; for clubs still without an email, a few Claude Haiku agents a day search the public web with only WebSearch and WebFetch (`backend/services/outreach/prompt.md`), and code keeps an address only when it is printed on the page the agent cites.
+Leads land in `public.outreach_leads`, one per club; the email and follow-up (`backend/services/outreach/claim_email.md`) are written from the club when the admin page reads them, and a lead moves to claimed once its club is claimed.
+On the Outreach admin page an admin opens each email as a filled-in Gmail draft and tracks its status.
 Nothing is sent automatically.
-Lead types, the offer, the sender and the schedule live in `backend/controlbox/outreach.json`.
+The sweep's limits, the sender and the club link live in `backend/controlbox/outreach.json`.
 Install its LaunchAgent with `cd backend && .venv/bin/python jobs/find_outreach_leads.py install-schedule`, or run one sweep with `sweep`.
 Every local agent runs through `backend/services/claude_code.py`, which passes no application secrets unless the caller supplies them.
 Notifications and recommendation compute run on GitHub-hosted runners.

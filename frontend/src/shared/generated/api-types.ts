@@ -3471,34 +3471,37 @@ export interface components {
             /** Id */
             id?: string | null;
         };
-        /** OutreachLeadResponse */
+        /**
+         * OutreachLeadResponse
+         * @description One unclaimed club, its email, and what to send it to claim its page.
+         */
         OutreachLeadResponse: {
-            /** Event Name */
-            event_name: string;
-            /** Event Url */
-            event_url: string;
-            /** Event Date */
-            event_date?: string | null;
-            /** Organization */
-            organization: string;
             /**
-             * Contact Name
-             * @default
+             * Id
+             * Format: uuid
              */
-            contact_name: string;
-            /**
-             * Contact Role
-             * @default
-             */
-            contact_role: string;
+            id: string;
+            /** Club Id */
+            club_id: number;
+            /** Club Name */
+            club_name: string;
+            /** Club Url */
+            club_url: string;
+            /** Listings */
+            listings: number;
+            /** School Slug */
+            school_slug: string;
+            /** School Name */
+            school_name: string;
             /** Email */
             email: string;
-            /** Source Url */
-            source_url: string;
-            /** Context */
-            context: string;
-            /** Video Script */
-            video_script: string;
+            /** Email Source Url */
+            email_source_url: string;
+            /**
+             * Email Found By
+             * @enum {string}
+             */
+            email_found_by: "club_page" | "research";
             /** Email Subject */
             email_subject: string;
             /** Email Body */
@@ -3506,21 +3509,10 @@ export interface components {
             /** Follow Up */
             follow_up: string;
             /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Lead Type */
-            lead_type: string;
-            /** School Slug */
-            school_slug: string;
-            /** School Name */
-            school_name: string;
-            /**
              * Status
              * @enum {string}
              */
-            status: "new" | "contacted" | "replied" | "submitted" | "not_interested" | "dismissed";
+            status: "new" | "contacted" | "replied" | "claimed" | "not_interested" | "dismissed";
             /** Notes */
             notes: string;
             /**
@@ -3532,7 +3524,7 @@ export interface components {
         /** OutreachLeadUpdate */
         OutreachLeadUpdate: {
             /** Status */
-            status?: ("new" | "contacted" | "replied" | "submitted" | "not_interested" | "dismissed") | null;
+            status?: ("new" | "contacted" | "replied" | "claimed" | "not_interested" | "dismissed") | null;
             /** Notes */
             notes?: string | null;
         };
@@ -6797,8 +6789,7 @@ export interface operations {
     list_leads_outreach_leads__get: {
         parameters: {
             query?: {
-                lead_type?: string | null;
-                lead_status?: ("new" | "contacted" | "replied" | "submitted" | "not_interested" | "dismissed") | null;
+                lead_status?: ("new" | "contacted" | "replied" | "claimed" | "not_interested" | "dismissed") | null;
                 school?: string | null;
                 search?: string | null;
                 /** @description Page number (1-indexed) */

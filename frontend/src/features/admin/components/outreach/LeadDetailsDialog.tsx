@@ -17,7 +17,7 @@ interface LeadDetailsDialogProps {
   onSaveNotes: (lead: OutreachLead, notes: string) => void;
 }
 
-/** Everything the research agent wrote for one organizer, ready to record and send. */
+/** The email and follow-up inviting one club to claim its page, ready to send. */
 export function LeadDetailsDialog({ lead, isSaving, onClose, onSaveNotes }: LeadDetailsDialogProps) {
   return (
     <Dialog open={lead !== null} onOpenChange={open => !open && onClose()}>
@@ -32,8 +32,6 @@ function LeadDetails({ lead, isSaving, onSaveNotes }: Omit<LeadDetailsDialogProp
   const { t } = useTranslation();
   const [notes, setNotes] = useState(lead.notes);
   const sections = [
-    { title: t("admin.outreach.context"), text: lead.context },
-    { title: t("admin.outreach.videoScript"), text: lead.video_script },
     { title: t("admin.outreach.email"), text: `${lead.email_subject}\n\n${lead.email_body}` },
     { title: t("admin.outreach.followUp"), text: lead.follow_up },
   ];
@@ -41,8 +39,8 @@ function LeadDetails({ lead, isSaving, onSaveNotes }: Omit<LeadDetailsDialogProp
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{lead.event_name}</DialogTitle>
-        <DialogDescription>{[lead.organization, lead.contact_name, lead.email].filter(Boolean).join(" · ")}</DialogDescription>
+        <DialogTitle>{lead.club_name}</DialogTitle>
+        <DialogDescription>{[lead.school_name, lead.email].join(" · ")}</DialogDescription>
       </DialogHeader>
       <DialogBody>
         <Stack gap={5}>
@@ -61,7 +59,10 @@ function LeadDetails({ lead, isSaving, onSaveNotes }: Omit<LeadDetailsDialogProp
                 </a>
               </Button>
               <Button asChild variant="ghost">
-                <a href={lead.source_url} target="_blank" rel="noopener noreferrer"><ExternalLink />{t("admin.outreach.source")}</a>
+                <a href={lead.club_url} target="_blank" rel="noopener noreferrer"><ExternalLink />{t("admin.outreach.openClub")}</a>
+              </Button>
+              <Button asChild variant="ghost">
+                <a href={lead.email_source_url} target="_blank" rel="noopener noreferrer"><ExternalLink />{t("admin.outreach.source")}</a>
               </Button>
             </Stack>
             <LoadingButton isLoading={isSaving} loadingText={t("common.pleaseWait")} disabled={notes === lead.notes}

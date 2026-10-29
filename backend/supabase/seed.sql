@@ -696,19 +696,14 @@ VALUES
      'The app keeps logging me out.', 'Unreliable login', 'other', NULL, 'dismissed')
 ON CONFLICT (id) DO NOTHING;
 
--- Local example for the admin Outreach page: one researched hackathon organizer.
+-- Local example for the admin Outreach page: one unclaimed club with its email.
 INSERT INTO public.outreach_leads
-    (id, school_id, lead_type, event_name, event_url, event_date, organization,
-     contact_name, contact_role, email, source_url, context, video_script,
-     email_subject, email_body, follow_up, status)
+    (id, club_id, email, email_source_url, email_found_by, found_at, status)
 SELECT
-    '99999999-9999-4999-8999-999999999992', id, 'hackathon',
-    'Example Hacks 2026', 'https://example.com/hacks', current_date + 30, 'Example Hacks',
-    'Sam Organizer', 'Co-director', 'team@example.com', 'https://example.com/hacks/contact',
-    'A 36-hour student hackathon whose registration closes in two weeks.',
-    'Hey Sam, I saw Example Hacks opens registration soon...',
-    'Example Hacks on Wat2Do', 'Hi Sam, ...', 'Hi Sam, one more thing...', 'new'
-FROM public.schools WHERE slug = 'uwaterloo'
+    '99999999-9999-4999-8999-999999999992', id, 'boardgames@example.com',
+    'https://example.com/clubs/board-games', 'club_page', now(), 'new'
+FROM public.clubs WHERE club_name = 'UW Board Games Club'
+ORDER BY id LIMIT 1
 ON CONFLICT (id) DO NOTHING;
 
 COMMIT;
