@@ -448,7 +448,8 @@
         "label": "Widoki kont społecznościowych",
         "accounts": "Konta",
         "posts": "Wszystkie posty",
-        "songs": "Utwory"
+        "songs": "Utwory",
+        "follow": "Konta do obserwowania"
       },
       "sortLabel": "Sortuj",
       "accountLabel": "Konto",
@@ -473,6 +474,35 @@
         "emptyTitle": "Brak utworów",
         "emptyDescription": "Utwory pojawią się tutaj, gdy emulator doda je do opublikowanych karuzel."
       }
+    },
+    "followCandidates": {
+      "followers": "Obserwujący: {{value}}",
+      "read": {
+        "ok": "Profil odczytany",
+        "no_posts": "Brak postów",
+        "failed": "Nie udało się odczytać profilu",
+        "unread": "Jeszcze nieodczytany"
+      },
+      "unscored": "Bez oceny",
+      "foundVia": "Znaleziono przez {{accounts}}",
+      "profileTitle": "Profil Instagram @{{handle}}",
+      "showProfile": "Pokaż profil",
+      "approve": "Zatwierdź",
+      "reject": "Odrzuć",
+      "submit": "Wyślij decyzje ({{value}})",
+      "total": "Konta: {{value}}",
+      "schoolLabel": "Uczelnia",
+      "allSchools": "Wszystkie uczelnie",
+      "statusLabel": "Status",
+      "statuses": {
+        "pending": "Czeka na przegląd",
+        "approved": "Zatwierdzone, jeszcze nieobserwowane",
+        "followed": "Obserwowane",
+        "rejected": "Odrzucone"
+      },
+      "submitFailed": "Nie udało się zapisać decyzji. Spróbuj ponownie.",
+      "emptyTitle": "Nic do przejrzenia",
+      "emptyDescription": "Konta pojawiają się tutaj, gdy cotygodniowe wyszukiwanie je znajdzie."
     },
     "clubSubmissions": "Zgłoszenia klubów",
     "noClubSubmissions": "Brak zgłoszeń klubów",

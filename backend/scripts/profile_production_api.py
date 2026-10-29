@@ -106,6 +106,11 @@ AUTHENTICATED_ENDPOINTS = (
     ),
     Endpoint("/instagram-publishing/songs/", "/instagram-publishing/songs/", True),
     Endpoint("/instagram-publishing/accounts/", "/instagram-publishing/accounts/", True),
+    Endpoint(
+        "/instagram-publishing/follow-candidates/",
+        "/instagram-publishing/follow-candidates/?page=1&page_size=20",
+        True,
+    ),
     Endpoint("/notification-preferences", "/notification-preferences", True),
     Endpoint("/clubs/claims", "/clubs/claims", True),
     Endpoint("/clubs/mine", "/clubs/mine", True),

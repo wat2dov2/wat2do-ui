@@ -448,7 +448,8 @@
         "label": "سوشل اکاؤنٹس کے منظر",
         "accounts": "اکاؤنٹس",
         "posts": "تمام پوسٹس",
-        "songs": "گانے"
+        "songs": "گانے",
+        "follow": "فالو کرنے کے لیے اکاؤنٹس"
       },
       "sortLabel": "ترتیب",
       "accountLabel": "اکاؤنٹ",
@@ -473,6 +474,35 @@
         "emptyTitle": "ابھی کوئی گانا نہیں",
         "emptyDescription": "جب ایمولیٹر شائع شدہ کیروسلز میں گانے شامل کرے گا تو وہ یہاں نظر آئیں گے۔"
       }
+    },
+    "followCandidates": {
+      "followers": "فالوورز: {{value}}",
+      "read": {
+        "ok": "پروفائل پڑھ لیا گیا",
+        "no_posts": "کوئی پوسٹ نہیں",
+        "failed": "پروفائل پڑھا نہیں جا سکا",
+        "unread": "ابھی پڑھا نہیں گیا"
+      },
+      "unscored": "اسکور نہیں",
+      "foundVia": "{{accounts}} کے ذریعے ملا",
+      "profileTitle": "‎@{{handle}} کا انسٹاگرام پروفائل",
+      "showProfile": "پروفائل دکھائیں",
+      "approve": "منظور کریں",
+      "reject": "مسترد کریں",
+      "submit": "فیصلے بھیجیں ({{value}})",
+      "total": "اکاؤنٹس: {{value}}",
+      "schoolLabel": "یونیورسٹی",
+      "allSchools": "تمام یونیورسٹیاں",
+      "statusLabel": "حیثیت",
+      "statuses": {
+        "pending": "جائزے کا منتظر",
+        "approved": "منظور شدہ، ابھی فالو نہیں کیا",
+        "followed": "فالو کیا گیا",
+        "rejected": "مسترد"
+      },
+      "submitFailed": "فیصلے محفوظ نہیں ہو سکے۔ دوبارہ کوشش کریں۔",
+      "emptyTitle": "جائزے کے لیے کچھ نہیں",
+      "emptyDescription": "ہفتہ وار تلاش جیسے جیسے اکاؤنٹس ڈھونڈتی ہے وہ یہاں نظر آتے ہیں۔"
     },
     "clubSubmissions": "کلب کی درخواستیں",
     "noClubSubmissions": "کلب کی کوئی درخواست نہیں",

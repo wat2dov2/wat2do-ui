@@ -448,7 +448,8 @@
         "label": "Mga view ng social account",
         "accounts": "Mga account",
         "posts": "Lahat ng post",
-        "songs": "Mga kanta"
+        "songs": "Mga kanta",
+        "follow": "Mga account na ifa-follow"
       },
       "sortLabel": "Ayusin",
       "accountLabel": "Account",
@@ -473,6 +474,35 @@
         "emptyTitle": "Wala pang kanta",
         "emptyDescription": "Lalabas dito ang mga kanta kapag naidagdag na ng emulator sa mga na-publish na carousel."
       }
+    },
+    "followCandidates": {
+      "followers": "{{value}} follower",
+      "read": {
+        "ok": "Nabasa ang profile",
+        "no_posts": "Walang post",
+        "failed": "Hindi nabasa ang profile",
+        "unread": "Hindi pa nababasa"
+      },
+      "unscored": "Walang score",
+      "foundVia": "Nakita sa {{accounts}}",
+      "profileTitle": "Instagram profile ni @{{handle}}",
+      "showProfile": "Ipakita ang profile",
+      "approve": "Aprubahan",
+      "reject": "Tanggihan",
+      "submit": "Ipadala ang mga desisyon ({{value}})",
+      "total": "Mga account: {{value}}",
+      "schoolLabel": "Paaralan",
+      "allSchools": "Lahat ng paaralan",
+      "statusLabel": "Status",
+      "statuses": {
+        "pending": "Naghihintay ng review",
+        "approved": "Aprubado, hindi pa naka-follow",
+        "followed": "Naka-follow",
+        "rejected": "Tinanggihan"
+      },
+      "submitFailed": "Hindi na-save ang mga desisyon. Subukan ulit.",
+      "emptyTitle": "Walang ire-review",
+      "emptyDescription": "Lumalabas dito ang mga account habang nahahanap sila ng lingguhang paghahanap."
     },
     "clubSubmissions": "Mga pagsusumite ng club",
     "noClubSubmissions": "Walang pagsusumite ng club",

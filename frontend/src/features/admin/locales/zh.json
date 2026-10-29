@@ -448,7 +448,8 @@
         "label": "社交账号视图",
         "accounts": "账号",
         "posts": "全部帖子",
-        "songs": "歌曲"
+        "songs": "歌曲",
+        "follow": "待关注账号"
       },
       "sortLabel": "排序",
       "accountLabel": "账号",
@@ -473,6 +474,35 @@
         "emptyTitle": "暂无歌曲",
         "emptyDescription": "模拟器为已发布的轮播添加歌曲后，会显示在这里。"
       }
+    },
+    "followCandidates": {
+      "followers": "{{value}} 位粉丝",
+      "read": {
+        "ok": "已读取主页",
+        "no_posts": "没有帖子",
+        "failed": "无法读取主页",
+        "unread": "尚未读取"
+      },
+      "unscored": "未评分",
+      "foundVia": "通过 {{accounts}} 发现",
+      "profileTitle": "@{{handle}} 的 Instagram 主页",
+      "showProfile": "显示主页",
+      "approve": "批准",
+      "reject": "拒绝",
+      "submit": "提交决定（{{value}}）",
+      "total": "账号：{{value}}",
+      "schoolLabel": "学校",
+      "allSchools": "所有学校",
+      "statusLabel": "状态",
+      "statuses": {
+        "pending": "等待审核",
+        "approved": "已批准，尚未关注",
+        "followed": "已关注",
+        "rejected": "已拒绝"
+      },
+      "submitFailed": "无法保存决定，请重试。",
+      "emptyTitle": "没有需要审核的内容",
+      "emptyDescription": "每周搜索找到账号后会显示在这里。"
     },
     "clubSubmissions": "社团提交",
     "noClubSubmissions": "暂无社团提交",

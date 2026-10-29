@@ -5,6 +5,13 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from core.constants import (
+    FOLLOW_CANDIDATE_APPROVED,
+    FOLLOW_CANDIDATE_FOLLOWED,
+    FOLLOW_CANDIDATE_PENDING,
+    FOLLOW_CANDIDATE_REJECTED,
+    FOLLOW_SOURCE_CLUB,
+    FOLLOW_SOURCE_CRAWL,
+    FOLLOW_SOURCE_IMPORT,
     INSTAGRAM_BATCH_EMPTY,
     INSTAGRAM_BATCH_FAILED,
     INSTAGRAM_BATCH_GENERATING,
@@ -35,6 +42,16 @@ InstagramMusicStatus = Literal[
     INSTAGRAM_MUSIC_ADDED,
     INSTAGRAM_MUSIC_FAILED,
 ]
+
+
+FollowCandidateStatus = Literal[
+    FOLLOW_CANDIDATE_PENDING,
+    FOLLOW_CANDIDATE_APPROVED,
+    FOLLOW_CANDIDATE_REJECTED,
+    FOLLOW_CANDIDATE_FOLLOWED,
+]
+FollowCandidateDecisionStatus = Literal[FOLLOW_CANDIDATE_APPROVED, FOLLOW_CANDIDATE_REJECTED]
+FollowCandidateSource = Literal[FOLLOW_SOURCE_CRAWL, FOLLOW_SOURCE_CLUB, FOLLOW_SOURCE_IMPORT]
 
 
 class InstagramPublishItemResponse(BaseModel):
@@ -178,3 +195,50 @@ class InstagramAccountStatsResponse(BaseModel):
     token_expires_at: datetime
     followers_history: list[InstagramFollowerCountResponse]
     posts: list[InstagramAccountPostResponse]
+
+
+class FollowCandidatePostResponse(BaseModel):
+    url: str
+    posted_at: datetime | None = None
+    caption: str = ""
+    # Instagram's signed CDN image; it stops loading after a few days.
+    image: str | None = None
+
+
+class FollowCandidateResponse(BaseModel):
+    """An account a school account might follow, with what its newest posts showed."""
+
+    id: UUID
+    school: str
+    handle: str
+    name: str | None = None
+    source: FollowCandidateSource
+    found_via: list[str]
+    status: FollowCandidateStatus
+    read_status: Literal["ok", "no_posts", "failed"] | None = None
+    followers_count: int | None = None
+    is_private: bool | None = None
+    last_posted_at: datetime | None = None
+    recent_posts: list[FollowCandidatePostResponse]
+    score: int | None = None
+    verdict: Literal["approve", "review", "reject"] | None = None
+    reason: str | None = None
+    follow_error: str | None = None
+
+
+class FollowCandidateDecision(BaseModel):
+    id: UUID
+    status: FollowCandidateDecisionStatus
+
+
+class FollowCandidateDecisionsSubmit(BaseModel):
+    """Every decision an admin staged on the page, sent together."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decisions: list[FollowCandidateDecision] = Field(min_length=1, max_length=500)
+
+
+class FollowCandidateDecisionsResponse(BaseModel):
+    approved: int
+    rejected: int

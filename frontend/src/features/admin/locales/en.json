@@ -448,7 +448,8 @@
         "label": "Social account views",
         "accounts": "Accounts",
         "posts": "All posts",
-        "songs": "Songs"
+        "songs": "Songs",
+        "follow": "Follow candidates"
       },
       "sortLabel": "Sort",
       "accountLabel": "Account",
@@ -473,6 +474,35 @@
         "emptyTitle": "No songs yet",
         "emptyDescription": "Songs appear here once the emulator adds them to published carousels."
       }
+    },
+    "followCandidates": {
+      "followers": "{{value}} followers",
+      "read": {
+        "ok": "Profile read",
+        "no_posts": "No posts",
+        "failed": "Profile could not be read",
+        "unread": "Not read yet"
+      },
+      "unscored": "Not scored",
+      "foundVia": "Found via {{accounts}}",
+      "profileTitle": "Instagram profile of @{{handle}}",
+      "showProfile": "Show profile",
+      "approve": "Approve",
+      "reject": "Reject",
+      "submit": "Submit decisions ({{value}})",
+      "total": "Accounts: {{value}}",
+      "schoolLabel": "School",
+      "allSchools": "All schools",
+      "statusLabel": "Status",
+      "statuses": {
+        "pending": "Waiting for review",
+        "approved": "Approved, not followed yet",
+        "followed": "Followed",
+        "rejected": "Rejected"
+      },
+      "submitFailed": "Decisions could not be saved. Try again.",
+      "emptyTitle": "Nothing to review",
+      "emptyDescription": "Accounts appear here as the weekly crawl finds them."
     },
     "clubSubmissions": "Club submissions",
     "noClubSubmissions": "No club submissions",

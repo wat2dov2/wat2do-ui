@@ -448,7 +448,8 @@
         "label": "Các chế độ xem tài khoản",
         "accounts": "Tài khoản",
         "posts": "Tất cả bài đăng",
-        "songs": "Bài hát"
+        "songs": "Bài hát",
+        "follow": "Tài khoản cần theo dõi"
       },
       "sortLabel": "Sắp xếp",
       "accountLabel": "Tài khoản",
@@ -473,6 +474,35 @@
         "emptyTitle": "Chưa có bài hát",
         "emptyDescription": "Bài hát xuất hiện ở đây khi trình giả lập thêm chúng vào các carousel đã đăng."
       }
+    },
+    "followCandidates": {
+      "followers": "{{value}} người theo dõi",
+      "read": {
+        "ok": "Đã đọc hồ sơ",
+        "no_posts": "Không có bài đăng",
+        "failed": "Không đọc được hồ sơ",
+        "unread": "Chưa đọc"
+      },
+      "unscored": "Chưa chấm điểm",
+      "foundVia": "Tìm thấy qua {{accounts}}",
+      "profileTitle": "Hồ sơ Instagram của @{{handle}}",
+      "showProfile": "Hiện hồ sơ",
+      "approve": "Duyệt",
+      "reject": "Từ chối",
+      "submit": "Gửi quyết định ({{value}})",
+      "total": "Tài khoản: {{value}}",
+      "schoolLabel": "Trường",
+      "allSchools": "Tất cả các trường",
+      "statusLabel": "Trạng thái",
+      "statuses": {
+        "pending": "Đang chờ xem xét",
+        "approved": "Đã duyệt, chưa theo dõi",
+        "followed": "Đã theo dõi",
+        "rejected": "Đã từ chối"
+      },
+      "submitFailed": "Không lưu được quyết định. Hãy thử lại.",
+      "emptyTitle": "Không có gì để xem xét",
+      "emptyDescription": "Tài khoản xuất hiện ở đây khi đợt tìm kiếm hằng tuần tìm thấy chúng."
     },
     "clubSubmissions": "Đề xuất câu lạc bộ",
     "noClubSubmissions": "Chưa có đề xuất câu lạc bộ",

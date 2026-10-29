@@ -1,0 +1,102 @@
+{
+  "model": "claude-sonnet-5-5",
+  "agent_timeout_seconds": 600,
+  "score_batch_size": 25,
+  "auto_approve_score": 70,
+  "profile_read_delay_min_seconds": 3,
+  "profile_read_delay_max_seconds": 6,
+  "crawl_interval_days": 7,
+  "crawl_miss_streak": 10,
+  "crawl_max_scrolls": 25,
+  "crawl_profile_wait_seconds": 40,
+  "crawl_seed_attempts": 3,
+  "crawl_failures_before_rest": 3,
+  "crawl_rest_seconds": 600,
+  "follows_per_account_per_day": 20,
+  "school_names": {
+    "brocku": [
+      "brock"
+    ],
+    "dalhousie": [
+      "dal"
+    ],
+    "guelph": [
+      "uofg"
+    ],
+    "mcmaster": [
+      "mac"
+    ],
+    "mun": [
+      "memorial"
+    ],
+    "ocadu": [
+      "ocad"
+    ],
+    "ontariotech": [
+      "otu",
+      "uoit"
+    ],
+    "ottawa": [
+      "uottawa"
+    ],
+    "queensu": [
+      "queens"
+    ],
+    "tmu": [
+      "ryerson"
+    ],
+    "ualberta": [
+      "uofa"
+    ],
+    "ucalgary": [
+      "uofc"
+    ],
+    "ulaval": [
+      "laval"
+    ],
+    "umanitoba": [
+      "uofm",
+      "manitoba"
+    ],
+    "umich": [
+      "michigan"
+    ],
+    "upenn": [
+      "penn"
+    ],
+    "usask": [
+      "uofs"
+    ],
+    "utm": [
+      "uoft",
+      "utsc",
+      "utsg"
+    ],
+    "utsc": [
+      "uoft",
+      "utm",
+      "utsg"
+    ],
+    "utsg": [
+      "uoft",
+      "utm",
+      "utsc"
+    ],
+    "uwaterloo": [
+      "uw",
+      "waterloo"
+    ],
+    "uwindsor": [
+      "windsor"
+    ],
+    "uwo": [
+      "western"
+    ],
+    "wlu": [
+      "laurier"
+    ],
+    "yorku": [
+      "york"
+    ]
+  }
+}

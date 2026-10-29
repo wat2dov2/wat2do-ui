@@ -448,7 +448,8 @@
         "label": "Ansichten der Social-Media-Konten",
         "accounts": "Konten",
         "posts": "Alle Beiträge",
-        "songs": "Songs"
+        "songs": "Songs",
+        "follow": "Konten zum Folgen"
       },
       "sortLabel": "Sortieren",
       "accountLabel": "Konto",
@@ -473,6 +474,35 @@
         "emptyTitle": "Noch keine Songs",
         "emptyDescription": "Songs erscheinen hier, sobald der Emulator sie zu veröffentlichten Karussells hinzufügt."
       }
+    },
+    "followCandidates": {
+      "followers": "{{value}} Follower",
+      "read": {
+        "ok": "Profil gelesen",
+        "no_posts": "Keine Beiträge",
+        "failed": "Profil konnte nicht gelesen werden",
+        "unread": "Noch nicht gelesen"
+      },
+      "unscored": "Ohne Bewertung",
+      "foundVia": "Gefunden über {{accounts}}",
+      "profileTitle": "Instagram-Profil von @{{handle}}",
+      "showProfile": "Profil anzeigen",
+      "approve": "Freigeben",
+      "reject": "Ablehnen",
+      "submit": "Entscheidungen senden ({{value}})",
+      "total": "Konten: {{value}}",
+      "schoolLabel": "Hochschule",
+      "allSchools": "Alle Hochschulen",
+      "statusLabel": "Status",
+      "statuses": {
+        "pending": "Wartet auf Prüfung",
+        "approved": "Freigegeben, noch nicht gefolgt",
+        "followed": "Gefolgt",
+        "rejected": "Abgelehnt"
+      },
+      "submitFailed": "Die Entscheidungen konnten nicht gespeichert werden. Versuch es noch einmal.",
+      "emptyTitle": "Nichts zu prüfen",
+      "emptyDescription": "Konten erscheinen hier, sobald die wöchentliche Suche sie findet."
     },
     "clubSubmissions": "Club-Einreichungen",
     "noClubSubmissions": "Keine Club-Einreichungen",

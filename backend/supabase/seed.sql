@@ -742,6 +742,32 @@ VALUES
     ('bts spring day', true)
 ON CONFLICT DO NOTHING;
 
+-- Accounts the uwaterloo account might follow, in each state the admin review shows.
+INSERT INTO public.instagram_follow_candidates (
+    school_id, handle, name, source, found_via, status, read_status, followers_count,
+    last_posted_at, recent_posts, score, verdict, reason, scored_at
+)
+SELECT school.id, seed.handle, seed.name, 'crawl', ARRAY['uwmsa'], seed.status, seed.read_status,
+    seed.followers_count, now() - make_interval(days => seed.days_ago),
+    jsonb_build_array(jsonb_build_object(
+        'url', 'https://www.instagram.com/p/LOCALSEED/',
+        'posted_at', now() - make_interval(days => seed.days_ago),
+        'caption', seed.caption,
+        'image', NULL
+    )),
+    seed.score, seed.verdict, seed.reason, now()
+FROM public.schools school
+CROSS JOIN (VALUES
+    ('uwboardgames', 'UW Board Games Club', 'pending', 'ok', 840, 3, 'Board game night Friday in SLC',
+        88, 'approve', 'Weekly board game nights for Waterloo students'),
+    ('uw.pottery', 'Pottery at UW', 'pending', 'ok', 210, 40, 'Wheel throwing workshop sign-ups',
+        55, 'review', 'Workshops posted, but only a few this term'),
+    ('waterloo.memes', 'Waterloo Memes', 'rejected', 'ok', 9200, 1, 'When the exam is at 8am',
+        12, 'reject', 'Meme page, not a club')
+) AS seed(handle, name, status, read_status, followers_count, days_ago, caption, score, verdict, reason)
+WHERE school.slug = 'uwaterloo'
+ON CONFLICT (school_id, handle) DO NOTHING;
+
 -- The existing ULaval draft exercises review before an Instagram account is connected.
 UPDATE public.instagram_publish_batches
 SET instagram_user_id = NULL

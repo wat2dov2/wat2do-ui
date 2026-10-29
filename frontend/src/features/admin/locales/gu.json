@@ -448,7 +448,8 @@
         "label": "સોશિયલ એકાઉન્ટ્સના દૃશ્યો",
         "accounts": "એકાઉન્ટ્સ",
         "posts": "બધી પોસ્ટ્સ",
-        "songs": "ગીતો"
+        "songs": "ગીતો",
+        "follow": "ફોલો કરવા માટેના એકાઉન્ટ"
       },
       "sortLabel": "ક્રમ",
       "accountLabel": "એકાઉન્ટ",
@@ -473,6 +474,35 @@
         "emptyTitle": "હજી કોઈ ગીત નથી",
         "emptyDescription": "ઇમ્યુલેટર પ્રકાશિત કારોઝલ્સમાં ગીતો ઉમેરશે ત્યારે તે અહીં દેખાશે."
       }
+    },
+    "followCandidates": {
+      "followers": "ફોલોઅર: {{value}}",
+      "read": {
+        "ok": "પ્રોફાઇલ વાંચી",
+        "no_posts": "કોઈ પોસ્ટ નથી",
+        "failed": "પ્રોફાઇલ વાંચી શકાઈ નથી",
+        "unread": "હજુ વાંચી નથી"
+      },
+      "unscored": "સ્કોર નથી",
+      "foundVia": "{{accounts}} દ્વારા મળ્યું",
+      "profileTitle": "@{{handle}} ની Instagram પ્રોફાઇલ",
+      "showProfile": "પ્રોફાઇલ બતાવો",
+      "approve": "મંજૂર કરો",
+      "reject": "નકારો",
+      "submit": "નિર્ણયો મોકલો ({{value}})",
+      "total": "એકાઉન્ટ: {{value}}",
+      "schoolLabel": "યુનિવર્સિટી",
+      "allSchools": "બધી યુનિવર્સિટીઓ",
+      "statusLabel": "સ્થિતિ",
+      "statuses": {
+        "pending": "સમીક્ષાની રાહ",
+        "approved": "મંજૂર, હજુ ફોલો કર્યું નથી",
+        "followed": "ફોલો કર્યું",
+        "rejected": "નકાર્યું"
+      },
+      "submitFailed": "નિર્ણયો સાચવી શકાયા નથી. ફરી પ્રયાસ કરો.",
+      "emptyTitle": "સમીક્ષા માટે કંઈ નથી",
+      "emptyDescription": "સાપ્તાહિક શોધ એકાઉન્ટ શોધે તેમ તે અહીં દેખાય છે."
     },
     "clubSubmissions": "ક્લબ સબમિશન",
     "noClubSubmissions": "કોઈ ક્લબ સબમિશન નથી",

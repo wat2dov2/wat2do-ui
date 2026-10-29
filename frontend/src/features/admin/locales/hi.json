@@ -448,7 +448,8 @@
         "label": "सोशल अकाउंट के दृश्य",
         "accounts": "अकाउंट",
         "posts": "सभी पोस्ट",
-        "songs": "गाने"
+        "songs": "गाने",
+        "follow": "फ़ॉलो करने के लिए अकाउंट"
       },
       "sortLabel": "क्रम",
       "accountLabel": "अकाउंट",
@@ -473,6 +474,35 @@
         "emptyTitle": "अभी कोई गाना नहीं",
         "emptyDescription": "एम्युलेटर जब प्रकाशित कैरोसेल में गाने जोड़ेगा, तब वे यहाँ दिखेंगे।"
       }
+    },
+    "followCandidates": {
+      "followers": "फ़ॉलोअर: {{value}}",
+      "read": {
+        "ok": "प्रोफ़ाइल पढ़ ली गई",
+        "no_posts": "कोई पोस्ट नहीं",
+        "failed": "प्रोफ़ाइल पढ़ी नहीं जा सकी",
+        "unread": "अभी पढ़ी नहीं गई"
+      },
+      "unscored": "स्कोर नहीं",
+      "foundVia": "{{accounts}} के ज़रिए मिला",
+      "profileTitle": "@{{handle}} की Instagram प्रोफ़ाइल",
+      "showProfile": "प्रोफ़ाइल दिखाएँ",
+      "approve": "मंज़ूर करें",
+      "reject": "अस्वीकार करें",
+      "submit": "फ़ैसले भेजें ({{value}})",
+      "total": "अकाउंट: {{value}}",
+      "schoolLabel": "विश्वविद्यालय",
+      "allSchools": "सभी विश्वविद्यालय",
+      "statusLabel": "स्थिति",
+      "statuses": {
+        "pending": "समीक्षा का इंतज़ार",
+        "approved": "मंज़ूर, अभी फ़ॉलो नहीं किया",
+        "followed": "फ़ॉलो किया",
+        "rejected": "अस्वीकृत"
+      },
+      "submitFailed": "फ़ैसले सहेजे नहीं जा सके। फिर से कोशिश करें।",
+      "emptyTitle": "समीक्षा के लिए कुछ नहीं",
+      "emptyDescription": "साप्ताहिक खोज जैसे-जैसे अकाउंट ढूँढती है, वे यहाँ दिखते हैं।"
     },
     "clubSubmissions": "क्लब सबमिशन",
     "noClubSubmissions": "कोई क्लब सबमिशन नहीं",

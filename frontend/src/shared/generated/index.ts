@@ -58,6 +58,14 @@ export type ApiInstagramAccountStatsResponse =
   components["schemas"]["InstagramAccountStatsResponse"];
 export type ApiInstagramAccountPostResponse =
   components["schemas"]["InstagramAccountPostResponse"];
+export type ApiFollowCandidateResponse =
+  components["schemas"]["FollowCandidateResponse"];
+export type ApiPaginatedFollowCandidateResponse =
+  components["schemas"]["PaginatedResponse_FollowCandidateResponse_"];
+export type ApiFollowCandidateDecision =
+  components["schemas"]["FollowCandidateDecision"];
+export type ApiFollowCandidateDecisionsResponse =
+  components["schemas"]["FollowCandidateDecisionsResponse"];
 
 // ── Event Submissions ───────────────────────────────────────────────
 export type ApiSubmissionResponse = components["schemas"]["SubmissionResponse"];

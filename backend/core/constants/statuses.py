@@ -32,3 +32,20 @@ INSTAGRAM_BATCH_STATUSES = (
 INSTAGRAM_MUSIC_PENDING: Final = "pending"
 INSTAGRAM_MUSIC_ADDED: Final = "added"
 INSTAGRAM_MUSIC_FAILED: Final = "failed"
+
+# An account a school account might follow: an admin approves or rejects it, and the
+# daily follow job marks approved ones followed.
+FOLLOW_CANDIDATE_PENDING: Final = "pending"
+FOLLOW_CANDIDATE_APPROVED: Final = "approved"
+FOLLOW_CANDIDATE_REJECTED: Final = "rejected"
+FOLLOW_CANDIDATE_FOLLOWED: Final = "followed"
+FOLLOW_CANDIDATE_STATUSES = (
+    FOLLOW_CANDIDATE_PENDING,
+    FOLLOW_CANDIDATE_APPROVED,
+    FOLLOW_CANDIDATE_REJECTED,
+    FOLLOW_CANDIDATE_FOLLOWED,
+)
+# Where a request to follow came from.
+FOLLOW_SOURCE_CRAWL: Final = "crawl"
+FOLLOW_SOURCE_CLUB: Final = "club"
+FOLLOW_SOURCE_IMPORT: Final = "import"

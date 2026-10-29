@@ -448,7 +448,8 @@
         "label": "Vues des comptes sociaux",
         "accounts": "Comptes",
         "posts": "Toutes les publications",
-        "songs": "Chansons"
+        "songs": "Chansons",
+        "follow": "Comptes à suivre"
       },
       "sortLabel": "Trier",
       "accountLabel": "Compte",
@@ -473,6 +474,35 @@
         "emptyTitle": "Aucune chanson pour l'instant",
         "emptyDescription": "Les chansons apparaissent ici dès que l'émulateur les ajoute aux carrousels publiés."
       }
+    },
+    "followCandidates": {
+      "followers": "{{value}} abonnés",
+      "read": {
+        "ok": "Profil lu",
+        "no_posts": "Aucune publication",
+        "failed": "Le profil n'a pas pu être lu",
+        "unread": "Pas encore lu"
+      },
+      "unscored": "Sans score",
+      "foundVia": "Trouvé via {{accounts}}",
+      "profileTitle": "Profil Instagram de @{{handle}}",
+      "showProfile": "Afficher le profil",
+      "approve": "Approuver",
+      "reject": "Refuser",
+      "submit": "Envoyer les décisions ({{value}})",
+      "total": "Comptes : {{value}}",
+      "schoolLabel": "École",
+      "allSchools": "Toutes les écoles",
+      "statusLabel": "Statut",
+      "statuses": {
+        "pending": "En attente de revue",
+        "approved": "Approuvé, pas encore suivi",
+        "followed": "Suivi",
+        "rejected": "Refusé"
+      },
+      "submitFailed": "Les décisions n'ont pas pu être enregistrées. Réessayez.",
+      "emptyTitle": "Rien à revoir",
+      "emptyDescription": "Les comptes apparaissent ici à mesure que l'exploration hebdomadaire les trouve."
     },
     "clubSubmissions": "Soumissions de clubs",
     "noClubSubmissions": "Aucune soumission de club",

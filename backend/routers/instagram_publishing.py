@@ -6,6 +6,10 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from core.auth import get_admin_user
 from core.pagination import PaginatedResponse, PaginationParams, paginated_response
 from schemas.instagram_publishing import (
+    FollowCandidateDecisionsResponse,
+    FollowCandidateDecisionsSubmit,
+    FollowCandidateResponse,
+    FollowCandidateStatus,
     InstagramAccountStatsResponse,
     InstagramPublishBatchPublish,
     InstagramPublishBatchResponse,
@@ -17,6 +21,7 @@ from schemas.instagram_publishing import (
 )
 from schemas.user import UserResponse
 from services import instagram_publishing
+from services.instagram_follow import candidates
 from services.instagram_publishing import music, stats
 
 router = APIRouter(prefix="/instagram-publishing", tags=["instagram-publishing"])
@@ -102,3 +107,33 @@ def delete_instagram_song(
 @router.get("/accounts/", response_model=list[InstagramAccountStatsResponse])
 def list_instagram_account_stats(_: UserResponse = Depends(get_admin_user)):
     return stats.list_account_stats()
+
+
+@router.get(
+    "/follow-candidates/",
+    response_model=PaginatedResponse[FollowCandidateResponse],
+)
+def list_follow_candidates(
+    candidate_status: FollowCandidateStatus = Query(default="pending", alias="status"),
+    school: str | None = None,
+    pagination: PaginationParams = Depends(),
+    _: UserResponse = Depends(get_admin_user),
+):
+    items, total = candidates.list_candidates(
+        school=school,
+        status=candidate_status,
+        offset=pagination.offset,
+        limit=pagination.page_size,
+    )
+    return paginated_response(items, total, pagination)
+
+
+@router.post("/follow-candidates/decisions", response_model=FollowCandidateDecisionsResponse)
+def submit_follow_decisions(
+    data: FollowCandidateDecisionsSubmit,
+    admin: UserResponse = Depends(get_admin_user),
+):
+    return candidates.decide(
+        [(decision.id, decision.status) for decision in data.decisions],
+        decided_by=str(admin.id),
+    )

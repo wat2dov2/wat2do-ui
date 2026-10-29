@@ -23,6 +23,9 @@ import type {
   ApiInstagramAccountStatsResponse,
   ApiInstagramSongCreate,
   ApiInstagramSongResponse,
+  ApiFollowCandidateDecision,
+  ApiFollowCandidateDecisionsResponse,
+  ApiPaginatedFollowCandidateResponse,
   ApiPaginatedInstagramPublishBatchSummaryResponse,
   ApiPaginatedPosterPayoutResponse,
   ApiPayoutCsvExportResponse,
@@ -238,6 +241,40 @@ export async function addInstagramSong(
 
 export async function deleteInstagramSong(id: string): Promise<void> {
   return api.delete<void>(`/instagram-publishing/songs/${id}`);
+}
+
+export interface FollowCandidateFilters {
+  /** Every school when empty. */
+  school: string;
+  status: ApiFollowCandidateStatus;
+  page: number;
+  pageSize: number;
+}
+
+export type ApiFollowCandidateStatus = ApiPaginatedFollowCandidateResponse["items"][number]["status"];
+
+/** Accounts a school account might follow, best scored first. */
+export async function getFollowCandidates({
+  school,
+  status,
+  page,
+  pageSize,
+}: FollowCandidateFilters): Promise<ApiPaginatedFollowCandidateResponse> {
+  const params = new URLSearchParams({ status, page: String(page), page_size: String(pageSize) });
+  if (school) params.set("school", school);
+  return api.get<ApiPaginatedFollowCandidateResponse>(
+    `/instagram-publishing/follow-candidates/?${params.toString()}`,
+  );
+}
+
+/** Every staged approval and rejection, sent together. */
+export async function submitFollowDecisions(
+  decisions: ApiFollowCandidateDecision[],
+): Promise<ApiFollowCandidateDecisionsResponse> {
+  return api.post<ApiFollowCandidateDecisionsResponse>(
+    "/instagram-publishing/follow-candidates/decisions",
+    { decisions },
+  );
 }
 
 

@@ -816,6 +816,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instagram-publishing/follow-candidates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Follow Candidates */
+        get: operations["list_follow_candidates_instagram_publishing_follow_candidates__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/follow-candidates/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Follow Decisions */
+        post: operations["submit_follow_decisions_instagram_publishing_follow_candidates_decisions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/interactions/batch": {
         parameters: {
             query?: never;
@@ -2881,6 +2915,95 @@ export interface components {
             /** Cancelled */
             cancelled?: boolean | null;
         };
+        /** FollowCandidateDecision */
+        FollowCandidateDecision: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "approved" | "rejected";
+        };
+        /** FollowCandidateDecisionsResponse */
+        FollowCandidateDecisionsResponse: {
+            /** Approved */
+            approved: number;
+            /** Rejected */
+            rejected: number;
+        };
+        /**
+         * FollowCandidateDecisionsSubmit
+         * @description Every decision an admin staged on the page, sent together.
+         */
+        FollowCandidateDecisionsSubmit: {
+            /** Decisions */
+            decisions: components["schemas"]["FollowCandidateDecision"][];
+        };
+        /** FollowCandidatePostResponse */
+        FollowCandidatePostResponse: {
+            /** Url */
+            url: string;
+            /** Posted At */
+            posted_at?: string | null;
+            /**
+             * Caption
+             * @default
+             */
+            caption: string;
+            /** Image */
+            image?: string | null;
+        };
+        /**
+         * FollowCandidateResponse
+         * @description An account a school account might follow, with what its newest posts showed.
+         */
+        FollowCandidateResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** School */
+            school: string;
+            /** Handle */
+            handle: string;
+            /** Name */
+            name?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "crawl" | "club" | "import";
+            /** Found Via */
+            found_via: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected" | "followed";
+            /** Read Status */
+            read_status?: ("ok" | "no_posts" | "failed") | null;
+            /** Followers Count */
+            followers_count?: number | null;
+            /** Is Private */
+            is_private?: boolean | null;
+            /** Last Posted At */
+            last_posted_at?: string | null;
+            /** Recent Posts */
+            recent_posts: components["schemas"]["FollowCandidatePostResponse"][];
+            /** Score */
+            score?: number | null;
+            /** Verdict */
+            verdict?: ("approve" | "review" | "reject") | null;
+            /** Reason */
+            reason?: string | null;
+            /** Follow Error */
+            follow_error?: string | null;
+        };
         /** GoingEventSelection */
         GoingEventSelection: {
             /** Event Id */
@@ -3610,6 +3733,19 @@ export interface components {
         PaginatedResponse_EventSummaryResponse_: {
             /** Items */
             items: components["schemas"]["EventSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[FollowCandidateResponse] */
+        PaginatedResponse_FollowCandidateResponse_: {
+            /** Items */
+            items: components["schemas"]["FollowCandidateResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -6616,6 +6752,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InstagramAccountStatsResponse"][];
+                };
+            };
+        };
+    };
+    list_follow_candidates_instagram_publishing_follow_candidates__get: {
+        parameters: {
+            query?: {
+                status?: "pending" | "approved" | "rejected" | "followed";
+                school?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_FollowCandidateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_follow_decisions_instagram_publishing_follow_candidates_decisions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FollowCandidateDecisionsSubmit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowCandidateDecisionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -976,6 +976,45 @@ class IngestionControl(_ControlModel):
         return self
 
 
+class InstagramFollowControl(_ControlModel):
+    """Finding clubs a school account should follow, reviewing them, and following them."""
+
+    # Sonnet scores each found account from its newest posts, this many per agent run;
+    # a score this high starts approved in the admin review.
+    model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
+    agent_timeout_seconds: int = Field(gt=0, le=1800)
+    score_batch_size: int = Field(ge=1, le=50)
+    auto_approve_score: int = Field(ge=0, le=100)
+    # Logged-out profile reads share the Mac's IP with ingestion, so they are spaced out.
+    profile_read_delay_min_seconds: float = Field(ge=0, le=60)
+    profile_read_delay_max_seconds: float = Field(ge=0, le=120)
+
+    # Each school's crawl starts at most once per interval.
+    crawl_interval_days: int = Field(ge=1, le=60)
+    # A crawl stops after this many visited accounts in a row turn up nothing new.
+    crawl_miss_streak: int = Field(ge=1, le=100)
+    crawl_max_scrolls: int = Field(ge=1, le=200)
+    crawl_profile_wait_seconds: int = Field(ge=5, le=300)
+    # A profile that fails to load is retried later, up to this many times, and never
+    # counts as a miss; this many failures in a row rests the crawl before going on.
+    crawl_seed_attempts: int = Field(ge=1, le=10)
+    crawl_failures_before_rest: int = Field(ge=1, le=20)
+    crawl_rest_seconds: int = Field(ge=0, le=7200)
+
+    # Each school account follows at most this many approved accounts per day.
+    follows_per_account_per_day: int = Field(ge=1, le=200)
+
+    # Names clubs use for their school besides its slug, searched in Following lists.
+    # UofT's campuses list each other: a club named for one campus often runs on another.
+    school_names: dict[str, list[str]]
+
+    @model_validator(mode="after")
+    def _read_delays_are_ordered(self) -> "InstagramFollowControl":
+        if self.profile_read_delay_min_seconds > self.profile_read_delay_max_seconds:
+            raise ValueError("profile_read_delay_min_seconds must not exceed the maximum")
+        return self
+
+
 class InstagramDmsControl(_ControlModel):
     # Dry run reads, decides and logs each DM without replying or queueing anything.
     dry_run: bool
@@ -1178,6 +1217,7 @@ class ControlBox(_ControlModel):
     instagram_publishing: InstagramPublishingControl
     competitor_pain_points: CompetitorPainPointsControl
     outreach: OutreachControl
+    instagram_follow: InstagramFollowControl
     instagram_dms: InstagramDmsControl
     instagram_emulator: InstagramEmulatorControl
     workflow_failure_alerts: WorkflowFailureAlertsControl

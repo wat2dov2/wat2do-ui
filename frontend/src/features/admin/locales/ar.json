@@ -448,7 +448,8 @@
         "label": "عروض الحسابات الاجتماعية",
         "accounts": "الحسابات",
         "posts": "كل المنشورات",
-        "songs": "الأغاني"
+        "songs": "الأغاني",
+        "follow": "حسابات للمتابعة"
       },
       "sortLabel": "ترتيب",
       "accountLabel": "الحساب",
@@ -473,6 +474,35 @@
         "emptyTitle": "لا توجد أغانٍ بعد",
         "emptyDescription": "تظهر الأغاني هنا بعد أن يضيفها المحاكي إلى المنشورات الدائرية المنشورة."
       }
+    },
+    "followCandidates": {
+      "followers": "المتابعون: {{value}}",
+      "read": {
+        "ok": "تمت قراءة الملف",
+        "no_posts": "لا توجد منشورات",
+        "failed": "تعذّرت قراءة الملف",
+        "unread": "لم تتم قراءته بعد"
+      },
+      "unscored": "بلا تقييم",
+      "foundVia": "وُجد عبر {{accounts}}",
+      "profileTitle": "ملف إنستغرام للحساب @{{handle}}",
+      "showProfile": "عرض الملف",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "submit": "إرسال القرارات ({{value}})",
+      "total": "الحسابات: {{value}}",
+      "schoolLabel": "الجامعة",
+      "allSchools": "كل الجامعات",
+      "statusLabel": "الحالة",
+      "statuses": {
+        "pending": "بانتظار المراجعة",
+        "approved": "تمت الموافقة، لم تتم المتابعة بعد",
+        "followed": "تمت المتابعة",
+        "rejected": "مرفوض"
+      },
+      "submitFailed": "تعذّر حفظ القرارات. حاول مرة أخرى.",
+      "emptyTitle": "لا شيء للمراجعة",
+      "emptyDescription": "تظهر الحسابات هنا عندما يعثر عليها البحث الأسبوعي."
     },
     "clubSubmissions": "طلبات الأندية",
     "noClubSubmissions": "لا توجد طلبات أندية",

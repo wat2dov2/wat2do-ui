@@ -448,7 +448,8 @@
         "label": "소셜 계정 보기",
         "accounts": "계정",
         "posts": "모든 게시물",
-        "songs": "노래"
+        "songs": "노래",
+        "follow": "팔로우할 계정"
       },
       "sortLabel": "정렬",
       "accountLabel": "계정",
@@ -473,6 +474,35 @@
         "emptyTitle": "아직 노래가 없습니다",
         "emptyDescription": "에뮬레이터가 게시된 캐러셀에 노래를 추가하면 여기에 표시됩니다."
       }
+    },
+    "followCandidates": {
+      "followers": "팔로워 {{value}}명",
+      "read": {
+        "ok": "프로필 읽음",
+        "no_posts": "게시물 없음",
+        "failed": "프로필을 읽을 수 없음",
+        "unread": "아직 읽지 않음"
+      },
+      "unscored": "점수 없음",
+      "foundVia": "{{accounts}}에서 발견",
+      "profileTitle": "@{{handle}}의 Instagram 프로필",
+      "showProfile": "프로필 보기",
+      "approve": "승인",
+      "reject": "거절",
+      "submit": "결정 제출 ({{value}})",
+      "total": "계정: {{value}}",
+      "schoolLabel": "학교",
+      "allSchools": "모든 학교",
+      "statusLabel": "상태",
+      "statuses": {
+        "pending": "검토 대기 중",
+        "approved": "승인됨, 아직 팔로우 전",
+        "followed": "팔로우함",
+        "rejected": "거절됨"
+      },
+      "submitFailed": "결정을 저장하지 못했습니다. 다시 시도하세요.",
+      "emptyTitle": "검토할 항목 없음",
+      "emptyDescription": "매주 탐색이 계정을 찾으면 여기에 표시됩니다."
     },
     "clubSubmissions": "동아리 제출",
     "noClubSubmissions": "동아리 제출 없음",

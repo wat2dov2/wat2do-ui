@@ -142,3 +142,84 @@ def test_only_post_urls_are_fetched(respond):
     with pytest.raises(ValueError):
         module.fetch_post("https://www.instagram.com/uwimprov/")
     assert respond.requests == []
+
+
+PROFILE_URL = "https://www.instagram.com/utmaclub/embed/"
+
+
+def _embed(context: dict | None) -> str:
+    """A profile embed page: its data is a JSON string inside the page's own JSON."""
+    raw = json.dumps(json.dumps({"context": context}) if context is not None else None)
+    return f'<html><script>{{"contextJSON":{raw}}}</script></html>'
+
+
+def _media(shortcode: str, taken_at: int, caption: str) -> dict:
+    return {
+        "shortcode_media": {
+            "shortcode": shortcode,
+            "taken_at_timestamp": taken_at,
+            "display_url": f"https://scontent.cdninstagram.com/{shortcode}.jpg",
+            "edge_media_to_caption": {"edges": [{"node": {"text": caption}}]},
+            "owner": {"is_private": False},
+        }
+    }
+
+
+def test_a_profile_comes_back_with_its_newest_posts_first(respond):
+    respond.response = _response(
+        _embed(
+            {
+                "full_name": "UTMAC",
+                "followers_count": 436,
+                "posts_count": 68,
+                "graphql_media": [
+                    _media("OLD", 1790000000, "Game night"),
+                    _media("NEW", 1791000000, "Mahjong quiz Friday"),
+                    _media("MID", 1790500000, "Workshop"),
+                    _media("OLDEST", 1780000000, "Welcome"),
+                ],
+            }
+        ),
+        url=PROFILE_URL,
+    )
+
+    profile = module.fetch_profile("utmaclub")
+
+    assert profile["read"] == "ok"
+    assert (profile["name"], profile["followers_count"], profile["is_private"]) == (
+        "UTMAC",
+        436,
+        False,
+    )
+    assert [post["url"] for post in profile["posts"]] == [
+        "https://www.instagram.com/p/NEW/",
+        "https://www.instagram.com/p/MID/",
+        "https://www.instagram.com/p/OLD/",
+    ]
+    assert profile["posts"][0]["caption"] == "Mahjong quiz Friday"
+    assert respond.requests[0][1]["headers"]["Sec-Fetch-Dest"] == "iframe"
+
+
+def test_a_profile_without_posts_says_so(respond):
+    respond.response = _response(
+        _embed({"full_name": "New club", "graphql_media": []}), url=PROFILE_URL
+    )
+
+    assert module.fetch_profile("newclub")["read"] == "no_posts"
+
+
+@pytest.mark.parametrize("text", ["<html>no data</html>", _embed(None)])
+def test_a_profile_that_never_renders_is_a_failed_read(respond, text):
+    respond.response = _response(text, url=PROFILE_URL)
+
+    assert module.fetch_profile("gone") == {"read": "failed"}
+
+
+@pytest.mark.parametrize(
+    "response",
+    [_response(url="https://www.instagram.com/accounts/login/"), _response(status=429)],
+)
+def test_a_profile_read_refused_by_instagram_stops(respond, response):
+    respond.response = response
+    with pytest.raises(module.FetchBlocked):
+        module.fetch_profile("utmaclub")

@@ -129,6 +129,21 @@ searches the admin's song list in random order, and Claude Haiku picks the match
 track or none.
 A song the admin marks as Asian or K-pop is tried only at the campuses in
 `controlbox/instagram_publishing.json` `asian_song_schools`.
+The emulator also finds and follows the clubs each school account should follow.
+`public.instagram_follow_candidates` is the one queue of accounts to follow: any feature that wants an account followed adds a row there with its `source` (`crawl`, `club` or `import`), and nothing else follows accounts.
+One row per school and handle is kept whatever its status, so an account an admin rejected is never offered again.
+Every listed club's Instagram account goes in approved for its school (`sync_club_targets`); crawled accounts wait for review.
+A crawl (`backend/services/instagram_follow/crawl.py`) starts at most once per `controlbox/instagram_follow.json` `crawl_interval_days` per school.
+It searches the school account's own Following list for the school's names in `school_names` (UofT's campuses list each other), then each match's Following list in turn, reading from each row's button whether we already follow that account.
+Every match is followed further, and an unfollowed account with no row yet becomes a pending candidate.
+The crawl stops once `crawl_miss_streak` profiles in a row find nothing new; a profile that fails to load is retried later and never counts as a miss.
+It runs in slices (`crawl_slice`) with its place kept in local state, so it never holds the emulator for hours.
+New candidates are read logged out from their profile embed (`fetch_profile`) and scored by Claude (`backend/services/instagram_follow/prompt.md`) from their newest posts.
+Admins review them on the admin Social page's Follow candidates tab; approvals and rejections are staged in the page and submitted together.
+Approving creates the school's club for the handle unless one exists, and queues the follow.
+The emulator worker checks `crawl_due` and `follows_due` from the database, then calls `crawl_slice` and `follow_due` with the emulator on the school's account.
+`follow_due` follows a few approved accounts per visit, at most `follows_per_account_per_day` a day, and sets each one's post notifications to All so ingestion hears about its posts; an account already followed is only marked followed.
+Instagram's "Try again later" pauses that account's follows for a day; it is never pushed through.
 Every job that drives the emulator holds its lock, so no two ever tap at once.
 Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
 message, impersonation, login codes, money, follow-for-follow, pressure).

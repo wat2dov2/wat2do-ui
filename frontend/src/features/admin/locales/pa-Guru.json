@@ -448,7 +448,8 @@
         "label": "ਸੋਸ਼ਲ ਖਾਤਿਆਂ ਦੇ ਦ੍ਰਿਸ਼",
         "accounts": "ਖਾਤੇ",
         "posts": "ਸਾਰੀਆਂ ਪੋਸਟਾਂ",
-        "songs": "ਗੀਤ"
+        "songs": "ਗੀਤ",
+        "follow": "ਫਾਲੋ ਕਰਨ ਲਈ ਖਾਤੇ"
       },
       "sortLabel": "ਕ੍ਰਮ",
       "accountLabel": "ਖਾਤਾ",
@@ -473,6 +474,35 @@
         "emptyTitle": "ਹਾਲੇ ਕੋਈ ਗੀਤ ਨਹੀਂ",
         "emptyDescription": "ਜਦੋਂ ਇਮੂਲੇਟਰ ਪ੍ਰਕਾਸ਼ਿਤ ਕੈਰੋਸਲਾਂ ਵਿੱਚ ਗੀਤ ਜੋੜੇਗਾ, ਉਹ ਇੱਥੇ ਦਿਖਣਗੇ।"
       }
+    },
+    "followCandidates": {
+      "followers": "ਫਾਲੋਅਰ: {{value}}",
+      "read": {
+        "ok": "ਪ੍ਰੋਫਾਈਲ ਪੜ੍ਹ ਲਈ",
+        "no_posts": "ਕੋਈ ਪੋਸਟ ਨਹੀਂ",
+        "failed": "ਪ੍ਰੋਫਾਈਲ ਪੜ੍ਹੀ ਨਹੀਂ ਜਾ ਸਕੀ",
+        "unread": "ਹਾਲੇ ਪੜ੍ਹੀ ਨਹੀਂ"
+      },
+      "unscored": "ਸਕੋਰ ਨਹੀਂ",
+      "foundVia": "{{accounts}} ਰਾਹੀਂ ਮਿਲਿਆ",
+      "profileTitle": "@{{handle}} ਦੀ Instagram ਪ੍ਰੋਫਾਈਲ",
+      "showProfile": "ਪ੍ਰੋਫਾਈਲ ਦਿਖਾਓ",
+      "approve": "ਮਨਜ਼ੂਰ ਕਰੋ",
+      "reject": "ਰੱਦ ਕਰੋ",
+      "submit": "ਫ਼ੈਸਲੇ ਭੇਜੋ ({{value}})",
+      "total": "ਖਾਤੇ: {{value}}",
+      "schoolLabel": "ਯੂਨੀਵਰਸਿਟੀ",
+      "allSchools": "ਸਾਰੀਆਂ ਯੂਨੀਵਰਸਿਟੀਆਂ",
+      "statusLabel": "ਸਥਿਤੀ",
+      "statuses": {
+        "pending": "ਸਮੀਖਿਆ ਦੀ ਉਡੀਕ",
+        "approved": "ਮਨਜ਼ੂਰ, ਹਾਲੇ ਫਾਲੋ ਨਹੀਂ ਕੀਤਾ",
+        "followed": "ਫਾਲੋ ਕੀਤਾ",
+        "rejected": "ਰੱਦ ਕੀਤਾ"
+      },
+      "submitFailed": "ਫ਼ੈਸਲੇ ਸੰਭਾਲੇ ਨਹੀਂ ਜਾ ਸਕੇ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+      "emptyTitle": "ਸਮੀਖਿਆ ਲਈ ਕੁਝ ਨਹੀਂ",
+      "emptyDescription": "ਹਫ਼ਤਾਵਾਰੀ ਖੋਜ ਜਿਵੇਂ ਖਾਤੇ ਲੱਭਦੀ ਹੈ, ਉਹ ਇੱਥੇ ਦਿਸਦੇ ਹਨ।"
     },
     "clubSubmissions": "ਕਲੱਬ ਸਬਮਿਸ਼ਨ",
     "noClubSubmissions": "ਕੋਈ ਕਲੱਬ ਸਬਮਿਸ਼ਨ ਨਹੀਂ",

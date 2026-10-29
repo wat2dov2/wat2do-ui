@@ -448,7 +448,8 @@
         "label": "社交帳戶檢視",
         "accounts": "帳戶",
         "posts": "所有帖子",
-        "songs": "歌曲"
+        "songs": "歌曲",
+        "follow": "待追蹤帳號"
       },
       "sortLabel": "排序",
       "accountLabel": "帳戶",
@@ -473,6 +474,35 @@
         "emptyTitle": "暫時未有歌曲",
         "emptyDescription": "模擬器幫已發佈嘅旋轉木馬加咗歌之後，就會喺度顯示。"
       }
+    },
+    "followCandidates": {
+      "followers": "{{value}} 位粉絲",
+      "read": {
+        "ok": "已讀取主頁",
+        "no_posts": "冇帖子",
+        "failed": "讀唔到主頁",
+        "unread": "未讀取"
+      },
+      "unscored": "未評分",
+      "foundVia": "經 {{accounts}} 搵到",
+      "profileTitle": "@{{handle}} 嘅 Instagram 主頁",
+      "showProfile": "顯示主頁",
+      "approve": "批准",
+      "reject": "拒絕",
+      "submit": "提交決定（{{value}}）",
+      "total": "帳號：{{value}}",
+      "schoolLabel": "學校",
+      "allSchools": "所有學校",
+      "statusLabel": "狀態",
+      "statuses": {
+        "pending": "等緊審核",
+        "approved": "已批准，未追蹤",
+        "followed": "已追蹤",
+        "rejected": "已拒絕"
+      },
+      "submitFailed": "儲存唔到決定，請再試。",
+      "emptyTitle": "冇嘢要審核",
+      "emptyDescription": "每星期搜尋搵到帳號之後會喺度顯示。"
     },
     "clubSubmissions": "社團提交",
     "noClubSubmissions": "暫無社團提交",
