@@ -18,8 +18,15 @@ from core.exceptions import NotFoundError
 from core.pagination import fetch_all_pages
 from core.sanitize import sanitize_postgrest_value
 from core.tables import OUTREACH_LEADS
-from schemas.outreach import EmailFoundBy, FoundClubEmail, OutreachLeadResponse, OutreachLeadUpdate
+from schemas.outreach import (
+    EmailFoundBy,
+    FoundClubEmail,
+    LeadSort,
+    OutreachLeadResponse,
+    OutreachLeadUpdate,
+)
 from services import school_service
+from services.outreach.formality import ClubFacts
 
 CONTROL = controlbox.outreach
 _LEAD_COLUMNS = "*,club:clubs!inner(club_name,school_id,school:schools(slug,name))"
@@ -37,13 +44,14 @@ _TEMPLATE = _load_template()
 
 def list_leads(
     *,
+    sort: LeadSort,
     status: str | None,
     school: str | None,
     search: str | None,
     offset: int,
     limit: int,
 ) -> tuple[list[OutreachLeadResponse], int]:
-    """Clubs with an email, newest first."""
+    """Clubs with an email, newest or most formal first."""
     query = (
         get_sb()
         .table(OUTREACH_LEADS)
@@ -64,6 +72,8 @@ def list_leads(
             if "@" in term
             else query.ilike("club.club_name", f"%{term}%")
         )
+    if sort == "formality":
+        query = query.order("formality", desc=True, nullsfirst=False)
     result = (
         query.order("found_at", desc=True).order("id").range(offset, offset + limit - 1).execute()
     )
@@ -149,10 +159,50 @@ def save_page_search(club_id: int, found: FoundClubEmail | None) -> None:
 
 
 def save_research(club_id: int, found: FoundClubEmail | None) -> None:
-    """What the research agent found for a club, or that it found nothing this time."""
-    get_sb().table(OUTREACH_LEADS).update(
-        {"researched_at": datetime.now(UTC).isoformat(), **_email_columns(found, "research")}
-    ).eq("club_id", club_id).is_("email", "null").execute()
+    """What the research agent found for a club, or that it found nothing this time.
+
+    A found email changes the club's formality, so the next scoring pass rescores it.
+    """
+    changes = {"researched_at": datetime.now(UTC).isoformat(), **_email_columns(found, "research")}
+    if found is not None:
+        changes["formality"] = None
+    get_sb().table(OUTREACH_LEADS).update(changes).eq("club_id", club_id).is_(
+        "email", "null"
+    ).execute()
+
+
+def unscored(limit: int) -> list[tuple[str, int, ClubFacts]]:
+    """Leads without a formality score yet: each lead's id, club id and what to score."""
+    rows = get_sb().rpc("outreach_unscored", {"p_limit": limit}).execute().data or []
+    return [
+        (
+            row["lead_id"],
+            row["club_id"],
+            ClubFacts(
+                club_name=row["club_name"],
+                ig=row["ig"],
+                club_page=row["club_page"],
+                email=row["email"],
+                listings=row["listings"],
+                page_host_clubs=row["page_host_clubs"],
+                school_domains=row["school_domains"] or [],
+            ),
+        )
+        for row in rows
+    ]
+
+
+def save_formality(scores: list[tuple[str, int, int, list[str]]]) -> None:
+    """Store each lead's (id, club id, score, signals)."""
+    if not scores:
+        return
+    get_sb().table(OUTREACH_LEADS).upsert(
+        [
+            {"id": lead_id, "club_id": club_id, "formality": value, "formality_signals": signals}
+            for lead_id, club_id, value, signals in scores
+        ],
+        on_conflict="id",
+    ).execute()
 
 
 def mark_claimed() -> int:

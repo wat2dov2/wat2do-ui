@@ -582,6 +582,27 @@
       "emptyDescription": "रोज़ की खोज क्लबों के ईमेल मिलने पर उन्हें यहाँ जोड़ती है।",
       "club": "क्लब",
       "contact": "संपर्क",
+      "formality": "औपचारिकता",
+      "formalityScore": "{{value}}/100",
+      "notScored": "अभी स्कोर नहीं हुआ",
+      "formalitySignals": {
+        "directory_page": "यूनिवर्सिटी की क्लब डायरेक्टरी में दर्ज",
+        "own_website": "अपनी वेबसाइट है",
+        "school_email": "यूनिवर्सिटी ईमेल इस्तेमाल करता है",
+        "own_domain_email": "अपना ईमेल डोमेन इस्तेमाल करता है",
+        "free_email": "निजी ईमेल सेवा इस्तेमाल करता है",
+        "many_listings": "कई इवेंट और पद",
+        "some_listings": "कुछ इवेंट और पद",
+        "few_listings": "कम इवेंट या पद",
+        "instagram": "Instagram अकाउंट है",
+        "formal_name": "औपचारिक नाम",
+        "informal_account": "कन्फ़ेशन या मीम अकाउंट जैसा लगता है"
+      },
+      "sortLabel": "क्रम",
+      "sorts": {
+        "newest": "सबसे नए",
+        "formality": "सबसे औपचारिक पहले"
+      },
       "details": "विवरण",
       "openEmail": "Gmail में ईमेल खोलें",
       "openClub": "क्लब पेज खोलें",

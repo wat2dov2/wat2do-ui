@@ -582,6 +582,27 @@
       "emptyDescription": "દૈનિક શોધ ક્લબના ઇમેઇલ મળતાં તેમને અહીં ઉમેરે છે.",
       "club": "ક્લબ",
       "contact": "સંપર્ક",
+      "formality": "ઔપચારિકતા",
+      "formalityScore": "{{value}}/100",
+      "notScored": "હજી સ્કોર નથી થયો",
+      "formalitySignals": {
+        "directory_page": "યુનિવર્સિટીની ક્લબ ડિરેક્ટરીમાં નોંધાયેલું",
+        "own_website": "પોતાની વેબસાઇટ છે",
+        "school_email": "યુનિવર્સિટી ઇમેઇલ વાપરે છે",
+        "own_domain_email": "પોતાનું ઇમેઇલ ડોમેન વાપરે છે",
+        "free_email": "વ્યક્તિગત ઇમેઇલ સેવા વાપરે છે",
+        "many_listings": "ઘણા ઇવેન્ટ્સ અને પદ",
+        "some_listings": "થોડા ઇવેન્ટ્સ અને પદ",
+        "few_listings": "બહુ ઓછા ઇવેન્ટ્સ અથવા પદ",
+        "instagram": "Instagram એકાઉન્ટ છે",
+        "formal_name": "ઔપચારિક નામ",
+        "informal_account": "કન્ફેશન અથવા મીમ એકાઉન્ટ જેવું લાગે છે"
+      },
+      "sortLabel": "ક્રમ",
+      "sorts": {
+        "newest": "સૌથી નવા",
+        "formality": "સૌથી ઔપચારિક પહેલા"
+      },
       "details": "વિગતો",
       "openEmail": "Gmailમાં ઇમેઇલ ખોલો",
       "openClub": "ક્લબ પેજ ખોલો",

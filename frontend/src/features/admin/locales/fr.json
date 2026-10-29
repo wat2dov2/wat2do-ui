@@ -582,6 +582,27 @@
       "emptyDescription": "La recherche quotidienne ajoute ici des clubs à mesure qu'elle trouve leur adresse e-mail.",
       "club": "Club",
       "contact": "Contact",
+      "formality": "Formalité",
+      "formalityScore": "{{value}}/100",
+      "notScored": "Pas encore évalué",
+      "formalitySignals": {
+        "directory_page": "Inscrit dans l'annuaire des clubs de l'établissement",
+        "own_website": "A son propre site web",
+        "school_email": "Utilise une adresse e-mail de l'établissement",
+        "own_domain_email": "Utilise son propre domaine e-mail",
+        "free_email": "Utilise un service d'e-mail personnel",
+        "many_listings": "Beaucoup d'événements et de postes",
+        "some_listings": "Quelques événements et postes",
+        "few_listings": "Peu d'événements ou de postes",
+        "instagram": "A un compte Instagram",
+        "formal_name": "Nom officiel",
+        "informal_account": "Ressemble à un compte de confessions ou de mèmes"
+      },
+      "sortLabel": "Trier",
+      "sorts": {
+        "newest": "Plus récents",
+        "formality": "Plus formels d'abord"
+      },
       "details": "Détails",
       "openEmail": "Ouvrir l'e-mail dans Gmail",
       "openClub": "Ouvrir la page du club",

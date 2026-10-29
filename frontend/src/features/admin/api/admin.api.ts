@@ -39,7 +39,7 @@ import {
 } from "@/features/clubs";
 import { api, type PaginatedApiResponse } from "@/shared/services/apiClient";
 import type { Event } from "@/shared/types";
-import type { components } from "@/shared/generated/api-types";
+import type { components, operations } from "@/shared/generated/api-types";
 import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 
 export async function getPositionSubmissions(page = 1, status?: string, school?: string, search?: string) {
@@ -437,7 +437,10 @@ export type OutreachLead = components["schemas"]["OutreachLeadResponse"];
 export type OutreachLeadUpdate = components["schemas"]["OutreachLeadUpdate"];
 
 /** Empty values mean "all"; the page keeps them as plain strings for its selects. */
+export type OutreachLeadSort = NonNullable<NonNullable<operations["list_leads_outreach_leads__get"]["parameters"]["query"]>["sort"]>;
+
 export interface OutreachLeadFilters {
+  sort: OutreachLeadSort;
   status: string;
   school: string;
   search: string;
@@ -445,6 +448,7 @@ export interface OutreachLeadFilters {
 
 export function getOutreachLeads(page: number, filters: OutreachLeadFilters) {
   const params = new URLSearchParams({ page: String(page), page_size: String(ADMIN_ITEMS_PER_PAGE) });
+  params.set("sort", filters.sort);
   if (filters.status) params.set("lead_status", filters.status);
   if (filters.school) params.set("school", filters.school);
   if (filters.search) params.set("search", filters.search);

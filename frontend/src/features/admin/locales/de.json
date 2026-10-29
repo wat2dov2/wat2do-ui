@@ -582,6 +582,27 @@
       "emptyDescription": "Die tägliche Suche fügt hier Clubs hinzu, sobald sie ihre E-Mail-Adresse findet.",
       "club": "Club",
       "contact": "Kontakt",
+      "formality": "Formalität",
+      "formalityScore": "{{value}}/100",
+      "notScored": "Noch nicht bewertet",
+      "formalitySignals": {
+        "directory_page": "Im Clubverzeichnis der Hochschule gelistet",
+        "own_website": "Hat eine eigene Website",
+        "school_email": "Nutzt eine E-Mail-Adresse der Hochschule",
+        "own_domain_email": "Nutzt eine eigene E-Mail-Domain",
+        "free_email": "Nutzt einen privaten E-Mail-Dienst",
+        "many_listings": "Viele Events und Positionen",
+        "some_listings": "Einige Events und Positionen",
+        "few_listings": "Wenige Events oder Positionen",
+        "instagram": "Hat einen Instagram-Account",
+        "formal_name": "Offizieller Name",
+        "informal_account": "Wirkt wie ein Confession- oder Meme-Account"
+      },
+      "sortLabel": "Sortieren",
+      "sorts": {
+        "newest": "Neueste",
+        "formality": "Formellste zuerst"
+      },
       "details": "Details",
       "openEmail": "E-Mail in Gmail öffnen",
       "openClub": "Clubseite öffnen",

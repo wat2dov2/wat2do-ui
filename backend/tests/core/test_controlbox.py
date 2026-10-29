@@ -983,3 +983,12 @@ def test_follow_profile_read_delays_must_be_ordered(tmp_path: Path) -> None:
 
     with pytest.raises(ValidationError, match="must not exceed the maximum"):
         load_controlbox(path)
+
+
+def test_outreach_formality_points_must_add_up_to_100(tmp_path: Path) -> None:
+    def shrink(payload):
+        payload["formality"]["points"]["instagram"] = 5
+
+    path = _write_control(tmp_path, "outreach", shrink)
+    with pytest.raises(ValidationError, match="add up to 100"):
+        load_controlbox(path)

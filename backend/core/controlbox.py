@@ -1111,6 +1111,61 @@ class InstagramEmulatorControl(_ControlModel):
         return self
 
 
+class OutreachFormalityControl(_ControlModel):
+    """How official a club looks, out of 100, from what the outreach sweep already read."""
+
+    # A page host shared by at least this many clubs is a school or union directory.
+    directory_min_clubs: int = Field(ge=2, le=1000)
+    points: dict[
+        Literal[
+            "directory_page",
+            "own_website",
+            "school_email",
+            "own_domain_email",
+            "free_email",
+            "many_listings",
+            "some_listings",
+            "few_listings",
+            "instagram",
+            "formal_name",
+        ],
+        Annotated[int, Field(ge=0, le=100)],
+    ]
+    # Events and positions listed that count as many, and as some.
+    many_listings: int = Field(ge=1, le=1000)
+    some_listings: int = Field(ge=1, le=1000)
+    # The highest score a confession, meme or similar account can get.
+    informal_cap: int = Field(ge=0, le=100)
+    free_email_domains: list[str] = Field(min_length=1)
+    # Link and social hosts are not a club website.
+    link_hosts: list[str] = Field(min_length=1)
+    formal_words: list[str] = Field(min_length=1)
+    informal_words: list[str] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _fits_in_100(self) -> OutreachFormalityControl:
+        best = (
+            max(self.points["directory_page"], self.points["own_website"])
+            + max(
+                self.points["school_email"],
+                self.points["own_domain_email"],
+                self.points["free_email"],
+            )
+            + max(
+                self.points["many_listings"],
+                self.points["some_listings"],
+                self.points["few_listings"],
+            )
+            + self.points["instagram"]
+            + self.points["formal_name"]
+        )
+        if len(self.points) != 10 or best != 100:
+            raise ValueError("formality points must name every signal and add up to 100")
+        if self.some_listings > self.many_listings:
+            raise ValueError("some_listings must not exceed many_listings")
+        return self
+
+
 class OutreachControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     agent_timeout_seconds: int = Field(gt=0, le=3600)
@@ -1124,6 +1179,8 @@ class OutreachControl(_ControlModel):
     # A club research came back empty for is searched again after this long.
     research_retry_days: int = Field(ge=1, le=365)
     page_fetch_concurrency: int = Field(ge=1, le=32)
+    # Leads scored for formality per database round trip.
+    scoring_batch_size: int = Field(ge=1, le=10000)
     # Each email must appear on the page it was found on, fetched within this time.
     page_fetch_timeout_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
@@ -1131,6 +1188,7 @@ class OutreachControl(_ControlModel):
     sender_name: str = Field(min_length=1, max_length=60)
     # "{school}" becomes the school's slug and "{club_id}" the club's id.
     club_url_template: str = Field(pattern=r"^https://\S*\{school\}\S*\{club_id\}\S*$")
+    formality: OutreachFormalityControl
 
 
 class CompetitorPainPointsControl(_ControlModel):

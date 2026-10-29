@@ -582,6 +582,27 @@
       "emptyDescription": "The daily sweep adds clubs here as it finds their emails.",
       "club": "Club",
       "contact": "Contact",
+      "formality": "Formality",
+      "formalityScore": "{{value}}/100",
+      "notScored": "Not scored yet",
+      "formalitySignals": {
+        "directory_page": "Listed in the school's club directory",
+        "own_website": "Has its own website",
+        "school_email": "Uses a school email address",
+        "own_domain_email": "Uses its own email domain",
+        "free_email": "Uses a personal email service",
+        "many_listings": "Many events and positions",
+        "some_listings": "Some events and positions",
+        "few_listings": "A few events or positions",
+        "instagram": "Has an Instagram account",
+        "formal_name": "Formal name",
+        "informal_account": "Looks like a confession or meme account"
+      },
+      "sortLabel": "Sort",
+      "sorts": {
+        "newest": "Newest",
+        "formality": "Most formal first"
+      },
       "details": "Details",
       "openEmail": "Open email in Gmail",
       "openClub": "Open club page",

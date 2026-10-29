@@ -582,6 +582,27 @@
       "emptyDescription": "Codzienne wyszukiwanie dodaje tu kluby, gdy znajdzie ich adresy e-mail.",
       "club": "Klub",
       "contact": "Kontakt",
+      "formality": "Formalność",
+      "formalityScore": "{{value}}/100",
+      "notScored": "Jeszcze nie oceniono",
+      "formalitySignals": {
+        "directory_page": "Wpisany do katalogu klubów uczelni",
+        "own_website": "Ma własną stronę",
+        "school_email": "Używa uczelnianego adresu e-mail",
+        "own_domain_email": "Używa własnej domeny e-mail",
+        "free_email": "Używa prywatnej poczty e-mail",
+        "many_listings": "Wiele wydarzeń i stanowisk",
+        "some_listings": "Kilka wydarzeń i stanowisk",
+        "few_listings": "Niewiele wydarzeń lub stanowisk",
+        "instagram": "Ma konto na Instagramie",
+        "formal_name": "Oficjalna nazwa",
+        "informal_account": "Wygląda na konto z wyznaniami lub memami"
+      },
+      "sortLabel": "Sortuj",
+      "sorts": {
+        "newest": "Najnowsze",
+        "formality": "Najbardziej formalne najpierw"
+      },
       "details": "Szczegóły",
       "openEmail": "Otwórz e-mail w Gmailu",
       "openClub": "Otwórz stronę klubu",

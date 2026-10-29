@@ -3830,6 +3830,20 @@
         ],
         "parameters": [
           {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "newest",
+                "formality"
+              ],
+              "type": "string",
+              "default": "newest",
+              "title": "Sort"
+            }
+          },
+          {
             "name": "lead_status",
             "in": "query",
             "required": false,
@@ -12623,6 +12637,37 @@
             "type": "string",
             "format": "date-time",
             "title": "Found At"
+          },
+          "formality": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formality"
+          },
+          "formality_signals": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "directory_page",
+                "own_website",
+                "school_email",
+                "own_domain_email",
+                "free_email",
+                "many_listings",
+                "some_listings",
+                "few_listings",
+                "instagram",
+                "formal_name",
+                "informal_account"
+              ]
+            },
+            "type": "array",
+            "title": "Formality Signals"
           }
         },
         "type": "object",
@@ -12642,7 +12687,9 @@
           "follow_up",
           "status",
           "notes",
-          "found_at"
+          "found_at",
+          "formality",
+          "formality_signals"
         ],
         "title": "OutreachLeadResponse",
         "description": "One unclaimed club, its email, and what to send it to claim its page."

@@ -174,7 +174,8 @@ Install its LaunchAgent with `cd backend && .venv/bin/python jobs/find_competito
 Once a day the outreach sweep finds the emails of unclaimed clubs that have events or positions on Wat2Do, so each can be invited to claim the page Wat2Do made for it.
 It reads each new club's own directory page first, busiest clubs first, and keeps an address only when that page shows it for that club alone; for clubs still without an email, a few Claude Haiku agents a day search the public web with only WebSearch and WebFetch (`backend/services/outreach/prompt.md`), and code keeps an address only when it is printed on the page the agent cites.
 Leads land in `public.outreach_leads`, one per club; the email and follow-up (`backend/services/outreach/claim_email.md`) are written from the club when the admin page reads them, and a lead moves to claimed once its club is claimed.
-On the Outreach admin page an admin opens each email as a filled-in Gmail draft and tracks its status.
+Each lead also gets a formality score out of 100, how official the club looks, from signals the sweep already read: a page in the school's club directory or a site of its own, its email's domain, how many events and positions it has listed, an Instagram account and a formal name, with confession and meme accounts capped (`backend/services/outreach/formality.py`, points in the control box).
+On the Outreach admin page an admin opens each email as a filled-in Gmail draft and tracks its status, sorting by newest or most formal.
 Nothing is sent automatically.
 The sweep's limits, the sender and the club link live in `backend/controlbox/outreach.json`.
 Install its LaunchAgent with `cd backend && .venv/bin/python jobs/find_outreach_leads.py install-schedule`, or run one sweep with `sweep`.

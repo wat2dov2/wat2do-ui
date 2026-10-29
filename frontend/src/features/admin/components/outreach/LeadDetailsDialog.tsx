@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { OutreachLead } from "@/features/admin/api/admin.api";
+import { FormalityBadge } from "@/features/admin/components/outreach/FormalityBadge";
 import { gmailComposeUrl } from "@/features/admin/components/outreach/gmailCompose";
 import { DialogBody, FormActions, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
@@ -44,6 +45,15 @@ function LeadDetails({ lead, isSaving, onSaveNotes }: Omit<LeadDetailsDialogProp
       </DialogHeader>
       <DialogBody>
         <Stack gap={5}>
+          <ItemContent>
+            <ItemTitle>{t("admin.outreach.formality")}</ItemTitle>
+            <FormalityBadge formality={lead.formality} />
+            {lead.formality_signals.length > 0 && (
+              <ItemDescription length="full">
+                {lead.formality_signals.map(signal => t(`admin.outreach.formalitySignals.${signal}`)).join(" · ")}
+              </ItemDescription>
+            )}
+          </ItemContent>
           {sections.map(section => (
             <ItemContent key={section.title}>
               <ItemTitle>{section.title}</ItemTitle>

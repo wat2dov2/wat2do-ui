@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import httpx
+import pytest
 
 from schemas.outreach import FoundClubEmail
 from services.claude_code import ClaudeCodeError
@@ -101,6 +102,7 @@ def test_research_keeps_an_email_only_when_the_cited_page_prints_it(monkeypatch)
 def test_sweep_reads_new_pages_researches_the_rest_and_reports(monkeypatch):
     monkeypatch.setattr(finder, "remove_leftovers", lambda _prefix: None)
     monkeypatch.setattr(finder.service, "mark_claimed", lambda: 2)
+    monkeypatch.setattr(finder, "_score_leads", lambda: 5)
     monkeypatch.setattr(finder.service, "emails_in_use", lambda: {"used@example.org"})
     monkeypatch.setattr(finder.service, "new_clubs", lambda limit: [{"club_id": 1}])
     monkeypatch.setattr(finder, "_search_club_pages", lambda clubs, taken: len(clubs))
@@ -135,8 +137,45 @@ def test_sweep_reads_new_pages_researches_the_rest_and_reports(monkeypatch):
     assert saved == [(10, answers[10]), (11, None), (12, None)]
     assert result == {
         "claimed": 2,
+        "scored": 5,
         "page_emails": 1,
         "researched": 3,
         "research_emails": 1,
         "research_failed": 1,
     }
+
+
+def test_every_unscored_lead_is_scored_in_batches(monkeypatch):
+    from services.outreach.formality import ClubFacts
+
+    club = ClubFacts(
+        club_name="Board Games Club",
+        ig="uwboardgames",
+        club_page=None,
+        email=None,
+        listings=1,
+        page_host_clubs=0,
+        school_domains=[],
+    )
+    batches = [[("a", 1, club), ("b", 2, club)], [("c", 3, club)], []]
+    monkeypatch.setattr(finder.service, "unscored", lambda limit: batches.pop(0))
+    saved = []
+    monkeypatch.setattr(finder.service, "save_formality", saved.extend)
+
+    assert finder._score_leads() == 3
+    assert [(lead, club_id) for lead, club_id, _value, _signals in saved] == [
+        ("a", 1),
+        ("b", 2),
+        ("c", 3),
+    ]
+    assert saved[0][2:] == (23, ["few_listings", "instagram", "formal_name"])
+
+
+def test_scoring_stops_when_scores_do_not_stick(monkeypatch):
+    from services.outreach.formality import ClubFacts
+
+    club = ClubFacts("Club", None, None, None, 1, 0, [])
+    monkeypatch.setattr(finder.service, "unscored", lambda limit: [("a", 1, club)])
+    monkeypatch.setattr(finder.service, "save_formality", lambda scores: None)
+    with pytest.raises(RuntimeError, match="not saved"):
+        finder._score_leads()

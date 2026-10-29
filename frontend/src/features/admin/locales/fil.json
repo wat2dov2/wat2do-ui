@@ -582,6 +582,27 @@
       "emptyDescription": "Idinadagdag dito ng araw-araw na paghahanap ang mga club kapag nakita nito ang kanilang email.",
       "club": "Club",
       "contact": "Contact",
+      "formality": "Pagiging pormal",
+      "formalityScore": "{{value}}/100",
+      "notScored": "Wala pang score",
+      "formalitySignals": {
+        "directory_page": "Nakalista sa direktoryo ng mga club ng paaralan",
+        "own_website": "May sariling website",
+        "school_email": "Gumagamit ng email ng paaralan",
+        "own_domain_email": "Gumagamit ng sariling email domain",
+        "free_email": "Gumagamit ng personal na email service",
+        "many_listings": "Maraming event at posisyon",
+        "some_listings": "Ilang event at posisyon",
+        "few_listings": "Kaunting event o posisyon",
+        "instagram": "May Instagram account",
+        "formal_name": "Pormal na pangalan",
+        "informal_account": "Mukhang confession o meme account"
+      },
+      "sortLabel": "Ayusin",
+      "sorts": {
+        "newest": "Pinakabago",
+        "formality": "Pinakapormal muna"
+      },
       "details": "Mga detalye",
       "openEmail": "Buksan ang email sa Gmail",
       "openClub": "Buksan ang page ng club",

@@ -582,6 +582,27 @@
       "emptyDescription": "ਰੋਜ਼ਾਨਾ ਖੋਜ ਕਲੱਬਾਂ ਦੀਆਂ ਈਮੇਲਾਂ ਮਿਲਣ 'ਤੇ ਉਨ੍ਹਾਂ ਨੂੰ ਇੱਥੇ ਜੋੜਦੀ ਹੈ।",
       "club": "ਕਲੱਬ",
       "contact": "ਸੰਪਰਕ",
+      "formality": "ਰਸਮੀਅਤ",
+      "formalityScore": "{{value}}/100",
+      "notScored": "ਅਜੇ ਸਕੋਰ ਨਹੀਂ ਹੋਇਆ",
+      "formalitySignals": {
+        "directory_page": "ਯੂਨੀਵਰਸਿਟੀ ਦੀ ਕਲੱਬ ਡਾਇਰੈਕਟਰੀ ਵਿੱਚ ਦਰਜ",
+        "own_website": "ਆਪਣੀ ਵੈੱਬਸਾਈਟ ਹੈ",
+        "school_email": "ਯੂਨੀਵਰਸਿਟੀ ਈਮੇਲ ਵਰਤਦਾ ਹੈ",
+        "own_domain_email": "ਆਪਣਾ ਈਮੇਲ ਡੋਮੇਨ ਵਰਤਦਾ ਹੈ",
+        "free_email": "ਨਿੱਜੀ ਈਮੇਲ ਸੇਵਾ ਵਰਤਦਾ ਹੈ",
+        "many_listings": "ਕਈ ਇਵੈਂਟ ਅਤੇ ਅਹੁਦੇ",
+        "some_listings": "ਕੁਝ ਇਵੈਂਟ ਅਤੇ ਅਹੁਦੇ",
+        "few_listings": "ਥੋੜ੍ਹੇ ਇਵੈਂਟ ਜਾਂ ਅਹੁਦੇ",
+        "instagram": "Instagram ਖਾਤਾ ਹੈ",
+        "formal_name": "ਰਸਮੀ ਨਾਮ",
+        "informal_account": "ਕਨਫੈਸ਼ਨ ਜਾਂ ਮੀਮ ਖਾਤੇ ਵਰਗਾ ਲੱਗਦਾ ਹੈ"
+      },
+      "sortLabel": "ਕ੍ਰਮ",
+      "sorts": {
+        "newest": "ਸਭ ਤੋਂ ਨਵੇਂ",
+        "formality": "ਸਭ ਤੋਂ ਰਸਮੀ ਪਹਿਲਾਂ"
+      },
       "details": "ਵੇਰਵੇ",
       "openEmail": "Gmail ਵਿੱਚ ਈਮੇਲ ਖੋਲ੍ਹੋ",
       "openClub": "ਕਲੱਬ ਪੰਨਾ ਖੋਲ੍ਹੋ",

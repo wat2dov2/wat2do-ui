@@ -6,8 +6,10 @@ import {
   updateOutreachLead,
   type OutreachLead,
   type OutreachLeadFilters,
+  type OutreachLeadSort,
   type OutreachLeadUpdate,
 } from "@/features/admin/api/admin.api";
+import { FormalityBadge } from "@/features/admin/components/outreach/FormalityBadge";
 import { gmailComposeUrl } from "@/features/admin/components/outreach/gmailCompose";
 import { LeadDetailsDialog } from "@/features/admin/components/outreach/LeadDetailsDialog";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
@@ -23,13 +25,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TableCell, TableRow } from "@/shared/ui/table";
 
 const LEAD_STATUSES = ["new", "contacted", "replied", "claimed", "not_interested", "dismissed"] as const;
+const LEAD_SORTS: OutreachLeadSort[] = ["newest", "formality"];
 
 /** Unclaimed clubs the daily sweep found an email for, each with the email inviting it to claim its page. */
 export function AdminOutreachPage({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState<OutreachLeadFilters>({ status: "new", school: "", search: "" });
+  const [filters, setFilters] = useState<OutreachLeadFilters>({ sort: "newest", status: "new", school: "", search: "" });
   const [openLead, setOpenLead] = useState<OutreachLead | null>(null);
   const leads = useQuery({ queryKey: queryKeys.outreach.leads(page, filters), queryFn: () => getOutreachLeads(page, filters) });
   const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.outreach.all });
@@ -46,6 +49,12 @@ export function AdminOutreachPage({ onBack }: { onBack: () => void }) {
     <Stack gap={5}>
       <AdminPageHeader icon={Mail} title={t("admin.outreach.title")} description={t("admin.outreach.description")} onBack={onBack} />
       <AdminTableFilters search={filters.search} onSearchChange={filter("search")} school={filters.school} onSchoolChange={filter("school")}>
+        <Select value={filters.sort} onValueChange={filter("sort")}>
+          <SelectTrigger aria-label={t("admin.outreach.sortLabel")}><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {LEAD_SORTS.map(value => <SelectItem key={value} value={value}>{t(`admin.outreach.sorts.${value}`)}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Select value={filters.status || "all"} onValueChange={filter("status")}>
           <SelectTrigger aria-label={t("admin.status")}><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -58,7 +67,7 @@ export function AdminOutreachPage({ onBack }: { onBack: () => void }) {
         : !leads.isPending && leads.data?.items.length === 0 ? <AdminEmptyState icon={Mail} title={t("admin.outreach.emptyTitle")} description={t("admin.outreach.emptyDescription")} />
         : <AdminTable isLoading={leads.isPending} count={leads.data?.total ?? 0} label={t("admin.outreach.title")}
           pagination={{ currentPage: page, totalPages: leads.data?.total_pages ?? 1, onPageChange: setPage }}
-          headers={[{ label: t("admin.outreach.club") }, { label: t("admin.outreach.contact") }, { label: t("admin.status") }, { label: t("common.actions") }]}>
+          headers={[{ label: t("admin.outreach.club") }, { label: t("admin.outreach.formality") }, { label: t("admin.outreach.contact") }, { label: t("admin.status") }, { label: t("common.actions") }]}>
           {leads.data?.items.map(lead => <TableRow key={lead.id}>
             <TableCell>
               <ItemContent>
@@ -66,6 +75,7 @@ export function AdminOutreachPage({ onBack }: { onBack: () => void }) {
                 <ItemDescription>{[lead.school_name, t("admin.outreach.listings", { value: lead.listings })].join(" · ")}</ItemDescription>
               </ItemContent>
             </TableCell>
+            <TableCell><FormalityBadge formality={lead.formality} /></TableCell>
             <TableCell>
               <ItemContent>
                 <ItemTitle>{lead.email}</ItemTitle>

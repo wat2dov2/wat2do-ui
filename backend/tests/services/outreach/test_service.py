@@ -9,6 +9,8 @@ ROW = {
     "status": "new",
     "notes": "",
     "found_at": "2026-10-28T00:00:00Z",
+    "formality": None,
+    "formality_signals": [],
     "club": {
         "club_name": "Board Games Club",
         "school_id": 7,

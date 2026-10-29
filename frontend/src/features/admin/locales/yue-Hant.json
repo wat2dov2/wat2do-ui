@@ -582,6 +582,27 @@
       "emptyDescription": "每日搜尋搵到學會電郵之後會加喺呢度。",
       "club": "學會",
       "contact": "聯絡",
+      "formality": "正式程度",
+      "formalityScore": "{{value}}/100",
+      "notScored": "未有評分",
+      "formalitySignals": {
+        "directory_page": "喺學校學會名錄有登記",
+        "own_website": "有自己嘅網站",
+        "school_email": "用學校電郵",
+        "own_domain_email": "用自己嘅電郵網域",
+        "free_email": "用個人電郵服務",
+        "many_listings": "好多活動同職位",
+        "some_listings": "有啲活動同職位",
+        "few_listings": "好少活動或職位",
+        "instagram": "有 Instagram 帳戶",
+        "formal_name": "正式名稱",
+        "informal_account": "似 confession 或者 meme 帳戶"
+      },
+      "sortLabel": "排序",
+      "sorts": {
+        "newest": "最新",
+        "formality": "最正式優先"
+      },
       "details": "詳情",
       "openEmail": "喺 Gmail 打開電郵",
       "openClub": "打開學會頁面",

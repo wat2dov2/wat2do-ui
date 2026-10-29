@@ -582,6 +582,27 @@
       "emptyDescription": "يضيف البحث اليومي الأندية هنا عندما يجد بريدها الإلكتروني.",
       "club": "النادي",
       "contact": "جهة الاتصال",
+      "formality": "الرسمية",
+      "formalityScore": "{{value}}/100",
+      "notScored": "لم يُقيَّم بعد",
+      "formalitySignals": {
+        "directory_page": "مُدرج في دليل أندية الجامعة",
+        "own_website": "لديه موقع إلكتروني خاص",
+        "school_email": "يستخدم بريدًا إلكترونيًا جامعيًا",
+        "own_domain_email": "يستخدم نطاق بريد خاصًا به",
+        "free_email": "يستخدم خدمة بريد شخصية",
+        "many_listings": "فعاليات ووظائف كثيرة",
+        "some_listings": "بعض الفعاليات والوظائف",
+        "few_listings": "فعاليات أو وظائف قليلة",
+        "instagram": "لديه حساب على Instagram",
+        "formal_name": "اسم رسمي",
+        "informal_account": "يبدو كحساب اعترافات أو ميمز"
+      },
+      "sortLabel": "ترتيب",
+      "sorts": {
+        "newest": "الأحدث",
+        "formality": "الأكثر رسمية أولًا"
+      },
       "details": "التفاصيل",
       "openEmail": "فتح البريد في Gmail",
       "openClub": "فتح صفحة النادي",

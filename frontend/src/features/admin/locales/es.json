@@ -582,6 +582,27 @@
       "emptyDescription": "La búsqueda diaria añade clubes aquí a medida que encuentra sus correos.",
       "club": "Club",
       "contact": "Contacto",
+      "formality": "Formalidad",
+      "formalityScore": "{{value}}/100",
+      "notScored": "Sin puntuar aún",
+      "formalitySignals": {
+        "directory_page": "Figura en el directorio de clubes de la universidad",
+        "own_website": "Tiene su propio sitio web",
+        "school_email": "Usa un correo de la universidad",
+        "own_domain_email": "Usa su propio dominio de correo",
+        "free_email": "Usa un servicio de correo personal",
+        "many_listings": "Muchos eventos y puestos",
+        "some_listings": "Algunos eventos y puestos",
+        "few_listings": "Pocos eventos o puestos",
+        "instagram": "Tiene cuenta de Instagram",
+        "formal_name": "Nombre formal",
+        "informal_account": "Parece una cuenta de confesiones o memes"
+      },
+      "sortLabel": "Ordenar",
+      "sorts": {
+        "newest": "Más recientes",
+        "formality": "Más formales primero"
+      },
       "details": "Detalles",
       "openEmail": "Abrir correo en Gmail",
       "openClub": "Abrir la página del club",

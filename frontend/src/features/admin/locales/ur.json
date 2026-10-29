@@ -582,6 +582,27 @@
       "emptyDescription": "روزانہ تلاش کلبوں کے ای میل ملنے پر انہیں یہاں شامل کرتی ہے۔",
       "club": "کلب",
       "contact": "رابطہ",
+      "formality": "رسمیت",
+      "formalityScore": "{{value}}/100",
+      "notScored": "ابھی اسکور نہیں ہوا",
+      "formalitySignals": {
+        "directory_page": "یونیورسٹی کی کلب ڈائریکٹری میں درج",
+        "own_website": "اپنی ویب سائٹ ہے",
+        "school_email": "یونیورسٹی کا ای میل استعمال کرتا ہے",
+        "own_domain_email": "اپنا ای میل ڈومین استعمال کرتا ہے",
+        "free_email": "ذاتی ای میل سروس استعمال کرتا ہے",
+        "many_listings": "بہت سے ایونٹس اور عہدے",
+        "some_listings": "کچھ ایونٹس اور عہدے",
+        "few_listings": "چند ایونٹس یا عہدے",
+        "instagram": "Instagram اکاؤنٹ ہے",
+        "formal_name": "رسمی نام",
+        "informal_account": "کنفیشن یا میم اکاؤنٹ لگتا ہے"
+      },
+      "sortLabel": "ترتیب",
+      "sorts": {
+        "newest": "نئے ترین",
+        "formality": "سب سے رسمی پہلے"
+      },
       "details": "تفصیلات",
       "openEmail": "Gmail میں ای میل کھولیں",
       "openClub": "کلب کا صفحہ کھولیں",

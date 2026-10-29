@@ -26,6 +26,8 @@ def lead(status="new"):
         status=status,
         notes="",
         found_at="2026-10-28T00:00:00Z",
+        formality=72,
+        formality_signals=["directory_page", "many_listings"],
     )
 
 
@@ -47,6 +49,7 @@ def test_admin_lead_list_forwards_every_filter(admin_client, monkeypatch):
     response = admin_client.get(
         "/outreach/leads/",
         params={
+            "sort": "formality",
             "lead_status": "new",
             "school": "uwaterloo",
             "search": "board",
@@ -57,8 +60,10 @@ def test_admin_lead_list_forwards_every_filter(admin_client, monkeypatch):
     assert response.status_code == 200
     assert response.json()["total"] == 3
     assert response.json()["items"][0]["school_name"] == "University of Waterloo"
+    assert response.json()["items"][0]["formality"] == 72
     assert calls == [
         {
+            "sort": "formality",
             "status": "new",
             "school": "uwaterloo",
             "search": "board",
@@ -81,3 +86,11 @@ def test_admin_updates_a_lead_and_unknown_ids_404(admin_client, monkeypatch):
         admin_client.patch(f"/outreach/leads/{LEAD}", json={"status": "replied"}).status_code == 404
     )
     assert admin_client.patch(f"/outreach/leads/{LEAD}", json={"status": "sold"}).status_code == 422
+
+
+def test_lead_list_sorts_newest_by_default_and_rejects_unknown_sorts(admin_client, monkeypatch):
+    calls = []
+    monkeypatch.setattr(service, "list_leads", lambda **kwargs: calls.append(kwargs) or ([], 0))
+    assert admin_client.get("/outreach/leads/").status_code == 200
+    assert calls[0]["sort"] == "newest"
+    assert admin_client.get("/outreach/leads/", params={"sort": "loudest"}).status_code == 422

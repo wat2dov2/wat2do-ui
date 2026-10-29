@@ -5,7 +5,8 @@ email printed on each club's own page. An address the page shows for more than o
 club, or already given to another club, belongs to the directory, not the club, so it
 is never used. Clubs still without an email then get a Claude research agent, a few at
 a time; code keeps an address only when it is printed on the page the agent cites, so
-an invented one never reaches the admin page. Nothing is ever sent: an admin sends the
+an invented one never reaches the admin page. Last, every lead not scored yet gets its
+formality (``formality.py``) from what the sweep read. Nothing is ever sent: an admin sends the
 email from Gmail.
 """
 
@@ -28,7 +29,7 @@ from pydantic import ValidationError
 from core.controlbox import controlbox
 from schemas.outreach import FoundClubEmail
 from services.claude_code import ClaudeCodeError, remove_leftovers, run_agent
-from services.outreach import service
+from services.outreach import formality, service
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.outreach
@@ -79,11 +80,25 @@ def sweep() -> dict[str, Any]:
         service.save_research(club["club_id"], found)
     return {
         "claimed": claimed,
+        "scored": _score_leads(),
         "page_emails": page_emails,
         "researched": len(research) - failed,
         "research_emails": research_emails,
         "research_failed": failed,
     }
+
+
+def _score_leads() -> int:
+    """Give every lead not scored yet its formality, a batch at a time."""
+    scored: set[str] = set()
+    while batch := service.unscored(CONTROL.scoring_batch_size):
+        if batch[0][0] in scored:
+            raise RuntimeError("Outreach formality scores were not saved")
+        service.save_formality(
+            [(lead_id, club_id, *formality.score(facts)) for lead_id, club_id, facts in batch]
+        )
+        scored.update(lead_id for lead_id, _club_id, _facts in batch)
+    return len(scored)
 
 
 def _search_club_pages(clubs: list[dict[str, Any]], taken: set[str]) -> int:

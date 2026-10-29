@@ -582,6 +582,27 @@
       "emptyDescription": "جستجوی روزانه با پیدا کردن ایمیل باشگاه‌ها آن‌ها را اینجا اضافه می‌کند.",
       "club": "باشگاه",
       "contact": "تماس",
+      "formality": "رسمی بودن",
+      "formalityScore": "{{value}}/100",
+      "notScored": "هنوز امتیاز نگرفته",
+      "formalitySignals": {
+        "directory_page": "در فهرست باشگاه‌های دانشگاه ثبت شده",
+        "own_website": "وب‌سایت خودش را دارد",
+        "school_email": "از ایمیل دانشگاه استفاده می‌کند",
+        "own_domain_email": "از دامنه ایمیل خودش استفاده می‌کند",
+        "free_email": "از سرویس ایمیل شخصی استفاده می‌کند",
+        "many_listings": "رویدادها و موقعیت‌های زیاد",
+        "some_listings": "چند رویداد و موقعیت",
+        "few_listings": "رویداد یا موقعیت کم",
+        "instagram": "حساب Instagram دارد",
+        "formal_name": "نام رسمی",
+        "informal_account": "شبیه حساب اعتراف یا میم است"
+      },
+      "sortLabel": "مرتب‌سازی",
+      "sorts": {
+        "newest": "جدیدترین",
+        "formality": "رسمی‌ترین‌ها اول"
+      },
       "details": "جزئیات",
       "openEmail": "باز کردن ایمیل در Gmail",
       "openClub": "باز کردن صفحه باشگاه",

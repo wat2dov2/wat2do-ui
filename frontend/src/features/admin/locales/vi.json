@@ -582,6 +582,27 @@
       "emptyDescription": "Lượt tìm hằng ngày thêm câu lạc bộ vào đây khi tìm thấy email của họ.",
       "club": "Câu lạc bộ",
       "contact": "Liên hệ",
+      "formality": "Mức độ chính thức",
+      "formalityScore": "{{value}}/100",
+      "notScored": "Chưa chấm điểm",
+      "formalitySignals": {
+        "directory_page": "Có trong danh bạ câu lạc bộ của trường",
+        "own_website": "Có trang web riêng",
+        "school_email": "Dùng email của trường",
+        "own_domain_email": "Dùng tên miền email riêng",
+        "free_email": "Dùng dịch vụ email cá nhân",
+        "many_listings": "Nhiều sự kiện và vị trí",
+        "some_listings": "Một số sự kiện và vị trí",
+        "few_listings": "Ít sự kiện hoặc vị trí",
+        "instagram": "Có tài khoản Instagram",
+        "formal_name": "Tên chính thức",
+        "informal_account": "Trông giống tài khoản confession hoặc meme"
+      },
+      "sortLabel": "Sắp xếp",
+      "sorts": {
+        "newest": "Mới nhất",
+        "formality": "Chính thức nhất trước"
+      },
       "details": "Chi tiết",
       "openEmail": "Mở email trong Gmail",
       "openClub": "Mở trang câu lạc bộ",

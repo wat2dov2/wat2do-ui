@@ -582,6 +582,27 @@
       "emptyDescription": "每日搜索找到社团邮箱后会将其添加到这里。",
       "club": "社团",
       "contact": "联系方式",
+      "formality": "正式程度",
+      "formalityScore": "{{value}}/100",
+      "notScored": "尚未评分",
+      "formalitySignals": {
+        "directory_page": "列入学校社团名录",
+        "own_website": "有自己的网站",
+        "school_email": "使用学校邮箱",
+        "own_domain_email": "使用自己的邮箱域名",
+        "free_email": "使用个人邮箱服务",
+        "many_listings": "活动和职位很多",
+        "some_listings": "有一些活动和职位",
+        "few_listings": "活动或职位很少",
+        "instagram": "有 Instagram 账号",
+        "formal_name": "正式名称",
+        "informal_account": "看起来像表白墙或梗图账号"
+      },
+      "sortLabel": "排序",
+      "sorts": {
+        "newest": "最新",
+        "formality": "最正式优先"
+      },
       "details": "详情",
       "openEmail": "在 Gmail 中打开邮件",
       "openClub": "打开社团页面",

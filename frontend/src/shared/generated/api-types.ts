@@ -3643,6 +3643,10 @@ export interface components {
              * Format: date-time
              */
             found_at: string;
+            /** Formality */
+            formality: number | null;
+            /** Formality Signals */
+            formality_signals: ("directory_page" | "own_website" | "school_email" | "own_domain_email" | "free_email" | "many_listings" | "some_listings" | "few_listings" | "instagram" | "formal_name" | "informal_account")[];
         };
         /** OutreachLeadUpdate */
         OutreachLeadUpdate: {
@@ -6994,6 +6998,7 @@ export interface operations {
     list_leads_outreach_leads__get: {
         parameters: {
             query?: {
+                sort?: "newest" | "formality";
                 lead_status?: ("new" | "contacted" | "replied" | "claimed" | "not_interested" | "dismissed") | null;
                 school?: string | null;
                 search?: string | null;

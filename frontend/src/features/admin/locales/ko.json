@@ -582,6 +582,27 @@
       "emptyDescription": "매일 검색이 동아리 이메일을 찾으면 여기에 추가해요.",
       "club": "동아리",
       "contact": "연락처",
+      "formality": "공식성",
+      "formalityScore": "{{value}}/100",
+      "notScored": "아직 점수 없음",
+      "formalitySignals": {
+        "directory_page": "학교 동아리 목록에 등록됨",
+        "own_website": "자체 웹사이트가 있음",
+        "school_email": "학교 이메일을 사용함",
+        "own_domain_email": "자체 이메일 도메인을 사용함",
+        "free_email": "개인 이메일 서비스를 사용함",
+        "many_listings": "행사와 모집이 많음",
+        "some_listings": "행사와 모집이 어느 정도 있음",
+        "few_listings": "행사나 모집이 적음",
+        "instagram": "Instagram 계정이 있음",
+        "formal_name": "공식적인 이름",
+        "informal_account": "고백이나 밈 계정처럼 보임"
+      },
+      "sortLabel": "정렬",
+      "sorts": {
+        "newest": "최신순",
+        "formality": "공식성 높은 순"
+      },
       "details": "세부 정보",
       "openEmail": "Gmail에서 이메일 열기",
       "openClub": "동아리 페이지 열기",
