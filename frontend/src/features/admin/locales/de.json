@@ -448,8 +448,7 @@
         "label": "Ansichten der Social-Media-Konten",
         "accounts": "Konten",
         "posts": "Alle Beiträge",
-        "songs": "Songs",
-        "follow": "Konten zum Folgen"
+        "songs": "Songs"
       },
       "sortLabel": "Sortieren",
       "accountLabel": "Konto",
@@ -621,6 +620,7 @@
       "records": "Datensatzdetails",
       "clubId": "Club-ID: {{id}}",
       "ownerId": "Inhaber-ID: {{id}}"
-    }
+    },
+    "followCandidatesTab": "Konten zum Folgen"
   }
 }

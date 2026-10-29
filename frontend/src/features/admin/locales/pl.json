@@ -448,8 +448,7 @@
         "label": "Widoki kont społecznościowych",
         "accounts": "Konta",
         "posts": "Wszystkie posty",
-        "songs": "Utwory",
-        "follow": "Konta do obserwowania"
+        "songs": "Utwory"
       },
       "sortLabel": "Sortuj",
       "accountLabel": "Konto",
@@ -621,6 +620,7 @@
       "records": "Szczegóły rekordu",
       "clubId": "ID klubu: {{id}}",
       "ownerId": "ID właściciela: {{id}}"
-    }
+    },
+    "followCandidatesTab": "Konta do obserwowania"
   }
 }

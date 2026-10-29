@@ -448,8 +448,7 @@
         "label": "社交账号视图",
         "accounts": "账号",
         "posts": "全部帖子",
-        "songs": "歌曲",
-        "follow": "待关注账号"
+        "songs": "歌曲"
       },
       "sortLabel": "排序",
       "accountLabel": "账号",
@@ -621,6 +620,7 @@
       "records": "记录详情",
       "clubId": "社团 ID：{{id}}",
       "ownerId": "所有者 ID：{{id}}"
-    }
+    },
+    "followCandidatesTab": "待关注账号"
   }
 }

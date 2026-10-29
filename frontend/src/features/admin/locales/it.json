@@ -448,8 +448,7 @@
         "label": "Viste degli account social",
         "accounts": "Account",
         "posts": "Tutti i post",
-        "songs": "Brani",
-        "follow": "Account da seguire"
+        "songs": "Brani"
       },
       "sortLabel": "Ordina",
       "accountLabel": "Account",
@@ -621,6 +620,7 @@
       "records": "Dettagli del record",
       "clubId": "ID del club: {{id}}",
       "ownerId": "ID del proprietario: {{id}}"
-    }
+    },
+    "followCandidatesTab": "Account da seguire"
   }
 }

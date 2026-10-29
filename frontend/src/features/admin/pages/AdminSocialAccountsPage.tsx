@@ -12,7 +12,6 @@ import {
 import { useSocialAccounts } from "@/features/admin/hooks/useSocialAccounts";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
-import { FollowCandidatesPanel } from "@/features/admin/components/social/FollowCandidatesPanel";
 import { SocialAccountRow } from "@/features/admin/components/social/SocialAccountRow";
 import { SocialPostTile } from "@/features/admin/components/social/SocialPostTile";
 import { SocialSongsTable } from "@/features/admin/components/social/SocialSongsTable";
@@ -79,7 +78,6 @@ export function AdminSocialAccountsPage({ onBack }: { onBack: () => void }) {
             <TabsTrigger value="accounts">{t("admin.socialAccounts.tabs.accounts")}</TabsTrigger>
             <TabsTrigger value="posts">{t("admin.socialAccounts.tabs.posts")}</TabsTrigger>
             <TabsTrigger value="songs">{t("admin.socialAccounts.tabs.songs")}</TabsTrigger>
-            <TabsTrigger value="follow">{t("admin.socialAccounts.tabs.follow")}</TabsTrigger>
           </TabsList>
           <TabsContent value="accounts">
             <Stack gap={4}>
@@ -125,9 +123,6 @@ export function AdminSocialAccountsPage({ onBack }: { onBack: () => void }) {
                 <AdminEmptyState icon={Music} title={t("admin.socialAccounts.songs.emptyTitle")} description={t("admin.socialAccounts.songs.emptyDescription")} />
               )}
             </Stack>
-          </TabsContent>
-          <TabsContent value="follow">
-            <FollowCandidatesPanel />
           </TabsContent>
         </Stack>
       </Tabs>

@@ -448,8 +448,7 @@
         "label": "소셜 계정 보기",
         "accounts": "계정",
         "posts": "모든 게시물",
-        "songs": "노래",
-        "follow": "팔로우할 계정"
+        "songs": "노래"
       },
       "sortLabel": "정렬",
       "accountLabel": "계정",
@@ -621,6 +620,7 @@
       "records": "기록 상세 정보",
       "clubId": "동아리 ID: {{id}}",
       "ownerId": "소유자 ID: {{id}}"
-    }
+    },
+    "followCandidatesTab": "팔로우할 계정"
   }
 }

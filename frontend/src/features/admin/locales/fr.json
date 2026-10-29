@@ -448,8 +448,7 @@
         "label": "Vues des comptes sociaux",
         "accounts": "Comptes",
         "posts": "Toutes les publications",
-        "songs": "Chansons",
-        "follow": "Comptes à suivre"
+        "songs": "Chansons"
       },
       "sortLabel": "Trier",
       "accountLabel": "Compte",
@@ -621,6 +620,7 @@
       "records": "Détails du dossier",
       "clubId": "Identifiant du club : {{id}}",
       "ownerId": "Identifiant du propriétaire : {{id}}"
-    }
+    },
+    "followCandidatesTab": "Comptes à suivre"
   }
 }

@@ -448,8 +448,7 @@
         "label": "Visões das contas sociais",
         "accounts": "Contas",
         "posts": "Todas as publicações",
-        "songs": "Músicas",
-        "follow": "Contas para seguir"
+        "songs": "Músicas"
       },
       "sortLabel": "Ordenar",
       "accountLabel": "Conta",
@@ -621,6 +620,7 @@
       "records": "Detalhes do registo",
       "clubId": "ID do clube: {{id}}",
       "ownerId": "ID do proprietário: {{id}}"
-    }
+    },
+    "followCandidatesTab": "Contas para seguir"
   }
 }

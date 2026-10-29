@@ -448,8 +448,7 @@
         "label": "Các chế độ xem tài khoản",
         "accounts": "Tài khoản",
         "posts": "Tất cả bài đăng",
-        "songs": "Bài hát",
-        "follow": "Tài khoản cần theo dõi"
+        "songs": "Bài hát"
       },
       "sortLabel": "Sắp xếp",
       "accountLabel": "Tài khoản",
@@ -621,6 +620,7 @@
       "records": "Chi tiết bản ghi",
       "clubId": "ID câu lạc bộ: {{id}}",
       "ownerId": "ID chủ sở hữu: {{id}}"
-    }
+    },
+    "followCandidatesTab": "Tài khoản cần theo dõi"
   }
 }
