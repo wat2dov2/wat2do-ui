@@ -77,8 +77,12 @@ Never read, copy, print, persist, rotate, or maintain `sessionid` values or brow
 cookie jars, and never create a parallel pool of browser sessions.
 Exception: after Instagram logs Brave out, the worker may log back in by clicking a
 saved wat2do profile on Instagram's own logged-out page and accepting "Save info",
-spaced and capped by controlbox. It never types passwords, and a password prompt or
-challenge waits for a person.
+spaced and capped by controlbox.
+A school account missing from the switcher is logged in the way a person adds one: switch to the `login_from_school` account, then Switch accounts, "Log into an Existing Account".
+A password prompt, there or after a logout, is answered with the account's password from the Mac's login Keychain (`login_keychain_service`), and an emailed security code is read from the Gmail inbox in `login_code_email` over IMAP.
+Each account is tried at most once a day and `account_login_daily_limit` a day in all.
+Passwords go to the page through osascript's stdin, never a command line, log or file.
+A refused password or any other challenge waits for a person.
 School accounts' direct messages are not taken from notifications.
 One Mac LaunchAgent (`backend/jobs/run_instagram_worker.py`, `io.wat2do.instagram.worker`) is the only thing that drives the emulator (`backend/services/instagram_worker.py`).
 It visits one school account at a time: it picks the account with the most urgent work (a carousel waiting for its song, then an inbox due a check, then follows, then crawling), switches the app to it once, and does everything that account needs before moving on.

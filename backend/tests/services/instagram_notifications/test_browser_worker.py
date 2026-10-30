@@ -2903,3 +2903,42 @@ def test_login_recovery_stops_after_the_daily_limit(monkeypatch, tmp_path):
         lambda queue: SimpleNamespace(recover_login=lambda: pytest.fail("over the daily limit")),
     )
     assert module.recover_login(queue, now=lambda: 100000.0) is False
+
+
+def test_a_missing_account_is_logged_in_once_a_day_and_capped(monkeypatch):
+    settings = {}
+    queue = SimpleNamespace(
+        get_setting=lambda key, default=None: settings.get(key, default),
+        set_setting=lambda key, value: settings.update({key: value}),
+    )
+    added = []
+    monkeypatch.setattr(
+        module, "BrowserTabPool", lambda queue: SimpleNamespace(add_account=added.append)
+    )
+    now = [100000.0]
+    clock = lambda: now[0]  # noqa: E731
+
+    assert module._attempt_account_login(queue, "wat2do.ucalgary", clock) is True
+    assert module._attempt_account_login(queue, "wat2do.ucalgary", clock) is False
+    now[0] += 86400
+    assert module._attempt_account_login(queue, "wat2do.ucalgary", clock) is True
+    assert added == ["wat2do.ucalgary", "wat2do.ucalgary"]
+
+    settings["account_login_attempts"] = [now[0]] * module.CONTROL.account_login_daily_limit
+    assert module._attempt_account_login(queue, "wat2do.sfu", clock) is False
+
+
+def test_a_failed_account_login_leaves_the_job_to_fail(monkeypatch):
+    settings = {}
+    queue = SimpleNamespace(
+        get_setting=lambda key, default=None: settings.get(key, default),
+        set_setting=lambda key, value: settings.update({key: value}),
+    )
+
+    def refuse(username):
+        raise module.BrowserSessionError("Instagram needs a person: it refused the password")
+
+    monkeypatch.setattr(module, "BrowserTabPool", lambda queue: SimpleNamespace(add_account=refuse))
+
+    assert module._attempt_account_login(queue, "wat2do.ucalgary", lambda: 1000.0) is False
+    assert "paused" not in settings
