@@ -183,6 +183,20 @@ def test_following_turns_post_notifications_to_all() -> None:
     ]
 
 
+def test_a_missing_bell_reopens_the_profile() -> None:
+    following = _profile("utmaclub", button="Following")
+    no_bell = following[:-1]
+    device = _Device([HOME, _profile("utmaclub"), no_bell, following, _bell("All"), following])
+
+    assert _reader(device).follow("utmaclub") == FollowOutcome("Following", tapped=True)
+    assert device.actions[1:] == [
+        "Follow",
+        "instagram://user?username=utmaclub",
+        "Open notification settings",
+        "back",
+    ]
+
+
 def test_an_account_already_on_all_is_left_alone() -> None:
     following = _profile("utmmsa", button="Following")
     device = _Device([HOME, following, _bell("All"), following])

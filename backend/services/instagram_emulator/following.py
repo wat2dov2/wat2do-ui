@@ -116,6 +116,7 @@ class FollowingReader:
             self._device.tap(button)
             button = self._wait_for_button(_FOLLOWED_LABELS)
         if button.text == "Following":
+            self._show_bell(username)
             self._set_posts_to_all()
         return FollowOutcome(button.text, tapped)
 
@@ -146,6 +147,11 @@ class FollowingReader:
             if time.monotonic() >= deadline:
                 raise EmulatorError("Instagram never confirmed the follow")
             time.sleep(1)
+
+    def _show_bell(self, username: str) -> None:
+        """Instagram often leaves the bell off a followed profile's first load; the next open shows it."""
+        if self._device.find(_BELL) is None:
+            self._open_profile(username, _BELL)
 
     def _set_posts_to_all(self) -> None:
         if self._posts_setting() != "All":
