@@ -323,7 +323,9 @@ def test_rate_limit_uses_existing_sanitized_diagnostics_without_changing_the_job
     queue.defer_for_rate_limit(untrusted_result, reason)
 
     assert queue.get(job_id) == active
-    assert queue.get_setting("browser_rate_limit_until") == (
+    # A retrieval's 429 holds only retrievals.
+    assert queue.get_setting("browser_rate_limit_until") is None
+    assert queue.get_setting("retrieval_rate_limit_until") == (
         clock.now + module.CONTROL.rate_limit_backoff_seconds
     )
     with queue._connect() as db:
@@ -2262,3 +2264,28 @@ def test_first_upgrade_cancels_waiting_notification_reads_once(tmp_path):
         url="https://www.instagram.com/ubcclub/",
     )
     assert module.BrowserJobQueue(queue.state_directory).get(later).state == "pending"
+
+
+def test_a_retrieval_rate_limit_holds_retrievals_but_not_digests(queue, monkeypatch):
+    clock = _clock(monkeypatch)
+    queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/mcgillboardgames/",
+    )
+    queue.defer_for_rate_limit(queue.claim_next(), "Instagram browser is rate limited (HTTP 429)")
+    second = queue.enqueue_retrieval(
+        school="ubc",
+        recipient_id=RECIPIENT_ID,
+        account_username=ACCOUNT_USERNAME,
+        url="https://www.instagram.com/mcmasterboardgames/",
+    )
+    digest = queue.enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "during-retrieval-hold")
+
+    assert not queue.is_rate_limited()
+    assert queue.is_rate_limited(kind="retrieval")
+    assert queue.claim_next().id == digest.id
+    assert queue.claim_next() is None
+    clock.now += module.CONTROL.rate_limit_backoff_seconds
+    assert queue.claim_next().id == second

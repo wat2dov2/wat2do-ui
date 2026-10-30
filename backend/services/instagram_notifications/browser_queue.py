@@ -42,6 +42,15 @@ _AVAILABLE_ACCOUNT_SQL = (
 )
 
 
+# Rate limit holds: "browser" stops every claim, "retrieval" only profile retrievals.
+_BROWSER_SCOPE = "browser"
+_RETRIEVAL_SCOPE = "retrieval"
+
+
+def _scope(job: BrowserJob | None) -> str:
+    return _RETRIEVAL_SCOPE if job is not None and job.kind == "retrieval" else _BROWSER_SCOPE
+
+
 # Every job kind the queue accepts; a stored table missing any of them is rebuilt.
 _JOB_KINDS = ("digest", "retrieval", "engagement")
 
@@ -387,7 +396,11 @@ class BrowserJobQueue:
 
     @_retry_storage
     def defer_for_rate_limit(self, job: BrowserJob | None, reason: str) -> None:
-        """Hold all browser admission without changing a claim or its retry policy."""
+        """Hold browser admission without changing a claim or its retry policy.
+
+        A profile retrieval's 429 comes from Instagram's stricter profile endpoint, so it
+        holds only retrievals; digests keep running and hold everything if they are limited too.
+        """
         if not reason or not reason.strip():
             raise ValueError("A rate limit requires a diagnostic reason")
         limited_job = None
@@ -402,7 +415,7 @@ class BrowserJobQueue:
                     if row is None or job.state != "running":
                         return
                     limited_job = self._job(row)
-                self._write_rate_limit_state(db, time.time())
+                self._write_rate_limit_state(db, time.time(), _scope(limited_job))
         except sqlite3.Error:
             self._pending_rate_limit = True
             raise
@@ -410,8 +423,10 @@ class BrowserJobQueue:
         self.record_diagnostic("rate_limited", limited_job, reason=reason)
 
     @classmethod
-    def _write_rate_limit_state(cls, db: sqlite3.Connection, now: float) -> None:
-        deadline, backoff = cls._rate_limit_state(db)
+    def _write_rate_limit_state(
+        cls, db: sqlite3.Connection, now: float, scope: str = _BROWSER_SCOPE
+    ) -> None:
+        deadline, backoff = cls._rate_limit_state(db, scope)
         if backoff == 0:
             backoff = CONTROL.rate_limit_backoff_seconds
         elif now >= deadline:
@@ -420,28 +435,31 @@ class BrowserJobQueue:
         db.executemany(
             "INSERT INTO settings VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
             [
-                ("browser_rate_limit_until", json.dumps(deadline)),
-                ("browser_rate_limit_backoff_seconds", json.dumps(backoff)),
+                (f"{scope}_rate_limit_until", json.dumps(deadline)),
+                (f"{scope}_rate_limit_backoff_seconds", json.dumps(backoff)),
             ],
         )
 
     @_retry_storage
-    def is_rate_limited(self, now: float | None = None) -> bool:
+    def is_rate_limited(self, now: float | None = None, *, kind: str | None = None) -> bool:
+        """Whether every claim is held, or with ``kind="retrieval"`` whether retrievals are."""
         if self._pending_rate_limit:
             return True
         now = time.time() if now is None else now
         with closing(self._connect()) as db:
-            return now < self._rate_limit_state(db)[0]
+            return now < self._rate_limit_state(db)[0] or (
+                kind == _RETRIEVAL_SCOPE and now < self._rate_limit_state(db, _RETRIEVAL_SCOPE)[0]
+            )
 
     @staticmethod
-    def _rate_limit_state(db: sqlite3.Connection) -> tuple[float, float]:
-        state: dict[str, float] = {
-            "browser_rate_limit_until": 0,
-            "browser_rate_limit_backoff_seconds": 0,
-        }
+    def _rate_limit_state(
+        db: sqlite3.Connection, scope: str = _BROWSER_SCOPE
+    ) -> tuple[float, float]:
+        until, interval_key = f"{scope}_rate_limit_until", f"{scope}_rate_limit_backoff_seconds"
+        state: dict[str, float] = {until: 0, interval_key: 0}
         for row in db.execute("SELECT key,value FROM settings WHERE key IN (?,?)", tuple(state)):
             value = json.loads(row["value"])
-            interval = row["key"] == "browser_rate_limit_backoff_seconds"
+            interval = row["key"] == interval_key
             if (
                 type(value) not in (int, float)
                 or not math.isfinite(value)
@@ -456,7 +474,7 @@ class BrowserJobQueue:
                 name = "interval" if interval else "timestamp"
                 raise ValueError(f"Browser rate limit {name} is invalid")
             state[row["key"]] = value
-        return state["browser_rate_limit_until"], state["browser_rate_limit_backoff_seconds"]
+        return state[until], state[interval_key]
 
     @classmethod
     def _claims_blocked(cls, db: sqlite3.Connection, now: float) -> bool:
@@ -691,7 +709,7 @@ class BrowserJobQueue:
             ).fetchone()
             if not row and allow_engagement:
                 row = self._select_engagement(db, now, require_waited=True)
-            if not row:
+            if not row and now >= self._rate_limit_state(db, _RETRIEVAL_SCOPE)[0]:
                 row = db.execute(
                     "SELECT * FROM jobs WHERE state='pending' AND kind='retrieval' "
                     f"AND {_AVAILABLE_ACCOUNT_SQL} "
@@ -761,7 +779,8 @@ class BrowserJobQueue:
                 return []
             self._expire_pending_digests(db, now)
             if first.kind == "retrieval" and (
-                db.execute(
+                now < self._rate_limit_state(db, _RETRIEVAL_SCOPE)[0]
+                or db.execute(
                     "SELECT 1 FROM jobs WHERE state='pending' AND kind='digest' "
                     f"AND {_AVAILABLE_ACCOUNT_SQL} LIMIT 1"
                 ).fetchone()
@@ -897,19 +916,22 @@ class BrowserJobQueue:
                     or (stored_job.kind == "engagement" and not stored_job.payload.get("dry_run"))
                 )
             ):
-                deadline, backoff = self._rate_limit_state(db)
-                recovered_at = deadline + CONTROL.rate_limit_recovery_seconds
-                # One healthy route does not prove a recently limited route recovered.
-                # Keep escalation until a fresh verified job follows a quiet recovery window.
-                if (
-                    backoff
-                    and stored_job.started_at is not None
-                    and recovered_at <= stored_job.started_at <= now
-                ):
-                    db.execute(
-                        "INSERT INTO settings VALUES ('browser_rate_limit_backoff_seconds','0') "
-                        "ON CONFLICT(key) DO UPDATE SET value=excluded.value"
-                    )
+                # Any fresh success clears the shared hold; a retrieval also clears its own.
+                for scope in {_BROWSER_SCOPE, _scope(stored_job)}:
+                    deadline, backoff = self._rate_limit_state(db, scope)
+                    recovered_at = deadline + CONTROL.rate_limit_recovery_seconds
+                    # One healthy route does not prove a recently limited route recovered.
+                    # Keep escalation until a fresh verified job follows a quiet recovery window.
+                    if (
+                        backoff
+                        and stored_job.started_at is not None
+                        and recovered_at <= stored_job.started_at <= now
+                    ):
+                        db.execute(
+                            "INSERT INTO settings VALUES (?,'0') "
+                            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                            (f"{scope}_rate_limit_backoff_seconds",),
+                        )
         if changed and retry_job is not None:
             self.record_diagnostic(
                 "retrying", replace(retry_job, state="pending", result=None, error=error)

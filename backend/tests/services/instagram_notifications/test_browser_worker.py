@@ -1117,7 +1117,11 @@ def test_rate_limit_stops_refills_before_failed_operation_cleanup_finishes(queue
         waits += 1
         if waits == 2:
             observations.append(
-                (queue.is_rate_limited(), queue.get(extra[0]).attempts, queue.get(job_ids[0]).state)
+                (
+                    queue.is_rate_limited(kind="retrieval"),
+                    queue.get(extra[0]).attempts,
+                    queue.get(job_ids[0]).state,
+                )
             )
             release_cleanup.set()
         return wait_for_futures(futures, **kwargs)
@@ -1221,7 +1225,7 @@ def test_settled_rate_limited_read_refunds_behind_an_independent_human_pause(
     assert queue.get(job_ids[0]).attempts == 0
     assert queue.get(job_ids[1]).state == "failed"
     assert queue.get_setting("paused") == human_error
-    assert queue.is_rate_limited()
+    assert queue.is_rate_limited(kind="retrieval")
     assert queue.claim_next() is None
     assert queue.claim_companions(queue.get(job_ids[0]), limit=1) == []
 
@@ -1264,8 +1268,8 @@ def test_last_budget_rate_limit_refunds_only_after_cleanup_then_real_failure_exh
     assert attempts_during_cleanup == [module.CONTROL.ingestion_retry_limit]
     assert queue.get(job_id).state == "pending"
     assert queue.get(job_id).attempts == module.CONTROL.ingestion_retry_limit - 1
-    assert queue.is_rate_limited()
-    queue.set_setting("browser_rate_limit_until", 0)
+    assert queue.is_rate_limited(kind=kind)
+    queue.set_setting(f"{'retrieval' if kind == 'retrieval' else 'browser'}_rate_limit_until", 0)
 
     def ordinary_failure(*args, **kwargs):
         raise _BrowserPageUnavailable(
@@ -2430,7 +2434,7 @@ def test_all_fourteen_reads_drain_before_deferred_cleanup_and_no_slots_refill(
     assert queue.get(extra[0]).state == "pending"
     assert queue.get(extra[0]).attempts == 0
     assert ("pending", job_ids[0]) in diagnostics
-    assert queue.is_rate_limited() is rate_limited
+    assert queue.is_rate_limited(kind="retrieval") is rate_limited
     assert diagnostics.count(("rate_limited", job_ids[0])) == int(rate_limited)
     assert not queue.get_setting("paused", False)
 
