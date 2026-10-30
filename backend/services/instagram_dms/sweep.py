@@ -7,8 +7,8 @@ answers each thread that may need it with ``EmulatorDirectExecutor``.
 
 Local state remembers each thread's last preview that was handled, so a thread is
 read again only when something new arrives, each account's next check, and the pause
-a person must clear after a reply or repost that could not be confirmed. DM text is
-never logged.
+a person must clear after a reply or repost that could not be confirmed, and which
+accounts Instagram has stopped from sending messages. DM text is never logged.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from services import school_service
 from services.instagram_emulator.device import CONTROL as EMULATOR
 from services.instagram_emulator.device import EmulatorDevice
 from services.instagram_emulator.direct import EmulatorDirectExecutor
-from services.instagram_emulator.inbox import InboxRow, read_inbox
+from services.instagram_emulator.inbox import InboxRow, MessagingLimited, read_inbox
 from services.instagram_notifications.browser_session import (
     BrowserEngagementUncertain,
     BrowserSessionError,
@@ -81,6 +81,14 @@ def answer(device: EmulatorDevice, school: str) -> list[str]:
             _save(state)
             statuses.append(result["status"])
             log.info("DM sweep %s: %s (%s)", school, result["status"], result["outcome"])
+        state.get("limited", {}).pop(school, None)
+        _save(state)
+    except MessagingLimited:
+        # Nothing can be sent, so the threads stay unhandled until Instagram lifts it.
+        state.setdefault("limited", {})[school] = datetime.now().astimezone().isoformat()
+        _save(state)
+        log.warning("DM sweep %s: Instagram has limited this account's messages", school)
+        return statuses
     except BrowserEngagementUncertain as exc:
         # It may already have reached Instagram, so a person checks before anything else.
         state["paused"] = str(exc)

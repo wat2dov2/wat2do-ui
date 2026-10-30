@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from services.instagram_dms import sweep as module
-from services.instagram_emulator.inbox import InboxRow
+from services.instagram_emulator.inbox import InboxRow, MessagingLimited
 from services.instagram_notifications.browser_session import BrowserEngagementUncertain
 
 THEIRS = InboxRow("club", "Could you share this?", 0.5, unread=True, request=False)
@@ -80,6 +80,21 @@ def test_an_unconfirmed_answer_pauses_every_inbox(emulator, monkeypatch) -> None
     assert module.paused() == "Instagram DM reply is uncertain"
     assert not module.due("sfu")
     module.resume()
+    assert module.paused() is None and module.due("sfu")
+
+
+def test_a_limited_account_is_skipped_and_its_threads_wait(emulator, monkeypatch) -> None:
+    class _Limited:
+        def __init__(self, device):
+            pass
+
+        def handle(self, row, **kwargs):
+            raise MessagingLimited("Instagram has limited this account's messages")
+
+    monkeypatch.setattr(module, "EmulatorDirectExecutor", _Limited)
+    assert module.answer(DEVICE, "ubc") == []
+    state = module._load()
+    assert "ubc" in state["limited"] and state["handled"]["ubc"] == {}
     assert module.paused() is None and module.due("sfu")
 
 

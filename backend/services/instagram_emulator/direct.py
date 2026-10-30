@@ -25,7 +25,13 @@ from services.instagram_emulator.device import (
     Node,
     labels,
 )
-from services.instagram_emulator.inbox import InboxRow, accept_request, open_row
+from services.instagram_emulator.inbox import (
+    InboxRow,
+    MessagingLimited,
+    accept_request,
+    open_row,
+    raise_if_messaging_limited,
+)
 from services.instagram_emulator.story import share_to_story
 from services.instagram_notifications.browser_session import (
     BrowserEngagementUncertain,
@@ -93,6 +99,8 @@ class EmulatorDirectExecutor:
         reader = _ThreadReader(self._device, lambda: open_row(self._device, user, row.name))
         try:
             thread = reader.read()
+        except MessagingLimited:
+            raise
         except EmulatorError as exc:
             raise BrowserSessionError(f"Instagram DM thread could not be read: {exc}") from None
         decision = (
@@ -158,6 +166,8 @@ class _ThreadReader:
     def read(self) -> list[dict[str, Any]]:
         """The thread's newest messages, oldest first, with each shared post's link."""
         nodes = self._open()
+        # A limited account can send nothing, so its threads are not read.
+        raise_if_messaging_limited(nodes)
         self.stale = _newest_message_is_old(nodes)
         sender = _sender(nodes)
         messages = _messages(nodes)[-CONTROL.thread_item_limit :]

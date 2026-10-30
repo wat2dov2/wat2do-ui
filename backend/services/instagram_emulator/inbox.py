@@ -20,6 +20,8 @@ _REQUESTS_TAB = re.compile(r"^Requests(?:, .*)?$")
 _TABS = re.compile(r"^(?:All|Primary|General|Requests)(?:, .*)?$")
 _COMPOSER = re.compile(r"^row_thread_composer_edittext$")
 _REQUEST_PROMPT = re.compile(r"^thread_disabled_title$")
+# The same banner says when Instagram has limited the account's messages.
+_MESSAGING_LIMITED = re.compile(r"^You can.t send messages")
 _ACCEPT = re.compile(r"^Accept$")
 _MOVE_TO_PRIMARY = re.compile(r"^igds_alert_dialog_primary_button$")
 _AGE = re.compile(r"^(now|\d+)([smhdw]?)$")
@@ -29,6 +31,10 @@ _DAYS_PER_UNIT = {"s": 1 / 86_400, "m": 1 / 1440, "h": 1 / 24, "d": 1, "w": 7, "
 _OURS = re.compile(r"^(?:You:|You sent|Sent\b|Seen\b)")
 # A thread row spans the screen from its left edge and is about one avatar tall.
 _ROW_HEIGHT = (150, 260)
+
+
+class MessagingLimited(EmulatorError):
+    """Instagram has limited this account's messages, so no thread can be answered."""
 
 
 @dataclass(frozen=True)
@@ -87,8 +93,10 @@ def open_row(device: EmulatorDevice, user: int, name: str) -> None:
 
 def accept_request(device: EmulatorDevice) -> None:
     """Accept the open message request, if it is one, so the thread can be answered."""
-    if device.find(_REQUEST_PROMPT) is None:
+    prompt = device.find(_REQUEST_PROMPT)
+    if prompt is None:
         return
+    raise_if_messaging_limited([prompt])
     device.tap_when(_ACCEPT)
     # Some accounts then ask which inbox the thread moves to; Primary is where we look.
     shown = device.wait_for(re.compile(f"{_COMPOSER.pattern}|{_MOVE_TO_PRIMARY.pattern}"))
@@ -96,6 +104,12 @@ def accept_request(device: EmulatorDevice) -> None:
         device.tap(shown)
         device.wait_for(_COMPOSER)
     device.pause()
+
+
+def raise_if_messaging_limited(nodes: list[Node]) -> None:
+    prompt = next((node for node in nodes if node.labelled(_REQUEST_PROMPT)), None)
+    if prompt is not None and _MESSAGING_LIMITED.match(prompt.text):
+        raise MessagingLimited("Instagram has limited this account's messages")
 
 
 def _open_list(device: EmulatorDevice, user: int, *, requests: bool) -> bool:

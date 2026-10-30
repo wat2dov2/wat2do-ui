@@ -516,6 +516,8 @@ The worker answers as the school in the Instagram app on the Mac's Android emula
 8. `reply` only sends the reply.
 9. `ignore` does nothing.
 
+When Instagram has limited an account's messages, its threads show "You can't send messages at this time" where the composer would be. The sweep then stops for that account without reading or answering anything, leaves its threads unhandled, and lists the account under `limited` in `~/.local/state/wat2do/instagram-dms/sweep.json` until a later check gets through.
+
 Daily carousel drafts always include requested events among the candidates, however long ago they were added, until a carousel publishes them or they pass, and the curation prompt picks them first.
 
 `controlbox/instagram_dms.json` starts with `dry_run: true`, which records each decision in the worker's job results without replying or queueing.

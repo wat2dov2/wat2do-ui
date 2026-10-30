@@ -98,6 +98,19 @@ def test_accepting_a_request_moves_it_to_primary_when_asked(asks_inbox) -> None:
     assert device.tapped == expected
 
 
+def test_a_limited_account_is_not_taken_for_a_request() -> None:
+    # wat2do.ualberta's threads on 2026-10-29, where the composer would be.
+    device = _AcceptingDevice(asks_inbox=False)
+    device.screens[0] = [
+        _node(
+            "You can't send messages at this time", (42, 1992, 1038, 2039), "thread_disabled_title"
+        )
+    ]
+    with pytest.raises(inbox.MessagingLimited):
+        inbox.accept_request(device)
+    assert device.tapped == []
+
+
 class _InboxDevice:
     """One inbox screen, with or without a Requests link."""
 
