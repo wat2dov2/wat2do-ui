@@ -1244,6 +1244,32 @@ class CompetitorPainPointsControl(_ControlModel):
         return self
 
 
+class NotificationRetryControl(_ControlModel):
+    """Daily relogin to Brave and rerun of failed Process Notifications workflow runs.
+
+    When a school account drops out of Brave, its browser-run notification job fails.
+    A LaunchAgent fires once a day, logs back in (the login_first_school's saved profile
+    first), and reruns the failed runs so their posts are picked up. The Brave login reuses
+    the capped recovery in instagram_browser; this box only tunes the rerun side.
+    """
+
+    # The daily LaunchAgent fires at this local time.
+    schedule_hour: int = Field(ge=0, le=23)
+    schedule_minute: int = Field(ge=0, le=59)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=300)
+    # The GitHub repository (owner/name) and the workflow whose failed runs are reran.
+    github_repo: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+    workflow_name: str = Field(min_length=1, max_length=100)
+    # Only runs that failed within this many hours are considered.
+    lookback_hours: int = Field(ge=1, le=168)
+    # The school whose saved Brave profile is logged in first, before any failed account.
+    login_first_school: str = Field(pattern=r"^[a-z0-9_]{1,23}$")
+    # At most this many run reruns are started per day, across every run.
+    reruns_per_day: int = Field(ge=0, le=200)
+    # A run reran this many times across days and still failing is reported, not reran again.
+    max_reruns_per_run: int = Field(ge=1, le=10)
+
+
 class ControlBox(_ControlModel):
     positions: PositionsControl
     database: DatabaseControl
@@ -1275,6 +1301,7 @@ class ControlBox(_ControlModel):
     social_previews: SocialPreviewsControl
     instagram_browser: InstagramBrowserControl
     notification_workflow: NotificationWorkflowControl
+    notification_retry: NotificationRetryControl
     runner_setup: RunnerSetupControl
     instagram_bell_setup: InstagramBellSetupControl
     instagram_digest: InstagramDigestControl
