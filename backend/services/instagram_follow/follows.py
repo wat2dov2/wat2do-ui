@@ -19,7 +19,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from core.constants import FOLLOW_CANDIDATE_FOLLOWED
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.launch_agents import atomic_write
@@ -27,7 +26,11 @@ from core.tables import INSTAGRAM_FOLLOW_CANDIDATES
 from services import school_service
 from services.instagram_emulator.device import CONTROL as EMULATOR
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError
-from services.instagram_emulator.following import ActionBlocked, FollowingReader
+from services.instagram_emulator.following import (
+    ActionBlocked,
+    FollowedWithoutBell,
+    FollowingReader,
+)
 from services.instagram_follow import candidates
 
 log = logging.getLogger(__name__)
@@ -76,6 +79,14 @@ def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
             break
         try:
             outcome = reader.follow(row["handle"])
+        except FollowedWithoutBell as exc:
+            # Counted now; it stays approved so a later visit sets its bell.
+            candidates.mark_follow_failed(row["id"], str(exc), tapped=True)
+            followed += 1
+            if isinstance(exc.__cause__, ActionBlocked):
+                _block(school)
+                return FollowVisit(followed, confirmed, True)
+            continue
         except ActionBlocked as exc:
             candidates.mark_follow_failed(row["id"], str(exc))
             _block(school)
@@ -101,7 +112,6 @@ def _allowance(school_id: int) -> int:
         .table(INSTAGRAM_FOLLOW_CANDIDATES)
         .select("id", count="exact")
         .eq("school_id", school_id)
-        .eq("status", FOLLOW_CANDIDATE_FOLLOWED)
         .gte("followed_at", midnight.isoformat())
         .limit(1)
         .execute()

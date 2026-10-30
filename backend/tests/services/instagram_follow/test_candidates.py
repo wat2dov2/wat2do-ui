@@ -172,3 +172,19 @@ def test_listed_clubs_are_queued_approved_for_their_school_once(sb, monkeypatch)
 )
 def test_handles_are_bare_usernames(value, handle):
     assert module.normalize_handle(value) == handle
+
+
+def test_confirming_a_followed_account_keeps_the_day_it_was_followed(sb):
+    module.mark_followed("1", tapped=False)
+
+    update = sb.update.call_args.args[0]
+    assert update["status"] == "followed"
+    assert "followed_at" not in update
+
+
+def test_a_follow_that_failed_after_its_tap_is_dated(sb):
+    module.mark_follow_failed("1", "bell never showed", tapped=True)
+    assert "followed_at" in sb.update.call_args.args[0]
+
+    module.mark_follow_failed("2", "profile never loaded")
+    assert "followed_at" not in sb.update.call_args.args[0]

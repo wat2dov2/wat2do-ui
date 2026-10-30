@@ -1,7 +1,11 @@
 import pytest
 
 from services.instagram_emulator.device import EmulatorError
-from services.instagram_emulator.following import ActionBlocked, FollowOutcome
+from services.instagram_emulator.following import (
+    ActionBlocked,
+    FollowedWithoutBell,
+    FollowOutcome,
+)
 from services.instagram_follow import follows as module
 from services.instagram_follow.follows import FollowVisit
 
@@ -40,7 +44,9 @@ def world(monkeypatch, tmp_path):
     monkeypatch.setattr(
         module.candidates,
         "mark_follow_failed",
-        lambda candidate_id, error: marks.append(("failed", candidate_id)),
+        lambda candidate_id, error, tapped=False: marks.append(
+            ("followed without bell" if tapped else "failed", candidate_id)
+        ),
     )
 
     def use(results=None):
@@ -102,7 +108,8 @@ def test_todays_follows_count_against_the_daily_cap(fake_sb, patch_sb):
     fake_sb.set_response(data=[], count=18)
 
     assert module._allowance(7) == module.CONTROL.follows_per_account_per_day - 18
-    fake_sb.eq.assert_any_call("status", "followed")
+    # Every follow made today counts, including one whose bell step failed after it.
+    assert all(call.args[0] != "status" for call in fake_sb.eq.call_args_list)
 
 
 def test_accounts_already_followed_are_confirmed_without_using_the_allowance(world):
@@ -122,3 +129,23 @@ def test_a_visit_opens_a_bounded_number_of_profiles(world):
     visit = module.follow_due(object(), "utsg", 1)
     assert visit == FollowVisit(0, module.PROFILES_PER_FOLLOW, False)
     assert len(reader.followed) == module.PROFILES_PER_FOLLOW
+
+
+def test_a_follow_whose_bell_failed_still_uses_the_allowance(world):
+    no_bell = FollowedWithoutBell("Instagram never showed the bell")
+    reader, marks = world({"club0": no_bell, "club1": no_bell})
+
+    # Allowance 2: both taps count, so the visit stops instead of following more.
+    assert module.follow_due(object(), "utsg", 5) == FollowVisit(2, 0, False)
+    assert reader.followed == ["club0", "club1"]
+    assert marks == [("followed without bell", "0"), ("followed without bell", "1")]
+
+
+def test_try_again_later_after_a_follow_counts_it_and_stops(world):
+    blocked = FollowedWithoutBell("Instagram asked this account to try again later")
+    blocked.__cause__ = ActionBlocked("Instagram asked this account to try again later")
+    reader, marks = world({"club0": blocked})
+
+    assert module.follow_due(object(), "utsg", 5) == FollowVisit(1, 0, True)
+    assert reader.followed == ["club0"]
+    assert module.follows_due("utsg") is False

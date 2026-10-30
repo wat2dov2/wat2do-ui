@@ -4,6 +4,7 @@ from services.instagram_emulator import following as module
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError, Node
 from services.instagram_emulator.following import (
     ActionBlocked,
+    FollowedWithoutBell,
     FollowingReader,
     FollowingRow,
     FollowOutcome,
@@ -217,3 +218,21 @@ def test_try_again_later_stops_the_account() -> None:
 
     with pytest.raises(ActionBlocked):
         _reader(device).follow("utmaclub")
+
+
+def test_a_follow_whose_bell_never_shows_still_reports_the_follow() -> None:
+    no_bell = _profile("utmaclub", button="Following")[:-1]
+    device = _Device([HOME, _profile("utmaclub"), no_bell])
+
+    with pytest.raises(FollowedWithoutBell):
+        _reader(device).follow("utmaclub")
+    assert device.actions[1] == "Follow"
+
+
+def test_a_missing_bell_on_an_account_already_followed_is_a_plain_failure() -> None:
+    no_bell = _profile("utmmsa", button="Following")[:-1]
+    device = _Device([HOME, no_bell])
+
+    with pytest.raises(EmulatorError) as raised:
+        _reader(device).follow("utmmsa")
+    assert not isinstance(raised.value, FollowedWithoutBell)
