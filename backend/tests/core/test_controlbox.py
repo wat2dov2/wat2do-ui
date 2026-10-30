@@ -44,6 +44,34 @@ def test_checked_in_controlbox_is_valid() -> None:
     assert {"eventbrite", "meetup", "fable"} <= set(controlbox.competitor_pain_points.competitors)
     assert not {"x", "reddit"} & set(controlbox.competitor_pain_points.lanes)
     assert controlbox.competitor_pain_points.sources["forum"] == []
+
+
+def test_notification_retry_control_is_loaded() -> None:
+    control = controlbox.notification_retry
+    assert control.schedule_hour == 3
+    assert control.github_repo == "wat2dov2/wat2do-ui"
+    assert control.workflow_name == "Process Notifications"
+    assert control.login_first_school == "guelph"
+
+
+def test_invalid_notification_retry_schedule_hour_is_rejected(tmp_path) -> None:
+    directory = _write_control(
+        tmp_path,
+        "notification_retry",
+        lambda payload: payload.__setitem__("schedule_hour", 24),
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
+def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
+    directory = _write_control(
+        tmp_path,
+        "notification_retry",
+        lambda payload: payload.__setitem__("github_repo", "missing-slash"),
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
     assert controlbox.notification_defaults.morning_email is True
     assert controlbox.email_delivery.notification_consent_version == "2026-10"
     assert controlbox.email_delivery.team_sender == "wat2do <team@wat2do.io>"
