@@ -17,6 +17,7 @@ from urllib.parse import urlsplit
 
 from core.controlbox import controlbox
 from schemas.school import validate_recipient_id
+from services.instagram_notifications import account_login
 
 _CONTROL = controlbox.instagram_browser
 _REQUEST_KEY = "__wat2doInstagramBrowserRequest"
@@ -46,6 +47,21 @@ _LOGIN_PAGE_SOURCE = """JSON.stringify((() => {
  return {state: profiles.length ? "profiles" : "loading", profiles};
 })())"""
 LOGGED_OUT_PAUSE = "Instagram browser requires human account recovery: log in to Instagram in Brave"
+ACCOUNT_UNAVAILABLE = "Matching Instagram browser account is unavailable"
+# Instagram's login form, on the logged-out page or the "Log into an Existing
+# Account" dialog, and what it shows once submitted.
+_LOGIN_FORM_STATE_SOURCE = """JSON.stringify((() => {
+ const path = window.location.pathname;
+ const text = document.body ? document.body.innerText : "";
+ const code = document.querySelector(
+  'input[name="verificationCode"],input[name="security_code"],input[autocomplete="one-time-code"]');
+ if (code) return {state: "code"};
+ if (/^\\/(challenge|checkpoint|accounts\\/suspended)/.test(path)) return {state: "challenge"};
+ if (/password (was|is) incorrect|incorrect password/i.test(text)) return {state: "wrong_password"};
+ if (path.startsWith("/accounts/onetap")) return {state: "save_info"};
+ if (document.querySelector('input[name="password"]')) return {state: "form"};
+ return {state: "pending"};
+})())"""
 # Asks Instagram's server, not the page, which may still show a logged-in screen
 # after a logout. Logged out, account settings redirect to the login page.
 _SERVER_LOGIN_SOURCE = """(() => {
@@ -254,6 +270,18 @@ class _PinnedBraveJavascriptRunner:
         except BrowserSessionError as exc:
             self._verify_closed_document(exc, deadline)
             raise
+
+    def run_secret(self, source: str, timeout_seconds: float) -> str:
+        """Run a source holding a password: it is written into the script on stdin."""
+        deadline = time.monotonic() + timeout_seconds
+        tab_id, window_id = self._pin(deadline)
+        script = _EXECUTE_TAB_SCRIPT.replace(
+            "set javascriptSource to item 2 of argv",
+            f"set javascriptSource to {_applescript_string(source)}",
+        )
+        return _run_applescript(
+            script, (tab_id, "", window_id), _bridge_time_left(deadline), secret=True
+        )
 
     def _viewport_is_ready(
         self, tab_id: str, window_id: str, deadline: float, *, minimum_width: int = 0
@@ -742,6 +770,67 @@ class BrowserInstagramSession:
             if self.run(_close_account_chooser_source()) != "clicked":
                 raise BrowserSessionError("Instagram account chooser could not be closed")
 
+    def log_in(self, username: str, password: str) -> None:
+        """Fill and submit the login form on the page, then answer what Instagram asks.
+
+        Saves the login info, and enters an emailed security code when Instagram
+        asks for one. A wrong password or any other challenge stops for a person.
+        """
+        if not isinstance(self._javascript_runner, _PinnedBraveJavascriptRunner):
+            raise BrowserSessionError("Instagram login needs a pinned Brave tab")
+        self.poll_until(lambda: self._login_state() == "form")
+        submitted_at = time.time()
+        source = _submit_login_source(username, password)
+        if self._javascript_runner.run_secret(source, self._remaining_timeout()) != "submitted":
+            raise BrowserSessionError("Instagram's login form could not be submitted")
+        code_entered = False
+        state = ""
+
+        def settled() -> bool:
+            nonlocal state, code_entered
+            state = self._login_state()
+            if state == "save_info":
+                self.run(_click_label_source("Save info"))
+                return False
+            if state == "code" and not code_entered:
+                code = account_login.emailed_code(username, submitted_at)
+                if code is None:
+                    raise BrowserSessionError(
+                        "Instagram needs a person: its security code never arrived"
+                    )
+                if self.run(_submit_code_source(code)) != "submitted":
+                    raise BrowserSessionError("Instagram's security code could not be entered")
+                code_entered = True
+                return False
+            if state in {"wrong_password", "challenge"}:
+                return True
+            return self.current_account_username() == username
+
+        self.poll_until(settled)
+        if state == "wrong_password":
+            raise BrowserSessionError(f"Instagram needs a person: it refused {username}'s password")
+        if state == "challenge":
+            raise BrowserSessionError(f"Instagram needs a person: it asks to confirm {username}")
+
+    def _login_state(self) -> str:
+        try:
+            return str(json.loads(self.read(_LOGIN_FORM_STATE_SOURCE)).get("state", ""))
+        except json.JSONDecodeError:
+            return ""
+
+    def add_account(self, username: str, password: str, *, from_account: str) -> None:
+        """Log in an account missing from the switcher, from ``from_account``.
+
+        The way a person adds one: switch to an account that is logged in, then
+        Switch accounts, "Log into an Existing Account".
+        """
+        if username != from_account and self.current_account_username() != from_account:
+            self._switch_account(from_account)
+        self._open_account_chooser()
+        if self.run(_click_label_source("Log into an Existing Account")) != "clicked":
+            raise _BrowserPageUnavailable("Instagram's add-account control is unavailable")
+        self.log_in(username, password)
+
     def _open_account_chooser(self) -> None:
         if self.read(_account_chooser_state_source()) == "ready":
             return
@@ -759,7 +848,7 @@ class BrowserInstagramSession:
         if selected == "ambiguous":
             raise BrowserSessionError("Matching Instagram browser account is ambiguous")
         if selected != "clicked":
-            raise BrowserSessionError("Matching Instagram browser account is unavailable")
+            raise BrowserSessionError(ACCOUNT_UNAVAILABLE)
 
         def switched() -> bool:
             self.current_page_path(check_response=True)
@@ -843,7 +932,10 @@ def _dispatch_navigation(script: str, arguments: tuple[str, ...], deadline: floa
         _NAVIGATION_LOCK.release()
 
 
-def _run_applescript(script: str, arguments: tuple[str, ...], timeout_seconds: float) -> str:
+def _run_applescript(
+    script: str, arguments: tuple[str, ...], timeout_seconds: float, *, secret: bool = False
+) -> str:
+    """Run ``script`` through osascript; a ``secret`` script goes on stdin, never argv."""
     deadline = time.monotonic() + timeout_seconds
     if not _APPLESCRIPT_LOCK.acquire(timeout=timeout_seconds):
         raise _BrowserAutomationTransient("Brave browser automation timed out")
@@ -852,7 +944,10 @@ def _run_applescript(script: str, arguments: tuple[str, ...], timeout_seconds: f
         if remaining <= 0:
             raise _BrowserAutomationTransient("Brave browser automation timed out")
         completed = subprocess.run(
-            ["/usr/bin/osascript", "-e", script, "--", *arguments],
+            ["/usr/bin/osascript", "-", *arguments]
+            if secret
+            else ["/usr/bin/osascript", "-e", script, "--", *arguments],
+            input=script if secret else None,
             capture_output=True,
             text=True,
             check=True,
@@ -1102,6 +1197,58 @@ def _click_label_source(text: str) -> str:
   return "clicked";
 }})()
 """.strip()
+
+
+def _submit_login_source(username: str, password: str) -> str:
+    """Fill the login form (the username only when it asks) and press Log in."""
+    return f"""
+(() => {{
+  const [username, password] = [{json.dumps(username)}, {json.dumps(password)}];
+  const forms = [...document.querySelectorAll('[role="dialog"]'), document];
+  const scope = forms.find(form => form.querySelector('input[name="password"]'));
+  if (!scope) return "missing";
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+  const fill = (input, value) => {{
+    input.focus();
+    setValue.call(input, value);
+    input.dispatchEvent(new Event("input", {{bubbles: true}}));
+  }};
+  const user = scope.querySelector('input[name="username"]');
+  if (user) fill(user, username);
+  fill(scope.querySelector('input[name="password"]'), password);
+  const label = element => (element.innerText || element.textContent || "").trim();
+  const button = [...scope.querySelectorAll('button,[role="button"]')]
+    .find(element => label(element) === "Log in");
+  if (!button) return "missing";
+  button.click();
+  return "submitted";
+}})()
+""".strip()
+
+
+def _submit_code_source(code: str) -> str:
+    return f"""
+(() => {{
+  const input = document.querySelector(
+    'input[name="verificationCode"],input[name="security_code"],input[autocomplete="one-time-code"]');
+  if (!input) return "missing";
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+  input.focus();
+  setValue.call(input, {json.dumps(code)});
+  input.dispatchEvent(new Event("input", {{bubbles: true}}));
+  const label = element => (element.innerText || element.textContent || "").trim().toLowerCase();
+  const button = [...document.querySelectorAll('button,[role="button"]')]
+    .find(element => ["confirm", "submit", "continue", "next"].includes(label(element)));
+  if (!button) return "missing";
+  button.click();
+  return "submitted";
+}})()
+""".strip()
+
+
+def _applescript_string(text: str) -> str:
+    escaped = text.replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ")
+    return f'"{escaped}"'
 
 
 def _close_account_chooser_source() -> str:
@@ -1624,8 +1771,9 @@ class BrowserTabPool:
         """Log back in through Instagram's saved profiles, the way a person would.
 
         Clicks a saved wat2do profile and accepts "save login info" so the next
-        recovery works the same way. Never types a password or touches cookies;
-        a password prompt or challenge stops for a person.
+        recovery works the same way. A password prompt is answered with the
+        account's Keychain password; a challenge stops for a person. Never
+        touches cookies.
         """
         ids = self._live_ids(self._registered_ids())
         if not ids:
@@ -1667,9 +1815,15 @@ class BrowserTabPool:
 
         session.poll_until(settled)
         if outcome == "password":
-            raise BrowserSessionError(
-                "Instagram needs a person: it asks for a password to log back in"
-            )
+            # The saved profile clicked, or the preferred account on a bare login form.
+            username = account_login.canonical_account(clicked[0] if clicked else str(preferred))
+            password = account_login.account_password(username)
+            if password is None:
+                raise BrowserSessionError(
+                    f"Instagram needs a person: no stored password for {username}"
+                )
+            session.log_in(username, password)
+            outcome = "logged_in"
         if outcome == "challenge":
             raise BrowserSessionError("Instagram needs a person: it asks to confirm the account")
         username = None
@@ -1690,6 +1844,25 @@ class BrowserTabPool:
             except BrowserSessionError:
                 pass  # The pool check repairs a window that cannot reload.
         return cast(str, username)
+
+    def add_account(self, username: str) -> None:
+        """Log in an account missing from Brave's switcher, from the logged-in one
+        named by ``login_from_school``, with its Keychain password."""
+        password = account_login.account_password(username)
+        if password is None:
+            raise BrowserSessionError(
+                f"Instagram needs a person: no stored password for {username}"
+            )
+        ids = self._live_ids(self._registered_ids())
+        if not ids:
+            raise _BrowserTabUnavailable("No worker Instagram window is open")
+        session = BrowserInstagramSession(
+            javascript_runner=_PinnedBraveJavascriptRunner(ids[0]),
+            job_timeout_seconds=_CONTROL.login_recovery_timeout_seconds,
+        )
+        session.add_account(
+            username, password, from_account=school_account_username(_CONTROL.login_from_school)
+        )
 
     def prepare(self, job, count: int) -> tuple[list[BrowserInstagramSession], str]:
         if count < 1:

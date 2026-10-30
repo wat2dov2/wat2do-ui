@@ -59,7 +59,7 @@ Keep Brave running with the school accounts logged in and available under More >
 Open one Instagram tab for the worker to use as its primary tab.
 The first registered Instagram tab is reserved for account switching and serialized likes/reposts.
 Digest queries and manual profile listings use the second tab only.
-After a logout, the worker logs back in by clicking a saved wat2do profile on Instagram's logged-out page (at most once every `login_recovery_interval_seconds`, `login_recovery_daily_limit` times a day). Humans complete password and challenge recovery in the primary tab; the worker never types a password.
+After a logout, the worker logs back in by clicking a saved wat2do profile on Instagram's logged-out page (at most once every `login_recovery_interval_seconds`, `login_recovery_daily_limit` times a day). A password prompt is answered with the account's Keychain password (`login_keychain_service`) and an emailed security code from `login_code_email`; a refused password or other challenge waits for a person. A school account missing from the switcher is logged in from the `login_from_school` account through Switch accounts, "Log into an Existing Account", at most once a day per account and `account_login_daily_limit` a day in all.
 The healthy worker maintains `parallel_tabs` Instagram tabs in that same window (two by default), including when the queue is empty.
 It checks pool health on startup, before batches, and every `tab_health_interval_seconds` while idle.
 It persists their exact tab IDs and recreates closed worker tabs inside their registered existing window, even if every worker tab was closed.

@@ -17,6 +17,7 @@ from services.instagram_notifications.browser_digest import BrowserInstagramDige
 from services.instagram_notifications.browser_engagement import BrowserInstagramEngagementExecutor
 from services.instagram_notifications.browser_queue import CONTROL, BrowserJob, BrowserJobQueue
 from services.instagram_notifications.browser_session import (
+    ACCOUNT_UNAVAILABLE,
     LOGGED_OUT_PAUSE,
     BrowserAccountChanged,
     BrowserEngagementUncertain,
@@ -448,8 +449,15 @@ def _process_batch(
             try:
                 sessions, username = BrowserTabPool(queue).prepare(jobs[0], capacity)
             except BrowserSessionError as exc:
-                # A logout found before any request: log back in, then run the batch.
-                if not _is_logout(str(exc)) or not _attempt_login_recovery(queue, time.time):
+                # A logout or a missing account found before any request: log in, then
+                # run the batch.
+                if _is_logout(str(exc)):
+                    recovered = _attempt_login_recovery(queue, time.time)
+                elif str(exc) == ACCOUNT_UNAVAILABLE:
+                    recovered = _attempt_account_login(queue, jobs[0].account_username, time.time)
+                else:
+                    recovered = False
+                if not recovered:
                     raise
                 sessions, username = BrowserTabPool(queue).prepare(jobs[0], capacity)
         # Keep slots busy until the queue empties, a digest arrives, or work is paused.
@@ -645,6 +653,33 @@ def _attempt_login_recovery(queue: BrowserJobQueue, now: Callable[[], float]) ->
         return False
     log.warning("Logged back in to Instagram as %s after a logout", username)
     queue.set_setting("paused", False)
+    return True
+
+
+def _attempt_account_login(queue: BrowserJobQueue, username: str, now: Callable[[], float]) -> bool:
+    """Log in an account missing from Brave, at most once a day per account and
+    ``account_login_daily_limit`` a day in all; the browser lock is held."""
+    attempts = [at for at in queue.get_setting("account_login_attempts", []) if now() - at < 86400]
+    key = f"account_login_at:{username}"
+    if (
+        len(attempts) >= CONTROL.account_login_daily_limit
+        or now() - queue.get_setting(key, 0) < 86400
+    ):
+        return False
+    queue.set_setting("account_login_attempts", [*attempts, now()])
+    queue.set_setting(key, now())
+    try:
+        BrowserTabPool(queue).add_account(username)
+    except (
+        TimeoutError,
+        _BrowserAutomationTransient,
+        _BrowserPageUnavailable,
+        _BrowserTabUnavailable,
+        BrowserSessionError,
+    ) as exc:
+        log.error("Logging %s in to Brave did not finish: %s", username, exc)
+        return False
+    log.warning("Logged %s in to Brave after it went missing", username)
     return True
 
 

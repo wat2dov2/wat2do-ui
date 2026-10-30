@@ -2826,19 +2826,39 @@ def test_login_recovery_falls_back_to_any_saved_wat2do_profile(monkeypatch):
     assert clicks[1:] == [browser._click_label_source("wat2do.ubc")]
 
 
-@pytest.mark.parametrize(
-    ("state", "message"),
-    [("password", "asks for a password"), ("challenge", "asks to confirm the account")],
-)
-def test_login_recovery_stops_for_a_person_at_a_password_or_challenge(monkeypatch, state, message):
+def test_login_recovery_stops_for_a_person_at_a_challenge(monkeypatch):
     pool, clicks, _ = _login_pool(
-        monkeypatch, [{"state": "profiles", "profiles": ["wat2do.ottawa"]}, {"state": state}]
+        monkeypatch, [{"state": "profiles", "profiles": ["wat2do.ottawa"]}, {"state": "challenge"}]
     )
-    with pytest.raises(browser.BrowserSessionError, match=message) as raised:
+    with pytest.raises(browser.BrowserSessionError, match="asks to confirm the account") as raised:
         pool.recover_login()
     # This pause is not the logged-out one, so recovery is not attempted again.
     assert not str(raised.value).startswith("Instagram browser requires human account recovery")
-    assert not any("password" in click for click in clicks)
+
+
+def test_login_recovery_answers_a_password_prompt_for_the_clicked_profile(monkeypatch):
+    pool, _, _ = _login_pool(
+        monkeypatch,
+        [{"state": "profiles", "profiles": ["tmu.wat2do.io"]}, {"state": "password"}],
+    )
+    logged_in = []
+    monkeypatch.setattr(browser.account_login, "account_password", lambda username: "pw")
+    browser.BrowserInstagramSession(**{}).log_in = lambda username, password: logged_in.append(
+        username
+    )
+
+    assert pool.recover_login() == "wat2do.ottawa"
+    assert logged_in == ["wat2do.tmu"]
+
+
+def test_login_recovery_without_a_stored_password_stops_for_a_person(monkeypatch):
+    pool, _, _ = _login_pool(
+        monkeypatch, [{"state": "profiles", "profiles": ["wat2do.ottawa"]}, {"state": "password"}]
+    )
+    monkeypatch.setattr(browser.account_login, "account_password", lambda username: None)
+
+    with pytest.raises(browser.BrowserSessionError, match="no stored password for wat2do.ottawa"):
+        pool.recover_login()
 
 
 def test_click_label_source_only_clicks_one_exact_match():
@@ -2891,3 +2911,102 @@ def test_an_unconfirmed_cancellation_pauses_only_requests_that_can_change_someth
     with pytest.raises(BaseException) as raised:
         session.query("start request", read_only=read_only)
     assert ("cancellation could not be confirmed" in str(raised.value)) is not read_only
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        browser._submit_login_source("wat2do.ucalgary", 'pa"ss\\word'),
+        browser._submit_code_source("123456"),
+        browser._LOGIN_FORM_STATE_SOURCE,
+    ],
+)
+def test_login_sources_parse(source):
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js unavailable")
+    completed = subprocess.run([node, "--check"], input=source, text=True, capture_output=True)
+    assert completed.returncode == 0, completed.stderr
+
+
+def test_a_password_reaches_brave_on_stdin_never_the_command_line(monkeypatch):
+    calls = []
+
+    def subprocess_run(arguments, **kwargs):
+        calls.append((arguments, kwargs.get("input")))
+        return subprocess.CompletedProcess(arguments, 0, stdout="submitted")
+
+    monkeypatch.setattr(browser.subprocess, "run", subprocess_run)
+    runner = browser._PinnedBraveJavascriptRunner("7", window_id="99")
+    source = browser._submit_login_source("wat2do.ucalgary", "s3cret")
+
+    assert runner.run_secret(source, 3) == "submitted"
+    arguments, script = calls[-1]
+    assert arguments == ["/usr/bin/osascript", "-", "7", "", "99"]
+    assert not any("s3cret" in argument for argument in arguments)
+    assert "s3cret" in script and "item 2 of argv" not in script
+
+
+class _LoginRunner(browser._PinnedBraveJavascriptRunner):
+    """Plays Instagram's login screens: form, then each state in turn after submit."""
+
+    def __init__(self, states, *, account="wat2do.guelph"):
+        super().__init__("7", window_id="99")
+        self.states = list(states)
+        self.account = account
+        self.submitted = []
+        self.clicked = []
+
+    def __call__(self, source, timeout_seconds):
+        if source == browser._LOGIN_FORM_STATE_SOURCE:
+            state = self.states[0] if self.submitted else "form"
+            if self.submitted and len(self.states) > 1:
+                self.states.pop(0)
+            if state == "done":
+                self.account = "wat2do.ucalgary"
+                state = "pending"
+            return json.dumps({"state": state})
+        if source == browser._current_account_username_source():
+            return self.account
+        self.clicked.append(source)
+        return "submitted" if "verificationCode" in source else "clicked"
+
+    def run_secret(self, source, timeout_seconds):
+        self.submitted.append(source)
+        return "submitted"
+
+
+def _login_session(runner):
+    return browser.BrowserInstagramSession(
+        javascript_runner=runner, sleep=lambda _seconds: None, job_timeout_seconds=30
+    )
+
+
+def test_log_in_saves_the_login_info_and_ends_on_the_account():
+    runner = _LoginRunner(["pending", "save_info", "done"])
+
+    _login_session(runner).log_in("wat2do.ucalgary", "s3cret")
+
+    assert len(runner.submitted) == 1
+    assert browser._click_label_source("Save info") in runner.clicked
+
+
+def test_log_in_enters_the_emailed_code(monkeypatch):
+    runner = _LoginRunner(["code", "pending", "done"])
+    monkeypatch.setattr(browser.account_login, "emailed_code", lambda username, after: "654321")
+
+    _login_session(runner).log_in("wat2do.ucalgary", "s3cret")
+
+    assert browser._submit_code_source("654321") in runner.clicked
+
+
+@pytest.mark.parametrize(
+    ("state", "message"),
+    [("wrong_password", "refused wat2do.ucalgary's password"), ("challenge", "confirm")],
+)
+def test_log_in_stops_for_a_person_on_a_refused_password_or_challenge(state, message):
+    runner = _LoginRunner([state])
+
+    with pytest.raises(browser.BrowserSessionError, match=message):
+        _login_session(runner).log_in("wat2do.ucalgary", "s3cret")
+    assert len(runner.submitted) == 1
