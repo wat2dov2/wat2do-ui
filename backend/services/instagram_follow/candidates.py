@@ -280,18 +280,20 @@ def mark_followed(candidate_id: str, *, tapped: bool) -> None:
     """Record the account as followed; ``followed_at`` only when this run followed it,
     so accounts the school already followed never use up a day's allowance."""
     now = datetime.now(timezone.utc).isoformat()
-    get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(
-        {
-            "status": FOLLOW_CANDIDATE_FOLLOWED,
-            "followed_at": now if tapped else None,
-            "follow_error": None,
-            "updated_at": now,
-        }
-    ).eq("id", candidate_id).execute()
+    update = {"status": FOLLOW_CANDIDATE_FOLLOWED, "follow_error": None, "updated_at": now}
+    if tapped:
+        update["followed_at"] = now
+    get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(update).eq("id", candidate_id).execute()
 
 
-def mark_follow_failed(candidate_id: str, error: str) -> None:
-    """Keep the account approved, so the next daily run tries again."""
-    get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(
-        {"follow_error": error, "updated_at": datetime.now(timezone.utc).isoformat()}
-    ).eq("id", candidate_id).execute()
+def mark_follow_failed(candidate_id: str, error: str, *, tapped: bool = False) -> None:
+    """Keep the account approved, so the next daily run tries again.
+
+    ``tapped`` when this run followed it before failing: ``followed_at`` counts it
+    toward the day's allowance.
+    """
+    now = datetime.now(timezone.utc).isoformat()
+    update = {"follow_error": error, "updated_at": now}
+    if tapped:
+        update["followed_at"] = now
+    get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(update).eq("id", candidate_id).execute()

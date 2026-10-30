@@ -46,6 +46,10 @@ class ActionBlocked(EmulatorError):
     """Instagram refused an action from this account for now ("Try again later")."""
 
 
+class FollowedWithoutBell(EmulatorError):
+    """This call followed the account, but its post notifications could not be set to All."""
+
+
 @dataclass(frozen=True)
 class FollowOutcome:
     label: str
@@ -106,7 +110,8 @@ class FollowingReader:
 
         The label is "Following" for a public account and "Requested" for a private one
         waiting on its owner; ``tapped`` says whether this call followed it. None when
-        the profile is gone or hidden.
+        the profile is gone or hidden. ``FollowedWithoutBell`` when this call followed
+        it but the bell step failed.
         """
         button = self._open_profile(username, _FOLLOW_BUTTON)
         if button is None:
@@ -116,8 +121,14 @@ class FollowingReader:
             self._device.tap(button)
             button = self._wait_for_button(_FOLLOWED_LABELS)
         if button.text == "Following":
-            self._show_bell(username)
-            self._set_posts_to_all()
+            try:
+                self._show_bell(username)
+                self._set_posts_to_all()
+            except EmulatorError as exc:
+                # The follow already happened, so it must still count toward the day's.
+                if tapped:
+                    raise FollowedWithoutBell(str(exc)) from exc
+                raise
         return FollowOutcome(button.text, tapped)
 
     def _open_profile(self, username: str, control: re.Pattern[str]) -> Node | None:
