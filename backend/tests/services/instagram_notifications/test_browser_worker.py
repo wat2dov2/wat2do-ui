@@ -2854,7 +2854,8 @@ def test_login_recovery_is_spaced_capped_and_unpauses_on_success(monkeypatch, tm
     now[0] += 1  # A Brave hiccup retries after the short delay, not the full spacing.
     assert module.recover_login(queue, now=clock) is True
     assert settings["paused"] is False
-    assert len(settings["login_recovery_attempts"]) == 2
+    # The Brave hiccup does not count toward the daily cap; the real login does.
+    assert len(settings["login_recovery_attempts"]) == 1
     # A real login spaces the next attempt by the full interval.
     assert (
         settings["login_recovery_next_at"]

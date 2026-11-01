@@ -642,7 +642,9 @@ def _attempt_login_recovery(queue: BrowserJobQueue, now: Callable[[], float]) ->
         _BrowserPageUnavailable,
         _BrowserTabUnavailable,
     ) as exc:
-        # A Brave hiccup is not a login Instagram saw; try again soon.
+        # A Brave hiccup is not a login Instagram saw: it does not use up the daily
+        # cap (timeouts once spent it and left work paused for hours). Try again soon.
+        queue.set_setting("login_recovery_attempts", attempts)
         queue.set_setting("login_recovery_next_at", now() + CONTROL.login_recovery_retry_seconds)
         queue.set_setting("paused", LOGGED_OUT_PAUSE)
         log.warning("Instagram login recovery did not finish (%s); retrying shortly", exc)
