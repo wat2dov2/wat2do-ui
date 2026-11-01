@@ -74,4 +74,4 @@ def test_build_contact_email_escapes_html():
     assert "<script>" not in message.body_html
     assert "<strong>team</strong>" not in message.body_html
     assert "Hello &lt;strong&gt;team&lt;/strong&gt;" in message.body_html
-    assert [image.content_id for image in message.inline_images] == ["wat2do-logo"]
+    assert [image.content_id for image in message.inline_images] == []

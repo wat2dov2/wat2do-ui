@@ -6,7 +6,6 @@ from typing import Literal
 from core.constants import SUBMISSION_APPROVED, SUBMISSION_REJECTED
 from core.controlbox import controlbox
 from services.email_layout import (
-    EMAIL_LOGO,
     email_button,
     email_paragraph,
     email_quote,
@@ -85,7 +84,6 @@ def build_review_decision_email(
             ),
         ),
         body_text="\n\n".join(part for part in (intro, details_text, _CLOSING) if part),
-        inline_images=[EMAIL_LOGO],
     )
 
 

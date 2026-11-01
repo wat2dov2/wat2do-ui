@@ -269,7 +269,7 @@ def test_event_change_email_reads_each_change_in_local_time():
     assert "- Added date: Mon, Nov 23, 1 PM" in text
     assert "View the event: https://uwaterloo.wat2do.io/events/42" in text
     assert '<img src="cid:event-image"' in html
-    assert '<img src="cid:wat2do-logo" alt="wat2do"' in html
+    assert "cid:wat2do-logo" not in html
     assert html.count('href="https://uwaterloo.wat2do.io/events/42"') == 3
     assert 'text-decoration:line-through;">RCH 208</span> &rarr; <strong>DC 1301</strong>' in html
     assert "Location: " not in html
@@ -680,7 +680,7 @@ def test_event_reminder_send_is_idempotent_per_occurrence_start(monkeypatch):
     assert "https://uwaterloo.wat2do.io/events/42" in message.body_html
     assert message.headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
     assert '<img src="cid:event-image"' in message.body_html
-    assert [image.content_id for image in message.inline_images] == ["wat2do-logo", "event-image"]
+    assert [image.content_id for image in message.inline_images] == ["event-image"]
     assert "- When: Fri, May 1, 11 AM" in message.body_text
     assert "- Where: SLC" in message.body_text
 
@@ -722,7 +722,7 @@ def test_send_prepared_email_adds_unsubscribe_headers_and_embedded_cards(monkeyp
     assert message.headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
     assert "https://uwaterloo.wat2do.io/events/42" in message.body_html
     assert message.subject == "1 new event and 1 new position"
-    assert [image.content_id for image in message.inline_images] == ["wat2do-logo", "event-42"]
+    assert [image.content_id for image in message.inline_images] == ["event-42"]
     assert "New positions" in message.body_text
 
 
