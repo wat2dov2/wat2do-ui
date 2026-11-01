@@ -171,8 +171,9 @@ def test_prepare_otp_email_preserves_safe_return_path(monkeypatch):
     assert "returnTo=%2Fpromote%3Fschool%3Duwaterloo" in message.body_html
     assert "email=student%40uwaterloo.ca" in message.body_text
     assert ">123456</div>" in message.body_html
-    assert "<img" not in message.body_html
-    assert message.inline_images == []
+    assert '<img src="cid:wat2do-logo"' in message.body_html
+    assert message.body_html.index("cid:wat2do-logo") > message.body_html.index("expire in 15")
+    assert [image.content_id for image in message.inline_images] == ["wat2do-logo"]
     assert "expire in 15 minutes" in message.body_text
 
 

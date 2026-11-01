@@ -508,6 +508,7 @@ def create_invitation(club_id: int, email: str, invited_by: UUID) -> dict:
         from html import escape
 
         from services.email_layout import (
+            EMAIL_LOGO,
             email_button,
             email_note,
             email_paragraph,
@@ -537,6 +538,7 @@ def create_invitation(club_id: int, email: str, invited_by: UUID) -> dict:
                 ),
             ),
             body_text=f"{intro}\n\nAccept the invitation: {invite_url}\n\n{expiry}",
+            inline_images=[EMAIL_LOGO],
         )
         email_service.send(msg)
     except Exception as e:

@@ -1,6 +1,9 @@
 """The light wat2do email layout shared by every email the app sends."""
 
 from html import escape
+from pathlib import Path
+
+from services.email_service import InlineImage
 
 # Email clients do not reliably support CSS custom properties or OKLCH.
 # These resolved sRGB values preserve the app's semantic light-theme roles.
@@ -23,6 +26,14 @@ _EMAIL_FONT_IMPORT = (
     "&display=swap');</style>"
 )
 
+# Embedded in every email; the shell shows it as cid:wat2do-logo.
+EMAIL_LOGO = InlineImage(
+    content_id="wat2do-logo",
+    filename="wat2do-logo.png",
+    content_type="image/png",
+    content=Path(__file__).with_name("wat2do-logo.png").read_bytes(),
+)
+
 
 def email_shell(
     *,
@@ -30,7 +41,7 @@ def email_shell(
     content: str,
     footer_links: list[tuple[str, str]] | None = None,
 ) -> str:
-    """Heading, content, and footer on the light card."""
+    """Heading, content, footer, and logo on the light card. Send with ``EMAIL_LOGO`` inline."""
     links = " &middot; ".join(
         f'<a style="color:{EMAIL_THEME["foreground"]};" href="{escape(url, quote=True)}">'
         f"{escape(label)}</a>"
@@ -48,7 +59,10 @@ def email_shell(
         f'font:12px/1.6 {EMAIL_FONT};">'
         f"{links + '<br>' if links else ''}"
         "wat2do helps students discover campus events."
-        "</p></div></div>"
+        "</p>"
+        f'<img src="cid:{EMAIL_LOGO.content_id}" alt="wat2do" width="80" height="57" '
+        'style="display:block;margin:16px 0 0;border:0;">'
+        "</div></div>"
     )
 
 
