@@ -8,6 +8,8 @@ Events with a `carousel_requested_at` time were asked for by their own club in o
 
 Never pick an event whose `ig_handle` (ignoring `@` and case) is in `excluded_clubs`, or whose club is clearly one of those accounts. Those clubs asked not to be posted.
 
+Never pick religious events. A religious event's purpose is worship, prayer, religious practice, or marking a faith's holiday: services and Mass, Shabbat, Jummah and prayer gatherings, pujas and aartis, scripture, Bible or Quran studies, faith fellowships, and any holiday that is itself religious even when it is dressed up as a party, dinner, bazaar or cultural night (Diwali, Bandi Chhor Divas, Navratri, Hanukkah, Eid, Día de los Muertos, an Indigenous round dance). This holds even when the event is social or offers free food, such as a faith group's Shabbat or iftar dinner. A secular party, show, game, sale or social with no act of worship and no religious-holiday theme is fine even when a religious or faith-based club hosts it, such as a Muslim Students' Association games night or a campus ministry's bowling night.
+
 Pick the events that make students want to go and make this account look worth following: the cool, exciting, high-status ones people would brag about attending or post on their story. There is no quota, but be selective; a short carousel of great events beats a long one with filler.
 
 Favor events that are:
