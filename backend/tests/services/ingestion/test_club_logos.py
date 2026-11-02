@@ -77,3 +77,13 @@ def test_a_read_handle_waits_out_the_retry_days_even_after_a_restart(stored, tmp
     }
     state.write_text(json.dumps(stale))
     assert module.ClubLogos(state).fill_next() is True
+
+
+def test_first_fill_lists_even_when_the_monotonic_clock_is_small(stored, tmp_path, monkeypatch):
+    # On a freshly booted host time.monotonic() can be below retry_backoff_seconds; the
+    # first listing must still happen rather than waiting out a backoff that never elapsed.
+    monkeypatch.setattr(module.time, "monotonic", lambda: 1.0)
+    assert module.CONTROL.retry_backoff_seconds > 1.0
+
+    assert module.ClubLogos(tmp_path / "club_logos.json").fill_next() is True
+    assert stored["read"] == ["ubcclub"]
