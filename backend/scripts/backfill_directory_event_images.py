@@ -20,6 +20,7 @@ import argparse
 import sys
 import time
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -27,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.constants import BUCKET_EVENT_IMAGES  # noqa: E402
 from core.database import get_sb  # noqa: E402
 from core.pagination import fetch_all_pages  # noqa: E402
-from core.tables import EVENTS  # noqa: E402
+from core.tables import EVENT_DATES, EVENTS  # noqa: E402
 from services.scraper.image_uploader import upload_image_from_url  # noqa: E402
 from services.scraper.page_image import fetch_event_poster  # noqa: E402
 
@@ -36,23 +37,37 @@ SHARED_DEFAULT_COUNT = 5
 
 
 def posterless_directory_events() -> list[dict]:
-    """Directory events with a source page but no stored poster."""
+    """Upcoming directory events with a source page but no stored poster.
+
+    Past events are skipped: they are no longer shown and their pages are often
+    gone, so reading them would only churn through dead links.
+    """
     sb = get_sb()
-    return fetch_all_pages(
+    now = datetime.now(timezone.utc).isoformat()
+    rows = fetch_all_pages(
         lambda offset, page_size: (
             (
-                sb.table(EVENTS)
-                .select("id,source_url")
-                .eq("ingestion_source", "directory")
-                .is_("source_image_url", "null")
-                .not_.is_("source_url", "null")
-                .order("id")
+                sb.table(EVENT_DATES)
+                .select("event_id,events!inner(id,source_url,ingestion_source,source_image_url)")
+                .gt("dtstart_utc", now)
+                .eq("events.ingestion_source", "directory")
+                .is_("events.source_image_url", "null")
+                .not_.is_("events.source_url", "null")
+                .order("event_id")
                 .range(offset, offset + page_size - 1)
                 .execute()
             ).data
             or []
         )
     )
+    # One event has many future dates; keep each event once.
+    unique: dict[int, dict] = {}
+    for row in rows:
+        event = row.get("events") or {}
+        event_id = event.get("id")
+        if event_id is not None and event_id not in unique:
+            unique[event_id] = {"id": event_id, "source_url": event.get("source_url")}
+    return list(unique.values())
 
 
 def candidate_posters(events: list[dict], *, delay: float) -> dict[int, str]:
