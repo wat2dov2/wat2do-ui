@@ -1,7 +1,7 @@
 """VESTIGIAL: the fixed-pipeline ingestion path, kept on purpose but unused.
 
-The local ingestion processor now hands each source to the Haiku agent in
-``services.ingestion.agent``, which reads and writes the database itself.
+The ingestion processor (Rust, ``rust/src/ingestion``) now hands each source to a
+Haiku agent, which reads and writes the database itself.
 This module, with ``reconciler``, the candidate matching in ``dedup``,
 ``event_writer`` and ``position_writer``, is the earlier rigid pipeline. It is
 kept as reference and as a fallback we may want again; do not delete it.
@@ -14,28 +14,29 @@ Stages:
     3. Reconcile - Pass 2 match/update event candidates.
     4. Save - write events, occurrences, and positions.
 
-Public entry point: ``process_post``, called by the local ingestion processor
-for each queued capture.
+Public entry point: ``process_post``, which nothing calls any more.
 """
 
 from __future__ import annotations
 
 import logging
 from typing import Literal
+from urllib.parse import urlsplit
 
 from core.sanitize import normalize_scraped_text, parse_iso_datetime
-from services.ingestion.agent import already_imported as _already_imported
-from services.ingestion.agent import image_urls as _extract_image_urls
-from services.ingestion.agent import is_instagram as _is_instagram
-from services.ingestion.agent import video_urls as _extract_video_urls
+from core.tables import POSITIONS
 from services.ingestion.claude_completion import claude_completion
 from services.scraper.dedup import (
+    _extract_shortcode,
     collapse_duplicate_extractions,
+    existing_shortcodes,
+    existing_urls,
     find_candidates,
 )
 from services.scraper.event_writer import _lookup_club_by_ig, write_event
 from services.scraper.extractor import extract_post_content
 from services.scraper.image_uploader import (
+    is_carousel_post,
     single_post_video_url,
     upload_post_images,
     upload_video_from_url,
@@ -45,6 +46,50 @@ from services.scraper.position_writer import write_position
 from services.scraper.reconciler import reconcile_events
 
 log = logging.getLogger(__name__)
+
+
+def _is_instagram(source_url: str) -> bool:
+    host = (urlsplit(source_url).hostname or "").removeprefix("www.")
+    return host == "instagram.com"
+
+
+def _already_imported(source_url: str) -> bool:
+    shortcode = _extract_shortcode(source_url) if _is_instagram(source_url) else None
+    if shortcode is not None:
+        return bool(existing_shortcodes({shortcode}))
+    return bool(existing_urls({source_url}) or existing_urls({source_url}, table=POSITIONS))
+
+
+def _extract_image_urls(post: dict) -> list[str]:
+    """Image URLs from a retrieved Instagram post or directory page."""
+    images = [
+        (entry.get("url") if isinstance(entry, dict) else entry) or ""
+        for entry in post.get("images") or []
+    ]
+    if not any(images):
+        images = [
+            child.get("displayUrl") or ""
+            for child in post.get("childPosts") or []
+            if isinstance(child, dict)
+        ]
+    if not any(images):
+        images = [post.get("displayUrl") or ""]
+    return [image for image in images if image]
+
+
+def _extract_video_urls(post: dict) -> dict[str, str]:
+    """Each carousel video's poster, mapped to its downloadable source."""
+    videos: dict[str, str] = {}
+    children = post.get("childPosts")
+    records = (children if isinstance(children, list) else []) if is_carousel_post(post) else [post]
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        video = record.get("videoUrl")
+        poster = record.get("displayUrl") or ""
+        if isinstance(video, str) and video and isinstance(poster, str):
+            videos[poster] = video
+    return videos
 
 
 def process_post(post: dict, *, school: str, publisher_ig: str | None = None) -> None:

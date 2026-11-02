@@ -1,7 +1,7 @@
 """End-to-end pipeline integration tests for services/scraper.
 
 These complement the per-helper unit tests by exercising ``process_post``
-and the local ingestion processor with mocked Claude, storage, and DB.
+with mocked Claude, storage, and DB.
 The big invariant they protect: a post with N occurrences must produce
 one events row plus N event_dates rows.
 

@@ -51,6 +51,7 @@ The workflow records exact post URLs in the Supabase notification ledger, and a
 database trigger adds each post to `public.ingestion_items`, the only ingestion queue.
 The Mac's always-on processor reads each queued post logged out, with no account,
 cookie or session ID, then owns extraction and database writes.
+The processor is Rust (`rust/src/ingestion`, binary `wat2do-ingest`); its LaunchAgent `io.wat2do.ingestion.process` runs `cargo run --release` against the runtime checkout, so a kickstart builds and runs that checkout's code and `prompt.md`.
 It runs a Claude Haiku agent that follows `backend/services/ingestion/prompt.md` and writes only events, event dates and positions through the scoped `wat2do_ingest_agent` login.
 The same processor reads, logged out and one at a time (`controlbox/ingestion.json` `club_logo_read_delay_seconds` apart), the Instagram profile of each club that has a handle but still needs a logo or still carries a placeholder "@handle" name, copies its picture to S3 as the club's logo, and replaces the placeholder name with the account's real one.
 A handle is read again only after `club_logo_retry_days`, and a refused read pauses these reads with the post fetches.
@@ -176,6 +177,14 @@ Other notification workflow runs must remain independently processable.
 
 Secrets and Instagram credentials must still follow the repository's existing
 secret-storage rules and must never be committed.
+
+### Rust services
+
+The backend is being ported to Rust one component at a time, in the single crate under `rust/`.
+A ported component replaces its Python code in the same change; never keep both running.
+Rust reads the same `backend/controlbox/*.json` (embedded at build time), `backend/.env` settings and Postgres tables as Python, and talks to Postgres directly through `DATABASE_URL`.
+Constants Rust mirrors from `backend/core/constants` live in `rust/src/constants.rs`, guarded by `backend/tests/test_rust_constants.py`.
+Run `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` in `rust/` alongside the backend checks.
 
 ### Bug fixes and testing
 

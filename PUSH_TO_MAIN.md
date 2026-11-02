@@ -58,6 +58,15 @@ ENVIRONMENT=testing \
   pytest -q
 ```
 
+Then the Rust checks, from repo root (install Rust with rustup and cmake with Homebrew first):
+
+```bash
+cd rust
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+```
+
 ---
 
 ## 3. Frontend checks
@@ -153,7 +162,7 @@ Follow the repo's existing commit message style (`git log -5`).
 git push origin main
 ```
 
-After push, CI/CD runs the backend and frontend checks.
+After push, CI/CD runs the backend, Rust and frontend checks.
 The deploy job then applies pending database migrations, rolls out ECS, updates the social-preview Lambda when it already exists, and finishes with `scripts/smoke-subdomains.sh`, which asserts a school subdomain never serves another school's feed.
 The primary Wat2Do frontend and backend deploy together to ECS, while the isolated screenshot worker deploys to Lambda through the same GitHub OIDC and immutable ECR release flow.
 A green local run means those check jobs should pass; the AWS deployment requires the repository variables and Secrets Manager values documented in the Terraform roots.
