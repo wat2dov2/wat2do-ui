@@ -761,7 +761,14 @@ def _summarize_recent_events(
         int(item["event_id"]) for item in batch.get("items", []) if item.get("event_id") is not None
     }
     new_event_count = max(len(recent_ids), len(carousel_ids))
-    if batch["status"] not in {INSTAGRAM_BATCH_READY_FOR_REVIEW, INSTAGRAM_BATCH_FAILED}:
+    # The outro preview is rendered from these events until the run posts its own
+    # outro image, so a batch still publishing keeps listing them; only a finished
+    # run reads back the image it posted (see publishedCarouselAssets on the client).
+    if batch["status"] not in {
+        INSTAGRAM_BATCH_READY_FOR_REVIEW,
+        INSTAGRAM_BATCH_FAILED,
+        INSTAGRAM_BATCH_PUBLISHING,
+    }:
         return new_event_count, []
     now = datetime.now(timezone.utc)
     excluded = _excluded_club_handles()

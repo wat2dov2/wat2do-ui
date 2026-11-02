@@ -54,6 +54,8 @@ interface InstagramCarouselDrawerProps {
 
 /** The cover is slide 0; event slides follow in carousel order. */
 const COVER_INDEX = 0;
+/** Stable empty list so a slide with no outro events keeps a steady prop identity. */
+const EMPTY_EVENTS: Event[] = [];
 
 export function InstagramCarouselDrawer({
   batch,
@@ -89,7 +91,9 @@ export function InstagramCarouselDrawer({
   const currentEventId = slideIndex === COVER_INDEX ? null : (eventIds[slideIndex - 1] ?? null);
   const busy = isSaving || isPublishing || isSavingSlide;
   const school = schoolBySlug.get(batch.school);
-  const coverColors = school ? getSchoolColors(school) : null;
+  // Memoized so the slide previews, which take it, are not re-rendered by an
+  // unrelated drawer re-render such as a keystroke in the caption field.
+  const coverColors = useMemo(() => (school ? getSchoolColors(school) : null), [school]);
 
   // Slides render from the saved carousel, so an event edited here shows up in
   // the preview once the draft is saved and the batch comes back.
@@ -108,16 +112,21 @@ export function InstagramCarouselDrawer({
     [eventIds, slideEvents],
   );
   // The cover and the outro both read the batch's school, language and kind.
-  const cover = {
-    language: school?.language ?? "en",
-    batchKind: batch.batch_kind,
-    school: batch.school,
-    localDate: batch.local_date,
-    newEventCount: batch.new_event_count,
-    eventCount: eventIds.length,
-    body: coverBody,
-    tiles: coverTiles,
-  };
+  // Memoized so slide previews keep a stable prop and only re-render when a field
+  // they draw actually changes (editing the cover body, adding or removing a slide).
+  const cover = useMemo(
+    () => ({
+      language: school?.language ?? "en",
+      batchKind: batch.batch_kind,
+      school: batch.school,
+      localDate: batch.local_date,
+      newEventCount: batch.new_event_count,
+      eventCount: eventIds.length,
+      body: coverBody,
+      tiles: coverTiles,
+    }),
+    [school?.language, batch.batch_kind, batch.school, batch.local_date, batch.new_event_count, eventIds.length, coverBody, coverTiles],
+  );
 
   const [editors, setEditors] = useState<Array<{
     eventId: number;
@@ -300,7 +309,7 @@ export function InstagramCarouselDrawer({
                 stickerLabels={eventId == null ? undefined : batch.sticker_selections?.[String(eventId)]}
                 coverColors={coverColors}
                 cover={cover}
-                outroEvents={batch.published_outro_url && index === publishedAssets.length - 1 ? [] : undefined}
+                outroEvents={batch.published_outro_url && index === publishedAssets.length - 1 ? EMPTY_EVENTS : undefined}
                 publishedAssetUrl={publishedAssets[index] ?? null}
               />
               ))}
@@ -313,7 +322,7 @@ export function InstagramCarouselDrawer({
                   event={null}
                   coverColors={coverColors}
                   cover={cover}
-                  outroEvents={batch.other_events ?? []}
+                  outroEvents={batch.other_events ?? EMPTY_EVENTS}
                 />
               )}
             </FormGrid>

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { X } from "lucide-react";
@@ -49,23 +49,28 @@ const COVER_INDEX = 0;
 /** On-screen width of the preview column, matching a feed card. */
 const PREVIEW_WIDTH = 288;
 
-/** Drafts preview the exact published template; published assets remain historical. */
-export function CarouselSlidePreview({
+type SlideCanvasProps = Pick<
+  CarouselSlidePreviewProps,
+  "slideIndex" | "event" | "stickerLabels" | "cover" | "coverColors" | "outroEvents" | "publishedAssetUrl"
+>;
+
+/**
+ * The rendered slide image: the scaled template or its published PNG.
+ *
+ * Memoized so editing copy or selecting another slide, which re-renders the
+ * drawer, does not re-render every slide's template. It only re-renders when the
+ * data it draws from changes, so its inputs must stay referentially stable
+ * (`cover`, `coverColors` and `outroEvents` are memoized by the drawer).
+ */
+const SlideCanvas = memo(function SlideCanvas({
   slideIndex,
-  slideCount,
   event,
   stickerLabels,
   cover,
   coverColors,
   outroEvents,
   publishedAssetUrl,
-  selected,
-  onSelect,
-  onRemove,
-  onPositionChange,
-  disabled,
-  removeDisabled,
-}: CarouselSlidePreviewProps) {
+}: SlideCanvasProps) {
   const { t } = useTranslation();
   const { getSchoolTimezone, schoolBySlug } = useSchoolDirectory();
   const school = schoolBySlug.get(event?.school ?? cover.school);
@@ -118,24 +123,7 @@ export function CarouselSlidePreview({
   }, []);
 
   return (
-    <div ref={previewRef} className="relative isolate flex max-w-full flex-col gap-2" style={{ width: PREVIEW_WIDTH }}>
-      {!isCover && onRemove && (
-        <div className="absolute right-2 top-2 z-20" onPointerDown={(event) => event.stopPropagation()}>
-          <Button variant="outline" size="icon-sm" disabled={disabled || removeDisabled}
-            aria-label={t("admin.instagramPublishing.removeSlide")} onClick={onRemove}>
-            <X />
-          </Button>
-        </div>
-      )}
-    <figure
-      role={onSelect ? "button" : undefined}
-      tabIndex={onSelect ? 0 : undefined}
-      aria-pressed={selected}
-      onClick={onSelect}
-      onKeyDown={(event) => { if (onSelect && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onSelect(); } }}
-      className={cn("relative z-0 flex max-w-full flex-col items-center gap-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring", onSelect && "cursor-pointer", selected && "ring-2 ring-primary")}
-      style={{ width: "100%" }}
-    >
+    <div ref={previewRef} className="w-full">
       {publishedAssetUrl || ((isCover || isOutro) && coverColors) || (!isCover && slideModel) ? (
         <div
           className="relative overflow-hidden rounded-xl border border-border bg-surface"
@@ -172,6 +160,59 @@ export function CarouselSlidePreview({
             : t("admin.instagramPublishing.slideEventUnavailable")}
         </p>
       )}
+    </div>
+  );
+});
+
+/** Drafts preview the exact published template; published assets remain historical. */
+export function CarouselSlidePreview({
+  slideIndex,
+  slideCount,
+  event,
+  stickerLabels,
+  cover,
+  coverColors,
+  outroEvents,
+  publishedAssetUrl,
+  selected,
+  onSelect,
+  onRemove,
+  onPositionChange,
+  disabled,
+  removeDisabled,
+}: CarouselSlidePreviewProps) {
+  const { t } = useTranslation();
+  const isCover = slideIndex === COVER_INDEX;
+  const isOutro = outroEvents !== undefined;
+
+  return (
+    <div className="relative isolate flex max-w-full flex-col gap-2" style={{ width: PREVIEW_WIDTH }}>
+      {!isCover && onRemove && (
+        <div className="absolute right-2 top-2 z-20" onPointerDown={(event) => event.stopPropagation()}>
+          <Button variant="outline" size="icon-sm" disabled={disabled || removeDisabled}
+            aria-label={t("admin.instagramPublishing.removeSlide")} onClick={onRemove}>
+            <X />
+          </Button>
+        </div>
+      )}
+    <figure
+      role={onSelect ? "button" : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      aria-pressed={selected}
+      onClick={onSelect}
+      onKeyDown={(event) => { if (onSelect && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onSelect(); } }}
+      className={cn("relative z-0 flex max-w-full flex-col items-center gap-2 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring", onSelect && "cursor-pointer", selected && "ring-2 ring-primary")}
+      style={{ width: "100%" }}
+    >
+      <SlideCanvas
+        slideIndex={slideIndex}
+        event={event}
+        stickerLabels={stickerLabels}
+        cover={cover}
+        coverColors={coverColors}
+        outroEvents={outroEvents}
+        publishedAssetUrl={publishedAssetUrl}
+      />
       {(isCover || isOutro) && (
         <figcaption className="text-xs text-muted-foreground">
           {t(isCover ? "admin.instagramPublishing.coverSlide" : "admin.instagramPublishing.outroSlide")}
