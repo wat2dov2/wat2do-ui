@@ -11,7 +11,7 @@ use std::time::Duration;
 
 use anyhow::Result;
 
-use super::state_directory;
+use super::state_directory_under;
 use crate::controlbox::INGESTION;
 use crate::launch_agents::{Launchctl, Plist, claude_code_path, home, install_launch_agent};
 
@@ -54,11 +54,20 @@ pub fn repository_directory() -> PathBuf {
         .to_path_buf()
 }
 
+/// Where the jobs keep their state under launchd, which passes them only PATH,
+/// so the installer's own `XDG_STATE_HOME` must not move their logs.
+pub fn job_state_directory() -> PathBuf {
+    state_directory_under(None)
+}
+
 fn log_path(name: &str) -> String {
     if name.starts_with('/') {
         name.to_owned()
     } else {
-        state_directory().join(name).to_string_lossy().into_owned()
+        job_state_directory()
+            .join(name)
+            .to_string_lossy()
+            .into_owned()
     }
 }
 
@@ -115,26 +124,27 @@ pub fn launch_agent_payload(job: &Job) -> Plist {
     Plist::Dict(payload)
 }
 
-/// Install both LaunchAgents, replacing the loaded ones.
-pub fn install_schedule(launchctl: &Launchctl) -> Result<Vec<String>> {
+/// Install both LaunchAgents, replacing the loaded ones, and say what was installed.
+pub fn install_schedule(launchctl: &Launchctl) -> Result<()> {
     // launchd does not create a log file's folder.
-    std::fs::create_dir_all(state_directory())?;
-    let mut installed = Vec::new();
+    std::fs::create_dir_all(job_state_directory())?;
     for job in jobs() {
+        // An interrupt between agents leaves the next one as it was.
+        launchctl.check_interrupted()?;
         let path = home()
             .join("Library/LaunchAgents")
             .join(format!("{}.plist", job.label));
         install_launch_agent(&path, job.label, &launch_agent_payload(&job), launchctl)?;
-        installed.push(match job.interval {
-            Some(seconds) => format!("Installed {} every {seconds} seconds", job.label),
-            None => format!("Installed {} (always on)", job.label),
-        });
+        match job.interval {
+            Some(seconds) => println!("Installed {} every {seconds} seconds", job.label),
+            None => println!("Installed {} (always on)", job.label),
+        }
     }
-    Ok(installed)
+    Ok(())
 }
 
 /// launchctl with the control box's timeout, polled every second.
-pub fn launchctl() -> Launchctl {
+pub fn launchctl() -> Result<Launchctl> {
     Launchctl::new(
         Duration::from_secs_f64(INGESTION.launch_agent_timeout_seconds),
         Duration::from_secs(1),
@@ -233,7 +243,9 @@ mod tests {
             );
             assert!(path.contains(&"/opt/homebrew/bin") && path.contains(&"/usr/bin"));
         }
-        let state = state_directory();
+        let state = job_state_directory();
+        // Not the installer's XDG_STATE_HOME: launchd gives the jobs only PATH.
+        assert_eq!(state, home().join(".local/state/wat2do/ingestion"));
         let process = launch_agent_payload(&process);
         assert_eq!(
             entries(&process)["StandardOutPath"],

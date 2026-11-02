@@ -6,6 +6,7 @@
 //! Markdown. Reading it here, deterministically, is why directory events get a
 //! poster at all; without it they fall back to the directory club's logo.
 
+use std::future::Future;
 use std::sync::LazyLock;
 use std::time::Duration;
 
@@ -13,7 +14,9 @@ use anyhow::{Result, bail};
 use futures_util::StreamExt;
 use regex::{Regex, RegexBuilder};
 use serde_json::Value;
+use url::Url;
 
+use crate::images::resolves_publicly;
 use crate::urls::urljoin;
 
 // Some WAFs reject a full browser user-agent from a non-browser HTTP client.
@@ -45,30 +48,76 @@ static GENERIC_ASSET: LazyLock<Regex> = LazyLock::new(|| {
     insensitive(r"/system/|/clientlibs/|/static/|(?:^|[/\-_])(?:default|placeholder)[\-_.]")
 });
 
-/// GET `url` the way a plain HTTP client does (curl's user-agent, redirects
-/// followed) and keep at most `max_bytes` of the body.
+/// GET `url` the way a plain HTTP client does (curl's user-agent, compressed
+/// bodies decoded, redirects followed) and keep at most `max_bytes` of the
+/// decoded body. Every hop must be http(s) on a host whose addresses are all
+/// public, since the URLs come from pages and agents.
 pub async fn download(url: &str, timeout: Duration, max_bytes: usize) -> Result<Vec<u8>> {
+    download_from(url, timeout, max_bytes, |hop| async move {
+        is_public_url(&hop).await
+    })
+    .await
+}
+
+async fn is_public_url(url: &Url) -> bool {
+    let (Some(host), Some(port)) = (url.host_str(), url.port_or_known_default()) else {
+        return false;
+    };
+    matches!(url.scheme(), "http" | "https") && resolves_publicly(host, port).await
+}
+
+async fn download_from<F, Allowed>(
+    url: &str,
+    timeout: Duration,
+    max_bytes: usize,
+    allowed: F,
+) -> Result<Vec<u8>>
+where
+    F: Fn(Url) -> Allowed,
+    Allowed: Future<Output = bool>,
+{
     let client = wreq::Client::builder()
         .user_agent(USER_AGENT)
-        .redirect(wreq::redirect::Policy::limited(MAX_REDIRECTS))
+        // Redirects are followed by hand so each destination is checked.
+        .redirect(wreq::redirect::Policy::none())
         .connect_timeout(timeout)
         .read_timeout(timeout)
         .build()?;
-    let response = client.get(url).header("Accept", "*/*").send().await?;
-    let status = response.status();
-    if !status.is_success() {
-        bail!("HTTP {}", status.as_u16());
-    }
-    let mut body = Vec::new();
-    let mut chunks = response.bytes_stream();
-    while let Some(chunk) = chunks.next().await {
-        body.extend_from_slice(&chunk?);
-        if body.len() >= max_bytes {
-            break;
+    let mut current = Url::parse(url)?;
+    for _ in 0..=MAX_REDIRECTS {
+        if !allowed(current.clone()).await {
+            bail!("refusing a non-public address");
         }
+        let response = client
+            .get(current.as_str())
+            .header("Accept", "*/*")
+            .send()
+            .await?;
+        let status = response.status();
+        if status.is_redirection()
+            && let Some(location) = response
+                .headers()
+                .get("location")
+                .and_then(|value| value.to_str().ok())
+        {
+            current = current.join(location)?;
+            continue;
+        }
+        if !status.is_success() {
+            bail!("HTTP {}", status.as_u16());
+        }
+        let mut body = Vec::new();
+        let mut chunks = response.bytes_stream();
+        while let Some(chunk) = chunks.next().await {
+            body.extend_from_slice(&chunk?);
+            if body.len() >= max_bytes {
+                break;
+            }
+        }
+        body.truncate(max_bytes);
+        return Ok(body);
     }
-    body.truncate(max_bytes);
-    Ok(body)
+    bail!("too many redirects")
 }
 
 /// The absolute https poster URL a scraped event page advertises, or None.
@@ -154,6 +203,148 @@ fn absolute_https(base_url: &str, candidate: &str) -> Option<String> {
         .to_lowercase()
         .starts_with("https://")
         .then_some(absolute)
+}
+
+#[cfg(test)]
+mod download_tests {
+    use std::io::Write;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpListener;
+
+    use super::*;
+
+    /// A status line, extra headers and body.
+    type Reply = (&'static str, Vec<(&'static str, String)>, Vec<u8>);
+
+    /// A one-request-per-connection HTTP server answering each path with
+    /// `respond(path) -> (status line, extra headers, body)`.
+    async fn serve(respond: fn(&str) -> Reply) -> (String, Arc<AtomicUsize>) {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let requests = Arc::new(AtomicUsize::new(0));
+        let counter = Arc::clone(&requests);
+        tokio::spawn(async move {
+            loop {
+                let Ok((mut socket, _)) = listener.accept().await else {
+                    return;
+                };
+                counter.fetch_add(1, Ordering::SeqCst);
+                let mut request = Vec::new();
+                let mut buffer = [0u8; 1024];
+                while !request.windows(4).any(|w| w == b"\r\n\r\n") {
+                    let Ok(read) = socket.read(&mut buffer).await else {
+                        break;
+                    };
+                    if read == 0 {
+                        break;
+                    }
+                    request.extend_from_slice(&buffer[..read]);
+                }
+                let text = String::from_utf8_lossy(&request);
+                let path = text.split_whitespace().nth(1).unwrap_or("/").to_owned();
+                let (status, headers, body) = respond(&path);
+                let mut response = format!(
+                    "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n",
+                    body.len()
+                );
+                for (name, value) in headers {
+                    response.push_str(&format!("{name}: {value}\r\n"));
+                }
+                response.push_str("\r\n");
+                let _ = socket.write_all(response.as_bytes()).await;
+                let _ = socket.write_all(&body).await;
+                let _ = socket.shutdown().await;
+            }
+        });
+        (base, requests)
+    }
+
+    fn gzipped(text: &str) -> Vec<u8> {
+        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        encoder.write_all(text.as_bytes()).unwrap();
+        encoder.finish().unwrap()
+    }
+
+    fn pages(path: &str) -> Reply {
+        match path {
+            "/start" => ("302 Found", vec![("Location", "/final".into())], vec![]),
+            "/final" => ("200 OK", vec![], b"hello".to_vec()),
+            "/to-private" => (
+                "301 Moved",
+                vec![("Location", "/private/admin".into())],
+                vec![],
+            ),
+            "/gzip" => (
+                "200 OK",
+                vec![("Content-Encoding", "gzip".into())],
+                gzipped(&"x".repeat(5000)),
+            ),
+            "/loop" => ("302 Found", vec![("Location", "/loop".into())], vec![]),
+            _ => ("404 Not Found", vec![], vec![]),
+        }
+    }
+
+    /// Stands in for the public-address check: the test server is on loopback,
+    /// so only `/private` paths count as non-public.
+    async fn not_private(url: Url) -> bool {
+        !url.path().starts_with("/private")
+    }
+
+    const SECOND: Duration = Duration::from_secs(1);
+
+    #[tokio::test]
+    async fn redirects_are_followed_and_each_hop_is_checked() {
+        let (base, _) = serve(pages).await;
+        let body = download_from(&format!("{base}/start"), SECOND, 100, not_private).await;
+        assert_eq!(body.unwrap(), b"hello");
+        let refused = download_from(&format!("{base}/to-private"), SECOND, 100, not_private).await;
+        assert_eq!(
+            refused.unwrap_err().to_string(),
+            "refusing a non-public address"
+        );
+        let missing = download_from(&format!("{base}/nope"), SECOND, 100, not_private).await;
+        assert_eq!(missing.unwrap_err().to_string(), "HTTP 404");
+    }
+
+    #[tokio::test]
+    async fn compressed_bodies_are_decoded_and_capped_by_decoded_bytes() {
+        let (base, _) = serve(pages).await;
+        let whole = download_from(&format!("{base}/gzip"), SECOND, 10_000, not_private).await;
+        assert_eq!(whole.unwrap(), "x".repeat(5000).into_bytes());
+        let capped = download_from(&format!("{base}/gzip"), SECOND, 1000, not_private).await;
+        assert_eq!(capped.unwrap(), "x".repeat(1000).into_bytes());
+    }
+
+    #[tokio::test]
+    async fn at_most_twenty_redirects_are_followed() {
+        let (base, requests) = serve(pages).await;
+        let looped = download_from(&format!("{base}/loop"), SECOND, 100, not_private).await;
+        assert_eq!(looped.unwrap_err().to_string(), "too many redirects");
+        assert_eq!(requests.load(Ordering::SeqCst), MAX_REDIRECTS + 1);
+    }
+
+    #[tokio::test]
+    async fn loopback_private_and_non_web_addresses_are_refused() {
+        for url in [
+            "http://127.0.0.1/",
+            "https://[::1]/",
+            "http://10.0.0.1:8080/",
+            "https://192.168.1.1/",
+            "https://169.254.169.254/latest/meta-data/",
+            "https://localhost/",
+            "ftp://8.8.8.8/",
+        ] {
+            assert!(!is_public_url(&Url::parse(url).unwrap()).await, "{url}");
+            assert_eq!(
+                download(url, SECOND, 100).await.unwrap_err().to_string(),
+                "refusing a non-public address",
+                "{url}"
+            );
+        }
+    }
 }
 
 #[cfg(test)]

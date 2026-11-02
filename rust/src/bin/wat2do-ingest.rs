@@ -87,11 +87,6 @@ async fn main() -> anyhow::Result<()> {
             let pool = wat2do::db::connect(2).await?;
             print_json(&items::counts(&pool).await?)
         }
-        Command::InstallSchedule => {
-            for line in schedule::install_schedule(&schedule::launchctl())? {
-                println!("{line}");
-            }
-            Ok(())
-        }
+        Command::InstallSchedule => schedule::install_schedule(&schedule::launchctl()?),
     }
 }

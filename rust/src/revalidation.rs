@@ -15,6 +15,10 @@ pub async fn revalidate_schools(schools: &[String], resources: &[&str]) {
         return;
     }
     let Ok(client) = wreq::Client::builder()
+        // Compressed responses are decoded only where asked for (page_image).
+        .gzip(false)
+        .deflate(false)
+        .brotli(false)
         .timeout(Duration::from_secs_f64(
             settings.event_feed_revalidation_timeout_seconds,
         ))

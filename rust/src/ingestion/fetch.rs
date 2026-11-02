@@ -48,6 +48,10 @@ fn client() -> Result<wreq::Client, FetchBlocked> {
     };
     wreq::Client::builder()
         .emulation(emulation)
+        // Compressed responses are decoded only where asked for (page_image).
+        .gzip(false)
+        .deflate(false)
+        .brotli(false)
         .redirect(wreq::redirect::Policy::limited(30))
         .timeout(Duration::from_secs_f64(INGESTION.fetch_timeout_seconds))
         .build()

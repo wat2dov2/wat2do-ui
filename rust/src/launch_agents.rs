@@ -8,9 +8,11 @@
 use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Context, Result, anyhow, bail};
 
 /// launchd starts agents with a bare PATH; this one also finds Claude Code
 /// (`~/.local/bin`) and Homebrew tools.
@@ -110,15 +112,33 @@ pub struct Launchctl {
     pub program: PathBuf,
     pub timeout: Duration,
     pub poll_interval: Duration,
+    /// Set by SIGINT or SIGTERM. A replacement in progress then puts the
+    /// previous agent back before stopping, as Python did on KeyboardInterrupt.
+    pub interrupted: Arc<AtomicBool>,
 }
 
 impl Launchctl {
-    pub fn new(timeout: Duration, poll_interval: Duration) -> Self {
-        Self {
+    /// The real launchctl. SIGINT and SIGTERM no longer end the process; they
+    /// set `interrupted`, which the install steps check.
+    pub fn new(timeout: Duration, poll_interval: Duration) -> Result<Self> {
+        let interrupted = Arc::new(AtomicBool::new(false));
+        for signal in [signal_hook::consts::SIGINT, signal_hook::consts::SIGTERM] {
+            signal_hook::flag::register(signal, Arc::clone(&interrupted))?;
+        }
+        Ok(Self {
             program: PathBuf::from("launchctl"),
             timeout,
             poll_interval,
+            interrupted,
+        })
+    }
+
+    /// Fails once an interrupt has arrived.
+    pub fn check_interrupted(&self) -> Result<()> {
+        if self.interrupted.load(Ordering::SeqCst) {
+            bail!("LaunchAgent install interrupted");
         }
+        Ok(())
     }
 
     fn run(&self, arguments: &[&str], timeout: Duration, check: bool) -> Result<bool> {
@@ -206,7 +226,13 @@ pub fn install_launch_agent(
     let domain = format!("gui/{uid}");
     let service = format!("{domain}/{label}");
     let timeout = launchctl.timeout;
-    let previous = std::fs::read(path).ok();
+    // Only a missing plist means there is nothing to restore; any other read
+    // error stops before anything changes.
+    let previous = match std::fs::read(path) {
+        Ok(previous) => Some(previous),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(error).context("could not read the current LaunchAgent"),
+    };
     let loaded = launchctl.run(&["print", &service], timeout, false)?;
     // Stage all writes while the previous service is still available.
     let mut candidate = Some(stage(path, to_xml(payload)?.as_bytes())?);
@@ -214,15 +240,18 @@ pub fn install_launch_agent(
     let mut replaced = false;
     let attempt = (|| -> Result<()> {
         launchctl.run(&["enable", &service], timeout, true)?;
+        launchctl.check_interrupted()?;
         if loaded {
             stop_attempted = true;
             launchctl.run(&["bootout", &service], timeout, true)?;
             launchctl.wait_for_unload(&service)?;
+            launchctl.check_interrupted()?;
         }
         if let Some(staged) = candidate.take() {
             staged.persist(path)?;
         }
         replaced = true;
+        launchctl.check_interrupted()?;
         launchctl.run(
             &["bootstrap", &domain, &path.to_string_lossy()],
             timeout,
@@ -376,6 +405,7 @@ mod tests {
             program: script,
             timeout: Duration::from_secs(3),
             poll_interval: Duration::from_millis(10),
+            interrupted: Arc::default(),
         }
     }
 
@@ -547,6 +577,7 @@ mod tests {
             program: script,
             timeout: Duration::from_millis(200),
             poll_interval: Duration::from_millis(10),
+            interrupted: Arc::default(),
         };
 
         let error = install_launch_agent(
@@ -561,5 +592,55 @@ mod tests {
             error.to_string(),
             "LaunchAgent print failed (TimeoutExpired)"
         );
+    }
+
+    #[test]
+    fn an_interrupted_replacement_restores_the_old_agent_before_stopping() {
+        let folder = tempfile::tempdir().unwrap();
+        let path = with_previous(folder.path());
+        // The stopped service lingers long enough for the interrupt to land mid-replacement.
+        let launchctl = fake_launchctl(folder.path(), true, &[], 40);
+        let interrupted = Arc::clone(&launchctl.interrupted);
+        let log = folder.path().join("calls.log");
+        let watcher = std::thread::spawn(move || {
+            for _ in 0..2000 {
+                if std::fs::read_to_string(&log)
+                    .unwrap_or_default()
+                    .contains("bootout")
+                {
+                    interrupted.store(true, Ordering::SeqCst);
+                    return;
+                }
+                std::thread::sleep(Duration::from_millis(1));
+            }
+        });
+
+        let error =
+            install_launch_agent(&path, "io.wat2do.test", &payload(), &launchctl).unwrap_err();
+        watcher.join().unwrap();
+
+        assert_eq!(error.to_string(), "LaunchAgent install interrupted");
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "old");
+        assert_eq!(started(folder.path()), ["old"]);
+        assert_eq!(
+            std::fs::read_dir(path.parent().unwrap()).unwrap().count(),
+            1
+        );
+    }
+
+    #[test]
+    fn an_unreadable_previous_plist_stops_before_anything_changes() {
+        let folder = tempfile::tempdir().unwrap();
+        // A directory where the plist should be cannot be read as a file.
+        let path = folder.path().join("io.wat2do.test.plist");
+        std::fs::create_dir(&path).unwrap();
+        let launchctl = fake_launchctl(folder.path(), true, &[], 0);
+
+        let error =
+            install_launch_agent(&path, "io.wat2do.test", &payload(), &launchctl).unwrap_err();
+
+        assert_eq!(error.to_string(), "could not read the current LaunchAgent");
+        assert!(calls(folder.path()).is_empty());
+        assert!(path.is_dir());
     }
 }

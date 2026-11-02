@@ -17,10 +17,15 @@ pub mod stop;
 
 use std::path::PathBuf;
 
-/// `~/.local/state/wat2do/ingestion`: locks, the club logo state and the job logs.
+/// `~/.local/state/wat2do/ingestion` (under `XDG_STATE_HOME` when set): locks,
+/// the club logo state and the job logs.
 pub fn state_directory() -> PathBuf {
-    std::env::var_os("XDG_STATE_HOME")
-        .map(PathBuf::from)
+    state_directory_under(std::env::var_os("XDG_STATE_HOME").map(PathBuf::from))
+}
+
+/// The state directory for a given `XDG_STATE_HOME`, or the default without one.
+pub fn state_directory_under(xdg_state_home: Option<PathBuf>) -> PathBuf {
+    xdg_state_home
         .unwrap_or_else(|| {
             PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".local/state")
         })
