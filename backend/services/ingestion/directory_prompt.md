@@ -62,4 +62,3 @@ When an event is open to current students and they would plausibly go, keep it, 
 - `location`: the most specific place stated (building and room, address, or "Online (Zoom)"). Use "TBA" when the page says so. Never guess.
 - `host`: the club, office or group running it, as published.
 - `description`: two or three factual sentences from the page: what it is, who it is for, cost, food, registration.
-- `image_url`: the event's own poster or banner image URL when the page has one; leave it empty for logos, icons and generic headers.
