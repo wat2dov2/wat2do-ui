@@ -5,8 +5,9 @@ account with the most urgent work, switches the app to it once, and does everyth
 that account needs before moving on: the song, like and repost for its new carousels,
 its DMs, its follows, and, when no other account is waiting, a slice of its crawl.
 
-Replies, follows and post edits happen only during the control box's action hours;
-outside them the worker only reads, crawling Following lists. The emulator's lock is
+Replies and post edits happen only during the control box's action hours, follows
+only during its follow hours; outside them the worker only reads, crawling Following
+lists. The emulator's lock is
 held for one visit at a time, and one failing step never stops the others.
 """
 
@@ -50,6 +51,7 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
     """Visit the account with the most urgent work; False when nothing is due anywhere."""
     moment = (now or datetime.now(timezone.utc)).astimezone()
     acting = acting_hours(moment)
+    following = following_hours(moment)
     order = _visit_order(_current_user(device))
     tiers: list[tuple[list[str], bool]] = []
     if acting:
@@ -57,6 +59,9 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
         tiers += [
             ([school for school in order if school in due_music], False),
             ([school for school in order if sweep.due(school, moment)], False),
+        ]
+    if following:
+        tiers.append(
             (
                 [
                     school
@@ -65,12 +70,19 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
                     and follows.follows_due(school)
                 ],
                 False,
-            ),
-        ]
+            )
+        )
     tiers.append((_crawl_order(order, moment), True))
     for schools, crawling in tiers:
         if schools:
-            visit(device, schools[0], acting=acting, crawl_slice=crawling, now=moment)
+            visit(
+                device,
+                schools[0],
+                acting=acting,
+                following=following,
+                crawl_slice=crawling,
+                now=moment,
+            )
             return True
     return False
 
@@ -80,6 +92,7 @@ def visit(
     school: str,
     *,
     acting: bool,
+    following: bool,
     crawl_slice: bool,
     now: datetime,
 ) -> None:
@@ -96,18 +109,20 @@ def visit(
                 _step(f"music {school}", lambda: music.finish_due(device, school, now))
             if sweep.due(school, now):
                 _step(f"dms {school}", lambda: sweep.answer(device, school))
-            if _follows_rested_until.get(school, now) <= now and follows.follows_due(school):
-                followed = _step(
-                    f"follows {school}",
-                    lambda: follows.follow_due(device, school, CONTROL.follows_per_visit),
-                )
-                if not isinstance(followed, follows.FollowVisit) or not (
-                    followed.followed or followed.confirmed
-                ):
-                    # Nothing went through, so the next try waits instead of looping here.
-                    _follows_rested_until[school] = now + timedelta(
-                        seconds=FOLLOW.crawl_rest_seconds
-                    )
+        if (
+            following
+            and _follows_rested_until.get(school, now) <= now
+            and follows.follows_due(school)
+        ):
+            followed = _step(
+                f"follows {school}",
+                lambda: follows.follow_due(device, school, CONTROL.follows_per_visit),
+            )
+            if not isinstance(followed, follows.FollowVisit) or not (
+                followed.followed or followed.confirmed
+            ):
+                # Nothing went through, so the next try waits instead of looping here.
+                _follows_rested_until[school] = now + timedelta(seconds=FOLLOW.crawl_rest_seconds)
         if crawl_slice:
             deadline = time.monotonic() + CONTROL.crawl_slice_minutes * 60
             outcome = _step(f"crawl {school}", lambda: crawl.crawl_slice(device, school, deadline))
@@ -132,6 +147,10 @@ def _crawl_order(order: list[str], now: datetime) -> list[str]:
 
 def acting_hours(moment: datetime) -> bool:
     return CONTROL.action_start_hour <= moment.hour < CONTROL.action_end_hour
+
+
+def following_hours(moment: datetime) -> bool:
+    return CONTROL.follow_start_hour <= moment.hour < CONTROL.follow_end_hour
 
 
 _scoring = threading.Lock()

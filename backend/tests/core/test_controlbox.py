@@ -998,7 +998,7 @@ def test_follow_control_names_every_uoft_campus_for_the_others() -> None:
     names = controlbox.instagram_follow.school_names
     assert {"uoft", "utsc", "utsg"} <= set(names["utm"])
     assert controlbox.instagram_follow.crawl_miss_streak == 10
-    assert controlbox.instagram_follow.follows_per_account_per_day == 20
+    assert controlbox.instagram_follow.follows_per_account_per_day == 150
 
 
 def test_follow_profile_read_delays_must_be_ordered(tmp_path: Path) -> None:

@@ -12,7 +12,7 @@
   "crawl_seed_attempts": 3,
   "crawl_failures_before_rest": 3,
   "crawl_rest_seconds": 600,
-  "follows_per_account_per_day": 20,
+  "follows_per_account_per_day": 150,
   "school_names": {
     "brocku": [
       "brock"

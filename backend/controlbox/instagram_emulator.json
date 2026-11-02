@@ -80,8 +80,10 @@
   "reclaim_interval_hours": 24,
   "action_start_hour": 9,
   "action_end_hour": 23,
+  "follow_start_hour": 0,
+  "follow_end_hour": 24,
   "crawl_slice_minutes": 15,
-  "follows_per_visit": 5,
+  "follows_per_visit": 40,
   "idle_seconds": 300,
   "launch_agent_timeout_seconds": 30
 }

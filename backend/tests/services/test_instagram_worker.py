@@ -31,6 +31,11 @@ class _Device:
         self.accounts.append(account)
 
 
+def _follow_hours(monkeypatch, start: int, end: int) -> None:
+    control = worker.CONTROL.model_copy(update={"follow_start_hour": start, "follow_end_hour": end})
+    monkeypatch.setattr(worker, "CONTROL", control)
+
+
 @pytest.fixture
 def due(monkeypatch):
     """What each step reports as due; the steps record what they did."""
@@ -93,7 +98,8 @@ def test_inboxes_come_before_follows_and_follows_before_crawls(due):
     assert due.done[-2:] == [("crawl", "utm"), "score"]
 
 
-def test_at_night_the_worker_only_crawls(due):
+def test_at_night_the_worker_only_crawls(due, monkeypatch):
+    _follow_hours(monkeypatch, 9, 23)
     due.music = ["uwo"]
     due.dms = {"uwo"}
     due.follows = {"uwo"}
@@ -150,6 +156,15 @@ def test_one_failing_step_does_not_stop_the_rest_of_the_visit(due, monkeypatch):
 
     monkeypatch.setattr(worker.sweep, "answer", broken)
     worker.visit_next(_Device(), DAY)
+    assert due.done == [("follows", "uwo")]
+
+
+def test_follows_keep_their_own_hours(due, monkeypatch):
+    _follow_hours(monkeypatch, 0, 24)
+    due.dms = {"uwo"}
+    due.follows = {"uwo"}
+    device = _Device()
+    assert worker.visit_next(device, NIGHT)
     assert due.done == [("follows", "uwo")]
 
 
