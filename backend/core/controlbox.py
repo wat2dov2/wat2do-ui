@@ -678,10 +678,6 @@ class InstagramBrowserControl(_ControlModel):
     ingestion_retry_limit: int = Field(gt=0, le=10)
     profile_post_limit: int = Field(gt=0, le=50)
     # Club logos come from profile retrievals: a few at a time, capped per day.
-    club_logo_pending_limit: int = Field(gt=0, le=10)
-    club_logo_daily_limit: int = Field(ge=0, le=500)
-    club_logo_retry_days: int = Field(gt=0)
-    club_logo_interval_seconds: int = Field(gt=0)
     school_switcher_username_overrides: dict[
         Annotated[str, Field(pattern=r"^[a-z0-9_]+$")],
         Annotated[str, Field(pattern=r"^wat2do\.[a-z0-9_]+$", max_length=30)],
@@ -973,6 +969,9 @@ class IngestionControl(_ControlModel):
     model_timeout_seconds: int = Field(gt=0, le=1800)
     max_images_per_item: int = Field(ge=0, le=20)
     fetch_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # Club logo profile reads share the Mac's IP with post fetches, so they are spaced out.
+    club_logo_read_delay_seconds: float = Field(ge=0, le=3600, allow_inf_nan=False)
+    club_logo_retry_days: int = Field(gt=0, le=365)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
 
     @model_validator(mode="after")

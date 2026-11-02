@@ -778,7 +778,8 @@ def test_fourteen_native_navigations_are_spaced_without_losing_exact_targets(mon
 
     def native(arguments, **kwargs):
         assert arguments[2] == browser._NAVIGATE_TAB_SCRIPT
-        sent.append((arguments[4], arguments[5], time.monotonic()))
+        # The dispatch time the spacing is kept on, not this call's own (possibly late) clock.
+        sent.append((arguments[4], arguments[5], browser._LAST_NAVIGATION_AT))
         return subprocess.CompletedProcess(arguments, 0, stdout="navigating")
 
     def navigate(tab_id):

@@ -52,6 +52,8 @@ database trigger adds each post to `public.ingestion_items`, the only ingestion 
 The Mac's always-on processor reads each queued post logged out, with no account,
 cookie or session ID, then owns extraction and database writes.
 It runs a Claude Haiku agent that follows `backend/services/ingestion/prompt.md` and writes only events, event dates and positions through the scoped `wat2do_ingest_agent` login.
+The same processor reads, logged out and one at a time (`controlbox/ingestion.json` `club_logo_read_delay_seconds` apart), the Instagram profile of each club that has a handle but no logo, and copies its picture to S3 as the club's logo.
+A handle is read again only after `club_logo_retry_days`, and a refused read pauses these reads with the post fetches.
 Haiku directory agents, not code-based parsers, read the official school directories and queue finished event details.
 The earlier fixed pipeline (`services/scraper/pipeline.py`, `reconciler.py`, candidate matching in `dedup.py`, and the event and position writers) is vestigial and kept on purpose; do not delete it.
 
@@ -62,9 +64,7 @@ CacheEntID workflow jobs submit through the browser-capable Mac runner to the
 single installed worker.
 The worker owns two Instagram tabs in the existing Brave session.
 The first tab is reserved for account switching and serialized likes/reposts; the second tab owns digest queries and manual profile listings.
-The second tab also reads the Instagram profiles of clubs that have a handle but no logo, to copy each profile picture to S3 as the club's logo.
-These reads never switch accounts, are queued a few at a time every few minutes and capped per day in `controlbox/instagram_browser.json`, and wait behind digests and engagement.
-An HTTP 429 on one of these profile reads holds only profile reads (Instagram limits that endpoint on its own); a 429 on any other job holds every claim.
+An HTTP 429 on a profile listing holds only profile listings (Instagram limits that endpoint on its own); a 429 on any other job holds every claim.
 Brave never opens individual posts for ingestion.
 Account switches wait for every tab request to settle, verify the notification's
 intended recipient, and refresh each selected tab before querying.

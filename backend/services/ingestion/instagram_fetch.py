@@ -5,7 +5,7 @@ browser-like TLS fingerprint. A post's details come from the JSON Instagram
 embeds in the public page, projected into the same shape the Brave retriever
 produced, so the processing agent sees one post format whatever fetched it.
 A profile comes from its embed page, which Instagram renders on the server when
-it is requested the way a browser loads an iframe.
+it is requested the way a browser loads an iframe, and carries its picture.
 """
 
 from __future__ import annotations
@@ -21,6 +21,8 @@ from services.ingestion.items import CONTROL, post_key
 
 _JSON_SCRIPT = re.compile(r'<script type="application/json"[^>]*>(.*?)</script>', re.S)
 _PROFILE_CONTEXT = '"contextJSON":'
+# Instagram's grey silhouette for accounts that never set a picture.
+_DEFAULT_PICTURE = "44884218_345707102882519_2446069589734326272_n"
 # A profile embed renders on the server only for a request that looks like an iframe load.
 _EMBED_HEADERS = {
     "Accept": "text/html,application/xhtml+xml",
@@ -100,12 +102,16 @@ def _embed_profile(html: str, post_limit: int) -> dict | None:
         reverse=True,
     )
     owner = (media[0].get("owner") if media else None) or {}
+    picture = context.get("profile_pic_url")
     return {
         "read": "ok" if posts else "no_posts",
         "name": context.get("full_name"),
         "followers_count": context.get("followers_count"),
         "posts_count": context.get("posts_count"),
         "is_private": owner.get("is_private"),
+        "profile_picture_url": None
+        if not isinstance(picture, str) or _DEFAULT_PICTURE in picture
+        else picture,
         "posts": posts[:post_limit],
     }
 

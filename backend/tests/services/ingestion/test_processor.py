@@ -83,6 +83,7 @@ def queue(monkeypatch, tmp_path):
     monkeypatch.setattr(
         module, "fetch_post", lambda url: pytest.fail("Fetched without a fetch row")
     )
+    monkeypatch.setattr(module.ClubLogos, "fill_next", lambda self: False)
     return fake
 
 
@@ -165,6 +166,19 @@ def test_a_login_wall_pauses_fetching_without_giving_up(queue, monkeypatch):
     assert stats == {"fetch_blocked": 1}
     assert calls == ["https://www.instagram.com/p/A/"]
     assert set(queue.statuses().values()) == {"fetch"}
+
+
+def test_a_refused_club_logo_read_pauses_post_fetches_too(queue, monkeypatch):
+    def blocked(self):
+        raise module.FetchBlocked("Instagram answered HTTP 429")
+
+    monkeypatch.setattr(module.ClubLogos, "fill_next", blocked)
+    processor = module._Processor(threading.Event())
+
+    assert processor.fill_club_logo_next() is False
+    assert processor.stats == {"fetch_blocked": 1}
+    # The post fetch lanes share the pause, so nothing reads Instagram meanwhile.
+    assert processor._fetch_paused_until > time.monotonic()
 
 
 def test_publishers_are_looked_up_only_for_directory_rows(queue, monkeypatch):

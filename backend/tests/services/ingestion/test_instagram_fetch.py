@@ -170,6 +170,7 @@ def test_a_profile_comes_back_with_its_newest_posts_first(respond):
         _embed(
             {
                 "full_name": "UTMAC",
+                "profile_pic_url": "https://scontent.cdninstagram.com/utmac.jpg",
                 "followers_count": 436,
                 "posts_count": 68,
                 "graphql_media": [
@@ -197,15 +198,22 @@ def test_a_profile_comes_back_with_its_newest_posts_first(respond):
         "https://www.instagram.com/p/OLD/",
     ]
     assert profile["posts"][0]["caption"] == "Mahjong quiz Friday"
+    assert profile["profile_picture_url"] == "https://scontent.cdninstagram.com/utmac.jpg"
     assert respond.requests[0][1]["headers"]["Sec-Fetch-Dest"] == "iframe"
 
 
-def test_a_profile_without_posts_says_so(respond):
+def test_a_profile_without_posts_or_a_picture_says_so(respond):
+    blank = "https://scontent.cdninstagram.com/44884218_345707102882519_2446069589734326272_n.jpg"
     respond.response = _response(
-        _embed({"full_name": "New club", "graphql_media": []}), url=PROFILE_URL
+        _embed({"full_name": "New club", "profile_pic_url": blank, "graphql_media": []}),
+        url=PROFILE_URL,
     )
 
-    assert module.fetch_profile("newclub")["read"] == "no_posts"
+    profile = module.fetch_profile("newclub")
+
+    assert profile["read"] == "no_posts"
+    # Instagram's default silhouette is no logo.
+    assert profile["profile_picture_url"] is None
 
 
 @pytest.mark.parametrize("text", ["<html>no data</html>", _embed(None)])

@@ -2,7 +2,7 @@
 """Backfill club logos from the school directory pages in ``clubs.club_page``.
 
 Covers clubs with no logo and no Instagram handle (clubs with a handle get
-their logo from Brave profile reads). Three directory platforms publish club
+their logo from the ingestion processor's logged-out profile reads). Three directory platforms publish club
 logos to a plain request:
 
 - Campus Labs Engage (``/organization/<key>``): its public discovery API names

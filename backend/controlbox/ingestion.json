@@ -18,5 +18,7 @@
   "model_timeout_seconds": 420,
   "max_images_per_item": 6,
   "fetch_timeout_seconds": 30,
+  "club_logo_read_delay_seconds": 20,
+  "club_logo_retry_days": 30,
   "launch_agent_timeout_seconds": 30
 }

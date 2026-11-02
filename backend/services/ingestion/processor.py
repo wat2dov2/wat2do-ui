@@ -2,7 +2,8 @@
 
 The processor stays running. ``fetch_lanes`` threads fill in notified Instagram
 posts with the logged-out fetcher; ``parallel_agents`` slots each run one Haiku
-agent on the next ready row. Supabase Realtime wakes both as soon as a row is
+agent on the next ready row. One more lane reads, logged out, the Instagram
+profile of each club that has a handle but no logo, to store its picture. Supabase Realtime wakes both as soon as a row is
 added or changes; with nothing waiting they sleep.
 """
 
@@ -22,6 +23,7 @@ from urllib.parse import urlsplit
 from core.tables import INGESTION_ITEMS
 from services.claude_code import remove_leftovers
 from services.ingestion import agent, changes, items
+from services.ingestion.club_logos import ClubLogos
 from services.ingestion.directory import list_sources
 from services.ingestion.instagram_fetch import FetchBlocked, fetch_post
 from services.ingestion.items import CONTROL, Item
@@ -60,6 +62,7 @@ class _Processor:
         self._club_locks: defaultdict[str, threading.Lock] = defaultdict(threading.Lock)
         self._publishers: dict[int, str | None] = {}
         self._fetch_paused_until = 0.0
+        self._club_logos = ClubLogos(state_directory() / "club_logos.json")
 
     def count(self, outcome: str) -> None:
         with self._stats_lock:
@@ -83,9 +86,7 @@ class _Processor:
             self.wake.wait(seen, CONTROL.retry_backoff_seconds)
 
     def fetch_next(self) -> bool:
-        pause = self._fetch_paused_until - time.monotonic()
-        if pause > 0:
-            self.wake.wait(self.wake.generation, pause)
+        if self._fetch_paused():
             return False
         item = items.claim("fetch")
         if item is None:
@@ -93,10 +94,8 @@ class _Processor:
         try:
             post = fetch_post(item.source_url)
         except FetchBlocked as exc:
-            log.warning("Instagram refused logged-out fetches (%s); pausing", exc)
-            self._fetch_paused_until = time.monotonic() + CONTROL.fetch_block_pause_seconds
+            self._pause_fetches(exc)
             items.release(item, "fetch", delay_seconds=CONTROL.fetch_block_pause_seconds)
-            self.count("fetch_blocked")
             return False
         except ValueError:
             items.mark(item, "gone")
@@ -114,6 +113,31 @@ class _Processor:
         self.count("fetched")
         self.wake.notify()
         return True
+
+    def fill_club_logo_next(self) -> bool:
+        if self._fetch_paused():
+            return False
+        try:
+            if not self._club_logos.fill_next():
+                return False
+        except FetchBlocked as exc:
+            self._pause_fetches(exc)
+            return False
+        self.count("club_logo_read")
+        # Club logos are background work: space the reads out behind the post fetches.
+        self.stopping.wait(CONTROL.club_logo_read_delay_seconds)
+        return True
+
+    def _fetch_paused(self) -> bool:
+        pause = self._fetch_paused_until - time.monotonic()
+        if pause > 0:
+            self.wake.wait(self.wake.generation, pause)
+        return pause > 0
+
+    def _pause_fetches(self, exc: FetchBlocked) -> None:
+        log.warning("Instagram refused logged-out fetches (%s); pausing", exc)
+        self._fetch_paused_until = time.monotonic() + CONTROL.fetch_block_pause_seconds
+        self.count("fetch_blocked")
 
     def process_next(self) -> bool:
         item = items.claim("ready")
@@ -183,6 +207,7 @@ def process_queue(
         ]
         try:
             if wait_for_work:
+                stages.append((processor.fill_club_logo_next, 1))
                 _run_together(processor, stages, wait_for_work=True)
             else:
                 # A one-off run fetches everything first so agents see every post.
