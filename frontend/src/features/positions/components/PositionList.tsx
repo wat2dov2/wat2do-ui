@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { CardEntrance } from "@/shared/ui/card-entrance";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { CardImageSkeleton } from "@/shared/ui/card-image-skeleton";
-import { EventCardContentFrame } from "@/shared/ui/event-card-content";
 import { Users } from "lucide-react";
 import { EmptyState } from "@/shared/feedback/empty-state";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
@@ -19,17 +18,22 @@ interface PositionListProps {
   emptyDescription?: string;
 }
 
+/** Mirrors EventCardSkeleton: two title lines, then the description beneath. */
 function PositionCardSkeleton() {
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl">
       <CardImageSkeleton />
-      <EventCardContentFrame className="gap-3 py-4">
-        <Skeleton className="h-5 w-24" />
-        <Skeleton className="h-6 w-4/5" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-5/6" />
-      </EventCardContentFrame>
+      <div className="flex flex-1 flex-col gap-2.5 pb-2.5 pt-3 sm:gap-3 sm:pb-3 sm:pt-4">
+        <div className="space-y-1.5">
+          <Skeleton className="h-4 w-3/4 rounded-lg" />
+          <Skeleton className="h-4 w-1/2 rounded-lg" />
+        </div>
+        <div className="space-y-1.5">
+          <Skeleton className="h-3 w-full rounded-lg" />
+          <Skeleton className="h-3 w-5/6 rounded-lg" />
+          <Skeleton className="h-3 w-2/5 rounded-lg" />
+        </div>
+      </div>
     </div>
   );
 }
