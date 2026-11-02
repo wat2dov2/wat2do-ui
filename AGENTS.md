@@ -56,6 +56,8 @@ It runs a Claude Haiku agent that follows `backend/services/ingestion/prompt.md`
 The same processor reads, logged out and one at a time (`controlbox/ingestion.json` `club_logo_read_delay_seconds` apart), the Instagram profile of each club that has a handle but still needs a logo or still carries a placeholder "@handle" name, copies its picture to S3 as the club's logo, and replaces the placeholder name with the account's real one.
 A handle is read again only after `club_logo_retry_days`, and a refused read pauses these reads with the post fetches.
 Haiku directory agents, not code-based parsers, read the official school directories and queue finished event details.
+wat2do lists only student-led clubs, events and positions (clubs, societies, student unions and governments, student media and groups) plus varsity teams and their games.
+Anything the university itself runs (departments, faculties, offices, services, centres, libraries, alumni, admissions, the university's own accounts) is never listed or followed: the directory prompt, the ingestion prompt and the follow scoring prompt each leave it out.
 The earlier fixed pipeline (`services/scraper/pipeline.py`, `reconciler.py`, candidate matching in `dedup.py`, and the event and position writers) is vestigial and kept on purpose; do not delete it.
 
 When Instagram collapses a notification into "account posted and N others", the

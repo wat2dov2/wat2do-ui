@@ -57,6 +57,9 @@ Read the text and every image, then decide which of these it is (it can be sever
 3. A cancellation: the whole event, or only one date of a recurring event ("no jam this Wednesday").
 4. Open hiring positions.
 5. Nothing relevant (memes, recaps, photo dumps, results, generic promotion). Then change nothing.
+6. Not student-led: wat2do lists only events and positions run by students (clubs, societies, student unions and governments, student media and other student groups) and varsity games.
+   An event or position run by the university itself (a department, faculty, office, service, library, centre, institute, residence administration, alumni, admissions or the university's own account) is not listed, whoever posted it, unless it is a varsity game.
+   Then change nothing for it.
 
 ## Step 2: Look at what is already listed
 
@@ -159,7 +162,8 @@ Columns:
 - For an official school event-directory page, attribute the host deterministically and never invent a club:
   - A named club, society or group registered at this school (find it with `clubs.club_name ILIKE` or its Instagram handle): use that club's `club_id`, name and `ig`.
   - A student-union or general campus-life event with no more specific registered club: use the publishing club shown above.
-  - A university department, office, faculty, library, athletics, residence or administration (not a student club or the student union): attribute it to the university itself, with `club_id` NULL, `ig_handle` NULL, and `club` set to '{{school_name}}'. Never put a department or office name in `club`, and never create a club for it.
+  - A varsity game: attribute it to the team's or athletics' registered club, otherwise to the university itself, with `club_id` NULL, `ig_handle` NULL, and `club` set to '{{school_name}}'.
+  - Anything run by the university itself is not student-led and is never listed (see Step 1). Never put a department or office name in `club`, and never create a club for it.
 - `cohost_club_ids`: `clubs.id` values of other registered co-hosting clubs at this school (default `'{}'`).
 - `school_id`: {{school_id}}, unless a co-hosting club belongs to another school (see below).
 - `source_url`: always exactly `{{source_url}}` for rows you create.
