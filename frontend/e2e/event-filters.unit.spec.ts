@@ -430,15 +430,15 @@ test("a later holiday occurrence cannot keep an expired selected-window occurren
 
 test("empty seasonal filters wait for the complete feed and hide options with no upcoming school matches", () => {
   const school = { ...campusSchool, event_seasons: [{
-    id: "midterm_prep", classification_id: "midterm_prep", labels: { en: "Midterm prep" },
+    id: "exam_destress", classification_id: "exam_destress", labels: { en: "Exam de-stress" },
     display_windows: [{ start_date: "2026-09-01", end_date: "2026-11-01" }],
   }] } as SchoolSummary;
   const now = Date.parse("2026-09-30T12:00:00Z");
-  expect(resolveCampusSeasonFilters(school, now, "en", ["midterm_prep"], null).ready).toBe(false);
-  const empty = resolveCampusSeasonFilters(school, now, "en", ["midterm_prep"], []);
+  expect(resolveCampusSeasonFilters(school, now, "en", ["exam_destress"], null).ready).toBe(false);
+  const empty = resolveCampusSeasonFilters(school, now, "en", ["exam_destress"], []);
   expect(empty.options).toEqual([]);
   expect(empty.selectedIds).toEqual([]);
-  const matching = { ...events[0], school: school.slug, campus_season_ids: ["midterm_prep"], occurrences: [{ dtstart_utc: "2026-10-01T18:00:00Z" }] } as Event;
+  const matching = { ...events[0], school: school.slug, campus_season_ids: ["exam_destress"], occurrences: [{ dtstart_utc: "2026-10-01T18:00:00Z" }] } as Event;
   expect(resolveCampusSeasonFilters(school, now, "en", [], [matching]).options).toHaveLength(1);
   expect(resolveCampusSeasonFilters(school, now, "en", [], [{ ...matching, cancelled: true }]).options).toEqual([]);
 });

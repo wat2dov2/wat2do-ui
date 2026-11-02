@@ -95,7 +95,6 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
         "halloween",
         "winter_holidays",
         "orientation",
-        "midterm_prep",
         "exam_destress",
         "finals_prep",
     }

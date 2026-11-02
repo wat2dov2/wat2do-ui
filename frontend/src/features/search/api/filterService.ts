@@ -212,7 +212,7 @@ export function resolveCampusSeasonFilters(
   const today = schoolCalendarDate(currentTimeMs, school.timezone).toISOString().slice(0, 10);
   const options = school.event_seasons
     .filter(season => season.display_windows.some(window => window.start_date <= today && today <= window.end_date))
-    .filter(season => !["midterm_prep", "exam_destress"].includes(season.classification_id) || events.some(event =>
+    .filter(season => season.classification_id !== "exam_destress" || events.some(event =>
       event.school === school.slug && !event.cancelled &&
       event.campus_season_ids?.includes(season.classification_id) &&
       hasActiveEventOccurrence(event, currentTimeMs),
