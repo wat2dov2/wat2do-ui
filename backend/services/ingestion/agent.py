@@ -117,9 +117,7 @@ def ingest(
     token = uuid4().hex[:12]
     with tempfile.TemporaryDirectory(prefix=WORKDIR_PREFIX) as workdir:
         images = _download_images(post, Path(workdir), instagram=is_instagram(source_url))
-        owner = _owner_club(
-            post, school=school, publisher_ig=publisher_ig, image_count=len(image_urls(post))
-        )
+        owner = _owner_club(post, school=school, publisher_ig=publisher_ig)
         prompt = _render(
             post,
             school=record,
@@ -275,22 +273,16 @@ def _store_poster(image: _Image | None) -> dict[str, str | None]:
     return {"source_image_url": poster, "source_video_url": video}
 
 
-def _owner_club(post: dict, *, school: str, publisher_ig: str | None, image_count: int) -> str:
+def _owner_club(post: dict, *, school: str, publisher_ig: str | None) -> str:
     handles = candidate_handles(post)
-    if handles:
-        # A single-poster post from an unknown account still gets a club stub.
-        club = resolve_club_for_scrape(
-            ig_handle=handles,
-            school=school,
-            club_name=None,
-            create_stub_if_missing=image_count <= 1,
-        )
-    elif publisher_ig:
-        club = resolve_club_for_scrape(
-            ig_handle=publisher_ig, school=school, club_name=None, create_stub_if_missing=False
-        )
-    else:
+    ig_handle: str | list[str] | None = handles or publisher_ig
+    if not ig_handle:
         return "unknown; find the host named in the source"
+    # Ingestion never invents a club: an unregistered account is reported as such, and
+    # real clubs come from the vetted follow pipeline, not from ingestion.
+    club = resolve_club_for_scrape(
+        ig_handle=ig_handle, school=school, club_name=None, create_stub_if_missing=False
+    )
     if club.club_id is None:
         return f"@{handles[0] if handles else publisher_ig} (not registered at this school)"
     return f"{club.club_name} (clubs.id = {club.club_id}, Instagram @{club.ig_handle})"
@@ -318,6 +310,7 @@ def _render(
         "source_kind": source_kind,
         "ingestion_source": ingestion_source,
         "school": school.slug,
+        "school_name": school.name,
         "school_id": str(school.id),
         "timezone": timezone.key,
         "today": now.strftime("%A %Y-%m-%d"),

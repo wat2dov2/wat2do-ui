@@ -14,7 +14,7 @@ from services.scraper.org_resolve import ResolvedClub
 
 _DIRECTORY_URL = "https://clubs.example.edu/events/123"
 _POSTED = datetime(2026, 10, 15, 15, tzinfo=UTC)
-_SCHOOL = SimpleNamespace(slug="uwaterloo", id=7)
+_SCHOOL = SimpleNamespace(slug="uwaterloo", id=7, name="University of Waterloo")
 _POST = {
     "url": "https://www.instagram.com/p/NEW/",
     "caption": "Drop-in jam this Wednesday Oct 21 is in AL 116!",
@@ -171,6 +171,18 @@ def test_ingest_lets_directory_pages_fall_back_to_the_publishing_club(run):
     assert "ingestion_source = 'directory'" in prompt
     assert module.DIRECTORY_NOTE in prompt
     assert "Images (read every one" in prompt and "(no images)" in prompt
+
+
+def test_ingest_never_creates_a_club_stub(run):
+    module.ingest(dict(_POST), school="uwaterloo", source="instagram")
+    assert run.resolved == [
+        {
+            "ig_handle": ["uwimprovisation", "yourwusa"],
+            "school": "uwaterloo",
+            "club_name": None,
+            "create_stub_if_missing": False,
+        }
+    ]
 
 
 def test_ingest_still_drains_when_the_agent_fails(run):
