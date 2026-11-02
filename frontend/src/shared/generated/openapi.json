@@ -9833,6 +9833,18 @@
             "type": "string",
             "format": "date-time",
             "title": "Added At"
+          },
+          "last_source_changed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Source Changed At"
           }
         },
         "type": "object",
@@ -10138,6 +10150,18 @@
             "type": "string",
             "format": "date-time",
             "title": "Added At"
+          },
+          "last_source_changed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Source Changed At"
           },
           "created_by": {
             "anyOf": [
@@ -10504,6 +10528,18 @@
             "type": "string",
             "format": "date-time",
             "title": "Added At"
+          },
+          "last_source_changed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Source Changed At"
           }
         },
         "type": "object",
@@ -13995,6 +14031,11 @@
             "format": "date-time",
             "title": "Added At"
           },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
           "club_name": {
             "type": "string",
             "title": "Club Name"
@@ -14077,6 +14118,7 @@
           "source_url",
           "is_active",
           "added_at",
+          "updated_at",
           "club_name",
           "school"
         ],

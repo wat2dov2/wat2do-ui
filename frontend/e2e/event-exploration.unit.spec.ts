@@ -3,6 +3,7 @@ import type { Event } from "../src/shared/types";
 import { toCalendarEvents } from "../src/features/events/lib/calendarEvents";
 import { controlBox } from "../src/shared/config/controlBox";
 import { getEventStreetAddress } from "../src/shared/utils/event";
+import { getRecencyBadge } from "../src/shared/utils/date";
 
 function event(occurrences: Event["occurrences"]): Event {
   return { id: 1, title: "Cooking night", occurrences } as Event;
@@ -42,4 +43,25 @@ test("street extraction never treats room numbers or campus buildings as street 
   for (const address of ["1 Discovery Pkwy NW", "2 Innovation Cir NE", "3 Campus Sq SW", "4 National Parkway SE", "5 University Avenue Nord", "6 Campus Road Sud", "7 College Street Est", "8 Avenue Road West", "9 University Private", "10 Nadolny Sachs Pvt"]) {
     expect(getEventStreetAddress(`${address}, Waterloo`)).toBe(address);
   }
+});
+
+test("getRecencyBadge prefers new, then updated, then nothing", () => {
+  const now = new Date("2026-11-01T12:00:00Z");
+  const recent = "2026-11-01T06:00:00Z"; // 6h ago, inside the 24h window
+  const old = "2026-10-20T12:00:00Z"; // ~12 days ago, outside the window
+
+  // Added within the window wins, even when it was also just changed.
+  expect(getRecencyBadge(recent, null, now)).toBe("new");
+  expect(getRecencyBadge(recent, recent, now)).toBe("new");
+  expect(getRecencyBadge(recent, old, now)).toBe("new");
+
+  // Added long ago but changed within the window shows updated.
+  expect(getRecencyBadge(old, recent, now)).toBe("updated");
+
+  // Never changed, or changed long ago, shows no recency badge.
+  expect(getRecencyBadge(old, null, now)).toBeUndefined();
+  expect(getRecencyBadge(old, old, now)).toBeUndefined();
+
+  // A stamp at or before creation is not an edit (positions start updated_at == added_at).
+  expect(getRecencyBadge(old, "2026-10-20T11:59:00Z", now)).toBeUndefined();
 });

@@ -10,7 +10,7 @@ import {
 } from "@/shared/ui/event-image-cutout";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 import { formatPositionDeadlineBadge } from "@/features/positions/lib/positionDates";
-import { wasAddedWithinLast24Hours } from "@/shared/utils/date";
+import { getRecencyBadge } from "@/shared/utils/date";
 import type { Position } from "@/shared/types";
 
 interface PositionCardImageProps {
@@ -35,6 +35,7 @@ export function PositionCardImage({
     () => formatPositionDeadlineBadge(position, i18n.language, getSchoolTimezone(position.school)),
     [i18n.language, position, getSchoolTimezone],
   );
+  const recencyStatus = getRecencyBadge(position.added_at, position.updated_at);
   return (
     <div
       ref={surfaceRef}
@@ -63,9 +64,9 @@ export function PositionCardImage({
         className="absolute inset-0"
       />
 
-      {variant === "card" && wasAddedWithinLast24Hours(position) ? (
+      {variant === "card" && recencyStatus ? (
         <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
-          <Badge variant="new" size="md">{t("events.new")}</Badge>
+          <Badge variant={recencyStatus} size="md">{t(`events.${recencyStatus}`)}</Badge>
         </BadgeMask>
       ) : null}
 

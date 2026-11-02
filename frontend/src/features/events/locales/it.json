@@ -108,6 +108,7 @@
       }
     },
     "new": "NUOVO",
+    "updated": "AGGIORNATO",
     "goingCount": "{{count}} partecipante",
     "goingCount_one": "{{count}} partecipante",
     "goingCount_other": "{{count}} partecipanti",

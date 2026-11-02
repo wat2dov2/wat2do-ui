@@ -163,11 +163,11 @@ def test_position_reads_exclude_unused_database_metadata(fake_sb, patch_sb, read
     columns = fake_sb.select.call_args.args[0]
     assert "*" not in columns
     assert "ingestion_source" not in columns
-    assert "updated_at" not in columns
+    assert "updated_at" in columns
     assert position is not None
     response = position.model_dump(mode="json")
     assert "ingestion_source" not in response
-    assert "updated_at" not in response
+    assert "updated_at" in response
     assert response["requirements"] == ["Portfolio"]
     assert response["source_url"] == "https://instagram.com/p/example/"
     assert response["club_discord"] == "https://discord.gg/example"

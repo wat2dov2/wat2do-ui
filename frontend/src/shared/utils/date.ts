@@ -156,6 +156,43 @@ export function wasAddedWithinLast24Hours(
   return ageMs >= 0 && ageMs <= controlBox.eventDiscovery.newEventWindowMs;
 }
 
+export function wasUpdatedWithinLast24Hours(
+  updatedAt: string | null | undefined,
+  addedAt: string | null | undefined,
+  currentDate: Date = new Date()
+): boolean {
+  if (!updatedAt) return false;
+
+  const updated = new Date(updatedAt);
+  if (Number.isNaN(updated.getTime())) return false;
+
+  const ageMs = currentDate.getTime() - updated.getTime();
+  if (ageMs < 0 || ageMs > controlBox.eventDiscovery.newEventWindowMs) return false;
+
+  // Creation is not an update: a row last changed when it was added (or earlier)
+  // keeps the "New" treatment instead of also claiming "Updated".
+  if (addedAt) {
+    const added = new Date(addedAt);
+    if (!Number.isNaN(added.getTime()) && updated.getTime() <= added.getTime()) return false;
+  }
+  return true;
+}
+
+/**
+ * The one recency badge a card shows, or undefined. "New" (added within the window)
+ * always wins over "Updated" (changed within the window), so a brand-new card never
+ * shows both.
+ */
+export function getRecencyBadge(
+  addedAt: string | null | undefined,
+  updatedAt: string | null | undefined,
+  currentDate: Date = new Date()
+): "new" | "updated" | undefined {
+  if (wasAddedWithinLast24Hours({ added_at: addedAt }, currentDate)) return "new";
+  if (wasUpdatedWithinLast24Hours(updatedAt, addedAt, currentDate)) return "updated";
+  return undefined;
+}
+
 /**
  * Format an event date for compact card display.
  * Today and tomorrow use localized relative labels; later dates use the full

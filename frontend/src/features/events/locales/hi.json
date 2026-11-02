@@ -108,6 +108,7 @@
       }
     },
     "new": "नया",
+    "updated": "अपडेटेड",
     "goingCount": "{{count}} प्रतिभागी",
     "goingCount_one": "{{count}} प्रतिभागी",
     "goingCount_other": "{{count}} प्रतिभागी",

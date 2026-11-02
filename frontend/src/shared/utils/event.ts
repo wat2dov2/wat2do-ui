@@ -1,14 +1,17 @@
 import type { Event, EventFormData, EventFormOccurrence } from "@/shared/types";
 import { getDefaultEventCategory } from "@/shared/data/eventCategories";
-import { toLocalDateTimeInput, wasAddedWithinLast24Hours } from "@/shared/utils/date";
+import { getRecencyBadge, toLocalDateTimeInput } from "@/shared/utils/date";
 import type { TFunction } from "i18next";
 import type { CardBadge } from "@/shared/ui/event-card-content";
 import { Ticket, Utensils, X } from "lucide-react";
 import { translateFood } from "@/shared/utils/foodTranslation";
 
-/** Attendance takes precedence over the newly added treatment on event artwork. */
-export function getEventImageStatus(event: Pick<Event, "added_at">, isGoing: boolean) {
-  return isGoing ? "going" : wasAddedWithinLast24Hours(event) ? "new" : undefined;
+/** On event artwork attendance wins over new, and new wins over recently updated. */
+export function getEventImageStatus(
+  event: Pick<Event, "added_at" | "last_source_changed_at">,
+  isGoing: boolean,
+) {
+  return isGoing ? "going" : getRecencyBadge(event.added_at, event.last_source_changed_at);
 }
 
 /** Shared badge content for cards, previews, and published artwork. */

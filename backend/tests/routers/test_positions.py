@@ -33,6 +33,7 @@ def _position(position_id: int = 1) -> PositionResponse:
         source_image_url="https://example.com/post.jpg",
         is_active=True,
         added_at=now,
+        updated_at=now,
         club_name="UW Design Club",
         club_logo_url="https://example.com/logo.png",
         club_ig="uwdesign",
@@ -59,7 +60,7 @@ def test_list_positions_is_public_and_paginated(client, monkeypatch):
     assert body["total_pages"] == 3
     assert body["items"][0]["title"] == "Design Lead"
     assert "ingestion_source" not in body["items"][0]
-    assert "updated_at" not in body["items"][0]
+    assert "updated_at" in body["items"][0]
     assert body["latest_added_position"] is None
     latest_position.assert_not_called()
     list_positions.assert_called_once_with(

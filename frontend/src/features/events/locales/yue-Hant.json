@@ -108,6 +108,7 @@
       }
     },
     "new": "最新",
+    "updated": "已更新",
     "goingCount": "{{count}} 人參加",
     "goingCount_other": "{{count}} 人參加",
     "andOthersCount": "以及 {{count}} 位其他人",

@@ -108,6 +108,7 @@
       }
     },
     "new": "ਨਵਾਂ",
+    "updated": "ਅੱਪਡੇਟ ਹੋਇਆ",
     "goingCount": "{{count}} ਹਾਜ਼ਰ ਹੋਣ ਵਾਲਾ",
     "goingCount_one": "{{count}} ਹਾਜ਼ਰ ਹੋਣ ਵਾਲਾ",
     "goingCount_other": "{{count}} ਹਾਜ਼ਰ ਹੋਣ ਵਾਲੇ",

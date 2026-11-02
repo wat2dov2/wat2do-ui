@@ -108,6 +108,7 @@
       }
     },
     "new": "НОВОЕ",
+    "updated": "ОБНОВЛЕНО",
     "goingCount": "{{count}} участник",
     "goingCount_one": "{{count}} участник",
     "goingCount_other": "{{count}} участника",

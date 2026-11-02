@@ -31,6 +31,8 @@ const badgeVariants = cva(
           "border-0 bg-warning text-warning-foreground",
         new:
           "border-badge-new bg-badge-new",
+        updated:
+          "border-badge-updated bg-badge-updated",
         going:
           "border-badge-going bg-badge-going text-badge-going-foreground",
         category:
@@ -66,7 +68,7 @@ const Badge = React.forwardRef<
     <Comp
       ref={ref}
       className={cn(badgeVariants({ variant, size }), className)}
-      style={(variant === "new" || variant === "soon") ? { color: "var(--color-white)", ...style } : style}
+      style={(variant === "new" || variant === "soon" || variant === "updated") ? { color: "var(--color-white)", ...style } : style}
       {...props}
     />
   )

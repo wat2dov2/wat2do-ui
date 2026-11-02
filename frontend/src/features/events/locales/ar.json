@@ -108,6 +108,7 @@
       }
     },
     "new": "جديد",
+    "updated": "مُحدَّث",
     "goingCount": "{{count}} مشارك",
     "goingCount_one": "{{count}} مشارك",
     "goingCount_other": "{{count}} مشارك",

@@ -83,6 +83,9 @@ class PositionResponse(PositionFields):
     source_image_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
     is_active: bool
     added_at: datetime
+    # Bumped on every edit by the ``stamp_position_updated_at`` trigger, so the card
+    # can show an "Updated" badge. Equal to ``added_at`` until the row is first edited.
+    updated_at: datetime
     club_name: str
     club_logo_url: str | None = None
     cohosts: list[ClubCohostResponse] = Field(default_factory=list)

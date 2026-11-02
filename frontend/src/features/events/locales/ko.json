@@ -108,6 +108,7 @@
       }
     },
     "new": "신규",
+    "updated": "업데이트됨",
     "goingCount": "{{count}}명 참여",
     "goingCount_other": "{{count}}명 참여",
     "andOthersCount": "-외 {{count}}명",
