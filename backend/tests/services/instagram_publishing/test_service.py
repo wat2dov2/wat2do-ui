@@ -639,6 +639,21 @@ def test_outro_leaves_out_excluded_clubs(monkeypatch, excluded_clubs):
     assert [event.id for event in others] == [11]
 
 
+def test_publishing_batches_still_list_the_outro_events(monkeypatch):
+    # Mid-publish the run has not posted its outro image yet, so the preview keeps
+    # listing the events rather than falling back to the generic "check out" outro.
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(table=lambda _name: _FakeQuery([{"id": 11}], [])),
+    )
+    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {11: _event(11)})
+
+    _count, others = service._summarize_recent_events(_batch([7], status="publishing"))
+
+    assert [event.id for event in others] == [11]
+
+
 def test_published_batches_skip_the_outro_events(monkeypatch):
     monkeypatch.setattr(
         service,
