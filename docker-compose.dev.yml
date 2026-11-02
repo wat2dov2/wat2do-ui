@@ -58,7 +58,8 @@ services:
       # {"role": "service_role"} signed with the data-api service's development secret.
       DATA_API_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.O6dcW70Pm5arJhCi0KK_-4PKWFb3RIOB6kg2ceEm3Yw
       AUTH_SIGNING_KEY: ${DEV_AUTH_SIGNING_KEY:?run make dev}
-      DATABASE_URL: ""
+      # The Rust API server reads Postgres directly.
+      DATABASE_URL: postgresql://postgres:postgres@database:5432/wat2do
       FRONTEND_URL: http://wat2do.localhost:3000
       COOKIE_DOMAIN: .wat2do.localhost
       COOKIE_SECURE: "false"
@@ -76,7 +77,7 @@ services:
     volumes:
       - ./backend:/workspace/backend
       - ./scripts:/workspace/scripts:ro
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: wat2do-api serve --reload
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s

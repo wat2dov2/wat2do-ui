@@ -32,3 +32,8 @@ pub const NOTIFICATION_TYPE_EVENT_REMINDER: &str = "event_reminder";
 pub const NOTIFICATION_TYPE_EVENT_CHANGE: &str = "event_change";
 pub const NOTIFICATION_STATUS_SENT: &str = "sent";
 pub const NOTIFICATION_STATUS_FAILED: &str = "failed";
+
+/// `core.constants.pagination`: page sizes and the deepest page.
+pub const DEFAULT_PAGE_SIZE: i64 = 50;
+pub const MAX_PAGE_SIZE: i64 = 100;
+pub const MAX_PAGE_NUMBER: i64 = 1000;

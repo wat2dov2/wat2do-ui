@@ -8,10 +8,13 @@ from core.constants import (
     BUCKET_CLUB_LOGOS,
     BUCKET_EVENT_IMAGES,
     BUCKET_EVENT_VIDEOS,
+    DEFAULT_PAGE_SIZE,
     EVENT_CATEGORIES,
     MAX_AVATAR_SIZE_BYTES,
     MAX_CLUB_NAME_LENGTH,
     MAX_EVENT_DESCRIPTION_LENGTH,
+    MAX_PAGE_NUMBER,
+    MAX_PAGE_SIZE,
     NOTIFICATION_STATUS_FAILED,
     NOTIFICATION_STATUS_SENT,
     NOTIFICATION_TYPE_EVENT_CHANGE,
@@ -42,6 +45,9 @@ def test_limits_and_buckets_match():
     assert _rust_value("BUCKET_EVENT_IMAGES") == f'"{BUCKET_EVENT_IMAGES}"'
     assert _rust_value("BUCKET_EVENT_VIDEOS") == f'"{BUCKET_EVENT_VIDEOS}"'
     assert _rust_value("BUCKET_CLUB_LOGOS") == f'"{BUCKET_CLUB_LOGOS}"'
+    assert int(_rust_value("DEFAULT_PAGE_SIZE")) == DEFAULT_PAGE_SIZE
+    assert int(_rust_value("MAX_PAGE_SIZE")) == MAX_PAGE_SIZE
+    assert int(_rust_value("MAX_PAGE_NUMBER")) == MAX_PAGE_NUMBER
 
 
 def test_notification_types_and_statuses_match():
@@ -53,3 +59,24 @@ def test_notification_types_and_statuses_match():
         ("NOTIFICATION_STATUS_FAILED", NOTIFICATION_STATUS_FAILED),
     ):
         assert _rust_value(name) == f'"{value}"'
+
+
+RUST_MESSAGES = Path(__file__).resolve().parents[2] / "rust/src/api/messages.rs"
+
+
+def _rust_string(literal: str) -> str:
+    return re.sub(r"\\u\{([0-9a-fA-F]+)\}", lambda match: chr(int(match.group(1), 16)), literal)
+
+
+def test_error_messages_match_core_errors():
+    from core import errors
+
+    source = RUST_MESSAGES.read_text()
+    messages = re.findall(r'pub const ([A-Z_]+): &str = "((?:[^"\\]|\\.)*)";', source)
+    assert messages
+    for name, literal in messages:
+        assert _rust_string(literal) == getattr(errors, name), name
+    pg_codes = re.findall(r'\("(\d+)", (\d+), "([^"]+)"\)', source)
+    assert {code: (int(status), detail) for code, status, detail in pg_codes} == (
+        errors.PG_CODE_TO_HTTP
+    )

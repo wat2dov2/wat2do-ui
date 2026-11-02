@@ -13,6 +13,7 @@ import routers as routers_package
 from core.config import settings
 from core.constants import MAX_IMAGE_SIZE_BYTES
 from core.error_handlers import register_error_handlers
+from core.openapi import install_rust_routes
 from core.security_headers import SecurityHeadersMiddleware
 from services import map_location_service
 
@@ -88,7 +89,6 @@ for _mod_info in sorted(pkgutil.iter_modules(routers_package.__path__), key=lamb
 
 log.info("Registered %d routers: %s", len(_registered), ", ".join(_registered))
 
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
+# Routes already ported to Rust (rust/src/api) are served by the Rust server in
+# front of this app; describe them in this app's OpenAPI schema too.
+install_rust_routes(app)

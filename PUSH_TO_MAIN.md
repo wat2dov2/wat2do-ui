@@ -65,6 +65,9 @@ cargo clippy --all-targets -- -D warnings
 cargo test
 ```
 
+`cargo test` fails while `backend/core/rust_openapi.json` lags the Rust routes; regenerate it with `cargo run --bin wat2do-api -- openapi > ../backend/core/rust_openapi.json` and then `npm run generate-types` in `frontend/`.
+Pull requests also build the backend image (Rust stage included) and smoke-test `wat2do-api` with the Python app behind it; Docker is not needed locally.
+
 ---
 
 ## 3. Frontend checks
@@ -195,6 +198,12 @@ bash scripts/check-notification-workflow.sh
     DATA_API_URL=https://data.example.test \
     DATA_API_KEY=test-service-key \
     pytest -q)
+
+# Rust
+(cd rust && \
+  cargo fmt --check && \
+  cargo clippy --all-targets -- -D warnings && \
+  cargo test)
 
 # Frontend
 (cd frontend && \

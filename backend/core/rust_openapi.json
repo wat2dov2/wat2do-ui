@@ -1,0 +1,74 @@
+{
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/site-banner": {
+      "get": {
+        "tags": [
+          "site-banner"
+        ],
+        "summary": "Get Site Banner Endpoint",
+        "description": "Public: the banner shown above the navigation, or nothing when disabled.",
+        "operationId": "get_site_banner_endpoint_site_banner_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteBannerResponse"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SiteBannerResponse": {
+        "type": "object",
+        "title": "SiteBannerResponse",
+        "description": "The single site-wide banner, as shown above the navigation.",
+        "required": [
+          "message_translation_key",
+          "cta_label_translation_key",
+          "cta_href"
+        ],
+        "properties": {
+          "message_translation_key": {
+            "type": "string"
+          },
+          "cta_label_translation_key": {
+            "type": "string"
+          },
+          "cta_href": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

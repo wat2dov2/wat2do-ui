@@ -1,0 +1,102 @@
+[
+  {
+    "name": "health",
+    "path": "/health"
+  },
+  {
+    "name": "health from an allowed origin",
+    "path": "/health",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "health HEAD is not allowed",
+    "method": "HEAD",
+    "path": "/health"
+  },
+  {
+    "name": "health POST is not allowed",
+    "method": "POST",
+    "path": "/health",
+    "safe": true
+  },
+  {
+    "name": "health trailing slash redirects",
+    "path": "/health/?probe=1"
+  },
+  {
+    "name": "health preflight",
+    "method": "OPTIONS",
+    "path": "/health",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io",
+      "access-control-request-method": "GET",
+      "access-control-request-headers": "authorization, content-type"
+    }
+  },
+  {
+    "name": "site banner",
+    "path": "/site-banner"
+  },
+  {
+    "name": "site banner from an allowed origin",
+    "path": "/site-banner",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "site banner from another origin",
+    "path": "/site-banner",
+    "headers": {
+      "origin": "https://evil.example"
+    }
+  },
+  {
+    "name": "site banner signed in",
+    "path": "/site-banner",
+    "identity": {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "email": "test@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "site banner with a query string",
+    "path": "/site-banner?school=uwaterloo"
+  },
+  {
+    "name": "site banner percent-encoded path",
+    "path": "/site%2Dbanner"
+  },
+  {
+    "name": "site banner trailing slash redirects",
+    "path": "/site-banner/?school=uwaterloo&x=%20y",
+    "headers": {
+      "x-forwarded-proto": "https"
+    }
+  },
+  {
+    "name": "site banner HEAD is not allowed",
+    "method": "HEAD",
+    "path": "/site-banner"
+  },
+  {
+    "name": "site banner DELETE is not allowed",
+    "method": "DELETE",
+    "path": "/site-banner",
+    "safe": true
+  },
+  {
+    "name": "site banner disallowed preflight",
+    "method": "OPTIONS",
+    "path": "/site-banner",
+    "headers": {
+      "origin": "https://evil.example",
+      "access-control-request-method": "PUT",
+      "access-control-request-private-network": "true"
+    }
+  }
+]

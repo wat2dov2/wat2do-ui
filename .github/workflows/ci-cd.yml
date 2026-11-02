@@ -150,6 +150,64 @@ jobs:
       - name: Run tests
         run: cargo test
 
+  backend-image:
+    name: Backend image build
+    # The deploy job builds this image too; building it on every pull request
+    # catches Dockerfile and Rust build breakage before a merge can reach it.
+    runs-on: ubuntu-24.04-arm
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          platforms: linux/arm64
+          push: false
+          load: true
+          tags: wat2do-backend:pull-request
+          cache-from: type=gha,scope=backend
+
+      - name: Smoke test the API server and the Python app behind it
+        run: |
+          image=wat2do-backend:pull-request
+          # The binary runs in the runtime image and reports the committed route inventory.
+          docker run --rm "$image" wat2do-api openapi | diff - backend/core/rust_openapi.json
+          # Serve with throwaway settings (no database is reached): /health must turn
+          # healthy once uvicorn is up, a FastAPI route must answer through the proxy,
+          # and SIGTERM must stop both processes cleanly.
+          container_id="$(docker run --detach --read-only --tmpfs /tmp \
+            --env ENVIRONMENT=testing \
+            --env SUPABASE_URL=https://example.supabase.co \
+            --env SUPABASE_KEY=test-anon-key \
+            --env SUPABASE_SECRET_KEY=test-service-role-key \
+            --env DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/postgres \
+            --publish 127.0.0.1::8000 "$image")"
+          cleanup() {
+            docker logs "$container_id" || true
+            docker rm --force "$container_id" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          port="$(docker port "$container_id" 8000/tcp)"
+          port="${port##*:}"
+          for _ in $(seq 1 60); do
+            if curl --fail --silent "http://127.0.0.1:$port/health"; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent "http://127.0.0.1:$port/health"
+          curl --fail --silent --output /dev/null "http://127.0.0.1:$port/openapi.json"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:$port/no-such-route")" = 404
+          docker stop --time 30 "$container_id" >/dev/null
+          test "$(docker inspect --format '{{.State.ExitCode}}' "$container_id")" = 0
+
   deploy-wat2do:
     name: Deploy Wat2Do to AWS
     runs-on: ubuntu-24.04-arm

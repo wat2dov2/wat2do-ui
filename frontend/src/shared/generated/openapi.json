@@ -6120,36 +6120,6 @@
         }
       }
     },
-    "/site-banner": {
-      "get": {
-        "tags": [
-          "site-banner"
-        ],
-        "summary": "Get Site Banner Endpoint",
-        "description": "Public: the banner shown above the navigation, or nothing when disabled.",
-        "operationId": "get_site_banner_endpoint_site_banner_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/SiteBannerResponse"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Response Get Site Banner Endpoint Site Banner Get"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/sponsor-submissions/": {
       "post": {
         "tags": [
@@ -7599,6 +7569,35 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/site-banner": {
+      "get": {
+        "tags": [
+          "site-banner"
+        ],
+        "summary": "Get Site Banner Endpoint",
+        "description": "Public: the banner shown above the navigation, or nothing when disabled.",
+        "operationId": "get_site_banner_endpoint_site_banner_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SiteBannerResponse"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
               }
             }
           }
@@ -15795,30 +15794,6 @@
         ],
         "title": "SendOtpRequest"
       },
-      "SiteBannerResponse": {
-        "properties": {
-          "message_translation_key": {
-            "type": "string",
-            "title": "Message Translation Key"
-          },
-          "cta_label_translation_key": {
-            "type": "string",
-            "title": "Cta Label Translation Key"
-          },
-          "cta_href": {
-            "type": "string",
-            "title": "Cta Href"
-          }
-        },
-        "type": "object",
-        "required": [
-          "message_translation_key",
-          "cta_label_translation_key",
-          "cta_href"
-        ],
-        "title": "SiteBannerResponse",
-        "description": "The single site-wide banner, as shown above the navigation."
-      },
       "SponsorSubmissionCreate": {
         "properties": {
           "email": {
@@ -16603,6 +16578,27 @@
           "token"
         ],
         "title": "VerifyOtpRequest"
+      },
+      "SiteBannerResponse": {
+        "type": "object",
+        "title": "SiteBannerResponse",
+        "description": "The single site-wide banner, as shown above the navigation.",
+        "required": [
+          "message_translation_key",
+          "cta_label_translation_key",
+          "cta_href"
+        ],
+        "properties": {
+          "message_translation_key": {
+            "type": "string"
+          },
+          "cta_label_translation_key": {
+            "type": "string"
+          },
+          "cta_href": {
+            "type": "string"
+          }
+        }
       }
     },
     "securitySchemes": {

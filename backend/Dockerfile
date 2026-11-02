@@ -1,4 +1,39 @@
-FROM python:3.12-slim AS build
+# The Rust API server (rust/, binary wat2do-api) answers on port 8000 and runs
+# the FastAPI app behind it on loopback until every router is ported.
+
+FROM rust:1-slim-trixie AS rust-chef
+
+# The crate's ingestion half links BoringSSL (wreq) and aws-lc, which build with
+# cmake, a C++ compiler and libclang; the API binary itself does not use them.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    clang \
+    cmake \
+    g++ \
+    libclang-dev \
+    make \
+    perl \
+    && rm -rf /var/lib/apt/lists/* \
+    && cargo install cargo-chef --locked --version 0.1.78
+
+WORKDIR /src/rust
+
+FROM rust-chef AS rust-plan
+COPY rust/ .
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM rust-chef AS rust-build
+# Dependencies are their own layer, rebuilt only when Cargo.lock changes.
+COPY --from=rust-plan /src/rust/recipe.json recipe.json
+RUN cargo chef cook --release --locked --bin wat2do-api --recipe-path recipe.json
+COPY rust/ .
+# Files the crate embeds at build time.
+COPY backend/controlbox/ /src/backend/controlbox/
+COPY backend/schemas/event_discovery_fields.json /src/backend/schemas/event_discovery_fields.json
+COPY backend/services/ingestion/prompt.md /src/backend/services/ingestion/prompt.md
+RUN cargo build --release --locked --bin wat2do-api \
+    && cp target/release/wat2do-api /usr/local/bin/wat2do-api
+
+FROM python:3.12-slim-trixie AS build
 
 WORKDIR /app
 
@@ -9,7 +44,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/requirements.txt .
 RUN pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt
 
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim-trixie AS runtime
 
 WORKDIR /app
 
@@ -24,10 +59,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && groupadd --system wat2do \
     && useradd --system --gid wat2do --create-home wat2do
 
+COPY --from=rust-build /usr/local/bin/wat2do-api /usr/local/bin/wat2do-api
 COPY --chown=wat2do:wat2do backend/ .
 
 USER wat2do
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+# PID 1: serves port 8000, runs uvicorn on loopback, and exits when it exits.
+CMD ["wat2do-api", "serve"]

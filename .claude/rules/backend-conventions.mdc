@@ -12,7 +12,11 @@ alwaysApply: false
 
 ## Stack
 
-- **FastAPI** for the HTTP layer.
+- **Rust in front, FastAPI behind.** `wat2do-api` (`rust/src/api`) serves port
+  8000, answers the routes already ported to Rust and proxies the rest to this
+  FastAPI app on loopback. Port a router there instead of adding to it in
+  Python when the change is a rewrite; `docs/rust_api.md` is the guide.
+- **FastAPI** for the HTTP layer of every route not yet ported.
 - **PostgreSQL behind our own PostgREST data API** as the data layer.
   Accessed via the synchronous Python client from `core.database.get_sb()`.
 - **No ORM.** No SQLAlchemy, no Alembic. Schema lives in
@@ -87,8 +91,8 @@ ORM.
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload          # dev server
 pytest -q                          # run tests
+# make dev (repo root) runs wat2do-api serve --reload, which starts uvicorn behind it
 ```
 
 Migrations: name a new file `backend/database/migrations/<yyyymmddhhmmss>_<lowercase_name>.sql`,

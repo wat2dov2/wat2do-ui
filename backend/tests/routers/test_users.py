@@ -241,12 +241,3 @@ def test_update_user_role_rejects_invalid_role(admin_client):
         json={"role": "superuser"},
     )
     assert resp.status_code == 422
-
-
-# ── Health check ─────────────────────────────────────────────────────
-
-
-def test_health_check(client):
-    response = client.get("/health")
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok"}

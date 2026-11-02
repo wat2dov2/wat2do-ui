@@ -105,9 +105,9 @@ The measured duration includes network latency between the workstation and produ
 
 ## Coverage check
 
-Every run calls FastAPI's `app.openapi()` from the local checkout and compares its route classifications with that runtime-generated schema.
+Every run calls `app.openapi()` from the local checkout and compares its route classifications with that runtime-generated schema.
 Unclassified or stale routes stop the run before it sends an OTP or begins authentication.
-FastAPI includes every GET route registered on the application when the schema is generated.
+The schema includes every GET route registered on the FastAPI application plus every route the Rust API server serves (`backend/core/rust_openapi.json`, merged by `backend/core/openapi.py`).
 This includes parameterized GET routes and GET routes added through included routers.
 It does not prove that the deployed production application is running the same commit as the local checkout.
 Confirm deployment alignment before calling the coverage production-complete.
