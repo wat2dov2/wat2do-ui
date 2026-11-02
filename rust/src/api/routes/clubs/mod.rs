@@ -487,7 +487,7 @@ pub async fn list_clubs_for_review(
         filters.resource,
         &format!(
             "SELECT entries.position, {} FROM entries \
-         JOIN public.clubs c ON c.id::text = entries.id {CLUB_JOINS}",
+         JOIN public.clubs c ON c.id = entries.id::integer {CLUB_JOINS}",
             club_columns(Computed::FULL)
         ),
     );

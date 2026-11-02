@@ -149,7 +149,7 @@ pub async fn list_claims(
               FROM public.clubs c LEFT JOIN public.schools s ON s.id = c.school_id \
               WHERE c.id = cc.club_id) AS clubs, \
              (SELECT to_jsonb(u) FROM public.users u WHERE u.id = cc.user_id) AS users \
-         FROM entries JOIN public.club_claims cc ON cc.id::text = entries.id"
+         FROM entries JOIN public.club_claims cc ON cc.id = entries.id::uuid"
         ),
     );
     let rows = read_with_retry(|| {
