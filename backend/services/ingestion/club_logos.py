@@ -41,7 +41,9 @@ class ClubLogos:
         self._state_path = state_path
         self._read_at: dict[str, float] = _load(state_path)
         self._waiting: dict[str, list[dict]] = {}
-        self._listed_at = 0.0
+        # -inf, not 0.0: the first listing must happen even when time.monotonic() has
+        # not yet passed retry_backoff_seconds (it can be small on a freshly booted host).
+        self._listed_at = float("-inf")
 
     def fill_next(self) -> bool:
         """Read one handle's profile; False when none is due."""
