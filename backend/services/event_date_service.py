@@ -69,23 +69,3 @@ def list_for_events(event_ids: list[int]) -> dict[int, list[OccurrenceResponse]]
             if eid in grouped:
                 grouped[eid].append(OccurrenceResponse.model_validate(d))
     return grouped
-
-
-def list_by_ids(occurrence_ids: list[str]) -> list[OccurrenceResponse]:
-    """Fetch only the requested occurrences, chunked for PostgREST URL limits."""
-    unique_ids = list(dict.fromkeys(occurrence_ids))
-    if not unique_ids:
-        return []
-
-    occurrences: list[OccurrenceResponse] = []
-    for chunk in batched(unique_ids, 500):
-        response = (
-            get_sb()
-            .table(EVENT_DATES)
-            .select(_OCCURRENCE_COLUMNS)
-            .in_("id", chunk)
-            .order("dtstart_utc")
-            .execute()
-        )
-        occurrences.extend(OccurrenceResponse.model_validate(row) for row in (response.data or []))
-    return occurrences

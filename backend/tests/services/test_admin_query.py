@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 
 from core.tables import ADMIN_LIST_ENTRIES, EVENT_SUBMISSIONS
-from services import admin_query, report_service, submission_service
+from services import admin_query, submission_service
 
 
 @pytest.mark.parametrize(
@@ -68,31 +68,6 @@ def test_search_preserves_email_punctuation(fake_sb, patch_sb):
     fake_sb.ilike.assert_called_once_with("search_text", "%person.name@example.com%")
 
 
-def test_report_page_carries_event_title_and_school(monkeypatch):
-    monkeypatch.setattr(
-        admin_query,
-        "load_page_rows",
-        Mock(
-            return_value=(
-                [
-                    {
-                        "id": "report-1",
-                        "event_id": 7,
-                        "user_id": None,
-                        "reason": "Wrong location",
-                        "status": "pending",
-                        "reported_at": "2026-09-14T12:00:00Z",
-                        "events": {"title": "Laval Dance", "school_record": {"slug": "ulaval"}},
-                    }
-                ],
-                21,
-            )
-        ),
-    )
-    items, total = report_service.get_reports(offset=20, limit=20, school="ulaval")
-    assert total == 21
-    assert items[0].event_title == "Laval Dance"
-    assert items[0].school == "ulaval"
 
 
 def test_submission_page_batches_club_names_without_full_club_list(fake_sb, patch_sb, monkeypatch):

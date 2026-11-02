@@ -36,3 +36,17 @@ pub const PROMOTER_TOS_REQUIRED: &str = "You must accept the promoter terms to e
 pub const USER_HAS_PAYOUTS: &str = "Users with payout records cannot be deleted";
 pub const USER_HAS_PROMOTER_POSTERS: &str = "Users with promoter posters cannot be deleted";
 pub const USER_HAS_PAYOUT_REVIEWS: &str = "Users with payout review records cannot be deleted";
+
+// Events (`api/events`, `api/routes/events.rs` and its neighbours).
+pub const EVENT_NOT_FOUND: &str = "Event not found";
+pub const REPORT_NOT_FOUND: &str = "Report not found";
+pub const CALENDAR_FEED_NOT_FOUND: &str = "Calendar feed not found";
+pub const CLUB_EVENT_CREATION_REQUIRED: &str =
+    "Only approved club owners can create events for their club";
+pub const INVALID_STATUS_TRANSITION: &str = "Invalid status transition";
+pub const EVENT_ALREADY_PAST: &str = "Event has already ended and cannot be modified";
+pub const GOING_EVENTS_CAP_REACHED: &str = "Maximum going events limit reached";
+pub const INVALID_EVENT_OCCURRENCE: &str = "One or more occurrences do not belong to this event";
+pub const OCCURRENCE_NOT_SELECTABLE: &str = "One or more occurrences can no longer be selected";
+pub const CLUB_PENDING_REVIEW: &str =
+    "This club is still awaiting review. You can publish events once it is approved.";

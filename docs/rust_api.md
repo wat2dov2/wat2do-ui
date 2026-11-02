@@ -15,8 +15,9 @@ A request from a peer uvicorn would not have trusted reaches Python with `X-Forw
 
 `/health` answers 200 only while the Python app also answers, so the ECS container health check (unchanged, `python -c ... /health`) covers both processes.
 If uvicorn exits, `wat2do-api` exits non-zero and ECS replaces the task.
-On SIGTERM it stops accepting connections, finishes in-flight requests (`shutdown_drain_seconds`, 14), then sends SIGTERM to uvicorn (whose lifespan shutdown stops the map-location thread), gives it `python_shutdown_seconds` (15) and exits 0, inside ECS's 30 second stop timeout.
-The Python app still owns the map-location thread (`main.py` lifespan) until that is ported.
+On SIGTERM it stops accepting connections, finishes in-flight requests (`shutdown_drain_seconds`, 14), then sends SIGTERM to uvicorn, gives it `python_shutdown_seconds` (15) and exits 0, inside ECS's 30 second stop timeout.
+Each server also runs the map location worker (`rust/src/map_locations.rs`): it looks up waiting `map_locations` rows with Nominatim, and `claim_map_location` lets only one lookup be outstanding across every server, so the app keeps to Nominatim's one request a second.
+SIGTERM stops it with the server; a lookup cut short leaves its claim to lapse, and the place is tried again.
 
 Rust routes behave exactly like FastAPI routes:
 
@@ -64,6 +65,7 @@ Port one whole router (every path under its prefix) per change, so no path is se
    | PostgREST table reads through `get_sb()` | SQL on `state.db`; wrap reads in `db::read_with_retry` |
 
    Mirror any new constant in `rust/src/constants.rs` and extend `backend/tests/test_rust_constants.py`.
+   When the router's schemas are shared with routes still in Python (or the generated types must not change), commit FastAPI's operations and schemas for its paths as `rust/src/api/routes/<router>_openapi.json`, cut from `frontend/src/shared/generated/openapi.json` before the Python router is deleted, and list it in `api/contract.rs`: it replaces what utoipa generated, keeps FastAPI's method order for 405 `Allow` headers, and maps a suffixed path such as `/calendar/feed/{token}.ics` to the axum route `/calendar/feed/{token}`.
 5. Port the Python tests to Rust tests next to the code, plus the edge cases you find.
 6. Regenerate the route inventory: `cargo run --bin wat2do-api -- openapi > ../backend/core/rust_openapi.json` in `rust/` (a Rust test fails while it is stale), then `npm run generate-types` in `frontend/` and check that `api-types.ts` only moves.
 7. Run the parity harness (below) against production, read-only, with a reference checkout that still has the Python router.
@@ -93,7 +95,7 @@ Keep real ids and emails out of committed case files: commit placeholders (as in
 Only GET, HEAD and OPTIONS cases run unless a case is marked `"safe": true` or `--allow-writes` is given, and `--allow-writes` only runs when `DATABASE_URL` and `DATA_API_URL` are local.
 The Rust side uses at most 2 connections, and each runs `SET default_transaction_read_only = on`, `statement_timeout = '10s'` and `idle_in_transaction_session_timeout = '15s'`, and checks the first with `SHOW` before any query.
 The FastAPI side cannot be made read-only through PostgREST, so never mark a case safe if its Python handler could write.
-The FastAPI lifespan, and with it the map-location thread, is never started.
+The FastAPI lifespan is never started.
 
 Run it against production with the Python router still in a reference checkout.
 Production runs go one at a time (take the shared `parity.lock` first), with at most 20 iterations and no retry of a failed run; stop at the first timeout.
@@ -111,7 +113,10 @@ export ENVIRONMENT=production \
   --python-backend /tmp/wat2do-ref/backend --rust-binary ../rust/target/release/wat2do-api
 ```
 
-`--iterations 1000` also reports per-request latency for both stacks, and `--json-out` keeps both sides' responses.
+`--iterations 1000` also reports per-request latency for both stacks (mean, median, p90, p95, min, max), and `--json-out` keeps both sides' responses.
+
+Write routes are never run against production, not even in a rolled-back transaction.
+Prove them with Rust tests, plus a read-only replay of the write cases (no `--allow-writes`): each handler runs its reads for real and must stop at its first write statement with Postgres' 25006 (read-only transaction), which the API reports as a 502.
 Every case must print `SAME`; explain any accepted difference in the PR.
 Remove the reference worktree afterwards.
 

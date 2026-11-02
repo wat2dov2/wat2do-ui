@@ -178,7 +178,7 @@ async fn preflights_for_rust_routes_are_answered_here() {
 
 #[tokio::test]
 async fn other_paths_are_not_served_by_rust() {
-    let reply = send(state(None), get("/events/"), "testclient").await;
+    let reply = send(state(None), get("/python-only/"), "testclient").await;
     assert!(!reply.rust);
 }
 
@@ -295,14 +295,14 @@ async fn untrusted_peers_are_presented_to_python_as_the_client() {
     let port = start_python().await;
     let upstream = Arc::new(Upstream::new(port, Duration::from_secs(5)));
     let request = Request::builder()
-        .uri("/events/?x=%20")
+        .uri("/python-only/?x=%20")
         .header("x-forwarded-for", "1.2.3.4")
         .header("x-forwarded-proto", "https")
         .body(Body::empty())
         .unwrap();
     let reply = send(state(Some(upstream)), request, "172.17.0.5").await;
     let echo: Value = serde_json::from_slice(&reply.body).unwrap();
-    assert_eq!(echo["uri"], "/events/?x=%20");
+    assert_eq!(echo["uri"], "/python-only/?x=%20");
     // uvicorn on loopback trusts these headers, so they now say what it saw before.
     assert_eq!(echoed_header(&echo, "x-forwarded-for"), ["172.17.0.5"]);
     assert!(echoed_header(&echo, "x-forwarded-proto").is_empty());
@@ -311,6 +311,132 @@ async fn untrusted_peers_are_presented_to_python_as_the_client() {
 #[tokio::test]
 async fn an_unreachable_python_app_is_a_502() {
     let upstream = Arc::new(Upstream::new(9, Duration::from_secs(1)));
-    let reply = send(state(Some(upstream)), get("/events/"), "127.0.0.1").await;
+    let reply = send(state(Some(upstream)), get("/python-only/"), "127.0.0.1").await;
     assert_eq!(reply.status, StatusCode::BAD_GATEWAY);
+}
+
+fn request(method: Method, path: &str, body: Option<Value>) -> Request<Body> {
+    let builder = Request::builder()
+        .method(method)
+        .uri(path)
+        .header(header::HOST, "testserver");
+    match body {
+        Some(json) => builder
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(json.to_string()))
+            .unwrap(),
+        None => builder.body(Body::empty()).unwrap(),
+    }
+}
+
+#[tokio::test]
+async fn event_routes_need_a_signed_in_user_before_anything_else() {
+    // tests/routers/test_events.py, test_going_events.py, test_v1_saved_events.py,
+    // test_reports.py, test_calendar.py: anonymous callers get 401 (no database needed).
+    let occurrence_body = json!({"title": "Test", "location": "Here", "club_id": 7});
+    for (method, path, body) in [
+        (Method::POST, "/events/", Some(occurrence_body.clone())),
+        (Method::GET, "/events/admin", None),
+        (Method::PATCH, "/events/1", Some(json!({"title": "x"}))),
+        (Method::DELETE, "/events/1", None),
+        (Method::GET, "/going-events/", None),
+        (
+            Method::PUT,
+            "/going-events/42",
+            Some(json!({"occurrence_ids": []})),
+        ),
+        (Method::DELETE, "/going-events/42", None),
+        (Method::GET, "/v1/saved-events/", None),
+        (Method::PUT, "/v1/saved-events/42", None),
+        (Method::GET, "/reports/", None),
+        (
+            Method::PATCH,
+            "/reports/x",
+            Some(json!({"status": "resolved"})),
+        ),
+        (Method::GET, "/calendar/token", None),
+        (Method::POST, "/calendar/token/regenerate", None),
+    ] {
+        let reply = send(
+            state(None),
+            request(method.clone(), path, body),
+            "testclient",
+        )
+        .await;
+        assert_eq!(reply.status, StatusCode::UNAUTHORIZED, "{method} {path}");
+        assert_eq!(reply.headers[header::WWW_AUTHENTICATE], "Bearer");
+        assert!(reply.rust, "{method} {path}");
+    }
+}
+
+#[tokio::test]
+async fn event_routes_validate_parameters_like_fastapi() {
+    // test_get_event_stats_requires_school
+    let reply = send(state(None), get("/events/stats"), "testclient").await;
+    assert_eq!(reply.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(
+        serde_json::from_slice::<Value>(&reply.body).unwrap(),
+        json!({"detail": [{"type": "missing", "loc": ["query", "school"], "msg": "Field required", "input": null}]})
+    );
+    let reply = send(state(None), get("/events/abc"), "testclient").await;
+    assert_eq!(reply.status, StatusCode::UNPROCESSABLE_ENTITY);
+    let reply = send(
+        state(None),
+        get("/events/?page_size=0&sort_order=up"),
+        "testclient",
+    )
+    .await;
+    let detail = serde_json::from_slice::<Value>(&reply.body).unwrap();
+    assert_eq!(detail["detail"][0]["loc"], json!(["query", "page_size"]));
+    assert_eq!(detail["detail"][1]["loc"], json!(["query", "sort_order"]));
+    // Anonymous interaction batches are validated before anything is recorded.
+    let reply = send(
+        state(None),
+        request(
+            Method::POST,
+            "/interactions/batch",
+            Some(json!({"session_id": "", "interactions": "x"})),
+        ),
+        "testclient",
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::UNPROCESSABLE_ENTITY);
+}
+
+#[tokio::test]
+async fn method_errors_name_fastapis_first_registered_method() {
+    // `/reports/` registered POST before GET.
+    let reply = send(
+        state(None),
+        request(Method::PATCH, "/reports/", None),
+        "testclient",
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::METHOD_NOT_ALLOWED);
+    assert_eq!(reply.headers[header::ALLOW], "POST");
+    let reply = send(
+        state(None),
+        request(Method::POST, "/going-events/1", None),
+        "testclient",
+    )
+    .await;
+    assert_eq!(reply.headers[header::ALLOW], "PUT");
+    let reply = send(
+        state(None),
+        request(Method::HEAD, "/events/", None),
+        "testclient",
+    )
+    .await;
+    assert_eq!(reply.headers[header::ALLOW], "GET");
+}
+
+#[tokio::test]
+async fn calendar_paths_without_the_ics_suffix_go_to_python() {
+    let reply = send(state(None), get("/calendar/feed/abc"), "testclient").await;
+    assert!(!reply.rust);
+    let reply = send(state(None), get("/calendar/feed/.ics"), "testclient").await;
+    assert!(!reply.rust);
+    // An encoded slash is a second segment, as in Starlette: no Rust route.
+    let reply = send(state(None), get("/calendar/feed/a%2Fb.ics"), "testclient").await;
+    assert!(!reply.rust);
 }

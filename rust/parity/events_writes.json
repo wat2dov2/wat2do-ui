@@ -1,0 +1,283 @@
+[
+  {
+    "name": "calendar token (none yet)",
+    "path": "/calendar/token",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "calendar regenerate",
+    "method": "POST",
+    "path": "/calendar/token/regenerate",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "create event as admin",
+    "method": "POST",
+    "path": "/events/",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "json": {
+      "title": "Parity rollback night",
+      "location": "SLC Great Hall",
+      "map_location": "Student Life Centre",
+      "occurrences": [
+        {
+          "dtstart_utc": "2026-12-01T23:00:00Z",
+          "dtend_utc": "2026-12-02T01:00:00Z",
+          "duration": null,
+          "tz": "America/Toronto"
+        }
+      ],
+      "club_id": 7004,
+      "price": 5,
+      "food": [
+        "Pizza"
+      ],
+      "category": "Business",
+      "source_url": " https://example.com/x ",
+      "campus_season_ids": []
+    }
+  },
+  {
+    "name": "create event as user refused",
+    "method": "POST",
+    "path": "/events/",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "json": {
+      "title": "x",
+      "location": "y",
+      "occurrences": [
+        {
+          "dtstart_utc": "2026-12-01T23:00:00Z",
+          "dtend_utc": "2026-12-02T01:00:00Z",
+          "duration": null,
+          "tz": "America/Toronto"
+        }
+      ],
+      "club_id": 7004
+    }
+  },
+  {
+    "name": "update event title",
+    "method": "PATCH",
+    "path": "/events/43024",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "json": {
+      "title": "Parity updated title",
+      "food": null
+    }
+  },
+  {
+    "name": "read updated event",
+    "path": "/events/43024"
+  },
+  {
+    "name": "update as user refused",
+    "method": "PATCH",
+    "path": "/events/43024",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "json": {
+      "title": "nope"
+    }
+  },
+  {
+    "name": "going on",
+    "method": "PUT",
+    "path": "/going-events/43024",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "json": {
+      "occurrence_ids": [
+        "1b58acd9-2c6a-4c41-a709-bceafa1c8a61"
+      ]
+    }
+  },
+  {
+    "name": "going list after",
+    "path": "/going-events/",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "going off",
+    "method": "DELETE",
+    "path": "/going-events/43024",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "save event",
+    "method": "PUT",
+    "path": "/v1/saved-events/45161",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "save again",
+    "method": "PUT",
+    "path": "/v1/saved-events/45161",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "saved list",
+    "path": "/v1/saved-events/",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "unsave",
+    "method": "DELETE",
+    "path": "/v1/saved-events/45161",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "save missing event",
+    "method": "PUT",
+    "path": "/v1/saved-events/999999999",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "interactions anonymous",
+    "method": "POST",
+    "path": "/interactions/batch",
+    "json": {
+      "session_id": "parity-session",
+      "interactions": [
+        {
+          "event_id": 43024,
+          "interaction_type": "click"
+        },
+        {
+          "event_id": 43024,
+          "interaction_type": "going"
+        }
+      ]
+    }
+  },
+  {
+    "name": "interactions user",
+    "method": "POST",
+    "path": "/interactions/batch",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "json": {
+      "session_id": "parity-session",
+      "interactions": [
+        {
+          "event_id": 43024,
+          "interaction_type": "detail_view",
+          "metadata": {
+            "from": "parity"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "report event",
+    "method": "POST",
+    "path": "/reports/",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "json": {
+      "event_id": 43024,
+      "reason": "Parity check"
+    }
+  },
+  {
+    "name": "report missing event",
+    "method": "POST",
+    "path": "/reports/",
+    "json": {
+      "event_id": 999999999,
+      "reason": "x"
+    }
+  },
+  {
+    "name": "delete event",
+    "method": "DELETE",
+    "path": "/events/45161",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "deleted event is gone",
+    "path": "/events/45161"
+  }
+]

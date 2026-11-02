@@ -212,11 +212,18 @@ pub struct NotificationRetry {
     pub max_reruns_per_run: i64,
 }
 
-/// The campus seasons and building codes in `controlbox/event_discovery.json`.
+/// The campus seasons, map views and map geocoding in `controlbox/event_discovery.json`.
 #[derive(Debug, Deserialize)]
 pub struct EventDiscovery {
     pub campus_seasons: CampusSeasons,
     pub map_geocoding: MapGeocoding,
+    pub views: EventViews,
+}
+
+/// The map views' campus centers (`[longitude, latitude]` per school).
+#[derive(Debug, Deserialize)]
+pub struct EventViews {
+    pub map_campus_centers: HashMap<String, (f64, f64)>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -291,10 +298,43 @@ pub struct Positions {
     pub undated_visibility_months: u32,
 }
 
+/// Map location lookups with OpenStreetMap's Nominatim (`map_location_service`).
 #[derive(Debug, Deserialize)]
 pub struct MapGeocoding {
+    pub search_url: String,
+    pub user_agent: String,
+    pub request_interval_seconds: f64,
+    pub request_timeout_seconds: f64,
+    pub search_radius_degrees: f64,
+    pub candidate_count: u32,
+    pub not_found_retry_days: i64,
+    pub claim_lease_seconds: i32,
+    pub idle_poll_seconds: f64,
+    pub feed_refresh_seconds: f64,
+    /// Per school, building name to `[longitude, latitude]`, in the file's order.
+    pub known_places: HashMap<String, IndexMap<String, (f64, f64)>>,
     /// Per school, building code to building name, in the file's order.
     pub building_codes: HashMap<String, IndexMap<String, String>>,
+}
+
+/// `controlbox/public_attendance.json`, every field.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PublicAttendance {
+    pub maximum_display_names: usize,
+}
+
+/// `controlbox/interaction_ingestion.json`, every field.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InteractionIngestion {
+    pub default_query_limit: usize,
+    pub maximum_batch_size: usize,
+    pub maximum_metadata_bytes: usize,
+    pub maximum_duplicates_per_window: usize,
+    pub deduplication_window_minutes: i64,
+    pub maximum_user_interactions_per_window: usize,
+    pub maximum_anonymous_clicks_per_ip_per_event: usize,
 }
 
 /// `controlbox/morning_email.json`, every field.
@@ -469,6 +509,18 @@ pub static NOTIFICATION_DEFAULTS: LazyLock<NotificationDefaults> = LazyLock::new
         include_str!("../../backend/controlbox/notification_defaults.json"),
     )
 });
+pub static PUBLIC_ATTENDANCE: LazyLock<PublicAttendance> = LazyLock::new(|| {
+    parse(
+        "public_attendance",
+        include_str!("../../backend/controlbox/public_attendance.json"),
+    )
+});
+pub static INTERACTION_INGESTION: LazyLock<InteractionIngestion> = LazyLock::new(|| {
+    parse(
+        "interaction_ingestion",
+        include_str!("../../backend/controlbox/interaction_ingestion.json"),
+    )
+});
 
 /// `controlbox/instagram_browser.json`. A test may replace it for itself and the
 /// threads the code under test starts (see [`InheritedControls`]).
@@ -584,5 +636,7 @@ mod tests {
         assert!(!SCRAPING.instagram_web_app_id.is_empty());
         assert!(INSTAGRAM_DIGEST.maximum_pages > 0);
         assert!(NOTIFICATION_RETRY.max_reruns_per_run > 0);
+        assert!(PUBLIC_ATTENDANCE.maximum_display_names > 0);
+        assert!(INTERACTION_INGESTION.maximum_batch_size > 0);
     }
 }

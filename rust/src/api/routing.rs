@@ -105,7 +105,8 @@ pub fn prepare(mut request: Request) -> Request {
 /// (it reports the first route registered for the path).
 static FIRST_METHODS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
     let api = super::openapi();
-    api.paths
+    let mut first: HashMap<String, String> = api
+        .paths
         .paths
         .iter()
         .filter_map(|(path, item)| {
@@ -122,7 +123,14 @@ static FIRST_METHODS: LazyLock<HashMap<String, String>> = LazyLock::new(|| {
             let first = operations.iter().find(|(_, present)| *present)?.0;
             Some((path.clone(), first.to_owned()))
         })
-        .collect()
+        .collect();
+    // Ported routes keep FastAPI's registration order.
+    for (path, methods) in super::contract::method_orders() {
+        if let Some(method) = methods.first() {
+            first.insert(path, method.clone());
+        }
+    }
+    first
 });
 
 fn method_not_allowed(path: Option<&MatchedPath>) -> Response {

@@ -1,0 +1,272 @@
+[
+ {
+  "events": [],
+  "ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//wat2do//calendar feed//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:wat2do\r\nEND:VCALENDAR\r\n"
+ },
+ {
+  "events": [
+   {
+    "id": 1,
+    "title": "Event 1",
+    "location": "SLC",
+    "club": "UW Club",
+    "description": null,
+    "school": "uwaterloo",
+    "added_at": "2026-10-01 05:06:07.891011+00:00",
+    "occurrences": [
+     {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "event_id": 1,
+      "dtstart_utc": "2026-11-02 18:30:00+00:00",
+      "dtend_utc": "2026-11-02 20:30:00+00:00",
+      "duration": null,
+      "tz": null
+     }
+    ]
+   }
+  ],
+  "ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//wat2do//calendar feed//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:wat2do\r\nBEGIN:VEVENT\r\nSUMMARY:Event 1\r\nDTSTART;TZID=America/Toronto:20261102T133000\r\nDTEND;TZID=America/Toronto:20261102T153000\r\nDTSTAMP:20261102T010203Z\r\nUID:event-1-00000000-0000-0000-0000-000000000001@wat2do.app\r\nSEQUENCE:0\r\nDESCRIPTION:UW Club\\n\\nhttps://wat2do.io/events/1\r\nLAST-MODIFIED:20261001T050607Z\r\nLOCATION:SLC\r\nURL:https://wat2do.io/events/1\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+ },
+ {
+  "events": [
+   {
+    "id": 2,
+    "title": "Event 2",
+    "location": "SLC",
+    "club": "UW Club",
+    "description": "Line one\nLine two\r\nLine three\rend; with, commas \\ and \\N literal",
+    "school": "uwaterloo",
+    "added_at": "2026-10-01 05:06:07.891011+00:00",
+    "occurrences": [
+     {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "event_id": 1,
+      "dtstart_utc": "2026-11-02 18:30:00+00:00",
+      "dtend_utc": null,
+      "duration": null,
+      "tz": null
+     }
+    ]
+   }
+  ],
+  "ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//wat2do//calendar feed//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:wat2do\r\nBEGIN:VEVENT\r\nSUMMARY:Event 2\r\nDTSTART;TZID=America/Toronto:20261102T133000\r\nDTSTAMP:20261102T010203Z\r\nUID:event-2-00000000-0000-0000-0000-000000000002@wat2do.app\r\nSEQUENCE:0\r\nDESCRIPTION:UW Club\\n\\nLine one\\nLine two\\nLine three\\nend\\; with\\, commas\r\n  \\\\ and \\n literal\\n\\nhttps://wat2do.io/events/2\r\nLAST-MODIFIED:20261001T050607Z\r\nLOCATION:SLC\r\nURL:https://wat2do.io/events/2\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+ },
+ {
+  "events": [
+   {
+    "id": 3,
+    "title": "Ünïcödé 😀 éééééééééééééééééééééééééééééééééééééééé😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+    "location": "Room 1; Bldg, 2",
+    "club": "UW Club",
+    "description": null,
+    "school": "uwaterloo",
+    "added_at": "2026-10-01 05:06:07.891011+00:00",
+    "occurrences": [
+     {
+      "id": "00000000-0000-0000-0000-000000000003",
+      "event_id": 1,
+      "dtstart_utc": "2026-11-02 18:30:00+00:00",
+      "dtend_utc": "2026-11-02 20:00:00.123456+00:00",
+      "duration": null,
+      "tz": null
+     }
+    ]
+   }
+  ],
+  "ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//wat2do//calendar feed//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:wat2do\r\nBEGIN:VEVENT\r\nSUMMARY:Ünïcödé 😀 éééééééééééééééééééééééé\r\n éééééééééééééééé😀😀😀😀😀😀😀😀😀😀\r\n 😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\r\n 😀😀\r\nDTSTART;TZID=America/Toronto:20261102T133000\r\nDTEND;TZID=America/Toronto:20261102T150000\r\nDTSTAMP:20261102T010203Z\r\nUID:event-3-00000000-0000-0000-0000-000000000003@wat2do.app\r\nSEQUENCE:0\r\nDESCRIPTION:UW Club\\n\\nhttps://wat2do.io/events/3\r\nLAST-MODIFIED:20261001T050607Z\r\nLOCATION:Room 1\\; Bldg\\, 2\r\nURL:https://wat2do.io/events/3\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+ },
+ {
+  "events": [
+   {
+    "id": 4,
+    "title": "Event 4",
+    "location": "SLC",
+    "club": "UW Club",
+    "description": null,
+    "school": "nonexistent-school",
+    "added_at": "2026-10-01 05:06:07.891011+00:00",
+    "occurrences": [
+     {
+      "id": "00000000-0000-0000-0000-000000000004",
+      "event_id": 1,
+      "dtstart_utc": "2026-11-02 18:30:00+00:00",
+      "dtend_utc": null,
+      "duration": null,
+      "tz": null
+     }
+    ]
+   }
+  ],
+  "ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//wat2do//calendar feed//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:wat2do\r\nBEGIN:VEVENT\r\nSUMMARY:Event 4\r\nDTSTART:20261102T183000Z\r\nDTSTAMP:20261102T010203Z\r\nUID:event-4-00000000-0000-0000-0000-000000000004@wat2do.app\r\nSEQUENCE:0\r\nDESCRIPTION:UW Club\\n\\nhttps://wat2do.io/events/4\r\nLAST-MODIFIED:20261001T050607Z\r\nLOCATION:SLC\r\nURL:https://wat2do.io/events/4\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+ },
+ {
+  "events": [
+   {
+    "id": 5,
+    "title": "Event 5",
+    "location": "SLC",
+    "club": null,
+    "description": "Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text Long text ",
+    "school": null,
+    "added_at": "2026-10-01 05:06:07.891011+00:00",
+    "occurrences": [
+     {
+      "id": "00000000-0000-0000-0000-000000000005",
+      "event_id": 1,
+      "dtstart_utc": "2026-11-02 18:30:00+00:00",
+      "dtend_utc": null,
+      "duration": null,
+      "tz": null
+     },
+     {
+      "id": "00000000-0000-0000-0000-000000000006",
+      "event_id": 1,
+      "dtstart_utc": "2026-11-09 18:30:00+00:00",
+      "dtend_utc": null,
+      "duration": null,
+      "tz": null
+     }
+    ]
+   }
+  ],
+  "ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//wat2do//calendar feed//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:wat2do\r\nBEGIN:VEVENT\r\nSUMMARY:Event 5\r\nDTSTART:20261102T183000Z\r\nDTSTAMP:20261102T010203Z\r\nUID:event-5-00000000-0000-0000-0000-000000000005@wat2do.app\r\nSEQUENCE:0\r\nDESCRIPTION:Long text Long text Long text Long text Long text Long text Lo\r\n ng text Long text Long text Long text Long text Long text Long text Long t\r\n ext Long text Long text Long text Long text Long text Long text Long text \r\n Long text Long text Long text Long text Long text Long text Long text Long\r\n  text Long text Long text Long text Long text Long text Long text Long tex\r\n t Long text Long text Long text Long text \\n\\nhttps://wat2do.io/events/5\r\nLAST-MODIFIED:20261001T050607Z\r\nLOCATION:SLC\r\nURL:https://wat2do.io/events/5\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nSUMMARY:Event 5\r\nDTSTART:20261109T183000Z\r\nDTSTAMP:20261102T010203Z\r\nUID:event-5-00000000-0000-0000-0000-000000000006@wat2do.app\r\nSEQUENCE:0\r\nDESCRIPTION:Long text Long text Long text Long text Long text Long text Lo\r\n ng text Long text Long text Long text Long text Long text Long text Long t\r\n ext Long text Long text Long text Long text Long text Long text Long text \r\n Long text Long text Long text Long text Long text Long text Long text Long\r\n  text Long text Long text Long text Long text Long text Long text Long tex\r\n t Long text Long text Long text Long text \\n\\nhttps://wat2do.io/events/5\r\nLAST-MODIFIED:20261001T050607Z\r\nLOCATION:SLC\r\nURL:https://wat2do.io/events/5\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+ },
+ {
+  "events": [
+   {
+    "id": 6,
+    "title": "Event 6",
+    "location": "SLC",
+    "club": "UW Club",
+    "description": null,
+    "school": "ubc",
+    "added_at": "2026-10-01 05:06:07.891011+00:00",
+    "occurrences": [
+     {
+      "id": "00000000-0000-0000-0000-000000000007",
+      "event_id": 1,
+      "dtstart_utc": "2026-03-08 10:00:00+00:00",
+      "dtend_utc": null,
+      "duration": null,
+      "tz": null
+     },
+     {
+      "id": "00000000-0000-0000-0000-000000000008",
+      "event_id": 1,
+      "dtstart_utc": "2026-11-01 09:30:00+00:00",
+      "dtend_utc": null,
+      "duration": null,
+      "tz": null
+     }
+    ]
+   }
+  ],
+  "ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//wat2do//calendar feed//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:wat2do\r\nBEGIN:VEVENT\r\nSUMMARY:Event 6\r\nDTSTART;TZID=America/Vancouver:20260308T030000\r\nDTSTAMP:20261102T010203Z\r\nUID:event-6-00000000-0000-0000-0000-000000000007@wat2do.app\r\nSEQUENCE:0\r\nDESCRIPTION:UW Club\\n\\nhttps://wat2do.io/events/6\r\nLAST-MODIFIED:20261001T050607Z\r\nLOCATION:SLC\r\nURL:https://wat2do.io/events/6\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nSUMMARY:Event 6\r\nDTSTART;TZID=America/Vancouver:20261101T013000\r\nDTSTAMP:20261102T010203Z\r\nUID:event-6-00000000-0000-0000-0000-000000000008@wat2do.app\r\nSEQUENCE:0\r\nDESCRIPTION:UW Club\\n\\nhttps://wat2do.io/events/6\r\nLAST-MODIFIED:20261001T050607Z\r\nLOCATION:SLC\r\nURL:https://wat2do.io/events/6\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+ },
+ {
+  "events": [
+   {
+    "id": 7,
+    "title": "Event 7",
+    "location": "SLC",
+    "club": "UW Club",
+    "description": null,
+    "school": "mun",
+    "added_at": "2026-10-01 05:06:07.891011+00:00",
+    "occurrences": [
+     {
+      "id": "00000000-0000-0000-0000-000000000009",
+      "event_id": 1,
+      "dtstart_utc": "2026-07-01 02:15:59+00:00",
+      "dtend_utc": null,
+      "duration": null,
+      "tz": null
+     }
+    ]
+   }
+  ],
+  "ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//wat2do//calendar feed//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:wat2do\r\nBEGIN:VEVENT\r\nSUMMARY:Event 7\r\nDTSTART;TZID=America/St_Johns:20260630T234559\r\nDTSTAMP:20261102T010203Z\r\nUID:event-7-00000000-0000-0000-0000-000000000009@wat2do.app\r\nSEQUENCE:0\r\nDESCRIPTION:UW Club\\n\\nhttps://wat2do.io/events/7\r\nLAST-MODIFIED:20261001T050607Z\r\nLOCATION:SLC\r\nURL:https://wat2do.io/events/7\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+ },
+ {
+  "events": [
+   {
+    "id": 8,
+    "title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\y",
+    "location": "SLC",
+    "club": "UW Club",
+    "description": null,
+    "school": "uwaterloo",
+    "added_at": "2026-10-01 05:06:07.891011+00:00",
+    "occurrences": [
+     {
+      "id": "00000000-0000-0000-0000-00000000000a",
+      "event_id": 1,
+      "dtstart_utc": "2026-11-02 18:30:00+00:00",
+      "dtend_utc": null,
+      "duration": null,
+      "tz": null
+     }
+    ]
+   },
+   {
+    "id": 9,
+    "title": "Event 9",
+    "location": "SLC",
+    "club": "UW Club",
+    "description": null,
+    "school": "uwaterloo",
+    "added_at": "2026-10-01 05:06:07.891011+00:00",
+    "occurrences": []
+   }
+  ],
+  "ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//wat2do//calendar feed//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:wat2do\r\nBEGIN:VEVENT\r\nSUMMARY:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\r\n xxxxxxx\\\\y\r\nDTSTART;TZID=America/Toronto:20261102T133000\r\nDTSTAMP:20261102T010203Z\r\nUID:event-8-00000000-0000-0000-0000-00000000000a@wat2do.app\r\nSEQUENCE:0\r\nDESCRIPTION:UW Club\\n\\nhttps://wat2do.io/events/8\r\nLAST-MODIFIED:20261001T050607Z\r\nLOCATION:SLC\r\nURL:https://wat2do.io/events/8\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+ },
+ {
+  "events": [
+   {
+    "id": 10,
+    "title": "Event 10",
+    "location": "",
+    "club": "",
+    "description": "",
+    "school": "uwaterloo",
+    "added_at": "2026-10-01 05:06:07.891011+00:00",
+    "occurrences": [
+     {
+      "id": "00000000-0000-0000-0000-00000000000b",
+      "event_id": 1,
+      "dtstart_utc": "2026-11-02 18:30:00+00:00",
+      "dtend_utc": null,
+      "duration": null,
+      "tz": null
+     }
+    ]
+   }
+  ],
+  "ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//wat2do//calendar feed//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:wat2do\r\nBEGIN:VEVENT\r\nSUMMARY:Event 10\r\nDTSTART;TZID=America/Toronto:20261102T133000\r\nDTSTAMP:20261102T010203Z\r\nUID:event-10-00000000-0000-0000-0000-00000000000b@wat2do.app\r\nSEQUENCE:0\r\nDESCRIPTION:https://wat2do.io/events/10\r\nLAST-MODIFIED:20261001T050607Z\r\nLOCATION:\r\nURL:https://wat2do.io/events/10\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+ },
+ {
+  "events": [
+   {
+    "id": 11,
+    "title": "Event 11",
+    "location": "SLC",
+    "club": "UW Club",
+    "description": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\,bcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc^d",
+    "school": "uwaterloo",
+    "added_at": "2026-10-01 05:06:07.891011+00:00",
+    "occurrences": [
+     {
+      "id": "00000000-0000-0000-0000-00000000000c",
+      "event_id": 1,
+      "dtstart_utc": "2026-11-02 18:30:00+00:00",
+      "dtend_utc": null,
+      "duration": null,
+      "tz": null
+     }
+    ]
+   }
+  ],
+  "ics": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//wat2do//calendar feed//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:wat2do\r\nBEGIN:VEVENT\r\nSUMMARY:Event 11\r\nDTSTART;TZID=America/Toronto:20261102T133000\r\nDTSTAMP:20261102T010203Z\r\nUID:event-11-00000000-0000-0000-0000-00000000000c@wat2do.app\r\nSEQUENCE:0\r\nDESCRIPTION:UW Club\\n\\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n aaaaaaaaaaaaaaa\\\\\\,bcccccccccccccccccccccccccccccccccccccccccccccccccccccc\r\n cccccccccccccccccccccccccc^d\\n\\nhttps://wat2do.io/events/11\r\nLAST-MODIFIED:20261001T050607Z\r\nLOCATION:SLC\r\nURL:https://wat2do.io/events/11\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+ }
+]

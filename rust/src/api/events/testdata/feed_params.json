@@ -1,0 +1,3735 @@
+[
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00Z"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00+05:30"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00+05:30",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00",
+    "aware": false
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T00:00:00",
+    "aware": false
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02 10:00"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00",
+    "aware": false
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00",
+    "aware": false
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00.123456Z"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00.123456+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00.1234567Z"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00.123456+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00.1Z"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00.100000+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10Z"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, unexpected extra characters at the end of the input",
+     "input": "2026-11-02T10Z",
+     "ctx": {
+      "error": "unexpected extra characters at the end of the input"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00z"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02t10:00:00Z"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "1700000000"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2023-11-14T22:13:20+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "1700000000.5"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2023-11-14T22:13:20.500000+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "17000000000000"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2508-09-16T06:13:20+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "-1"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "1969-12-31T23:59:59+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "0"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "1970-01-01T00:00:00+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "1e10"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, input is too short",
+     "input": "1e10",
+     "ctx": {
+      "error": "input is too short"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "20261102"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "1970-08-23T12:05:02+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-13-02"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, month value is outside expected range of 1-12",
+     "input": "2026-13-02",
+     "ctx": {
+      "error": "month value is outside expected range of 1-12"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-02-30"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, day value is outside expected range",
+     "input": "2026-02-30",
+     "ctx": {
+      "error": "day value is outside expected range"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T25:00:00"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, unexpected extra characters at the end of the input",
+     "input": "2026-11-02T25:00:00",
+     "ctx": {
+      "error": "unexpected extra characters at the end of the input"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:60"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, unexpected extra characters at the end of the input",
+     "input": "2026-11-02T10:00:60",
+     "ctx": {
+      "error": "unexpected extra characters at the end of the input"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00+24:00"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, unexpected extra characters at the end of the input",
+     "input": "2026-11-02T10:00:00+24:00",
+     "ctx": {
+      "error": "unexpected extra characters at the end of the input"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00+0530"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00+05:30",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00+05"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, unexpected extra characters at the end of the input",
+     "input": "2026-11-02T10:00:00+05",
+     "ctx": {
+      "error": "unexpected extra characters at the end of the input"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00 +05:00"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, unexpected extra characters at the end of the input",
+     "input": "2026-11-02T10:00:00 +05:00",
+     "ctx": {
+      "error": "unexpected extra characters at the end of the input"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "nonsense"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, input is too short",
+     "input": "nonsense",
+     "ctx": {
+      "error": "input is too short"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    ""
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, input is too short",
+     "input": "",
+     "ctx": {
+      "error": "input is too short"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    " 2026-11-02"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, invalid character in year",
+     "input": " 2026-11-02",
+     "ctx": {
+      "error": "invalid character in year"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00Z "
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, unexpected extra characters at the end of the input",
+     "input": "2026-11-02T10:00:00Z ",
+     "ctx": {
+      "error": "unexpected extra characters at the end of the input"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-1-2"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, input is too short",
+     "input": "2026-1-2",
+     "ctx": {
+      "error": "input is too short"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "+002026-11-02"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, invalid character in year",
+     "input": "+002026-11-02",
+     "ctx": {
+      "error": "invalid character in year"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00-00:00"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00.Z"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, unexpected extra characters at the end of the input",
+     "input": "2026-11-02T10:00:00.Z",
+     "ctx": {
+      "error": "unexpected extra characters at the end of the input"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00,5Z"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T10:00:00.500000+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "9999-12-31T23:59:59Z"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "9999-12-31T23:59:59+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "0001-01-01T00:00:00Z"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "0001-01-01T00:00:00+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T23:59:59.999999+14:00"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2026-11-02T23:59:59.999999+14:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00+05:30:00"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, unexpected extra characters at the end of the input",
+     "input": "2026-11-02T10:00:00+05:30:00",
+     "ctx": {
+      "error": "unexpected extra characters at the end of the input"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T1000"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, unexpected extra characters at the end of the input",
+     "input": "2026-11-02T1000",
+     "ctx": {
+      "error": "unexpected extra characters at the end of the input"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2026-11-02T10:00:00UTC"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, unexpected extra characters at the end of the input",
+     "input": "2026-11-02T10:00:00UTC",
+     "ctx": {
+      "error": "unexpected extra characters at the end of the input"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "now"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, input is too short",
+     "input": "now",
+     "ctx": {
+      "error": "input is too short"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "today"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, input is too short",
+     "input": "today",
+     "ctx": {
+      "error": "input is too short"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "1700000000000"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "2023-11-14T22:13:20+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "2e3"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, input is too short",
+     "input": "2e3",
+     "ctx": {
+      "error": "input is too short"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "1_700_000_000"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, invalid character in year",
+     "input": "1_700_000_000",
+     "ctx": {
+      "error": "invalid character in year"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "-62135596800"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "1968-01-12T20:06:43.200000+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "253402300800"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": {
+    "iso": "1978-01-11T21:31:40.800000+00:00",
+    "aware": true
+   },
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "start_utc",
+    "infinity"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, input is too short",
+     "input": "infinity",
+     "ctx": {
+      "error": "input is too short"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "0"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "0.0",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "1"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "1.0",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "10.5"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "10.5",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "-1"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "greater_than_equal",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be greater than or equal to 0",
+     "input": "-1",
+     "ctx": {
+      "ge": 0.0
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "100000"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "100000.0",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "100000.1"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "less_than_equal",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be less than or equal to 100000",
+     "input": "100000.1",
+     "ctx": {
+      "le": 100000.0
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "1e3"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "1000.0",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "1e-5"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "1e-05",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "inf"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "less_than_equal",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be less than or equal to 100000",
+     "input": "inf",
+     "ctx": {
+      "le": 100000.0
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "-inf"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "greater_than_equal",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be greater than or equal to 0",
+     "input": "-inf",
+     "ctx": {
+      "ge": 0.0
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "nan"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "less_than_equal",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be less than or equal to 100000",
+     "input": "nan",
+     "ctx": {
+      "le": 100000.0
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "abc"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "float_parsing",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be a valid number, unable to parse string as a number",
+     "input": "abc"
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    ""
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "float_parsing",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be a valid number, unable to parse string as a number",
+     "input": ""
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    " 5 "
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "5.0",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "1_000"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "1000.0",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "0x10"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "float_parsing",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be a valid number, unable to parse string as a number",
+     "input": "0x10"
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "Infinity"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "less_than_equal",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be less than or equal to 100000",
+     "input": "Infinity",
+     "ctx": {
+      "le": 100000.0
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "1."
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "1.0",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    ".5"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "0.5",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "+5"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "5.0",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "5e"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "float_parsing",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be a valid number, unable to parse string as a number",
+     "input": "5e"
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "1e400"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "less_than_equal",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be less than or equal to 100000",
+     "input": "1e400",
+     "ctx": {
+      "le": 100000.0
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "-0"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "-0.0",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "00012"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": "12.0",
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "1,5"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "float_parsing",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be a valid number, unable to parse string as a number",
+     "input": "1,5"
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "min_price",
+    "١٢"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "float_parsing",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be a valid number, unable to parse string as a number",
+     "input": "١٢"
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "true"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": true,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "true"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": true,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "1"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": true,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "1"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": true,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "yes"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": true,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "yes"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": true,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "on"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": true,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "on"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": true,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "false"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": false,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "false"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "0"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": false,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "0"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "no"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": false,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "no"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "off"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": false,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "off"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "TRUE"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": true,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "TRUE"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": true,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "maybe"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "bool_parsing",
+     "loc": [
+      "query",
+      "registration"
+     ],
+     "msg": "Input should be a valid boolean, unable to interpret input",
+     "input": "maybe"
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "maybe"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "bool_parsing",
+     "loc": [
+      "query",
+      "has_food"
+     ],
+     "msg": "Input should be a valid boolean, unable to interpret input",
+     "input": "maybe"
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    ""
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "bool_parsing",
+     "loc": [
+      "query",
+      "registration"
+     ],
+     "msg": "Input should be a valid boolean, unable to interpret input",
+     "input": ""
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    ""
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "bool_parsing",
+     "loc": [
+      "query",
+      "has_food"
+     ],
+     "msg": "Input should be a valid boolean, unable to interpret input",
+     "input": ""
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    " true"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "bool_parsing",
+     "loc": [
+      "query",
+      "registration"
+     ],
+     "msg": "Input should be a valid boolean, unable to interpret input",
+     "input": " true"
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    " true"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "bool_parsing",
+     "loc": [
+      "query",
+      "has_food"
+     ],
+     "msg": "Input should be a valid boolean, unable to interpret input",
+     "input": " true"
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "2"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "bool_parsing",
+     "loc": [
+      "query",
+      "registration"
+     ],
+     "msg": "Input should be a valid boolean, unable to interpret input",
+     "input": "2"
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "2"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "bool_parsing",
+     "loc": [
+      "query",
+      "has_food"
+     ],
+     "msg": "Input should be a valid boolean, unable to interpret input",
+     "input": "2"
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "t"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": true,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "t"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": true,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "f"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": false,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "f"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "y"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": true,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "y"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": true,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "registration",
+    "n"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": false,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "has_food",
+    "n"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "sort_by",
+    "date"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "sort_by",
+    "title"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "title",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "sort_by",
+    "price"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "price",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "sort_by",
+    "added_at"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "added_at",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "sort_by",
+    "location"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "location",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "sort_by",
+    "DATE"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "literal_error",
+     "loc": [
+      "query",
+      "sort_by"
+     ],
+     "msg": "Input should be 'date', 'title', 'location', 'price' or 'added_at'",
+     "input": "DATE",
+     "ctx": {
+      "expected": "'date', 'title', 'location', 'price' or 'added_at'"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "sort_by",
+    "x"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "literal_error",
+     "loc": [
+      "query",
+      "sort_by"
+     ],
+     "msg": "Input should be 'date', 'title', 'location', 'price' or 'added_at'",
+     "input": "x",
+     "ctx": {
+      "expected": "'date', 'title', 'location', 'price' or 'added_at'"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "sort_by",
+    ""
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "literal_error",
+     "loc": [
+      "query",
+      "sort_by"
+     ],
+     "msg": "Input should be 'date', 'title', 'location', 'price' or 'added_at'",
+     "input": "",
+     "ctx": {
+      "expected": "'date', 'title', 'location', 'price' or 'added_at'"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "sort_order",
+    "asc"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "sort_order",
+    "desc"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "desc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "sort_order",
+    "ASC"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "literal_error",
+     "loc": [
+      "query",
+      "sort_order"
+     ],
+     "msg": "Input should be 'asc' or 'desc'",
+     "input": "ASC",
+     "ctx": {
+      "expected": "'asc' or 'desc'"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "sort_order",
+    ""
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "literal_error",
+     "loc": [
+      "query",
+      "sort_order"
+     ],
+     "msg": "Input should be 'asc' or 'desc'",
+     "input": "",
+     "ctx": {
+      "expected": "'asc' or 'desc'"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "club_ids",
+    "1"
+   ],
+   [
+    "club_ids",
+    "x"
+   ],
+   [
+    "club_ids",
+    "3.0"
+   ],
+   [
+    "club_ids",
+    "2.5"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "int_parsing",
+     "loc": [
+      "query",
+      "club_ids",
+      1
+     ],
+     "msg": "Input should be a valid integer, unable to parse string as an integer",
+     "input": "x"
+    },
+    {
+     "type": "int_parsing",
+     "loc": [
+      "query",
+      "club_ids",
+      3
+     ],
+     "msg": "Input should be a valid integer, unable to parse string as an integer",
+     "input": "2.5"
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "ids",
+    ""
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "int_parsing",
+     "loc": [
+      "query",
+      "ids",
+      0
+     ],
+     "msg": "Input should be a valid integer, unable to parse string as an integer",
+     "input": ""
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "ids",
+    "1"
+   ],
+   [
+    "ids",
+    "99999999999999999999"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": [
+    1,
+    99999999999999999999
+   ],
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "categories",
+    "a"
+   ],
+   [
+    "categories",
+    ""
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": [
+    "a",
+    ""
+   ],
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "page",
+    "0"
+   ],
+   [
+    "page_size",
+    "200"
+   ],
+   [
+    "school",
+    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   ],
+   [
+    "search",
+    "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+   ],
+   [
+    "min_price",
+    "-1"
+   ],
+   [
+    "club_ids",
+    "a"
+   ],
+   [
+    "sort_by",
+    "z"
+   ],
+   [
+    "start_utc",
+    "bad"
+   ],
+   [
+    "registration",
+    "q"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "greater_than_equal",
+     "loc": [
+      "query",
+      "page"
+     ],
+     "msg": "Input should be greater than or equal to 1",
+     "input": "0",
+     "ctx": {
+      "ge": 1
+     }
+    },
+    {
+     "type": "less_than_equal",
+     "loc": [
+      "query",
+      "page_size"
+     ],
+     "msg": "Input should be less than or equal to 100",
+     "input": "200",
+     "ctx": {
+      "le": 100
+     }
+    },
+    {
+     "type": "string_too_long",
+     "loc": [
+      "query",
+      "school"
+     ],
+     "msg": "String should have at most 255 characters",
+     "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "ctx": {
+      "max_length": 255
+     }
+    },
+    {
+     "type": "string_too_long",
+     "loc": [
+      "query",
+      "search"
+     ],
+     "msg": "String should have at most 200 characters",
+     "input": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+     "ctx": {
+      "max_length": 200
+     }
+    },
+    {
+     "type": "greater_than_equal",
+     "loc": [
+      "query",
+      "min_price"
+     ],
+     "msg": "Input should be greater than or equal to 0",
+     "input": "-1",
+     "ctx": {
+      "ge": 0.0
+     }
+    },
+    {
+     "type": "bool_parsing",
+     "loc": [
+      "query",
+      "registration"
+     ],
+     "msg": "Input should be a valid boolean, unable to interpret input",
+     "input": "q"
+    },
+    {
+     "type": "int_parsing",
+     "loc": [
+      "query",
+      "club_ids",
+      0
+     ],
+     "msg": "Input should be a valid integer, unable to parse string as an integer",
+     "input": "a"
+    },
+    {
+     "type": "literal_error",
+     "loc": [
+      "query",
+      "sort_by"
+     ],
+     "msg": "Input should be 'date', 'title', 'location', 'price' or 'added_at'",
+     "input": "z",
+     "ctx": {
+      "expected": "'date', 'title', 'location', 'price' or 'added_at'"
+     }
+    },
+    {
+     "type": "datetime_from_date_parsing",
+     "loc": [
+      "query",
+      "start_utc"
+     ],
+     "msg": "Input should be a valid datetime or date, input is too short",
+     "input": "bad",
+     "ctx": {
+      "error": "input is too short"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "query": [
+   [
+    "page",
+    "2"
+   ],
+   [
+    "page",
+    "3"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 3,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "school",
+    ""
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": "",
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "days",
+    "Monday"
+   ],
+   [
+    "days",
+    ""
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": [
+    "Monday",
+    ""
+   ],
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 50
+  }
+ },
+ {
+  "query": [
+   [
+    "page_size",
+    "1.0"
+   ]
+  ],
+  "status": 200,
+  "body": {
+   "school": null,
+   "search": null,
+   "categories": null,
+   "days": null,
+   "min_price": null,
+   "max_price": null,
+   "registration": null,
+   "club_ids": null,
+   "has_food": false,
+   "ids": null,
+   "sort_by": "date",
+   "sort_order": "asc",
+   "start_utc": null,
+   "end_utc": null,
+   "include_past": false,
+   "page": 1,
+   "page_size": 1
+  }
+ },
+ {
+  "query": [
+   [
+    "page",
+    "1e2"
+   ]
+  ],
+  "status": 422,
+  "body": {
+   "detail": [
+    {
+     "type": "int_parsing",
+     "loc": [
+      "query",
+      "page"
+     ],
+     "msg": "Input should be a valid integer, unable to parse string as an integer",
+     "input": "1e2"
+    }
+   ]
+  }
+ }
+]

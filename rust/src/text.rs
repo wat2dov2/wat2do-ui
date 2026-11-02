@@ -12,7 +12,7 @@ pub fn python_space(character: char) -> bool {
 }
 
 /// Python's `\w` for `str` patterns: `str.isalnum()` or underscore.
-fn python_word(character: char) -> bool {
+pub fn python_word(character: char) -> bool {
     use GeneralCategory::*;
     character == '_'
         || matches!(
@@ -31,6 +31,11 @@ fn python_word(character: char) -> bool {
 /// Python's `str.strip()`.
 pub fn python_strip(value: &str) -> &str {
     value.trim_matches(python_space)
+}
+
+/// Python's `str.casefold()` (full Unicode case folding).
+pub fn casefold(value: &str) -> String {
+    caseless::default_case_fold_str(value)
 }
 
 /// `sanitize_postgrest_value`: keep letters, digits, underscores, whitespace,

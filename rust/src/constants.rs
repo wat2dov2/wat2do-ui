@@ -78,3 +78,13 @@ pub const NOTIFICATION_STATUS_FAILED: &str = "failed";
 pub const DEFAULT_PAGE_SIZE: i64 = 50;
 pub const MAX_PAGE_SIZE: i64 = 100;
 pub const MAX_PAGE_NUMBER: i64 = 1000;
+
+/// `core.constants.validation`: event fields and list filters.
+pub const MAX_EVENT_TITLE_LENGTH: usize = 300;
+pub const MAX_EVENT_LOCATION_LENGTH: usize = 500;
+pub const MAX_EVENT_CATEGORY_LENGTH: usize = 100;
+pub const MAX_EVENT_HANDLE_LENGTH: usize = 255;
+pub const MAX_EVENT_FOOD_ITEM_LENGTH: usize = 100;
+pub const MAX_EVENT_FOOD_COUNT: usize = 20;
+pub const MAX_EVENT_PRICE: f64 = 100_000.0;
+pub const MAX_STATUS_FILTER_LENGTH: usize = 30;

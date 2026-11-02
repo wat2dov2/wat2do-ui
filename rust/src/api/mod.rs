@@ -11,13 +11,16 @@ pub mod allowed_emails;
 pub mod auth;
 pub mod body;
 pub mod client_ip;
+pub mod contract;
 pub mod cors;
 pub mod email_address;
 pub mod errors;
 pub mod json;
+pub mod events;
 pub mod messages;
 pub mod pagination;
 pub mod proxy;
+pub mod pyjson;
 pub mod rate_limit;
 pub mod replay;
 pub mod routes;
@@ -79,6 +82,32 @@ impl AppState {
 fn rust_routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(routes::health::health))
+        .routes(routes!(routes::calendar::get_calendar_token))
+        .routes(routes!(routes::calendar::regenerate_calendar_token))
+        .routes(routes!(routes::calendar::get_calendar_feed))
+        .routes(routes!(routes::events::list_admin_events))
+        .routes(routes!(routes::events::get_event_stats))
+        .routes(routes!(
+            routes::events::list_events,
+            routes::events::create_event
+        ))
+        .routes(routes!(
+            routes::events::get_event,
+            routes::events::update_event,
+            routes::events::delete_event
+        ))
+        .routes(routes!(routes::going_events::list_going_events))
+        .routes(routes!(routes::going_events::list_event_attendees))
+        .routes(routes!(
+            routes::going_events::mark_going,
+            routes::going_events::unmark_going
+        ))
+        .routes(routes!(routes::interactions::record_interactions))
+        .routes(routes!(
+            routes::reports::create_report,
+            routes::reports::list_reports
+        ))
+        .routes(routes!(routes::reports::update_report))
         .routes(routes!(routes::site_banner::get_site_banner))
         // routers/clubs.py
         .routes(routes!(
@@ -138,6 +167,11 @@ fn rust_routes() -> OpenApiRouter<AppState> {
             routes::users::delete_user
         ))
         .routes(routes!(routes::users::update_user_role))
+        .routes(routes!(routes::v1_saved_events::list_saved_events))
+        .routes(routes!(
+            routes::v1_saved_events::save_event,
+            routes::v1_saved_events::unsave_event
+        ))
 }
 
 /// The OpenAPI paths and schemas of the Rust routes, merged into FastAPI's
@@ -194,12 +228,13 @@ pub fn router(state: AppState) -> Router {
 /// committed in `backend/core/rust_openapi.json`.
 pub fn openapi_json() -> anyhow::Result<String> {
     let document = serde_json::to_value(openapi())?;
-    let fragment = serde_json::json!({
+    let mut fragment = serde_json::json!({
         "paths": document["paths"],
         "components": {
             "schemas": document["components"]["schemas"].as_object().cloned().unwrap_or_default(),
         },
     });
+    contract::apply(&mut fragment);
     Ok(serde_json::to_string_pretty(&fragment)? + "\n")
 }
 

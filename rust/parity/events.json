@@ -1,0 +1,802 @@
+[
+  {
+    "name": "feed uwaterloo default",
+    "path": "/events/?school=uwaterloo"
+  },
+  {
+    "name": "feed utsg default",
+    "path": "/events/?school=utsg"
+  },
+  {
+    "name": "feed mcgill default",
+    "path": "/events/?school=mcgill"
+  },
+  {
+    "name": "feed ubc default",
+    "path": "/events/?school=ubc"
+  },
+  {
+    "name": "feed umich default",
+    "path": "/events/?school=umich"
+  },
+  {
+    "name": "feed cornell default",
+    "path": "/events/?school=cornell"
+  },
+  {
+    "name": "feed nowhere default",
+    "path": "/events/?school=nowhere"
+  },
+  {
+    "name": "feed empty default",
+    "path": "/events/?school="
+  },
+  {
+    "name": "feed University of Waterloo default",
+    "path": "/events/?school=University%20of%20Waterloo"
+  },
+  {
+    "name": "feed UWATERLOO%20 default",
+    "path": "/events/?school=UWATERLOO%20"
+  },
+  {
+    "name": "feed uwaterloo page 1 size 20",
+    "path": "/events/?school=uwaterloo&page=1&page_size=20"
+  },
+  {
+    "name": "feed uwaterloo page 2 size 20",
+    "path": "/events/?school=uwaterloo&page=2&page_size=20"
+  },
+  {
+    "name": "feed uwaterloo page 1 size 50",
+    "path": "/events/?school=uwaterloo&page=1&page_size=50"
+  },
+  {
+    "name": "feed uwaterloo page 2 size 50",
+    "path": "/events/?school=uwaterloo&page=2&page_size=50"
+  },
+  {
+    "name": "feed uwaterloo page 1 size 100",
+    "path": "/events/?school=uwaterloo&page=1&page_size=100"
+  },
+  {
+    "name": "feed uwaterloo page 2 size 100",
+    "path": "/events/?school=uwaterloo&page=2&page_size=100"
+  },
+  {
+    "name": "feed uwaterloo last page",
+    "path": "/events/?school=uwaterloo&page=1000&page_size=100"
+  },
+  {
+    "name": "feed all schools",
+    "path": "/events/?page_size=100"
+  },
+  {
+    "name": "feed all schools page 3",
+    "path": "/events/?page=3&page_size=100"
+  },
+  {
+    "name": "feed utsg page 2 size 100",
+    "path": "/events/?school=utsg&page=2&page_size=100"
+  },
+  {
+    "name": "feed include_past uwaterloo",
+    "path": "/events/?school=uwaterloo&include_past=true&page_size=100"
+  },
+  {
+    "name": "feed include_past page 5",
+    "path": "/events/?school=uwaterloo&include_past=true&page=5&page_size=100"
+  },
+  {
+    "name": "club page 7004",
+    "path": "/events/?school=uwaterloo&club_ids=7004&include_past=true&page_size=100"
+  },
+  {
+    "name": "club page 6758",
+    "path": "/events/?school=uwaterloo&club_ids=6758&include_past=true&page_size=100"
+  },
+  {
+    "name": "club page 5778",
+    "path": "/events/?school=uwaterloo&club_ids=5778&include_past=true&page_size=100"
+  },
+  {
+    "name": "club page 21826",
+    "path": "/events/?school=uwaterloo&club_ids=21826&include_past=true&page_size=100"
+  },
+  {
+    "name": "club page other school",
+    "path": "/events/?school=utsg&club_ids=5778&include_past=true&page_size=100"
+  },
+  {
+    "name": "club page two clubs",
+    "path": "/events/?school=uwaterloo&club_ids=7004&club_ids=6758&include_past=true"
+  },
+  {
+    "name": "club page no school",
+    "path": "/events/?club_ids=7004&include_past=true&page_size=100"
+  },
+  {
+    "name": "club page huge id",
+    "path": "/events/?school=uwaterloo&club_ids=99999999999"
+  },
+  {
+    "name": "ids filter",
+    "path": "/events/?ids=44146&ids=43979&ids=36964&include_past=true"
+  },
+  {
+    "name": "ids with huge",
+    "path": "/events/?ids=44146&ids=99999999999999999999"
+  },
+  {
+    "name": "ids and club narrowed",
+    "path": "/events/?ids=44146&ids=99999999999999999999&club_ids=7004&include_past=true"
+  },
+  {
+    "name": "search",
+    "path": "/events/?school=uwaterloo&search=club"
+  },
+  {
+    "name": "search compact",
+    "path": "/events/?school=uwaterloo&search=Engineering%20Society"
+  },
+  {
+    "name": "search whitespace",
+    "path": "/events/?school=uwaterloo&search=%20%20"
+  },
+  {
+    "name": "search punctuation",
+    "path": "/events/?school=utsg&search=games!!"
+  },
+  {
+    "name": "categories",
+    "path": "/events/?school=uwaterloo&categories=Business&categories=Health"
+  },
+  {
+    "name": "days",
+    "path": "/events/?school=uwaterloo&days=Monday&days=Wednesday"
+  },
+  {
+    "name": "days blank",
+    "path": "/events/?school=uwaterloo&days=%20"
+  },
+  {
+    "name": "food",
+    "path": "/events/?school=uwaterloo&has_food=true"
+  },
+  {
+    "name": "foods",
+    "path": "/events/?school=utsg&foods=pizza"
+  },
+  {
+    "name": "locations",
+    "path": "/events/?school=uwaterloo&locations=SLC"
+  },
+  {
+    "name": "price window",
+    "path": "/events/?school=utsg&min_price=0&max_price=10"
+  },
+  {
+    "name": "registration",
+    "path": "/events/?school=uwaterloo&registration=true"
+  },
+  {
+    "name": "clubs by name",
+    "path": "/events/?school=uwaterloo&clubs=engineering"
+  },
+  {
+    "name": "sort title desc",
+    "path": "/events/?school=uwaterloo&sort_by=title&sort_order=desc&page_size=100"
+  },
+  {
+    "name": "sort location",
+    "path": "/events/?school=mcgill&sort_by=location"
+  },
+  {
+    "name": "sort price",
+    "path": "/events/?school=utsg&sort_by=price&page=2&page_size=20"
+  },
+  {
+    "name": "sort added desc",
+    "path": "/events/?sort_by=added_at&sort_order=desc&page_size=100"
+  },
+  {
+    "name": "sort date desc",
+    "path": "/events/?school=uwaterloo&sort_order=desc"
+  },
+  {
+    "name": "added within 24h",
+    "path": "/events/?added_within_24h=true&page_size=100"
+  },
+  {
+    "name": "window",
+    "path": "/events/?school=uwaterloo&start_utc=2026-11-01T00:00:00Z&end_utc=2026-11-30T00:00:00Z&page_size=100"
+  },
+  {
+    "name": "window naive",
+    "path": "/events/?school=ubc&start_utc=2026-11-10&page_size=100"
+  },
+  {
+    "name": "window filtered",
+    "path": "/events/?school=uwaterloo&start_utc=2026-11-01T00:00:00-05:00&categories=Business"
+  },
+  {
+    "name": "feed bad params",
+    "path": "/events/?page=0&page_size=200&min_price=-1&sort_by=x&start_utc=bad&club_ids=a&registration=q"
+  },
+  {
+    "name": "feed from origin",
+    "path": "/events/?school=uwaterloo&page_size=5",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "feed no slash",
+    "path": "/events?school=uwaterloo"
+  },
+  {
+    "name": "feed HEAD",
+    "path": "/events/",
+    "method": "HEAD"
+  },
+  {
+    "name": "stats uwaterloo",
+    "path": "/events/stats?school=uwaterloo"
+  },
+  {
+    "name": "stats utsg",
+    "path": "/events/stats?school=utsg"
+  },
+  {
+    "name": "stats mcgill",
+    "path": "/events/stats?school=mcgill"
+  },
+  {
+    "name": "stats nowhere",
+    "path": "/events/stats?school=nowhere"
+  },
+  {
+    "name": "stats missing school",
+    "path": "/events/stats"
+  },
+  {
+    "name": "stats empty school",
+    "path": "/events/stats?school="
+  },
+  {
+    "name": "stats slash",
+    "path": "/events/stats/?school=uwaterloo"
+  },
+  {
+    "name": "detail 46584",
+    "path": "/events/46584"
+  },
+  {
+    "name": "detail 46577",
+    "path": "/events/46577"
+  },
+  {
+    "name": "detail 46573",
+    "path": "/events/46573"
+  },
+  {
+    "name": "detail 47281",
+    "path": "/events/47281"
+  },
+  {
+    "name": "detail 47275",
+    "path": "/events/47275"
+  },
+  {
+    "name": "detail 47282",
+    "path": "/events/47282"
+  },
+  {
+    "name": "detail 47280",
+    "path": "/events/47280"
+  },
+  {
+    "name": "detail 44146",
+    "path": "/events/44146"
+  },
+  {
+    "name": "detail 47301",
+    "path": "/events/47301"
+  },
+  {
+    "name": "detail 47267",
+    "path": "/events/47267"
+  },
+  {
+    "name": "detail 31000",
+    "path": "/events/31000"
+  },
+  {
+    "name": "detail 27187",
+    "path": "/events/27187"
+  },
+  {
+    "name": "detail 36745",
+    "path": "/events/36745"
+  },
+  {
+    "name": "detail 26983",
+    "path": "/events/26983"
+  },
+  {
+    "name": "detail 25798",
+    "path": "/events/25798"
+  },
+  {
+    "name": "detail missing",
+    "path": "/events/999999999"
+  },
+  {
+    "name": "detail out of int4",
+    "path": "/events/99999999999"
+  },
+  {
+    "name": "detail huge",
+    "path": "/events/99999999999999999999"
+  },
+  {
+    "name": "detail not int",
+    "path": "/events/abc"
+  },
+  {
+    "name": "detail negative",
+    "path": "/events/-5"
+  },
+  {
+    "name": "detail slash",
+    "path": "/events/44146/"
+  },
+  {
+    "name": "admin anonymous",
+    "path": "/events/admin"
+  },
+  {
+    "name": "admin as user",
+    "path": "/events/admin",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "admin page 1",
+    "path": "/events/admin",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "admin page 3 search",
+    "path": "/events/admin?page=3&page_size=20&search=Dance",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "admin school category",
+    "path": "/events/admin?school=uwaterloo&category=Business",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "admin wildcard search",
+    "path": "/events/admin?search=*night*",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "admin bad page",
+    "path": "/events/admin?page=0",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "admin unknown user",
+    "path": "/events/admin",
+    "identity": {
+      "id": "00000000-0000-0000-0000-00000000dead",
+      "email": "x@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "going anonymous",
+    "path": "/going-events/"
+  },
+  {
+    "name": "going admin",
+    "path": "/going-events/",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "going user",
+    "path": "/going-events/",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "going none",
+    "path": "/going-events/",
+    "identity": {
+      "id": "e7c18396-ecaf-4eb2-b210-74c8d4d2b1ca",
+      "email": "saver@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "going unknown user",
+    "path": "/going-events/",
+    "identity": {
+      "id": "00000000-0000-0000-0000-00000000dead",
+      "email": "x@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "attendees 44146",
+    "path": "/going-events/44146/attendees"
+  },
+  {
+    "name": "attendees 43979",
+    "path": "/going-events/43979/attendees"
+  },
+  {
+    "name": "attendees 36964",
+    "path": "/going-events/36964/attendees"
+  },
+  {
+    "name": "attendees 47281",
+    "path": "/going-events/47281/attendees"
+  },
+  {
+    "name": "attendees missing",
+    "path": "/going-events/999999999/attendees"
+  },
+  {
+    "name": "attendees huge",
+    "path": "/going-events/99999999999/attendees"
+  },
+  {
+    "name": "going PUT invalid body",
+    "path": "/going-events/44146",
+    "method": "PUT",
+    "json": {
+      "occurrence_ids": []
+    },
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "safe": true
+  },
+  {
+    "name": "going PUT bad id and body",
+    "path": "/going-events/abc",
+    "method": "PUT",
+    "json": {
+      "occurrence_ids": [
+        "bad"
+      ],
+      "x": 1
+    },
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "safe": true
+  },
+  {
+    "name": "going PUT anonymous",
+    "path": "/going-events/44146",
+    "method": "PUT",
+    "json": {
+      "occurrence_ids": []
+    },
+    "safe": true
+  },
+  {
+    "name": "going POST not allowed",
+    "path": "/going-events/44146",
+    "method": "POST",
+    "safe": true
+  },
+  {
+    "name": "saved anonymous",
+    "path": "/v1/saved-events/"
+  },
+  {
+    "name": "saved user",
+    "path": "/v1/saved-events/",
+    "identity": {
+      "id": "e7c18396-ecaf-4eb2-b210-74c8d4d2b1ca",
+      "email": "saver@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "saved empty",
+    "path": "/v1/saved-events/",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "calendar feed unknown token",
+    "path": "/calendar/feed/not-a-real-token.ics"
+  },
+  {
+    "name": "calendar feed no suffix",
+    "path": "/calendar/feed/not-a-real-token"
+  },
+  {
+    "name": "calendar token anonymous",
+    "path": "/calendar/token"
+  },
+  {
+    "name": "calendar regenerate anonymous",
+    "path": "/calendar/token/regenerate",
+    "method": "POST",
+    "safe": true
+  },
+  {
+    "name": "reports anonymous",
+    "path": "/reports/"
+  },
+  {
+    "name": "reports as user",
+    "path": "/reports/",
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "reports admin",
+    "path": "/reports/",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "reports admin filtered",
+    "path": "/reports/?report_status=resolved",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "reports admin search",
+    "path": "/reports/?search=spam&school=uwaterloo",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "reports admin bad status filter",
+    "path": "/reports/?report_status=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "reports PATCH list not allowed",
+    "path": "/reports/",
+    "method": "PATCH",
+    "safe": true
+  },
+  {
+    "name": "report create invalid",
+    "path": "/reports/",
+    "method": "POST",
+    "json": {
+      "event_id": 1.5,
+      "reason": "<b>"
+    },
+    "safe": true
+  },
+  {
+    "name": "report update invalid",
+    "path": "/reports/not-a-uuid",
+    "method": "PATCH",
+    "json": {
+      "status": "bogus"
+    },
+    "identity": {
+      "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
+      "email": "admin@wat2do.io",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "safe": true
+  },
+  {
+    "name": "report update as user",
+    "path": "/reports/not-a-uuid",
+    "method": "PATCH",
+    "json": {
+      "status": "resolved"
+    },
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "safe": true
+  },
+  {
+    "name": "create anonymous",
+    "path": "/events/",
+    "method": "POST",
+    "json": {
+      "title": "x"
+    },
+    "safe": true
+  },
+  {
+    "name": "create invalid",
+    "path": "/events/",
+    "method": "POST",
+    "json": {
+      "title": "",
+      "location": null,
+      "occurrences": [],
+      "club_id": "x",
+      "extra": 1
+    },
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "safe": true
+  },
+  {
+    "name": "create unknown user",
+    "path": "/events/",
+    "method": "POST",
+    "json": {},
+    "identity": {
+      "id": "00000000-0000-0000-0000-00000000dead",
+      "email": "x@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "safe": true
+  },
+  {
+    "name": "update invalid",
+    "path": "/events/44146",
+    "method": "PATCH",
+    "json": {
+      "location": "SLC"
+    },
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "safe": true
+  },
+  {
+    "name": "update invalid path and body",
+    "path": "/events/abc",
+    "method": "PATCH",
+    "json": {
+      "featured": true
+    },
+    "identity": {
+      "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "safe": true
+  },
+  {
+    "name": "delete anonymous",
+    "path": "/events/44146",
+    "method": "DELETE",
+    "safe": true
+  },
+  {
+    "name": "interactions invalid",
+    "path": "/interactions/batch",
+    "method": "POST",
+    "json": {
+      "session_id": "",
+      "interactions": "x"
+    },
+    "safe": true
+  },
+  {
+    "name": "interactions not json",
+    "path": "/interactions/batch",
+    "method": "POST",
+    "body": "session_id=x",
+    "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+    },
+    "safe": true
+  },
+  {
+    "name": "interactions empty body",
+    "path": "/interactions/batch",
+    "method": "POST",
+    "safe": true
+  },
+  {
+    "name": "interactions GET not allowed",
+    "path": "/interactions/batch"
+  },
+  {
+    "name": "preflight",
+    "path": "/events/",
+    "method": "OPTIONS",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io",
+      "access-control-request-method": "GET"
+    }
+  }
+]

@@ -1,15 +1,21 @@
 //! Routes ported from `backend/routers`, one module per FastAPI router.
 
+pub mod calendar;
 pub mod clubs;
 pub mod discovery_queries;
+pub mod events;
+pub mod going_events;
 pub mod health;
 pub mod ingestion_latency;
+pub mod interactions;
 pub mod meta;
 pub mod positions;
+pub mod reports;
 pub mod saved_clubs;
 pub mod schools;
 pub mod site_banner;
 pub mod users;
+pub mod v1_saved_events;
 
 use utoipa::ToSchema;
 
