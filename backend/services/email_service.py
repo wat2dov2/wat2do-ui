@@ -18,6 +18,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from email.message import EmailMessage as MimeMessage
+from email.policy import EmailPolicy
 
 import boto3  # type: ignore[import-untyped]
 from botocore.config import Config  # type: ignore[import-untyped]
@@ -31,6 +32,28 @@ _LEGACY_WAT2DO_URL = re.compile(
     r"https?://(?:[a-z0-9-]+\.)*wat2do\.ca(?=[:/?#\s\"'<]|$)",
     re.IGNORECASE,
 )
+
+
+# A URL cannot fold, so the default policy would send these as RFC 2047 encoded
+# words, which mail clients do not read back as a URL.
+_UNFOLDED_HEADERS = frozenset({"list-unsubscribe", "list-unsubscribe-post"})
+
+
+class _MimePolicy(EmailPolicy):
+    """``email.policy.default``, except the List-Unsubscribe headers go out as written."""
+
+    def fold(self, name: str, value: str) -> str:
+        if name.lower() in _UNFOLDED_HEADERS:
+            return f"{name}: {value}{self.linesep}"
+        return super().fold(name, value)
+
+    def fold_binary(self, name: str, value: str) -> bytes:
+        if name.lower() in _UNFOLDED_HEADERS:
+            return f"{name}: {value}{self.linesep}".encode("ascii")
+        return super().fold_binary(name, value)
+
+
+_MIME_POLICY = _MimePolicy()
 
 
 @dataclass(frozen=True)
@@ -129,7 +152,7 @@ def _mime_message(msg: EmailMessage, recipients: list[str]) -> bytes:
     Gmail and Outlook only resolve ``cid:`` images that sit in the HTML part's
     multipart/related container, so the message is assembled here rather than by SES.
     """
-    mime = MimeMessage()
+    mime = MimeMessage(policy=_MIME_POLICY)
     mime["From"] = msg.sender or settings.email_from
     mime["To"] = ", ".join(recipients)
     mime["Subject"] = msg.subject
@@ -150,10 +173,7 @@ def _mime_message(msg: EmailMessage, recipients: list[str]) -> bytes:
             filename=image.filename,
             disposition="inline",
         )
-    # RFC 5322's 998-character line limit, not the default 78: a header that
-    # cannot fold, like a List-Unsubscribe URL, would otherwise be sent as RFC 2047
-    # encoded words, which mail clients do not read back as a URL.
-    return mime.as_bytes(policy=mime.policy.clone(max_line_length=998))
+    return mime.as_bytes()
 
 
 email_service = EmailService()

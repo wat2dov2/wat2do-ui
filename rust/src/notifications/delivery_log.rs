@@ -23,6 +23,27 @@ const RETRYABLE_SES_ERRORS: [&str; 3] = [
     "ServiceUnavailable",
 ];
 
+/// Attempts to record a delivery's status, and the pause before each retry.
+const RECORD_ATTEMPTS: u32 = 3;
+const RECORD_PAUSE: std::time::Duration = std::time::Duration::from_secs(2);
+
+/// Run `operation` up to `attempts` times, pausing between tries.
+async fn retry<F, Fut>(attempts: u32, pause: std::time::Duration, mut operation: F) -> Result<()>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<()>>,
+{
+    let mut tries = 0;
+    loop {
+        tries += 1;
+        match operation().await {
+            Ok(()) => return Ok(()),
+            Err(error) if tries >= attempts => return Err(error),
+            Err(_) => tokio::time::sleep(pause).await,
+        }
+    }
+}
+
 /// Where claimed messages go.
 pub struct Outbox {
     pool: PgPool,
@@ -88,15 +109,32 @@ impl Outbox {
             write_rendered(directory, message)?;
             return Ok(true);
         }
-        let sent = attempt(provider_attempts, log_context, || async {
-            email::send(message).await?;
-            self.mark_sent(row_id).await.map_err(SendError::Other)
-        })
-        .await;
-        match sent {
-            Ok(()) => Ok(true),
+        match attempt(provider_attempts, log_context, || email::send(message)).await {
+            Ok(()) => {
+                // SES has the message: the row must never become failed, which
+                // would send it again. A row left pending is reclaimed only after
+                // the claim's stale threshold.
+                let recorded =
+                    retry(RECORD_ATTEMPTS, RECORD_PAUSE, || self.mark_sent(row_id)).await;
+                if let Err(error) = recorded {
+                    tracing::error!(
+                        "Notification {log_context} was sent but not recorded as sent; \
+                         its row stays pending ({error:#})"
+                    );
+                }
+                Ok(true)
+            }
             Err(failure_category) => {
-                self.mark_failed(row_id, &failure_category).await?;
+                let recorded = retry(RECORD_ATTEMPTS, RECORD_PAUSE, || {
+                    self.mark_failed(row_id, &failure_category)
+                })
+                .await;
+                if let Err(error) = recorded {
+                    tracing::error!(
+                        "Notification {log_context} failed ({failure_category}) and could not be \
+                         recorded; its row stays pending ({error:#})"
+                    );
+                }
                 Ok(false)
             }
         }
@@ -210,6 +248,31 @@ mod tests {
         })
         .await;
         (result, calls.into_inner())
+    }
+
+    #[tokio::test]
+    async fn status_writes_are_retried_then_given_up() {
+        let calls = RefCell::new(0);
+        let flaky = retry(3, std::time::Duration::ZERO, || {
+            *calls.borrow_mut() += 1;
+            let fail = *calls.borrow() < 3;
+            async move {
+                if fail {
+                    anyhow::bail!("connection reset")
+                }
+                Ok(())
+            }
+        })
+        .await;
+        assert!(flaky.is_ok());
+        assert_eq!(calls.replace(0), 3);
+        let down = retry(3, std::time::Duration::ZERO, || {
+            *calls.borrow_mut() += 1;
+            async { anyhow::bail!("database down") }
+        })
+        .await;
+        assert!(down.is_err());
+        assert_eq!(calls.into_inner(), 3);
     }
 
     #[tokio::test]

@@ -66,7 +66,23 @@ fn boundary() -> String {
 }
 
 fn header(out: &mut String, name: &str, value: &str) {
-    out.push_str(&format!("{name}: {value}\n"));
+    out.push_str(&format!("{name}: {}\n", one_line(value)));
+}
+
+/// A header value with every control character (CR, LF, tab, NUL, DEL, the C1
+/// controls) and Unicode line or paragraph separator replaced by a space, so a
+/// value such as an event title can never end a header or start a new one.
+fn one_line(value: &str) -> String {
+    value
+        .chars()
+        .map(|character| {
+            if character.is_control() || matches!(character, '\u{2028}' | '\u{2029}') {
+                ' '
+            } else {
+                character
+            }
+        })
+        .collect()
 }
 
 fn multipart_header(out: &mut String, subtype: &str, boundary: &str) {
@@ -78,6 +94,7 @@ fn multipart_header(out: &mut String, subtype: &str, boundary: &str) {
 /// `Subject`, folded at spaces when it is long, and sent as UTF-8 encoded
 /// words (RFC 2047) when it is not plain ASCII.
 fn subject_header(subject: &str) -> String {
+    let subject = &one_line(subject);
     let words: Vec<String> = if subject.is_ascii() {
         subject.split(' ').map(str::to_owned).collect()
     } else {
@@ -422,6 +439,38 @@ mod tests {
                 "A".repeat(114)
             )
         );
+    }
+
+    #[test]
+    fn control_characters_never_reach_a_header() {
+        assert_eq!(
+            one_line("Tea\r\nBcc: x@y.z\tnow\u{0}\u{7f}\u{85}\u{2028}end"),
+            "Tea  Bcc: x@y.z now    end"
+        );
+        let message = EmailMessage {
+            to: vec!["a@b.ca\r\nBcc: evil@x.com".to_owned()],
+            subject: "Starts in about 1 hour: Tea\r\nBcc: evil@x.com".to_owned(),
+            headers: vec![(
+                "List-Unsubscribe".to_owned(),
+                "<https://x/u>\nX-Evil: 1".to_owned(),
+            )],
+            ..EmailMessage::default()
+        };
+        let raw = String::from_utf8(build(&message, "wat2do <team@wat2do.io>\r\nX: y")).unwrap();
+        let headers = raw.split("\n\n").next().unwrap();
+        assert!(!headers.contains('\r'));
+        assert!(
+            headers
+                .lines()
+                .all(|line| !line.starts_with("Bcc") && !line.starts_with("X"))
+        );
+        assert!(headers.contains("Subject: Starts in about 1 hour: Tea  Bcc: evil@x.com\n"));
+        let unicode = subject_header("Café\nBcc: evil@x.com");
+        assert!(
+            unicode.lines().skip(1).all(|line| line.starts_with(' ')),
+            "{unicode}"
+        );
+        assert!(!unicode.contains("Bcc"));
     }
 
     #[test]

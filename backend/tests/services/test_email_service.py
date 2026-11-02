@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import email
 import email.policy
+import re
 from unittest.mock import MagicMock
 
 import pytest
@@ -89,13 +90,26 @@ def test_long_unsubscribe_urls_stay_readable_urls(monkeypatch):
     ses = MagicMock()
     url = "https://uwaterloo.wat2do.io/api/notification-preferences/unsubscribe?token=" + "A" * 114
 
+    subject = "Changé : soirée crêpes 🎉 " + "très longue " * 12
     EmailService(ses_client=ses).send(
-        _message(subject="Changed: Café night", headers={"List-Unsubscribe": f"<{url}>"})
+        _message(
+            subject=subject,
+            headers={
+                "List-Unsubscribe": f"<{url}>",
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
+        )
     )
 
     raw = ses.send_email.call_args.kwargs["Content"]["Raw"]["Data"]
     assert f"List-Unsubscribe: <{url}>\n".encode() in raw
-    assert _sent_mime(ses)["Subject"] == "Changed: Café night"
+    assert b"List-Unsubscribe-Post: List-Unsubscribe=One-Click\n" in raw
+    header_block = raw.split(b"\n\n", 1)[0]
+    subject_lines = header_block.split(b"Subject:", 1)[1].split(b"\nList-Unsubscribe", 1)[0]
+    # The subject still folds into RFC 2047 words of at most 75 characters.
+    assert all(len(line) <= 78 for line in subject_lines.split(b"\n"))
+    assert all(len(word) <= 75 for word in re.findall(rb"=\?utf-8\?[qb]\?[^?]*\?=", raw))
+    assert _sent_mime(ses)["Subject"] == subject
 
 
 def test_inline_images_ride_inside_the_html_part(monkeypatch):

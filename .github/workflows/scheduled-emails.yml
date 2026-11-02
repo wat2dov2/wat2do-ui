@@ -36,11 +36,13 @@ jobs:
 
       # The sender is built before any secret is in the environment, and only
       # when its code, embedded control box or logo changed since the last build.
+      # The binary is kept outside target/, which rust-cache prunes, and saved
+      # right after the build so a failed send does not lose it.
       - name: Restore the notification sender
         id: sender
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
-          path: rust/target/release/wat2do-send-notifications
+          path: .sender/wat2do-send-notifications
           key: wat2do-send-notifications-${{ runner.os }}-${{ hashFiles('rust/**', 'backend/controlbox/*.json', 'backend/services/wat2do-logo.png') }}
 
       - name: Set up Rust
@@ -60,7 +62,17 @@ jobs:
           # Link-time optimization would add minutes to every run for no
           # measurable gain in a job that mostly waits on the network.
           CARGO_PROFILE_RELEASE_LTO: "false"
-        run: cargo build --release --locked --bin wat2do-send-notifications
+        run: |
+          cargo build --release --locked --bin wat2do-send-notifications
+          mkdir -p ../.sender
+          cp target/release/wat2do-send-notifications ../.sender/
+
+      - name: Save the notification sender
+        if: steps.sender.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .sender/wat2do-send-notifications
+          key: ${{ steps.sender.outputs.cache-primary-key }}
 
       - name: Verify notification configuration
         run: |
@@ -103,4 +115,4 @@ jobs:
             notification=morning_email
           fi
           args+=(--notification "$notification")
-          ../rust/target/release/wat2do-send-notifications "${args[@]}"
+          ../.sender/wat2do-send-notifications "${args[@]}"
