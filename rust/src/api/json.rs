@@ -1,13 +1,16 @@
-//! JSON exactly as FastAPI writes it: pydantic's datetime and date formats,
-//! and `json.dumps` floats (`repr`), so a ported route's bytes match.
+//! JSON exactly as FastAPI writes it: pydantic's datetime, date and float
+//! formats for routes with a `response_model` (every ported route so far),
+//! and `json.dumps`'s `repr` floats for routes without one, so a ported
+//! route's bytes match.
 //!
 //! Use the serde helpers on response fields:
 //!
 //! ```text
-//! #[serde(serialize_with = "json::datetime")]      created_at: DateTime<Utc>,
+//! #[serde(serialize_with = "json::datetime")]        created_at: DateTime<Utc>,
 //! #[serde(serialize_with = "json::option_datetime")] paid_at: Option<DateTime<Utc>>,
-//! #[serde(serialize_with = "json::float")]          mean_minutes: f64,
-//! #[serde(serialize_with = "json::value")]          filters: serde_json::Value,
+//! #[serde(serialize_with = "json::float")]           mean_minutes: f64,      // NaN -> null
+//! #[serde(serialize_with = "json::value")]           filters: serde_json::Value,
+//! #[serde(serialize_with = "json::repr_value")]      body: Value,            // no response_model
 //! ```
 
 use std::fmt::Write as _;
@@ -55,9 +58,23 @@ pub fn option_date<S: Serializer>(
     }
 }
 
-/// Python's `repr(float)`, which `json.dumps` writes: the shortest digits that
-/// round-trip, in positional notation for exponents -4 to 15 and otherwise
-/// as `1e-05` / `1.5e+16`.
+/// pydantic-core's JSON for a float, which FastAPI writes for every route
+/// with a `response_model` (also inside `Any` and `dict` fields): the
+/// shortest round-trip digits, positional for exponents -5 to 15
+/// (`0.00001`, `123456789.0`) and otherwise `1e-7` / `1.5e+16`, with no
+/// exponent padding; NaN and infinities are `null` (`ser_json_inf_nan`).
+/// `None` stands for that `null`.
+pub fn pydantic_float(value: f64) -> Option<String> {
+    if !value.is_finite() {
+        return None;
+    }
+    Some(shortest_float(value, -5, false))
+}
+
+/// Python's `repr(float)`, which `json.dumps` writes (routes without a
+/// `response_model`, and sizes measured with `json.dumps`): positional for
+/// exponents -4 to 15, otherwise `1e-05` / `1.5e+16` with a two-digit
+/// exponent; `NaN`, `Infinity` and `-Infinity` as Python writes them.
 pub fn python_float(value: f64) -> String {
     if value.is_nan() {
         return "NaN".to_owned();
@@ -65,6 +82,13 @@ pub fn python_float(value: f64) -> String {
     if value.is_infinite() {
         return if value > 0.0 { "Infinity" } else { "-Infinity" }.to_owned();
     }
+    shortest_float(value, -4, true)
+}
+
+/// The shortest round-trip digits of a finite float, positional for decimal
+/// exponents from `lowest_positional` to 15, else scientific (with the
+/// exponent zero-padded to two digits when `pad_exponent`).
+fn shortest_float(value: f64, lowest_positional: i32, pad_exponent: bool) -> String {
     if value == 0.0 {
         return if value.is_sign_negative() {
             "-0.0"
@@ -82,7 +106,7 @@ pub fn python_float(value: f64) -> String {
         None => ("", mantissa),
     };
     let digits: String = mantissa.chars().filter(char::is_ascii_digit).collect();
-    if (-4..16).contains(&exponent) {
+    if (lowest_positional..16).contains(&exponent) {
         let point = exponent + 1;
         let text = if point <= 0 {
             format!("0.{}{digits}", "0".repeat((-point) as usize))
@@ -101,12 +125,44 @@ pub fn python_float(value: f64) -> String {
         format!("{first}.{rest}")
     };
     let exponent_sign = if exponent < 0 { '-' } else { '+' };
-    format!("{sign}{mantissa}e{exponent_sign}{:02}", exponent.abs())
+    if pad_exponent {
+        format!("{sign}{mantissa}e{exponent_sign}{:02}", exponent.abs())
+    } else {
+        format!("{sign}{mantissa}e{exponent_sign}{}", exponent.abs())
+    }
 }
 
-/// A float as `json.dumps` writes it.
+/// Which float text a value is written with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FloatStyle {
+    /// pydantic-core (routes with a `response_model`).
+    Pydantic,
+    /// `json.dumps` (routes without one).
+    Repr,
+}
+
+fn write_float<S: Serializer>(
+    value: f64,
+    style: FloatStyle,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    let text = match style {
+        FloatStyle::Pydantic => match pydantic_float(value) {
+            Some(text) => text,
+            None => return serializer.serialize_none(),
+        },
+        FloatStyle::Repr => python_float(value),
+    };
+    // A raw value keeps the text as Python writes it; serde_json's own float
+    // writer would print "1e-5" and "1e16".
+    serde_json::value::RawValue::from_string(text)
+        .map_err(serde::ser::Error::custom)?
+        .serialize(serializer)
+}
+
+/// A float as FastAPI writes it in a response model.
 pub fn float<S: Serializer>(value: &f64, serializer: S) -> Result<S::Ok, S::Error> {
-    PyValue(&number(*value)).serialize_into(serializer)
+    write_float(*value, FloatStyle::Pydantic, serializer)
 }
 
 pub fn option_float<S: Serializer>(value: &Option<f64>, serializer: S) -> Result<S::Ok, S::Error> {
@@ -116,14 +172,11 @@ pub fn option_float<S: Serializer>(value: &Option<f64>, serializer: S) -> Result
     }
 }
 
-fn number(value: f64) -> Value {
-    serde_json::Number::from_f64(value).map_or(Value::Null, Value::Number)
-}
-
-/// A JSON value (a `jsonb` column) as Python re-serializes what PostgREST
-/// returned: floats through `repr`, everything else unchanged.
+/// A JSON value (a `jsonb` column) inside a response model, as pydantic
+/// re-serializes what PostgREST returned: floats in pydantic's format,
+/// everything else unchanged.
 pub fn value<S: Serializer>(value: &Value, serializer: S) -> Result<S::Ok, S::Error> {
-    PyValue(value).serialize_into(serializer)
+    PyValue(value).serialize(serializer)
 }
 
 pub fn option_value<S: Serializer>(
@@ -131,42 +184,46 @@ pub fn option_value<S: Serializer>(
     serializer: S,
 ) -> Result<S::Ok, S::Error> {
     match value {
-        Some(value) => PyValue(value).serialize_into(serializer),
+        Some(value) => PyValue(value).serialize(serializer),
         None => serializer.serialize_none(),
     }
 }
 
-/// Serializes a `Value` with Python's float text.
-pub struct PyValue<'a>(pub &'a Value);
-
-impl PyValue<'_> {
-    fn serialize_into<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        self.serialize(serializer)
-    }
+/// A JSON value returned by a route without a `response_model`, which
+/// FastAPI writes with `json.dumps` (`repr` floats).
+pub fn repr_value<S: Serializer>(value: &Value, serializer: S) -> Result<S::Ok, S::Error> {
+    StyledValue(value, FloatStyle::Repr).serialize(serializer)
 }
+
+/// Serializes a `Value` with pydantic's float text.
+pub struct PyValue<'a>(pub &'a Value);
 
 impl serde::Serialize for PyValue<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        StyledValue(self.0, FloatStyle::Pydantic).serialize(serializer)
+    }
+}
+
+struct StyledValue<'a>(&'a Value, FloatStyle);
+
+impl serde::Serialize for StyledValue<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let style = self.1;
         match self.0 {
             Value::Number(number) if number.is_f64() => {
-                // A raw value keeps "1e-05" as Python writes it; serde_json's
-                // own float writer would print "1e-5".
-                let text = python_float(number.as_f64().unwrap_or_default());
-                serde_json::value::RawValue::from_string(text)
-                    .map_err(serde::ser::Error::custom)?
-                    .serialize(serializer)
+                write_float(number.as_f64().unwrap_or_default(), style, serializer)
             }
             Value::Array(items) => {
                 let mut seq = serializer.serialize_seq(Some(items.len()))?;
                 for item in items {
-                    seq.serialize_element(&PyValue(item))?;
+                    seq.serialize_element(&StyledValue(item, style))?;
                 }
                 seq.end()
             }
             Value::Object(entries) => {
                 let mut map = serializer.serialize_map(Some(entries.len()))?;
                 for (key, item) in entries {
-                    map.serialize_entry(key, &PyValue(item))?;
+                    map.serialize_entry(key, &StyledValue(item, style))?;
                 }
                 map.end()
             }
@@ -267,11 +324,78 @@ mod tests {
     }
 
     #[test]
-    fn json_values_use_python_floats() {
-        let value = json!({"a": 0.00001, "b": [1, 2.5, "x"], "c": null, "d": 1e16});
+    fn floats_match_a_pydantic_corpus() {
+        // [repr(value), TypeAdapter(float).dump_json(value)] from pydantic 2.14
+        // (shared with the events port; checked against the backend venv).
+        let corpus: Vec<(String, String)> =
+            serde_json::from_str(include_str!("testdata/pydantic_floats.json")).unwrap();
+        assert!(corpus.len() > 100);
+        for (python_repr, expected) in corpus {
+            let value: f64 = python_repr.parse().unwrap();
+            assert_eq!(
+                pydantic_float(value).as_deref(),
+                Some(expected.as_str()),
+                "{python_repr}"
+            );
+            // And the repr side round-trips Python's own text.
+            assert_eq!(python_float(value), python_repr, "{python_repr}");
+        }
+    }
+
+    #[test]
+    fn floats_match_pydantic_core() {
+        // FastAPI 0.162 / pydantic 2.14, a response_model with these floats:
+        // [0.00001,1e-7,1e+16,123456789.0,-0.0,null,null,0.30000000000000004,
+        //  0.000030000000000000004,1.2345678901234568e+16,1e+300,5e-324]
+        for (value, expected) in [
+            (0.00001, Some("0.00001")),
+            (1e-7, Some("1e-7")),
+            (1e16, Some("1e+16")),
+            (123456789.0, Some("123456789.0")),
+            (-0.0, Some("-0.0")),
+            (f64::NAN, None),
+            (f64::INFINITY, None),
+            (f64::NEG_INFINITY, None),
+            (0.1 + 0.2, Some("0.30000000000000004")),
+            (1e-5 * 3.0, Some("0.000030000000000000004")),
+            (12345678901234567.0, Some("1.2345678901234568e+16")),
+            (1e300, Some("1e+300")),
+            (5e-324, Some("5e-324")),
+            (2.5e20, Some("2.5e+20")),
+            (1e15, Some("1000000000000000.0")),
+        ] {
+            assert_eq!(pydantic_float(value).as_deref(), expected, "{value}");
+        }
+    }
+
+    #[test]
+    fn json_values_use_pydantic_floats_and_repr_on_request() {
+        let value = json!({"a": 0.00001, "b": [1, 2.5, "x"], "c": null, "d": 1e16, "e": 1e-7});
         assert_eq!(
             serde_json::to_string(&PyValue(&value)).unwrap(),
-            r#"{"a":1e-05,"b":[1,2.5,"x"],"c":null,"d":1e+16}"#
+            r#"{"a":0.00001,"b":[1,2.5,"x"],"c":null,"d":1e+16,"e":1e-7}"#
+        );
+        #[derive(serde::Serialize)]
+        struct Repr(#[serde(serialize_with = "repr_value")] Value);
+        // FastAPI without a response_model: {"f":[1e-05,1e+16]}
+        assert_eq!(
+            serde_json::to_string(&Repr(json!({"f": [0.00001, 1e16]}))).unwrap(),
+            r#"{"f":[1e-05,1e+16]}"#
+        );
+        #[derive(serde::Serialize)]
+        struct Floats {
+            #[serde(serialize_with = "float")]
+            x: f64,
+            #[serde(serialize_with = "option_float")]
+            y: Option<f64>,
+        }
+        assert_eq!(
+            serde_json::to_string(&Floats {
+                x: f64::NAN,
+                y: Some(1e16)
+            })
+            .unwrap(),
+            r#"{"x":null,"y":1e+16}"#
         );
     }
 

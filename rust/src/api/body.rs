@@ -326,6 +326,19 @@ impl Body {
         };
         let parsed = match &value {
             Value::Bool(flag) => Some(*flag),
+            // 0 and 1 are booleans; another whole number is unreadable
+            // (`bool_parsing`); a fraction, or a number too large for an
+            // integer, is the wrong type (`bool_type`).
+            Value::Number(number) if !whole_i64(number) => {
+                self.issue(
+                    "bool_type",
+                    Self::loc(name),
+                    "Input should be a valid boolean".into(),
+                    value,
+                    None,
+                );
+                return Input::Missing;
+            }
             Value::Number(number) => match number.as_f64() {
                 Some(0.0) => Some(false),
                 Some(1.0) => Some(true),
@@ -356,6 +369,62 @@ impl Body {
                 Input::Missing
             }
         }
+    }
+
+    /// pydantic's lax `int` from JSON: whole numbers (also as floats or
+    /// numeric strings) and booleans. A fraction is `int_from_float`, a
+    /// number beyond 64 bits `int_parsing_size` (pydantic accepts larger
+    /// integers given as digits; no column here holds one).
+    pub fn int(&mut self, name: &'static str) -> Input<i64> {
+        let value = match self.take(name) {
+            Input::Given(value) => value,
+            Input::Null => return Input::Null,
+            Input::Missing => return Input::Missing,
+        };
+        let loc = Self::loc(name);
+        let (kind, msg) = match &value {
+            Value::Bool(flag) => return Input::Given(i64::from(*flag)),
+            Value::Number(number) => {
+                if let Some(int) = number.as_i64() {
+                    return Input::Given(int);
+                }
+                let float = number.as_f64().unwrap_or(f64::INFINITY);
+                if number.is_f64() && float.fract() != 0.0 {
+                    (
+                        "int_from_float",
+                        "Input should be a valid integer, got a number with a fractional part",
+                    )
+                } else if number.is_f64() && float.abs() < 9_223_372_036_854_775_808.0 {
+                    return Input::Given(float as i64);
+                } else {
+                    (
+                        "int_parsing_size",
+                        "Unable to parse input string as an integer, exceeded maximum size",
+                    )
+                }
+            }
+            Value::String(text) => match super::validation::parse_python_int(text) {
+                Some(int) => return Input::Given(int),
+                None if text
+                    .trim()
+                    .bytes()
+                    .all(|byte| byte.is_ascii_digit() || byte == b'-' || byte == b'+')
+                    && text.trim().bytes().any(|byte| byte.is_ascii_digit()) =>
+                {
+                    (
+                        "int_parsing_size",
+                        "Unable to parse input string as an integer, exceeded maximum size",
+                    )
+                }
+                None => (
+                    "int_parsing",
+                    "Input should be a valid integer, unable to parse string as an integer",
+                ),
+            },
+            _ => ("int_type", "Input should be a valid integer"),
+        };
+        self.issue(kind, loc, msg.into(), value, None);
+        Input::Missing
     }
 
     /// A `bool` field with a default (not `Optional`): missing reads as
@@ -634,6 +703,19 @@ impl Body {
     }
 }
 
+/// Whether a JSON number is a whole number that fits in 64 bits.
+fn whole_i64(number: &serde_json::Number) -> bool {
+    if number.is_i64() {
+        return true;
+    }
+    if number.is_u64() {
+        return false;
+    }
+    number
+        .as_f64()
+        .is_some_and(|float| float.fract() == 0.0 && float.abs() < 9_223_372_036_854_775_808.0)
+}
+
 /// FastAPI decodes a JSON body before it runs a route's dependencies, so
 /// malformed JSON is a 422 before (for example) a rate limit is counted;
 /// the body's other problems are reported after them.
@@ -790,6 +872,63 @@ mod tests {
             Err(ApiError::RequestValidation(issues)) => assert_eq!(issues[0].kind, "json_invalid"),
             other => panic!("{other:?}"),
         }
+    }
+
+    #[test]
+    fn booleans_and_integers_match_pydantic() {
+        // pydantic 2.14 TypeAdapter(bool).validate_json / a model's `n: int`.
+        let kinds = |value: Value, read: fn(&mut Body)| {
+            let mut body = Body::from_value(json!({"v": value}), Extra::Ignore);
+            read(&mut body);
+            match body.finish() {
+                Ok(()) => "ok".to_owned(),
+                Err(ApiError::RequestValidation(issues)) => issues[0].kind.clone(),
+                Err(other) => panic!("{other:?}"),
+            }
+        };
+        let bool_read: fn(&mut Body) = |body| {
+            body.bool("v");
+        };
+        for (value, expected) in [
+            (json!(2), "bool_parsing"),
+            (json!(-1), "bool_parsing"),
+            (json!(2.0), "bool_parsing"),
+            (json!("2"), "bool_parsing"),
+            (json!("1.0"), "bool_parsing"),
+            (json!(2.5), "bool_type"),
+            (json!(1e20), "bool_type"),
+            (json!([]), "bool_type"),
+            (json!(1.0), "ok"),
+            (json!(0), "ok"),
+            (json!("t"), "ok"),
+        ] {
+            assert_eq!(kinds(value.clone(), bool_read), expected, "{value}");
+        }
+        let int_read: fn(&mut Body) = |body| {
+            body.int("v");
+        };
+        for (value, expected) in [
+            (json!(1e20), "int_parsing_size"),
+            (json!(1e19), "int_parsing_size"),
+            (json!(-9.3e18), "int_parsing_size"),
+            (json!(9223372036854775807.0), "int_parsing_size"),
+            (json!(1.5), "int_from_float"),
+            (json!("1.5"), "int_parsing"),
+            (json!("abc"), "int_parsing"),
+            (json!([]), "int_type"),
+            (json!(9.2e18), "ok"),
+            (json!(-9.2e18), "ok"),
+            (json!(2.0), "ok"),
+            (json!(" 12 "), "ok"),
+            (json!("1.0"), "ok"),
+            (json!(true), "ok"),
+        ] {
+            assert_eq!(kinds(value.clone(), int_read), expected, "{value}");
+        }
+        let mut body = Body::from_value(json!({"v": 9.2e18, "w": true, "x": null}), Extra::Ignore);
+        assert_eq!(body.int("v"), Input::Given(9_200_000_000_000_000_000));
+        assert_eq!(body.int("w"), Input::Given(1));
+        assert_eq!(body.int("x"), Input::Null);
     }
 
     #[test]

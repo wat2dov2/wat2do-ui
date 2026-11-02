@@ -457,21 +457,8 @@ pub enum DatetimeError {
 /// `Z` or a `±HH:MM`/`±HHMM` offset.
 pub fn parse_aware_datetime(raw: &str) -> Result<DateTime<FixedOffset>, DatetimeError> {
     use DatetimeError::{Invalid, Naive};
-    if let Ok(seconds) = raw.parse::<f64>()
-        && raw
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || matches!(byte, b'-' | b'+' | b'.'))
-    {
-        let seconds = if seconds.abs() > 2e10 {
-            seconds / 1000.0
-        } else {
-            seconds
-        };
-        let whole = seconds.floor();
-        let micros = ((seconds - whole) * 1e6).round() as u32;
-        return DateTime::from_timestamp(whole as i64, micros * 1000)
-            .map(|value| value.fixed_offset())
-            .ok_or(Invalid("timestamp value is outside expected range"));
+    if let Some(value) = timestamp_from_text(raw) {
+        return Ok(value);
     }
     let bytes = raw.as_bytes();
     if bytes.len() < 10 {
@@ -518,6 +505,53 @@ pub fn parse_aware_datetime(raw: &str) -> Result<DateTime<FixedOffset>, Datetime
             "unexpected extra characters at the end of the input",
         )),
     }
+}
+
+/// speedate's number-as-timestamp: an optional sign, digits with an
+/// optional fraction, and an exponent only after a decimal point (`1.7e9`
+/// is a timestamp, `17e8` is not). Seconds, or milliseconds past 2e10;
+/// microseconds are rounded. Anything else (or out of range) is parsed as a
+/// date instead.
+fn timestamp_from_text(raw: &str) -> Option<DateTime<FixedOffset>> {
+    let body = raw.strip_prefix(['+', '-']).unwrap_or(raw);
+    let (mantissa, exponent) = match body.find(['e', 'E']) {
+        Some(at) => (&body[..at], Some(&body[at + 1..])),
+        None => (body, None),
+    };
+    let (whole, fraction) = match mantissa.split_once('.') {
+        Some((whole, fraction)) => (whole, Some(fraction)),
+        None => (mantissa, None),
+    };
+    let digits = |text: &str| text.bytes().all(|byte| byte.is_ascii_digit());
+    let mantissa_ok = digits(whole)
+        && fraction.is_none_or(digits)
+        && !(whole.is_empty() && fraction.is_none_or(str::is_empty));
+    let exponent_ok = match exponent {
+        None => true,
+        Some(exponent) => {
+            let unsigned = exponent.strip_prefix(['+', '-']).unwrap_or(exponent);
+            fraction.is_some() && !unsigned.is_empty() && digits(unsigned)
+        }
+    };
+    if !mantissa_ok || !exponent_ok {
+        return None;
+    }
+    let value: f64 = raw.parse().ok()?;
+    let seconds = if value.abs() > 2e10 {
+        value / 1000.0
+    } else {
+        value
+    };
+    let mut whole = seconds.floor();
+    let mut micros = ((seconds - whole) * 1e6).round();
+    if micros >= 1e6 {
+        whole += 1.0;
+        micros -= 1e6;
+    }
+    if !(-62_135_596_800.0..=253_402_300_799.0).contains(&whole) {
+        return None;
+    }
+    DateTime::from_timestamp(whole as i64, micros as u32 * 1000).map(|value| value.fixed_offset())
 }
 
 fn parse_time(text: &str) -> Option<(NaiveTime, Option<FixedOffset>)> {
@@ -897,6 +931,37 @@ mod tests {
         assert_eq!(ok("1700000000.5"), "2023-11-14T22:13:20.500+00:00");
         assert_eq!(ok("-1"), "1969-12-31T23:59:59+00:00");
         assert_eq!(ok("20240101"), "1970-08-23T06:15:01+00:00");
+        // Numeric strings: an exponent only after a decimal point.
+        assert_eq!(ok("1.7e9"), "2023-11-14T22:13:20+00:00");
+        assert_eq!(ok("17.e8"), "2023-11-14T22:13:20+00:00");
+        assert_eq!(ok("1.7E+9"), "2023-11-14T22:13:20+00:00");
+        assert_eq!(ok("1.7e-3"), "1970-01-01T00:00:00.001700+00:00");
+        assert_eq!(ok("+1700000000"), "2023-11-14T22:13:20+00:00");
+        assert_eq!(ok("-.5"), "1969-12-31T23:59:59.500+00:00");
+        assert_eq!(ok("5."), "1970-01-01T00:00:05+00:00");
+        assert_eq!(ok("0.9999999"), "1970-01-01T00:00:01+00:00");
+        assert_eq!(
+            ok("1700000000.123456789"),
+            "2023-11-14T22:13:20.123457+00:00"
+        );
+        assert_eq!(ok("20000000001"), "1970-08-20T11:33:20.001+00:00");
+        assert_eq!(ok("-20000000001"), "1969-05-14T12:26:39.999+00:00");
+        assert_eq!(ok("20000000000.0"), "2603-10-11T11:33:20+00:00");
+        assert_eq!(ok("00001700000000"), "2023-11-14T22:13:20+00:00");
+        for raw in [
+            "1e3", "17e8", "5e-1", "2e10", "1.0e20", ".e5", "1.7e", "inf", "nan", "--1", "1..0",
+            ".",
+        ] {
+            assert_eq!(
+                parse_aware_datetime(raw).unwrap_err(),
+                Invalid("input is too short"),
+                "{raw}"
+            );
+        }
+        assert_eq!(
+            parse_aware_datetime("17000000e2").unwrap_err(),
+            Invalid("invalid date separator, expected `-`")
+        );
         for (raw, expected) in [
             ("garbage", Invalid("input is too short")),
             (
