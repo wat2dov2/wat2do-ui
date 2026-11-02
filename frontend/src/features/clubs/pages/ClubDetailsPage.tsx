@@ -61,7 +61,7 @@ function ClubDetailsContent({
     (state) => state.savedClubIds,
   );
   const isSaved = savedClubIds.includes(club.id);
-  const managesClub = club.created_by === userId || clubs.some((managedClub) => managedClub.id === club.id);
+  const managesClub = (userId !== null && club.created_by === userId) || clubs.some((managedClub) => managedClub.id === club.id);
   const openClubPanel = useOpenClubPanel();
   const clubPageHref = sanitizeHref(club.club_page);
   const discordHref = sanitizeHref(club.discord ?? "");
