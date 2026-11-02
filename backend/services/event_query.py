@@ -117,7 +117,13 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
         else {}
     )
     is_directory_event = row.pop("ingestion_source", None) == "directory"
-    if is_directory_event and not org_fields.get("club_logo_url"):
+    # An event hosted by the university itself (no club) never borrows the student
+    # union's logo: it shows its own poster or the plain fallback instead.
+    if (
+        is_directory_event
+        and row.get("club_id") is not None
+        and not org_fields.get("club_logo_url")
+    ):
         org_fields["club_logo_url"] = directory.default_club_logo(
             row.get("school"), row.get("source_url")
         )

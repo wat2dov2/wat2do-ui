@@ -1389,6 +1389,7 @@ def test_directory_missing_host_picture_uses_union_without_renaming_host(monkeyp
         "school": "cornell",
         "source_url": "https://cornell.campusgroups.com/rsvp?id=2313686",
         "added_at": datetime(2026, 9, 30, tzinfo=timezone.utc),
+        "club_id": 7,
         "clubs": {"logo_url": None},
         "ingestion_source": "directory",
     }
@@ -1396,3 +1397,7 @@ def test_directory_missing_host_picture_uses_union_without_renaming_host(monkeyp
     assert event.club == "Scholars Working Ambitiously to Graduate"
     assert event.club_logo_url == "https://example.com/union.jpg"
     lookup.assert_called_once_with("cornell", "cornell_studentassembly")
+
+    # Hosted by the university itself: no club, so no borrowed student union logo.
+    university = {**row, "club": "Cornell University", "club_id": None, "clubs": None}
+    assert event_query.hydrate_event(university, [], model).club_logo_url is None
