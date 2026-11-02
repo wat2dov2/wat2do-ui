@@ -1,0 +1,1 @@
+String(!!document.querySelector('a[href^="/accounts/login"]'))

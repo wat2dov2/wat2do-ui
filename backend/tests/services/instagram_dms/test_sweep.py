@@ -4,9 +4,9 @@ from types import SimpleNamespace
 
 import pytest
 
+from services.instagram_accounts import BrowserEngagementUncertain
 from services.instagram_dms import sweep as module
 from services.instagram_emulator.inbox import InboxRow, MessagingLimited
-from services.instagram_notifications.browser_session import BrowserEngagementUncertain
 
 THEIRS = InboxRow("club", "Could you share this?", 0.5, unread=True, request=False)
 OURS = InboxRow("friend", "You: Sure!", 0.5, unread=False, request=False)

@@ -25,6 +25,81 @@ pub async fn connect_read_only(max_connections: u32) -> Result<PgPool> {
     pool(max_connections, true).await
 }
 
+/// How long a blocking caller waits for one database operation, connection included.
+const OPERATION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+
+fn pool_options(max_connections: u32) -> PgPoolOptions {
+    PgPoolOptions::new()
+        .max_connections(max_connections)
+        .acquire_timeout(OPERATION_TIMEOUT)
+}
+
+/// Postgres for synchronous services (the Brave worker and its jobs), which run
+/// their own threads and call the database from any of them.
+pub struct BlockingPool {
+    runtime: tokio::runtime::Runtime,
+    pool: PgPool,
+}
+
+impl BlockingPool {
+    pub fn connect(max_connections: u32) -> Result<Self> {
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(1)
+            .enable_all()
+            .build()
+            .context("could not start the database runtime")?;
+        let pool = runtime.block_on(connect(max_connections))?;
+        Ok(Self { runtime, pool })
+    }
+
+    /// A pool that connects on first use, so a database outage cannot stop a service
+    /// whose other work needs no database.
+    pub fn connect_lazy(max_connections: u32) -> Result<Self> {
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(1)
+            .enable_all()
+            .build()
+            .context("could not start the database runtime")?;
+        let options = connect_options()?;
+        let pool = {
+            let _entered = runtime.enter();
+            pool_options(max_connections).connect_lazy_with(options)
+        };
+        Ok(Self { runtime, pool })
+    }
+
+    /// Run one database operation on the calling thread, giving up after `timeout`
+    /// (the worker holds Brave's lock around some of them).
+    pub fn run_within<T, E, F>(
+        &self,
+        timeout: std::time::Duration,
+        operation: impl FnOnce(PgPool) -> F,
+    ) -> Result<T>
+    where
+        F: std::future::Future<Output = Result<T, E>>,
+        E: Into<anyhow::Error>,
+    {
+        let pool = self.pool.clone();
+        self.runtime.block_on(async move {
+            match tokio::time::timeout(timeout, operation(pool)).await {
+                Ok(result) => result.map_err(Into::into),
+                Err(_) => Err(anyhow::anyhow!(
+                    "the database did not answer within {timeout:?}"
+                )),
+            }
+        })
+    }
+
+    /// `run_within` the default 30 second budget.
+    pub fn run<T, E, F>(&self, operation: impl FnOnce(PgPool) -> F) -> Result<T>
+    where
+        F: std::future::Future<Output = Result<T, E>>,
+        E: Into<anyhow::Error>,
+    {
+        self.run_within(OPERATION_TIMEOUT, operation)
+    }
+}
+
 /// A `LISTEN`/`NOTIFY` listener on its own connection to `DATABASE_URL`.
 pub async fn listener() -> Result<PgListener> {
     // One connection that is never retired, as `PgListener::connect` sets up.
@@ -39,8 +114,7 @@ pub async fn listener() -> Result<PgListener> {
 }
 
 async fn pool(max_connections: u32, read_only: bool) -> Result<PgPool> {
-    PgPoolOptions::new()
-        .max_connections(max_connections)
+    pool_options(max_connections)
         // Each pool connection is its own server session, so the settings hold
         // for as long as it is open.
         .after_connect(move |connection, _| {

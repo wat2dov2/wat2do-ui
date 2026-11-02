@@ -1,0 +1,29 @@
+# The sources the wat2do-browser binary is built from, relative to the repository root.
+# Their git blobs (tests excluded) make its source fingerprint: build.rs embeds it and
+# scripts/notification-binary.sh computes it the same way. A worker binary is replaced
+# (and needs a new macOS Automation approval) only when one of these changes.
+rust/browser-worker-sources.txt
+rust/build.rs
+rust/Cargo.toml
+rust/Cargo.lock
+rust/src/lib.rs
+rust/src/bin/wat2do-browser.rs
+rust/src/instagram_notifications
+rust/src/notification_retry.rs
+rust/src/launch_agents.rs
+rust/src/logs.rs
+rust/src/host.rs
+rust/src/python_json.rs
+rust/src/python_url.rs
+rust/src/automate_logs.rs
+rust/src/controlbox.rs
+rust/src/db.rs
+rust/src/settings.rs
+rust/src/schools.rs
+rust/src/ingestion/items.rs
+backend/controlbox/instagram_browser.json
+backend/controlbox/instagram_digest.json
+backend/controlbox/notification_retry.json
+backend/controlbox/scraping.json
+backend/controlbox/ingestion.json
+backend/controlbox/event_discovery.json

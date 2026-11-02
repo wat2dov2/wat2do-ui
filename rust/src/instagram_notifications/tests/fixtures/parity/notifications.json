@@ -1,0 +1,1079 @@
+[
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Successfully queued 0 new Instagram posts (ignored 1 duplicates) to the ledger."
+   ]
+  ],
+  "name": "single post",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=3456789012345678901_17841400000000000\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": {
+   "cache_ent_id": null,
+   "intended_recipient_id": "12342599092",
+   "media": [
+    [
+     "3456789012345678901",
+     "https://www.instagram.com/p/C_4-0q4Vmw1/"
+    ]
+   ],
+   "push_category": "post",
+   "push_id": "push-1",
+   "school_id": 7,
+   "total_non_mmc_media_count": null
+  },
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Successfully queued 2 new Instagram posts (ignored 1 duplicates) to the ledger."
+   ]
+  ],
+  "name": "media list with duplicates",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_list=111_1,222,111_3&media_id=333\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": {
+   "cache_ent_id": null,
+   "intended_recipient_id": "12342599092",
+   "media": [
+    [
+     "111",
+     "https://www.instagram.com/p/Bv/"
+    ],
+    [
+     "222",
+     "https://www.instagram.com/p/De/"
+    ],
+    [
+     "333",
+     "https://www.instagram.com/p/FN/"
+    ]
+   ],
+   "push_category": "post",
+   "push_id": "push-1",
+   "school_id": 7,
+   "total_non_mmc_media_count": null
+  },
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Successfully queued 0 new Instagram posts (ignored 1 duplicates) to the ledger."
+   ]
+  ],
+  "name": "encoded query",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=444%5F5&x=%zz+y\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": {
+   "cache_ent_id": null,
+   "intended_recipient_id": "12342599092",
+   "media": [
+    [
+     "444",
+     "https://www.instagram.com/p/G8/"
+    ]
+   ],
+   "push_category": "post",
+   "push_id": "push-1",
+   "school_id": 7,
+   "total_non_mmc_media_count": null
+  },
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Expanded Instagram digest through wat2do.ubc to 2 exact media target(s)."
+   ],
+   [
+    "WARNING",
+    "Instagram returned 2 of 3 advertised media items; processing all media available from the terminal digest page."
+   ],
+   [
+    "INFO",
+    "Successfully queued 1 new Instagram posts (ignored 1 duplicates) to the ledger."
+   ]
+  ],
+  "name": "digest with count",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=111&cache_ent_id=c-1&total_non_mmc_media_count=3\", \"com.instagram.android.igns.logging.push_category\": \"subscription_daily_digest\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": {
+   "cache_ent_id": "c-1",
+   "intended_recipient_id": "12342599092",
+   "media": [
+    [
+     "111",
+     "https://www.instagram.com/p/Bv/"
+    ],
+    [
+     "555",
+     "https://www.instagram.com/p/Ir/"
+    ]
+   ],
+   "push_category": "subscription_daily_digest",
+   "push_id": "push-1",
+   "school_id": 7,
+   "total_non_mmc_media_count": 3
+  },
+  "resolver_calls": [
+   [
+    "12342599092",
+    "wat2do.ubc",
+    "c-1"
+   ]
+  ],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Expanded Instagram digest through wat2do.ubc to 2 exact media target(s)."
+   ],
+   [
+    "INFO",
+    "Successfully queued 1 new Instagram posts (ignored 1 duplicates) to the ledger."
+   ]
+  ],
+  "name": "digest without count",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?cache_ent_id=c-2\", \"com.instagram.android.igns.logging.push_category\": \"subscription_daily_digest\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": {
+   "cache_ent_id": "c-2",
+   "intended_recipient_id": "12342599092",
+   "media": [
+    [
+     "555",
+     "https://www.instagram.com/p/Ir/"
+    ],
+    [
+     "111",
+     "https://www.instagram.com/p/Bv/"
+    ]
+   ],
+   "push_category": "subscription_daily_digest",
+   "push_id": "push-1",
+   "school_id": 7,
+   "total_non_mmc_media_count": null
+  },
+  "resolver_calls": [
+   [
+    "12342599092",
+    "wat2do.ubc",
+    "c-2"
+   ]
+  ],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Expanded Instagram digest through wat2do.ubc to 2 exact media target(s)."
+   ],
+   [
+    "INFO",
+    "Successfully queued 1 new Instagram posts (ignored 1 duplicates) to the ledger."
+   ]
+  ],
+  "name": "digest payload metadata",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=111\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\", \"cache_ent_id\": \"c-3\", \"total_non_mmc_media_count\": 2}",
+  "options": {},
+  "record": {
+   "cache_ent_id": "c-3",
+   "intended_recipient_id": "12342599092",
+   "media": [
+    [
+     "111",
+     "https://www.instagram.com/p/Bv/"
+    ],
+    [
+     "555",
+     "https://www.instagram.com/p/Ir/"
+    ]
+   ],
+   "push_category": "post",
+   "push_id": "push-1",
+   "school_id": 7,
+   "total_non_mmc_media_count": 2
+  },
+  "resolver_calls": [
+   [
+    "12342599092",
+    "wat2do.ubc",
+    "c-3"
+   ]
+  ],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification cache_ent_id values conflict."
+   ]
+  ],
+  "name": "digest metadata conflict",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?cache_ent_id=c-4\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\", \"cache_ent_id\": \"c-5\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification cache_ent_id cannot be empty."
+   ]
+  ],
+  "name": "digest empty cache",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?cache_ent_id=\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification cache_ent_id has an invalid type."
+   ]
+  ],
+  "name": "digest cache bool",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\", \"cache_ent_id\": true}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification total_non_mmc_media_count is invalid."
+   ]
+  ],
+  "name": "count not digits",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1&total_non_mmc_media_count=-1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "WARNING",
+    "Instagram returned 1 of 3 advertised media items; processing all media available from the terminal digest page."
+   ],
+   [
+    "INFO",
+    "Successfully queued 0 new Instagram posts (ignored 1 duplicates) to the ledger."
+   ]
+  ],
+  "name": "count leading zeros",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1&total_non_mmc_media_count=0003\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": {
+   "cache_ent_id": null,
+   "intended_recipient_id": "12342599092",
+   "media": [
+    [
+     "1",
+     "https://www.instagram.com/p/B/"
+    ]
+   ],
+   "push_category": "post",
+   "push_id": "push-1",
+   "school_id": 7,
+   "total_non_mmc_media_count": 3
+  },
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Instagram digest resolved more media IDs than advertised"
+   ]
+  ],
+  "name": "over count",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_list=1,2&cache_ent_id=c&total_non_mmc_media_count=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Successfully queued 1 new Instagram posts (ignored 1 duplicates) to the ledger."
+   ]
+  ],
+  "name": "complete digest needs no browser",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_list=1,2&cache_ent_id=c&total_non_mmc_media_count=2\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": {
+   "cache_ent_id": "c",
+   "intended_recipient_id": "12342599092",
+   "media": [
+    [
+     "1",
+     "https://www.instagram.com/p/B/"
+    ],
+    [
+     "2",
+     "https://www.instagram.com/p/C/"
+    ]
+   ],
+   "push_category": "post",
+   "push_id": "push-1",
+   "school_id": 7,
+   "total_non_mmc_media_count": 2
+  },
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification cache_ent_id is invalid."
+   ]
+  ],
+  "name": "long cache",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\", \"cache_ent_id\": \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification contains an invalid media ID."
+   ]
+  ],
+  "name": "zero media",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=0\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification contains an invalid media ID."
+   ]
+  ],
+  "name": "leading zero media",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=0123\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification contains an invalid media ID."
+   ]
+  ],
+  "name": "blank media",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification contains an invalid media ID."
+   ]
+  ],
+  "name": "33 digit media",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=111111111111111111111111111111111\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Successfully queued 0 new Instagram posts (ignored 1 duplicates) to the ledger."
+   ]
+  ],
+  "name": "32 digit media",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=99999999999999999999999999999999\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": {
+   "cache_ent_id": null,
+   "intended_recipient_id": "12342599092",
+   "media": [
+    [
+     "99999999999999999999999999999999",
+     "https://www.instagram.com/p/TuLW1BW4Ws74D_____/"
+    ]
+   ],
+   "push_category": "post",
+   "push_id": "push-1",
+   "school_id": 7,
+   "total_non_mmc_media_count": null
+  },
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification contains an invalid media ID."
+   ]
+  ],
+  "name": "unicode digits",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=\\u0661\\u0662\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Actionable notification has an unsupported Instagram action."
+   ]
+  ],
+  "name": "wrong path",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"user?username=someone\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Actionable notification contains no Instagram media identity."
+   ]
+  ],
+  "name": "no media",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?foo=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Actionable notification has an unsupported Instagram action."
+   ]
+  ],
+  "name": "no action",
+  "notification_json": "{\"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"p\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification action must be a string."
+   ]
+  ],
+  "name": "action not text",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": 7, \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Actionable notification requires a valid push ID."
+   ]
+  ],
+  "name": "push missing",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Actionable notification requires a valid push ID."
+   ]
+  ],
+  "name": "push too long",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Successfully queued 0 new Instagram posts (ignored 1 duplicates) to the ledger."
+   ]
+  ],
+  "name": "push padded",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"  p  \", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": {
+   "cache_ent_id": null,
+   "intended_recipient_id": "12342599092",
+   "media": [
+    [
+     "1",
+     "https://www.instagram.com/p/B/"
+    ]
+   ],
+   "push_category": "post",
+   "push_id": "p",
+   "school_id": 7,
+   "total_non_mmc_media_count": null
+  },
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification intended recipient does not match workflow routing."
+   ]
+  ],
+  "name": "recipient mismatch",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"99999999999\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification intended recipient does not match workflow routing."
+   ]
+  ],
+  "name": "recipient not text",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": 12342599092}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Successfully queued 0 new Instagram posts (ignored 1 duplicates) to the ledger."
+   ]
+  ],
+  "name": "recipient absent",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"p\"}",
+  "options": {},
+  "record": {
+   "cache_ent_id": null,
+   "intended_recipient_id": "12342599092",
+   "media": [
+    [
+     "1",
+     "https://www.instagram.com/p/B/"
+    ]
+   ],
+   "push_category": "post",
+   "push_id": "p",
+   "school_id": 7,
+   "total_non_mmc_media_count": null
+  },
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Ignoring unsupported Instagram notification."
+   ]
+  ],
+  "name": "dm share",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"direct_v2?id=340282366841710300949128&x=31337&clip_id=9\", \"com.instagram.android.igns.logging.push_category\": \"direct_v2_clips_share\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Ignoring unsupported Instagram notification."
+   ]
+  ],
+  "name": "suggested",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"user?username=x\", \"com.instagram.android.igns.logging.push_category\": \"suggested_close_friend\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Ignoring unsupported Instagram notification."
+   ]
+  ],
+  "name": "category not text",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1\", \"com.instagram.android.igns.logging.push_category\": [\"post\"], \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "NOTIFICATION_JSON must contain a JSON object."
+   ]
+  ],
+  "name": "not an object",
+  "notification_json": "[\"x\"]",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Failed to decode NOTIFICATION_JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+   ]
+  ],
+  "name": "invalid json",
+  "notification_json": "{not json",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "NOTIFICATION_JSON environment variable is empty or not set."
+   ]
+  ],
+  "name": "empty",
+  "notification_json": "   ",
+  "options": {},
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "No school mapping exists for the notification recipient."
+   ]
+  ],
+  "name": "unknown school",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {
+   "school": null
+  },
+  "record": null,
+  "resolver_calls": [],
+  "school": null
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "0123",
+  "logs": [
+   [
+    "ERROR",
+    "Actionable notification requires a valid intended recipient ID."
+   ]
+  ],
+  "name": "bad recipient env",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"0123\"}",
+  "options": {
+   "recipient": "0123"
+  },
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "CacheEntID expansion requires the browser-capable Mac runner"
+   ]
+  ],
+  "name": "linux digest",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?cache_ent_id=c-9\", \"com.instagram.android.igns.logging.push_category\": \"subscription_daily_digest\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {
+   "mac": false
+  },
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Instagram digest queue timed out; notification can be retried"
+   ]
+  ],
+  "name": "resolver failure",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?cache_ent_id=c-10\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {
+   "resolver_error": "Instagram digest queue timed out; notification can be retried"
+  },
+  "record": null,
+  "resolver_calls": [
+   [
+    "12342599092",
+    "wat2do.ubc",
+    "c-10"
+   ]
+  ],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Notification contains an invalid media ID."
+   ]
+  ],
+  "name": "resolver bad id",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?cache_ent_id=c-11\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {
+   "resolved": [
+    "abc"
+   ]
+  },
+  "record": null,
+  "resolver_calls": [
+   [
+    "12342599092",
+    "wat2do.ubc",
+    "c-11"
+   ]
+  ],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 1,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "ERROR",
+    "Instagram notification ledger recording failed."
+   ]
+  ],
+  "name": "ledger failure",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?media_id=1\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {
+   "ledger_error": true
+  },
+  "record": null,
+  "resolver_calls": [],
+  "school": [
+   7,
+   "ubc"
+  ]
+ },
+ {
+  "exit_code": 0,
+  "intended_recipient_id": "12342599092",
+  "logs": [
+   [
+    "INFO",
+    "Expanded Instagram digest through wat2do.uwaterloo to 2 exact media target(s)."
+   ],
+   [
+    "INFO",
+    "Successfully queued 1 new Instagram posts (ignored 1 duplicates) to the ledger."
+   ]
+  ],
+  "name": "renamed school",
+  "notification_json": "{\"com.instagram.android.igns.logging.ig_action\": \"clips_home?cache_ent_id=c-12\", \"com.instagram.android.igns.logging.push_category\": \"post\", \"com.instagram.android.igns.logging.push_id\": \"push-1\", \"com.instagram.android.igns.logging.intended_recipient_id\": \"12342599092\"}",
+  "options": {
+   "school": [
+    7,
+    "uwaterloo"
+   ]
+  },
+  "record": {
+   "cache_ent_id": "c-12",
+   "intended_recipient_id": "12342599092",
+   "media": [
+    [
+     "555",
+     "https://www.instagram.com/p/Ir/"
+    ],
+    [
+     "111",
+     "https://www.instagram.com/p/Bv/"
+    ]
+   ],
+   "push_category": "post",
+   "push_id": "push-1",
+   "school_id": 7,
+   "total_non_mmc_media_count": null
+  },
+  "resolver_calls": [
+   [
+    "12342599092",
+    "wat2do.uwaterloo",
+    "c-12"
+   ]
+  ],
+  "school": [
+   7,
+   "uwaterloo"
+  ]
+ }
+]

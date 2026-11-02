@@ -51,7 +51,7 @@ Notifications come from one physical Android phone, not an emulator.
 Log the phone's Instagram app into the school accounts being collected, keeping each device to three accounts or fewer and adding devices for more capacity.
 Automate's Android `NotificationListenerService` flow observes each Instagram notification and sends a `new_instagram_post` repository dispatch to GitHub.
 The dispatch carries the notification's recipient ID, push ID, push category, and Instagram action.
-A collapsed `subscription_daily_digest` notification is forwarded unchanged so `jobs/process_notification.py` remains the single owner of media materialization.
+A collapsed `subscription_daily_digest` notification is forwarded unchanged so the workflow's Rust job (`wat2do-browser process-notification`, `rust/src/instagram_notifications/process_notification.rs`) remains the single owner of media materialization.
 
 ## Shared Brave browser worker
 
@@ -82,8 +82,12 @@ It never launches Brave, creates a separate browser profile, or logs into an acc
 An authorized human completes login, two-factor prompts, and security challenges.
 In Brave, enable View > Developer > Allow JavaScript from Apple Events.
 This permission lets the worker switch accounts, verify the active username and recipient, resolve notification digests, and operate visible post controls in the authenticated tab.
-The installed Python worker also needs macOS Automation permission to control Brave Browser.
-Approve the `python3.12` prompt on its first browser job, or enable its Brave Browser entry under System Settings > Privacy & Security > Automation.
+The installed worker also needs macOS Automation permission to control Brave Browser.
+Its LaunchAgent runs the installed copy `~/.local/libexec/wat2do/wat2do-browser`, so macOS asks about `wat2do-browser`: approve the prompt on its first browser job, or enable its Brave Browser entry under System Settings > Privacy & Security > Automation, then resume the worker.
+Until then the worker pauses with a message that says exactly this.
+`install` replaces that copy only when the worker's own sources changed (`rust/browser-worker-sources.txt`), and each replaced copy needs this approval once; rebuilding the checkout for anything else keeps the approval.
+`install` refuses a binary built from uncommitted sources or outside `~/wat2do-runtime`, and puts the previous binary back if the LaunchAgent could not be replaced.
+The daily notification retry (`install-retry-schedule`, after `install`) runs the same copy, never replaces it, and shares that permission.
 If the prompt times out, the worker pauses before further jobs; after granting permission, inspect the failed job, resume the worker, and explicitly retry that job.
 Browser cookie values, including `sessionid` and CSRF values, never leave the browser.
 
@@ -104,31 +108,19 @@ The CLI's global `--state-directory` option supports isolated diagnostics; chang
 The queue stores public identities, post URLs, actions, sanitized results, and scheduling state.
 Do not delete its database to clear an error: that also removes deduplication history and the activation watermark.
 
-The notification workflow runs `backend/scripts/notification_runtime.py` maintenance before checking its disk reserve, preparing Python, or downloading dependencies.
-`backend/controlbox/notification_workflow.json` owns the disk reserve, pinned uv release, package-cache size cap, cleanup free-space threshold, retained uv tool-version count, cache cleanup deadline, setup and processing deadlines, and HTTP retry budget.
-Each runner reuses its own Python environment outside the disposable checkout and synchronizes it exactly to `requirements.lock`.
-The uv cache has one consistent location across setup and installation.
-Pinning uv prevents each new release from accumulating another tool binary on the persistent Mac runner.
-Preflight uses an available uv executable to prune the package cache before a low-space guard can prevent setup.
-An always-run maintenance step repeats cleanup after the job, including after processing or setup failures when uv is available.
-Maintenance uses `uv cache prune --ci`, then native `uv cache clean` if the cache remains over `cache_max_mb` or available space remains below `cleanup_free_disk_mb`.
-The cleanup threshold must include `minimum_free_disk_mb`; a final free-space read still gates admission after maintenance.
-Both native cleanup commands respect uv's cache lock and the configured total cleanup deadline; never pass `--force` or remove cache entries directly.
-Installation explicitly uses `UV_LINK_MODE=copy`, so clearing the package cache preserves installed environments.
-Old uv tool versions are pruned only during an assigned GitHub Actions job when the current registered runner proves it owns a nonshared tool root.
-Retain the configured uv release and enough recent complete versions to satisfy the configured count, with selected and open executable versions exempt from cleanup.
-An unproven or shared tool root is preserved.
-Package-cache cleanup also defers when installed environments use cache symlinks or their package directories cannot be inspected completely.
-Maintenance defers safely when another installation owns the cache or cleanup fails.
-Post-job maintenance warnings cannot invalidate already committed notification media or extend beyond the configured cleanup deadline.
-A low-space failure identifies the affected filesystem role and free MiB without printing credentials or notification contents.
-Free disposable build or package caches, preserve the browser queue and dispatch ledger, and rerun the failed notification after storage is available.
+The notification workflow runs the Rust binary `wat2do-browser`, built from the run's own checkout by `scripts/notification-binary.sh`.
+The binary records the source it was built from: the committed files listed in `rust/browser-worker-sources.txt`, tests excluded.
+Each runner keeps copies in its tool cache (`$RUNNER_TOOL_CACHE/wat2do-notification-<os>-<arch>/bin/<fingerprint>`), outside the disposable checkout; the Mac keeps the `binaries_to_keep` most recently used, so reruns of older commits reuse theirs, and Ubuntu runners restore theirs from the Actions cache by the same fingerprint.
+The binary is built before the job reads any credential, and its third-party actions are pinned by commit.
+When the source changed, the job builds it again (`cargo build --release --locked`, incremental in the runner's `rust-target` directory on the Mac) before processing anything.
+A missing `cargo`, a failed build, too little free disk or a binary that still does not match the checkout fails the job loudly, before any media is recorded, so the notification can be rerun.
+`backend/controlbox/notification_workflow.json` owns the disk reserve, the build cache's size cap (above it the cache is cleared and rebuilt), the build's parallelism and the build and processing deadlines.
+The job reads `DATABASE_URL` from the runtime secret (`AWS_RUNTIME_SECRET_ARN`) through GitHub OIDC and masks it before use.
 
 SQLite contention and temporary storage failures use the bounded storage controls in `instagram_browser.json`.
 Optional diagnostic publication cannot invalidate a committed queue transition.
 Storage recovery must preserve authentication holds, operator pauses, and uncertainty about engagement clicks.
 The worker's operational log rotates within `worker_log_max_bytes` and `worker_log_backup_count`, including when it is supervised by launchd.
-Late service imports preserve that entrypoint-owned handler and level instead of replacing it with an unbounded stderr stream.
 If log storage fails, one sanitized warning identifies the continuous failure episode without repeatedly dumping tracebacks into launchd's stderr log.
 Keep scheduled tasks on the installed revision; never fast-forward or replace the live worker checkout during draft generation.
 Code and runtime updates belong to maintenance with the existing installation and capture locks, an owned admission pause, no running jobs, and worker health readback.
@@ -210,10 +202,10 @@ cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-ingest -- en
 cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-ingest -- status
 ```
 
-`scripts/instagram_browser.py retrieve --school <slug> --url <url>` accepts the same post URLs, and also a profile.
+`wat2do-browser retrieve --school <slug> --url <url>` accepts the same post URLs, and also a profile.
 A profile needs the login to list, so the Brave worker lists at most `profile_post_limit` recent posts on its second tab and adds each one to the ingestion queue.
 Use actual club handles rather than an illustrative profile URL.
-`python scripts/instagram_browser.py retry --job-id <id>` lists an idle profile again.
+`wat2do-browser retry --job-id <id>` lists an idle profile again.
 Public profile listing reuses the currently logged-in account without switching to the school's account; digest expansion and engagement still require the exact intended school account.
 A login, challenge or suspended-account page pauses browser work for human recovery.
 Reload worker code only when its current job has finished, preserving the spool and pause state.
@@ -242,15 +234,16 @@ Apply the browser source delivery migration before installing this worker versio
 
 ### Worker operations
 
-Keep the Mac checkout's existing ignored `backend/.env` configured for the intended database environment.
-Use the repository's Python environment for the commands below.
+Keep the Mac checkout's existing ignored `backend/.env` configured for the intended database environment, including `DATABASE_URL`.
+In the commands below, `wat2do-browser` stands for `cargo run --release --quiet --manifest-path rust/Cargo.toml --bin wat2do-browser --`, run from the runtime checkout (`~/wat2do-runtime`).
 Install the persistent worker, then check its heartbeat, queue counts by school/state, source collector status, and recent failures:
 
 ```sh
-cd backend
-python scripts/instagram_browser.py install
-python scripts/instagram_browser.py status
+wat2do-browser install
+wat2do-browser status
 ```
+
+Run `install` again after moving the runtime checkout: it copies the new binary only when the worker's sources changed, then restarts the LaunchAgent.
 
 The installed LaunchAgent is `io.wat2do.instagram-browser.worker`.
 Its stdout and stderr logs are stored with the queue state.
@@ -267,7 +260,7 @@ launchctl print gui/$(id -u)/io.wat2do.instagram-browser.worker
 For a foreground worker managed by the terminal instead of the installed service:
 
 ```sh
-python scripts/instagram_browser.py worker
+wat2do-browser worker
 ```
 
 `worker --once` processes one bounded queued batch and does not collect source posts.
@@ -278,10 +271,10 @@ It does not replace the Android notification dispatcher or GitHub runner.
 Inspect a post's native controls through the queue without liking, saving, or reposting it:
 
 ```sh
-python scripts/instagram_browser.py inspect \
+wat2do-browser inspect \
   --school '<school_slug>' \
   --url '<original_instagram_post_url>'
-python scripts/instagram_browser.py status --job-id '<job_id_from_inspect>'
+wat2do-browser status --job-id '<job_id_from_inspect>'
 ```
 
 Inspection still switches the browser to the school's account and navigates to the post.
@@ -292,7 +285,7 @@ Inspection jobs do not suppress later real engagement on the same post.
 To collect eligible published selections immediately, run:
 
 ```sh
-python scripts/instagram_browser.py sync
+wat2do-browser sync
 ```
 
 This only reads the database and appends work to the local queue.
@@ -302,8 +295,8 @@ There is no manual command to enqueue live engagement for arbitrary posts.
 Before manually logging into or fixing an account in the shared tab, pause new browser work and wait until `status` shows no running jobs:
 
 ```sh
-python scripts/instagram_browser.py pause
-python scripts/instagram_browser.py status
+wat2do-browser pause
+wat2do-browser status
 ```
 
 Pausing lets the current operation finish and prevents both digest and engagement jobs from starting.
@@ -311,21 +304,21 @@ Source polling can continue to append queued work while paused.
 After resolving the account or browser issue, resume the worker:
 
 ```sh
-python scripts/instagram_browser.py resume
+wat2do-browser resume
 ```
 
 After inspecting an uncertain action's browser state and job result, explicitly retry a failed, unsupported, or cancelled job:
 
 ```sh
-python scripts/instagram_browser.py status --job-id '<job_id>'
-python scripts/instagram_browser.py retry --job-id '<job_id>'
+wat2do-browser status --job-id '<job_id>'
+wat2do-browser retry --job-id '<job_id>'
 ```
 
 Retries inspect the current state before attempting an engagement click.
 To remove a pending action from execution without deleting its deduplication record:
 
 ```sh
-python scripts/instagram_browser.py cancel --job-id '<job_id>'
+wat2do-browser cancel --job-id '<job_id>'
 ```
 
 Cancellation does not interrupt an operation already running in the browser.
@@ -502,7 +495,7 @@ Existing local job history is not backfilled; lifecycle events begin when the up
 Clubs sometimes DM a school account to ask Wat2Do to share their post.
 The phone's Automate flow already forwards every Instagram notification, and DMs arrive as the `direct_v2_text`, `direct_v2_media_share` and `direct_v2_clips_share` push categories.
 Their `ig_action` is `direct_v2?id=<thread>&x=<message>`; a reel share also carries `clip_id`.
-The workflow routes these to the Mac runner, and `jobs/process_notification.py` queues one `direct` job per message for the worker, delayed by a random interval between `reply_delay_min_seconds` and `reply_delay_max_seconds`.
+The notification job ignores them: the emulator worker's inbox sweep reads each school's inbox at random times instead.
 
 The worker answers as the school in the Instagram app on the Mac's Android emulator, never in Brave, holding the emulator's lock for the whole job:
 

@@ -1,0 +1,10 @@
+{
+  "android.title": "Instagram",
+  "android.text": "fixture_suggested_account, who you might know, is on Instagram.",
+  "android.subText": "wat2do.ubc",
+  "android.showWhen": true,
+  "com.instagram.android.igns.logging.ig_action": "user?username=fixture_suggested_account",
+  "com.instagram.android.igns.logging.push_category": "suggested_close_friend",
+  "com.instagram.android.igns.logging.push_id": "fixture-push-0006",
+  "com.instagram.android.igns.logging.intended_recipient_id": "12342599092"
+}

@@ -1,0 +1,37 @@
+Delivered-To: codes@example.com
+Return-Path: <security@mail.instagram.com>
+From: Instagram <security@mail.instagram.com>
+To: wat2do.ubc <codes@example.com>
+Subject: 482913 is your Instagram code
+Date: Mon, 02 Nov 2026 14:05:09 +0000
+Message-ID: <fixture.0001@mail.instagram.com>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b1_fixture_boundary"
+
+--b1_fixture_boundary
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hi wat2do.ubc,
+
+Someone tried to log in to your Instagram account. If this was you, please=
+ use the following code to confirm your identity: 4829=
+13
+
+If this wasn=E2=80=99t you, please reset your password to secure your accoun=
+t.
+
+=C2=A9 Instagram. Meta Platforms, Inc., 1601 Willow Road, Menlo Park, CA 9402=
+5
+--b1_fixture_boundary
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<html><body style=3D"margin:0;padding:0"><table width=3D"100%" cellpadding=
+=3D"0"><tr><td style=3D"color:#262626;font-size:14px">Hi wat2do.ubc,</td></=
+tr><tr><td>Someone tried to log in to your Instagram account. If this was y=
+ou, please use the following code to confirm your identity:</td></tr><tr><t=
+d style=3D"font-size:32px;color:#262626"><b>482913</b></td></tr><tr><td>If =
+this wasn=E2=80=99t you, please reset your password.</td></tr></table></bod=
+y></html>
+--b1_fixture_boundary--

@@ -1,0 +1,10 @@
+{
+  "android.title": "fixture_sender",
+  "android.text": "fixture-dm-text-never-logged",
+  "android.subText": "wat2do.ubc",
+  "android.showWhen": true,
+  "com.instagram.android.igns.logging.ig_action": "direct_v2?id=340282366841710300949128000000000001&x=31337000000000001&clip_id=3456789012345678905",
+  "com.instagram.android.igns.logging.push_category": "direct_v2_clips_share",
+  "com.instagram.android.igns.logging.push_id": "fixture-push-0005",
+  "com.instagram.android.igns.logging.intended_recipient_id": "12342599092"
+}

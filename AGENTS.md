@@ -65,6 +65,10 @@ When Instagram collapses a notification into "account posted and N others", the
 existing, human-authenticated browser tab before recording notification media.
 CacheEntID workflow jobs submit through the browser-capable Mac runner to the
 single installed worker.
+The worker, the workflow's job and the daily rerun of failed runs are Rust (`rust/src/instagram_notifications`, binary `wat2do-browser`).
+`wat2do-browser install`, run from the committed runtime checkout only, copies the binary to `~/.local/libexec/wat2do/wat2do-browser` when its source fingerprint (`rust/browser-worker-sources.txt`) changed; the LaunchAgents `io.wat2do.instagram-browser.worker` and the daily `io.wat2do.notification-retry` (`install-retry-schedule`, which never replaces the binary) run that copy, so macOS's Automation approval for Brave survives unrelated rebuilds; each replaced copy needs one approval and pauses the worker until then.
+The workflow builds `wat2do-browser` from its own checkout once per source change (`scripts/notification-binary.sh`), before any credential is in its environment, and fails before recording anything when that binary is missing or stale.
+Their AppleScript and page JavaScript live under `rust/src/instagram_notifications/scripts/`, and the local queue stays `~/.local/state/wat2do/instagram-browser/jobs.sqlite3`.
 The worker owns two Instagram tabs in the existing Brave session.
 The first tab is reserved for account switching and serialized likes/reposts; the second tab owns digest queries and manual profile listings.
 An HTTP 429 on a profile listing holds only profile listings (Instagram limits that endpoint on its own); a 429 on any other job holds every claim.
@@ -83,7 +87,8 @@ saved wat2do profile on Instagram's own logged-out page and accepting "Save info
 spaced and capped by controlbox.
 A school account missing from the switcher is logged in the way a person adds one: switch to the `login_from_school` account, then Switch accounts, "Log into an Existing Account".
 A password prompt, there or after a logout, is answered with the account's password from the Mac's login Keychain (`login_keychain_service`), and an emailed security code is read from the Gmail inbox in `login_code_email` over IMAP.
-Each account is tried at most once a day and `account_login_daily_limit` a day in all.
+Each account's password is entered at most once a day and `account_login_daily_limit` a day in all, whether it is added or logged back in after a logout.
+Once a password has been submitted, any failure (including a timeout) pauses browser work for a person and is never retried automatically.
 Passwords go to the page through osascript's stdin, never a command line, log or file.
 A refused password or any other challenge waits for a person.
 School accounts' direct messages are not taken from notifications.

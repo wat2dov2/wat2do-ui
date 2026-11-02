@@ -1,0 +1,1 @@
+delete window["__wat2doInstagramBrowserRequest"]; 'cleared'

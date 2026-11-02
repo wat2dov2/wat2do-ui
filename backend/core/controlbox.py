@@ -752,6 +752,14 @@ class InstagramBrowserControl(_ControlModel):
             raise ValueError("Secondary cleanup timeout must not exceed interaction timeout")
         if self.account_transition_grace_seconds > self.interaction_timeout_seconds:
             raise ValueError("Account transition grace must not exceed interaction timeout")
+        if (
+            self.login_recovery_timeout_seconds
+            < self.login_code_wait_seconds + self.interaction_timeout_seconds
+        ):
+            # A submitted login waits for its emailed code inside the recovery's deadline.
+            raise ValueError(
+                "Login recovery timeout must cover the security code wait and its entry"
+            )
         if self.viewport_warm_timeout_seconds > self.request_timeout_seconds:
             raise ValueError("Viewport warm timeout must not exceed browser request timeout")
         if self.apple_event_timeout_seconds > self.request_timeout_seconds:
@@ -777,23 +785,16 @@ class InstagramBrowserControl(_ControlModel):
 
 
 class NotificationWorkflowControl(_ControlModel):
-    uv_version: str = Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+$")
-    minimum_free_disk_mb: int = Field(ge=512, le=65536)
-    cache_max_mb: int = Field(ge=64, le=8192)
-    cleanup_free_disk_mb: int = Field(ge=512, le=65536)
-    uv_tool_versions_to_keep: int = Field(ge=1, le=5)
-    setup_timeout_minutes: int = Field(ge=1, le=30)
-    install_timeout_minutes: int = Field(ge=1, le=60)
-    process_timeout_minutes: int = Field(ge=6, le=60)
-    http_timeout_seconds: int = Field(ge=1, le=120)
-    http_retries: int = Field(ge=0, le=5)
-    cache_cleanup_timeout_seconds: int = Field(ge=1, le=120)
+    """The process-notification workflow's Rust binary build and step budgets."""
 
-    @model_validator(mode="after")
-    def validate_cleanup_reserve(self) -> "NotificationWorkflowControl":
-        if self.cleanup_free_disk_mb < self.minimum_free_disk_mb:
-            raise ValueError("Cleanup free disk threshold must include the minimum disk reserve")
-        return self
+    minimum_free_disk_mb: int = Field(ge=512, le=65536)
+    # The runner's cached Rust build is cleared above this size, then rebuilt.
+    build_target_max_mb: int = Field(ge=1024, le=65536)
+    build_jobs: int = Field(ge=1, le=16)
+    # The Mac keeps this many recently used builds so reruns of older commits reuse theirs.
+    binaries_to_keep: int = Field(ge=1, le=20)
+    build_timeout_minutes: int = Field(ge=5, le=60)
+    process_timeout_minutes: int = Field(ge=6, le=60)
 
 
 class RunnerSetupControl(_ControlModel):

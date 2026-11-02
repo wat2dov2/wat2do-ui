@@ -60,10 +60,90 @@ pub struct Uploads {
     pub event_video_download_timeout_seconds: u64,
 }
 
-/// The directory image floor in `controlbox/scraping.json`.
+/// The directory image floor and Instagram's web app ID in `controlbox/scraping.json`.
 #[derive(Debug, Deserialize)]
 pub struct Scraping {
     pub directory_minimum_image_dimension_pixels: u32,
+    pub instagram_web_app_id: String,
+}
+
+/// `controlbox/instagram_browser.json`, every field.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InstagramBrowser {
+    pub request_timeout_seconds: f64,
+    pub apple_event_timeout_seconds: f64,
+    pub navigation_interval_seconds: f64,
+    pub rate_limit_backoff_seconds: f64,
+    pub rate_limit_max_backoff_seconds: f64,
+    pub rate_limit_recovery_seconds: f64,
+    pub viewport_warm_timeout_seconds: f64,
+    pub primary_minimum_viewport_width: u32,
+    pub worker_window_height: u32,
+    pub worker_window_idle_seconds: f64,
+    pub worker_window_idle_wait_seconds: f64,
+    pub login_recovery_timeout_seconds: f64,
+    pub login_recovery_interval_seconds: f64,
+    pub login_recovery_retry_seconds: f64,
+    pub login_recovery_daily_limit: usize,
+    pub account_login_daily_limit: usize,
+    pub login_from_school: String,
+    pub login_keychain_service: String,
+    pub login_code_email: String,
+    pub login_code_keychain_service: String,
+    pub login_code_imap_host: String,
+    pub login_code_wait_seconds: f64,
+    pub interaction_timeout_seconds: f64,
+    pub account_transition_grace_seconds: f64,
+    pub secondary_cleanup_timeout_seconds: f64,
+    pub poll_interval_seconds: f64,
+    pub worker_poll_interval_seconds: f64,
+    pub job_timeout_seconds: f64,
+    pub result_timeout_seconds: f64,
+    pub source_poll_interval_seconds: f64,
+    pub source_page_size: usize,
+    pub engagement_interval_seconds: f64,
+    pub engagement_max_wait_seconds: f64,
+    pub bootstrap_profile_school: String,
+    /// School slug to the name Brave's account switcher shows, in the file's order.
+    pub school_switcher_username_overrides: IndexMap<String, String>,
+    pub actions: Vec<String>,
+    pub parallel_tabs: usize,
+    pub tab_health_interval_seconds: f64,
+    pub profile_post_limit: usize,
+    pub ingestion_retry_limit: i64,
+    pub bridge_retry_limit: usize,
+    pub storage_busy_timeout_seconds: f64,
+    pub storage_retry_limit: usize,
+    pub storage_retry_interval_seconds: f64,
+    pub worker_log_max_bytes: u64,
+    pub worker_log_backup_count: usize,
+}
+
+/// `controlbox/instagram_digest.json`, every field.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InstagramDigest {
+    pub endpoint_url: String,
+    pub operation_name: String,
+    pub client_doc_id: String,
+    pub web_app_id: String,
+    pub maximum_pages: i64,
+}
+
+/// `controlbox/notification_retry.json`, every field.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NotificationRetry {
+    pub schedule_hour: u32,
+    pub schedule_minute: u32,
+    pub launch_agent_timeout_seconds: f64,
+    pub github_repo: String,
+    pub workflow_name: String,
+    pub lookback_hours: u32,
+    pub login_first_school: String,
+    pub reruns_per_day: usize,
+    pub max_reruns_per_run: i64,
 }
 
 /// The campus seasons and building codes in `controlbox/event_discovery.json`.
@@ -178,6 +258,24 @@ pub static SCRAPING: LazyLock<Scraping> = LazyLock::new(|| {
         include_str!("../../backend/controlbox/scraping.json"),
     )
 });
+pub static INSTAGRAM_BROWSER: LazyLock<InstagramBrowser> = LazyLock::new(|| {
+    parse(
+        "instagram_browser",
+        include_str!("../../backend/controlbox/instagram_browser.json"),
+    )
+});
+pub static INSTAGRAM_DIGEST: LazyLock<InstagramDigest> = LazyLock::new(|| {
+    parse(
+        "instagram_digest",
+        include_str!("../../backend/controlbox/instagram_digest.json"),
+    )
+});
+pub static NOTIFICATION_RETRY: LazyLock<NotificationRetry> = LazyLock::new(|| {
+    parse(
+        "notification_retry",
+        include_str!("../../backend/controlbox/notification_retry.json"),
+    )
+});
 pub static EVENT_DISCOVERY: LazyLock<EventDiscovery> = LazyLock::new(|| {
     parse(
         "event_discovery",
@@ -210,6 +308,93 @@ pub static NOTIFICATION_DEFAULTS: LazyLock<NotificationDefaults> = LazyLock::new
     )
 });
 
+/// `controlbox/instagram_browser.json`. A test may replace it for itself and the
+/// threads the code under test starts (see [`InheritedControls`]).
+#[cfg(not(test))]
+pub fn instagram_browser() -> &'static InstagramBrowser {
+    &INSTAGRAM_BROWSER
+}
+
+/// `controlbox/notification_retry.json`, replaceable like [`instagram_browser`].
+#[cfg(not(test))]
+pub fn notification_retry() -> &'static NotificationRetry {
+    &NOTIFICATION_RETRY
+}
+
+#[cfg(test)]
+pub fn instagram_browser() -> std::sync::Arc<InstagramBrowser> {
+    overrides::BROWSER
+        .with(|current| current.borrow().clone())
+        .unwrap_or_else(|| overrides::DEFAULT_BROWSER.clone())
+}
+
+#[cfg(test)]
+pub fn notification_retry() -> std::sync::Arc<NotificationRetry> {
+    overrides::RETRY
+        .with(|current| current.borrow().clone())
+        .unwrap_or_else(|| overrides::DEFAULT_RETRY.clone())
+}
+
+/// The controls a thread runs with, carried into the threads it starts.
+pub struct InheritedControls {
+    #[cfg(test)]
+    browser: Option<std::sync::Arc<InstagramBrowser>>,
+    #[cfg(test)]
+    retry: Option<std::sync::Arc<NotificationRetry>>,
+}
+
+impl InheritedControls {
+    pub fn capture() -> Self {
+        Self {
+            #[cfg(test)]
+            browser: overrides::BROWSER.with(|current| current.borrow().clone()),
+            #[cfg(test)]
+            retry: overrides::RETRY.with(|current| current.borrow().clone()),
+        }
+    }
+
+    pub fn install(self) {
+        #[cfg(test)]
+        {
+            overrides::BROWSER.with(|current| *current.borrow_mut() = self.browser);
+            overrides::RETRY.with(|current| *current.borrow_mut() = self.retry);
+        }
+    }
+}
+
+/// Per-test replacements of the controls.
+#[cfg(test)]
+pub mod overrides {
+    use std::cell::RefCell;
+    use std::sync::{Arc, LazyLock};
+
+    use super::{INSTAGRAM_BROWSER, InstagramBrowser, NOTIFICATION_RETRY, NotificationRetry};
+
+    pub(super) static DEFAULT_BROWSER: LazyLock<Arc<InstagramBrowser>> =
+        LazyLock::new(|| Arc::new(INSTAGRAM_BROWSER.clone()));
+    pub(super) static DEFAULT_RETRY: LazyLock<Arc<NotificationRetry>> =
+        LazyLock::new(|| Arc::new(NOTIFICATION_RETRY.clone()));
+
+    thread_local! {
+        pub(super) static BROWSER: RefCell<Option<Arc<InstagramBrowser>>> = const { RefCell::new(None) };
+        pub(super) static RETRY: RefCell<Option<Arc<NotificationRetry>>> = const { RefCell::new(None) };
+    }
+
+    /// Change this test's `instagram_browser` controls.
+    pub fn instagram_browser(change: impl FnOnce(&mut InstagramBrowser)) {
+        let mut control = (*super::instagram_browser()).clone();
+        change(&mut control);
+        BROWSER.with(|current| *current.borrow_mut() = Some(Arc::new(control)));
+    }
+
+    /// Change this test's `notification_retry` controls.
+    pub fn notification_retry(change: impl FnOnce(&mut NotificationRetry)) {
+        let mut control = (*super::notification_retry()).clone();
+        change(&mut control);
+        RETRY.with(|current| *current.borrow_mut() = Some(Arc::new(control)));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -224,5 +409,10 @@ mod tests {
         assert!(EVENT_REMINDER.lead_minutes > 0);
         assert!(!EMAIL_DELIVERY.team_sender.is_empty());
         assert!(!NOTIFICATION_DEFAULTS.enabled("unknown_type"));
+
+        assert!(INSTAGRAM_BROWSER.parallel_tabs >= 2);
+        assert!(!SCRAPING.instagram_web_app_id.is_empty());
+        assert!(INSTAGRAM_DIGEST.maximum_pages > 0);
+        assert!(NOTIFICATION_RETRY.max_reruns_per_run > 0);
     }
 }

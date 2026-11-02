@@ -9,7 +9,6 @@ from pydantic import ValidationError
 from core.controlbox import (
     EcsRuntimeControl,
     GoogleAnalyticsControl,
-    NotificationWorkflowControl,
     controlbox,
     load_controlbox,
 )
@@ -706,25 +705,19 @@ def test_instagram_browser_controls_reject_unsafe_worker_configuration(tmp_path,
 @pytest.mark.parametrize(
     "patch",
     [
-        {"uv_version": "latest"},
-        {"uv_version": "0.12.23\nuv_version=latest"},
         {"minimum_free_disk_mb": 0},
         {"minimum_free_disk_mb": 65537},
-        {"cache_max_mb": 63},
-        {"cache_max_mb": 8193},
-        {"cleanup_free_disk_mb": 511},
-        {"cleanup_free_disk_mb": 65537},
-        {"uv_tool_versions_to_keep": 0},
-        {"uv_tool_versions_to_keep": 6},
-        {"setup_timeout_minutes": 0},
-        {"install_timeout_minutes": 61},
+        {"build_target_max_mb": 1023},
+        {"build_target_max_mb": 65537},
+        {"build_jobs": 0},
+        {"build_jobs": 17},
+        {"binaries_to_keep": 0},
+        {"binaries_to_keep": 21},
+        {"build_timeout_minutes": 4},
+        {"build_timeout_minutes": 61},
         {"process_timeout_minutes": 5},
         {"process_timeout_minutes": 61},
-        {"http_timeout_seconds": 0},
-        {"http_retries": -1},
-        {"http_retries": 6},
-        {"cache_cleanup_timeout_seconds": 0},
-        {"cache_cleanup_timeout_seconds": 121},
+        {"uv_version": "0.12.23"},
     ],
 )
 def test_notification_workflow_controls_reject_unsafe_setup(tmp_path, patch):
@@ -733,15 +726,6 @@ def test_notification_workflow_controls_reject_unsafe_setup(tmp_path, patch):
     )
     with pytest.raises(ValidationError):
         load_controlbox(directory)
-
-
-def test_notification_cleanup_threshold_includes_admission_reserve():
-    values = controlbox.notification_workflow.model_dump()
-    values.update(minimum_free_disk_mb=4096, cleanup_free_disk_mb=2048)
-    with pytest.raises(ValidationError, match="must include the minimum disk reserve"):
-        NotificationWorkflowControl.model_validate(values)
-    values["cleanup_free_disk_mb"] = 4096
-    assert NotificationWorkflowControl.model_validate(values).cleanup_free_disk_mb == 4096
 
 
 @pytest.mark.parametrize(
@@ -1023,3 +1007,17 @@ def test_outreach_formality_points_must_add_up_to_100(tmp_path: Path) -> None:
     path = _write_control(tmp_path, "outreach", shrink)
     with pytest.raises(ValidationError, match="add up to 100"):
         load_controlbox(path)
+
+
+def test_login_recovery_must_cover_the_security_code_wait(tmp_path) -> None:
+    directory = _write_control(
+        tmp_path,
+        "instagram_browser",
+        lambda payload: payload.update(
+            login_recovery_timeout_seconds=60,
+            login_code_wait_seconds=45,
+            interaction_timeout_seconds=30,
+        ),
+    )
+    with pytest.raises(ValidationError, match="security code wait"):
+        load_controlbox(directory)

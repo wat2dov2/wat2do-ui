@@ -4,16 +4,23 @@
 //! `backend/.env` settings and the same Postgres tables as the Python code
 //! around it, so the two languages share one database and one configuration.
 
+pub mod automate_logs;
 pub mod claude;
 pub mod constants;
 pub mod controlbox;
 pub mod db;
 pub mod email;
+pub mod host;
 pub mod images;
 pub mod ingestion;
+pub mod instagram_notifications;
 pub mod launch_agents;
+pub mod logs;
+pub mod notification_retry;
 pub mod notifications;
 pub mod pyjson;
+pub mod python_json;
+pub mod python_url;
 pub mod revalidation;
 pub mod schools;
 pub mod settings;

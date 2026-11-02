@@ -1,0 +1,11 @@
+{
+  "android.title": "Instagram",
+  "android.text": "fixture_club shared a post.",
+  "android.subText": "wat2do.ubc",
+  "android.showWhen": true,
+  "com.instagram.android.igns.logging.ig_action": "clips_home?media_id=3456789012345678901_4567890123&launch_reason=push",
+  "com.instagram.android.igns.logging.push_category": "post",
+  "com.instagram.android.igns.logging.push_id": "fixture-push-0001",
+  "com.instagram.android.igns.logging.intended_recipient_id": "12342599092",
+  "com.instagram.android.igns.logging.notification_id": "fixture-notification-0001"
+}

@@ -1,0 +1,1 @@
+JSON.stringify({width: window.innerWidth, height: window.innerHeight})

@@ -103,6 +103,72 @@ fn explicit_port(url: &str) -> Option<u16> {
     port.parse().ok()
 }
 
+/// `schemas.school.validate_recipient_id`: one canonical numeric notification recipient ID.
+pub fn validate_recipient_id(value: &str) -> Result<String, String> {
+    if !(1..=32).contains(&value.len())
+        || !value.bytes().all(|byte| byte.is_ascii_digit())
+        || value.starts_with('0')
+    {
+        return Err("recipient_id must be a canonical numeric identifier".to_owned());
+    }
+    Ok(value.to_owned())
+}
+
+/// The fields Instagram routing needs from a school.
+#[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
+pub struct SchoolRouting {
+    pub id: i32,
+    pub slug: String,
+    pub recipient_id: Option<String>,
+}
+
+/// `school_service.get_school`: a school by slug.
+pub async fn routing_by_slug(pool: &PgPool, slug: &str) -> Result<Option<SchoolRouting>> {
+    let slug = slug.trim().to_lowercase();
+    if slug.is_empty() {
+        return Ok(None);
+    }
+    Ok(
+        sqlx::query_as("SELECT id, slug, recipient_id FROM public.schools WHERE slug = $1 LIMIT 1")
+            .bind(slug)
+            .fetch_optional(pool)
+            .await?,
+    )
+}
+
+/// `school_service.get_school_by_recipient_id`: the school an Instagram account notifies.
+pub async fn routing_by_recipient_id(
+    pool: &PgPool,
+    recipient_id: &str,
+) -> Result<Option<SchoolRouting>> {
+    let Ok(recipient_id) = validate_recipient_id(recipient_id.trim()) else {
+        return Ok(None);
+    };
+    Ok(sqlx::query_as(
+        "SELECT id, slug, recipient_id FROM public.schools WHERE recipient_id = $1 LIMIT 1",
+    )
+    .bind(recipient_id)
+    .fetch_optional(pool)
+    .await?)
+}
+
+/// `school_service.get_school_id`: a school's ID by slug, else by name.
+pub async fn id_by_slug_or_name(pool: &PgPool, value: &str) -> Result<Option<i32>> {
+    if let Some(school) = routing_by_slug(pool, value).await? {
+        return Ok(Some(school.id));
+    }
+    let name = value.trim();
+    if name.is_empty() {
+        return Ok(None);
+    }
+    Ok(
+        sqlx::query_scalar("SELECT id FROM public.schools WHERE name ILIKE $1 LIMIT 1")
+            .bind(name)
+            .fetch_optional(pool)
+            .await?,
+    )
+}
+
 impl School {
     /// The school's IANA zone; an unknown name falls back to UTC like Python's lookup.
     pub fn tz(&self) -> Tz {
