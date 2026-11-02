@@ -2627,6 +2627,8 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
+            /** Last Source Changed At */
+            last_source_changed_at?: string | null;
         };
         /**
          * EventResponse
@@ -2730,6 +2732,8 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
+            /** Last Source Changed At */
+            last_source_changed_at?: string | null;
             /** Created By */
             created_by?: string | null;
         };
@@ -2863,6 +2867,8 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
+            /** Last Source Changed At */
+            last_source_changed_at?: string | null;
         };
         /** EventUpdate */
         EventUpdate: {
@@ -4061,6 +4067,11 @@ export interface components {
              * Format: date-time
              */
             added_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
             /** Club Name */
             club_name: string;
             /** Club Logo Url */

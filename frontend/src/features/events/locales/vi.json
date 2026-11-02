@@ -108,6 +108,7 @@
       }
     },
     "new": "MỚI",
+    "updated": "ĐÃ CẬP NHẬT",
     "goingCount": "{{count}} người sẽ tham gia",
     "goingCount_other": "{{count}} người sẽ tham gia",
     "andOthersCount": "và {{count}} người khác",

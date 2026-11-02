@@ -108,6 +108,7 @@
       }
     },
     "new": "BAGO",
+    "updated": "NA-UPDATE",
     "goingCount": "{{count}} pupunta",
     "goingCount_one": "{{count}} pupunta",
     "goingCount_other": "{{count}} pupunta",

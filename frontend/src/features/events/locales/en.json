@@ -108,6 +108,7 @@
       }
     },
     "new": "NEW",
+    "updated": "UPDATED",
     "goingCount": "{{count}} going",
     "goingCount_one": "{{count}} going",
     "goingCount_other": "{{count}} going",

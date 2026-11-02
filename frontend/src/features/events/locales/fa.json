@@ -108,6 +108,7 @@
       }
     },
     "new": "جدید",
+    "updated": "به‌روز شد",
     "goingCount": "{{count}} شرکت‌کننده",
     "goingCount_one": "{{count}} شرکت‌کننده",
     "goingCount_other": "{{count}} شرکت‌کننده",

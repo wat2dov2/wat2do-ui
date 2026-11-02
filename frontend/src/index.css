@@ -82,6 +82,7 @@
   --color-pink-500: var(--pink-500);
   --color-orange-500: var(--orange-500);
   --color-badge-new: var(--badge-new);
+  --color-badge-updated: var(--badge-updated);
   --color-badge-going: var(--badge-going);
   --color-badge-going-foreground: var(--badge-going-foreground);
 

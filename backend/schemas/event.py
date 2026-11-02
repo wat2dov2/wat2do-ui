@@ -332,6 +332,9 @@ class EventSummaryResponse(EventDiscoveryFields):
     school: str | None = None
     cancelled: bool = False
     added_at: datetime
+    # Set when a later source post changes this listing, null until one does. Drives
+    # the "Updated" card badge, as ``added_at`` drives "New".
+    last_source_changed_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -389,6 +392,7 @@ class EventResponse(EventDiscoveryFields):
     ig_handle: str | None = None
     cancelled: bool = False
     added_at: datetime
+    last_source_changed_at: datetime | None = None
     created_by: str | None = None
 
     model_config = {"from_attributes": True}
@@ -425,5 +429,6 @@ class EventPublicResponse(EventDiscoveryFields):
     ig_handle: str | None = None
     cancelled: bool = False
     added_at: datetime
+    last_source_changed_at: datetime | None = None
 
     model_config = {"from_attributes": True}
