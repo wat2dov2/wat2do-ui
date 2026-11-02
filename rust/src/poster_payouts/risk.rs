@@ -80,6 +80,7 @@ pub fn evaluate_period_scans(scans: &[PeriodScan], control: &PromoterProgram) ->
         let mut affected: BTreeSet<&str> = BTreeSet::new();
         let mut maximum_distinct = 0;
         let mut end = 0;
+        let mut covered = 0;
         let mut visitor_counts: HashMap<&str, usize> = HashMap::new();
         for start in 0..ordered.len() {
             let start_time = ordered[start].scanned_at;
@@ -90,7 +91,13 @@ pub fn evaluate_period_scans(scans: &[PeriodScan], control: &PromoterProgram) ->
             let distinct = visitor_counts.len();
             maximum_distinct = maximum_distinct.max(distinct);
             if distinct >= control.rapid_distinct_visitors {
-                affected.extend(ordered[start..end].iter().map(|scan| scan.id.as_str()));
+                // Windows overlap; add only the scans not already added.
+                affected.extend(
+                    ordered[start.max(covered)..end]
+                        .iter()
+                        .map(|scan| scan.id.as_str()),
+                );
+                covered = covered.max(end);
             }
             let visitor = ordered[start].dedupe_hash.as_str();
             if let Some(count) = visitor_counts.get_mut(visitor) {
