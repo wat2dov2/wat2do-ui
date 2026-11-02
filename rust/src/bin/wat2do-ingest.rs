@@ -27,12 +27,15 @@ async fn main() -> anyhow::Result<()> {
     wat2do::install_tls();
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "warn".into()),
+            // sqlx warns about every claim that waits on a row lock; only its errors matter.
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "warn,sqlx=error".into()),
         )
         .with_writer(std::io::stderr)
         .init();
     let Command::Process { once } = Cli::parse().command;
-    let pool = wat2do::db::connect(16).await?;
+    // Session-mode connections are scarce; queries are short, so lanes share a few.
+    let pool = wat2do::db::connect(6).await?;
     let stopping = Stop::default();
     let on_signal = stopping.clone();
     tokio::spawn(async move {

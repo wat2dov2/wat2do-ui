@@ -40,7 +40,6 @@ pub async fn drain(pool: &PgPool, include_pending_posters: bool) -> Result<()> {
     let changes: Vec<Change> = sqlx::query_as(&format!(
         "SELECT change.kind, change.record_id, change.school_id FROM public.ingestion_changes AS change{pending_filter}"
     ))
-    .persistent(false)
     .fetch_all(pool)
     .await?;
     if changes.is_empty() {
@@ -54,7 +53,6 @@ pub async fn drain(pool: &PgPool, include_pending_posters: bool) -> Result<()> {
     school_ids.dedup();
     let schools: Vec<String> =
         sqlx::query_scalar("SELECT slug FROM public.schools WHERE id = ANY($1)")
-            .persistent(false)
             .bind(&school_ids)
             .fetch_all(pool)
             .await?;
@@ -69,7 +67,6 @@ pub async fn drain(pool: &PgPool, include_pending_posters: bool) -> Result<()> {
             sqlx::query(
                 "DELETE FROM public.ingestion_changes WHERE kind = $1 AND record_id = ANY($2)",
             )
-            .persistent(false)
             .bind(kind)
             .bind(&ids)
             .execute(pool)
@@ -95,7 +92,6 @@ pub async fn stamp_new_rows(
                source_posted_at = coalesce($4, source_posted_at) \
              WHERE source_url = $1 AND added_at >= $5",
         )
-        .persistent(false)
         .bind(source_url)
         .bind(caption)
         .bind(MAX_EVENT_DESCRIPTION_LENGTH)
@@ -108,7 +104,6 @@ pub async fn stamp_new_rows(
         sqlx::query(
             "UPDATE public.positions SET description = left($2, $3) WHERE source_url = $1 AND added_at >= $4",
         )
-    .persistent(false)
         .bind(source_url)
         .bind(caption)
         .bind(MAX_POSITION_DESCRIPTION_LENGTH)

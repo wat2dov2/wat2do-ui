@@ -102,7 +102,6 @@ impl ClubLogos {
                 "UPDATE public.clubs SET logo_url = coalesce($2, logo_url), club_name = coalesce($3, club_name) \
                  WHERE id = $1",
             )
-    .persistent(false)
             .bind(club.id)
             .bind(logo)
             .bind(rename)

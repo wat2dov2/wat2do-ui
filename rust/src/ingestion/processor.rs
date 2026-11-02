@@ -259,7 +259,6 @@ impl Processor {
         {
             let rows: Vec<(i64, Option<String>)> =
                 sqlx::query_as("SELECT id, default_club_ig FROM public.directory_sources")
-                    .persistent(false)
                     .fetch_all(&self.pool)
                     .await?;
             *publishers = Some(rows.into_iter().collect());
