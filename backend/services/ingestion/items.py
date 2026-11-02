@@ -1,7 +1,8 @@
 """The ingestion queue: one row per Instagram post or directory page.
 
-The Rust ingestion processor (``rust/src/ingestion``) claims and settles rows;
-this module only adds them. Instagram rows start at ``fetch`` and become
+The Rust ingestion processor (``rust/src/ingestion``) claims and settles rows,
+and ``wat2do-ingest enqueue`` and ``status`` queue posts by hand and count rows;
+this module adds the rows the Python Instagram workers find. Instagram rows start at ``fetch`` and become
 ``ready`` once the logged-out fetcher fills in the post. Directory rows arrive ``ready`` with finished
 details, and ``dm`` rows arrive ``ready`` with a club's DM about its listings. A processing agent turns each ready row into events or positions,
 then the row is marked ``done`` or ``not_event`` and kept, so a URL is never
@@ -98,20 +99,6 @@ def queue_dm(message: str, *, school: str, sender: str | None) -> None:
         on_conflict="source_url",
         ignore_duplicates=True,
     ).execute()
-
-
-def counts() -> dict[str, int]:
-    statuses = ("fetch", "ready", "working", "done", "not_event", "gone", "failed")
-    return {
-        status: get_sb()
-        .table(INGESTION_ITEMS)
-        .select("source_url", count="exact", head=True)
-        .eq("status", status)
-        .execute()
-        .count
-        or 0
-        for status in statuses
-    }
 
 
 def _shortcode(url: str) -> str:

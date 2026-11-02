@@ -15,6 +15,7 @@ clap = { version = "4", features = ["derive"] }
 dotenvy = "0.15"
 fs2 = "0.4"
 futures-util = "0.3"
+htmlize = { version = "1", features = ["unescape"] }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp"] }
 indexmap = { version = "2", features = ["serde"] }
 percent-encoding = "2"
