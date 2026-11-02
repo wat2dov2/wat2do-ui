@@ -36,8 +36,9 @@ const FOOTER_LINK_GROUPS = [
 export function SiteFooter() {
   const { t } = useTranslation();
   const handle = schoolInstagramHandle(useRequestSchool());
+  const instagramHref = `https://www.instagram.com/${handle}/`;
   const socials = [
-    { label: "Instagram", href: `https://www.instagram.com/${handle}/` },
+    { label: "Instagram", href: instagramHref },
     { label: "LinkedIn", href: EXTERNAL_LINKS.LINKEDIN },
   ];
 
@@ -54,7 +55,15 @@ export function SiteFooter() {
                 className="h-6 w-[34px] select-none object-contain"
                 src={imgLogo}
               />
-              <span className="text-lg font-semibold tracking-tight text-foreground">@{handle}</span>
+              <Link
+                href={instagramHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="navigation"
+                className="text-lg font-semibold tracking-tight text-foreground underline-offset-4 hover:underline"
+              >
+                @{handle}
+              </Link>
             </Stack>
             <nav aria-label={t("footer.social")}>
               <Stack direction="horizontal" gap={6} align="center">
