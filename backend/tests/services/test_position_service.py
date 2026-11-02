@@ -1,4 +1,3 @@
-
 from services import position_service
 
 

@@ -265,12 +265,13 @@ pub async fn remove_club_member(
     if member == user.id {
         return Err(ApiError::validation(CANNOT_REMOVE_YOURSELF));
     }
-    let removed = sqlx::query("DELETE FROM public.club_members WHERE club_id = $1 AND user_id = $2")
-        .bind(id)
-        .bind(member)
-        .execute(&state.db)
-        .await?
-        .rows_affected();
+    let removed =
+        sqlx::query("DELETE FROM public.club_members WHERE club_id = $1 AND user_id = $2")
+            .bind(id)
+            .bind(member)
+            .execute(&state.db)
+            .await?
+            .rows_affected();
     if removed == 0 {
         return Err(ApiError::not_found(MEMBER_NOT_FOUND));
     }
@@ -293,7 +294,12 @@ mod tests {
         ] {
             assert_eq!(python_uuid(text), Some(id), "{text}");
         }
-        for text in ["", "not-a-uuid", "12345678-1234-5678-1234-56781234567", "g2345678123456781234567812345678"] {
+        for text in [
+            "",
+            "not-a-uuid",
+            "12345678-1234-5678-1234-56781234567",
+            "g2345678123456781234567812345678",
+        ] {
             assert_eq!(python_uuid(text), None, "{text}");
         }
     }

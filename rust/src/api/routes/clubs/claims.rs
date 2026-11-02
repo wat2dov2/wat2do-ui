@@ -15,7 +15,10 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use super::members::{AddError, add_member};
-use super::{AdminFilters, ClubResponse, admin_page_sql, club_id_into, emails, get_club, is_club_member, merge_err};
+use super::{
+    AdminFilters, ClubResponse, admin_page_sql, club_id_into, emails, get_club, is_club_member,
+    merge_err,
+};
 use crate::api::AppState;
 use crate::api::auth::{AdminUser, DbUser};
 use crate::api::body::{Body, Extra, Str};
@@ -56,10 +59,13 @@ pub struct ClubClaimResponse {
     pub users: Option<UserResponse>,
 }
 
-crate::paginated_schema!(PaginatedClaims, PaginatedResponse_ClubClaimResponse_, ClubClaimResponse);
+crate::paginated_schema!(
+    PaginatedClaims,
+    PaginatedResponse_ClubClaimResponse_,
+    ClubClaimResponse
+);
 
-const CLAIM_COLUMNS: &str =
-    "cc.id, cc.club_id, cc.user_id, cc.executive_role, cc.proof_url, cc.status, \
+const CLAIM_COLUMNS: &str = "cc.id, cc.club_id, cc.user_id, cc.executive_role, cc.proof_url, cc.status, \
      cc.rejection_reason, cc.created_at, cc.updated_at";
 
 impl ClubClaimResponse {
@@ -122,7 +128,9 @@ pub async fn list_claims(
 ) -> Result<Json<Paginated<ClubClaimResponse>>, ApiError> {
     let mut check = Validator::default();
     let pagination = Pagination::read(&mut check, &query);
-    let status = check.query(&query, "status").optional_string(Length::default());
+    let status = check
+        .query(&query, "status")
+        .optional_string(Length::default());
     let school = check
         .query(&query, "school")
         .optional_string(Length::default().max(MAX_SCHOOL_LENGTH));
@@ -227,7 +235,11 @@ pub async fn create_claim(
     .bind(now)
     .fetch_one(&state.db)
     .await?;
-    Ok((StatusCode::CREATED, Json(ClubClaimResponse::from_row(&row)?)).into_response())
+    Ok((
+        StatusCode::CREATED,
+        Json(ClubClaimResponse::from_row(&row)?),
+    )
+        .into_response())
 }
 
 #[allow(dead_code)]
@@ -267,7 +279,9 @@ pub async fn update_claim(
                 "status",
                 &Str::new().pattern(CLAIM_STATUS_PATTERN, &CLAIM_STATUS),
             );
-            let reason = body.string("rejection_reason", &Str::new().max(500)).value();
+            let reason = body
+                .string("rejection_reason", &Str::new().max(500))
+                .value();
             match body.finish() {
                 Ok(()) => {
                     check.finish()?;

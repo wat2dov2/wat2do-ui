@@ -16,10 +16,10 @@ use std::collections::HashMap;
 use axum::extract::{FromRequest, FromRequestParts, Request};
 use axum::http::request::Parts;
 use axum::http::{HeaderMap, header};
+use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
-use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime};
 use uuid::Uuid;
 
 use super::errors::ApiError;
@@ -423,7 +423,11 @@ impl Field<'_> {
         match parse_aware_datetime(raw) {
             Ok(value) => Some(value),
             Err(DatetimeError::Naive) => {
-                self.issue("timezone_aware", "Input should have timezone info".to_owned(), None);
+                self.issue(
+                    "timezone_aware",
+                    "Input should have timezone info".to_owned(),
+                    None,
+                );
                 None
             }
             Err(DatetimeError::Invalid(error)) => {
@@ -454,9 +458,15 @@ pub enum DatetimeError {
 pub fn parse_aware_datetime(raw: &str) -> Result<DateTime<FixedOffset>, DatetimeError> {
     use DatetimeError::{Invalid, Naive};
     if let Ok(seconds) = raw.parse::<f64>()
-        && raw.bytes().all(|byte| byte.is_ascii_digit() || matches!(byte, b'-' | b'+' | b'.'))
+        && raw
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || matches!(byte, b'-' | b'+' | b'.'))
     {
-        let seconds = if seconds.abs() > 2e10 { seconds / 1000.0 } else { seconds };
+        let seconds = if seconds.abs() > 2e10 {
+            seconds / 1000.0
+        } else {
+            seconds
+        };
         let whole = seconds.floor();
         let micros = ((seconds - whole) * 1e6).round() as u32;
         return DateTime::from_timestamp(whole as i64, micros * 1000)
@@ -470,7 +480,9 @@ pub fn parse_aware_datetime(raw: &str) -> Result<DateTime<FixedOffset>, Datetime
     let digits = |range: std::ops::Range<usize>, error| {
         let part = &bytes[range];
         if part.iter().all(u8::is_ascii_digit) {
-            Ok(part.iter().fold(0u32, |total, digit| total * 10 + u32::from(digit - b'0')))
+            Ok(part
+                .iter()
+                .fold(0u32, |total, digit| total * 10 + u32::from(digit - b'0')))
         } else {
             Err(Invalid(error))
         }
@@ -502,10 +514,9 @@ pub fn parse_aware_datetime(raw: &str) -> Result<DateTime<FixedOffset>, Datetime
     let local = date.and_time(time);
     match offset {
         None => Err(Naive),
-        Some(offset) => local
-            .and_local_timezone(offset)
-            .single()
-            .ok_or(Invalid("unexpected extra characters at the end of the input")),
+        Some(offset) => local.and_local_timezone(offset).single().ok_or(Invalid(
+            "unexpected extra characters at the end of the input",
+        )),
     }
 }
 
@@ -563,7 +574,11 @@ fn parse_time(text: &str) -> Option<(NaiveTime, Option<FixedOffset>)> {
                 return None;
             }
             let seconds = (hours * 60 + minutes) * 60;
-            Some(FixedOffset::east_opt(if *sign == b'-' { -seconds } else { seconds })?)
+            Some(FixedOffset::east_opt(if *sign == b'-' {
+                -seconds
+            } else {
+                seconds
+            })?)
         }
         _ => return None,
     };
@@ -868,27 +883,60 @@ mod tests {
         let ok = |raw: &str| parse_aware_datetime(raw).unwrap().to_rfc3339();
         assert_eq!(ok("2024-01-01T10:00Z"), "2024-01-01T10:00:00+00:00");
         assert_eq!(ok("2024-01-01 10:00:00+05:30"), "2024-01-01T10:00:00+05:30");
-        assert_eq!(ok("2024-01-01T10:00:00.1234567Z"), "2024-01-01T10:00:00.123456+00:00");
+        assert_eq!(
+            ok("2024-01-01T10:00:00.1234567Z"),
+            "2024-01-01T10:00:00.123456+00:00"
+        );
         assert_eq!(ok("2024-01-01T10:00:00+0530"), "2024-01-01T10:00:00+05:30");
         assert_eq!(ok("2024-01-01t10:00:00z"), "2024-01-01T10:00:00+00:00");
-        assert_eq!(ok("2024-01-01T10:00:00,5Z"), "2024-01-01T10:00:00.500+00:00");
+        assert_eq!(
+            ok("2024-01-01T10:00:00,5Z"),
+            "2024-01-01T10:00:00.500+00:00"
+        );
         assert_eq!(ok("1700000000"), "2023-11-14T22:13:20+00:00");
         assert_eq!(ok("1700000000.5"), "2023-11-14T22:13:20.500+00:00");
         assert_eq!(ok("-1"), "1969-12-31T23:59:59+00:00");
         assert_eq!(ok("20240101"), "1970-08-23T06:15:01+00:00");
         for (raw, expected) in [
             ("garbage", Invalid("input is too short")),
-            ("2024-13-01T00:00:00Z", Invalid("month value is outside expected range of 1-12")),
-            ("2024-02-30T00:00:00Z", Invalid("day value is outside expected range")),
-            ("2024/01/01", Invalid("invalid date separator, expected `-`")),
+            (
+                "2024-13-01T00:00:00Z",
+                Invalid("month value is outside expected range of 1-12"),
+            ),
+            (
+                "2024-02-30T00:00:00Z",
+                Invalid("day value is outside expected range"),
+            ),
+            (
+                "2024/01/01",
+                Invalid("invalid date separator, expected `-`"),
+            ),
             ("2024-01-01", Naive),
             ("2024-01-01T10:00", Naive),
-            ("2024-01-01T25:00:00Z", Invalid("unexpected extra characters at the end of the input")),
-            ("2024-01-01T10:00:00Zx", Invalid("unexpected extra characters at the end of the input")),
-            ("2024-01-01X10:00:00Z", Invalid("unexpected extra characters at the end of the input")),
-            ("2024-01-01T10:00:00+05", Invalid("unexpected extra characters at the end of the input")),
-            ("2024-01-01T10:00:61Z", Invalid("unexpected extra characters at the end of the input")),
-            ("2024-01-01T1", Invalid("unexpected extra characters at the end of the input")),
+            (
+                "2024-01-01T25:00:00Z",
+                Invalid("unexpected extra characters at the end of the input"),
+            ),
+            (
+                "2024-01-01T10:00:00Zx",
+                Invalid("unexpected extra characters at the end of the input"),
+            ),
+            (
+                "2024-01-01X10:00:00Z",
+                Invalid("unexpected extra characters at the end of the input"),
+            ),
+            (
+                "2024-01-01T10:00:00+05",
+                Invalid("unexpected extra characters at the end of the input"),
+            ),
+            (
+                "2024-01-01T10:00:61Z",
+                Invalid("unexpected extra characters at the end of the input"),
+            ),
+            (
+                "2024-01-01T1",
+                Invalid("unexpected extra characters at the end of the input"),
+            ),
         ] {
             assert_eq!(parse_aware_datetime(raw).unwrap_err(), expected, "{raw}");
         }

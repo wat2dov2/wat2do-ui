@@ -54,11 +54,7 @@ pub fn avatar_url_for_user(user_id: &str, avatar_url: Option<&str>) -> String {
                 let mut columns = vec![x, 4 - x];
                 columns.dedup();
                 for column in columns {
-                    cells.push_str(&format!(
-                        "M{} {}h16v16h-16z",
-                        10 + column * 16,
-                        10 + y * 16
-                    ));
+                    cells.push_str(&format!("M{} {}h16v16h-16z", 10 + column * 16, 10 + y * 16));
                 }
             }
         }
@@ -191,7 +187,12 @@ fn user_query(condition: &str) -> String {
 /// `user_service.get_user`.
 pub async fn get_user(db: &sqlx::PgPool, id: Uuid) -> Result<Option<UserResponse>, ApiError> {
     let sql = user_query("u.id = $1 LIMIT 1");
-    Ok(read_with_retry(|| sqlx::query_as::<_, UserResponse>(&sql).bind(id).fetch_optional(db)).await?)
+    Ok(read_with_retry(|| {
+        sqlx::query_as::<_, UserResponse>(&sql)
+            .bind(id)
+            .fetch_optional(db)
+    })
+    .await?)
 }
 
 /// `user_service.get_user_by_email`: an exact, case-sensitive match.
@@ -246,7 +247,8 @@ impl UserUpdate {
     fn parse(mut body: Body, full_profile: bool) -> Result<Self, ApiError> {
         let mut update = Self::default();
         if full_profile {
-            update.full_name = Some(body.string("full_name", &Str::new().max(MAX_FULL_NAME_LENGTH)));
+            update.full_name =
+                Some(body.string("full_name", &Str::new().max(MAX_FULL_NAME_LENGTH)));
             update.avatar_url =
                 Some(body.string("avatar_url", &Str::new().max(MAX_AVATAR_URL_LENGTH)));
         }
@@ -323,8 +325,11 @@ async fn update_user(
             let target = match &school {
                 Some(school) => Some(school.clone()),
                 None => {
-                    school_by_slug(db, &normalize_slug(existing.school.as_deref().unwrap_or_default()))
-                        .await?
+                    school_by_slug(
+                        db,
+                        &normalize_slug(existing.school.as_deref().unwrap_or_default()),
+                    )
+                    .await?
                 }
             };
             if !target.is_some_and(|(_, faculties)| faculties.contains(faculty)) {
@@ -349,10 +354,12 @@ async fn update_user(
         index += 1;
         assignment
     };
-    let text = |input: &Option<Input<String>>| input.clone().and_then(|input| match input {
-        Input::Missing => None,
-        other => Some(other.value()),
-    });
+    let text = |input: &Option<Input<String>>| {
+        input.clone().and_then(|input| match input {
+            Input::Missing => None,
+            other => Some(other.value()),
+        })
+    };
     let full_name = text(&data.full_name);
     let avatar_url = text(&data.avatar_url);
     let faculty = text(&data.faculty);
@@ -498,6 +505,27 @@ fn payout_email(body: &mut Body) -> Option<String> {
     }
 }
 
+/// Why a promoter enrollment change is refused. Someone already enrolled
+/// may always change their payout email; enrolling needs a registered
+/// school, the program running, and the terms accepted.
+fn enrollment_refusal(
+    enrolled: bool,
+    school_registered: bool,
+    program_enabled: bool,
+    accept_tos: bool,
+) -> Option<&'static str> {
+    if enrolled {
+        return None;
+    }
+    if !school_registered {
+        return Some(PROMOTER_SCHOOL_REQUIRED);
+    }
+    if !program_enabled {
+        return Some(PROMOTER_PROGRAM_PAUSED);
+    }
+    (!accept_tos).then_some(PROMOTER_TOS_REQUIRED)
+}
+
 #[utoipa::path(
     put,
     path = "/users/me/promoter-enrollment",
@@ -525,17 +553,17 @@ pub async fn update_promoter_enrollment(
     let enrolled = existing.payout_email.is_some()
         && existing.promoter_tos_accepted_at.is_some()
         && existing.promoter_tos_version.is_some();
-    if !enrolled {
+    let school_registered = enrolled || {
         let slug = normalize_slug(existing.school.as_deref().unwrap_or_default());
-        if school_by_slug(&state.db, &slug).await?.is_none() {
-            return Err(ApiError::validation(PROMOTER_SCHOOL_REQUIRED));
-        }
-        if !PROMOTER_PROGRAM.enabled {
-            return Err(ApiError::validation(PROMOTER_PROGRAM_PAUSED));
-        }
-        if !accept_tos {
-            return Err(ApiError::validation(PROMOTER_TOS_REQUIRED));
-        }
+        school_by_slug(&state.db, &slug).await?.is_some()
+    };
+    if let Some(refusal) = enrollment_refusal(
+        enrolled,
+        school_registered,
+        PROMOTER_PROGRAM.enabled,
+        accept_tos,
+    ) {
+        return Err(ApiError::validation(refusal));
     }
     // Acceptance is server-owned and stamped only when enrolling.
     let sql = format!(
@@ -579,7 +607,9 @@ pub async fn list_users(
     query: QueryParams,
 ) -> Result<Json<Vec<UserResponse>>, ApiError> {
     let mut check = Validator::default();
-    let skip = check.query(&query, "skip").int_or(0, Limits::default().ge(0));
+    let skip = check
+        .query(&query, "skip")
+        .int_or(0, Limits::default().ge(0));
     let limit = check
         .query(&query, "limit")
         .int_or(MAX_LIST_LIMIT, Limits::default().ge(1).le(MAX_LIST_LIMIT));
@@ -625,7 +655,10 @@ pub async fn get_user_route(
     path: PathParams,
 ) -> Result<Json<UserResponse>, ApiError> {
     let id = user_id(&path)?;
-    Ok(Json(get_or_404(get_user(&state.db, id).await?, USER_NOT_FOUND)?))
+    Ok(Json(get_or_404(
+        get_user(&state.db, id).await?,
+        USER_NOT_FOUND,
+    )?))
 }
 
 /// Whether removing `target`'s admin role would leave no admin.
@@ -839,8 +872,14 @@ mod tests {
 
     #[test]
     fn profile_bodies_are_validated_like_pydantic() {
-        let parse = |value: Value, full: bool| UserUpdate::parse(Body::from_value(value, Extra::Forbid), full);
-        let update = parse(json!({"faculty": "Math", "is_first_year": "yes", "interests": ["a"]}), true).unwrap();
+        let parse = |value: Value, full: bool| {
+            UserUpdate::parse(Body::from_value(value, Extra::Forbid), full)
+        };
+        let update = parse(
+            json!({"faculty": "Math", "is_first_year": "yes", "interests": ["a"]}),
+            true,
+        )
+        .unwrap();
         assert_eq!(update.is_first_year, Some(Input::Given(true)));
         assert_eq!(update.full_name, Some(Input::Missing));
         // The profile form cannot change the name.
@@ -850,11 +889,39 @@ mod tests {
     }
 
     #[test]
+    fn promoter_enrollment_rules_match_python() {
+        // backend/tests/services/test_user_service.py (promoter enrollment cases)
+        // First acceptance needs the terms.
+        assert_eq!(
+            enrollment_refusal(false, true, true, false),
+            Some(PROMOTER_TOS_REQUIRED)
+        );
+        assert_eq!(enrollment_refusal(false, true, true, true), None);
+        // A supported school comes first, then the program switch.
+        assert_eq!(
+            enrollment_refusal(false, false, false, false),
+            Some(PROMOTER_SCHOOL_REQUIRED)
+        );
+        assert_eq!(
+            enrollment_refusal(false, true, false, true),
+            Some(PROMOTER_PROGRAM_PAUSED)
+        );
+        // An enrolled promoter (earlier terms) updates the email even while paused.
+        assert_eq!(enrollment_refusal(true, false, false, false), None);
+    }
+
+    #[test]
     fn payout_emails_refuse_formulas_and_bad_addresses() {
         // test_promoter_enrollment_rejects_csv_formula_email / _invalid_email
         for (payload, expected) in [
-            (json!({"payout_email": "=a@b.com"}), "Value error, payout email cannot begin with a spreadsheet formula character"),
-            (json!({"payout_email": "not-an-email"}), "value is not a valid email address: An email address must have an @-sign."),
+            (
+                json!({"payout_email": "=a@b.com"}),
+                "Value error, payout email cannot begin with a spreadsheet formula character",
+            ),
+            (
+                json!({"payout_email": "not-an-email"}),
+                "value is not a valid email address: An email address must have an @-sign.",
+            ),
         ] {
             let mut body = Body::from_value(payload, Extra::Forbid);
             assert_eq!(payout_email(&mut body), None);

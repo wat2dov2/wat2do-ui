@@ -26,17 +26,12 @@ use super::validation::{ValidationIssue, parse_json_body};
 use crate::text::python_strip;
 
 /// One field of the body.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub enum Input<T> {
+    #[default]
     Missing,
     Null,
     Given(T),
-}
-
-impl<T> Default for Input<T> {
-    fn default() -> Self {
-        Self::Missing
-    }
 }
 
 impl<T> Input<T> {
@@ -116,7 +111,11 @@ impl Str {
 }
 
 fn characters(count: usize) -> &'static str {
-    if count == 1 { "character" } else { "characters" }
+    if count == 1 {
+        "character"
+    } else {
+        "characters"
+    }
 }
 
 /// pydantic's "'a', 'b' or 'c'".
@@ -173,7 +172,14 @@ impl Body {
         }
     }
 
-    fn issue(&mut self, kind: &str, loc: Vec<Value>, msg: String, input: Value, ctx: Option<Value>) {
+    fn issue(
+        &mut self,
+        kind: &str,
+        loc: Vec<Value>,
+        msg: String,
+        input: Value,
+        ctx: Option<Value>,
+    ) {
         let mut issue = ValidationIssue::new(kind, loc, msg, input);
         issue.ctx = ctx;
         self.issues.push(issue);
@@ -321,8 +327,8 @@ impl Body {
         let parsed = match &value {
             Value::Bool(flag) => Some(*flag),
             Value::Number(number) => match number.as_f64() {
-                Some(n) if n == 0.0 => Some(false),
-                Some(n) if n == 1.0 => Some(true),
+                Some(0.0) => Some(false),
+                Some(1.0) => Some(true),
                 _ => None,
             },
             Value::String(text) => super::validation::parse_python_bool(text),
@@ -446,7 +452,11 @@ impl Body {
 
     /// A required JSON object field (`dict[str, Any]`); with `strip_keys`, keys
     /// are stripped like the model's other strings.
-    pub fn required_object(&mut self, name: &'static str, strip_keys: bool) -> Option<Map<String, Value>> {
+    pub fn required_object(
+        &mut self,
+        name: &'static str,
+        strip_keys: bool,
+    ) -> Option<Map<String, Value>> {
         match self.take(name) {
             Input::Given(Value::Object(entries)) => Some(if strip_keys {
                 entries
@@ -537,7 +547,11 @@ impl Body {
                 return None;
             }
         };
-        let text = if strip { python_strip(&raw) } else { raw.as_str() };
+        let text = if strip {
+            python_strip(&raw)
+        } else {
+            raw.as_str()
+        };
         if text.chars().count() > MAX_URL_LENGTH {
             self.issue(
                 "url_too_long",
@@ -602,7 +616,10 @@ impl Body {
 }
 
 /// FastAPI reports path and body problems in one 422, path first.
-pub fn merge_issues(check: super::validation::Validator, body: Result<(), ApiError>) -> Result<(), ApiError> {
+pub fn merge_issues(
+    check: super::validation::Validator,
+    body: Result<(), ApiError>,
+) -> Result<(), ApiError> {
     match (check.finish(), body) {
         (Ok(()), body) => body,
         (Err(ApiError::RequestValidation(mut path)), Err(ApiError::RequestValidation(body))) => {
@@ -618,7 +635,8 @@ mod tests {
     use super::*;
     use std::sync::LazyLock;
 
-    static SLUG: LazyLock<Regex> = LazyLock::new(|| Regex::new("^[a-z0-9]+(?:-[a-z0-9]+)*$").unwrap());
+    static SLUG: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new("^[a-z0-9]+(?:-[a-z0-9]+)*$").unwrap());
 
     fn issues(body: Body) -> Value {
         match body.finish() {
@@ -643,7 +661,11 @@ mod tests {
         }
         body.string(
             "club_type",
-            &Str::new().strip_lower().min(1).max(100).pattern("^[a-z0-9]+(?:-[a-z0-9]+)*$", &SLUG),
+            &Str::new()
+                .strip_lower()
+                .min(1)
+                .max(100)
+                .pattern("^[a-z0-9]+(?:-[a-z0-9]+)*$", &SLUG),
         );
         assert_eq!(
             issues(body),
@@ -683,7 +705,10 @@ mod tests {
 
     #[test]
     fn too_many_items_and_tri_state_fields() {
-        let mut body = Body::from_value(json!({"tags": ["a", "a", "a"], "name": null}), Extra::Forbid);
+        let mut body = Body::from_value(
+            json!({"tags": ["a", "a", "a"], "name": null}),
+            Extra::Forbid,
+        );
         assert_eq!(body.string("name", &Str::new()), Input::Null);
         assert_eq!(body.string("other", &Str::new()), Input::Missing);
         body.string_list("tags", &Str::new(), 2);
@@ -699,7 +724,10 @@ mod tests {
             json!({"a": "https://WAT2DO.io", "b": "https://uwaterloo.wat2do.io/events?q=a b#x", "c": "ftp://x", "d": "not a url"}),
             Extra::Ignore,
         );
-        assert_eq!(body.required_http_url("a", true).as_deref(), Some("https://wat2do.io/"));
+        assert_eq!(
+            body.required_http_url("a", true).as_deref(),
+            Some("https://wat2do.io/")
+        );
         assert_eq!(
             body.required_http_url("b", true).as_deref(),
             Some("https://uwaterloo.wat2do.io/events?q=a%20b#x")

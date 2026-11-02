@@ -55,8 +55,12 @@ pub fn event_seasons(slug: &str) -> Vec<SchoolEventSeason> {
     };
     let mut result = Vec::new();
     for season in &school.seasons {
-        let filter_of =
-            |window: &crate::controlbox::DisplayWindow| window.filter_id.clone().unwrap_or_else(|| season.id.clone());
+        let filter_of = |window: &crate::controlbox::DisplayWindow| {
+            window
+                .filter_id
+                .clone()
+                .unwrap_or_else(|| season.id.clone())
+        };
         let mut filter_ids: Vec<String> = Vec::new();
         for window in &season.display_windows {
             let filter_id = filter_of(window);
@@ -507,7 +511,9 @@ mod tests {
             holidays.iter().map(|season| season.id.as_str()).collect();
         assert_eq!(
             ids,
-            ["halloween", "thanksgiving", "winter_holidays"].into_iter().collect()
+            ["halloween", "thanksgiving", "winter_holidays"]
+                .into_iter()
+                .collect()
         );
         assert!(seasons.iter().all(|season| season.id != "holidays"));
         let thanksgiving = holidays.iter().find(|s| s.id == "thanksgiving").unwrap();
@@ -516,7 +522,11 @@ mod tests {
             thanksgiving.display_windows[0].start_date.to_string(),
             "2026-10-05"
         );
-        assert!(holidays.iter().all(|season| season.display_windows.len() == 1));
+        assert!(
+            holidays
+                .iter()
+                .all(|season| season.display_windows.len() == 1)
+        );
         assert_eq!(event_seasons(" UWATERLOO ").len(), seasons.len());
         assert!(event_seasons("nowhere").is_empty());
     }

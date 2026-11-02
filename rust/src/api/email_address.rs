@@ -74,7 +74,10 @@ fn atext_intl_or_dot(character: char) -> bool {
 }
 
 fn hostname_intl(character: char) -> bool {
-    character.is_ascii_alphanumeric() || character == '-' || character == '.' || character as u32 >= 0x80
+    character.is_ascii_alphanumeric()
+        || character == '-'
+        || character == '.'
+        || character as u32 >= 0x80
 }
 
 fn qtext_intl(character: char) -> bool {
@@ -253,8 +256,11 @@ fn unquote(text: &str) -> Check<(String, bool)> {
                 escaped = true;
             } else if character == '"' {
                 if index != characters.len() - 1 {
-                    let rest: Vec<String> =
-                        characters[index + 1..].iter().copied().map(display).collect();
+                    let rest: Vec<String> = characters[index + 1..]
+                        .iter()
+                        .copied()
+                        .map(display)
+                        .collect();
                     return Err(format!(
                         "Extra character(s) found after close quote: {}",
                         rest.join(", ")
@@ -464,7 +470,12 @@ fn uts46_valid_char(character: char) -> bool {
     use GeneralCategory::*;
     !matches!(
         get_general_category(character),
-        Format | Unassigned | PrivateUse | Surrogate | SpaceSeparator | LineSeparator
+        Format
+            | Unassigned
+            | PrivateUse
+            | Surrogate
+            | SpaceSeparator
+            | LineSeparator
             | ParagraphSeparator
     )
 }
@@ -551,16 +562,17 @@ fn validate_domain_name(domain: &str) -> Check<(String, String)> {
         }
     }
     if !ascii_domain.contains('.') {
-        return Err(
-            "The part after the @-sign is not valid. It should have a period.".to_owned(),
-        );
+        return Err("The part after the @-sign is not valid. It should have a period.".to_owned());
     }
     if !ascii_domain
         .chars()
         .last()
         .is_some_and(|last| last.is_ascii_alphabetic())
     {
-        return Err("The part after the @-sign is not valid. It is not within a valid top-level domain.".to_owned());
+        return Err(
+            "The part after the @-sign is not valid. It is not within a valid top-level domain."
+                .to_owned(),
+        );
     }
     for special in SPECIAL_USE_DOMAIN_NAMES {
         if ascii_domain == special || ascii_domain.ends_with(&format!(".{special}")) {
@@ -572,9 +584,8 @@ fn validate_domain_name(domain: &str) -> Check<(String, String)> {
         .any(|label| label.to_ascii_lowercase().starts_with("xn--"))
     {
         let (decoded, result) = idna::domain_to_unicode(&ascii_domain);
-        result.map_err(|error| {
-            format!("The part after the @-sign is not valid IDNA ({error:?}).")
-        })?;
+        result
+            .map_err(|error| format!("The part after the @-sign is not valid IDNA ({error:?})."))?;
         decoded
     } else {
         ascii_domain.clone()
@@ -677,10 +688,7 @@ mod tests {
             ),
             ("@b.com", "There must be something before the @-sign."),
             ("a@", "There must be something after the @-sign."),
-            (
-                ".a@b.com",
-                "An email address cannot start with a period.",
-            ),
+            (".a@b.com", "An email address cannot start with a period."),
             (
                 "a.@b.com",
                 "An email address cannot have a period immediately before the @-sign.",

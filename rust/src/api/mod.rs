@@ -81,7 +81,10 @@ fn rust_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(routes::health::health))
         .routes(routes!(routes::site_banner::get_site_banner))
         // routers/clubs.py
-        .routes(routes!(routes::clubs::list_clubs, routes::clubs::create_club))
+        .routes(routes!(
+            routes::clubs::list_clubs,
+            routes::clubs::create_club
+        ))
         .routes(routes!(routes::clubs::list_clubs_for_review))
         .routes(routes!(routes::clubs::list_my_clubs))
         .routes(routes!(routes::clubs::claims::list_claims))
@@ -126,10 +129,7 @@ fn rust_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(routes::schools::search_schools))
         .routes(routes!(routes::schools::get_school))
         // routers/users.py
-        .routes(routes!(
-            routes::users::get_me,
-            routes::users::update_me
-        ))
+        .routes(routes!(routes::users::get_me, routes::users::update_me))
         .routes(routes!(routes::users::update_profile))
         .routes(routes!(routes::users::update_promoter_enrollment))
         .routes(routes!(routes::users::list_users))

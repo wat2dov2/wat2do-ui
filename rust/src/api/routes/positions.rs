@@ -191,7 +191,9 @@ impl PositionResponse {
             title: row.try_get("title")?,
             description: row.try_get("description")?,
             position_type: row.try_get("position_type")?,
-            requirements: row.try_get::<sqlx::types::Json<Vec<String>>, _>("requirements")?.0,
+            requirements: row
+                .try_get::<sqlx::types::Json<Vec<String>>, _>("requirements")?
+                .0,
             commitment: row.try_get("commitment")?,
             compensation: row.try_get("compensation")?,
             is_paid: row.try_get("is_paid")?,
@@ -209,7 +211,9 @@ impl PositionResponse {
             updated_at: row.try_get("updated_at")?,
             club_name: required(row.try_get("club_name")?, "club")?,
             club_logo_url: row.try_get("club_logo_url")?,
-            cohosts: row.try_get::<sqlx::types::Json<Vec<ClubCohost>>, _>("cohosts")?.0,
+            cohosts: row
+                .try_get::<sqlx::types::Json<Vec<ClubCohost>>, _>("cohosts")?
+                .0,
             club_type: row.try_get("club_type")?,
             club_page: row.try_get("club_page")?,
             club_ig: row.try_get("club_ig")?,
@@ -263,14 +267,19 @@ pub async fn list_positions(
     let search = check
         .query(&query, "search")
         .optional_string(Length::default().max(MAX_SEARCH_QUERY_LENGTH));
-    let position_type = check.query(&query, "position_type").optional_choice(POSITION_TYPES);
+    let position_type = check
+        .query(&query, "position_type")
+        .optional_choice(POSITION_TYPES);
     let club_id = check
         .query(&query, "club_id")
         .optional_int(Limits::default().ge(1));
     let include_closed = check.query(&query, "include_closed").bool_or(false);
     let added_since = check.query(&query, "added_since").optional_aware_datetime();
     let paid_only = check.query(&query, "paid_only").bool_or(false);
-    let descending = check.query(&query, "sort_order").choice_or("asc", SORT_ORDERS) == "desc";
+    let descending = check
+        .query(&query, "sort_order")
+        .choice_or("asc", SORT_ORDERS)
+        == "desc";
     check.finish()?;
 
     let school = school.filter(|school| !school.is_empty());
@@ -345,7 +354,9 @@ pub async fn list_positions(
         if let Some(title) = row.try_get::<Option<String>, _>("latest_title")? {
             latest = Some(LatestAddedItem {
                 title,
-                added_at: row.try_get::<Option<DateTime<Utc>>, _>("latest_added_at")?.unwrap_or_default(),
+                added_at: row
+                    .try_get::<Option<DateTime<Utc>>, _>("latest_added_at")?
+                    .unwrap_or_default(),
                 club_name: row.try_get("latest_club_name")?,
                 club_logo_url: row.try_get("latest_club_logo_url")?,
             });
@@ -467,7 +478,10 @@ mod tests {
         assert_eq!(POSITIONS.undated_visibility_months, 4);
         let window = OpenWindow::now();
         assert_eq!(window.today, Utc::now().date_naive());
-        let months = (window.today.signed_duration_since(window.cutoff.date_naive())).num_days();
+        let months = (window
+            .today
+            .signed_duration_since(window.cutoff.date_naive()))
+        .num_days();
         assert!((118..=124).contains(&months), "{months}");
         assert_eq!(
             OpenWindow::sql("p", "$1", "$2"),

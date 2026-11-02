@@ -57,6 +57,24 @@ pub struct ClubInvitationResponse {
 const INVITATION_COLUMNS: &str =
     "id, club_id, email, token, invited_by, status, created_at, expires_at";
 
+/// Managers (not admins) may only invite addresses of their own school.
+fn school_refusal(inviter_school: Option<&str>, invited_school: Option<&str>) -> Option<String> {
+    let same = match (invited_school, inviter_school) {
+        (Some(invited), Some(own)) if !invited.is_empty() && !own.is_empty() => {
+            invited.to_lowercase() == own.to_lowercase()
+        }
+        _ => false,
+    };
+    (!same).then(|| {
+        format!(
+            "You can only invite emails matching your school domain ({}).",
+            inviter_school
+                .filter(|school| !school.is_empty())
+                .unwrap_or("Unknown")
+        )
+    })
+}
+
 /// `create_invitation`: invite an email to the club's team (renewing an
 /// earlier invitation to it), then email the invitation.
 pub async fn create(
@@ -69,17 +87,10 @@ pub async fn create(
         .await?
         .ok_or_else(|| ApiError::not_found(INVITER_NOT_FOUND))?;
     if inviter.role != ROLE_ADMIN {
-        // Managers may only invite people from their own school.
         let invited_school = EMAIL_DOMAINS.school_for_email(db, email).await;
-        let same_school = match (&invited_school, &inviter.school) {
-            (Some(invited), Some(own)) => invited.to_lowercase() == own.to_lowercase(),
-            _ => false,
-        };
-        if !same_school {
-            return Err(ApiError::validation(format!(
-                "You can only invite emails matching your school domain ({}).",
-                inviter.school.as_deref().filter(|school| !school.is_empty()).unwrap_or("Unknown")
-            )));
+        if let Some(refusal) = school_refusal(inviter.school.as_deref(), invited_school.as_deref())
+        {
+            return Err(ApiError::validation(refusal));
         }
     }
     if let Some(existing) = get_user_by_email(db, email).await?
@@ -109,7 +120,13 @@ pub async fn create(
     .fetch_one(db)
     .await
     .inspect_err(|error| tracing::error!("Failed to create/upsert invitation: {error}"))?;
-    emails::send_invitation(&club.club_name, club.school.as_deref(), email, &token.to_string()).await;
+    emails::send_invitation(
+        &club.club_name,
+        club.school.as_deref(),
+        email,
+        &token.to_string(),
+    )
+    .await;
     Ok(invitation)
 }
 
@@ -187,9 +204,9 @@ pub async fn list_invitations(
     );
     let invitations = read_with_retry(|| {
         sqlx::query_as::<_, ClubInvitationResponse>(&sql)
-        .bind(id)
-        .bind(now)
-        .fetch_all(&state.db)
+            .bind(id)
+            .bind(now)
+            .fetch_all(&state.db)
     })
     .await?;
     Ok(Json(invitations))
@@ -215,15 +232,18 @@ pub async fn revoke_invitation(
     let id = club_id(&path)?;
     managed_club(&state.db, id, &user).await?;
     let mut check = Validator::default();
-    let invitation_id = check.path(&path, "invitation_id").string(Default::default());
+    let invitation_id = check
+        .path(&path, "invitation_id")
+        .string(Default::default());
     check.finish()?;
     // Compared as text cast to uuid, so a malformed id fails as it did through PostgREST.
-    let revoked = sqlx::query("DELETE FROM public.club_invitations WHERE club_id = $1 AND id = $2::uuid")
-        .bind(id)
-        .bind(&invitation_id)
-        .execute(&state.db)
-        .await?
-        .rows_affected();
+    let revoked =
+        sqlx::query("DELETE FROM public.club_invitations WHERE club_id = $1 AND id = $2::uuid")
+            .bind(id)
+            .bind(&invitation_id)
+            .execute(&state.db)
+            .await?
+            .rows_affected();
     if revoked == 0 {
         return Err(ApiError::not_found(INVITATION_NOT_FOUND));
     }
@@ -329,4 +349,29 @@ pub async fn accept_invitation(
         .execute(&state.db)
         .await?;
     Ok(no_content())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn managers_invite_only_their_own_school() {
+        // test_create_invitation_enforces_school_matching_for_non_admins
+        assert_eq!(school_refusal(Some("uwaterloo"), Some("uwaterloo")), None);
+        assert_eq!(school_refusal(Some("UWaterloo"), Some("uwaterloo")), None);
+        let refusal = "You can only invite emails matching your school domain (uwaterloo).";
+        assert_eq!(
+            school_refusal(Some("uwaterloo"), Some("wlu")).as_deref(),
+            Some(refusal)
+        );
+        assert_eq!(
+            school_refusal(Some("uwaterloo"), None).as_deref(),
+            Some(refusal)
+        );
+        assert_eq!(
+            school_refusal(None, Some("uwaterloo")).as_deref(),
+            Some("You can only invite emails matching your school domain (Unknown).")
+        );
+    }
 }

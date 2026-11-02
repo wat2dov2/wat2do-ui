@@ -13,8 +13,8 @@
 use std::fmt::Write as _;
 
 use chrono::{DateTime, NaiveDate, Timelike, Utc};
-use serde::{Serialize, Serializer};
 use serde::ser::{SerializeMap, SerializeSeq};
+use serde::{Serialize, Serializer};
 use serde_json::Value;
 
 /// pydantic's datetime: `2024-10-01T12:34:56Z`, or with `.123456` when the
@@ -66,7 +66,12 @@ pub fn python_float(value: f64) -> String {
         return if value > 0.0 { "Infinity" } else { "-Infinity" }.to_owned();
     }
     if value == 0.0 {
-        return if value.is_sign_negative() { "-0.0" } else { "0.0" }.to_owned();
+        return if value.is_sign_negative() {
+            "-0.0"
+        } else {
+            "0.0"
+        }
+        .to_owned();
     }
     // `{:e}` writes the shortest round-trip digits, e.g. "1.2345e4".
     let scientific = format!("{value:e}");
@@ -82,10 +87,7 @@ pub fn python_float(value: f64) -> String {
         let text = if point <= 0 {
             format!("0.{}{digits}", "0".repeat((-point) as usize))
         } else if point as usize >= digits.len() {
-            format!(
-                "{digits}{}.0",
-                "0".repeat(point as usize - digits.len())
-            )
+            format!("{digits}{}.0", "0".repeat(point as usize - digits.len()))
         } else {
             let (whole, fraction) = digits.split_at(point as usize);
             format!("{whole}.{fraction}")
@@ -233,7 +235,8 @@ mod tests {
         assert_eq!(format_datetime(&at), "2024-10-01T12:34:56Z");
         let at = at + chrono::Duration::microseconds(123_000);
         assert_eq!(format_datetime(&at), "2024-10-01T12:34:56.123000Z");
-        let at = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap() + chrono::Duration::microseconds(1);
+        let at =
+            Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap() + chrono::Duration::microseconds(1);
         assert_eq!(format_datetime(&at), "2024-01-01T00:00:00.000001Z");
     }
 
@@ -275,6 +278,9 @@ mod tests {
     #[test]
     fn dumps_uses_default_separators() {
         let value = json!({"q": "é\n", "n": [1, 2.0], "t": true});
-        assert_eq!(python_dumps(&value), "{\"q\": \"é\\n\", \"n\": [1, 2.0], \"t\": true}");
+        assert_eq!(
+            python_dumps(&value),
+            "{\"q\": \"é\\n\", \"n\": [1, 2.0], \"t\": true}"
+        );
     }
 }

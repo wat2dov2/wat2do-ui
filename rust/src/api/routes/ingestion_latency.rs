@@ -248,45 +248,90 @@ mod tests {
     fn report_breaks_delays_down_by_school_and_hour() {
         // backend/tests/services/test_ingestion_latency_service.py
         let rows = vec![
-            Latency { school: "uwaterloo".into(), added_at: at(14, 5), latency_seconds: 600.0 },
-            Latency { school: "uwaterloo".into(), added_at: at(14, 40), latency_seconds: 1800.0 },
-            Latency { school: "mcgill".into(), added_at: at(15, 20), latency_seconds: 3600.0 },
+            Latency {
+                school: "uwaterloo".into(),
+                added_at: at(14, 5),
+                latency_seconds: 600.0,
+            },
+            Latency {
+                school: "uwaterloo".into(),
+                added_at: at(14, 40),
+                latency_seconds: 1800.0,
+            },
+            Latency {
+                school: "mcgill".into(),
+                added_at: at(15, 20),
+                latency_seconds: 3600.0,
+            },
         ];
         let since = Utc.with_ymd_and_hms(2026, 10, 3, 0, 0, 0).unwrap();
         let report = report(since, rows);
         assert_eq!(report.overall.count, 3);
-        assert_eq!(report.overall.mean_minutes, Some(fsum(&[10.0, 30.0, 60.0]) / 3.0));
+        assert_eq!(
+            report.overall.mean_minutes,
+            Some(fsum(&[10.0, 30.0, 60.0]) / 3.0)
+        );
         assert_eq!(report.overall.median_minutes, Some(30.0));
         assert_eq!(
-            report.schools.iter().map(|s| s.school.as_str()).collect::<Vec<_>>(),
+            report
+                .schools
+                .iter()
+                .map(|s| s.school.as_str())
+                .collect::<Vec<_>>(),
             ["mcgill", "uwaterloo"]
         );
         let waterloo = &report.schools[1];
-        assert_eq!((waterloo.count, waterloo.mean_minutes, waterloo.median_minutes), (2, Some(20.0), Some(20.0)));
+        assert_eq!(
+            (
+                waterloo.count,
+                waterloo.mean_minutes,
+                waterloo.median_minutes
+            ),
+            (2, Some(20.0), Some(20.0))
+        );
         let hourly: Vec<_> = report
             .hourly
             .iter()
             .map(|hour| (hour.hour, hour.count, hour.median_minutes))
             .collect();
-        assert_eq!(hourly, [(at(14, 0).unwrap(), 2, 20.0), (at(15, 0).unwrap(), 1, 60.0)]);
+        assert_eq!(
+            hourly,
+            [(at(14, 0).unwrap(), 2, 20.0), (at(15, 0).unwrap(), 1, 60.0)]
+        );
         let body = serde_json::to_string(&report).unwrap();
         assert!(body.starts_with(r#"{"since":"2026-10-03T00:00:00Z","overall":{"count":3,"mean_minutes":33.333333333333336,"median_minutes":30.0}"#));
-        assert!(body.contains(r#"{"hour":"2026-10-10T14:00:00Z","count":2,"mean_minutes":20.0,"median_minutes":20.0}"#));
+        assert!(body.contains(
+            r#"{"hour":"2026-10-10T14:00:00Z","count":2,"mean_minutes":20.0,"median_minutes":20.0}"#
+        ));
     }
 
     #[test]
     fn report_without_events_is_empty() {
         let report = report(Utc::now(), Vec::new());
-        assert_eq!(report.overall, LatencyStats { count: 0, mean_minutes: None, median_minutes: None });
+        assert_eq!(
+            report.overall,
+            LatencyStats {
+                count: 0,
+                mean_minutes: None,
+                median_minutes: None
+            }
+        );
         assert!(report.schools.is_empty() && report.hourly.is_empty());
-        assert!(serde_json::to_string(&report.overall).unwrap().ends_with(r#""mean_minutes":null,"median_minutes":null}"#));
+        assert!(
+            serde_json::to_string(&report.overall)
+                .unwrap()
+                .ends_with(r#""mean_minutes":null,"median_minutes":null}"#)
+        );
     }
 
     #[test]
     fn fsum_is_correctly_rounded_like_python() {
         // math.fsum([0.1] * 10) == 1.0 while the naive sum is 0.9999999999999999.
         assert_eq!(fsum(&[0.1; 10]), 1.0);
-        assert_eq!(fsum(&[1e100, 1.0, -1e100, 1e-100, 1e50, -1.0, -1e50]), 1e-100);
+        assert_eq!(
+            fsum(&[1e100, 1.0, -1e100, 1e-100, 1e50, -1.0, -1e50]),
+            1e-100
+        );
         assert_eq!(fsum(&[]), 0.0);
         assert_eq!(median(&[3.0, 1.0, 2.0, 10.0]), 2.5);
     }

@@ -8,7 +8,9 @@ use indexmap::IndexMap;
 use serde::Serialize;
 use utoipa::ToSchema;
 
-use crate::constants::{CLUB_CATEGORIES, EVENT_CATEGORIES, INTEREST_TO_CATEGORIES, REPORT_STATUSES};
+use crate::constants::{
+    CLUB_CATEGORIES, EVENT_CATEGORIES, INTEREST_TO_CATEGORIES, REPORT_STATUSES,
+};
 
 /// Shared domain constants that the frontend must stay in sync with.
 ///
@@ -70,7 +72,9 @@ mod tests {
     #[test]
     fn constants_keep_python_order() {
         let body = serde_json::to_string(&constants()).unwrap();
-        assert!(body.starts_with(r#"{"event_categories":["Arts & Culture","Academics & Science","#));
+        assert!(
+            body.starts_with(r#"{"event_categories":["Arts & Culture","Academics & Science","#)
+        );
         assert!(body.contains(r#""interest_to_categories":{"Arts & Culture":["Arts & Culture"],"#));
         assert!(body.ends_with(r#""report_statuses":["pending","resolved","dismissed"]}"#));
     }

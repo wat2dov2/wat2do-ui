@@ -73,17 +73,24 @@ fn parse_query(mut body: Body) -> Result<DiscoveryQuery, ApiError> {
     body.finish()?;
     // `finish` fails whenever a field above is missing.
     match (id, school, surface, search_query, page_url, filters) {
-        (Some(id), Some(school), Some(surface), Some(search_query), Some(page_url), Some(filters)) => {
-            Ok(DiscoveryQuery {
-                id,
-                school,
-                surface,
-                search_query,
-                page_url,
-                filters,
-            })
-        }
-        _ => Err(ApiError::Internal(anyhow::anyhow!("validated body is incomplete"))),
+        (
+            Some(id),
+            Some(school),
+            Some(surface),
+            Some(search_query),
+            Some(page_url),
+            Some(filters),
+        ) => Ok(DiscoveryQuery {
+            id,
+            school,
+            surface,
+            search_query,
+            page_url,
+            filters,
+        }),
+        _ => Err(ApiError::Internal(anyhow::anyhow!(
+            "validated body is incomplete"
+        ))),
     }
 }
 
@@ -359,8 +366,13 @@ mod tests {
         ] {
             assert_eq!(issues(payload(changes.clone())).len(), 1, "{changes}");
         }
-        let oversized = issues(payload(json!({"filters": {"blob": "x".repeat(DISCOVERY_QUERIES.maximum_filters_bytes)}})));
-        assert_eq!(oversized[0].msg, "Value error, Query filters exceed the maximum size");
+        let oversized = issues(payload(
+            json!({"filters": {"blob": "x".repeat(DISCOVERY_QUERIES.maximum_filters_bytes)}}),
+        ));
+        assert_eq!(
+            oversized[0].msg,
+            "Value error, Query filters exceed the maximum size"
+        );
     }
 
     #[test]

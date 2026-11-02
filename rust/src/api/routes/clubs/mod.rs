@@ -110,7 +110,11 @@ pub struct ClubSubmissionResponse {
     pub submitted_by_email: Option<String>,
 }
 
-crate::paginated_schema!(PaginatedClubs, PaginatedResponse_ClubResponse_, ClubResponse);
+crate::paginated_schema!(
+    PaginatedClubs,
+    PaginatedResponse_ClubResponse_,
+    ClubResponse
+);
 crate::paginated_schema!(
     PaginatedClubSubmissions,
     PaginatedResponse_ClubSubmissionResponse_,
@@ -229,7 +233,11 @@ pub async fn is_club_member(db: &sqlx::PgPool, club_id: i64, user_id: Uuid) -> b
 }
 
 /// `_get_club_or_403`: the club (404 when missing), for an admin or a member of it.
-pub async fn managed_club(db: &sqlx::PgPool, id: i64, user: &User) -> Result<ClubResponse, ApiError> {
+pub async fn managed_club(
+    db: &sqlx::PgPool,
+    id: i64,
+    user: &User,
+) -> Result<ClubResponse, ApiError> {
     let sql = format!(
         "SELECT {}, EXISTS (SELECT 1 FROM public.club_members m \
                  WHERE m.club_id = c.id AND m.user_id = $2) AS is_member \
@@ -461,7 +469,9 @@ pub async fn list_clubs_for_review(
 ) -> Result<Json<Paginated<ClubSubmissionResponse>>, ApiError> {
     let mut check = Validator::default();
     let pagination = Pagination::read(&mut check, &query);
-    let status = check.query(&query, "club_status").optional_choice(CLUB_STATUSES);
+    let status = check
+        .query(&query, "club_status")
+        .optional_choice(CLUB_STATUSES);
     let school = check
         .query(&query, "school")
         .optional_string(Length::default().max(MAX_SCHOOL_LENGTH));
@@ -579,10 +589,18 @@ fn safe_http_url(value: &str) -> Result<Option<String>, &'static str> {
         return Ok(None);
     }
     // urlparse drops tabs and newlines and lower-cases the scheme.
-    let cleaned: String = value.chars().filter(|c| !matches!(c, '\t' | '\r' | '\n')).collect();
+    let cleaned: String = value
+        .chars()
+        .filter(|c| !matches!(c, '\t' | '\r' | '\n'))
+        .collect();
     let safe = cleaned.split_once(':').is_some_and(|(scheme, rest)| {
-        let scheme_ok = scheme.chars().next().is_some_and(|c| c.is_ascii_alphabetic())
-            && scheme.chars().all(|c| c.is_ascii_alphanumeric() || "+-.".contains(c));
+        let scheme_ok = scheme
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_alphabetic())
+            && scheme
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || "+-.".contains(c));
         let netloc = rest
             .strip_prefix("//")
             .map(|rest| rest.split(['/', '?', '#']).next().unwrap_or_default())
@@ -614,7 +632,10 @@ fn checked_categories(values: Vec<String>) -> Result<Vec<String>, String> {
             if !category.is_empty() {
                 tracing::warn!("Unrecognized club category {category:?}, dropping it");
             }
-            return Err(format!("categories must be from: {}", CLUB_CATEGORIES.join(", ")));
+            return Err(format!(
+                "categories must be from: {}",
+                CLUB_CATEGORIES.join(", ")
+            ));
         }
         if !normalized.iter().any(|known| known == category) {
             normalized.push(category.to_owned());
@@ -757,7 +778,12 @@ pub struct ClubCreate {
     ig: Option<String>,
     #[schema(max_length = 2048)]
     discord: Option<String>,
-    #[schema(min_length = 1, max_length = 100, pattern = r"^[a-z0-9]+(?:-[a-z0-9]+)*$", default = "independent")]
+    #[schema(
+        min_length = 1,
+        max_length = 100,
+        pattern = r"^[a-z0-9]+(?:-[a-z0-9]+)*$",
+        default = "independent"
+    )]
     club_type: String,
     #[schema(max_length = 2048)]
     logo_url: Option<String>,
@@ -874,23 +900,32 @@ pub async fn create_club(
     if let Some(user) = &db_user
         && let Err(error) = members::add_member(&state.db, i64::from(club.id), user.id).await
     {
-        tracing::warn!("Failed to auto-add creator {} to club members: {error:?}", user.id);
+        tracing::warn!(
+            "Failed to auto-add creator {} to club members: {error:?}",
+            user.id
+        );
     }
     if auto_approve {
-        revalidate(&[club.school.clone()], CLUB_RESOURCES).await;
+        revalidate(std::slice::from_ref(&club.school), CLUB_RESOURCES).await;
     }
     Ok((StatusCode::CREATED, Json(club)).into_response())
 }
 
 /// `SubmissionUpdate`: a review decision and an optional reason.
-fn parse_review(body: Result<Body, ApiError>, check: Validator) -> Result<(String, Option<String>), ApiError> {
+fn parse_review(
+    body: Result<Body, ApiError>,
+    check: Validator,
+) -> Result<(String, Option<String>), ApiError> {
     let mut body = match body {
         Ok(body) => body,
         Err(error) => return Err(merge_err(check, error)),
     };
     let status = body.required_string("status", &Str::new().one_of(CLUB_STATUSES));
     let reason = body
-        .string("rejection_reason", &Str::new().max(MAX_REJECTION_REASON_LENGTH))
+        .string(
+            "rejection_reason",
+            &Str::new().max(MAX_REJECTION_REASON_LENGTH),
+        )
         .value();
     merge_issues(check, body.finish())?;
     Ok((status.unwrap_or_default(), reason))
@@ -925,7 +960,9 @@ pub async fn review_club(
         "UPDATE public.clubs c SET status = $2 FROM public.clubs old \
          WHERE c.id = $1 AND old.id = c.id \
          RETURNING {}, old.status AS previous_status",
-        returned_club_sql("(SELECT NULLIF(s.slug, '') FROM public.schools s WHERE s.id = c.school_id)")
+        returned_club_sql(
+            "(SELECT NULLIF(s.slug, '') FROM public.schools s WHERE s.id = c.school_id)"
+        )
     );
     let row = sqlx::query(&sql)
         .bind(id)
@@ -936,7 +973,7 @@ pub async fn review_club(
     let club = ClubResponse::from_row(&row)?;
     let previous: String = row.try_get("previous_status")?;
     if previous != club.status {
-        revalidate(&[club.school.clone()], ALL_RESOURCES).await;
+        revalidate(std::slice::from_ref(&club.school), ALL_RESOURCES).await;
         let recipient: Option<String> = row.try_get("submitted_by_email")?;
         emails::send_review_decision(
             emails::Reviewed::Club,
@@ -1040,9 +1077,11 @@ async fn apply_update(
             None
         } else {
             read_with_retry(|| {
-                sqlx::query_scalar::<_, i32>("SELECT id FROM public.schools WHERE slug = $1 LIMIT 1")
-                    .bind(&slug)
-                    .fetch_optional(db)
+                sqlx::query_scalar::<_, i32>(
+                    "SELECT id FROM public.schools WHERE slug = $1 LIMIT 1",
+                )
+                .bind(&slug)
+                .fetch_optional(db)
             })
             .await?
         };
@@ -1085,7 +1124,11 @@ async fn apply_update(
         || updated.discord != existing.discord;
     revalidate(
         &[existing.school.clone(), updated.school.clone()],
-        if embedded_changed { ALL_RESOURCES } else { CLUB_RESOURCES },
+        if embedded_changed {
+            ALL_RESOURCES
+        } else {
+            CLUB_RESOURCES
+        },
     )
     .await;
     Ok(updated)
