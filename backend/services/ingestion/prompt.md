@@ -53,31 +53,50 @@ Nothing else is available.
 Read the text and every image, then decide which of these it is (it can be several):
 
 1. New event(s) being announced.
-2. An update to an event that is probably already listed: a reminder, a repost, a new poster, more details, a moved date, a moved room, a new time.
+2. An update to an event that is probably already listed: a reminder, a repost, a new poster, more details, a moved date, a moved room, a new time, or the next session of a series the club already runs.
 3. A cancellation: the whole event, or only one date of a recurring event ("no jam this Wednesday").
 4. Open hiring positions.
 5. Nothing relevant (memes, recaps, photo dumps, results, generic promotion). Then change nothing.
 
 ## Step 2: Look at what is already listed
 
-Before writing anything, look up this club's upcoming events and their dates.
+Before writing anything, look up this club's events from the last few months and their dates, not only upcoming ones: the series this source continues may have no future dates yet.
 When the publishing club has an id, start with:
 
 ```
-psql -c "SELECT e.id, e.title, e.location, e.map_location, e.cancelled, e.source_url, string_agg(to_char(d.dtstart_utc AT TIME ZONE '{{timezone}}', 'Dy YYYY-MM-DD HH24:MI') || ' [' || d.id || ']', ', ' ORDER BY d.dtstart_utc) AS dates FROM events e JOIN event_dates d ON d.event_id = e.id WHERE e.club_id = <club id> AND d.dtstart_utc > now() - interval '1 day' GROUP BY e.id ORDER BY min(d.dtstart_utc) LIMIT 40"
+psql -c "SELECT e.id, e.title, e.location, e.map_location, e.cancelled, e.source_url, string_agg(to_char(d.dtstart_utc AT TIME ZONE '{{timezone}}', 'Dy YYYY-MM-DD HH24:MI') || ' [' || d.id || ']', ', ' ORDER BY d.dtstart_utc) AS dates FROM events e JOIN event_dates d ON d.event_id = e.id WHERE e.club_id = <club id> GROUP BY e.id HAVING max(d.dtstart_utc) > now() - interval '120 days' ORDER BY max(d.dtstart_utc) DESC LIMIT 40"
 ```
+
+When the club has no id, run the same query with `e.ig_handle IN ('<handle>', '@<handle>')` instead of the `club_id` match.
 
 Also search the school for the same activity under another host or a slightly different title when it could be a duplicate, for example `WHERE e.school_id = {{school_id}} AND e.title ILIKE '%jam%'`.
 Look up clubs by Instagram handle (`clubs.ig`) or name (`clubs.club_name ILIKE ...`) when the source names a host.
 
 The same logical event already listed means the same club and the same activity, even when the title wording differs ("Drop-In Jam" and "Improv UW Drop-in Jams" are the same thing).
-A recurring series (weekly meetings, jams, practices) is ONE event row with one `event_dates` row per date.
+A recurring series (weekly meetings, jams, practices, drop-in classes and workshops) is ONE event row with one `event_dates` row per date.
+
+A post for another session of something the club runs regularly belongs to that series, even when:
+
+- its earlier dates have already passed, or there was a gap of weeks or a term between sessions;
+- each session has its own theme, piece, song, topic or guest ("寤俑 Wuyong Drop-In Workshop", "慵仙录 Yong Xian Lu Drop-In Workshop" and "Hearing Spring Workshop" from the same dance club, in the same studio, on Sunday evenings, are all sessions of one drop-in workshop series);
+- the title carries a session number or a part count ("Workshop 3/4", "Week 5", "Session 2");
+- the title is translated, transliterated or spelled differently ("Wu Yong" and "Wuyong").
+
+Treat it as the same series when the club, the kind of activity and the usual venue or time slot match.
+A different kind of activity from the same club stays its own event: a showcase, performance, social, competition or a one-off special event is not a session of the club's weekly workshop, even in the same room.
+When unsure whether a listed event is the same series, prefer updating it over creating a near-duplicate.
 
 ## Step 3: Make the database match
 
 Apply exactly the change the source supports, in one transaction per logical change.
 
-- **New event:** insert one `events` row and one `event_dates` row per date.
+- **New event:** insert one `events` row and one `event_dates` row per date, only after Step 2 found no listed event or series it belongs to.
+- **Next session(s) of a listed series:** insert the new date(s) as `event_dates` rows on that series' event, and update its fields from this source (image, location, price) as for a reminder.
+  Do not create a new event for it.
+  A series title names the recurring activity, never one session's theme or number.
+  When the listed title carries a theme or number that this session does not share, update the title in the same transaction ("Wu Yong Drop-In Workshop" followed by a Yong Xian Lu session becomes "Chinese Classical Dance Drop-In Workshop"; "Workshop 3/4" becomes "Workshop").
+  Keep a title that already names only the activity.
+  When the listed series event is cancelled but this source announces a new session, set `cancelled = false`.
 - **Reminder, repost or extra details for a listed event:** update that row instead of inserting a duplicate.
   Fill fields that are empty or vaguer, such as a TBA location, a price or food, and give it this source's image (see `source_image_url`).
   Keep its existing `source_url`, `description` and dates unless the source changes them.
@@ -248,7 +267,7 @@ When no registered club hosts a position, skip that position.
 Report the outcome:
 
 - `added`: you inserted at least one event or position.
-- `updated`: you only changed rows that were already listed (details, dates, cancellations, positions closed).
+- `updated`: you only changed rows that were already listed (details, dates, new sessions added to a listed series, cancellations, positions closed).
 - `nothing`: you changed nothing, for example because the source is not an event or it is already listed exactly as described.
 
 Add one short line saying what you changed, for example "Inserted event 123; deleted date of event 45 on Oct 21", or "No change: not an event".
