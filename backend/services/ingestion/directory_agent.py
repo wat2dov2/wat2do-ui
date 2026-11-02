@@ -33,13 +33,14 @@ from services.ingestion.directory import list_sources
 from services.ingestion.items import CONTROL
 from services.ingestion.processor import state_directory
 from services.school_context import resolve_school_timezone
+from services.scraper.page_image import fetch_event_poster
 
 log = logging.getLogger(__name__)
 PROMPT = Path(__file__).with_name("directory_prompt.md").read_text()
 WORKDIR_PREFIX = "wat2do-directory-"
 # Some WAFs reject a full browser user-agent from a non-browser HTTP client.
 _USER_AGENT = "curl/8.7.1"
-_DETAIL_FIELDS = ("title", "starts", "ends", "location", "host", "description", "image_url")
+_DETAIL_FIELDS = ("title", "starts", "ends", "location", "host", "description")
 REPORT_SCHEMA = {
     "type": "object",
     "additionalProperties": False,
@@ -62,7 +63,6 @@ REPORT_SCHEMA = {
                     "location": {"type": "string"},
                     "host": {"type": "string"},
                     "description": {"type": "string"},
-                    "image_url": {"type": "string"},
                 },
             },
         }
@@ -259,15 +259,15 @@ def _save(
         if verdict == "changed":
             if statuses.get(url) != "done":
                 continue
-            _update_ready(url, _post(url, item))
+            _update_ready(url, _post(url, item, _poster(url)))
             stats["changed"] += 1
         elif url in statuses:
             continue
         elif verdict in ("event", "position"):
-            _insert({**row, "status": "ready", "post": _post(url, item)})
+            _insert({**row, "status": "ready", "post": _post(url, item, _poster(url))})
             stats["queued"] += 1
         elif verdict == "already_listed":
-            _insert({**row, "status": "done", "post": _post(url, item)})
+            _insert({**row, "status": "done", "post": _post(url, item, None)})
             stats["already_listed"] += 1
         else:
             _insert({**row, "status": "not_event"})
@@ -286,7 +286,12 @@ def _plausible(url: str, page: str, listing_host: str) -> bool:
     return parts.hostname == site or parts.hostname.endswith(f".{site}")
 
 
-def _post(url: str, item: dict) -> dict:
+def _poster(url: str) -> str | None:
+    """The event page's own poster image for the ingestion agent to store, or None."""
+    return fetch_event_poster(url)
+
+
+def _post(url: str, item: dict, poster: str | None) -> dict:
     """The processor's view of a directory page: finished text plus its poster."""
     details = {field: item[field] for field in _DETAIL_FIELDS if item.get(field)}
     starts, ends = details.get("starts", []), details.get("ends", [])
@@ -305,7 +310,7 @@ def _post(url: str, item: dict) -> dict:
     return {
         "url": url,
         "text": "\n".join(lines),
-        "images": [details["image_url"]] if details.get("image_url") else [],
+        "images": [poster] if poster else [],
         "details": details,
     }
 

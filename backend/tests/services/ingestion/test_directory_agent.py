@@ -28,12 +28,15 @@ def _source(**overrides) -> DirectorySource:
 
 @pytest.fixture
 def directory(monkeypatch):
-    state = SimpleNamespace(prompts=[], inserted=[], updated=[], reported=[], handled=[])
+    state = SimpleNamespace(
+        prompts=[], inserted=[], updated=[], reported=[], handled=[], posters={}
+    )
     monkeypatch.setattr(
         module.school_service, "get_school", lambda slug: SimpleNamespace(id=7, slug=slug)
     )
     monkeypatch.setattr(module, "resolve_school_timezone", lambda _school: "America/New_York")
     monkeypatch.setattr(module, "_download", lambda url: LISTING)
+    monkeypatch.setattr(module, "_poster", lambda url: state.posters.get(url))
     monkeypatch.setattr(module, "_handled", lambda source: state.handled)
     monkeypatch.setattr(module, "_listed", lambda *_: {"events": [], "positions": []})
 
@@ -63,7 +66,6 @@ def test_agent_findings_become_queue_rows(directory):
             "location": "Houston Hall 201",
             "host": "Penn Jazz",
             "description": "Weekly jam.",
-            "image_url": "https://clubs.example.edu/jam.png",
         },
         {"url": "https://clubs.example.edu/events/office-hours", "verdict": "not_event"},
         {"url": "https://clubs.example.edu/events/gala", "verdict": "already_listed"},
@@ -73,6 +75,10 @@ def test_agent_findings_become_queue_rows(directory):
         # Already handled and unchanged: never queued again.
         {"url": "https://clubs.example.edu/events/old", "verdict": "event", "title": "Old"},
     ]
+
+    directory.posters = {
+        "https://clubs.example.edu/events/jam": "https://clubs.example.edu/jam.png"
+    }
 
     stats = module.scrape_source(_source())
 
