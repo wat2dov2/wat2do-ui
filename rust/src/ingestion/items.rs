@@ -46,7 +46,6 @@ pub async fn claim(pool: &PgPool, stage: Stage) -> Result<Option<Item>> {
          FROM public.claim_ingestion_item($1, $2) AS item \
          LEFT JOIN public.schools AS school ON school.id = item.school_id",
     )
-    .persistent(false)
     .bind(stage.as_str())
     .bind(INGESTION.claim_lease_seconds)
     .fetch_optional(pool)
@@ -58,7 +57,6 @@ pub async fn mark_fetched(pool: &PgPool, item: &Item, post: &serde_json::Value) 
         "UPDATE public.ingestion_items SET status = 'ready', post = $2, attempts = 0, \
          claimed_until = NULL, updated_at = now() WHERE source_url = $1",
     )
-    .persistent(false)
     .bind(&item.source_url)
     .bind(post)
     .execute(pool)
@@ -72,7 +70,6 @@ pub async fn mark(pool: &PgPool, item: &Item, status: &str) -> Result<()> {
         "UPDATE public.ingestion_items SET status = $2, claimed_until = NULL, updated_at = now() \
          WHERE source_url = $1",
     )
-    .persistent(false)
     .bind(&item.source_url)
     .bind(status)
     .execute(pool)
@@ -95,7 +92,6 @@ pub async fn release(
         "UPDATE public.ingestion_items SET status = $2, \
          claimed_until = now() + make_interval(secs => $3), updated_at = now() WHERE source_url = $1",
     )
-    .persistent(false)
     .bind(&item.source_url)
     .bind(stage.as_str())
     .bind(delay)

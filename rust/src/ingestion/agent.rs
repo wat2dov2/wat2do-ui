@@ -126,7 +126,6 @@ async fn already_imported(pool: &PgPool, source_url: &str) -> Result<bool> {
         }
     };
     Ok(sqlx::query_scalar(query)
-        .persistent(false)
         .bind(shortcode.as_deref().unwrap_or(source_url))
         .fetch_one(pool)
         .await?)
@@ -277,7 +276,6 @@ async fn owner_club(
         let club: Option<(i32, String)> = sqlx::query_as(
             "SELECT id, club_name FROM public.clubs WHERE ig = $1 AND school_id = $2 ORDER BY id LIMIT 1",
         )
-    .persistent(false)
         .bind(handle)
         .bind(school_id)
         .fetch_optional(pool)
@@ -395,7 +393,6 @@ async fn store_chosen_posters(pool: &PgPool, token: &str, images: &[Image]) -> R
         let references: Vec<String> = sqlx::query_scalar(&format!(
             "SELECT DISTINCT source_image_url FROM public.{table} WHERE source_image_url LIKE $1 || '%'"
         ))
-    .persistent(false)
         .bind(&prefix)
         .fetch_all(pool)
         .await?;
@@ -413,7 +410,6 @@ async fn store_chosen_posters(pool: &PgPool, token: &str, images: &[Image]) -> R
             sqlx::query(&format!(
                 "UPDATE public.{table} SET source_image_url = $2, source_video_url = $3 WHERE source_image_url = $1"
             ))
-    .persistent(false)
             .bind(&reference)
             .bind(poster)
             .bind(video)
@@ -438,7 +434,6 @@ async fn cover_posterless_events(
     let ids: Vec<i32> = sqlx::query_scalar(
         "SELECT id FROM public.events WHERE source_url = $1 AND added_at >= $2 AND source_image_url IS NULL",
     )
-    .persistent(false)
     .bind(source_url)
     .bind(since)
     .fetch_all(pool)
@@ -450,7 +445,6 @@ async fn cover_posterless_events(
     sqlx::query(
         "UPDATE public.events SET source_image_url = $2, source_video_url = $3 WHERE id = ANY($1)",
     )
-    .persistent(false)
     .bind(&ids)
     .bind(poster)
     .bind(video)
