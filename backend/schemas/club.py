@@ -26,7 +26,7 @@ from core.constants import (
 )
 
 # ---------------------------------------------------------------------------
-# Safe-URL validator - mirrors schemas.qr_code._is_safe_url so club fields
+# Safe-URL validator (the QR poster routes apply the same rule) so club fields
 # that accept user-supplied URLs (club_page, logo_url) reject dangerous
 # schemes (javascript:, data:, file:) before they reach storage or FE.
 # ---------------------------------------------------------------------------

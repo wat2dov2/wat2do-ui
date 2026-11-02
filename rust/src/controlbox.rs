@@ -286,11 +286,36 @@ pub struct DiscoveryQueries {
     pub rate_limit: RateLimit,
 }
 
-/// The enrollment switches in `controlbox/promoter_program.json`.
-#[derive(Debug, Deserialize)]
+/// `controlbox/promoter_program.json` (Python's `PromoterProgramControl`
+/// validates it; the fields Rust reads are here).
+#[derive(Debug, Clone, Deserialize)]
 pub struct PromoterProgram {
     pub enabled: bool,
+    pub rate_cents: i64,
+    pub maximum_active_posters: i64,
+    pub landing_confirmation_seconds: i64,
+    pub confirmation_token_minutes: i64,
+    pub quiet_poster_days: i64,
+    pub map_coordinate_decimal_places: i32,
+    /// The most confirmed visitors a map cell may have to read as none, low and medium.
+    pub map_visitor_bucket_maximums: [i64; 3],
+    pub risk_rules_version: String,
+    pub rapid_distinct_visitors: usize,
+    pub rapid_window_seconds: i64,
+    pub rapid_rule_points: i64,
+    pub hold_score_threshold: i64,
     pub tos_version: String,
+    pub approved_templates: Vec<PromoterTemplate>,
+}
+
+/// One approved poster template of the promoter program.
+#[derive(Debug, Clone, Deserialize)]
+pub struct PromoterTemplate {
+    pub id: String,
+    pub asset_path: String,
+    /// "global" or one school's slug.
+    pub eligible_school: String,
+    pub available_for_creation: bool,
 }
 
 /// `controlbox/positions.json`, every field.

@@ -69,11 +69,6 @@ class Settings(BaseSettings):
     event_feed_revalidation_url: str = ""
     event_feed_revalidation_secret: str = ""
     event_feed_revalidation_timeout: float = 3.0
-    # Server-only HMAC secrets for anonymous poster visitor identifiers and
-    # short-lived scan confirmation tokens.
-    poster_hash_secret: str = ""
-    poster_confirmation_secret: str = ""
-    poster_visitor_cookie_path: str = "/qr"
     # Server-only key for encrypting per-account Instagram access tokens before
     # they are stored in the database. Generate with Fernet.generate_key().
     instagram_token_encryption_key: str = ""

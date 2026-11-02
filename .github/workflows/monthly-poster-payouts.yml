@@ -2,8 +2,8 @@ name: Monthly promoter poster payouts
 
 on:
   schedule:
+    # GitHub reads schedules in UTC.
     - cron: '15 1 1 * *'
-      timezone: 'UTC'
   workflow_dispatch:
 
 concurrency:
@@ -27,6 +27,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The payout job is built before any secret is in the environment, and
+      # only when its code or embedded control box changed since the last
+      # build. The binary is kept outside target/, which rust-cache prunes,
+      # and saved right after the build so a failed run does not lose it.
+      - name: Restore the payout job
+        id: payouts
+        uses: actions/cache/restore@v4
+        with:
+          path: .payouts/wat2do-poster-payouts
+          key: wat2do-poster-payouts-${{ runner.os }}-${{ hashFiles('rust/**', 'backend/controlbox/*.json', 'backend/services/wat2do-logo.png') }}
+
+      - name: Set up Rust
+        if: steps.payouts.outputs.cache-hit != 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust builds
+        if: steps.payouts.outputs.cache-hit != 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
+      - name: Build the payout job
+        if: steps.payouts.outputs.cache-hit != 'true'
+        working-directory: rust
+        env:
+          # Link-time optimization would add minutes to a job that mostly
+          # waits on the database.
+          CARGO_PROFILE_RELEASE_LTO: "false"
+        run: |
+          cargo build --release --locked --bin wat2do-poster-payouts
+          mkdir -p ../.payouts
+          cp target/release/wat2do-poster-payouts ../.payouts/
+
+      - name: Save the payout job
+        if: steps.payouts.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .payouts/wat2do-poster-payouts
+          key: ${{ steps.payouts.outputs.cache-primary-key }}
+
       - name: Validate payout configuration
         run: |
           test -n "$AWS_DEPLOY_ROLE_ARN"
@@ -44,28 +84,12 @@ jobs:
             --secret-id "$AWS_RUNTIME_SECRET_ARN" \
             --query SecretString \
             --output text)"
-          for secret_key in DATA_API_URL DATA_API_KEY; do
+          for secret_key in DATABASE_URL; do
             secret_value="$(jq -er --arg key "$secret_key" '.[$key]' <<< "$secret_json")"
             echo "::add-mask::$secret_value"
             echo "$secret_key=$secret_value" >> "$GITHUB_ENV"
           done
           unset secret_json
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
-          cache-dependency-glob: "backend/requirements.lock"
-        env:
-          UV_CACHE_DIR: ${{ runner.temp }}/.uv-cache
-
-      - name: Set up Python
-        working-directory: backend
-        run: uv venv --python 3.12 .venv
-
-      - name: Install dependencies
-        working-directory: backend
-        run: uv pip install --python .venv/bin/python -r requirements.lock
 
       - name: Compute promoter poster payouts
         working-directory: backend
@@ -73,4 +97,4 @@ jobs:
           # The database payout rows are the source of truth. The scheduled CSV
           # remains in runner-temporary storage; finance uses the authenticated
           # admin export at settlement.
-          .venv/bin/python jobs/run_poster_payouts.py --output "$RUNNER_TEMP/poster-payouts.csv"
+          ../.payouts/wat2do-poster-payouts --output "$RUNNER_TEMP/poster-payouts.csv"

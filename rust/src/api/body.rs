@@ -197,6 +197,19 @@ impl Body {
         }
     }
 
+    /// One member of a union body (`A | B`): pydantic validates the object
+    /// against each member and names the member in every issue's `loc`.
+    pub fn member(object: Map<String, Value>, extra: Extra, label: &'static str) -> Self {
+        Self {
+            object,
+            extra,
+            known: Vec::new(),
+            issues: Vec::new(),
+            prefix: vec![json!("body"), json!(label)],
+            extras_checked: false,
+        }
+    }
+
     /// A field's location, as pydantic reports it.
     pub fn loc(&self, name: &str) -> Vec<Value> {
         let mut loc = self.prefix.clone();
@@ -212,6 +225,125 @@ impl Body {
     /// The object as sent (a model validator's `input`).
     pub fn input(&self) -> Value {
         Value::Object(self.object.clone())
+    }
+
+    /// A `model_validator`'s `ValueError(message)`, reported at the model.
+    pub fn model_error(&mut self, message: &str) {
+        let (loc, input) = (self.model_loc(), self.input());
+        self.value_error(loc, input, message);
+    }
+
+    /// An issue below a field (`loc` continues with `path`), such as one
+    /// member of a field's own union.
+    pub fn nested_issue(&mut self, path: &[&str], kind: &str, msg: &str, input: &Value) {
+        let mut loc = self.model_loc();
+        loc.extend(path.iter().map(|part| json!(part)));
+        self.issue(kind, loc, msg.into(), input.clone(), None);
+    }
+
+    /// A `Literal[...]` field with a default: missing reads as `default`,
+    /// and `null` is refused like any other value.
+    pub fn literal_or(
+        &mut self,
+        name: &'static str,
+        default: &'static str,
+        choices: &'static [&'static str],
+    ) -> Option<String> {
+        match self.take(name) {
+            Input::Missing => Some(default.to_owned()),
+            Input::Null => {
+                let loc = self.loc(name);
+                self.literal_error(loc, Value::Null, choices);
+                None
+            }
+            Input::Given(value) => {
+                let loc = self.loc(name);
+                self.check_string(loc, &value, &Str::new().one_of(choices))
+            }
+        }
+    }
+
+    /// `int` with a default when missing (not `Optional`: `null` is
+    /// refused), checked against `limits`.
+    pub fn int_or(
+        &mut self,
+        name: &'static str,
+        default: i64,
+        limits: super::validation::Limits,
+    ) -> Option<i64> {
+        let before = self.issues.len();
+        let input = self.object.get(name).cloned().unwrap_or(Value::Null);
+        match self.int(name) {
+            Input::Given(integer) => {
+                if let Some((kind, msg, ctx)) = limits.violation(integer) {
+                    let loc = self.loc(name);
+                    self.issue(kind, loc, msg, input, Some(ctx));
+                    return None;
+                }
+                Some(integer)
+            }
+            Input::Null => {
+                let loc = self.loc(name);
+                self.issue(
+                    "int_type",
+                    loc,
+                    "Input should be a valid integer".into(),
+                    Value::Null,
+                    None,
+                );
+                None
+            }
+            Input::Missing => (self.issues.len() == before).then_some(default),
+        }
+    }
+
+    /// pydantic's lax `float` from JSON (a number, a bool or a numeric
+    /// string), with a default when missing; `null` is refused.
+    pub fn float_or(
+        &mut self,
+        name: &'static str,
+        default: f64,
+        limits: super::validation::FloatLimits,
+    ) -> Option<f64> {
+        let value = match self.take(name) {
+            Input::Missing => return Some(default),
+            Input::Null => Value::Null,
+            Input::Given(value) => value,
+        };
+        let loc = self.loc(name);
+        let parsed = match &value {
+            Value::Bool(flag) => Some(f64::from(u8::from(*flag))),
+            Value::Number(number) => number.as_f64(),
+            Value::String(text) => match super::validation::parse_python_float(text) {
+                Some(float) => Some(float),
+                None => {
+                    self.issue(
+                        "float_parsing",
+                        loc,
+                        "Input should be a valid number, unable to parse string as a number".into(),
+                        value.clone(),
+                        None,
+                    );
+                    return None;
+                }
+            },
+            _ => None,
+        };
+        let Some(float) = parsed else {
+            self.issue(
+                "float_type",
+                loc,
+                "Input should be a valid number".into(),
+                value,
+                None,
+            );
+            return None;
+        };
+        if let Some((kind, msg, ctx)) = limits.violation(float) {
+            self.issue(kind, loc, msg, value, Some(ctx));
+            return None;
+        }
+        Some(float)
     }
 
     fn take(&mut self, name: &'static str) -> Input<Value> {
@@ -946,6 +1078,35 @@ impl Body {
             return Input::Missing;
         }
         Input::Given(parsed)
+    }
+
+    /// A required `list[UUID]` of `min..=max` items, each bad item reported
+    /// at its index.
+    pub fn required_uuid_list(
+        &mut self,
+        name: &'static str,
+        min: usize,
+        max: usize,
+    ) -> Option<Vec<Uuid>> {
+        if !self.has_field(name) {
+            self.missing(name);
+            return None;
+        }
+        match self.list(name, min, max, |body, loc, value| body.uuid_item(loc, value)) {
+            Input::Given(ids) => Some(ids),
+            Input::Null => {
+                let loc = self.loc(name);
+                self.issue(
+                    "list_type",
+                    loc,
+                    "Input should be a valid list".into(),
+                    Value::Null,
+                    None,
+                );
+                None
+            }
+            Input::Missing => None,
+        }
     }
 
     /// One nested model in a list: `read` gets its own `Body` at `loc`,

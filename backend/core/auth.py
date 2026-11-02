@@ -10,7 +10,6 @@ from core.auth_tokens import decode_access_token
 from core.constants import ROLE_ADMIN
 from core.errors import (
     ADMIN_ACCESS_REQUIRED,
-    CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED,
     CREDENTIALS_INVALID,
     INVALID_OR_EXPIRED_TOKEN,
     NOT_AUTHORIZED,
@@ -157,21 +156,6 @@ def get_admin_user(
     """
     if db_user.role != ROLE_ADMIN:
         raise AuthorizationError(ADMIN_ACCESS_REQUIRED)
-    return db_user
-
-
-def get_club_owner_or_admin(
-    db_user: "UserResponse" = Depends(get_db_user),
-) -> "UserResponse":
-    """Require admin OR club manager/member (user in at least one club). Returns 403 if neither."""
-    if db_user.role == ROLE_ADMIN:
-        return db_user
-
-    from services import club_service
-
-    clubs = club_service.list_clubs_by_owner(str(db_user.id))
-    if not clubs:
-        raise AuthorizationError(CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED)
     return db_user
 
 

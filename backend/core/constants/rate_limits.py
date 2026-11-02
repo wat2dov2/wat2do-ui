@@ -14,8 +14,6 @@ AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.sensitive_authentication.win
 AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS = _CONTROL.token_refresh.maximum_requests
 AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.token_refresh.window_seconds
 
-QR_SCAN_RATE_LIMIT_MAX_REQUESTS = _CONTROL.qr_scans.maximum_requests
-QR_SCAN_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.qr_scans.window_seconds
 
 SUBMISSION_RATE_LIMIT_MAX_REQUESTS = _CONTROL.submissions.maximum_requests
 SUBMISSION_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.submissions.window_seconds

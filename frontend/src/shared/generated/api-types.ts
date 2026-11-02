@@ -148,6 +148,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/calendar/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Calendar Token */
+        get: operations["get_calendar_token_calendar_token_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar/token/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Regenerate Calendar Token */
+        post: operations["regenerate_calendar_token_calendar_token_regenerate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar/feed/{token}.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Calendar Feed
+         * @description Public VCALENDAR for the token's owner. Rate-limited per token.
+         */
+        get: operations["get_calendar_feed_calendar_feed__token__ics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/competitor-pain-points/": {
         parameters: {
             query?: never;
@@ -211,6 +265,144 @@ export interface paths {
         /** Submit Contact Message */
         post: operations["submit_contact_message_contact__post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Admin Events */
+        get: operations["list_admin_events_events_admin_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event Stats
+         * @description Public uncached card stats for one school.
+         */
+        get: operations["get_event_stats_events_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Events
+         * @description Public school feed; optional ``start_utc``/``end_utc`` window.
+         *
+         *     ``include_past`` drops the default start-of-today lower bound, so a caller
+         *     can ask for a host's full history. Omits ``created_by``.
+         */
+        get: operations["list_events_events__get"];
+        put?: never;
+        /** Create Event */
+        post: operations["create_event_events__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event
+         * @description Public event detail; ``created_by`` omitted via ``EventPublicResponse``.
+         */
+        get: operations["get_event_events__event_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Event */
+        delete: operations["delete_event_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Event */
+        patch: operations["update_event_events__event_id__patch"];
+        trace?: never;
+    };
+    "/going-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Going Events */
+        get: operations["list_going_events_going_events__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/going-events/{event_id}/attendees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Event Attendees
+         * @description Public who's-going summary for an event's details view.
+         */
+        get: operations["list_event_attendees_going_events__event_id__attendees_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/going-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mark Going */
+        put: operations["mark_going_going_events__event_id__put"];
+        post?: never;
+        /** Unmark Going */
+        delete: operations["unmark_going_going_events__event_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -354,6 +546,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/interactions/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Interactions
+         * @description Record a batch of event interactions and position clicks.
+         *
+         *     Auth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``
+         *     so the header works on unload). Authenticated batches are size-capped and
+         *     deduped; payload ``user_id`` must match the authenticated user.
+         *     Anonymous requests are allowed for basic click tracking and are
+         *     IP-rate-limited; without ``user_id`` they cannot drive personalized signals.
+         */
+        post: operations["record_interactions_interactions_batch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notification-preferences": {
         parameters: {
             query?: never;
@@ -431,108 +649,6 @@ export interface paths {
         patch: operations["update_lead_outreach_leads__lead_id__patch"];
         trace?: never;
     };
-    "/payouts/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Own Payouts */
-        get: operations["list_own_payouts_payouts__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payouts/admin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Admin Payouts */
-        get: operations["list_admin_payouts_payouts_admin_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payouts/admin/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Export Pending Payouts */
-        post: operations["export_pending_payouts_payouts_admin_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payouts/admin/{payout_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Admin Payout Detail */
-        get: operations["get_admin_payout_detail_payouts_admin__payout_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payouts/admin/{payout_id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Transition Payout */
-        patch: operations["transition_payout_payouts_admin__payout_id__status_patch"];
-        trace?: never;
-    };
-    "/payouts/admin/mark-paid": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Bulk Mark Paid */
-        post: operations["bulk_mark_paid_payouts_admin_mark_paid_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/position-submissions/": {
         parameters: {
             query?: never;
@@ -568,62 +684,25 @@ export interface paths {
         patch: operations["review_submission_position_submissions__submission_id__patch"];
         trace?: never;
     };
-    "/qr/": {
+    "/reports/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Qr Codes
-         * @description List manageable QR codes with explicit active-state and recency filters.
-         */
-        get: operations["list_qr_codes_qr__get"];
+        /** List Reports */
+        get: operations["list_reports_reports__get"];
         put?: never;
-        /** Create Poster */
-        post: operations["create_poster_qr__post"];
+        /** Create Report */
+        post: operations["create_report_reports__post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/qr/scans": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Scans */
-        get: operations["list_scans_qr_scans_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/earnings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Promoter Earnings */
-        get: operations["get_promoter_earnings_qr_earnings_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/scans/confirm": {
+    "/reports/{report_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -632,48 +711,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Confirm Scan */
-        post: operations["confirm_scan_qr_scans_confirm_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/map": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Campus Coverage */
-        get: operations["get_campus_coverage_qr_map_get"];
-        put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/{qr_code_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Resolve Qr And Record Scan */
-        get: operations["resolve_qr_and_record_scan_qr__qr_code_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Poster */
-        delete: operations["delete_poster_qr__qr_code_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Poster */
-        patch: operations["update_poster_qr__qr_code_id__patch"];
+        /** Update Report */
+        patch: operations["update_report_reports__report_id__patch"];
         trace?: never;
     };
     "/sponsor-submissions/": {
@@ -850,6 +893,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/saved-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Saved Events */
+        get: operations["list_saved_events_v1_saved_events__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/saved-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Event */
+        put: operations["save_event_v1_saved_events__event_id__put"];
+        post?: never;
+        /** Unsave Event */
+        delete: operations["unsave_event_v1_saved_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/webhooks/automate": {
         parameters: {
             query?: never;
@@ -878,7 +956,7 @@ export interface paths {
         put?: never;
         /**
          * Send Event Change Alerts
-         * @description Called every minute by the scheduled event change alerts call.
+         * @description Called every minute by Supabase pg_cron while event changes are pending.
          */
         post: operations["send_event_change_alerts_webhooks_event_change_alerts_post"];
         delete?: never;
@@ -919,259 +997,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/calendar/token": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Calendar Token */
-        get: operations["get_calendar_token_calendar_token_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/calendar/token/regenerate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Regenerate Calendar Token */
-        post: operations["regenerate_calendar_token_calendar_token_regenerate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/calendar/feed/{token}.ics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Calendar Feed
-         * @description Public VCALENDAR for the token's owner. Rate-limited per token.
-         */
-        get: operations["get_calendar_feed_calendar_feed__token__ics_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/admin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Admin Events */
-        get: operations["list_admin_events_events_admin_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Event Stats
-         * @description Public uncached card stats for one school.
-         */
-        get: operations["get_event_stats_events_stats_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Events
-         * @description Public school feed; optional ``start_utc``/``end_utc`` window.
-         *
-         *     ``include_past`` drops the default start-of-today lower bound, so a caller
-         *     can ask for a host's full history. Omits ``created_by``.
-         */
-        get: operations["list_events_events__get"];
-        put?: never;
-        /** Create Event */
-        post: operations["create_event_events__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Event
-         * @description Public event detail; ``created_by`` omitted via ``EventPublicResponse``.
-         */
-        get: operations["get_event_events__event_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Event */
-        delete: operations["delete_event_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Event */
-        patch: operations["update_event_events__event_id__patch"];
-        trace?: never;
-    };
-    "/going-events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Going Events */
-        get: operations["list_going_events_going_events__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/going-events/{event_id}/attendees": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Event Attendees
-         * @description Public who's-going summary for an event's details view.
-         */
-        get: operations["list_event_attendees_going_events__event_id__attendees_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/going-events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Mark Going */
-        put: operations["mark_going_going_events__event_id__put"];
-        post?: never;
-        /** Unmark Going */
-        delete: operations["unmark_going_going_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/interactions/batch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Record Interactions
-         * @description Record a batch of event interactions and position clicks.
-         *
-         *     Auth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``
-         *     so the header works on unload). Authenticated batches are size-capped and
-         *     deduped; payload ``user_id`` must match the authenticated user.
-         *     Anonymous requests are allowed for basic click tracking and are
-         *     IP-rate-limited; without ``user_id`` they cannot drive personalized signals.
-         */
-        post: operations["record_interactions_interactions_batch_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Reports */
-        get: operations["list_reports_reports__get"];
-        put?: never;
-        /** Create Report */
-        post: operations["create_report_reports__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/{report_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Report */
-        patch: operations["update_report_reports__report_id__patch"];
         trace?: never;
     };
     "/site-banner": {
@@ -1522,6 +1347,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/payouts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Own Payouts */
+        get: operations["list_own_payouts_payouts__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Admin Payouts */
+        get: operations["list_admin_payouts_payouts_admin_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export Pending Payouts */
+        post: operations["export_pending_payouts_payouts_admin_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin/{payout_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Admin Payout Detail */
+        get: operations["get_admin_payout_detail_payouts_admin__payout_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin/{payout_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Transition Payout */
+        patch: operations["transition_payout_payouts_admin__payout_id__status_patch"];
+        trace?: never;
+    };
+    "/payouts/admin/mark-paid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Mark Paid */
+        post: operations["bulk_mark_paid_payouts_admin_mark_paid_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/positions/": {
         parameters: {
             query?: never;
@@ -1571,6 +1498,114 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/qr/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Qr Codes
+         * @description List manageable QR codes with explicit active-state and recency filters.
+         */
+        get: operations["list_qr_codes_qr__get"];
+        put?: never;
+        /** Create Poster */
+        post: operations["create_poster_qr__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/scans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Scans */
+        get: operations["list_scans_qr_scans_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Promoter Earnings */
+        get: operations["get_promoter_earnings_qr_earnings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/scans/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Scan */
+        post: operations["confirm_scan_qr_scans_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Campus Coverage */
+        get: operations["get_campus_coverage_qr_map_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/{qr_code_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolve Qr And Record Scan */
+        get: operations["resolve_qr_and_record_scan_qr__qr_code_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Poster */
+        delete: operations["delete_poster_qr__qr_code_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Poster */
+        patch: operations["update_poster_qr__qr_code_id__patch"];
         trace?: never;
     };
     "/saved-clubs/": {
@@ -1772,65 +1807,10 @@ export interface paths {
         patch: operations["update_user_role_users__user_id__role_patch"];
         trace?: never;
     };
-    "/v1/saved-events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Saved Events */
-        get: operations["list_saved_events_v1_saved_events__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/saved-events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Save Event */
-        put: operations["save_event_v1_saved_events__event_id__put"];
-        post?: never;
-        /** Unsave Event */
-        delete: operations["unsave_event_v1_saved_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AdminPayoutDetail */
-        AdminPayoutDetail: {
-            payout: components["schemas"]["PosterPayoutResponse"];
-            /** Fraud Reasons */
-            fraud_reasons: components["schemas"]["PayoutFraudReason"][];
-            /** Contributions */
-            contributions: components["schemas"]["PosterPayoutContribution"][];
-            /**
-             * Period Start
-             * Format: date-time
-             */
-            period_start: string;
-            /**
-             * Period End
-             * Format: date-time
-             */
-            period_end: string;
-            /** Review History */
-            review_history: components["schemas"]["PayoutReviewEvent"][];
-        };
         /** AutomateLogPayload */
         AutomateLogPayload: {
             /** Event */
@@ -1888,32 +1868,15 @@ export interface components {
             /** File */
             file: string;
         };
-        /** CampusCoverageCell */
-        CampusCoverageCell: {
-            /** Latitude */
-            latitude: number;
-            /** Longitude */
-            longitude: number;
-            /** Poster Count */
-            poster_count: number;
-            /** Recent Poster Count */
-            recent_poster_count: number;
-            /** Quiet Poster Count */
-            quiet_poster_count: number;
-            /**
-             * Confirmed Visitor Bucket
-             * @enum {string}
-             */
-            confirmed_visitor_bucket: "none" | "low" | "medium" | "high";
-        };
-        /** CampusCoverageResponse */
-        CampusCoverageResponse: {
-            /** School */
-            school: string;
-            /** Quiet After Days */
-            quiet_after_days: number;
-            /** Cells */
-            cells: components["schemas"]["CampusCoverageCell"][];
+        /**
+         * CalendarTokenResponse
+         * @description Returned by GET /calendar/token and POST /calendar/token/regenerate.
+         */
+        CalendarTokenResponse: {
+            /** Token */
+            token: string;
+            /** Feed Url */
+            feed_url: string;
         };
         /**
          * ClubCohostResponse
@@ -2021,6 +1984,23 @@ export interface components {
              */
             created_at: string;
         };
+        /** EventAttendeeResponse */
+        EventAttendeeResponse: {
+            /** Name */
+            name: string;
+            /** Avatar Url */
+            avatar_url: string;
+        };
+        /**
+         * EventAttendeesResponse
+         * @description Public who's-going summary without user IDs or full names.
+         */
+        EventAttendeesResponse: {
+            /** Going Count */
+            going_count: number;
+            /** Attendees */
+            attendees: components["schemas"]["EventAttendeeResponse"][];
+        };
         /** EventCreate */
         EventCreate: {
             /**
@@ -2078,6 +2058,24 @@ export interface components {
              */
             cancelled: boolean;
         };
+        /**
+         * EventFeedResponse
+         * @description Public school feed response with catalog-freshness metadata.
+         */
+        EventFeedResponse: {
+            /** Items */
+            items: components["schemas"]["EventSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+            /** @description School freshness metadata on the first page only. */
+            latest_added_event?: components["schemas"]["LatestAddedItem"] | null;
+        };
         /** EventFormDataResponse */
         EventFormDataResponse: {
             /**
@@ -2131,6 +2129,227 @@ export interface components {
             dtend_local: string;
         };
         /**
+         * EventPublicResponse
+         * @description Like EventResponse but without ``created_by``, so public detail
+         *     views do not leak creator UUIDs to unauthenticated callers.
+         */
+        EventPublicResponse: {
+            /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
+             * Employers On Campus
+             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
+            /** Id */
+            id: number;
+            /** Club Id */
+            club_id?: number | null;
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Map Location */
+            map_location?: string | null;
+            /** Map Coordinates */
+            map_coordinates?: [
+                number,
+                number
+            ] | null;
+            /** Occurrences */
+            occurrences?: components["schemas"]["OccurrenceResponse"][];
+            /** Price */
+            price?: number | null;
+            /** Food */
+            food?: string[] | null;
+            /**
+             * Registration
+             * @default false
+             */
+            registration: boolean;
+            /** Source Image Url */
+            source_image_url?: string | null;
+            /** Source Video Url */
+            source_video_url?: string | null;
+            /** Club Logo Url */
+            club_logo_url?: string | null;
+            /** Cohosts */
+            cohosts?: components["schemas"]["ClubCohostResponse"][];
+            /**
+             * Featured
+             * @description Published to Instagram
+             * @default false
+             */
+            featured: boolean;
+            /**
+             * Is Directory Event
+             * @default false
+             */
+            is_directory_event: boolean;
+            /** Club Type */
+            club_type?: string | null;
+            /** School */
+            school?: string | null;
+            /** Source Url */
+            source_url?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Club */
+            club?: string | null;
+            /** Ig Handle */
+            ig_handle?: string | null;
+            /**
+             * Cancelled
+             * @default false
+             */
+            cancelled: boolean;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Last Source Changed At */
+            last_source_changed_at?: string | null;
+        };
+        /**
+         * EventResponse
+         * @description Full event payload returned from GET /events/{id} and used internally
+         *     for ownership checks.
+         *
+         *     ``created_by`` is retained here because the field is load-bearing for
+         *     the authorization layer (``get_authorized_resource`` reads it); the
+         *     public list endpoint hides it via ``EventSummaryResponse`` which
+         *     omits the field entirely.
+         *
+         *     ``occurrences`` is the canonical date list.
+         */
+        EventResponse: {
+            /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
+             * Employers On Campus
+             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
+            /** Id */
+            id: number;
+            /** Club Id */
+            club_id?: number | null;
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Map Location */
+            map_location?: string | null;
+            /** Map Coordinates */
+            map_coordinates?: [
+                number,
+                number
+            ] | null;
+            /** Occurrences */
+            occurrences?: components["schemas"]["OccurrenceResponse"][];
+            /** Price */
+            price?: number | null;
+            /** Food */
+            food?: string[] | null;
+            /**
+             * Registration
+             * @default false
+             */
+            registration: boolean;
+            /** Source Image Url */
+            source_image_url?: string | null;
+            /** Source Video Url */
+            source_video_url?: string | null;
+            /** Club Logo Url */
+            club_logo_url?: string | null;
+            /** Cohosts */
+            cohosts?: components["schemas"]["ClubCohostResponse"][];
+            /**
+             * Featured
+             * @description Published to Instagram
+             * @default false
+             */
+            featured: boolean;
+            /**
+             * Is Directory Event
+             * @default false
+             */
+            is_directory_event: boolean;
+            /** Club Type */
+            club_type?: string | null;
+            /** School */
+            school?: string | null;
+            /** Source Url */
+            source_url?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Club */
+            club?: string | null;
+            /** Ig Handle */
+            ig_handle?: string | null;
+            /**
+             * Cancelled
+             * @default false
+             */
+            cancelled: boolean;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Last Source Changed At */
+            last_source_changed_at?: string | null;
+            /** Created By */
+            created_by?: string | null;
+        };
+        /**
+         * EventStatsResponse
+         * @description Volatile public card stats loaded separately from the cached event feed.
+         */
+        EventStatsResponse: {
+            /**
+             * Click Count
+             * @default 0
+             */
+            click_count: number;
+            /**
+             * Going Count
+             * @default 0
+             */
+            going_count: number;
+        };
+        /**
          * EventSummaryResponse
          * @description Payload for list/card views.
          *
@@ -2145,8 +2364,8 @@ export interface components {
          *     fetch.
          *
          *     ``created_by`` is intentionally omitted - this response is returned on
-         *     public GET /events/ and would otherwise leak the creator's user ID
-         *     to anonymous callers.
+         *     public GET /events/ and would otherwise leak the creator's Supabase
+         *     auth UID to anonymous callers.
          */
         EventSummaryResponse: {
             /**
@@ -2247,6 +2466,57 @@ export interface components {
             /** Last Source Changed At */
             last_source_changed_at?: string | null;
         };
+        /** EventUpdate */
+        EventUpdate: {
+            /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
+             * Employers On Campus
+             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Map Location */
+            map_location?: string | null;
+            /** Occurrences */
+            occurrences?: components["schemas"]["OccurrenceUpdate"][] | null;
+            /** Price */
+            price?: number | null;
+            /** Food */
+            food?: string[] | null;
+            /** Registration */
+            registration?: boolean | null;
+            /** Source Image Url */
+            source_image_url?: string | null;
+            /** Source Url */
+            source_url?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Club Id */
+            club_id?: number | null;
+            /** Ig Handle */
+            ig_handle?: string | null;
+            /** Cancelled */
+            cancelled?: boolean | null;
+        };
         /** FollowCandidateDecision */
         FollowCandidateDecision: {
             /**
@@ -2302,7 +2572,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "pending" | "approved" | "rejected" | "followed" | "unfollow";
+            status: "pending" | "approved" | "rejected" | "followed";
             /** Read Status */
             read_status?: ("ok" | "no_posts" | "failed") | null;
             /** Followers Count */
@@ -2319,6 +2589,35 @@ export interface components {
             reason?: string | null;
             /** Follow Error */
             follow_error?: string | null;
+        };
+        /** GoingEventSelection */
+        GoingEventSelection: {
+            /** Event Id */
+            event_id: number;
+            /** Occurrence Ids */
+            occurrence_ids: string[];
+        };
+        /** GoingEventSelectionUpdate */
+        GoingEventSelectionUpdate: {
+            /** Occurrence Ids */
+            occurrence_ids: string[];
+        };
+        /**
+         * GoingEventStatusResponse
+         * @description Locks the going/not_going status contract at the OpenAPI boundary.
+         */
+        GoingEventStatusResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "going" | "not_going";
+            /** Event Id */
+            event_id: number;
+            /** Occurrence Ids */
+            occurrence_ids: string[];
+            /** Going Count */
+            going_count: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2663,6 +2962,57 @@ export interface components {
              */
             created_at: string;
         };
+        /**
+         * InteractionBatch
+         * @description Batch of interactions submitted from a single browser session.
+         *
+         *     **Trust boundary note on ``user_id``**: this field models the client's
+         *     *claim* of which user the batch belongs to.  The server verifies the
+         *     claim against the authenticated identity in ``interaction_service._validate_batch``
+         *     and 403s on mismatch.  The field is **advisory / diagnostic** -
+         *     never trust it for authorization or identity resolution in new code;
+         *     use the value resolved from the Bearer token instead.
+         *
+         *     Typed as ``UUID | None`` so the Pydantic boundary rejects arbitrary
+         *     opaque strings (e.g. ``"admin"``) at parse time - if the router-side
+         *     ownership check is ever removed during a refactor, impersonation
+         *     still cannot succeed because the payload won't even deserialise.
+         */
+        InteractionBatch: {
+            /** Session Id */
+            session_id: string;
+            /** User Id */
+            user_id?: string | null;
+            /** Interactions */
+            interactions: components["schemas"]["InteractionCreate"][];
+        };
+        /** InteractionCreate */
+        InteractionCreate: {
+            /** Event Id */
+            event_id?: number | null;
+            /** Position Id */
+            position_id?: number | null;
+            /** Interaction Type */
+            interaction_type: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** LatestAddedItem */
+        LatestAddedItem: {
+            /** Title */
+            title: string;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Club Name */
+            club_name?: string | null;
+            /** Club Logo Url */
+            club_logo_url?: string | null;
+        };
         /** MessageResponse */
         MessageResponse: {
             /** Message */
@@ -2734,6 +3084,27 @@ export interface components {
             /** Tz */
             tz?: string | null;
         };
+        /** OccurrenceResponse */
+        OccurrenceResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Dtstart Utc
+             * Format: date-time
+             */
+            dtstart_utc: string;
+            /** Dtend Utc */
+            dtend_utc?: string | null;
+            /** Event Id */
+            event_id: number;
+            /** Duration */
+            duration?: string | null;
+            /** Tz */
+            tz?: string | null;
+        };
         /**
          * OccurrenceSummaryResponse
          * @description Browse dates retain selection identity without repeated parent/import fields.
@@ -2751,6 +3122,27 @@ export interface components {
             dtstart_utc: string;
             /** Dtend Utc */
             dtend_utc?: string | null;
+        };
+        /**
+         * OccurrenceUpdate
+         * @description Occurrence payload for event edits.
+         *
+         *     An ID retains an existing occurrence. A missing ID creates a new one.
+         */
+        OccurrenceUpdate: {
+            /**
+             * Dtstart Utc
+             * Format: date-time
+             */
+            dtstart_utc: string;
+            /** Dtend Utc */
+            dtend_utc?: string | null;
+            /** Duration */
+            duration?: string | null;
+            /** Tz */
+            tz?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /**
          * OutreachLeadResponse
@@ -2839,6 +3231,19 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        /** PaginatedResponse[EventSummaryResponse] */
+        PaginatedResponse_EventSummaryResponse_: {
+            /** Items */
+            items: components["schemas"]["EventSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         /** PaginatedResponse[FollowCandidateResponse] */
         PaginatedResponse_FollowCandidateResponse_: {
             /** Items */
@@ -2891,36 +3296,10 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
-        /** PaginatedResponse[PosterPayoutResponse] */
-        PaginatedResponse_PosterPayoutResponse_: {
+        /** PaginatedResponse[ReportResponse] */
+        PaginatedResponse_ReportResponse_: {
             /** Items */
-            items: components["schemas"]["PosterPayoutResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[QrCodeResponse] */
-        PaginatedResponse_QrCodeResponse_: {
-            /** Items */
-            items: components["schemas"]["QrCodeResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[QrCodeScanResponse] */
-        PaginatedResponse_QrCodeScanResponse_: {
-            /** Items */
-            items: components["schemas"]["QrCodeScanResponse"][];
+            items: components["schemas"]["ReportResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -2955,84 +3334,6 @@ export interface components {
             page_size: number;
             /** Total Pages */
             total_pages: number;
-        };
-        /** PaginatedResponse[UserPosterPayoutResponse] */
-        PaginatedResponse_UserPosterPayoutResponse_: {
-            /** Items */
-            items: components["schemas"]["UserPosterPayoutResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PayoutCsvExportResponse */
-        PayoutCsvExportResponse: {
-            /** Filename */
-            filename: string;
-            /** Content */
-            content: string;
-        };
-        /** PayoutFraudReason */
-        PayoutFraudReason: {
-            /** Code */
-            code: string;
-            /** Points */
-            points: number;
-            /** Affected Scan Count */
-            affected_scan_count: number;
-            /** Evidence */
-            evidence: {
-                [key: string]: unknown;
-            };
-        };
-        /** PayoutReviewEvent */
-        PayoutReviewEvent: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * From Status
-             * @enum {string}
-             */
-            from_status: "pending" | "held" | "paid" | "voided";
-            /**
-             * To Status
-             * @enum {string}
-             */
-            to_status: "pending" | "held" | "paid" | "voided";
-            /** Notes */
-            notes: string | null;
-            /**
-             * Reviewed By
-             * Format: uuid
-             */
-            reviewed_by: string;
-            /**
-             * Reviewed At
-             * Format: date-time
-             */
-            reviewed_at: string;
-        };
-        /** PayoutSelectionRequest */
-        PayoutSelectionRequest: {
-            /** Payout Ids */
-            payout_ids: string[];
-        };
-        /** PayoutStatusUpdate */
-        PayoutStatusUpdate: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "held" | "paid" | "voided";
-            /** Notes */
-            notes?: string | null;
         };
         /** PositionCreate */
         PositionCreate: {
@@ -3133,340 +3434,47 @@ export interface components {
             submitted_by_email?: string | null;
             position_data: components["schemas"]["PositionCreate"];
         };
-        /** PosterEarningsItem */
-        PosterEarningsItem: {
-            /** Qr Code Id */
-            qr_code_id: string;
-            /** Name */
-            name: string;
-            /** Latest Scan */
-            latest_scan: string | null;
-            /** Latitude */
-            latitude: number;
-            /** Longitude */
-            longitude: number;
-            /** Poster Template Id */
-            poster_template_id: string | null;
-            /** Template Preview Url */
-            template_preview_url: string | null;
-            /** Lifetime Unique Scans */
-            lifetime_unique_scans: number;
-            /** Period Unique Scans */
-            period_unique_scans: number;
-            /** Period Creditable Scans */
-            period_creditable_scans: number;
-            /** Pending Cents */
-            pending_cents: number;
+        /**
+         * RecordInteractionsResponse
+         * @description Number of interaction rows recorded from a batch submit.
+         */
+        RecordInteractionsResponse: {
+            /** Recorded */
+            recorded: number;
         };
-        /** PosterPayoutContribution */
-        PosterPayoutContribution: {
-            /** Qr Code Id */
-            qr_code_id: string;
-            /** Name */
-            name: string;
-            /** Poster Template Id */
-            poster_template_id: string | null;
-            /** Scan Count */
-            scan_count: number;
-            /** Amount Cents */
-            amount_cents: number;
+        /** ReportCreate */
+        ReportCreate: {
+            /** Event Id */
+            event_id: number;
+            /** Reason */
+            reason: string;
         };
-        /** PosterPayoutResponse */
-        PosterPayoutResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
+        /** ReportResponse */
+        ReportResponse: {
+            /** Event Title */
+            event_title?: string | null;
+            /** School */
+            school?: string | null;
+            /** Id */
             id: string;
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
-            /**
-             * Period
-             * Format: date
-             */
-            period: string;
-            /**
-             * Payout Email
-             * Format: email
-             */
-            payout_email: string;
-            /** Rate Cents */
-            rate_cents: number;
-            /** Amount Cents */
-            amount_cents: number;
-            /** Scan Count */
-            scan_count: number;
+            /** Event Id */
+            event_id: number;
+            /** User Id */
+            user_id: string | null;
+            /** Reason */
+            reason: string;
             /**
              * Status
              * @enum {string}
              */
-            status: "pending" | "held" | "paid" | "voided";
+            status: "pending" | "resolved" | "dismissed";
             /**
-             * Fraud Status
-             * @default clear
-             * @enum {string}
-             */
-            fraud_status: "flagged" | "clear";
-            /** Paid At */
-            paid_at: string | null;
-            /** Notes */
-            notes: string | null;
-            /** Reviewed By */
-            reviewed_by: string | null;
-            /**
-             * Created At
+             * Reported At
              * Format: date-time
              */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /** PromoterEarningsResponse */
-        PromoterEarningsResponse: {
-            /** Period */
-            period: string;
-            /** Posters */
-            posters: components["schemas"]["PosterEarningsItem"][];
-            /** Period Creditable Scans */
-            period_creditable_scans: number;
-            /** Period Unqualified Scans */
-            period_unqualified_scans: number;
-            /** Pending Cents */
-            pending_cents: number;
-            /** Lifetime Paid Cents */
-            lifetime_paid_cents: number;
-            /** Active Slots Used */
-            active_slots_used: number;
-            /** Active Slots Limit */
-            active_slots_limit: number;
-            /** Program Enabled */
-            program_enabled: boolean;
-        };
-        /**
-         * PromoterPosterBatchCreate
-         * @description Create one or more independently tracked posters in one transaction.
-         */
-        PromoterPosterBatchCreate: {
-            /**
-             * Program
-             * @constant
-             */
-            program: "promoter";
-            /** Poster Template Id */
-            poster_template_id: string;
-            /** Name */
-            name: string;
-            /**
-             * Copies
-             * @default 1
-             */
-            copies: number;
-        };
-        /** PromoterPosterBatchResponse */
-        PromoterPosterBatchResponse: {
-            /** Posters */
-            posters: components["schemas"]["QrCodeResponse"][];
-        };
-        /**
-         * QrCodeCreate
-         * @description Create one standard club or administrator QR code.
-         */
-        QrCodeCreate: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Destination Type
-             * @enum {string}
-             */
-            destination_type: "event" | "events-list" | "custom-url";
-            /** Destination Id */
-            destination_id?: string | number | null;
-            /** Filters */
-            filters?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
-            /** Image Url */
-            image_url?: string | null;
-            /**
-             * Latitude
-             * @default 0
-             */
-            latitude: number;
-            /**
-             * Longitude
-             * @default 0
-             */
-            longitude: number;
-            /** Id */
-            id: string;
-            /**
-             * Program
-             * @default standard
-             * @constant
-             */
-            program: "standard";
-        };
-        /**
-         * QrCodeRedirect
-         * @description Redirect config for a QR scan; the scan itself is recorded server-side.
-         */
-        QrCodeRedirect: {
-            /**
-             * Destination Type
-             * @enum {string}
-             */
-            destination_type: "event" | "events-list" | "custom-url";
-            /** Destination Id */
-            destination_id?: string | number | null;
-            /** Filters */
-            filters?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
-            /** Query Params */
-            query_params?: {
-                [key: string]: string;
-            } | null;
-            /** Scan Confirmation Token */
-            scan_confirmation_token?: string | null;
-        };
-        /** QrCodeResponse */
-        QrCodeResponse: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /**
-             * Destination Type
-             * @enum {string}
-             */
-            destination_type: "event" | "events-list" | "custom-url";
-            /** Destination Id */
-            destination_id: string | null;
-            /** Filters */
-            filters: {
-                [key: string]: unknown;
-            } | unknown[] | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Created By */
-            created_by: string;
-            /** Is Active */
-            is_active: boolean;
-            /**
-             * Program
-             * @enum {string}
-             */
-            program: "standard" | "promoter";
-            /** Latest Scan */
-            latest_scan?: string | null;
-            /** Poster Template Id */
-            poster_template_id?: string | null;
-            /** Image Url */
-            image_url: string | null;
-            /** Latitude */
-            latitude: number;
-            /** Longitude */
-            longitude: number;
-        };
-        /** QrCodeScanResponse */
-        QrCodeScanResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Qr Code Id */
-            qr_code_id: string;
-            /**
-             * Scanned At
-             * Format: date-time
-             */
-            scanned_at: string;
-            /** Visitor Reference */
-            visitor_reference: string;
-            /** Browser Family */
-            browser_family: string | null;
-            /** Os Family */
-            os_family: string | null;
-            /** Asn */
-            asn: number | null;
-            /** Country */
-            country: string | null;
-            /** Landing Confirmed At */
-            landing_confirmed_at: string | null;
-            /** Risk Score */
-            risk_score: number;
-            /** Risk Flags */
-            risk_flags: {
-                [key: string]: unknown;
-            }[];
-            /** Risk Evaluated At */
-            risk_evaluated_at: string | null;
-            /** Risk Rules Version */
-            risk_rules_version: string | null;
-        };
-        /**
-         * QrCodeUpdate
-         * @description Update editable QR content without accepting lifecycle or program fields.
-         */
-        QrCodeUpdate: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Destination Type
-             * @enum {string}
-             */
-            destination_type: "event" | "events-list" | "custom-url";
-            /** Destination Id */
-            destination_id?: string | number | null;
-            /** Filters */
-            filters?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
-            /** Image Url */
-            image_url?: string | null;
-            /**
-             * Latitude
-             * @default 0
-             */
-            latitude: number;
-            /**
-             * Longitude
-             * @default 0
-             */
-            longitude: number;
-            /** Id */
-            id: string;
-        };
-        /** QrScanConfirmRequest */
-        QrScanConfirmRequest: {
-            /** Token */
-            token: string;
-        };
-        /** QrScanConfirmResponse */
-        QrScanConfirmResponse: {
-            /** Confirmed */
-            confirmed: boolean;
-            /**
-             * Landing Confirmed At
-             * Format: date-time
-             */
-            landing_confirmed_at: string;
+            reported_at: string;
+            /** Resolved At */
+            resolved_at?: string | null;
         };
         /**
          * ReportSuggestion
@@ -3502,6 +3510,14 @@ export interface components {
             competitors?: string[];
             /** Complaint Urls */
             complaint_urls?: string[];
+        };
+        /** ReportUpdate */
+        ReportUpdate: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "resolved" | "dismissed";
         };
         /** SendOtpRequest */
         SendOtpRequest: {
@@ -3651,41 +3667,13 @@ export interface components {
             /** Url */
             url: string;
         };
-        /** UserPosterPayoutResponse */
-        UserPosterPayoutResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Period
-             * Format: date
-             */
-            period: string;
-            /**
-             * Payout Email
-             * Format: email
-             */
-            payout_email: string;
-            /** Rate Cents */
-            rate_cents: number;
-            /** Amount Cents */
-            amount_cents: number;
-            /** Scan Count */
-            scan_count: number;
+        /** V1SavedEventStatusResponse */
+        V1SavedEventStatusResponse: {
             /**
              * Status
              * @enum {string}
              */
-            status: "pending" | "held" | "paid" | "voided";
-            /** Paid At */
-            paid_at: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
+            status: "saved" | "unsaved";
         };
         /** ValidationError */
         ValidationError: {
@@ -3710,6 +3698,17 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** @description `AdminPayoutDetail`. */
+        AdminPayoutDetail: {
+            payout: components["schemas"]["PosterPayoutResponse"];
+            fraud_reasons: components["schemas"]["PayoutFraudReason"][];
+            contributions: components["schemas"]["PosterPayoutContribution"][];
+            /** Format: date-time */
+            period_start: string;
+            /** Format: date-time */
+            period_end: string;
+            review_history: components["schemas"]["PayoutReviewEvent"][];
+        };
         /**
          * @description Shared domain constants that the frontend must stay in sync with.
          *
@@ -3725,15 +3724,27 @@ export interface components {
             };
             report_statuses: string[];
         };
-        /**
-         * CalendarTokenResponse
-         * @description Returned by GET /calendar/token and POST /calendar/token/regenerate.
-         */
-        CalendarTokenResponse: {
-            /** Token */
-            token: string;
-            /** Feed Url */
-            feed_url: string;
+        /** @description `CampusCoverageCell`: one rounded map cell, with no poster or owner id. */
+        CampusCoverageCell: {
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            /** Format: int64 */
+            poster_count: number;
+            /** Format: int64 */
+            recent_poster_count: number;
+            /** Format: int64 */
+            quiet_poster_count: number;
+            /** @enum {string} */
+            confirmed_visitor_bucket: "none" | "low" | "medium" | "high";
+        };
+        /** @description `CampusCoverageResponse`. */
+        CampusCoverageResponse: {
+            school: string;
+            /** Format: int64 */
+            quiet_after_days: number;
+            cells: components["schemas"]["CampusCoverageCell"][];
         };
         CampusSeasonWindow: {
             /** Format: date */
@@ -3892,342 +3903,6 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
-        /** EventAttendeeResponse */
-        EventAttendeeResponse: {
-            /** Name */
-            name: string;
-            /** Avatar Url */
-            avatar_url: string;
-        };
-        /**
-         * EventAttendeesResponse
-         * @description Public who's-going summary without user IDs or full names.
-         */
-        EventAttendeesResponse: {
-            /** Going Count */
-            going_count: number;
-            /** Attendees */
-            attendees: components["schemas"]["EventAttendeeResponse"][];
-        };
-        /**
-         * EventFeedResponse
-         * @description Public school feed response with catalog-freshness metadata.
-         */
-        EventFeedResponse: {
-            /** Items */
-            items: components["schemas"]["EventSummaryResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-            /** @description School freshness metadata on the first page only. */
-            latest_added_event?: components["schemas"]["LatestAddedItem"] | null;
-        };
-        /**
-         * EventPublicResponse
-         * @description Like EventResponse but without ``created_by``, so public detail
-         *     views do not leak creator UUIDs to unauthenticated callers.
-         */
-        EventPublicResponse: {
-            /**
-             * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
-             */
-            competition?: boolean | null;
-            /**
-             * Employers On Campus
-             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
-             */
-            employers_on_campus?: boolean | null;
-            /**
-             * Sports Game
-             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
-             */
-            sports_game?: boolean | null;
-            /**
-             * Campus Season Ids
-             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
-             */
-            campus_season_ids?: string[] | null;
-            /** Id */
-            id: number;
-            /** Club Id */
-            club_id?: number | null;
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Location */
-            location?: string | null;
-            /** Map Location */
-            map_location?: string | null;
-            /** Map Coordinates */
-            map_coordinates?: [
-                number,
-                number
-            ] | null;
-            /** Occurrences */
-            occurrences?: components["schemas"]["OccurrenceResponse"][];
-            /** Price */
-            price?: number | null;
-            /** Food */
-            food?: string[] | null;
-            /**
-             * Registration
-             * @default false
-             */
-            registration: boolean;
-            /** Source Image Url */
-            source_image_url?: string | null;
-            /** Source Video Url */
-            source_video_url?: string | null;
-            /** Club Logo Url */
-            club_logo_url?: string | null;
-            /** Cohosts */
-            cohosts?: components["schemas"]["ClubCohostResponse"][];
-            /**
-             * Featured
-             * @description Published to Instagram
-             * @default false
-             */
-            featured: boolean;
-            /**
-             * Is Directory Event
-             * @default false
-             */
-            is_directory_event: boolean;
-            /** Club Type */
-            club_type?: string | null;
-            /** School */
-            school?: string | null;
-            /** Source Url */
-            source_url?: string | null;
-            /** Category */
-            category?: string | null;
-            /** Club */
-            club?: string | null;
-            /** Ig Handle */
-            ig_handle?: string | null;
-            /**
-             * Cancelled
-             * @default false
-             */
-            cancelled: boolean;
-            /**
-             * Added At
-             * Format: date-time
-             */
-            added_at: string;
-            /** Last Source Changed At */
-            last_source_changed_at?: string | null;
-        };
-        /**
-         * EventResponse
-         * @description Full event payload returned from GET /events/{id} and used internally
-         *     for ownership checks.
-         *
-         *     ``created_by`` is retained here because the field is load-bearing for
-         *     the authorization layer (``get_authorized_resource`` reads it); the
-         *     public list endpoint hides it via ``EventSummaryResponse`` which
-         *     omits the field entirely.
-         *
-         *     ``occurrences`` is the canonical date list.
-         */
-        EventResponse: {
-            /**
-             * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
-             */
-            competition?: boolean | null;
-            /**
-             * Employers On Campus
-             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
-             */
-            employers_on_campus?: boolean | null;
-            /**
-             * Sports Game
-             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
-             */
-            sports_game?: boolean | null;
-            /**
-             * Campus Season Ids
-             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
-             */
-            campus_season_ids?: string[] | null;
-            /** Id */
-            id: number;
-            /** Club Id */
-            club_id?: number | null;
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Location */
-            location?: string | null;
-            /** Map Location */
-            map_location?: string | null;
-            /** Map Coordinates */
-            map_coordinates?: [
-                number,
-                number
-            ] | null;
-            /** Occurrences */
-            occurrences?: components["schemas"]["OccurrenceResponse"][];
-            /** Price */
-            price?: number | null;
-            /** Food */
-            food?: string[] | null;
-            /**
-             * Registration
-             * @default false
-             */
-            registration: boolean;
-            /** Source Image Url */
-            source_image_url?: string | null;
-            /** Source Video Url */
-            source_video_url?: string | null;
-            /** Club Logo Url */
-            club_logo_url?: string | null;
-            /** Cohosts */
-            cohosts?: components["schemas"]["ClubCohostResponse"][];
-            /**
-             * Featured
-             * @description Published to Instagram
-             * @default false
-             */
-            featured: boolean;
-            /**
-             * Is Directory Event
-             * @default false
-             */
-            is_directory_event: boolean;
-            /** Club Type */
-            club_type?: string | null;
-            /** School */
-            school?: string | null;
-            /** Source Url */
-            source_url?: string | null;
-            /** Category */
-            category?: string | null;
-            /** Club */
-            club?: string | null;
-            /** Ig Handle */
-            ig_handle?: string | null;
-            /**
-             * Cancelled
-             * @default false
-             */
-            cancelled: boolean;
-            /**
-             * Added At
-             * Format: date-time
-             */
-            added_at: string;
-            /** Last Source Changed At */
-            last_source_changed_at?: string | null;
-            /** Created By */
-            created_by?: string | null;
-        };
-        /**
-         * EventStatsResponse
-         * @description Volatile public card stats loaded separately from the cached event feed.
-         */
-        EventStatsResponse: {
-            /**
-             * Click Count
-             * @default 0
-             */
-            click_count: number;
-            /**
-             * Going Count
-             * @default 0
-             */
-            going_count: number;
-        };
-        /** EventUpdate */
-        EventUpdate: {
-            /**
-             * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
-             */
-            competition?: boolean | null;
-            /**
-             * Employers On Campus
-             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
-             */
-            employers_on_campus?: boolean | null;
-            /**
-             * Sports Game
-             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
-             */
-            sports_game?: boolean | null;
-            /**
-             * Campus Season Ids
-             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
-             */
-            campus_season_ids?: string[] | null;
-            /** Title */
-            title?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Location */
-            location?: string | null;
-            /** Map Location */
-            map_location?: string | null;
-            /** Occurrences */
-            occurrences?: components["schemas"]["OccurrenceUpdate"][] | null;
-            /** Price */
-            price?: number | null;
-            /** Food */
-            food?: string[] | null;
-            /** Registration */
-            registration?: boolean | null;
-            /** Source Image Url */
-            source_image_url?: string | null;
-            /** Source Url */
-            source_url?: string | null;
-            /** Category */
-            category?: string | null;
-            /** Club Id */
-            club_id?: number | null;
-            /** Ig Handle */
-            ig_handle?: string | null;
-            /** Cancelled */
-            cancelled?: boolean | null;
-        };
-        /** GoingEventSelection */
-        GoingEventSelection: {
-            /** Event Id */
-            event_id: number;
-            /** Occurrence Ids */
-            occurrence_ids: string[];
-        };
-        /** GoingEventSelectionUpdate */
-        GoingEventSelectionUpdate: {
-            /** Occurrence Ids */
-            occurrence_ids: string[];
-        };
-        /**
-         * GoingEventStatusResponse
-         * @description Locks the going/not_going status contract at the OpenAPI boundary.
-         */
-        GoingEventStatusResponse: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "going" | "not_going";
-            /** Event Id */
-            event_id: number;
-            /** Occurrence Ids */
-            occurrence_ids: string[];
-            /** Going Count */
-            going_count: number;
-        };
         HourlyIngestionLatency: {
             /** Format: date-time */
             hour: string;
@@ -4245,43 +3920,6 @@ export interface components {
             schools: components["schemas"]["SchoolIngestionLatency"][];
             hourly: components["schemas"]["HourlyIngestionLatency"][];
         };
-        /**
-         * InteractionBatch
-         * @description Batch of interactions submitted from a single browser session.
-         *
-         *     **Trust boundary note on ``user_id``**: this field models the client's
-         *     *claim* of which user the batch belongs to.  The server verifies the
-         *     claim against the authenticated identity in ``interaction_service._validate_batch``
-         *     and 403s on mismatch.  The field is **advisory / diagnostic** -
-         *     never trust it for authorization or identity resolution in new code;
-         *     use the value resolved from the Bearer token instead.
-         *
-         *     Typed as ``UUID | None`` so the Pydantic boundary rejects arbitrary
-         *     opaque strings (e.g. ``"admin"``) at parse time - if the router-side
-         *     ownership check is ever removed during a refactor, impersonation
-         *     still cannot succeed because the payload won't even deserialise.
-         */
-        InteractionBatch: {
-            /** Session Id */
-            session_id: string;
-            /** User Id */
-            user_id?: string | null;
-            /** Interactions */
-            interactions: components["schemas"]["InteractionCreate"][];
-        };
-        /** InteractionCreate */
-        InteractionCreate: {
-            /** Event Id */
-            event_id?: number | null;
-            /** Position Id */
-            position_id?: number | null;
-            /** Interaction Type */
-            interaction_type: string;
-            /** Metadata */
-            metadata?: {
-                [key: string]: unknown;
-            } | null;
-        };
         LatencyStats: {
             /** Format: int64 */
             count: number;
@@ -4290,64 +3928,8 @@ export interface components {
             /** Format: double */
             median_minutes: number | null;
         };
-        /** LatestAddedItem */
-        LatestAddedItem: {
-            /** Title */
-            title: string;
-            /**
-             * Added At
-             * Format: date-time
-             */
-            added_at: string;
-            /** Club Name */
-            club_name?: string | null;
-            /** Club Logo Url */
-            club_logo_url?: string | null;
-        };
         /** @description `Union[ClubMemberResponse, ClubInvitationResponse]`. */
         MemberOrInvitation: components["schemas"]["ClubMemberResponse"] | components["schemas"]["ClubInvitationResponse"];
-        /** OccurrenceResponse */
-        OccurrenceResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Dtstart Utc
-             * Format: date-time
-             */
-            dtstart_utc: string;
-            /** Dtend Utc */
-            dtend_utc?: string | null;
-            /** Event Id */
-            event_id: number;
-            /** Duration */
-            duration?: string | null;
-            /** Tz */
-            tz?: string | null;
-        };
-        /**
-         * OccurrenceUpdate
-         * @description Occurrence payload for event edits.
-         *
-         *     An ID retains an existing occurrence. A missing ID creates a new one.
-         */
-        OccurrenceUpdate: {
-            /**
-             * Dtstart Utc
-             * Format: date-time
-             */
-            dtstart_utc: string;
-            /** Dtend Utc */
-            dtend_utc?: string | null;
-            /** Duration */
-            duration?: string | null;
-            /** Tz */
-            tz?: string | null;
-            /** Id */
-            id?: string | null;
-        };
         PaginatedResponse_ClubClaimResponse_: {
             items: components["schemas"]["ClubClaimResponse"][];
             /** Format: int64 */
@@ -4392,31 +3974,88 @@ export interface components {
             /** Format: int64 */
             total_pages: number;
         };
-        /** PaginatedResponse[EventSummaryResponse] */
-        PaginatedResponse_EventSummaryResponse_: {
-            /** Items */
-            items: components["schemas"]["EventSummaryResponse"][];
-            /** Total */
+        PaginatedResponse_PosterPayoutResponse_: {
+            items: components["schemas"]["PosterPayoutResponse"][];
+            /** Format: int64 */
             total: number;
-            /** Page */
+            /** Format: int64 */
             page: number;
-            /** Page Size */
+            /** Format: int64 */
             page_size: number;
-            /** Total Pages */
+            /** Format: int64 */
             total_pages: number;
         };
-        /** PaginatedResponse[ReportResponse] */
-        PaginatedResponse_ReportResponse_: {
-            /** Items */
-            items: components["schemas"]["ReportResponse"][];
-            /** Total */
+        PaginatedResponse_QrCodeResponse_: {
+            items: components["schemas"]["QrCodeResponse"][];
+            /** Format: int64 */
             total: number;
-            /** Page */
+            /** Format: int64 */
             page: number;
-            /** Page Size */
+            /** Format: int64 */
             page_size: number;
-            /** Total Pages */
+            /** Format: int64 */
             total_pages: number;
+        };
+        PaginatedResponse_QrCodeScanResponse_: {
+            items: components["schemas"]["QrCodeScanResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
+        PaginatedResponse_UserPosterPayoutResponse_: {
+            items: components["schemas"]["UserPosterPayoutResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
+        /** @description `PayoutCsvExportResponse`. */
+        PayoutCsvExportResponse: {
+            filename: string;
+            content: string;
+        };
+        /** @description `PayoutFraudReason`. */
+        PayoutFraudReason: {
+            code: string;
+            /** Format: int64 */
+            points: number;
+            /** Format: int64 */
+            affected_scan_count: number;
+            evidence: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description `PayoutReviewEvent`: one entry of the append-only review history. */
+        PayoutReviewEvent: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            from_status: "pending" | "held" | "paid" | "voided";
+            /** @enum {string} */
+            to_status: "pending" | "held" | "paid" | "voided";
+            notes: string | null;
+            /** Format: uuid */
+            reviewed_by: string;
+            /** Format: date-time */
+            reviewed_at: string;
+        };
+        PayoutSelectionRequest: {
+            payout_ids: string[];
+        };
+        /** @description The OpenAPI request bodies. */
+        PayoutStatusUpdate: {
+            /** @enum {string} */
+            status: "pending" | "held" | "paid" | "voided";
+            notes?: string | null;
         };
         PositionDirectoryResponse: {
             items: components["schemas"]["PositionResponse"][];
@@ -4471,61 +4110,228 @@ export interface components {
             /** Format: int64 */
             click_count: number;
         };
+        /** @description `PosterEarningsItem`: one active poster's earnings this month. */
+        PosterEarningsItem: {
+            qr_code_id: string;
+            name: string;
+            /** Format: date-time */
+            latest_scan: string | null;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            poster_template_id: string | null;
+            template_preview_url: string | null;
+            /** Format: int64 */
+            lifetime_unique_scans: number;
+            /** Format: int64 */
+            period_unique_scans: number;
+            /** Format: int64 */
+            period_creditable_scans: number;
+            /** Format: int64 */
+            pending_cents: number;
+        };
+        /** @description `PosterPayoutContribution`: one poster's share of a payout. */
+        PosterPayoutContribution: {
+            qr_code_id: string;
+            name: string;
+            poster_template_id: string | null;
+            /** Format: int64 */
+            scan_count: number;
+            /** Format: int64 */
+            amount_cents: number;
+        };
+        /** @description `PosterPayoutResponse`: the administrator view of a payout. */
+        PosterPayoutResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            /** Format: date */
+            period: string;
+            /** Format: email */
+            payout_email: string;
+            /** Format: int64 */
+            rate_cents: number;
+            /** Format: int64 */
+            amount_cents: number;
+            /** Format: int64 */
+            scan_count: number;
+            /** @enum {string} */
+            status: "pending" | "held" | "paid" | "voided";
+            /** @enum {string} */
+            fraud_status: "flagged" | "clear";
+            /** Format: date-time */
+            paid_at: string | null;
+            notes: string | null;
+            /** Format: uuid */
+            reviewed_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description `PromoterEarningsResponse`. */
+        PromoterEarningsResponse: {
+            period: string;
+            posters: components["schemas"]["PosterEarningsItem"][];
+            /** Format: int64 */
+            period_creditable_scans: number;
+            /** Format: int64 */
+            period_unqualified_scans: number;
+            /** Format: int64 */
+            pending_cents: number;
+            /** Format: int64 */
+            lifetime_paid_cents: number;
+            /** Format: int64 */
+            active_slots_used: number;
+            /** Format: int64 */
+            active_slots_limit: number;
+            program_enabled: boolean;
+        };
         PromoterEnrollmentUpdate: {
             /** Format: email */
             payout_email: string;
             /** @default false */
             accept_tos: boolean;
         };
-        /**
-         * RecordInteractionsResponse
-         * @description Number of interaction rows recorded from a batch submit.
-         */
-        RecordInteractionsResponse: {
-            /** Recorded */
-            recorded: number;
+        PromoterPosterBatchCreate: {
+            /** @enum {string} */
+            program: "promoter";
+            poster_template_id: string;
+            name: string;
+            /**
+             * Format: int64
+             * @default 1
+             */
+            copies: number;
         };
-        /** ReportCreate */
-        ReportCreate: {
-            /** Event Id */
-            event_id: number;
-            /** Reason */
-            reason: string;
+        /** @description `PromoterPosterBatchResponse`. */
+        PromoterPosterBatchResponse: {
+            posters: components["schemas"]["QrCodeResponse"][];
         };
-        /** ReportResponse */
-        ReportResponse: {
-            /** Event Title */
-            event_title?: string | null;
-            /** School */
-            school?: string | null;
-            /** Id */
+        /** @description The OpenAPI request bodies. */
+        QrCodeCreate: {
+            name: string;
+            description?: string | null;
+            /** @enum {string} */
+            destination_type: "event" | "events-list" | "custom-url";
+            destination_id?: (string | number) | null;
+            filters?: ({
+                [key: string]: unknown;
+            } | unknown[]) | null;
+            image_url?: string | null;
+            /**
+             * Format: double
+             * @default 0
+             */
+            latitude: number;
+            /**
+             * Format: double
+             * @default 0
+             */
+            longitude: number;
             id: string;
-            /** Event Id */
-            event_id: number;
-            /** User Id */
-            user_id: string | null;
-            /** Reason */
-            reason: string;
             /**
-             * Status
+             * @default standard
              * @enum {string}
              */
-            status: "pending" | "resolved" | "dismissed";
-            /**
-             * Reported At
-             * Format: date-time
-             */
-            reported_at: string;
-            /** Resolved At */
-            resolved_at?: string | null;
+            program: "standard";
         };
-        /** ReportUpdate */
-        ReportUpdate: {
+        /** @description `QrCodeRedirect`: where a scan goes; the scan itself is recorded server-side. */
+        QrCodeRedirect: {
+            /** @enum {string} */
+            destination_type: "event" | "events-list" | "custom-url";
+            destination_id?: (string | number) | null;
+            filters?: ({
+                [key: string]: unknown;
+            } | unknown[]) | null;
+            query_params?: {
+                [key: string]: string;
+            } | null;
+            scan_confirmation_token?: string | null;
+        };
+        /** @description A poster as the API returns it (`QrCodeResponse`). */
+        QrCodeResponse: {
+            id: string;
+            name: string;
+            description: string | null;
+            /** @enum {string} */
+            destination_type: "event" | "events-list" | "custom-url";
+            destination_id: string | null;
+            filters: ({
+                [key: string]: unknown;
+            } | unknown[]) | null;
+            /** Format: date-time */
+            created_at: string;
+            created_by: string;
+            is_active: boolean;
+            /** @enum {string} */
+            program: "standard" | "promoter";
+            /** Format: date-time */
+            latest_scan?: string | null;
+            poster_template_id?: string | null;
+            image_url: string | null;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+        };
+        /** @description `QrCodeScanResponse`: one scan, with only a short visitor reference. */
+        QrCodeScanResponse: {
+            /** Format: uuid */
+            id: string;
+            qr_code_id: string;
+            /** Format: date-time */
+            scanned_at: string;
+            visitor_reference: string;
+            browser_family: string | null;
+            os_family: string | null;
+            /** Format: int64 */
+            asn: number | null;
+            country: string | null;
+            /** Format: date-time */
+            landing_confirmed_at: string | null;
+            /** Format: int64 */
+            risk_score: number;
+            risk_flags: {
+                [key: string]: unknown;
+            }[];
+            /** Format: date-time */
+            risk_evaluated_at: string | null;
+            risk_rules_version: string | null;
+        };
+        QrCodeUpdate: {
+            name: string;
+            description?: string | null;
+            /** @enum {string} */
+            destination_type: "event" | "events-list" | "custom-url";
+            destination_id?: (string | number) | null;
+            filters?: ({
+                [key: string]: unknown;
+            } | unknown[]) | null;
+            image_url?: string | null;
             /**
-             * Status
-             * @enum {string}
+             * Format: double
+             * @default 0
              */
-            status: "pending" | "resolved" | "dismissed";
+            latitude: number;
+            /**
+             * Format: double
+             * @default 0
+             */
+            longitude: number;
+            id: string;
+        };
+        /** @description The OpenAPI request body. */
+        QrScanConfirmRequest: {
+            token: string;
+        };
+        /** @description `QrScanConfirmResponse`. */
+        QrScanConfirmResponse: {
+            confirmed: boolean;
+            /** Format: date-time */
+            landing_confirmed_at: string;
         };
         /** @description Locks the save/unsave status contract at the OpenAPI boundary. */
         SaveClubStatusResponse: {
@@ -4599,6 +4405,30 @@ export interface components {
             cta_label_translation_key: string;
             cta_href: string;
         };
+        /**
+         * @description `UserPosterPayoutResponse`: what a promoter sees of their own payout
+         *     (no notes, reviewer or fraud status).
+         */
+        UserPosterPayoutResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            period: string;
+            /** Format: email */
+            payout_email: string;
+            /** Format: int64 */
+            rate_cents: number;
+            /** Format: int64 */
+            amount_cents: number;
+            /** Format: int64 */
+            scan_count: number;
+            /** @enum {string} */
+            status: "pending" | "held" | "paid" | "voided";
+            /** Format: date-time */
+            paid_at: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
         UserProfileUpdate: {
             faculty?: string | null;
             school?: string | null;
@@ -4644,14 +4474,6 @@ export interface components {
             school?: string | null;
             interests?: string[] | null;
             is_first_year?: boolean | null;
-        };
-        /** V1SavedEventStatusResponse */
-        V1SavedEventStatusResponse: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "saved" | "unsaved";
         };
     };
     responses: never;
@@ -4766,7 +4588,6 @@ export interface operations {
         parameters: {
             query?: {
                 code?: string | null;
-                state?: string | null;
                 error?: string | null;
             };
             header?: never;
@@ -4899,6 +4720,75 @@ export interface operations {
             };
         };
     };
+    get_calendar_token_calendar_token_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarTokenResponse"];
+                };
+            };
+        };
+    };
+    regenerate_calendar_token_calendar_token_regenerate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarTokenResponse"];
+                };
+            };
+        };
+    };
+    get_calendar_feed_calendar_feed__token__ics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_pain_points_competitor_pain_points__get: {
         parameters: {
             query?: {
@@ -5027,6 +4917,374 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_admin_events_events_admin_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+                category?: string | null;
+                school?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_EventSummaryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_event_stats_events_stats_get: {
+        parameters: {
+            query: {
+                school: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["EventStatsResponse"];
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_events_events__get: {
+        parameters: {
+            query?: {
+                school?: string | null;
+                search?: string | null;
+                categories?: string[] | null;
+                locations?: string[] | null;
+                foods?: string[] | null;
+                days?: string[] | null;
+                min_price?: number | null;
+                max_price?: number | null;
+                registration?: boolean | null;
+                clubs?: string[] | null;
+                club_ids?: number[] | null;
+                has_food?: boolean;
+                added_within_24h?: boolean;
+                ids?: number[] | null;
+                sort_by?: "date" | "title" | "location" | "price" | "added_at";
+                sort_order?: "asc" | "desc";
+                start_utc?: string | null;
+                end_utc?: string | null;
+                include_past?: boolean;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFeedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_event_events__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_event_events__event_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventPublicResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_event_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_event_events__event_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_going_events_going_events__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoingEventSelection"][];
+                };
+            };
+        };
+    };
+    list_event_attendees_going_events__event_id__attendees_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAttendeesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_going_going_events__event_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoingEventSelectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoingEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unmark_going_going_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoingEventStatusResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5282,7 +5540,7 @@ export interface operations {
     list_follow_candidates_instagram_publishing_follow_candidates__get: {
         parameters: {
             query?: {
-                status?: "pending" | "approved" | "rejected" | "followed" | "unfollow";
+                status?: "pending" | "approved" | "rejected" | "followed";
                 school?: string | null;
                 /** @description Page number (1-indexed) */
                 page?: number;
@@ -5335,6 +5593,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FollowCandidateDecisionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_interactions_interactions_batch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InteractionBatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordInteractionsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5534,216 +5825,6 @@ export interface operations {
             };
         };
     };
-    list_own_payouts_payouts__get: {
-        parameters: {
-            query?: {
-                payout_status?: ("pending" | "held" | "paid" | "voided") | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_UserPosterPayoutResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_admin_payouts_payouts_admin_get: {
-        parameters: {
-            query?: {
-                user_id?: string | null;
-                payout_status?: ("pending" | "held" | "paid" | "voided") | null;
-                period?: string | null;
-                payout_email?: string | null;
-                period_from?: string | null;
-                period_to?: string | null;
-                min_amount_cents?: number | null;
-                max_amount_cents?: number | null;
-                fraud_status?: ("flagged" | "clear") | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_PosterPayoutResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    export_pending_payouts_payouts_admin_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PayoutSelectionRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PayoutCsvExportResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_admin_payout_detail_payouts_admin__payout_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                payout_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminPayoutDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    transition_payout_payouts_admin__payout_id__status_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                payout_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PayoutStatusUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PosterPayoutResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_mark_paid_payouts_admin_mark_paid_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PayoutSelectionRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PosterPayoutResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_submissions_position_submissions__get: {
         parameters: {
             query?: {
@@ -5849,15 +5930,12 @@ export interface operations {
             };
         };
     };
-    list_qr_codes_qr__get: {
+    list_reports_reports__get: {
         parameters: {
             query?: {
+                report_status?: string | null;
+                search?: string | null;
                 school?: string | null;
-                program?: ("standard" | "promoter") | null;
-                is_active?: boolean | null;
-                latest_scan_before?: string | null;
-                latest_scan_after?: string | null;
-                never_scanned?: boolean | null;
                 /** @description Page number (1-indexed) */
                 page?: number;
                 /** @description Items per page (max 100) */
@@ -5875,7 +5953,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedResponse_QrCodeResponse_"];
+                    "application/json": components["schemas"]["PaginatedResponse_ReportResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -5889,7 +5967,7 @@ export interface operations {
             };
         };
     };
-    create_poster_qr__post: {
+    create_report_reports__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -5898,7 +5976,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["QrCodeCreate"] | components["schemas"]["PromoterPosterBatchCreate"];
+                "application/json": components["schemas"]["ReportCreate"];
             };
         };
         responses: {
@@ -5908,7 +5986,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QrCodeResponse"] | components["schemas"]["PromoterPosterBatchResponse"];
+                    "application/json": components["schemas"]["ReportResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5922,202 +6000,18 @@ export interface operations {
             };
         };
     };
-    list_scans_qr_scans_get: {
-        parameters: {
-            query?: {
-                qr_code_id?: string | null;
-                from_time?: string | null;
-                to_time?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_QrCodeScanResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_promoter_earnings_qr_earnings_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromoterEarningsResponse"];
-                };
-            };
-        };
-    };
-    confirm_scan_qr_scans_confirm_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["QrScanConfirmRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QrScanConfirmResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_campus_coverage_qr_map_get: {
-        parameters: {
-            query: {
-                school: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CampusCoverageResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    resolve_qr_and_record_scan_qr__qr_code_id__get: {
-        parameters: {
-            query?: {
-                lat?: number | null;
-                lon?: number | null;
-            };
-            header?: never;
-            path: {
-                qr_code_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QrCodeRedirect"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_poster_qr__qr_code_id__delete: {
+    update_report_reports__report_id__patch: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                qr_code_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_poster_qr__qr_code_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                qr_code_id: string;
+                report_id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["QrCodeUpdate"];
+                "application/json": components["schemas"]["ReportUpdate"];
             };
         };
         responses: {
@@ -6127,7 +6021,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["QrCodeResponse"];
+                    "application/json": components["schemas"]["ReportResponse"];
                 };
             };
             /** @description Validation Error */
@@ -6613,6 +6507,88 @@ export interface operations {
             };
         };
     };
+    list_saved_events_v1_saved_events__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number[];
+                };
+            };
+        };
+    };
+    save_event_v1_saved_events__event_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsave_event_v1_saved_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     receive_automate_log_webhooks_automate_post: {
         parameters: {
             query?: never;
@@ -6714,581 +6690,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-        };
-    };
-    get_calendar_token_calendar_token_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CalendarTokenResponse"];
-                };
-            };
-        };
-    };
-    regenerate_calendar_token_calendar_token_regenerate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CalendarTokenResponse"];
-                };
-            };
-        };
-    };
-    get_calendar_feed_calendar_feed__token__ics_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_admin_events_events_admin_get: {
-        parameters: {
-            query?: {
-                search?: string | null;
-                category?: string | null;
-                school?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_EventSummaryResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_event_stats_events_stats_get: {
-        parameters: {
-            query: {
-                school: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: components["schemas"]["EventStatsResponse"];
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_events_events__get: {
-        parameters: {
-            query?: {
-                school?: string | null;
-                search?: string | null;
-                categories?: string[] | null;
-                locations?: string[] | null;
-                foods?: string[] | null;
-                days?: string[] | null;
-                min_price?: number | null;
-                max_price?: number | null;
-                registration?: boolean | null;
-                clubs?: string[] | null;
-                club_ids?: number[] | null;
-                has_food?: boolean;
-                added_within_24h?: boolean;
-                ids?: number[] | null;
-                sort_by?: "date" | "title" | "location" | "price" | "added_at";
-                sort_order?: "asc" | "desc";
-                start_utc?: string | null;
-                end_utc?: string | null;
-                include_past?: boolean;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventFeedResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_event_events__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EventCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_event_events__event_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventPublicResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_event_events__event_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_event_events__event_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EventUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_going_events_going_events__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoingEventSelection"][];
-                };
-            };
-        };
-    };
-    list_event_attendees_going_events__event_id__attendees_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventAttendeesResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    mark_going_going_events__event_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GoingEventSelectionUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoingEventStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unmark_going_going_events__event_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoingEventStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    record_interactions_interactions_batch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InteractionBatch"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecordInteractionsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_reports_reports__get: {
-        parameters: {
-            query?: {
-                report_status?: string | null;
-                search?: string | null;
-                school?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_ReportResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_report_reports__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReportCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReportResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_report_reports__report_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                report_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReportUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReportResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -8050,6 +7451,216 @@ export interface operations {
             };
         };
     };
+    list_own_payouts_payouts__get: {
+        parameters: {
+            query?: {
+                payout_status?: ("pending" | "held" | "paid" | "voided") | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_UserPosterPayoutResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_admin_payouts_payouts_admin_get: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+                payout_status?: ("pending" | "held" | "paid" | "voided") | null;
+                period?: string | null;
+                payout_email?: string | null;
+                period_from?: string | null;
+                period_to?: string | null;
+                min_amount_cents?: number | null;
+                max_amount_cents?: number | null;
+                fraud_status?: ("flagged" | "clear") | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_PosterPayoutResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_pending_payouts_payouts_admin_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayoutSelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutCsvExportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_admin_payout_detail_payouts_admin__payout_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPayoutDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transition_payout_payouts_admin__payout_id__status_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayoutStatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosterPayoutResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_mark_paid_payouts_admin_mark_paid_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayoutSelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosterPayoutResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_positions_positions__get: {
         parameters: {
             query?: {
@@ -8143,6 +7754,298 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PositionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_qr_codes_qr__get: {
+        parameters: {
+            query?: {
+                school?: string | null;
+                program?: ("standard" | "promoter") | null;
+                is_active?: boolean | null;
+                latest_scan_before?: string | null;
+                latest_scan_after?: string | null;
+                never_scanned?: boolean | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_QrCodeResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_poster_qr__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QrCodeCreate"] | components["schemas"]["PromoterPosterBatchCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrCodeResponse"] | components["schemas"]["PromoterPosterBatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_scans_qr_scans_get: {
+        parameters: {
+            query?: {
+                qr_code_id?: string | null;
+                from_time?: string | null;
+                to_time?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_QrCodeScanResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_promoter_earnings_qr_earnings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromoterEarningsResponse"];
+                };
+            };
+        };
+    };
+    confirm_scan_qr_scans_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QrScanConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrScanConfirmResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_campus_coverage_qr_map_get: {
+        parameters: {
+            query: {
+                school: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampusCoverageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_qr_and_record_scan_qr__qr_code_id__get: {
+        parameters: {
+            query?: {
+                lat?: number | null;
+                lon?: number | null;
+            };
+            header?: never;
+            path: {
+                qr_code_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrCodeRedirect"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_poster_qr__qr_code_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qr_code_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_poster_qr__qr_code_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qr_code_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QrCodeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrCodeResponse"];
                 };
             };
             /** @description Validation Error */
@@ -8534,88 +8437,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_saved_events_v1_saved_events__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": number[];
-                };
-            };
-        };
-    };
-    save_event_v1_saved_events__event_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unsave_event_v1_saved_events__event_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
                 };
             };
             /** @description Validation Error */
