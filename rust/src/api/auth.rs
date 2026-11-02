@@ -43,6 +43,10 @@ const AUDIENCE: &str = "authenticated";
 const JWKS_LIFESPAN: Duration = Duration::from_secs(600);
 /// `PyJWKClient(cache_keys=True)`: up to 16 keys by `kid`, kept for the process.
 const CACHED_KEYS: usize = 16;
+/// A token naming an unknown `kid` refetches the key set at most this often;
+/// in between, such tokens fail like any invalid token. (PyJWKClient refetched
+/// for every one, which let anyone make the API hammer the key endpoint.)
+const UNKNOWN_KID_REFETCH: Duration = Duration::from_secs(30);
 /// `PyJWKClient`'s default fetch timeout.
 const JWKS_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -117,6 +121,7 @@ pub struct JwksVerifier {
     issuer: String,
     key_set: tokio::sync::Mutex<Option<KeySet>>,
     keys: Mutex<HashMap<String, Jwk>>,
+    last_refetch: Mutex<Option<Instant>>,
 }
 
 impl JwksVerifier {
@@ -132,6 +137,7 @@ impl JwksVerifier {
             issuer,
             key_set: tokio::sync::Mutex::new(None),
             keys: Mutex::new(HashMap::new()),
+            last_refetch: Mutex::new(None),
         }
     }
 
@@ -180,13 +186,19 @@ impl JwksVerifier {
                 .find(|(key_id, _)| key_id == kid)
                 .map(|(_, key)| key)
         };
+        let unknown = || {
+            VerifyError::Invalid(format!(
+                "Unable to find a signing key that matches: \"{kid}\""
+            ))
+        };
         let key = match find(self.signing_keys(false).await?) {
             Some(key) => key,
-            None => find(self.signing_keys(true).await?).ok_or_else(|| {
-                VerifyError::Invalid(format!(
-                    "Unable to find a signing key that matches: \"{kid}\""
-                ))
-            })?,
+            None => {
+                if !self.may_refetch() {
+                    return Err(unknown());
+                }
+                find(self.signing_keys(true).await?).ok_or_else(unknown)?
+            }
         };
         let mut cache = self.keys.lock().expect("key cache");
         if cache.len() >= CACHED_KEYS {
@@ -194,6 +206,16 @@ impl JwksVerifier {
         }
         cache.insert(kid.to_owned(), key.clone());
         Ok(key)
+    }
+
+    /// Whether an unknown `kid` may refetch the key set now (and record it if so).
+    fn may_refetch(&self) -> bool {
+        let mut last = self.last_refetch.lock().expect("refetch time");
+        if last.is_some_and(|at| at.elapsed() < UNKNOWN_KID_REFETCH) {
+            return false;
+        }
+        *last = Some(Instant::now());
+        true
     }
 
     async fn verify(&self, token: &str) -> Result<AuthUser, VerifyError> {
@@ -708,6 +730,37 @@ mod tests {
             authenticator.current(&garbage).await.unwrap_err(),
             ApiError::Authentication(detail) if detail == INVALID_OR_EXPIRED_TOKEN
         ));
+    }
+
+    #[tokio::test]
+    async fn unknown_kids_refetch_the_key_set_at_most_every_30_seconds() {
+        // Nothing listens on port 9, so any fetch fails as unavailable (503).
+        let verifier = JwksVerifier::new(&test_settings(&[("SUPABASE_URL", "http://127.0.0.1:9")]));
+        let ec = json!({"kty": "EC", "crv": "P-256", "kid": "k1", "use": "sig", "alg": "ES256",
+            "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU", "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"});
+        let keys = signing_keys(&json!({"keys": [ec]})).ok().unwrap();
+        *verifier.key_set.lock().await = Some(KeySet {
+            fetched: Instant::now(),
+            keys,
+        });
+        assert!(verifier.key(Some("k1")).await.is_ok());
+        // The first unknown kid refetches (and the fetch fails here).
+        assert!(matches!(
+            verifier.key(Some("rotated")).await,
+            Err(VerifyError::Unavailable(_))
+        ));
+        // Within 30 seconds another unknown kid fails at once, like an invalid token.
+        assert!(matches!(
+            verifier.key(Some("forged")).await,
+            Err(VerifyError::Invalid(_))
+        ));
+        *verifier.last_refetch.lock().unwrap() = Some(Instant::now() - UNKNOWN_KID_REFETCH);
+        assert!(matches!(
+            verifier.key(Some("forged")).await,
+            Err(VerifyError::Unavailable(_))
+        ));
+        // Known keys never wait on a refetch.
+        assert!(verifier.key(Some("k1")).await.is_ok());
     }
 
     fn user(role: &str) -> User {

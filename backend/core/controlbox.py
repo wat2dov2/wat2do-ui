@@ -528,6 +528,8 @@ class ApiServerControl(_ControlModel):
             raise ValueError("python_keep_alive_seconds must exceed upstream_idle_seconds")
         if self.python_port == 8000:
             raise ValueError("python_port must differ from the public API port 8000")
+        if self.shutdown_drain_seconds + self.python_shutdown_seconds >= 30:
+            raise ValueError("shutdown must finish within ECS's 30 second stop timeout")
         return self
 
 

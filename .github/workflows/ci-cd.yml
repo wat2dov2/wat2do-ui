@@ -152,10 +152,10 @@ jobs:
 
   backend-image:
     name: Backend image build
-    # The deploy job builds this image too; building it on every pull request
-    # catches Dockerfile and Rust build breakage before a merge can reach it.
+    # Builds and smoke-tests the image the deploy job ships, on pull requests and
+    # before every deploy, so a broken Dockerfile or Rust build never reaches ECS.
+    # The deploy job's own build then reuses this build's cached layers.
     runs-on: ubuntu-24.04-arm
-    if: github.event_name == 'pull_request'
 
     steps:
       - uses: actions/checkout@v4
@@ -171,12 +171,13 @@ jobs:
           platforms: linux/arm64
           push: false
           load: true
-          tags: wat2do-backend:pull-request
+          tags: wat2do-backend:check
           cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend,ignore-error=true
 
       - name: Smoke test the API server and the Python app behind it
         run: |
-          image=wat2do-backend:pull-request
+          image=wat2do-backend:check
           # The binary runs in the runtime image and reports the committed route inventory.
           docker run --rm "$image" wat2do-api openapi | diff - backend/core/rust_openapi.json
           # Serve with throwaway settings (no database is reached): /health must turn
@@ -213,6 +214,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     needs:
       - backend
+      - backend-image
       - frontend
       - social-preview
       - rust

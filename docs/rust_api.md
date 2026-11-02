@@ -15,7 +15,7 @@ A request from a peer uvicorn would not have trusted reaches Python with `X-Forw
 
 `/health` answers 200 only while the Python app also answers, so the ECS container health check (unchanged, `python -c ... /health`) covers both processes.
 If uvicorn exits, `wat2do-api` exits non-zero and ECS replaces the task.
-On SIGTERM it stops accepting connections, finishes in-flight requests (`shutdown_drain_seconds`), then sends SIGTERM to uvicorn (whose lifespan shutdown stops the map-location thread) and exits 0.
+On SIGTERM it stops accepting connections, finishes in-flight requests (`shutdown_drain_seconds`, 14), then sends SIGTERM to uvicorn (whose lifespan shutdown stops the map-location thread), gives it `python_shutdown_seconds` (15) and exits 0, inside ECS's 30 second stop timeout.
 The Python app still owns the map-location thread (`main.py` lifespan) until that is ported.
 
 Rust routes behave exactly like FastAPI routes:
@@ -114,7 +114,9 @@ To run Rust alone without Docker, use the parity harness or `cargo test`; agents
 ## Production
 
 The backend image builds `wat2do-api` in a Rust stage and runs it as the non-root `wat2do` user on a read-only root filesystem.
-The ECS task needs egress to Postgres on 5432 (`infra/terraform/production/security-groups.tf`).
+The ECS task needs egress to Postgres on 5432 (the `task_postgres` rule in `infra/terraform/production/security-groups.tf`).
+The image is built and smoke-tested by the "Backend image build" CI job on every pull request and before every deploy.
+Container PID 1 is `wat2do-api`; like uvicorn before it, it reaps only its own child.
 
 ### Database connection budget
 

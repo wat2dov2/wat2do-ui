@@ -1,14 +1,17 @@
 # The Rust API server (rust/, binary wat2do-api) answers on port 8000 and runs
 # the FastAPI app behind it on loopback until every router is ported.
 
-FROM rust:1-slim-trixie AS rust-chef
+FROM rust:1-slim-bookworm AS rust-chef
 
 # The crate's ingestion half links BoringSSL (wreq) and aws-lc, which build with
-# cmake, a C++ compiler and libclang; the API binary itself does not use them.
+# cmake, a C++ compiler and libclang, and BoringSSL applies its patches with git;
+# the API binary itself does not use them. Bookworm's glibc is no newer than the
+# Python runtime image's, so the binary runs there.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     clang \
     cmake \
     g++ \
+    git \
     libclang-dev \
     make \
     perl \
@@ -33,7 +36,7 @@ COPY backend/services/ingestion/prompt.md /src/backend/services/ingestion/prompt
 RUN cargo build --release --locked --bin wat2do-api \
     && cp target/release/wat2do-api /usr/local/bin/wat2do-api
 
-FROM python:3.12-slim-trixie AS build
+FROM python:3.12-slim AS build
 
 WORKDIR /app
 
@@ -44,7 +47,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/requirements.txt .
 RUN pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt
 
-FROM python:3.12-slim-trixie AS runtime
+FROM python:3.12-slim AS runtime
 
 WORKDIR /app
 

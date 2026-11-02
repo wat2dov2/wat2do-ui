@@ -1029,6 +1029,7 @@ def test_login_recovery_must_cover_the_security_code_wait(tmp_path) -> None:
         ({"python_keep_alive_seconds": 60}, "must exceed upstream_idle_seconds"),
         ({"python_port": 8000}, "must differ from the public API port"),
         ({"database_connections": 7}, "less than or equal to 6"),
+        ({"shutdown_drain_seconds": 15}, "30 second stop timeout"),
     ],
 )
 def test_api_server_rejects_unsafe_settings(tmp_path: Path, patch, message) -> None:
