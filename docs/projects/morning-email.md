@@ -809,14 +809,14 @@ Do not deploy a nullable compatibility period or dual Going API.
 - `backend/core/config.py`
 - `backend/schemas/event_date.py`
 - `backend/schemas/event.py`
-- `backend/schemas/going_event.py`
+- `backend/schemas/going_event.py`, deleted
 - `backend/schemas/notification_preference.py`
 - `backend/routers/events.py`, since ported to Rust (`rust/src/api`)
 - `backend/routers/going_events.py`, since ported to Rust (`rust/src/api`)
 - `backend/routers/notification_preferences.py`
 - `backend/services/event_date_service.py`
 - `backend/services/event_service.py`
-- `backend/services/going_event_service.py`
+- `backend/services/going_event_service.py`, deleted
 - `backend/services/calendar_service.py`, since ported to Rust (`rust/src/api`)
 - `backend/services/email_service.py`
 - `backend/services/notifications/delivery_log.py`

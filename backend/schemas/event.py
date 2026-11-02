@@ -246,19 +246,6 @@ class EventUpdate(EventDiscoveryFields):
         return self
 
 
-class EventTimeMeta(BaseModel):
-    """Minimal event metadata for time-decay calculations.
-
-    Decay keys off ``added_at`` (catalog age), not ``dtstart_utc`` -
-    see the rationale in recommender/popularity.py. The field
-    used to be on this model when ``events`` carried dtstart_utc as a
-    column; occurrence dates now live in event_dates.
-    """
-
-    id: int
-    added_at: str | None = None
-
-
 class EventSummaryResponse(EventDiscoveryFields):
     """Payload for list/card views.
 

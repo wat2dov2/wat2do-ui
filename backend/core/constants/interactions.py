@@ -1,10 +1,4 @@
-"""Interaction types and the default interaction query limit."""
-
-from core.controlbox import controlbox
-
-_CONTROL = controlbox.interaction_ingestion
-
-DEFAULT_INTERACTION_LIMIT = _CONTROL.default_query_limit
+"""Interaction types."""
 
 INTERACTION_CLICK = "click"
 INTERACTION_DETAIL_VIEW = "detail_view"

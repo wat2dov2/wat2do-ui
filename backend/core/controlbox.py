@@ -11,7 +11,6 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, model_validator
 
 _CONTROLBOX_DIRECTORY = Path(__file__).resolve().parents[1] / "controlbox"
-_INTERACTION_TYPES = {"click", "detail_view", "going", "ungoing", "share"}
 _INSTAGRAM_ACCOUNTS_PER_APP = 10
 # Instagram keeps its sessions and messages here; deleting them logs accounts out.
 _INSTAGRAM_LOGIN_FOLDERS = frozenset({"databases", "shared_prefs", "app_light_prefs", "no_backup"})
@@ -19,123 +18,6 @@ _INSTAGRAM_LOGIN_FOLDERS = frozenset({"databases", "shared_prefs", "app_light_pr
 
 class _ControlModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-
-
-class ScoreBlend(_ControlModel):
-    content: float = Field(ge=0, le=1)
-    collaborative: float = Field(ge=0, le=1)
-    popularity: float = Field(ge=0, le=1)
-
-    @model_validator(mode="after")
-    def validate_total(self) -> "ScoreBlend":
-        total = self.content + self.collaborative + self.popularity
-        if abs(total - 1.0) > 1e-9:
-            raise ValueError("recommendation blend weights must total 1")
-        return self
-
-
-class RecommendationSnapshotControl(_ControlModel):
-    recommendations_per_user: int = Field(gt=0)
-    candidate_events_per_school: int = Field(gt=0)
-
-
-class RecommendationApiControl(_ControlModel):
-    maximum_results: int = Field(gt=0)
-
-
-class PersonalizationControl(_ControlModel):
-    relevance_weight: float = Field(ge=0, le=1)
-    warm_interactions: int = Field(ge=0)
-    hot_interactions: int = Field(gt=0)
-    hot_blend: ScoreBlend
-    warm_blend: ScoreBlend
-    warm_without_collaborative_blend: ScoreBlend
-    cold_blend: ScoreBlend
-
-    @model_validator(mode="after")
-    def validate_tiers(self) -> "PersonalizationControl":
-        if self.warm_interactions >= self.hot_interactions:
-            raise ValueError("warm_interactions must be lower than hot_interactions")
-        return self
-
-
-class CollaborativeFilteringControl(_ControlModel):
-    minimum_interactions: int = Field(gt=0)
-    neighbor_count: int = Field(gt=0)
-    user_item_blend_weight: float = Field(ge=0, le=1)
-    going_weight: float = Field(gt=0)
-    maximum_user_event_score: float = Field(gt=0)
-
-
-class TemporalTier(_ControlModel):
-    within_hours: int = Field(gt=0)
-    score: float = Field(ge=0, le=1)
-
-
-class ContentScoringControl(_ControlModel):
-    category_match: float = Field(ge=0, le=1)
-    category_without_profile: float = Field(ge=0, le=1)
-    school_match: float = Field(ge=0, le=1)
-    club_affinity: float = Field(ge=0, le=1)
-    temporal_tiers: tuple[TemporalTier, ...] = Field(min_length=1)
-    temporal_fallback: float = Field(ge=0, le=1)
-    free_event: float = Field(ge=0, le=1)
-    has_food: float = Field(ge=0, le=1)
-    first_year: float = Field(ge=0, le=1)
-    first_year_categories: frozenset[str] = Field(min_length=1)
-    price_normalization_cap: float = Field(gt=0)
-    morning_end_hour: int = Field(ge=1, le=23)
-    afternoon_end_hour: int = Field(ge=1, le=23)
-
-    @model_validator(mode="after")
-    def validate_ordering(self) -> "ContentScoringControl":
-        tier_hours = [tier.within_hours for tier in self.temporal_tiers]
-        if tier_hours != sorted(set(tier_hours)):
-            raise ValueError("temporal_tiers must have unique, ascending within_hours")
-        if self.morning_end_hour >= self.afternoon_end_hour:
-            raise ValueError("morning_end_hour must be lower than afternoon_end_hour")
-        return self
-
-
-class PopularityControl(_ControlModel):
-    half_life_days: float = Field(gt=0)
-    fallback_score: float = Field(ge=0, le=1)
-    candidate_limit: int = Field(gt=0)
-    maximum_user_contribution: float = Field(gt=0)
-
-
-class RecommendationInteractionControl(_ControlModel):
-    lookback_days: int = Field(gt=0)
-    weights: dict[str, float]
-
-    @model_validator(mode="after")
-    def validate_weights(self) -> "RecommendationInteractionControl":
-        if set(self.weights) != _INTERACTION_TYPES:
-            raise ValueError(f"interaction weight keys must be {_INTERACTION_TYPES}")
-        return self
-
-
-class EvaluationControl(_ControlModel):
-    k: int = Field(gt=0)
-    minimum_interactions: int = Field(gt=0)
-    maximum_events: int = Field(ge=0)
-
-
-class RecommendationControl(_ControlModel):
-    snapshot: RecommendationSnapshotControl
-    api: RecommendationApiControl
-    personalization: PersonalizationControl
-    collaborative_filtering: CollaborativeFilteringControl
-    content_scoring: ContentScoringControl
-    popularity: PopularityControl
-    interactions: RecommendationInteractionControl
-    evaluation: EvaluationControl
-
-    @model_validator(mode="after")
-    def validate_limits(self) -> "RecommendationControl":
-        if self.snapshot.recommendations_per_user > self.api.maximum_results:
-            raise ValueError("recommendations_per_user cannot exceed maximum_results")
-        return self
 
 
 class CampusSeasonWindowControl(_ControlModel):
@@ -498,7 +380,6 @@ class NotificationDefaultsControl(_ControlModel):
 
 
 class InteractionIngestionControl(_ControlModel):
-    default_query_limit: int = Field(gt=0)
     maximum_batch_size: int = Field(gt=0)
     maximum_metadata_bytes: int = Field(gt=0)
     maximum_duplicates_per_window: int = Field(gt=0)
@@ -1358,7 +1239,6 @@ class ControlBox(_ControlModel):
     interaction_tracking: InteractionTrackingControl
     authentication: AuthenticationControl
     club_management: ClubManagementControl
-    recommendations: RecommendationControl
     morning_email: MorningEmailControl
     event_reminder: EventReminderControl
     event_change_alerts: EventChangeAlertsControl

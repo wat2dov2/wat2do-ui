@@ -50,12 +50,11 @@ def test_event_reads_do_not_retry_service_errors(monkeypatch, read):
         kwargs = {"event_id": 1}
     else:
         monkeypatch.setattr(event_query, "_load_lightweight_date_page_ids", failure)
-        query = event_query.load_upcoming_events
+        query = event_query.load_upcoming_event_ids
         kwargs = {
             "since": datetime(2026, 9, 25, tzinfo=timezone.utc),
             "school": "uwaterloo",
             "cap": 20,
-            "model": EventSummaryResponse,
         }
 
     with pytest.raises(RuntimeError, match="Database unavailable"):
@@ -64,23 +63,17 @@ def test_event_reads_do_not_retry_service_errors(monkeypatch, read):
     assert failure.call_count == 1
 
 
-def test_upcoming_events_preserve_school_window_order_and_cap(monkeypatch):
+def test_upcoming_event_ids_preserve_school_window_order_and_cap(monkeypatch):
     since = datetime(2026, 9, 25, tzinfo=timezone.utc)
     load_ids = MagicMock(return_value=[3, 1])
-    events = {1: _event(id=1), 3: _event(id=3)}
-    hydrate = MagicMock(return_value=events)
     monkeypatch.setattr(event_query, "_load_lightweight_date_page_ids", load_ids)
-    monkeypatch.setattr(event_query, "_load_hydrated_events_by_ids", hydrate)
 
-    result = event_query.load_upcoming_events(
-        since=since, school="uwaterloo", cap=20, model=EventResponse
-    )
+    result = event_query.load_upcoming_event_ids(since=since, school="uwaterloo", cap=20)
 
-    assert result == [events[3], events[1]]
+    assert result == [3, 1]
     load_ids.assert_called_once_with(
         start_utc=since, end_utc=None, school_id=1, offset=0, limit=20, cap=20
     )
-    hydrate.assert_called_once_with([3, 1], model=EventResponse)
 
 
 def _occurrence(dtstart: datetime, dtend: datetime | None = None) -> OccurrenceResponse:
