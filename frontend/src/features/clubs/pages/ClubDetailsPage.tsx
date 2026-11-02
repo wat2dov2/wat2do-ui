@@ -4,7 +4,8 @@ import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
-import { ExternalLink, HelpCircle, Instagram } from "lucide-react";
+import { BadgeCheck, Check, ExternalLink, HelpCircle, Instagram, Plus } from "lucide-react";
+import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { DiscordIcon } from "@/shared/ui/platform-icons";
 import { Button } from "@/shared/ui/button";
 import { LoadingPage } from "@/shared/ui/loading-page";
@@ -88,7 +89,16 @@ function ClubDetailsContent({
               href: ROUTES.CLUBS,
               label: t("clubs.allClubs"),
             }}
-            title={club.club_name}
+            title={
+              // Club profile header: the club's logo beside its name.
+              <span className="flex items-center gap-3">
+                <AvatarStack
+                  size="lg"
+                  avatars={[{ src: club.logo_url ?? "", name: club.club_name }]}
+                />
+                {club.club_name}
+              </span>
+            }
             description={schoolName}
             actionsPlacement="heading"
             actions={
@@ -113,6 +123,7 @@ function ClubDetailsContent({
                       onClick={() => requireSignIn(() => toggleSave(club.id), "clubs.signInToFollow")}
                       aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
                     >
+                      {isSaved ? <Check /> : <Plus />}
                       {isSaved ? t("clubs.following") : t("clubs.follow")}
                     </Button>
                     <Button
@@ -120,6 +131,7 @@ function ClubDetailsContent({
                       variant="outline"
                       onClick={() => requireSignIn(() => setShowClaimModal(true), "clubs.signInToClaim")}
                     >
+                      <BadgeCheck />
                       {t("clubs.claimClub")}
                     </Button>
                   </>
