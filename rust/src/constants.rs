@@ -25,3 +25,10 @@ pub const BUCKET_CLUB_LOGOS: &str = "organization-logos";
 
 /// `MAX_AVATAR_SIZE_BYTES`, the club logo bucket's limit.
 pub const MAX_AVATAR_SIZE_BYTES: usize = 2 * 1024 * 1024;
+
+/// `core.constants.notifications`: notification types and delivery statuses.
+pub const NOTIFICATION_TYPE_MORNING_EMAIL: &str = "morning_email";
+pub const NOTIFICATION_TYPE_EVENT_REMINDER: &str = "event_reminder";
+pub const NOTIFICATION_TYPE_EVENT_CHANGE: &str = "event_change";
+pub const NOTIFICATION_STATUS_SENT: &str = "sent";
+pub const NOTIFICATION_STATUS_FAILED: &str = "failed";

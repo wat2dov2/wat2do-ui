@@ -84,6 +84,20 @@ def test_message_sender_overrides_the_default_from(monkeypatch):
     assert _sent_mime(ses)["From"] == "wat2do <team@wat2do.io>"
 
 
+def test_long_unsubscribe_urls_stay_readable_urls(monkeypatch):
+    monkeypatch.setattr(email_module.settings, "email_delivery_enabled", True)
+    ses = MagicMock()
+    url = "https://uwaterloo.wat2do.io/api/notification-preferences/unsubscribe?token=" + "A" * 114
+
+    EmailService(ses_client=ses).send(
+        _message(subject="Changed: Café night", headers={"List-Unsubscribe": f"<{url}>"})
+    )
+
+    raw = ses.send_email.call_args.kwargs["Content"]["Raw"]["Data"]
+    assert f"List-Unsubscribe: <{url}>\n".encode() in raw
+    assert _sent_mime(ses)["Subject"] == "Changed: Café night"
+
+
 def test_inline_images_ride_inside_the_html_part(monkeypatch):
     monkeypatch.setattr(email_module.settings, "email_delivery_enabled", True)
     ses = MagicMock()

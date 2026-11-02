@@ -15,10 +15,24 @@ pub struct Settings {
     pub event_feed_revalidation_url: String,
     pub event_feed_revalidation_secret: String,
     pub event_feed_revalidation_timeout_seconds: f64,
+    /// False sends nothing: each email is logged and counted as delivered.
+    pub email_delivery_enabled: bool,
+    pub email_from: String,
+    pub frontend_url: String,
+    pub email_unsubscribe_secret: String,
 }
 
 fn optional(name: &str) -> String {
     std::env::var(name).unwrap_or_default().trim().to_owned()
+}
+
+/// Pydantic's boolean parsing, so a value Python accepts means the same here.
+fn flag(name: &str) -> Result<bool> {
+    match optional(name).to_lowercase().as_str() {
+        "" | "0" | "off" | "f" | "false" | "n" | "no" => Ok(false),
+        "1" | "on" | "t" | "true" | "y" | "yes" => Ok(true),
+        other => anyhow::bail!("{name} is not a boolean: {other:?}"),
+    }
 }
 
 fn required(name: &str) -> Result<String> {
@@ -46,6 +60,15 @@ impl Settings {
             event_feed_revalidation_timeout_seconds: optional("EVENT_FEED_REVALIDATION_TIMEOUT")
                 .parse()
                 .unwrap_or(3.0),
+            email_delivery_enabled: flag("EMAIL_DELIVERY_ENABLED")?,
+            email_from: Some(optional("EMAIL_FROM"))
+                .filter(|sender| !sender.is_empty())
+                .unwrap_or_else(|| "wat2do <notifications@wat2do.io>".to_owned()),
+            frontend_url: Some(optional("FRONTEND_URL"))
+                .filter(|url| !url.is_empty())
+                .unwrap_or_else(|| "http://localhost:3000".to_owned()),
+            // Untrimmed, like Python: the signing key must match the API's byte for byte.
+            email_unsubscribe_secret: std::env::var("EMAIL_UNSUBSCRIBE_SECRET").unwrap_or_default(),
         })
     }
 }

@@ -150,7 +150,10 @@ def _mime_message(msg: EmailMessage, recipients: list[str]) -> bytes:
             filename=image.filename,
             disposition="inline",
         )
-    return mime.as_bytes()
+    # RFC 5322's 998-character line limit, not the default 78: a header that
+    # cannot fold, like a List-Unsubscribe URL, would otherwise be sent as RFC 2047
+    # encoded words, which mail clients do not read back as a URL.
+    return mime.as_bytes(policy=mime.policy.clone(max_line_length=998))
 
 
 email_service = EmailService()

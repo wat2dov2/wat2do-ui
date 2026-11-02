@@ -1,4 +1,8 @@
-"""The light wat2do email layout shared by every email the app sends."""
+"""The light wat2do email layout shared by every email the app sends.
+
+The scheduled emails sent by Rust use `rust/src/email/layout.rs`, a copy of this
+layout; change both together.
+"""
 
 from html import escape
 from pathlib import Path

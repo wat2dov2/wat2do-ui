@@ -26,43 +26,43 @@ def _serve(monkeypatch, content: bytes):
 
 
 @pytest.mark.parametrize("fmt", ["JPEG", "PNG", "WEBP", "GIF"])
-def test_every_poster_format_becomes_a_square_jpeg(monkeypatch, fmt):
+def test_every_poster_format_becomes_a_jpeg(monkeypatch, fmt):
     _serve(monkeypatch, _poster(fmt, (800, 1000)))
 
-    image = email_images.email_image(URL, "event-1", width=480, square=True)
+    image = email_images.event_hero_image(URL)
 
     assert (image.content_id, image.filename, image.content_type) == (
-        "event-1",
-        "event-1.jpg",
+        "event-image",
+        "event-image.jpg",
         "image/jpeg",
     )
     with Image.open(BytesIO(image.content)) as embedded:
-        assert (embedded.format, embedded.size) == ("JPEG", (480, 480))
+        assert (embedded.format, embedded.size) == ("JPEG", (800, 1000))
 
 
 def test_hero_keeps_its_shape_and_never_enlarges(monkeypatch):
     _serve(monkeypatch, _poster("PNG", (2400, 3000)))
-    wide = email_images.email_image(URL, "event-image", width=1200, square=False)
+    wide = email_images.event_hero_image(URL)
     with Image.open(BytesIO(wide.content)) as embedded:
         assert embedded.size == (1200, 1500)
 
     _serve(monkeypatch, _poster("PNG", (300, 200)))
-    small = email_images.email_image(URL, "event-image", width=1200, square=False)
+    small = email_images.event_hero_image(URL)
     with Image.open(BytesIO(small.content)) as embedded:
         assert embedded.size == (300, 200)
 
 
 def test_unusable_posters_fall_back_to_linking(monkeypatch):
-    assert email_images.email_image(None, "event-1", width=480, square=True) is None
+    assert email_images.event_hero_image(None) is None
 
     _serve(monkeypatch, b"not an image")
-    assert email_images.email_image(URL, "event-1", width=480, square=True) is None
+    assert email_images.event_hero_image(URL) is None
 
     _serve(monkeypatch, b"x" * (email_images.controlbox.email_delivery.image_max_bytes + 1))
-    assert email_images.email_image(URL, "event-1", width=480, square=True) is None
+    assert email_images.event_hero_image(URL) is None
 
     def fail(*_args, **_kwargs):
         raise httpx.ConnectTimeout("slow")
 
     monkeypatch.setattr(email_images.httpx, "get", fail)
-    assert email_images.email_image(URL, "event-1", width=480, square=True) is None
+    assert email_images.event_hero_image(URL) is None

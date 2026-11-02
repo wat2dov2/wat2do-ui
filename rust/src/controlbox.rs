@@ -11,6 +11,11 @@ use indexmap::IndexMap;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 
+use crate::constants::{
+    NOTIFICATION_TYPE_EVENT_CHANGE, NOTIFICATION_TYPE_EVENT_REMINDER,
+    NOTIFICATION_TYPE_MORNING_EMAIL,
+};
+
 fn parse<T: DeserializeOwned>(name: &str, json: &str) -> T {
     serde_json::from_str(json)
         .unwrap_or_else(|error| panic!("backend/controlbox/{name}.json: {error}"))
@@ -98,6 +103,63 @@ pub struct MapGeocoding {
     pub building_codes: HashMap<String, IndexMap<String, String>>,
 }
 
+/// `controlbox/morning_email.json`, every field.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MorningEmail {
+    pub local_send_hour: u32,
+    /// Catch-up for skipped scheduled runs: send any time from `local_send_hour`
+    /// through this hour, once per local day.
+    pub last_local_send_hour: u32,
+    pub new_event_window_hours: i64,
+    pub provider_attempts: u32,
+    pub card_image_px: u32,
+    pub image_download_concurrency: usize,
+    pub club_logo_px: u32,
+}
+
+/// `controlbox/event_reminder.json`, every field.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EventReminder {
+    pub lead_minutes: i64,
+    pub early_tolerance_minutes: i64,
+    pub late_tolerance_minutes: i64,
+    pub provider_attempts: u32,
+}
+
+/// The sending and image limits in `controlbox/email_delivery.json`.
+#[derive(Debug, Deserialize)]
+pub struct EmailDelivery {
+    pub provider_timeout_seconds: f64,
+    pub team_sender: String,
+    pub image_timeout_seconds: f64,
+    pub image_max_bytes: usize,
+    pub image_quality: u8,
+    pub hero_image_px: u32,
+}
+
+/// `controlbox/notification_defaults.json`: whether a type is on before a user chooses.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NotificationDefaults {
+    pub morning_email: bool,
+    pub event_reminder: bool,
+    pub event_change: bool,
+}
+
+impl NotificationDefaults {
+    /// `NOTIFICATION_DEFAULT_ENABLED.get(notification_type, False)`.
+    pub fn enabled(&self, notification_type: &str) -> bool {
+        match notification_type {
+            NOTIFICATION_TYPE_MORNING_EMAIL => self.morning_email,
+            NOTIFICATION_TYPE_EVENT_REMINDER => self.event_reminder,
+            NOTIFICATION_TYPE_EVENT_CHANGE => self.event_change,
+            _ => false,
+        }
+    }
+}
+
 pub static INGESTION: LazyLock<Ingestion> = LazyLock::new(|| {
     parse(
         "ingestion",
@@ -123,6 +185,31 @@ pub static EVENT_DISCOVERY: LazyLock<EventDiscovery> = LazyLock::new(|| {
     )
 });
 
+pub static MORNING_EMAIL: LazyLock<MorningEmail> = LazyLock::new(|| {
+    parse(
+        "morning_email",
+        include_str!("../../backend/controlbox/morning_email.json"),
+    )
+});
+pub static EVENT_REMINDER: LazyLock<EventReminder> = LazyLock::new(|| {
+    parse(
+        "event_reminder",
+        include_str!("../../backend/controlbox/event_reminder.json"),
+    )
+});
+pub static EMAIL_DELIVERY: LazyLock<EmailDelivery> = LazyLock::new(|| {
+    parse(
+        "email_delivery",
+        include_str!("../../backend/controlbox/email_delivery.json"),
+    )
+});
+pub static NOTIFICATION_DEFAULTS: LazyLock<NotificationDefaults> = LazyLock::new(|| {
+    parse(
+        "notification_defaults",
+        include_str!("../../backend/controlbox/notification_defaults.json"),
+    )
+});
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -133,5 +220,9 @@ mod tests {
         assert!(UPLOADS.event_image_max_size_bytes > 0);
         assert!(SCRAPING.directory_minimum_image_dimension_pixels > 0);
         assert!(!EVENT_DISCOVERY.campus_seasons.schools.is_empty());
+        assert!(MORNING_EMAIL.local_send_hour <= MORNING_EMAIL.last_local_send_hour);
+        assert!(EVENT_REMINDER.lead_minutes > 0);
+        assert!(!EMAIL_DELIVERY.team_sender.is_empty());
+        assert!(!NOTIFICATION_DEFAULTS.enabled("unknown_type"));
     }
 }
