@@ -396,15 +396,18 @@ async fn directory(
 
 /// `admin_query.load_page_rows`: a page of one admin list (`admin_list_entries`,
 /// newest first) and its total, as a CTE `entries (id, position)` plus the
-/// total, given placeholders for the resource and its filters.
-pub fn admin_page_sql(rows: &str) -> String {
+/// total. The resource is written into the statement (it is a code
+/// constant) so Postgres reads only that branch of the view's UNION, even
+/// under a generic plan; the filters are bound as `$3` to `$5`.
+pub fn admin_page_sql(resource: &'static str, rows: &str) -> String {
+    debug_assert!(resource.chars().all(|c| c.is_ascii_alphabetic()));
     format!(
         "WITH matched AS ( \
              SELECT e.id, e.sort_at FROM public.admin_list_entries e \
-             WHERE e.resource = $3 \
-               AND ($4::text IS NULL OR e.search_text ILIKE $4) \
-               AND ($5::text IS NULL OR e.school = $5) \
-               AND ($6::text IS NULL OR e.status = $6)), \
+             WHERE e.resource = '{resource}' \
+               AND ($3::text IS NULL OR e.search_text ILIKE $3) \
+               AND ($4::text IS NULL OR e.school = $4) \
+               AND ($5::text IS NULL OR e.status = $5)), \
          entries AS ( \
              SELECT id, row_number() OVER (ORDER BY sort_at DESC, id ASC) AS position \
              FROM (SELECT id, sort_at FROM matched ORDER BY sort_at DESC, id ASC \
@@ -415,7 +418,7 @@ pub fn admin_page_sql(rows: &str) -> String {
     )
 }
 
-/// The admin list filters, bound as `$3` to `$6` of `admin_page_sql`.
+/// The admin list and its filters, bound as `$3` to `$5` of `admin_page_sql`.
 pub struct AdminFilters {
     pub resource: &'static str,
     /// `%search%` with PostgREST's `*` wildcard, unsanitized as in Python.
@@ -480,16 +483,18 @@ pub async fn list_clubs_for_review(
         .optional_string(Length::default().max(MAX_SEARCH_QUERY_LENGTH));
     check.finish()?;
     let filters = AdminFilters::new("clubSubmissions", search, school, status);
-    let sql = admin_page_sql(&format!(
-        "SELECT entries.position, {} FROM entries \
+    let sql = admin_page_sql(
+        filters.resource,
+        &format!(
+            "SELECT entries.position, {} FROM entries \
          JOIN public.clubs c ON c.id::text = entries.id {CLUB_JOINS}",
-        club_columns(Computed::FULL)
-    ));
+            club_columns(Computed::FULL)
+        ),
+    );
     let rows = read_with_retry(|| {
         sqlx::query(&sql)
             .bind(pagination.page_size)
             .bind(pagination.offset())
-            .bind(filters.resource)
             .bind(&filters.search)
             .bind(&filters.school)
             .bind(&filters.status)

@@ -141,19 +141,21 @@ pub async fn list_claims(
     let filters = AdminFilters::new("claims", search, school, status);
     // The club and the claimant come embedded as stored, like `clubs(*)` and
     // `users(*)`: no owner email, event count or generated avatar.
-    let sql = admin_page_sql(&format!(
-        "SELECT entries.position, {CLAIM_COLUMNS}, \
+    let sql = admin_page_sql(
+        filters.resource,
+        &format!(
+            "SELECT entries.position, {CLAIM_COLUMNS}, \
              (SELECT to_jsonb(c) || jsonb_build_object('school', NULLIF(s.slug, '')) \
               FROM public.clubs c LEFT JOIN public.schools s ON s.id = c.school_id \
               WHERE c.id = cc.club_id) AS clubs, \
              (SELECT to_jsonb(u) FROM public.users u WHERE u.id = cc.user_id) AS users \
          FROM entries JOIN public.club_claims cc ON cc.id::text = entries.id"
-    ));
+        ),
+    );
     let rows = read_with_retry(|| {
         sqlx::query(&sql)
             .bind(pagination.page_size)
             .bind(pagination.offset())
-            .bind(filters.resource)
             .bind(&filters.search)
             .bind(&filters.school)
             .bind(&filters.status)
