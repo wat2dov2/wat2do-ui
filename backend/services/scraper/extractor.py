@@ -1,7 +1,7 @@
 """Vision-based event and hiring extraction for scraped content.
 
 The model call is a ``Completion``: the API uses ``openai_completion`` and the
-local ingestion processor passes a Claude completion. Every image is preceded
+vestigial pipeline passes a Claude completion. Every image is preceded
 by an ``Image N:`` marker. The model keys off these markers when populating
 ``image_index``; without them carousel-image attribution is essentially random.
 """
@@ -28,7 +28,7 @@ from core.constants.positions import (
     MAX_POSITION_TITLE_LENGTH,
 )
 from core.sanitize import normalize_scraped_text
-from schemas.event import EventDiscoveryFields
+from schemas.event import EVENT_DISCOVERY, EventDiscoveryFields
 from schemas.position import PositionType
 from services.event_service import normalize_campus_season_ids
 from services.school_context import (
@@ -51,11 +51,7 @@ EVENT_DISCOVERY_JSON_FIELDS = "\n".join(
 )
 EVENT_DISCOVERY_RULES = "\n".join(
     [
-        "EVENT DISCOVERY METADATA:",
-        "These independent facts may overlap and do not replace the event category.",
-        "For boolean flags, use true only when the source establishes the fact, false when it explicitly "
-        "rules it out, and null when evidence is missing or uncertain. Never guess from "
-        "the category, host, or the word 'free' alone.",
+        *EVENT_DISCOVERY["heading"],
         *(
             f"- {name}: {field.description}"
             for name, field in EventDiscoveryFields.model_fields.items()

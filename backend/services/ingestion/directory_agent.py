@@ -12,6 +12,7 @@ from __future__ import annotations
 import fcntl
 import json
 import logging
+import os
 import tempfile
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
@@ -28,16 +29,25 @@ from core.tables import EVENT_DATES, INGESTION_ITEMS, POSITIONS
 from schemas.directory_source import DirectorySource
 from services import school_service
 from services.claude_code import ClaudeCodeError, remove_leftovers, run_agent
-from services.ingestion.agent import AgentError
 from services.ingestion.directory import list_sources
 from services.ingestion.items import CONTROL
-from services.ingestion.processor import state_directory
 from services.school_context import resolve_school_timezone
 from services.scraper.page_image import fetch_event_poster
 
 log = logging.getLogger(__name__)
 PROMPT = Path(__file__).with_name("directory_prompt.md").read_text()
 WORKDIR_PREFIX = "wat2do-directory-"
+
+
+class AgentError(RuntimeError):
+    """A directory agent could not finish; its source is tried again next run."""
+
+
+def state_directory() -> Path:
+    """Local state shared with the Rust ingestion processor."""
+    return Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "wat2do/ingestion"
+
+
 # Some WAFs reject a full browser user-agent from a non-browser HTTP client.
 _USER_AGENT = "curl/8.7.1"
 _DETAIL_FIELDS = ("title", "starts", "ends", "location", "host", "description")

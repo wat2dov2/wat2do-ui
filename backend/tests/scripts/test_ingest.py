@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from scripts import ingest as script
-from services.ingestion import directory_agent, items, processor
+from services.ingestion import directory_agent, items
 
 
 @pytest.mark.parametrize(
@@ -27,19 +27,34 @@ def test_launch_agent_payload_runs_one_command_without_logs(command, label, sche
     assert {
         key: payload[key] for key in ("KeepAlive", "StartInterval") if key in payload
     } == schedule
-    assert payload["ProgramArguments"] == [
-        sys.executable,
-        str(Path(script.__file__).resolve()),
-        command,
-    ]
+    if command == "process":
+        # The Rust processor is built from this checkout on every start.
+        assert payload["ProgramArguments"] == [
+            str(Path.home() / ".cargo/bin/cargo"),
+            "run",
+            "--release",
+            "--quiet",
+            "--manifest-path",
+            str(script.REPOSITORY_DIRECTORY / "rust/Cargo.toml"),
+            "--bin",
+            "wat2do-ingest",
+            "--",
+            "process",
+        ]
+    else:
+        assert payload["ProgramArguments"] == [
+            sys.executable,
+            str(Path(script.__file__).resolve()),
+            command,
+        ]
     assert payload["WorkingDirectory"] == str(script.BACKEND_DIRECTORY)
     assert payload["RunAtLoad"] is True
     assert payload["ProcessType"] == "Background"
     assert payload["StandardOutPath"] == "/dev/null"
     assert payload["StandardErrorPath"] == "/dev/null"
     path = payload["EnvironmentVariables"]["PATH"].split(":")
-    # Claude Code installs its launcher in ~/.local/bin, which launchd omits.
-    assert path[0] == str(Path.home() / ".local/bin")
+    # cargo and Claude Code install their launchers under home, which launchd omits.
+    assert path[:2] == [str(Path.home() / ".cargo/bin"), str(Path.home() / ".local/bin")]
     assert "/opt/homebrew/bin" in path
     assert "/usr/bin" in path
 
@@ -75,13 +90,6 @@ def test_install_schedule_installs_both_agents(monkeypatch, tmp_path, capsys):
 @pytest.mark.parametrize(
     ("argv", "patched", "result", "options"),
     [
-        (["process"], (processor, "process_queue"), {"processed": 2}, {"wait_for_work": True}),
-        (
-            ["process", "--once"],
-            (processor, "process_queue"),
-            {"processed": 2},
-            {"wait_for_work": False},
-        ),
         (["scrape-directories"], (directory_agent, "scrape_directories"), {"queued": 3}, {}),
     ],
 )

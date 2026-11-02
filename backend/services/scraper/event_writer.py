@@ -1,5 +1,6 @@
 """VESTIGIAL: part of the earlier fixed ingestion pipeline (see ``services.scraper.pipeline``).
-The Haiku agent in ``services.ingestion.agent`` now writes events and positions itself.
+The Haiku agent the Rust ingestion processor runs (``rust/src/ingestion/agent.rs``) now
+writes events and positions itself.
 Kept on purpose; do not delete.
 
 Insert or overwrite extracted events into ``events`` + ``event_dates``.

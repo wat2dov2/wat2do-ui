@@ -2,10 +2,10 @@
 """Event and position ingestion through the Supabase ingestion queue.
 
 Notified Instagram posts join the queue when GitHub records them; ``enqueue``
-adds one by hand, and ``scrape-directories`` runs the Haiku directory agents.
-``process`` stays running on the Mac: it fetches queued Instagram posts logged
-out and turns every ready row into events and positions with Claude agents.
-``install-schedule`` installs both macOS LaunchAgents; they keep no logs.
+adds one by hand, and ``scrape-directories`` runs the Haiku directory agents. The always-on processor
+that fetches queued posts and runs the ingestion agents is Rust
+(``rust/src/bin/wat2do-ingest.rs``); ``install-schedule`` installs it and the
+directory scrape as macOS LaunchAgents, which keep no logs.
 """
 
 from __future__ import annotations
@@ -24,6 +24,23 @@ if str(BACKEND_DIRECTORY) not in sys.path:
 from core.launch_agents import CLAUDE_CODE_PATH, install_launch_agent  # noqa: E402
 from services.ingestion.items import CONTROL  # noqa: E402
 
+REPOSITORY_DIRECTORY = BACKEND_DIRECTORY.parent
+# cargo builds the checkout's processor on every start, so a moved runtime
+# checkout runs its own code and prompt after a kickstart.
+CARGO_PATH = Path.home() / ".cargo/bin/cargo"
+PROCESS_COMMAND = [
+    str(CARGO_PATH),
+    "run",
+    "--release",
+    "--quiet",
+    "--manifest-path",
+    str(REPOSITORY_DIRECTORY / "rust/Cargo.toml"),
+    "--bin",
+    "wat2do-ingest",
+    "--",
+    "process",
+]
+
 # The processor stays running (no interval); the directory scrape repeats.
 LAUNCH_AGENTS: dict[str, tuple[str, int | None]] = {
     "process": ("io.wat2do.ingestion.process", None),
@@ -38,9 +55,11 @@ def launch_agent_payload(command: str) -> dict[str, Any]:
     label, interval = LAUNCH_AGENTS[command]
     return {
         "Label": label,
-        "ProgramArguments": [sys.executable, str(Path(__file__).resolve()), command],
+        "ProgramArguments": PROCESS_COMMAND
+        if command == "process"
+        else [sys.executable, str(Path(__file__).resolve()), command],
         "WorkingDirectory": str(BACKEND_DIRECTORY),
-        "EnvironmentVariables": {"PATH": CLAUDE_CODE_PATH},
+        "EnvironmentVariables": {"PATH": f"{CARGO_PATH.parent}:{CLAUDE_CODE_PATH}"},
         "RunAtLoad": True,
         **({"StartInterval": interval} if interval else {"KeepAlive": True}),
         "ProcessType": "Background",
@@ -67,10 +86,6 @@ def main() -> int:
     commands.add_parser(
         "scrape-directories", help="Run the directory agents and queue what they find"
     )
-    process = commands.add_parser(
-        "process", help="Stay running and turn queued sources into events and positions"
-    )
-    process.add_argument("--once", action="store_true", help="Drain what is queued now, then exit")
     enqueue = commands.add_parser("enqueue", help="Queue Instagram post URLs for one school")
     enqueue.add_argument("--school", required=True)
     enqueue.add_argument("--url", action="append", required=True, dest="urls")
@@ -87,10 +102,6 @@ def main() -> int:
         from services.ingestion.directory_agent import scrape_directories
 
         result = scrape_directories()
-    elif arguments.command == "process":
-        from services.ingestion.processor import process_queue
-
-        result = process_queue(wait_for_work=not arguments.once)
     elif arguments.command == "enqueue":
         from services.ingestion import items
 

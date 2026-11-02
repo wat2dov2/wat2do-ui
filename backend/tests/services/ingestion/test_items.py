@@ -1,5 +1,3 @@
-from types import SimpleNamespace
-
 import pytest
 
 from core.tables import INGESTION_ITEMS
@@ -7,67 +5,9 @@ from services.ingestion import items as module
 
 
 @pytest.fixture
-def sb(fake_sb, patch_sb, monkeypatch):
+def sb(fake_sb, patch_sb):
     patch_sb("services.ingestion.items")
-    monkeypatch.setattr(
-        module.school_service, "get_school_by_id", lambda school_id: SimpleNamespace(slug="ubc")
-    )
     return fake_sb
-
-
-def _item(**overrides):
-    fields = {
-        "source_url": "https://www.instagram.com/p/A/",
-        "school": "ubc",
-        "source": "instagram",
-        "post": None,
-        "directory_source_id": None,
-        "attempts": 1,
-    }
-    return module.Item(**{**fields, **overrides})
-
-
-def test_claim_leases_one_row_at_a_stage(sb):
-    sb.set_response(
-        data=[
-            {
-                "source_url": "https://www.instagram.com/p/A/",
-                "school_id": 3,
-                "source": "instagram",
-                "post": None,
-                "directory_source_id": None,
-                "attempts": 1,
-            }
-        ]
-    )
-
-    assert module.claim("fetch") == _item()
-    sb.rpc.assert_called_once_with(
-        "claim_ingestion_item",
-        {"p_stage": "fetch", "p_lease_seconds": module.CONTROL.claim_lease_seconds},
-    )
-
-
-def test_claim_returns_none_when_nothing_waits(sb):
-    assert module.claim("ready") is None
-
-
-def test_a_fetched_post_becomes_ready_with_a_fresh_retry_budget(sb):
-    module.mark_fetched(_item(attempts=2), {"url": "https://www.instagram.com/p/A/"})
-
-    values = sb.update.call_args.args[0]
-    assert values["status"] == "ready" and values["attempts"] == 0
-    assert values["claimed_until"] is None
-    sb.eq.assert_called_once_with("source_url", "https://www.instagram.com/p/A/")
-
-
-def test_a_released_row_waits_then_is_given_up(sb):
-    module.release(_item(attempts=1), "ready")
-    waiting = sb.update.call_args.args[0]
-    assert waiting["status"] == "ready" and waiting["claimed_until"] is not None
-
-    module.release(_item(attempts=module.CONTROL.max_attempts), "ready")
-    assert sb.update.call_args.args[0]["status"] == "failed"
 
 
 @pytest.mark.parametrize(

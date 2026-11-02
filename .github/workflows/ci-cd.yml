@@ -123,6 +123,35 @@ jobs:
         working-directory: social-preview
         run: npm test
 
+  rust:
+    name: Rust checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Lint
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Run tests
+        run: cargo test
+
   deploy-wat2do:
     name: Deploy Wat2Do to AWS
     runs-on: ubuntu-24.04-arm
@@ -130,6 +159,7 @@ jobs:
       - backend
       - frontend
       - social-preview
+      - rust
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
     permissions:

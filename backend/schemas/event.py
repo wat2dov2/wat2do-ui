@@ -1,5 +1,7 @@
+import json
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Annotated
 from urllib.parse import urlparse
 
@@ -106,62 +108,35 @@ def _validate_category(v: str | None) -> str | None:
 PriceField = Annotated[float, Field(ge=0, le=MAX_EVENT_PRICE, allow_inf_nan=False)]
 
 
+# One source for these descriptions: the API schema, the event extractor and the
+# Rust ingestion agent's prompt all read them from this file.
+EVENT_DISCOVERY = json.loads(
+    Path(__file__).with_name("event_discovery_fields.json").read_text(encoding="utf-8")
+)
+_DISCOVERY_FIELDS: dict[str, str] = EVENT_DISCOVERY["fields"]
+
+
 class EventDiscoveryFields(BaseModel):
     """Independent discovery facts; null means the source has not established the fact."""
 
     competition: bool | None = Field(
         default=None,
         strict=True,
-        description="An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.",
+        description=_DISCOVERY_FIELDS["competition"],
     )
     employers_on_campus: bool | None = Field(
         default=None,
         strict=True,
-        description=(
-            "True only when people from employers (companies, firms, public employers or "
-            "industry organizations) take part, in person on this school's campus or online, for "
-            "recruiting, employer information sessions, co-op or internship information, "
-            "career fairs, or career networking with students. Working professionals who "
-            "explain careers in their industry or network with students qualify, including "
-            "alumni speaking as industry professionals, even when their companies are not "
-            "named and without current vacancies. Require event-specific evidence of an "
-            "employment purpose in the caption or poster; a post with no event details, "
-            "such as a link-in-bio or weekly roundup post, establishes nothing. "
-            "Classify this individual event, not other events in a shared caption. "
-            "Student unions and university publishers do not qualify merely by organizing "
-            "an event. Food or affordable produce distributions, Sexpectations, queer life "
-            "and resource fairs, wellness education, community services, vendors, performers, "
-            "academic speakers, professors, researchers, independent creators, mentors and "
-            "judges do not qualify without employer career participation. Organization "
-            "booths, sponsorship, professional status and the word fair alone are "
-            "insufficient. Interview or job-search coaching and talks about job contracts or "
-            "workers' rights do not qualify unless an employer recruits or presents. "
-            "Student-club hiring, grad school information and in-person off-campus "
-            "events do not qualify. Use false for confirmed "
-            "non-employer activities and null when employer participation or campus "
-            "location is unconfirmed."
-        ),
+        description=_DISCOVERY_FIELDS["employers_on_campus"],
     )
     sports_game: bool | None = Field(
         default=None,
         strict=True,
-        description=(
-            "An actual scheduled athletic game, match, meet, or tournament involving an "
-            "official school varsity team. Intramural, club-team, and recreational "
-            "competitions, practices, tryouts, fitness classes, sports-club meetings, "
-            "video games, and watch parties do not qualify. School affiliation or posting "
-            "from an athletics account alone does not establish varsity participation. "
-            "Use null when official varsity participation is unconfirmed."
-        ),
+        description=_DISCOVERY_FIELDS["sports_game"],
     )
     campus_season_ids: list[str] | None = Field(
         default=None,
-        description=(
-            "School-configured campus season IDs established by the event's theme or "
-            "purpose. Null means unreviewed or uncertain; an empty array means reviewed "
-            "with no matching season. Display windows control filter visibility, not "
-            "classification. Event dates alone do not prove thematic membership."
-        ),
+        description=_DISCOVERY_FIELDS["campus_season_ids"],
     )
 
     @field_validator("campus_season_ids")
