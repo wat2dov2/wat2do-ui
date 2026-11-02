@@ -2,6 +2,7 @@ import { memo, useMemo, useCallback } from "react";
 import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
+import { Check, Plus } from "lucide-react";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { Button } from "@/shared/ui/button";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
@@ -127,6 +128,7 @@ function ClubCardComponent({
               onClick={toggleFollow}
               aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
             >
+              {isSaved ? <Check /> : <Plus />}
               {isSaved ? t("clubs.following") : t("clubs.follow")}
             </Button>
           )}

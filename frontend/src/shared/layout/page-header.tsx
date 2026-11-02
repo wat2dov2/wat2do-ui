@@ -19,7 +19,8 @@ type PageHeaderBack =
       onClick: () => void
     }
 
-type PageHeaderProps = React.ComponentProps<"header"> & {
+// Omit the HTML "title" attribute so our ReactNode title is not narrowed to string.
+type PageHeaderProps = Omit<React.ComponentProps<"header">, "title"> & {
   title?: React.ReactNode
   description?: React.ReactNode
   actions?: React.ReactNode
