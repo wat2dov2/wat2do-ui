@@ -2,11 +2,13 @@
 """Backfill club logos from the school directory pages in ``clubs.club_page``.
 
 Covers clubs with no logo and no Instagram handle (clubs with a handle get
-their logo from the ingestion processor's logged-out profile reads). Three directory platforms publish club
-logos to a plain request:
+their logo from the ingestion processor's logged-out profile reads). Three
+directory platforms publish club logos to a plain request:
 
 - Campus Labs Engage (``/organization/<key>``): its public discovery API names
-  the profile picture.
+  the profile picture, and the club's Instagram when it lists one. That handle
+  is saved too, so the club's Instagram picture becomes its logo when the
+  directory has none.
 - CampusGroups: the club page header carries the club's logo, or the school's
   logo when the club never uploaded one.
 - Penn Clubs: its public club API has ``image_url``.
@@ -39,6 +41,7 @@ from core.pagination import fetch_all_pages  # noqa: E402
 from core.tables import CLUBS  # noqa: E402
 from schemas.club import ClubUpdate  # noqa: E402
 from services import club_service  # noqa: E402
+from services.instagram_follow.candidates import normalize_handle  # noqa: E402
 from services.scraper.image_uploader import upload_image_from_url  # noqa: E402
 
 _USER_AGENT = (
@@ -75,6 +78,34 @@ def clubs_without_logos() -> list[dict[str, Any]]:
     )
 
 
+def engage_organization(client: httpx.Client, page_url: str) -> dict[str, Any] | None:
+    """An Engage club page's public organization record, or None for other pages."""
+    parts = urlsplit(page_url)
+    match = _ENGAGE_PATH.match(parts.path)
+    if not match:
+        return None
+    response = client.get(
+        f"{parts.scheme}://{parts.netloc}/api/discovery/organization/bykey/{match.group(1)}"
+    )
+    if response.status_code != 200 or "json" not in response.headers.get("content-type", ""):
+        return None
+    data = response.json()
+    return data if isinstance(data, dict) else None
+
+
+def directory_instagram(client: httpx.Client, page_url: str) -> str | None:
+    """The Instagram handle an Engage club page lists, or None."""
+    try:
+        organization = engage_organization(client, page_url) or {}
+    except (httpx.HTTPError, ValueError):
+        return None
+    url = str((organization.get("socialMedia") or {}).get("InstagramUrl") or "")
+    parts = urlsplit(url)
+    if (parts.hostname or "").lower().removeprefix("www.") != "instagram.com":
+        return None
+    return normalize_handle(parts.path.strip("/").split("/", 1)[0])
+
+
 def directory_logo(client: httpx.Client, page_url: str) -> str | None:
     """The club logo a directory page publishes, or None."""
     parts = urlsplit(page_url)
@@ -84,13 +115,9 @@ def directory_logo(client: httpx.Client, page_url: str) -> str | None:
         if host == "pennclubs.com" and (match := _PENN_PATH.match(parts.path)):
             data = client.get(f"{origin}/api/clubs/{match.group(1)}/").json()
             return data.get("image_url") or None
-        if match := _ENGAGE_PATH.match(parts.path):
-            response = client.get(f"{origin}/api/discovery/organization/bykey/{match.group(1)}")
-            if response.status_code != 200 or "json" not in response.headers.get(
-                "content-type", ""
-            ):
-                return None
-            picture = response.json().get("profilePicture")
+        if _ENGAGE_PATH.match(parts.path):
+            organization = engage_organization(client, page_url) or {}
+            picture = organization.get("profilePicture")
             return f"{_ENGAGE_IMAGES}{picture}?preset=med-sq" if picture else None
         response = client.get(page_url)
         if response.status_code != 200:
@@ -108,19 +135,40 @@ def without_shared_defaults(found: dict[int, str]) -> dict[int, str]:
     return {club_id: url for club_id, url in found.items() if counts[url] < SHARED_DEFAULT_COUNT}
 
 
-def find_logos(clubs: list[dict[str, Any]], *, delay: float) -> dict[int, str]:
+def find_logos(
+    clubs: list[dict[str, Any]], *, delay: float
+) -> tuple[dict[int, str], dict[int, str]]:
+    """Each club's directory logo, and the Instagram handles of those without one."""
     found: dict[int, str] = {}
+    handles: dict[int, str] = {}
     with httpx.Client(
         timeout=20, follow_redirects=True, headers={"User-Agent": _USER_AGENT}
     ) as client:
         for index, club in enumerate(clubs, 1):
-            logo = directory_logo(client, str(club["club_page"]))
+            page_url = str(club["club_page"])
+            logo = directory_logo(client, page_url)
             if logo:
                 found[int(club["id"])] = logo
+            if handle := directory_instagram(client, page_url):
+                handles[int(club["id"])] = handle
             if index % 50 == 0:
-                print(f"  read {index}/{len(clubs)} pages, {len(found)} logos so far")
+                print(
+                    f"  read {index}/{len(clubs)} pages, {len(found)} logos and "
+                    f"{len(handles)} Instagram handles so far"
+                )
             time.sleep(delay)
-    return without_shared_defaults(found)
+    logos = without_shared_defaults(found)
+    # Including a club whose only logo was the school's default.
+    return logos, {club_id: h for club_id, h in handles.items() if club_id not in logos}
+
+
+def store_handles(handles: dict[int, str]) -> int:
+    """Save each handle; the ingestion processor then reads its picture as the logo."""
+    return sum(
+        1
+        for club_id, handle in handles.items()
+        if club_service.update_club(club_id, ClubUpdate(ig=handle))
+    )
 
 
 def store_logos(logos: dict[int, str]) -> tuple[int, int]:
@@ -146,16 +194,17 @@ def main() -> int:
 
     clubs = clubs_without_logos()[: args.limit]
     print(f"{len(clubs)} clubs with a directory page and no logo or Instagram handle")
-    logos = find_logos(clubs, delay=args.delay)
+    logos, handles = find_logos(clubs, delay=args.delay)
     hosts = Counter(
         urlsplit(str(club["club_page"])).hostname for club in clubs if int(club["id"]) in logos
     )
     print(f"{len(logos)} logos found: {dict(hosts.most_common())}")
+    print(f"{len(handles)} Instagram handles found on clubs without a directory logo")
     if not args.apply:
         print("Dry run only. Re-run with --apply to upload logos and update clubs.")
         return 0
     updated, failed = store_logos(logos)
-    print(f"updated {updated}, failed {failed}")
+    print(f"updated {updated}, failed {failed}, {store_handles(handles)} handles saved")
     return 0
 
 
