@@ -6,9 +6,9 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::api::errors::ApiError;
+use crate::api::json;
 use crate::api::messages::INVALID_STATUS_TRANSITION;
 use crate::api::pagination::Pagination;
-use crate::api::pyjson::PyDateTime;
 use crate::db::read_with_retry;
 
 /// `ReportResponse`.
@@ -21,8 +21,10 @@ pub struct Report {
     pub user_id: Option<String>,
     pub reason: String,
     pub status: String,
-    pub reported_at: PyDateTime,
-    pub resolved_at: Option<PyDateTime>,
+    #[serde(serialize_with = "json::datetime")]
+    pub reported_at: DateTime<Utc>,
+    #[serde(serialize_with = "json::option_datetime")]
+    pub resolved_at: Option<DateTime<Utc>>,
 }
 
 type ReportRow = (
@@ -57,8 +59,8 @@ fn report(
         user_id,
         reason,
         status,
-        reported_at: reported_at.into(),
-        resolved_at: resolved_at.map(Into::into),
+        reported_at,
+        resolved_at,
     })
 }
 

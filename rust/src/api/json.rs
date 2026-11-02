@@ -172,6 +172,29 @@ pub fn option_float<S: Serializer>(value: &Option<f64>, serializer: S) -> Result
     }
 }
 
+/// A fixed-size float array (`tuple[float, float]`) as pydantic writes it.
+pub fn option_float_array<S: Serializer, const N: usize>(
+    value: &Option<[f64; N]>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    struct Element(f64);
+    impl Serialize for Element {
+        fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+            float(&self.0, serializer)
+        }
+    }
+    match value {
+        Some(values) => {
+            let mut seq = serializer.serialize_seq(Some(N))?;
+            for value in values {
+                seq.serialize_element(&Element(*value))?;
+            }
+            seq.end()
+        }
+        None => serializer.serialize_none(),
+    }
+}
+
 /// A JSON value (a `jsonb` column) inside a response model, as pydantic
 /// re-serializes what PostgREST returned: floats in pydantic's format,
 /// everything else unchanged.
@@ -236,11 +259,57 @@ impl serde::Serialize for StyledValue<'_> {
 /// (`", "` and `": "`), as Python measures a value's encoded size.
 pub fn python_dumps(value: &Value) -> String {
     let mut out = String::new();
-    dump(value, &mut out);
+    dump(value, &mut out, Dumps::DEFAULT);
     out
 }
 
-fn dump(value: &Value, out: &mut String) {
+/// `json.dumps(value, separators=(",", ":"))`: compact, with non-ASCII
+/// characters escaped (`ensure_ascii`), as a metadata size limit measures it.
+pub fn python_dumps_compact(value: &Value) -> String {
+    let mut out = String::new();
+    dump(value, &mut out, Dumps::COMPACT_ASCII);
+    out
+}
+
+#[derive(Clone, Copy)]
+struct Dumps {
+    item_separator: &'static str,
+    key_separator: &'static str,
+    ascii: bool,
+}
+
+impl Dumps {
+    const DEFAULT: Self = Self {
+        item_separator: ", ",
+        key_separator: ": ",
+        ascii: false,
+    };
+    const COMPACT_ASCII: Self = Self {
+        item_separator: ",",
+        key_separator: ":",
+        ascii: true,
+    };
+}
+
+fn dump_string(text: &str, out: &mut String, style: Dumps) {
+    let quoted = serde_json::to_string(text).expect("string serializes");
+    if !style.ascii {
+        out.push_str(&quoted);
+        return;
+    }
+    for character in quoted.chars() {
+        if character.is_ascii() {
+            out.push(character);
+        } else {
+            let mut units = [0u16; 2];
+            for unit in character.encode_utf16(&mut units) {
+                let _ = write!(out, "\\u{unit:04x}");
+            }
+        }
+    }
+}
+
+fn dump(value: &Value, out: &mut String, style: Dumps) {
     match value {
         Value::Null => out.push_str("null"),
         Value::Bool(flag) => out.push_str(if *flag { "true" } else { "false" }),
@@ -251,16 +320,14 @@ fn dump(value: &Value, out: &mut String) {
                 out.push_str(&number.to_string());
             }
         }
-        Value::String(text) => {
-            out.push_str(&serde_json::to_string(text).expect("string serializes"));
-        }
+        Value::String(text) => dump_string(text, out, style),
         Value::Array(items) => {
             out.push('[');
             for (index, item) in items.iter().enumerate() {
                 if index > 0 {
-                    out.push_str(", ");
+                    out.push_str(style.item_separator);
                 }
-                dump(item, out);
+                dump(item, out, style);
             }
             out.push(']');
         }
@@ -268,11 +335,11 @@ fn dump(value: &Value, out: &mut String) {
             out.push('{');
             for (index, (key, item)) in entries.iter().enumerate() {
                 if index > 0 {
-                    out.push_str(", ");
+                    out.push_str(style.item_separator);
                 }
-                out.push_str(&serde_json::to_string(key).expect("string serializes"));
-                out.push_str(": ");
-                dump(item, out);
+                dump_string(key, out, style);
+                out.push_str(style.key_separator);
+                dump(item, out, style);
             }
             out.push('}');
         }

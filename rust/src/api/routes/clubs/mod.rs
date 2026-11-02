@@ -1055,7 +1055,7 @@ pub async fn update_club(
 }
 
 fn merge_err(check: Validator, error: ApiError) -> ApiError {
-    merge_issues(check, Err(error)).expect_err("an error stays an error")
+    merge_issues::<()>(check, Err(error)).expect_err("an error stays an error")
 }
 
 /// One bound value of a dynamic statement.

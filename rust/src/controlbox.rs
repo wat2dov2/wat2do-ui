@@ -269,7 +269,8 @@ pub struct ClubManagement {
     pub directory_page_size: u32,
     pub invite_expiration_days: i64,
     pub initial_render_count: u32,
-    /// Python's cache of a school's clubs for name lookups; Rust reads fresh.
+    /// Python's cache of a school's clubs for name lookups; the events routes
+    /// also reuse school lookups and directory logos this long.
     pub school_lookup_cache_seconds: f64,
 }
 

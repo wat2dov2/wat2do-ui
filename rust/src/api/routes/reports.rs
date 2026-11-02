@@ -3,19 +3,20 @@
 
 use std::sync::LazyLock;
 
+use axum::Json;
 use axum::body::Bytes;
-use axum::extract::State;
+use axum::extract::{FromRequestParts, Request, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 
 use crate::api::AppState;
 use crate::api::auth::{AdminUser, OptionalUser, find_user};
+use crate::api::body::{Body, Extra, check_json_syntax, json_first, merge_issues};
 use crate::api::client_ip::Peer;
 use crate::api::errors::ApiError;
-use crate::api::events::{body, reports, store, writes};
+use crate::api::events::{reports, requests, store, writes};
 use crate::api::messages::{EVENT_NOT_FOUND, REPORT_NOT_FOUND, USER_NOT_FOUND};
 use crate::api::pagination::{Paginated, Pagination};
-use crate::api::pyjson::{PyJson, ok};
 use crate::api::rate_limit::RateLimiter;
 use crate::api::validation::{Length, PathParams, QueryParams, Validator};
 use crate::constants::{MAX_SCHOOL_LENGTH, MAX_SEARCH_QUERY_LENGTH, MAX_STATUS_FILTER_LENGTH};
@@ -40,10 +41,14 @@ pub async fn create_report(
     headers: HeaderMap,
     bytes: Bytes,
 ) -> Result<Response, ApiError> {
+    // FastAPI decodes the body before its dependencies, the limiter included.
+    check_json_syntax(&bytes, &headers)?;
     let peer = peer.map(|axum::Extension(Peer(peer))| peer);
     CREATE_LIMITER.check(&state.trust.client_ip(peer.as_deref(), &headers))?;
-    let value = body::decode(&headers, &bytes)?;
-    let (event_id, reason) = body::report_create(&value, MAX_REPORT_REASON_LENGTH)?;
+    let (event_id, reason) = requests::report_create(
+        Body::parse(&bytes, &headers, Extra::Forbid)?,
+        MAX_REPORT_REASON_LENGTH,
+    )?;
     let user_id = match auth_user {
         Some(auth_user) => Some(
             find_user(&state.db, &auth_user.id)
@@ -58,7 +63,7 @@ pub async fn create_report(
         return Err(ApiError::not_found(EVENT_NOT_FOUND));
     }
     let report = reports::create(&state.db, user_id, event_id, &reason).await?;
-    Ok(PyJson(StatusCode::CREATED, report).into_response())
+    Ok((StatusCode::CREATED, Json(report)).into_response())
 }
 
 #[utoipa::path(
@@ -93,7 +98,7 @@ pub async fn list_reports(
         school.as_deref(),
     )
     .await?;
-    Ok(ok(Paginated::new(items, total, pagination)))
+    Ok(Json(Paginated::new(items, total, pagination)).into_response())
 }
 
 #[utoipa::path(
@@ -105,17 +110,19 @@ pub async fn list_reports(
 )]
 pub async fn update_report(
     State(state): State<AppState>,
-    AdminUser(_): AdminUser,
-    path: PathParams,
-    headers: HeaderMap,
-    bytes: Bytes,
+    request: Request,
 ) -> Result<Response, ApiError> {
+    let (mut parts, bytes) = json_first(request).await?;
+    AdminUser::from_request_parts(&mut parts, &state).await?;
+    let path = PathParams::from_request_parts(&mut parts, &state).await?;
     let mut check = Validator::default();
     let report_id = check.path(&path, "report_id").string(Length::default());
-    let status = body::validate_into(&mut check, &headers, &bytes, body::report_update)?;
-    check.finish()?;
-    let report = reports::update(&state.db, &report_id, status.unwrap_or("pending"))
+    let status = merge_issues(
+        check,
+        Body::parse(&bytes, &parts.headers, Extra::Forbid).and_then(requests::report_update),
+    )?;
+    let report = reports::update(&state.db, &report_id, &status)
         .await?
         .ok_or_else(|| ApiError::not_found(REPORT_NOT_FOUND))?;
-    Ok(ok(report))
+    Ok(Json(report).into_response())
 }

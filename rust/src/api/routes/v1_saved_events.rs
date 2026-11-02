@@ -1,7 +1,8 @@
 //! `/v1/saved-events`: V1 saved events (`routers/v1_saved_events.py`).
 
+use axum::Json;
 use axum::extract::State;
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use serde_json::json;
 
 use crate::api::AppState;
@@ -9,7 +10,6 @@ use crate::api::auth::DbUser;
 use crate::api::errors::ApiError;
 use crate::api::events::{going, store, writes};
 use crate::api::messages::EVENT_NOT_FOUND;
-use crate::api::pyjson::ok;
 use crate::api::validation::{PathParams, Validator};
 
 #[utoipa::path(
@@ -23,7 +23,7 @@ pub async fn list_saved_events(
     State(state): State<AppState>,
     DbUser(user): DbUser,
 ) -> Result<Response, ApiError> {
-    Ok(ok(going::saved_event_ids(&state.db, user.id).await?))
+    Ok(Json(going::saved_event_ids(&state.db, user.id).await?).into_response())
 }
 
 #[utoipa::path(
@@ -46,7 +46,7 @@ pub async fn save_event(
         return Err(ApiError::not_found(EVENT_NOT_FOUND));
     }
     going::save_event(&state.db, user.id, id).await?;
-    Ok(ok(json!({"status": "saved"})))
+    Ok(Json(json!({"status": "saved"})).into_response())
 }
 
 #[utoipa::path(
@@ -65,5 +65,5 @@ pub async fn unsave_event(
     let id = check.path(&path, "event_id").unbounded_int();
     check.finish()?;
     going::unsave_event(&state.db, user.id, writes::int4(id)?).await?;
-    Ok(ok(json!({"status": "unsaved"})))
+    Ok(Json(json!({"status": "unsaved"})).into_response())
 }

@@ -30,8 +30,11 @@ use crate::text::{casefold, python_strip};
 pub const POSTGREST_MAX_ROWS: i64 = 1000;
 /// `event_date_service` and `_load_event_rows_by_ids` batch ids by 500.
 const ID_BATCH: usize = 500;
-/// Python caches school lookups for the process (`lru_cache`); Rust refreshes them.
-const SCHOOL_CACHE_SECONDS: u64 = 300;
+/// How long school lookups, directory sources and directory logos are
+/// reused (Python cached them for the process; Rust refreshes them).
+fn lookup_ttl() -> Duration {
+    Duration::from_secs_f64(crate::controlbox::CLUB_MANAGEMENT.school_lookup_cache_seconds)
+}
 
 // ── Schools (the lookups `school_service` and `school_context` make) ───────
 
@@ -55,7 +58,7 @@ async fn cached_school(
     by_name: bool,
     key: String,
 ) -> Result<Option<School>, ApiError> {
-    let ttl = Duration::from_secs(SCHOOL_CACHE_SECONDS);
+    let ttl = lookup_ttl();
     if let Some((at, school)) = SCHOOLS
         .lock()
         .expect("school cache")
@@ -65,8 +68,7 @@ async fn cached_school(
         return Ok(Some(school.clone()));
     }
     let school = if by_name {
-        // PostgREST's `ilike`: `*` is a wildcard too.
-        let pattern = key.replace('*', "%");
+        let pattern = key.clone();
         read_with_retry(|| {
             sqlx::query_as::<_, School>(
                 "SELECT id::int8 AS id, slug, timezone FROM public.schools WHERE name ILIKE $1 LIMIT 1",
@@ -100,7 +102,7 @@ async fn cached_school(
 
 /// `school_service.get_school`: by slug (stripped, lower-cased).
 pub async fn school_by_slug(db: &PgPool, value: &str) -> Result<Option<School>, ApiError> {
-    let slug = python_strip(value).to_lowercase();
+    let slug = crate::schools::normalize_slug(value);
     if slug.is_empty() {
         return Ok(None);
     }
@@ -112,11 +114,10 @@ pub async fn school_id(db: &PgPool, value: &str) -> Result<Option<i64>, ApiError
     if let Some(school) = school_by_slug(db, value).await? {
         return Ok(Some(school.id));
     }
-    let name = python_strip(value);
-    if name.is_empty() {
+    let Some(pattern) = crate::schools::name_pattern(value) else {
         return Ok(None);
-    }
-    Ok(cached_school(db, true, name.to_owned())
+    };
+    Ok(cached_school(db, true, pattern)
         .await?
         .map(|school| school.id))
 }
@@ -420,7 +421,7 @@ type LogoCache = Mutex<HashMap<(String, String), (Instant, Option<String>)>>;
 static HANDLE_LOGOS: LazyLock<LogoCache> = LazyLock::new(|| Mutex::new(HashMap::new()));
 
 async fn directory_sources(db: &PgPool) -> Result<Vec<DirectorySource>, ApiError> {
-    let ttl = Duration::from_secs(SCHOOL_CACHE_SECONDS);
+    let ttl = lookup_ttl();
     if let Some((at, sources)) = DIRECTORY_SOURCES.lock().expect("source cache").as_ref()
         && at.elapsed() < ttl
     {
@@ -525,7 +526,7 @@ async fn club_logo_by_handle(
     handle: &str,
 ) -> Result<Option<String>, ApiError> {
     let key = (slug.to_owned(), handle.to_owned());
-    let ttl = Duration::from_secs(SCHOOL_CACHE_SECONDS);
+    let ttl = lookup_ttl();
     if let Some((at, logo)) = HANDLE_LOGOS.lock().expect("logo cache").get(&key)
         && at.elapsed() < ttl
     {
@@ -585,7 +586,8 @@ pub struct FeedPage {
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct LatestAdded {
     pub title: String,
-    pub added_at: crate::api::pyjson::PyDateTime,
+    #[serde(serialize_with = "crate::api::json::datetime")]
+    pub added_at: DateTime<Utc>,
     pub club_name: Option<String>,
     pub club_logo_url: Option<String>,
 }
@@ -631,7 +633,7 @@ fn parse_latest(value: Option<serde_json::Value>) -> Result<Option<LatestAdded>,
         .map_err(|error| ApiError::Internal(anyhow::anyhow!("latest event JSON: {error}")))?;
     Ok(Some(LatestAdded {
         title: latest.title,
-        added_at: from_micros(latest.added_at)?.into(),
+        added_at: from_micros(latest.added_at)?,
         club_name: latest.club_name,
         club_logo_url: latest.club_logo_url,
     }))

@@ -8,8 +8,8 @@
 use serde_json::{Value, json};
 use sqlx::PgPool;
 
-use super::body::{EventInput, OccurrenceInput};
 use super::model::Event;
+use super::requests::{EventInput, OccurrenceInput};
 use super::store;
 use crate::api::auth::User;
 use crate::api::errors::ApiError;

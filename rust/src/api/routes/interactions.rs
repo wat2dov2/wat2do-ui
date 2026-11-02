@@ -3,6 +3,7 @@
 
 use std::sync::LazyLock;
 
+use axum::Json;
 use axum::body::Bytes;
 use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode};
@@ -11,11 +12,11 @@ use serde_json::json;
 
 use crate::api::AppState;
 use crate::api::auth::{OptionalUser, find_user};
+use crate::api::body::{Body, Extra};
 use crate::api::client_ip::Peer;
 use crate::api::errors::ApiError;
-use crate::api::events::{body, interactions};
+use crate::api::events::{interactions, requests};
 use crate::api::messages::USER_NOT_FOUND;
-use crate::api::pyjson::PyJson;
 use crate::api::rate_limit::RateLimiter;
 use crate::controlbox::{INTERACTION_INGESTION, RATE_LIMITS, RateLimit};
 
@@ -44,9 +45,8 @@ pub async fn record_interactions(
     headers: HeaderMap,
     bytes: Bytes,
 ) -> Result<Response, ApiError> {
-    let value = body::decode(&headers, &bytes)?;
-    let batch = body::interaction_batch(
-        &value,
+    let batch = requests::interaction_batch(
+        Body::parse(&bytes, &headers, Extra::Forbid)?,
         INTERACTION_INGESTION.maximum_batch_size,
         INTERACTION_INGESTION.maximum_metadata_bytes,
     )?;
@@ -74,5 +74,5 @@ pub async fn record_interactions(
         batch.interactions,
     )
     .await?;
-    Ok(PyJson(StatusCode::ACCEPTED, json!({ "recorded": recorded })).into_response())
+    Ok((StatusCode::ACCEPTED, Json(json!({ "recorded": recorded }))).into_response())
 }

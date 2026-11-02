@@ -127,26 +127,62 @@ pub fn expected_choices(choices: &[&str]) -> String {
     }
 }
 
-/// A request body object being validated.
+/// A request body object being validated: the request model, or (with a
+/// longer `prefix`) a model nested inside it, such as one item of a list.
 pub struct Body {
     object: Map<String, Value>,
     extra: Extra,
     known: Vec<&'static str>,
     issues: Vec<ValidationIssue>,
+    /// Where this object sits: `["body"]`, or `["body", "items", 0]`.
+    prefix: Vec<Value>,
+    extras_checked: bool,
 }
 
 impl Body {
     /// Parse the body, failing at once (as FastAPI does) when it is empty,
     /// not JSON or not an object.
     pub fn parse(bytes: &[u8], headers: &HeaderMap, extra: Extra) -> Result<Self, ApiError> {
-        let object: Map<String, Value> =
-            parse_json_body(bytes, super::validation::json_content_type(headers))?;
-        Ok(Self {
-            object,
-            extra,
-            known: Vec::new(),
-            issues: Vec::new(),
-        })
+        let value: Value = parse_json_body(bytes, super::validation::json_content_type(headers))?;
+        Self::from_json(value, extra)
+    }
+
+    /// A decoded body: `null` is a missing body, as in FastAPI, and anything
+    /// but an object is refused at once.
+    pub fn from_json(value: Value, extra: Extra) -> Result<Self, ApiError> {
+        if value.is_null() {
+            return Err(ApiError::RequestValidation(vec![ValidationIssue::missing(
+                vec![json!("body")],
+                Value::Null,
+            )]));
+        }
+        Self::nested(value, vec![json!("body")], extra)
+            .map_err(|issue| ApiError::RequestValidation(vec![*issue]))
+    }
+
+    /// A nested model at `prefix`, or pydantic's `model_attributes_type`
+    /// when `value` is not an object.
+    pub fn nested(
+        value: Value,
+        prefix: Vec<Value>,
+        extra: Extra,
+    ) -> Result<Self, Box<ValidationIssue>> {
+        match value {
+            Value::Object(object) => Ok(Self {
+                object,
+                extra,
+                known: Vec::new(),
+                issues: Vec::new(),
+                prefix,
+                extras_checked: false,
+            }),
+            other => Err(Box::new(ValidationIssue::new(
+                "model_attributes_type",
+                prefix,
+                "Input should be a valid dictionary or object to extract fields from",
+                other,
+            ))),
+        }
     }
 
     #[cfg(test)]
@@ -156,11 +192,26 @@ impl Body {
             extra,
             known: Vec::new(),
             issues: Vec::new(),
+            prefix: vec![json!("body")],
+            extras_checked: false,
         }
     }
 
-    fn loc(name: &str) -> Vec<Value> {
-        vec![json!("body"), json!(name)]
+    /// A field's location, as pydantic reports it.
+    pub fn loc(&self, name: &str) -> Vec<Value> {
+        let mut loc = self.prefix.clone();
+        loc.push(json!(name));
+        loc
+    }
+
+    /// This object's own location (where a model validator reports).
+    pub fn model_loc(&self) -> Vec<Value> {
+        self.prefix.clone()
+    }
+
+    /// The object as sent (a model validator's `input`).
+    pub fn input(&self) -> Value {
+        Value::Object(self.object.clone())
     }
 
     fn take(&mut self, name: &'static str) -> Input<Value> {
@@ -187,7 +238,7 @@ impl Body {
 
     /// A required field that was not sent.
     pub fn missing(&mut self, name: &str) {
-        let issue = ValidationIssue::missing(Self::loc(name), Value::Object(self.object.clone()));
+        let issue = ValidationIssue::missing(self.loc(name), self.input());
         self.issues.push(issue);
     }
 
@@ -204,7 +255,7 @@ impl Body {
 
     /// `value_error` at a top-level field.
     pub fn field_error(&mut self, name: &str, input: Value, message: &str) {
-        self.value_error(Self::loc(name), input, message);
+        self.value_error(self.loc(name), input, message);
     }
 
     /// Check one string against `rules`, reporting at `loc`.
@@ -293,7 +344,7 @@ impl Body {
     /// An optional string field.
     pub fn string(&mut self, name: &'static str, rules: &Str) -> Input<String> {
         match self.take(name) {
-            Input::Given(value) => match self.check_string(Self::loc(name), &value, rules) {
+            Input::Given(value) => match self.check_string(self.loc(name), &value, rules) {
                 Some(text) => Input::Given(text),
                 None => Input::Missing,
             },
@@ -305,9 +356,9 @@ impl Body {
     /// A required, non-null string field.
     pub fn required_string(&mut self, name: &'static str, rules: &Str) -> Option<String> {
         match self.take(name) {
-            Input::Given(value) => self.check_string(Self::loc(name), &value, rules),
+            Input::Given(value) => self.check_string(self.loc(name), &value, rules),
             Input::Null => {
-                self.check_string(Self::loc(name), &Value::Null, rules);
+                self.check_string(self.loc(name), &Value::Null, rules);
                 None
             }
             Input::Missing => {
@@ -332,7 +383,7 @@ impl Body {
             Value::Number(number) if !whole_i64(number) => {
                 self.issue(
                     "bool_type",
-                    Self::loc(name),
+                    self.loc(name),
                     "Input should be a valid boolean".into(),
                     value,
                     None,
@@ -348,7 +399,7 @@ impl Body {
             _ => {
                 self.issue(
                     "bool_type",
-                    Self::loc(name),
+                    self.loc(name),
                     "Input should be a valid boolean".into(),
                     value,
                     None,
@@ -361,7 +412,7 @@ impl Body {
             None => {
                 self.issue(
                     "bool_parsing",
-                    Self::loc(name),
+                    self.loc(name),
                     "Input should be a valid boolean, unable to interpret input".into(),
                     value,
                     None,
@@ -381,7 +432,7 @@ impl Body {
             Input::Null => return Input::Null,
             Input::Missing => return Input::Missing,
         };
-        let loc = Self::loc(name);
+        let loc = self.loc(name);
         let (kind, msg) = match &value {
             Value::Bool(flag) => return Input::Given(i64::from(*flag)),
             Value::Number(number) => {
@@ -435,7 +486,7 @@ impl Body {
             Input::Null => {
                 self.issue(
                     "bool_type",
-                    Self::loc(name),
+                    self.loc(name),
                     "Input should be a valid boolean".into(),
                     Value::Null,
                     None,
@@ -454,7 +505,7 @@ impl Body {
                 Err(error) => {
                     self.issue(
                         "uuid_parsing",
-                        Self::loc(name),
+                        self.loc(name),
                         format!("Input should be a valid UUID, {error}"),
                         json!(text),
                         Some(json!({"error": error.to_string()})),
@@ -480,7 +531,7 @@ impl Body {
     fn uuid_type(&mut self, name: &str, input: Value) {
         self.issue(
             "uuid_type",
-            Self::loc(name),
+            self.loc(name),
             "UUID input should be a string, bytes or UUID object".into(),
             input,
             None,
@@ -503,7 +554,7 @@ impl Body {
         let Value::Array(items) = &value else {
             self.issue(
                 "list_type",
-                Self::loc(name),
+                self.loc(name),
                 "Input should be a valid list".into(),
                 value.clone(),
                 None,
@@ -513,7 +564,7 @@ impl Body {
         if items.len() > max_items {
             self.issue(
                 "too_long",
-                Self::loc(name),
+                self.loc(name),
                 format!(
                     "List should have at most {max_items} items after validation, not {}",
                     items.len()
@@ -526,7 +577,7 @@ impl Body {
         let before = self.issues.len();
         let mut texts = Vec::with_capacity(items.len());
         for (index, entry) in items.iter().enumerate() {
-            let mut loc = Self::loc(name);
+            let mut loc = self.loc(name);
             loc.push(json!(index));
             if let Some(text) = self.check_string(loc, entry, item) {
                 texts.push(text);
@@ -536,6 +587,419 @@ impl Body {
             return Input::Missing;
         }
         Input::Given(texts)
+    }
+
+    /// Whether the field was sent (as a value or `null`).
+    pub fn has_field(&self, name: &str) -> bool {
+        self.object.contains_key(name)
+    }
+
+    /// A field's value as sent, without reading it.
+    pub fn raw_copy(&self, name: &str) -> Option<Value> {
+        self.object.get(name).cloned()
+    }
+
+    /// A type error at a field (`null` for a required, non-optional field).
+    pub fn type_error(&mut self, name: &str, kind: &str, message: &str) {
+        let input = self.raw_copy(name).unwrap_or(Value::Null);
+        self.issue(kind, self.loc(name), message.into(), input, None);
+    }
+
+    /// Another field's raw value, marking it known (for a custom validator).
+    pub fn raw(&mut self, name: &'static str) -> Input<Value> {
+        self.take(name)
+    }
+
+    /// A strict `bool | None` (`Field(strict=True)`): only JSON booleans.
+    pub fn strict_bool(&mut self, name: &'static str) -> Input<bool> {
+        match self.take(name) {
+            Input::Given(Value::Bool(flag)) => Input::Given(flag),
+            Input::Given(other) => {
+                self.issue(
+                    "bool_type",
+                    self.loc(name),
+                    "Input should be a valid boolean".into(),
+                    other,
+                    None,
+                );
+                Input::Missing
+            }
+            other => other.map(|_| false),
+        }
+    }
+
+    /// A lax `float` within `[ge, le]`, refusing NaN and infinities
+    /// (`allow_inf_nan=False`).
+    pub fn finite_float(&mut self, name: &'static str, ge: f64, le: f64) -> Input<f64> {
+        let value = match self.take(name) {
+            Input::Given(value) => value,
+            Input::Null => return Input::Null,
+            Input::Missing => return Input::Missing,
+        };
+        let loc = self.loc(name);
+        let parsed = match &value {
+            Value::Bool(flag) => f64::from(u8::from(*flag)),
+            Value::Number(number) => number.as_f64().unwrap_or(f64::INFINITY),
+            Value::String(text) => match super::validation::parse_python_float(text) {
+                Some(float) => float,
+                None => {
+                    self.issue(
+                        "float_parsing",
+                        loc,
+                        "Input should be a valid number, unable to parse string as a number".into(),
+                        value,
+                        None,
+                    );
+                    return Input::Missing;
+                }
+            },
+            _ => {
+                self.issue(
+                    "float_type",
+                    loc,
+                    "Input should be a valid number".into(),
+                    value,
+                    None,
+                );
+                return Input::Missing;
+            }
+        };
+        if !parsed.is_finite() {
+            self.issue(
+                "finite_number",
+                loc,
+                "Input should be a finite number".into(),
+                value,
+                None,
+            );
+            return Input::Missing;
+        }
+        if parsed < ge {
+            self.issue(
+                "greater_than_equal",
+                loc,
+                format!(
+                    "Input should be greater than or equal to {}",
+                    super::validation::bound_text(ge)
+                ),
+                value,
+                Some(json!({"ge": ge})),
+            );
+            return Input::Missing;
+        }
+        if parsed > le {
+            self.issue(
+                "less_than_equal",
+                loc,
+                format!(
+                    "Input should be less than or equal to {}",
+                    super::validation::bound_text(le)
+                ),
+                value,
+                Some(json!({"le": le})),
+            );
+            return Input::Missing;
+        }
+        Input::Given(parsed)
+    }
+
+    /// A lax `int` of any size with an optional `ge`: pydantic accepts
+    /// integers beyond 64 bits (`PyInt::Huge`), which Postgres then refuses.
+    pub fn unbounded_int(
+        &mut self,
+        name: &'static str,
+        ge: Option<i64>,
+    ) -> Input<super::validation::PyInt> {
+        use super::validation::PyInt;
+        let value = match self.take(name) {
+            Input::Given(value) => value,
+            Input::Null => return Input::Null,
+            Input::Missing => return Input::Missing,
+        };
+        let loc = self.loc(name);
+        let parsed = match &value {
+            Value::Bool(flag) => PyInt::Small(i64::from(*flag)),
+            Value::Number(number) => match number.as_i64() {
+                Some(integer) => PyInt::Small(integer),
+                None => {
+                    let float = number.as_f64().unwrap_or(f64::NAN);
+                    if float.fract() != 0.0 || !float.is_finite() {
+                        self.issue(
+                            "int_from_float",
+                            loc,
+                            "Input should be a valid integer, got a number with a fractional part"
+                                .into(),
+                            value,
+                            None,
+                        );
+                        return Input::Missing;
+                    }
+                    if float.abs() < 9.2e18 {
+                        PyInt::Small(float as i64)
+                    } else {
+                        PyInt::Huge
+                    }
+                }
+            },
+            Value::String(text) => match super::validation::parse_unbounded_int(text) {
+                Some(parsed) => parsed,
+                None => {
+                    self.issue(
+                        "int_parsing",
+                        loc,
+                        "Input should be a valid integer, unable to parse string as an integer"
+                            .into(),
+                        value,
+                        None,
+                    );
+                    return Input::Missing;
+                }
+            },
+            _ => {
+                self.issue(
+                    "int_type",
+                    loc,
+                    "Input should be a valid integer".into(),
+                    value,
+                    None,
+                );
+                return Input::Missing;
+            }
+        };
+        if let (PyInt::Small(integer), Some(bound)) = (parsed, ge)
+            && integer < bound
+        {
+            self.issue(
+                "greater_than_equal",
+                loc,
+                format!("Input should be greater than or equal to {bound}"),
+                value,
+                Some(json!({"ge": bound})),
+            );
+            return Input::Missing;
+        }
+        Input::Given(parsed)
+    }
+
+    /// An `AwareDatetime` (`| None`), normalized to UTC; a JSON number is a
+    /// Unix timestamp.
+    pub fn aware_datetime(&mut self, name: &'static str) -> Input<chrono::DateTime<chrono::Utc>> {
+        use super::validation::ParsedDatetime;
+        let value = match self.take(name) {
+            Input::Given(value) => value,
+            Input::Null => return Input::Null,
+            Input::Missing => return Input::Missing,
+        };
+        let loc = self.loc(name);
+        let (text, kind, prefix) = match &value {
+            Value::String(text) => (
+                text.clone(),
+                "datetime_from_date_parsing",
+                "Input should be a valid datetime or date",
+            ),
+            Value::Number(number) => (
+                number.to_string(),
+                "datetime_parsing",
+                "Input should be a valid datetime",
+            ),
+            _ => {
+                self.issue(
+                    "datetime_type",
+                    loc,
+                    "Input should be a valid datetime".into(),
+                    value,
+                    None,
+                );
+                return Input::Missing;
+            }
+        };
+        match super::validation::parse_datetime(&text) {
+            Ok(ParsedDatetime::Aware(at)) => Input::Given(at.with_timezone(&chrono::Utc)),
+            Ok(ParsedDatetime::Naive(_)) => {
+                self.issue(
+                    "timezone_aware",
+                    loc,
+                    "Input should have timezone info".into(),
+                    value,
+                    None,
+                );
+                Input::Missing
+            }
+            Err(error) => {
+                self.issue(
+                    kind,
+                    loc,
+                    format!("{prefix}, {error}"),
+                    value,
+                    Some(json!({"error": error})),
+                );
+                Input::Missing
+            }
+        }
+    }
+
+    /// A `UUID | None`.
+    pub fn uuid(&mut self, name: &'static str) -> Input<Uuid> {
+        match self.take(name) {
+            Input::Given(Value::String(text)) => match Uuid::parse_str(&text) {
+                Ok(id) => Input::Given(id),
+                Err(error) => {
+                    self.issue(
+                        "uuid_parsing",
+                        self.loc(name),
+                        format!("Input should be a valid UUID, {error}"),
+                        json!(text),
+                        Some(json!({"error": error.to_string()})),
+                    );
+                    Input::Missing
+                }
+            },
+            Input::Given(other) => {
+                self.uuid_type(name, other);
+                Input::Missing
+            }
+            other => other.map(|_| Uuid::nil()),
+        }
+    }
+
+    /// A `dict | None` field.
+    pub fn object(&mut self, name: &'static str) -> Input<Map<String, Value>> {
+        match self.take(name) {
+            Input::Given(Value::Object(entries)) => Input::Given(entries),
+            Input::Given(other) => {
+                self.dict_type(name, other);
+                Input::Missing
+            }
+            other => other.map(|_| Map::new()),
+        }
+    }
+
+    /// A list (`list[...]`) of `min..=max` items, each read by `item` at
+    /// `[name, index]`. As in pydantic, too many items is reported alone;
+    /// too few is reported once the items are valid.
+    pub fn list<T>(
+        &mut self,
+        name: &'static str,
+        min: usize,
+        max: usize,
+        mut item: impl FnMut(&mut Self, Vec<Value>, Value) -> Option<T>,
+    ) -> Input<Vec<T>> {
+        let value = match self.take(name) {
+            Input::Given(value) => value,
+            Input::Null => return Input::Null,
+            Input::Missing => return Input::Missing,
+        };
+        let loc = self.loc(name);
+        let Value::Array(items) = &value else {
+            self.issue(
+                "list_type",
+                loc,
+                "Input should be a valid list".into(),
+                value,
+                None,
+            );
+            return Input::Missing;
+        };
+        let plural = |count: usize| if count == 1 { "item" } else { "items" };
+        if items.len() > max {
+            self.issue(
+                "too_long",
+                loc,
+                format!(
+                    "List should have at most {max} {} after validation, not {}",
+                    plural(max),
+                    items.len()
+                ),
+                value.clone(),
+                Some(
+                    json!({"field_type": "List", "max_length": max, "actual_length": items.len()}),
+                ),
+            );
+            return Input::Missing;
+        }
+        let before = self.issues.len();
+        let mut parsed = Vec::with_capacity(items.len());
+        for (index, entry) in items.iter().enumerate() {
+            let mut at = loc.clone();
+            at.push(json!(index));
+            if let Some(value) = item(self, at, entry.clone()) {
+                parsed.push(value);
+            }
+        }
+        if self.issues.len() > before {
+            return Input::Missing;
+        }
+        if items.len() < min {
+            self.issue(
+                "too_short",
+                loc,
+                format!(
+                    "List should have at least {min} {} after validation, not {}",
+                    plural(min),
+                    items.len()
+                ),
+                value.clone(),
+                Some(
+                    json!({"field_type": "List", "min_length": min, "actual_length": items.len()}),
+                ),
+            );
+            return Input::Missing;
+        }
+        Input::Given(parsed)
+    }
+
+    /// One nested model in a list: `read` gets its own `Body` at `loc`,
+    /// whose problems join this one's.
+    pub fn nested_item<T>(
+        &mut self,
+        loc: Vec<Value>,
+        value: Value,
+        extra: Extra,
+        read: impl FnOnce(&mut Self) -> Option<T>,
+    ) -> Option<T> {
+        match Self::nested(value, loc, extra) {
+            Err(issue) => {
+                self.issues.push(*issue);
+                None
+            }
+            Ok(mut child) => {
+                let result = read(&mut child);
+                self.issues.extend(child.into_issues());
+                result
+            }
+        }
+    }
+
+    /// One string list item checked against `rules`.
+    pub fn string_item(&mut self, loc: Vec<Value>, value: &Value, rules: &Str) -> Option<String> {
+        self.check_string(loc, value, rules)
+    }
+
+    /// One UUID list item.
+    pub fn uuid_item(&mut self, loc: Vec<Value>, value: Value) -> Option<Uuid> {
+        let Value::String(text) = &value else {
+            self.issue(
+                "uuid_type",
+                loc,
+                "UUID input should be a string, bytes or UUID object".into(),
+                value,
+                None,
+            );
+            return None;
+        };
+        match Uuid::parse_str(text) {
+            Ok(id) => Some(id),
+            Err(error) => {
+                self.issue(
+                    "uuid_parsing",
+                    loc,
+                    format!("Input should be a valid UUID, {error}"),
+                    value.clone(),
+                    Some(json!({"error": error.to_string()})),
+                );
+                None
+            }
+        }
     }
 
     /// A required JSON object field (`dict[str, Any]`); with `strip_keys`, keys
@@ -572,7 +1036,7 @@ impl Body {
     fn dict_type(&mut self, name: &str, input: Value) {
         self.issue(
             "dict_type",
-            Self::loc(name),
+            self.loc(name),
             "Input should be a valid dictionary".into(),
             input,
             None,
@@ -587,7 +1051,7 @@ impl Body {
                 Err(reason) => {
                     self.issue(
                         "value_error",
-                        Self::loc(name),
+                        self.loc(name),
                         format!("value is not a valid email address: {reason}"),
                         json!(text),
                         Some(json!({"reason": reason})),
@@ -596,7 +1060,7 @@ impl Body {
                 }
             },
             Input::Given(other) => {
-                self.check_string(Self::loc(name), &other, &Str::new());
+                self.check_string(self.loc(name), &other, &Str::new());
                 Input::Missing
             }
             Input::Null => Input::Null,
@@ -617,7 +1081,7 @@ impl Body {
             Input::Given(other) => {
                 self.issue(
                     "url_type",
-                    Self::loc(name),
+                    self.loc(name),
                     "URL input should be a string or URL".into(),
                     other,
                     None,
@@ -627,7 +1091,7 @@ impl Body {
             Input::Null => {
                 self.issue(
                     "url_type",
-                    Self::loc(name),
+                    self.loc(name),
                     "URL input should be a string or URL".into(),
                     Value::Null,
                     None,
@@ -643,7 +1107,7 @@ impl Body {
         if text.chars().count() > MAX_URL_LENGTH {
             self.issue(
                 "url_too_long",
-                Self::loc(name),
+                self.loc(name),
                 format!("URL should have at most {MAX_URL_LENGTH} characters"),
                 json!(raw),
                 Some(json!({"max_length": MAX_URL_LENGTH})),
@@ -654,7 +1118,7 @@ impl Body {
             Err(error) => {
                 self.issue(
                     "url_parsing",
-                    Self::loc(name),
+                    self.loc(name),
                     format!("Input should be a valid URL, {error}"),
                     json!(raw),
                     Some(json!({"error": error.to_string()})),
@@ -664,7 +1128,7 @@ impl Body {
             Ok(url) if !matches!(url.scheme(), "http" | "https") => {
                 self.issue(
                     "url_scheme",
-                    Self::loc(name),
+                    self.loc(name),
                     "URL scheme should be 'http' or 'https'".into(),
                     json!(raw),
                     Some(json!({"expected_schemes": "'http' or 'https'"})),
@@ -675,30 +1139,49 @@ impl Body {
         }
     }
 
+    /// Report the unknown keys of an `extra="forbid"` model (once). pydantic
+    /// reports them after the fields, before any model validator runs.
+    pub fn check_extras(&mut self) {
+        if self.extras_checked || self.extra != Extra::Forbid {
+            return;
+        }
+        self.extras_checked = true;
+        let unknown: Vec<(String, Value)> = self
+            .object
+            .iter()
+            .filter(|(key, _)| !self.known.contains(&key.as_str()))
+            .map(|(key, value)| (key.clone(), value.clone()))
+            .collect();
+        for (key, value) in unknown {
+            self.issue(
+                "extra_forbidden",
+                self.loc(&key),
+                "Extra inputs are not permitted".into(),
+                value,
+                None,
+            );
+        }
+    }
+
+    /// Whether any problem has been found so far.
+    pub fn has_issues(&self) -> bool {
+        !self.issues.is_empty()
+    }
+
+    /// Every problem found, unknown keys included.
+    pub fn into_issues(mut self) -> Vec<ValidationIssue> {
+        self.check_extras();
+        self.issues
+    }
+
     /// Fail with every problem found, after reporting unknown keys of a
     /// `extra="forbid"` model.
-    pub fn finish(mut self) -> Result<(), ApiError> {
-        if self.extra == Extra::Forbid {
-            let unknown: Vec<(String, Value)> = self
-                .object
-                .iter()
-                .filter(|(key, _)| !self.known.contains(&key.as_str()))
-                .map(|(key, value)| (key.clone(), value.clone()))
-                .collect();
-            for (key, value) in unknown {
-                self.issue(
-                    "extra_forbidden",
-                    Self::loc(&key),
-                    "Extra inputs are not permitted".into(),
-                    value,
-                    None,
-                );
-            }
-        }
-        if self.issues.is_empty() {
+    pub fn finish(self) -> Result<(), ApiError> {
+        let issues = self.into_issues();
+        if issues.is_empty() {
             Ok(())
         } else {
-            Err(ApiError::RequestValidation(self.issues))
+            Err(ApiError::RequestValidation(issues))
         }
     }
 }
@@ -716,6 +1199,20 @@ fn whole_i64(number: &serde_json::Number) -> bool {
         .is_some_and(|float| float.fract() == 0.0 && float.abs() < 9_223_372_036_854_775_808.0)
 }
 
+/// A request whose body is read and JSON-checked before its extractors run,
+/// as FastAPI decodes a body before it resolves dependencies (malformed JSON
+/// is a 422 even without a token). Extract from `parts` afterwards.
+pub async fn json_first(
+    request: axum::extract::Request,
+) -> Result<(axum::http::request::Parts, axum::body::Bytes), ApiError> {
+    let (parts, body) = request.into_parts();
+    let bytes = axum::body::to_bytes(body, usize::MAX)
+        .await
+        .map_err(|error| ApiError::Internal(anyhow::anyhow!("request body: {error}")))?;
+    check_json_syntax(&bytes, &parts.headers)?;
+    Ok((parts, bytes))
+}
+
 /// FastAPI decodes a JSON body before it runs a route's dependencies, so
 /// malformed JSON is a 422 before (for example) a rate limit is counted;
 /// the body's other problems are reported after them.
@@ -731,10 +1228,10 @@ pub fn check_json_syntax(bytes: &[u8], headers: &HeaderMap) -> Result<(), ApiErr
 }
 
 /// FastAPI reports path and body problems in one 422, path first.
-pub fn merge_issues(
+pub fn merge_issues<T>(
     check: super::validation::Validator,
-    body: Result<(), ApiError>,
-) -> Result<(), ApiError> {
+    body: Result<T, ApiError>,
+) -> Result<T, ApiError> {
     match (check.finish(), body) {
         (Ok(()), body) => body,
         (Err(ApiError::RequestValidation(mut path)), Err(ApiError::RequestValidation(body))) => {

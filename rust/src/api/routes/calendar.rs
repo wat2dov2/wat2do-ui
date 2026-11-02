@@ -3,6 +3,7 @@
 
 use std::sync::LazyLock;
 
+use axum::Json;
 use axum::extract::{Request, State};
 use axum::http::header::{CONTENT_TYPE, HOST};
 use axum::http::{HeaderValue, StatusCode};
@@ -15,7 +16,6 @@ use crate::api::client_ip::Peer;
 use crate::api::errors::ApiError;
 use crate::api::events::{going, ics};
 use crate::api::messages::CALENDAR_FEED_NOT_FOUND;
-use crate::api::pyjson::ok;
 use crate::api::rate_limit::RateLimiter;
 use crate::controlbox::RATE_LIMITS;
 
@@ -60,7 +60,7 @@ pub async fn get_calendar_token(
 ) -> Result<Response, ApiError> {
     let token = ics::token_for(&state.db, user.id).await?;
     let feed_url = feed_url(&state, &request, &token);
-    Ok(ok(TokenResponse { token, feed_url }))
+    Ok(Json(TokenResponse { token, feed_url }).into_response())
 }
 
 #[utoipa::path(
@@ -77,7 +77,7 @@ pub async fn regenerate_calendar_token(
 ) -> Result<Response, ApiError> {
     let token = ics::rotate_token(&state.db, user.id).await?;
     let feed_url = feed_url(&state, &request, &token);
-    Ok(ok(TokenResponse { token, feed_url }))
+    Ok(Json(TokenResponse { token, feed_url }).into_response())
 }
 
 /// `_frontend_base_url`: the first CORS origin, else the production site.

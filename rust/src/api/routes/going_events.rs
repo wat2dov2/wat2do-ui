@@ -1,17 +1,16 @@
 //! `/going-events`: a user's Going selections and the public who's-going
 //! list (`routers/going_events.py`).
 
-use axum::body::Bytes;
-use axum::extract::State;
-use axum::http::HeaderMap;
-use axum::response::Response;
+use axum::Json;
+use axum::extract::{FromRequestParts, Request, State};
+use axum::response::{IntoResponse, Response};
 
 use crate::api::AppState;
 use crate::api::auth::DbUser;
+use crate::api::body::{Body, Extra, json_first, merge_issues};
 use crate::api::errors::ApiError;
-use crate::api::events::{body, going, store, writes};
+use crate::api::events::{going, requests, store, writes};
 use crate::api::messages::EVENT_NOT_FOUND;
-use crate::api::pyjson::ok;
 use crate::api::validation::{PathParams, Validator};
 
 #[utoipa::path(
@@ -26,10 +25,10 @@ pub async fn list_going_events(
     DbUser(user): DbUser,
 ) -> Result<Response, ApiError> {
     match going::selections(&state.db, user.id).await {
-        Ok(selections) => Ok(ok(selections)),
+        Ok(selections) => Ok(Json(selections).into_response()),
         Err(ApiError::Database(error)) => {
             tracing::warn!("going_events table unavailable: {error}");
-            Ok(ok(Vec::<going::GoingSelection>::new()))
+            Ok(Json(Vec::<going::GoingSelection>::new()).into_response())
         }
         Err(other) => Err(other),
     }
@@ -53,7 +52,7 @@ pub async fn list_event_attendees(
     if store::event_by_id(&state.db, id).await?.is_none() {
         return Err(ApiError::not_found(EVENT_NOT_FOUND));
     }
-    Ok(ok(going::attendees(&state.db, id).await?))
+    Ok(Json(going::attendees(&state.db, id).await?).into_response())
 }
 
 #[utoipa::path(
@@ -65,23 +64,19 @@ pub async fn list_event_attendees(
 )]
 pub async fn mark_going(
     State(state): State<AppState>,
-    DbUser(user): DbUser,
-    path: PathParams,
-    headers: HeaderMap,
-    bytes: Bytes,
+    request: Request,
 ) -> Result<Response, ApiError> {
+    let (mut parts, bytes) = json_first(request).await?;
+    let DbUser(user) = DbUser::from_request_parts(&mut parts, &state).await?;
+    let path = PathParams::from_request_parts(&mut parts, &state).await?;
     let mut check = Validator::default();
     let id = check.path(&path, "event_id").unbounded_int();
-    let selection = body::validate_into(&mut check, &headers, &bytes, body::going_selection)?;
-    check.finish()?;
-    let status = going::set_occurrences(
-        &state.db,
-        user.id,
-        writes::int4(id)?,
-        &selection.unwrap_or_default(),
-    )
-    .await?;
-    Ok(ok(status))
+    let selection = merge_issues(
+        check,
+        Body::parse(&bytes, &parts.headers, Extra::Forbid).and_then(requests::going_selection),
+    )?;
+    let status = going::set_occurrences(&state.db, user.id, writes::int4(id)?, &selection).await?;
+    Ok(Json(status).into_response())
 }
 
 #[utoipa::path(
@@ -100,5 +95,5 @@ pub async fn unmark_going(
     let id = check.path(&path, "event_id").unbounded_int();
     check.finish()?;
     let status = going::set_occurrences(&state.db, user.id, writes::int4(id)?, &[]).await?;
-    Ok(ok(status))
+    Ok(Json(status).into_response())
 }

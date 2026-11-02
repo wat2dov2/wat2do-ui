@@ -51,10 +51,12 @@ Port one whole router (every path under its prefix) per change, so no path is se
    | strings in `core/errors.py` | `api/messages.rs` (same names; a Python test checks they match) |
    | `Query(...)` and path parameters | `QueryParams`, `PathParams` and `Validator` (`api/validation.rs`) |
    | a Pydantic request body | `ValidatedJson<T>` |
-   | a Pydantic body with constraints, validators or `exclude_unset` | `body::Body` (every issue in field order, `Input::Missing`/`Null`/`Given`) |
+   | a Pydantic body with constraints, validators or `exclude_unset` | `body::Body` (every issue in field order, `Input::Missing`/`Null`/`Given`; nested models and lists through `Body::list` and `nested_item`) |
+   | a body route whose dependency could fail first (auth, a limiter) | `body::json_first` or `check_json_syntax` first: FastAPI decodes the JSON before its dependencies |
    | `EmailStr` | `email_address::normalize` |
    | `AwareDatetime`, `Literal`, `pattern`, `list[int]` query parameters | `Field::optional_aware_datetime`, `optional_choice`, `optional_pattern`, `Validator::query_ints` |
-   | pydantic's datetime and date output, `json.dumps` floats | `json::datetime`, `json::option_date`, `json::float`, `json::value` |
+   | `datetime` (naive allowed), `float`, `bool \| None`, any-size `int` and `list[str]` query parameters | `Field::optional_datetime`, `optional_float`, `optional_bool`, `unbounded_int`, `Validator::query_list` |
+   | pydantic's datetime and date output, `json.dumps` floats | `json::datetime`, `json::option_date`, `json::float`, `json::option_float_array`, `json::value` |
    | `get_client_ip(request)` for a limiter | `client_ip::ClientIp` |
    | `PaginationParams`, `paginated_response`, `fetch_all_pages` | `pagination::Pagination`, `Paginated`, `fetch_all_pages` |
    | `RateLimiter` | `rate_limit::RateLimiter` in a `LazyLock`, keyed by `state.trust.client_ip(...)` or the user id |

@@ -8,7 +8,7 @@ use serde_json::Value;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use super::body::InteractionInput;
+use super::requests::InteractionInput;
 use crate::api::errors::ApiError;
 use crate::controlbox::INTERACTION_INGESTION;
 

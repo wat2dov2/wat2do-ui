@@ -1,9 +1,9 @@
 //! `/events`: the public feed and detail, card stats, the admin list and
 //! event writes (`routers/events.py`).
 
-use axum::body::Bytes;
-use axum::extract::State;
-use axum::http::{HeaderMap, StatusCode};
+use axum::Json;
+use axum::extract::{FromRequestParts, Request, State};
+use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use chrono::Utc;
 use indexmap::IndexMap;
@@ -11,12 +11,12 @@ use serde::Serialize;
 
 use crate::api::AppState;
 use crate::api::auth::{AdminUser, DbUser};
+use crate::api::body::{Body, Extra, json_first, merge_issues};
 use crate::api::errors::ApiError;
 use crate::api::events::store::{self, DateWindow, LatestAdded, ScanFilters};
-use crate::api::events::{body, feed, writes};
+use crate::api::events::{feed, requests, writes};
 use crate::api::messages::EVENT_NOT_FOUND;
 use crate::api::pagination::{Paginated, Pagination};
-use crate::api::pyjson::{PyJson, ok};
 use crate::api::validation::{FloatLimits, Length, PathParams, PyInt, QueryParams, Validator};
 
 use crate::constants::{MAX_EVENT_PRICE, MAX_LIST_LIMIT, MAX_SEARCH_QUERY_LENGTH};
@@ -81,7 +81,7 @@ pub async fn list_admin_events(
     )
     .await?;
     let items = events.iter().map(|event| event.summary()).collect();
-    Ok(ok(Paginated::new(items, total, pagination)))
+    Ok(Json(Paginated::new(items, total, pagination)).into_response())
 }
 
 #[utoipa::path(
@@ -120,7 +120,7 @@ pub async fn get_event_stats(
             }
         }
     }
-    Ok(ok(stats))
+    Ok(Json(stats).into_response())
 }
 
 /// The feed's query parameters, in `list_events`' order.
@@ -140,8 +140,8 @@ struct FeedQuery {
     has_food: bool,
     added_within_24h: bool,
     ids: Option<Vec<PyInt>>,
-    sort_by: &'static str,
-    sort_order: &'static str,
+    sort_by: String,
+    sort_order: String,
     start_utc: Option<chrono::DateTime<Utc>>,
     end_utc: Option<chrono::DateTime<Utc>>,
     include_past: bool,
@@ -171,10 +171,10 @@ impl FeedQuery {
             has_food: check.query(query, "has_food").bool_or(false),
             added_within_24h: check.query(query, "added_within_24h").bool_or(false),
             ids: check.query_list(query, "ids").ints(),
-            sort_by: check.query(query, "sort_by").literal_or("date", &SORT_BY),
+            sort_by: check.query(query, "sort_by").choice_or("date", &SORT_BY),
             sort_order: check
                 .query(query, "sort_order")
-                .literal_or("asc", &SORT_ORDER),
+                .choice_or("asc", &SORT_ORDER),
             start_utc: check
                 .query(query, "start_utc")
                 .optional_datetime()
@@ -240,7 +240,7 @@ pub async fn list_events(
         Some(school) => match store::school_id(db, school).await? {
             Some(id) => Some(id),
             // An unknown school has no events and no newest event.
-            None => return Ok(ok(empty_feed(pagination))),
+            None => return Ok(Json(empty_feed(pagination)).into_response()),
         },
         None => None,
     };
@@ -264,10 +264,11 @@ pub async fn list_events(
         filtered_feed(db, &feed, window, first_page).await?
     };
     let items = events.iter().map(|event| event.summary()).collect();
-    Ok(ok(FeedResponse {
+    Ok(Json(FeedResponse {
         page: Paginated::new(items, total, pagination),
         latest_added_event: latest,
-    }))
+    })
+    .into_response())
 }
 
 fn empty_feed(pagination: Pagination) -> FeedResponse<'static> {
@@ -349,7 +350,7 @@ async fn filtered_feed(
             has_food: feed.has_food,
         },
     );
-    feed::sort(&mut candidates, feed.sort_by, feed.sort_order == "desc");
+    feed::sort(&mut candidates, &feed.sort_by, feed.sort_order == "desc");
     let total = candidates.len() as i64;
     let page: Vec<i64> = candidates
         .iter()
@@ -381,7 +382,7 @@ pub async fn get_event(
     let event = store::event_by_id(&state.db, writes::int4(id)?)
         .await?
         .ok_or_else(|| ApiError::not_found(EVENT_NOT_FOUND))?;
-    Ok(ok(event.public()))
+    Ok(Json(event.public()).into_response())
 }
 
 #[utoipa::path(
@@ -393,20 +394,16 @@ pub async fn get_event(
 )]
 pub async fn create_event(
     State(state): State<AppState>,
-    DbUser(user): DbUser,
-    headers: HeaderMap,
-    bytes: Bytes,
+    request: Request,
 ) -> Result<Response, ApiError> {
-    let mut check = Validator::default();
-    let input = body::validate_into(&mut check, &headers, &bytes, |value| {
-        body::event(value, false)
-    })?;
-    check.finish()?;
-    let input = input.expect("validated");
+    let (mut parts, bytes) = json_first(request).await?;
+    let DbUser(user) = DbUser::from_request_parts(&mut parts, &state).await?;
+    let input = Body::parse(&bytes, &parts.headers, Extra::Forbid)
+        .and_then(|body| requests::event(body, false))?;
     let club =
         writes::authorize_club(&state.db, input.club_id.unwrap_or(PyInt::Small(0)), &user).await?;
     let created = writes::create(&state.db, input, &club, &user.id.to_string()).await?;
-    Ok(PyJson(StatusCode::CREATED, created.full()).into_response())
+    Ok((StatusCode::CREATED, Json(created.full())).into_response())
 }
 
 #[utoipa::path(
@@ -418,18 +415,16 @@ pub async fn create_event(
 )]
 pub async fn update_event(
     State(state): State<AppState>,
-    DbUser(user): DbUser,
-    path: PathParams,
-    headers: HeaderMap,
-    bytes: Bytes,
+    request: Request,
 ) -> Result<Response, ApiError> {
+    let (mut parts, bytes) = json_first(request).await?;
+    let DbUser(user) = DbUser::from_request_parts(&mut parts, &state).await?;
+    let path = PathParams::from_request_parts(&mut parts, &state).await?;
     let mut check = Validator::default();
     let id = event_id(&mut check, &path);
-    let input = body::validate_into(&mut check, &headers, &bytes, |value| {
-        body::event(value, true)
-    })?;
-    check.finish()?;
-    let input = input.expect("validated");
+    let parsed = Body::parse(&bytes, &parts.headers, Extra::Forbid)
+        .and_then(|body| requests::event(body, true));
+    let input = merge_issues(check, parsed)?;
     let existing = writes::authorized_event(&state.db, id, &user).await?;
     // Reassigning the club needs the same right to publish as creating.
     let new_club = match input.club_id {
@@ -439,7 +434,7 @@ pub async fn update_event(
     let updated = writes::update(&state.db, existing.id, input, new_club.as_ref())
         .await?
         .ok_or_else(|| ApiError::not_found(EVENT_NOT_FOUND))?;
-    Ok(ok(updated.full()))
+    Ok(Json(updated.full()).into_response())
 }
 
 #[utoipa::path(

@@ -8,7 +8,7 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use crate::api::errors::ApiError;
-use crate::api::pyjson::PyDateTime;
+use crate::api::json;
 
 /// One `event_dates` row (`OccurrenceResponse`).
 #[derive(Debug, Clone, PartialEq)]
@@ -25,16 +25,20 @@ pub struct Occurrence {
 #[derive(Debug, Serialize)]
 pub struct OccurrenceSummary {
     pub id: Uuid,
-    pub dtstart_utc: PyDateTime,
-    pub dtend_utc: Option<PyDateTime>,
+    #[serde(serialize_with = "json::datetime")]
+    pub dtstart_utc: DateTime<Utc>,
+    #[serde(serialize_with = "json::option_datetime")]
+    pub dtend_utc: Option<DateTime<Utc>>,
 }
 
 /// `OccurrenceResponse`.
 #[derive(Debug, Serialize)]
 pub struct OccurrenceResponse {
     pub id: Uuid,
-    pub dtstart_utc: PyDateTime,
-    pub dtend_utc: Option<PyDateTime>,
+    #[serde(serialize_with = "json::datetime")]
+    pub dtstart_utc: DateTime<Utc>,
+    #[serde(serialize_with = "json::option_datetime")]
+    pub dtend_utc: Option<DateTime<Utc>>,
     pub event_id: i64,
     pub duration: Option<String>,
     pub tz: Option<String>,
@@ -44,8 +48,8 @@ impl From<&Occurrence> for OccurrenceSummary {
     fn from(occurrence: &Occurrence) -> Self {
         Self {
             id: occurrence.id,
-            dtstart_utc: occurrence.dtstart_utc.into(),
-            dtend_utc: occurrence.dtend_utc.map(Into::into),
+            dtstart_utc: occurrence.dtstart_utc,
+            dtend_utc: occurrence.dtend_utc,
         }
     }
 }
@@ -54,8 +58,8 @@ impl From<&Occurrence> for OccurrenceResponse {
     fn from(occurrence: &Occurrence) -> Self {
         Self {
             id: occurrence.id,
-            dtstart_utc: occurrence.dtstart_utc.into(),
-            dtend_utc: occurrence.dtend_utc.map(Into::into),
+            dtstart_utc: occurrence.dtstart_utc,
+            dtend_utc: occurrence.dtend_utc,
             event_id: occurrence.event_id,
             duration: occurrence.duration.clone(),
             tz: occurrence.tz.clone(),
@@ -315,8 +319,10 @@ pub struct EventSummaryResponse<'a> {
     pub description: &'a Option<String>,
     pub location: &'a Option<String>,
     pub map_location: &'a Option<String>,
+    #[serde(serialize_with = "json::option_float_array")]
     pub map_coordinates: Option<[f64; 2]>,
     pub occurrences: Vec<OccurrenceSummary>,
+    #[serde(serialize_with = "json::option_float")]
     pub price: Option<f64>,
     pub food: &'a Option<Vec<String>>,
     pub registration: bool,
@@ -336,8 +342,10 @@ pub struct EventSummaryResponse<'a> {
     pub ig_handle: &'a Option<String>,
     pub school: &'a Option<String>,
     pub cancelled: bool,
-    pub added_at: PyDateTime,
-    pub last_source_changed_at: Option<PyDateTime>,
+    #[serde(serialize_with = "json::datetime")]
+    pub added_at: DateTime<Utc>,
+    #[serde(serialize_with = "json::option_datetime")]
+    pub last_source_changed_at: Option<DateTime<Utc>>,
 }
 
 /// `EventResponse` (with `created_by`) and `EventPublicResponse` (without).
@@ -353,8 +361,10 @@ pub struct EventResponse<'a> {
     pub description: &'a Option<String>,
     pub location: &'a Option<String>,
     pub map_location: &'a Option<String>,
+    #[serde(serialize_with = "json::option_float_array")]
     pub map_coordinates: Option<[f64; 2]>,
     pub occurrences: Vec<OccurrenceResponse>,
+    #[serde(serialize_with = "json::option_float")]
     pub price: Option<f64>,
     pub food: &'a Option<Vec<String>>,
     pub registration: bool,
@@ -371,8 +381,10 @@ pub struct EventResponse<'a> {
     pub club: &'a Option<String>,
     pub ig_handle: &'a Option<String>,
     pub cancelled: bool,
-    pub added_at: PyDateTime,
-    pub last_source_changed_at: Option<PyDateTime>,
+    #[serde(serialize_with = "json::datetime")]
+    pub added_at: DateTime<Utc>,
+    #[serde(serialize_with = "json::option_datetime")]
+    pub last_source_changed_at: Option<DateTime<Utc>>,
     #[serde(skip_serializing_if = "Hidden::is_hidden")]
     pub created_by: Hidden<Option<String>>,
 }
@@ -433,8 +445,8 @@ impl Event {
             ig_handle: &self.ig_handle,
             school: &self.school,
             cancelled: self.cancelled,
-            added_at: self.added_at.into(),
-            last_source_changed_at: self.last_source_changed_at.map(Into::into),
+            added_at: self.added_at,
+            last_source_changed_at: self.last_source_changed_at,
         }
     }
 
@@ -468,8 +480,8 @@ impl Event {
             club: &self.club,
             ig_handle: &self.ig_handle,
             cancelled: self.cancelled,
-            added_at: self.added_at.into(),
-            last_source_changed_at: self.last_source_changed_at.map(Into::into),
+            added_at: self.added_at,
+            last_source_changed_at: self.last_source_changed_at,
             created_by,
         }
     }

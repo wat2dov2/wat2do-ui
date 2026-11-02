@@ -68,8 +68,6 @@ def test_search_preserves_email_punctuation(fake_sb, patch_sb):
     fake_sb.ilike.assert_called_once_with("search_text", "%person.name@example.com%")
 
 
-
-
 def test_submission_page_batches_club_names_without_full_club_list(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.submission_service")
     rows = [

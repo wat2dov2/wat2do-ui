@@ -24,12 +24,6 @@ use uuid::Uuid;
 
 use super::errors::ApiError;
 
-mod lax;
-pub use lax::{
-    FloatLimits, ListField, PyDateTimeInput, PyInt, parse_python_datetime, parse_python_float,
-    parse_unbounded_int,
-};
-
 /// One entry of FastAPI's 422 `detail` list.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ValidationIssue {
@@ -457,18 +451,36 @@ pub enum DatetimeError {
     Invalid(&'static str),
 }
 
+/// A datetime as pydantic parsed it: with an offset, or naive (which a
+/// PostgREST filter compared in the database's zone, UTC).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ParsedDatetime {
+    Aware(DateTime<FixedOffset>),
+    Naive(chrono::NaiveDateTime),
+}
+
+impl ParsedDatetime {
+    /// The instant, reading a naive value as UTC.
+    pub fn to_utc(self) -> DateTime<chrono::Utc> {
+        match self {
+            Self::Aware(value) => value.with_timezone(&chrono::Utc),
+            Self::Naive(value) => value.and_utc(),
+        }
+    }
+}
+
 /// pydantic's (speedate's) datetime from a string: a Unix timestamp (in
-/// milliseconds past 2e10), or `YYYY-MM-DD` with an optional time after `T`,
-/// `t`, `_` or a space, a fraction of up to six digits (more are dropped) and
-/// `Z` or a `±HH:MM`/`±HHMM` offset.
-pub fn parse_aware_datetime(raw: &str) -> Result<DateTime<FixedOffset>, DatetimeError> {
-    use DatetimeError::{Invalid, Naive};
-    if let Some(value) = timestamp_from_text(raw) {
-        return Ok(value);
+/// milliseconds past 2e10), or `YYYY-MM-DD` (read as midnight) with an
+/// optional time after `T`, `t`, `_` or a space, a fraction of up to six
+/// digits (more are dropped) and `Z` or a `±HH:MM`/`±HHMM` offset. The error
+/// is speedate's reason, such as "input is too short".
+pub fn parse_datetime(raw: &str) -> Result<ParsedDatetime, &'static str> {
+    if let Some(value) = timestamp_from_text(raw)? {
+        return Ok(ParsedDatetime::Aware(value));
     }
     let bytes = raw.as_bytes();
     if bytes.len() < 10 {
-        return Err(Invalid("input is too short"));
+        return Err("input is too short");
     }
     let digits = |range: std::ops::Range<usize>, error| {
         let part = &bytes[range];
@@ -477,48 +489,59 @@ pub fn parse_aware_datetime(raw: &str) -> Result<DateTime<FixedOffset>, Datetime
                 .iter()
                 .fold(0u32, |total, digit| total * 10 + u32::from(digit - b'0')))
         } else {
-            Err(Invalid(error))
+            Err(error)
         }
     };
     let year = digits(0..4, "invalid character in year")?;
     if bytes[4] != b'-' {
-        return Err(Invalid("invalid date separator, expected `-`"));
+        return Err("invalid date separator, expected `-`");
     }
     let month = digits(5..7, "invalid character in month")?;
     if bytes[7] != b'-' {
-        return Err(Invalid("invalid date separator, expected `-`"));
+        return Err("invalid date separator, expected `-`");
     }
     let day = digits(8..10, "invalid character in day")?;
     if !(1..=12).contains(&month) {
-        return Err(Invalid("month value is outside expected range of 1-12"));
+        return Err("month value is outside expected range of 1-12");
     }
     let date = NaiveDate::from_ymd_opt(year as i32, month, day)
-        .ok_or(Invalid("day value is outside expected range"))?;
+        .ok_or("day value is outside expected range")?;
     if bytes.len() == 10 {
-        return Err(Naive);
+        return Ok(ParsedDatetime::Naive(date.and_time(NaiveTime::MIN)));
     }
     // Anything wrong after the date reads, as in pydantic, as trailing junk.
-    let extra = Invalid("unexpected extra characters at the end of the input");
+    let extra = "unexpected extra characters at the end of the input";
     if !matches!(bytes[10], b'T' | b't' | b'_' | b' ') {
         return Err(extra);
     }
-    let rest = &raw[11..];
-    let (time, offset) = parse_time(rest).ok_or(extra)?;
+    let (time, offset) = parse_time(&raw[11..]).ok_or(extra)?;
     let local = date.and_time(time);
     match offset {
-        None => Err(Naive),
-        Some(offset) => local.and_local_timezone(offset).single().ok_or(Invalid(
-            "unexpected extra characters at the end of the input",
-        )),
+        None => Ok(ParsedDatetime::Naive(local)),
+        Some(offset) => local
+            .and_local_timezone(offset)
+            .single()
+            .map(ParsedDatetime::Aware)
+            .ok_or(extra),
+    }
+}
+
+/// `AwareDatetime`: `parse_datetime` refusing values without an offset.
+pub fn parse_aware_datetime(raw: &str) -> Result<DateTime<FixedOffset>, DatetimeError> {
+    match parse_datetime(raw) {
+        Ok(ParsedDatetime::Aware(value)) => Ok(value),
+        Ok(ParsedDatetime::Naive(_)) => Err(DatetimeError::Naive),
+        Err(error) => Err(DatetimeError::Invalid(error)),
     }
 }
 
 /// speedate's number-as-timestamp: an optional sign, digits with an
 /// optional fraction, and an exponent only after a decimal point (`1.7e9`
 /// is a timestamp, `17e8` is not). Seconds, or milliseconds past 2e10;
-/// microseconds are rounded. Anything else (or out of range) is parsed as a
-/// date instead.
-fn timestamp_from_text(raw: &str) -> Option<DateTime<FixedOffset>> {
+/// microseconds are rounded. A whole number out of range is refused with
+/// speedate's reason; anything else that is not a timestamp (`None`) is
+/// parsed as a date instead.
+fn timestamp_from_text(raw: &str) -> Result<Option<DateTime<FixedOffset>>, &'static str> {
     let body = raw.strip_prefix(['+', '-']).unwrap_or(raw);
     let (mantissa, exponent) = match body.find(['e', 'E']) {
         Some(at) => (&body[..at], Some(&body[at + 1..])),
@@ -540,9 +563,32 @@ fn timestamp_from_text(raw: &str) -> Option<DateTime<FixedOffset>> {
         }
     };
     if !mantissa_ok || !exponent_ok {
-        return None;
+        return Ok(None);
     }
-    let value: f64 = raw.parse().ok()?;
+    if fraction.is_none() && exponent.is_none() {
+        // A whole number: 64 bits, or (like speedate) not a timestamp at all.
+        let Ok(value) = raw.parse::<i64>() else {
+            return Ok(None);
+        };
+        let (seconds, millis) = if value.unsigned_abs() <= 20_000_000_000 {
+            (value, 0)
+        } else {
+            (value.div_euclid(1000), value.rem_euclid(1000))
+        };
+        if seconds < -62_167_219_200 {
+            return Err("dates before 0000 are not supported as unix timestamps");
+        }
+        if seconds > 253_402_300_799 {
+            return Err("dates after 9999 are not supported as unix timestamps");
+        }
+        return Ok(
+            DateTime::from_timestamp(seconds, (millis * 1_000_000) as u32)
+                .map(|value| value.fixed_offset()),
+        );
+    }
+    let Ok(value) = raw.parse::<f64>() else {
+        return Ok(None);
+    };
     let seconds = if value.abs() > 2e10 {
         value / 1000.0
     } else {
@@ -555,9 +601,10 @@ fn timestamp_from_text(raw: &str) -> Option<DateTime<FixedOffset>> {
         micros -= 1e6;
     }
     if !(-62_135_596_800.0..=253_402_300_799.0).contains(&whole) {
-        return None;
+        return Ok(None);
     }
-    DateTime::from_timestamp(whole as i64, micros as u32 * 1000).map(|value| value.fixed_offset())
+    Ok(DateTime::from_timestamp(whole as i64, micros as u32 * 1000)
+        .map(|value| value.fixed_offset()))
 }
 
 fn parse_time(text: &str) -> Option<(NaiveTime, Option<FixedOffset>)> {
@@ -1161,5 +1208,440 @@ mod tests {
         assert_eq!(invalid[0]["type"], "json_invalid");
         assert_eq!(invalid[0]["loc"], json!(["body", 1]));
         assert_eq!(invalid[0]["msg"], "JSON decode error");
+    }
+}
+
+// ── More of pydantic's lax query parsing (the events routes) ──────────
+
+/// Float bounds, as in `Query(ge=0, le=100_000)`.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct FloatLimits {
+    ge: Option<f64>,
+    le: Option<f64>,
+}
+
+impl FloatLimits {
+    pub fn ge(mut self, bound: f64) -> Self {
+        self.ge = Some(bound);
+        self
+    }
+    pub fn le(mut self, bound: f64) -> Self {
+        self.le = Some(bound);
+        self
+    }
+}
+
+/// pydantic's message shows a bound as Python prints it (`100000`, `0.5`).
+pub(crate) fn bound_text(bound: f64) -> String {
+    if bound.fract() == 0.0 && bound.abs() < 1e16 {
+        format!("{}", bound as i64)
+    } else {
+        format!("{bound}")
+    }
+}
+
+/// pydantic's lax `float` from a string: trimmed, single underscores between
+/// digits, `inf` / `nan` in any case, overflow to infinity.
+pub fn parse_python_float(raw: &str) -> Option<f64> {
+    let text = raw.trim();
+    let cleaned = if text.contains('_') {
+        let bytes = text.as_bytes();
+        let valid = bytes.iter().enumerate().all(|(index, byte)| {
+            *byte != b'_'
+                || (index > 0
+                    && index + 1 < bytes.len()
+                    && bytes[index - 1].is_ascii_digit()
+                    && bytes[index + 1].is_ascii_digit())
+        });
+        if !valid {
+            return None;
+        }
+        text.replace('_', "")
+    } else {
+        text.to_owned()
+    };
+    cleaned.parse::<f64>().ok()
+}
+
+/// An integer pydantic accepted: one that fits `i64`, or a larger one (Python
+/// ints are unbounded) that Postgres will refuse.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PyInt {
+    Small(i64),
+    Huge,
+}
+
+/// pydantic's lax `int` from a string, without an upper bound.
+pub fn parse_unbounded_int(raw: &str) -> Option<PyInt> {
+    if let Some(value) = parse_python_int(raw) {
+        return Some(PyInt::Small(value));
+    }
+    // The same grammar with the magnitude replaced by a small one tells
+    // whether only the size failed.
+    let text = raw.trim();
+    let unsigned = text.trim_start_matches(['+', '-']);
+    if text.len() - unsigned.len() > 1 {
+        return None;
+    }
+    let whole = unsigned
+        .split_once('.')
+        .map_or(unsigned, |(whole, _)| whole);
+    let significant = whole.replace('_', "");
+    let probe = text.replacen(whole, "1", 1);
+    (significant.len() >= 19 && parse_python_int(&probe).is_some() && {
+        // Underscore placement still has to be valid in the original.
+        !whole.starts_with('_')
+            && !whole.ends_with('_')
+            && !whole.contains("__")
+            && whole.bytes().all(|b| b.is_ascii_digit() || b == b'_')
+    })
+    .then_some(PyInt::Huge)
+}
+
+impl Field<'_> {
+    fn push_issue(
+        &mut self,
+        kind: &str,
+        msg: String,
+        input: Value,
+        loc: Vec<Value>,
+        ctx: Option<Value>,
+    ) {
+        self.validator.push(ValidationIssue {
+            kind: kind.to_owned(),
+            loc,
+            msg,
+            input,
+            ctx,
+        });
+    }
+
+    /// An optional bounded float (`float | None = Query(None, ge=.., le=..)`).
+    pub fn optional_float(mut self, limits: FloatLimits) -> Option<f64> {
+        let raw = self.raw?;
+        let loc = self.loc();
+        let Some(value) = parse_python_float(raw) else {
+            self.push_issue(
+                "float_parsing",
+                "Input should be a valid number, unable to parse string as a number".to_owned(),
+                json!(raw),
+                loc,
+                None,
+            );
+            return None;
+        };
+        if let Some(bound) = limits.ge.filter(|bound| value < *bound) {
+            self.push_issue(
+                "greater_than_equal",
+                format!(
+                    "Input should be greater than or equal to {}",
+                    bound_text(bound)
+                ),
+                json!(raw),
+                loc,
+                Some(json!({ "ge": bound })),
+            );
+            return None;
+        }
+        if let Some(bound) = limits.le.filter(|bound| {
+            // NaN fails too, as in pydantic.
+            !matches!(
+                value.partial_cmp(bound),
+                Some(std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
+            )
+        }) {
+            self.push_issue(
+                "less_than_equal",
+                format!(
+                    "Input should be less than or equal to {}",
+                    bound_text(bound)
+                ),
+                json!(raw),
+                loc,
+                Some(json!({ "le": bound })),
+            );
+            return None;
+        }
+        Some(value)
+    }
+
+    /// An optional boolean (`bool | None = Query(None)`).
+    pub fn optional_bool(self) -> Option<bool> {
+        self.raw?;
+        Some(self.bool_or(false))
+    }
+
+    /// A required integer of any size (`event_id: int` in a path).
+    pub fn unbounded_int(mut self) -> PyInt {
+        let Some(raw) = self.raw else {
+            let loc = self.loc();
+            self.push_issue(
+                "missing",
+                "Field required".to_owned(),
+                Value::Null,
+                loc,
+                None,
+            );
+            return PyInt::Small(0);
+        };
+        match parse_unbounded_int(raw) {
+            Some(value) => value,
+            None => {
+                let loc = self.loc();
+                self.push_issue(
+                    "int_parsing",
+                    "Input should be a valid integer, unable to parse string as an integer"
+                        .to_owned(),
+                    json!(raw),
+                    loc,
+                    None,
+                );
+                PyInt::Small(0)
+            }
+        }
+    }
+
+    /// An optional `datetime` (`datetime | None = Query(None)`).
+    pub fn optional_datetime(mut self) -> Option<ParsedDatetime> {
+        let raw = self.raw?;
+        match parse_datetime(raw) {
+            Ok(value) => Some(value),
+            Err(error) => {
+                let loc = self.loc();
+                self.push_issue(
+                    "datetime_from_date_parsing",
+                    format!("Input should be a valid datetime or date, {error}"),
+                    json!(raw),
+                    loc,
+                    Some(json!({ "error": error })),
+                );
+                None
+            }
+        }
+    }
+}
+
+/// Repeated query parameters (`list[...] | None = Query(None)`).
+pub struct ListField<'a> {
+    validator: &'a mut Validator,
+    name: &'a str,
+    values: Vec<&'a str>,
+}
+
+impl ListField<'_> {
+    /// Every value, or `None` when the parameter is absent.
+    pub fn strings(self) -> Option<Vec<String>> {
+        (!self.values.is_empty()).then(|| self.values.iter().map(|v| (*v).to_owned()).collect())
+    }
+
+    /// Every value as an integer; each bad one is reported at its index.
+    pub fn ints(self) -> Option<Vec<PyInt>> {
+        if self.values.is_empty() {
+            return None;
+        }
+        let mut parsed = Vec::with_capacity(self.values.len());
+        for (index, raw) in self.values.iter().enumerate() {
+            match parse_unbounded_int(raw) {
+                Some(value) => parsed.push(value),
+                None => self.validator.push(ValidationIssue::new(
+                    "int_parsing",
+                    vec![json!("query"), json!(self.name), json!(index)],
+                    "Input should be a valid integer, unable to parse string as an integer",
+                    json!(raw),
+                )),
+            }
+        }
+        Some(parsed)
+    }
+}
+
+impl Validator {
+    pub fn query_list<'a>(&'a mut self, query: &'a QueryParams, name: &'a str) -> ListField<'a> {
+        let values = query.all(name);
+        ListField {
+            validator: self,
+            name,
+            values,
+        }
+    }
+}
+
+#[cfg(test)]
+mod feed_parameter_tests {
+    use super::*;
+    use chrono::NaiveDateTime;
+
+    const DATE_SEPARATOR: &str = "invalid date separator, expected `-`";
+    const TOO_LARGE: &str = "dates after 9999 are not supported as unix timestamps";
+    const EXTRA: &str = "unexpected extra characters at the end of the input";
+    const TOO_SHORT: &str = "input is too short";
+
+    /// FastAPI's answers to the feed's query parameters (generated by
+    /// `GET /events/` echoing what it parsed): datetimes, floats, booleans,
+    /// literals and lists.
+    #[test]
+    fn feed_parameters_parse_like_fastapi() {
+        let corpus: Vec<Value> =
+            serde_json::from_str(include_str!("events/testdata/feed_params.json")).unwrap();
+        for case in corpus {
+            let query: Vec<(String, String)> =
+                serde_json::from_value(case["query"].clone()).unwrap();
+            let names: Vec<&str> = query.iter().map(|(name, _)| name.as_str()).collect();
+            // Only single-parameter cases of the types parsed here.
+            if names.len() != 1 {
+                continue;
+            }
+            let encoded: String = form_urlencoded::Serializer::new(String::new())
+                .extend_pairs(query.iter())
+                .finish();
+            let params = QueryParams::parse(Some(&encoded));
+            let mut check = Validator::default();
+            let name = names[0];
+            let parsed: Value = match name {
+                "start_utc" => match check.query(&params, name).optional_datetime() {
+                    Some(ParsedDatetime::Aware(value)) => {
+                        json!({"iso": value.to_rfc3339_opts(chrono::SecondsFormat::AutoSi, false), "aware": true})
+                    }
+                    Some(ParsedDatetime::Naive(value)) => {
+                        json!({"iso": value.format("%Y-%m-%dT%H:%M:%S%.f").to_string(), "aware": false})
+                    }
+                    None => Value::Null,
+                },
+                "min_price" => json!(
+                    check
+                        .query(&params, name)
+                        .optional_float(FloatLimits::default().ge(0.0).le(100_000.0))
+                ),
+                "registration" => json!(check.query(&params, name).optional_bool()),
+                "has_food" => json!(check.query(&params, name).bool_or(false)),
+                "sort_by" => json!(
+                    check
+                        .query(&params, name)
+                        .choice_or("date", &["date", "title", "location", "price", "added_at"])
+                ),
+                "sort_order" => json!(
+                    check
+                        .query(&params, name)
+                        .choice_or("asc", &["asc", "desc"])
+                ),
+                _ => continue,
+            };
+            let status = case["status"].as_i64().unwrap();
+            match check.finish() {
+                Ok(()) => {
+                    assert_eq!(status, 200, "{query:?} should fail");
+                    let expected = &case["body"][name];
+                    if name == "start_utc" {
+                        let expected_dt = expected["iso"].as_str().unwrap();
+                        // Python's isoformat: compare instants and awareness.
+                        assert_eq!(parsed["aware"], expected["aware"], "{query:?}");
+                        let python = expected_dt.replace("+00:00", "Z");
+                        let ours = parsed["iso"].as_str().unwrap().replace("+00:00", "Z");
+                        let normalize = |s: &str| {
+                            DateTime::parse_from_rfc3339(s)
+                                .map(|d| d.timestamp_micros())
+                                .unwrap_or_else(|_| {
+                                    NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.f")
+                                        .unwrap()
+                                        .and_utc()
+                                        .timestamp_micros()
+                                })
+                        };
+                        assert_eq!(normalize(&ours), normalize(&python), "{query:?}");
+                    } else if name == "min_price" {
+                        let python: f64 = expected.as_str().unwrap().parse().unwrap();
+                        assert_eq!(parsed.as_f64().unwrap(), python, "{query:?}");
+                    } else {
+                        assert_eq!(&parsed, expected, "{query:?}");
+                    }
+                }
+                Err(crate::api::errors::ApiError::RequestValidation(issues)) => {
+                    assert_eq!(status, 422, "{query:?} should pass");
+                    assert_eq!(json!(issues), case["body"]["detail"], "{query:?}");
+                }
+                Err(other) => panic!("{other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn datetime_edges_match_speedate() {
+        let ok = |raw: &str| parse_datetime(raw).unwrap().to_utc().to_rfc3339();
+        assert_eq!(ok("2026-11-02_10:00"), "2026-11-02T10:00:00+00:00");
+        assert_eq!(ok("+1700000000"), "2023-11-14T22:13:20+00:00");
+        assert_eq!(ok("1."), "1970-01-01T00:00:01+00:00");
+        assert_eq!(ok(".5"), "1970-01-01T00:00:00.500+00:00");
+        assert_eq!(ok("-1.5"), "1969-12-31T23:59:58.500+00:00");
+        assert_eq!(ok("1700000000.1234567"), "2023-11-14T22:13:20.123457+00:00");
+        assert_eq!(ok("1700000000.9999999"), "2023-11-14T22:13:21+00:00");
+        assert_eq!(ok("20000000001"), "1970-08-20T11:33:20.001+00:00");
+        assert_eq!(ok("-20000000001"), "1969-05-14T12:26:39.999+00:00");
+        assert_eq!(ok("253402300799999"), "9999-12-31T23:59:59.999+00:00");
+        assert_eq!(ok("2026-11-02T10:00:00+23:59"), "2026-11-01T10:01:00+00:00");
+        assert_eq!(ok("2024-02-29T00:00Z"), "2024-02-29T00:00:00+00:00");
+        let err = |raw: &str| parse_datetime(raw).unwrap_err();
+        assert_eq!(err("99999999999999999999"), DATE_SEPARATOR);
+        assert_eq!(err("9999999999999999"), TOO_LARGE);
+        assert_eq!(err("253402300800000"), TOO_LARGE);
+        assert_eq!(err("2026-11-02T10:00.5"), EXTRA);
+        assert_eq!(err("2026-11-02T10:00:00+05:60"), EXTRA);
+        assert_eq!(err("2026-02-29"), "day value is outside expected range");
+        assert_eq!(err("  "), TOO_SHORT);
+        assert_eq!(err("2026-11-02T"), EXTRA);
+        assert_eq!(err("1e3"), TOO_SHORT);
+    }
+
+    #[test]
+    fn unbounded_ints_and_lists() {
+        assert_eq!(parse_unbounded_int("12"), Some(PyInt::Small(12)));
+        assert_eq!(
+            parse_unbounded_int("99999999999999999999"),
+            Some(PyInt::Huge)
+        );
+        assert_eq!(
+            parse_unbounded_int("-99999999999999999999"),
+            Some(PyInt::Huge)
+        );
+        assert_eq!(
+            parse_unbounded_int("9_999_999_999_999_999_999"),
+            Some(PyInt::Huge)
+        );
+        assert_eq!(parse_unbounded_int("x"), None);
+        assert_eq!(parse_unbounded_int(""), None);
+        let corpus: Vec<Value> =
+            serde_json::from_str(include_str!("events/testdata/feed_params.json")).unwrap();
+        let lists: Vec<&Value> = corpus
+            .iter()
+            .filter(|case| {
+                let names: Vec<&str> = case["query"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|p| p[0].as_str().unwrap())
+                    .collect();
+                names.len() > 1 && names.iter().all(|n| *n == "club_ids")
+                    || names == ["ids"]
+                    || names == ["ids", "ids"]
+            })
+            .collect();
+        assert!(!lists.is_empty());
+        for case in lists {
+            let query: Vec<(String, String)> =
+                serde_json::from_value(case["query"].clone()).unwrap();
+            let encoded: String = form_urlencoded::Serializer::new(String::new())
+                .extend_pairs(query.iter())
+                .finish();
+            let params = QueryParams::parse(Some(&encoded));
+            let mut check = Validator::default();
+            let name = query[0].0.as_str();
+            check.query_list(&params, name).ints();
+            match check.finish() {
+                Ok(()) => assert_eq!(case["status"], 200),
+                Err(crate::api::errors::ApiError::RequestValidation(issues)) => {
+                    assert_eq!(json!(issues), case["body"]["detail"])
+                }
+                Err(other) => panic!("{other:?}"),
+            }
+        }
     }
 }
