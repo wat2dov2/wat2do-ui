@@ -358,6 +358,25 @@ impl Body {
         }
     }
 
+    /// A `bool` field with a default (not `Optional`): missing reads as
+    /// `default`, and `null` is refused as pydantic refuses it.
+    pub fn bool_or(&mut self, name: &'static str, default: bool) -> bool {
+        match self.bool(name) {
+            Input::Given(flag) => flag,
+            Input::Null => {
+                self.issue(
+                    "bool_type",
+                    Self::loc(name),
+                    "Input should be a valid boolean".into(),
+                    Value::Null,
+                    None,
+                );
+                default
+            }
+            Input::Missing => default,
+        }
+    }
+
     /// A required UUID field.
     pub fn required_uuid(&mut self, name: &'static str) -> Option<Uuid> {
         match self.take(name) {
@@ -615,6 +634,20 @@ impl Body {
     }
 }
 
+/// FastAPI decodes a JSON body before it runs a route's dependencies, so
+/// malformed JSON is a 422 before (for example) a rate limit is counted;
+/// the body's other problems are reported after them.
+pub fn check_json_syntax(bytes: &[u8], headers: &HeaderMap) -> Result<(), ApiError> {
+    let is_json = super::validation::json_content_type(headers);
+    if bytes.is_empty()
+        || !is_json
+        || serde_json::from_slice::<serde::de::IgnoredAny>(bytes).is_ok()
+    {
+        return Ok(());
+    }
+    parse_json_body::<Value>(bytes, true).map(|_| ())
+}
+
 /// FastAPI reports path and body problems in one 422, path first.
 pub fn merge_issues(
     check: super::validation::Validator,
@@ -740,6 +773,34 @@ mod tests {
                 {"type": "url_scheme", "loc": ["body", "c"], "msg": "URL scheme should be 'http' or 'https'", "input": "ftp://x", "ctx": {"expected_schemes": "'http' or 'https'"}},
                 {"type": "url_parsing", "loc": ["body", "d"], "msg": "Input should be a valid URL, relative URL without a base", "input": "not a url", "ctx": {"error": "relative URL without a base"}}
             ])
+        );
+    }
+
+    #[test]
+    fn only_malformed_json_fails_the_syntax_check() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            axum::http::header::CONTENT_TYPE,
+            "application/json".parse().unwrap(),
+        );
+        assert!(check_json_syntax(b"{\"a\": 1}", &headers).is_ok());
+        assert!(check_json_syntax(b"[1]", &headers).is_ok());
+        assert!(check_json_syntax(b"", &headers).is_ok());
+        match check_json_syntax(b"{bad", &headers) {
+            Err(ApiError::RequestValidation(issues)) => assert_eq!(issues[0].kind, "json_invalid"),
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[test]
+    fn defaulted_booleans_refuse_null() {
+        let mut body = Body::from_value(json!({"a": null, "c": "yes"}), Extra::Ignore);
+        assert!(!body.bool_or("a", false));
+        assert!(!body.bool_or("b", false));
+        assert!(body.bool_or("c", false));
+        assert_eq!(
+            issues(body),
+            json!([{"type": "bool_type", "loc": ["body", "a"], "msg": "Input should be a valid boolean", "input": null}])
         );
     }
 

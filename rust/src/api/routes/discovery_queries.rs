@@ -18,7 +18,7 @@ use uuid::Uuid;
 
 use crate::api::AppState;
 use crate::api::auth::{AdminUser, OptionalUser};
-use crate::api::body::{Body, Extra, Str};
+use crate::api::body::{Body, Extra, Str, check_json_syntax};
 use crate::api::client_ip::ClientIp;
 use crate::api::errors::ApiError;
 use crate::api::json;
@@ -124,6 +124,7 @@ pub async fn record_query(
     headers: HeaderMap,
     bytes: Bytes,
 ) -> Result<Response, ApiError> {
+    check_json_syntax(&bytes, &headers)?;
     LIMITER.check(&client_ip)?;
     let query = parse_query(Body::parse(&bytes, &headers, Extra::Forbid)?)?;
     if is_excluded(auth_user.as_ref().and_then(|user| user.email.as_deref())) {

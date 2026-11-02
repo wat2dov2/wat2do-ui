@@ -31,6 +31,39 @@ pub enum SaveStatus {
     Unsaved,
 }
 
+/// Save a club once: the insert happens only for an existing club and a
+/// user under the cap, and returns both facts for `save_refusal`.
+const SAVE_SQL: &str = "WITH found AS (SELECT EXISTS (SELECT 1 FROM public.clubs WHERE id = $2) AS club), \
+         saved AS (SELECT count(*) AS total FROM public.user_saved_clubs WHERE user_id = $1), \
+         inserted AS ( \
+             INSERT INTO public.user_saved_clubs (id, user_id, club_id) \
+             SELECT $3, $1, $2 FROM found, saved WHERE found.club AND saved.total < $4 \
+             ON CONFLICT (user_id, club_id) DO NOTHING) \
+         SELECT found.club, saved.total FROM found, saved";
+
+/// Saving needs the club to exist (404) and the user under the cap (400);
+/// the count includes this club when it is already saved, as in Python.
+/// The insert in `save_club` repeats both conditions (`found.club AND
+/// saved.total < $4`), so a refused save writes nothing.
+fn save_refusal(club_found: bool, saved_count: i64, cap: i64) -> Result<(), ApiError> {
+    if !club_found {
+        return Err(ApiError::not_found(CLUB_NOT_FOUND));
+    }
+    if saved_count >= cap {
+        return Err(ApiError::validation(SAVED_CLUBS_CAP_REACHED));
+    }
+    Ok(())
+}
+
+/// A club's own members always follow it.
+fn unsave_refusal(is_member: bool) -> Result<(), ApiError> {
+    if is_member {
+        Err(ApiError::validation(MEMBERS_ALWAYS_FOLLOW_CLUB))
+    } else {
+        Ok(())
+    }
+}
+
 #[utoipa::path(
     get,
     path = "/saved-clubs/",
@@ -87,27 +120,18 @@ pub async fn save_club(
     let club_id = club_id(&path)?;
     // One round trip: the club must exist and the user be under the cap
     // (counting this club if it is already saved); saving twice keeps one row.
-    let (club_found, saved_count) = sqlx::query_as::<_, (bool, i64)>(
-        "WITH found AS (SELECT EXISTS (SELECT 1 FROM public.clubs WHERE id = $2) AS club), \
-         saved AS (SELECT count(*) AS total FROM public.user_saved_clubs WHERE user_id = $1), \
-         inserted AS ( \
-             INSERT INTO public.user_saved_clubs (id, user_id, club_id) \
-             SELECT $3, $1, $2 FROM found, saved WHERE found.club AND saved.total < $4 \
-             ON CONFLICT (user_id, club_id) DO NOTHING) \
-         SELECT found.club, saved.total FROM found, saved",
-    )
-    .bind(user.id)
-    .bind(club_id)
-    .bind(Uuid::new_v4())
-    .bind(RATE_LIMITS.maximum_saved_clubs_per_user)
-    .fetch_one(&state.db)
-    .await?;
-    if !club_found {
-        return Err(ApiError::not_found(CLUB_NOT_FOUND));
-    }
-    if saved_count >= RATE_LIMITS.maximum_saved_clubs_per_user {
-        return Err(ApiError::validation(SAVED_CLUBS_CAP_REACHED));
-    }
+    let (club_found, saved_count) = sqlx::query_as::<_, (bool, i64)>(SAVE_SQL)
+        .bind(user.id)
+        .bind(club_id)
+        .bind(Uuid::new_v4())
+        .bind(RATE_LIMITS.maximum_saved_clubs_per_user)
+        .fetch_one(&state.db)
+        .await?;
+    save_refusal(
+        club_found,
+        saved_count,
+        RATE_LIMITS.maximum_saved_clubs_per_user,
+    )?;
     Ok(Json(SaveClubStatusResponse {
         status: SaveStatus::Saved,
     }))
@@ -132,9 +156,7 @@ pub async fn unsave_club(
     path: PathParams,
 ) -> Result<Json<SaveClubStatusResponse>, ApiError> {
     let club_id = club_id(&path)?;
-    if is_club_member(&state.db, club_id, user.id).await {
-        return Err(ApiError::validation(MEMBERS_ALWAYS_FOLLOW_CLUB));
-    }
+    unsave_refusal(is_club_member(&state.db, club_id, user.id).await)?;
     sqlx::query("DELETE FROM public.user_saved_clubs WHERE user_id = $1 AND club_id = $2")
         .bind(user.id)
         .bind(club_id)
@@ -143,4 +165,39 @@ pub async fn unsave_club(
     Ok(Json(SaveClubStatusResponse {
         status: SaveStatus::Unsaved,
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn saving_needs_the_club_and_room_under_the_cap() {
+        // test_save_club_nonexistent_returns_404, test_save_club_at_cap_returns_400
+        let cap = RATE_LIMITS.maximum_saved_clubs_per_user;
+        assert!(
+            matches!(save_refusal(false, 0, cap), Err(ApiError::NotFound(detail)) if detail == CLUB_NOT_FOUND)
+        );
+        assert!(
+            matches!(save_refusal(true, cap, cap), Err(ApiError::Validation { detail, .. }) if detail == SAVED_CLUBS_CAP_REACHED)
+        );
+        assert!(save_refusal(true, cap - 1, cap).is_ok());
+        // A missing club is reported before the cap.
+        assert!(matches!(
+            save_refusal(false, cap, cap),
+            Err(ApiError::NotFound(_))
+        ));
+        // The insert itself is guarded by the same two conditions, and is idempotent.
+        assert!(SAVE_SQL.contains("WHERE found.club AND saved.total < $4"));
+        assert!(SAVE_SQL.contains("ON CONFLICT (user_id, club_id) DO NOTHING"));
+    }
+
+    #[test]
+    fn members_cannot_unfollow_their_own_club() {
+        // test_club_member_cannot_unfollow_their_own_club
+        assert!(
+            matches!(unsave_refusal(true), Err(ApiError::Validation { detail, .. }) if detail == MEMBERS_ALWAYS_FOLLOW_CLUB)
+        );
+        assert!(unsave_refusal(false).is_ok());
+    }
 }

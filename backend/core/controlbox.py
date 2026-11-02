@@ -453,6 +453,9 @@ class ClubManagementControl(_ControlModel):
     initial_render_count: int = Field(gt=0, le=100)
     directory_page_size: int = Field(gt=0, le=100)
     invite_expiration_days: int = Field(gt=0)
+    # How long a school's club list for name and handle lookups stays cached
+    # in a Python process; the API's club writes (in Rust) cannot clear it.
+    school_lookup_cache_seconds: float = Field(gt=0, le=3600)
 
 
 class MorningEmailControl(_ControlModel):

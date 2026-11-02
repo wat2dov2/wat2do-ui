@@ -28,7 +28,7 @@ use uuid::Uuid;
 
 use crate::api::AppState;
 use crate::api::auth::{AdminUser, DbUser, OptionalUser, User, find_user};
-use crate::api::body::{Body, Extra, Input, Str, merge_issues};
+use crate::api::body::{Body, Extra, Input, Str, check_json_syntax, merge_issues};
 use crate::api::client_ip::ClientIp;
 use crate::api::errors::ApiError;
 use crate::api::json;
@@ -244,15 +244,37 @@ pub async fn managed_club(
          FROM public.clubs c {CLUB_JOINS} WHERE c.id = $1",
         club_columns(Computed::FULL)
     );
-    let row = read_with_retry(|| sqlx::query(&sql).bind(id).bind(user.id).fetch_optional(db))
-        .await?
-        .ok_or_else(|| ApiError::not_found(CLUB_NOT_FOUND))?;
-    let club = ClubResponse::from_row(&row)?;
-    if user.is_admin() || row.try_get::<bool, _>("is_member")? {
+    let row =
+        read_with_retry(|| sqlx::query(&sql).bind(id).bind(user.id).fetch_optional(db)).await?;
+    let found = match row {
+        Some(row) => Some((
+            ClubResponse::from_row(&row)?,
+            row.try_get::<bool, _>("is_member")?,
+        )),
+        None => None,
+    };
+    club_access(found, user.is_admin())
+}
+
+/// The management gate: a missing club is a 404 for everyone (before any
+/// membership check), then admins and the club's members pass and anyone
+/// else gets a 403.
+pub fn club_access(
+    found: Option<(ClubResponse, bool)>,
+    is_admin: bool,
+) -> Result<ClubResponse, ApiError> {
+    let (club, is_member) = found.ok_or_else(|| ApiError::not_found(CLUB_NOT_FOUND))?;
+    if is_admin || is_member {
         Ok(club)
     } else {
         Err(ApiError::authorization(NOT_AUTHORIZED))
     }
+}
+
+/// Whether a review moved a club or claim to another status; only then is
+/// the frontend refreshed and the decision emailed.
+pub fn decision_changed(previous: &str, current: &str) -> bool {
+    previous != current
 }
 
 /// Ask the frontend to refresh `resources` of each named school.
@@ -854,6 +876,7 @@ pub async fn create_club(
     headers: HeaderMap,
     bytes: Bytes,
 ) -> Result<Response, ApiError> {
+    check_json_syntax(&bytes, &headers)?;
     SUBMISSIONS.check(&client_ip)?;
     let fields = parse_club(Body::parse(&bytes, &headers, Extra::Forbid)?, true)?;
     let db_user = match auth_user {
@@ -977,7 +1000,7 @@ pub async fn review_club(
         .ok_or_else(|| ApiError::not_found(CLUB_NOT_FOUND))?;
     let club = ClubResponse::from_row(&row)?;
     let previous: String = row.try_get("previous_status")?;
-    if previous != club.status {
+    if decision_changed(&previous, &club.status) {
         revalidate(std::slice::from_ref(&club.school), ALL_RESOURCES).await;
         let recipient: Option<String> = row.try_get("submitted_by_email")?;
         emails::send_review_decision(

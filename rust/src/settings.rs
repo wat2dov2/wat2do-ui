@@ -181,6 +181,25 @@ mod tests {
     use super::*;
 
     #[test]
+    fn revalidation_url_and_secret_are_stripped_like_python() {
+        // event_feed_revalidation.py strips both before use.
+        let settings = test_settings(&[
+            (
+                "EVENT_FEED_REVALIDATION_URL",
+                "  https://wat2do.io/api/revalidate \n",
+            ),
+            ("EVENT_FEED_REVALIDATION_SECRET", "\tsecret  "),
+        ]);
+        assert_eq!(
+            settings.event_feed_revalidation_url,
+            "https://wat2do.io/api/revalidate"
+        );
+        assert_eq!(settings.event_feed_revalidation_secret, "secret");
+        let blank = test_settings(&[("EVENT_FEED_REVALIDATION_URL", "   ")]);
+        assert!(blank.event_feed_revalidation_url.is_empty());
+    }
+
+    #[test]
     fn defaults_match_core_config() {
         let settings = test_settings(&[]);
         assert_eq!(settings.environment, "development");

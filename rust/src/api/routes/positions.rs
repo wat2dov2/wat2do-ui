@@ -405,34 +405,48 @@ pub async fn get_position_stats(
     check.finish()?;
     let (slug, name) = school_lookup(&school);
     let open = OpenWindow::now();
-    // Live click counts of the school's open positions (the events group's
-    // `interaction_service.get_click_counts_for_positions`, inlined), by id.
+    // The school's open positions; a failure here is the request's failure.
     let sql = format!(
-        "SELECT counts.position_id, counts.click_count FROM public.get_position_click_counts( \
-             ARRAY(SELECT p.id::int FROM public.positions p \
-                   WHERE p.school_id = {} AND {} ORDER BY p.id LIMIT $5)) AS counts \
-         ORDER BY counts.position_id",
+        "SELECT p.id::int FROM public.positions p WHERE p.school_id = {} AND {} \
+         ORDER BY p.id LIMIT $5",
         school_id_sql("$1", "$2"),
         OpenWindow::sql("p", "$3", "$4"),
     );
-    let result = read_with_retry(|| {
-        sqlx::query_as::<_, (i32, i64)>(&sql)
+    let ids = read_with_retry(|| {
+        sqlx::query_scalar::<_, i32>(&sql)
             .bind(&slug)
             .bind(&name)
             .bind(open.today)
             .bind(open.cutoff)
-            .bind(DEFAULT_MAX_ROWS as i64)
+            .bind(DEFAULT_MAX_ROWS as i64 + 1)
             .fetch_all(&state.db)
     })
+    .await?;
+    if ids.len() > DEFAULT_MAX_ROWS {
+        // `fetch_all_pages` refuses rather than return a partial read.
+        return Err(ApiError::Internal(anyhow::anyhow!(
+            "fetch_all_pages exceeded max_rows={DEFAULT_MAX_ROWS}"
+        )));
+    }
+    if ids.is_empty() {
+        return Ok(Json(IndexMap::new()));
+    }
+    // Live click counts (the events group's
+    // `interaction_service.get_click_counts_for_positions`, inlined), by id.
+    // As in `_get_click_counts`, failing counts read as none.
+    let result = read_with_retry(|| {
+        sqlx::query_as::<_, (i32, i64)>(
+            "SELECT position_id, click_count FROM public.get_position_click_counts($1) \
+             ORDER BY position_id",
+        )
+        .bind(&ids)
+        .fetch_all(&state.db)
+    })
     .await;
-    let counts = match result {
-        Ok(counts) => counts,
-        // As in `_get_click_counts`, failing counts read as none.
-        Err(error) => {
-            tracing::warn!("Failed to fetch position click counts: {error}");
-            Vec::new()
-        }
-    };
+    let counts = result.unwrap_or_else(|error| {
+        tracing::warn!("Failed to fetch position click counts: {error}");
+        Vec::new()
+    });
     Ok(Json(
         counts
             .into_iter()

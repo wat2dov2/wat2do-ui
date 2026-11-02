@@ -262,6 +262,8 @@ pub struct ClubManagement {
     pub directory_page_size: u32,
     pub invite_expiration_days: i64,
     pub initial_render_count: u32,
+    /// Python's cache of a school's clubs for name lookups; Rust reads fresh.
+    pub school_lookup_cache_seconds: f64,
 }
 
 /// The server-side limits in `controlbox/discovery_queries.json`.

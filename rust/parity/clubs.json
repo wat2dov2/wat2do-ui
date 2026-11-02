@@ -860,5 +860,43 @@
   {
     "name": "discovery anonymous",
     "path": "/discovery-queries/"
+  },
+  {
+    "name": "collision GET /clubs/invitations/invitations anonymous",
+    "path": "/clubs/invitations/invitations"
+  },
+  {
+    "name": "collision GET /clubs/invitations/invitations signed in",
+    "path": "/clubs/invitations/invitations",
+    "identity": {
+      "id": "user-supabase-auth-id",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    }
+  },
+  {
+    "name": "collision POST /clubs/claims/claims anonymous",
+    "method": "POST",
+    "path": "/clubs/claims/claims",
+    "json": {
+      "executive_role": "President"
+    },
+    "safe": true
+  },
+  {
+    "name": "collision POST /clubs/claims/claims signed in",
+    "method": "POST",
+    "path": "/clubs/claims/claims",
+    "json": {
+      "executive_role": "President"
+    },
+    "identity": {
+      "id": "user-supabase-auth-id",
+      "email": "user@example.com",
+      "aud": "authenticated",
+      "role": "authenticated"
+    },
+    "safe": true
   }
 ]

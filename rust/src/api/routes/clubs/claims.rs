@@ -31,6 +31,10 @@ use crate::api::validation::{Length, PathParams, QueryParams, Validator};
 use crate::constants::{MAX_SCHOOL_LENGTH, MAX_SEARCH_QUERY_LENGTH};
 use crate::db::read_with_retry;
 
+/// An approved claim makes the claimant the club's owner only when it has
+/// none: an existing owner is never replaced.
+const CLAIM_OWNER_SQL: &str =
+    "UPDATE public.clubs SET created_by = $2 WHERE id = $1 AND created_by IS NULL";
 const ALREADY_MANAGED: &str = "You already manage this club";
 const CLAIM_NOT_FOUND: &str = "Claim not found";
 const CLAIM_STATUS_PATTERN: &str = "^(approved|rejected)$";
@@ -311,7 +315,7 @@ pub async fn update_claim(
     let previous: String = row.try_get("previous_status")?;
     if status == "approved" {
         // An unowned club gets the claimant as its owner.
-        sqlx::query("UPDATE public.clubs SET created_by = $2 WHERE id = $1 AND created_by IS NULL")
+        sqlx::query(CLAIM_OWNER_SQL)
             .bind(claim.club_id)
             .bind(claim.user_id)
             .execute(&state.db)
@@ -321,7 +325,7 @@ pub async fn update_claim(
             Err(AddError::Api(error)) => return Err(error),
         }
     }
-    if previous != status {
+    if super::decision_changed(&previous, &status) {
         send_claim_decision(&state.db, &claim, &status, reason.as_deref()).await?;
     }
     Ok(Json(claim))
@@ -355,4 +359,24 @@ async fn send_claim_decision(
     )
     .await;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn claim_approval_never_replaces_an_existing_owner() {
+        // test_claim_approval_never_replaces_an_existing_owner
+        assert!(CLAIM_OWNER_SQL.ends_with("WHERE id = $1 AND created_by IS NULL"));
+        assert!(CLAIM_OWNER_SQL.starts_with("UPDATE public.clubs SET created_by = $2"));
+    }
+
+    #[test]
+    fn claim_decisions_are_emailed_only_when_the_status_changes() {
+        // test_claim_decision_is_emailed_only_when_the_status_changes
+        assert!(super::super::decision_changed("pending", "approved"));
+        assert!(super::super::decision_changed("approved", "rejected"));
+        assert!(!super::super::decision_changed("approved", "approved"));
+    }
 }

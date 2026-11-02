@@ -57,6 +57,13 @@ pub struct ClubInvitationResponse {
 const INVITATION_COLUMNS: &str =
     "id, club_id, email, token, invited_by, status, created_at, expires_at";
 
+/// Only the invited address may accept: the signed-in email, stripped and
+/// casefolded, must equal the invited one.
+fn is_intended_recipient(user_email: &str, invited_email: &str) -> bool {
+    let fold = |text: &str| caseless::default_case_fold_str(crate::text::python_strip(text));
+    !user_email.is_empty() && fold(user_email) == fold(invited_email)
+}
+
 /// Managers (not admins) may only invite addresses of their own school.
 fn school_refusal(inviter_school: Option<&str>, invited_school: Option<&str>) -> Option<String> {
     let same = match (invited_school, inviter_school) {
@@ -336,8 +343,7 @@ pub async fn accept_invitation(
     .ok_or_else(|| ApiError::not_found(INVITATION_EXPIRED))?;
     let (invitation_id, club_id, invited_email) = invitation;
     // Only the invited address may accept.
-    let fold = |text: &str| caseless::default_case_fold_str(crate::text::python_strip(text));
-    if user.email.is_empty() || fold(&user.email) != fold(&invited_email) {
+    if !is_intended_recipient(&user.email, &invited_email) {
         return Err(ApiError::authorization(NOT_AUTHORIZED));
     }
     match add_member(&state.db, i64::from(club_id), user.id).await {
@@ -354,6 +360,28 @@ pub async fn accept_invitation(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn invitations_only_accept_the_intended_recipient() {
+        // test_invitation_only_accepts_intended_recipient
+        let user = "test@uwaterloo.ca";
+        for recipient in [
+            "test@uwaterloo.ca",
+            "TEST@UWATERLOO.CA",
+            "  Test@UWaterloo.ca ",
+        ] {
+            assert!(is_intended_recipient(user, recipient), "{recipient}");
+        }
+        for recipient in ["other@uwaterloo.ca", "test@uwaterloo.ca.evil", ""] {
+            assert!(!is_intended_recipient(user, recipient), "{recipient}");
+        }
+        assert!(!is_intended_recipient("", ""));
+        // Casefolding, not lower-casing: "ß" matches "SS".
+        assert!(is_intended_recipient(
+            "strasse@example.com",
+            "STRAßE@example.com"
+        ));
+    }
 
     #[test]
     fn managers_invite_only_their_own_school() {

@@ -374,3 +374,35 @@ def test_new_club_member_follows_the_club(monkeypatch, fake_sb, patch_sb):
     club_service.add_club_member(7, user_id)
 
     follow.assert_called_once_with(str(user_id), 7)
+
+
+def test_school_lookup_cache_expires_so_rust_writes_show_up(monkeypatch):
+    """Club writes happen in the Rust API, which cannot clear this cache."""
+    loads = []
+    now = [1000.0]
+    monkeypatch.setattr(club_service.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(
+        club_service,
+        "_load_clubs_for_school_lookup",
+        lambda school_id: loads.append(school_id) or [{"id": len(loads)}],
+    )
+    club_service.clear_school_lookup_cache()
+    ttl = club_service.controlbox.club_management.school_lookup_cache_seconds
+
+    assert club_service._get_clubs_for_school_lookup(7) == [{"id": 1}]
+    now[0] += ttl - 1
+    assert club_service._get_clubs_for_school_lookup(7) == [{"id": 1}]
+    now[0] += 2
+    assert club_service._get_clubs_for_school_lookup(7) == [{"id": 2}]
+    club_service.clear_school_lookup_cache()
+    assert club_service._get_clubs_for_school_lookup(7) == [{"id": 3}]
+    assert loads == [7, 7, 7]
+
+
+def test_school_lookup_cache_keeps_at_most_sixteen_schools(monkeypatch):
+    monkeypatch.setattr(club_service, "_load_clubs_for_school_lookup", lambda school_id: [])
+    club_service.clear_school_lookup_cache()
+    for school_id in range(20):
+        club_service._get_clubs_for_school_lookup(school_id)
+    assert len(club_service._school_lookup_cache) == 16
+    assert 0 not in club_service._school_lookup_cache

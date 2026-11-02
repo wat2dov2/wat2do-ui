@@ -182,6 +182,6 @@ def clear_scraper_caches():
     get_school_by_name.cache_clear()
 
     # club_service caches
-    from services.club_service import _get_clubs_for_school_lookup
+    from services.club_service import clear_school_lookup_cache
 
-    _get_clubs_for_school_lookup.cache_clear()
+    clear_school_lookup_cache()

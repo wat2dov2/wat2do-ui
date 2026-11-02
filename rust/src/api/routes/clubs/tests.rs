@@ -323,3 +323,37 @@ fn club_rows_serialize_in_the_model_order() {
             .ends_with(r#""position_count":0,"submitted_by_email":"visitor@example.com"}"#)
     );
 }
+
+fn sample_club() -> ClubResponse {
+    serde_json::from_value(json!({
+        "id": 1, "club_name": "Chess", "status": "approved", "club_type": "independent",
+        "club_page": null, "ig": null, "discord": null, "logo_url": null,
+        "created_by": null, "created_at": null
+    }))
+    .unwrap()
+}
+
+#[test]
+fn club_management_requires_membership_or_admin() {
+    // test_club_management_requires_membership, test_list_club_members_denied_for_non_member
+    assert!(matches!(
+        club_access(Some((sample_club(), false)), false),
+        Err(ApiError::Authorization(detail)) if detail == NOT_AUTHORIZED
+    ));
+    assert!(club_access(Some((sample_club(), true)), false).is_ok());
+    assert!(club_access(Some((sample_club(), false)), true).is_ok());
+    // A missing club is a 404 before any membership check, even for admins.
+    for is_admin in [false, true] {
+        assert!(matches!(
+            club_access(None, is_admin),
+            Err(ApiError::NotFound(detail)) if detail == CLUB_NOT_FOUND
+        ));
+    }
+}
+
+#[test]
+fn club_review_decisions_are_announced_only_on_change() {
+    // test_club_status_change_refreshes_visibility_dependencies
+    assert!(decision_changed("pending", "approved"));
+    assert!(!decision_changed("approved", "approved"));
+}

@@ -505,6 +505,14 @@ fn payout_email(body: &mut Body) -> Option<String> {
     }
 }
 
+/// `PromoterEnrollmentUpdate`: the payout email and whether the terms are accepted.
+fn parse_enrollment(mut body: Body) -> Result<(String, bool), ApiError> {
+    let email = payout_email(&mut body);
+    let accept_tos = body.bool_or("accept_tos", false);
+    body.finish()?;
+    Ok((email.unwrap_or_default(), accept_tos))
+}
+
 /// Why a promoter enrollment change is refused. Someone already enrolled
 /// may always change their payout email; enrolling needs a registered
 /// school, the program running, and the terms accepted.
@@ -544,11 +552,7 @@ pub async fn update_promoter_enrollment(
     headers: HeaderMap,
     bytes: Bytes,
 ) -> Result<Json<UserResponse>, ApiError> {
-    let mut body = Body::parse(&bytes, &headers, Extra::Forbid)?;
-    let email = payout_email(&mut body);
-    let accept_tos = body.bool("accept_tos").value().unwrap_or(false);
-    body.finish()?;
-    let email = email.unwrap_or_default();
+    let (email, accept_tos) = parse_enrollment(Body::parse(&bytes, &headers, Extra::Forbid)?)?;
     let existing = get_or_404(get_user(&state.db, user.id).await?, USER_NOT_FOUND)?;
     let enrolled = existing.payout_email.is_some()
         && existing.promoter_tos_accepted_at.is_some()
@@ -754,24 +758,14 @@ pub async fn delete_user(
         return Err(ApiError::validation(LAST_ADMIN_REQUIRED));
     }
     // Financial and promoter records keep their user; refuse rather than orphan them.
-    let (payouts, posters, reviews) = read_with_retry(|| {
-        sqlx::query_as::<_, (bool, bool, bool)>(
-            "SELECT EXISTS (SELECT 1 FROM public.poster_payouts WHERE user_id = $1), \
-             EXISTS (SELECT 1 FROM public.qr_codes WHERE created_by = $1 AND program = 'promoter'), \
-             EXISTS (SELECT 1 FROM public.poster_payout_reviews WHERE reviewed_by = $1)",
-        )
-        .bind(id)
-        .fetch_one(&state.db)
+    let records = read_with_retry(|| {
+        sqlx::query_as::<_, (bool, bool, bool)>(USER_RECORDS_SQL)
+            .bind(id)
+            .fetch_one(&state.db)
     })
     .await?;
-    if payouts {
-        return Err(ApiError::validation(USER_HAS_PAYOUTS));
-    }
-    if posters {
-        return Err(ApiError::validation(USER_HAS_PROMOTER_POSTERS));
-    }
-    if reviews {
-        return Err(ApiError::validation(USER_HAS_PAYOUT_REVIEWS));
+    if let Some(refusal) = delete_refusal(records) {
+        return Err(ApiError::validation(refusal));
     }
     let deleted = sqlx::query("DELETE FROM public.users WHERE id = $1")
         .bind(id)
@@ -782,6 +776,26 @@ pub async fn delete_user(
         return Err(ApiError::not_found(USER_NOT_FOUND));
     }
     Ok(no_content())
+}
+
+/// Whether the user has payouts, promoter posters, or payout reviews they made.
+const USER_RECORDS_SQL: &str = "SELECT \
+     EXISTS (SELECT 1 FROM public.poster_payouts WHERE user_id = $1), \
+     EXISTS (SELECT 1 FROM public.qr_codes WHERE created_by = $1 AND program = 'promoter'), \
+     EXISTS (SELECT 1 FROM public.poster_payout_reviews WHERE reviewed_by = $1)";
+
+/// Financial and promoter records keep their user: refuse to delete it, in
+/// Python's order (payouts, promoter posters, payout reviews).
+fn delete_refusal((payouts, posters, reviews): (bool, bool, bool)) -> Option<&'static str> {
+    if payouts {
+        Some(USER_HAS_PAYOUTS)
+    } else if posters {
+        Some(USER_HAS_PROMOTER_POSTERS)
+    } else if reviews {
+        Some(USER_HAS_PAYOUT_REVIEWS)
+    } else {
+        None
+    }
 }
 
 /// FastAPI's empty 204 for a route that returns nothing (it keeps the JSON
@@ -886,6 +900,47 @@ mod tests {
         assert!(parse(json!({"full_name": "x"}), false).is_err());
         assert!(parse(json!({"interests": vec!["a"; 51]}), true).is_err());
         assert!(parse(json!({"is_first_year": 2}), true).is_err());
+    }
+
+    #[test]
+    fn delete_user_rejects_records_that_keep_their_user() {
+        // test_delete_user_rejects_financial_record_removal,
+        // test_delete_user_rejects_promoter_poster_removal,
+        // test_delete_user_rejects_payout_reviewer_removal,
+        // test_delete_user_without_payouts_deletes_profile
+        assert_eq!(delete_refusal((true, true, true)), Some(USER_HAS_PAYOUTS));
+        assert_eq!(
+            delete_refusal((false, true, true)),
+            Some(USER_HAS_PROMOTER_POSTERS)
+        );
+        assert_eq!(
+            delete_refusal((false, false, true)),
+            Some(USER_HAS_PAYOUT_REVIEWS)
+        );
+        assert_eq!(delete_refusal((false, false, false)), None);
+        // Only promoter posters count, and reviews by the user, not of them.
+        assert!(
+            USER_RECORDS_SQL.contains("qr_codes WHERE created_by = $1 AND program = 'promoter'")
+        );
+        assert!(USER_RECORDS_SQL.contains("poster_payout_reviews WHERE reviewed_by = $1"));
+        assert!(USER_RECORDS_SQL.contains("poster_payouts WHERE user_id = $1"));
+    }
+
+    #[test]
+    fn enrollment_bodies_refuse_null_terms() {
+        let parse = |value: Value| parse_enrollment(Body::from_value(value, Extra::Forbid));
+        assert_eq!(
+            parse(json!({"payout_email": "pay@example.com"})).unwrap(),
+            ("pay@example.com".to_owned(), false)
+        );
+        match parse(json!({"payout_email": "pay@example.com", "accept_tos": null})) {
+            Err(ApiError::RequestValidation(issues)) => assert_eq!(
+                json!(issues),
+                json!([{"type": "bool_type", "loc": ["body", "accept_tos"], "msg": "Input should be a valid boolean", "input": null}])
+            ),
+            other => panic!("{other:?}"),
+        }
+        assert!(parse(json!({"payout_email": "pay@example.com", "extra": 1})).is_err());
     }
 
     #[test]

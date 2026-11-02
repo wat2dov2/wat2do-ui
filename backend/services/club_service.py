@@ -1,8 +1,8 @@
 """Clubs via the data API. Sync."""
 
-import functools
 import json
 import logging
+import time
 from datetime import datetime, timezone
 
 log = logging.getLogger(__name__)
@@ -16,6 +16,7 @@ from core.constants import (
     DEFAULT_LIST_LIMIT,
     MAX_PAGE_SIZE,
 )
+from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import CLUB_EVENT_CREATION_REQUIRED, CLUB_PENDING_REVIEW
 from core.exceptions import ConflictError, NotFoundError, ValidationError
@@ -91,8 +92,39 @@ def lookup_club_by_school_and_ig(school: str, handle: str) -> dict | None:
     return school_service.with_school_slug(matches[0]) if len(matches) == 1 else None
 
 
-@functools.lru_cache(maxsize=16)
+# school id -> (loaded at, rows), for at most ``_SCHOOL_LOOKUP_CACHE_SIZE`` schools.
+_school_lookup_cache: dict[int, tuple[float, list[dict]]] = {}
+_SCHOOL_LOOKUP_CACHE_SIZE = 16
+
+
+def clear_school_lookup_cache() -> None:
+    """Forget every cached school club list (after a club write in this process)."""
+    _school_lookup_cache.clear()
+
+
 def _get_clubs_for_school_lookup(school_id: int) -> list[dict]:
+    """A school's clubs for name and handle lookups, cached briefly.
+
+    Club writes now happen in the Rust API, which cannot clear this process's
+    cache, so entries expire after ``school_lookup_cache_seconds``.
+    """
+    now = time.monotonic()
+    cached = _school_lookup_cache.get(school_id)
+    if cached is not None and now - cached[0] < (
+        controlbox.club_management.school_lookup_cache_seconds
+    ):
+        return cached[1]
+    rows = _load_clubs_for_school_lookup(school_id)
+    if school_id not in _school_lookup_cache and len(_school_lookup_cache) >= (
+        _SCHOOL_LOOKUP_CACHE_SIZE
+    ):
+        oldest = min(_school_lookup_cache, key=lambda key: _school_lookup_cache[key][0])
+        del _school_lookup_cache[oldest]
+    _school_lookup_cache[school_id] = (now, rows)
+    return rows
+
+
+def _load_clubs_for_school_lookup(school_id: int) -> list[dict]:
     rows: list[dict] = []
     offset = 0
     while True:
@@ -292,7 +324,7 @@ def create_club(
             add_club_member(club.id, UUID(created_by))
         except Exception as e:
             log.warning("Failed to auto-add creator %s to club members: %s", created_by, e)
-    _get_clubs_for_school_lookup.cache_clear()
+    clear_school_lookup_cache()
     if auto_approve:
         event_feed_revalidation_service.revalidate_school(club.school, resources=("clubs",))
     return club
@@ -316,7 +348,7 @@ def update_club(club_id: int, data: ClubUpdate) -> ClubResponse | None:
     r = get_sb().table(CLUBS).update(payload).eq("id", club_id).execute()
     if r.data:
         updated = _club_response({**r.data[0], "school": updated_school})
-        _get_clubs_for_school_lookup.cache_clear()
+        clear_school_lookup_cache()
         # These fields are embedded by the event and position read models.
         changes_embedded_fields = any(
             getattr(updated, field) != getattr(existing, field)
