@@ -6,8 +6,10 @@ use anyhow::{Context, Result};
 use sqlx::postgres::{PgConnectOptions, PgPool, PgPoolOptions};
 
 /// Connect to `DATABASE_URL`. Production points at Supabase's transaction
-/// pooler, which cannot keep prepared statements between transactions, so
-/// statements are never cached.
+/// pooler, which shares server connections between clients, so a named
+/// prepared statement can collide with another client's ("sqlx_s_1 already
+/// exists"). Every query is therefore one-shot (`persistent(false)`), which
+/// uses the unnamed statement, and nothing is cached.
 pub async fn connect(max_connections: u32) -> Result<PgPool> {
     let url = &crate::settings::settings()?.database_url;
     let options = PgConnectOptions::from_str(url)

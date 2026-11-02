@@ -25,6 +25,7 @@ pub async fn by_slug(pool: &PgPool, slug: &str) -> Result<Option<School>> {
     Ok(sqlx::query_as(&format!(
         "SELECT {COLUMNS} FROM public.schools WHERE slug = $1"
     ))
+    .persistent(false)
     .bind(slug)
     .fetch_optional(pool)
     .await?)
