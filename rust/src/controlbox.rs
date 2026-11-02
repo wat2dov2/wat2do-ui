@@ -84,6 +84,7 @@ pub struct RateLimits {
     pub reports: RateLimit,
     pub submissions: RateLimit,
     pub calendar_feed: RateLimit,
+    pub maximum_saved_clubs_per_user: i64,
 }
 
 /// `controlbox/ingestion.json`, every field.
@@ -226,7 +227,8 @@ pub struct CampusSeasons {
 
 #[derive(Debug, Deserialize)]
 pub struct SeasonDefinition {
-    pub labels: HashMap<String, String>,
+    /// Per language, in the file's order (the schools API lists them so).
+    pub labels: IndexMap<String, String>,
     pub instructions: String,
 }
 
@@ -240,6 +242,51 @@ pub struct SchoolSeasons {
 pub struct SchoolSeason {
     pub id: String,
     pub instructions: String,
+    pub display_windows: Vec<DisplayWindow>,
+}
+
+/// When a season shows as a discovery filter; `filter_id` names a narrower
+/// filter (Thanksgiving within holidays) that shares the season's tagging.
+#[derive(Debug, Deserialize)]
+pub struct DisplayWindow {
+    pub start_date: chrono::NaiveDate,
+    pub end_date: chrono::NaiveDate,
+    #[serde(default)]
+    pub filter_id: Option<String>,
+}
+
+/// `controlbox/club_management.json`, every field.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ClubManagement {
+    pub directory_page_size: u32,
+    pub invite_expiration_days: i64,
+    pub initial_render_count: u32,
+}
+
+/// The server-side limits in `controlbox/discovery_queries.json`.
+#[derive(Debug, Deserialize)]
+pub struct DiscoveryQueries {
+    pub excluded_account_emails: Vec<String>,
+    pub maximum_search_length: usize,
+    pub maximum_page_url_length: usize,
+    pub maximum_filters_bytes: usize,
+    pub rate_limit: RateLimit,
+}
+
+/// The enrollment switches in `controlbox/promoter_program.json`.
+#[derive(Debug, Deserialize)]
+pub struct PromoterProgram {
+    pub enabled: bool,
+    pub tos_version: String,
+}
+
+/// `controlbox/positions.json`, every field.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Positions {
+    /// An undated position stays listed this many months after it is added.
+    pub undated_visibility_months: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -372,6 +419,30 @@ pub static EVENT_DISCOVERY: LazyLock<EventDiscovery> = LazyLock::new(|| {
     )
 });
 
+pub static CLUB_MANAGEMENT: LazyLock<ClubManagement> = LazyLock::new(|| {
+    parse(
+        "club_management",
+        include_str!("../../backend/controlbox/club_management.json"),
+    )
+});
+pub static DISCOVERY_QUERIES: LazyLock<DiscoveryQueries> = LazyLock::new(|| {
+    parse(
+        "discovery_queries",
+        include_str!("../../backend/controlbox/discovery_queries.json"),
+    )
+});
+pub static PROMOTER_PROGRAM: LazyLock<PromoterProgram> = LazyLock::new(|| {
+    parse(
+        "promoter_program",
+        include_str!("../../backend/controlbox/promoter_program.json"),
+    )
+});
+pub static POSITIONS: LazyLock<Positions> = LazyLock::new(|| {
+    parse(
+        "positions",
+        include_str!("../../backend/controlbox/positions.json"),
+    )
+});
 pub static MORNING_EMAIL: LazyLock<MorningEmail> = LazyLock::new(|| {
     parse(
         "morning_email",
@@ -501,6 +572,10 @@ mod tests {
         assert!(MORNING_EMAIL.local_send_hour <= MORNING_EMAIL.last_local_send_hour);
         assert!(EVENT_REMINDER.lead_minutes > 0);
         assert!(!EMAIL_DELIVERY.team_sender.is_empty());
+        assert!(CLUB_MANAGEMENT.invite_expiration_days > 0);
+        assert!(DISCOVERY_QUERIES.maximum_filters_bytes > 0);
+        assert!(!PROMOTER_PROGRAM.tos_version.is_empty());
+        assert!(POSITIONS.undated_visibility_months > 0);
         assert!(!NOTIFICATION_DEFAULTS.enabled("unknown_type"));
 
         assert!(INSTAGRAM_BROWSER.parallel_tabs >= 2);

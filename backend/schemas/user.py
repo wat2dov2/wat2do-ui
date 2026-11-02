@@ -39,35 +39,6 @@ class UserUpdate(BaseModel):
     is_first_year: bool | None = None
 
 
-class UserProfileUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    faculty: str | None = Field(default=None, max_length=MAX_FACULTY_LENGTH)
-    school: str | None = Field(default=None, max_length=MAX_SCHOOL_LENGTH)
-    interests: list[InterestStr] | None = Field(default=None, max_length=MAX_INTERESTS_COUNT)
-    is_first_year: bool | None = None
-
-
-class UserRoleUpdate(BaseModel):
-    """Admin-only payload for rotating a user's role.
-
-    Separate from ``UserUpdate`` so ``role`` never leaks into a self-service
-    update path - one shared model across trust boundaries would be a
-    defense-in-depth gap.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    role: UserRole
-
-
-class PromoterEnrollmentUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    payout_email: PayoutEmail
-    accept_tos: bool = False
-
-
 class UserResponse(UserBase):
     id: UUID
     school_id: int | None = Field(default=None, exclude=True)

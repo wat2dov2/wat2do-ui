@@ -1,7 +1,5 @@
 import pytest
 
-from core.tables import SCHOOLS
-from schemas.school import SchoolSummary
 from services import school_service
 
 
@@ -53,8 +51,6 @@ def test_season_projection_is_school_scoped_static_and_public(fake_sb, patch_sb,
         ),
     )
     patch_sb("services.school_service")
-    fake_sb.set_response(data=SCHOOL_ROWS)
-    schools = {school.slug: school for school in school_service.search_schools("")}
     expected = [
         {
             "id": "homecoming",
@@ -66,8 +62,10 @@ def test_season_projection_is_school_scoped_static_and_public(fake_sb, patch_sb,
             ],
         }
     ]
-    assert schools["uwaterloo"].model_dump(mode="json")["event_seasons"] == expected
-    assert schools["mit"].event_seasons == []
+    assert [
+        season.model_dump(mode="json") for season in school_service._event_seasons("uwaterloo")
+    ] == expected
+    assert school_service._event_seasons("mit") == []
     assert school_service.campus_season_ids(" UWATERLOO ") == frozenset({"homecoming"})
     assert school_service.campus_season_ids("mit") == frozenset()
 
@@ -101,66 +99,6 @@ SCHOOL_ROWS = [
 ]
 
 
-def test_search_schools_leads_with_the_primary_domain(fake_sb, patch_sb):
-    """Consumers read the head of the list, so a subdomain must never lead."""
-    patch_sb("services.school_service")
-    fake_sb.set_response(
-        data=[
-            {
-                "slug": "uwaterloo",
-                "name": "University of Waterloo",
-                "primary_color": "#FFD54F",
-                "secondary_color": "#111111",
-                "timezone": "America/Toronto",
-                "faculties": ["Engineering", "Mathematics"],
-                "location_examples": ["MC", "SLC"],
-                "school_email_domains": [
-                    {"domain": "edu.uwaterloo.ca", "is_primary": False},
-                    {"domain": "uwaterloo.ca", "is_primary": True},
-                ],
-            }
-        ]
-    )
-
-    [school] = school_service.search_schools("")
-
-    assert school.email_domains == ["uwaterloo.ca", "edu.uwaterloo.ca"]
-    assert school.timezone == "America/Toronto"
-    assert school.faculties == ["Engineering", "Mathematics"]
-    assert school.location_examples == ["MC", "SLC"]
-
-
-def test_search_schools_matches_domain_fragment(fake_sb, patch_sb):
-    patch_sb("services.school_service")
-    fake_sb.set_response(data=SCHOOL_ROWS)
-
-    assert [
-        school.model_copy(update={"event_seasons": []})
-        for school in school_service.search_schools("mit.edu")
-    ] == [
-        SchoolSummary(
-            slug="mit",
-            name="Massachusetts Institute of Technology",
-            primary_color="#A31F34",
-            secondary_color="#FFFFFF",
-            timezone="America/Toronto",
-            email_domains=["mit.edu"],
-        )
-    ]
-    fake_sb.table.assert_called_once_with(SCHOOLS)
-
-
-def test_search_schools_exposes_authoritative_city_and_allows_unknown_city(fake_sb, patch_sb):
-    patch_sb("services.school_service")
-    fake_sb.set_response(data=[{**SCHOOL_ROWS[0], "city": "Waterloo"}, SCHOOL_ROWS[1]])
-
-    schools = {school.slug: school for school in school_service.search_schools("")}
-
-    assert schools["uwaterloo"].city == "Waterloo"
-    assert schools["mit"].city is None
-    assert "city" in [column.strip() for column in fake_sb.select.call_args.args[0].split(",")]
-
-
 @pytest.mark.parametrize(
     "lookup,argument",
     [
@@ -180,52 +118,6 @@ def test_school_identity_lookups_include_city(lookup, argument, fake_sb, patch_s
     assert school is not None
     assert school.city == "Waterloo"
     assert "city" in [column.strip() for column in fake_sb.select.call_args.args[0].split(",")]
-
-
-def test_search_schools_matches_display_name_fragment(fake_sb, patch_sb):
-    patch_sb("services.school_service")
-    fake_sb.set_response(data=SCHOOL_ROWS)
-
-    assert [
-        school.model_copy(update={"event_seasons": []})
-        for school in school_service.search_schools("waterloo")
-    ] == [
-        SchoolSummary(
-            slug="uwaterloo",
-            name="University of Waterloo",
-            primary_color="#FFD54F",
-            secondary_color="#111111",
-            timezone="America/Toronto",
-            email_domains=["uwaterloo.ca"],
-        )
-    ]
-
-
-def test_search_schools_returns_directory_for_blank_query(fake_sb, patch_sb):
-    patch_sb("services.school_service")
-    fake_sb.set_response(data=SCHOOL_ROWS)
-
-    assert [
-        school.model_copy(update={"event_seasons": []})
-        for school in school_service.search_schools("   ")
-    ] == [
-        SchoolSummary(
-            slug="mit",
-            name="Massachusetts Institute of Technology",
-            primary_color="#A31F34",
-            secondary_color="#FFFFFF",
-            timezone="America/Toronto",
-            email_domains=["mit.edu"],
-        ),
-        SchoolSummary(
-            slug="uwaterloo",
-            name="University of Waterloo",
-            primary_color="#FFD54F",
-            secondary_color="#111111",
-            timezone="America/Toronto",
-            email_domains=["uwaterloo.ca"],
-        ),
-    ]
 
 
 def test_get_school_by_recipient_id(fake_sb, patch_sb):
@@ -263,47 +155,6 @@ def test_get_school_by_recipient_id_rejects_noncanonical_values(
 
     assert school_service.get_school_by_recipient_id(recipient_id) is None
     fake_sb.table.assert_not_called()
-
-
-@pytest.mark.parametrize(
-    "query,expected",
-    [
-        ("UWATERLOO", ["uwaterloo"]),
-        ("u waterloo", ["uwaterloo"]),
-        ("u-waterloo", ["uwaterloo"]),
-        ("waterloo.ca", ["uwaterloo"]),
-        ("  University   of Waterloo ", ["uwaterloo"]),
-        ("ＭＩＴ", ["mit"]),
-        ("mit edu", ["mit"]),
-        ("massachusetts", ["mit"]),
-        ("MassachusettsInstituteofTechnology", ["mit"]),
-        ("technology", ["mit"]),
-        ("unknown university", []),
-        ("", ["mit", "uwaterloo"]),
-    ],
-)
-def test_search_schools_normalized_and_compact_terms(query, expected, fake_sb, patch_sb):
-    patch_sb("services.school_service")
-    fake_sb.set_response(data=SCHOOL_ROWS)
-
-    schools = school_service.search_schools(query)
-
-    assert [school.slug for school in schools] == expected
-
-
-@pytest.mark.parametrize("limit", [1, 2, 3])
-def test_search_schools_ranks_exact_then_prefix_then_substring(limit, fake_sb, patch_sb):
-    patch_sb("services.school_service")
-    rows = [
-        {**SCHOOL_ROWS[0], "slug": "abc", "name": "ABC University", "school_email_domains": []},
-        {**SCHOOL_ROWS[0], "slug": "xabc", "name": "XABC University", "school_email_domains": []},
-        {**SCHOOL_ROWS[0], "slug": "ab", "name": "AB University", "school_email_domains": []},
-    ]
-    fake_sb.set_response(data=rows)
-
-    schools = school_service.search_schools("a b", limit)
-
-    assert [school.slug for school in schools] == ["ab", "abc", "xabc"][:limit]
 
 
 def test_holiday_windows_project_specific_filters_without_reclassifying_events():

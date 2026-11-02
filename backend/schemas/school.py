@@ -58,19 +58,3 @@ class SchoolRecord(School):
     social_preview_revision: int = 0
     social_preview_rendered_revision: int = 0
     social_preview_rendered_at: datetime | None = None
-
-
-class SchoolSummary(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-
-    slug: str
-    name: str
-    city: str | None = None
-    primary_color: str
-    secondary_color: str
-    timezone: str
-    language: Literal["en", "fr"] = "en"
-    faculties: list[str] = Field(default_factory=list)
-    location_examples: list[str] = Field(default_factory=list)
-    event_seasons: list[SchoolEventSeason] = Field(default_factory=list)
-    email_domains: list[str] = Field(default_factory=list)

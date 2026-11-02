@@ -15,6 +15,47 @@ pub const EVENT_CATEGORIES: [&str; 10] = [
     "Religion & Spirituality",
 ];
 
+/// `core.constants.clubs.CLUB_CATEGORIES`, the same list as events'.
+pub const CLUB_CATEGORIES: [&str; 10] = EVENT_CATEGORIES;
+
+/// `core.constants.events.INTEREST_TO_CATEGORIES`: each interest, in order,
+/// to the event categories it follows.
+pub const INTEREST_TO_CATEGORIES: [(&str, &[&str]); 10] = [
+    ("Arts & Culture", &["Arts & Culture"]),
+    ("Academics & Science", &["Academics & Science"]),
+    ("Business", &["Business"]),
+    ("Community Service", &["Community Service"]),
+    ("Environment", &["Environment"]),
+    ("Games & Recreation", &["Games & Recreation"]),
+    ("Health", &["Health"]),
+    ("Media & Web", &["Media & Web"]),
+    ("Politics & Advocacy", &["Politics & Advocacy"]),
+    ("Religion & Spirituality", &["Religion & Spirituality"]),
+];
+
+/// `core.constants.statuses.REPORT_STATUSES`, in order.
+pub const REPORT_STATUSES: [&str; 3] = ["pending", "resolved", "dismissed"];
+
+/// `core.constants.clubs.CLUB_TYPE_INDEPENDENT`.
+pub const CLUB_TYPE_INDEPENDENT: &str = "independent";
+
+/// `core.constants.validation` limits on request fields.
+pub const MAX_FULL_NAME_LENGTH: usize = 255;
+pub const MAX_FACULTY_LENGTH: usize = 255;
+pub const MAX_SCHOOL_LENGTH: usize = 255;
+pub const MAX_INTEREST_LENGTH: usize = 100;
+pub const MAX_INTERESTS_COUNT: usize = 50;
+pub const MAX_REJECTION_REASON_LENGTH: usize = 2000;
+pub const MAX_AVATAR_URL_LENGTH: usize = 2048;
+pub const MAX_URL_LENGTH: usize = 2048;
+pub const MAX_SEARCH_QUERY_LENGTH: usize = 200;
+pub const MAX_CLUB_TYPE_LENGTH: usize = 100;
+pub const MAX_CLUB_CATEGORY_LENGTH: usize = 100;
+pub const MAX_CLUB_CATEGORY_COUNT: usize = 20;
+
+/// `core.constants.pagination.MAX_LIST_LIMIT`, also the default of `/users/`.
+pub const MAX_LIST_LIMIT: i64 = 100_000;
+
 pub const MAX_EVENT_DESCRIPTION_LENGTH: i32 = 5000;
 pub const MAX_POSITION_DESCRIPTION_LENGTH: i32 = 4000;
 pub const MAX_CLUB_NAME_LENGTH: usize = 200;

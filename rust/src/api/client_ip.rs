@@ -225,6 +225,21 @@ fn host_of(value: &str) -> String {
     value.to_owned()
 }
 
+/// `get_client_ip(request)` as an extractor, for limiters keyed by client IP.
+pub struct ClientIp(pub String);
+
+impl axum::extract::FromRequestParts<super::AppState> for ClientIp {
+    type Rejection = std::convert::Infallible;
+
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        state: &super::AppState,
+    ) -> Result<Self, Self::Rejection> {
+        let peer = parts.extensions.get::<Peer>().map(|peer| peer.0.as_str());
+        Ok(Self(state.trust.client_ip(peer, &parts.headers)))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

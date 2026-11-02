@@ -14,18 +14,14 @@ from postgrest.exceptions import APIError
 from core.auth import is_admin
 from core.constants import (
     DEFAULT_LIST_LIMIT,
-    DEFAULT_PAGE_SIZE,
     MAX_PAGE_SIZE,
 )
-from core.controlbox import controlbox
 from core.database import get_sb
-from core.errors import CLUB_EVENT_CREATION_REQUIRED, CLUB_PENDING_REVIEW, NOT_AUTHORIZED
-from core.exceptions import AuthorizationError, ConflictError, NotFoundError, ValidationError
+from core.errors import CLUB_EVENT_CREATION_REQUIRED, CLUB_PENDING_REVIEW
+from core.exceptions import ConflictError, NotFoundError, ValidationError
 from core.pagination import apply_stable_order
 from core.sanitize import sanitize_postgrest_value
 from core.tables import (
-    CLUB_CLAIMS,
-    CLUB_INVITATIONS,
     CLUB_MEMBERS,
     CLUBS,
     USERS,
@@ -36,15 +32,11 @@ from schemas.club import (
     ClubCreate,
     ClubMemberResponse,
     ClubResponse,
-    ClubStatus,
-    ClubSubmissionResponse,
     ClubUpdate,
 )
 from schemas.user import UserResponse
-from services import admin_query, position_service, school_service
+from services import position_service, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
-from services.notifications.submission_review import send_review_decision
-from services.school_context import school_frontend_url
 
 _CLUB_SELECT = f"*,event_count,{school_service.SCHOOL_SLUG_EMBED}"
 
@@ -175,53 +167,6 @@ def publish_refusal(club: ClubResponse, db_user: UserResponse) -> str | None:
     return None
 
 
-def is_club_member(club_id: int, user_id: str) -> bool:
-    """Return whether a user is a member of the club."""
-    try:
-        r = (
-            get_sb()
-            .table(CLUB_MEMBERS)
-            .select("id")
-            .eq("club_id", club_id)
-            .eq("user_id", user_id)
-            .execute()
-        )
-        if r.data:
-            return True
-    except Exception as e:
-        log.warning("Failed to query club_members in is_club_member: %s", e)
-
-    return False
-
-
-def list_club_members(club_id: int) -> list[ClubMemberResponse]:
-    """Return all members/managers of the club."""
-    r = get_sb().table(CLUB_MEMBERS).select("joined_at, users(*)").eq("club_id", club_id).execute()
-    members = []
-    club = get_club(club_id)
-    if not club:
-        return []
-
-    for row in r.data or []:
-        u_data = row.get("users")
-        if not u_data:
-            continue
-        u_id = u_data["id"]
-
-        members.append(
-            ClubMemberResponse(
-                user_id=UUID(u_id),
-                email=u_data["email"],
-                full_name=u_data.get("full_name"),
-                avatar_url=u_data.get("avatar_url"),
-                role="Member",
-                joined_at=datetime.fromisoformat(row["joined_at"]),
-            )
-        )
-
-    return members
-
-
 def add_club_member(club_id: int, user_id: UUID) -> ClubMemberResponse:
     """Add a user as a member of the club. Members always follow their club."""
     from services import saved_club_service, user_service
@@ -257,19 +202,6 @@ def add_club_member(club_id: int, user_id: UUID) -> ClubMemberResponse:
         role="Member",
         joined_at=datetime.fromisoformat(inserted["joined_at"]),
     )
-
-
-def remove_club_member(club_id: int, user_id: UUID) -> bool:
-    """Remove a user from the club's members."""
-    r = (
-        get_sb()
-        .table(CLUB_MEMBERS)
-        .delete()
-        .eq("club_id", club_id)
-        .eq("user_id", str(user_id))
-        .execute()
-    )
-    return bool(r.data)
 
 
 def get_club(club_id: int) -> ClubResponse | None:
@@ -366,36 +298,6 @@ def create_club(
     return club
 
 
-def set_club_status(
-    club_id: int, status: ClubStatus, rejection_reason: str | None = None
-) -> ClubResponse | None:
-    """Admin review decision. Approving publishes the club and unlocks
-    event creation for its members."""
-    existing = get_club(club_id)
-    if existing is None:
-        return None
-
-    r = get_sb().table(CLUBS).update({"status": status}).eq("id", club_id).execute()
-    if not r.data:
-        return None
-
-    updated = _club_response({**r.data[0], "school": existing.school})
-    if existing.status != updated.status:
-        event_feed_revalidation_service.revalidate_school(
-            updated.school, resources=("events", "positions", "clubs")
-        )
-        send_review_decision(
-            kind="club",
-            title=updated.club_name,
-            status=updated.status,
-            recipient=r.data[0].get("submitted_by_email"),
-            school=updated.school,
-            path=f"/clubs/{updated.id}",
-            rejection_reason=rejection_reason,
-        )
-    return updated
-
-
 def update_club(club_id: int, data: ClubUpdate) -> ClubResponse | None:
     existing = get_club(club_id)
     if existing is None:
@@ -436,273 +338,7 @@ def update_club(club_id: int, data: ClubUpdate) -> ClubResponse | None:
     return None
 
 
-def delete_club(club_id: int) -> bool:
-    existing = get_club(club_id)
-    r = get_sb().table(CLUBS).delete().eq("id", club_id).execute()
-    if r.data:
-        _get_clubs_for_school_lookup.cache_clear()
-        event_feed_revalidation_service.revalidate_school(
-            existing.school if existing else None,
-            resources=("events", "positions", "clubs"),
-        )
-    return bool(r.data)
-
-
-def create_invitation(club_id: int, email: str, invited_by: UUID) -> dict:
-    """Create or renew an invitation for an email to join a club, and send the email."""
-    club = get_club(club_id)
-    if not club:
-        raise NotFoundError("Club not found")
-
-    from services import user_service
-
-    inviter = user_service.get_user(invited_by)
-    if not inviter:
-        raise NotFoundError("Inviting user not found")
-
-    if inviter.role != "admin":
-        from core.allowed_emails import get_school_for_email
-
-        invited_school = get_school_for_email(email)
-        if (
-            not invited_school
-            or not inviter.school
-            or invited_school.lower() != inviter.school.lower()
-        ):
-            raise ValidationError(
-                f"You can only invite emails matching your school domain ({inviter.school or 'Unknown'})."
-            )
-
-    existing_user = user_service.get_user_by_email(email)
-    if existing_user and is_club_member(club_id, str(existing_user.id)):
-        raise ConflictError("User is already a member of this club")
-
-    import uuid
-    from datetime import timedelta
-
-    token = uuid.uuid4()
-    now = datetime.now(timezone.utc)
-    expires_at = now + timedelta(days=controlbox.club_management.invite_expiration_days)
-
-    payload = {
-        "club_id": club_id,
-        "email": email.strip().lower(),
-        "token": str(token),
-        "invited_by": str(invited_by),
-        "status": "pending",
-        "expires_at": expires_at.isoformat(),
-        "created_at": now.isoformat(),
-    }
-
-    try:
-        # Upsert: if an invite for (club_id, email) already exists, overwrite it.
-        r = get_sb().table(CLUB_INVITATIONS).upsert(payload, on_conflict="club_id,email").execute()
-        if not r.data:
-            raise APIError("Failed to create invitation")
-        invitation = r.data[0]
-    except Exception as e:
-        log.error("Failed to create/upsert invitation: %s", e)
-        raise
-
-    try:
-        from html import escape
-
-        from services.email_layout import (
-            EMAIL_LOGO,
-            email_button,
-            email_note,
-            email_paragraph,
-            email_shell,
-        )
-        from services.email_service import EmailMessage, email_service
-
-        invite_url = f"{school_frontend_url(club.school)}/invite/{token}"
-        days = controlbox.club_management.invite_expiration_days
-        intro = (
-            f"You've been invited to join the management team of {club.club_name} on wat2do. "
-            "Accept to get access to the club panel."
-        )
-        expiry = (
-            f"This invitation expires in {days} days. "
-            "If you did not expect it, you can safely ignore this email."
-        )
-        msg = EmailMessage(
-            to=email,
-            subject=f"Invitation to manage {club.club_name} on wat2do",
-            body_html=email_shell(
-                heading=f"Join {club.club_name}",
-                content=(
-                    email_paragraph(escape(intro), muted=True)
-                    + email_button(invite_url, "Accept invitation")
-                    + email_note(escape(expiry))
-                ),
-            ),
-            body_text=f"{intro}\n\nAccept the invitation: {invite_url}\n\n{expiry}",
-            inline_images=[EMAIL_LOGO],
-        )
-        email_service.send(msg)
-    except Exception as e:
-        log.warning("Failed to send invitation email: %s", e)
-
-    return invitation
-
-
-def list_invitations(club_id: int) -> list[dict]:
-    """List all pending, non-expired invitations for a club."""
-    now = datetime.now(timezone.utc).isoformat()
-    r = (
-        get_sb()
-        .table(CLUB_INVITATIONS)
-        .select("*")
-        .eq("club_id", club_id)
-        .eq("status", "pending")
-        .gt("expires_at", now)
-        .execute()
-    )
-    return r.data or []
-
-
-def revoke_invitation(club_id: int, invitation_id: str) -> bool:
-    """Revoke (delete) a pending invitation."""
-    r = (
-        get_sb()
-        .table(CLUB_INVITATIONS)
-        .delete()
-        .eq("club_id", club_id)
-        .eq("id", invitation_id)
-        .execute()
-    )
-    return bool(r.data)
-
-
-def get_invitation_by_token(token: str) -> dict:
-    """Retrieve public invitation details by token. Raises NotFoundError if invalid/expired."""
-    now = datetime.now(timezone.utc).isoformat()
-    r = (
-        get_sb()
-        .table(CLUB_INVITATIONS)
-        .select("*, clubs(club_name)")
-        .eq("token", token)
-        .eq("status", "pending")
-        .gt("expires_at", now)
-        .execute()
-    )
-    if not r.data:
-        raise NotFoundError("Invitation not found or has expired")
-
-    inv = r.data[0]
-    club_name = inv.get("clubs", {}).get("club_name", "Unknown Club")
-    return {
-        "club_name": club_name,
-        "email": inv["email"],
-        "expires_at": inv["expires_at"],
-    }
-
-
-def accept_invitation(token: str, user_id: UUID, *, email: str) -> bool:
-    """Accept an invitation by token and add the user to the club."""
-    now = datetime.now(timezone.utc).isoformat()
-
-    r = (
-        get_sb()
-        .table(CLUB_INVITATIONS)
-        .select("*")
-        .eq("token", token)
-        .eq("status", "pending")
-        .gt("expires_at", now)
-        .execute()
-    )
-    if not r.data:
-        raise NotFoundError("Invitation not found or has expired")
-
-    inv = r.data[0]
-    if not email or email.strip().casefold() != inv["email"].strip().casefold():
-        raise AuthorizationError(NOT_AUTHORIZED)
-    club_id = inv["club_id"]
-
-    try:
-        add_club_member(club_id, user_id)
-    except ConflictError:
-        pass
-
-    get_sb().table(CLUB_INVITATIONS).update({"status": "accepted"}).eq("id", inv["id"]).execute()
-    return True
-
-
 # --- Club Claims ---
-
-
-def create_claim(club_id: int, user_id: UUID, role: str, proof_url: str | None) -> dict:
-    club = get_club(club_id)
-    if not club:
-        raise NotFoundError("Club not found")
-    if is_club_member(club_id, str(user_id)):
-        raise ConflictError("You already manage this club")
-
-    payload = {
-        "club_id": club_id,
-        "user_id": str(user_id),
-        "executive_role": role,
-        "proof_url": proof_url,
-        "status": "pending",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-    }
-    r = get_sb().table("club_claims").insert(payload).execute()
-    if not r.data:
-        raise APIError("Failed to submit claim")
-    return r.data[0]
-
-
-def list_claims(
-    status: str | None = None,
-    school: str | None = None,
-    *,
-    offset: int = 0,
-    limit: int = DEFAULT_PAGE_SIZE,
-    search: str | None = None,
-) -> tuple[list[dict], int]:
-    rows, total = admin_query.load_page_rows(
-        "claims",
-        CLUB_CLAIMS,
-        f"*, clubs(*,{school_service.SCHOOL_SLUG_EMBED}), users(*)",
-        offset=offset,
-        limit=limit,
-        search=search,
-        school=school,
-        status=status,
-    )
-    for row in rows:
-        club = row.get("clubs")
-        if isinstance(club, dict):
-            row["clubs"] = school_service.with_school_slug(club)
-    return rows, total
-
-
-def list_club_submissions(
-    *,
-    offset: int,
-    limit: int,
-    status: str | None = None,
-    school: str | None = None,
-    search: str | None = None,
-) -> tuple[list[ClubSubmissionResponse], int]:
-    rows, total = admin_query.load_page_rows(
-        "clubSubmissions",
-        CLUBS,
-        _CLUB_SELECT,
-        offset=offset,
-        limit=limit,
-        search=search,
-        school=school,
-        status=status,
-    )
-    return [
-        ClubSubmissionResponse.model_validate(
-            {**club.model_dump(), "submitted_by_email": row.get("submitted_by_email")}
-        )
-        for club, row in zip(_clubs_with_owner_emails(rows), rows, strict=True)
-    ], total
 
 
 def _clubs_with_owner_emails(rows: list[dict]) -> list[ClubResponse]:
@@ -714,51 +350,3 @@ def _clubs_with_owner_emails(rows: list[dict]) -> list[ClubResponse]:
     )
     emails = {row["id"]: row.get("email") for row in owners or []}
     return [_club_response(row, owner_email=emails.get(row.get("created_by"))) for row in rows]
-
-
-def update_claim(claim_id: UUID, status: str, rejection_reason: str | None = None) -> dict:
-    now = datetime.now(timezone.utc).isoformat()
-    previous = (
-        get_sb().table("club_claims").select("status").eq("id", str(claim_id)).execute()
-    ).data
-    r = (
-        get_sb()
-        .table("club_claims")
-        .update({"status": status, "rejection_reason": rejection_reason, "updated_at": now})
-        .eq("id", str(claim_id))
-        .execute()
-    )
-
-    if not r.data:
-        raise NotFoundError("Claim not found")
-
-    claim = r.data[0]
-    if status == "approved":
-        get_sb().table("clubs").update({"created_by": claim["user_id"]}).eq(
-            "id", claim["club_id"]
-        ).is_("created_by", "null").execute()
-        try:
-            add_club_member(claim["club_id"], UUID(claim["user_id"]))
-        except ConflictError:
-            pass
-
-    if previous and previous[0].get("status") != status:
-        _send_claim_decision(claim, status, rejection_reason)
-    return claim
-
-
-def _send_claim_decision(claim: dict, status: str, rejection_reason: str | None) -> None:
-    """Email the claimant the decision; a missing club or account just skips the email."""
-    club = get_club(int(claim["club_id"]))
-    claimant = (get_sb().table(USERS).select("email").eq("id", claim["user_id"]).execute()).data
-    if club is None or not claimant:
-        return
-    send_review_decision(
-        kind="claim",
-        title=club.club_name,
-        status=status,
-        recipient=claimant[0].get("email"),
-        school=club.school,
-        path="/club-panel",
-        rejection_reason=rejection_reason,
-    )

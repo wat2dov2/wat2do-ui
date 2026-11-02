@@ -111,6 +111,23 @@ pub fn paragraph(html: &str, muted: bool) -> String {
     format!(r#"<p style="margin:0 0 18px;color:{color};font:15px/1.6 {FONT};">{html}</p>"#)
 }
 
+/// Small print such as expiry notices; `html` must already be escaped.
+pub fn note(html: &str) -> String {
+    format!(r#"<p style="margin:0;color:{MUTED_FOREGROUND};font:13px/1.6 {FONT};">{html}</p>"#)
+}
+
+/// Someone's own words, such as a rejection reason; `html` must already be escaped.
+pub fn quote(html: &str) -> String {
+    format!(
+        concat!(
+            r#"<div style="margin:0 0 18px;padding:16px;background:{};"#,
+            "border:1px solid {};border-radius:12px;",
+            r#"color:{};font:15px/1.6 {};">{}</div>"#,
+        ),
+        SURFACE_ELEVATED, BORDER, FOREGROUND, FONT, html
+    )
+}
+
 pub fn button(href: &str, label: &str) -> String {
     format!(
         concat!(

@@ -7,7 +7,7 @@ use regex::{Captures, Regex};
 use unicode_general_category::{GeneralCategory, get_general_category};
 
 /// Python's `str.isspace` (Unicode whitespace plus the separators U+001C to U+001F).
-fn python_space(character: char) -> bool {
+pub fn python_space(character: char) -> bool {
     character.is_whitespace() || ('\u{1c}'..='\u{1f}').contains(&character)
 }
 
@@ -26,6 +26,11 @@ fn python_word(character: char) -> bool {
                 | LetterNumber
                 | OtherNumber
         )
+}
+
+/// Python's `str.strip()`.
+pub fn python_strip(value: &str) -> &str {
+    value.trim_matches(python_space)
 }
 
 /// `sanitize_postgrest_value`: keep letters, digits, underscores, whitespace,

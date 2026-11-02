@@ -19,6 +19,7 @@ use axum::http::{HeaderMap, header};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
+use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime};
 use uuid::Uuid;
 
 use super::errors::ApiError;
@@ -168,6 +169,28 @@ impl Validator {
         }
     }
 
+    /// A repeated integer parameter (`?ids=1&ids=2`): `None` when absent; each
+    /// bad value is reported at its index.
+    pub fn query_ints(&mut self, query: &QueryParams, name: &str) -> Option<Vec<i64>> {
+        let values = query.all(name);
+        if values.is_empty() {
+            return None;
+        }
+        let mut parsed = Vec::with_capacity(values.len());
+        for (index, raw) in values.into_iter().enumerate() {
+            match parse_python_int(raw) {
+                Some(value) => parsed.push(value),
+                None => self.push(ValidationIssue::new(
+                    "int_parsing",
+                    vec![json!("query"), json!(name), json!(index)],
+                    "Input should be a valid integer, unable to parse string as an integer",
+                    json!(raw),
+                )),
+            }
+        }
+        Some(parsed)
+    }
+
     pub fn push(&mut self, issue: ValidationIssue) {
         self.issues.push(issue);
     }
@@ -296,6 +319,59 @@ impl Field<'_> {
         Some(raw.to_owned())
     }
 
+    fn check_choice(&mut self, raw: &str, choices: &[&str]) -> bool {
+        if choices.contains(&raw) {
+            return true;
+        }
+        let expected = super::body::expected_choices(choices);
+        self.issue(
+            "literal_error",
+            format!("Input should be {expected}"),
+            Some(json!({ "expected": expected })),
+        );
+        false
+    }
+
+    /// An optional `Literal[...]`.
+    pub fn optional_choice(mut self, choices: &[&str]) -> Option<String> {
+        let raw = self.raw?;
+        self.check_choice(raw, choices).then(|| raw.to_owned())
+    }
+
+    /// A `Literal[...]` with a default.
+    pub fn choice_or(mut self, default: &str, choices: &[&str]) -> String {
+        let raw = self.raw;
+        match raw {
+            Some(raw) if self.check_choice(raw, choices) => raw.to_owned(),
+            Some(_) => default.to_owned(),
+            None => default.to_owned(),
+        }
+    }
+
+    /// An optional string that must also match `pattern` (shown as `source`).
+    pub fn optional_pattern(
+        mut self,
+        length: Length,
+        source: &str,
+        pattern: &regex::Regex,
+    ) -> Option<String> {
+        let raw = self.raw?;
+        let before = self.validator.issues.len();
+        self.check_length(raw, length);
+        if self.validator.issues.len() > before {
+            return None;
+        }
+        if !pattern.is_match(raw) {
+            self.issue(
+                "string_pattern_mismatch",
+                format!("String should match pattern '{source}'"),
+                Some(json!({ "pattern": source })),
+            );
+            return None;
+        }
+        Some(raw.to_owned())
+    }
+
     pub fn bool_or(mut self, default: bool) -> bool {
         let Some(raw) = self.raw else { return default };
         match parse_python_bool(raw) {
@@ -340,6 +416,158 @@ impl Field<'_> {
         let raw = self.raw?;
         self.parse_uuid(raw)
     }
+
+    /// An optional `AwareDatetime`: a timestamp with a UTC offset.
+    pub fn optional_aware_datetime(mut self) -> Option<DateTime<FixedOffset>> {
+        let raw = self.raw?;
+        match parse_aware_datetime(raw) {
+            Ok(value) => Some(value),
+            Err(DatetimeError::Naive) => {
+                self.issue("timezone_aware", "Input should have timezone info".to_owned(), None);
+                None
+            }
+            Err(DatetimeError::Invalid(error)) => {
+                self.issue(
+                    "datetime_from_date_parsing",
+                    format!("Input should be a valid datetime or date, {error}"),
+                    Some(json!({ "error": error })),
+                );
+                None
+            }
+        }
+    }
+}
+
+/// Why pydantic refuses a string as an `AwareDatetime`.
+#[derive(Debug, PartialEq)]
+pub enum DatetimeError {
+    /// It is a valid date or datetime without an offset.
+    Naive,
+    /// speedate's reason, such as "input is too short".
+    Invalid(&'static str),
+}
+
+/// pydantic's (speedate's) datetime from a string: a Unix timestamp (in
+/// milliseconds past 2e10), or `YYYY-MM-DD` with an optional time after `T`,
+/// `t`, `_` or a space, a fraction of up to six digits (more are dropped) and
+/// `Z` or a `±HH:MM`/`±HHMM` offset.
+pub fn parse_aware_datetime(raw: &str) -> Result<DateTime<FixedOffset>, DatetimeError> {
+    use DatetimeError::{Invalid, Naive};
+    if let Ok(seconds) = raw.parse::<f64>()
+        && raw.bytes().all(|byte| byte.is_ascii_digit() || matches!(byte, b'-' | b'+' | b'.'))
+    {
+        let seconds = if seconds.abs() > 2e10 { seconds / 1000.0 } else { seconds };
+        let whole = seconds.floor();
+        let micros = ((seconds - whole) * 1e6).round() as u32;
+        return DateTime::from_timestamp(whole as i64, micros * 1000)
+            .map(|value| value.fixed_offset())
+            .ok_or(Invalid("timestamp value is outside expected range"));
+    }
+    let bytes = raw.as_bytes();
+    if bytes.len() < 10 {
+        return Err(Invalid("input is too short"));
+    }
+    let digits = |range: std::ops::Range<usize>, error| {
+        let part = &bytes[range];
+        if part.iter().all(u8::is_ascii_digit) {
+            Ok(part.iter().fold(0u32, |total, digit| total * 10 + u32::from(digit - b'0')))
+        } else {
+            Err(Invalid(error))
+        }
+    };
+    let year = digits(0..4, "invalid character in year")?;
+    if bytes[4] != b'-' {
+        return Err(Invalid("invalid date separator, expected `-`"));
+    }
+    let month = digits(5..7, "invalid character in month")?;
+    if bytes[7] != b'-' {
+        return Err(Invalid("invalid date separator, expected `-`"));
+    }
+    let day = digits(8..10, "invalid character in day")?;
+    if !(1..=12).contains(&month) {
+        return Err(Invalid("month value is outside expected range of 1-12"));
+    }
+    let date = NaiveDate::from_ymd_opt(year as i32, month, day)
+        .ok_or(Invalid("day value is outside expected range"))?;
+    if bytes.len() == 10 {
+        return Err(Naive);
+    }
+    // Anything wrong after the date reads, as in pydantic, as trailing junk.
+    let extra = Invalid("unexpected extra characters at the end of the input");
+    if !matches!(bytes[10], b'T' | b't' | b'_' | b' ') {
+        return Err(extra);
+    }
+    let rest = &raw[11..];
+    let (time, offset) = parse_time(rest).ok_or(extra)?;
+    let local = date.and_time(time);
+    match offset {
+        None => Err(Naive),
+        Some(offset) => local
+            .and_local_timezone(offset)
+            .single()
+            .ok_or(Invalid("unexpected extra characters at the end of the input")),
+    }
+}
+
+fn parse_time(text: &str) -> Option<(NaiveTime, Option<FixedOffset>)> {
+    let bytes = text.as_bytes();
+    let two = |at: usize| -> Option<u32> {
+        let part = bytes.get(at..at + 2)?;
+        part.iter()
+            .all(u8::is_ascii_digit)
+            .then(|| u32::from(part[0] - b'0') * 10 + u32::from(part[1] - b'0'))
+    };
+    let hour = two(0)?;
+    if bytes.get(2) != Some(&b':') {
+        return None;
+    }
+    let minute = two(3)?;
+    let mut at = 5;
+    let mut second = 0;
+    let mut micros = 0;
+    if bytes.get(at) == Some(&b':') {
+        second = two(at + 1)?;
+        at += 3;
+        if matches!(bytes.get(at), Some(b'.' | b',')) {
+            at += 1;
+            let start = at;
+            while bytes.get(at).is_some_and(u8::is_ascii_digit) {
+                at += 1;
+            }
+            if at == start {
+                return None;
+            }
+            let fraction = &text[start..at.min(start + 6)];
+            micros = fraction.parse::<u32>().ok()? * 10u32.pow(6 - fraction.len() as u32);
+        }
+    }
+    if hour > 23 || minute > 59 || second > 59 {
+        return None;
+    }
+    let time = NaiveTime::from_hms_micro_opt(hour, minute, second, micros)?;
+    let zone = &text[at..];
+    let offset = match zone.as_bytes() {
+        [] => None,
+        [b'Z' | b'z'] => Some(FixedOffset::east_opt(0)?),
+        [sign @ (b'+' | b'-'), rest @ ..] => {
+            let digits: Vec<u8> = match rest {
+                [h1, h2, b':', m1, m2] | [h1, h2, m1, m2] => vec![*h1, *h2, *m1, *m2],
+                _ => return None,
+            };
+            if !digits.iter().all(u8::is_ascii_digit) {
+                return None;
+            }
+            let hours = i32::from(digits[0] - b'0') * 10 + i32::from(digits[1] - b'0');
+            let minutes = i32::from(digits[2] - b'0') * 10 + i32::from(digits[3] - b'0');
+            if hours > 23 || minutes > 59 {
+                return None;
+            }
+            let seconds = (hours * 60 + minutes) * 60;
+            Some(FixedOffset::east_opt(if *sign == b'-' { -seconds } else { seconds })?)
+        }
+        _ => return None,
+    };
+    Some((time, offset))
 }
 
 /// pydantic's lax `int` from a string: surrounding whitespace, a sign,
@@ -460,7 +688,7 @@ impl<S: Send + Sync, T: DeserializeOwned> FromRequest<S> for ValidatedJson<T> {
     }
 }
 
-fn json_content_type(headers: &HeaderMap) -> bool {
+pub fn json_content_type(headers: &HeaderMap) -> bool {
     // FastAPI parses the body as JSON when the header is absent or names JSON.
     let Some(content_type) = headers.get(header::CONTENT_TYPE) else {
         return true;
@@ -630,6 +858,39 @@ mod tests {
             ("+-1", None),
         ] {
             assert_eq!(parse_python_int(raw), expected, "{raw:?}");
+        }
+    }
+
+    #[test]
+    fn aware_datetimes_match_pydantic() {
+        // Outcomes from pydantic's TypeAdapter(AwareDatetime).validate_python.
+        use DatetimeError::{Invalid, Naive};
+        let ok = |raw: &str| parse_aware_datetime(raw).unwrap().to_rfc3339();
+        assert_eq!(ok("2024-01-01T10:00Z"), "2024-01-01T10:00:00+00:00");
+        assert_eq!(ok("2024-01-01 10:00:00+05:30"), "2024-01-01T10:00:00+05:30");
+        assert_eq!(ok("2024-01-01T10:00:00.1234567Z"), "2024-01-01T10:00:00.123456+00:00");
+        assert_eq!(ok("2024-01-01T10:00:00+0530"), "2024-01-01T10:00:00+05:30");
+        assert_eq!(ok("2024-01-01t10:00:00z"), "2024-01-01T10:00:00+00:00");
+        assert_eq!(ok("2024-01-01T10:00:00,5Z"), "2024-01-01T10:00:00.500+00:00");
+        assert_eq!(ok("1700000000"), "2023-11-14T22:13:20+00:00");
+        assert_eq!(ok("1700000000.5"), "2023-11-14T22:13:20.500+00:00");
+        assert_eq!(ok("-1"), "1969-12-31T23:59:59+00:00");
+        assert_eq!(ok("20240101"), "1970-08-23T06:15:01+00:00");
+        for (raw, expected) in [
+            ("garbage", Invalid("input is too short")),
+            ("2024-13-01T00:00:00Z", Invalid("month value is outside expected range of 1-12")),
+            ("2024-02-30T00:00:00Z", Invalid("day value is outside expected range")),
+            ("2024/01/01", Invalid("invalid date separator, expected `-`")),
+            ("2024-01-01", Naive),
+            ("2024-01-01T10:00", Naive),
+            ("2024-01-01T25:00:00Z", Invalid("unexpected extra characters at the end of the input")),
+            ("2024-01-01T10:00:00Zx", Invalid("unexpected extra characters at the end of the input")),
+            ("2024-01-01X10:00:00Z", Invalid("unexpected extra characters at the end of the input")),
+            ("2024-01-01T10:00:00+05", Invalid("unexpected extra characters at the end of the input")),
+            ("2024-01-01T10:00:61Z", Invalid("unexpected extra characters at the end of the input")),
+            ("2024-01-01T1", Invalid("unexpected extra characters at the end of the input")),
+        ] {
+            assert_eq!(parse_aware_datetime(raw).unwrap_err(), expected, "{raw}");
         }
     }
 
