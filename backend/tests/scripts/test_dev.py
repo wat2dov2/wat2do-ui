@@ -7,11 +7,16 @@ import pytest
 
 
 @pytest.fixture
-def workflow(monkeypatch):
+def workflow(monkeypatch, tmp_path):
     path = Path(__file__).resolve().parents[3] / "scripts/dev.py"
     spec = importlib.util.spec_from_file_location("local_dev", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    signing_key = tmp_path / "dev-auth-signing-key"
+    signing_key.write_text("local-test-key\n")
+    monkeypatch.setattr(module, "DEV_SIGNING_KEY", signing_key)
+    # main() exports the key for docker compose; undo that after each test.
+    monkeypatch.delenv("DEV_AUTH_SIGNING_KEY", raising=False)
     calls = []
 
     def run(command, **kwargs):
@@ -57,6 +62,7 @@ def test_dev_starts_database_then_migrates_and_seeds_before_apps(workflow, monke
     assert scripts[2].endswith("-f /workspace/backend/database/seed.sql")
     assert commands[-1] == [*module.COMPOSE, "up", "--build", "--detach", "--wait"]
     assert not any("dropdb" in script for script in scripts)
+    assert module.os.environ["DEV_AUTH_SIGNING_KEY"] == "local-test-key"
 
 
 @pytest.mark.parametrize("key", [None, "", "   "])
