@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from html import escape
-from itertools import batched
 from zoneinfo import ZoneInfo
 
 from services.email_layout import (
@@ -12,6 +11,10 @@ from services.email_layout import (
     email_paragraph,
     email_shell,
 )
+
+# Half the shell's 640px content width, less a little so two cards always fit a row.
+_GRID_CARD_MAX_WIDTH_PX = 318
+_GRID_GUTTER_PX = 16
 
 
 def morning_email_subject(event_count: int, position_count: int) -> str:
@@ -151,22 +154,22 @@ def render_event_reminder_html(
 
 
 def _grid_section(title: str, cards: list[str]) -> str:
-    rows = "".join(
-        "<tr>"
-        + "".join(
-            f'<td width="50%" valign="top" style="width:50%;padding:0 {6 if side == 0 else 0}px '
-            f'20px {6 if side == 1 else 0}px;">{card}</td>'
-            for side, card in enumerate(pair)
-        )
-        + ('<td width="50%" style="width:50%;"></td>' if len(pair) == 1 else "")
-        + "</tr>"
-        for pair in batched(cards, 2)
+    """Two cards per row that wrap to one column on screens too narrow for two.
+
+    Each card is an inline block capped at half the shell's width, so phones stack
+    them without media queries, which many email apps ignore. Every card keeps its
+    gutter on the right, so stacked cards stay aligned with the heading.
+    """
+    blocks = "".join(
+        '<div style="display:inline-block;box-sizing:border-box;width:100%;'
+        f"max-width:{_GRID_CARD_MAX_WIDTH_PX}px;padding:0 {_GRID_GUTTER_PX}px 20px 0;"
+        f'vertical-align:top;text-align:left;font:15px/1.35 {EMAIL_FONT};">{card}</div>'
+        for card in cards
     )
     return (
         f'<h2 style="margin:24px 0 12px;color:{EMAIL_THEME["foreground"]};'
         f'font:700 19px {EMAIL_FONT};">{escape(title)}</h2>'
-        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
-        f'style="width:100%;border-collapse:collapse;table-layout:fixed;">{rows}</table>'
+        f'<div style="font-size:0;line-height:0;">{blocks}</div>'
     )
 
 
