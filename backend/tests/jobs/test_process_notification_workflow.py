@@ -684,6 +684,45 @@ def test_missing_routing_fails_without_logging_payload(runner, monkeypatch):
     assert "PRIVATE_" not in result.stdout + result.stderr
 
 
+ROUTE_STEP = WORKFLOW["jobs"]["route"]["steps"][0]
+
+
+def run_route(monkeypatch, *, recipient="", school="", payload="{}", poster=""):
+    monkeypatch.setenv("INTENDED_RECIPIENT_ID", recipient)
+    monkeypatch.setenv("TARGET_SCHOOL", school)
+    monkeypatch.setenv("NOTIFICATION_JSON", payload)
+    monkeypatch.setenv("POSTER_ID", poster)
+    return subprocess.run(
+        ["bash", "-e", "-c", ROUTE_STEP["run"]],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=5,
+    )
+
+
+@pytest.mark.parametrize(
+    ("recipient", "school", "routed"),
+    [("", "", "false"), ("17841400000000000", "", "true"), ("", "Waterloo", "true")],
+)
+def test_route_skips_notifications_without_routing(runner, monkeypatch, recipient, school, routed):
+    result = run_route(
+        monkeypatch, recipient=recipient, school=school, payload='{"android.title": null}'
+    )
+
+    assert result.returncode == 0
+    assert output_file("GITHUB_OUTPUT")["routed"] == routed
+    assert ("::notice::Skipped" in result.stdout) == (routed == "false")
+
+
+def test_processing_runs_only_for_routed_notifications():
+    route_env = ROUTE_STEP["env"]
+    assert route_env["INTENDED_RECIPIENT_ID"] == JOB["env"]["INTENDED_RECIPIENT_ID"]
+    assert route_env["TARGET_SCHOOL"] == JOB["env"]["TARGET_SCHOOL"]
+    assert JOB["if"] == "needs.route.outputs.routed == 'true'"
+    assert WORKFLOW["jobs"]["route"]["outputs"]["routed"] == "${{ steps.check.outputs.routed }}"
+
+
 def test_setup_and_processing_steps_have_bounded_consistent_runtime():
     preflight_index = JOB["steps"].index(STEPS["Check dependency setup capacity"])
     assert STEPS["Check dependency setup capacity"]["run"].strip() == (

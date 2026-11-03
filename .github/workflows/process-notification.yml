@@ -36,12 +36,23 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       runner: ${{ steps.check.outputs.runner }}
+      routed: ${{ steps.check.outputs.routed }}
     steps:
       - id: check
         env:
           POSTER_ID: ${{ inputs.poster_id }}
           NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
+          INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || github.event.client_payload.notification_dict['com.instagram.android.igns.logging.intended_recipient_id'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.intended_recipient_id'] }}
+          TARGET_SCHOOL: ${{ github.event_name == 'workflow_dispatch' && inputs.school || '' }}
         run: |
+          # Instagram also posts empty summary notifications with no recipient. Nothing can
+          # route them, so they finish here instead of failing in "Validate job inputs".
+          if [[ -z "$INTENDED_RECIPIENT_ID" && -z "$TARGET_SCHOOL" ]]; then
+            echo "::notice::Skipped a notification with no intended recipient or school; nothing to process."
+            echo 'routed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'routed=true' >> "$GITHUB_OUTPUT"
+          fi
           # Digests need the Mac's browser worker. DMs are answered by its inbox sweep instead.
           if echo "$NOTIFICATION_JSON" | grep -q "cache_ent_id" \
             || [[ -n "$POSTER_ID" ]]; then
@@ -52,6 +63,7 @@ jobs:
 
   process-post:
     needs: route
+    if: needs.route.outputs.routed == 'true'
     runs-on: ${{ fromJSON(needs.route.outputs.runner) }}
     environment: production
 
