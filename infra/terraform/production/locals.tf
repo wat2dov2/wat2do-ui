@@ -42,9 +42,6 @@ locals {
   }
 
   runtime_secret_keys = [
-    "SUPABASE_URL",
-    "SUPABASE_KEY",
-    "SUPABASE_SECRET_KEY",
     "DATA_API_URL",
     "DATA_API_KEY",
     "AUTH_SIGNING_KEY",
