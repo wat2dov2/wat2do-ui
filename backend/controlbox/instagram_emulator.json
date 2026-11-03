@@ -84,6 +84,7 @@
   "follow_end_hour": 24,
   "crawl_slice_minutes": 15,
   "follows_per_visit": 40,
+  "follows_per_busy_visit": 5,
   "idle_seconds": 300,
   "launch_agent_timeout_seconds": 30
 }

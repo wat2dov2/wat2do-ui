@@ -1086,14 +1086,16 @@ class InstagramEmulatorControl(_ControlModel):
     # The one worker that drives the emulator visits one account at a time. Replies
     # and post edits happen only between the action hours, follows only between the
     # follow hours (local time); otherwise it only reads, crawling Following lists in
-    # slices of this length. A visit follows at most this many accounts, and with
-    # nothing due the worker checks again after idle_seconds.
+    # slices of this length. A visit follows at most this many accounts, or the busy
+    # count while another account's carousel waits for its song, and with nothing
+    # due the worker checks again after idle_seconds.
     action_start_hour: int = Field(ge=0, le=23)
     action_end_hour: int = Field(ge=1, le=24)
     follow_start_hour: int = Field(ge=0, le=23)
     follow_end_hour: int = Field(ge=1, le=24)
     crawl_slice_minutes: int = Field(ge=1, le=120)
     follows_per_visit: int = Field(ge=1, le=50)
+    follows_per_busy_visit: int = Field(ge=1, le=50)
     idle_seconds: int = Field(ge=10, le=3600)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
 

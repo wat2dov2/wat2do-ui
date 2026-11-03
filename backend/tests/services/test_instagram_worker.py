@@ -154,6 +154,21 @@ def test_follows_that_get_nowhere_rest_instead_of_looping(due, monkeypatch):
     assert not worker.visit_next(device, DAY)
 
 
+def test_follows_stay_short_while_another_carousel_waits_for_its_song(due, monkeypatch):
+    limits = []
+    monkeypatch.setattr(
+        worker.follows,
+        "follow_due",
+        lambda device, school, limit: limits.append(limit) or FollowVisit(1, 0, False),
+    )
+    due.music = ["ubc"]
+    due.follows = {"uwo"}
+    worker.visit(_Device(), "uwo", acting=True, following=True, crawl_slice=False, now=DAY)
+    due.music = []
+    worker.visit(_Device(), "uwo", acting=True, following=True, crawl_slice=False, now=DAY)
+    assert limits == [worker.CONTROL.follows_per_busy_visit, worker.CONTROL.follows_per_visit]
+
+
 def test_one_failing_step_does_not_stop_the_rest_of_the_visit(due, monkeypatch):
     due.dms = {"uwo"}
     due.follows = {"uwo"}

@@ -111,19 +111,25 @@ def visit(
             if sweep.due(school, now):
                 _step(f"dms {school}", lambda: sweep.answer(device, school))
         if following and _follows_rested_until.get(school, now) <= now:
+            # Keep follows short while other accounts' carousels wait for their songs.
+            limit = (
+                CONTROL.follows_per_busy_visit
+                if acting and set(music.schools_due(now)) - {school}
+                else CONTROL.follows_per_visit
+            )
             visits = []
             if follows.unfollows_due(school):
                 visits.append(
                     _step(
                         f"unfollows {school}",
-                        lambda: follows.unfollow_due(device, school, CONTROL.follows_per_visit),
+                        lambda: follows.unfollow_due(device, school, limit),
                     )
                 )
             if follows.follows_due(school):
                 visits.append(
                     _step(
                         f"follows {school}",
-                        lambda: follows.follow_due(device, school, CONTROL.follows_per_visit),
+                        lambda: follows.follow_due(device, school, limit),
                     )
                 )
             if visits and not any(
