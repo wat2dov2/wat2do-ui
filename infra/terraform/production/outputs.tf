@@ -41,3 +41,24 @@ output "social_preview_function_name" {
 output "social_preview_queue_url" {
   value = aws_sqs_queue.social_preview.url
 }
+
+output "database_host" {
+  value = aws_db_instance.main.address
+}
+
+output "database_port" {
+  value = aws_db_instance.main.port
+}
+
+output "database_master_username" {
+  value = aws_db_instance.main.username
+}
+
+output "database_master_password" {
+  value     = random_password.database_master.result
+  sensitive = true
+}
+
+output "data_api_url" {
+  value = "https://${local.data_api_domain_name}"
+}

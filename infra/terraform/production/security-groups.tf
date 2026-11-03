@@ -12,6 +12,17 @@ resource "aws_vpc_security_group_ingress_rule" "load_balancer_cloudfront" {
   to_port           = 443
 }
 
+# The data API host is served straight from the ALB (data-api.tf). Every other
+# host still needs the CloudFront origin secret, so direct requests for them
+# keep getting the listener's default 403.
+resource "aws_vpc_security_group_ingress_rule" "load_balancer_public_https" {
+  security_group_id = aws_security_group.load_balancer.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+}
+
 resource "aws_vpc_security_group_egress_rule" "load_balancer_frontend" {
   security_group_id            = aws_security_group.load_balancer.id
   referenced_security_group_id = aws_security_group.task.id

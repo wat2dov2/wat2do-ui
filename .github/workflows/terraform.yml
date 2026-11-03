@@ -87,6 +87,7 @@ jobs:
       TF_VAR_runtime_secret_arn: ${{ vars.AWS_RUNTIME_SECRET_ARN }}
       TF_VAR_email_from: ${{ vars.AWS_EMAIL_FROM }}
       TF_VAR_cloudfront_origin_secret: ${{ secrets.AWS_CLOUDFRONT_ORIGIN_SECRET }}
+      TF_VAR_event_change_alerts_key: ${{ secrets.EVENT_CHANGE_ALERTS_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -186,6 +187,7 @@ jobs:
       TF_VAR_runtime_secret_arn: ${{ vars.AWS_RUNTIME_SECRET_ARN }}
       TF_VAR_email_from: ${{ vars.AWS_EMAIL_FROM }}
       TF_VAR_cloudfront_origin_secret: ${{ secrets.AWS_CLOUDFRONT_ORIGIN_SECRET }}
+      TF_VAR_event_change_alerts_key: ${{ secrets.EVENT_CHANGE_ALERTS_KEY }}
 
     steps:
       - uses: actions/checkout@v4

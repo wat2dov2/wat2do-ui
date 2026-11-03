@@ -25,6 +25,17 @@ variable "cloudfront_origin_secret" {
   }
 }
 
+variable "event_change_alerts_key" {
+  description = "Bearer key EventBridge sends to the event change alerts webhook; the runtime secret's EVENT_CHANGE_ALERTS_KEY."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.event_change_alerts_key) > 0
+    error_message = "event_change_alerts_key must be the runtime secret's EVENT_CHANGE_ALERTS_KEY."
+  }
+}
+
 variable "frontend_image" {
   description = "Initial immutable frontend ECR image URI with a digest."
   type        = string
