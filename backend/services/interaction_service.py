@@ -11,11 +11,15 @@ import uuid
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 
+from core.client_ip import hash_client_ip
+from core.config import settings
 from core.constants import (
     DEDUP_WINDOW_MINUTES,
+    INTERACTION_CLICK,
     INTERACTION_DETAIL_VIEW,
     INTERACTION_GOING,
     INTERACTION_SHARE,
+    MAX_ANON_CLICKS_PER_IP_PER_EVENT,
     MAX_DUPLICATE_INTERACTIONS,
     MAX_INTERACTION_BATCH_SIZE,
     MAX_USER_INTERACTIONS_PER_WINDOW,
@@ -83,6 +87,7 @@ def record_interactions(
     user_id: str | None,
     session_id: str,
     interactions: list[InteractionCreate],
+    ip_hash: str | None = None,
 ) -> int:
     """Batch-insert interactions. Returns count inserted."""
     if not interactions:
@@ -100,6 +105,7 @@ def record_interactions(
                 target_field: item.position_id if item.position_id is not None else item.event_id,
                 "interaction_type": item.interaction_type,
                 "metadata": item.metadata,
+                "ip_hash": ip_hash,
             }
         )
     return sum(
@@ -138,12 +144,19 @@ def record_interactions_batch(
     payload_user_id: str | None,
     session_id: str,
     interactions: list[InteractionCreate],
+    client_ip: str | None = None,
 ) -> int:
     """Validate ownership, restrict anonymous signals, deduplicate, and persist.
 
     Database insert errors propagate so failed writes cannot appear successful.
     """
     _validate_batch(user_id, payload_user_id, interactions)
+    # Best-effort: hash the IP when we have one and the secret is configured
+    # (production does). Without it, degrade to no IP cap/forensics rather than
+    # break interaction recording.
+    ip_hash = (
+        hash_client_ip(client_ip) if client_ip and settings.poster_hash_secret else None
+    )
 
     # Drop anonymous interactions in ``_ANON_DISALLOWED_INTERACTION_TYPES`` (I18).
     if user_id is None:
@@ -173,6 +186,23 @@ def record_interactions_batch(
                 position=position,
             )
         ]
+        # Fresh-session floods bypass the per-session cap above, so also cap
+        # anonymous clicks per client IP + event (the IP cannot be forged like
+        # a client-supplied session_id).
+        if ip_hash is not None:
+            interactions = [
+                item
+                for position in (False, True)
+                for item in check_click_burst_for_ip(
+                    ip_hash=ip_hash,
+                    interactions=[
+                        item for item in interactions if (item.position_id is not None) == position
+                    ],
+                    position=position,
+                )
+            ]
+            if not interactions:
+                return 0
     else:
         interactions = [
             item
@@ -192,6 +222,7 @@ def record_interactions_batch(
         user_id=user_id,
         session_id=session_id,
         interactions=interactions,
+        ip_hash=ip_hash,
     )
 
 
@@ -367,3 +398,64 @@ def check_duplicate_interactions_for_session(
     return _filter_duplicate_interactions(
         existing, interactions, actor=f"anonymous session={session_id}", position=position
     )
+
+
+def check_click_burst_for_ip(
+    ip_hash: str,
+    interactions: list[InteractionCreate],
+    *,
+    position: bool = False,
+) -> list[InteractionCreate]:
+    """Cap anonymous *clicks* per client IP + event within the dedup window.
+
+    Only ``click`` is limited here - the other anonymous types are already blocked
+    by ``_ANON_DISALLOWED_INTERACTION_TYPES``, and non-click items pass through
+    untouched. On a read failure the batch is rejected (fail closed) to prevent
+    gaming, matching the session dedup checks.
+    """
+    if not any(item.interaction_type == INTERACTION_CLICK for item in interactions):
+        return interactions
+
+    target_field = "position_id" if position else "event_id"
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=DEDUP_WINDOW_MINUTES)).isoformat()
+    try:
+        existing = fetch_all_pages(
+            lambda offset, ps: (
+                (
+                    get_sb()
+                    .table(POSITION_INTERACTIONS if position else USER_INTERACTIONS)
+                    .select(target_field)
+                    .eq("ip_hash", ip_hash)
+                    .eq("interaction_type", INTERACTION_CLICK)
+                    .is_("user_id", "null")
+                    .gte("created_at", cutoff)
+                    .order("created_at")
+                    .range(offset, offset + ps - 1)
+                    .execute()
+                ).data
+                or []
+            ),
+        )
+    except Exception as e:
+        log.error("Anonymous IP click-burst check failed, rejecting batch: %s", e)
+        return []
+
+    counts = Counter(row[target_field] for row in existing)
+    kept: list[InteractionCreate] = []
+    for item in interactions:
+        if item.interaction_type != INTERACTION_CLICK:
+            kept.append(item)
+            continue
+        key = item.position_id if position else item.event_id
+        if counts[key] >= MAX_ANON_CLICKS_PER_IP_PER_EVENT:
+            log.warning(
+                "Dropping anonymous click - IP+event cap reached (ip_hash=%s… %s=%s count=%d)",
+                ip_hash[:12],
+                target_field,
+                key,
+                counts[key],
+            )
+            continue
+        counts[key] += 1
+        kept.append(item)
+    return kept
