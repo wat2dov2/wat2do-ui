@@ -47,7 +47,7 @@ def runner(tmp_path, monkeypatch):
         "GITHUB_ENV": tmp_path / "github-env",
         "GITHUB_OUTPUT": tmp_path / "github-output",
         "NOTIFICATION_JSON": "PRIVATE_NOTIFICATION_PAYLOAD",
-        "SUPABASE_SECRET_KEY": "PRIVATE_CREDENTIAL",
+        "DATA_API_KEY": "PRIVATE_CREDENTIAL",
     }.items():
         monkeypatch.setenv(name, str(value))
     monkeypatch.setattr(shutil, "which", lambda _: None)
@@ -670,8 +670,8 @@ def test_missing_routing_fails_without_logging_payload(runner, monkeypatch):
     for name in (
         "AWS_DEPLOY_ROLE_ARN",
         "FRONTEND_URL",
-        "SUPABASE_URL",
-        "SUPABASE_KEY",
+        "DATA_API_URL",
+        "DATA_API_KEY",
         "OPENAI_API_KEY",
         "EVENT_FEED_REVALIDATION_SECRET",
     ):

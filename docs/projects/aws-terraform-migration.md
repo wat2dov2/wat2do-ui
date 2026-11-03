@@ -715,9 +715,10 @@ The expected non-secret backend environment includes:
 
 The expected secret-backed backend environment includes:
 
-- `SUPABASE_URL`
-- `SUPABASE_KEY`
-- `SUPABASE_SECRET_KEY`
+- `DATA_API_URL`
+- `DATA_API_KEY`
+- `AUTH_SIGNING_KEY`
+- `GOOGLE_OAUTH_CLIENT_SECRET`
 - `DATABASE_URL`
 - `OPENAI_API_KEY`
 - `APIFY_API_TOKEN`

@@ -3,15 +3,13 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, TypedDict, TypeVar
 
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jwt import PyJWKClient
 
-from core.config import settings
+from core.auth_tokens import decode_access_token
 from core.constants import ROLE_ADMIN
 from core.errors import (
     ADMIN_ACCESS_REQUIRED,
-    AUTHENTICATION_ERROR,
     CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED,
     CREDENTIALS_INVALID,
     INVALID_OR_EXPIRED_TOKEN,
@@ -32,9 +30,9 @@ bearer_optional = HTTPBearer(auto_error=False)
 class AuthUser(TypedDict):
     """JWT-derived identity dict returned by ``get_current_user``.
 
-    ``id`` is the Supabase auth id (JWT ``sub`` claim), **not** the
-    internal ``users.id`` UUID. Use this dict when you only need to
-    confirm authentication; use ``get_db_user`` whenever you need the
+    ``id`` is the auth id (JWT ``sub`` claim, ``users.supabase_auth_id``),
+    **not** the internal ``users.id`` UUID. Use this dict when you only need
+    to confirm authentication; use ``get_db_user`` whenever you need the
     internal user id or the user's role (ownership, admin checks).
     """
 
@@ -44,26 +42,8 @@ class AuthUser(TypedDict):
     role: str | None
 
 
-# JWKS client - fetches public keys from Supabase's discovery endpoint
-# and caches them in-memory for 10 minutes.
-_jwks_url = f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
-_jwks_client: PyJWKClient | None = None
-# Only asymmetric algorithms are allowed in the JWKS path.  Never include
-# HS256 here - doing so enables the classic "algorithm confusion" attack where
-# an attacker signs a token with the *public* key as an HMAC secret.
-_ASYMMETRIC_ALGS = ("RS256", "ES256", "EdDSA")
-# Supabase issues tokens with iss = <project_url>/auth/v1
-_EXPECTED_ISSUER = settings.supabase_jwt_issuer or f"{settings.supabase_url.rstrip('/')}/auth/v1"
-
 # Lazy import to avoid circular dependency (user_service → database → config)
 _user_service = None
-
-
-def _get_jwks_client() -> PyJWKClient:
-    global _jwks_client
-    if _jwks_client is None:
-        _jwks_client = PyJWKClient(_jwks_url, cache_keys=True, lifespan=600)
-    return _jwks_client
 
 
 def _get_user_service():
@@ -76,34 +56,18 @@ def _get_user_service():
 
 
 def _resolve_user(token: HTTPAuthorizationCredentials) -> AuthUser:
-    """Validate a Bearer token locally via JWKS signature verification."""
+    """Validate a Bearer token locally against our signing key."""
     return _decode_jwt(token.credentials)
 
 
 def _decode_jwt(credentials: str) -> AuthUser:
-    """Decode and verify a raw JWT string.
-
-    Narrowed exception surface so signature failures surface clearly.
-    Failures are logged at ``warning`` so operators see JWKS regressions.
-    """
+    """Decode and verify a raw access token string."""
     try:
-        signing_key = _get_jwks_client().get_signing_key_from_jwt(credentials)
-        payload = jwt.decode(
-            credentials,
-            signing_key.key,
-            algorithms=list(_ASYMMETRIC_ALGS),
-            audience="authenticated",
-            issuer=_EXPECTED_ISSUER,
-        )
-        return _payload_to_user(payload)
-    except jwt.PyJWKClientConnectionError as e:
-        # A fresh worker has no cached signing keys. Failure to fetch them
-        # during a deployment is not evidence that the user's token is invalid.
-        log.warning("JWKS endpoint unavailable: %s", e)
-        raise HTTPException(status_code=503, detail=AUTHENTICATION_ERROR) from e
-    except (jwt.PyJWKClientError, jwt.PyJWKSetError, jwt.InvalidTokenError) as e:
-        log.warning("JWKS verification failed: %s", e)
+        payload = decode_access_token(credentials)
+    except jwt.InvalidTokenError as e:
+        log.warning("Access token verification failed: %s", e)
         raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN) from e
+    return _payload_to_user(payload)
 
 
 def _payload_to_user(payload: dict) -> AuthUser:
@@ -125,7 +89,7 @@ def get_current_user(
     """Require a valid Bearer token. Returns the auth user or 401.
 
     Defined as a plain ``def`` so FastAPI runs it in a thread-pool,
-    keeping the synchronous JWT / JWKS operations off the event loop.
+    keeping the synchronous JWT operations off the event loop.
     """
     return _resolve_user(token)
 
@@ -145,13 +109,13 @@ def get_optional_user(
         return None
     try:
         return _resolve_user(token)
-    except (AuthenticationError, HTTPException) as e:
+    except AuthenticationError as e:
         log.warning("Optional auth failed with invalid token, continuing as anonymous: %s", e)
         return None
 
 
 def resolve_db_user(auth_user: AuthUser, *, user_lookup=None) -> "UserResponse":
-    """Look up the internal DB user from a Supabase auth user dict.
+    """Look up the internal DB user from an auth user dict.
 
     Unifying on the DB user means we pay for one fresh read and everyone
     downstream gets the current role.

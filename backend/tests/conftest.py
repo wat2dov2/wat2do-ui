@@ -1,7 +1,10 @@
+import base64
 from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi.testclient import TestClient
 
 from core.auth import get_current_user, get_optional_user
@@ -11,6 +14,15 @@ from main import app
 from schemas.user import UserResponse
 from services import user_service
 from services.instagram_notifications import browser_session, browser_worker
+
+# One throwaway P-256 key signs and verifies every access token in the suite.
+settings.auth_signing_key = base64.b64encode(
+    ec.generate_private_key(ec.SECP256R1()).private_bytes(
+        serialization.Encoding.DER,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    )
+).decode("ascii")
 
 
 @pytest.fixture(autouse=True)
@@ -23,7 +35,7 @@ def test_environment_settings(monkeypatch):
     monkeypatch.setattr(settings, "cors_origin_regex", "")
 
 
-# In tests we make the auth id (Supabase ``sub``) and the internal
+# In tests we make the auth id (JWT ``sub``) and the internal
 # ``users.id`` the **same** UUID per actor. In production they're
 # different columns with different values, but making them equal in
 # tests means a mock event whose ``created_by`` is set to

@@ -44,7 +44,7 @@ jobs:
             --secret-id "$AWS_RUNTIME_SECRET_ARN" \
             --query SecretString \
             --output text)"
-          for secret_key in SUPABASE_URL SUPABASE_KEY SUPABASE_SECRET_KEY INSTAGRAM_TOKEN_ENCRYPTION_KEY; do
+          for secret_key in DATA_API_URL DATA_API_KEY INSTAGRAM_TOKEN_ENCRYPTION_KEY; do
             secret_value="$(jq -er --arg key "$secret_key" '.[$key]' <<< "$secret_json")"
             echo "::add-mask::$secret_value"
             echo "$secret_key=$secret_value" >> "$GITHUB_ENV"

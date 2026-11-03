@@ -75,7 +75,7 @@ async def receive_automate_log(
 
 @router.post("/event-change-alerts")
 def send_event_change_alerts(_: str = Depends(verify_event_change_alerts_token)):
-    """Called every minute by Supabase pg_cron while event changes are pending."""
+    """Called every minute by the scheduled event change alerts call."""
     return {"sent": event_change.send_due_alerts()}
 
 

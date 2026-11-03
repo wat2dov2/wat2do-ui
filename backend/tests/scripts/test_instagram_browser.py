@@ -67,9 +67,8 @@ handler.close()
             **os.environ,
             "PYTHONPATH": str(script.BACKEND_DIRECTORY),
             "ENVIRONMENT": "testing",
-            "SUPABASE_URL": "https://example.supabase.co",
-            "SUPABASE_KEY": "test-key",
-            "SUPABASE_SECRET_KEY": "test-service-role",
+            "DATA_API_URL": "https://data.example.test",
+            "DATA_API_KEY": "test-service-role",
             "DATABASE_URL": "",
             "OPENAI_API_KEY": "",
             "APIFY_API_TOKEN": "",
@@ -220,7 +219,7 @@ def test_install_uses_stable_checkout_and_shared_spool(tmp_path, monkeypatch):
     assert payload["KeepAlive"] and payload["RunAtLoad"]
     assert [call[1] for call in calls] == ["print", "enable", "bootstrap"]
     assert queue.get_setting("paused") is False
-    assert "SUPABASE_SECRET_KEY" not in payload["EnvironmentVariables"]
+    assert "DATA_API_KEY" not in payload["EnvironmentVariables"]
 
 
 def test_install_reports_failed_bootstrap(tmp_path, monkeypatch):

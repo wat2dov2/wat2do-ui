@@ -75,9 +75,8 @@ jobs:
       AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
       ENVIRONMENT: production
       FRONTEND_URL: ${{ vars.FRONTEND_URL }}
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      DATA_API_URL: ${{ secrets.DATA_API_URL }}
+      DATA_API_KEY: ${{ secrets.DATA_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       EVENT_FEED_REVALIDATION_SECRET: ${{ secrets.EVENT_FEED_REVALIDATION_SECRET }}
       POSTER_ID: ${{ inputs.poster_id }}
@@ -117,9 +116,8 @@ jobs:
         run: |
           test -n "$AWS_DEPLOY_ROLE_ARN"
           test -n "$FRONTEND_URL"
-          test -n "$SUPABASE_URL"
-          test -n "$SUPABASE_KEY"
-          test -n "$SUPABASE_SECRET_KEY"
+          test -n "$DATA_API_URL"
+          test -n "$DATA_API_KEY"
           test -n "$OPENAI_API_KEY"
           test -n "$EVENT_FEED_REVALIDATION_SECRET"
           if [[ -z "$INTENDED_RECIPIENT_ID" && -z "$TARGET_SCHOOL" ]]; then

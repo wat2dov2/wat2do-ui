@@ -1,4 +1,5 @@
 import base64
+import hmac
 import json
 from urllib.parse import urlencode, urlparse
 
@@ -50,6 +51,11 @@ COOKIE_MAX_AGE = controlbox.authentication.session_cookie_days * 24 * 3600
 GOOGLE_OAUTH_STATE_COOKIE = "google_oauth_state"
 GOOGLE_OAUTH_STATE_MAX_AGE = 10 * 60
 GOOGLE_OAUTH_CALLBACK_PATH = "/api/auth/google/callback"
+
+
+def _google_redirect_uri() -> str:
+    """The one callback registered with Google; it sends users back to their school after."""
+    return f"{settings.frontend_url.rstrip('/')}{GOOGLE_OAUTH_CALLBACK_PATH}"
 
 
 # Fail fast in production without Secure cookies. The refresh token is a
@@ -154,14 +160,20 @@ def _decode_google_oauth_state(value: str | None) -> dict[str, str | None] | Non
     if not isinstance(payload, dict):
         return None
     verifier = payload.get("code_verifier")
+    state = payload.get("state")
     callback_url = payload.get("callback_url")
     return_to = payload.get("return_to")
-    if not isinstance(verifier, str) or not isinstance(callback_url, str):
+    if (
+        not isinstance(verifier, str)
+        or not isinstance(state, str)
+        or not isinstance(callback_url, str)
+    ):
         return None
     if return_to is not None and not isinstance(return_to, str):
         return None
     return {
         "code_verifier": verifier,
+        "state": state,
         "callback_url": callback_url,
         "return_to": return_to,
     }
@@ -232,10 +244,11 @@ def start_google_oauth(
             detail=str(exc),
         ) from exc
 
-    result = auth.prepare_google_oauth(callback_url)
+    result = auth.prepare_google_oauth(_google_redirect_uri())
     state = _encode_google_oauth_state(
         {
             "code_verifier": result.code_verifier,
+            "state": result.state,
             "callback_url": callback_url,
             "return_to": safe_return_to,
         }
@@ -258,10 +271,16 @@ def start_google_oauth(
 def complete_google_oauth(
     request: Request,
     code: str | None = Query(default=None, max_length=MAX_URL_LENGTH),
+    state: str | None = Query(default=None, max_length=MAX_URL_LENGTH),
     error: str | None = Query(default=None, max_length=255),
     _rl: None = Depends(verify_otp_rate_limiter.ip_dependency()),
 ):
     state_payload = _decode_google_oauth_state(request.cookies.get(GOOGLE_OAUTH_STATE_COOKIE))
+    # Google echoes the state we sent; anything else is a forged or stale callback.
+    if state_payload is not None and not hmac.compare_digest(
+        (state or "").encode("utf-8"), (state_payload["state"] or "").encode("utf-8")
+    ):
+        state_payload = None
     fallback_callback_url = f"{settings.frontend_url.rstrip('/')}{GOOGLE_OAUTH_CALLBACK_PATH}"
     callback_url = (
         state_payload.get("callback_url") if state_payload is not None else fallback_callback_url
@@ -289,6 +308,7 @@ def complete_google_oauth(
         result = auth.verify_google_oauth(
             code,
             state_payload["code_verifier"] or "",
+            _google_redirect_uri(),
             callback_url,
         )
     except ServiceError:
@@ -345,6 +365,8 @@ def verify_otp(
     response: Response,
     _rl: None = Depends(verify_otp_rate_limiter.ip_dependency()),
 ):
+    # Codes are six digits, so guesses are also capped per address across all IPs.
+    verify_otp_rate_limiter.check(f"email:{data.email.strip().lower()}")
     result = auth.verify_otp(data.email, data.token, signup_school=_request_school(request))
     if result.refresh_token:
         _set_refresh_cookie(response, result.refresh_token, request)

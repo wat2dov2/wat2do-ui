@@ -144,7 +144,7 @@ def test_agent_runs_without_secrets_and_leaves_no_run_folder(monkeypatch, tmp_pa
     removed = []
     monkeypatch.setattr(claude_code.shutil, "which", lambda _name: "/usr/local/bin/claude")
     monkeypatch.setattr(claude_code, "remove_run_folder", removed.append)
-    monkeypatch.setenv("SUPABASE_SECRET_KEY", "never-passed")
+    monkeypatch.setenv("DATA_API_KEY", "never-passed")
 
     def run(command, **kwargs):
         calls.append((command, kwargs))
@@ -159,7 +159,7 @@ def test_agent_runs_without_secrets_and_leaves_no_run_folder(monkeypatch, tmp_pa
     command, kwargs = calls[0]
     assert command[command.index("--tools") + 1] == "Read,Grep,WebFetch"
     assert "Bash" not in " ".join(command)
-    assert "SUPABASE_SECRET_KEY" not in kwargs["env"]
+    assert "DATA_API_KEY" not in kwargs["env"]
     assert not any(name.startswith("PG") for name in kwargs["env"])
     assert removed == [str(tmp_path)]
 

@@ -1,4 +1,4 @@
-"""Bounded recovery for Supabase table reads at the HTTP transport boundary.
+"""Bounded recovery for data API table reads at the HTTP transport boundary.
 
 Only GET/HEAD table requests are replayable here. Writes, RPCs, auth, and HTTP
 error responses are returned once to their caller. Retrying one failed page
@@ -15,7 +15,7 @@ from core.controlbox import controlbox
 from core.logging import logger
 
 
-class SupabaseReadTransport(httpx.BaseTransport):
+class DataApiReadTransport(httpx.BaseTransport):
     def __init__(
         self,
         transport: httpx.BaseTransport | None = None,
@@ -29,11 +29,7 @@ class SupabaseReadTransport(httpx.BaseTransport):
         self._wait = wait
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
-        is_table_read = (
-            request.method in {"GET", "HEAD"}
-            and request.url.path.startswith("/rest/v1/")
-            and not request.url.path.startswith("/rest/v1/rpc/")
-        )
+        is_table_read = request.method in {"GET", "HEAD"} and "/rpc/" not in request.url.path
         if not is_table_read:
             return self._transport.handle_request(request)
 
@@ -55,7 +51,7 @@ class SupabaseReadTransport(httpx.BaseTransport):
             with attempt:
                 if attempt.retry_state.attempt_number > 1:
                     logger.warning(
-                        "Retrying Supabase table read method=%s path=%s attempt=%s",
+                        "Retrying data API table read method=%s path=%s attempt=%s",
                         request.method,
                         request.url.path,
                         attempt.retry_state.attempt_number,
@@ -68,7 +64,7 @@ class SupabaseReadTransport(httpx.BaseTransport):
                 finally:
                     response.close()
                 return response
-        raise RuntimeError("Supabase read retry exhausted without a result")
+        raise RuntimeError("Data API read retry exhausted without a result")
 
     def close(self) -> None:
         self._transport.close()

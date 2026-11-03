@@ -1,4 +1,3 @@
-from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Default origins allowed in local development only.
@@ -8,19 +7,21 @@ _DEV_ORIGINS = [
 
 
 class Settings(BaseSettings):
-    # `extra="ignore"` - .env holds some shell-only vars (e.g. DATABASE_URL,
-    # read by the Supabase CLI) that the Python runtime doesn't need as
-    # typed fields. Ignoring them keeps Settings focused on what the app
-    # actually reads.
+    # `extra="ignore"` - .env holds some shell-only vars that the Python
+    # runtime doesn't need as typed fields. Ignoring them keeps Settings
+    # focused on what the app actually reads.
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # "development", "testing", or "production". Controls OpenAPI docs visibility.
     environment: str = "development"
 
-    supabase_url: str
-    supabase_jwt_issuer: str = ""
-    supabase_key: str
-    supabase_secret_key: str = ""
+    # PostgREST data API in front of Postgres, and the service JWT every
+    # backend request carries (it maps to a role that bypasses RLS).
+    data_api_url: str
+    data_api_key: str = ""
+    # PEM EC P-256 private key that signs our ES256 access tokens.
+    auth_signing_key: str = ""
+    google_oauth_client_secret: str = ""
     database_url: str = ""
     # Scoped login the local ingestion agent uses for events and positions.
     ingest_agent_database_url: str = ""
@@ -74,7 +75,7 @@ class Settings(BaseSettings):
     poster_confirmation_secret: str = ""
     poster_visitor_cookie_path: str = "/qr"
     # Server-only key for encrypting per-account Instagram access tokens before
-    # they are stored in Supabase. Generate with Fernet.generate_key().
+    # they are stored in the database. Generate with Fernet.generate_key().
     instagram_token_encryption_key: str = ""
     # Next.js slide renderer. The carousel slide templates live in the frontend
     # so the admin preview and the published PNG come from one source; this is
@@ -83,55 +84,8 @@ class Settings(BaseSettings):
     instagram_slide_render_secret: str = ""
     instagram_slide_render_timeout: float = 30.0
     automate_webhook_key: str = ""
-    # Bearer key Supabase's pg_cron job sends to the event change alerts webhook.
+    # Bearer key the scheduled event change alerts call sends to its webhook.
     event_change_alerts_key: str = ""
-
-    @model_validator(mode="after")
-    def validate_database_region(self) -> "Settings":
-        if not self.database_url:
-            return self
-
-        import urllib.parse
-
-        try:
-            parsed = urllib.parse.urlparse(self.database_url)
-            host = parsed.hostname
-            if not host or not host.endswith(".pooler.supabase.com"):
-                return self
-
-            port = parsed.port or 5432
-            username = parsed.username
-            if not username:
-                return self
-        except Exception:
-            return self
-
-        import socket
-
-        try:
-            # Build postgres startup packet to test regional connectivity
-            user_str = f"user\x00{username}\x00database\x00postgres\x00\x00"
-            packet_len = 8 + len(user_str)
-            packet = (
-                packet_len.to_bytes(4, byteorder="big")
-                + (196608).to_bytes(4, byteorder="big")
-                + user_str.encode("utf-8")
-            )
-
-            with socket.create_connection((host, port), timeout=3) as s:
-                s.sendall(packet)
-                response = s.recv(1024)
-                if b"not found" in response or b"tenant/user" in response:
-                    raise ValueError(
-                        f"Database pooler region mismatch: The tenant '{username}' was not found "
-                        f"on the pooler host '{host}'. Please verify that the region in your "
-                        f"DATABASE_URL matches the remote Supabase database's region."
-                    )
-        except socket.timeout:
-            pass
-        except socket.error:
-            pass
-        return self
 
     @property
     def is_production(self) -> bool:

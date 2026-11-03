@@ -51,10 +51,8 @@ ruff format --check .
 ruff check .
 mypy .
 ENVIRONMENT=testing \
-  SUPABASE_URL=https://example.supabase.co \
-  SUPABASE_KEY=test-anon-key \
-  SUPABASE_SECRET_KEY=test-service-role-key \
-  SUPABASE_JWT_SECRET=test-jwt-secret \
+  DATA_API_URL=https://data.example.test \
+  DATA_API_KEY=test-service-key \
   pytest -q
 ```
 
@@ -186,10 +184,8 @@ bash scripts/check-notification-workflow.sh
   ruff check . && \
   mypy . && \
   ENVIRONMENT=testing \
-    SUPABASE_URL=https://example.supabase.co \
-    SUPABASE_KEY=test-anon-key \
-    SUPABASE_SECRET_KEY=test-service-role-key \
-    SUPABASE_JWT_SECRET=test-jwt-secret \
+    DATA_API_URL=https://data.example.test \
+    DATA_API_KEY=test-service-key \
     pytest -q)
 
 # Frontend

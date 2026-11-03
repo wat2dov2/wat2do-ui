@@ -16,7 +16,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from core.database import supabase_admin  # noqa: E402
+from core.database import get_sb  # noqa: E402
 from core.sanitize import normalize_scraped_text  # noqa: E402
 from core.tables import EVENTS  # noqa: E402
 
@@ -41,7 +41,8 @@ def _instagram_event_rows() -> list[dict[str, Any]]:
     offset = 0
     while True:
         response = (
-            supabase_admin.table(EVENTS)
+            get_sb()
+            .table(EVENTS)
             .select("id,title,description")
             .eq("ingestion_source", "instagram_scraper")
             .not_.is_("description", "null")
@@ -67,7 +68,8 @@ def main() -> int:
         print(f"  {row['id']}: {row.get('title') or '(untitled)'}")
         if args.apply:
             (
-                supabase_admin.table(EVENTS)
+                get_sb()
+                .table(EVENTS)
                 .update({"description": normalized})
                 .eq("id", row["id"])
                 .execute()

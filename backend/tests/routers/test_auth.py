@@ -3,8 +3,9 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
-from supabase_auth.errors import AuthApiError
+from fastapi.testclient import TestClient
 
 from core.config import settings
 from core.errors import (
@@ -17,6 +18,7 @@ from core.rate_limit import (
     send_otp_rate_limiter,
     verify_otp_rate_limiter,
 )
+from main import app
 from schemas.auth import TokenResponse
 from services.auth_service import AuthResult, auth
 
@@ -78,6 +80,8 @@ def _verify_result(
 
 class TestGoogleOAuth:
     CALLBACK_URL = "http://localhost:3000/api/auth/google/callback"
+    # settings.frontend_url in tests is http://localhost:3000.
+    GOOGLE_REDIRECT = "http://localhost:3000/api/auth/google/callback"
 
     def test_start_google_oauth_sets_pkce_state_and_redirects(
         self,
@@ -92,6 +96,7 @@ class TestGoogleOAuth:
                 return_value=SimpleNamespace(
                     authorization_url="https://accounts.example/authorize",
                     code_verifier="verifier",
+                    state="state-1",
                 )
             ),
         )
@@ -111,7 +116,30 @@ class TestGoogleOAuth:
         set_cookie = response.headers["set-cookie"].lower()
         assert "httponly" in set_cookie
         assert "path=/api/auth/google/callback" in set_cookie
-        auth.prepare_google_oauth.assert_called_once_with(self.CALLBACK_URL)
+        auth.prepare_google_oauth.assert_called_once_with(self.GOOGLE_REDIRECT)
+
+    def test_google_always_returns_to_the_one_registered_callback(self, client, monkeypatch):
+        monkeypatch.setattr(settings, "cors_origin_regex", r"^http://[a-z]+\.localhost:3000$")
+        monkeypatch.setattr(
+            auth,
+            "prepare_google_oauth",
+            MagicMock(
+                return_value=SimpleNamespace(
+                    authorization_url="https://accounts.example/authorize",
+                    code_verifier="verifier",
+                    state="state-1",
+                )
+            ),
+        )
+
+        response = client.get(
+            "/auth/google",
+            params={"callback_url": "http://uwaterloo.localhost:3000/api/auth/google/callback"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        auth.prepare_google_oauth.assert_called_once_with(self.GOOGLE_REDIRECT)
 
     @pytest.mark.parametrize(
         "callback_url",
@@ -152,6 +180,7 @@ class TestGoogleOAuth:
                 return_value=SimpleNamespace(
                     authorization_url="https://accounts.example/authorize",
                     code_verifier="verifier",
+                    state="state-1",
                 )
             ),
         )
@@ -177,7 +206,7 @@ class TestGoogleOAuth:
 
         response = client.get(
             "/auth/google/callback",
-            params={"code": "auth-code"},
+            params={"code": "auth-code", "state": "state-1"},
             follow_redirects=False,
         )
 
@@ -191,8 +220,39 @@ class TestGoogleOAuth:
         auth.verify_google_oauth.assert_called_once_with(
             "auth-code",
             "verifier",
+            self.GOOGLE_REDIRECT,
             self.CALLBACK_URL,
         )
+
+    @pytest.mark.parametrize("state", [None, "forged-state"])
+    def test_complete_google_oauth_with_a_wrong_state_returns_to_login(
+        self, client, monkeypatch, state
+    ):
+        monkeypatch.setattr(settings, "cookie_secure", False)
+        monkeypatch.setattr(
+            auth,
+            "prepare_google_oauth",
+            MagicMock(
+                return_value=SimpleNamespace(
+                    authorization_url="https://accounts.example/authorize",
+                    code_verifier="verifier",
+                    state="state-1",
+                )
+            ),
+        )
+        start_response = client.get(
+            "/auth/google", params={"callback_url": self.CALLBACK_URL}, follow_redirects=False
+        )
+        client.cookies.set("google_oauth_state", start_response.cookies["google_oauth_state"])
+        verify = MagicMock()
+        monkeypatch.setattr(auth, "verify_google_oauth", verify)
+
+        params = {"code": "auth-code"} | ({"state": state} if state else {})
+        response = client.get("/auth/google/callback", params=params, follow_redirects=False)
+
+        assert response.status_code == 303
+        assert response.headers["location"] == "http://localhost:3000/login?oauthError=google"
+        verify.assert_not_called()
 
     def test_complete_google_oauth_without_pkce_state_returns_to_login(self, client):
         response = client.get(
@@ -318,6 +378,13 @@ class TestSendOtp:
 class TestVerifyOtp:
     """Tests for the verify-otp endpoint."""
 
+    def test_verify_otp_counts_guesses_per_address(self, client, monkeypatch):
+        monkeypatch.setattr(auth, "verify_otp", MagicMock(return_value=_verify_result()))
+
+        client.post("/auth/verify-otp", json={**VALID_VERIFY_OTP, "email": "Student@UWaterloo.ca"})
+
+        assert "email:student@uwaterloo.ca" in verify_otp_rate_limiter._requests
+
     def test_verify_otp_success(self, client, monkeypatch):
         """Successful verify-otp returns tokens and sets refresh cookie."""
         result = _verify_result()
@@ -367,25 +434,36 @@ class TestRefresh:
 
     ALLOWED_ORIGIN = "http://localhost:3000"
 
-    @pytest.mark.parametrize("upstream_status", [400, 401, 403, 408, 429, 500, 502, 503])
-    def test_refresh_preserves_transient_upstream_failures(
-        self, client, monkeypatch, upstream_status
-    ):
-        upstream = MagicMock()
-        upstream.refresh_session.side_effect = AuthApiError(
-            "Private upstream error", upstream_status, None
-        )
-        monkeypatch.setattr(auth, "_auth_eager", upstream)
+    def test_refresh_with_an_unknown_token_is_unauthorized(self, client, monkeypatch):
+        db = MagicMock()
+        db.table().update().eq().is_().gt().execute.return_value = SimpleNamespace(data=[])
+        db.table().select().eq().is_().execute.return_value = SimpleNamespace(data=[])
+        monkeypatch.setattr(auth, "_db_eager", db)
 
         response = client.post(
+            "/auth/refresh",
+            cookies={"refresh_token": "never-issued"},
+            headers={"Origin": self.ALLOWED_ORIGIN},
+        )
+
+        assert response.status_code == 401
+        assert "set-cookie" not in response.headers
+
+    def test_refresh_during_a_database_outage_is_not_a_logout(self, monkeypatch):
+        db = MagicMock()
+        db.table.side_effect = httpx.ConnectError("data API unreachable")
+        monkeypatch.setattr(auth, "_db_eager", db)
+
+        response = TestClient(app, raise_server_exceptions=False).post(
             "/auth/refresh",
             cookies={"refresh_token": "existing-session"},
             headers={"Origin": self.ALLOWED_ORIGIN},
         )
 
-        expected_status = 401 if upstream_status in {400, 401, 403} else upstream_status
-        assert response.status_code == expected_status
-        assert "Private upstream error" not in response.text
+        # The browser logs out only on 401; an outage must not end the session.
+        assert response.status_code != 401
+        assert response.status_code >= 500
+        assert "data API unreachable" not in response.text
         assert "set-cookie" not in response.headers
 
     def test_refresh_success(self, client, monkeypatch):

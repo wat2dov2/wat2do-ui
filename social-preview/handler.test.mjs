@@ -81,8 +81,8 @@ test("the scheduled check queues every school with a stale preview", async (t) =
   process.env.QUEUE_URL = "https://example.com/queue";
   t.mock.method(SecretsManagerClient.prototype, "send", async () => ({
     SecretString: JSON.stringify({
-      SUPABASE_URL: "https://db.example",
-      SUPABASE_SECRET_KEY: "test",
+      DATA_API_URL: "https://db.example",
+      DATA_API_KEY: "test",
     }),
   }));
   const batches = [];

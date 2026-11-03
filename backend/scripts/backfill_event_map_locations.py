@@ -22,7 +22,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core.constants import MAX_EVENT_LOCATION_LENGTH  # noqa: E402
-from core.database import supabase_admin  # noqa: E402
+from core.database import get_sb  # noqa: E402
 from core.tables import EVENTS, SCHOOLS  # noqa: E402
 from services.ingestion.claude_completion import claude_completion  # noqa: E402
 
@@ -85,7 +85,8 @@ def _upcoming_events() -> list[dict[str, Any]]:
     offset = 0
     while True:
         batch = (
-            supabase_admin.table(EVENTS)
+            get_sb()
+            .table(EVENTS)
             .select("id,school_id,location,map_location,event_dates!inner(dtstart_utc)")
             .gte("event_dates.dtstart_utc", since)
             .eq("cancelled", False)
@@ -109,9 +110,7 @@ def main() -> int:
 
     schools = {
         school["id"]: school
-        for school in (
-            supabase_admin.table(SCHOOLS).select("id,slug,name,city").execute().data or []
-        )
+        for school in (get_sb().table(SCHOOLS).select("id,slug,name,city").execute().data or [])
         if not args.school or school["slug"] == args.school
     }
     events = [row for row in _upcoming_events() if row["school_id"] in schools]
@@ -140,7 +139,8 @@ def main() -> int:
             print(f"  {school['slug']} {row['id']}: {row['location']!r} -> {map_location!r}")
             if args.apply:
                 (
-                    supabase_admin.table(EVENTS)
+                    get_sb()
+                    .table(EVENTS)
                     .update({"map_location": map_location})
                     .eq("id", row["id"])
                     .execute()

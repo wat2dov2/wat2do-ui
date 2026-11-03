@@ -933,7 +933,7 @@ def test_get_batch_recovers_from_database_disconnect(monkeypatch):
     import httpx
     from postgrest import SyncPostgrestClient
 
-    from core.retry import SupabaseReadTransport
+    from core.retry import DataApiReadTransport
 
     batch = {"id": "batch-1", "batch_kind": "events", "school_record": {"slug": "uwaterloo"}}
     send = Mock(
@@ -945,9 +945,9 @@ def test_get_batch_recovers_from_database_disconnect(monkeypatch):
     hydrate = Mock()
     monkeypatch.setattr(service, "_hydrate_batch", hydrate)
     with httpx.Client(
-        transport=SupabaseReadTransport(httpx.MockTransport(send), wait=lambda _: None)
+        transport=DataApiReadTransport(httpx.MockTransport(send), wait=lambda _: None)
     ) as http_client:
-        client = SyncPostgrestClient("https://example.supabase.co/rest/v1", http_client=http_client)
+        client = SyncPostgrestClient("https://data.example.test", http_client=http_client)
         monkeypatch.setattr(service, "get_sb", lambda: client)
         assert service.get_batch("batch-1")["id"] == "batch-1"
     assert send.call_count == 2
@@ -961,7 +961,7 @@ def test_concurrent_batch_reads_recover_without_mixing_results(monkeypatch):
     import httpx
     from postgrest import SyncPostgrestClient
 
-    from core.retry import SupabaseReadTransport
+    from core.retry import DataApiReadTransport
 
     attempts = {}
     lock = Lock()
@@ -981,9 +981,9 @@ def test_concurrent_batch_reads_recover_without_mixing_results(monkeypatch):
 
     monkeypatch.setattr(service, "_hydrate_batch", hydrate)
     with httpx.Client(
-        transport=SupabaseReadTransport(httpx.MockTransport(send), wait=lambda _: None)
+        transport=DataApiReadTransport(httpx.MockTransport(send), wait=lambda _: None)
     ) as http_client:
-        client = SyncPostgrestClient("https://example.supabase.co/rest/v1", http_client=http_client)
+        client = SyncPostgrestClient("https://data.example.test", http_client=http_client)
         monkeypatch.setattr(service, "get_sb", lambda: client)
         with ThreadPoolExecutor(max_workers=2) as pool:
             results = list(pool.map(service.get_batch, ["batch-1", "batch-2"]))

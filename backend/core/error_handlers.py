@@ -18,10 +18,8 @@ import traceback
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from postgrest.exceptions import APIError
-from supabase_auth.errors import AuthApiError
 
 from core.errors import (
-    AUTHENTICATION_ERROR,
     DB_OPERATION_FAILED,
     INTERNAL_SERVER_ERROR,
     PG_CODE_TO_HTTP,
@@ -100,23 +98,6 @@ def register_error_handlers(app: FastAPI) -> None:
         if exc.code:
             body["code"] = exc.code
         return JSONResponse(status_code=400, content=body)
-
-    @app.exception_handler(AuthApiError)
-    async def handle_auth_api_error(request: Request, exc: AuthApiError) -> JSONResponse:
-        status_code = exc.status or 400
-        # Log the real Supabase message server-side for debugging, but never
-        # send it to the client - raw messages like "User already registered"
-        # or "Email not confirmed" enable user-enumeration attacks.
-        # Sanitize the upstream message (CR/LF) before interpolation
-        # so a compromised/hostile upstream cannot forge log lines.
-        logger.warning(
-            "AuthApiError on %s %s [code=%s]: %s",
-            request.method,
-            request.url.path,
-            _safe(exc.code),
-            _safe(exc.message),
-        )
-        return JSONResponse(status_code=status_code, content={"detail": AUTHENTICATION_ERROR})
 
     @app.exception_handler(APIError)
     async def handle_postgrest_error(request: Request, exc: APIError) -> JSONResponse:

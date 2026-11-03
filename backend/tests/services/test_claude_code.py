@@ -13,7 +13,7 @@ def test_agent_gets_only_its_tools_and_no_secrets(monkeypatch, tmp_path):
     removed = []
     monkeypatch.setattr(claude_code.shutil, "which", lambda _name: "/usr/local/bin/claude")
     monkeypatch.setattr(claude_code, "remove_run_folder", removed.append)
-    monkeypatch.setenv("SUPABASE_SECRET_KEY", "never-passed")
+    monkeypatch.setenv("DATA_API_KEY", "never-passed")
 
     def run(command, **kwargs):
         calls.append((command, kwargs))
@@ -38,7 +38,7 @@ def test_agent_gets_only_its_tools_and_no_secrets(monkeypatch, tmp_path):
     assert allowed == ["WebSearch", "WebFetch"]
     assert command[command.index("--model") + 1] == "claude-haiku-5-5"
     assert kwargs["input"] == "prompt" and kwargs["timeout"] == 60
-    assert "SUPABASE_SECRET_KEY" not in kwargs["env"]
+    assert "DATA_API_KEY" not in kwargs["env"]
     assert removed == [str(tmp_path)]
 
 

@@ -121,7 +121,6 @@ RATE_LIMIT_EXCEEDED = "Too many requests — please wait before trying again."
 # ---------------------------------------------------------------------------
 # Global error handler defaults
 # ---------------------------------------------------------------------------
-AUTHENTICATION_ERROR = "Authentication error"
 DB_OPERATION_FAILED = "Database operation failed"
 INTERNAL_SERVER_ERROR = "Internal server error"
 
@@ -136,7 +135,6 @@ PG_CODE_TO_HTTP: dict[str, tuple[int, str]] = {
 # ---------------------------------------------------------------------------
 # 500 / Service errors
 # ---------------------------------------------------------------------------
-FAILED_TO_GENERATE_TOKEN = "Unable to generate login link. Please try again later."
 FAILED_TO_SAVE_TOKEN = "Unable to save verification token. Please try again later."
 REGISTRATION_FAILED = "Unable to complete registration. Please try again later."
 

@@ -18,10 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ENVIRONMENT: testing
-      SUPABASE_URL: https://example.supabase.co
-      SUPABASE_KEY: test-anon-key
-      SUPABASE_SECRET_KEY: test-service-role-key
-      SUPABASE_JWT_SECRET: test-jwt-secret
+      DATA_API_URL: https://data.example.test
+      DATA_API_KEY: test-service-key
 
     steps:
       - uses: actions/checkout@v4

@@ -1,6 +1,10 @@
 {
   "session_cookie_days": 30,
   "verification_token_minutes": 15,
+  "access_token_minutes": 60,
+  "refresh_token_reuse_seconds": 10,
+  "token_issuer": "wat2do",
+  "google_client_id": "175699622765-hr5e7j9arvb1cv5e97hld9kf5lv08nmi.apps.googleusercontent.com",
   "legacy_frontend_origins": [
     "https://wat2do.ca",
     "https://www.wat2do.ca"

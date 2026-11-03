@@ -433,6 +433,12 @@ class InteractionTrackingControl(_ControlModel):
 class AuthenticationControl(_ControlModel):
     session_cookie_days: int = Field(gt=0)
     verification_token_minutes: int = Field(gt=0)
+    access_token_minutes: int = Field(gt=0, le=1440)
+    # A just-rotated refresh token still returns its successor for this long, so
+    # parallel refreshes from one browser do not log it out.
+    refresh_token_reuse_seconds: int = Field(ge=0, le=300)
+    token_issuer: str = Field(min_length=1)
+    google_client_id: str = Field(pattern=r"^[0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com$")
     legacy_frontend_origins: tuple[HttpUrl, ...]
 
 

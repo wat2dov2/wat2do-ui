@@ -1764,7 +1764,7 @@ export interface paths {
         put?: never;
         /**
          * Send Event Change Alerts
-         * @description Called every minute by Supabase pg_cron while event changes are pending.
+         * @description Called every minute by the scheduled event change alerts call.
          */
         post: operations["send_event_change_alerts_webhooks_event_change_alerts_post"];
         delete?: never;
@@ -5089,6 +5089,7 @@ export interface operations {
         parameters: {
             query?: {
                 code?: string | null;
+                state?: string | null;
                 error?: string | null;
             };
             header?: never;

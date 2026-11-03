@@ -1,17 +1,34 @@
-"""Auth via Supabase (auth + users table). Sync."""
+"""Our own auth: email login codes, Google sign-in, and refreshable sessions.
 
+Login codes and links are generated here and stored hashed in
+``verification_tokens``; a verified login starts an ``auth_sessions`` row whose
+refresh token lives in the browser's httpOnly cookie.  Access tokens are
+short-lived ES256 JWTs from ``core.auth_tokens``.  Sync.
+"""
+
+import base64
 import hashlib
+import hmac
+import secrets
+import uuid
+from datetime import datetime, timedelta, timezone
 from html import escape
-from typing import NoReturn
 from urllib.parse import urlencode
 
-from supabase_auth import SyncMemoryStorage
-from supabase_auth.errors import AuthApiError
+import httpx
+import jwt
 
+from core.auth_tokens import (
+    access_token_seconds,
+    decode_access_token,
+    issue_access_token,
+    new_refresh_token,
+    next_refresh_token,
+    refresh_token_hash,
+)
 from core.config import settings
 from core.controlbox import controlbox
 from core.errors import (
-    FAILED_TO_GENERATE_TOKEN,
     FAILED_TO_SAVE_TOKEN,
     INVALID_OR_EXPIRED_TOKEN,
     REGISTRATION_FAILED,
@@ -22,7 +39,7 @@ from core.exceptions import (
     ServiceError,
 )
 from core.logging import logger
-from core.tables import USERS, VERIFICATION_TOKENS
+from core.tables import AUTH_SESSIONS, USERS, VERIFICATION_TOKENS
 from schemas.auth import (
     TokenResponse,
 )
@@ -37,6 +54,13 @@ from services.email_layout import (
 )
 from services.email_service import EmailMessage
 from services.school_context import school_from_frontend_url, school_frontend_url
+
+GOOGLE_AUTHORIZATION_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_CERTS_URL = "https://www.googleapis.com/oauth2/v3/certs"
+GOOGLE_ISSUERS = ("https://accounts.google.com", "accounts.google.com")
+_GOOGLE_TIMEOUT_SECONDS = 10
+_google_keys = jwt.PyJWKClient(GOOGLE_CERTS_URL, cache_keys=True, lifespan=3600)
 
 
 def _sanitize_for_log(value: str | None) -> str:
@@ -54,6 +78,10 @@ def _sanitize_for_log(value: str | None) -> str:
     return value.replace("\r", "\\r").replace("\n", "\\n")
 
 
+def _token_digest(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
 class AuthResult:
     """Carries the JSON response body *and* the raw refresh token for cookie setting."""
 
@@ -63,46 +91,26 @@ class AuthResult:
 
 
 class OAuthStartResult:
-    """Authorization URL plus the one-time PKCE verifier bound to this browser."""
+    """Authorization URL plus the one-time PKCE verifier and state bound to this browser."""
 
-    def __init__(self, authorization_url: str, code_verifier: str):
+    def __init__(self, authorization_url: str, code_verifier: str, state: str):
         self.authorization_url = authorization_url
         self.code_verifier = code_verifier
+        self.state = state
 
 
-class _OAuthVerifierStorage(SyncMemoryStorage):
-    """Capture the PKCE verifier without persisting a user session server-side."""
+class _Session:
+    """A session's access token, its lifetime and the refresh token for the cookie."""
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.code_verifier: str | None = None
-
-    def set_item(self, key: str, value: str) -> None:
-        super().set_item(key, value)
-        if key.endswith("-code-verifier"):
-            self.code_verifier = value
+    def __init__(self, access_token: str, refresh_token: str):
+        self.access_token = access_token
+        self.expires_in = access_token_seconds()
+        self.refresh_token = refresh_token
 
 
 class AuthService:
-    def __init__(self, auth_client=None, db_client=None):
-        self._auth_eager = auth_client
+    def __init__(self, db_client=None):
         self._db_eager = db_client
-
-    @property
-    def _auth(self):
-        if self._auth_eager is not None:
-            return self._auth_eager
-        from core.database import supabase as _sb
-
-        return _sb.auth
-
-    @property
-    def _auth_admin(self):
-        if self._auth_eager is not None:
-            return self._auth_eager
-        from core.database import supabase_admin as _sb_admin
-
-        return _sb_admin.auth
 
     @property
     def _db(self):
@@ -112,86 +120,42 @@ class AuthService:
 
         return get_sb()
 
-    @staticmethod
-    def _new_oauth_auth(storage: SyncMemoryStorage | None = None):
-        """Create an isolated PKCE client for one OAuth request."""
-        from supabase import ClientOptions, create_client
-
-        return create_client(
-            settings.supabase_url,
-            settings.supabase_key,
-            ClientOptions(
-                flow_type="pkce",
-                storage=storage or SyncMemoryStorage(),
-                persist_session=False,
-                auto_refresh_token=False,
-            ),
-        ).auth
-
-    def prepare_google_oauth(self, callback_url: str) -> OAuthStartResult:
-        storage = _OAuthVerifierStorage()
-        response = self._new_oauth_auth(storage).sign_in_with_oauth(
+    def prepare_google_oauth(self, redirect_uri: str) -> OAuthStartResult:
+        """Build Google's consent URL with PKCE; Google sends the code to *redirect_uri*."""
+        code_verifier = secrets.token_urlsafe(64)
+        challenge = (
+            base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode("ascii")).digest())
+            .rstrip(b"=")
+            .decode("ascii")
+        )
+        state = secrets.token_urlsafe(32)
+        query = urlencode(
             {
-                "provider": "google",
-                "options": {"redirect_to": callback_url},
+                "client_id": controlbox.authentication.google_client_id,
+                "redirect_uri": redirect_uri,
+                "response_type": "code",
+                "scope": "openid email profile",
+                "code_challenge": challenge,
+                "code_challenge_method": "S256",
+                "state": state,
             }
         )
-        if not response.url or not storage.code_verifier:
-            raise ServiceError("Failed to start Google sign-in")
-        return OAuthStartResult(response.url, storage.code_verifier)
+        return OAuthStartResult(f"{GOOGLE_AUTHORIZATION_URL}?{query}", code_verifier, state)
 
     def verify_google_oauth(
         self,
         code: str,
         code_verifier: str,
+        redirect_uri: str,
         callback_url: str,
     ) -> AuthResult:
-        try:
-            response = self._new_oauth_auth().exchange_code_for_session(
-                {
-                    "auth_code": code,
-                    "code_verifier": code_verifier,
-                    "redirect_to": callback_url,
-                }
-            )
-        except AuthApiError as exc:
-            logger.warning("Supabase Google OAuth verification failed: %s", exc.message)
-            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
-        except Exception as exc:
-            logger.warning("Supabase Google OAuth verification failed: %s", exc)
-            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
-
-        if not response.session or not response.user or not response.user.email:
-            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
-
-        from datetime import datetime, timezone
-
+        """Exchange Google's code for a verified email and start a session."""
+        email = _google_verified_email(code, code_verifier, redirect_uri)
         return self._complete_authenticated_session(
-            response,
-            response.user.email.strip().lower(),
+            email,
             datetime.now(timezone.utc).isoformat(),
             school_from_frontend_url(callback_url),
         )
-
-    @staticmethod
-    def _handle_auth_error(
-        exc: AuthApiError,
-        log_message: str,
-        domain_error_cls: type[ServiceError],
-        error_detail: str,
-    ) -> NoReturn:
-        """Log an AuthApiError and raise the corresponding domain exception.
-
-        E16: annotated ``NoReturn`` so type-checkers (mypy/pyright) know every
-        call terminates in an exception - prevents latent ``UnboundLocalError``
-        if this helper is ever refactored into a non-raising form.
-
-        E7: the untrusted value is passed as a separate %s argument (not
-        f-string-interpolated) and the caller is expected to pass pre-sanitised
-        strings.
-        """
-        logger.warning("%s: %s", log_message, exc.message)
-        raise domain_error_cls(error_detail)
 
     def prepare_otp_email(
         self,
@@ -203,8 +167,6 @@ class AuthService:
         email_clean = email.strip().lower()
         recipient_school = signup_school
         if invitation_token:
-            from datetime import datetime, timezone
-
             now_str = datetime.now(timezone.utc).isoformat()
             try:
                 r_invite = (
@@ -241,51 +203,33 @@ class AuthService:
         except Exception as e:
             logger.warning("Failed to check if user exists: %s", e)
 
-        safe_email = _sanitize_for_log(email_clean)
-
-        # confirm=True so the Auth user is already confirmed when they verify OTP
-        try:
-            self._auth_admin.admin.create_user({"email": email_clean, "email_confirm": True})
-            logger.info("Created new Supabase auth user for %s", safe_email)
-        except AuthApiError as e:
-            if "already exists" in getattr(e, "message", "").lower():
-                logger.info("Supabase auth user already exists: %s", safe_email)
-            else:
-                logger.warning("Supabase auth user creation error: %s", e.message)
-        except Exception as e:
-            logger.info("Supabase auth user check/creation bypassed: %s", e)
-
-        try:
-            link_res = self._auth_admin.admin.generate_link(
-                {
-                    "type": "magiclink",
-                    "email": email_clean,
-                }
-            )
-        except Exception as e:
-            logger.error("Failed to generate magic link from Supabase: %s", e)
-            raise ServiceError(FAILED_TO_GENERATE_TOKEN)
-
         try:
             self._db.table(VERIFICATION_TOKENS).delete().eq("identifier", email_clean).execute()
         except Exception as e:
             logger.warning("Failed to delete old verification tokens: %s", e)
-
-        from datetime import datetime, timedelta, timezone
 
         expires_at = (
             datetime.now(timezone.utc)
             + timedelta(minutes=controlbox.authentication.verification_token_minutes)
         ).isoformat()
 
-        hashed_token = link_res.properties.hashed_token
-        otp_hash = hashlib.sha256(link_res.properties.email_otp.encode("utf-8")).hexdigest()
+        # One six-digit code to type and one link token to click; only hashes are stored.
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        link_token = secrets.token_urlsafe(32)
 
         try:
             self._db.table(VERIFICATION_TOKENS).insert(
                 [
-                    {"identifier": email_clean, "token": hashed_token, "expires": expires_at},
-                    {"identifier": email_clean, "token": otp_hash, "expires": expires_at},
+                    {
+                        "identifier": email_clean,
+                        "token": _token_digest(link_token),
+                        "expires": expires_at,
+                    },
+                    {
+                        "identifier": email_clean,
+                        "token": _token_digest(code),
+                        "expires": expires_at,
+                    },
                 ]
             ).execute()
         except Exception as e:
@@ -294,23 +238,22 @@ class AuthService:
 
         base_url = school_frontend_url(recipient_school)
         callback_params = {
-            "token": hashed_token,
+            "token": link_token,
             "email": email_clean,
         }
         if return_to is not None:
             callback_params["returnTo"] = return_to
         callback_url = f"{base_url}/auth/callback?{urlencode(callback_params)}"
 
-        return _login_email(email_clean, link_res.properties.email_otp, callback_url)
+        return _login_email(email_clean, code, callback_url)
 
     def _complete_authenticated_session(
         self,
-        auth_response,
         email_clean: str,
         now_str: str,
         signup_school: str | None = None,
     ) -> AuthResult:
-        """Map any verified Supabase session into Wat2Do's one user/session path."""
+        """Map any verified login (code, link or Google) into Wat2Do's one user/session path."""
         db_user = None
         try:
             r_user = (
@@ -332,6 +275,7 @@ class AuthService:
                 logger.error("Existing user is not assigned to a registered school")
                 raise ServiceError(REGISTRATION_FAILED)
             onboarding_required = school is None
+            auth_id = db_user["supabase_auth_id"]
         else:
             school = signup_school
             school_record = school_service.get_school(school)
@@ -340,12 +284,11 @@ class AuthService:
                 raise ServiceError(REGISTRATION_FAILED)
 
             onboarding_required = True
-            import uuid
-
             user_id = str(uuid.uuid4())
+            auth_id = str(uuid.uuid4())
             payload = {
                 "id": user_id,
-                "supabase_auth_id": auth_response.user.id,
+                "supabase_auth_id": auth_id,
                 "email": email_clean,
                 "school_id": school_record.id if school_record else None,
             }
@@ -386,72 +329,36 @@ class AuthService:
             except Exception as exc:
                 logger.warning("Failed to process auto-join for user %s: %s", user_id, exc)
 
+        session = self._start_session(auth_id, email_clean)
         return AuthResult(
             body=TokenResponse(
-                access_token=auth_response.session.access_token,
-                expires_in=auth_response.session.expires_in,
-                user_id=auth_response.user.id,
+                access_token=session.access_token,
+                expires_in=session.expires_in,
+                user_id=auth_id,
                 school=school,
                 onboarding_required=onboarding_required,
             ),
-            refresh_token=auth_response.session.refresh_token,
+            refresh_token=session.refresh_token,
         )
 
     def verify_otp(self, email: str, token: str, signup_school: str | None = None) -> AuthResult:
+        """Accept the six-digit code or the link token from the latest login email."""
         email_clean = email.strip().lower()
-        token_clean = token.strip()
-
-        hashed_token = hashlib.sha256(token_clean.encode("utf-8")).hexdigest()
-
-        from datetime import datetime, timezone
-
         now_str = datetime.now(timezone.utc).isoformat()
 
         try:
-            # Magic-link callback stores the hashed token as-is; OTP stores
-            # sha256(code). Try the raw token first, then the hashed form.
             r = (
                 self._db.table(VERIFICATION_TOKENS)
-                .select("*")
+                .select("identifier")
                 .eq("identifier", email_clean)
-                .eq("token", token_clean)
+                .eq("token", _token_digest(token.strip()))
                 .gt("expires", now_str)
                 .execute()
             )
-            if not r.data:
-                r = (
-                    self._db.table(VERIFICATION_TOKENS)
-                    .select("*")
-                    .eq("identifier", email_clean)
-                    .eq("token", hashed_token)
-                    .gt("expires", now_str)
-                    .execute()
-                )
-
-            if not r.data:
-                raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
-
-        except AuthenticationError:
-            raise
         except Exception as e:
             logger.error("Failed to query verification token: %s", e)
             raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
-
-        try:
-            if token_clean.isdigit():
-                res = self._auth.verify_otp(
-                    {"email": email_clean, "token": token_clean, "type": "email"}
-                )
-            else:
-                res = self._auth.verify_otp({"token_hash": token_clean, "type": "email"})
-        except AuthApiError as e:
-            logger.warning("Supabase OTP verification failed: %s", e.message)
-            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
-        except Exception as e:
-            logger.warning("Supabase OTP verification failed: %s", e)
-            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
-
-        if not res.session or not res.user:
+        if not r.data:
             raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
 
         try:
@@ -459,49 +366,154 @@ class AuthService:
         except Exception as e:
             logger.warning("Failed to delete used verification tokens: %s", e)
 
-        return self._complete_authenticated_session(res, email_clean, now_str, signup_school)
+        return self._complete_authenticated_session(email_clean, now_str, signup_school)
 
     def refresh(self, refresh_token: str) -> AuthResult:
-        try:
-            res = self._auth.refresh_session(refresh_token)
-        except AuthApiError as e:
-            # Only credential rejections invalidate the browser session.
-            # Preserve other statuses through the shared AuthApiError handler
-            # so temporary upstream failures do not become logout-triggering 401s.
-            if e.status not in {400, 401, 403}:
-                raise
-            self._handle_auth_error(
-                e,
-                "Token refresh failed",
-                AuthenticationError,
-                SESSION_REFRESH_FAILED,
-            )
-
-        if not res.session:
+        """Rotate the browser's refresh token and issue a new access token."""
+        presented = refresh_token_hash(refresh_token)
+        successor = next_refresh_token(refresh_token)
+        now = datetime.now(timezone.utc)
+        session = self._rotate(presented, successor, now)
+        if session is None:
+            session = self._recently_rotated(presented, successor, now)
+        if session is None:
             raise AuthenticationError(SESSION_REFRESH_FAILED)
 
+        auth_id = session["auth_id"]
         return AuthResult(
             body=TokenResponse(
-                access_token=res.session.access_token,
-                expires_in=res.session.expires_in,
-                user_id=res.user.id,
+                access_token=issue_access_token(
+                    subject=auth_id, email=self._email_for(auth_id), session_id=session["id"]
+                ),
+                expires_in=access_token_seconds(),
+                user_id=auth_id,
             ),
-            refresh_token=res.session.refresh_token,
+            refresh_token=successor,
         )
 
     def logout(self, access_token: str) -> None:
+        """End every session of the token's user, like signing out everywhere."""
         try:
-            self._db.auth.admin.sign_out(access_token)
-        except AuthApiError as e:
-            self._handle_auth_error(
-                e,
-                "Logout error",
-                AuthenticationError,
-                INVALID_OR_EXPIRED_TOKEN,
+            claims = decode_access_token(access_token)
+        except jwt.InvalidTokenError as exc:
+            logger.warning("Logout with an invalid access token: %s", exc)
+            raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
+        self._db.table(AUTH_SESSIONS).update(
+            {"revoked_at": datetime.now(timezone.utc).isoformat()}
+        ).eq("auth_id", claims["sub"]).is_("revoked_at", "null").execute()
+
+    def _start_session(self, auth_id: str, email: str | None) -> _Session:
+        refresh_token = new_refresh_token()
+        try:
+            row = (
+                self._db.table(AUTH_SESSIONS)
+                .insert(
+                    {
+                        "auth_id": auth_id,
+                        "refresh_token_hash": refresh_token_hash(refresh_token),
+                        "expires_at": _session_expiry(datetime.now(timezone.utc)),
+                    }
+                )
+                .execute()
+                .data[0]
             )
+        except Exception as exc:
+            logger.error("Failed to start a session: %s", exc)
+            raise ServiceError(REGISTRATION_FAILED)
+        access_token = issue_access_token(subject=auth_id, email=email, session_id=row["id"])
+        return _Session(access_token, refresh_token)
+
+    def _rotate(self, presented: str, successor: str, now: datetime) -> dict | None:
+        """Swap the session's current token for its successor; None if it is not current."""
+        rows = (
+            self._db.table(AUTH_SESSIONS)
+            .update(
+                {
+                    "refresh_token_hash": refresh_token_hash(successor),
+                    "previous_refresh_token_hash": presented,
+                    "rotated_at": now.isoformat(),
+                    "expires_at": _session_expiry(now),
+                }
+            )
+            .eq("refresh_token_hash", presented)
+            .is_("revoked_at", "null")
+            .gt("expires_at", now.isoformat())
+            .execute()
+            .data
+        )
+        return rows[0] if rows else None
+
+    def _recently_rotated(self, presented: str, successor: str, now: datetime) -> dict | None:
+        """A token rotated moments ago (a parallel refresh) still yields its successor.
+
+        Sent any later, a replaced token means it leaked: the session is revoked.
+        """
+        rows = (
+            self._db.table(AUTH_SESSIONS)
+            .select("id,auth_id,refresh_token_hash,rotated_at")
+            .eq("previous_refresh_token_hash", presented)
+            .is_("revoked_at", "null")
+            .execute()
+            .data
+        )
+        if not rows:
+            return None
+        session = rows[0]
+        reuse_window = timedelta(seconds=controlbox.authentication.refresh_token_reuse_seconds)
+        rotated_at = datetime.fromisoformat(session["rotated_at"])
+        if now - rotated_at <= reuse_window and hmac.compare_digest(
+            session["refresh_token_hash"], refresh_token_hash(successor)
+        ):
+            return session
+        logger.warning("Replaced refresh token reused; revoking session %s", session["id"])
+        self._db.table(AUTH_SESSIONS).update({"revoked_at": now.isoformat()}).eq(
+            "id", session["id"]
+        ).execute()
+        return None
+
+    def _email_for(self, auth_id: str) -> str | None:
+        rows = self._db.table(USERS).select("email").eq("supabase_auth_id", auth_id).execute().data
+        return rows[0]["email"] if rows else None
 
 
 auth = AuthService()
+
+
+def _session_expiry(now: datetime) -> str:
+    return (now + timedelta(days=controlbox.authentication.session_cookie_days)).isoformat()
+
+
+def _google_verified_email(code: str, code_verifier: str, redirect_uri: str) -> str:
+    """Trade Google's authorization code for its ID token and return the verified email."""
+    try:
+        response = httpx.post(
+            GOOGLE_TOKEN_URL,
+            data={
+                "code": code,
+                "code_verifier": code_verifier,
+                "client_id": controlbox.authentication.google_client_id,
+                "client_secret": settings.google_oauth_client_secret,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code",
+            },
+            timeout=_GOOGLE_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        id_token = response.json()["id_token"]
+        claims = jwt.decode(
+            id_token,
+            _google_keys.get_signing_key_from_jwt(id_token).key,
+            algorithms=["RS256"],
+            audience=controlbox.authentication.google_client_id,
+            issuer=GOOGLE_ISSUERS,
+        )
+    except (httpx.HTTPError, KeyError, ValueError, jwt.PyJWTError) as exc:
+        logger.warning("Google sign-in verification failed: %s", exc)
+        raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
+    email = claims.get("email")
+    if not email or claims.get("email_verified") is not True:
+        raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
+    return str(email).strip().lower()
 
 
 def _login_email(email: str, code: str, callback_url: str) -> EmailMessage:

@@ -35,12 +35,10 @@ async function getRuntimeSecret() {
     }),
   );
   const payload = JSON.parse(response.SecretString ?? "{}");
-  const url = String(payload.SUPABASE_URL ?? "").replace(/\/$/, "");
-  const secretKey = String(payload.SUPABASE_SECRET_KEY ?? "");
+  const url = String(payload.DATA_API_URL ?? "").replace(/\/$/, "");
+  const secretKey = String(payload.DATA_API_KEY ?? "");
   if (!url || !secretKey) {
-    throw new Error(
-      "Runtime secret must contain SUPABASE_URL and SUPABASE_SECRET_KEY",
-    );
+    throw new Error("Runtime secret must contain DATA_API_URL and DATA_API_KEY");
   }
   runtimeSecret = {
     url,
@@ -52,9 +50,9 @@ async function getRuntimeSecret() {
   return runtimeSecret;
 }
 
-async function supabaseRequest(path, init = {}) {
+async function dataApiRequest(path, init = {}) {
   const { url, secretKey } = await getRuntimeSecret();
-  const response = await fetch(`${url}/rest/v1/${path}`, {
+  const response = await fetch(`${url}/${path}`, {
     ...init,
     headers: {
       apikey: secretKey,
@@ -65,7 +63,7 @@ async function supabaseRequest(path, init = {}) {
   });
   if (!response.ok) {
     throw new Error(
-      `Supabase ${init.method ?? "GET"} ${path} failed: ${response.status}`,
+      `Data API ${init.method ?? "GET"} ${path} failed: ${response.status}`,
     );
   }
   if (response.status === 204) return null;
@@ -142,7 +140,7 @@ export function buildCaptureUrl(slug, domainName) {
 
 async function enqueueStalePreviews() {
   // Every school whose discovery data changed since its last rendered preview.
-  const schools = await supabaseRequest(
+  const schools = await dataApiRequest(
     "schools?select=id,slug,social_preview_revision,social_preview_rendered_revision&order=id",
   );
   const messages = schools
@@ -181,7 +179,7 @@ async function enqueueStalePreviews() {
 }
 
 async function getSchoolState(schoolId) {
-  const rows = await supabaseRequest(
+  const rows = await dataApiRequest(
     `schools?select=id,slug,social_preview_revision,social_preview_rendered_revision&id=eq.${schoolId}&limit=1`,
   );
   return rows?.[0] ?? null;
@@ -309,7 +307,7 @@ async function renderSchoolPreview(message) {
     "",
   );
   const imageUrl = `${publicBaseUrl}/${key.replace(/^media\//, "")}`;
-  const rows = await supabaseRequest(
+  const rows = await dataApiRequest(
     `schools?id=eq.${message.schoolId}&social_preview_revision=eq.${targetRevision}&social_preview_rendered_revision=lt.${targetRevision}`,
     {
       method: "PATCH",

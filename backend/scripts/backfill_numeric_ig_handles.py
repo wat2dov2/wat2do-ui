@@ -33,7 +33,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core.controlbox import controlbox  # noqa: E402
-from core.database import supabase_admin  # noqa: E402
+from core.database import get_sb  # noqa: E402
 from core.tables import CLUBS, EVENTS  # noqa: E402
 from services import school_service  # noqa: E402
 from services.event_feed_revalidation import event_feed_revalidation_service  # noqa: E402
@@ -84,7 +84,8 @@ def _rows_with_numeric_handle(table: str, column: str) -> list[dict[str, Any]]:
     offset = 0
     while True:
         response = (
-            supabase_admin.table(table)
+            get_sb()
+            .table(table)
             .select(f"id,{column},{school_service.SCHOOL_SLUG_EMBED}")
             .not_.is_(column, "null")
             .range(offset, offset + _PAGE_SIZE - 1)
@@ -148,9 +149,7 @@ def main() -> int:
         if not username:
             continue
         if not args.dry_run:
-            supabase_admin.table(EVENTS).update({"ig_handle": username}).eq(
-                "id", row["id"]
-            ).execute()
+            get_sb().table(EVENTS).update({"ig_handle": username}).eq("id", row["id"]).execute()
             event_feed_revalidation_service.revalidate_school(
                 row.get("school"),
                 resources=("events", "clubs"),
@@ -163,7 +162,7 @@ def main() -> int:
         if not username:
             continue
         if not args.dry_run:
-            supabase_admin.table(CLUBS).update({"ig": username}).eq("id", row["id"]).execute()
+            get_sb().table(CLUBS).update({"ig": username}).eq("id", row["id"]).execute()
             event_feed_revalidation_service.revalidate_school(
                 row.get("school"),
                 resources=("events", "positions", "clubs"),

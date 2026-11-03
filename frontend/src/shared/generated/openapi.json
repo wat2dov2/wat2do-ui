@@ -192,6 +192,23 @@
             }
           },
           {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 2048
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
             "name": "error",
             "in": "query",
             "required": false,
@@ -7491,7 +7508,7 @@
           "webhooks"
         ],
         "summary": "Send Event Change Alerts",
-        "description": "Called every minute by Supabase pg_cron while event changes are pending.",
+        "description": "Called every minute by the scheduled event change alerts call.",
         "operationId": "send_event_change_alerts_webhooks_event_change_alerts_post",
         "responses": {
           "200": {
