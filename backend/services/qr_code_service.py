@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, timezone
 
 from postgrest.exceptions import APIError
 
+from core.client_ip import hash_client_ip
 from core.config import settings
 from core.constants import DEFAULT_LIST_LIMIT, PG_UNIQUE_VIOLATION
 from core.controlbox import PromoterTemplateControl, controlbox
@@ -611,10 +612,6 @@ def new_visitor_token() -> str:
 
 def hash_visitor_token(visitor_token: str) -> str:
     return _keyed_hash("visitor:v1", visitor_token, settings.poster_hash_secret)
-
-
-def hash_client_ip(client_ip: str) -> str:
-    return _keyed_hash("ip:v1", client_ip, settings.poster_hash_secret)
 
 
 def _keyed_hash(domain: str, value: str, secret: str) -> str:

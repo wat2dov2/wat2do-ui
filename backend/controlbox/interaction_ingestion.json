@@ -4,5 +4,6 @@
   "maximum_metadata_bytes": 2048,
   "maximum_duplicates_per_window": 3,
   "deduplication_window_minutes": 60,
-  "maximum_user_interactions_per_window": 100
+  "maximum_user_interactions_per_window": 100,
+  "maximum_anonymous_clicks_per_ip_per_event": 30
 }

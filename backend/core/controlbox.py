@@ -484,6 +484,10 @@ class InteractionIngestionControl(_ControlModel):
     maximum_duplicates_per_window: int = Field(gt=0)
     deduplication_window_minutes: int = Field(gt=0)
     maximum_user_interactions_per_window: int = Field(gt=0)
+    # Cap on anonymous clicks for one event from a single client IP within the
+    # dedup window. Higher than the per-session cap because many students share
+    # one NAT'd campus IP; sized to stop scripted click floods, not real traffic.
+    maximum_anonymous_clicks_per_ip_per_event: int = Field(gt=0)
 
 
 class RateLimitControl(_ControlModel):

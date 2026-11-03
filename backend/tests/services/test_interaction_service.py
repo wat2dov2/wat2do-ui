@@ -179,3 +179,96 @@ def test_interaction_target_is_unambiguous(payload):
 
     with pytest.raises(ValidationError):
         InteractionCreate(**payload)
+
+
+@pytest.mark.parametrize(
+    ("existing_event_ids", "expected_indices"),
+    [
+        ([], [0, 1, 2, 3]),  # nothing recorded yet -> every item kept
+        ([1, 1], [1, 2, 3]),  # event 1 already at cap -> only its click dropped
+        ([1, 1, 2, 2], [2, 3]),  # events 1 and 2 at cap -> their clicks dropped
+    ],
+)
+def test_click_burst_caps_anonymous_clicks_per_ip(
+    fake_sb, patch_sb, monkeypatch, existing_event_ids, expected_indices
+):
+    patch_sb("services.interaction_service")
+    monkeypatch.setattr(interaction_service, "MAX_ANON_CLICKS_PER_IP_PER_EVENT", 2)
+    fake_sb.set_response(data=[{"event_id": eid} for eid in existing_event_ids])
+    interactions = [
+        InteractionCreate(event_id=1, interaction_type="click"),
+        InteractionCreate(event_id=2, interaction_type="click"),
+        InteractionCreate(event_id=3, interaction_type="click"),
+        InteractionCreate(event_id=4, interaction_type="ungoing"),  # non-click: always passes
+    ]
+
+    result = interaction_service.check_click_burst_for_ip("iphash", interactions)
+
+    assert result == [interactions[index] for index in expected_indices]
+    fake_sb.eq.assert_any_call("ip_hash", "iphash")
+    fake_sb.eq.assert_any_call("interaction_type", "click")
+    fake_sb.is_.assert_called_once_with("user_id", "null")
+
+
+def test_click_burst_passthrough_and_fail_closed(monkeypatch):
+    get_sb = MagicMock(side_effect=RuntimeError("database unavailable"))
+    monkeypatch.setattr(interaction_service, "get_sb", get_sb)
+
+    # No clicks in the batch: nothing to cap, so the DB is never touched.
+    ungoing = [InteractionCreate(event_id=1, interaction_type="ungoing")]
+    assert interaction_service.check_click_burst_for_ip("iphash", ungoing) == ungoing
+    get_sb.assert_not_called()
+
+    # Clicks present but the read fails: drop the batch rather than let it through.
+    clicks = [InteractionCreate(event_id=1, interaction_type="click")]
+    assert interaction_service.check_click_burst_for_ip("iphash", clicks) == []
+    get_sb.assert_called_once()
+
+
+def test_record_interactions_stores_ip_hash(fake_sb, patch_sb):
+    patch_sb("services.interaction_service")
+    fake_sb.set_response(data=[{"id": "recorded"}])
+
+    interaction_service.record_interactions(
+        None,
+        "session",
+        [InteractionCreate(event_id=1, interaction_type="click")],
+        ip_hash="deadbeef",
+    )
+
+    row = fake_sb.insert.call_args_list[0].args[0][0]
+    assert row["ip_hash"] == "deadbeef"
+
+
+def test_record_batch_hashes_client_ip_and_passes_it_through(monkeypatch):
+    monkeypatch.setattr(interaction_service.settings, "poster_hash_secret", "testsecret")
+    monkeypatch.setattr(interaction_service, "hash_client_ip", lambda ip: f"H({ip})")
+    monkeypatch.setattr(
+        interaction_service,
+        "check_duplicate_interactions_for_session",
+        lambda session_id, interactions, *, position=False: interactions,
+    )
+    seen: dict = {}
+
+    def fake_burst(ip_hash, interactions, *, position=False):
+        seen["ip_hash"] = ip_hash
+        return interactions
+
+    def fake_record(*, user_id, session_id, interactions, ip_hash):
+        seen["stored_ip_hash"] = ip_hash
+        return len(interactions)
+
+    monkeypatch.setattr(interaction_service, "check_click_burst_for_ip", fake_burst)
+    monkeypatch.setattr(interaction_service, "record_interactions", fake_record)
+
+    count = interaction_service.record_interactions_batch(
+        user_id=None,
+        payload_user_id=None,
+        session_id="s",
+        interactions=[InteractionCreate(event_id=1, interaction_type="click")],
+        client_ip="1.2.3.4",
+    )
+
+    assert count == 1
+    assert seen["ip_hash"] == "H(1.2.3.4)"
+    assert seen["stored_ip_hash"] == "H(1.2.3.4)"

@@ -16,6 +16,8 @@ appended by the last proxy we trust - so the rightmost IP that is NOT
 one of our own proxies is the most reliable client address.
 """
 
+import hashlib
+import hmac
 import ipaddress
 import logging
 
@@ -101,3 +103,16 @@ def get_client_ip(request: Request) -> str:
 
     # Nothing usable in headers - fall back to the peer address (the proxy).
     return peer
+
+
+def hash_client_ip(client_ip: str) -> str:
+    """Keyed (HMAC-SHA256) hash of a client IP for storage and abuse limits.
+
+    Keeps raw IPs out of the database while letting us cap and trace traffic per
+    IP. The ``ip:v1`` domain and the shared ``poster_hash_secret`` match
+    ``qr_code_scans.ip_hash``, so one IP hashes identically everywhere.
+    """
+    secret = settings.poster_hash_secret
+    if not secret:
+        raise RuntimeError("POSTER_HASH_SECRET is required to hash client IPs")
+    return hmac.new(secret.encode(), f"ip:v1:{client_ip}".encode(), hashlib.sha256).hexdigest()

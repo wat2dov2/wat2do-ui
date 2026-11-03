@@ -38,10 +38,11 @@ def record_interactions(
         db_user = resolve_db_user(auth_user)
         user_id = str(db_user.id)
 
+    client_ip = get_client_ip(request)
     if user_id is not None:
         _interaction_limiter.check(user_id)
     else:
-        anon_interaction_rate_limiter.check(get_client_ip(request))
+        anon_interaction_rate_limiter.check(client_ip)
 
     # Payload user_id is UUID; auth layer uses str - stringify here.
     payload_user_id = str(data.user_id) if data.user_id is not None else None
@@ -50,5 +51,6 @@ def record_interactions(
         payload_user_id=payload_user_id,
         session_id=data.session_id,
         interactions=data.interactions,
+        client_ip=client_ip,
     )
     return {"recorded": count}
