@@ -24,7 +24,7 @@ def _mock_user(**overrides) -> UserResponse:
 
 
 def test_our_access_token_reaches_the_user_without_any_key_fetch(client, monkeypatch):
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", lambda _: _mock_user())
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", lambda _: _mock_user())
     token = auth_tokens.issue_access_token(
         subject=FAKE_USER["id"], email=FAKE_USER["email"], session_id="session-1"
     )
@@ -36,7 +36,7 @@ def test_our_access_token_reaches_the_user_without_any_key_fetch(client, monkeyp
 
 
 def test_an_expired_access_token_is_refused(client, monkeypatch):
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", lambda _: _mock_user())
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", lambda _: _mock_user())
     monkeypatch.setattr(auth_tokens, "access_token_seconds", lambda: -1)
     expired = auth_tokens.issue_access_token(
         subject=FAKE_USER["id"], email=FAKE_USER["email"], session_id="session-1"
@@ -54,13 +54,13 @@ def test_get_me_requires_auth(client):
 
 def test_get_me_returns_user(authenticated_client, monkeypatch):
     user = _mock_user()
-    get_user_by_supabase_id = MagicMock(return_value=user)
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", get_user_by_supabase_id)
+    get_user_by_auth_id = MagicMock(return_value=user)
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", get_user_by_auth_id)
 
     resp = authenticated_client.get("/users/me")
     assert resp.status_code == 200
     assert resp.json()["email"] == FAKE_USER["email"]
-    get_user_by_supabase_id.assert_called_once_with(FAKE_USER["id"])
+    get_user_by_auth_id.assert_called_once_with(FAKE_USER["id"])
 
 
 # ── PATCH /users/me ─────────────────────────────────────────────────
@@ -74,7 +74,7 @@ def test_update_me_requires_auth(client):
 def test_update_me_succeeds(authenticated_client, monkeypatch):
     user = _mock_user()
     updated = _mock_user(full_name="newname")
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=user))
     monkeypatch.setattr(user_service, "update_user", MagicMock(return_value=updated))
 
     resp = authenticated_client.patch("/users/me", json={"full_name": "newname"})
@@ -93,7 +93,7 @@ def test_update_profile_requires_auth(client):
 def test_update_profile_succeeds(authenticated_client, monkeypatch):
     user = _mock_user()
     updated = _mock_user(faculty="Engineering")
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=user))
     monkeypatch.setattr(user_service, "update_user", MagicMock(return_value=updated))
 
     resp = authenticated_client.patch("/users/me/profile", json={"faculty": "Engineering"})

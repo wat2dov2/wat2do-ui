@@ -242,9 +242,7 @@ def test_update_event_admin_allowed(admin_client, monkeypatch):
     )
     from services import user_service
 
-    monkeypatch.setattr(
-        user_service, "get_user_by_supabase_id", MagicMock(return_value=admin_db_user)
-    )
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=admin_db_user))
 
     resp = admin_client.patch("/events/1", json={"title": "Admin Fix"})
     assert resp.status_code == 200

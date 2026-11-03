@@ -2768,8 +2768,8 @@ export interface components {
          *     fetch.
          *
          *     ``created_by`` is intentionally omitted - this response is returned on
-         *     public GET /events/ and would otherwise leak the creator's Supabase
-         *     auth UID to anonymous callers.
+         *     public GET /events/ and would otherwise leak the creator's user ID
+         *     to anonymous callers.
          */
         EventSummaryResponse: {
             /**

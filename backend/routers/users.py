@@ -26,7 +26,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get("/me", response_model=UserResponse)
 def get_me(auth_user: dict = Depends(get_current_user)):
     return get_or_404(
-        user_service.get_user_by_supabase_id(auth_user["id"]),
+        user_service.get_user_by_auth_id(auth_user["id"]),
         USER_PROFILE_NOT_FOUND,
     )
 

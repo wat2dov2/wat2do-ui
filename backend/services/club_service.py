@@ -1,4 +1,4 @@
-"""Clubs via Supabase. Sync."""
+"""Clubs via the data API. Sync."""
 
 import functools
 import json

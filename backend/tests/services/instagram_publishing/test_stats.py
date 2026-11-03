@@ -43,7 +43,7 @@ MEDIA = [
 
 
 class _Query:
-    """One Supabase query: every call chains, `execute` answers with the table's rows."""
+    """One data API query: every call chains, `execute` answers with the table's rows."""
 
     def __init__(self, name, tables, calls):
         self.name, self.tables, self.calls = name, tables, calls

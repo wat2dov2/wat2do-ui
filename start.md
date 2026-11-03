@@ -8,18 +8,6 @@ cd frontend && next start
 cd backend && source .venv/bin/activate && uvicorn main:app --reload
 ```
 
-## Mock User Credentials (Supabase Auth)
+## Signing in
 
-### 1. Mock UWaterloo Student User
-* **Email:** `student@uwaterloo.ca`
-* **Password:** `Password123!`
-* **Role:** `user`
-* **School:** `University of Waterloo`
-* **Faculty:** `Mathematics`
-
-### 2. Mock Admin User
-* **Email:** `admin@uwaterloo.ca`
-* **Password:** `Password123!`
-* **Role:** `admin`
-* **School:** `University of Waterloo`
-* **Faculty:** `Engineering`
+Sign in with a login code sent to your email; see "Local development" in `README.md` for the email setup.

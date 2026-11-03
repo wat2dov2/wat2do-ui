@@ -89,7 +89,7 @@ trap 'rm -f "$temporary"' EXIT
   # The runner owns public.schema_migrations and creates it itself.
   pg_dump --dbname="$database_url" --schema-only --no-owner --no-privileges \
     --no-publications --no-subscriptions --no-security-labels --no-tablespaces \
-    --exclude-schema=supabase_migrations --exclude-table=public.schema_migrations \
+    --exclude-table=public.schema_migrations \
     --restrict-key="baseline$baseline_version"
 } >"$temporary"
 mv "$temporary" "$baseline"

@@ -1,13 +1,13 @@
 """Fixtures for service-layer tests.
 
 Router tests go through FastAPI's TestClient with auth overrides, which
-verifies HTTP contracts but never touches the Supabase query chain.
+verifies HTTP contracts but never touches the data API query chain.
 That's a real gap: a filter typo (``.eq("user_id", …)`` vs
 ``.eq("owner_id", …)``) passes every router test and only surfaces in
 production, where it either leaks another user's rows or hides the
 caller's own.
 
-The ``fake_sb`` fixture below is a Supabase-py query-builder stand-in
+The ``fake_sb`` fixture below is a postgrest-py query-builder stand-in
 that records every chain call so tests can assert on them cheaply.
 Pair it with ``patch_sb("services.<resource>_service")`` to install
 the fake in place of the real client for one test.
@@ -21,7 +21,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-# Every supabase-py builder method that currently appears somewhere in
+# Every postgrest-py builder method that currently appears somewhere in
 # ``backend/services/``. If a new method shows up in a service, add it
 # here — the fake needs to return ``self`` from it for chaining.
 _BUILDER_METHODS = (
@@ -57,8 +57,8 @@ _BUILDER_METHODS = (
 )
 
 
-class FakeSupabase:
-    """Supabase-py query-builder fake.
+class FakeDataApi:
+    """postgrest-py query-builder fake.
 
     The real client chains fluent calls:
 
@@ -84,7 +84,7 @@ class FakeSupabase:
 
         self._response = MagicMock(data=[], count=0)
         self.execute = MagicMock(side_effect=lambda: self._response, name="execute")
-        # Supabase exposes ``not_`` as a nested filter builder (``.not_.is_(...)``).
+        # postgrest-py exposes ``not_`` as a nested filter builder (``.not_.is_(...)``).
         # Point it at this instance so chained calls still reach ``execute()``.
         self.not_ = self
 
@@ -105,7 +105,7 @@ class FakeSupabase:
         """Configure a sequence of ``.execute()`` results for multi-query tests.
 
         Each item is the ``data`` payload for one call, in order. Use when
-        a single service function makes multiple Supabase calls (e.g. a
+        a single service function makes multiple data API calls (e.g. a
         fanout that fetches an event, then its saves, then the users).
         Exhausting the queue falls back to an empty response so tests
         don't crash if a new query is added mid-refactor — the failing
@@ -130,9 +130,9 @@ class FakeSupabase:
 
 
 @pytest.fixture
-def fake_sb() -> FakeSupabase:
-    """Fresh ``FakeSupabase`` per test."""
-    return FakeSupabase()
+def fake_sb() -> FakeDataApi:
+    """Fresh ``FakeDataApi`` per test."""
+    return FakeDataApi()
 
 
 @pytest.fixture

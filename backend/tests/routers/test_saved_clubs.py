@@ -43,7 +43,7 @@ def test_list_saved_clubs_requires_auth(client):
 
 def test_list_saved_clubs_succeeds(authenticated_client, monkeypatch):
     db_user = _mock_db_user()
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(saved_club_service, "get_saved_club_ids", MagicMock(return_value=[1, 3, 7]))
 
     resp = authenticated_client.get("/saved-clubs/")
@@ -61,7 +61,7 @@ def test_save_club_requires_auth(client):
 
 def test_save_club_succeeds(authenticated_client, monkeypatch):
     db_user = _mock_db_user()
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=_mock_club()))
     monkeypatch.setattr(saved_club_service, "count_saved_clubs", MagicMock(return_value=0))
     monkeypatch.setattr(saved_club_service, "save_club", MagicMock(return_value=None))
@@ -74,7 +74,7 @@ def test_save_club_succeeds(authenticated_client, monkeypatch):
 def test_save_club_nonexistent_returns_404(authenticated_client, monkeypatch):
     """PUT to /saved-clubs/{club_id} returns 404 when the club does not exist."""
     db_user = _mock_db_user()
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=None))
 
     resp = authenticated_client.put("/saved-clubs/9999")
@@ -86,7 +86,7 @@ def test_save_club_at_cap_returns_400(authenticated_client, monkeypatch):
     from core.constants import MAX_SAVED_CLUBS_PER_USER
 
     db_user = _mock_db_user()
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(club_service, "get_club", MagicMock(return_value=_mock_club()))
     monkeypatch.setattr(
         saved_club_service,
@@ -108,7 +108,7 @@ def test_unsave_club_requires_auth(client):
 
 def test_unsave_club_succeeds(authenticated_client, monkeypatch):
     db_user = _mock_db_user()
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(saved_club_service, "unsave_club", MagicMock(return_value=True))
     monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=False))
 
@@ -119,7 +119,7 @@ def test_unsave_club_succeeds(authenticated_client, monkeypatch):
 
 def test_club_member_cannot_unfollow_their_own_club(authenticated_client, monkeypatch):
     db_user = _mock_db_user()
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=db_user))
     unsave = MagicMock(return_value=True)
     monkeypatch.setattr(saved_club_service, "unsave_club", unsave)
     monkeypatch.setattr(club_service, "is_club_member", MagicMock(return_value=True))

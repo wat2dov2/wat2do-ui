@@ -1,4 +1,4 @@
-"""The Supabase ingestion queue: one row per Instagram post or directory page.
+"""The ingestion queue: one row per Instagram post or directory page.
 
 The Rust ingestion processor (``rust/src/ingestion``) claims and settles rows;
 this module only adds them. Instagram rows start at ``fetch`` and become

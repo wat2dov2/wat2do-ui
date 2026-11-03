@@ -8,7 +8,7 @@ from core.allowed_emails import get_school_for_email, is_email_allowed
 
 @pytest.fixture(autouse=True)
 def _stub_domain_table(monkeypatch):
-    """Replace the Supabase-backed domain table with a fixed in-memory dict.
+    """Replace the database-backed domain table with a fixed in-memory dict.
 
     Mirrors the seeds in 20260610180000_add_schools_and_email_domains.sql so
     the tests don't reach out to a live database.

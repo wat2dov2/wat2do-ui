@@ -552,7 +552,7 @@ def test_enrolled_promoter_can_create_promoter_poster(authenticated_client, monk
     )
     monkeypatch.setattr(
         user_service,
-        "get_user_by_supabase_id",
+        "get_user_by_auth_id",
         MagicMock(return_value=enrolled),
     )
     created = _mock_qr(
@@ -605,7 +605,7 @@ def test_promoter_create_rejects_non_contract_fields(
     )
     monkeypatch.setattr(
         user_service,
-        "get_user_by_supabase_id",
+        "get_user_by_auth_id",
         MagicMock(return_value=enrolled),
     )
 

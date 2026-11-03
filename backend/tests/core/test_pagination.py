@@ -88,7 +88,7 @@ class TestIterAllPagesMaxRows:
 
 
 class FakeQueryBuilder:
-    """Mimic the chainable .order() surface of the supabase-py query builder."""
+    """Mimic the chainable .order() surface of the postgrest-py query builder."""
 
     def __init__(self):
         self.orders: list[tuple[str, bool]] = []

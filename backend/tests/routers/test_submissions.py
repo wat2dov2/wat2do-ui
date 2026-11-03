@@ -75,9 +75,7 @@ def test_create_submission_anonymous(client, monkeypatch):
 def test_create_submission_authenticated(authenticated_client, monkeypatch):
     submission = _mock_submission()
     mock_create = MagicMock(return_value=submission)
-    monkeypatch.setattr(
-        user_service, "get_user_by_supabase_id", MagicMock(return_value=FAKE_DB_USER)
-    )
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=FAKE_DB_USER))
     monkeypatch.setattr(submission_service, "create_submission", mock_create)
 
     from main import app
@@ -100,9 +98,7 @@ def test_create_submission_authenticated(authenticated_client, monkeypatch):
 def test_create_submission_optional_auth_user_keeps_school_out_of_event_data(client, monkeypatch):
     submission = _mock_submission()
     mock_create = MagicMock(return_value=submission)
-    monkeypatch.setattr(
-        user_service, "get_user_by_supabase_id", MagicMock(return_value=FAKE_DB_USER)
-    )
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=FAKE_DB_USER))
     monkeypatch.setattr(submission_service, "create_submission", mock_create)
 
     from main import app

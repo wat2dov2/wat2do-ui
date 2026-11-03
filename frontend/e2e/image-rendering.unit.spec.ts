@@ -219,7 +219,7 @@ test("tiny owned logos get tiny candidates while external and local preview sour
   const logo = render(LazyImage, { src: posterUrl, alt: "", width: 12, height: 12 });
   expect(logo).toContain(`&amp;w=${imageDelivery.image_sizes[0]}&amp;q=${imageDelivery.quality}`);
   expect(logo).not.toContain("&amp;w=1080");
-  for (const src of ["https://external.example/poster.jpg", "https://legacy.supabase.co/storage/v1/object/public/event-images/poster.jpg", "blob:http://localhost/preview", "data:image/png;base64,AA=="]) {
+  for (const src of ["https://external.example/poster.jpg", "https://legacy-storage.example/event-images/poster.jpg", "blob:http://localhost/preview", "data:image/png;base64,AA=="]) {
     const html = render(LazyImage, { src, alt: "Preview", sizes: "320px" });
     expect(html).toContain(`src="${src}"`);
     expect(html).not.toContain("/_next/image");

@@ -111,7 +111,7 @@ class PaginationParams:
 
     @property
     def offset(self) -> int:
-        """Zero-based offset for Supabase .range()."""
+        """Zero-based offset for the data API's .range()."""
         return (self.page - 1) * self.page_size
 
 

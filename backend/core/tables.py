@@ -1,4 +1,4 @@
-"""Supabase table name constants.
+"""Database table name constants.
 
 Single source of truth - import from here instead of using string literals.
 """

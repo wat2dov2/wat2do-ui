@@ -93,7 +93,7 @@ def _school_directory(monkeypatch):
 
 
 def test_get_user_returns_none_when_no_row(fake_sb, patch_sb):
-    """No rows back from Supabase → service returns ``None`` (not an error)."""
+    """No rows back from the data API → service returns ``None`` (not an error)."""
     patch_sb("services.user_service")
     fake_sb.set_response(data=[])
 

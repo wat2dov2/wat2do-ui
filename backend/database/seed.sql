@@ -576,7 +576,7 @@ FROM public.schools s
 CROSS JOIN generate_series(1, 2) AS slot
 WHERE s.slug IN ('uwaterloo', 'ualberta', 'ulaval');
 
-INSERT INTO public.users (id, supabase_auth_id, email, full_name, school_id)
+INSERT INTO public.users (id, auth_id, email, full_name, school_id)
 SELECT user_id, user_id::text, email,
     format('Demo %s Submitter %s', slug, slot), school_id
 FROM moderation_seed

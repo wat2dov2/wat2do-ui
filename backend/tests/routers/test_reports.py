@@ -53,9 +53,7 @@ def test_create_report_authenticated(authenticated_client, monkeypatch):
     """POST /reports/ with auth returns 201."""
     report = _mock_report()
     mock_create = MagicMock(return_value=report)
-    monkeypatch.setattr(
-        user_service, "get_user_by_supabase_id", MagicMock(return_value=FAKE_DB_USER)
-    )
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=FAKE_DB_USER))
     monkeypatch.setattr(report_service, "create_report", mock_create)
 
     from main import app

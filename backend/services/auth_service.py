@@ -275,7 +275,7 @@ class AuthService:
                 logger.error("Existing user is not assigned to a registered school")
                 raise ServiceError(REGISTRATION_FAILED)
             onboarding_required = school is None
-            auth_id = db_user["supabase_auth_id"]
+            auth_id = db_user["auth_id"]
         else:
             school = signup_school
             school_record = school_service.get_school(school)
@@ -288,7 +288,7 @@ class AuthService:
             auth_id = str(uuid.uuid4())
             payload = {
                 "id": user_id,
-                "supabase_auth_id": auth_id,
+                "auth_id": auth_id,
                 "email": email_clean,
                 "school_id": school_record.id if school_record else None,
             }
@@ -472,7 +472,7 @@ class AuthService:
         return None
 
     def _email_for(self, auth_id: str) -> str | None:
-        rows = self._db.table(USERS).select("email").eq("supabase_auth_id", auth_id).execute().data
+        rows = self._db.table(USERS).select("email").eq("auth_id", auth_id).execute().data
         return rows[0]["email"] if rows else None
 
 

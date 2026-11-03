@@ -130,7 +130,7 @@ def test_batch_202_with_bearer_auth(authenticated_client, monkeypatch):
     from services import interaction_service, user_service
 
     db_user = make_db_user(id=FAKE_DB_USER_ID)
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(
         interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"]
     )
@@ -196,7 +196,7 @@ def test_batch_rejects_mismatched_user_id(authenticated_client, monkeypatch):
     from services import user_service
 
     db_user = make_db_user(id=FAKE_DB_USER_ID)
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=db_user))
 
     resp = authenticated_client.post(
         "/interactions/batch",
@@ -211,7 +211,7 @@ def test_batch_accepts_matching_user_id(authenticated_client, monkeypatch):
     from services import interaction_service, user_service
 
     db_user = make_db_user(id=FAKE_DB_USER_ID)
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(
         interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"]
     )
@@ -232,7 +232,7 @@ def test_dedup_filters_duplicates_for_authenticated_user(authenticated_client, m
     from services import interaction_service, user_service
 
     db_user = make_db_user(id=FAKE_DB_USER_ID)
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=db_user))
     # Dedup returns empty list (all duplicates)
     monkeypatch.setattr(interaction_service, "check_duplicate_interactions", lambda **kw: [])
 
@@ -262,7 +262,7 @@ def test_rate_limit_triggers_429(authenticated_client, monkeypatch):
     from services import interaction_service, user_service
 
     db_user = make_db_user(id=FAKE_DB_USER_ID)
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", MagicMock(return_value=db_user))
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", MagicMock(return_value=db_user))
     monkeypatch.setattr(
         interaction_service, "check_duplicate_interactions", lambda **kw: kw["interactions"]
     )

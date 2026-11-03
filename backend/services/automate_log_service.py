@@ -32,8 +32,7 @@ def create_automate_log(
 
 
 def get_automate_logs(limit: int = 50, sender_id: str | None = None) -> list[dict[str, Any]]:
-    supabase = get_sb()
-    query = supabase.table("automate_logs").select("*").order("created_at", desc=True).limit(limit)
+    query = get_sb().table("automate_logs").select("*").order("created_at", desc=True).limit(limit)
     if sender_id:
         query = query.eq("sender_id", sender_id)
     return query.execute().data

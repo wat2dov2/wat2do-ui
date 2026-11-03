@@ -1,4 +1,4 @@
-"""Saved clubs: persist user bookmarks of clubs to Supabase."""
+"""Saved clubs: persist user bookmarks of clubs to the database."""
 
 import logging
 import uuid

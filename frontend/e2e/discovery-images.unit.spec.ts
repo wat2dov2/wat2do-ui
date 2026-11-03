@@ -53,7 +53,7 @@ test("warms only current first-screen owned posters, deduplicates variants, and 
       "positions",
       snapshot(
         urls[0],
-        "https://legacy.supabase.co/storage/poster.jpg",
+        "https://legacy-storage.example/poster.jpg",
         "data:image/png;base64,AAAA",
         "https://wat2do.io@outside.example/media/no.jpg",
         "https://wat2do.io:8443/media/0.webp",

@@ -48,22 +48,22 @@ def test_is_production_property():
 
     dev = Settings(
         environment="development",
-        supabase_url="http://localhost",
-        supabase_key="key",
+        data_api_url="http://localhost",
+        data_api_key="key",
     )
     assert dev.is_production is False
 
     prod = Settings(
         environment="production",
-        supabase_url="http://localhost",
-        supabase_key="key",
+        data_api_url="http://localhost",
+        data_api_key="key",
     )
     assert prod.is_production is True
 
     # Case-insensitive
     prod_upper = Settings(
         environment="Production",
-        supabase_url="http://localhost",
-        supabase_key="key",
+        data_api_url="http://localhost",
+        data_api_key="key",
     )
     assert prod_upper.is_production is True

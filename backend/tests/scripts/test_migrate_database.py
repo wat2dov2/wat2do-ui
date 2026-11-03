@@ -39,12 +39,9 @@ if len(commands) == 1 and not files and commands[0].lstrip().startswith("SELECT"
     sql = commands[0]
     flag = lambda value: "t" if value else "f"
     if "to_regclass" in sql:
-        print(flag(state["history"] is not None), flag(state["supabase_history"] is not None),
-              flag(state["has_schema"]))
+        print(flag(state["history"] is not None), flag(state["has_schema"]))
     elif "FROM public.schema_migrations" in sql:
         print("\\n".join(row[0] for row in state["history"]))
-    elif "FROM supabase_migrations.schema_migrations" in sql:
-        print("\\n".join(row[0] for row in state["supabase_history"]))
     sys.exit(0)
 
 calls = state["calls"]
@@ -53,8 +50,6 @@ for sql in commands:
         if state["history"] is not None:
             sys.exit('ERROR: relation "schema_migrations" already exists')
         state["history"] = []
-    elif "SELECT version, coalesce(name, '')" in sql:
-        state["history"] += state["supabase_history"]
     elif sql.startswith("INSERT INTO public.schema_migrations"):
         for version, name in re.findall(r"\\('(\\d{14})', '([a-z0-9_]+)'\\)", sql):
             if version in [row[0] for row in state["history"]]:
@@ -86,7 +81,7 @@ class FakeDatabase:
         psql.chmod(0o755)
         self.path = f"{bin_dir}{os.pathsep}{os.environ['PATH']}"
         self.state_path = root / "database.json"
-        self.store(history=None, supabase_history=None, has_schema=False)
+        self.store(history=None, has_schema=False)
 
     def store(self, **changes):
         state = self.state() if self.state_path.exists() else {}
@@ -134,22 +129,20 @@ def history_versions(database: FakeDatabase) -> list[str]:
     return [version for version, _ in database.state()["history"]]
 
 
-def test_first_run_copies_supabase_history_and_applies_only_new_files(database):
+def test_run_applies_only_files_the_history_does_not_record(database):
     database.store(
-        supabase_history=[["20260101000000", "first"], ["20260201000000", "second"]],
-        has_schema=True,
+        history=[["20260101000000", "first"], ["20260201000000", "second"]], has_schema=True
     )
     result = database.migrate()
     assert result.returncode == 0, result.stderr
-    assert "copying the 2 migrations the Supabase CLI applied" in result.stdout
+    assert "First run" not in result.stdout
     assert database.state()["applied"] == [THIRD]
     assert database.state()["history"] == [
         ["20260101000000", "first"],
         ["20260201000000", "second"],
         ["20260301000000", "third"],
     ]
-    seeding, applying = database.write_calls()
-    assert seeding["single_transaction"] and "CREATE TABLE" in seeding["commands"][0]
+    (applying,) = database.write_calls()
     # The record is written in the same transaction as, and before, the file.
     assert applying["single_transaction"]
     assert applying["commands"][0].startswith("INSERT INTO public.schema_migrations")
@@ -158,7 +151,7 @@ def test_first_run_copies_supabase_history_and_applies_only_new_files(database):
 
 
 def test_second_run_applies_nothing(database):
-    database.store(supabase_history=[["20260101000000", "first"]], has_schema=True)
+    database.store(history=[["20260101000000", "first"]], has_schema=True)
     assert database.migrate().returncode == 0
     result = database.migrate()
     assert result.returncode == 0, result.stderr
@@ -167,12 +160,12 @@ def test_second_run_applies_nothing(database):
 
 
 def test_dry_run_lists_pending_files_without_writing(database):
-    database.store(supabase_history=[["20260101000000", "first"]], has_schema=True)
+    database.store(history=[["20260101000000", "first"]], has_schema=True)
     result = database.migrate("--dry-run")
     assert result.returncode == 0, result.stderr
     assert f"  {SECOND}\n  {THIRD}\n" in result.stdout
     assert database.write_calls() == []
-    assert database.state()["history"] is None
+    assert history_versions(database) == ["20260101000000"]
     calls = database.state()["calls"]
     assert calls and all("default_transaction_read_only=on" in c["pgoptions"] for c in calls)
 

@@ -122,7 +122,7 @@ def _existing_user(db, email="student@uwaterloo.ca", school="uwaterloo"):
     db.tables.setdefault(USERS, []).append(
         {
             "id": "db-user-id",
-            "supabase_auth_id": "auth-id-1",
+            "auth_id": "auth-id-1",
             "email": email,
             "school_record": {"slug": school} if school else None,
         }
@@ -216,8 +216,8 @@ def test_first_login_creates_the_user_with_a_new_auth_id(service, db):
     assert created["email"] == "tqiu@uwaterloo.ca"
     assert created["role"] == "admin"
     assert created["school_id"] == 1
-    assert created["supabase_auth_id"] == result.body.user_id
-    assert created["id"] != created["supabase_auth_id"]
+    assert created["auth_id"] == result.body.user_id
+    assert created["id"] != created["auth_id"]
     assert result.body.onboarding_required is True
 
 
@@ -301,14 +301,14 @@ def test_unknown_or_expired_refresh_tokens_are_rejected(service, db):
         service.refresh(login.refresh_token)
 
 
-def test_a_session_imported_from_supabase_refreshes(service, db):
+def test_a_session_copied_in_by_the_auth_sessions_migration_refreshes(service, db):
     _existing_user(db)
     db.tables[AUTH_SESSIONS] = [
         {
             "id": "imported-session",
             "auth_id": "auth-id-1",
-            # The import stores encode(sha256(convert_to(token, 'UTF8')), 'hex').
-            "refresh_token_hash": hashlib.sha256(b"supabase-token").hexdigest(),
+            # The migration stores encode(sha256(convert_to(token, 'UTF8')), 'hex').
+            "refresh_token_hash": hashlib.sha256(b"imported-token").hexdigest(),
             "previous_refresh_token_hash": None,
             "rotated_at": None,
             "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
@@ -316,7 +316,7 @@ def test_a_session_imported_from_supabase_refreshes(service, db):
         }
     ]
 
-    result = service.refresh("supabase-token")
+    result = service.refresh("imported-token")
 
     claims = auth_tokens.decode_access_token(result.body.access_token)
     assert claims["session_id"] == "imported-session"

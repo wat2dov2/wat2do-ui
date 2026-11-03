@@ -44,4 +44,4 @@ The first carousel image is a collage of every selected event with the heading `
 Every following image represents one event.
 The caption includes the canonical organization handle when available, local date and time, location, and a reminder that final details are available at `wat2do.io`.
 
-The retired standalone Supabase schema, submission repository, template editor, and Vercel application are not part of the production path.
+The retired standalone `waterloo-commons` schema, submission repository, template editor, and Vercel application are not part of the production path.

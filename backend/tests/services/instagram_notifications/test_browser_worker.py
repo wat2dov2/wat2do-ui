@@ -2826,7 +2826,7 @@ def test_a_rerun_digest_uses_the_renamed_school_accounts_current_name(monkeypatc
         attempts=1,
     )
     assert module._with_current_account(job) == replace(job, account_username="wat2do.uwaterloo")
-    # Other kinds, unknown recipients and an unreachable Supabase keep the queued name.
+    # Other kinds, unknown recipients and an unreachable database keep the queued name.
     for kept in (
         replace(job, kind="engagement"),
         replace(job, recipient_id="1"),

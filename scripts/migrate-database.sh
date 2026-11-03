@@ -4,10 +4,9 @@
 #
 # Each migration runs in one transaction with the row that records it in
 # public.schema_migrations, so a failed migration leaves no trace and the next
-# run starts again from it. The first run against a database the Supabase CLI
-# migrated copies the CLI's history, so nothing already applied runs again.
-# The first run against an empty database starts from backend/database/baseline.sql
-# (written by scripts/dump-schema-baseline.sh) when that file exists.
+# run starts again from it. The first run against an empty database starts from
+# backend/database/baseline.sql (written by scripts/dump-schema-baseline.sh)
+# when that file exists.
 #
 # Usage: DATABASE_URL=postgresql://... scripts/migrate-database.sh [--dry-run]
 #   --dry-run  list what would be applied without changing the database.
@@ -112,11 +111,10 @@ read_baseline_version() {
 # Work out how this database's history starts and which versions it records
 # (or, before its first run, will record) without changing anything yet.
 state="$(query "SELECT to_regclass('public.schema_migrations') IS NOT NULL,
-  to_regclass('supabase_migrations.schema_migrations') IS NOT NULL,
   to_regclass('public.schools') IS NOT NULL")"
-read -r has_history has_supabase_history has_schema <<<"$state"
+read -r has_history has_schema <<<"$state"
 start=existing
-case "$has_history $has_supabase_history $has_schema" in
+case "$has_history $has_schema" in
   "t "*)
     recorded="$(query 'SELECT version FROM public.schema_migrations')"
     if [ -z "$recorded" ] && [ "$has_schema" = t ]; then
@@ -124,11 +122,7 @@ case "$has_history $has_supabase_history $has_schema" in
         "Refusing to apply every migration on top of an existing schema; restore its history first."
     fi
     ;;
-  "f t "*)
-    start=supabase
-    recorded="$(query 'SELECT version FROM supabase_migrations.schema_migrations')"
-    ;;
-  "f f f")
+  "f f")
     if [ -f "$baseline" ]; then
       start=baseline
       baseline_version="$(read_baseline_version)"
@@ -146,7 +140,7 @@ case "$has_history $has_supabase_history $has_schema" in
     fi
     ;;
   *)
-    fail "public.schools exists but neither public.schema_migrations nor supabase_migrations.schema_migrations does, so this database's migration state is unknown." \
+    fail "public.schools exists but public.schema_migrations does not, so this database's migration state is unknown." \
       "Refusing to apply every migration on top of an existing schema; record its history first."
     ;;
 esac
@@ -160,8 +154,8 @@ unknown_versions="$(LC_ALL=C comm -13 <(lines "$file_versions") <(lines "$record
 
 pending="$(LC_ALL=C comm -23 <(lines "$file_versions") <(lines "$recorded"))"
 
-# Like the Supabase CLI before it, refuse a migration dated before one already
-# applied: it was written against an older schema than the database now has.
+# Refuse a migration dated before one already applied: it was written against
+# an older schema than the database now has.
 newest_recorded="${recorded##*$'\n'}"
 if [ -n "$newest_recorded" ] && [ -n "$pending" ]; then
   stale_versions=""
@@ -184,7 +178,6 @@ ALTER TABLE public.schema_migrations ENABLE ROW LEVEL SECURITY;
 COMMENT ON TABLE public.schema_migrations IS 'Migrations applied by scripts/migrate-database.sh.';"
 
 case "$start" in
-  supabase) first_step="copying the $(count "$recorded") migrations the Supabase CLI applied into public.schema_migrations" ;;
   baseline) first_step="applying backend/database/baseline.sql to this empty database, which records every migration through $baseline_version" ;;
   empty) first_step="applying every migration from the start, since the database is empty and backend/database/baseline.sql does not exist yet (scripts/dump-schema-baseline.sh writes it)" ;;
   existing) first_step="" ;;
@@ -212,11 +205,6 @@ if [ -n "$first_step" ]; then
   echo "First run: $first_step."
 fi
 case "$start" in
-  supabase)
-    run_psql --single-transaction --command="$history_table" \
-      --command="INSERT INTO public.schema_migrations (version, name)
-        SELECT version, coalesce(name, '') FROM supabase_migrations.schema_migrations"
-    ;;
   baseline)
     baseline_rows=""
     while read -r version name; do

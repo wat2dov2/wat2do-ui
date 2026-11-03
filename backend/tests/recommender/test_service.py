@@ -13,7 +13,7 @@ from recommender.service import (
 )
 from schemas.event import EventResponse
 from tests.conftest import make_db_user
-from tests.services.conftest import FakeSupabase
+from tests.services.conftest import FakeDataApi
 
 
 def _event(event_id: int, school: str = "uwaterloo") -> EventResponse:
@@ -287,7 +287,7 @@ def test_content_scorer_receives_loaded_inputs_without_unused_user_id(monkeypatc
 
 @pytest.mark.parametrize("count", [0, 1, 499, 500, 501, 1200])
 def test_stored_recommendation_reads_preserve_batch_boundaries(monkeypatch, count):
-    fake_sb = FakeSupabase()
+    fake_sb = FakeDataApi()
     monkeypatch.setattr("recommender.service.get_sb", lambda: fake_sb)
     ids = [str(index) for index in range(count)]
     fake_sb.set_response(data=[])
@@ -301,7 +301,7 @@ def test_stored_recommendation_reads_preserve_batch_boundaries(monkeypatch, coun
 
 
 def test_stored_recommendations_accumulate_rows_across_user_batches(monkeypatch):
-    database = FakeSupabase()
+    database = FakeDataApi()
     monkeypatch.setattr("recommender.service.get_sb", lambda: database)
     user_ids = [str(index) for index in range(501)]
     first = {"user_id": "0", "event_id": 1, "rank": 1}

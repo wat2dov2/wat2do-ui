@@ -16,7 +16,7 @@ The PNG files can always be regenerated from that manifest by the frontend rende
 
 ## Generate from the configured database
 
-Run from `backend/` so the backend `.env` supplies the Supabase service credentials and frontend origin:
+Run from `backend/` so the backend `.env` supplies the data API credentials (`DATA_API_URL`, `DATA_API_KEY`) and frontend origin:
 
 ```bash
 .venv/bin/python scripts/generate_school_posters.py --school columbia
@@ -24,7 +24,7 @@ Run from `backend/` so the backend `.env` supplies the Supabase service credenti
 ```
 
 The generator is read-only.
-Before treating an output as production-derived, confirm that `backend/.env` points at the production Supabase project and that the checkout matches the deployed schema.
+Before treating an output as production-derived, confirm that `backend/.env` points at the production data API (`https://data.wat2do.io`) and that the checkout matches the deployed schema.
 
 ## Data rules
 

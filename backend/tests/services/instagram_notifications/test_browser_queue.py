@@ -2255,7 +2255,7 @@ def test_first_upgrade_cancels_waiting_notification_reads_once(tmp_path):
     )
 
     upgraded = module.BrowserJobQueue(queue.state_directory)
-    # Its post now waits in the Supabase ingestion queue instead.
+    # Its post now waits in the ingestion queue instead.
     assert upgraded.get(waiting).state == "cancelled"
     later = upgraded.enqueue_retrieval(
         school="ubc",

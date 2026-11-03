@@ -1,9 +1,9 @@
 # Instagram Automation Commands
 
 The active collection path uses Instagram notifications on a physical Android phone running Automate.
-Automate triggers the GitHub `process-notification` workflow, which records each exact post URL in the Supabase notification ledger.
+Automate triggers the GitHub `process-notification` workflow, which records each exact post URL in the notification ledger.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
-A database trigger adds each recorded post to `public.ingestion_items`, the Supabase ingestion queue.
+A database trigger adds each recorded post to `public.ingestion_items`, the ingestion queue.
 An always-on launchd processor on the Mac, `backend/scripts/ingest.py process`, wakes on a Postgres notification from the queue, reads each new post logged out (no account, cookie or session ID), and then runs a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
 The Brave worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
 Digest expansion, manual profile listing, and engagement share two worker-owned tabs in one registered Brave window, with credentials remaining inside the browser.
@@ -14,7 +14,7 @@ Brave never opens individual posts for ingestion.
 New scraped videos are copied to owned S3 storage and played on event and position detail views, with their images retained as posters.
 Previously processed posts remain deduplicated during ordinary scraping, so deploying video support does not redownload historical posts or rerun AI extraction.
 Use the targeted media repair command for an existing event or position.
-It replaces the obsolete Supabase-only image-resize command and uses the same S3 storage, limits, and rendition rules as new uploads.
+It uses the same S3 storage, limits, and rendition rules as new uploads.
 Configure the intended database, `STORAGE_BUCKET_NAME`, `STORAGE_PUBLIC_BASE_URL`, and discovery revalidation settings in the command's environment before applying a repair.
 
 ```sh
@@ -220,7 +220,7 @@ Reload worker code only when its current job has finished, preserving the spool 
 
 ### Eligible event posts
 
-The collector reads the existing publishing batches, selected publish items, and each event's original `source_url` from Supabase.
+The collector reads the existing publishing batches, selected publish items, and each event's original `source_url` from the database.
 Only fully published carousels qualify.
 Draft selections, removed draft slides, unpublished batches, and non-Instagram source URLs do not enter the engagement queue.
 It resolves the school's enabled publishing account and notification `recipient_id` from existing records, selecting public identity fields only and never loading or decrypting publishing tokens.
@@ -242,7 +242,7 @@ Apply the browser source delivery migration before installing this worker versio
 
 ### Worker operations
 
-Keep the Mac checkout's existing ignored `backend/.env` configured for the intended Supabase environment.
+Keep the Mac checkout's existing ignored `backend/.env` configured for the intended database environment.
 Use the repository's Python environment for the commands below.
 Install the persistent worker, then check its heartbeat, queue counts by school/state, source collector status, and recent failures:
 
@@ -295,7 +295,7 @@ To collect eligible published selections immediately, run:
 python scripts/instagram_browser.py sync
 ```
 
-This only reads Supabase and appends work to the local queue.
+This only reads the database and appends work to the local queue.
 A running worker can execute the resulting like and native repost jobs.
 There is no manual command to enqueue live engagement for arbitrary posts.
 

@@ -110,18 +110,20 @@ When `social-preview/` changes, also run its dependency and unit-test gate:
 
 ## 5. Database migrations
 
-**The production Supabase project is `vgfwgjwahedyieaknkcd`.**
-It is displayed as `wat2do-v2` in the Supabase dashboard.
-Match on the ref rather than the display name, since names can change.
-Confirm the ref against the deployed configuration before running anything destructive:
+**Production's database is the Amazon RDS for PostgreSQL 17 instance `wat2do-production`, database `wat2do`, in `ca-central-1`.**
+The deploy job reaches it through the production environment's `DATABASE_URL` secret, and the app task through the `DATABASE_URL` key of the runtime secret.
+Confirm which database `DATABASE_URL` names before running anything destructive.
+This prints only the URL's host and database name, never its password:
 
 ```bash
 aws secretsmanager get-secret-value --region ca-central-1 \
   --secret-id wat2do/production/runtime --query SecretString --output text \
-  | python3 -c "import json,sys; print(json.load(sys.stdin)['SUPABASE_URL'])"
+  | python3 -c "import json,sys; from urllib.parse import urlsplit; url = urlsplit(json.load(sys.stdin)['DATABASE_URL']); print(url.hostname, url.path.lstrip('/'))"
 ```
 
-Check what a push would apply before it runs, with `DATABASE_URL` set to the production session-mode connection string (port 5432):
+The host should start with `wat2do-production.` and end in `.rds.amazonaws.com`, and the database should be `wat2do`.
+
+Check what a push would apply before it runs, with `DATABASE_URL` set to the same connection string the deploy job uses:
 
 ```bash
 bash scripts/migrate-database.sh --dry-run

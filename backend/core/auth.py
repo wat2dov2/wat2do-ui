@@ -30,7 +30,7 @@ bearer_optional = HTTPBearer(auto_error=False)
 class AuthUser(TypedDict):
     """JWT-derived identity dict returned by ``get_current_user``.
 
-    ``id`` is the auth id (JWT ``sub`` claim, ``users.supabase_auth_id``),
+    ``id`` is the auth id (JWT ``sub`` claim, ``users.auth_id``),
     **not** the internal ``users.id`` UUID. Use this dict when you only need
     to confirm authentication; use ``get_db_user`` whenever you need the
     internal user id or the user's role (ownership, admin checks).
@@ -125,7 +125,7 @@ def resolve_db_user(auth_user: AuthUser, *, user_lookup=None) -> "UserResponse":
 
     *user_lookup* can be injected for testing.
     """
-    lookup = user_lookup or _get_user_service().get_user_by_supabase_id
+    lookup = user_lookup or _get_user_service().get_user_by_auth_id
     db_user = lookup(auth_user["id"])
     if not db_user:
         raise NotFoundError(USER_NOT_FOUND)

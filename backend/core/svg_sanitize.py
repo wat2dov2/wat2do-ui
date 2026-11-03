@@ -4,7 +4,7 @@ SVG files can embed ``<script>`` tags, event-handler attributes
 (``onload``, ``onclick``, ...), ``<foreignObject>`` (embeds arbitrary
 HTML), ``xlink:href="javascript:..."`` URIs, and more.  Since the
 backend accepts SVG uploads for club logos and QR assets, every SVG
-must be sanitized before it reaches Supabase storage.
+must be sanitized before it reaches storage.
 
 Strategy:
 1. Parse with ``defusedxml`` to block entity-expansion attacks (billion
@@ -19,7 +19,7 @@ Strategy:
 
 This runs at upload time - the stored file is always the sanitized
 version, so the attack surface is eliminated regardless of how
-Supabase storage serves the file.
+the storage service serves the file.
 """
 
 import re

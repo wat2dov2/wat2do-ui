@@ -47,7 +47,7 @@ the GitHub `process-notification` workflow directly.
 Do not use Android emulators for notification collection.
 Budget no more than three Instagram accounts per device and scale horizontally by
 adding devices.
-The workflow records exact post URLs in the Supabase notification ledger, and a
+The workflow records exact post URLs in the notification ledger, and a
 database trigger adds each post to `public.ingestion_items`, the only ingestion queue.
 The Mac's always-on processor reads each queued post logged out, with no account,
 cookie or session ID, then owns extraction and database writes.

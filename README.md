@@ -37,7 +37,7 @@ Node and backend Python dependencies are installed inside their containers.
 The first run downloads images and dependencies and can take several minutes.
 Before the apps start, `scripts/migrate-database.sh` applies pending migrations from `backend/database/migrations`, and `backend/database/seed.sql` runs.
 An empty local database is built from `backend/database/baseline.sql`, the production schema that `scripts/dump-schema-baseline.sh` dumps.
-Until that file exists, a new local database cannot be built, because the oldest migrations still need Supabase's roles and extensions.
+Until that file exists, a new local database cannot be built, because the oldest migrations name roles and functions (`anon`, `authenticated`, `auth.uid()`) that a plain PostgreSQL server does not have.
 Ordinary code reloads do not rerun migrations or seeds.
 The database listens on `127.0.0.1:55432` (`postgresql://postgres:postgres@127.0.0.1:55432/wat2do`) and the data API on `http://127.0.0.1:55433`.
 The data API, like production's, has no anonymous role: it refuses any request without a token signed with its development secret (`PGRST_JWT_SECRET` in `docker-compose.dev.yml`).
@@ -64,7 +64,6 @@ Run `make dev` again after changing dependencies or environment settings.
 Use `docker compose -p wat2do-dev -f docker-compose.dev.yml logs -f` to inspect app logs.
 Stop manually started frontend/backend processes before switching to this workflow; ports 3000 and 8000 must be free.
 Never use Compose `down -v` unless intentionally deleting local data.
-Data in the earlier Supabase CLI stack does not carry over; remove its `supabase_*` containers and volumes once you no longer need it.
 The regular `docker-compose.yml` remains the production-style image configuration, not the local startup entry point.
 
 ## Repeatable local demo data
@@ -145,13 +144,15 @@ Employer recruiting continues to use `employers_on_campus` independently of thes
 
 Wat2Do serves the application from one private AWS ECS Fargate task in `ca-central-1`.
 The task contains the Next.js frontend on port 3000 and the FastAPI backend on port 8000.
-CloudFront is the public edge, an Application Load Balancer is the HTTPS origin, and Supabase remains the database, authentication, and object-storage provider.
+CloudFront is the public edge and an Application Load Balancer is the HTTPS origin.
+The database is Amazon RDS for PostgreSQL 17 (database `wat2do`), which the backend reads and writes through our own PostgREST data API at `https://data.wat2do.io`.
+Sign-in, sessions and access tokens are the backend's own (`backend/services/auth_service.py`), and uploaded images live in S3 behind CloudFront.
 An isolated, concurrency-limited Lambda captures changed school event feeds as social-preview images after their CacheEntID media finishes scraping, then stores the immutable JPEG in the existing S3 and CloudFront asset path.
 The encrypted Terraform state bucket and DynamoDB lock table remain in `us-west-2`; they do not affect Canadian application traffic.
 
 Terraform is split into `infra/terraform/foundation` and `infra/terraform/production`.
 Foundation creates the encrypted, versioned S3 state bucket, Route 53 zone, three ECR repositories, secret containers, and GitHub OIDC roles.
-Production creates the VPC, private Fargate workload, social-preview Lambda and queues, CloudFront, certificates, logging, and alarms.
+Production creates the VPC, private Fargate workload, RDS database, PostgREST data API service, the per-minute event change alerts schedule, social-preview Lambda and queues, CloudFront, certificates, logging, and alarms.
 
 The first foundation apply intentionally starts with local state because the state bucket does not yet exist.
 Temporarily move `infra/terraform/foundation/backend.tf` outside that directory for this one local apply, then restore it before state migration.
@@ -161,9 +162,9 @@ Before switching registrar nameservers, inventory every current Vercel DNS recor
 
 The first ARM64 frontend and backend images, plus the x86-64 social-preview image, must be pushed to ECR by digest before the initial production apply.
 Once production exists, pushes to `main` use GitHub OIDC to build all three images, tag them with the full commit SHA, update the ECS task definition, and update the Lambda image.
-Event and position ingestion runs through one Supabase table, `public.ingestion_items`, with one row per Instagram post or directory page (`backend/scripts/ingest.py`).
+Event and position ingestion runs through one database table, `public.ingestion_items`, with one row per Instagram post or directory page (`backend/scripts/ingest.py`).
 Instagram notifications come from a physical Android phone running Automate, which triggers the `process-notification` workflow.
-The workflow records exact post URLs in the Supabase notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker, and a database trigger adds each post to `ingestion_items`.
+The workflow records exact post URLs in the notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker, and a database trigger adds each post to `ingestion_items`.
 An always-on processor on the Mac listens for the Postgres notification (`LISTEN ingestion_items`) that a trigger on the queue sends whenever a row is added or changes, and wakes at once.
 Its fetcher reads each new post logged out, with no account or cookies (`backend/services/ingestion/instagram_fetch.py`), and marks the row ready; a deleted post is marked gone.
 Every 12 hours Claude Haiku directory agents read the official school directories listed in `public.directory_sources`, skip what is already handled or listed, and add finished event details as ready rows (`backend/services/ingestion/directory_prompt.md`).

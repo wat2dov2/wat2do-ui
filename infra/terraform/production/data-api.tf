@@ -2,8 +2,7 @@ locals {
   data_api_domain_name = "data.${var.domain_name}"
   data_api_port        = 3000
   data_api_admin_port  = 3001
-  # postgrest/postgrest:v14.5, the version Supabase served, pinned to its
-  # multi-architecture index digest.
+  # postgrest/postgrest:v14.5, pinned to its multi-architecture index digest.
   data_api_image = "postgrest/postgrest@sha256:b574528fe109c8343c1247155734d03df8c34b462f342dca0ccc20244fc36ef9"
 
   # No PGRST_DB_ANON_ROLE: PostgREST rejects every request without a valid JWT.

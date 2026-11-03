@@ -2,7 +2,7 @@
 Allowed student email domains mapped to schools.
 Only emails from these domains can sign up.
 
-The {domain -> school slug} mapping is stored in the Supabase
+The {domain -> school slug} mapping is stored in the database's
 ``school_email_domains`` table (joined to ``schools``) and is loaded
 lazily on first lookup.
 """
@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 # Dynamic mapping of domain -> school slug.  Lazily populated on first
 # lookup from the ``school_email_domains`` table.  Tests can monkeypatch
-# this dict directly; set ``_loaded`` to True to skip the Supabase load.
+# this dict directly; set ``_loaded`` to True to skip the database load.
 ALLOWED_EMAIL_DOMAINS: dict[str, str] = {}
 _loaded: bool = False
 
@@ -23,7 +23,7 @@ def _has_control_chars(value: str) -> bool:
     """Return True if *value* contains ASCII control characters (including CR/LF/NUL).
 
     Used to reject header-injection and smuggled-payload email inputs before
-    the value reaches Supabase or the allowlist lookup.
+    the value reaches the database or the allowlist lookup.
     """
     return any(ord(c) < 0x20 or ord(c) == 0x7F for c in value)
 
@@ -45,10 +45,10 @@ def _normalize_domain(domain: str) -> str | None:
 
 
 def load_allowed_domains() -> None:
-    """Populate ``ALLOWED_EMAIL_DOMAINS`` from Supabase.
+    """Populate ``ALLOWED_EMAIL_DOMAINS`` from the database.
 
     Idempotent - sets ``_loaded`` so subsequent calls are no-ops.  Imported
-    lazily inside the function so module import doesn't trigger a Supabase
+    lazily inside the function so module import doesn't trigger a data API
     client construction (matters for scripts and tests).
     """
     global _loaded
@@ -69,7 +69,7 @@ def load_allowed_domains() -> None:
             if canonical and canonical not in ALLOWED_EMAIL_DOMAINS:
                 ALLOWED_EMAIL_DOMAINS[canonical] = school.strip().lower()
     except Exception as e:
-        log.error("Failed to load school email domains from Supabase: %s", e)
+        log.error("Failed to load school email domains from the database: %s", e)
 
     _loaded = True
 
@@ -91,7 +91,7 @@ def get_school_for_email(email: str) -> str | None:
     before the dictionary lookup so Cyrillic/Greek homographs of allowed
     domains resolve to their punycode form (never in ``ALLOWED_EMAIL_DOMAINS``)
     rather than silently bypassing the check.  Also rejects inputs containing
-    ASCII control characters, which would otherwise reach Supabase unfiltered.
+    ASCII control characters, which would otherwise reach the database unfiltered.
     """
     email = (email or "").strip()
     if not email or _has_control_chars(email):

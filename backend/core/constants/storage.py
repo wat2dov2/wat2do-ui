@@ -1,4 +1,4 @@
-"""Supabase storage bucket and upload limit constants."""
+"""Storage bucket and upload limit constants."""
 
 BUCKET_EVENT_IMAGES = "event-images"
 BUCKET_EVENT_VIDEOS = "event-videos"

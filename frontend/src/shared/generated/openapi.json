@@ -10567,7 +10567,7 @@
           "added_at"
         ],
         "title": "EventSummaryResponse",
-        "description": "Payload for list/card views.\n\nDescription is included because the feed search matches event copy as well\nas titles, hosts, locations, and food.\n\nThe owning club's display/link/social fields (``club_logo_url``,\n``club_type``, ``club_page``, ``club_ig``,\n``club_discord``) are\nembedded read-time from the ``clubs`` row via the\n``events.club_id`` FK so the event card can render without a second\nfetch.\n\n``created_by`` is intentionally omitted - this response is returned on\npublic GET /events/ and would otherwise leak the creator's Supabase\nauth UID to anonymous callers."
+        "description": "Payload for list/card views.\n\nDescription is included because the feed search matches event copy as well\nas titles, hosts, locations, and food.\n\nThe owning club's display/link/social fields (``club_logo_url``,\n``club_type``, ``club_page``, ``club_ig``,\n``club_discord``) are\nembedded read-time from the ``clubs`` row via the\n``events.club_id`` FK so the event card can render without a second\nfetch.\n\n``created_by`` is intentionally omitted - this response is returned on\npublic GET /events/ and would otherwise leak the creator's user ID\nto anonymous callers."
       },
       "EventUpdate": {
         "properties": {

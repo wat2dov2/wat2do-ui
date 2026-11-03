@@ -8,7 +8,6 @@ exclude = [
     ".ruff_cache",
     ".venv",
     "__pycache__",
-    "supabase",
 ]
 
 [tool.ruff.lint]

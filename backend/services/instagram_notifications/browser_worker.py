@@ -185,7 +185,7 @@ def _school_account_for(recipient_id: str) -> str | None:
 
     try:
         school = school_service.get_school_by_recipient_id(recipient_id)
-    except Exception:  # noqa: BLE001 - keep the queued name when Supabase is unreachable
+    except Exception:  # noqa: BLE001 - keep the queued name when the database is unreachable
         return None
     return school_account_username(school.slug) if school else None
 

@@ -1,7 +1,7 @@
 """Queue the posts of a manually requested Instagram profile.
 
 Listing a profile's recent posts is the one retrieval Brave still does, because
-it needs the login. Each listed post joins the Supabase ingestion queue, where
+it needs the login. Each listed post joins the ingestion queue, where
 the logged-out fetcher and the processor take over, as for any notified post.
 """
 

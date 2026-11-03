@@ -28,9 +28,6 @@ data_api = SyncPostgrestClient(
     headers={
         "Accept": "application/json",
         "Content-Type": "application/json",
-        # PostgREST reads the bearer JWT. ``apikey`` is what a gateway in front
-        # of PostgREST may also expect; PostgREST itself ignores it.
-        "apikey": settings.data_api_key,
         "Authorization": f"Bearer {settings.data_api_key}",
     },
     http_client=httpx.Client(

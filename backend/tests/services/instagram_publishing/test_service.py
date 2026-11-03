@@ -39,7 +39,7 @@ def feed_revalidation(monkeypatch):
 
 
 class _FakeQuery:
-    """Supabase query builder stub: every call chains, `execute` ends it."""
+    """Data API query builder stub: every call chains, `execute` ends it."""
 
     def __init__(self, data: list[dict], calls: list[tuple], *, count: int | None = None):
         self._data = data

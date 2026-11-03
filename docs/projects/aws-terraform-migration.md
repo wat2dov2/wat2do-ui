@@ -7,7 +7,7 @@ Owner: Tony.
 
 Replace the wat2do Vercel frontend and Railway backend with one Terraform-managed AWS deployment.
 
-Keep Supabase as the database and authentication provider.
+Run the database on Amazon RDS for PostgreSQL, reached through our own PostgREST data API, and run authentication in the backend.
 Store application files in a versioned private S3 bucket served through the existing CloudFront distribution.
 
 Run the Next.js frontend and FastAPI backend together in one Amazon ECS Fargate task.
@@ -23,9 +23,9 @@ There is no staging environment, canary deployment, blue-green deployment, paral
 
 ## 2. Locked decisions
 
-- Keep Supabase and its existing project unchanged.
+- Run PostgreSQL 17 on Amazon RDS (instance `wat2do-production`, database `wat2do`), with table access through our own PostgREST data API at `data.wat2do.io` and authentication in the backend.
 - Use the existing AWS account unless implementation discovers that the available account cannot be administered.
-- Use `us-west-2` because the current Supabase database pooler is in `us-west-2`.
+- Run the application and its database in `ca-central-1`; Terraform state and its lock table stay in `us-west-2`.
 - Use Terraform for AWS infrastructure.
 - Use GitHub Actions for CI/CD orchestration.
 - Use GitHub OIDC to authenticate to AWS.
@@ -60,9 +60,9 @@ There is no staging environment, canary deployment, blue-green deployment, paral
 
 ## 3. Explicitly out of scope
 
-- Migrating Supabase PostgreSQL to RDS or Aurora.
-- Migrating Supabase authentication to Cognito.
-- Changing the Supabase schema or historical migrations.
+- Moving the database to Aurora.
+- Moving authentication to Cognito.
+- Changing applied migrations.
 - Rewriting application API contracts.
 - Replacing OpenAI, Apify, PostHog, or Mapbox.
 - Adding a staging environment.
@@ -133,14 +133,15 @@ Internet
        -> FastAPI backend on port 8000
        -> frontend calls backend through 127.0.0.1:8000
        -> backend calls frontend through 127.0.0.1:3000
-  -> Supabase in us-west-2
+  -> RDS for PostgreSQL and the PostgREST data API in ca-central-1
 ```
 
 The Fargate task runs in public subnets with a public IP for outbound access.
 
 The Application Load Balancer runs in public subnets.
 
-The task security group accepts inbound traffic only from the Application Load Balancer and uses the internet gateway for Supabase, ECR, SES, OpenAI, Apify, and other outbound HTTPS traffic.
+The task security group accepts inbound traffic only from the Application Load Balancer and uses the internet gateway for the data API, ECR, SES, OpenAI, Apify, and other outbound HTTPS traffic.
+It also reaches the RDS instance on PostgreSQL's port 5432.
 
 The ECS service keeps the configured task count running, with a minimum of two tasks.
 
@@ -242,7 +243,6 @@ The implementation audit must include:
 - DKIM records.
 - DMARC records.
 - Domain-verification records.
-- Any Supabase custom-domain records.
 - Any unrelated subdomains that must continue resolving.
 
 The registrar nameserver change is the only expected action that may not be automatable through AWS or repository tooling.
@@ -395,7 +395,7 @@ Allow inbound TCP port 3000 only from the Application Load Balancer security gro
 
 Do not allow inbound traffic to port 8000.
 
-Allow outbound HTTPS traffic for Supabase and external services.
+Allow outbound HTTPS traffic for the data API and external services, and outbound PostgreSQL traffic to the RDS security group.
 
 Allow outbound DNS traffic required by the VPC resolver.
 
@@ -812,7 +812,7 @@ Add one minimal `GET /healthz` route.
 
 The route returns a small JSON response and status 200.
 
-The route must not call Supabase or the backend.
+The route must not call the database or the backend.
 
 Backend health is already enforced by the backend container dependency and health check.
 
@@ -845,7 +845,7 @@ Use a 30-day retention period.
 
 Tag log groups consistently.
 
-Do not log secret values, authorization headers, refresh cookies, Supabase service-role keys, or complete database URLs.
+Do not log secret values, authorization headers, refresh cookies, data API service keys, or complete database URLs.
 
 ### 17.2 Basic alarms
 
@@ -886,7 +886,7 @@ Do not provision a separate ECS jobs task definition, task role, or CloudWatch l
 
 ### 18.2 Directory events
 
-Directory and Instagram ingestion share one Supabase queue, `public.ingestion_items`.
+Directory and Instagram ingestion share one database queue, `public.ingestion_items`.
 A LaunchAgent on the Mac runs Claude Haiku directory agents over the official sources in `public.directory_sources` every 12 hours; they queue finished event details.
 Another, always-on LaunchAgent wakes on Postgres notifications from the queue (`LISTEN ingestion_items`), fetches queued Instagram posts logged out, and runs Claude Haiku agents that write events and positions directly through a scoped database login.
 The computer must remain on and signed in to Claude Code.
@@ -1126,7 +1126,7 @@ The following should not require functional changes:
 - `backend/services/event_feed_revalidation.py`
 - `backend/main.py`
 - `backend/core/config.py`
-- Supabase migrations.
+- Applied database migrations.
 - Generated OpenAPI types.
 - Frontend API clients.
 - Authentication endpoints.
@@ -1234,7 +1234,7 @@ Done when:
 
 Done when:
 
-- Supabase is the only retained core hosting dependency outside AWS.
+- No core hosting dependency remains outside AWS.
 - GitHub is used for source control, CI/CD orchestration, and recurring application compute.
 - The repository has one obvious production deployment path.
 
@@ -1389,7 +1389,7 @@ The project is complete only when all of the following are true:
 - The backend is reachable from the frontend over loopback.
 - The backend can invalidate the frontend event-feed cache over loopback.
 - On-demand ISR works with the existing application implementation.
-- Supabase database and authentication continue working.
+- The RDS database, the data API, and the backend's authentication work.
 - Application file uploads, reads, and replacement deletes use the versioned S3 asset bucket.
 - GitHub uses OIDC for AWS deployment.
 - Frontend and backend images are immutable and commit-addressed.

@@ -9,7 +9,7 @@ from schemas.club import ClubMemberResponse, ClubResponse
 from schemas.user import UserResponse
 from services import club_service
 from tests.conftest import ADMIN_USER, FAKE_USER, OTHER_USER
-from tests.services.conftest import FakeSupabase
+from tests.services.conftest import FakeDataApi
 
 
 @pytest.fixture(autouse=True)
@@ -398,7 +398,7 @@ def test_accept_invitation(authenticated_client, monkeypatch):
 
 @pytest.mark.parametrize("recipient", [OTHER_USER["email"], FAKE_USER["email"].upper()])
 def test_invitation_only_accepts_intended_recipient(authenticated_client, monkeypatch, recipient):
-    fake_sb = FakeSupabase()
+    fake_sb = FakeDataApi()
     monkeypatch.setattr(club_service, "get_sb", lambda: fake_sb)
     fake_sb.set_response(
         data=[

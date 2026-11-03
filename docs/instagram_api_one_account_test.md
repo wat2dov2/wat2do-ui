@@ -150,7 +150,7 @@ Create two JPEG images with these properties:
 - No login, cookies, or expiring browser session required.
 - The URL returns the image itself instead of an HTML page.
 
-Upload the files to a public Supabase Storage bucket or another server under your control.
+Upload the files to a public S3 bucket or another server under your control.
 Open each URL in an incognito browser window to confirm that authentication is not required.
 
 Set the image URLs in the current shell:

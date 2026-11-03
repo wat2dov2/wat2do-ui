@@ -1,6 +1,6 @@
 """The notification ledger GitHub records, and carousel delivery receipts.
 
-Each recorded notification post joins the Supabase ingestion queue through a
+Each recorded notification post joins the ingestion queue through a
 database trigger; nothing on the Mac claims or settles ledger rows.
 """
 

@@ -11,9 +11,9 @@ state_bucket_name = "wat2do-terraform-state-058264255918"
 # Application-specific ECR repositories and Secrets Manager containers run in Canada Central.
 application_region = "ca-central-1"
 
-# Add every MX, SPF, DKIM, DMARC, verification, Supabase custom-domain,
-# and unrelated record found in the current DNS inventory before changing the
-# registrar nameservers. Use fully qualified names.
+# Add every MX, SPF, DKIM, DMARC, verification, and unrelated record found in
+# the current DNS inventory before changing the registrar nameservers. Use
+# fully qualified names.
 additional_dns_records = [
   {
     name    = "_dmarc.wat2do.io"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Event and position ingestion through the Supabase ingestion queue.
+"""Event and position ingestion through the database's ingestion queue.
 
 Notified Instagram posts join the queue when GitHub records them; ``enqueue``
 adds one by hand, and ``scrape-directories`` runs the Haiku directory agents. The always-on processor

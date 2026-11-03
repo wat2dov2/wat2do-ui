@@ -13,8 +13,8 @@ A launch is complete only when the school identity, database records, club direc
 A new school is complete only when all of the following are true:
 
 - The canonical school slug, official name, student email domains, timezone, current academic-term dates, academic-calendar source, official Instagram handle, student association, official club directory, and official event directory have been researched from authoritative sources.
-- The school and every accepted student email domain exist in Supabase through the normal migration path.
-- The school has validated primary and secondary brand colors in Supabase and in `assets/school-logos/colors.json`.
+- The school and every accepted student email domain exist in the database through the normal migration path.
+- The school has validated primary and secondary brand colors in the database and in `assets/school-logos/colors.json`.
 - `assets/school-logos/<schoolslug>.jpg` exists, matches the established dimensions and visual contract, and has been inspected at Instagram-avatar size.
 - Every club listed by the selected authoritative directory has been accounted for, deduplicated, and imported into `public.clubs` with every supported field that can be verified.
 - Every club imported from the official student-association directory has the school's verified association `club_type`; clubs added from outside that directory use `independent` unless a separate association source proves otherwise.
@@ -48,8 +48,8 @@ Do not introduce a second source of truth.
 | Instagram publishing identity and credentials | `public.instagram_publishing_accounts` | This service-role-only table stores the validated user ID, username, encrypted token, expiry, and reauthorization state. |
 | Instagram token encryption key | Ignored backend environment file and production secret manager | Never store it in a controlbox file, migration, document, or task output. |
 | Notification-to-school routing | `public.schools.recipient_id` | This is the identifier observed from the Android Automate notification payload. |
-| Single-account scrape school resolution | `backend/services/scraper/single_user.py` | It resolves `INTENDED_RECIPIENT_ID` through Supabase and already accepts database-added schools. |
-| Club following targets | Supabase clubs for the school | Follow the verified target set through the logged-in Android account while browser-cookie automation is paused. |
+| Single-account scrape school resolution | `backend/services/scraper/single_user.py` | It resolves `INTENDED_RECIPIENT_ID` through the database and already accepts database-added schools. |
+| Club following targets | Database clubs for the school | Follow the verified target set through the logged-in Android account while browser-cookie automation is paused. |
 | Bell notification state | Instagram Android application state | `automate_bell_notifications.py` drives the already-open consolidated list and does not read the spreadsheet. |
 
 ## 3. Important distinctions and corrections
@@ -90,7 +90,7 @@ Meta documents the distinction in its official [Instagram API with Instagram Log
 
 Do not modify the notification ingestion path merely because a new publishing token was added.
 
-`backend/jobs/process_notification.py` resolves a notification's school from its intended recipient ID through `school_service`, and each recorded post joins the Supabase ingestion queue (`public.ingestion_items`) with that school.
+`backend/jobs/process_notification.py` resolves a notification's school from its intended recipient ID through `school_service`, and each recorded post joins the ingestion queue (`public.ingestion_items`) with that school.
 
 It does not use the Meta publishing token or publishing user ID.
 
@@ -98,13 +98,13 @@ It does not use the Meta publishing token or publishing user ID.
 
 Do not extract an Instagram browser cookie or create a replacement browser-session follow script.
 
-Until an approved database-backed Android automation path exists, follow the verified Supabase target set through the logged-in Instagram Android application.
+Until an approved database-backed Android automation path exists, follow the verified database target set through the logged-in Instagram Android application.
 
 `backend/scripts/automate_bell_notifications.py` does not read the spreadsheet.
 
 It only drives the consolidated Instagram notification list that a human or agent has already opened.
 
-Do not rewrite it to query Supabase unless completeness reconciliation against an expected database handle set is an explicitly approved requirement.
+Do not rewrite it to query the database unless completeness reconciliation against an expected database handle set is an explicitly approved requirement.
 
 ## 4. Security and account isolation rules
 
@@ -404,7 +404,7 @@ Never add a one-school copy of an existing scraper.
 
 ### 9.3 Database-first requirement
 
-The desired end state is Supabase-first club onboarding.
+The desired end state is database-first club onboarding.
 
 The current discovery pipeline still passes through `backend/services/scraper/wat2do-clubs.xlsx` in several scripts.
 
@@ -594,7 +594,7 @@ Keep shards small enough that every result receives evidence rather than a guess
 
 If fewer than 15 clubs are missing, assign one primary search per missing club and use the remaining jobs as independent verification passes over the proposed matches and unresolved rows.
 
-Subagents must use browser or web search and must not write directly to Supabase, the workbook, or tracked files.
+Subagents must use browser or web search and must not write directly to the database, the workbook, or tracked files.
 
 Each subagent returns structured results to one coordinator.
 
@@ -862,7 +862,7 @@ Verify all of the following from the public profile view:
 
 Complete club discovery and database reconciliation before following accounts.
 
-The following set must come from Supabase:
+The following set must come from the database:
 
 ```sql
 select distinct lower(trim(club.ig)) as instagram_handle
@@ -883,9 +883,9 @@ Stop on an authentication loss, security challenge, soft block, or unexpected ac
 
 Do not extract a browser cookie as a workaround.
 
-### 14.2 Reconcile and follow the Supabase target set
+### 14.2 Reconcile and follow the database target set
 
-Use the Supabase query above as the authoritative target list.
+Use the database query above as the authoritative target list.
 
 Open each normalized handle in the Instagram Android application, confirm the exact profile identity, and follow it from the chapter account.
 
@@ -893,7 +893,7 @@ Record completed, invalid, renamed, missing, and blocked handles in the onboardi
 
 Do not retry a refusal aggressively or mutate a stale club handle without revalidating it through the normal reviewed club update path.
 
-Compare the final followed count with the distinct verified Supabase handle count before enabling notifications.
+Compare the final followed count with the distinct verified database handle count before enabling notifications.
 
 ## 15. Phase K: Enable post notifications on Android
 
@@ -1029,7 +1029,7 @@ Do not trust a human-entered label or a user ID copied from the Meta dashboard w
 
 ### 17.5 Import the token securely
 
-Use `backend/scripts/import_instagram_tokens.py` rather than writing to Supabase manually.
+Use `backend/scripts/import_instagram_tokens.py` rather than writing to the database manually.
 
 The importer validates the token through Instagram, matches the returned username to the configured account, encrypts the token, stores the scoped user ID, and sets expiry and validation metadata.
 
@@ -1262,7 +1262,7 @@ The final handoff must contain no secrets and must include:
 
 ### Following, notifications, and Automate
 
-- [ ] Follow target set read from Supabase.
+- [ ] Follow target set read from the database.
 - [ ] Android account identity confirmed as the chapter account.
 - [ ] All verified handles followed or reconciled.
 - [ ] Followed count reconciled against the database target count.

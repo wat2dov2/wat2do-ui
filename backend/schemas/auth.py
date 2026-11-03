@@ -5,13 +5,6 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from core.constants import MAX_SCHOOL_LENGTH, MAX_URL_LENGTH
 
-# Password constraints protect the backend even when the frontend
-# validation is bypassed (e.g. direct API calls).  Supabase enforces its own
-# minimum (currently 6) but that setting can drift - enforce here for defence
-# in depth.  EmailStr additionally rejects header-injection / CRLF payloads.
-_PASSWORD_MIN_LENGTH = 8
-_PASSWORD_MAX_LENGTH = 128
-
 
 def validate_safe_return_to(value: str | None) -> str | None:
     if value is None:

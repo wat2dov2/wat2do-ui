@@ -27,7 +27,7 @@ function notifyAuthStateChanged(): void {
 }
 
 export interface UserProfile {
-  /** Supabase user UUID (from backend `users.id`). */
+  /** User UUID (from backend `users.id`). */
   id: string;
   /** Mirrors backend ``users.full_name``; null when the user never set one. */
   fullName: string | null;

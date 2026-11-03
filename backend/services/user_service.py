@@ -1,4 +1,4 @@
-"""Users (profile table) via Supabase. Sync."""
+"""Users (profile table) via the data API. Sync."""
 
 import base64
 import hashlib
@@ -69,14 +69,8 @@ def get_user_by_email(email: str) -> UserResponse | None:
     return _user_response(r.data[0])
 
 
-def get_user_by_supabase_id(supabase_auth_id: str) -> UserResponse | None:
-    r = (
-        get_sb()
-        .table(USERS)
-        .select(_USER_SELECT)
-        .eq("supabase_auth_id", supabase_auth_id)
-        .execute()
-    )
+def get_user_by_auth_id(auth_id: str) -> UserResponse | None:
+    r = get_sb().table(USERS).select(_USER_SELECT).eq("auth_id", auth_id).execute()
     if not r.data or len(r.data) == 0:
         return None
     return _user_response(r.data[0])

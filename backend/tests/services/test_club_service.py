@@ -536,7 +536,7 @@ def test_club_directory_pages_use_unique_order_for_identical_names(monkeypatch):
 
     monkeypatch.setattr(club_service.position_service, "get_club_position_counts", lambda _: {})
     with httpx.Client(transport=httpx.MockTransport(respond)) as http_client:
-        client = SyncPostgrestClient("https://example.supabase.co/rest/v1", http_client=http_client)
+        client = SyncPostgrestClient("https://data.example.test", http_client=http_client)
         monkeypatch.setattr(club_service, "get_sb", lambda: client)
         first, total = club_service.list_clubs(skip=0, limit=1)
         second, _ = club_service.list_clubs(skip=1, limit=1)

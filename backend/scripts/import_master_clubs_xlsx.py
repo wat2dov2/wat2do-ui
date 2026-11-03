@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Bulk-import clubs from wat2do-clubs.xlsx into the
-Supabase ``clubs`` table.
+database's ``clubs`` table.
 
 Every row with a name and a registered school slug is imported.  The sheet's
 ``IG Source`` column records how a handle was discovered and gates overwrites in
@@ -8,7 +8,7 @@ the SPA merge pipeline; it does not affect what lands in the database.
 
 Usage (from backend/):
   python scripts/import_master_clubs_xlsx.py            # dry-run, prints diff
-  python scripts/import_master_clubs_xlsx.py --apply    # write to Supabase
+  python scripts/import_master_clubs_xlsx.py --apply    # write to the database
 
 Idempotent: keyed on ``(school, club_name)``.  Re-running with ``--apply``
 inserts new rows, updates rows whose xlsx values changed, and leaves
@@ -201,7 +201,7 @@ def _validate_rows(
 
     if unknown_schools:
         log.warning(
-            "xlsx School slugs not registered in the Supabase 'schools' table skipped: "
+            "xlsx School slugs not registered in the 'schools' table skipped: "
             + ", ".join(sorted(unknown_schools))
         )
     if bad_categories:
@@ -274,7 +274,7 @@ def main() -> int:
     parser.add_argument(
         "--apply",
         action="store_true",
-        help="Write inserts and updates to Supabase.  Without this flag, prints the diff and exits.",
+        help="Write inserts and updates to the database.  Without this flag, prints the diff and exits.",
     )
     parser.add_argument(
         "--school",
@@ -294,7 +294,7 @@ def main() -> int:
         res_schools = sb.table(SCHOOLS).select("id,slug").execute()
         db_schools = {row["slug"]: int(row["id"]) for row in res_schools.data or []}
     except Exception as e:
-        log.error("Failed to fetch canonical schools from Supabase: %s", e)
+        log.error("Failed to fetch canonical schools from the database: %s", e)
         return 2
 
     rows = _read_xlsx_rows()
@@ -302,7 +302,7 @@ def main() -> int:
 
     if args.school:
         if args.school not in db_schools:
-            log.error("--school %r is not a slug in the Supabase 'schools' table.", args.school)
+            log.error("--school %r is not a slug in the 'schools' table.", args.school)
             return 2
         rows = [row for row in rows if row["school_slug"] == args.school]
         log.info("xlsx rows for school %r: %s", args.school, len(rows))
@@ -314,7 +314,7 @@ def main() -> int:
 
     schools_in_play = {row["school"]: row["school_id"] for row in kept}
     existing = _fetch_existing(sb, schools_in_play)
-    log.info("existing rows in Supabase for those schools: %s", len(existing))
+    log.info("existing rows in the database for those schools: %s", len(existing))
 
     to_insert: list[dict] = []
     to_update: list[tuple[int, dict, dict]] = []  # (id, planned, diff)
@@ -365,7 +365,7 @@ def main() -> int:
             )
         return 0
 
-    # Insert in batches; update one row at a time (Supabase doesn't batch
+    # Insert in batches; update one row at a time (the data API doesn't batch
     # updates with different field values cleanly).
     inserted = 0
     if to_insert:

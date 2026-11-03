@@ -92,13 +92,13 @@ def make_db_user(
 
 
 def _install_db_user_mock(monkeypatch, db_user: UserResponse) -> MagicMock:
-    """Make ``user_service.get_user_by_supabase_id`` return *db_user*.
+    """Make ``user_service.get_user_by_auth_id`` return *db_user*.
 
     Returned as a ``MagicMock`` so tests can inspect call args if they
     want; most tests just need the lookup to succeed.
     """
     mock = MagicMock(return_value=db_user)
-    monkeypatch.setattr(user_service, "get_user_by_supabase_id", mock)
+    monkeypatch.setattr(user_service, "get_user_by_auth_id", mock)
     return mock
 
 
@@ -112,7 +112,7 @@ def authenticated_client(monkeypatch):
     """Client authenticated as a regular (non-admin) user.
 
     Installs both the JWT dependency override AND a matching
-    ``user_service.get_user_by_supabase_id`` mock, so routes that reach
+    ``user_service.get_user_by_auth_id`` mock, so routes that reach
     for ``get_db_user`` / ``get_admin_user`` / ownership helpers resolve
     to a consistent ``UserResponse`` (``role=user``). Tests that need a
     different role or id can re-install their own mock with

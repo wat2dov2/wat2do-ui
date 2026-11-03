@@ -68,7 +68,7 @@ def test_tokens_we_did_not_sign_are_rejected(token):
     [
         {"exp": int(time.time()) - 1},
         {"aud": "anon"},
-        {"iss": "https://example.supabase.co/auth/v1"},
+        {"iss": "https://other-issuer.example/auth/v1"},
         {"session_id": None},
     ],
     ids=["expired", "audience", "issuer", "no-session"],

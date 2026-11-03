@@ -1,4 +1,4 @@
-"""Events via Supabase. Sync so no asyncpg/SQLAlchemy.
+"""Events via the data API. Sync so no asyncpg/SQLAlchemy.
 
 Events store metadata (title, location, image, etc.); occurrence dates
 live in ``event_dates`` (via ``event_date_service``) and are returned on

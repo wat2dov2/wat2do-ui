@@ -96,7 +96,7 @@ _OBSOLETE_SETTINGS = (
     "notification_import_status",
     "notification_import_error",
     "review_storage_status",
-    # Notified posts now reach the Supabase ingestion queue without Brave.
+    # Notified posts now reach the ingestion queue without Brave.
     "notification_delivery:*",
     "notification_ledger_claim",
     "notification_browser_import_claim",
@@ -205,7 +205,7 @@ class BrowserJobQueue:
             if not db.execute(
                 "SELECT 1 FROM settings WHERE key='notification_retrievals_retired'"
             ).fetchone():
-                # Their posts moved to the Supabase queue, which fetches them without Brave.
+                # Their posts moved to the ingestion queue, which fetches them without Brave.
                 db.execute(
                     "UPDATE jobs SET state='cancelled',finished_at=? "
                     "WHERE kind='retrieval' AND state='pending'",

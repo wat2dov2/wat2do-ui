@@ -24,7 +24,7 @@ BATCH = {
 
 
 class _Table:
-    """One Supabase table: every call chains, `execute` answers with its rows."""
+    """One data API table: every call chains, `execute` answers with its rows."""
 
     def __init__(self, rows, calls):
         self.rows = rows

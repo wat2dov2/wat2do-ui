@@ -823,7 +823,7 @@ Do not deploy a nullable compatibility period or dual Going API.
 - `backend/recommender/service.py`
 - `backend/recommender/collaborative.py`
 - `backend/services/scraper/event_writer.py`
-- New forward-only Supabase migrations and related tests
+- New forward-only migrations and related tests
 
 ### Frontend
 
@@ -877,7 +877,7 @@ npx playwright test
 
 Also run:
 
-- Fresh local Supabase reset and migration.
+- Fresh local database reset and migration.
 - Production-shaped migration rehearsal.
 - Repository-wide deleted-name search.
 - Query-count tests.
