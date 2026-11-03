@@ -153,6 +153,7 @@ def _write_packet(workdir: Path, packet: dict[str, Any]) -> None:
                 "school": packet["account_key"],
                 "language": school.language if school else "en",
                 "default_caption_intro": packet["caption_intro"],
+                "event_slides": _CONTROL.maximum_event_slides,
                 "events": events,
                 "excluded_clubs": packet["excluded_clubs"],
             },
