@@ -3,7 +3,8 @@
 Every emulator job is a step of a visit to one school account. The worker picks the
 account with the most urgent work, switches the app to it once, and does everything
 that account needs before moving on: the song, like and repost for its new carousels,
-its DMs, its follows, and, when no other account is waiting, a slice of its crawl.
+its DMs, its unfollows and follows, and, when no other account is waiting, a slice of
+its crawl.
 
 Replies and post edits happen only during the control box's action hours, follows
 only during its follow hours; outside them the worker only reads, crawling Following
@@ -67,7 +68,7 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
                     school
                     for school in order
                     if _follows_rested_until.get(school, moment) <= moment
-                    and follows.follows_due(school)
+                    and (follows.unfollows_due(school) or follows.follows_due(school))
                 ],
                 False,
             )
@@ -109,17 +110,25 @@ def visit(
                 _step(f"music {school}", lambda: music.finish_due(device, school, now))
             if sweep.due(school, now):
                 _step(f"dms {school}", lambda: sweep.answer(device, school))
-        if (
-            following
-            and _follows_rested_until.get(school, now) <= now
-            and follows.follows_due(school)
-        ):
-            followed = _step(
-                f"follows {school}",
-                lambda: follows.follow_due(device, school, CONTROL.follows_per_visit),
-            )
-            if not isinstance(followed, follows.FollowVisit) or not (
-                followed.followed or followed.confirmed
+        if following and _follows_rested_until.get(school, now) <= now:
+            visits = []
+            if follows.unfollows_due(school):
+                visits.append(
+                    _step(
+                        f"unfollows {school}",
+                        lambda: follows.unfollow_due(device, school, CONTROL.follows_per_visit),
+                    )
+                )
+            if follows.follows_due(school):
+                visits.append(
+                    _step(
+                        f"follows {school}",
+                        lambda: follows.follow_due(device, school, CONTROL.follows_per_visit),
+                    )
+                )
+            if visits and not any(
+                isinstance(done, follows.FollowVisit) and (done.followed or done.confirmed)
+                for done in visits
             ):
                 # Nothing went through, so the next try waits instead of looping here.
                 _follows_rested_until[school] = now + timedelta(seconds=FOLLOW.crawl_rest_seconds)

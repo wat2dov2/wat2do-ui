@@ -2976,7 +2976,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "pending" | "approved" | "rejected" | "followed";
+            status: "pending" | "approved" | "rejected" | "followed" | "unfollow";
             /** Read Status */
             read_status?: ("ok" | "no_posts" | "failed") | null;
             /** Followers Count */
@@ -6758,7 +6758,7 @@ export interface operations {
     list_follow_candidates_instagram_publishing_follow_candidates__get: {
         parameters: {
             query?: {
-                status?: "pending" | "approved" | "rejected" | "followed";
+                status?: "pending" | "approved" | "rejected" | "followed" | "unfollow";
                 school?: string | null;
                 /** @description Page number (1-indexed) */
                 page?: number;

@@ -40,7 +40,7 @@ def _follow_hours(monkeypatch, start: int, end: int) -> None:
 def due(monkeypatch):
     """What each step reports as due; the steps record what they did."""
     state = SimpleNamespace(
-        music=[], dms=set(), follows=set(), crawls=set(), running=set(), done=[]
+        music=[], dms=set(), unfollows=set(), follows=set(), crawls=set(), running=set(), done=[]
     )
     monkeypatch.setattr(worker, "exclusive", nullcontext)
     monkeypatch.setattr(worker, "_crawl_rested_until", {})
@@ -55,6 +55,13 @@ def due(monkeypatch):
         worker.sweep, "answer", lambda device, school: state.done.append(("dms", school))
     )
     monkeypatch.setattr(worker.follows, "follows_due", lambda school: school in state.follows)
+    monkeypatch.setattr(worker.follows, "unfollows_due", lambda school: school in state.unfollows)
+
+    def unfollow_due(device, school, limit):
+        state.done.append(("unfollows", school))
+        return FollowVisit(followed=1, confirmed=0, blocked=False)
+
+    monkeypatch.setattr(worker.follows, "unfollow_due", unfollow_due)
 
     def follow_due(device, school, limit):
         state.done.append(("follows", school))
@@ -157,6 +164,22 @@ def test_one_failing_step_does_not_stop_the_rest_of_the_visit(due, monkeypatch):
     monkeypatch.setattr(worker.sweep, "answer", broken)
     worker.visit_next(_Device(), DAY)
     assert due.done == [("follows", "uwo")]
+
+
+def test_unfollows_come_before_follows_in_the_same_visit(due):
+    due.unfollows = {"uwo"}
+    due.follows = {"uwo"}
+    device = _Device()
+    assert worker.visit_next(device, DAY)
+    assert device.accounts == ["wat2do.uwo"]
+    assert due.done == [("unfollows", "uwo"), ("follows", "uwo")]
+
+
+def test_an_account_with_only_unfollows_is_visited(due):
+    due.unfollows = {"sfu"}
+    device = _Device()
+    assert worker.visit_next(device, DAY)
+    assert due.done == [("unfollows", "sfu")]
 
 
 def test_follows_keep_their_own_hours(due, monkeypatch):

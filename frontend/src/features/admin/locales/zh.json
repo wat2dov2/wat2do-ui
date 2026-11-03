@@ -497,7 +497,8 @@
         "pending": "等待审核",
         "approved": "已批准，尚未关注",
         "followed": "已关注",
-        "rejected": "已拒绝"
+        "rejected": "已拒绝",
+        "unfollow": "已拒绝，等待取消关注"
       },
       "submitFailed": "无法保存决定，请重试。",
       "emptyTitle": "没有需要审核的内容",

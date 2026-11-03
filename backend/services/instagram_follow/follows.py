@@ -7,6 +7,9 @@ follow this visit. Across the day a school account follows at most
 All so ingestion hears about its posts; an account the school already follows is only
 marked followed, after its bell is checked. Instagram's "Try again later" pauses the
 account's follows for a day; a follow that fails otherwise stays approved for later.
+
+Accounts waiting in ``unfollow`` (rejected, but still followed) are unfollowed the
+same way, from the same daily allowance, before any new follow.
 """
 
 from __future__ import annotations
@@ -60,17 +63,58 @@ def follows_due(school: str) -> bool:
     return _allowance(school_id) > 0 and bool(candidates.approved(school_id, 1))
 
 
-def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
-    """Follow up to ``limit`` of the school's approved accounts, within today's allowance."""
+def unfollows_due(school: str) -> bool:
+    """Whether the school has accounts to unfollow and may act on more today."""
+    school_id = school_service.get_school_id(school)
+    if school_id is None or _blocked(school):
+        return False
+    return _allowance(school_id) > 0 and bool(candidates.to_unfollow(school_id, 1))
+
+
+def unfollow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
+    """Unfollow up to ``limit`` of the school's rejected accounts, within today's allowance."""
     school_id = school_service.get_school_id(school)
     if school_id is None or _blocked(school):
         return FollowVisit(0, 0, _blocked(school))
-    reader = FollowingReader(
+    reader = _reader(device, school)
+    allowed = min(limit, _allowance(school_id))
+    unfollowed = confirmed = 0
+    for row in candidates.to_unfollow(school_id, allowed * PROFILES_PER_FOLLOW):
+        if unfollowed >= allowed:
+            break
+        try:
+            tapped = reader.unfollow(row["handle"])
+        except ActionBlocked as exc:
+            candidates.mark_follow_failed(row["id"], str(exc))
+            _block(school)
+            return FollowVisit(unfollowed, confirmed, True)
+        except EmulatorError as exc:
+            candidates.mark_follow_failed(row["id"], str(exc))
+            continue
+        # A profile that is gone or hidden needs no unfollow.
+        candidates.mark_unfollowed(row["id"], tapped=bool(tapped))
+        if tapped:
+            unfollowed += 1
+        else:
+            confirmed += 1
+    return FollowVisit(unfollowed, confirmed, False)
+
+
+def _reader(device: EmulatorDevice, school: str) -> FollowingReader:
+    return FollowingReader(
         device,
         EMULATOR.android_user_by_school[school],
         profile_wait_seconds=CONTROL.crawl_profile_wait_seconds,
         max_scrolls=CONTROL.crawl_max_scrolls,
     )
+
+
+def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
+    """Follow up to ``limit`` of the school's approved accounts, within today's allowance."""
+    school_id = school_service.get_school_id(school)
+    if school_id is None or _blocked(school):
+        return FollowVisit(0, 0, _blocked(school))
+    reader = _reader(device, school)
     # Only a real follow counts toward the visit's limit and today's allowance.
     allowed = min(limit, _allowance(school_id))
     followed = confirmed = 0
@@ -106,17 +150,21 @@ def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
 
 
 def _allowance(school_id: int) -> int:
+    """Follows and unfollows share the day's allowance."""
     midnight = datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
-    response = (
-        get_sb()
-        .table(INSTAGRAM_FOLLOW_CANDIDATES)
-        .select("id", count="exact")
-        .eq("school_id", school_id)
-        .gte("followed_at", midnight.isoformat())
-        .limit(1)
-        .execute()
-    )
-    return CONTROL.follows_per_account_per_day - (response.count or 0)
+    used = 0
+    for column in ("followed_at", "unfollowed_at"):
+        response = (
+            get_sb()
+            .table(INSTAGRAM_FOLLOW_CANDIDATES)
+            .select("id", count="exact")
+            .eq("school_id", school_id)
+            .gte(column, midnight.isoformat())
+            .limit(1)
+            .execute()
+        )
+        used += response.count or 0
+    return CONTROL.follows_per_account_per_day - used
 
 
 def _blocks() -> dict[str, Any]:

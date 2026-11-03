@@ -497,7 +497,8 @@
         "pending": "Czeka na przegląd",
         "approved": "Zatwierdzone, jeszcze nieobserwowane",
         "followed": "Obserwowane",
-        "rejected": "Odrzucone"
+        "rejected": "Odrzucone",
+        "unfollow": "Odrzucone, czeka na przestanie obserwowania"
       },
       "submitFailed": "Nie udało się zapisać decyzji. Spróbuj ponownie.",
       "emptyTitle": "Nic do przejrzenia",

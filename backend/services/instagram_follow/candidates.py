@@ -5,6 +5,7 @@ row with its ``source`` (a crawl, a club, an import) and the emulator follows wh
 approved. One row per school and handle is kept whatever its status, so an account
 is never offered twice: an account an admin rejected stays rejected. Approving
 creates the club when the school has none with that handle, and queues the follow.
+Rejecting an account the school already follows queues an unfollow instead.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from core.constants import (
     FOLLOW_CANDIDATE_FOLLOWED,
     FOLLOW_CANDIDATE_PENDING,
     FOLLOW_CANDIDATE_REJECTED,
+    FOLLOW_CANDIDATE_UNFOLLOW,
     FOLLOW_SOURCE_CLUB,
 )
 from core.database import get_sb
@@ -296,4 +298,44 @@ def mark_follow_failed(candidate_id: str, error: str, *, tapped: bool = False) -
     update = {"follow_error": error, "updated_at": now}
     if tapped:
         update["followed_at"] = now
+    get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(update).eq("id", candidate_id).execute()
+
+
+def stop_following(candidate_ids: list[str]) -> None:
+    """Reject the accounts for good; one the school follows waits to be unfollowed first."""
+    now = datetime.now(timezone.utc).isoformat()
+    for start in range(0, len(candidate_ids), _INSERT_CHUNK):
+        chunk = candidate_ids[start : start + _INSERT_CHUNK]
+        for status, followed in (
+            (FOLLOW_CANDIDATE_UNFOLLOW, [FOLLOW_CANDIDATE_FOLLOWED]),
+            (FOLLOW_CANDIDATE_REJECTED, [FOLLOW_CANDIDATE_PENDING, FOLLOW_CANDIDATE_APPROVED]),
+        ):
+            get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(
+                {"status": status, "follow_error": None, "updated_at": now}
+            ).in_("id", chunk).in_("status", followed).execute()
+
+
+def to_unfollow(school_id: int, limit: int) -> list[dict[str, Any]]:
+    """Accounts waiting to be unfollowed, failed ones last, least recently tried first."""
+    response = (
+        get_sb()
+        .table(INSTAGRAM_FOLLOW_CANDIDATES)
+        .select("id,handle")
+        .eq("school_id", school_id)
+        .eq("status", FOLLOW_CANDIDATE_UNFOLLOW)
+        .order("follow_error", nullsfirst=True)
+        .order("updated_at")
+        .limit(limit)
+        .execute()
+    )
+    return response.data or []
+
+
+def mark_unfollowed(candidate_id: str, *, tapped: bool) -> None:
+    """Record the account as rejected and unfollowed; ``unfollowed_at`` only when this run
+    unfollowed it, so it counts toward the day's allowance."""
+    now = datetime.now(timezone.utc).isoformat()
+    update = {"status": FOLLOW_CANDIDATE_REJECTED, "follow_error": None, "updated_at": now}
+    if tapped:
+        update["unfollowed_at"] = now
     get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(update).eq("id", candidate_id).execute()

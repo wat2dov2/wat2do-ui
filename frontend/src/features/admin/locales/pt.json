@@ -497,7 +497,8 @@
         "pending": "Aguardando revisão",
         "approved": "Aprovado, ainda não seguido",
         "followed": "Seguido",
-        "rejected": "Rejeitado"
+        "rejected": "Rejeitado",
+        "unfollow": "Rejeitado, aguardando deixar de seguir"
       },
       "submitFailed": "Não foi possível salvar as decisões. Tente de novo.",
       "emptyTitle": "Nada para revisar",

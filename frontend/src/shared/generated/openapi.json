@@ -3479,7 +3479,8 @@
                 "pending",
                 "approved",
                 "rejected",
-                "followed"
+                "followed",
+                "unfollow"
               ],
               "type": "string",
               "default": "pending",
@@ -10894,7 +10895,8 @@
               "pending",
               "approved",
               "rejected",
-              "followed"
+              "followed",
+              "unfollow"
             ],
             "title": "Status"
           },

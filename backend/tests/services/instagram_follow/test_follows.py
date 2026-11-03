@@ -14,6 +14,14 @@ class _Reader:
     def __init__(self, results):
         self.results = results
         self.followed = []
+        self.unfollowed = []
+
+    def unfollow(self, handle):
+        self.unfollowed.append(handle)
+        result = self.results.get(handle, True)
+        if isinstance(result, Exception):
+            raise result
+        return result
 
     def follow(self, handle):
         self.followed.append(handle)
@@ -39,6 +47,18 @@ def world(monkeypatch, tmp_path):
         "mark_followed",
         lambda candidate_id, tapped: marks.append(
             ("followed" if tapped else "confirmed", candidate_id)
+        ),
+    )
+    monkeypatch.setattr(
+        module.candidates,
+        "to_unfollow",
+        lambda school_id, limit: [{"id": str(n), "handle": f"club{n}"} for n in range(limit)],
+    )
+    monkeypatch.setattr(
+        module.candidates,
+        "mark_unfollowed",
+        lambda candidate_id, tapped: marks.append(
+            ("unfollowed" if tapped else "gone", candidate_id)
         ),
     )
     monkeypatch.setattr(
@@ -103,10 +123,11 @@ def test_follows_are_due_while_accounts_wait_and_the_day_allows(world, monkeypat
     assert module.follows_due("utsg") is False
 
 
-def test_todays_follows_count_against_the_daily_cap(fake_sb, patch_sb):
+def test_todays_follows_and_unfollows_count_against_the_daily_cap(fake_sb, patch_sb):
     patch_sb("services.instagram_follow.follows")
-    fake_sb.set_response(data=[], count=18)
+    fake_sb.set_response(data=[], count=9)
 
+    # Nine follows and nine unfollows today.
     assert module._allowance(7) == module.CONTROL.follows_per_account_per_day - 18
     # Every follow made today counts, including one whose bell step failed after it.
     assert all(call.args[0] != "status" for call in fake_sb.eq.call_args_list)
@@ -148,4 +169,34 @@ def test_try_again_later_after_a_follow_counts_it_and_stops(world):
 
     assert module.follow_due(object(), "utsg", 5) == FollowVisit(1, 0, True)
     assert reader.followed == ["club0"]
+    assert module.follows_due("utsg") is False
+
+
+def test_a_visit_unfollows_within_the_allowance(world):
+    reader, marks = world()
+
+    assert module.unfollow_due(object(), "utsg", 5) == FollowVisit(2, 0, False)
+    assert reader.unfollowed == ["club0", "club1"]
+    assert marks == [("unfollowed", "0"), ("unfollowed", "1")]
+
+
+def test_accounts_not_followed_or_gone_are_rejected_without_using_the_allowance(world):
+    reader, marks = world({"club0": False, "club1": None})
+
+    assert module.unfollow_due(object(), "utsg", 5) == FollowVisit(2, 2, False)
+    assert marks == [("gone", "0"), ("gone", "1"), ("unfollowed", "2"), ("unfollowed", "3")]
+
+
+def test_a_failed_unfollow_waits_for_the_next_try(world):
+    reader, marks = world({"club0": EmulatorError("Instagram never confirmed the unfollow")})
+
+    assert module.unfollow_due(object(), "utsg", 1) == FollowVisit(1, 0, False)
+    assert marks == [("failed", "0"), ("unfollowed", "1")]
+
+
+def test_try_again_later_stops_unfollows_and_follows(world):
+    reader, _ = world({"club0": ActionBlocked("Instagram asked this account to try again later")})
+
+    assert module.unfollow_due(object(), "utsg", 5) == FollowVisit(0, 0, True)
+    assert module.unfollows_due("utsg") is False
     assert module.follows_due("utsg") is False

@@ -497,7 +497,8 @@
         "pending": "In attesa di revisione",
         "approved": "Approvato, non ancora seguito",
         "followed": "Seguito",
-        "rejected": "Rifiutato"
+        "rejected": "Rifiutato",
+        "unfollow": "Rifiutato, in attesa di smettere di seguire"
       },
       "submitFailed": "Impossibile salvare le decisioni. Riprova.",
       "emptyTitle": "Niente da rivedere",

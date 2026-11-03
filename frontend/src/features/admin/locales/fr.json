@@ -497,7 +497,8 @@
         "pending": "En attente de revue",
         "approved": "Approuvé, pas encore suivi",
         "followed": "Suivi",
-        "rejected": "Refusé"
+        "rejected": "Refusé",
+        "unfollow": "Refusé, en attente de désabonnement"
       },
       "submitFailed": "Les décisions n'ont pas pu être enregistrées. Réessayez.",
       "emptyTitle": "Rien à revoir",

@@ -497,7 +497,8 @@
         "pending": "Naghihintay ng review",
         "approved": "Aprubado, hindi pa naka-follow",
         "followed": "Naka-follow",
-        "rejected": "Tinanggihan"
+        "rejected": "Tinanggihan",
+        "unfollow": "Tinanggihan, hinihintay i-unfollow"
       },
       "submitFailed": "Hindi na-save ang mga desisyon. Subukan ulit.",
       "emptyTitle": "Walang ire-review",

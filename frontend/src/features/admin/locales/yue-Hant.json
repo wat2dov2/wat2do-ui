@@ -497,7 +497,8 @@
         "pending": "等緊審核",
         "approved": "已批准，未追蹤",
         "followed": "已追蹤",
-        "rejected": "已拒絕"
+        "rejected": "已拒絕",
+        "unfollow": "已拒絕，等緊取消追蹤"
       },
       "submitFailed": "儲存唔到決定，請再試。",
       "emptyTitle": "冇嘢要審核",

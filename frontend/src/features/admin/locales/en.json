@@ -497,7 +497,8 @@
         "pending": "Waiting for review",
         "approved": "Approved, not followed yet",
         "followed": "Followed",
-        "rejected": "Rejected"
+        "rejected": "Rejected",
+        "unfollow": "Rejected, waiting to unfollow"
       },
       "submitFailed": "Decisions could not be saved. Try again.",
       "emptyTitle": "Nothing to review",

@@ -497,7 +497,8 @@
         "pending": "검토 대기 중",
         "approved": "승인됨, 아직 팔로우 전",
         "followed": "팔로우함",
-        "rejected": "거절됨"
+        "rejected": "거절됨",
+        "unfollow": "거절됨, 언팔로우 대기 중"
       },
       "submitFailed": "결정을 저장하지 못했습니다. 다시 시도하세요.",
       "emptyTitle": "검토할 항목 없음",

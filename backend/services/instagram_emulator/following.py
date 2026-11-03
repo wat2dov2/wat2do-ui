@@ -6,8 +6,9 @@ don't follow yet, "Message" or "Following" for one we do. So one search of a
 followed club's list tells us both who it follows and which of those we are missing.
 
 Following an account also turns its post notifications to All, since ingestion only
-hears about posts from accounts whose bell is set that way. Instagram's "Try again
-later" block stops the account for the day; it is never pushed through.
+hears about posts from accounts whose bell is set that way. Unfollowing taps the same
+button and confirms in the sheet it opens. Instagram's "Try again later" block stops
+the account for the day; it is never pushed through.
 """
 
 from __future__ import annotations
@@ -35,6 +36,7 @@ _BLOCKED = labels(
 _BELL = re.compile(r"^Open notification settings$")
 _POSTS = re.compile(r"^Posts$")
 _ALL = re.compile(r"^All$")
+_UNFOLLOW = labels("Unfollow", "Cancel request", "Cancel Request")
 _FOLLOWED_LABELS = ("Message", "Following", "Requested")
 _UNFOLLOWED_LABELS = ("Follow", "Follow back")
 _ROW_NAME = "follow_list_username"
@@ -131,6 +133,22 @@ class FollowingReader:
                 raise
         return FollowOutcome(button.text, tapped)
 
+    def unfollow(self, username: str) -> bool | None:
+        """Unfollow the account, or withdraw the request to a private one.
+
+        False when the school account did not follow it anyway, None when the profile
+        is gone or hidden.
+        """
+        button = self._open_profile(username, _FOLLOW_BUTTON)
+        if button is None:
+            return None
+        if button.text in _UNFOLLOWED_LABELS:
+            return False
+        self._device.tap(button)
+        self._device.tap(self._device.wait_for(_UNFOLLOW))
+        self._wait_for_button(_UNFOLLOWED_LABELS, "Instagram never confirmed the unfollow")
+        return True
+
     def _open_profile(self, username: str, control: re.Pattern[str]) -> Node | None:
         self._device.open_instagram(self._user, f"instagram://user?username={username}")
         deadline = time.monotonic() + self._profile_wait_seconds
@@ -147,7 +165,9 @@ class FollowingReader:
                 raise EmulatorError("Instagram profile never loaded")
             time.sleep(1)
 
-    def _wait_for_button(self, wanted: tuple[str, ...]) -> Node:
+    def _wait_for_button(
+        self, wanted: tuple[str, ...], error: str = "Instagram never confirmed the follow"
+    ) -> Node:
         deadline = time.monotonic() + self._profile_wait_seconds
         while True:
             nodes = self._device.screen()
@@ -156,7 +176,7 @@ class FollowingReader:
             if button is not None and button.text in wanted:
                 return button
             if time.monotonic() >= deadline:
-                raise EmulatorError("Instagram never confirmed the follow")
+                raise EmulatorError(error)
             time.sleep(1)
 
     def _show_bell(self, username: str) -> None:

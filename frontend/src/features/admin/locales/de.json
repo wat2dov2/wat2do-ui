@@ -497,7 +497,8 @@
         "pending": "Wartet auf Prüfung",
         "approved": "Freigegeben, noch nicht gefolgt",
         "followed": "Gefolgt",
-        "rejected": "Abgelehnt"
+        "rejected": "Abgelehnt",
+        "unfollow": "Abgelehnt, Entfolgen ausstehend"
       },
       "submitFailed": "Die Entscheidungen konnten nicht gespeichert werden. Versuch es noch einmal.",
       "emptyTitle": "Nichts zu prüfen",

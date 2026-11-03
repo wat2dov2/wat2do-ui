@@ -5,7 +5,7 @@ export type FollowDecision = ApiFollowCandidateDecision["status"];
 /** Decisions the admin made on the page; null clears a suggestion. Nothing is saved until submit. */
 export type StagedDecisions = ReadonlyMap<string, FollowDecision | null>;
 
-export const FOLLOW_CANDIDATE_STATUSES = ["pending", "approved", "followed", "rejected"] as const;
+export const FOLLOW_CANDIDATE_STATUSES = ["pending", "approved", "followed", "unfollow", "rejected"] as const;
 
 /** A strong score the scorer approved starts approved, as on the old review page. */
 export function suggestedDecision(candidate: ApiFollowCandidateResponse): FollowDecision | null {

@@ -236,3 +236,32 @@ def test_a_missing_bell_on_an_account_already_followed_is_a_plain_failure() -> N
     with pytest.raises(EmulatorError) as raised:
         _reader(device).follow("utmmsa")
     assert not isinstance(raised.value, FollowedWithoutBell)
+
+
+def test_unfollowing_taps_following_then_confirms() -> None:
+    sheet = _profile("club", button="Following") + [_node("Unfollow")]
+    device = _Device([HOME, _profile("club", button="Following"), sheet, _profile("club")])
+    assert _reader(device).unfollow("club") is True
+    assert device.actions[-2:] == ["Following", "Unfollow"]
+
+
+def test_an_account_we_do_not_follow_needs_no_unfollow() -> None:
+    device = _Device([HOME, _profile("club")])
+    assert _reader(device).unfollow("club") is False
+    assert "Unfollow" not in device.actions
+
+
+def test_a_private_account_has_its_request_withdrawn() -> None:
+    sheet = _profile("club", button="Requested") + [_node("Cancel request")]
+    device = _Device([HOME, _profile("club", button="Requested"), sheet, _profile("club")])
+    assert _reader(device).unfollow("club") is True
+    assert device.actions[-1] == "Cancel request"
+
+
+def test_an_unfollow_instagram_never_confirms_raises() -> None:
+    sheet = _profile("club", button="Following") + [_node("Unfollow")]
+    device = _Device(
+        [HOME, _profile("club", button="Following"), sheet, _profile("club", button="Following")]
+    )
+    with pytest.raises(EmulatorError, match="unfollow"):
+        _reader(device).unfollow("club")

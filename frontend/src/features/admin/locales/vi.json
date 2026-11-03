@@ -497,7 +497,8 @@
         "pending": "Đang chờ xem xét",
         "approved": "Đã duyệt, chưa theo dõi",
         "followed": "Đã theo dõi",
-        "rejected": "Đã từ chối"
+        "rejected": "Đã từ chối",
+        "unfollow": "Đã từ chối, đang chờ bỏ theo dõi"
       },
       "submitFailed": "Không lưu được quyết định. Hãy thử lại.",
       "emptyTitle": "Không có gì để xem xét",
