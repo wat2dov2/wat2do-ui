@@ -1,4 +1,48 @@
 services:
+  database:
+    build:
+      context: ./backend/database
+      dockerfile_inline: |
+        FROM postgres:17
+        RUN apt-get update \
+          && apt-get install --yes --no-install-recommends postgresql-17-cron \
+          && rm -rf /var/lib/apt/lists/*
+    # Production preloads the same libraries.
+    command: ["postgres", "-c", "shared_preload_libraries=pg_cron,pg_stat_statements", "-c", "cron.database_name=wat2do"]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: wat2do
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - database_data:/var/lib/postgresql/data
+      # scripts/dev.py runs the migration runner, local roles and seed from here.
+      - ./backend/database:/workspace/backend/database:ro
+      - ./scripts:/workspace/scripts:ro
+    healthcheck:
+      # The first start's setup server listens only on its socket; wait for TCP.
+      test: ["CMD", "pg_isready", "--host=127.0.0.1", "--username=postgres", "--dbname=postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  data-api:
+    image: postgrest/postgrest:v14.5
+    environment:
+      # authenticator's development-only password comes from backend/database/local-roles.sql.
+      PGRST_DB_URI: postgres://authenticator:authenticator@database:5432/wat2do
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_MAX_ROWS: "1000"
+      # Development-only signing secret. With no PGRST_DB_ANON_ROLE, a request
+      # without a token signed by it is refused.
+      PGRST_JWT_SECRET: local-development-data-api-jwt-secret
+    ports:
+      - "127.0.0.1:55433:3000"
+    depends_on:
+      database:
+        condition: service_healthy
+
   backend:
     working_dir: /workspace/backend
     build:
@@ -9,10 +53,11 @@ services:
         required: false
     environment:
       ENVIRONMENT: development
-      SUPABASE_URL: ${DEV_SUPABASE_URL:-http://host.docker.internal:54321}
-      SUPABASE_KEY: ${DEV_SUPABASE_KEY:-}
-      SUPABASE_SECRET_KEY: ${DEV_SUPABASE_SECRET_KEY:-}
-      SUPABASE_JWT_ISSUER: ${DEV_SUPABASE_JWT_ISSUER:-}
+      # Local data only: these override any production values in backend/.env.
+      DATA_API_URL: http://data-api:3000
+      # {"role": "service_role"} signed with the data-api service's development secret.
+      DATA_API_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.O6dcW70Pm5arJhCi0KK_-4PKWFb3RIOB6kg2ceEm3Yw
+      AUTH_SIGNING_KEY: ${DEV_AUTH_SIGNING_KEY:?run make dev}
       DATABASE_URL: ""
       FRONTEND_URL: http://wat2do.localhost:3000
       COOKIE_DOMAIN: .wat2do.localhost
@@ -69,5 +114,6 @@ services:
       start_period: 120s
 
 volumes:
+  database_data:
   frontend_modules:
   frontend_next:

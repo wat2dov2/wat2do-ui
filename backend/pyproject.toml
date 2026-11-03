@@ -29,7 +29,6 @@ exclude = [
     "^scripts/",
     "^seeds/",
     "^services/",
-    "^supabase/",
     "^tests/",
     "^core/(auth|config|constants|database|error_handlers|rate_limit)\\.py$",
 ]

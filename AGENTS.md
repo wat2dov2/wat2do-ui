@@ -258,10 +258,12 @@ latency regardless of the configured sample count.
 
 ### Database schema and seed maintenance
 
-Treat `backend/supabase/seed.sql` as part of every database schema change.
+Migrations live in `backend/database/migrations` as `<14-digit version>_<lowercase_name>.sql`, dated after the newest migration on `origin/main`.
+`scripts/migrate-database.sh` applies them in version order and records each in `public.schema_migrations`; the deploy job runs it against production before the new code ships.
+Treat `backend/database/seed.sql` as part of every database schema change.
 Audit it and update it in the same change whenever tables, columns, constraints,
 or required relationships used by seeded data change.
-Verify the migration and seed together with `cd backend && supabase db reset`.
+Verify the migration and seed together with `make db-reset`.
 
 ### Python Dependencies
 

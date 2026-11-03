@@ -24,19 +24,24 @@ Waterloo, scraped directly from Instagram by capturing all student club events w
 
 ## Local development
 
-Install Docker Desktop (with Compose v2), the Supabase CLI, Python 3.11+, and Make.
+Install Docker Desktop (with Compose v2), Python 3.11+, and Make.
 Start Docker Desktop, then run from the repository root:
 
 ```bash
 make dev
 ```
 
-Supabase manages the database, authentication, and API gateway.
-The development Compose file builds and starts the frontend and backend with source mounts and automatic reload.
+The development Compose file runs PostgreSQL 17 (`database`, preloading `pg_cron` and `pg_stat_statements` as production does) and the PostgREST data API (`data-api`).
+It builds and starts the frontend and backend with source mounts and automatic reload.
 Node and backend Python dependencies are installed inside their containers.
 The first run downloads images and dependencies and can take several minutes.
-Pending local migrations and `backend/supabase/seed.sql` run before the apps start.
+Before the apps start, `scripts/migrate-database.sh` applies pending migrations from `backend/database/migrations`, and `backend/database/seed.sql` runs.
+An empty local database is built from `backend/database/baseline.sql`, the production schema that `scripts/dump-schema-baseline.sh` dumps.
+Until that file exists, a new local database cannot be built, because the oldest migrations still need Supabase's roles and extensions.
 Ordinary code reloads do not rerun migrations or seeds.
+The database listens on `127.0.0.1:55432` (`postgresql://postgres:postgres@127.0.0.1:55432/wat2do`) and the data API on `http://127.0.0.1:55433`.
+The data API, like production's, has no anonymous role: it refuses any request without a token signed with its development secret (`PGRST_JWT_SECRET` in `docker-compose.dev.yml`).
+The backend's token names `service_role`, which `backend/database/local-roles.sql` grants every table.
 
 Open `http://uwaterloo.wat2do.localhost:3000` or `http://ulaval.wat2do.localhost:3000`.
 Set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` for an IAM user allowed `ses:SendEmail` in the ignored `backend/.env` before starting.
@@ -44,21 +49,22 @@ Login codes and other app emails arrive in the recipient's real inbox through Am
 The default sender is `wat2do <notifications@wat2do.io>`; it must be a verified SES identity in `AWS_REGION`, or set `EMAIL_FROM` to your verified sender.
 While the SES account is in the sandbox, recipients must be verified SES identities too.
 Automated backend tests disable delivery and mock SES calls.
-The workflow derives database credentials from local Supabase and overrides production database settings in `backend/.env`.
+The development Compose file overrides the production database settings in `backend/.env`.
 Keep optional OpenAI and development storage credentials in that ignored file to test extraction and uploads.
 Do not put production storage credentials there.
 
 | Command | Behavior |
 | --- | --- |
-| `make dev` | Start infrastructure, migrate, seed, and start auto-reloading apps. |
+| `make dev` | Start the database, migrate, seed, then start the data API and auto-reloading apps. |
 | `make seed` | Rerun the single SQL seed against the running local database. |
-| `make stop` | Stop the app and Supabase containers, preserving data and dependency volumes. |
-| `make reset` | Require typing `RESET`, then erase and reseed the running local database. Apps remain stopped; run `make dev` afterward. |
+| `make stop` | Stop every local container, preserving data and dependency volumes. |
+| `make db-reset` | Require typing `RESET`, then drop and rebuild the local database from the baseline, migrations, and seed. Apps remain stopped; run `make dev` afterward. |
 
 Run `make dev` again after changing dependencies or environment settings.
 Use `docker compose -p wat2do-dev -f docker-compose.dev.yml logs -f` to inspect app logs.
 Stop manually started frontend/backend processes before switching to this workflow; ports 3000 and 8000 must be free.
-Never use `supabase stop --no-backup` or Compose `down -v` unless intentionally deleting local data.
+Never use Compose `down -v` unless intentionally deleting local data.
+Data in the earlier Supabase CLI stack does not carry over; remove its `supabase_*` containers and volumes once you no longer need it.
 The regular `docker-compose.yml` remains the production-style image configuration, not the local startup entry point.
 
 ## Repeatable local demo data
@@ -83,7 +89,7 @@ If switching from the old campus URLs, sign in once on the new campus URL.
 All campus subdomains share the refresh cookie, just as production uses `.wat2do.io` with secure cookies.
 Old `*.localhost` campus URLs do not share this cookie and should no longer be used.
 
-With local Supabase running, use the same seed entry point:
+With the local database running, use the same seed entry point:
 
 ```bash
 make seed
@@ -112,7 +118,7 @@ Their stored occurrence timezone is deliberately wrong (`America/Toronto`); Inst
 The old bug produced 8 PM and 1:30 AM the following day in September.
 Inspect the generated Instagram output, not the drawer's generic event cards, which use their own display formatting.
 The fake account cannot publish, and Picsum images are not accepted by the production slide renderer's storage allowlist; these fixtures support local data/payload checks without publishing.
-Supabase also runs this seed after `supabase db reset`, but that command deletes local data and is only for an intentional fresh start.
+`make db-reset` also runs this seed after rebuilding the database, but it deletes local data and is only for an intentional fresh start.
 
 ## Feature control boxes
 

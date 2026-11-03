@@ -16,7 +16,7 @@ alwaysApply: false
 - **Supabase** (Postgres + PostgREST) as the data layer. Accessed via
   the synchronous Python client from `core.database.get_sb()`.
 - **No ORM.** No SQLAlchemy, no Alembic. Schema lives in
-  `backend/supabase/migrations/*.sql` and is owned by the Supabase CLI.
+  `backend/database/migrations/*.sql`, applied by `scripts/migrate-database.sh`.
 - **Pydantic v2** for schemas (request/response validation + OpenAPI).
 
 ## Layout
@@ -30,7 +30,7 @@ backend/
   routers/     # HTTP endpoints — one file per resource, auto-discovered
   tests/       # Mirrors routers/ and services/
   jobs/ seeds/ scripts/   # Background tasks, data population, admin ops
-  supabase/    # Schema (migrations/*.sql + config.toml) — owned by Supabase CLI
+  database/    # Schema: migrations/*.sql, seed.sql, local-roles.sql (and baseline.sql once dumped)
 ```
 
 **No `models/` directory.** Data access goes through `get_sb()`, not an
@@ -38,7 +38,7 @@ ORM.
 
 ## Adding a new resource
 
-1. **Migration** — new file in `backend/supabase/migrations/`. Idempotent
+1. **Migration** - new file in `backend/database/migrations/`. Idempotent
    (`IF NOT EXISTS`, `pg_constraint` guards). **Always include**
    `ALTER TABLE <name> ENABLE ROW LEVEL SECURITY;` — forgetting this
    exposes the table to the anon role.
@@ -91,9 +91,9 @@ uvicorn main:app --reload          # dev server
 pytest -q                          # run tests
 ```
 
-Migrations (run from `backend/` — that's where both `.env` and `supabase/` live):
+Migrations: name a new file `backend/database/migrations/<yyyymmddhhmmss>_<lowercase_name>.sql`,
+dated after the newest one on `origin/main`, then check it with the seed locally:
 ```bash
-cd backend
-supabase migration new <name>
-supabase db push --db-url "$DATABASE_URL"
+make db-reset                                       # rebuild the local database
+DATABASE_URL=... bash scripts/migrate-database.sh   # apply pending migrations elsewhere
 ```

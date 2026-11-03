@@ -31,35 +31,32 @@ def workflow(monkeypatch):
                     }
                 )
             )
-        return SimpleNamespace(
-            stdout=json.dumps(
-                {
-                    "ANON_KEY": "local-anon",
-                    "SERVICE_ROLE_KEY": "local-service",
-                    "API_URL": "http://127.0.0.1:54321",
-                }
-            )
-        )
+        return SimpleNamespace(stdout="")
 
     monkeypatch.setattr(module, "run", run)
     monkeypatch.setattr(module.shutil, "which", lambda name: name)
     return module, calls
 
 
-def test_dev_uses_local_infrastructure_then_single_seed_then_apps(workflow, monkeypatch, capsys):
+def database_scripts(module, commands):
+    """The shell scripts run inside the database container, in order."""
+    prefix = [*module.COMPOSE, "exec", "-T", "database", "sh", "-c"]
+    return [command[-1] for command in commands if command[:-1] == prefix]
+
+
+def test_dev_starts_database_then_migrates_and_seeds_before_apps(workflow, monkeypatch):
     module, calls = workflow
     monkeypatch.setattr("sys.argv", ["dev.py", "dev"])
     module.main()
     commands = [command for command, _ in calls]
-    assert commands[2] == ["supabase", "start"]
-    assert commands[3] == ["supabase", "migration", "up", "--local"]
-    assert commands[4][:3] == ["docker", "exec", "-i"]
-    assert calls[4][1]["stdin"].name.endswith("supabase/seed.sql")
-    assert commands[-1][-4:] == ["up", "--build", "--detach", "--wait"]
-    assert calls[-1][1]["env"]["DEV_SUPABASE_SECRET_KEY"] == "local-service"
-    assert calls[-1][1]["env"]["DEV_SUPABASE_JWT_ISSUER"] == "http://127.0.0.1:54321/auth/v1"
-    assert "local-service" not in capsys.readouterr().out
-    assert not any("reset" in command for command in commands)
+    assert commands[2] == [*module.COMPOSE, "up", "--build", "--detach", "--wait", "database"]
+    scripts = database_scripts(module, commands)
+    assert len(scripts) == 3
+    assert scripts[0].endswith("-f /workspace/backend/database/local-roles.sql")
+    assert scripts[1].endswith("bash /workspace/scripts/migrate-database.sh")
+    assert scripts[2].endswith("-f /workspace/backend/database/seed.sql")
+    assert commands[-1] == [*module.COMPOSE, "up", "--build", "--detach", "--wait"]
+    assert not any("dropdb" in script for script in scripts)
 
 
 @pytest.mark.parametrize("key", [None, "", "   "])
@@ -87,30 +84,40 @@ def test_seed_does_not_start_or_reset_services(workflow, monkeypatch):
     module, calls = workflow
     monkeypatch.setattr("sys.argv", ["dev.py", "seed"])
     module.main()
-    assert len(calls) == 2
-    assert calls[-1][0][:3] == ["docker", "exec", "-i"]
+    commands = [command for command, _ in calls]
+    assert len(commands) == 2
+    assert database_scripts(module, commands) == [
+        f"{module.PSQL} -f /workspace/backend/database/seed.sql"
+    ]
 
 
 def test_stop_preserves_volumes(workflow, monkeypatch):
     module, calls = workflow
     monkeypatch.setattr("sys.argv", ["dev.py", "stop"])
     module.main()
-    assert calls[1][0] == [*module.COMPOSE, "down"]
-    assert calls[2][0] == ["supabase", "stop"]
+    assert [command for command, _ in calls[1:]] == [[*module.COMPOSE, "down"]]
 
 
-def test_reset_requires_explicit_confirmation(workflow, monkeypatch):
+def test_db_reset_requires_explicit_confirmation(workflow, monkeypatch):
     module, calls = workflow
-    monkeypatch.setattr("sys.argv", ["dev.py", "reset"])
+    monkeypatch.setattr("sys.argv", ["dev.py", "db-reset"])
     monkeypatch.setattr("builtins.input", lambda _: "no")
     with pytest.raises(SystemExit):
         module.main()
     assert len(calls) == 1
 
 
-def test_confirmed_reset_is_local_only(workflow, monkeypatch):
+def test_confirmed_db_reset_rebuilds_only_the_local_database(workflow, monkeypatch):
     module, calls = workflow
-    monkeypatch.setattr("sys.argv", ["dev.py", "reset"])
+    monkeypatch.setattr("sys.argv", ["dev.py", "db-reset"])
     monkeypatch.setattr("builtins.input", lambda _: "RESET")
     module.main()
-    assert calls[-1][0] == ["supabase", "db", "reset", "--local"]
+    commands = [command for command, _ in calls]
+    assert commands[1] == [*module.COMPOSE, "stop", "data-api", "backend", "frontend"]
+    assert commands[2] == [*module.COMPOSE, "up", "--build", "--detach", "--wait", "database"]
+    scripts = database_scripts(module, commands)
+    assert "dropdb" in scripts[0] and "--force" in scripts[0] and "createdb" in scripts[0]
+    assert scripts[1].endswith("local-roles.sql")
+    assert scripts[2].endswith("migrate-database.sh")
+    assert scripts[3].endswith("seed.sql")
+    assert len(commands) == 3 + len(scripts)

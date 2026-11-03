@@ -151,16 +151,13 @@ The highest-value next change is to consolidate the exact count, ordered page, e
 
 ## Repeat the local profile
 
-From `backend/`:
-
 1. Start Docker Desktop.
-2. Run `supabase start`.
-3. Run `supabase db reset` to replay migrations and load `supabase/seed.sql`.
-4. Create a local GoTrue user and matching administrator row in `public.users`.
-5. Start `main:app` with `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SECRET_KEY`, and `DATABASE_URL` sourced from `supabase status -o env`.
-6. Keep `OPENAI_API_KEY` empty and `EMAIL_DELIVERY_ENABLED` false for a read-only profiling run.
-7. Run `.venv/bin/python scripts/profile_production_api.py --base-url http://127.0.0.1:8000 --email <local-allowed-email>`.
-8. Stop the FastAPI process and run `supabase stop` when profiling is complete.
+2. From the repository root, run `make db-reset` to rebuild the local database and load `backend/database/seed.sql`, then `make dev` to start the data API.
+3. From `backend/`, create a local user and matching administrator row in `public.users`.
+4. Start `main:app` against the local data API and database described in README.md "Local development".
+5. Keep `OPENAI_API_KEY` empty and `EMAIL_DELIVERY_ENABLED` false for a read-only profiling run.
+6. Run `.venv/bin/python scripts/profile_production_api.py --base-url http://127.0.0.1:8000 --email <local-allowed-email>`.
+7. Stop the FastAPI process and run `make stop` when profiling is complete.
 
 Each profiler invocation creates a new UTC timestamped folder under `/tmp` containing `profile.json` and `latency-distributions.svg`.
 The production profiling runbook remains the source of truth for profiler flags, warm-ups, sampling, route safety, and artifact interpretation.

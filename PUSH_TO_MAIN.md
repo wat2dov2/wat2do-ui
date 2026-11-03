@@ -121,15 +121,18 @@ aws secretsmanager get-secret-value --region ca-central-1 \
   | python3 -c "import json,sys; print(json.load(sys.stdin)['SUPABASE_URL'])"
 ```
 
-Check what a push would apply before it runs:
+Check what a push would apply before it runs, with `DATABASE_URL` set to the production session-mode connection string (port 5432):
 
 ```bash
-(cd backend && supabase migration list --linked)
+bash scripts/migrate-database.sh --dry-run
 ```
 
+The dry run only reads, and lists the migration files the database has not recorded in `public.schema_migrations`.
+It fails, as the deploy would, when the database records a version that has no file or when a pending file is dated before the newest applied one.
+
 Schema must land **before** the code that reads it.
-The deploy job applies migrations automatically ahead of the ECS rollout, using the `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` secrets plus the `SUPABASE_PROJECT_REF` variable.
-When those are unset, a push that adds migration files fails the deploy rather than shipping code against a database that lacks the column.
+The deploy job applies migrations automatically ahead of the ECS rollout with `scripts/migrate-database.sh`, using the production environment's `DATABASE_URL` secret.
+When that secret is unset, a push that adds migration files fails the deploy rather than shipping code against a database that lacks the column.
 
 Prefer additive migrations (`ADD COLUMN ... DEFAULT`, new tables, new indexes).
 An additive migration is safe to apply while the previous build is still serving traffic, because unknown columns are ignored by the response models.

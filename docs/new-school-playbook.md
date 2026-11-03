@@ -228,7 +228,7 @@ At minimum, inspect the following current sources because their structure may ha
 - `backend/schemas/school.py`.
 - `backend/services/school_service.py`.
 - `backend/core/allowed_emails.py`.
-- `backend/supabase/seed.sql`.
+- `backend/database/seed.sql`.
 - `assets/school-logos/colors.json`.
 - `backend/controlbox/instagram_publishing.json`.
 - `backend/core/controlbox.py` and its tests.
@@ -245,7 +245,7 @@ Do not add a frontend school constant when the frontend already reads the school
 
 Do not add an alias, fallback mapping, or second credential configuration path.
 
-## 7. Phase C: Add the school through Supabase migrations
+## 7. Phase C: Add the school through database migrations
 
 Create one normal, reviewable migration for the new school and its related authoritative data.
 
@@ -270,7 +270,7 @@ Do not add a domain used only by faculty, staff, alumni, applicants, or the publ
 
 Use `schools.id` relationships and the migration style used by the latest school migrations.
 
-Audit `backend/supabase/seed.sql` as required by `AGENTS.md`.
+Audit `backend/database/seed.sql` as required by `AGENTS.md`.
 
 Update the seed only when the new migration or schema change creates a seeded-data dependency.
 
@@ -1107,10 +1107,10 @@ The controlbox and current Meta documentation take precedence over any stale API
 
 ### 19.1 Migration and database checks
 
-Run the local Supabase reset when migrations changed:
+Rebuild the local database when migrations changed:
 
 ```sh
-cd backend && supabase db reset
+make db-reset
 ```
 
 Confirm the new school, email domains, academic metadata, clubs, club types, and required relationships survive the reset or are produced through the documented post-reset import step.
@@ -1288,7 +1288,7 @@ The final handoff must contain no secrets and must include:
 
 ### Verification and handoff
 
-- [ ] `cd backend && supabase db reset` passed when migrations changed.
+- [ ] `make db-reset` passed when migrations changed.
 - [ ] Backend tests passed.
 - [ ] `cd frontend && npm run check` passed.
 - [ ] Browser-dependent checks were run only with explicit permission or handed to the human.
