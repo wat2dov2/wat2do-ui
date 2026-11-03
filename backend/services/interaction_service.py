@@ -154,9 +154,7 @@ def record_interactions_batch(
     # Best-effort: hash the IP when we have one and the secret is configured
     # (production does). Without it, degrade to no IP cap/forensics rather than
     # break interaction recording.
-    ip_hash = (
-        hash_client_ip(client_ip) if client_ip and settings.poster_hash_secret else None
-    )
+    ip_hash = hash_client_ip(client_ip) if client_ip and settings.poster_hash_secret else None
 
     # Drop anonymous interactions in ``_ANON_DISALLOWED_INTERACTION_TYPES`` (I18).
     if user_id is None:
