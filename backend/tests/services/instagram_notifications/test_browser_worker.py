@@ -1150,6 +1150,19 @@ def test_tab_maintenance_does_not_request_bootstrap_pages_during_cooldown(queue,
     assert not queue.get_setting("paused", False)
 
 
+def test_a_viewport_that_is_not_ready_defers_maintenance_without_pausing(queue, monkeypatch):
+    from services.instagram_notifications.browser_session import _BrowserPageUnavailable
+
+    def unavailable():
+        raise _BrowserPageUnavailable("Instagram browser viewport did not become ready")
+
+    monkeypatch.setattr(
+        module, "BrowserTabPool", lambda _: SimpleNamespace(ensure_capacity=unavailable)
+    )
+    assert maintain_tab_pool(queue) is False
+    assert not queue.get_setting("paused", False)
+
+
 def test_fresh_maintenance_429_uses_shared_cooldown_without_a_human_pause(queue, monkeypatch):
     def unavailable():
         raise BrowserRateLimited("Instagram browser is rate limited (HTTP 429)")

@@ -723,6 +723,10 @@ def maintain_tab_pool(queue: BrowserJobQueue) -> bool:
         except _BrowserTabUnavailable:
             # Someone closed or browsed away from a worker window mid-repair.
             log.warning("Tab maintenance deferred: a worker window changed during repair")
+        except _BrowserPageUnavailable as exc:
+            # A page that has not laid out yet (a hidden or busy window) settles by
+            # itself; pausing here left every school failing until a person resumed.
+            log.warning("Tab maintenance deferred: %s", exc)
         except BrowserSessionError as exc:
             queue.set_setting("paused", str(exc))
         except sqlite3.Error:
@@ -849,6 +853,10 @@ def _recover_worker_queue(queue: BrowserJobQueue) -> None:
             log.warning("Worker windows are missing; they are reopened before the next job")
         except _BrowserAutomationTransient:
             log.warning("Brave is unavailable; the worker waits for it")
+        except _BrowserPageUnavailable as exc:
+            log.warning(
+                "Worker tabs are not ready yet (%s); they are repaired before the next job", exc
+            )
         except BrowserSessionError as exc:
             queue.set_setting("paused", str(exc))
         queue.recover_interrupted()
