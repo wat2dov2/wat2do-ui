@@ -960,8 +960,10 @@ class IngestionControl(_ControlModel):
     fetch_impersonate: str = Field(pattern=r"^[a-z0-9_]+$")
     fetch_block_pause_seconds: int = Field(gt=0, le=86400)
     retry_backoff_seconds: int = Field(gt=0, le=86400)
-    realtime_reconnect_seconds: float = Field(gt=0, le=300)
-    realtime_probe_seconds: float = Field(ge=5, le=600)
+    # How long a lane waits to retry, and the queue listener to reconnect, after a database error.
+    database_retry_seconds: float = Field(gt=0, le=300)
+    # The queue listener notifies itself this often to prove its connection still delivers.
+    listener_probe_seconds: float = Field(ge=5, le=600)
     directory_agents: int = Field(ge=1, le=16)
     directory_items_per_run: int = Field(ge=1, le=200)
     directory_horizon_days: int = Field(ge=1, le=365)

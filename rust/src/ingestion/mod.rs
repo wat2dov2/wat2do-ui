@@ -1,14 +1,14 @@
-//! The always-on ingestion processor: Supabase's `ingestion_items` queue turned
-//! into events and positions by Claude Haiku agents.
+//! The always-on ingestion processor: the `ingestion_items` queue turned into
+//! events and positions by Claude Haiku agents.
 
 pub mod agent;
 pub mod changes;
 pub mod club_logos;
 pub mod fetch;
 pub mod items;
+pub mod notify;
 pub mod processor;
 pub mod prompt;
-pub mod realtime;
 pub mod stop;
 
 use std::path::PathBuf;

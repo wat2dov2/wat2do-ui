@@ -884,7 +884,7 @@ Do not provision a separate ECS jobs task definition, task role, or CloudWatch l
 
 Directory and Instagram ingestion share one Supabase queue, `public.ingestion_items`.
 A LaunchAgent on the Mac runs Claude Haiku directory agents over the official sources in `public.directory_sources` every 12 hours; they queue finished event details.
-Another, always-on LaunchAgent wakes through Supabase Realtime, fetches queued Instagram posts logged out, and runs Claude Haiku agents that write events and positions directly through a scoped database login.
+Another, always-on LaunchAgent wakes on Postgres notifications from the queue (`LISTEN ingestion_items`), fetches queued Instagram posts logged out, and runs Claude Haiku agents that write events and positions directly through a scoped database login.
 The computer must remain on and signed in to Claude Code.
 
 ### 18.3 Notification dispatcher

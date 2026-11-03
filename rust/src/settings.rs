@@ -8,8 +8,6 @@ use anyhow::{Context, Result};
 
 pub struct Settings {
     pub database_url: String,
-    pub supabase_url: String,
-    pub supabase_secret_key: String,
     pub ingest_agent_database_url: String,
     pub aws_region: String,
     pub storage_bucket_name: String,
@@ -35,8 +33,6 @@ impl Settings {
         let _ = dotenvy::dotenv();
         Ok(Self {
             database_url: required("DATABASE_URL")?,
-            supabase_url: required("SUPABASE_URL")?,
-            supabase_secret_key: required("SUPABASE_SECRET_KEY")?,
             ingest_agent_database_url: optional("INGEST_AGENT_DATABASE_URL"),
             aws_region: Some(optional("AWS_REGION"))
                 .filter(|region| !region.is_empty())

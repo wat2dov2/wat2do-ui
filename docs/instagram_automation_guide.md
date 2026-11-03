@@ -4,7 +4,7 @@ The active collection path uses Instagram notifications on a physical Android ph
 Automate triggers the GitHub `process-notification` workflow, which records each exact post URL in the Supabase notification ledger.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
 A database trigger adds each recorded post to `public.ingestion_items`, the Supabase ingestion queue.
-An always-on launchd processor on the Mac, `backend/scripts/ingest.py process`, wakes through Supabase Realtime, reads each new post logged out (no account, cookie or session ID), and then runs a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
+An always-on launchd processor on the Mac, `backend/scripts/ingest.py process`, wakes on a Postgres notification from the queue, reads each new post logged out (no account, cookie or session ID), and then runs a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
 The Brave worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
 Digest expansion, manual profile listing, and engagement share two worker-owned tabs in one registered Brave window, with credentials remaining inside the browser.
 Brave never opens individual posts for ingestion.
@@ -196,7 +196,7 @@ Profile listings respect the same exclusions.
 
 The notification workflow records exact post URLs in the production notification ledger.
 A database trigger adds each post to `public.ingestion_items` with status `fetch`, keyed by its `https://www.instagram.com/p/<shortcode>/` URL, and marks the ledger row succeeded; the ledger is the notification's receipt.
-The Mac's processor receives every new or changed row through Supabase Realtime, and catches up on everything waiting whenever it starts or reconnects.
+A trigger on the queue sends a Postgres notification for every new or changed row, and the Mac's processor listens for them (`LISTEN ingestion_items`); it catches up on everything waiting whenever it starts or reconnects.
 Its fetch lanes (`fetch_lanes` in `backend/controlbox/ingestion.json`) read each post's public page logged out with a browser-like TLS fingerprint and no cookies, then write the caption, owner, post time, coauthors, tagged users and media links onto the row and mark it `ready`.
 A page with no post is read once more and then marked `gone`, which is how deleted posts are ignored.
 A login wall, HTTP 429 or server error pauses every fetch lane for `fetch_block_pause_seconds` without consuming the row's attempts.

@@ -158,7 +158,7 @@ Once production exists, pushes to `main` use GitHub OIDC to build all three imag
 Event and position ingestion runs through one Supabase table, `public.ingestion_items`, with one row per Instagram post or directory page (`backend/scripts/ingest.py`).
 Instagram notifications come from a physical Android phone running Automate, which triggers the `process-notification` workflow.
 The workflow records exact post URLs in the Supabase notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker, and a database trigger adds each post to `ingestion_items`.
-An always-on processor on the Mac wakes through Supabase Realtime whenever a row is added or becomes ready.
+An always-on processor on the Mac listens for the Postgres notification (`LISTEN ingestion_items`) that a trigger on the queue sends whenever a row is added or changes, and wakes at once.
 Its fetcher reads each new post logged out, with no account or cookies (`backend/services/ingestion/instagram_fetch.py`), and marks the row ready; a deleted post is marked gone.
 Every 12 hours Claude Haiku directory agents read the official school directories listed in `public.directory_sources`, skip what is already handled or listed, and add finished event details as ready rows (`backend/services/ingestion/directory_prompt.md`).
 For each ready row the processor runs a Claude Haiku agent (`claude -p`) that follows `backend/services/ingestion/prompt.md`, up to `parallel_agents` at once (`backend/controlbox/ingestion.json`); posts from one club never run at the same time.

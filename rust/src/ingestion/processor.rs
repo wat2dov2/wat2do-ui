@@ -3,8 +3,8 @@
 //! `fetch_lanes` tasks fill in notified Instagram posts with the logged-out
 //! fetcher; `parallel_agents` tasks each run one Haiku agent on the next ready
 //! row; one more lane reads, logged out, the Instagram profile of each club that
-//! still needs a logo or a real name. Supabase Realtime wakes them as soon as a
-//! row is added or changes; with nothing waiting they sleep.
+//! still needs a logo or a real name. A Postgres notification wakes them as soon
+//! as a row is added or changes; with nothing waiting they sleep.
 
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
@@ -23,7 +23,7 @@ use super::club_logos::{ClubLogos, is_blocked};
 use super::fetch::{FetchBlocked, fetch_post};
 use super::items::{self, Item, Stage};
 use super::stop::Stop;
-use super::{agent, changes, realtime, state_directory};
+use super::{agent, changes, notify, state_directory};
 use crate::claude::remove_leftovers;
 use crate::controlbox::INGESTION;
 
@@ -92,12 +92,10 @@ impl Processor {
                 Ok(true) => continue,
                 Ok(false) => {}
                 Err(error) => {
-                    // Supabase or network trouble: wait, then carry on with the next row.
+                    // Database or network trouble: wait, then carry on with the next row.
                     tracing::warn!("Ingestion queue unavailable ({error:#})");
                     self.stopping
-                        .sleep(Duration::from_secs_f64(
-                            INGESTION.realtime_reconnect_seconds,
-                        ))
+                        .sleep(Duration::from_secs_f64(INGESTION.database_retry_seconds))
                         .await;
                     continue;
                 }
@@ -336,7 +334,7 @@ pub async fn process_queue(
         let listener = Arc::clone(&processor);
         tokio::spawn(async move {
             let waker = Arc::clone(&listener);
-            realtime::listen_for_changes(
+            notify::listen_for_changes(
                 "ingestion_items",
                 move || waker.wake.notify(),
                 listener.stopping.clone(),
