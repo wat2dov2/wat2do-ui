@@ -41,27 +41,35 @@ def email_shell(
     content: str,
     footer_links: list[tuple[str, str]] | None = None,
 ) -> str:
-    """Logo, heading, content, and footer on the light card. Send with ``EMAIL_LOGO`` inline."""
+    """Heading, content, and a footer signed with a small logo on the light card. Send with ``EMAIL_LOGO`` inline."""
     links = " &middot; ".join(
         f'<a style="color:{EMAIL_THEME["foreground"]};" href="{escape(url, quote=True)}">'
         f"{escape(label)}</a>"
         for label, url in footer_links or []
+    )
+    footer_links_html = (
+        f'<p style="margin:24px 0 0;color:{EMAIL_THEME["muted_foreground"]};'
+        f'font:12px/1.6 {EMAIL_FONT};">{links}</p>'
+        if links
+        else ""
     )
     return (
         f"{_EMAIL_FONT_IMPORT}"
         f'<div style="margin:0;background:{EMAIL_THEME["background"]};padding:28px 16px;">'
         f'<div style="max-width:640px;margin:0 auto;background:{EMAIL_THEME["surface"]};'
         f'border:1px solid {EMAIL_THEME["border"]};border-radius:16px;padding:24px;">'
-        f'<img src="cid:{EMAIL_LOGO.content_id}" alt="wat2do" width="80" height="57" '
-        'style="display:block;margin:0 0 16px;border:0;">'
         f'<h1 style="margin:0 0 24px;color:{EMAIL_THEME["foreground"]};'
         f'font:800 28px {EMAIL_FONT};">{escape(heading)}</h1>'
         f"{content}"
-        f'<p style="margin:24px 0 0;color:{EMAIL_THEME["muted_foreground"]};'
-        f'font:12px/1.6 {EMAIL_FONT};">'
-        f"{links + '<br>' if links else ''}"
-        "wat2do helps students discover campus events."
-        "</p></div></div>"
+        f"{footer_links_html}"
+        '<table role="presentation" cellpadding="0" cellspacing="0" '
+        f'style="border-collapse:collapse;margin:{"8px" if links else "24px"} 0 0;"><tr>'
+        '<td width="24" valign="middle" style="width:24px;padding:0 6px 0 0;">'
+        f'<img src="cid:{EMAIL_LOGO.content_id}" alt="wat2do" width="24" height="17" '
+        'style="display:block;width:24px;height:17px;border:0;"></td>'
+        f'<td valign="middle" style="color:{EMAIL_THEME["muted_foreground"]};'
+        f'font:12px/1.6 {EMAIL_FONT};">wat2do helps students discover campus events.</td>'
+        "</tr></table></div></div>"
     )
 
 
