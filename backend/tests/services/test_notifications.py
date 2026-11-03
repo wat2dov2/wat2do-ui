@@ -204,15 +204,16 @@ def test_morning_html_escapes_event_values():
     assert "New positions" not in html
 
 
-def test_morning_html_lays_cards_out_two_per_row():
+def test_morning_html_lays_cards_out_two_per_row_and_stacks_them_on_phones():
     html = _morning_html(
         [_event(id=event_id, image_src=None) for event_id in (1, 2, 3)],
         [_position()],
     )
 
     events_table, positions_table = html.split("New positions")
-    assert events_table.count("<tr>") == 2
-    assert events_table.count('width="50%"') == 4
+    card = "display:inline-block;box-sizing:border-box;width:100%;max-width:318px;"
+    assert events_table.count(card) == 3
+    assert positions_table.count(card) == 1
     assert "Tea Tasting" in events_table
     assert 'src="cid:position-7"' in positions_table
     assert "Apply by Thu, May 7" in positions_table
