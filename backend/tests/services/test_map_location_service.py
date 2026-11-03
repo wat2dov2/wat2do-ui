@@ -439,3 +439,15 @@ def test_look_up_next_uses_the_school_known_places(fake_sb, searched, monkeypatc
 
     assert fake_sb.update.call_args.args[0]["coordinates"] == [-80.54204, 43.4725]
     assert asked == []
+
+
+@pytest.mark.parametrize("map_location", ["", " , ", ",,"])
+def test_a_location_with_no_names_is_not_searched(map_location):
+    searched = []
+
+    coordinates = map_location_service.locate(
+        map_location, WATERLOO, lambda query: searched.append(query) or [], {}
+    )
+
+    assert coordinates is None
+    assert searched == []

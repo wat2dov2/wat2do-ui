@@ -229,6 +229,9 @@ def _queries(
     map_location: str, center: tuple[float, float]
 ) -> list[tuple[str, Callable[[dict], bool]]]:
     parts = [part.strip() for part in map_location.split(",") if part.strip()]
+    if not parts:
+        # Only commas or blanks: nothing to search for.
+        return []
     street = next((index for index, part in enumerate(parts) if _STREET_NUMBER.match(part)), None)
     on_campus = any(_CAMPUS.search(part) for part in parts)
     locality = [
