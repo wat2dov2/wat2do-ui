@@ -2,11 +2,6 @@ locals {
   database_port = 5432
 }
 
-resource "random_password" "database_master" {
-  length  = 48
-  special = false
-}
-
 resource "aws_db_subnet_group" "main" {
   name       = local.name_prefix
   subnet_ids = [for subnet in aws_subnet.public : subnet.id]
@@ -38,9 +33,8 @@ resource "aws_db_parameter_group" "main" {
 resource "aws_db_instance" "main" {
   identifier = local.name_prefix
   engine     = "postgres"
-  # Automatic minor upgrades can move the instance past this version. When a
-  # plan proposes a downgrade, set this to the version the instance now runs.
-  engine_version = "17.11"
+  # Major version only, so automatic minor upgrades never show up as drift.
+  engine_version = "17"
   instance_class = "db.t4g.medium"
 
   allocated_storage     = 20
@@ -48,9 +42,12 @@ resource "aws_db_instance" "main" {
   storage_type          = "gp3"
   storage_encrypted     = true
 
-  username = "wat2do_admin"
-  password = random_password.database_master.result
-  port     = local.database_port
+  # RDS keeps the master password in its own Secrets Manager secret, so it never
+  # lands in Terraform state. It is only for administration; the backend, the
+  # data API and the ingestion agent log in as their own roles.
+  username                    = "wat2do_admin"
+  manage_master_user_password = true
+  port                        = local.database_port
 
   db_subnet_group_name   = aws_db_subnet_group.main.name
   parameter_group_name   = aws_db_parameter_group.main.name

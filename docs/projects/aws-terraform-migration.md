@@ -49,8 +49,11 @@ There is no staging environment, canary deployment, blue-green deployment, paral
 - Use ACM for TLS certificates.
 - Use Secrets Manager for runtime secret values.
 - Do not store secret values in Terraform state.
+  The one exception is the event change alerts bearer key, which an EventBridge connection can only be given in plain form; it is a sensitive variable.
+  The RDS master password stays out of state because RDS manages it in its own Secrets Manager secret.
 - Use CloudWatch for application logs and basic service alarms.
 - Keep all scheduled and triggered application jobs on GitHub-hosted runners.
+  The per-minute event change alerts call is the exception: GitHub cron cannot run every minute, so an EventBridge rule calls the webhook.
 - Delete the nightly redeployment workflow.
 - Delete Railway and Vercel deployment logic when AWS production is working.
 - Do not retain compatibility branches that deploy the same application to multiple providers.

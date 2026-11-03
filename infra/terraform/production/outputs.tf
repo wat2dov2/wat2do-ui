@@ -54,9 +54,9 @@ output "database_master_username" {
   value = aws_db_instance.main.username
 }
 
-output "database_master_password" {
-  value     = random_password.database_master.result
-  sensitive = true
+output "database_master_secret_arn" {
+  description = "Secrets Manager secret RDS keeps the master password in."
+  value       = aws_db_instance.main.master_user_secret[0].secret_arn
 }
 
 output "data_api_url" {
