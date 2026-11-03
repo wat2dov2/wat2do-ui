@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
-# Writes backend/database/baseline.sql, the schema scripts/migrate-database.sh
-# builds an empty database from, by dumping DATABASE_URL.
+# Writes backend/database/baseline.sql, the schema (plus the schools, email
+# domains and site banner rows) scripts/migrate-database.sh builds an empty
+# database from, by dumping DATABASE_URL.
 #
 # The database's public.schema_migrations must record exactly the files in
 # backend/database/migrations, so the baseline holds every migration up to the
@@ -90,6 +91,12 @@ trap 'rm -f "$temporary"' EXIT
   pg_dump --dbname="$database_url" --schema-only --no-owner --no-privileges \
     --no-publications --no-subscriptions --no-security-labels --no-tablespaces \
     --exclude-table=public.schema_migrations \
+    --restrict-key="baseline$baseline_version"
+  echo
+  echo "-- Reference rows every environment starts from: the schools, their email"
+  echo "-- domains and the site banner. All other data comes from use or seed.sql."
+  pg_dump --dbname="$database_url" --data-only --no-owner --no-privileges \
+    --table=public.schools --table=public.school_email_domains --table=public.site_banner \
     --restrict-key="baseline$baseline_version"
 } >"$temporary"
 mv "$temporary" "$baseline"
