@@ -757,5 +757,12 @@
     "copyright": "© {{year}} Wat2Do",
     "madeBy": "Gawa ng mga estudyante, para sa mga estudyante.",
     "social": "Social"
+  },
+  "notFound": {
+    "eyebrow": "Hindi nahanap ang page",
+    "title": "Hindi umiiral ang page na ito.",
+    "description": "Maaaring sira ang link o nailipat na ang page. Bumalik at maghanap ng puwedeng gawin.",
+    "browseEvents": "Tingnan ang mga event",
+    "browseClubs": "Tingnan ang mga club"
   }
 }

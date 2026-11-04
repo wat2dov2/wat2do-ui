@@ -748,5 +748,12 @@
     "copyright": "© {{year}} Wat2Do",
     "madeBy": "學生整，為學生而整。",
     "social": "社交平台"
+  },
+  "notFound": {
+    "eyebrow": "搵唔到頁面",
+    "title": "呢個頁面唔存在。",
+    "description": "條連結可能壞咗，或者頁面已經搬咗。返去搵啲嘢做啦。",
+    "browseEvents": "睇活動",
+    "browseClubs": "睇學會"
   }
 }

@@ -748,5 +748,12 @@
     "copyright": "© {{year}} Wat2Do",
     "madeBy": "Do sinh viên làm, dành cho sinh viên.",
     "social": "Mạng xã hội"
+  },
+  "notFound": {
+    "eyebrow": "Không tìm thấy trang",
+    "title": "Trang này không tồn tại.",
+    "description": "Liên kết có thể bị hỏng hoặc trang đã được di chuyển. Hãy quay lại và tìm việc gì đó để làm.",
+    "browseEvents": "Xem sự kiện",
+    "browseClubs": "Xem câu lạc bộ"
   }
 }
