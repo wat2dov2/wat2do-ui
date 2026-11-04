@@ -6,17 +6,18 @@ response models as the ``occurrences`` list.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from postgrest.exceptions import APIError
 
 from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
+from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import CLUB_NOT_FOUND, EVENT_ALREADY_PAST
 from core.exceptions import NotFoundError, ValidationError
 from core.pagination import LATEST_ADDED_COLUMNS, LatestAddedItem
-from core.tables import EVENTS
+from core.tables import EVENT_DATES, EVENTS
 from schemas.event import (
     EventCreate,
     EventResponse,
@@ -111,8 +112,25 @@ def normalize_campus_season_ids(
 
 
 def get_latest_added_event(school: str | None = None) -> LatestAddedItem | None:
-    """Return the most recently added event (by added_at desc), or None if no events."""
-    q = get_sb().table(EVENTS).select(LATEST_ADDED_COLUMNS)
+    """Return the most recently added event that has not ended, or None.
+
+    Selecting it searches the feed, which hides ended events, so an event added
+    after it finished would lead to an empty search.
+    """
+    now = datetime.now(timezone.utc)
+    without_end_since = now - timedelta(
+        minutes=controlbox.event_discovery.event_without_end_visibility_minutes
+    )
+    q = (
+        get_sb()
+        .table(EVENTS)
+        .select(f"{LATEST_ADDED_COLUMNS},{EVENT_DATES}!inner(dtstart_utc)")
+        .or_(
+            f'dtend_utc.gte."{now.isoformat()}",'
+            f'and(dtend_utc.is.null,dtstart_utc.gte."{without_end_since.isoformat()}")',
+            reference_table=EVENT_DATES,
+        )
+    )
     if school:
         school_id = school_service.get_school_id(school)
         if school_id is None:

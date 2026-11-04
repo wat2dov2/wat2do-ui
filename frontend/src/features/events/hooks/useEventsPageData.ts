@@ -11,7 +11,11 @@ import { resolveSchool } from "@/shared/constants/schools";
 import { getUniqueEvents } from "@/shared/utils/event";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
 import i18n from "@/shared/lib/i18n";
-import { eventFeedQueryOptions, type PaginatedEventsResponse } from "@/features/events/api/events.api";
+import {
+  eventFeedQueryOptions,
+  latestVisibleAddedEvent,
+  type PaginatedEventsResponse,
+} from "@/features/events/api/events.api";
 
 interface UseEventsPageDataOptions {
   /** The server's browse snapshot, or null when that fetch failed. */
@@ -35,7 +39,6 @@ export function useEventsPageData({
     initialDataUpdatedAt: initialSnapshot?.generated_at,
   });
   const events = useMemo(() => query.data?.items ?? [], [query.data]);
-  const latestAddedEvent = query.data?.latest_added_event ?? null;
   const isLoading = query.isLoading;
   const error = query.isLoadingError ? i18n.t("events.loadFailed") : null;
   const { data: goingSelections = [], isSuccess: goingEventsReady } = useGoingEvents();
@@ -55,6 +58,10 @@ export function useEventsPageData({
             hasActiveEventOccurrence(event, currentTimeMs),
           ),
     [currentTimeMs, events],
+  );
+  const latestAddedEvent = useMemo(
+    () => latestVisibleAddedEvent(query.data?.latest_added_event ?? null, events, visibleEvents),
+    [events, query.data, visibleEvents],
   );
 
   const filters = useSearch({

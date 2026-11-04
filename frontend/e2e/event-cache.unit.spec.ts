@@ -12,7 +12,7 @@ import clientCache from "../../backend/controlbox/client_cache.json" with { type
 
 const require = createRequire(import.meta.url);
 const { getQueryClient }: typeof import("../src/shared/lib/queryClient") = require("../src/shared/lib/queryClient");
-const { eventFeedQueryOptions, createEventAPI, updateEventAPI, deleteEventAPI }: typeof import("../src/features/events/api/events.api") = require("../src/features/events/api/events.api");
+const { eventFeedQueryOptions, createEventAPI, updateEventAPI, deleteEventAPI, latestVisibleAddedEvent }: typeof import("../src/features/events/api/events.api") = require("../src/features/events/api/events.api");
 require("../src/shared/services/discoveryCache.server");
 const discoveryModule = require.cache[require.resolve("../src/shared/services/discoveryCache.server")]!;
 const discovery = discoveryModule.exports;
@@ -133,6 +133,22 @@ for (const transition of ["explicit logout", "rejected session", "cross-tab logo
     expect(listeners.size).toBe(0);
   });
 }
+
+test("the latest added banner moves to the newest visible event once its event ends", () => {
+  const feedEvent = (id: number, title: string, added_at: string) =>
+    ({ id, title, added_at, club: `Club ${id}`, club_logo_url: `https://cdn.example/${id}.png` }) as unknown as Event;
+  const ended = feedEvent(1, "Important Investing Ratios", "2026-11-03T23:04:58Z");
+  const older = feedEvent(2, "Pilates Night", "2026-11-03T23:03:14Z");
+  const newer = feedEvent(3, "Bake Sale", "2026-11-03T23:04:02Z");
+  const latest = { title: ended.title, added_at: ended.added_at, club_name: "Club 1", club_logo_url: null };
+
+  expect(latestVisibleAddedEvent(latest, [ended, older, newer], [ended, older, newer])).toBe(latest);
+  expect(latestVisibleAddedEvent(latest, [ended, older, newer], [older, newer])).toEqual({
+    title: "Bake Sale", added_at: newer.added_at, club_name: "Club 3", club_logo_url: "https://cdn.example/3.png",
+  });
+  expect(latestVisibleAddedEvent(latest, [ended], [])).toBeNull();
+  expect(latestVisibleAddedEvent(latest, [older], [older])).toBe(latest);
+});
 
 test("school feed reads one complete canonical snapshot with all results and freshness metadata", async () => {
   const urls: URL[] = [];

@@ -1117,8 +1117,30 @@ def test_get_latest_added_event_filters_by_school(fake_sb, patch_sb, monkeypatch
     assert latest.title == "MIT Men's Soccer"
     assert latest.club_name == "MIT Athletics"
     assert latest.club_logo_url == "https://cdn.example/mit.png"
-    fake_sb.select.assert_called_once_with("title,added_at,clubs(club_name,logo_url)")
+    fake_sb.select.assert_called_once_with(
+        "title,added_at,clubs(club_name,logo_url),event_dates!inner(dtstart_utc)"
+    )
     fake_sb.eq.assert_any_call("school_id", 99)
+
+
+def test_get_latest_added_event_skips_ended_events(fake_sb, patch_sb, monkeypatch):
+    """Selecting the latest event searches a feed that hides ended events."""
+
+    class FrozenDatetime:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 11, 4, 0, 30, tzinfo=tz)
+
+    monkeypatch.setattr(event_service, "datetime", FrozenDatetime)
+    patch_sb("services.event_service")
+    fake_sb.set_response(data=[])
+
+    assert event_service.get_latest_added_event() is None
+    fake_sb.or_.assert_called_once_with(
+        'dtend_utc.gte."2026-11-04T00:30:00+00:00",'
+        'and(dtend_utc.is.null,dtstart_utc.gte."2026-11-03T23:30:00+00:00")',
+        reference_table="event_dates",
+    )
 
 
 def _occ_response(dtstart, dtend=None, occ_id=1, event_id=42):

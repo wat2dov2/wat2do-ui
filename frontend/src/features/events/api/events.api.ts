@@ -171,7 +171,7 @@ function mergeEventIntoFeed(
   let latest = feed.latest_added_event;
   if (isLatestEvent(latest, existing)) latest = null;
   if (belongsToSchool && (!latest || Date.parse(event.added_at) >= Date.parse(latest.added_at))) {
-    latest = { title: event.title, added_at: event.added_at, club_name: event.club, club_logo_url: event.club_logo_url };
+    latest = latestAddedFrom(event);
   }
   return withFeedItems(feed, items, latest, Math.max(confirmedAt, feed.confirmed_at ?? 0));
 }
@@ -186,6 +186,28 @@ function mergeEventSummary(existing: Event | undefined, event: Event): Event {
 
 function isLatestEvent(latest: LatestAddedEvent, event: Event | undefined): boolean {
   return Boolean(latest && event && latest.added_at === event.added_at && latest.title === event.title);
+}
+
+function latestAddedFrom(event: Event): NonNullable<LatestAddedEvent> {
+  return { title: event.title, added_at: event.added_at, club_name: event.club, club_logo_url: event.club_logo_url };
+}
+
+/**
+ * The feed's latest added event, or the newest visible event once it has ended.
+ * Selecting it searches the visible events, so an ended one would find nothing.
+ */
+export function latestVisibleAddedEvent(
+  latest: LatestAddedEvent,
+  events: Event[],
+  visibleEvents: Event[],
+): LatestAddedEvent {
+  const isFeedEvent = events.some(event => isLatestEvent(latest, event));
+  if (!isFeedEvent || visibleEvents.some(event => isLatestEvent(latest, event))) return latest;
+  const newest = visibleEvents.reduce<Event | null>(
+    (found, event) => (!found || Date.parse(event.added_at) > Date.parse(found.added_at) ? event : found),
+    null,
+  );
+  return newest && latestAddedFrom(newest);
 }
 
 function withFeedItems(
