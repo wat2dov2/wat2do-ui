@@ -10,11 +10,14 @@ pub mod controlbox;
 pub mod db;
 pub mod images;
 pub mod ingestion;
+pub mod launch_agents;
+pub mod pyjson;
 pub mod revalidation;
 pub mod schools;
 pub mod settings;
 pub mod storage;
 pub mod text;
+pub mod urls;
 
 /// Choose rustls' crypto provider once per process. Two are compiled in (ring
 /// for Postgres, aws-lc for the AWS SDK), so rustls cannot pick one itself and

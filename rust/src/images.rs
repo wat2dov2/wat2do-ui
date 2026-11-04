@@ -22,6 +22,10 @@ const ALLOWED_HOST_SUFFIXES: [&str; 2] = [".cdninstagram.com", ".fbcdn.net"];
 
 fn client() -> Result<wreq::Client> {
     Ok(wreq::Client::builder()
+        // Compressed responses are decoded only where asked for (page_image).
+        .gzip(false)
+        .deflate(false)
+        .brotli(false)
         .user_agent(USER_AGENT)
         .redirect(wreq::redirect::Policy::none())
         .build()?)
@@ -83,8 +87,13 @@ pub async fn is_safe_url(url: &str, allow_all_domains: bool) -> bool {
     {
         return false;
     }
-    // A DNS failure is unsafe, so a transient resolution error never opens a fetch.
-    let Ok(addresses) = tokio::net::lookup_host((host.trim_matches(['[', ']']), 443)).await else {
+    resolves_publicly(&host, 443).await
+}
+
+/// Every address `host` resolves to is public; a DNS failure counts as not public,
+/// so a transient resolution error never opens a fetch.
+pub async fn resolves_publicly(host: &str, port: u16) -> bool {
+    let Ok(addresses) = tokio::net::lookup_host((host.trim_matches(['[', ']']), port)).await else {
         return false;
     };
     let addresses: Vec<_> = addresses.collect();

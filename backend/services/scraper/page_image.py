@@ -4,6 +4,9 @@ Directory pages state their event image in an Open Graph or Twitter meta tag or
 in JSON-LD, which the Haiku directory agent cannot see through WebFetch's
 Markdown. Reading it here, deterministically, is why directory events get a
 poster at all; without it they fall back to the directory club's logo.
+
+The directory agents read posters in Rust (``rust/src/ingestion/page_image.rs``);
+this copy serves only ``scripts/backfill_directory_event_images.py``.
 """
 
 from __future__ import annotations

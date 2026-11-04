@@ -4,7 +4,7 @@ The active collection path uses Instagram notifications on a physical Android ph
 Automate triggers the GitHub `process-notification` workflow, which records each exact post URL in the notification ledger.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
 A database trigger adds each recorded post to `public.ingestion_items`, the ingestion queue.
-An always-on launchd processor on the Mac, `backend/scripts/ingest.py process`, wakes on a Postgres notification from the queue, reads each new post logged out (no account, cookie or session ID), and then runs a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
+An always-on launchd processor on the Mac, `wat2do-ingest process` (Rust, `rust/src/ingestion`), wakes on a Postgres notification from the queue, reads each new post logged out (no account, cookie or session ID), and then runs a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
 The Brave worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
 Digest expansion, manual profile listing, and engagement share two worker-owned tabs in one registered Brave window, with credentials remaining inside the browser.
 Brave never opens individual posts for ingestion.
@@ -206,8 +206,8 @@ Queue a post by hand:
 
 ```sh
 cd backend
-python scripts/ingest.py enqueue --school utsc --url https://www.instagram.com/p/SHORTCODE/
-python scripts/ingest.py status
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-ingest -- enqueue --school utsc --url https://www.instagram.com/p/SHORTCODE/
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-ingest -- status
 ```
 
 `scripts/instagram_browser.py retrieve --school <slug> --url <url>` accepts the same post URLs, and also a profile.

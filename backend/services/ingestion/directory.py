@@ -1,8 +1,8 @@
 """Official school event directories and the clubs that publish them.
 
-Sources live in ``public.directory_sources``. Directory agents
-(``directory_agent``) read each source's listing; this module only describes
-the sources.
+Sources live in ``public.directory_sources``. The Rust directory agents
+(``rust/src/ingestion/directories.rs``) read each source's listing; this module
+only describes the sources.
 """
 
 from __future__ import annotations

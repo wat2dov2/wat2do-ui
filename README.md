@@ -162,17 +162,18 @@ Before switching registrar nameservers, inventory every current Vercel DNS recor
 
 The first ARM64 frontend and backend images, plus the x86-64 social-preview image, must be pushed to ECR by digest before the initial production apply.
 Once production exists, pushes to `main` use GitHub OIDC to build all three images, tag them with the full commit SHA, update the ECS task definition, and update the Lambda image.
-Event and position ingestion runs through one database table, `public.ingestion_items`, with one row per Instagram post or directory page (`backend/scripts/ingest.py`).
+Event and position ingestion runs through one database table, `public.ingestion_items`, with one row per Instagram post or directory page, run by the Rust binary `wat2do-ingest` (`rust/src/ingestion`).
 Instagram notifications come from a physical Android phone running Automate, which triggers the `process-notification` workflow.
 The workflow records exact post URLs in the notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker, and a database trigger adds each post to `ingestion_items`.
 An always-on processor on the Mac listens for the Postgres notification (`LISTEN ingestion_items`) that a trigger on the queue sends whenever a row is added or changes, and wakes at once.
-Its fetcher reads each new post logged out, with no account or cookies (`backend/services/ingestion/instagram_fetch.py`), and marks the row ready; a deleted post is marked gone.
-Every 12 hours Claude Haiku directory agents read the official school directories listed in `public.directory_sources`, skip what is already handled or listed, and add finished event details as ready rows (`backend/services/ingestion/directory_prompt.md`).
+Its fetcher reads each new post logged out, with no account or cookies (`rust/src/ingestion/fetch.rs`), and marks the row ready; a deleted post is marked gone.
+Every 12 hours Claude Haiku directory agents (`wat2do-ingest scrape-directories`) read the official school directories listed in `public.directory_sources`, skip what is already handled or listed, and add finished event details as ready rows (`backend/services/ingestion/directory_prompt.md`).
 For each ready row the processor runs a Claude Haiku agent (`claude -p`) that follows `backend/services/ingestion/prompt.md`, up to `parallel_agents` at once (`backend/controlbox/ingestion.json`); posts from one club never run at the same time.
 The agent inserts, updates, cancels or reschedules events and positions itself through `psql` with the `wat2do_ingest_agent` login, which can only write events, event dates and positions.
 Set its connection string as `INGEST_AGENT_DATABASE_URL` in `backend/.env`; the role is created by migration and its password is set out of band.
 Finished rows stay as `done` or `not_event`, so no URL is processed twice, and the Mac keeps no queue of its own.
-Install both LaunchAgents with `cd backend && .venv/bin/python scripts/ingest.py install-schedule`; the Mac must be on and signed in to Claude Code.
+Install both LaunchAgents with `cd backend && cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-ingest -- install-schedule`; the Mac must be on and signed in to Claude Code.
+The processor logs to `~/.local/state/wat2do/ingestion/process.stderr.log` and the directory scrape to `directories.log` beside it.
 Every 6 hours a Claude Haiku agent per competitor (Eventbrite, Meetup, Fable Social) searches the public web for complaints with only WebSearch and WebFetch (`backend/services/competitor_pain_points/prompt.md`).
 X shows nothing logged out, so before the agents run the sweep reads X's Latest search results in its own Safari window, using an X login a person made in Safari, and hands those posts to each agent (`x_browser.py`); Safari needs Develop > Allow JavaScript from Apple Events, and a logged-out Safari only skips X.
 Checked findings land in `public.competitor_pain_points`, deduplicated by link, and admins triage them on the Competitor pain points admin page; nothing ever replies or posts.
@@ -186,9 +187,9 @@ On the Outreach admin page an admin opens each email as a filled-in Gmail draft 
 Nothing is sent automatically.
 The sweep's limits, the sender and the club link live in `backend/controlbox/outreach.json`.
 Install its LaunchAgent with `cd backend && .venv/bin/python jobs/find_outreach_leads.py install-schedule`, or run one sweep with `sweep`.
-Every local agent runs through `backend/services/claude_code.py`, which passes no application secrets unless the caller supplies them.
+Every local agent runs through `backend/services/claude_code.py` (Python jobs) or `rust/src/claude.rs` (the ingestion binary), which pass no application secrets unless the caller supplies them.
 Notifications and recommendation compute run on GitHub-hosted runners.
-Queue a post by hand with `cd backend && python scripts/ingest.py enqueue --school <slug> --url <post url>`; `scripts/instagram_browser.py retrieve` also accepts a profile, which the Brave worker lists before its posts are queued.
+Queue a post by hand with `cd backend && cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-ingest -- enqueue --school <slug> --url <post url>` (`status` shows the queue counts); `scripts/instagram_browser.py retrieve` also accepts a profile, which the Brave worker lists before its posts are queued.
 Profile-logo backfills and single-post media repairs remain separate Apify operator tools.
 For a read-only live retrieval check, run `cd backend && python scripts/probe_instagram_post.py --url https://www.instagram.com/p/SHORTCODE/`.
 
