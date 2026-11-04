@@ -31,10 +31,10 @@ Nothing on the Mac listens on a public interface.
 - [x] Media copied: 54,043 files in use (9.7 GB); 80,928 unused files deleted from S3 (recoverable 90 days).
 - [x] Postgres 17 running locally; roles and database created; rehearsal copy from RDS matched every table.
 - [x] PostgREST 14.5 and cloudflared installed.
-- [ ] Code: local disk storage (branch `local-disk-storage`).
-- [ ] Code: link previews through Next (branch `og-image-route`).
-- [ ] Code: client IP from `CF-Connecting-IP`; workflows on the Mac runners; Mac deploy job (branch `mac-hosting`).
-- [ ] Services on the Mac: Caddy, PostgREST, API, website, timers, second runner.
+- [x] Code: local disk storage (branch `local-disk-storage`, merged into `mac-cutover`).
+- [x] Code: link previews through Next (branch `og-image-route`, merged into `mac-cutover`).
+- [x] Code: client IP from `CF-Connecting-IP` (Caddy), workflows on the Mac runners, Mac deploy job (branch `mac-hosting`, merged into `mac-cutover`).
+- [x] Services on the Mac: Caddy, PostgREST, API and website run from `releases/current` and passed deploy health checks against the rehearsal copy; deploy runner `wat2do-mac-deploy` is online. Timers wait for the cutover so the Mac sends no email from the copy (`EMAIL_DELIVERY_ENABLED=false` until then).
 - [ ] Cloudflare: account, zone, API token in Keychain `cloudflare-api-token` (Tony), records checked against Route 53, nameservers switched at Name.com (Tony), tunnel and cache rules.
 - [ ] Cutover: freeze RDS writes, final copy, deploy to the Mac, point DNS at the tunnel, check login and Process Notifications.
 - [ ] Teardown: ECS, ALB, CloudFront, RDS, S3, Lambda, SQS, EventBridge, Secrets Manager, Route 53 (after a day or two on the Mac).
