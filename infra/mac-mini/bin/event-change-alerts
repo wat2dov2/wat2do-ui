@@ -1,0 +1,9 @@
+#!/bin/bash
+# Every minute: email saved-by users about material event changes (replaces EventBridge).
+set -euo pipefail
+set -a
+. "$HOME/wat2do-data/config/backend.env"
+set +a
+exec curl --silent --show-error --fail --max-time 55 -X POST \
+  -H "Authorization: Bearer $EVENT_CHANGE_ALERTS_KEY" \
+  -o /dev/null http://127.0.0.1:8000/webhooks/event-change-alerts

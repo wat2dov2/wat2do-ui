@@ -1,0 +1,11 @@
+#!/bin/bash
+# The public API (wat2do-api on 127.0.0.1:8000, with FastAPI as its child) from the current release.
+set -euo pipefail
+data="$HOME/wat2do-data"
+set -a
+. "$data/config/backend.env"
+set +a
+export PATH="$data/venv/bin:/usr/bin:/bin"
+release="$(cd "$data/releases/current" && pwd -P)"
+cd "$release/backend"
+exec "$release/bin/wat2do-api" serve

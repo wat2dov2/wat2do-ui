@@ -1,0 +1,12 @@
+#!/bin/bash
+# Monthly: compute promoter poster payouts. The database rows are the source of
+# truth; the CSV is a convenience copy kept in ~/wat2do-data/payouts.
+set -euo pipefail
+data="$HOME/wat2do-data"
+set -a
+. "$data/config/backend.env"
+set +a
+mkdir -p "$data/payouts"
+release="$(cd "$data/releases/current" && pwd -P)"
+cd "$release/backend"
+exec "$release/bin/wat2do-poster-payouts" --output "$data/payouts/poster-payouts-$(date +%Y-%m).csv"

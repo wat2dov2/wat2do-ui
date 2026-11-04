@@ -1,0 +1,5 @@
+# Labels of the Mac mini's self-hosted runners (docs/projects/mac-mini-hosting.md).
+self-hosted-runner:
+  labels:
+    - wat2do-macmini-browser
+    - wat2do-macmini-deploy

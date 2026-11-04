@@ -1,0 +1,10 @@
+#!/bin/bash
+# Daily: refresh Instagram Graph API tokens and snapshot account stats for /admin/social.
+set -euo pipefail
+data="$HOME/wat2do-data"
+set -a
+. "$data/config/backend.env"
+set +a
+release="$(cd "$data/releases/current" && pwd -P)"
+cd "$release/backend"
+exec "$data/venv/bin/python" jobs/snapshot_instagram_accounts.py

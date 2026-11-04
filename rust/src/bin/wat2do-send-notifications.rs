@@ -1,5 +1,6 @@
 //! `wat2do-send-notifications`: the scheduled notification emails.
-//! `.github/workflows/scheduled-emails.yml` runs it hourly for the morning email.
+//! The Mac mini's `io.wat2do.scheduled-emails` launchd timer runs it hourly for
+//! the morning email.
 
 use std::path::PathBuf;
 use std::process::ExitCode;

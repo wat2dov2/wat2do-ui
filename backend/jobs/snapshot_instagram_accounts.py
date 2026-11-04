@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Refresh expiring Instagram tokens, then read every account's followers and recent posts.
 
-Runs daily from ``.github/workflows/instagram-account-stats.yml``, which holds the
-production token encryption key; the admin social dashboard reads what it writes.
+Runs daily from the Mac mini's ``io.wat2do.instagram-account-stats`` launchd timer
+(``infra/mac-mini``), whose production settings hold the token encryption key; the
+admin social dashboard reads what it writes.
 """
 
 from __future__ import annotations
