@@ -56,6 +56,21 @@ pub struct Authentication {
     pub legacy_frontend_origins: Vec<String>,
 }
 
+/// `controlbox/contact.json`: who receives contact and sponsor messages, and their limits.
+#[derive(Debug, Deserialize)]
+pub struct Contact {
+    pub recipient_emails: Vec<String>,
+    pub maximum_message_length: usize,
+    pub business_support: BusinessSupport,
+    pub rate_limit: RateLimit,
+}
+
+/// The sponsor nomination field limits in `controlbox/contact.json`.
+#[derive(Debug, Deserialize)]
+pub struct BusinessSupport {
+    pub business_name: usize,
+}
+
 /// The read retry policy in `controlbox/database.json`.
 #[derive(Debug, Deserialize)]
 pub struct Database {
@@ -434,6 +449,12 @@ pub static AUTHENTICATION: LazyLock<Authentication> = LazyLock::new(|| {
         include_str!("../../backend/controlbox/authentication.json"),
     )
 });
+pub static CONTACT: LazyLock<Contact> = LazyLock::new(|| {
+    parse(
+        "contact",
+        include_str!("../../backend/controlbox/contact.json"),
+    )
+});
 pub static DATABASE: LazyLock<Database> = LazyLock::new(|| {
     parse(
         "database",
@@ -645,6 +666,8 @@ mod tests {
     fn every_control_file_parses() {
         assert!(API_SERVER.database_connections > 0);
         assert!(AUTHENTICATION.access_token_minutes > 0);
+        assert!(!CONTACT.recipient_emails.is_empty());
+        assert!(CONTACT.business_support.business_name > 0);
         assert!(DATABASE.read_attempts > 0);
         assert!(RATE_LIMITS.default.maximum_requests > 0);
         assert!(INGESTION.parallel_agents > 0);

@@ -16,21 +16,6 @@ _UTC_TZID = "UTC"
 _LEGACY_APP_HOSTS = frozenset({"wat2do.ca", "www.wat2do.ca"})
 
 
-def school_from_frontend_url(url: str) -> str | None:
-    """Resolve a registered campus from a trusted frontend origin."""
-    parsed = urlsplit(url)
-    origin = f"{parsed.scheme}://{parsed.netloc}"
-    if not settings.is_allowed_origin(origin):
-        return None
-    hostname = (parsed.hostname or "").lower()
-    for suffix in (".wat2do.io", ".wat2do.localhost"):
-        if hostname.endswith(suffix):
-            slug = hostname.removesuffix(suffix)
-            if school_service.get_school(slug) is not None:
-                return slug
-    return None
-
-
 def canonical_school_key(school: str | None) -> str:
     """Return the normalized school slug."""
     return school_service.normalize_school_slug(school)

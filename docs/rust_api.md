@@ -58,6 +58,12 @@ Port one whole router (every path under its prefix) per change, so no path is se
    | `datetime` (naive allowed), `float`, `bool \| None`, any-size `int` and `list[str]` query parameters | `Field::optional_datetime`, `optional_float`, `optional_bool`, `unbounded_int`, `Validator::query_list` |
    | pydantic's datetime and date output, `json.dumps` floats | `json::datetime`, `json::option_date`, `json::float`, `json::option_float_array`, `json::value` |
    | `get_client_ip(request)` for a limiter | `client_ip::ClientIp` |
+   | `response.set_cookie`, `delete_cookie`, `request.cookies` | `cookies::set`, `cookies::delete`, `cookies::read` (Starlette's quoting and attribute order) |
+   | `RedirectResponse(url, status_code)` | `routing::redirect` |
+   | `background_tasks.add_task(email_service.send_safely, message)` | `email::send_in_background` |
+   | `secrets.token_urlsafe(n)` | `secrets::token_urlsafe` |
+   | `urlparse`, `urlsplit`, `urlencode`, `quote_plus`, repeated `unquote` | `crate::urls` |
+   | signing our access tokens, refresh token rotation (`services/auth_service.py`) | `auth::AccessTokens::issue`, `next_refresh_token`, `auth::new_refresh_token`, `auth::sha256_hex`, `auth::revoke_sessions` |
    | `PaginationParams`, `paginated_response`, `fetch_all_pages` | `pagination::Pagination`, `Paginated`, `fetch_all_pages` |
    | `RateLimiter` | `rate_limit::RateLimiter` in a `LazyLock`, keyed by `state.trust.client_ip(...)` or the user id |
    | `get_client_ip` | `ProxyTrust::client_ip` (repeats uvicorn's proxy rewrite first) |

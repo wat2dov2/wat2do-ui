@@ -38,116 +38,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/google": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Start Google Oauth */
-        get: operations["start_google_oauth_auth_google_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/google/callback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Complete Google Oauth */
-        get: operations["complete_google_oauth_auth_google_callback_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/send-otp": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Send Otp */
-        post: operations["send_otp_auth_send_otp_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/verify-otp": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Verify Otp */
-        post: operations["verify_otp_auth_verify_otp_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Refresh */
-        post: operations["refresh_auth_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Logout
-         * @description Log the user out.
-         *
-         *     Bearer is optional: if the access token has expired, the refresh cookie
-         *     is still cleared so the browser does not hold a replayable token.
-         *     Even if upstream revocation fails, the cookie is cleared via a
-         *     JSONResponse that carries Set-Cookie for ``refresh_token``.
-         */
-        post: operations["logout_auth_logout_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/competitor-pain-points/": {
         parameters: {
             query?: never;
@@ -197,23 +87,6 @@ export interface paths {
         head?: never;
         /** Review Pain Point */
         patch: operations["review_pain_point_competitor_pain_points__pain_point_id__patch"];
-        trace?: never;
-    };
-    "/contact/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Submit Contact Message */
-        post: operations["submit_contact_message_contact__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/instagram-publishing/batches/": {
@@ -466,41 +339,6 @@ export interface paths {
         patch: operations["review_submission_position_submissions__submission_id__patch"];
         trace?: never;
     };
-    "/sponsor-submissions/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Submissions */
-        get: operations["list_submissions_sponsor_submissions__get"];
-        put?: never;
-        /** Create Submission */
-        post: operations["create_submission_sponsor_submissions__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sponsor-submissions/{submission_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Review Submission */
-        patch: operations["review_submission_sponsor_submissions__submission_id__patch"];
-        trace?: never;
-    };
     "/submissions/": {
         parameters: {
             query?: never;
@@ -705,6 +543,116 @@ export interface paths {
         get: operations["health_health_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Start Google Oauth */
+        get: operations["start_google_oauth_auth_google_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/google/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Complete Google Oauth */
+        get: operations["complete_google_oauth_auth_google_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/send-otp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send Otp */
+        post: operations["send_otp_auth_send_otp_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/verify-otp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Otp */
+        post: operations["verify_otp_auth_verify_otp_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh */
+        post: operations["refresh_auth_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Logout
+         * @description Log the user out.
+         *
+         *     Bearer is optional: if the access token has expired, the refresh cookie
+         *     is still cleared so the browser does not hold a replayable token.
+         *     Even if upstream revocation fails, the cookie is cleared via a
+         *     JSONResponse that carries Set-Cookie for ``refresh_token``.
+         */
+        post: operations["logout_auth_logout_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1245,6 +1193,23 @@ export interface paths {
         patch: operations["update_claim_clubs_claims__claim_id__patch"];
         trace?: never;
     };
+    "/contact/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Contact Message */
+        post: operations["submit_contact_message_contact__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/discovery-queries/": {
         parameters: {
             query?: never;
@@ -1651,6 +1616,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sponsor-submissions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Submissions */
+        get: operations["list_submissions_sponsor_submissions__get"];
+        put?: never;
+        /** Create Submission */
+        post: operations["create_submission_sponsor_submissions__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sponsor-submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Review Submission */
+        patch: operations["review_submission_sponsor_submissions__submission_id__patch"];
+        trace?: never;
+    };
     "/users/me": {
         parameters: {
             query?: never;
@@ -1935,16 +1935,6 @@ export interface components {
              * @enum {string}
              */
             status: "new" | "seen" | "dismissed";
-        };
-        /** ContactCreate */
-        ContactCreate: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Message */
-            message: string;
         };
         /** DailyReportResponse */
         DailyReportResponse: {
@@ -2616,11 +2606,6 @@ export interface components {
              */
             created_at: string;
         };
-        /** MessageResponse */
-        MessageResponse: {
-            /** Message */
-            message: string;
-        };
         /** NotificationPreferenceResponse */
         NotificationPreferenceResponse: {
             /**
@@ -2844,19 +2829,6 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
-        /** PaginatedResponse[SponsorSubmissionResponse] */
-        PaginatedResponse_SponsorSubmissionResponse_: {
-            /** Items */
-            items: components["schemas"]["SponsorSubmissionResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
         /** PaginatedResponse[SubmissionResponse] */
         PaginatedResponse_SubmissionResponse_: {
             /** Items */
@@ -3004,71 +2976,6 @@ export interface components {
             /** Complaint Urls */
             complaint_urls?: string[];
         };
-        /** SendOtpRequest */
-        SendOtpRequest: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /**
-             * Token
-             * @description Optional invitation token
-             */
-            token?: string | null;
-            /** Return To */
-            return_to?: string | null;
-        };
-        /** SponsorSubmissionCreate */
-        SponsorSubmissionCreate: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Message */
-            message: string;
-            /** School */
-            school: string;
-            /** Business Name */
-            business_name: string;
-        };
-        /** SponsorSubmissionResponse */
-        SponsorSubmissionResponse: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Message */
-            message: string;
-            /** School */
-            school: string;
-            /** Business Name */
-            business_name: string;
-            /** Id */
-            id: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected";
-            /**
-             * Submitted At
-             * Format: date-time
-             */
-            submitted_at: string;
-            /** Reviewed At */
-            reviewed_at?: string | null;
-        };
-        /** SponsorSubmissionReview */
-        SponsorSubmissionReview: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "approved" | "rejected";
-        };
         /**
          * SubmissionCreate
          * @description Normal-user event submission for admin review.
@@ -3126,27 +3033,6 @@ export interface components {
             /** Rejection Reason */
             rejection_reason?: string | null;
         };
-        /** TokenResponse */
-        TokenResponse: {
-            /** Access Token */
-            access_token: string;
-            /**
-             * Token Type
-             * @default bearer
-             */
-            token_type: string;
-            /** Expires In */
-            expires_in: number;
-            /** User Id */
-            user_id: string;
-            /** School */
-            school?: string | null;
-            /**
-             * Onboarding Required
-             * @default false
-             */
-            onboarding_required: boolean;
-        };
         /** UploadResponse */
         UploadResponse: {
             /** Url */
@@ -3164,16 +3050,6 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
-        };
-        /** VerifyOtpRequest */
-        VerifyOtpRequest: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Token */
-            token: string;
         };
         /** @description `AdminPayoutDetail`. */
         AdminPayoutDetail: {
@@ -3361,6 +3237,11 @@ export interface components {
             club_type?: string | null;
             logo_url?: string | null;
             school?: string | null;
+        };
+        ContactCreate: {
+            /** Format: email */
+            email: string;
+            message: string;
         };
         /** @description The request body, documented for the OpenAPI schema. */
         DiscoveryQueryCreate: {
@@ -3804,6 +3685,9 @@ export interface components {
         };
         /** @description `Union[ClubMemberResponse, ClubInvitationResponse]`. */
         MemberOrInvitation: components["schemas"]["ClubMemberResponse"] | components["schemas"]["ClubInvitationResponse"];
+        MessageResponse: {
+            message: string;
+        };
         /** OccurrenceResponse */
         OccurrenceResponse: {
             /**
@@ -3947,6 +3831,17 @@ export interface components {
             /** Page Size */
             page_size: number;
             /** Total Pages */
+            total_pages: number;
+        };
+        PaginatedResponse_SponsorSubmissionResponse_: {
+            items: components["schemas"]["SponsorSubmissionResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
             total_pages: number;
         };
         PaginatedResponse_UserPosterPayoutResponse_: {
@@ -4388,6 +4283,13 @@ export interface components {
             event_seasons?: components["schemas"]["SchoolEventSeason"][];
             email_domains?: string[];
         };
+        SendOtpRequest: {
+            /** Format: email */
+            email: string;
+            /** @description Optional invitation token */
+            token?: string | null;
+            return_to?: string | null;
+        };
         /**
          * SiteBannerResponse
          * @description The single site-wide banner, as shown above the navigation.
@@ -4396,6 +4298,42 @@ export interface components {
             message_translation_key: string;
             cta_label_translation_key: string;
             cta_href: string;
+        };
+        SponsorSubmissionCreate: {
+            /** Format: email */
+            email: string;
+            message: string;
+            school: string;
+            business_name: string;
+        };
+        SponsorSubmissionResponse: {
+            /** Format: email */
+            email: string;
+            message: string;
+            school: string;
+            business_name: string;
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected";
+            /** Format: date-time */
+            submitted_at: string;
+            /** Format: date-time */
+            reviewed_at?: string | null;
+        };
+        SponsorSubmissionReview: {
+            /** @enum {string} */
+            status: "approved" | "rejected";
+        };
+        TokenResponse: {
+            access_token: string;
+            /** @default bearer */
+            token_type: string;
+            /** Format: int64 */
+            expires_in: number;
+            user_id: string;
+            school?: string | null;
+            /** @default false */
+            onboarding_required: boolean;
         };
         /**
          * @description `UserPosterPayoutResponse`: what a promoter sees of their own payout
@@ -4475,6 +4413,11 @@ export interface components {
              */
             status: "saved" | "unsaved";
         };
+        VerifyOtpRequest: {
+            /** Format: email */
+            email: string;
+            token: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -4550,173 +4493,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    start_google_oauth_auth_google_get: {
-        parameters: {
-            query: {
-                callback_url: string;
-                return_to?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            307: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    complete_google_oauth_auth_google_callback_get: {
-        parameters: {
-            query?: {
-                code?: string | null;
-                state?: string | null;
-                error?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            307: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    send_otp_auth_send_otp_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SendOtpRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MessageResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    verify_otp_auth_verify_otp_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VerifyOtpRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_auth_refresh_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-        };
-    };
-    logout_auth_logout_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MessageResponse"];
                 };
             };
         };
@@ -4816,39 +4592,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompetitorPainPointResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    submit_contact_message_contact__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ContactCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MessageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5461,111 +5204,6 @@ export interface operations {
             };
         };
     };
-    list_submissions_sponsor_submissions__get: {
-        parameters: {
-            query?: {
-                submission_status?: ("pending" | "approved" | "rejected") | null;
-                school?: string | null;
-                search?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_SponsorSubmissionResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_submission_sponsor_submissions__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SponsorSubmissionCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MessageResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    review_submission_sponsor_submissions__submission_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                submission_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SponsorSubmissionReview"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SponsorSubmissionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_submissions_submissions__get: {
         parameters: {
             query?: {
@@ -6034,6 +5672,173 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    start_google_oauth_auth_google_get: {
+        parameters: {
+            query: {
+                callback_url: string;
+                return_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            307: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_google_oauth_auth_google_callback_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                state?: string | null;
+                error?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            307: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_otp_auth_send_otp_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendOtpRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_otp_auth_verify_otp_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyOtpRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_auth_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+        };
+    };
+    logout_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
                 };
             };
         };
@@ -7252,6 +7057,39 @@ export interface operations {
             };
         };
     };
+    submit_contact_message_contact__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_queries_discovery_queries__get: {
         parameters: {
             query?: {
@@ -8110,6 +7948,111 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["School"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_submissions_sponsor_submissions__get: {
+        parameters: {
+            query?: {
+                submission_status?: ("pending" | "approved" | "rejected") | null;
+                school?: string | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_SponsorSubmissionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_submission_sponsor_submissions__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SponsorSubmissionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_submission_sponsor_submissions__submission_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SponsorSubmissionReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SponsorSubmissionResponse"];
                 };
             };
             /** @description Validation Error */

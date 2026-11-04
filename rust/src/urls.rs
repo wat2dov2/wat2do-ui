@@ -44,9 +44,9 @@ const USES_NETLOC: [&str; 27] = [
     "itms-services",
 ];
 /// Schemes whose last path segment may carry `;params`.
-const USES_PARAMS: [&str; 15] = [
+const USES_PARAMS: [&str; 16] = [
     "", "ftp", "hdl", "prospero", "http", "imap", "https", "shttp", "rtsp", "rtsps", "rtspu",
-    "sip", "sips", "mms", "sftp",
+    "sip", "sips", "mms", "sftp", "tel",
 ];
 
 fn is_c0_or_space(c: char) -> bool {
@@ -94,6 +94,9 @@ pub fn urlsplit(url: &str, default_scheme: &str) -> Result<Split, String> {
         if netloc.contains('[') != netloc.contains(']') {
             return Err("Invalid IPv6 URL".to_owned());
         }
+        if netloc.contains('[') {
+            check_bracketed_netloc(&netloc)?;
+        }
     }
     let mut fragment = String::new();
     if let Some((before, after)) = url.split_once('#') {
@@ -105,6 +108,7 @@ pub fn urlsplit(url: &str, default_scheme: &str) -> Result<Split, String> {
         query = after.to_owned();
         url = before.to_owned();
     }
+    check_netloc(&netloc)?;
     Ok(Split {
         scheme,
         netloc,
@@ -114,7 +118,110 @@ pub fn urlsplit(url: &str, default_scheme: &str) -> Result<Split, String> {
     })
 }
 
+/// `_check_bracketed_netloc`: the text between the first `[` and the next
+/// `]` must be an IPv6 address or an IPvFuture literal.
+fn check_bracketed_netloc(netloc: &str) -> Result<(), String> {
+    let after_open = netloc.split_once('[').map_or("", |(_, after)| after);
+    let hostname = after_open.split(']').next().unwrap_or_default();
+    if let Some(future) = hostname.strip_prefix('v') {
+        let valid = future.split_once('.').is_some_and(|(version, rest)| {
+            !version.is_empty()
+                && version.chars().all(|c| c.is_ascii_hexdigit())
+                && !rest.is_empty()
+                && !rest.contains('\n')
+        });
+        return if valid {
+            Ok(())
+        } else {
+            Err("IPvFuture address is invalid".to_owned())
+        };
+    }
+    let address = hostname.split('%').next().unwrap_or_default();
+    match address.parse::<std::net::Ipv6Addr>() {
+        Ok(_) if !hostname.ends_with('%') => Ok(()),
+        _ if address.parse::<std::net::Ipv4Addr>().is_ok() => {
+            Err("An IPv4 address cannot be in brackets".to_owned())
+        }
+        _ => Err(format!(
+            "{address:?} does not appear to be an IPv4 or IPv6 address"
+        )),
+    }
+}
+
+/// `_checknetloc`: a non-ASCII host must not hide URL delimiters behind NFKC.
+fn check_netloc(netloc: &str) -> Result<(), String> {
+    use unicode_normalization::UnicodeNormalization;
+    if netloc.is_ascii() {
+        return Ok(());
+    }
+    let stripped: String = netloc
+        .chars()
+        .filter(|c| !matches!(c, '@' | ':' | '#' | '?'))
+        .collect();
+    let normalized: String = stripped.nfkc().collect();
+    if normalized != stripped && normalized.contains(['/', '?', '#', '@', ':']) {
+        return Err(format!(
+            "netloc '{netloc}' contains invalid characters under NFKC normalization"
+        ));
+    }
+    Ok(())
+}
+
+/// `urllib.parse.urlparse(url)`: `urlsplit`'s parts and the last path
+/// segment's `;params`.
+pub fn urlparse(url: &str) -> Result<(Split, String), String> {
+    let mut parts = urlsplit(url, "")?;
+    let (path, params) = split_params(&parts.scheme, &parts.path);
+    parts.path = path;
+    Ok((parts, params))
+}
+
+/// `urllib.parse`'s always-safe characters besides letters and digits, and
+/// the space `quote_plus` turns into `+`.
+const QUOTE_PLUS: &percent_encoding::AsciiSet = &percent_encoding::NON_ALPHANUMERIC
+    .remove(b'_')
+    .remove(b'.')
+    .remove(b'-')
+    .remove(b'~')
+    .remove(b' ');
+
+/// `quote_plus(value, safe="")`.
+pub fn quote_plus(value: &str) -> String {
+    percent_encoding::utf8_percent_encode(value, QUOTE_PLUS)
+        .to_string()
+        .replace(' ', "+")
+}
+
+/// `urlencode(pairs)`.
+pub fn urlencode(pairs: &[(&str, &str)]) -> String {
+    pairs
+        .iter()
+        .map(|(name, value)| format!("{}={}", quote_plus(name), quote_plus(value)))
+        .collect::<Vec<_>>()
+        .join("&")
+}
+
+/// `unquote(value)` repeated until nothing changes.
+pub fn unquote_fully(value: &str) -> String {
+    let mut decoded = value.to_owned();
+    loop {
+        let next = percent_encoding::percent_decode_str(&decoded)
+            .decode_utf8_lossy()
+            .into_owned();
+        if next == decoded {
+            return decoded;
+        }
+        decoded = next;
+    }
+}
+
 impl Split {
+    /// `f"{scheme}://{netloc}"` when both are set.
+    pub fn origin(&self) -> Option<String> {
+        (!self.scheme.is_empty() && !self.netloc.is_empty())
+            .then(|| format!("{}://{}", self.scheme, self.netloc))
+    }
+
     fn userinfo(&self) -> Option<&str> {
         self.netloc.rsplit_once('@').map(|(userinfo, _)| userinfo)
     }
@@ -317,6 +424,99 @@ pub fn urljoin(base: &str, url: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn parsed(url: &str) -> (String, String, String, String, String, String) {
+        let (parts, params) = urlparse(url).unwrap();
+        (
+            parts.scheme,
+            parts.netloc,
+            parts.path,
+            params,
+            parts.query,
+            parts.fragment,
+        )
+    }
+
+    #[test]
+    fn urlparse_matches_python() {
+        // Each expectation is Python 3.12's urlparse.
+        let owned = |values: [&str; 6]| {
+            (
+                values[0].to_owned(),
+                values[1].to_owned(),
+                values[2].to_owned(),
+                values[3].to_owned(),
+                values[4].to_owned(),
+                values[5].to_owned(),
+            )
+        };
+        assert_eq!(
+            parsed("https://utsg.wat2do.io/api/auth/google/callback"),
+            owned([
+                "https",
+                "utsg.wat2do.io",
+                "/api/auth/google/callback",
+                "",
+                "",
+                ""
+            ])
+        );
+        assert_eq!(
+            parsed("HTTPS://a.io:443/p;x/q;y=1?z#f"),
+            owned(["https", "a.io:443", "/p;x/q", "y=1", "z", "f"])
+        );
+        assert_eq!(parsed("/p;a"), owned(["", "", "/p", "a", "", ""]));
+        assert_eq!(parsed("p;a;b"), owned(["", "", "p", "a;b", "", ""]));
+        assert_eq!(parsed("tel:1;x"), owned(["tel", "", "1", "x", "", ""]));
+        assert_eq!(
+            parsed(" \thttp://a\n.io/x"),
+            owned(["http", "a.io", "/x", "", "", ""])
+        );
+        assert_eq!(
+            parsed("1http://a"),
+            owned(["", "", "1http://a", "", "", ""])
+        );
+        assert_eq!(parsed("//a/b"), owned(["", "a", "/b", "", "", ""]));
+        assert!(urlparse("http://[::1]:8000/x").is_ok());
+        assert!(urlparse("http://[::1/x").is_err());
+        assert!(urlparse("http://::1]/x").is_err());
+        assert_eq!(
+            urlparse("http://[127.0.0.1]/").unwrap_err(),
+            "An IPv4 address cannot be in brackets"
+        );
+        assert!(urlparse("http://[v1.fe]/").is_ok());
+        assert!(urlparse("http://a[::1]/").is_ok());
+        assert!(urlparse("http://a\u{FF03}b.io/").is_err());
+        assert!(urlparse("http://caf\u{e9}.io/").is_ok());
+        assert_eq!(
+            urlparse("https://User@UTSG.wat2do.io:8443/x")
+                .unwrap()
+                .0
+                .origin()
+                .as_deref(),
+            Some("https://User@UTSG.wat2do.io:8443")
+        );
+        assert_eq!(urlparse("/x").unwrap().0.origin(), None);
+    }
+
+    #[test]
+    fn quoting_matches_urllib() {
+        assert_eq!(
+            quote_plus("x y/:?&=+~*'()\u{e9}"),
+            "x+y%2F%3A%3F%26%3D%2B~%2A%27%28%29%C3%A9"
+        );
+        assert_eq!(
+            urlencode(&[
+                ("token", "abc"),
+                ("email", "a+b@c.io"),
+                ("returnTo", "/p?s=1")
+            ]),
+            "token=abc&email=a%2Bb%40c.io&returnTo=%2Fp%3Fs%3D1"
+        );
+        assert_eq!(unquote_fully("%252F%252Fevil"), "//evil");
+        assert_eq!(unquote_fully("/a%zz%2"), "/a%zz%2");
+        assert_eq!(unquote_fully("/%C3%A9%FF"), "/\u{e9}\u{fffd}");
+    }
 
     #[test]
     fn hostnames_follow_python() {

@@ -152,6 +152,19 @@ pub async fn send(message: &EmailMessage) -> Result<(), SendError> {
     }
 }
 
+/// `email_service.send_safely` as a FastAPI background task: send after the
+/// response, logging (never raising) a failure.
+pub fn send_in_background(message: EmailMessage) {
+    tokio::spawn(async move {
+        if let Err(error) = send(&message).await {
+            tracing::error!(
+                "Background email dispatch failed for subject={:?}: {error}",
+                message.subject
+            );
+        }
+    });
+}
+
 static SES: OnceCell<aws_sdk_sesv2::Client> = OnceCell::const_new();
 
 async fn ses() -> anyhow::Result<&'static aws_sdk_sesv2::Client> {

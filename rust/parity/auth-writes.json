@@ -1,0 +1,43 @@
+[
+  {
+    "name": "refresh bogus token",
+    "method": "POST",
+    "path": "/auth/refresh",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io",
+      "cookie": "refresh_token=parity-bogus-token"
+    }
+  },
+  {
+    "name": "sponsor review admin",
+    "method": "PATCH",
+    "path": "/sponsor-submissions/77777777-7777-4777-8777-777777777771",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "status": "approved"
+    }
+  },
+  {
+    "name": "verify-otp wrong code records a miss",
+    "method": "POST",
+    "path": "/auth/verify-otp",
+    "json": {
+      "email": "nobody-parity@uwaterloo.ca",
+      "token": "123456"
+    }
+  },
+  {
+    "name": "create sponsor submission",
+    "method": "POST",
+    "path": "/sponsor-submissions/",
+    "json": {
+      "email": "student@example.com",
+      "message": "Needs support",
+      "school": "uwaterloo",
+      "business_name": "Campus Cafe"
+    }
+  }
+]

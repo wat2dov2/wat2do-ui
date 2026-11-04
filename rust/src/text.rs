@@ -229,6 +229,41 @@ fn parse_offset(characters: &[char]) -> Option<Duration> {
     )
 }
 
+/// Python's `str.splitlines()`: every line boundary Python knows, `\r\n` as one.
+pub fn python_splitlines(text: &str) -> Vec<&str> {
+    let mut lines = Vec::new();
+    let mut start = 0;
+    let mut characters = text.char_indices().peekable();
+    while let Some((index, character)) = characters.next() {
+        let boundary = matches!(
+            character,
+            '\n' | '\r'
+                | '\u{b}'
+                | '\u{c}'
+                | '\u{1c}'
+                | '\u{1d}'
+                | '\u{1e}'
+                | '\u{85}'
+                | '\u{2028}'
+                | '\u{2029}'
+        );
+        if !boundary {
+            continue;
+        }
+        lines.push(&text[start..index]);
+        let mut end = index + character.len_utf8();
+        if character == '\r' && characters.peek().is_some_and(|(_, next)| *next == '\n') {
+            characters.next();
+            end += 1;
+        }
+        start = end;
+    }
+    if start < text.len() {
+        lines.push(&text[start..]);
+    }
+    lines
+}
+
 #[cfg(test)]
 mod tests {
     use super::{normalize_scraped_text, parse_iso_datetime, sanitize_postgrest_value};
@@ -342,5 +377,15 @@ mod tests {
             r"lone \ud83c here"
         );
         assert_eq!(normalize_scraped_text(r"C:\path \t"), r"C:\path \t");
+    }
+
+    #[test]
+    fn lines_split_like_python() {
+        assert_eq!(
+            super::python_splitlines("a\r\nb\nc\u{2028}d\n"),
+            ["a", "b", "c", "d"]
+        );
+        assert_eq!(super::python_splitlines(""), Vec::<&str>::new());
+        assert_eq!(super::python_splitlines("one"), ["one"]);
     }
 }
