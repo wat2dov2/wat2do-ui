@@ -25,7 +25,7 @@ locals {
   backend_runtime_environment = {
     ENVIRONMENT                     = "production"
     CORS_ORIGINS                    = jsonencode(["https://${var.domain_name}", "https://www.${var.domain_name}", "https://wat2do.ca", "https://www.wat2do.ca"])
-    CORS_ORIGIN_REGEX               = "^https://[a-z0-9-]+[.]${var.domain_name}$"
+    CORS_ORIGIN_REGEX               = "^https://[a-z0-9-]+[.]${replace(var.domain_name, ".", "[.]")}$"
     COOKIE_DOMAIN                   = ".${var.domain_name}"
     COOKIE_SECURE                   = "true"
     REFRESH_COOKIE_PATH             = "/api/auth/refresh"
