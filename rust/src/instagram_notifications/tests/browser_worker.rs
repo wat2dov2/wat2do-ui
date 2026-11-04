@@ -1844,6 +1844,49 @@ fn test_tab_maintenance_does_not_request_bootstrap_pages_during_cooldown() {
     checks.assert_none();
 }
 
+/// Ported from main's d7a63615e: a page that has not laid out yet settles by itself.
+#[test]
+fn test_a_viewport_that_is_not_ready_defers_maintenance_without_pausing() {
+    let env = Env::new();
+    let pool = env.pool().ensure(|| {
+        Err(BrowserError::page_unavailable(
+            "Instagram browser viewport did not become ready",
+        ))
+    });
+    let worker = env.real_worker(pool);
+    let (maintained, logs) = capture_logs(|| worker.maintain_tab_pool());
+    assert!(!maintained.unwrap());
+    assert!(!is_paused(&env.queue));
+    assert!(
+        logs.contains("Tab maintenance deferred: Instagram browser viewport did not become ready"),
+        "{logs}"
+    );
+}
+
+/// Startup recovery treats unready worker tabs the same way: they are repaired before
+/// the next job instead of pausing every school.
+#[test]
+fn test_unready_worker_tabs_at_startup_recover_without_pausing() {
+    let env = Env::new();
+    // An interrupted read is safe to retry once the tabs are repaired.
+    let job_id = digest(&env.queue, "unready-startup");
+    env.queue.claim_next(None, true).unwrap().unwrap();
+    let pool = env.pool().settle(|| {
+        Err(BrowserError::page_unavailable(
+            "Instagram browser viewport did not become ready",
+        ))
+    });
+    let worker = env.real_worker(pool);
+    let (recovered, logs) = capture_logs(|| worker.recover_worker_queue());
+    recovered.unwrap();
+    assert!(!is_paused(&env.queue));
+    assert_eq!(job(&env.queue, &job_id).state, "pending");
+    assert!(
+        logs.contains("Worker tabs are not ready yet (Instagram browser viewport did not become ready); they are repaired before the next job"),
+        "{logs}"
+    );
+}
+
 #[test]
 fn test_fresh_maintenance_429_uses_shared_cooldown_without_a_human_pause() {
     let env = Env::new();

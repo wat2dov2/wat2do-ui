@@ -500,6 +500,12 @@ impl Worker {
                 tracing::warn!("Tab maintenance deferred: a worker window changed during repair");
                 Ok(false)
             }
+            Err(error) if error.is(SessionKind::PageUnavailable) => {
+                // A page that has not laid out yet (a hidden or busy window) settles by
+                // itself; pausing here left every school failing until a person resumed.
+                tracing::warn!("Tab maintenance deferred: {error}");
+                Ok(false)
+            }
             Err(error) if error.is_session() => {
                 queue.set_setting("paused", Value::from(error.to_string()))?;
                 Ok(false)
@@ -531,6 +537,11 @@ impl Worker {
                 }
                 Err(error) if error.is(SessionKind::AutomationTransient) => {
                     tracing::warn!("Brave is unavailable; the worker waits for it");
+                }
+                Err(error) if error.is(SessionKind::PageUnavailable) => {
+                    tracing::warn!(
+                        "Worker tabs are not ready yet ({error}); they are repaired before the next job"
+                    );
                 }
                 Err(error) if error.is_session() => {
                     self.queue
