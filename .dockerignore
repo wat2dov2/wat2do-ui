@@ -14,3 +14,4 @@
 backend/debug_dumps/
 backend/progress*.json
 backend/session*.json
+rust/target/

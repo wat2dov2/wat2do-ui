@@ -4,6 +4,7 @@
 //! `backend/.env` settings and the same Postgres tables as the Python code
 //! around it, so the two languages share one database and one configuration.
 
+pub mod api;
 pub mod automate_logs;
 pub mod claude;
 pub mod constants;
@@ -23,6 +24,7 @@ pub mod revalidation;
 pub mod schools;
 pub mod settings;
 pub mod storage;
+pub mod svg_sanitize;
 pub mod text;
 pub mod urls;
 

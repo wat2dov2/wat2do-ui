@@ -1,0 +1,13 @@
+{
+  "python_port": 8001,
+  "python_keep_alive_seconds": 75,
+  "python_probe_interval_milliseconds": 250,
+  "python_probe_timeout_seconds": 3,
+  "python_shutdown_seconds": 15,
+  "shutdown_drain_seconds": 14,
+  "upstream_idle_seconds": 60,
+  "database_connections": 3,
+  "database_idle_seconds": 60,
+  "database_acquire_seconds": 3,
+  "database_statement_timeout_milliseconds": 8000
+}

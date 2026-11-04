@@ -5,8 +5,10 @@ cd frontend && next start
 
 # Start Backend
 ```bash
-cd backend && source .venv/bin/activate && uvicorn main:app --reload
+cd backend && source .venv/bin/activate && ../rust/target/debug/wat2do-api serve --reload
 ```
+
+Build it first with `cd rust && cargo build --bin wat2do-api`; it serves port 8000 and runs uvicorn behind it (`docs/rust_api.md`).
 
 ## Signing in
 

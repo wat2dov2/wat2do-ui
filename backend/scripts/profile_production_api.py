@@ -475,7 +475,7 @@ def audit_openapi_coverage() -> dict[str, Any]:
     }
     classified = _known_get_paths() | set(SKIPPED_GET_ROUTES)
     return {
-        "schema_source": "FastAPI app.openapi() from the local checkout",
+        "schema_source": "app.openapi() (FastAPI plus Rust routes) from the local checkout",
         "get_route_count": len(get_paths),
         "classified_route_count": len(get_paths & classified),
         "unclassified_get_routes": sorted(get_paths - classified),

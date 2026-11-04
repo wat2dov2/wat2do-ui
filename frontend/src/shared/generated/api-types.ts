@@ -1386,26 +1386,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/site-banner": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Site Banner Endpoint
-         * @description Public: the banner shown above the navigation, or nothing when disabled.
-         */
-        get: operations["get_site_banner_endpoint_site_banner_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/sponsor-submissions/": {
         parameters: {
             query?: never;
@@ -1799,6 +1779,26 @@ export interface paths {
         };
         /** Health */
         get: operations["health_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/site-banner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Site Banner Endpoint
+         * @description Public: the banner shown above the navigation, or nothing when disabled.
+         */
+        get: operations["get_site_banner_endpoint_site_banner_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4676,18 +4676,6 @@ export interface components {
             /** Return To */
             return_to?: string | null;
         };
-        /**
-         * SiteBannerResponse
-         * @description The single site-wide banner, as shown above the navigation.
-         */
-        SiteBannerResponse: {
-            /** Message Translation Key */
-            message_translation_key: string;
-            /** Cta Label Translation Key */
-            cta_label_translation_key: string;
-            /** Cta Href */
-            cta_href: string;
-        };
         /** SponsorSubmissionCreate */
         SponsorSubmissionCreate: {
             /**
@@ -4975,6 +4963,15 @@ export interface components {
             email: string;
             /** Token */
             token: string;
+        };
+        /**
+         * SiteBannerResponse
+         * @description The single site-wide banner, as shown above the navigation.
+         */
+        SiteBannerResponse: {
+            message_translation_key: string;
+            cta_label_translation_key: string;
+            cta_href: string;
         };
     };
     responses: never;
@@ -8027,26 +8024,6 @@ export interface operations {
             };
         };
     };
-    get_site_banner_endpoint_site_banner_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SiteBannerResponse"] | null;
-                };
-            };
-        };
-    };
     list_submissions_sponsor_submissions__get: {
         parameters: {
             query?: {
@@ -8948,6 +8925,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_site_banner_endpoint_site_banner_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteBannerResponse"] | null;
                 };
             };
         };

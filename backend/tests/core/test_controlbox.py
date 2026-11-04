@@ -1021,3 +1021,20 @@ def test_login_recovery_must_cover_the_security_code_wait(tmp_path) -> None:
     )
     with pytest.raises(ValidationError, match="security code wait"):
         load_controlbox(directory)
+
+
+@pytest.mark.parametrize(
+    ("patch", "message"),
+    [
+        ({"python_keep_alive_seconds": 60}, "must exceed upstream_idle_seconds"),
+        ({"python_port": 8000}, "must differ from the public API port"),
+        ({"database_connections": 6}, "less than or equal to 5"),
+        ({"database_statement_timeout_milliseconds": 0}, "greater than or equal to 1000"),
+        ({"shutdown_drain_seconds": 15}, "30 second stop timeout"),
+    ],
+)
+def test_api_server_rejects_unsafe_settings(tmp_path: Path, patch, message) -> None:
+    path = _write_control(tmp_path, "api_server", lambda payload: payload.update(patch))
+
+    with pytest.raises(ValidationError, match=message):
+        load_controlbox(path)

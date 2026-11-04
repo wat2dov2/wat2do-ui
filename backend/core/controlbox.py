@@ -503,6 +503,38 @@ class InteractionIngestionControl(_ControlModel):
     maximum_anonymous_clicks_per_ip_per_event: int = Field(gt=0)
 
 
+class ApiServerControl(_ControlModel):
+    """The Rust API server (`wat2do-api serve`) and the Python app it supervises."""
+
+    # The Python app listens here on loopback behind the Rust server.
+    python_port: int = Field(ge=1024, le=65535)
+    # Longer than the Rust proxy's idle pool timeout, so Python never closes a
+    # connection the proxy is about to reuse.
+    python_keep_alive_seconds: int = Field(gt=0)
+    python_probe_interval_milliseconds: int = Field(gt=0)
+    python_probe_timeout_seconds: float = Field(gt=0, allow_inf_nan=False)
+    python_shutdown_seconds: int = Field(gt=0)
+    shutdown_drain_seconds: int = Field(gt=0)
+    upstream_idle_seconds: int = Field(gt=0)
+    # A small pool: every task holds at most this many Postgres connections.
+    database_connections: int = Field(ge=1, le=5)
+    database_idle_seconds: int = Field(gt=0)
+    # A request waits at most this long for a free connection, then fails with 503.
+    database_acquire_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
+    # Each statement's limit, the same as the data API role's (authenticator, 8 s).
+    database_statement_timeout_milliseconds: int = Field(ge=1000, le=60000)
+
+    @model_validator(mode="after")
+    def validate_keep_alive(self) -> "ApiServerControl":
+        if self.python_keep_alive_seconds <= self.upstream_idle_seconds:
+            raise ValueError("python_keep_alive_seconds must exceed upstream_idle_seconds")
+        if self.python_port == 8000:
+            raise ValueError("python_port must differ from the public API port 8000")
+        if self.shutdown_drain_seconds + self.python_shutdown_seconds >= 30:
+            raise ValueError("shutdown must finish within ECS's 30 second stop timeout")
+        return self
+
+
 class RateLimitControl(_ControlModel):
     maximum_requests: int = Field(gt=0)
     window_seconds: int = Field(gt=0)
@@ -1304,6 +1336,7 @@ class NotificationRetryControl(_ControlModel):
 
 
 class ControlBox(_ControlModel):
+    api_server: ApiServerControl
     positions: PositionsControl
     database: DatabaseControl
     ecs_runtime: EcsRuntimeControl
