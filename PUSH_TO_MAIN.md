@@ -100,6 +100,9 @@ terraform fmt -check -recursive infra/terraform
 
 Run `tflint` in each root when it is installed locally or rely on the Terraform workflow's dedicated TFLint job.
 
+A push to `main` cancels the CI/CD deploy already running, and the Terraform apply for that earlier push then stops at "Wait for the matching application release" without applying.
+After the latest deploy on `main` succeeds, apply the pending changes with `gh workflow run terraform.yml --ref main`; a manual run on `main` plans and applies against that release.
+
 When `social-preview/` changes, also run its dependency and unit-test gate:
 
 ```bash
