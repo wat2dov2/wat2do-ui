@@ -15,6 +15,7 @@ import os
 import plistlib
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 HOME = Path.home()
@@ -109,6 +110,12 @@ def install(label: str) -> None:
     path = AGENTS / f"{label}.plist"
     domain = f"gui/{os.getuid()}"
     subprocess.run(["launchctl", "bootout", f"{domain}/{label}"], capture_output=True)
+    # bootout returns before the job has stopped; bootstrap fails until it has.
+    for _ in range(60):
+        loaded = subprocess.run(["launchctl", "print", f"{domain}/{label}"], capture_output=True)
+        if loaded.returncode != 0:
+            break
+        time.sleep(0.5)
     path.write_bytes(plistlib.dumps(JOBS[label]))
     subprocess.run(["launchctl", "bootstrap", domain, str(path)], check=True)
     print(f"installed {label}")
