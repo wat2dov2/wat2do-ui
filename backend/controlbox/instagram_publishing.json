@@ -22,7 +22,7 @@
   "curation_attempts": 2,
   "curation_timeout_seconds": 1800,
   "curation_poster_pixels": 512,
-  "curation_hour": 9,
+  "curation_hours": [9, 11, 13, 15],
   "curation_minute": 0,
   "poster_timeout_seconds": 30,
   "launch_agent_timeout_seconds": 30,

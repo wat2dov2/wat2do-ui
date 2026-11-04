@@ -436,9 +436,9 @@ The renderer no longer requests maps or club hiring data.
 
 ### Daily publishing schedule
 
-The `io.wat2do.instagram.curate` LaunchAgent on the Mac mini runs `curate` daily at the `curation_hour` and `curation_minute` in `backend/controlbox/instagram_publishing.json` (9 a.m. Toronto); install or update it with `generate_instagram_posts.py install-schedule`.
+The `io.wat2do.instagram.curate` LaunchAgent on the Mac mini runs `curate` daily at each of the `curation_hours`, at `curation_minute`, in `backend/controlbox/instagram_publishing.json` (9 a.m., then 11 a.m., 1 p.m. and 3 p.m. Toronto); install or update it with `generate_instagram_posts.py install-schedule`.
 launchd runs a missed time once the Mac wakes, and a skipped day is not lost: the next draft window starts at the last successful cutoff.
-The job keeps no logs and exits non-zero when any school fails; failed schools are retried by running `curate` again, which skips schools already drafted today.
+The job keeps no logs and exits non-zero when any school fails; each later run retries them, since `curate` skips schools already drafted today.
 The model, parallel agents, attempts, timeout and poster size are the `curation_*` controlbox settings.
 The job uses the repository's existing production configuration and authenticated AWS access without printing or persisting credentials.
 It does not refresh tokens: the Mac has no token encryption key, so the daily `Instagram account stats` GitHub workflow refreshes expiring tokens (see below).

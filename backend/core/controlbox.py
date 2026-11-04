@@ -657,7 +657,8 @@ class InstagramPublishingControl(_ControlModel):
     curation_attempts: int = Field(ge=1, le=5)
     curation_timeout_seconds: int = Field(ge=60, le=7200)
     curation_poster_pixels: int = Field(ge=128, le=2048)
-    curation_hour: int = Field(ge=0, le=23)
+    # Later runs draft only schools still missing today's draft, so one failed run is retried.
+    curation_hours: tuple[Annotated[int, Field(ge=0, le=23)], ...] = Field(min_length=1)
     curation_minute: int = Field(ge=0, le=59)
     poster_timeout_seconds: float = Field(gt=0, le=120)
     # Some minutes after a carousel publishes, the Mac's emulator likes, reposts and adds

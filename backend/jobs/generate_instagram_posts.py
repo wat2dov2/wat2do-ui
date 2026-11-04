@@ -38,7 +38,9 @@ def launch_agent_payload() -> dict:
         "ProgramArguments": [sys.executable, str(Path(__file__).resolve()), "curate"],
         "WorkingDirectory": str(BACKEND_DIRECTORY),
         "EnvironmentVariables": {"PATH": CLAUDE_CODE_PATH},
-        "StartCalendarInterval": {"Hour": control.curation_hour, "Minute": control.curation_minute},
+        "StartCalendarInterval": [
+            {"Hour": hour, "Minute": control.curation_minute} for hour in control.curation_hours
+        ],
         "ProcessType": "Background",
         "StandardOutPath": "/dev/null",
         "StandardErrorPath": "/dev/null",

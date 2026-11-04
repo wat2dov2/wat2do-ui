@@ -51,5 +51,7 @@ def test_curate_command_reports_outcomes(monkeypatch, capsys, outcomes, code):
 def test_launch_agent_runs_curate_daily_without_logs():
     payload = job.launch_agent_payload()
     assert payload["ProgramArguments"][-1] == "curate"
-    assert payload["StartCalendarInterval"] == {"Hour": 9, "Minute": 0}
+    assert payload["StartCalendarInterval"] == [
+        {"Hour": hour, "Minute": 0} for hour in (9, 11, 13, 15)
+    ]
     assert payload["StandardOutPath"] == "/dev/null"
