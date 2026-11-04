@@ -15,7 +15,6 @@ def test_release_applies_runtime_budget_to_existing_task_without_losing_configur
         "cpu": 256,
         "memoryReservation": 256,
         "environment": [
-            {"name": "STORAGE_BUCKET_NAME", "value": "test-media"},
             {"name": "AWS_REGION", "value": "ca-central-1"},
             {"name": "OTHER_BACKEND_SETTING", "value": "keep"},
         ],
@@ -28,8 +27,6 @@ def test_release_applies_runtime_budget_to_existing_task_without_losing_configur
         "memoryReservation": 512,
         "environment": [
             {"name": "NODE_OPTIONS", "value": "--max-old-space-size=256"},
-            {"name": "STORAGE_BUCKET_NAME", "value": "old-media"},
-            {"name": "AWS_REGION", "value": "old-region"},
             {"name": "BACKEND_API_URL", "value": "http://127.0.0.1:8000"},
         ],
         "healthCheck": {"startPeriod": 20, "command": ["CMD-SHELL", "check-health"]},
@@ -104,7 +101,5 @@ def test_release_applies_runtime_budget_to_existing_task_without_losing_configur
     assert len(environment) == len(rendered_frontend["environment"])
     assert environment == {
         "NODE_OPTIONS": f"--max-old-space-size={runtime.frontend_heap_mib}",
-        "STORAGE_BUCKET_NAME": "test-media",
-        "AWS_REGION": "ca-central-1",
         "BACKEND_API_URL": "http://127.0.0.1:8000",
     }

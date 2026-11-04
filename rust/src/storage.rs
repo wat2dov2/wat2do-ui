@@ -1,23 +1,27 @@
-//! Validated uploads to S3, served through CloudFront (`services/storage_service.py`).
+//! Validated uploads to the media directory (`services/storage_service.py`).
+//!
+//! A file in bucket `event-images` named `<uuid>.jpg` lives at
+//! `$MEDIA_ROOT/event-images/<uuid>.jpg` and is served by the web server at
+//! `$STORAGE_PUBLIC_BASE_URL/event-images/<uuid>.jpg`.
 //!
 //! Raster images are always re-encoded from their pixels, which drops EXIF, XMP
 //! and other metadata; event posters are also scaled down to the rendition width.
 
 use std::io::Cursor;
+use std::os::unix::fs::PermissionsExt;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
-use aws_sdk_s3::primitives::ByteStream;
-use aws_sdk_s3::types::ServerSideEncryption;
 use image::codecs::gif::{GifDecoder, GifEncoder, Repeat};
 use image::codecs::jpeg::JpegEncoder;
 use image::imageops::FilterType;
 use image::{AnimationDecoder, DynamicImage, ImageFormat, ImageReader};
-use tokio::sync::OnceCell;
 
 use crate::constants::{
     BUCKET_CLUB_LOGOS, BUCKET_EVENT_IMAGES, BUCKET_EVENT_VIDEOS, MAX_AVATAR_SIZE_BYTES,
 };
 use crate::controlbox::UPLOADS;
+use crate::launch_agents::atomic_write;
 use crate::settings::settings;
 
 // Pillow's default lossy WebP quality, which the Python service saved with.
@@ -143,46 +147,55 @@ pub fn prepare_rendition(
     Ok(out)
 }
 
-static S3: OnceCell<aws_sdk_s3::Client> = OnceCell::const_new();
-
-async fn s3() -> &'static aws_sdk_s3::Client {
-    S3.get_or_init(|| async {
-        let region = settings().map(|s| s.aws_region.clone()).unwrap_or_default();
-        let config = aws_config::from_env()
-            .region(aws_config::Region::new(region))
-            .load()
-            .await;
-        aws_sdk_s3::Client::new(&config)
-    })
-    .await
-}
-
 /// `upload_file`: store prepared bytes under a random name and return the public URL.
 pub async fn upload(bucket_name: &str, data: Vec<u8>, content_type: &str) -> Result<String> {
     let settings = settings()?;
-    if settings.storage_bucket_name.is_empty() || settings.storage_public_base_url.is_empty() {
-        bail!("S3 storage is not configured. Set STORAGE_BUCKET_NAME and STORAGE_PUBLIC_BASE_URL.");
+    if settings.media_root.is_empty() || settings.storage_public_base_url.is_empty() {
+        bail!("Media storage is not configured. Set MEDIA_ROOT and STORAGE_PUBLIC_BASE_URL.");
     }
-    let path = format!(
+    let media_root = PathBuf::from(&settings.media_root);
+    let public_base_url = settings.storage_public_base_url.clone();
+    let bucket_name = bucket_name.to_owned();
+    let content_type = content_type.to_owned();
+    tokio::task::spawn_blocking(move || {
+        store_file(
+            &media_root,
+            &public_base_url,
+            &bucket_name,
+            &data,
+            &content_type,
+        )
+    })
+    .await
+    .context("media write task failed")?
+}
+
+/// Write `data` as a new file in its bucket under `media_root`, which the web
+/// server serves at `public_base_url`, and return the file's public URL.
+fn store_file(
+    media_root: &Path,
+    public_base_url: &str,
+    bucket_name: &str,
+    data: &[u8],
+    content_type: &str,
+) -> Result<String> {
+    if !media_root.is_absolute() {
+        bail!("MEDIA_ROOT must be an absolute path.");
+    }
+    // Only a known bucket names a directory; the file name is ours.
+    bucket(bucket_name)?;
+    let name = format!(
         "{}{}",
         uuid::Uuid::new_v4().simple(),
         extension(content_type)
     );
-    s3().await
-        .put_object()
-        .bucket(&settings.storage_bucket_name)
-        .key(format!("media/{bucket_name}/{path}"))
-        .body(ByteStream::from(data))
-        .content_type(content_type)
-        .cache_control("public, max-age=31536000, immutable")
-        .server_side_encryption(ServerSideEncryption::Aes256)
-        .send()
-        .await
-        .context("S3 upload failed")?;
-    Ok(format!(
-        "{}/{bucket_name}/{path}",
-        settings.storage_public_base_url
-    ))
+    let path = media_root.join(bucket_name).join(&name);
+    // Readers see no file or the whole file: a flushed temporary file in the
+    // bucket directory is renamed into place.
+    atomic_write(&path, data).context("media write failed")?;
+    // Media is public, and the web server may run as another user.
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644))?;
+    Ok(format!("{public_base_url}/{bucket_name}/{name}"))
 }
 
 /// `store_image`: validate fetched image bytes and upload them; None on any failure.
@@ -262,6 +275,54 @@ mod tests {
             validate_and_prepare(BUCKET_EVENT_IMAGES, jpeg(2160, 1080), "image/jpeg").unwrap();
         let decoded = image::load_from_memory(&prepared).unwrap();
         assert_eq!((decoded.width(), decoded.height()), (1080, 540));
+    }
+
+    #[test]
+    fn stored_files_land_whole_in_their_bucket_at_the_public_url() {
+        let media = tempfile::tempdir().unwrap();
+        let url = store_file(
+            media.path(),
+            "https://wat2do.io/media",
+            BUCKET_EVENT_IMAGES,
+            b"poster",
+            "image/jpeg",
+        )
+        .unwrap();
+        let name = url
+            .strip_prefix("https://wat2do.io/media/event-images/")
+            .unwrap();
+        assert!(name.ends_with(".jpg"));
+        let bucket = media.path().join(BUCKET_EVENT_IMAGES);
+        assert_eq!(std::fs::read(bucket.join(name)).unwrap(), b"poster");
+        let mode = std::fs::metadata(bucket.join(name))
+            .unwrap()
+            .permissions()
+            .mode();
+        assert_eq!(mode & 0o777, 0o644);
+        // Only the renamed file remains; no temporary file is left beside it.
+        let names: Vec<_> = std::fs::read_dir(&bucket)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect();
+        assert_eq!(names, [name]);
+    }
+
+    #[test]
+    fn files_are_stored_only_in_known_buckets_under_an_absolute_root() {
+        let media = tempfile::tempdir().unwrap();
+        let store = |root: &Path, bucket_name: &str| {
+            store_file(
+                root,
+                "https://wat2do.io/media",
+                bucket_name,
+                b"x",
+                "image/png",
+            )
+        };
+        assert!(store(media.path(), "../outside").is_err());
+        assert!(store(media.path(), "unknown").is_err());
+        assert!(store(Path::new("media"), BUCKET_CLUB_LOGOS).is_err());
+        assert_eq!(std::fs::read_dir(media.path()).unwrap().count(), 0);
     }
 
     #[test]

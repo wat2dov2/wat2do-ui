@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { getEventListeners } from "node:events";
-import { Readable } from "node:stream";
-import { S3Client } from "@aws-sdk/client-s3";
+import { mkdtemp, readdir, rm, utimes, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import discoveryControls from "../../backend/controlbox/discovery_cache.json" with { type: "json" };
 import {
   DiscoverySnapshotStore,
@@ -9,17 +9,35 @@ import {
 } from "../src/shared/services/discoverySnapshotStore";
 
 class MemoryStorage implements SnapshotStorage {
-  objects = new Map<string, { value: string; etag: string }>();
+  objects = new Map<
+    string,
+    { value: string; etag: string; writtenAt: number }
+  >();
   version = 0;
   gets: string[] = [];
+  constructor(private now = Date.now) {}
   async get(key: string) {
     this.gets.push(key);
-    return this.objects.get(key) ?? null;
+    const object = this.objects.get(key);
+    return object ? { value: object.value, etag: object.etag } : null;
   }
   async put(key: string, value: string, etag?: string) {
     if (this.objects.get(key)?.etag !== etag) return false;
-    this.objects.set(key, { value, etag: String(++this.version) });
+    this.objects.set(key, {
+      value,
+      etag: String(++this.version),
+      writtenAt: this.now(),
+    });
     return true;
+  }
+  async deleteOlderThan(prefix: string, cutoff: number) {
+    for (const [key, object] of this.objects)
+      if (
+        key.startsWith(`${prefix}/`) &&
+        !key.slice(prefix.length + 1).includes("/") &&
+        object.writtenAt < cutoff
+      )
+        this.objects.delete(key);
   }
 }
 
@@ -175,7 +193,7 @@ test("failed payload upload never changes the published pointer", async () => {
   await store.invalidate("uwo", "events");
   const put = storage.put.bind(storage);
   storage.put = async (key, value, etag) => {
-    if (key.includes("/generations/")) throw new Error("upload interrupted");
+    if (key.startsWith("generations/")) throw new Error("upload interrupted");
     return put(key, value, etag);
   };
   expect(await store.refresh("uwo", "events", async () => [2])).toBe(false);
@@ -218,7 +236,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const {
-  S3SnapshotStorage,
+  FileSnapshotStorage,
 }: typeof import("../src/shared/services/discoveryCache.server") = require("../src/shared/services/discoveryCache.server");
 const {
   getSchoolBrowseSnapshot,
@@ -238,10 +256,8 @@ const banner = {
   cta_label_translation_key: "navigation.siteBannerAction",
 };
 const originalFetch = globalThis.fetch;
-const originalAbortTimeout = AbortSignal.timeout;
 test.afterEach(() => {
   globalThis.fetch = originalFetch;
-  AbortSignal.timeout = originalAbortTimeout;
 });
 
 test("banner source distinguishes disabled content from failed refreshes", async () => {
@@ -269,10 +285,11 @@ test("published banners survive replacement readers and failed refresh without a
   const bannerPath = require.resolve("../src/shared/api/siteBanner.server");
   const previousCache = require.cache[cachePath];
   const previousBanner = require.cache[bannerPath];
-  const previousBucket = process.env.STORAGE_BUCKET_NAME;
+  const previousDirectory = process.env.DISCOVERY_CACHE_DIR;
   let getSiteBanner: (typeof import("../src/shared/api/siteBanner.server"))["getSiteBanner"];
   try {
-    process.env.STORAGE_BUCKET_NAME = "discovery-test";
+    // Reads and refreshes go to the memory store below; no file is touched.
+    process.env.DISCOVERY_CACHE_DIR = path.join(tmpdir(), "wat2do-discovery-unused");
     delete require.cache[cachePath];
     delete require.cache[bannerPath];
     const adapter: typeof import("../src/shared/services/discoveryCache.server") = require(
@@ -286,8 +303,8 @@ test("published banners survive replacement readers and failed refresh without a
     else delete require.cache[cachePath];
     if (previousBanner) require.cache[bannerPath] = previousBanner;
     else delete require.cache[bannerPath];
-    if (previousBucket === undefined) delete process.env.STORAGE_BUCKET_NAME;
-    else process.env.STORAGE_BUCKET_NAME = previousBucket;
+    if (previousDirectory === undefined) delete process.env.DISCOVERY_CACHE_DIR;
+    else process.env.DISCOVERY_CACHE_DIR = previousDirectory;
   }
   let sourceReads = 0;
   globalThis.fetch = async () => {
@@ -309,101 +326,170 @@ test("published banners survive replacement readers and failed refresh without a
   expect(sourceReads).toBe(1);
 });
 
-function storageWithHandler(
-  handle: S3Client["config"]["requestHandler"]["handle"],
-) {
-  return new S3SnapshotStorage(
-    "discovery-test",
-    new S3Client({
-      region: "us-east-1",
-      credentials: { accessKeyId: "test", secretAccessKey: "test" },
-      maxAttempts: 1,
-      requestHandler: { handle },
-    }),
-  );
+async function withCacheDirectory(
+  run: (directory: string) => Promise<void>,
+): Promise<void> {
+  const directory = await mkdtemp(path.join(tmpdir(), "wat2do-discovery-"));
+  try {
+    await run(directory);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 }
 
-function storageDeadline() {
-  const deadline = new AbortController();
-  AbortSignal.timeout = (milliseconds) => {
-    expect(milliseconds).toBe(discoveryControls.request_timeout_seconds * 1000);
-    return deadline.signal;
-  };
-  return deadline;
-}
-
-for (const operation of ["get", "put"] as const) {
-  test(`S3 ${operation} aborts a stalled request before response headers`, async () => {
-    const deadline = storageDeadline();
-    const timeout = new DOMException(
-      "Storage deadline exceeded",
-      "TimeoutError",
-    );
-    const storage = storageWithHandler(async (_request, options) => {
-      expect(options?.abortSignal).toBe(deadline.signal);
-      return new Promise((_resolve, reject) => {
-        deadline.signal.addEventListener(
-          "abort",
-          () => reject(deadline.signal.reason),
-          { once: true },
-        );
-        queueMicrotask(() => deadline.abort(timeout));
-      });
-    });
-    const result =
-      operation === "get"
-        ? storage.get("state.json")
-        : storage.put("state.json", "{}");
-    await expect(result).rejects.toThrow("Storage deadline exceeded");
+test("file storage writes whole files by rename and returns content etags", async () => {
+  await withCacheDirectory(async (directory) => {
+    const storage = new FileSnapshotStorage(directory);
+    const key = "v2/uwo/events/state.json";
+    expect(await storage.get(key)).toBeNull();
+    expect(await storage.put(key, '{"a":1}')).toBe(true);
+    const stored = await storage.get(key);
+    expect(stored?.value).toBe('{"a":1}');
+    expect(stored?.etag).toMatch(/^[0-9a-f]{64}$/);
+    // Only the renamed file remains; no temporary file is left beside it.
+    expect(await readdir(path.join(directory, "v2/uwo/events"))).toEqual([
+      "state.json",
+    ]);
+    expect(await new FileSnapshotStorage(directory).get(key)).toEqual(stored);
   });
-}
-
-test("S3 deadline destroys a stalled body after headers and allows the next read", async () => {
-  const deadline = storageDeadline();
-  const timeout = new DOMException(
-    "Storage body deadline exceeded",
-    "TimeoutError",
-  );
-  const stalledBody = new Readable({
-    read() {
-      queueMicrotask(() => deadline.abort(timeout));
-    },
-  });
-  let reads = 0;
-  const storage = storageWithHandler(async () => ({
-    response: {
-      statusCode: 200,
-      headers: { etag: '"published"' },
-      body: ++reads === 1 ? stalledBody : Readable.from(['{"items":[]}']),
-    },
-  }));
-  await expect(storage.get("state.json")).rejects.toThrow(
-    "Storage body deadline exceeded",
-  );
-  expect(stalledBody.destroyed).toBe(true);
-  expect(getEventListeners(deadline.signal, "abort")).toHaveLength(0);
-  const nextDeadline = storageDeadline();
-  expect(await storage.get("state.json")).toEqual({
-    value: '{"items":[]}',
-    etag: '"published"',
-  });
-  expect(getEventListeners(nextDeadline.signal, "abort")).toHaveLength(0);
 });
 
-test("S3 rejects an expired deadline before consuming a returned body", async () => {
-  const deadline = storageDeadline();
-  const body = Readable.from(["late data"]);
-  const storage = storageWithHandler(async () => {
-    deadline.abort(
-      new DOMException("Storage deadline exceeded", "TimeoutError"),
+test("file storage compare-and-swap rejects stale etags and existing files", async () => {
+  await withCacheDirectory(async (directory) => {
+    const storage = new FileSnapshotStorage(directory);
+    const key = "v2/uwo/events/state.json";
+    expect(await storage.put(key, "first")).toBe(true);
+    expect(await storage.put(key, "second")).toBe(false);
+    expect(await storage.put("v2/uwo/events/missing.json", "x", "etag")).toBe(
+      false,
     );
-    return { response: { statusCode: 200, headers: { etag: '"late"' }, body } };
+    const first = (await storage.get(key))!;
+    expect(await storage.put(key, "second", first.etag)).toBe(true);
+    expect(await storage.put(key, "third", first.etag)).toBe(false);
+    expect((await storage.get(key))?.value).toBe("second");
   });
-  await expect(storage.get("state.json")).rejects.toThrow(
-    "Storage deadline exceeded",
-  );
-  expect(body.destroyed).toBe(true);
-  expect(getEventListeners(deadline.signal, "abort")).toHaveLength(0);
+});
+
+test("concurrent writers in one process cannot both win the same etag", async () => {
+  await withCacheDirectory(async (directory) => {
+    // Separate instances stand in for separate Next bundles in one process.
+    const writers = [
+      new FileSnapshotStorage(directory),
+      new FileSnapshotStorage(directory),
+    ];
+    const key = "v2/uwo/events/state.json";
+    await writers[0].put(key, "start");
+    const { etag } = (await writers[0].get(key))!;
+    const results = await Promise.all(
+      Array.from({ length: 10 }, (_, index) =>
+        writers[index % 2].put(key, `writer ${index}`, etag),
+      ),
+    );
+    expect(results.filter(Boolean)).toHaveLength(1);
+    expect((await writers[1].get(key))?.value).toBe(
+      `writer ${results.indexOf(true)}`,
+    );
+    const creations = await Promise.all(
+      writers.map((writer, index) =>
+        writer.put("generations/v2/uwo/events/one.json", `${index}`),
+      ),
+    );
+    expect(creations.filter(Boolean)).toHaveLength(1);
+  });
+});
+
+test("file storage refuses keys that leave its directory", async () => {
+  await withCacheDirectory(async (directory) => {
+    const storage = new FileSnapshotStorage(path.join(directory, "cache"));
+    await writeFile(path.join(directory, "outside.json"), "secret");
+    for (const key of [
+      "../outside.json",
+      "v2/../../outside.json",
+      "/etc/passwd",
+      "v2//state.json",
+      "",
+    ]) {
+      await expect(storage.get(key)).rejects.toThrow(
+        "Invalid discovery storage key",
+      );
+      await expect(storage.put(key, "x")).rejects.toThrow(
+        "Invalid discovery storage key",
+      );
+    }
+    expect(() => new FileSnapshotStorage("relative/cache")).toThrow(
+      "DISCOVERY_CACHE_DIR must be an absolute path",
+    );
+  });
+});
+
+test("file storage deletes only expired files directly under one prefix", async () => {
+  await withCacheDirectory(async (directory) => {
+    const storage = new FileSnapshotStorage(directory);
+    const prefix = "generations/v2/uwo/events";
+    const otherResource = "generations/v2/uwo/clubs/old.json";
+    for (const name of ["old.json", "new.json"])
+      await storage.put(`${prefix}/${name}`, name);
+    await storage.put(otherResource, "other resource");
+    const old = new Date(Date.now() - 8 * 86_400_000);
+    await utimes(path.join(directory, prefix, "old.json"), old, old);
+    await utimes(path.join(directory, otherResource), old, old);
+    await storage.deleteOlderThan(prefix, Date.now() - 7 * 86_400_000);
+    expect(await readdir(path.join(directory, prefix))).toEqual(["new.json"]);
+    expect(await storage.get(otherResource)).not.toBeNull();
+    // A resource that never published a generation has nothing to prune.
+    await storage.deleteOlderThan("generations/v2/uwo/branding", Date.now());
+  });
+});
+
+test("publishing prunes that resource's generations past retention", async () => {
+  let now = 1_000_000_000_000;
+  const storage = new MemoryStorage(() => now);
+  const store = new DiscoverySnapshotStore(storage, () => now);
+  const retention = discoveryControls.generation_retention_days * 86_400_000;
+  const generations = (resource: string) =>
+    [...storage.objects.keys()].filter((key) =>
+      key.startsWith(
+        `generations/v${discoveryControls.schema_version}/uwo/${resource}/`,
+      ),
+    );
+  await store.refresh("uwo", "events", async () => [1]);
+  await store.refresh("uwo", "positions", async () => [1]);
+  const [first] = generations("events");
+  now += retention / 2;
+  await store.invalidate("uwo", "events");
+  await store.refresh("uwo", "events", async () => [2]);
+  expect(generations("events")).toHaveLength(2);
+  now += retention / 2 + 1;
+  await store.invalidate("uwo", "events");
+  await store.refresh("uwo", "events", async () => [3]);
+  expect(generations("events")).toHaveLength(2);
+  expect(generations("events")).not.toContain(first);
+  // Another resource's generations wait for its own refresh.
+  expect(generations("positions")).toHaveLength(1);
+  expect((await store.read("uwo", "events"))?.data).toEqual([3]);
+});
+
+test("the snapshot store publishes and rereads through file storage", async () => {
+  await withCacheDirectory(async (directory) => {
+    const store = new DiscoverySnapshotStore(new FileSnapshotStorage(directory));
+    await store.refresh("uwo", "events", async () => ({ items: [1] }));
+    await store.invalidate("uwo", "events");
+    await store.refresh("uwo", "events", async () => ({ items: [2] }));
+    const replacement = new DiscoverySnapshotStore(
+      new FileSnapshotStorage(directory),
+    );
+    expect((await replacement.read("uwo", "events"))?.data).toEqual({
+      items: [2],
+    });
+    expect(
+      await readdir(
+        path.join(
+          directory,
+          `generations/v${discoveryControls.schema_version}/uwo/events`,
+        ),
+      ),
+    ).toHaveLength(2);
+  });
 });
 
 for (const { name, load } of [

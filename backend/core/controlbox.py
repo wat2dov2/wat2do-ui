@@ -377,6 +377,8 @@ class DiscoveryCacheControl(_ControlModel):
     cdn_ttl_seconds: int = Field(gt=0, le=300)
     generation_retention_days: int = Field(ge=2)
     schema_version: int = Field(ge=1)
+    # The old S3 snapshot prefix. Only Terraform's bucket lifecycle and
+    # CloudFront rules still read it; snapshots now live in DISCOVERY_CACHE_DIR.
     storage_prefix: str = Field(min_length=1)
     refresh_interval_seconds: int = Field(gt=0)
     worker_interval_seconds: int = Field(gt=0)

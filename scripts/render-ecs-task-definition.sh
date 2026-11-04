@@ -18,15 +18,13 @@ jq --arg frontend_image "$2" --arg backend_image "$3" \
   | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
   | .cpu = ($runtime.task_cpu | tostring)
   | .memory = ($runtime.task_memory_mib | tostring)
-  | ([.containerDefinitions[] | select(.name == "backend") | .environment[] | select(.name == "STORAGE_BUCKET_NAME" or .name == "AWS_REGION")]) as $storage_env
   | .containerDefinitions |= map(
     if .name == "frontend" then
       .image = $frontend_image
       | .cpu = $runtime.frontend_cpu
       | .memoryReservation = $runtime.frontend_memory_reservation_mib
       | .environment = (
-          [.environment[] | select(.name != "STORAGE_BUCKET_NAME" and .name != "AWS_REGION" and .name != "NODE_OPTIONS")]
-          + $storage_env
+          [.environment[] | select(.name != "NODE_OPTIONS")]
           + [{name: "NODE_OPTIONS", value: ("--max-old-space-size=" + ($runtime.frontend_heap_mib | tostring))}]
         )
       | .healthCheck.startPeriod = ([$discovery[0].readiness_timeout_seconds, 300] | min)

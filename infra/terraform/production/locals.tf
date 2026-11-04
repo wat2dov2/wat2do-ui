@@ -14,8 +14,6 @@ locals {
   frontend_runtime_environment = {
     NODE_ENV                = "production"
     NODE_OPTIONS            = "--max-old-space-size=${local.ecs_runtime_control.frontend_heap_mib}"
-    AWS_REGION              = var.aws_region
-    STORAGE_BUCKET_NAME     = aws_s3_bucket.assets.id
     PORT                    = "3000"
     HOSTNAME                = "0.0.0.0"
     BACKEND_API_URL         = "http://127.0.0.1:8000"
@@ -37,7 +35,6 @@ locals {
     EMAIL_DELIVERY_ENABLED          = "true"
     EMAIL_FROM                      = var.email_from
     AWS_REGION                      = var.aws_region
-    STORAGE_BUCKET_NAME             = aws_s3_bucket.assets.id
     STORAGE_PUBLIC_BASE_URL         = "https://${var.domain_name}/media"
   }
 

@@ -49,9 +49,8 @@ Login codes and other app emails arrive in the recipient's real inbox through Am
 The default sender is `wat2do <notifications@wat2do.io>`; it must be a verified SES identity in `AWS_REGION`, or set `EMAIL_FROM` to your verified sender.
 While the SES account is in the sandbox, recipients must be verified SES identities too.
 Automated backend tests disable delivery and mock SES calls.
-The development Compose file overrides the production database settings in `backend/.env`.
-Keep optional OpenAI and development storage credentials in that ignored file to test extraction and uploads.
-Do not put production storage credentials there.
+The development Compose file overrides the production database and media settings in `backend/.env`.
+Keep an optional OpenAI key in that ignored file to test extraction.
 
 | Command | Behavior |
 | --- | --- |
@@ -70,13 +69,11 @@ The regular `docker-compose.yml` remains the production-style image configuratio
 
 ### Development image storage
 
-Development uses the same private S3 and CloudFront storage service as production, with separate resources.
-Run `python scripts/provision_development_storage.py --account-id 058264255918 --region ca-central-1` from `backend/` with your existing AWS credentials to provision or reconcile development storage.
-The command verifies the account before writing and prints the three storage environment settings for `backend/.env`.
-The bucket is `wat2do-development-assets-058264255918`; CloudFront distribution `E3SCZU2ECBSCDN` serves `https://d323wbcnju9x2b.cloudfront.net/media`.
-Only upload public test images: CloudFront image URLs are publicly readable, while S3 itself blocks public access.
-Versioning preserves replaced or deleted objects; no automatic expiration is configured.
-These resources incur AWS storage and delivery charges and are independent of the local database.
+Uploaded images are files on disk, as in production.
+`make dev` sets `MEDIA_ROOT` to the git-ignored `media/` folder at the repository root, one folder per bucket (`media/event-images/<uuid>.jpg`).
+The Compose `media` service serves that folder at `http://localhost:55434/media`, the backend's `STORAGE_PUBLIC_BASE_URL`.
+Delete files under `media/` to clear local uploads; the local database keeps their URLs.
+Discovery snapshots are built on each request in development, since `DISCOVERY_CACHE_DIR` is unset.
 Keep `OPENAI_API_KEY` in the ignored backend environment and restart the backend after environment changes.
 
 ### Shared local login configuration
@@ -146,7 +143,10 @@ Wat2Do serves the application from one private AWS ECS Fargate task in `ca-centr
 The task contains the Next.js frontend on port 3000 and the FastAPI backend on port 8000.
 CloudFront is the public edge and an Application Load Balancer is the HTTPS origin.
 The database is Amazon RDS for PostgreSQL 17 (database `wat2do`), which the backend reads and writes through our own PostgREST data API at `https://data.wat2do.io`.
-Sign-in, sessions and access tokens are the backend's own (`backend/services/auth_service.py`), and uploaded images live in S3 behind CloudFront.
+Sign-in, sessions and access tokens are the backend's own (`backend/services/auth_service.py`).
+Uploaded and ingested media are files under `MEDIA_ROOT`, one folder per bucket, which the web server serves at `STORAGE_PUBLIC_BASE_URL` (`https://wat2do.io/media`).
+The web server, not the code, sends their immutable `Cache-Control` header and `Content-Disposition: attachment` for `.svg` files.
+Discovery snapshots are files under the frontend's `DISCOVERY_CACHE_DIR`, which must sit outside `MEDIA_ROOT`; production refuses to start without it.
 An isolated, concurrency-limited Lambda captures changed school event feeds as social-preview images after their CacheEntID media finishes scraping, then stores the immutable JPEG in the existing S3 and CloudFront asset path.
 The encrypted Terraform state bucket and DynamoDB lock table remain in `us-west-2`; they do not affect Canadian application traffic.
 

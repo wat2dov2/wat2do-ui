@@ -6,17 +6,19 @@ Western's canonical school slug is `uwo`.
 
 ## Implemented design
 
-Events, Positions, Clubs, school branding, the school directory, and the site-wide banner use complete snapshots in the existing application S3 bucket.
+Events, Positions, Clubs, school branding, the school directory, and the site-wide banner use complete snapshots stored as files under the frontend's `DISCOVERY_CACHE_DIR`.
 Server rendering and browser directory refreshes read the same published data.
 Snapshot ownership lives in `discoverySnapshotStore.ts`; feature server loaders own source assembly; `app/discoveryRefresh.server.ts` composes the all-school worker.
 The old directory fetch-cache tags, unconditional five-resource invalidation, and recursive navigation warmer have been removed.
 Event and club details use current source reads, memoized within their route render, so task-local detail caches cannot retain another task's stale club fields.
 
-S3 was selected instead of the initially proposed Redis adapter because the application already operates S3 with strongly consistent reads and conditional writes.
+Snapshots were first kept in S3 for its conditional writes; production now runs one Next process on one machine, so local files give the same guarantees.
+`FileSnapshotStorage` (`shared/services/discoveryCache.server.ts`) uses each file's SHA-256 as its etag.
+A conditional write holds a process-wide lock for its file, shared by every Next bundle, while it compares the etag and renames a flushed temporary file into place.
 It stores a small mutable state record and immutable complete payloads under a versioned school/resource key.
 There is one authoritative directory snapshot path, without a second independent Next fetch cache for these datasets.
 No new database schema, Redis deployment, or SQS resource is required.
-CloudFront is denied access to the internal snapshot prefix; public media delivery retains its existing policy.
+`DISCOVERY_CACHE_DIR` must sit outside the publicly served `MEDIA_ROOT`.
 
 A refresh claims a conditional lease, builds all source pages, uploads a complete payload, and conditionally publishes its pointer.
 The generation timestamp records when source reads began, so a build that began before a confirmed edit cannot pretend to be newer than it.
@@ -113,7 +115,7 @@ Publishing concurrency and a separate render worker remain contingent on measuri
 
 Feature settings live in `backend/controlbox/database.json`, `discovery_cache.json`, `image_delivery.json`, and their existing feature control files.
 Snapshot schema changes require a version bump and readiness warming before traffic.
-Immutable generations expire after the retention window; state pointers do not expire independently.
+After each refresh, the store deletes that school/resource's generations older than `generation_retention_days`; state pointers do not expire independently.
 Structured refresh logs identify school, resource, success/failure, duration, and bytes.
 The discovery endpoint includes generation and Server-Timing headers; readiness identifies missing school/resource coverage.
 
@@ -142,7 +144,5 @@ The initial performance targets remain targets until measured: lower first-scree
 
 ## References
 
-- [S3 conditional writes](https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-writes.html)
-- [S3 strong consistency](https://aws.amazon.com/s3/consistency/)
 - [Next instrumentation lifecycle](https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation)
 - [Production API profiling runbook](../production_api_profiling_runbook.md)

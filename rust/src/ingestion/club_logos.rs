@@ -4,7 +4,7 @@
 //! One handle is read at a time, `club_logo_read_delay_seconds` apart, to fill a
 //! missing logo and to replace a placeholder "@handle" name with the real one.
 //! A handle is read again only after `club_logo_retry_days`. Instagram's picture
-//! links expire, so each one is copied to S3 right away.
+//! links expire, so each one is copied to media storage right away.
 
 use std::collections::HashMap;
 use std::path::PathBuf;

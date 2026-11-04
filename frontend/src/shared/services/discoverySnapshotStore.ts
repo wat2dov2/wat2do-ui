@@ -23,7 +23,10 @@ export interface StoredObject {
 }
 export interface SnapshotStorage {
   get(key: string): Promise<StoredObject | null>;
+  /** Writes only if the stored etag still matches, or nothing is stored when `etag` is undefined. */
   put(key: string, value: string, etag?: string): Promise<boolean>;
+  /** Deletes the objects directly under `prefix` last written before `cutoff` (epoch ms). */
+  deleteOlderThan(prefix: string, cutoff: number): Promise<void>;
 }
 
 /** One durable state record publishes immutable, complete generations with CAS. */
@@ -41,7 +44,27 @@ export class DiscoverySnapshotStore {
   private key(school: string, resource: DiscoveryResource) {
     if (!/^[a-z0-9_-]+$/.test(school))
       throw new Error("Invalid discovery school");
-    return `${control.storage_prefix}/v${control.schema_version}/${school}/${resource}/state.json`;
+    return `v${control.schema_version}/${school}/${resource}/state.json`;
+  }
+
+  private generations(school: string, resource: DiscoveryResource) {
+    return `generations/v${control.schema_version}/${school}/${resource}`;
+  }
+
+  /** A generation outlives the maximum snapshot age, so no reader still needs an expired one. */
+  private async pruneGenerations(school: string, resource: DiscoveryResource) {
+    try {
+      await this.storage.deleteOlderThan(
+        this.generations(school, resource),
+        this.now() - control.generation_retention_days * 86_400_000,
+      );
+    } catch (error) {
+      console.error("discovery_generation_prune_failed", {
+        school,
+        resource,
+        error,
+      });
+    }
   }
 
   private async state(school: string, resource: DiscoveryResource) {
@@ -205,7 +228,7 @@ export class DiscoverySnapshotStore {
     try {
       const data = await build();
       const generatedAt = now;
-      const payloadKey = `${control.storage_prefix}/generations/v${control.schema_version}/${school}/${resource}/${owner}.json`;
+      const payloadKey = `${this.generations(school, resource)}/${owner}.json`;
       if (!(await this.storage.put(payloadKey, JSON.stringify(data))))
         throw new Error("Discovery generation already exists");
       let currentRevision = false;
@@ -243,6 +266,7 @@ export class DiscoverySnapshotStore {
         durationMs: this.now() - now,
         bytes: Buffer.byteLength(JSON.stringify(data)),
       });
+      await this.pruneGenerations(school, resource);
       if (!updated || currentRevision) return published;
     } catch (error) {
       // Keep the published pointer untouched. A later worker retries durable dirty state.

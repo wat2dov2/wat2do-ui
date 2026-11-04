@@ -375,63 +375,50 @@ def test_upload_accepts_at_limit_content_length(authenticated_client, monkeypatc
 # ── Regression: audit U7 — extension derived from content-type only ────
 
 
-def test_upload_ignores_user_supplied_filename_extension(authenticated_client, monkeypatch):
-    """Audit U7: the stored object's path must use the extension that
+def _store_under(monkeypatch, media_root) -> None:
+    monkeypatch.setattr(storage, "_media_root", str(media_root))
+    monkeypatch.setattr(storage, "_public_base_url", "https://wat2do.io/media")
+
+
+def test_upload_ignores_user_supplied_filename_extension(
+    authenticated_client, monkeypatch, tmp_path
+):
+    """Audit U7: the stored file's name must use the extension that
     matches the validated content-type, never the user-supplied filename.
     A PNG uploaded as ``evil.html`` becomes ``<uuid>.png``, not ``.html``.
     """
-    fake_s3 = MagicMock()
-    monkeypatch.setattr(storage, "_s3", fake_s3)
-    monkeypatch.setattr(storage, "_bucket_name", "wat2do-test-assets")
-    monkeypatch.setattr(storage, "_public_base_url", "https://wat2do.io/media")
+    _store_under(monkeypatch, tmp_path)
 
     png = _real_png()
     files = _make_file("evil.html", png, "image/png")
     resp = authenticated_client.post("/uploads/qr-asset", files=files)
 
     assert resp.status_code == 200
-    stored_key = fake_s3.put_object.call_args.kwargs["Key"]
-    assert stored_key.endswith(".png")
-    assert not stored_key.endswith(".html")
+    [stored] = (tmp_path / "qr-assets").iterdir()
+    assert stored.suffix == ".png"
+    assert resp.json()["url"] == f"https://wat2do.io/media/qr-assets/{stored.name}"
 
 
-# ── Regression: audit U8 — SVGs uploaded with Content-Disposition: attachment ──
+# ── Regression: audit U8 - SVGs download instead of rendering inline ──
 
 
-def test_upload_svg_sets_content_disposition_attachment(authenticated_client, monkeypatch):
-    """Audit U8: storage uploads for SVG must set Content-Disposition:
-    attachment so browsers download rather than inline-render on
-    navigation (the latter would execute any surviving script in the
-    storage origin).
+def test_upload_svg_is_stored_as_sanitized_svg(authenticated_client, monkeypatch, tmp_path):
+    """Audit U8: the web server answers every ``.svg`` file with
+    ``Content-Disposition: attachment`` so browsers download rather than
+    inline-render on navigation (the latter would execute any surviving
+    script in the storage origin). That only holds while SVG content is
+    always stored under an ``.svg`` name.
     """
-    fake_s3 = MagicMock()
-    monkeypatch.setattr(storage, "_s3", fake_s3)
-    monkeypatch.setattr(storage, "_bucket_name", "wat2do-test-assets")
-    monkeypatch.setattr(storage, "_public_base_url", "https://wat2do.io/media")
+    _store_under(monkeypatch, tmp_path)
 
-    clean_svg = b'<svg xmlns="http://www.w3.org/2000/svg"><rect width="4" height="4"/></svg>'
-    files = _make_file("ok.svg", clean_svg, "image/svg+xml")
+    svg = b'<svg xmlns="http://www.w3.org/2000/svg"><rect width="4" height="4"/></svg>'
+    files = _make_file("ok.svg", svg, "image/svg+xml")
     resp = authenticated_client.post("/uploads/qr-asset", files=files)
 
     assert resp.status_code == 200
-    stored_options = fake_s3.put_object.call_args.kwargs
-    assert stored_options["ContentType"] == "image/svg+xml"
-    assert stored_options["ContentDisposition"] == "attachment"
-
-
-def test_upload_png_does_not_set_content_disposition(authenticated_client, monkeypatch):
-    """Raster uploads don't set content-disposition — they're safe to render inline."""
-    fake_s3 = MagicMock()
-    monkeypatch.setattr(storage, "_s3", fake_s3)
-    monkeypatch.setattr(storage, "_bucket_name", "wat2do-test-assets")
-    monkeypatch.setattr(storage, "_public_base_url", "https://wat2do.io/media")
-
-    files = _make_file("ok.png", _real_png(), "image/png")
-    resp = authenticated_client.post("/uploads/qr-asset", files=files)
-
-    assert resp.status_code == 200
-    stored_options = fake_s3.put_object.call_args.kwargs
-    assert "ContentDisposition" not in stored_options
+    [stored] = (tmp_path / "qr-assets").iterdir()
+    assert stored.suffix == ".svg"
+    assert b"<rect" in stored.read_bytes()
 
 
 # ── Regression: audit U9 — EXIF metadata stripped from uploads ─────────
@@ -527,14 +514,10 @@ def test_path_from_url_rejects_traversal():
 
     Without this, a user who PATCHes their event with
     ``source_image_url=".../event-images/../shared-asset.png"`` could cause
-    an unrelated object to be deleted when they next upload (audit U10).
+    an unrelated file to be deleted when they next upload (audit U10).
     """
     # Legitimate URL passes through.
-    service = StorageService(
-        MagicMock(),
-        bucket_name="wat2do-test-assets",
-        public_base_url="https://wat2do.io/media",
-    )
+    service = StorageService(media_root="/srv/media", public_base_url="https://wat2do.io/media")
 
     ok = service.path_from_url(
         "https://wat2do.io/media/event-images/abc123.png",
@@ -557,40 +540,82 @@ def test_path_from_url_rejects_traversal():
     assert bad_abs is None
 
 
-def test_upload_file_writes_private_s3_object_and_returns_cloudfront_url():
-    s3 = MagicMock()
-    service = StorageService(
-        s3,
-        bucket_name="wat2do-test-assets",
-        public_base_url="https://wat2do.io/media",
-    )
+def test_upload_file_writes_the_bucket_file_and_returns_its_public_url(tmp_path):
+    service = StorageService(media_root=str(tmp_path), public_base_url="https://wat2do.io/media/")
 
     url = service.upload_file("event-images", b"image-bytes", "image/png")
 
     assert url.startswith("https://wat2do.io/media/event-images/")
     assert url.endswith(".png")
-    put = s3.put_object.call_args.kwargs
-    assert put["Bucket"] == "wat2do-test-assets"
-    assert put["Key"].startswith("media/event-images/")
-    assert put["Body"] == b"image-bytes"
-    assert put["ContentType"] == "image/png"
-    assert put["ServerSideEncryption"] == "AES256"
+    stored = tmp_path / "event-images" / url.rsplit("/", 1)[-1]
+    assert stored.read_bytes() == b"image-bytes"
+    assert stored.stat().st_mode & 0o777 == 0o644
+    # Only the finished file remains; the temporary file was renamed into place.
+    assert [path.name for path in stored.parent.iterdir()] == [stored.name]
 
 
-def test_delete_file_deletes_only_the_expected_s3_key():
-    s3 = MagicMock()
-    service = StorageService(
-        s3,
-        bucket_name="wat2do-test-assets",
-        public_base_url="https://wat2do.io/media",
-    )
+def test_upload_file_leaves_no_partial_file_when_the_write_fails(tmp_path, monkeypatch):
+    import os
+
+    import pytest
+
+    service = StorageService(media_root=str(tmp_path), public_base_url="https://wat2do.io/media")
+
+    def fail_replace(source, target):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(os, "replace", fail_replace)
+    with pytest.raises(OSError, match="disk full"):
+        service.upload_file("event-images", b"image-bytes", "image/png")
+    assert list((tmp_path / "event-images").iterdir()) == []
+
+
+def test_storage_refuses_paths_outside_their_bucket(tmp_path):
+    import pytest
+
+    from core.exceptions import ValidationError
+
+    media_root = tmp_path / "media"
+    (media_root / "avatars").mkdir(parents=True)
+    secret = tmp_path / "secret.jpg"
+    secret.write_bytes(b"private")
+    (media_root / "avatars" / "escape.jpg").symlink_to(secret)
+    service = StorageService(media_root=str(media_root), public_base_url="https://wat2do.io/media")
+
+    for bucket, path in [
+        ("avatars", "../secret.jpg"),
+        ("avatars", "/etc/passwd"),
+        ("avatars", "escape.jpg"),
+        ("..", "secret.jpg"),
+    ]:
+        with pytest.raises(ValidationError, match="asset path"):
+            service.download_file(bucket, path)
+        service.delete_file(bucket, path)
+    assert secret.read_bytes() == b"private"
+    with pytest.raises(ValidationError, match="asset path"):
+        service.upload_file("..", b"bytes", "image/png")
+
+
+def test_storage_requires_an_absolute_media_root():
+    import pytest
+
+    for media_root in ("", "media"):
+        service = StorageService(media_root=media_root, public_base_url="https://wat2do.io/media")
+        with pytest.raises(RuntimeError, match="MEDIA_ROOT"):
+            service.upload_file("avatars", b"bytes", "image/png")
+
+
+def test_delete_file_deletes_only_the_expected_file(tmp_path):
+    for name in ("abc123.jpg", "other.jpg"):
+        (tmp_path / "avatars").mkdir(exist_ok=True)
+        (tmp_path / "avatars" / name).write_bytes(b"bytes")
+    service = StorageService(media_root=str(tmp_path), public_base_url="https://wat2do.io/media")
 
     service.delete_file("avatars", "abc123.jpg")
+    # A file that is already gone is not an error.
+    service.delete_file("avatars", "abc123.jpg")
 
-    s3.delete_object.assert_called_once_with(
-        Bucket="wat2do-test-assets",
-        Key="media/avatars/abc123.jpg",
-    )
+    assert [path.name for path in (tmp_path / "avatars").iterdir()] == ["other.jpg"]
 
 
 def test_unsigned_event_image_accepts_anonymous_visitors(client, monkeypatch):

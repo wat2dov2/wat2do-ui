@@ -15,7 +15,7 @@ directory platforms publish club logos to a plain request:
 
 A picture shared by several clubs on one host is the school's default, so it is
 skipped. Pages are read one at a time with a pause between requests. Each
-logo is copied to S3 before ``clubs.logo_url`` is set, so a rerun only visits
+logo is copied to media storage before ``clubs.logo_url`` is set, so a rerun only visits
 clubs that are still missing one. Without ``--apply`` nothing is uploaded or
 written.
 """
@@ -187,7 +187,7 @@ def store_logos(logos: dict[int, str]) -> tuple[int, int]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--apply", action="store_true", help="Upload to S3 and update clubs")
+    parser.add_argument("--apply", action="store_true", help="Store the logos and update clubs")
     parser.add_argument("--limit", type=int, help="Only read this many club pages")
     parser.add_argument("--delay", type=float, default=1.0, help="Seconds between page reads")
     args = parser.parse_args()
