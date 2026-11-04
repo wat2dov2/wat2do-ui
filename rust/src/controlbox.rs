@@ -374,7 +374,6 @@ pub struct PublicAttendance {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct InteractionIngestion {
-    pub default_query_limit: usize,
     pub maximum_batch_size: usize,
     pub maximum_metadata_bytes: usize,
     pub maximum_duplicates_per_window: usize,

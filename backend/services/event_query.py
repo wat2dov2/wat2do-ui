@@ -2,8 +2,7 @@
 
 The public feed, event detail and the rest of the event API are served by the
 Rust API (``rust/src/api/events``). Python keeps the reads its own jobs need:
-events by id (the Instagram carousel) and the upcoming candidate pool
-(``recommender``), in the same shape and order the feed serves.
+events by id (the Instagram carousel), in the same shape and order the feed serves.
 """
 
 import logging
@@ -71,7 +70,7 @@ def hydrate_event(row: dict, occurrences: list[OccurrenceResponse], model: type[
     """Combine a raw ``events`` row with its occurrences into a response model.
 
     The one place that knows how an events row + occurrence list become an API
-    model - shared by event detail, carousel slides and recommender candidates so
+    model - shared by event detail, and carousel slides so
     the shape never drifts between them (the Rust API mirrors it).
 
     When the row carries an embedded ``clubs`` object (from
@@ -167,23 +166,6 @@ def load_events_by_ids(event_ids: list[int], *, model: type[T]) -> dict[int, T]:
     shape the browse list serves rather than a hand-rolled select.
     """
     return _load_hydrated_events_by_ids(event_ids, model=model)
-
-
-def load_upcoming_events(
-    *, since: datetime, school: str | None, cap: int, model: type[T]
-) -> list[T]:
-    """Events with an occurrence at/after ``since``, deduped and hydrated.
-
-    Ordered soonest-first and capped at ``cap`` distinct events, so the nearest
-    events survive if a school has more upcoming than the cap. ``model`` selects
-    the response shape (and, with it, how many event columns we fetch).
-    """
-    event_ids = load_upcoming_event_ids(since=since, school=school, cap=cap)
-    if not event_ids:
-        return []
-
-    events_by_id = _load_hydrated_events_by_ids(event_ids, model=model)
-    return [events_by_id[event_id] for event_id in event_ids if event_id in events_by_id]
 
 
 def load_upcoming_event_ids(*, since: datetime, school: str | None, cap: int) -> list[int]:

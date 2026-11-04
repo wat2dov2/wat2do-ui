@@ -75,7 +75,6 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     assert controlbox.email_delivery.notification_consent_version == "2026-10"
     assert controlbox.email_delivery.team_sender == "wat2do <team@wat2do.io>"
     assert controlbox.reel_transcription.model == "gpt-4o-mini-transcribe"
-    assert controlbox.recommendations.snapshot.candidate_events_per_school == 1000
     assert controlbox.morning_email.new_event_window_hours == 24
     assert controlbox.morning_email.last_local_send_hour == 20
     assert controlbox.event_reminder.lead_minutes == 60
@@ -297,28 +296,6 @@ def test_invalid_instagram_digest_endpoint_is_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValidationError, match="must use i.instagram.com"):
-        load_controlbox(path)
-
-
-def test_invalid_recommendation_blend_is_rejected(tmp_path: Path) -> None:
-    path = _write_control(
-        tmp_path,
-        "recommendations",
-        lambda payload: payload["personalization"]["hot_blend"].update({"content": 0.9}),
-    )
-
-    with pytest.raises(ValidationError, match="blend weights must total 1"):
-        load_controlbox(path)
-
-
-def test_invalid_cross_field_limits_are_rejected(tmp_path: Path) -> None:
-    path = _write_control(
-        tmp_path,
-        "recommendations",
-        lambda payload: payload["snapshot"].update({"recommendations_per_user": 100}),
-    )
-
-    with pytest.raises(ValidationError, match="cannot exceed maximum_results"):
         load_controlbox(path)
 
 

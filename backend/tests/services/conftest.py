@@ -144,8 +144,8 @@ def patch_sb(monkeypatch, fake_sb):
     not enough — we patch the copy. Call with the module path of the
     service under test:
 
-        def test_all_user_goings(fake_sb, patch_sb):
-            patch_sb("services.going_event_service")
+        def test_click_counts(fake_sb, patch_sb):
+            patch_sb("services.interaction_service")
             ...
     """
 
