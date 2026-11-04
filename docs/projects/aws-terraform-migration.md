@@ -900,7 +900,7 @@ Run hourly at the same UTC minute as the current workflow.
 Run:
 
 ```text
-python jobs/send_notifications.py --only daily-new-events
+rust/target/release/wat2do-send-notifications --notification morning_email
 ```
 
 Keep timezone eligibility and delivery idempotency in application code.

@@ -9,20 +9,25 @@ description = "wat2do backend services ported from Python"
 anyhow = "1"
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-s3 = "1"
+aws-sdk-sesv2 = "1"
+base64 = "0.22"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
 chrono-tz = "0.10"
 clap = { version = "4", features = ["derive"] }
 dotenvy = "0.15"
 fs2 = "0.4"
 futures-util = "0.3"
+hmac = "0.12"
 htmlize = { version = "1", features = ["unescape"] }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp"] }
 indexmap = { version = "2", features = ["serde"] }
+jpeg-encoder = "0.7.1"
 percent-encoding = "2"
 regex = "1"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.10"
 signal-hook = "0.3"
 sqlx = { version = "0.8", default-features = false, features = ["postgres", "runtime-tokio", "tls-rustls", "uuid", "chrono", "json", "macros"] }
 tempfile = "3"

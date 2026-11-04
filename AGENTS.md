@@ -186,6 +186,7 @@ The backend is being ported to Rust one component at a time, in the single crate
 A ported component replaces its Python code in the same change; never keep both running.
 Rust reads the same `backend/controlbox/*.json` (embedded at build time), `backend/.env` settings and Postgres tables as Python, and talks to Postgres directly through `DATABASE_URL`.
 Constants Rust mirrors from `backend/core/constants` live in `rust/src/constants.rs`, guarded by `backend/tests/test_rust_constants.py`.
+The scheduled notification emails (morning email and event reminders) are sent by `wat2do-send-notifications` (`rust/src/notifications`, `rust/src/email`), which `.github/workflows/scheduled-emails.yml` builds and runs; event change emails and the preference and unsubscribe routes are still Python and share `notifications_log`, the unsubscribe token format and the email layout with it.
 Run `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` in `rust/` alongside the backend checks.
 
 ### Bug fixes and testing

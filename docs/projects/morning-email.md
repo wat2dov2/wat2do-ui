@@ -3,6 +3,12 @@
 Status: implemented.
 Owner: Tony.
 
+The scheduled sender is Rust: `.github/workflows/scheduled-emails.yml` runs `wat2do-send-notifications` (`rust/src/notifications`) every hour.
+`--render-only <directory>` writes every email a run would send to disk instead, reading the database through read-only connections whose statements stop after 10 seconds.
+`EMAIL_DELIVERY_ENABLED=false` is not a preview: it only skips the SES call, so a run against the real database still claims each delivery and marks it sent, and those users get nothing that day.
+Use `--render-only` to preview or compare emails against production.
+Event change emails, the preference routes and the unsubscribe route are still Python.
+
 ## 1. Goal
 
 Replace `morning_digest`, `weekly_digest`, and `daily_new_events` with one `morning_email` sent around 9:00 AM in the user's school timezone.
@@ -819,7 +825,7 @@ Do not deploy a nullable compatibility period or dual Going API.
 - `backend/services/notifications/preferences.py`
 - `backend/services/notifications/rendering.py`
 - `backend/services/notifications/schedule.py`
-- `backend/jobs/send_notifications.py`
+- `backend/jobs/send_notifications.py`, since ported to Rust (`rust/src/bin/wat2do-send-notifications.rs`)
 - `backend/recommender/service.py`
 - `backend/recommender/collaborative.py`
 - `backend/services/scraper/event_writer.py`

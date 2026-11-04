@@ -1,10 +1,13 @@
 //! Registered schools and the per-school context agents are given
 //! (`services/school_service.py` and `services/school_context.py`).
 
-use anyhow::Result;
+use std::collections::HashMap;
+
+use anyhow::{Result, bail};
 use chrono::{DateTime, NaiveDate, Utc};
 use chrono_tz::Tz;
 use sqlx::PgPool;
+use url::Url;
 
 use crate::controlbox::EVENT_DISCOVERY;
 
@@ -28,6 +31,76 @@ pub async fn by_slug(pool: &PgPool, slug: &str) -> Result<Option<School>> {
     .bind(slug)
     .fetch_optional(pool)
     .await?)
+}
+
+/// Every registered school by id; there are few, so callers load them once.
+pub async fn by_id(pool: &PgPool) -> Result<HashMap<i32, School>> {
+    let schools: Vec<School> = sqlx::query_as(&format!("SELECT {COLUMNS} FROM public.schools"))
+        .fetch_all(pool)
+        .await?;
+    Ok(schools
+        .into_iter()
+        .map(|school| (school.id, school))
+        .collect())
+}
+
+/// `school_frontend_url`: the configured frontend origin scoped to one school,
+/// such as `https://uwaterloo.wat2do.io` for `https://wat2do.io`.
+pub fn frontend_url(configured: &str, slug: Option<&str>) -> Result<String> {
+    let base_url = match configured.trim_end_matches('/') {
+        "" => "http://localhost:3000",
+        trimmed => trimmed,
+    };
+    let parsed = Url::parse(base_url).ok();
+    let Some(hostname) = parsed
+        .as_ref()
+        .and_then(Url::host_str)
+        .filter(|host| !host.is_empty())
+        .map(|host| host.trim_matches(['[', ']']).to_lowercase())
+    else {
+        bail!("FRONTEND_URL must be an absolute URL");
+    };
+    if matches!(hostname.as_str(), "wat2do.ca" | "www.wat2do.ca")
+        || hostname.ends_with(".wat2do.ca")
+    {
+        bail!("FRONTEND_URL must use wat2do.io, not wat2do.ca");
+    }
+    let slug = slug.unwrap_or("").trim().to_lowercase();
+    if slug.is_empty() || matches!(hostname.as_str(), "127.0.0.1" | "::1") {
+        return Ok(base_url.to_owned());
+    }
+    let scoped_hostname = if hostname == "localhost" || hostname.ends_with(".localhost") {
+        format!("{slug}.wat2do.localhost")
+    } else if hostname == "wat2do.io" || hostname.ends_with(".wat2do.io") {
+        format!("{slug}.wat2do.io")
+    } else {
+        format!(
+            "{slug}.{}",
+            hostname.strip_prefix("www.").unwrap_or(&hostname)
+        )
+    };
+    let parsed = parsed.expect("parsed above");
+    let port = explicit_port(base_url)
+        .map(|port| format!(":{port}"))
+        .unwrap_or_default();
+    Ok(format!(
+        "{}://{scoped_hostname}{port}{}",
+        parsed.scheme(),
+        parsed.path().trim_end_matches('/')
+    ))
+}
+
+/// The port a URL spells out, even the scheme's default, as Python's `urlsplit` reads it.
+fn explicit_port(url: &str) -> Option<u16> {
+    let authority = url.split_once("://")?.1.split(['/', '?', '#']).next()?;
+    let host_and_port = authority
+        .rsplit_once('@')
+        .map_or(authority, |(_, host)| host);
+    let (host, port) = host_and_port.rsplit_once(':')?;
+    if host.starts_with('[') && !host.ends_with(']') {
+        return None;
+    }
+    port.parse().ok()
 }
 
 impl School {
@@ -94,4 +167,190 @@ pub fn building_code_prompt(slug: &str) -> String {
         "Building codes at {slug}: {}. When a listed code appears, its map_location building is exactly this name; never expand it any other way.",
         listed.join("; ")
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::frontend_url;
+
+    /// Every case as `services.school_context.school_frontend_url` returns it.
+    #[test]
+    fn frontend_urls_match_python() {
+        let cases: [(&str, Option<&str>, Option<&str>); 45] = [
+            (
+                "https://wat2do.io",
+                Some("uwaterloo"),
+                Some("https://uwaterloo.wat2do.io"),
+            ),
+            ("https://wat2do.io", None, Some("https://wat2do.io")),
+            (
+                "https://wat2do.io",
+                Some(" UWaterloo "),
+                Some("https://uwaterloo.wat2do.io"),
+            ),
+            (
+                "https://wat2do.io/",
+                Some("uwaterloo"),
+                Some("https://uwaterloo.wat2do.io"),
+            ),
+            ("https://wat2do.io/", None, Some("https://wat2do.io")),
+            (
+                "https://wat2do.io/",
+                Some(" UWaterloo "),
+                Some("https://uwaterloo.wat2do.io"),
+            ),
+            (
+                "https://www.wat2do.io",
+                Some("uwaterloo"),
+                Some("https://uwaterloo.wat2do.io"),
+            ),
+            ("https://www.wat2do.io", None, Some("https://www.wat2do.io")),
+            (
+                "https://www.wat2do.io",
+                Some(" UWaterloo "),
+                Some("https://uwaterloo.wat2do.io"),
+            ),
+            (
+                "https://uwaterloo.wat2do.io",
+                Some("uwaterloo"),
+                Some("https://uwaterloo.wat2do.io"),
+            ),
+            (
+                "https://uwaterloo.wat2do.io",
+                None,
+                Some("https://uwaterloo.wat2do.io"),
+            ),
+            (
+                "https://uwaterloo.wat2do.io",
+                Some(" UWaterloo "),
+                Some("https://uwaterloo.wat2do.io"),
+            ),
+            (
+                "http://localhost:3000",
+                Some("uwaterloo"),
+                Some("http://uwaterloo.wat2do.localhost:3000"),
+            ),
+            ("http://localhost:3000", None, Some("http://localhost:3000")),
+            (
+                "http://localhost:3000",
+                Some(" UWaterloo "),
+                Some("http://uwaterloo.wat2do.localhost:3000"),
+            ),
+            (
+                "http://wat2do.localhost:3000",
+                Some("uwaterloo"),
+                Some("http://uwaterloo.wat2do.localhost:3000"),
+            ),
+            (
+                "http://wat2do.localhost:3000",
+                None,
+                Some("http://wat2do.localhost:3000"),
+            ),
+            (
+                "http://wat2do.localhost:3000",
+                Some(" UWaterloo "),
+                Some("http://uwaterloo.wat2do.localhost:3000"),
+            ),
+            (
+                "http://127.0.0.1:3000",
+                Some("uwaterloo"),
+                Some("http://127.0.0.1:3000"),
+            ),
+            ("http://127.0.0.1:3000", None, Some("http://127.0.0.1:3000")),
+            (
+                "http://127.0.0.1:3000",
+                Some(" UWaterloo "),
+                Some("http://127.0.0.1:3000"),
+            ),
+            (
+                "http://[::1]:3000",
+                Some("uwaterloo"),
+                Some("http://[::1]:3000"),
+            ),
+            ("http://[::1]:3000", None, Some("http://[::1]:3000")),
+            (
+                "http://[::1]:3000",
+                Some(" UWaterloo "),
+                Some("http://[::1]:3000"),
+            ),
+            (
+                "https://example.com:8443/app/",
+                Some("uwaterloo"),
+                Some("https://uwaterloo.example.com:8443/app"),
+            ),
+            (
+                "https://example.com:8443/app/",
+                None,
+                Some("https://example.com:8443/app"),
+            ),
+            (
+                "https://example.com:8443/app/",
+                Some(" UWaterloo "),
+                Some("https://uwaterloo.example.com:8443/app"),
+            ),
+            (
+                "https://www.example.com",
+                Some("uwaterloo"),
+                Some("https://uwaterloo.example.com"),
+            ),
+            (
+                "https://www.example.com",
+                None,
+                Some("https://www.example.com"),
+            ),
+            (
+                "https://www.example.com",
+                Some(" UWaterloo "),
+                Some("https://uwaterloo.example.com"),
+            ),
+            (
+                "",
+                Some("uwaterloo"),
+                Some("http://uwaterloo.wat2do.localhost:3000"),
+            ),
+            ("", None, Some("http://localhost:3000")),
+            (
+                "",
+                Some(" UWaterloo "),
+                Some("http://uwaterloo.wat2do.localhost:3000"),
+            ),
+            (
+                "https://WAT2DO.IO",
+                Some("uwaterloo"),
+                Some("https://uwaterloo.wat2do.io"),
+            ),
+            ("https://WAT2DO.IO", None, Some("https://WAT2DO.IO")),
+            (
+                "https://WAT2DO.IO",
+                Some(" UWaterloo "),
+                Some("https://uwaterloo.wat2do.io"),
+            ),
+            (
+                "https://wat2do.io:443",
+                Some("uwaterloo"),
+                Some("https://uwaterloo.wat2do.io:443"),
+            ),
+            ("https://wat2do.io:443", None, Some("https://wat2do.io:443")),
+            (
+                "https://wat2do.io:443",
+                Some(" UWaterloo "),
+                Some("https://uwaterloo.wat2do.io:443"),
+            ),
+            ("https://uwaterloo.wat2do.ca", Some("uwaterloo"), None),
+            ("https://uwaterloo.wat2do.ca", None, None),
+            ("https://uwaterloo.wat2do.ca", Some(" UWaterloo "), None),
+            ("localhost:3000", Some("uwaterloo"), None),
+            ("localhost:3000", None, None),
+            ("localhost:3000", Some(" UWaterloo "), None),
+        ];
+        for (configured, slug, expected) in cases {
+            assert_eq!(
+                frontend_url(configured, slug).ok().as_deref(),
+                expected,
+                "{configured:?} {slug:?}"
+            );
+        }
+        let legacy = frontend_url("https://uwaterloo.wat2do.ca", None).unwrap_err();
+        assert!(legacy.to_string().contains("must use wat2do.io"));
+    }
 }

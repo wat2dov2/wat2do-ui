@@ -27,13 +27,52 @@ jobs:
       AWS_REGION: ca-central-1
       AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
       AWS_RUNTIME_SECRET_ARN: ${{ vars.AWS_RUNTIME_SECRET_ARN }}
-      ENVIRONMENT: production
       FRONTEND_URL: ${{ vars.FRONTEND_URL }}
       EMAIL_DELIVERY_ENABLED: "true"
       EMAIL_FROM: ${{ vars.AWS_EMAIL_FROM }}
 
     steps:
       - uses: actions/checkout@v4
+
+      # The sender is built before any secret is in the environment, and only
+      # when its code, embedded control box or logo changed since the last build.
+      # The binary is kept outside target/, which rust-cache prunes, and saved
+      # right after the build so a failed send does not lose it.
+      - name: Restore the notification sender
+        id: sender
+        uses: actions/cache/restore@v4
+        with:
+          path: .sender/wat2do-send-notifications
+          key: wat2do-send-notifications-${{ runner.os }}-${{ hashFiles('rust/**', 'backend/controlbox/*.json', 'backend/services/wat2do-logo.png') }}
+
+      - name: Set up Rust
+        if: steps.sender.outputs.cache-hit != 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust builds
+        if: steps.sender.outputs.cache-hit != 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
+      - name: Build the notification sender
+        if: steps.sender.outputs.cache-hit != 'true'
+        working-directory: rust
+        env:
+          # Link-time optimization would add minutes to every run for no
+          # measurable gain in a job that mostly waits on the network.
+          CARGO_PROFILE_RELEASE_LTO: "false"
+        run: |
+          cargo build --release --locked --bin wat2do-send-notifications
+          mkdir -p ../.sender
+          cp target/release/wat2do-send-notifications ../.sender/
+
+      - name: Save the notification sender
+        if: steps.sender.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .sender/wat2do-send-notifications
+          key: ${{ steps.sender.outputs.cache-primary-key }}
 
       - name: Verify notification configuration
         run: |
@@ -54,28 +93,12 @@ jobs:
             --secret-id "$AWS_RUNTIME_SECRET_ARN" \
             --query SecretString \
             --output text)"
-          for secret_key in DATA_API_URL DATA_API_KEY EMAIL_UNSUBSCRIBE_SECRET; do
+          for secret_key in DATABASE_URL EMAIL_UNSUBSCRIBE_SECRET; do
             secret_value="$(jq -er --arg key "$secret_key" '.[$key]' <<< "$secret_json")"
             echo "::add-mask::$secret_value"
             echo "$secret_key=$secret_value" >> "$GITHUB_ENV"
           done
           unset secret_json
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
-          cache-dependency-glob: "backend/requirements.lock"
-        env:
-          UV_CACHE_DIR: ${{ runner.temp }}/.uv-cache
-
-      - name: Set up Python
-        working-directory: backend
-        run: uv venv --python 3.12 .venv
-
-      - name: Install dependencies
-        working-directory: backend
-        run: uv pip install --python .venv/bin/python -r requirements.lock
 
       - name: Dispatch scheduled emails
         working-directory: backend
@@ -92,4 +115,4 @@ jobs:
             notification=morning_email
           fi
           args+=(--notification "$notification")
-          .venv/bin/python jobs/send_notifications.py "${args[@]}"
+          ../.sender/wat2do-send-notifications "${args[@]}"
