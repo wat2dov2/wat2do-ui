@@ -3,7 +3,6 @@
 //! canonical property order, RFC 5545 TEXT escaping, folding at 75 octets
 //! (never splitting a backslash escape), local times with `TZID` and UTC as `Z`.
 
-use base64::Engine;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 use sqlx::PgPool;
@@ -42,12 +41,7 @@ pub struct FeedOccurrence {
 
 /// `secrets.token_urlsafe(32)`.
 pub fn new_token() -> String {
-    use ring::rand::SecureRandom;
-    let mut bytes = [0u8; TOKEN_BYTES];
-    ring::rand::SystemRandom::new()
-        .fill(&mut bytes)
-        .expect("the system random source works");
-    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
+    crate::api::secrets::token_urlsafe(TOKEN_BYTES)
 }
 
 /// `_escape_char`: TEXT escaping, with every line ending as `\n`.

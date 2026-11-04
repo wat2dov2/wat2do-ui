@@ -1057,6 +1057,16 @@ mod tests {
         assert!(queries(" , ").list.is_empty());
     }
 
+    #[test]
+    fn a_location_with_no_names_is_not_searched() {
+        // test_a_location_with_no_names_is_not_searched (main's de989a431).
+        for location in ["", " , ", ",,"] {
+            let (found, asked) = run_locate(location, WATERLOO, vec![], None);
+            assert_eq!(found, None, "{location:?}");
+            assert!(asked.is_empty(), "{location:?}");
+        }
+    }
+
     #[tokio::test]
     async fn run_refreshes_feeds_of_schools_that_gained_pins_and_survives_failures() {
         // test_run_refreshes_feeds_of_schools_that_gained_pins_and_survives_failures
@@ -1091,7 +1101,7 @@ mod tests {
     }
 
     /// `QUERIES_PARITY_FILE`: Python's `_queries` for every production
-    /// `map_location` (an empty one made Python raise; Rust plans no search).
+    /// `map_location` (one that names nothing plans no search on either side).
     #[test]
     #[ignore = "needs a file exported from production"]
     fn production_locations_plan_the_same_searches() {

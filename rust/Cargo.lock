@@ -4282,7 +4282,6 @@ dependencies = [
  "parking_lot",
  "percent-encoding",
  "regex",
- "ring",
  "roxmltree",
  "rusqlite",
  "rustls 0.23.46",

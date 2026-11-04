@@ -100,9 +100,7 @@
     "path": "/events/admin",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {
@@ -110,9 +108,7 @@
     "path": "/going-events/",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {
@@ -124,9 +120,7 @@
     "path": "/v1/saved-events/",
     "identity": {
       "id": "e7c18396-ecaf-4eb2-b210-74c8d4d2b1ca",
-      "email": "saver@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "saver@example.com"
     }
   },
   {
@@ -134,9 +128,7 @@
     "path": "/reports/",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {

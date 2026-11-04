@@ -15,6 +15,8 @@ use crate::controlbox::INTERACTION_INGESTION;
 /// Anonymous callers may record only clicks and un-goings: these feed
 /// popularity and collaborative scores.
 const ANONYMOUS_DISALLOWED: [&str; 3] = ["going", "share", "detail_view"];
+/// `INTERACTION_CLICK`.
+const CLICK: &str = "click";
 const ON_BEHALF: &str = "Cannot submit interactions on behalf of another user";
 
 /// Who a batch is recorded for.
@@ -152,13 +154,100 @@ async fn without_duplicates(
     }
 }
 
+/// `check_click_burst_for_ip`'s cap on counted clicks: each item keeps its
+/// place; a click whose target already has `maximum` anonymous clicks from
+/// this IP in the window is dropped, and kept clicks count toward the cap.
+pub fn cap_clicks_per_ip(
+    existing: &[i64],
+    interactions: Vec<InteractionInput>,
+    ip_hash: &str,
+    position: bool,
+    maximum: usize,
+) -> Vec<InteractionInput> {
+    let mut counts: HashMap<i64, usize> = HashMap::new();
+    for target in existing {
+        *counts.entry(*target).or_default() += 1;
+    }
+    let field = if position { "position_id" } else { "event_id" };
+    let prefix: String = ip_hash.chars().take(12).collect();
+    let mut kept = Vec::new();
+    for item in interactions {
+        if item.interaction_type != CLICK {
+            kept.push(item);
+            continue;
+        }
+        let key = target(&item, position);
+        let count = counts.entry(key).or_default();
+        if *count >= maximum {
+            tracing::warn!(
+                "Dropping anonymous click - IP+event cap reached (ip_hash={prefix}\u{2026} {field}={key} count={count})"
+            );
+            continue;
+        }
+        *count += 1;
+        kept.push(item);
+    }
+    kept
+}
+
+/// `check_click_burst_for_ip`: cap anonymous clicks per client IP and target
+/// within the dedup window, since a fresh `session_id` per request gets past
+/// the per-session cap. Only clicks are limited; a failed read rejects the
+/// group (fail closed), as the session checks do.
+async fn without_click_bursts(
+    db: &PgPool,
+    ip_hash: &str,
+    interactions: Vec<InteractionInput>,
+    position: bool,
+) -> Vec<InteractionInput> {
+    if !interactions
+        .iter()
+        .any(|item| item.interaction_type == CLICK)
+    {
+        return interactions;
+    }
+    let (table, column) = if position {
+        ("position_interactions", "position_id")
+    } else {
+        ("user_interactions", "event_id")
+    };
+    let cutoff =
+        Utc::now() - chrono::Duration::minutes(INTERACTION_INGESTION.deduplication_window_minutes);
+    let sql = format!(
+        "SELECT {column}::int8 FROM public.{table} \
+         WHERE ip_hash = $1 AND interaction_type = 'click' AND user_id IS NULL AND created_at >= $2"
+    );
+    let existing = crate::db::read_with_retry(|| {
+        sqlx::query_scalar::<_, i64>(&sql)
+            .bind(ip_hash)
+            .bind(cutoff)
+            .fetch_all(db)
+    })
+    .await;
+    match existing {
+        Ok(existing) => cap_clicks_per_ip(
+            &existing,
+            interactions,
+            ip_hash,
+            position,
+            INTERACTION_INGESTION.maximum_anonymous_clicks_per_ip_per_event,
+        ),
+        Err(error) => {
+            tracing::error!("Anonymous IP click-burst check failed, rejecting batch: {error}");
+            Vec::new()
+        }
+    }
+}
+
 /// `record_interactions_batch`: returns how many rows were recorded.
+/// `ip_hash` is the caller's hashed client IP when the hashing secret is set.
 pub async fn record_batch(
     db: &PgPool,
     user_id: Option<Uuid>,
     payload_user_id: Option<Uuid>,
     session_id: &str,
     interactions: Vec<InteractionInput>,
+    ip_hash: Option<&str>,
 ) -> Result<i64, ApiError> {
     check_owner(user_id, payload_user_id)?;
     let (actor, mut interactions) = match user_id {
@@ -184,12 +273,17 @@ pub async fn record_batch(
     let (positions, events): (Vec<_>, Vec<_>) = interactions
         .drain(..)
         .partition(|item| item.position_id.is_some());
-    let mut kept = without_duplicates(db, actor, events, false).await;
-    kept.extend(without_duplicates(db, actor, positions, true).await);
-    if kept.is_empty() {
+    let mut events = without_duplicates(db, actor, events, false).await;
+    let mut positions = without_duplicates(db, actor, positions, true).await;
+    if let (Actor::Session(_), Some(ip_hash)) = (actor, ip_hash) {
+        events = without_click_bursts(db, ip_hash, events, false).await;
+        positions = without_click_bursts(db, ip_hash, positions, true).await;
+    }
+    events.extend(positions);
+    if events.is_empty() {
         return Ok(0);
     }
-    record(db, user_id, session_id, &kept).await
+    record(db, user_id, session_id, &events, ip_hash).await
 }
 
 /// `record_interactions`: insert each table's rows, events first.
@@ -198,6 +292,7 @@ async fn record(
     user_id: Option<Uuid>,
     session_id: &str,
     interactions: &[InteractionInput],
+    ip_hash: Option<&str>,
 ) -> Result<i64, ApiError> {
     // Both tables or neither, even if the request is dropped between them.
     let mut transaction = db.begin().await?;
@@ -226,8 +321,9 @@ async fn record(
             .map(|item| item.metadata.clone().unwrap_or(Value::Null))
             .collect();
         let inserted = sqlx::query(&format!(
-            "INSERT INTO public.{table} (id, user_id, session_id, {column}, interaction_type, metadata) \
-             SELECT id, $2, $3, target::int4, kind, NULLIF(metadata, 'null'::jsonb) \
+            "INSERT INTO public.{table} \
+             (id, user_id, session_id, {column}, interaction_type, metadata, ip_hash) \
+             SELECT id, $2, $3, target::int4, kind, NULLIF(metadata, 'null'::jsonb), $7 \
              FROM unnest($1::uuid[], $4::int8[], $5::text[], $6::jsonb[]) AS row(id, target, kind, metadata)"
         ))
         .bind(&ids)
@@ -236,6 +332,7 @@ async fn record(
         .bind(&targets)
         .bind(&kinds)
         .bind(&metadata)
+        .bind(ip_hash)
         .execute(&mut *transaction)
         .await?;
         recorded += inserted.rows_affected() as i64;
@@ -315,5 +412,30 @@ mod tests {
             (2..1002).map(|id| (id, "click".to_owned())).collect();
         history.push((1, "click".to_owned()));
         assert!(filter_duplicates(&history, vec![click(1)], "user=x", false, (1, 2000)).is_empty());
+    }
+
+    #[test]
+    fn anonymous_clicks_are_capped_per_ip_and_target() {
+        // test_click_burst_caps_anonymous_clicks_per_ip (cap 2)
+        let ungoing = InteractionInput {
+            event_id: Some(4),
+            position_id: None,
+            interaction_type: "ungoing".into(),
+            metadata: None,
+        };
+        let batch = vec![click(1), click(2), click(3), ungoing];
+        for (existing, expected) in [
+            (vec![], vec![0, 1, 2, 3]),
+            (vec![1, 1], vec![1, 2, 3]),
+            (vec![1, 1, 2, 2], vec![2, 3]),
+        ] {
+            let kept = cap_clicks_per_ip(&existing, batch.clone(), "iphash", false, 2);
+            let wanted: Vec<InteractionInput> =
+                expected.iter().map(|index| batch[*index].clone()).collect();
+            assert_eq!(kept, wanted, "{existing:?}");
+        }
+        // Clicks accepted from this batch count toward the cap.
+        let kept = cap_clicks_per_ip(&[1], vec![click(1), click(1), click(1)], "iphash", false, 2);
+        assert_eq!(kept, vec![click(1)]);
     }
 }

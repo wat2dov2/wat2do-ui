@@ -360,9 +360,7 @@
     "path": "/events/admin",
     "identity": {
       "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
-      "email": "user@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "user@example.com"
     }
   },
   {
@@ -370,9 +368,7 @@
     "path": "/events/admin",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {
@@ -380,9 +376,7 @@
     "path": "/events/admin?page=3&page_size=20&search=Dance",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {
@@ -390,9 +384,7 @@
     "path": "/events/admin?school=uwaterloo&category=Business",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {
@@ -400,9 +392,7 @@
     "path": "/events/admin?search=*night*",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {
@@ -410,9 +400,7 @@
     "path": "/events/admin?page=0",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {
@@ -420,9 +408,7 @@
     "path": "/events/admin",
     "identity": {
       "id": "00000000-0000-0000-0000-00000000dead",
-      "email": "x@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "x@example.com"
     }
   },
   {
@@ -434,9 +420,7 @@
     "path": "/going-events/",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {
@@ -444,9 +428,7 @@
     "path": "/going-events/",
     "identity": {
       "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
-      "email": "user@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "user@example.com"
     }
   },
   {
@@ -454,9 +436,7 @@
     "path": "/going-events/",
     "identity": {
       "id": "e7c18396-ecaf-4eb2-b210-74c8d4d2b1ca",
-      "email": "saver@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "saver@example.com"
     }
   },
   {
@@ -464,9 +444,7 @@
     "path": "/going-events/",
     "identity": {
       "id": "00000000-0000-0000-0000-00000000dead",
-      "email": "x@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "x@example.com"
     }
   },
   {
@@ -502,9 +480,7 @@
     },
     "identity": {
       "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
-      "email": "user@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "user@example.com"
     },
     "safe": true
   },
@@ -520,9 +496,7 @@
     },
     "identity": {
       "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
-      "email": "user@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "user@example.com"
     },
     "safe": true
   },
@@ -550,9 +524,7 @@
     "path": "/v1/saved-events/",
     "identity": {
       "id": "e7c18396-ecaf-4eb2-b210-74c8d4d2b1ca",
-      "email": "saver@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "saver@example.com"
     }
   },
   {
@@ -560,9 +532,7 @@
     "path": "/v1/saved-events/",
     "identity": {
       "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
-      "email": "user@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "user@example.com"
     }
   },
   {
@@ -592,9 +562,7 @@
     "path": "/reports/",
     "identity": {
       "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
-      "email": "user@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "user@example.com"
     }
   },
   {
@@ -602,9 +570,7 @@
     "path": "/reports/",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {
@@ -612,9 +578,7 @@
     "path": "/reports/?report_status=resolved",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {
@@ -622,9 +586,7 @@
     "path": "/reports/?search=spam&school=uwaterloo",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {
@@ -632,9 +594,7 @@
     "path": "/reports/?report_status=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     }
   },
   {
@@ -662,9 +622,7 @@
     },
     "identity": {
       "id": "b3f08b92-5ab7-4f93-85d6-a05883b15b12",
-      "email": "admin@wat2do.io",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "admin@wat2do.io"
     },
     "safe": true
   },
@@ -677,9 +635,7 @@
     },
     "identity": {
       "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
-      "email": "user@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "user@example.com"
     },
     "safe": true
   },
@@ -705,9 +661,7 @@
     },
     "identity": {
       "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
-      "email": "user@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "user@example.com"
     },
     "safe": true
   },
@@ -718,9 +672,7 @@
     "json": {},
     "identity": {
       "id": "00000000-0000-0000-0000-00000000dead",
-      "email": "x@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "x@example.com"
     },
     "safe": true
   },
@@ -733,9 +685,7 @@
     },
     "identity": {
       "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
-      "email": "user@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "user@example.com"
     },
     "safe": true
   },
@@ -748,9 +698,7 @@
     },
     "identity": {
       "id": "c792dcd6-5f23-45c6-9f7a-980ac6d3ba48",
-      "email": "user@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "user@example.com"
     },
     "safe": true
   },

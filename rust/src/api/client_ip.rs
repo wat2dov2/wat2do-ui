@@ -240,6 +240,22 @@ impl axum::extract::FromRequestParts<super::AppState> for ClientIp {
     }
 }
 
+/// `hash_client_ip`: a keyed (HMAC-SHA256) hash of a client IP, so abuse
+/// limits and forensics never store the raw address. The `ip:v1` domain and
+/// `POSTER_HASH_SECRET` match `qr_code_scans.ip_hash`, so one IP hashes the
+/// same everywhere.
+pub fn hash_client_ip(client_ip: &str, secret: &str) -> anyhow::Result<String> {
+    use hmac::Mac;
+    anyhow::ensure!(
+        !secret.is_empty(),
+        "POSTER_HASH_SECRET is required to hash client IPs"
+    );
+    let mut mac =
+        hmac::Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes()).expect("HMAC takes any key");
+    mac.update(format!("ip:v1:{client_ip}").as_bytes());
+    Ok(hex::encode(mac.finalize().into_bytes()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -411,5 +427,15 @@ mod tests {
         )]));
         assert!(trust.is_trusted("10.1.2.3"));
         assert!(!trust.is_trusted("11.0.0.1"));
+    }
+
+    #[test]
+    fn client_ips_hash_like_python() {
+        // hmac.new(b"testsecret", b"ip:v1:1.2.3.4", hashlib.sha256).hexdigest()
+        assert_eq!(
+            hash_client_ip("1.2.3.4", "testsecret").unwrap(),
+            "928926712c09c8a8eb1a57fa364523379534466a075f715ec2c86fcd5bcda417"
+        );
+        assert!(hash_client_ip("1.2.3.4", "").is_err());
     }
 }

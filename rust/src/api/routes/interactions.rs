@@ -13,7 +13,7 @@ use serde_json::json;
 use crate::api::AppState;
 use crate::api::auth::{OptionalUser, find_user};
 use crate::api::body::{Body, Extra};
-use crate::api::client_ip::Peer;
+use crate::api::client_ip::{Peer, hash_client_ip};
 use crate::api::errors::ApiError;
 use crate::api::events::{interactions, requests};
 use crate::api::messages::USER_NOT_FOUND;
@@ -59,19 +59,25 @@ pub async fn record_interactions(
         ),
         None => None,
     };
+    let peer = peer.map(|axum::Extension(Peer(peer))| peer);
+    let client_ip = state.trust.client_ip(peer.as_deref(), &headers);
     match user_id {
         Some(id) => USER_LIMITER.check(&id.to_string())?,
-        None => {
-            let peer = peer.map(|axum::Extension(Peer(peer))| peer);
-            ANONYMOUS_LIMITER.check(&state.trust.client_ip(peer.as_deref(), &headers))?
-        }
+        None => ANONYMOUS_LIMITER.check(&client_ip)?,
     }
+    // Best effort, as in Python: without the secret, interactions still record,
+    // without the per-IP click cap or the stored hash.
+    let secret = &state.settings.poster_hash_secret;
+    let ip_hash = (!client_ip.is_empty() && !secret.is_empty())
+        .then(|| hash_client_ip(&client_ip, secret))
+        .transpose()?;
     let recorded = interactions::record_batch(
         &state.db,
         user_id,
         batch.user_id,
         &batch.session_id,
         batch.interactions,
+        ip_hash.as_deref(),
     )
     .await?;
     Ok((StatusCode::ACCEPTED, Json(json!({ "recorded": recorded }))).into_response())

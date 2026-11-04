@@ -32,6 +32,8 @@ pub struct Settings {
     pub cookie_secure: bool,
     pub refresh_cookie_path: String,
     pub poster_visitor_cookie_path: String,
+    /// Keys the HMACs of client IPs (`hash_client_ip`) and QR visitor tokens.
+    pub poster_hash_secret: String,
     pub frontend_url: String,
     /// `TRUSTED_PROXIES`: peers whose client-IP headers `client_ip` believes.
     pub trusted_proxies: Vec<String>,
@@ -110,6 +112,8 @@ impl Settings {
             cookie_secure: parse_bool("COOKIE_SECURE", &optional("COOKIE_SECURE"), true)?,
             refresh_cookie_path: or_default("REFRESH_COOKIE_PATH", "/auth/refresh"),
             poster_visitor_cookie_path: or_default("POSTER_VISITOR_COOKIE_PATH", "/qr"),
+            // Untrimmed, like Python: an HMAC key must match the stored hashes byte for byte.
+            poster_hash_secret: lookup("POSTER_HASH_SECRET").unwrap_or_default(),
             frontend_url: or_default("FRONTEND_URL", "http://localhost:3000"),
             trusted_proxies: list("TRUSTED_PROXIES", DEFAULT_TRUSTED_PROXIES)?,
             forwarded_allow_ips: or_default("FORWARDED_ALLOW_IPS", DEFAULT_FORWARDED_ALLOW_IPS)

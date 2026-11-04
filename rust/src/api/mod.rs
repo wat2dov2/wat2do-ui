@@ -24,6 +24,7 @@ pub mod rate_limit;
 pub mod replay;
 pub mod routes;
 pub mod routing;
+pub mod secrets;
 pub mod security_headers;
 pub mod supervisor;
 pub mod validation;

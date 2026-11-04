@@ -600,23 +600,39 @@ struct LatestJson {
     club_logo_url: Option<String>,
 }
 
+/// `get_latest_added_event`'s condition: the event still has an occurrence on
+/// or ahead (an end in the future, or no end and a start within
+/// `event_without_end_visibility_minutes`), since selecting it searches the
+/// feed, which hides ended events.
+fn not_ended_sql() -> String {
+    format!(
+        "EXISTS (SELECT 1 FROM public.event_dates d WHERE d.event_id = e.id \
+         AND (d.dtend_utc >= now() OR (d.dtend_utc IS NULL \
+         AND d.dtstart_utc >= now() - make_interval(mins => {}))))",
+        crate::controlbox::EVENT_DISCOVERY.event_without_end_visibility_minutes
+    )
+}
+
 /// `get_latest_added_event`'s scalar subquery; `$school` is its school id parameter.
 fn latest_sql(school_parameter: Option<&str>) -> String {
     // The newest event first, then its club (PostgREST's embed), so the club
     // join never runs over every event.
+    let not_ended = not_ended_sql();
     let newest = match school_parameter {
         Some(parameter) => format!(
             "SELECT e.title, e.added_at, e.club_id FROM public.events e \
-             WHERE e.school_id = {parameter} ORDER BY e.added_at DESC LIMIT 1"
+             WHERE e.school_id = {parameter} AND {not_ended} ORDER BY e.added_at DESC LIMIT 1"
         ),
         // Across schools, each school's newest through its (school_id, added_at)
         // index instead of reading every event; ties go to the lowest row
         // position, the row Postgres' full scan keeps.
-        None => "SELECT newest_of_school.title, newest_of_school.added_at, newest_of_school.club_id \
-                 FROM public.schools s CROSS JOIN LATERAL (SELECT e.title, e.added_at, e.club_id, e.ctid \
-                 FROM public.events e WHERE e.school_id = s.id ORDER BY e.added_at DESC, e.ctid LIMIT 1) \
-                 newest_of_school ORDER BY newest_of_school.added_at DESC, newest_of_school.ctid LIMIT 1"
-            .to_owned(),
+        None => format!(
+            "SELECT newest_of_school.title, newest_of_school.added_at, newest_of_school.club_id \
+             FROM public.schools s CROSS JOIN LATERAL (SELECT e.title, e.added_at, e.club_id, e.ctid \
+             FROM public.events e WHERE e.school_id = s.id AND {not_ended} \
+             ORDER BY e.added_at DESC, e.ctid LIMIT 1) \
+             newest_of_school ORDER BY newest_of_school.added_at DESC, newest_of_school.ctid LIMIT 1"
+        ),
     };
     format!(
         "(SELECT json_build_object('title', newest.title, 'added_at', {}, 'club_name', c.club_name, \
@@ -1106,5 +1122,18 @@ mod tests {
             "2026-03-08T05:00:00Z".parse::<DateTime<Utc>>().unwrap()
         );
         assert!(today_start_utc("Not/AZone", now).is_err());
+    }
+
+    #[test]
+    fn the_latest_added_event_has_not_ended() {
+        // test_get_latest_added_event_skips_ended_events: an occurrence ending
+        // now or later, or with no end and a start within the hour.
+        let condition = "EXISTS (SELECT 1 FROM public.event_dates d WHERE d.event_id = e.id \
+             AND (d.dtend_utc >= now() OR (d.dtend_utc IS NULL \
+             AND d.dtstart_utc >= now() - make_interval(mins => 60))))";
+        assert_eq!(not_ended_sql(), condition);
+        for school in [Some("$1"), None] {
+            assert!(latest_sql(school).contains(condition), "{school:?}");
+        }
     }
 }
