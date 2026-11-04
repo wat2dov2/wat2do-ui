@@ -44,18 +44,22 @@ fn hashes_match_python_and_are_domain_separated() {
         "3b9b9f0bfd8105ad43873adfd2a0c6cb8ae26e517289430d441b69132ed7682c"
     );
     assert_eq!(
-        hash_client_ip("203.0.113.5", &settings).unwrap(),
+        hash_client_ip("203.0.113.5", &settings.poster_hash_secret).unwrap(),
         "2b6935ab3eb591eb8d0c5bf483c9e550af10743c93ac303e76143b04c4a13028"
     );
-    assert_ne!(visitor, hash_client_ip("visitor", &settings).unwrap());
+    assert_ne!(
+        visitor,
+        hash_client_ip("visitor", &settings.poster_hash_secret).unwrap()
+    );
     assert!(!visitor.contains("visitor"));
 }
 
 #[test]
 fn hashing_without_a_secret_is_a_500() {
     let settings = test_settings(&[]);
+    assert!(hash_client_ip("1.2.3.4", &settings.poster_hash_secret).is_err());
     assert!(matches!(
-        hash_client_ip("1.2.3.4", &settings),
+        hash_visitor_token("visitor", &settings),
         Err(ApiError::Internal(_))
     ));
     assert!(matches!(

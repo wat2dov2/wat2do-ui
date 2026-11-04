@@ -148,60 +148,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/calendar/token": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Calendar Token */
-        get: operations["get_calendar_token_calendar_token_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/calendar/token/regenerate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Regenerate Calendar Token */
-        post: operations["regenerate_calendar_token_calendar_token_regenerate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/calendar/feed/{token}.ics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Calendar Feed
-         * @description Public VCALENDAR for the token's owner. Rate-limited per token.
-         */
-        get: operations["get_calendar_feed_calendar_feed__token__ics_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/competitor-pain-points/": {
         parameters: {
             query?: never;
@@ -265,144 +211,6 @@ export interface paths {
         /** Submit Contact Message */
         post: operations["submit_contact_message_contact__post"];
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/admin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Admin Events */
-        get: operations["list_admin_events_events_admin_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Event Stats
-         * @description Public uncached card stats for one school.
-         */
-        get: operations["get_event_stats_events_stats_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Events
-         * @description Public school feed; optional ``start_utc``/``end_utc`` window.
-         *
-         *     ``include_past`` drops the default start-of-today lower bound, so a caller
-         *     can ask for a host's full history. Omits ``created_by``.
-         */
-        get: operations["list_events_events__get"];
-        put?: never;
-        /** Create Event */
-        post: operations["create_event_events__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Event
-         * @description Public event detail; ``created_by`` omitted via ``EventPublicResponse``.
-         */
-        get: operations["get_event_events__event_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Event */
-        delete: operations["delete_event_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Event */
-        patch: operations["update_event_events__event_id__patch"];
-        trace?: never;
-    };
-    "/going-events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Going Events */
-        get: operations["list_going_events_going_events__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/going-events/{event_id}/attendees": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Event Attendees
-         * @description Public who's-going summary for an event's details view.
-         */
-        get: operations["list_event_attendees_going_events__event_id__attendees_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/going-events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Mark Going */
-        put: operations["mark_going_going_events__event_id__put"];
-        post?: never;
-        /** Unmark Going */
-        delete: operations["unmark_going_going_events__event_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -546,32 +354,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/interactions/batch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Record Interactions
-         * @description Record a batch of event interactions and position clicks.
-         *
-         *     Auth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``
-         *     so the header works on unload). Authenticated batches are size-capped and
-         *     deduped; payload ``user_id`` must match the authenticated user.
-         *     Anonymous requests are allowed for basic click tracking and are
-         *     IP-rate-limited; without ``user_id`` they cannot drive personalized signals.
-         */
-        post: operations["record_interactions_interactions_batch_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/notification-preferences": {
         parameters: {
             query?: never;
@@ -682,41 +464,6 @@ export interface paths {
         head?: never;
         /** Review Submission */
         patch: operations["review_submission_position_submissions__submission_id__patch"];
-        trace?: never;
-    };
-    "/reports/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Reports */
-        get: operations["list_reports_reports__get"];
-        put?: never;
-        /** Create Report */
-        post: operations["create_report_reports__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/{report_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Report */
-        patch: operations["update_report_reports__report_id__patch"];
         trace?: never;
     };
     "/sponsor-submissions/": {
@@ -893,41 +640,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/saved-events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Saved Events */
-        get: operations["list_saved_events_v1_saved_events__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/saved-events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Save Event */
-        put: operations["save_event_v1_saved_events__event_id__put"];
-        post?: never;
-        /** Unsave Event */
-        delete: operations["unsave_event_v1_saved_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/webhooks/automate": {
         parameters: {
             query?: never;
@@ -956,7 +668,7 @@ export interface paths {
         put?: never;
         /**
          * Send Event Change Alerts
-         * @description Called every minute by Supabase pg_cron while event changes are pending.
+         * @description Called every minute by the scheduled event change alerts call.
          */
         post: operations["send_event_change_alerts_webhooks_event_change_alerts_post"];
         delete?: never;
@@ -997,6 +709,259 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/calendar/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Calendar Token */
+        get: operations["get_calendar_token_calendar_token_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar/token/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Regenerate Calendar Token */
+        post: operations["regenerate_calendar_token_calendar_token_regenerate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/calendar/feed/{token}.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Calendar Feed
+         * @description Public VCALENDAR for the token's owner. Rate-limited per token.
+         */
+        get: operations["get_calendar_feed_calendar_feed__token__ics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Admin Events */
+        get: operations["list_admin_events_events_admin_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event Stats
+         * @description Public uncached card stats for one school.
+         */
+        get: operations["get_event_stats_events_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Events
+         * @description Public school feed; optional ``start_utc``/``end_utc`` window.
+         *
+         *     ``include_past`` drops the default start-of-today lower bound, so a caller
+         *     can ask for a host's full history. Omits ``created_by``.
+         */
+        get: operations["list_events_events__get"];
+        put?: never;
+        /** Create Event */
+        post: operations["create_event_events__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event
+         * @description Public event detail; ``created_by`` omitted via ``EventPublicResponse``.
+         */
+        get: operations["get_event_events__event_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Event */
+        delete: operations["delete_event_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Event */
+        patch: operations["update_event_events__event_id__patch"];
+        trace?: never;
+    };
+    "/going-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Going Events */
+        get: operations["list_going_events_going_events__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/going-events/{event_id}/attendees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Event Attendees
+         * @description Public who's-going summary for an event's details view.
+         */
+        get: operations["list_event_attendees_going_events__event_id__attendees_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/going-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mark Going */
+        put: operations["mark_going_going_events__event_id__put"];
+        post?: never;
+        /** Unmark Going */
+        delete: operations["unmark_going_going_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/interactions/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Interactions
+         * @description Record a batch of event interactions and position clicks.
+         *
+         *     Auth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``
+         *     so the header works on unload). Authenticated batches are size-capped and
+         *     deduped; payload ``user_id`` must match the authenticated user.
+         *     Anonymous requests are allowed for basic click tracking and are
+         *     IP-rate-limited; without ``user_id`` they cannot drive personalized signals.
+         */
+        post: operations["record_interactions_interactions_batch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Reports */
+        get: operations["list_reports_reports__get"];
+        put?: never;
+        /** Create Report */
+        post: operations["create_report_reports__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Report */
+        patch: operations["update_report_reports__report_id__patch"];
         trace?: never;
     };
     "/site-banner": {
@@ -1807,6 +1772,41 @@ export interface paths {
         patch: operations["update_user_role_users__user_id__role_patch"];
         trace?: never;
     };
+    "/v1/saved-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Saved Events */
+        get: operations["list_saved_events_v1_saved_events__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/saved-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Event */
+        put: operations["save_event_v1_saved_events__event_id__put"];
+        post?: never;
+        /** Unsave Event */
+        delete: operations["unsave_event_v1_saved_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1867,16 +1867,6 @@ export interface components {
         Body_upload_qr_asset_uploads_qr_asset_post: {
             /** File */
             file: string;
-        };
-        /**
-         * CalendarTokenResponse
-         * @description Returned by GET /calendar/token and POST /calendar/token/regenerate.
-         */
-        CalendarTokenResponse: {
-            /** Token */
-            token: string;
-            /** Feed Url */
-            feed_url: string;
         };
         /**
          * ClubCohostResponse
@@ -1984,23 +1974,6 @@ export interface components {
              */
             created_at: string;
         };
-        /** EventAttendeeResponse */
-        EventAttendeeResponse: {
-            /** Name */
-            name: string;
-            /** Avatar Url */
-            avatar_url: string;
-        };
-        /**
-         * EventAttendeesResponse
-         * @description Public who's-going summary without user IDs or full names.
-         */
-        EventAttendeesResponse: {
-            /** Going Count */
-            going_count: number;
-            /** Attendees */
-            attendees: components["schemas"]["EventAttendeeResponse"][];
-        };
         /** EventCreate */
         EventCreate: {
             /**
@@ -2058,24 +2031,6 @@ export interface components {
              */
             cancelled: boolean;
         };
-        /**
-         * EventFeedResponse
-         * @description Public school feed response with catalog-freshness metadata.
-         */
-        EventFeedResponse: {
-            /** Items */
-            items: components["schemas"]["EventSummaryResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-            /** @description School freshness metadata on the first page only. */
-            latest_added_event?: components["schemas"]["LatestAddedItem"] | null;
-        };
         /** EventFormDataResponse */
         EventFormDataResponse: {
             /**
@@ -2129,227 +2084,6 @@ export interface components {
             dtend_local: string;
         };
         /**
-         * EventPublicResponse
-         * @description Like EventResponse but without ``created_by``, so public detail
-         *     views do not leak creator UUIDs to unauthenticated callers.
-         */
-        EventPublicResponse: {
-            /**
-             * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
-             */
-            competition?: boolean | null;
-            /**
-             * Employers On Campus
-             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
-             */
-            employers_on_campus?: boolean | null;
-            /**
-             * Sports Game
-             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
-             */
-            sports_game?: boolean | null;
-            /**
-             * Campus Season Ids
-             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
-             */
-            campus_season_ids?: string[] | null;
-            /** Id */
-            id: number;
-            /** Club Id */
-            club_id?: number | null;
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Location */
-            location?: string | null;
-            /** Map Location */
-            map_location?: string | null;
-            /** Map Coordinates */
-            map_coordinates?: [
-                number,
-                number
-            ] | null;
-            /** Occurrences */
-            occurrences?: components["schemas"]["OccurrenceResponse"][];
-            /** Price */
-            price?: number | null;
-            /** Food */
-            food?: string[] | null;
-            /**
-             * Registration
-             * @default false
-             */
-            registration: boolean;
-            /** Source Image Url */
-            source_image_url?: string | null;
-            /** Source Video Url */
-            source_video_url?: string | null;
-            /** Club Logo Url */
-            club_logo_url?: string | null;
-            /** Cohosts */
-            cohosts?: components["schemas"]["ClubCohostResponse"][];
-            /**
-             * Featured
-             * @description Published to Instagram
-             * @default false
-             */
-            featured: boolean;
-            /**
-             * Is Directory Event
-             * @default false
-             */
-            is_directory_event: boolean;
-            /** Club Type */
-            club_type?: string | null;
-            /** School */
-            school?: string | null;
-            /** Source Url */
-            source_url?: string | null;
-            /** Category */
-            category?: string | null;
-            /** Club */
-            club?: string | null;
-            /** Ig Handle */
-            ig_handle?: string | null;
-            /**
-             * Cancelled
-             * @default false
-             */
-            cancelled: boolean;
-            /**
-             * Added At
-             * Format: date-time
-             */
-            added_at: string;
-            /** Last Source Changed At */
-            last_source_changed_at?: string | null;
-        };
-        /**
-         * EventResponse
-         * @description Full event payload returned from GET /events/{id} and used internally
-         *     for ownership checks.
-         *
-         *     ``created_by`` is retained here because the field is load-bearing for
-         *     the authorization layer (``get_authorized_resource`` reads it); the
-         *     public list endpoint hides it via ``EventSummaryResponse`` which
-         *     omits the field entirely.
-         *
-         *     ``occurrences`` is the canonical date list.
-         */
-        EventResponse: {
-            /**
-             * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
-             */
-            competition?: boolean | null;
-            /**
-             * Employers On Campus
-             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
-             */
-            employers_on_campus?: boolean | null;
-            /**
-             * Sports Game
-             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
-             */
-            sports_game?: boolean | null;
-            /**
-             * Campus Season Ids
-             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
-             */
-            campus_season_ids?: string[] | null;
-            /** Id */
-            id: number;
-            /** Club Id */
-            club_id?: number | null;
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Location */
-            location?: string | null;
-            /** Map Location */
-            map_location?: string | null;
-            /** Map Coordinates */
-            map_coordinates?: [
-                number,
-                number
-            ] | null;
-            /** Occurrences */
-            occurrences?: components["schemas"]["OccurrenceResponse"][];
-            /** Price */
-            price?: number | null;
-            /** Food */
-            food?: string[] | null;
-            /**
-             * Registration
-             * @default false
-             */
-            registration: boolean;
-            /** Source Image Url */
-            source_image_url?: string | null;
-            /** Source Video Url */
-            source_video_url?: string | null;
-            /** Club Logo Url */
-            club_logo_url?: string | null;
-            /** Cohosts */
-            cohosts?: components["schemas"]["ClubCohostResponse"][];
-            /**
-             * Featured
-             * @description Published to Instagram
-             * @default false
-             */
-            featured: boolean;
-            /**
-             * Is Directory Event
-             * @default false
-             */
-            is_directory_event: boolean;
-            /** Club Type */
-            club_type?: string | null;
-            /** School */
-            school?: string | null;
-            /** Source Url */
-            source_url?: string | null;
-            /** Category */
-            category?: string | null;
-            /** Club */
-            club?: string | null;
-            /** Ig Handle */
-            ig_handle?: string | null;
-            /**
-             * Cancelled
-             * @default false
-             */
-            cancelled: boolean;
-            /**
-             * Added At
-             * Format: date-time
-             */
-            added_at: string;
-            /** Last Source Changed At */
-            last_source_changed_at?: string | null;
-            /** Created By */
-            created_by?: string | null;
-        };
-        /**
-         * EventStatsResponse
-         * @description Volatile public card stats loaded separately from the cached event feed.
-         */
-        EventStatsResponse: {
-            /**
-             * Click Count
-             * @default 0
-             */
-            click_count: number;
-            /**
-             * Going Count
-             * @default 0
-             */
-            going_count: number;
-        };
-        /**
          * EventSummaryResponse
          * @description Payload for list/card views.
          *
@@ -2364,8 +2098,8 @@ export interface components {
          *     fetch.
          *
          *     ``created_by`` is intentionally omitted - this response is returned on
-         *     public GET /events/ and would otherwise leak the creator's Supabase
-         *     auth UID to anonymous callers.
+         *     public GET /events/ and would otherwise leak the creator's user ID
+         *     to anonymous callers.
          */
         EventSummaryResponse: {
             /**
@@ -2466,57 +2200,6 @@ export interface components {
             /** Last Source Changed At */
             last_source_changed_at?: string | null;
         };
-        /** EventUpdate */
-        EventUpdate: {
-            /**
-             * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
-             */
-            competition?: boolean | null;
-            /**
-             * Employers On Campus
-             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
-             */
-            employers_on_campus?: boolean | null;
-            /**
-             * Sports Game
-             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
-             */
-            sports_game?: boolean | null;
-            /**
-             * Campus Season Ids
-             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
-             */
-            campus_season_ids?: string[] | null;
-            /** Title */
-            title?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Location */
-            location?: string | null;
-            /** Map Location */
-            map_location?: string | null;
-            /** Occurrences */
-            occurrences?: components["schemas"]["OccurrenceUpdate"][] | null;
-            /** Price */
-            price?: number | null;
-            /** Food */
-            food?: string[] | null;
-            /** Registration */
-            registration?: boolean | null;
-            /** Source Image Url */
-            source_image_url?: string | null;
-            /** Source Url */
-            source_url?: string | null;
-            /** Category */
-            category?: string | null;
-            /** Club Id */
-            club_id?: number | null;
-            /** Ig Handle */
-            ig_handle?: string | null;
-            /** Cancelled */
-            cancelled?: boolean | null;
-        };
         /** FollowCandidateDecision */
         FollowCandidateDecision: {
             /**
@@ -2572,7 +2255,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "pending" | "approved" | "rejected" | "followed";
+            status: "pending" | "approved" | "rejected" | "followed" | "unfollow";
             /** Read Status */
             read_status?: ("ok" | "no_posts" | "failed") | null;
             /** Followers Count */
@@ -2589,35 +2272,6 @@ export interface components {
             reason?: string | null;
             /** Follow Error */
             follow_error?: string | null;
-        };
-        /** GoingEventSelection */
-        GoingEventSelection: {
-            /** Event Id */
-            event_id: number;
-            /** Occurrence Ids */
-            occurrence_ids: string[];
-        };
-        /** GoingEventSelectionUpdate */
-        GoingEventSelectionUpdate: {
-            /** Occurrence Ids */
-            occurrence_ids: string[];
-        };
-        /**
-         * GoingEventStatusResponse
-         * @description Locks the going/not_going status contract at the OpenAPI boundary.
-         */
-        GoingEventStatusResponse: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "going" | "not_going";
-            /** Event Id */
-            event_id: number;
-            /** Occurrence Ids */
-            occurrence_ids: string[];
-            /** Going Count */
-            going_count: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2962,57 +2616,6 @@ export interface components {
              */
             created_at: string;
         };
-        /**
-         * InteractionBatch
-         * @description Batch of interactions submitted from a single browser session.
-         *
-         *     **Trust boundary note on ``user_id``**: this field models the client's
-         *     *claim* of which user the batch belongs to.  The server verifies the
-         *     claim against the authenticated identity in ``interaction_service._validate_batch``
-         *     and 403s on mismatch.  The field is **advisory / diagnostic** -
-         *     never trust it for authorization or identity resolution in new code;
-         *     use the value resolved from the Bearer token instead.
-         *
-         *     Typed as ``UUID | None`` so the Pydantic boundary rejects arbitrary
-         *     opaque strings (e.g. ``"admin"``) at parse time - if the router-side
-         *     ownership check is ever removed during a refactor, impersonation
-         *     still cannot succeed because the payload won't even deserialise.
-         */
-        InteractionBatch: {
-            /** Session Id */
-            session_id: string;
-            /** User Id */
-            user_id?: string | null;
-            /** Interactions */
-            interactions: components["schemas"]["InteractionCreate"][];
-        };
-        /** InteractionCreate */
-        InteractionCreate: {
-            /** Event Id */
-            event_id?: number | null;
-            /** Position Id */
-            position_id?: number | null;
-            /** Interaction Type */
-            interaction_type: string;
-            /** Metadata */
-            metadata?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /** LatestAddedItem */
-        LatestAddedItem: {
-            /** Title */
-            title: string;
-            /**
-             * Added At
-             * Format: date-time
-             */
-            added_at: string;
-            /** Club Name */
-            club_name?: string | null;
-            /** Club Logo Url */
-            club_logo_url?: string | null;
-        };
         /** MessageResponse */
         MessageResponse: {
             /** Message */
@@ -3084,27 +2687,6 @@ export interface components {
             /** Tz */
             tz?: string | null;
         };
-        /** OccurrenceResponse */
-        OccurrenceResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Dtstart Utc
-             * Format: date-time
-             */
-            dtstart_utc: string;
-            /** Dtend Utc */
-            dtend_utc?: string | null;
-            /** Event Id */
-            event_id: number;
-            /** Duration */
-            duration?: string | null;
-            /** Tz */
-            tz?: string | null;
-        };
         /**
          * OccurrenceSummaryResponse
          * @description Browse dates retain selection identity without repeated parent/import fields.
@@ -3122,27 +2704,6 @@ export interface components {
             dtstart_utc: string;
             /** Dtend Utc */
             dtend_utc?: string | null;
-        };
-        /**
-         * OccurrenceUpdate
-         * @description Occurrence payload for event edits.
-         *
-         *     An ID retains an existing occurrence. A missing ID creates a new one.
-         */
-        OccurrenceUpdate: {
-            /**
-             * Dtstart Utc
-             * Format: date-time
-             */
-            dtstart_utc: string;
-            /** Dtend Utc */
-            dtend_utc?: string | null;
-            /** Duration */
-            duration?: string | null;
-            /** Tz */
-            tz?: string | null;
-            /** Id */
-            id?: string | null;
         };
         /**
          * OutreachLeadResponse
@@ -3231,19 +2792,6 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
-        /** PaginatedResponse[EventSummaryResponse] */
-        PaginatedResponse_EventSummaryResponse_: {
-            /** Items */
-            items: components["schemas"]["EventSummaryResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
         /** PaginatedResponse[FollowCandidateResponse] */
         PaginatedResponse_FollowCandidateResponse_: {
             /** Items */
@@ -3287,19 +2835,6 @@ export interface components {
         PaginatedResponse_PositionSubmissionResponse_: {
             /** Items */
             items: components["schemas"]["PositionSubmissionResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[ReportResponse] */
-        PaginatedResponse_ReportResponse_: {
-            /** Items */
-            items: components["schemas"]["ReportResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -3435,48 +2970,6 @@ export interface components {
             position_data: components["schemas"]["PositionCreate"];
         };
         /**
-         * RecordInteractionsResponse
-         * @description Number of interaction rows recorded from a batch submit.
-         */
-        RecordInteractionsResponse: {
-            /** Recorded */
-            recorded: number;
-        };
-        /** ReportCreate */
-        ReportCreate: {
-            /** Event Id */
-            event_id: number;
-            /** Reason */
-            reason: string;
-        };
-        /** ReportResponse */
-        ReportResponse: {
-            /** Event Title */
-            event_title?: string | null;
-            /** School */
-            school?: string | null;
-            /** Id */
-            id: string;
-            /** Event Id */
-            event_id: number;
-            /** User Id */
-            user_id: string | null;
-            /** Reason */
-            reason: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "resolved" | "dismissed";
-            /**
-             * Reported At
-             * Format: date-time
-             */
-            reported_at: string;
-            /** Resolved At */
-            resolved_at?: string | null;
-        };
-        /**
          * ReportSuggestion
          * @description One change to wat2do.io the report suggests, and the complaints behind it.
          */
@@ -3510,14 +3003,6 @@ export interface components {
             competitors?: string[];
             /** Complaint Urls */
             complaint_urls?: string[];
-        };
-        /** ReportUpdate */
-        ReportUpdate: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "resolved" | "dismissed";
         };
         /** SendOtpRequest */
         SendOtpRequest: {
@@ -3667,14 +3152,6 @@ export interface components {
             /** Url */
             url: string;
         };
-        /** V1SavedEventStatusResponse */
-        V1SavedEventStatusResponse: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "saved" | "unsaved";
-        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -3723,6 +3200,16 @@ export interface components {
                 [key: string]: string[];
             };
             report_statuses: string[];
+        };
+        /**
+         * CalendarTokenResponse
+         * @description Returned by GET /calendar/token and POST /calendar/token/regenerate.
+         */
+        CalendarTokenResponse: {
+            /** Token */
+            token: string;
+            /** Feed Url */
+            feed_url: string;
         };
         /** @description `CampusCoverageCell`: one rounded map cell, with no poster or owner id. */
         CampusCoverageCell: {
@@ -3903,6 +3390,342 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
+        /** EventAttendeeResponse */
+        EventAttendeeResponse: {
+            /** Name */
+            name: string;
+            /** Avatar Url */
+            avatar_url: string;
+        };
+        /**
+         * EventAttendeesResponse
+         * @description Public who's-going summary without user IDs or full names.
+         */
+        EventAttendeesResponse: {
+            /** Going Count */
+            going_count: number;
+            /** Attendees */
+            attendees: components["schemas"]["EventAttendeeResponse"][];
+        };
+        /**
+         * EventFeedResponse
+         * @description Public school feed response with catalog-freshness metadata.
+         */
+        EventFeedResponse: {
+            /** Items */
+            items: components["schemas"]["EventSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+            /** @description School freshness metadata on the first page only. */
+            latest_added_event?: components["schemas"]["LatestAddedItem"] | null;
+        };
+        /**
+         * EventPublicResponse
+         * @description Like EventResponse but without ``created_by``, so public detail
+         *     views do not leak creator UUIDs to unauthenticated callers.
+         */
+        EventPublicResponse: {
+            /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
+             * Employers On Campus
+             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
+            /** Id */
+            id: number;
+            /** Club Id */
+            club_id?: number | null;
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Map Location */
+            map_location?: string | null;
+            /** Map Coordinates */
+            map_coordinates?: [
+                number,
+                number
+            ] | null;
+            /** Occurrences */
+            occurrences?: components["schemas"]["OccurrenceResponse"][];
+            /** Price */
+            price?: number | null;
+            /** Food */
+            food?: string[] | null;
+            /**
+             * Registration
+             * @default false
+             */
+            registration: boolean;
+            /** Source Image Url */
+            source_image_url?: string | null;
+            /** Source Video Url */
+            source_video_url?: string | null;
+            /** Club Logo Url */
+            club_logo_url?: string | null;
+            /** Cohosts */
+            cohosts?: components["schemas"]["ClubCohostResponse"][];
+            /**
+             * Featured
+             * @description Published to Instagram
+             * @default false
+             */
+            featured: boolean;
+            /**
+             * Is Directory Event
+             * @default false
+             */
+            is_directory_event: boolean;
+            /** Club Type */
+            club_type?: string | null;
+            /** School */
+            school?: string | null;
+            /** Source Url */
+            source_url?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Club */
+            club?: string | null;
+            /** Ig Handle */
+            ig_handle?: string | null;
+            /**
+             * Cancelled
+             * @default false
+             */
+            cancelled: boolean;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Last Source Changed At */
+            last_source_changed_at?: string | null;
+        };
+        /**
+         * EventResponse
+         * @description Full event payload returned from GET /events/{id} and used internally
+         *     for ownership checks.
+         *
+         *     ``created_by`` is retained here because the field is load-bearing for
+         *     the authorization layer (``get_authorized_resource`` reads it); the
+         *     public list endpoint hides it via ``EventSummaryResponse`` which
+         *     omits the field entirely.
+         *
+         *     ``occurrences`` is the canonical date list.
+         */
+        EventResponse: {
+            /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
+             * Employers On Campus
+             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
+            /** Id */
+            id: number;
+            /** Club Id */
+            club_id?: number | null;
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Map Location */
+            map_location?: string | null;
+            /** Map Coordinates */
+            map_coordinates?: [
+                number,
+                number
+            ] | null;
+            /** Occurrences */
+            occurrences?: components["schemas"]["OccurrenceResponse"][];
+            /** Price */
+            price?: number | null;
+            /** Food */
+            food?: string[] | null;
+            /**
+             * Registration
+             * @default false
+             */
+            registration: boolean;
+            /** Source Image Url */
+            source_image_url?: string | null;
+            /** Source Video Url */
+            source_video_url?: string | null;
+            /** Club Logo Url */
+            club_logo_url?: string | null;
+            /** Cohosts */
+            cohosts?: components["schemas"]["ClubCohostResponse"][];
+            /**
+             * Featured
+             * @description Published to Instagram
+             * @default false
+             */
+            featured: boolean;
+            /**
+             * Is Directory Event
+             * @default false
+             */
+            is_directory_event: boolean;
+            /** Club Type */
+            club_type?: string | null;
+            /** School */
+            school?: string | null;
+            /** Source Url */
+            source_url?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Club */
+            club?: string | null;
+            /** Ig Handle */
+            ig_handle?: string | null;
+            /**
+             * Cancelled
+             * @default false
+             */
+            cancelled: boolean;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Last Source Changed At */
+            last_source_changed_at?: string | null;
+            /** Created By */
+            created_by?: string | null;
+        };
+        /**
+         * EventStatsResponse
+         * @description Volatile public card stats loaded separately from the cached event feed.
+         */
+        EventStatsResponse: {
+            /**
+             * Click Count
+             * @default 0
+             */
+            click_count: number;
+            /**
+             * Going Count
+             * @default 0
+             */
+            going_count: number;
+        };
+        /** EventUpdate */
+        EventUpdate: {
+            /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
+             * Employers On Campus
+             * @description True only when people from employers (companies, firms, public employers or industry organizations) take part, in person on this school's campus or online, for recruiting, employer information sessions, co-op or internship information, career fairs, or career networking with students. Working professionals who explain careers in their industry or network with students qualify, including alumni speaking as industry professionals, even when their companies are not named and without current vacancies. Require event-specific evidence of an employment purpose in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Student unions and university publishers do not qualify merely by organizing an event. Food or affordable produce distributions, Sexpectations, queer life and resource fairs, wellness education, community services, vendors, performers, academic speakers, professors, researchers, independent creators, mentors and judges do not qualify without employer career participation. Organization booths, sponsorship, professional status and the word fair alone are insufficient. Interview or job-search coaching and talks about job contracts or workers' rights do not qualify unless an employer recruits or presents. Student-club hiring, grad school information and in-person off-campus events do not qualify. Use false for confirmed non-employer activities and null when employer participation or campus location is unconfirmed.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Map Location */
+            map_location?: string | null;
+            /** Occurrences */
+            occurrences?: components["schemas"]["OccurrenceUpdate"][] | null;
+            /** Price */
+            price?: number | null;
+            /** Food */
+            food?: string[] | null;
+            /** Registration */
+            registration?: boolean | null;
+            /** Source Image Url */
+            source_image_url?: string | null;
+            /** Source Url */
+            source_url?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Club Id */
+            club_id?: number | null;
+            /** Ig Handle */
+            ig_handle?: string | null;
+            /** Cancelled */
+            cancelled?: boolean | null;
+        };
+        /** GoingEventSelection */
+        GoingEventSelection: {
+            /** Event Id */
+            event_id: number;
+            /** Occurrence Ids */
+            occurrence_ids: string[];
+        };
+        /** GoingEventSelectionUpdate */
+        GoingEventSelectionUpdate: {
+            /** Occurrence Ids */
+            occurrence_ids: string[];
+        };
+        /**
+         * GoingEventStatusResponse
+         * @description Locks the going/not_going status contract at the OpenAPI boundary.
+         */
+        GoingEventStatusResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "going" | "not_going";
+            /** Event Id */
+            event_id: number;
+            /** Occurrence Ids */
+            occurrence_ids: string[];
+            /** Going Count */
+            going_count: number;
+        };
         HourlyIngestionLatency: {
             /** Format: date-time */
             hour: string;
@@ -3920,6 +3743,43 @@ export interface components {
             schools: components["schemas"]["SchoolIngestionLatency"][];
             hourly: components["schemas"]["HourlyIngestionLatency"][];
         };
+        /**
+         * InteractionBatch
+         * @description Batch of interactions submitted from a single browser session.
+         *
+         *     **Trust boundary note on ``user_id``**: this field models the client's
+         *     *claim* of which user the batch belongs to.  The server verifies the
+         *     claim against the authenticated identity in ``interaction_service._validate_batch``
+         *     and 403s on mismatch.  The field is **advisory / diagnostic** -
+         *     never trust it for authorization or identity resolution in new code;
+         *     use the value resolved from the Bearer token instead.
+         *
+         *     Typed as ``UUID | None`` so the Pydantic boundary rejects arbitrary
+         *     opaque strings (e.g. ``"admin"``) at parse time - if the router-side
+         *     ownership check is ever removed during a refactor, impersonation
+         *     still cannot succeed because the payload won't even deserialise.
+         */
+        InteractionBatch: {
+            /** Session Id */
+            session_id: string;
+            /** User Id */
+            user_id?: string | null;
+            /** Interactions */
+            interactions: components["schemas"]["InteractionCreate"][];
+        };
+        /** InteractionCreate */
+        InteractionCreate: {
+            /** Event Id */
+            event_id?: number | null;
+            /** Position Id */
+            position_id?: number | null;
+            /** Interaction Type */
+            interaction_type: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+        };
         LatencyStats: {
             /** Format: int64 */
             count: number;
@@ -3928,8 +3788,64 @@ export interface components {
             /** Format: double */
             median_minutes: number | null;
         };
+        /** LatestAddedItem */
+        LatestAddedItem: {
+            /** Title */
+            title: string;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Club Name */
+            club_name?: string | null;
+            /** Club Logo Url */
+            club_logo_url?: string | null;
+        };
         /** @description `Union[ClubMemberResponse, ClubInvitationResponse]`. */
         MemberOrInvitation: components["schemas"]["ClubMemberResponse"] | components["schemas"]["ClubInvitationResponse"];
+        /** OccurrenceResponse */
+        OccurrenceResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Dtstart Utc
+             * Format: date-time
+             */
+            dtstart_utc: string;
+            /** Dtend Utc */
+            dtend_utc?: string | null;
+            /** Event Id */
+            event_id: number;
+            /** Duration */
+            duration?: string | null;
+            /** Tz */
+            tz?: string | null;
+        };
+        /**
+         * OccurrenceUpdate
+         * @description Occurrence payload for event edits.
+         *
+         *     An ID retains an existing occurrence. A missing ID creates a new one.
+         */
+        OccurrenceUpdate: {
+            /**
+             * Dtstart Utc
+             * Format: date-time
+             */
+            dtstart_utc: string;
+            /** Dtend Utc */
+            dtend_utc?: string | null;
+            /** Duration */
+            duration?: string | null;
+            /** Tz */
+            tz?: string | null;
+            /** Id */
+            id?: string | null;
+        };
         PaginatedResponse_ClubClaimResponse_: {
             items: components["schemas"]["ClubClaimResponse"][];
             /** Format: int64 */
@@ -3974,6 +3890,19 @@ export interface components {
             /** Format: int64 */
             total_pages: number;
         };
+        /** PaginatedResponse[EventSummaryResponse] */
+        PaginatedResponse_EventSummaryResponse_: {
+            /** Items */
+            items: components["schemas"]["EventSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         PaginatedResponse_PosterPayoutResponse_: {
             items: components["schemas"]["PosterPayoutResponse"][];
             /** Format: int64 */
@@ -4005,6 +3934,19 @@ export interface components {
             /** Format: int64 */
             page_size: number;
             /** Format: int64 */
+            total_pages: number;
+        };
+        /** PaginatedResponse[ReportResponse] */
+        PaginatedResponse_ReportResponse_: {
+            /** Items */
+            items: components["schemas"]["ReportResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
             total_pages: number;
         };
         PaginatedResponse_UserPosterPayoutResponse_: {
@@ -4333,6 +4275,56 @@ export interface components {
             /** Format: date-time */
             landing_confirmed_at: string;
         };
+        /**
+         * RecordInteractionsResponse
+         * @description Number of interaction rows recorded from a batch submit.
+         */
+        RecordInteractionsResponse: {
+            /** Recorded */
+            recorded: number;
+        };
+        /** ReportCreate */
+        ReportCreate: {
+            /** Event Id */
+            event_id: number;
+            /** Reason */
+            reason: string;
+        };
+        /** ReportResponse */
+        ReportResponse: {
+            /** Event Title */
+            event_title?: string | null;
+            /** School */
+            school?: string | null;
+            /** Id */
+            id: string;
+            /** Event Id */
+            event_id: number;
+            /** User Id */
+            user_id: string | null;
+            /** Reason */
+            reason: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "resolved" | "dismissed";
+            /**
+             * Reported At
+             * Format: date-time
+             */
+            reported_at: string;
+            /** Resolved At */
+            resolved_at?: string | null;
+        };
+        /** ReportUpdate */
+        ReportUpdate: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "resolved" | "dismissed";
+        };
         /** @description Locks the save/unsave status contract at the OpenAPI boundary. */
         SaveClubStatusResponse: {
             /** @enum {string} */
@@ -4475,6 +4467,14 @@ export interface components {
             interests?: string[] | null;
             is_first_year?: boolean | null;
         };
+        /** V1SavedEventStatusResponse */
+        V1SavedEventStatusResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "saved" | "unsaved";
+        };
     };
     responses: never;
     parameters: never;
@@ -4588,6 +4588,7 @@ export interface operations {
         parameters: {
             query?: {
                 code?: string | null;
+                state?: string | null;
                 error?: string | null;
             };
             header?: never;
@@ -4720,75 +4721,6 @@ export interface operations {
             };
         };
     };
-    get_calendar_token_calendar_token_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CalendarTokenResponse"];
-                };
-            };
-        };
-    };
-    regenerate_calendar_token_calendar_token_regenerate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CalendarTokenResponse"];
-                };
-            };
-        };
-    };
-    get_calendar_feed_calendar_feed__token__ics_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_pain_points_competitor_pain_points__get: {
         parameters: {
             query?: {
@@ -4917,374 +4849,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MessageResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_admin_events_events_admin_get: {
-        parameters: {
-            query?: {
-                search?: string | null;
-                category?: string | null;
-                school?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_EventSummaryResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_event_stats_events_stats_get: {
-        parameters: {
-            query: {
-                school: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: components["schemas"]["EventStatsResponse"];
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_events_events__get: {
-        parameters: {
-            query?: {
-                school?: string | null;
-                search?: string | null;
-                categories?: string[] | null;
-                locations?: string[] | null;
-                foods?: string[] | null;
-                days?: string[] | null;
-                min_price?: number | null;
-                max_price?: number | null;
-                registration?: boolean | null;
-                clubs?: string[] | null;
-                club_ids?: number[] | null;
-                has_food?: boolean;
-                added_within_24h?: boolean;
-                ids?: number[] | null;
-                sort_by?: "date" | "title" | "location" | "price" | "added_at";
-                sort_order?: "asc" | "desc";
-                start_utc?: string | null;
-                end_utc?: string | null;
-                include_past?: boolean;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventFeedResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_event_events__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EventCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_event_events__event_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventPublicResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_event_events__event_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_event_events__event_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EventUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_going_events_going_events__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoingEventSelection"][];
-                };
-            };
-        };
-    };
-    list_event_attendees_going_events__event_id__attendees_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventAttendeesResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    mark_going_going_events__event_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GoingEventSelectionUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoingEventStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unmark_going_going_events__event_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GoingEventStatusResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5540,7 +5104,7 @@ export interface operations {
     list_follow_candidates_instagram_publishing_follow_candidates__get: {
         parameters: {
             query?: {
-                status?: "pending" | "approved" | "rejected" | "followed";
+                status?: "pending" | "approved" | "rejected" | "followed" | "unfollow";
                 school?: string | null;
                 /** @description Page number (1-indexed) */
                 page?: number;
@@ -5593,39 +5157,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FollowCandidateDecisionsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    record_interactions_interactions_batch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InteractionBatch"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecordInteractionsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5917,111 +5448,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PositionSubmissionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_reports_reports__get: {
-        parameters: {
-            query?: {
-                report_status?: string | null;
-                search?: string | null;
-                school?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_ReportResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_report_reports__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReportCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReportResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_report_reports__report_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                report_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReportUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReportResponse"];
                 };
             };
             /** @description Validation Error */
@@ -6507,88 +5933,6 @@ export interface operations {
             };
         };
     };
-    list_saved_events_v1_saved_events__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": number[];
-                };
-            };
-        };
-    };
-    save_event_v1_saved_events__event_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unsave_event_v1_saved_events__event_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     receive_automate_log_webhooks_automate_post: {
         parameters: {
             query?: never;
@@ -6690,6 +6034,581 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_calendar_token_calendar_token_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarTokenResponse"];
+                };
+            };
+        };
+    };
+    regenerate_calendar_token_calendar_token_regenerate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarTokenResponse"];
+                };
+            };
+        };
+    };
+    get_calendar_feed_calendar_feed__token__ics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_admin_events_events_admin_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+                category?: string | null;
+                school?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_EventSummaryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_event_stats_events_stats_get: {
+        parameters: {
+            query: {
+                school: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["EventStatsResponse"];
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_events_events__get: {
+        parameters: {
+            query?: {
+                school?: string | null;
+                search?: string | null;
+                categories?: string[] | null;
+                locations?: string[] | null;
+                foods?: string[] | null;
+                days?: string[] | null;
+                min_price?: number | null;
+                max_price?: number | null;
+                registration?: boolean | null;
+                clubs?: string[] | null;
+                club_ids?: number[] | null;
+                has_food?: boolean;
+                added_within_24h?: boolean;
+                ids?: number[] | null;
+                sort_by?: "date" | "title" | "location" | "price" | "added_at";
+                sort_order?: "asc" | "desc";
+                start_utc?: string | null;
+                end_utc?: string | null;
+                include_past?: boolean;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFeedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_event_events__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_event_events__event_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventPublicResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_event_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_event_events__event_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_going_events_going_events__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoingEventSelection"][];
+                };
+            };
+        };
+    };
+    list_event_attendees_going_events__event_id__attendees_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAttendeesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_going_going_events__event_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoingEventSelectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoingEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unmark_going_going_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoingEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_interactions_interactions_batch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InteractionBatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordInteractionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_reports_reports__get: {
+        parameters: {
+            query?: {
+                report_status?: string | null;
+                search?: string | null;
+                school?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_ReportResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_report_reports__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_report_reports__report_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -8437,6 +8356,88 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_saved_events_v1_saved_events__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number[];
+                };
+            };
+        };
+    };
+    save_event_v1_saved_events__event_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsave_event_v1_saved_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
                 };
             };
             /** @description Validation Error */

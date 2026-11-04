@@ -1092,7 +1092,9 @@ impl Body {
             self.missing(name);
             return None;
         }
-        match self.list(name, min, max, |body, loc, value| body.uuid_item(loc, value)) {
+        match self.list(name, min, max, |body, loc, value| {
+            body.uuid_item(loc, value)
+        }) {
             Input::Given(ids) => Some(ids),
             Input::Null => {
                 let loc = self.loc(name);
@@ -1609,5 +1611,93 @@ mod tests {
             "'events', 'clubs' or 'positions'"
         );
         assert_eq!(expected_choices(&["only"]), "'only'");
+    }
+
+    #[test]
+    fn a_required_uuid_list_reports_like_pydantic() {
+        // pydantic 2 for `payout_ids: list[UUID] = Field(min_length=1, max_length=3)`.
+        let read = |value: Value| {
+            let mut body = Body::from_value(value, Extra::Forbid);
+            let ids = body.required_uuid_list("payout_ids", 1, 3);
+            (ids, body.into_issues())
+        };
+        let (ids, found) = read(json!({}));
+        assert_eq!(ids, None);
+        assert_eq!(
+            json!(found),
+            json!([{"type": "missing", "loc": ["body", "payout_ids"], "msg": "Field required", "input": {}}])
+        );
+        let (_, found) = read(json!({"payout_ids": null}));
+        assert_eq!(
+            json!(found),
+            json!([{"type": "list_type", "loc": ["body", "payout_ids"], "msg": "Input should be a valid list", "input": null}])
+        );
+        let (_, found) = read(json!({"payout_ids": []}));
+        assert_eq!(
+            json!(found),
+            json!([{"type": "too_short", "loc": ["body", "payout_ids"],
+                "msg": "List should have at least 1 item after validation, not 0", "input": [],
+                "ctx": {"field_type": "List", "min_length": 1, "actual_length": 0}}])
+        );
+        let id = "00000000-0000-0000-0000-000000000001";
+        let (_, found) = read(json!({"payout_ids": [id, id, id, id]}));
+        assert_eq!(
+            json!(found),
+            json!([{"type": "too_long", "loc": ["body", "payout_ids"],
+                "msg": "List should have at most 3 items after validation, not 4", "input": [id, id, id, id],
+                "ctx": {"field_type": "List", "max_length": 3, "actual_length": 4}}])
+        );
+        let (_, found) = read(json!({"payout_ids": ["x", 5]}));
+        let found = json!(found);
+        assert_eq!(found[0]["type"], "uuid_parsing");
+        assert_eq!(found[0]["loc"], json!(["body", "payout_ids", 0]));
+        assert_eq!(
+            found[1],
+            json!({"type": "uuid_type", "loc": ["body", "payout_ids", 1],
+                "msg": "UUID input should be a string, bytes or UUID object", "input": 5})
+        );
+        let (ids, found) = read(json!({"payout_ids": [id]}));
+        assert_eq!(ids, Some(vec![Uuid::parse_str(id).unwrap()]));
+        assert!(found.is_empty());
+    }
+
+    #[test]
+    fn a_union_member_names_itself_after_body() {
+        let object = json!({"copies": "x", "nope": 1})
+            .as_object()
+            .unwrap()
+            .clone();
+        let mut body = Body::member(object, Extra::Forbid, "PromoterPosterBatchCreate");
+        body.int_or("copies", 1, crate::api::validation::Limits::default().ge(1));
+        body.model_error("check failed");
+        let found = json!(body.into_issues());
+        assert_eq!(
+            found[0]["loc"],
+            json!(["body", "PromoterPosterBatchCreate", "copies"])
+        );
+        assert_eq!(
+            found[1]["loc"],
+            json!(["body", "PromoterPosterBatchCreate"])
+        );
+        assert_eq!(found[1]["msg"], "Value error, check failed");
+        assert_eq!(
+            found[2]["loc"],
+            json!(["body", "PromoterPosterBatchCreate", "nope"])
+        );
+    }
+
+    #[test]
+    fn a_defaulted_float_takes_pydantic_bounds() {
+        let limits = crate::api::validation::FloatLimits::default()
+            .ge(-90.0)
+            .le(90.0);
+        let mut body = Body::from_value(json!({"latitude": "nan"}), Extra::Ignore);
+        assert_eq!(body.float_or("latitude", 0.0, limits), None);
+        assert_eq!(body.float_or("longitude", 0.0, limits), Some(0.0));
+        assert_eq!(
+            issues(body),
+            json!([{"type": "less_than_equal", "loc": ["body", "latitude"],
+                "msg": "Input should be less than or equal to 90", "input": "nan", "ctx": {"le": 90.0}}])
+        );
     }
 }

@@ -23,8 +23,8 @@ use uuid::Uuid;
 
 use super::{QrCodeResponse, get_qr_code};
 use crate::api::AppState;
-use crate::api::body::{Body, Extra, Str, json_request};
-use crate::api::client_ip::ClientIp;
+use crate::api::body::{Body, Extra, Str, json_first};
+use crate::api::client_ip::{ClientIp, hash_client_ip};
 use crate::api::errors::ApiError;
 use crate::api::json;
 use crate::api::messages::{INVALID_SCAN_CONFIRMATION, POSTER_NOT_FOUND, REQUIRES_LOCATION};
@@ -64,11 +64,6 @@ fn keyed_hash(domain: &str, value: &str, secret: &str) -> Result<String, ApiErro
 /// `hash_visitor_token`.
 pub fn hash_visitor_token(token: &str, settings: &Settings) -> Result<String, ApiError> {
     keyed_hash("visitor:v1", token, &settings.poster_hash_secret)
-}
-
-/// `hash_client_ip`.
-pub fn hash_client_ip(ip: &str, settings: &Settings) -> Result<String, ApiError> {
-    keyed_hash("ip:v1", ip, &settings.poster_hash_secret)
 }
 
 fn encode_token(value: &[u8]) -> String {
@@ -529,16 +524,16 @@ pub async fn resolve_qr_and_record_scan(
 ) -> Result<Response, ApiError> {
     let settings = state.settings;
     // The limiter is a dependency, so it counts before parameters are checked.
-    let ip_hash = hash_client_ip(&client_ip, settings)?;
+    let ip_hash = hash_client_ip(&client_ip, &settings.poster_hash_secret)?;
     SCANS.check(&ip_hash)?;
     let mut check = Validator::default();
     let qr_code_id = check.path(&path, "qr_code_id").string(Default::default());
     let latitude = check
         .query(&query, "lat")
-        .optional_float(FloatLimits::default().ge(-90).le(90));
+        .optional_float(FloatLimits::default().ge(-90.0).le(90.0));
     let longitude = check
         .query(&query, "lon")
-        .optional_float(FloatLimits::default().ge(-180).le(180));
+        .optional_float(FloatLimits::default().ge(-180.0).le(180.0));
     check.finish()?;
 
     let existing_token = visitor_token(&headers);
@@ -618,7 +613,7 @@ pub async fn confirm_scan(
     State(state): State<AppState>,
     request: Request,
 ) -> Result<Json<QrScanConfirmResponse>, ApiError> {
-    let (parts, bytes) = json_request(request).await?;
+    let (parts, bytes) = json_first(request).await?;
     let mut body = Body::parse(&bytes, &parts.headers, Extra::Forbid)?;
     let token = body.required_string("token", &Str::new().min(1).max(2048));
     body.finish()?;

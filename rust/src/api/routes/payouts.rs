@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 use crate::api::AppState;
 use crate::api::auth::{AdminUser, DbUser};
-use crate::api::body::{Body, Extra, Input, Str, json_request, merge_issues};
+use crate::api::body::{Body, Extra, Input, Str, json_first, merge_issues};
 use crate::api::errors::ApiError;
 use crate::api::json;
 use crate::api::messages::{
@@ -505,7 +505,7 @@ pub async fn export_pending_payouts(
     State(state): State<AppState>,
     request: Request,
 ) -> Result<Json<PayoutCsvExportResponse>, ApiError> {
-    let (mut parts, bytes) = json_request(request).await?;
+    let (mut parts, bytes) = json_first(request).await?;
     AdminUser::from_request_parts(&mut parts, &state).await?;
     let ids = read_selection(&bytes, &parts.headers)?;
     let payouts = pending_payouts_for_export(&state.db, &ids).await?;
@@ -769,7 +769,7 @@ pub async fn transition_payout(
     path: PathParams,
     request: Request,
 ) -> Result<Json<PosterPayoutResponse>, ApiError> {
-    let (mut parts, bytes) = json_request(request).await?;
+    let (mut parts, bytes) = json_first(request).await?;
     let AdminUser(admin) = AdminUser::from_request_parts(&mut parts, &state).await?;
     let mut check = Validator::default();
     let id = payout_id(&path, &mut check);
@@ -779,7 +779,7 @@ pub async fn transition_payout(
             merge_issues(check, body.finish())?;
             fields
         }
-        Err(error) => return Err(merge_issues(check, Err(error)).expect_err("an error")),
+        Err(error) => return Err(merge_issues::<()>(check, Err(error)).expect_err("an error")),
     };
     let row = sqlx::query("SELECT * FROM public.transition_poster_payout_status($1, $2, $3, $4)")
         .bind(id)
@@ -811,7 +811,7 @@ pub async fn bulk_mark_paid(
     State(state): State<AppState>,
     request: Request,
 ) -> Result<Json<Vec<PosterPayoutResponse>>, ApiError> {
-    let (mut parts, bytes) = json_request(request).await?;
+    let (mut parts, bytes) = json_first(request).await?;
     let AdminUser(admin) = AdminUser::from_request_parts(&mut parts, &state).await?;
     let ids = unique(&read_selection(&bytes, &parts.headers)?);
     let rows = sqlx::query("SELECT * FROM public.mark_poster_payouts_paid($1, $2)")

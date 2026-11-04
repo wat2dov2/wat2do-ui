@@ -30,7 +30,7 @@ use crate::api::json;
 use crate::api::messages::PROMOTER_ENROLLMENT_REQUIRED;
 use crate::api::pagination::{Paginated, Pagination};
 use crate::api::routes::users::get_user;
-use crate::api::validation::{Length, QueryParams, Validator};
+use crate::api::validation::{Length, ParsedDatetime, QueryParams, Validator};
 use crate::constants::MAX_SCHOOL_LENGTH;
 use crate::controlbox::PROMOTER_PROGRAM;
 use crate::db::read_with_retry;
@@ -296,10 +296,15 @@ pub async fn list_qr_codes_route(
     let mut filters = ListFilters {
         program: check.query(&query, "program").optional_choice(PROGRAMS),
         is_active: check.query(&query, "is_active").optional_bool(),
+        // A naive value reads as UTC, as Postgres read Python's filter.
         latest_scan_before: check
             .query(&query, "latest_scan_before")
-            .optional_datetime(),
-        latest_scan_after: check.query(&query, "latest_scan_after").optional_datetime(),
+            .optional_datetime()
+            .map(ParsedDatetime::to_utc),
+        latest_scan_after: check
+            .query(&query, "latest_scan_after")
+            .optional_datetime()
+            .map(ParsedDatetime::to_utc),
         never_scanned: check.query(&query, "never_scanned").optional_bool(),
         ..ListFilters::default()
     };
@@ -425,8 +430,14 @@ pub async fn list_scans(
         .query(&query, "qr_code_id")
         .optional_string(Length::default().max(128))
         .filter(|id| !id.is_empty());
-    let from_time = check.query(&query, "from_time").optional_datetime();
-    let to_time = check.query(&query, "to_time").optional_datetime();
+    let from_time = check
+        .query(&query, "from_time")
+        .optional_datetime()
+        .map(ParsedDatetime::to_utc);
+    let to_time = check
+        .query(&query, "to_time")
+        .optional_datetime()
+        .map(ParsedDatetime::to_utc);
     check.finish()?;
     // Owners see their standard posters' scans; promoter scans and their
     // risk flags stay admin-only so fraud controls are not exposed.

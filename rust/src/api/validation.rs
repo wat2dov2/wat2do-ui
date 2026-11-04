@@ -478,6 +478,12 @@ pub fn parse_datetime(raw: &str) -> Result<ParsedDatetime, &'static str> {
     if let Some(value) = timestamp_from_text(raw)? {
         return Ok(ParsedDatetime::Aware(value));
     }
+    parse_calendar_datetime(raw)
+}
+
+/// `parse_datetime` for text that is not a Unix timestamp: `YYYY-MM-DD` and
+/// an optional time.
+fn parse_calendar_datetime(raw: &str) -> Result<ParsedDatetime, &'static str> {
     let bytes = raw.as_bytes();
     if bytes.len() < 10 {
         return Err("input is too short");
@@ -543,8 +549,9 @@ pub fn parse_date(raw: &str) -> Result<NaiveDate, DateError> {
         && raw.len() > 10
         && let Some(head) = raw.get(..10)
     {
-        // The date itself must parse first, as in speedate.
-        parse_datetime(head).map_err(DateError::Invalid)?;
+        // The date itself must parse first, as in speedate (as a date, never
+        // as a timestamp).
+        parse_calendar_datetime(head).map_err(DateError::Invalid)?;
         if !matches!(raw.as_bytes()[10], b'T' | b't' | b'_' | b' ') {
             return Err(DateError::Invalid(
                 "invalid datetime separator, expected `T`, `t`, `_` or space",
@@ -1283,10 +1290,7 @@ impl FloatLimits {
                 json!({ "ge": bound }),
             ));
         }
-        if let Some(bound) = self
-            .le
-            .filter(|bound| value.is_nan() || value > *bound)
-        {
+        if let Some(bound) = self.le.filter(|bound| value.is_nan() || value > *bound) {
             return Some((
                 "less_than_equal",
                 format!(
@@ -1628,6 +1632,61 @@ mod feed_parameter_tests {
                 Err(other) => panic!("{other:?}"),
             }
         }
+    }
+
+    #[test]
+    fn dates_match_pydantic() {
+        // pydantic 2's `date` from these strings.
+        let inexact = Err(DateError::Inexact);
+        for (raw, expected) in [
+            ("2026-01-01", Ok("2026-01-01")),
+            ("2026-01-01T00:00:00", Ok("2026-01-01")),
+            ("2026-01-01T00:00:00+05:00", Ok("2026-01-01")),
+            ("1699920000", Ok("2023-11-14")),
+        ] {
+            assert_eq!(
+                parse_date(raw).map(|date| date.to_string()),
+                expected.map(str::to_owned),
+                "{raw}"
+            );
+        }
+        for raw in ["2026-01-01T01:00", "1700000000", "99999999999999"] {
+            assert_eq!(parse_date(raw), inexact, "{raw}");
+        }
+        for (raw, reason) in [
+            ("9999999999999999", TOO_LARGE),
+            ("99999999999999999999", DATE_SEPARATOR),
+            (
+                "2026-01-01X",
+                "invalid datetime separator, expected `T`, `t`, `_` or space",
+            ),
+            ("2026-01-01T0", TOO_SHORT),
+            ("1e3", TOO_SHORT),
+            ("  ", TOO_SHORT),
+        ] {
+            assert_eq!(parse_date(raw), Err(DateError::Invalid(reason)), "{raw}");
+        }
+        // A multi-byte character inside the first ten bytes is no panic.
+        assert!(parse_date("2026-01-é1T00:00").is_err());
+    }
+
+    #[test]
+    fn float_bounds_check_nan_like_pydantic() {
+        let both = FloatLimits::default().ge(-90.0).le(90.0);
+        let kind = |limits: FloatLimits, value: f64| limits.violation(value).map(|issue| issue.0);
+        assert_eq!(kind(both, f64::NAN), Some("less_than_equal"));
+        assert_eq!(kind(both, f64::INFINITY), Some("less_than_equal"));
+        assert_eq!(kind(both, f64::NEG_INFINITY), Some("greater_than_equal"));
+        assert_eq!(kind(both, 0.25), None);
+        let only_ge = FloatLimits::default().ge(0.5);
+        assert_eq!(kind(only_ge, f64::NAN), Some("greater_than_equal"));
+        assert_eq!(kind(only_ge, f64::INFINITY), None);
+        let (_, msg, ctx) = only_ge.violation(0.25).unwrap();
+        assert_eq!(msg, "Input should be greater than or equal to 0.5");
+        assert_eq!(ctx, json!({"ge": 0.5}));
+        let (_, msg, ctx) = both.violation(100.0).unwrap();
+        assert_eq!(msg, "Input should be less than or equal to 90");
+        assert_eq!(ctx.to_string(), r#"{"le":90.0}"#);
     }
 
     #[test]

@@ -267,7 +267,7 @@ fn state() -> AppState {
         Duration::from_millis(200),
         false,
     );
-    AppState::new(settings, db, None, None).unwrap()
+    AppState::new(settings, db, None).unwrap()
 }
 
 pub(crate) async fn call(

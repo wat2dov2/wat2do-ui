@@ -27,7 +27,7 @@ use crate::api::AppState;
 use crate::api::auth::{
     ClubOwnerOrAdmin, DbUser, User, authorized_resource, require_club_owner_or_admin,
 };
-use crate::api::body::{Body, Extra, Str, json_request, merge_issues};
+use crate::api::body::{Body, Extra, Str, json_first, merge_issues};
 use crate::api::errors::ApiError;
 use crate::api::json;
 use crate::api::messages::{
@@ -253,8 +253,12 @@ fn read_poster(body: &mut Body, create: bool) -> Option<PosterFields> {
     let destination_id = read_destination(body);
     let filters = read_filters(body);
     let image_url = body.string("image_url", &Str::new().max(MAX_URL_LENGTH));
-    let latitude = body.float_or("latitude", 0.0, FloatLimits::default().ge(-90).le(90));
-    let longitude = body.float_or("longitude", 0.0, FloatLimits::default().ge(-180).le(180));
+    let latitude = body.float_or("latitude", 0.0, FloatLimits::default().ge(-90.0).le(90.0));
+    let longitude = body.float_or(
+        "longitude",
+        0.0,
+        FloatLimits::default().ge(-180.0).le(180.0),
+    );
     let id = body.required_string(
         "id",
         &Str::new()
@@ -541,7 +545,7 @@ pub async fn create_poster(
     State(state): State<AppState>,
     request: Request,
 ) -> Result<Response, ApiError> {
-    let (mut parts, bytes) = json_request(request).await?;
+    let (mut parts, bytes) = json_first(request).await?;
     let DbUser(user) = DbUser::from_request_parts(&mut parts, &state).await?;
     let value: Value = crate::api::validation::parse_json_body(
         &bytes,
@@ -795,7 +799,7 @@ async fn update(
     check: Validator,
     request: Request,
 ) -> Result<Json<QrCodeResponse>, ApiError> {
-    let (mut parts, bytes) = json_request(request).await?;
+    let (mut parts, bytes) = json_first(request).await?;
     let ClubOwnerOrAdmin(user) = ClubOwnerOrAdmin::from_request_parts(&mut parts, &state).await?;
     let fields = match Body::parse(&bytes, &parts.headers, Extra::Forbid) {
         Ok(mut body) => {
@@ -803,7 +807,7 @@ async fn update(
             merge_issues(check, body.finish())?;
             fields.expect("valid fields")
         }
-        Err(error) => return Err(merge_issues(check, Err(error)).expect_err("an error")),
+        Err(error) => return Err(merge_issues::<()>(check, Err(error)).expect_err("an error")),
     };
     if fields.id != id {
         return Err(ApiError::http(StatusCode::BAD_REQUEST, ID_MISMATCH));
