@@ -17,6 +17,7 @@ pub mod ingestion;
 pub mod instagram_notifications;
 pub mod launch_agents;
 pub mod logs;
+pub mod map_locations;
 pub mod notification_retry;
 pub mod notifications;
 pub mod pyjson;

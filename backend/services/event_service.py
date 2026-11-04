@@ -6,22 +6,17 @@ response models as the ``occurrences`` list.
 """
 
 import logging
-from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
+from datetime import datetime, timezone
 
 from postgrest.exceptions import APIError
 
-from core.constants import DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT
-from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import CLUB_NOT_FOUND, EVENT_ALREADY_PAST
 from core.exceptions import NotFoundError, ValidationError
-from core.pagination import LATEST_ADDED_COLUMNS, LatestAddedItem
-from core.tables import EVENT_DATES, EVENTS
+from core.tables import EVENTS
 from schemas.event import (
     EventCreate,
     EventResponse,
-    EventStatsResponse,
     EventSummaryResponse,
     EventUpdate,
 )
@@ -29,12 +24,9 @@ from schemas.event_date import OccurrenceResponse, OccurrenceUpdate
 from services import (
     event_date_service,
     event_query,
-    going_event_service,
-    interaction_service,
     school_service,
 )
 from services.event_feed_revalidation import event_feed_revalidation_service
-from services.school_context import resolve_school_timezone
 
 log = logging.getLogger(__name__)
 
@@ -111,37 +103,6 @@ def normalize_campus_season_ids(
 # ── Public functions ──────────────────────────────────────────────────
 
 
-def get_latest_added_event(school: str | None = None) -> LatestAddedItem | None:
-    """Return the most recently added event that has not ended, or None.
-
-    Selecting it searches the feed, which hides ended events, so an event added
-    after it finished would lead to an empty search.
-    """
-    now = datetime.now(timezone.utc)
-    without_end_since = now - timedelta(
-        minutes=controlbox.event_discovery.event_without_end_visibility_minutes
-    )
-    q = (
-        get_sb()
-        .table(EVENTS)
-        .select(f"{LATEST_ADDED_COLUMNS},{EVENT_DATES}!inner(dtstart_utc)")
-        .or_(
-            f'dtend_utc.gte."{now.isoformat()}",'
-            f'and(dtend_utc.is.null,dtstart_utc.gte."{without_end_since.isoformat()}")',
-            reference_table=EVENT_DATES,
-        )
-    )
-    if school:
-        school_id = school_service.get_school_id(school)
-        if school_id is None:
-            return None
-        q = q.eq("school_id", school_id)
-    r = q.order("added_at", desc=True).limit(1).execute()
-    if not r.data or len(r.data) == 0:
-        return None
-    return LatestAddedItem.from_row(r.data[0])
-
-
 def get_event(event_id: int) -> EventResponse | None:
     r = (
         get_sb()
@@ -156,104 +117,6 @@ def get_event(event_id: int) -> EventResponse | None:
         return None
     occurrences = event_date_service.list_for_event(event_id)
     return event_query.hydrate_event(r.data[0], occurrences, EventResponse)
-
-
-def get_event_stats_for_school(school: str) -> dict[str, EventStatsResponse]:
-    """Return uncached click and going counts for the school's upcoming feed."""
-    event_ids = event_query.load_upcoming_event_ids(
-        since=_today_start_utc(school), school=school, cap=MAX_LIST_LIMIT
-    )
-    click_counts = interaction_service.get_click_counts_for_events(event_ids)
-    try:
-        going_counts = going_event_service.get_going_counts_for_events(event_ids)
-    except APIError as exc:
-        log.warning("Failed to fetch event going counts: %s", exc)
-        going_counts = {}
-
-    return {
-        str(event_id): EventStatsResponse(
-            click_count=click_counts.get(event_id, 0),
-            going_count=going_counts.get(event_id, 0),
-        )
-        for event_id in event_ids
-        if click_counts.get(event_id, 0) > 0 or going_counts.get(event_id, 0) > 0
-    }
-
-
-def _today_start_utc(school: str | None) -> datetime:
-    """Start of the current day, in the school's timezone, as a UTC instant.
-
-    "Upcoming" means "starts today or later" - using the school's local day
-    boundary (not UTC midnight) so events earlier today don't drop out for
-    users a few hours off UTC.
-    """
-    tz = ZoneInfo(resolve_school_timezone(school))
-    local_midnight = datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
-    return local_midnight.astimezone(timezone.utc)
-
-
-def list_events(
-    school: str | None = None,
-    skip: int = 0,
-    limit: int = DEFAULT_LIST_LIMIT,
-    start_utc: datetime | None = None,
-    end_utc: datetime | None = None,
-    search: str | None = None,
-    categories: list[str] | None = None,
-    locations: list[str] | None = None,
-    foods: list[str] | None = None,
-    days: list[str] | None = None,
-    min_price: float | None = None,
-    max_price: float | None = None,
-    registration: bool | None = None,
-    clubs: list[str] | None = None,
-    club_ids: list[int] | None = None,
-    has_food: bool = False,
-    ids: list[int] | None = None,
-    sort_by: str = "date",
-    sort_order: str = "asc",
-    added_within_24h: bool = False,
-    include_past: bool = False,
-) -> tuple[list[EventSummaryResponse], int]:
-    """Public browse list for a school.
-
-    Returns a paged result plus total count. The default date lower bound is
-    the school's local start-of-today, matching the historical upcoming list.
-    ``include_past`` drops that lower bound entirely, for callers that want a
-    host's full history rather than what is still to come. An explicit
-    ``start_utc`` always wins over both.
-    """
-    if start_utc is not None:
-        lower_bound = start_utc
-    elif include_past:
-        lower_bound = None
-    else:
-        lower_bound = _today_start_utc(school)
-
-    return event_query.load_events_page(
-        start_utc=lower_bound,
-        end_utc=end_utc,
-        school=school,
-        offset=skip,
-        limit=limit,
-        cap=MAX_LIST_LIMIT,
-        model=EventSummaryResponse,
-        search=search,
-        categories=categories,
-        locations=locations,
-        foods=foods,
-        days=days,
-        min_price=min_price,
-        max_price=max_price,
-        registration=registration,
-        clubs=clubs,
-        club_ids=club_ids,
-        has_food=has_food,
-        ids=ids,
-        sort_by=sort_by,
-        sort_order=sort_order,
-        added_within_24h=added_within_24h,
-    )
 
 
 def create_event(data: EventCreate, *, created_by: str) -> EventResponse:

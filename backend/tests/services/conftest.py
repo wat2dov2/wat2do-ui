@@ -144,7 +144,7 @@ def patch_sb(monkeypatch, fake_sb):
     not enough — we patch the copy. Call with the module path of the
     service under test:
 
-        def test_unsave_event(fake_sb, patch_sb):
+        def test_all_user_goings(fake_sb, patch_sb):
             patch_sb("services.going_event_service")
             ...
     """

@@ -19,7 +19,6 @@ from core.constants import (
     MAX_EVENT_TITLE_LENGTH,
     MAX_URL_LENGTH,
 )
-from core.pagination import LatestAddedItem, PaginatedResponse
 from schemas.club import ClubCohostResponse, ClubTypeValue
 from schemas.event_date import (
     OccurrenceCreate,
@@ -314,21 +313,6 @@ class EventSummaryResponse(EventDiscoveryFields):
     model_config = {"from_attributes": True}
 
 
-class EventFeedResponse(PaginatedResponse[EventSummaryResponse]):
-    """Public school feed response with catalog-freshness metadata."""
-
-    latest_added_event: LatestAddedItem | None = Field(
-        default=None, description="School freshness metadata on the first page only."
-    )
-
-
-class EventStatsResponse(BaseModel):
-    """Volatile public card stats loaded separately from the cached event feed."""
-
-    click_count: int = 0
-    going_count: int = 0
-
-
 class EventResponse(EventDiscoveryFields):
     """Full event payload returned from GET /events/{id} and used internally
     for ownership checks.
@@ -369,41 +353,5 @@ class EventResponse(EventDiscoveryFields):
     added_at: datetime
     last_source_changed_at: datetime | None = None
     created_by: str | None = None
-
-    model_config = {"from_attributes": True}
-
-
-class EventPublicResponse(EventDiscoveryFields):
-    """Like EventResponse but without ``created_by``, so public detail
-    views do not leak creator UUIDs to unauthenticated callers.
-    """
-
-    id: int
-    club_id: int | None = None
-    title: str
-    description: str | None = None
-    location: str | None = None
-    map_location: str | None = None
-    # Stored when the map location is found, so the map needs no lookup of its own.
-    map_coordinates: MapCoordinates | None = None
-    occurrences: list[OccurrenceResponse] = Field(default_factory=list)
-    price: float | None = None
-    food: list[str] | None = None
-    registration: bool = False
-    source_image_url: str | None = None
-    source_video_url: str | None = None
-    club_logo_url: str | None = None
-    cohosts: list[ClubCohostResponse] = Field(default_factory=list)
-    featured: bool = Field(default=False, description="Published to Instagram")
-    is_directory_event: bool = False
-    club_type: ClubTypeValue | None = None
-    school: str | None = None
-    source_url: str | None = None
-    category: str | None = None
-    club: str | None = None
-    ig_handle: str | None = None
-    cancelled: bool = False
-    added_at: datetime
-    last_source_changed_at: datetime | None = None
 
     model_config = {"from_attributes": True}

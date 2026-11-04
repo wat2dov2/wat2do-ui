@@ -111,6 +111,13 @@ pub async fn serve(port: u16, reload: bool) -> Result<i32> {
     );
     let readiness = tokio::spawn(wait_until_ready(upstream));
 
+    // Every server looks up waiting map locations; they take turns through the database.
+    let (stop_lookups, lookups_stopping) = tokio::sync::watch::channel(false);
+    let lookups = tokio::spawn(crate::map_locations::run(
+        state.db.clone(),
+        lookups_stopping,
+    ));
+
     let app = super::app(super::router(state));
     let stop_accepting = Arc::new(Notify::new());
     let stopped = stop_accepting.clone();
@@ -137,6 +144,7 @@ pub async fn serve(port: u16, reload: bool) -> Result<i32> {
         }
         signal = termination() => {
             tracing::info!("{signal} received; draining requests");
+            let _ = stop_lookups.send(true);
             stop_accepting.notify_one();
             if tokio::time::timeout(drain, &mut server).await.is_err() {
                 tracing::warn!("Requests still open after {drain:?}; stopping anyway");
@@ -151,5 +159,14 @@ pub async fn serve(port: u16, reload: bool) -> Result<i32> {
         }
     };
     readiness.abort();
+    // A lookup cut short leaves its claim to lapse, and the place is tried again.
+    let _ = stop_lookups.send(true);
+    let mut lookups = lookups;
+    if tokio::time::timeout(Duration::from_secs(1), &mut lookups)
+        .await
+        .is_err()
+    {
+        lookups.abort();
+    }
     Ok(exit_code)
 }

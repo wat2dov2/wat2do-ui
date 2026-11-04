@@ -1,73 +1,4 @@
-import json
-from uuid import UUID
-
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-
-from core.constants import (
-    INTERACTION_TYPES,
-    MAX_INTERACTION_BATCH_SIZE,
-    MAX_INTERACTION_METADATA_BYTES,
-    MAX_SESSION_ID_LENGTH,
-)
-
-
-class InteractionCreate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    event_id: int | None = Field(default=None, ge=1)
-    position_id: int | None = Field(default=None, ge=1)
-    interaction_type: str
-    metadata: dict | None = None
-
-    @model_validator(mode="after")
-    def validate_target(self):
-        if (self.event_id is None) == (self.position_id is None):
-            raise ValueError("Select exactly one event_id or position_id")
-        if self.position_id is not None and self.interaction_type != "click":
-            raise ValueError("Positions support click interactions only")
-        return self
-
-    @field_validator("interaction_type")
-    @classmethod
-    def _interaction_type_allowed(cls, v: str) -> str:
-        if v not in INTERACTION_TYPES:
-            raise ValueError(f"interaction_type must be one of: {', '.join(INTERACTION_TYPES)}")
-        return v
-
-    @field_validator("metadata")
-    @classmethod
-    def _metadata_size_limit(cls, v: dict | None) -> dict | None:
-        if v is None:
-            return v
-        size = len(json.dumps(v, separators=(",", ":")))
-        if size > MAX_INTERACTION_METADATA_BYTES:
-            raise ValueError(
-                f"metadata exceeds maximum size ({size} bytes, limit {MAX_INTERACTION_METADATA_BYTES})"
-            )
-        return v
-
-
-class InteractionBatch(BaseModel):
-    """Batch of interactions submitted from a single browser session.
-
-    **Trust boundary note on ``user_id``**: this field models the client's
-    *claim* of which user the batch belongs to.  The server verifies the
-    claim against the authenticated identity in ``interaction_service._validate_batch``
-    and 403s on mismatch.  The field is **advisory / diagnostic** -
-    never trust it for authorization or identity resolution in new code;
-    use the value resolved from the Bearer token instead.
-
-    Typed as ``UUID | None`` so the Pydantic boundary rejects arbitrary
-    opaque strings (e.g. ``"admin"``) at parse time - if the router-side
-    ownership check is ever removed during a refactor, impersonation
-    still cannot succeed because the payload won't even deserialise.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    session_id: str = Field(..., min_length=1, max_length=MAX_SESSION_ID_LENGTH)
-    user_id: UUID | None = None
-    interactions: list[InteractionCreate] = Field(..., max_length=MAX_INTERACTION_BATCH_SIZE)
+from pydantic import BaseModel
 
 
 class InteractionMatrixRow(BaseModel):
@@ -83,9 +14,3 @@ class EventPopularity(BaseModel):
 
     event_id: int
     score: float
-
-
-class RecordInteractionsResponse(BaseModel):
-    """Number of interaction rows recorded from a batch submit."""
-
-    recorded: int

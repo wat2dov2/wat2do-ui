@@ -14,20 +14,11 @@ AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.sensitive_authentication.win
 AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS = _CONTROL.token_refresh.maximum_requests
 AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.token_refresh.window_seconds
 
-ANON_INTERACTION_RATE_LIMIT_MAX_REQUESTS = _CONTROL.anonymous_interactions.maximum_requests
-ANON_INTERACTION_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.anonymous_interactions.window_seconds
-
 QR_SCAN_RATE_LIMIT_MAX_REQUESTS = _CONTROL.qr_scans.maximum_requests
 QR_SCAN_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.qr_scans.window_seconds
-
-REPORT_RATE_LIMIT_MAX_REQUESTS = _CONTROL.reports.maximum_requests
-REPORT_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.reports.window_seconds
 
 SUBMISSION_RATE_LIMIT_MAX_REQUESTS = _CONTROL.submissions.maximum_requests
 SUBMISSION_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.submissions.window_seconds
 
 MAX_GOING_EVENTS_PER_USER = _CONTROL.maximum_going_events_per_user
 MAX_SAVED_CLUBS_PER_USER = _CONTROL.maximum_saved_clubs_per_user
-
-CALENDAR_FEED_RATE_LIMIT_MAX_REQUESTS = _CONTROL.calendar_feed.maximum_requests
-CALENDAR_FEED_RATE_LIMIT_WINDOW_SECONDS = _CONTROL.calendar_feed.window_seconds

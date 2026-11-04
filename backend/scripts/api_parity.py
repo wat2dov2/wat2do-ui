@@ -15,8 +15,8 @@ Only GET, HEAD and OPTIONS cases (or cases marked ``"safe": true``, such as a
 POST that must be refused with 405) run unless ``--allow-writes`` is given, which
 is refused unless ``DATABASE_URL`` and ``DATA_API_URL`` both name a local host.
 The Rust side's database sessions are read-only, with a 10 second statement
-timeout, unless ``--allow-writes`` is given. The FastAPI lifespan (the
-map-location thread) is never started.
+timeout, unless ``--allow-writes`` is given. The FastAPI lifespan is
+never started.
 """
 
 import argparse

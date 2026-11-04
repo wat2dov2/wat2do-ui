@@ -76,8 +76,6 @@ from fastapi import Depends, Request
 
 from core.client_ip import get_client_ip
 from core.constants import (
-    ANON_INTERACTION_RATE_LIMIT_MAX_REQUESTS,
-    ANON_INTERACTION_RATE_LIMIT_WINDOW_SECONDS,
     AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS,
     AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS,
     AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
@@ -305,13 +303,6 @@ verify_otp_rate_limiter = RateLimiter(
 auth_refresh_rate_limiter = RateLimiter(
     max_requests=AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS,
     window_seconds=AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS,
-)
-# Anonymous interaction batches (POST /interactions/batch without auth).
-# Legitimate frontends fire view/impression events on scroll - generous limit
-# but stops bots from flooding the interactions table.
-anon_interaction_rate_limiter = RateLimiter(
-    max_requests=ANON_INTERACTION_RATE_LIMIT_MAX_REQUESTS,
-    window_seconds=ANON_INTERACTION_RATE_LIMIT_WINDOW_SECONDS,
 )
 # QR scan recording (GET /qr/{id}).  Normal usage is one scan per QR code;
 # repeated rapid scans from the same IP are clearly automated.

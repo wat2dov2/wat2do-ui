@@ -20,7 +20,14 @@ from core.constants import (
     MAX_CLUB_CATEGORY_LENGTH,
     MAX_CLUB_NAME_LENGTH,
     MAX_CLUB_TYPE_LENGTH,
+    MAX_EVENT_CATEGORY_LENGTH,
     MAX_EVENT_DESCRIPTION_LENGTH,
+    MAX_EVENT_FOOD_COUNT,
+    MAX_EVENT_FOOD_ITEM_LENGTH,
+    MAX_EVENT_HANDLE_LENGTH,
+    MAX_EVENT_LOCATION_LENGTH,
+    MAX_EVENT_PRICE,
+    MAX_EVENT_TITLE_LENGTH,
     MAX_FACULTY_LENGTH,
     MAX_FULL_NAME_LENGTH,
     MAX_INTEREST_LENGTH,
@@ -31,6 +38,7 @@ from core.constants import (
     MAX_REJECTION_REASON_LENGTH,
     MAX_SCHOOL_LENGTH,
     MAX_SEARCH_QUERY_LENGTH,
+    MAX_STATUS_FILTER_LENGTH,
     MAX_URL_LENGTH,
     NOTIFICATION_STATUS_FAILED,
     NOTIFICATION_STATUS_SENT,
@@ -109,6 +117,24 @@ def test_notification_types_and_statuses_match():
         ("NOTIFICATION_STATUS_FAILED", NOTIFICATION_STATUS_FAILED),
     ):
         assert _rust_value(name) == f'"{value}"'
+
+
+def test_event_and_filter_limits_match():
+    for name, value in {
+        "MAX_EVENT_TITLE_LENGTH": MAX_EVENT_TITLE_LENGTH,
+        "MAX_EVENT_LOCATION_LENGTH": MAX_EVENT_LOCATION_LENGTH,
+        "MAX_EVENT_CATEGORY_LENGTH": MAX_EVENT_CATEGORY_LENGTH,
+        "MAX_EVENT_HANDLE_LENGTH": MAX_EVENT_HANDLE_LENGTH,
+        "MAX_EVENT_FOOD_ITEM_LENGTH": MAX_EVENT_FOOD_ITEM_LENGTH,
+        "MAX_EVENT_FOOD_COUNT": MAX_EVENT_FOOD_COUNT,
+        "MAX_URL_LENGTH": MAX_URL_LENGTH,
+        "MAX_SEARCH_QUERY_LENGTH": MAX_SEARCH_QUERY_LENGTH,
+        "MAX_SCHOOL_LENGTH": MAX_SCHOOL_LENGTH,
+        "MAX_STATUS_FILTER_LENGTH": MAX_STATUS_FILTER_LENGTH,
+        "MAX_LIST_LIMIT": MAX_LIST_LIMIT,
+    }.items():
+        assert int(_rust_value(name).replace("_", "")) == value, name
+    assert float(_rust_value("MAX_EVENT_PRICE").replace("_", "")) == MAX_EVENT_PRICE
 
 
 RUST_MESSAGES = Path(__file__).resolve().parents[2] / "rust/src/api/messages.rs"
