@@ -47,3 +47,21 @@ Nothing on the Mac listens on a public interface.
 - The `mac-hosting` branch moves `process-notification.yml` entirely onto the Mac runners and replaces its Secrets Manager read with `~/wat2do-data/config/backend.env`.
   It turns `scheduled-emails`, `monthly-poster-payouts` and `instagram-account-stats` into launchd timers that run the deployed release's binaries.
   Client IP moves from CloudFront's `x-wat2do-viewer-ip` to Cloudflare's `CF-Connecting-IP` in `backend/core/client_ip.py` and `rust/src/api/client_ip.rs`.
+
+## Cutover runbook
+
+Prerequisites: the Cloudflare zone is active (nameservers switched at Name.com), every DNS record matches Route 53, the tunnel `wat2do-mac` routes `wat2do.io` and `*.wat2do.io` to `http://127.0.0.1:8080`, and `io.wat2do.cloudflared` runs.
+The site records still point at AWS until step 5.
+The `mac-cutover` branch has deployed on the Mac against a rehearsal copy and passed its health checks.
+
+The scripts are in `~/.wat2do-backups/mac-cutover/cutover.py` (secrets stay outside the repo).
+Writes stop at step 1 and resume at step 5, about ten minutes; reads keep working throughout.
+
+1. `cutover.py freeze`: RDS refuses the app's writes and ends its sessions; Process Notifications runs fail and are rerun in step 7.
+2. `cutover.py copy`: the Mac's database gets RDS's exact public schema and data, then the data API reloads its schema.
+3. `infra/mac-mini/deploy.sh <mac-cutover sha>`: the release is already built, so this mostly migrates and restarts.
+4. `cutover.py switch-mac-jobs` and `cutover.py enable-email`, then restart the ingestion, browser and emulator LaunchAgents and `io.wat2do.api`, and run `infra/mac-mini/install.py` for the timers.
+5. Point `wat2do.io`, `www` and `*.wat2do.io` at the tunnel in Cloudflare (proxied); drop `origin` and `data`.
+6. Merge `mac-cutover` into `main`; the deploy job redeploys the same commit on the Mac.
+7. Rerun the Process Notifications runs that failed since step 1, check login, a school subdomain, discovery readiness, ingestion and the event change alerts timer.
+8. Leave AWS frozen for a day or two as the fallback (`cutover.py thaw-rds` and pointing DNS back undo it), then tear it down except SES.
