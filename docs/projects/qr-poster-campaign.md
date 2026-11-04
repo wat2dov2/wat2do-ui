@@ -574,7 +574,7 @@ No transition out of `paid` or `voided` is allowed.
 
 ## Monthly payout job
 
-Job: `wat2do-poster-payouts` (`rust/src/poster_payouts`), run by `.github/workflows/monthly-poster-payouts.yml`.
+Job: `wat2do-poster-payouts` (`rust/src/poster_payouts`), run by the Mac mini's monthly `io.wat2do.poster-payouts` launchd timer (`infra/mac-mini`).
 
 For a closed period, the job:
 

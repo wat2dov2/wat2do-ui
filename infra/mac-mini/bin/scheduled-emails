@@ -1,0 +1,11 @@
+#!/bin/bash
+# Hourly: send the scheduled notification emails (morning email and reminders).
+# The sender only sends what is due, so a missed hour is caught up by the next one.
+set -euo pipefail
+data="$HOME/wat2do-data"
+set -a
+. "$data/config/backend.env"
+set +a
+release="$(cd "$data/releases/current" && pwd -P)"
+cd "$release/backend"
+exec "$release/bin/wat2do-send-notifications" --notification morning_email

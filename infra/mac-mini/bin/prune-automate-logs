@@ -1,0 +1,8 @@
+#!/bin/bash
+# Daily: keep a week of Automate webhook logs (replaces the pg_cron job).
+set -euo pipefail
+set -a
+. "$HOME/wat2do-data/config/backend.env"
+set +a
+exec /opt/homebrew/opt/postgresql@17/bin/psql "$DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
+  -c "DELETE FROM public.automate_logs WHERE created_at < now() - interval '7 days'"

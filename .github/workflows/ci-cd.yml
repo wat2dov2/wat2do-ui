@@ -10,7 +10,9 @@ on:
 
 concurrency:
   group: ci-cd-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer push replaces a pull request's checks, but never cancels a run on main
+  # mid-deploy; the deploy job also queues on its own group.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   backend:
@@ -152,9 +154,8 @@ jobs:
 
   backend-image:
     name: Backend image build
-    # Builds and smoke-tests the image the deploy job ships, on pull requests and
-    # before every deploy, so a broken Dockerfile or Rust build never reaches ECS.
-    # The deploy job's own build then reuses this build's cached layers.
+    # Builds and smoke-tests the backend image that docker-compose.yml runs, so a
+    # broken Dockerfile or Rust build is caught before merge.
     runs-on: ubuntu-24.04-arm
 
     steps:
@@ -209,270 +210,34 @@ jobs:
           test "$(docker inspect --format '{{.State.ExitCode}}' "$container_id")" = 0
 
   deploy-wat2do:
-    name: Deploy Wat2Do to AWS
-    runs-on: ubuntu-24.04-arm
+    name: Deploy Wat2Do to the Mac mini
+    # The Mac mini serves production behind a Cloudflare Tunnel (docs/projects/mac-mini-hosting.md).
+    runs-on: [self-hosted, wat2do-macmini-deploy]
     needs:
       - backend
-      - backend-image
       - frontend
-      - social-preview
       - rust
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
+    # A deploy is never cancelled halfway; a newer push waits and then deploys.
+    concurrency:
+      group: deploy-mac-mini
+      cancel-in-progress: false
     permissions:
       contents: read
-      id-token: write
-    env:
-      AWS_REGION: ca-central-1
-      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
-      AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
-      ECS_CLUSTER: wat2do-production
-      ECS_SERVICE: wat2do-production-app
-      ECS_TASK_FAMILY: wat2do-production-app
-      SOCIAL_PREVIEW_FUNCTION: wat2do-production-social-preview
 
     steps:
-      # Full history: the migration guard below diffs against the previous
-      # commit, which a shallow checkout does not have.
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Verify AWS deployment configuration
-        run: |
-          test -n "$AWS_ACCOUNT_ID"
-          test -n "$AWS_DEPLOY_ROLE_ARN"
-
-
-      - name: Configure AWS credentials with GitHub OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Log in to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Read frontend build configuration
-        env:
-          FRONTEND_BUILD_SECRET_ID: wat2do/production/frontend-build
-        run: |
-          secret_json="$(aws secretsmanager get-secret-value --secret-id "$FRONTEND_BUILD_SECRET_ID" --query SecretString --output text)"
-          for secret_key in NEXT_PUBLIC_GOOGLE_MAPS_API_KEY NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN NEXT_PUBLIC_POSTHOG_HOST; do
-            secret_value="$(jq -er --arg key "$secret_key" '.[$key]' <<< "$secret_json")"
-            echo "::add-mask::$secret_value"
-            echo "$secret_key=$secret_value" >> "$GITHUB_ENV"
-          done
-          unset secret_json
-
-      - name: Build and push backend image
-        id: backend-image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: backend/Dockerfile
-          platforms: linux/arm64
-          push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/wat2do/backend:${{ github.sha }}
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,mode=max,scope=backend,ignore-error=true
-
-      - name: Build and push frontend image
-        id: frontend-image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: frontend/Dockerfile
-          platforms: linux/arm64
-          push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/wat2do/frontend:${{ github.sha }}
-          cache-from: type=gha,scope=frontend
-          cache-to: type=gha,mode=max,scope=frontend,ignore-error=true
-          build-args: |
-            NEXT_PUBLIC_API_URL=/api
-            API_REWRITE_URL=http://127.0.0.1:8000
-            BACKEND_API_URL=http://127.0.0.1:8000
-            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
-            NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=${{ env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
-            NEXT_PUBLIC_POSTHOG_HOST=${{ env.NEXT_PUBLIC_POSTHOG_HOST }}
-            APP_VERSION=${{ github.sha }}
-
-      - name: Wait for social-preview ECR repository
-        run: |
-          for _ in $(seq 1 60); do
-            if aws ecr describe-repositories --repository-names wat2do/social-preview >/dev/null 2>&1; then
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "::error::The wat2do/social-preview ECR repository was not created by the foundation deployment."
-          exit 1
-
-      - name: Build and push social-preview image
-        id: social-preview-image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: social-preview/Dockerfile
-          platforms: linux/amd64
-          push: true
-          provenance: false
-          sbom: false
-          tags: ${{ steps.login-ecr.outputs.registry }}/wat2do/social-preview:${{ github.sha }}
-          cache-from: type=gha,scope=social-preview
-          cache-to: type=gha,mode=max,scope=social-preview,ignore-error=true
-
-      - name: Smoke test frontend image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          frontend_image="$ECR_REGISTRY/wat2do/frontend:${{ github.sha }}"
-          # This isolated liveness check has no backend or AWS task credentials.
-          # Use the existing test mode; ECS startup and the readiness check below
-          # still require production discovery snapshots to initialize successfully.
-          container_id="$(docker run --detach --platform linux/arm64 --env PLAYWRIGHT_TEST=1 --publish 127.0.0.1::3000 "$frontend_image")"
-          cleanup() {
-            docker rm --force "$container_id" >/dev/null 2>&1 || true
-          }
-          trap cleanup EXIT
-          published_port="$(docker port "$container_id" 3000/tcp)"
-          published_port="${published_port##*:}"
-
-          for _ in $(seq 1 30); do
-            if curl --fail --silent "http://127.0.0.1:$published_port/healthz" >/dev/null; then
-              exit 0
-            fi
-            if [ "$(docker inspect --format '{{.State.Running}}' "$container_id")" != 'true' ]; then
-              docker logs "$container_id"
-              exit 1
-            fi
-            sleep 2
-          done
-
-          docker logs "$container_id"
-          exit 1
-
-      - name: Register immutable ECS task revisions
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          FRONTEND_DIGEST: ${{ steps.frontend-image.outputs.digest }}
-          BACKEND_DIGEST: ${{ steps.backend-image.outputs.digest }}
-        run: |
-          frontend_image="$ECR_REGISTRY/wat2do/frontend@$FRONTEND_DIGEST"
-          backend_image="$ECR_REGISTRY/wat2do/backend@$BACKEND_DIGEST"
-          aws ecs describe-task-definition --task-definition "$ECS_TASK_FAMILY" --query taskDefinition --output json > task-definition.json
-          bash scripts/render-ecs-task-definition.sh task-definition.json "$frontend_image" "$backend_image" > rendered-task-definition.json
-          task_definition_arn="$(aws ecs register-task-definition --cli-input-json file://rendered-task-definition.json --query 'taskDefinition.taskDefinitionArn' --output text)"
-          echo "TASK_DEFINITION_ARN=$task_definition_arn" >> "$GITHUB_ENV"
-
-      # Schema must land before the code that queries it. Without this, a commit
-      # adding a migration deploys code against a database that lacks the column.
-      # Skipped while the DATABASE_URL secret is unset, so this step cannot break
-      # deploys that do not touch the schema.
-      - name: Apply database migrations
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          set -euo pipefail
-
-          # Detection must never fail quietly: a diff that errors out and gets
-          # swallowed reads as "this push adds no migrations", which is exactly
-          # how unapplied schema once reached production. Force pushes and the
-          # first push to a branch have no usable before-sha, so fall back to
-          # this commit's parent rather than to silence.
-          before="${{ github.event.before }}"
-          if [ -z "$before" ] || ! git cat-file -e "${before}^{commit}" 2>/dev/null; then
-            before="$(git rev-parse "${{ github.sha }}^")"
-          fi
-          added_migrations="$(git diff --name-only --diff-filter=A \
-            "$before" "${{ github.sha }}" -- backend/database/migrations/)"
-
-          if [ -z "${DATABASE_URL:-}" ]; then
-            if [ -n "$added_migrations" ]; then
-              echo "::error::This push adds migrations but the DATABASE_URL secret is not configured."
-              echo "::error::Set the production environment's DATABASE_URL secret, or apply these migrations manually before merging:"
-              echo "$added_migrations"
-              exit 1
-            fi
-            echo "DATABASE_URL is not configured and no new migrations in this push; skipping."
-            exit 0
-          fi
-
-          if ! command -v psql >/dev/null; then
-            sudo apt-get update
-            sudo apt-get install --yes --no-install-recommends postgresql-client
-          fi
-          bash scripts/migrate-database.sh
-
-      - name: Deploy task revision and wait for service stability
-        run: |
-          grace_seconds="$(jq '.readiness_timeout_seconds + .startup_grace_seconds' backend/controlbox/discovery_cache.json)"
-          desired_count="$(jq '.desired_count' backend/controlbox/ecs_runtime.json)"
-          # Apply capacity and startup settings with this release, before Terraform runs.
-          # Instrumentation waits for complete snapshots before /healthz can answer.
-          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" \
-            --desired-count "$desired_count" --health-check-grace-period-seconds "$grace_seconds" \
-            --task-definition "$TASK_DEFINITION_ARN"
-          deployment_timeout="$(jq '.deployment_timeout_seconds' backend/controlbox/discovery_cache.json)"
-          poll_interval="$(jq '.worker_interval_seconds' backend/controlbox/discovery_cache.json)"
-          deadline=$((SECONDS + deployment_timeout))
-          revision_seen=false
-          while true; do
-            service="$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --query 'services[0]' --output json)"
-            if jq -e --arg expected "$TASK_DEFINITION_ARN" \
-              'any(.deployments[]; .taskDefinition == $expected and .rolloutState == "FAILED")' \
-              <<< "$service" >/dev/null; then
-              echo "::error::The requested ECS task revision failed to deploy."
-              exit 1
-            fi
-            if jq -e --arg expected "$TASK_DEFINITION_ARN" '.taskDefinition == $expected' \
-              <<< "$service" >/dev/null; then
-              revision_seen=true
-            elif [ "$revision_seen" = true ]; then
-              echo "::error::ECS rolled back or replaced the requested task revision."
-              exit 1
-            fi
-            if jq -e --arg expected "$TASK_DEFINITION_ARN" '
-              .taskDefinition == $expected and (.deployments | length) == 1 and
-              .deployments[0].taskDefinition == $expected and
-              .deployments[0].rolloutState == "COMPLETED" and
-              .runningCount == .desiredCount and .pendingCount == 0
-            ' <<< "$service" >/dev/null; then
-              break
-            fi
-            if [ "$SECONDS" -ge "$deadline" ]; then
-              echo "::error::ECS did not finish the requested deployment within its configured deadline."
-              exit 1
-            fi
-            sleep "$poll_interval"
-          done
-
-      - name: Deploy social-preview Lambda image when provisioned
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          SOCIAL_PREVIEW_DIGEST: ${{ steps.social-preview-image.outputs.digest }}
-        run: |
-          if ! aws lambda get-function --function-name "$SOCIAL_PREVIEW_FUNCTION" >/dev/null 2>&1; then
-            echo "Social-preview Lambda is not provisioned yet; Terraform will create it from this release image."
-            exit 0
-          fi
-
-          image="$ECR_REGISTRY/wat2do/social-preview@$SOCIAL_PREVIEW_DIGEST"
-          aws lambda update-function-code \
-            --function-name "$SOCIAL_PREVIEW_FUNCTION" \
-            --image-uri "$image" \
-            >/dev/null
-          aws lambda wait function-updated-v2 --function-name "$SOCIAL_PREVIEW_FUNCTION"
+      - name: Build, migrate and switch the release
+        timeout-minutes: 45
+        run: bash infra/mac-mini/deploy.sh "$GITHUB_SHA"
 
       - name: Verify all-school discovery readiness
         run: |
           timeout_seconds="$(jq -r '.readiness_timeout_seconds' backend/controlbox/discovery_cache.json)"
           request_timeout="$(jq -r '.request_timeout_seconds' backend/controlbox/discovery_cache.json)"
-          poll_interval="$(jq -r '.worker_interval_seconds' backend/controlbox/discovery_cache.json)"
+          poll_interval="$(jq -r '.snapshot_check_seconds' backend/controlbox/discovery_cache.json)"
           deadline=$((SECONDS + timeout_seconds))
           until curl --fail --silent --show-error --max-time "$request_timeout" https://wat2do.io/api/discovery/readiness; do
             if [ "$SECONDS" -ge "$deadline" ]; then
@@ -485,13 +250,6 @@ jobs:
       - name: Smoke test school subdomain scoping
         run: ./scripts/smoke-subdomains.sh
 
-      - name: Surface stopped-task diagnostics
+      - name: Surface service logs
         if: failure()
-        run: |
-          aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --output json
-          stopped_tasks="$(aws ecs list-tasks --cluster "$ECS_CLUSTER" --desired-status STOPPED --query 'taskArns' --output text)"
-          if [ -n "$stopped_tasks" ]; then
-            aws ecs describe-tasks --cluster "$ECS_CLUSTER" --tasks $stopped_tasks --output json
-          fi
-          aws logs tail /wat2do/production/frontend --since 30m || true
-          aws logs tail /wat2do/production/backend --since 30m || true
+        run: tail -n 200 "$HOME/wat2do-data/logs/api.log" "$HOME/wat2do-data/logs/web.log" || true
