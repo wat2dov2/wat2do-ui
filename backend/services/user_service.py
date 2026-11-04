@@ -2,26 +2,14 @@
 
 import base64
 import hashlib
-from datetime import datetime, timezone
 from itertools import batched
 from uuid import UUID
 
-from core.constants import DEFAULT_LIST_LIMIT
-from core.controlbox import controlbox
 from core.database import get_sb
-from core.errors import (
-    PROMOTER_PROGRAM_PAUSED,
-    PROMOTER_SCHOOL_REQUIRED,
-    PROMOTER_TOS_REQUIRED,
-    USER_HAS_PAYOUT_REVIEWS,
-    USER_HAS_PAYOUTS,
-    USER_HAS_PROMOTER_POSTERS,
-)
 from core.exceptions import ValidationError
-from core.tables import POSTER_PAYOUT_REVIEWS, POSTER_PAYOUTS, QR_CODES, USERS
-from schemas.user import PromoterEnrollmentUpdate, UserResponse, UserUpdate
+from core.tables import USERS
+from schemas.user import UserResponse, UserUpdate
 from services import school_service
-from services.auth_service import auth
 from services.school_context import canonical_school_key
 
 _USER_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
@@ -63,13 +51,6 @@ def get_user(user_id: UUID) -> UserResponse | None:
     return _user_response(r.data[0])
 
 
-def get_user_by_email(email: str) -> UserResponse | None:
-    r = get_sb().table(USERS).select(_USER_SELECT).eq("email", email).execute()
-    if not r.data or len(r.data) == 0:
-        return None
-    return _user_response(r.data[0])
-
-
 def get_user_by_auth_id(auth_id: str) -> UserResponse | None:
     r = get_sb().table(USERS).select(_USER_SELECT).eq("auth_id", auth_id).execute()
     if not r.data or len(r.data) == 0:
@@ -94,18 +75,6 @@ def get_users_by_ids(user_ids: list[str]) -> dict[str, UserResponse]:
             result[str(user.id)] = user
 
     return result
-
-
-def list_users(skip: int = 0, limit: int = DEFAULT_LIST_LIMIT) -> list[UserResponse]:
-    r = (
-        get_sb()
-        .table(USERS)
-        .select(_USER_SELECT)
-        .order("created_at", desc=True)
-        .range(skip, skip + limit - 1)
-        .execute()
-    )
-    return [_user_response(u) for u in (r.data or [])]
 
 
 def update_user(user_id: UUID, data: UserUpdate) -> UserResponse | None:
@@ -133,108 +102,3 @@ def update_user(user_id: UUID, data: UserUpdate) -> UserResponse | None:
     if not r.data:
         return None
     return _user_response({**r.data[0], "school": data.school or existing.school})
-
-
-def update_promoter_enrollment(
-    user_id: UUID,
-    data: PromoterEnrollmentUpdate,
-) -> UserResponse | None:
-    """Enroll a user or update an existing promoter payout email.
-
-    The acceptance metadata is server-owned and is only set during enrollment.
-    """
-    existing = get_user(user_id)
-    if existing is None:
-        return None
-
-    is_enrolled = (
-        existing.payout_email is not None
-        and existing.promoter_tos_accepted_at is not None
-        and existing.promoter_tos_version is not None
-    )
-    if not is_enrolled:
-        school = canonical_school_key(existing.school)
-        if not school_service.school_exists(school):
-            raise ValidationError(PROMOTER_SCHOOL_REQUIRED)
-        if not controlbox.promoter_program.enabled:
-            raise ValidationError(PROMOTER_PROGRAM_PAUSED)
-
-    must_accept = not is_enrolled
-    if must_accept and not data.accept_tos:
-        raise ValidationError(PROMOTER_TOS_REQUIRED)
-
-    payload: dict[str, object] = {"payout_email": str(data.payout_email)}
-    if must_accept:
-        payload.update(
-            {
-                "promoter_tos_accepted_at": datetime.now(timezone.utc).isoformat(),
-                "promoter_tos_version": controlbox.promoter_program.tos_version,
-            }
-        )
-
-    r = get_sb().table(USERS).update(payload).eq("id", str(user_id)).execute()
-    return _user_response({**r.data[0], "school": existing.school}) if r.data else None
-
-
-def set_role(user_id: UUID, role: str) -> UserResponse | None:
-    """Admin-only role rotation.
-
-    Updates the ``role`` column directly (bypassing ``UserUpdate`` which
-    intentionally does not list ``role`` - see schema audit S2).
-    """
-    existing = get_user(user_id)
-    if existing is None:
-        return None
-    r = get_sb().table(USERS).update({"role": role}).eq("id", str(user_id)).execute()
-    return get_user(user_id) if r.data else None
-
-
-def count_admins() -> int:
-    """Return the number of users with the admin role.
-
-    Used by admin-only routes to enforce an admin-quorum invariant: the
-    system must never reach a state with zero admins (a bored admin could
-    otherwise lock the platform into a permanently un-administered state -
-    see audit A26).  Uses PostgREST's ``count="exact"`` to avoid fetching
-    the full user list.
-    """
-    r = get_sb().table(USERS).select("id", count="exact").eq("role", "admin").execute()
-    return r.count or 0
-
-
-def delete_user(user_id: UUID) -> bool:
-    payout_response = (
-        get_sb()
-        .table(POSTER_PAYOUTS)
-        .select("id", count="exact")
-        .eq("user_id", str(user_id))
-        .limit(1)
-        .execute()
-    )
-    if payout_response.count or payout_response.data:
-        raise ValidationError(USER_HAS_PAYOUTS)
-    poster_response = (
-        get_sb()
-        .table(QR_CODES)
-        .select("id", count="exact")
-        .eq("created_by", str(user_id))
-        .eq("program", "promoter")
-        .limit(1)
-        .execute()
-    )
-    if poster_response.count or poster_response.data:
-        raise ValidationError(USER_HAS_PROMOTER_POSTERS)
-    review_response = (
-        get_sb()
-        .table(POSTER_PAYOUT_REVIEWS)
-        .select("id", count="exact")
-        .eq("reviewed_by", str(user_id))
-        .limit(1)
-        .execute()
-    )
-    if review_response.count or review_response.data:
-        raise ValidationError(USER_HAS_PAYOUT_REVIEWS)
-    r = get_sb().table(USERS).delete().eq("id", str(user_id)).execute()
-    for row in r.data:
-        auth.revoke_sessions(row["auth_id"])
-    return bool(r.data)

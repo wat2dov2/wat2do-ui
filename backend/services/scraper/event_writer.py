@@ -520,7 +520,7 @@ def _ensure_club_by_ig(
 
         from services import club_service
 
-        club_service._get_clubs_for_school_lookup.cache_clear()
+        club_service.clear_school_lookup_cache()
         event_feed_revalidation_service.revalidate_school(school_slug, resources=("clubs",))
 
         return row

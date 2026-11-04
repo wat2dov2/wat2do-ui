@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 
 from core.tables import ADMIN_LIST_ENTRIES, EVENT_SUBMISSIONS
-from services import admin_query, club_service, report_service, submission_service
+from services import admin_query, report_service, submission_service
 
 
 @pytest.mark.parametrize(
@@ -95,21 +95,6 @@ def test_report_page_carries_event_title_and_school(monkeypatch):
     assert items[0].school == "ulaval"
 
 
-def test_club_reviews_batch_owner_emails(fake_sb, patch_sb, monkeypatch):
-    patch_sb("services.club_service")
-    rows = [
-        {"id": id, "club_name": f"Club {id}", "created_by": "owner", "club_type": "independent"}
-        for id in [1, 2]
-    ]
-    monkeypatch.setattr(admin_query, "load_page_rows", Mock(return_value=(rows, 21)))
-    fake_sb.set_response(data=[{"id": "owner", "email": "owner@example.com"}])
-    items, total = club_service.list_club_submissions(offset=0, limit=20)
-    assert total == 21
-    assert [item.owner_email for item in items] == ["owner@example.com", "owner@example.com"]
-    fake_sb.in_.assert_called_once_with("id", ["owner"])
-    fake_sb.execute.assert_called_once()
-
-
 def test_submission_page_batches_club_names_without_full_club_list(fake_sb, patch_sb, monkeypatch):
     patch_sb("services.submission_service")
     rows = [
@@ -138,19 +123,3 @@ def test_submission_page_batches_club_names_without_full_club_list(fake_sb, patc
     assert loader.call_args.kwargs["offset"] == 20
     fake_sb.in_.assert_called_once_with("id", [7])
     fake_sb.execute.assert_called_once()
-
-
-def test_club_review_reads_private_visitor_contact(monkeypatch):
-    row = {
-        "id": 7,
-        "club_name": "Visitor Club",
-        "status": "pending",
-        "club_type": "independent",
-        "created_by": None,
-        "submitted_by_email": "visitor@example.com",
-    }
-    monkeypatch.setattr(admin_query, "load_page_rows", Mock(return_value=([row], 1)))
-    items, total = club_service.list_club_submissions(offset=0, limit=20)
-    assert total == 1
-    assert items[0].submitted_by_email == "visitor@example.com"
-    assert items[0].created_by is None

@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import re
-import unicodedata
 from functools import lru_cache
-from typing import Final, cast
+from typing import Final
 
 from core.controlbox import controlbox
 from core.database import get_sb
@@ -14,25 +12,15 @@ from schemas.school import (
     CampusSeasonWindow,
     SchoolEventSeason,
     SchoolRecord,
-    SchoolSummary,
     validate_recipient_id,
 )
 
-DEFAULT_SEARCH_LIMIT: Final[int] = 10
 SCHOOL_COLUMNS: Final[str] = (
     "id, slug, name, city, primary_color, secondary_color, timezone, language, faculties, location_examples, "
     "recipient_id, semester_start, semester_end, social_preview_image_url, "
     "social_preview_revision, social_preview_rendered_revision, social_preview_rendered_at"
 )
 SCHOOL_SLUG_EMBED: Final[str] = "school_record:schools(slug)"
-
-
-def _normalize(text: str | None) -> str:
-    return " ".join(unicodedata.normalize("NFKC", text or "").casefold().split())
-
-
-def _compact(text: str | None) -> str:
-    return re.sub(r"[^a-z0-9]", "", _normalize(text))
 
 
 def normalize_school_slug(value: str | None) -> str:
@@ -150,98 +138,6 @@ def with_school_slug(row: dict, *, relation: str = "school_record") -> dict:
     return normalized
 
 
-def school_exists(slug: str | None) -> bool:
-    return get_school(slug) is not None
-
-
-def _score_term(term: str, query: str, query_compact: str) -> tuple[int, int] | None:
-    term_compact = _compact(term)
-    if not term_compact:
-        return None
-
-    if term == query or term_compact == query_compact:
-        return (0, len(term_compact))
-    if term.startswith(query) or term_compact.startswith(query_compact):
-        return (1, len(term_compact))
-    if query in term or query_compact in term_compact:
-        return (2, len(term_compact))
-    return None
-
-
-def _ordered_email_domains(domain_rows: list[dict] | None) -> list[str]:
-    """School domains with the primary one first, then the rest alphabetically.
-
-    Consumers read the head of this list as *the* domain for a school - the
-    sign-in placeholder, for one - so a school that also accepts a subdomain
-    must not lead with it. Alphabetical order alone puts "edu.uwaterloo.ca"
-    ahead of "uwaterloo.ca", which is why the primary flag decides.
-    """
-    primary: list[str] = []
-    secondary: set[str] = set()
-    for domain_row in domain_rows or []:
-        domain = str(domain_row.get("domain") or "").strip().lower()
-        if not domain:
-            continue
-        if domain_row.get("is_primary"):
-            primary.append(domain)
-        else:
-            secondary.add(domain)
-    primary.sort()
-    return [*primary, *sorted(secondary - set(primary))]
-
-
-def search_schools(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[SchoolSummary]:
-    """Search the school directory using a fuzzy, prefix-friendly match."""
-    normalized_query = _normalize(query)
-    query_compact = _compact(normalized_query)
-    response = (
-        get_sb()
-        .table(SCHOOLS)
-        .select(
-            "slug, name, city, primary_color, secondary_color, timezone, language, faculties, location_examples, school_email_domains(domain, is_primary)"
-        )
-        .order("name")
-        .execute()
-    )
-
-    ranked: list[tuple[tuple[int, int, str], SchoolSummary]] = []
-    for row in cast(list[dict], response.data or []):
-        email_domains = _ordered_email_domains(row.get("school_email_domains"))
-        school = SchoolSummary.model_validate(
-            {
-                **row,
-                "email_domains": email_domains,
-                "event_seasons": _event_seasons(row["slug"]),
-            }
-        )
-        name_key = school.name.casefold()
-        if not normalized_query:
-            ranked.append(((0, 0, name_key), school))
-            continue
-
-        terms = {
-            _normalize(school.slug),
-            _normalize(school.name),
-        }
-        for domain_row in row.get("school_email_domains") or []:
-            domain = domain_row.get("domain")
-            if domain:
-                terms.add(_normalize(domain))
-        best_rank: tuple[int, int, str] | None = None
-        for term in terms:
-            score = _score_term(term, normalized_query, query_compact)
-            if score is None:
-                continue
-            candidate = (score[0], score[1], name_key)
-            if best_rank is None or candidate < best_rank:
-                best_rank = candidate
-        if best_rank is not None:
-            ranked.append((best_rank, school))
-
-    ranked.sort(key=lambda item: item[0])
-    return [school for _, school in ranked[:limit]]
-
-
 @lru_cache(maxsize=128)
 def get_school_by_name(name: str | None) -> SchoolRecord | None:
     normalized_name = (name or "").strip()
@@ -262,14 +158,11 @@ def get_school_by_name(name: str | None) -> SchoolRecord | None:
 
 __all__ = [
     "campus_season_ids",
-    "DEFAULT_SEARCH_LIMIT",
     "get_school",
     "get_school_by_recipient_id",
     "get_school_by_name",
     "get_school_id",
     "normalize_school_slug",
     "SCHOOL_SLUG_EMBED",
-    "school_exists",
-    "search_schools",
     "with_school_slug",
 ]

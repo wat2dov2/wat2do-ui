@@ -50,6 +50,11 @@ Port one whole router (every path under its prefix) per change, so no path is se
    | strings in `core/errors.py` | `api/messages.rs` (same names; a Python test checks they match) |
    | `Query(...)` and path parameters | `QueryParams`, `PathParams` and `Validator` (`api/validation.rs`) |
    | a Pydantic request body | `ValidatedJson<T>` |
+   | a Pydantic body with constraints, validators or `exclude_unset` | `body::Body` (every issue in field order, `Input::Missing`/`Null`/`Given`) |
+   | `EmailStr` | `email_address::normalize` |
+   | `AwareDatetime`, `Literal`, `pattern`, `list[int]` query parameters | `Field::optional_aware_datetime`, `optional_choice`, `optional_pattern`, `Validator::query_ints` |
+   | pydantic's datetime and date output, `json.dumps` floats | `json::datetime`, `json::option_date`, `json::float`, `json::value` |
+   | `get_client_ip(request)` for a limiter | `client_ip::ClientIp` |
    | `PaginationParams`, `paginated_response`, `fetch_all_pages` | `pagination::Pagination`, `Paginated`, `fetch_all_pages` |
    | `RateLimiter` | `rate_limit::RateLimiter` in a `LazyLock`, keyed by `state.trust.client_ip(...)` or the user id |
    | `get_client_ip` | `ProxyTrust::client_ip` (repeats uvicorn's proxy rewrite first) |
@@ -83,6 +88,7 @@ The harness gives both sides one throwaway `AUTH_SIGNING_KEY` for the run (it ov
 Each side then verifies the token itself, so authentication is compared too.
 Use the `auth_id` of a real user so `DbUser` resolves the same row on both sides.
 A case can also send its own `authorization` header, such as a token we did not sign.
+Keep real ids and emails out of committed case files: commit placeholders (as in `rust/parity/clubs.json`) and substitute real identities in a local copy when you run it.
 `json` sends a JSON body and `body` a raw one.
 Only GET, HEAD and OPTIONS cases run unless a case is marked `"safe": true` or `--allow-writes` is given, and `--allow-writes` only runs when `DATABASE_URL` and `DATA_API_URL` are local.
 The Rust side uses at most 2 connections, and each runs `SET default_transaction_read_only = on`, `statement_timeout = '10s'` and `idle_in_transaction_session_timeout = '15s'`, and checks the first with `SHOW` before any query.

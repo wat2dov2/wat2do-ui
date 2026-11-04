@@ -1,0 +1,804 @@
+[
+  {
+    "name": "meta constants",
+    "path": "/meta/constants",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "schools search ",
+    "path": "/schools"
+  },
+  {
+    "name": "schools search ?q=water",
+    "path": "/schools?q=water"
+  },
+  {
+    "name": "schools search ?q=UofT&limit=3",
+    "path": "/schools?q=UofT&limit=3"
+  },
+  {
+    "name": "schools search ?q=mcgill.ca",
+    "path": "/schools?q=mcgill.ca"
+  },
+  {
+    "name": "schools search ?q=%EF%BC%AD%EF%BC%A9%EF%BC%B4",
+    "path": "/schools?q=%EF%BC%AD%EF%BC%A9%EF%BC%B4"
+  },
+  {
+    "name": "schools search ?limit=50",
+    "path": "/schools?limit=50"
+  },
+  {
+    "name": "schools search ?q=zzzz",
+    "path": "/schools?q=zzzz"
+  },
+  {
+    "name": "schools search ?limit=0",
+    "path": "/schools?limit=0"
+  },
+  {
+    "name": "schools search ?limit=51&q=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "path": "/schools?limit=51&q=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  {
+    "name": "schools search ?q=university&limit=5",
+    "path": "/schools?q=university&limit=5"
+  },
+  {
+    "name": "schools trailing slash",
+    "path": "/schools/"
+  },
+  {
+    "name": "school uwaterloo",
+    "path": "/schools/uwaterloo"
+  },
+  {
+    "name": "school UWaterloo",
+    "path": "/schools/UWaterloo"
+  },
+  {
+    "name": "school mcgill",
+    "path": "/schools/mcgill"
+  },
+  {
+    "name": "school utoronto",
+    "path": "/schools/utoronto"
+  },
+  {
+    "name": "school nope",
+    "path": "/schools/nope"
+  },
+  {
+    "name": "school %20uwaterloo%20",
+    "path": "/schools/%20uwaterloo%20"
+  },
+  {
+    "name": "latency anonymous",
+    "path": "/ingestion-latency/"
+  },
+  {
+    "name": "latency user",
+    "path": "/ingestion-latency/",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "latency admin 1 day",
+    "path": "/ingestion-latency/?days=1",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "latency admin bad",
+    "path": "/ingestion-latency/?days=31",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "clubs list ",
+    "path": "/clubs/",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?school=uwaterloo",
+    "path": "/clubs/?school=uwaterloo",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?school=UWaterloo&page=2&page_size=7",
+    "path": "/clubs/?school=UWaterloo&page=2&page_size=7",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?search=chess",
+    "path": "/clubs/?search=chess",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?search=a%25_b(c).",
+    "path": "/clubs/?search=a%25_b(c).",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?categories=Arts%20%26%20Culture&categories=Business&school=uwo",
+    "path": "/clubs/?categories=Arts%20%26%20Culture&categories=Business&school=uwo",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?ids=30&ids=44&ids=99999999",
+    "path": "/clubs/?ids=30&ids=44&ids=99999999",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?club_type=utsu&page_size=3",
+    "path": "/clubs/?club_type=utsu&page_size=3",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?min_events=1&school=brocku&page_size=10",
+    "path": "/clubs/?min_events=1&school=brocku&page_size=10",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?school=nope",
+    "path": "/clubs/?school=nope",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?school=%20%20",
+    "path": "/clubs/?school=%20%20",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?page=1000",
+    "path": "/clubs/?page=1000",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?page=0&club_type=A",
+    "path": "/clubs/?page=0&club_type=A",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?ids=x&min_events=-1",
+    "path": "/clubs/?ids=x&min_events=-1",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?search=club&school=mcgill&page=3&page_size=100",
+    "path": "/clubs/?search=club&school=mcgill&page=3&page_size=100",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs list ?categories=Nope",
+    "path": "/clubs/?categories=Nope",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "clubs no slash",
+    "path": "/clubs?school=uwaterloo"
+  },
+  {
+    "name": "clubs HEAD",
+    "path": "/clubs/",
+    "method": "HEAD"
+  },
+  {
+    "name": "clubs preflight",
+    "path": "/clubs/",
+    "method": "OPTIONS",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io",
+      "access-control-request-method": "POST",
+      "access-control-request-headers": "content-type"
+    }
+  },
+  {
+    "name": "review ",
+    "path": "/clubs/review",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "review ?club_status=pending",
+    "path": "/clubs/review?club_status=pending",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "review ?club_status=approved&school=uwo&page=2&page_size=5",
+    "path": "/clubs/review?club_status=approved&school=uwo&page=2&page_size=5",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "review ?search=slavic",
+    "path": "/clubs/review?search=slavic",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "review ?search=*a*",
+    "path": "/clubs/review?search=*a*",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "review ?club_status=bogus",
+    "path": "/clubs/review?club_status=bogus",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "review anonymous",
+    "path": "/clubs/review"
+  },
+  {
+    "name": "review user",
+    "path": "/clubs/review",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "review POST not allowed",
+    "path": "/clubs/review",
+    "method": "POST",
+    "safe": true
+  },
+  {
+    "name": "mine owner",
+    "path": "/clubs/mine",
+    "identity": {
+      "id": "club-owner-auth-id",
+      "email": "owner@example.com"
+    }
+  },
+  {
+    "name": "mine user",
+    "path": "/clubs/mine",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "mine admin",
+    "path": "/clubs/mine",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "mine anonymous",
+    "path": "/clubs/mine"
+  },
+  {
+    "name": "claims ",
+    "path": "/clubs/claims",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "claims ?status=pending",
+    "path": "/clubs/claims?status=pending",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "claims ?search=western",
+    "path": "/clubs/claims?search=western",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "claims ?school=uwo",
+    "path": "/clubs/claims?school=uwo",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "claims ?page=2",
+    "path": "/clubs/claims?page=2",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "claims user",
+    "path": "/clubs/claims",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "club 30",
+    "path": "/clubs/30"
+  },
+  {
+    "name": "club 22766",
+    "path": "/clubs/22766"
+  },
+  {
+    "name": "club 21500",
+    "path": "/clubs/21500"
+  },
+  {
+    "name": "club 999999999",
+    "path": "/clubs/999999999"
+  },
+  {
+    "name": "club abc",
+    "path": "/clubs/abc"
+  },
+  {
+    "name": "club invitations",
+    "path": "/clubs/invitations"
+  },
+  {
+    "name": "club -1",
+    "path": "/clubs/-1"
+  },
+  {
+    "name": "club 1.0",
+    "path": "/clubs/1.0"
+  },
+  {
+    "name": "members admin",
+    "path": "/clubs/30/members",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "members owner own",
+    "path": "/clubs/22766/members",
+    "identity": {
+      "id": "club-owner-auth-id",
+      "email": "owner@example.com"
+    }
+  },
+  {
+    "name": "members owner other",
+    "path": "/clubs/30/members",
+    "identity": {
+      "id": "club-owner-auth-id",
+      "email": "owner@example.com"
+    }
+  },
+  {
+    "name": "members anonymous",
+    "path": "/clubs/30/members"
+  },
+  {
+    "name": "members missing club",
+    "path": "/clubs/999999999/members",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "members bad id",
+    "path": "/clubs/x/members",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "invitations owner",
+    "path": "/clubs/22766/invitations",
+    "identity": {
+      "id": "club-owner-auth-id",
+      "email": "owner@example.com"
+    }
+  },
+  {
+    "name": "invitations admin",
+    "path": "/clubs/30/invitations",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "invitations user",
+    "path": "/clubs/30/invitations",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "invitation token missing",
+    "path": "/clubs/invitations/3f8a6f0e-2c1d-4c5e-9f1a-1b2c3d4e5f60"
+  },
+  {
+    "name": "invitation token malformed",
+    "path": "/clubs/invitations/not-a-uuid"
+  },
+  {
+    "name": "positions ",
+    "path": "/positions/"
+  },
+  {
+    "name": "positions ?school=uwaterloo",
+    "path": "/positions/?school=uwaterloo"
+  },
+  {
+    "name": "positions ?school=University%20of%20Waterloo",
+    "path": "/positions/?school=University%20of%20Waterloo"
+  },
+  {
+    "name": "positions ?school=uwaterloo&page=2&page_size=5",
+    "path": "/positions/?school=uwaterloo&page=2&page_size=5"
+  },
+  {
+    "name": "positions ?search=design",
+    "path": "/positions/?search=design"
+  },
+  {
+    "name": "positions ?position_type=executive",
+    "path": "/positions/?position_type=executive"
+  },
+  {
+    "name": "positions ?club_id=996",
+    "path": "/positions/?club_id=996"
+  },
+  {
+    "name": "positions ?include_closed=true&page_size=100",
+    "path": "/positions/?include_closed=true&page_size=100"
+  },
+  {
+    "name": "positions ?added_since=2026-10-01T00:00:00Z",
+    "path": "/positions/?added_since=2026-10-01T00:00:00Z"
+  },
+  {
+    "name": "positions ?added_since=2026-10-01T00:00:00",
+    "path": "/positions/?added_since=2026-10-01T00:00:00"
+  },
+  {
+    "name": "positions ?added_since=garbage",
+    "path": "/positions/?added_since=garbage"
+  },
+  {
+    "name": "positions ?paid_only=true",
+    "path": "/positions/?paid_only=true"
+  },
+  {
+    "name": "positions ?sort_order=desc&school=brocku",
+    "path": "/positions/?sort_order=desc&school=brocku"
+  },
+  {
+    "name": "positions ?school=nope",
+    "path": "/positions/?school=nope"
+  },
+  {
+    "name": "positions ?club_id=0",
+    "path": "/positions/?club_id=0"
+  },
+  {
+    "name": "positions ?sort_order=x&page=0",
+    "path": "/positions/?sort_order=x&page=0"
+  },
+  {
+    "name": "positions ?search=%25",
+    "path": "/positions/?search=%25"
+  },
+  {
+    "name": "positions ?include_closed=yes&school=mcgill&page=3",
+    "path": "/positions/?include_closed=yes&school=mcgill&page=3"
+  },
+  {
+    "name": "position stats ?school=uwaterloo",
+    "path": "/positions/stats?school=uwaterloo"
+  },
+  {
+    "name": "position stats ?school=brocku",
+    "path": "/positions/stats?school=brocku"
+  },
+  {
+    "name": "position stats ",
+    "path": "/positions/stats"
+  },
+  {
+    "name": "position stats ?school=nope",
+    "path": "/positions/stats?school=nope"
+  },
+  {
+    "name": "position stats ?school=University%20of%20Waterloo",
+    "path": "/positions/stats?school=University%20of%20Waterloo"
+  },
+  {
+    "name": "position 10439",
+    "path": "/positions/10439"
+  },
+  {
+    "name": "position 9",
+    "path": "/positions/9"
+  },
+  {
+    "name": "position 999999999",
+    "path": "/positions/999999999"
+  },
+  {
+    "name": "position abc",
+    "path": "/positions/abc"
+  },
+  {
+    "name": "saved clubs admin",
+    "path": "/saved-clubs/",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "saved clubs user",
+    "path": "/saved-clubs/",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "saved clubs anonymous",
+    "path": "/saved-clubs/"
+  },
+  {
+    "name": "me admin",
+    "path": "/users/me",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "me user",
+    "path": "/users/me",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "me owner",
+    "path": "/users/me",
+    "identity": {
+      "id": "club-owner-auth-id",
+      "email": "owner@example.com"
+    }
+  },
+  {
+    "name": "me anonymous",
+    "path": "/users/me"
+  },
+  {
+    "name": "me unknown user",
+    "path": "/users/me",
+    "identity": {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "email": "x@y.z"
+    }
+  },
+  {
+    "name": "users list",
+    "path": "/users/?skip=2&limit=5",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "users list default",
+    "path": "/users/",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "users list bad",
+    "path": "/users/?limit=0&skip=-1",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "users list user",
+    "path": "/users/",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "user by id",
+    "path": "/users/ad2d695a-f5de-42eb-8241-0172ea64e51c",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "user by id missing",
+    "path": "/users/00000000-0000-0000-0000-000000000000",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "user by id bad",
+    "path": "/users/nope",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "user by id anonymous",
+    "path": "/users/nope"
+  },
+  {
+    "name": "discovery ",
+    "path": "/discovery-queries/",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "discovery ?school=uwaterloo",
+    "path": "/discovery-queries/?school=uwaterloo",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "discovery ?search=club&page=2&page_size=10",
+    "path": "/discovery-queries/?search=club&page=2&page_size=10",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "discovery ?school=University%20of%20Waterloo",
+    "path": "/discovery-queries/?school=University%20of%20Waterloo",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "discovery ?school=nope",
+    "path": "/discovery-queries/?school=nope",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "discovery ?search=%28",
+    "path": "/discovery-queries/?search=%28",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "discovery user",
+    "path": "/discovery-queries/",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "discovery anonymous",
+    "path": "/discovery-queries/"
+  },
+  {
+    "name": "collision GET /clubs/invitations/invitations anonymous",
+    "path": "/clubs/invitations/invitations"
+  },
+  {
+    "name": "collision GET /clubs/invitations/invitations signed in",
+    "path": "/clubs/invitations/invitations",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "collision POST /clubs/claims/claims anonymous",
+    "method": "POST",
+    "path": "/clubs/claims/claims",
+    "json": {
+      "executive_role": "President"
+    },
+    "safe": true
+  },
+  {
+    "name": "collision POST /clubs/claims/claims signed in",
+    "method": "POST",
+    "path": "/clubs/claims/claims",
+    "json": {
+      "executive_role": "President"
+    },
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  }
+]

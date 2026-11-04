@@ -8,18 +8,36 @@ from core.constants import (
     BUCKET_CLUB_LOGOS,
     BUCKET_EVENT_IMAGES,
     BUCKET_EVENT_VIDEOS,
+    CLUB_CATEGORIES,
+    CLUB_TYPE_INDEPENDENT,
+    DEFAULT_LIST_LIMIT,
     DEFAULT_PAGE_SIZE,
     EVENT_CATEGORIES,
+    INTEREST_TO_CATEGORIES,
     MAX_AVATAR_SIZE_BYTES,
+    MAX_AVATAR_URL_LENGTH,
+    MAX_CLUB_CATEGORY_COUNT,
+    MAX_CLUB_CATEGORY_LENGTH,
     MAX_CLUB_NAME_LENGTH,
+    MAX_CLUB_TYPE_LENGTH,
     MAX_EVENT_DESCRIPTION_LENGTH,
+    MAX_FACULTY_LENGTH,
+    MAX_FULL_NAME_LENGTH,
+    MAX_INTEREST_LENGTH,
+    MAX_INTERESTS_COUNT,
+    MAX_LIST_LIMIT,
     MAX_PAGE_NUMBER,
     MAX_PAGE_SIZE,
+    MAX_REJECTION_REASON_LENGTH,
+    MAX_SCHOOL_LENGTH,
+    MAX_SEARCH_QUERY_LENGTH,
+    MAX_URL_LENGTH,
     NOTIFICATION_STATUS_FAILED,
     NOTIFICATION_STATUS_SENT,
     NOTIFICATION_TYPE_EVENT_CHANGE,
     NOTIFICATION_TYPE_EVENT_REMINDER,
     NOTIFICATION_TYPE_MORNING_EMAIL,
+    REPORT_STATUSES,
 )
 from core.constants.positions import MAX_POSITION_DESCRIPTION_LENGTH
 
@@ -34,6 +52,38 @@ def _rust_value(name: str) -> str:
 
 def test_event_categories_match_in_order():
     assert re.findall(r'"([^"]+)"', _rust_value("EVENT_CATEGORIES")) == list(EVENT_CATEGORIES)
+
+
+def test_club_and_meta_constants_match_in_order():
+    assert _rust_value("CLUB_CATEGORIES") == "EVENT_CATEGORIES"
+    assert CLUB_CATEGORIES == EVENT_CATEGORIES
+    assert re.findall(r'"([^"]+)"', _rust_value("REPORT_STATUSES")) == list(REPORT_STATUSES)
+    pairs = re.findall(r'\("([^"]+)", &\[([^\]]*)\]\)', _rust_value("INTEREST_TO_CATEGORIES"))
+    assert [(interest, re.findall(r'"([^"]+)"', targets)) for interest, targets in pairs] == list(
+        INTEREST_TO_CATEGORIES.items()
+    )
+    assert _rust_value("CLUB_TYPE_INDEPENDENT") == f'"{CLUB_TYPE_INDEPENDENT}"'
+
+
+def test_request_limits_match():
+    for name, value in (
+        ("MAX_FULL_NAME_LENGTH", MAX_FULL_NAME_LENGTH),
+        ("MAX_FACULTY_LENGTH", MAX_FACULTY_LENGTH),
+        ("MAX_SCHOOL_LENGTH", MAX_SCHOOL_LENGTH),
+        ("MAX_INTEREST_LENGTH", MAX_INTEREST_LENGTH),
+        ("MAX_INTERESTS_COUNT", MAX_INTERESTS_COUNT),
+        ("MAX_REJECTION_REASON_LENGTH", MAX_REJECTION_REASON_LENGTH),
+        ("MAX_AVATAR_URL_LENGTH", MAX_AVATAR_URL_LENGTH),
+        ("MAX_URL_LENGTH", MAX_URL_LENGTH),
+        ("MAX_SEARCH_QUERY_LENGTH", MAX_SEARCH_QUERY_LENGTH),
+        ("MAX_CLUB_TYPE_LENGTH", MAX_CLUB_TYPE_LENGTH),
+        ("MAX_CLUB_CATEGORY_LENGTH", MAX_CLUB_CATEGORY_LENGTH),
+        ("MAX_CLUB_CATEGORY_COUNT", MAX_CLUB_CATEGORY_COUNT),
+    ):
+        assert int(_rust_value(name)) == value, name
+    assert (
+        int(_rust_value("MAX_LIST_LIMIT").replace("_", "")) == MAX_LIST_LIMIT == DEFAULT_LIST_LIMIT
+    )
 
 
 def test_limits_and_buckets_match():

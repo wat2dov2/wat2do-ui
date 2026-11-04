@@ -47,6 +47,28 @@ pub async fn by_id(pool: &PgPool) -> Result<HashMap<i32, School>> {
         .collect())
 }
 
+/// `normalize_school_slug` (and `canonical_school_key`): stripped and lower-cased.
+pub fn normalize_slug(value: &str) -> String {
+    crate::text::python_strip(value).to_lowercase()
+}
+
+/// `get_school_by_name`'s PostgREST `ilike` value: the stripped name, with
+/// `*` read as `%` as PostgREST reads it; `None` when blank.
+pub fn name_pattern(value: &str) -> Option<String> {
+    let name = crate::text::python_strip(value);
+    (!name.is_empty()).then(|| name.replace('*', "%"))
+}
+
+/// SQL for `get_school_id(value)`, given placeholders bound to
+/// `normalize_slug(value)` and `name_pattern(value)` (NULL when blank): the
+/// school with that slug, else the first whose name matches.
+pub fn school_id_sql(slug: &str, name: &str) -> String {
+    format!(
+        "COALESCE((SELECT id FROM public.schools WHERE slug = {slug} LIMIT 1), \
+         (SELECT id FROM public.schools WHERE name ILIKE {name} LIMIT 1))"
+    )
+}
+
 /// `school_frontend_url`: the configured frontend origin scoped to one school,
 /// such as `https://uwaterloo.wat2do.io` for `https://wat2do.io`.
 pub fn frontend_url(configured: &str, slug: Option<&str>) -> Result<String> {
@@ -188,7 +210,17 @@ pub fn building_code_prompt(slug: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::frontend_url;
+    use super::{frontend_url, name_pattern, normalize_slug};
+
+    #[test]
+    fn slugs_and_name_patterns_follow_python() {
+        assert_eq!(normalize_slug("  UWaterloo\n"), "uwaterloo");
+        assert_eq!(
+            name_pattern("  University of *  ").as_deref(),
+            Some("University of %")
+        );
+        assert_eq!(name_pattern("   "), None);
+    }
 
     /// Every case as `services.school_context.school_frontend_url` returns it.
     #[test]

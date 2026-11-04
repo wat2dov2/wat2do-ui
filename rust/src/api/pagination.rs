@@ -67,6 +67,25 @@ impl<T> Paginated<T> {
     }
 }
 
+/// The OpenAPI schema of one `Paginated<Item>`, named as FastAPI names
+/// `PaginatedResponse[Item]` (`PaginatedResponse_Item_`). Handlers return
+/// `Paginated<Item>`; the schema type only documents it.
+#[macro_export]
+macro_rules! paginated_schema {
+    ($name:ident, $schema:ident, $item:ty) => {
+        #[allow(dead_code)]
+        #[derive(utoipa::ToSchema)]
+        #[schema(as = $schema)]
+        pub struct $name {
+            pub items: Vec<$item>,
+            pub total: i64,
+            pub page: i64,
+            pub page_size: i64,
+            pub total_pages: i64,
+        }
+    };
+}
+
 /// `apply_stable_order`: an `ORDER BY` with a unique tiebreaker, so offset
 /// pages cannot drift when primary values tie. Columns are code constants.
 pub fn stable_order(primary: &str, descending: bool, tiebreaker: &str) -> String {

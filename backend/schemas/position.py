@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 from typing import Annotated, Literal
 
 from pydantic import (
@@ -19,8 +19,6 @@ from core.constants.positions import (
     MAX_POSITION_TITLE_LENGTH,
 )
 from core.constants.validation import MAX_URL_LENGTH
-from core.pagination import LatestAddedItem, PaginatedResponse
-from schemas.club import ClubCohostResponse, ClubTypeValue
 
 PositionType = Literal[
     "executive",
@@ -73,36 +71,3 @@ class PositionCreate(PositionFields):
         if self.deadline_at is not None and self.deadline_date is None:
             raise ValueError("deadline_at requires deadline_date")
         return self
-
-
-class PositionResponse(PositionFields):
-    source_video_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
-    id: int
-    club_id: int
-    source_url: str = Field(max_length=MAX_URL_LENGTH)
-    source_image_url: str | None = Field(default=None, max_length=MAX_URL_LENGTH)
-    is_active: bool
-    added_at: datetime
-    # Bumped on every edit by the ``stamp_position_updated_at`` trigger, so the card
-    # can show an "Updated" badge. Equal to ``added_at`` until the row is first edited.
-    updated_at: datetime
-    club_name: str
-    club_logo_url: str | None = None
-    cohosts: list[ClubCohostResponse] = Field(default_factory=list)
-    club_type: ClubTypeValue | None = None
-    club_page: str | None = None
-    club_ig: str | None = None
-    club_discord: str | None = None
-    school: str
-
-    model_config = {"from_attributes": True}
-
-
-class PositionStatsResponse(BaseModel):
-    click_count: int = Field(ge=0)
-
-
-class PositionDirectoryResponse(PaginatedResponse[PositionResponse]):
-    latest_added_position: LatestAddedItem | None = Field(
-        default=None, description="School freshness metadata on the first page only."
-    )

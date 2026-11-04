@@ -56,6 +56,7 @@ def _latency(samples: list[float]) -> dict[str, float]:
         "iterations": len(ordered),
         "mean": sum(ordered) / len(ordered),
         "median": rank(0.5),
+        "p90": rank(0.9),
         "p95": rank(0.95),
         "min": ordered[0],
         "max": ordered[-1],
@@ -232,8 +233,10 @@ def main() -> int:
         latency = ""
         if args.iterations > 1:
             latency = (
-                f"  python median {left['latency_ms']['median']:.3f} ms,"
+                f"  python median {left['latency_ms']['median']:.3f} ms"
+                f" p90 {left['latency_ms']['p90']:.3f} ms,"
                 f" rust median {right['latency_ms']['median']:.3f} ms"
+                f" p90 {right['latency_ms']['p90']:.3f} ms"
             )
         if differences:
             failed += 1

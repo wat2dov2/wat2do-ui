@@ -193,10 +193,6 @@ class ClubResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class ClubSubmissionResponse(ClubResponse):
-    submitted_by_email: str | None = None
-
-
 class ClubMemberResponse(BaseModel):
     user_id: UUID
     email: str
@@ -206,10 +202,6 @@ class ClubMemberResponse(BaseModel):
     joined_at: datetime
 
     model_config = {"from_attributes": True}
-
-
-class ClubMemberAdd(BaseModel):
-    email: str
 
 
 class ClubCohostResponse(BaseModel):

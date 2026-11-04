@@ -10,100 +10,6 @@ from schemas.club import ClubResponse, ClubUpdate
 from services import club_service
 
 
-@pytest.mark.parametrize("owner", [None, "existing-owner"])
-def test_claim_accepts_owner_and_executive_requests(monkeypatch, fake_sb, patch_sb, owner):
-    from uuid import UUID
-
-    patch_sb("services.club_service")
-    monkeypatch.setattr(club_service, "get_club", lambda _: SimpleNamespace(created_by=owner))
-    monkeypatch.setattr(club_service, "is_club_member", lambda *_: False)
-    fake_sb.set_response(data=[{"id": "claim"}])
-
-    club_service.create_claim(1, UUID("11111111-1111-1111-1111-111111111111"), "Treasurer", None)
-
-    payload = fake_sb.insert.call_args.args[0]
-    assert payload["executive_role"] == "Treasurer"
-    assert payload["status"] == "pending"
-
-
-def test_claim_approval_never_replaces_an_existing_owner(monkeypatch, fake_sb, patch_sb):
-    from uuid import UUID
-
-    patch_sb("services.club_service")
-    user_id = UUID("11111111-1111-1111-1111-111111111111")
-    fake_sb.set_response(data=[{"club_id": 1, "user_id": str(user_id)}])
-    add_manager = MagicMock()
-    monkeypatch.setattr(club_service, "add_club_member", add_manager)
-    monkeypatch.setattr(club_service, "_send_claim_decision", MagicMock())
-
-    club_service.update_claim(user_id, "approved")
-
-    fake_sb.is_.assert_called_once_with("created_by", "null")
-    add_manager.assert_called_once_with(1, user_id)
-
-
-def test_rejected_claim_does_not_grant_access(monkeypatch, fake_sb, patch_sb):
-    from uuid import UUID
-
-    patch_sb("services.club_service")
-    fake_sb.set_response(data=[{"club_id": 1, "user_id": "applicant"}])
-    add_manager = MagicMock()
-    monkeypatch.setattr(club_service, "add_club_member", add_manager)
-    monkeypatch.setattr(club_service, "_send_claim_decision", MagicMock())
-
-    club_service.update_claim(UUID("11111111-1111-1111-1111-111111111111"), "rejected")
-
-    add_manager.assert_not_called()
-    fake_sb.is_.assert_not_called()
-
-
-@pytest.mark.parametrize(("previous", "emails"), [("pending", 1), ("approved", 0)])
-def test_claim_decision_is_emailed_only_when_the_status_changes(
-    monkeypatch, fake_sb, patch_sb, previous, emails
-):
-    from uuid import UUID
-
-    patch_sb("services.club_service")
-    fake_sb.set_response(
-        data=[{"club_id": 7, "user_id": "11111111-1111-1111-1111-111111111111", "status": previous}]
-    )
-    monkeypatch.setattr(club_service, "add_club_member", MagicMock())
-    notify = MagicMock()
-    monkeypatch.setattr(club_service, "_send_claim_decision", notify)
-
-    club_service.update_claim(UUID("11111111-1111-1111-1111-111111111111"), "approved")
-
-    assert notify.call_count == emails
-
-
-def test_claim_decision_email_goes_to_the_claimant_with_the_club_panel(
-    monkeypatch, fake_sb, patch_sb
-):
-    patch_sb("services.club_service")
-    monkeypatch.setattr(
-        club_service,
-        "get_club",
-        lambda _id: ClubResponse(id=7, club_name="Tea Club", school="uwo"),
-    )
-    fake_sb.set_response(data=[{"email": "lead@uwo.ca"}])
-    notify = MagicMock()
-    monkeypatch.setattr(club_service, "send_review_decision", notify)
-
-    club_service._send_claim_decision(
-        {"club_id": 7, "user_id": "applicant"}, "rejected", "Proof does not show the role."
-    )
-
-    notify.assert_called_once_with(
-        kind="claim",
-        title="Tea Club",
-        status="rejected",
-        recipient="lead@uwo.ca",
-        school="uwo",
-        path="/club-panel",
-        rejection_reason="Proof does not show the role.",
-    )
-
-
 @pytest.fixture(autouse=True)
 def registered_school(monkeypatch):
     monkeypatch.setattr(
@@ -114,126 +20,6 @@ def registered_school(monkeypatch):
 
 
 # --- Invitation Service Tests ---
-
-
-def test_create_invitation_enforces_school_matching_for_non_admins(monkeypatch, fake_sb, patch_sb):
-    from datetime import datetime, timezone
-    from unittest.mock import MagicMock
-    from uuid import UUID
-
-    import pytest
-
-    from core import allowed_emails
-    from core.exceptions import ValidationError
-    from schemas.user import UserResponse
-    from services import user_service
-
-    patch_sb("services.club_service")
-
-    # Mock club
-    monkeypatch.setattr(
-        club_service,
-        "get_club",
-        MagicMock(
-            return_value=MagicMock(
-                id=1,
-                club_name="UW Club",
-                school="uwaterloo",
-            )
-        ),
-    )
-    # Mock inviter (non-admin from Waterloo)
-    mock_inviter = UserResponse(
-        id=UUID("11111111-1111-1111-1111-111111111111"),
-        email="test@uwaterloo.ca",
-        school="uwaterloo",
-        role="user",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-    )
-    monkeypatch.setattr(user_service, "get_user", MagicMock(return_value=mock_inviter))
-    monkeypatch.setattr(user_service, "get_user_by_email", MagicMock(return_value=None))
-    send = MagicMock(return_value=True)
-    monkeypatch.setattr("services.email_service.email_service.send", send)
-    monkeypatch.setattr(
-        "services.school_context.settings.frontend_url",
-        "https://wat2do.io",
-    )
-    monkeypatch.setattr(
-        allowed_emails,
-        "get_school_for_email",
-        lambda email: (
-            "uwaterloo"
-            if email.endswith("@uwaterloo.ca")
-            else "wlu"
-            if email.endswith("@wlu.ca")
-            else None
-        ),
-    )
-
-    # Inviting an email from the same school should proceed (we fake the upsert/insert DB responses)
-    fake_sb.queue_responses([[{"id": "inv-1", "club_id": 1, "email": "invitee@uwaterloo.ca"}]])
-    res = club_service.create_invitation(1, "invitee@uwaterloo.ca", mock_inviter.id)
-    assert res is not None
-    message = send.call_args.args[0]
-    assert "https://uwaterloo.wat2do.io/invite/" in message.body_html
-    assert "https://uwaterloo.wat2do.io/invite/" in message.body_text
-    assert '<img src="cid:wat2do-logo"' in message.body_html
-    assert [image.content_id for image in message.inline_images] == ["wat2do-logo"]
-
-    # Inviting an email from a different school should raise ValidationError
-    with pytest.raises(ValidationError) as excinfo:
-        club_service.create_invitation(1, "invitee@wlu.ca", mock_inviter.id)
-    assert "You can only invite emails matching your school domain" in str(excinfo.value)
-
-    # Inviting an email from an invalid domain should raise ValidationError
-    with pytest.raises(ValidationError) as excinfo2:
-        club_service.create_invitation(1, "invitee@example.com", mock_inviter.id)
-    assert "You can only invite emails matching your school domain" in str(excinfo2.value)
-
-
-def test_create_invitation_allows_admins_to_invite_any_domain(monkeypatch, fake_sb, patch_sb):
-    from datetime import datetime, timezone
-    from unittest.mock import MagicMock
-    from uuid import UUID
-
-    from schemas.user import UserResponse
-    from services import user_service
-
-    patch_sb("services.club_service")
-
-    # Mock club
-    monkeypatch.setattr(
-        club_service,
-        "get_club",
-        MagicMock(
-            return_value=MagicMock(
-                id=1,
-                club_name="UW Club",
-                school="uwaterloo",
-            )
-        ),
-    )
-    # Mock admin inviter (no school)
-    mock_admin = UserResponse(
-        id=UUID("33333333-3333-3333-3333-333333333333"),
-        email="admin@example.com",
-        school=None,
-        role="admin",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-    )
-    monkeypatch.setattr(user_service, "get_user", MagicMock(return_value=mock_admin))
-    monkeypatch.setattr(user_service, "get_user_by_email", MagicMock(return_value=None))
-    monkeypatch.setattr(
-        "services.email_service.email_service.send",
-        MagicMock(return_value=True),
-    )
-
-    # Admins should be allowed to invite ANY domain
-    fake_sb.queue_responses([[{"id": "inv-2", "club_id": 1, "email": "invitee@wlu.ca"}]])
-    res = club_service.create_invitation(1, "invitee@wlu.ca", mock_admin.id)
-    assert res is not None
 
 
 def test_normalize_club_name_collapses_case_and_whitespace():
@@ -470,56 +256,6 @@ def test_club_update_refreshes_only_datasets_that_embed_changed_fields(
     )
 
 
-def test_club_status_change_refreshes_visibility_dependencies(monkeypatch, fake_sb, patch_sb):
-    patch_sb("services.club_service")
-    row = {"id": 7, "club_name": "Tea Club", "school": "uwaterloo", "status": "pending"}
-    monkeypatch.setattr(club_service, "get_club", lambda _: ClubResponse(**row))
-    fake_sb.set_response(
-        data=[{**row, "status": "approved", "submitted_by_email": "lead@uwaterloo.ca"}]
-    )
-    refresh = MagicMock()
-    monkeypatch.setattr(club_service.event_feed_revalidation_service, "revalidate_school", refresh)
-    notify = MagicMock()
-    monkeypatch.setattr(club_service, "send_review_decision", notify)
-
-    club_service.set_club_status(7, "approved")
-    refresh.assert_called_once_with("uwaterloo", resources=("events", "positions", "clubs"))
-    notify.assert_called_once_with(
-        kind="club",
-        title="Tea Club",
-        status="approved",
-        recipient="lead@uwaterloo.ca",
-        school="uwaterloo",
-        path="/clubs/7",
-        rejection_reason=None,
-    )
-
-
-@pytest.mark.parametrize("database_fails", [False, True])
-def test_club_delete_refreshes_cascaded_content_only_after_commit(
-    monkeypatch, fake_sb, patch_sb, database_fails
-):
-    patch_sb("services.club_service")
-    monkeypatch.setattr(
-        club_service,
-        "get_club",
-        lambda _: ClubResponse(id=7, club_name="Tea Club", school="uwaterloo"),
-    )
-    fake_sb.set_response(data=[{"id": 7}])
-    if database_fails:
-        fake_sb.raise_on_execute(RuntimeError("database unavailable"))
-    refresh = MagicMock()
-    monkeypatch.setattr(club_service.event_feed_revalidation_service, "revalidate_school", refresh)
-
-    if database_fails:
-        with pytest.raises(RuntimeError):
-            club_service.delete_club(7)
-        refresh.assert_not_called()
-    else:
-        assert club_service.delete_club(7)
-        refresh.assert_called_once_with("uwaterloo", resources=("events", "positions", "clubs"))
-
-
 def test_club_directory_pages_use_unique_order_for_identical_names(monkeypatch):
     requests = []
     rows = [
@@ -638,3 +374,35 @@ def test_new_club_member_follows_the_club(monkeypatch, fake_sb, patch_sb):
     club_service.add_club_member(7, user_id)
 
     follow.assert_called_once_with(str(user_id), 7)
+
+
+def test_school_lookup_cache_expires_so_rust_writes_show_up(monkeypatch):
+    """Club writes happen in the Rust API, which cannot clear this cache."""
+    loads = []
+    now = [1000.0]
+    monkeypatch.setattr(club_service.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(
+        club_service,
+        "_load_clubs_for_school_lookup",
+        lambda school_id: loads.append(school_id) or [{"id": len(loads)}],
+    )
+    club_service.clear_school_lookup_cache()
+    ttl = club_service.controlbox.club_management.school_lookup_cache_seconds
+
+    assert club_service._get_clubs_for_school_lookup(7) == [{"id": 1}]
+    now[0] += ttl - 1
+    assert club_service._get_clubs_for_school_lookup(7) == [{"id": 1}]
+    now[0] += 2
+    assert club_service._get_clubs_for_school_lookup(7) == [{"id": 2}]
+    club_service.clear_school_lookup_cache()
+    assert club_service._get_clubs_for_school_lookup(7) == [{"id": 3}]
+    assert loads == [7, 7, 7]
+
+
+def test_school_lookup_cache_keeps_at_most_sixteen_schools(monkeypatch):
+    monkeypatch.setattr(club_service, "_load_clubs_for_school_lookup", lambda school_id: [])
+    club_service.clear_school_lookup_cache()
+    for school_id in range(20):
+        club_service._get_clubs_for_school_lookup(school_id)
+    assert len(club_service._school_lookup_cache) == 16
+    assert 0 not in club_service._school_lookup_cache

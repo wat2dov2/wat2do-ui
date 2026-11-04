@@ -202,6 +202,1033 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/competitor-pain-points/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pain Points */
+        get: operations["list_pain_points_competitor_pain_points__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/competitor-pain-points/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Reports */
+        get: operations["list_reports_competitor_pain_points_reports_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/competitor-pain-points/{pain_point_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Review Pain Point */
+        patch: operations["review_pain_point_competitor_pain_points__pain_point_id__patch"];
+        trace?: never;
+    };
+    "/contact/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Contact Message */
+        post: operations["submit_contact_message_contact__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Admin Events */
+        get: operations["list_admin_events_events_admin_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event Stats
+         * @description Public uncached card stats for one school.
+         */
+        get: operations["get_event_stats_events_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Events
+         * @description Public school feed; optional ``start_utc``/``end_utc`` window.
+         *
+         *     ``include_past`` drops the default start-of-today lower bound, so a caller
+         *     can ask for a host's full history. Omits ``created_by``.
+         */
+        get: operations["list_events_events__get"];
+        put?: never;
+        /** Create Event */
+        post: operations["create_event_events__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event
+         * @description Public event detail; ``created_by`` omitted via ``EventPublicResponse``.
+         */
+        get: operations["get_event_events__event_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Event */
+        delete: operations["delete_event_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Event */
+        patch: operations["update_event_events__event_id__patch"];
+        trace?: never;
+    };
+    "/going-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Going Events */
+        get: operations["list_going_events_going_events__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/going-events/{event_id}/attendees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Event Attendees
+         * @description Public who's-going summary for an event's details view.
+         */
+        get: operations["list_event_attendees_going_events__event_id__attendees_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/going-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mark Going */
+        put: operations["mark_going_going_events__event_id__put"];
+        post?: never;
+        /** Unmark Going */
+        delete: operations["unmark_going_going_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/batches/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Instagram Publish Batches */
+        get: operations["list_instagram_publish_batches_instagram_publishing_batches__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/batches/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Instagram Publish Batch */
+        get: operations["get_instagram_publish_batch_instagram_publishing_batches__batch_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Instagram Publish Batch */
+        patch: operations["update_instagram_publish_batch_instagram_publishing_batches__batch_id__patch"];
+        trace?: never;
+    };
+    "/instagram-publishing/batches/{batch_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish Instagram Batch */
+        post: operations["publish_instagram_batch_instagram_publishing_batches__batch_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/songs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Instagram Songs */
+        get: operations["list_instagram_songs_instagram_publishing_songs__get"];
+        put?: never;
+        /** Add Instagram Song */
+        post: operations["add_instagram_song_instagram_publishing_songs__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/songs/{song_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Instagram Song */
+        delete: operations["delete_instagram_song_instagram_publishing_songs__song_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/accounts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Instagram Account Stats */
+        get: operations["list_instagram_account_stats_instagram_publishing_accounts__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/follow-candidates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Follow Candidates */
+        get: operations["list_follow_candidates_instagram_publishing_follow_candidates__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/follow-candidates/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Follow Decisions */
+        post: operations["submit_follow_decisions_instagram_publishing_follow_candidates_decisions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/interactions/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Interactions
+         * @description Record a batch of event interactions and position clicks.
+         *
+         *     Auth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``
+         *     so the header works on unload). Authenticated batches are size-capped and
+         *     deduped; payload ``user_id`` must match the authenticated user.
+         *     Anonymous requests are allowed for basic click tracking and are
+         *     IP-rate-limited; without ``user_id`` they cannot drive personalized signals.
+         */
+        post: operations["record_interactions_interactions_batch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Preferences
+         * @description Return resolved preferences for the authenticated user.
+         *
+         *     Always one entry per supported type - untouched types come back with
+         *     their default and ``updated_at=None`` so the client can distinguish
+         *     a default from an explicit choice.
+         */
+        get: operations["get_my_preferences_notification_preferences_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update My Preferences */
+        patch: operations["update_my_preferences_notification_preferences_patch"];
+        trace?: never;
+    };
+    "/notification-preferences/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Confirm Unsubscribe */
+        get: operations["confirm_unsubscribe_notification_preferences_unsubscribe_get"];
+        put?: never;
+        /** Apply Unsubscribe */
+        post: operations["apply_unsubscribe_notification_preferences_unsubscribe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/outreach/leads/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Leads */
+        get: operations["list_leads_outreach_leads__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/outreach/leads/{lead_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Lead */
+        patch: operations["update_lead_outreach_leads__lead_id__patch"];
+        trace?: never;
+    };
+    "/payouts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Own Payouts */
+        get: operations["list_own_payouts_payouts__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Admin Payouts */
+        get: operations["list_admin_payouts_payouts_admin_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export Pending Payouts */
+        post: operations["export_pending_payouts_payouts_admin_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin/{payout_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Admin Payout Detail */
+        get: operations["get_admin_payout_detail_payouts_admin__payout_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin/{payout_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Transition Payout */
+        patch: operations["transition_payout_payouts_admin__payout_id__status_patch"];
+        trace?: never;
+    };
+    "/payouts/admin/mark-paid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Mark Paid */
+        post: operations["bulk_mark_paid_payouts_admin_mark_paid_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/position-submissions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Submissions */
+        get: operations["list_submissions_position_submissions__get"];
+        put?: never;
+        /** Create Submission */
+        post: operations["create_submission_position_submissions__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/position-submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Review Submission */
+        patch: operations["review_submission_position_submissions__submission_id__patch"];
+        trace?: never;
+    };
+    "/qr/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Qr Codes
+         * @description List manageable QR codes with explicit active-state and recency filters.
+         */
+        get: operations["list_qr_codes_qr__get"];
+        put?: never;
+        /** Create Poster */
+        post: operations["create_poster_qr__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/scans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Scans */
+        get: operations["list_scans_qr_scans_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Promoter Earnings */
+        get: operations["get_promoter_earnings_qr_earnings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/scans/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Scan */
+        post: operations["confirm_scan_qr_scans_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Campus Coverage */
+        get: operations["get_campus_coverage_qr_map_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/{qr_code_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolve Qr And Record Scan */
+        get: operations["resolve_qr_and_record_scan_qr__qr_code_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Poster */
+        delete: operations["delete_poster_qr__qr_code_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Poster */
+        patch: operations["update_poster_qr__qr_code_id__patch"];
+        trace?: never;
+    };
+    "/reports/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Reports */
+        get: operations["list_reports_reports__get"];
+        put?: never;
+        /** Create Report */
+        post: operations["create_report_reports__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Report */
+        patch: operations["update_report_reports__report_id__patch"];
+        trace?: never;
+    };
+    "/sponsor-submissions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Submissions */
+        get: operations["list_submissions_sponsor_submissions__get"];
+        put?: never;
+        /** Create Submission */
+        post: operations["create_submission_sponsor_submissions__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sponsor-submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Review Submission */
+        patch: operations["review_submission_sponsor_submissions__submission_id__patch"];
+        trace?: never;
+    };
+    "/submissions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Submissions */
+        get: operations["list_submissions_submissions__get"];
+        put?: never;
+        /** Create Submission */
+        post: operations["create_submission_submissions__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Submission */
+        get: operations["get_submission_submissions__submission_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Submission */
+        delete: operations["delete_submission_submissions__submission_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Submission */
+        patch: operations["update_submission_submissions__submission_id__patch"];
+        trace?: never;
+    };
+    "/uploads/event-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Event Image Unsigned */
+        post: operations["upload_event_image_unsigned_uploads_event_image_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/event-image/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Event Image */
+        post: operations["upload_event_image_uploads_event_image__event_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Avatar */
+        post: operations["upload_avatar_uploads_avatar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/club-logo/{club_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Club Logo */
+        post: operations["upload_club_logo_uploads_club_logo__club_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/qr-asset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Qr Asset */
+        post: operations["upload_qr_asset_uploads_qr_asset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/claim-proof": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Claim Proof */
+        post: operations["upload_claim_proof_uploads_claim_proof_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/saved-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Saved Events */
+        get: operations["list_saved_events_v1_saved_events__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/saved-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Event */
+        put: operations["save_event_v1_saved_events__event_id__put"];
+        post?: never;
+        /** Unsave Event */
+        delete: operations["unsave_event_v1_saved_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/automate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Receive Automate Log */
+        post: operations["receive_automate_log_webhooks_automate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/event-change-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Event Change Alerts
+         * @description Called every minute by the scheduled event change alerts call.
+         */
+        post: operations["send_event_change_alerts_webhooks_event_change_alerts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/automate/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Automate Logs */
+        get: operations["get_automate_logs_webhooks_automate_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health */
+        get: operations["health_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/site-banner": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Site Banner Endpoint
+         * @description Public: the banner shown above the navigation, or nothing when disabled.
+         */
+        get: operations["get_site_banner_endpoint_site_banner_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/clubs/": {
         parameters: {
             query?: never;
@@ -463,74 +1490,6 @@ export interface paths {
         patch: operations["update_claim_clubs_claims__claim_id__patch"];
         trace?: never;
     };
-    "/competitor-pain-points/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Pain Points */
-        get: operations["list_pain_points_competitor_pain_points__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/competitor-pain-points/reports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Reports */
-        get: operations["list_reports_competitor_pain_points_reports_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/competitor-pain-points/{pain_point_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Review Pain Point */
-        patch: operations["review_pain_point_competitor_pain_points__pain_point_id__patch"];
-        trace?: never;
-    };
-    "/contact/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Submit Contact Message */
-        post: operations["submit_contact_message_contact__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/discovery-queries/": {
         parameters: {
             query?: never;
@@ -554,144 +1513,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/events/admin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Admin Events */
-        get: operations["list_admin_events_events_admin_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Event Stats
-         * @description Public uncached card stats for one school.
-         */
-        get: operations["get_event_stats_events_stats_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Events
-         * @description Public school feed; optional ``start_utc``/``end_utc`` window.
-         *
-         *     ``include_past`` drops the default start-of-today lower bound, so a caller
-         *     can ask for a host's full history. Omits ``created_by``.
-         */
-        get: operations["list_events_events__get"];
-        put?: never;
-        /** Create Event */
-        post: operations["create_event_events__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Event
-         * @description Public event detail; ``created_by`` omitted via ``EventPublicResponse``.
-         */
-        get: operations["get_event_events__event_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Event */
-        delete: operations["delete_event_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Event */
-        patch: operations["update_event_events__event_id__patch"];
-        trace?: never;
-    };
-    "/going-events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Going Events */
-        get: operations["list_going_events_going_events__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/going-events/{event_id}/attendees": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Event Attendees
-         * @description Public who's-going summary for an event's details view.
-         */
-        get: operations["list_event_attendees_going_events__event_id__attendees_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/going-events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Mark Going */
-        put: operations["mark_going_going_events__event_id__put"];
-        post?: never;
-        /** Unmark Going */
-        delete: operations["unmark_going_going_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/ingestion-latency/": {
         parameters: {
             query?: never;
@@ -706,170 +1527,6 @@ export interface paths {
         get: operations["get_ingestion_latency_ingestion_latency__get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/batches/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Instagram Publish Batches */
-        get: operations["list_instagram_publish_batches_instagram_publishing_batches__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/batches/{batch_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Instagram Publish Batch */
-        get: operations["get_instagram_publish_batch_instagram_publishing_batches__batch_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Instagram Publish Batch */
-        patch: operations["update_instagram_publish_batch_instagram_publishing_batches__batch_id__patch"];
-        trace?: never;
-    };
-    "/instagram-publishing/batches/{batch_id}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Publish Instagram Batch */
-        post: operations["publish_instagram_batch_instagram_publishing_batches__batch_id__publish_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/songs/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Instagram Songs */
-        get: operations["list_instagram_songs_instagram_publishing_songs__get"];
-        put?: never;
-        /** Add Instagram Song */
-        post: operations["add_instagram_song_instagram_publishing_songs__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/songs/{song_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Instagram Song */
-        delete: operations["delete_instagram_song_instagram_publishing_songs__song_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/accounts/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Instagram Account Stats */
-        get: operations["list_instagram_account_stats_instagram_publishing_accounts__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/follow-candidates/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Follow Candidates */
-        get: operations["list_follow_candidates_instagram_publishing_follow_candidates__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/follow-candidates/decisions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Submit Follow Decisions */
-        post: operations["submit_follow_decisions_instagram_publishing_follow_candidates_decisions_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/interactions/batch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Record Interactions
-         * @description Record a batch of event interactions and position clicks.
-         *
-         *     Auth via ``Authorization: Bearer`` (frontend uses ``fetch`` + ``keepalive``
-         *     so the header works on unload). Authenticated batches are size-capped and
-         *     deduped; payload ``user_id`` must match the authenticated user.
-         *     Anonymous requests are allowed for basic click tracking and are
-         *     IP-rate-limited; without ``user_id`` they cannot drive personalized signals.
-         */
-        post: operations["record_interactions_interactions_batch_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -898,220 +1555,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/notification-preferences": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get My Preferences
-         * @description Return resolved preferences for the authenticated user.
-         *
-         *     Always one entry per supported type - untouched types come back with
-         *     their default and ``updated_at=None`` so the client can distinguish
-         *     a default from an explicit choice.
-         */
-        get: operations["get_my_preferences_notification_preferences_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update My Preferences */
-        patch: operations["update_my_preferences_notification_preferences_patch"];
-        trace?: never;
-    };
-    "/notification-preferences/unsubscribe": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Confirm Unsubscribe */
-        get: operations["confirm_unsubscribe_notification_preferences_unsubscribe_get"];
-        put?: never;
-        /** Apply Unsubscribe */
-        post: operations["apply_unsubscribe_notification_preferences_unsubscribe_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/outreach/leads/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Leads */
-        get: operations["list_leads_outreach_leads__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/outreach/leads/{lead_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Lead */
-        patch: operations["update_lead_outreach_leads__lead_id__patch"];
-        trace?: never;
-    };
-    "/payouts/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Own Payouts */
-        get: operations["list_own_payouts_payouts__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payouts/admin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Admin Payouts */
-        get: operations["list_admin_payouts_payouts_admin_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payouts/admin/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Export Pending Payouts */
-        post: operations["export_pending_payouts_payouts_admin_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payouts/admin/{payout_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Admin Payout Detail */
-        get: operations["get_admin_payout_detail_payouts_admin__payout_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payouts/admin/{payout_id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Transition Payout */
-        patch: operations["transition_payout_payouts_admin__payout_id__status_patch"];
-        trace?: never;
-    };
-    "/payouts/admin/mark-paid": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Bulk Mark Paid */
-        post: operations["bulk_mark_paid_payouts_admin_mark_paid_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/position-submissions/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Submissions */
-        get: operations["list_submissions_position_submissions__get"];
-        put?: never;
-        /** Create Submission */
-        post: operations["create_submission_position_submissions__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/position-submissions/{submission_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Review Submission */
-        patch: operations["review_submission_position_submissions__submission_id__patch"];
         trace?: never;
     };
     "/positions/": {
@@ -1163,149 +1606,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/qr/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Qr Codes
-         * @description List manageable QR codes with explicit active-state and recency filters.
-         */
-        get: operations["list_qr_codes_qr__get"];
-        put?: never;
-        /** Create Poster */
-        post: operations["create_poster_qr__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/scans": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Scans */
-        get: operations["list_scans_qr_scans_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/earnings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Promoter Earnings */
-        get: operations["get_promoter_earnings_qr_earnings_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/scans/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Confirm Scan */
-        post: operations["confirm_scan_qr_scans_confirm_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/map": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Campus Coverage */
-        get: operations["get_campus_coverage_qr_map_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/{qr_code_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Resolve Qr And Record Scan */
-        get: operations["resolve_qr_and_record_scan_qr__qr_code_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Poster */
-        delete: operations["delete_poster_qr__qr_code_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Poster */
-        patch: operations["update_poster_qr__qr_code_id__patch"];
-        trace?: never;
-    };
-    "/reports/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Reports */
-        get: operations["list_reports_reports__get"];
-        put?: never;
-        /** Create Report */
-        post: operations["create_report_reports__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/{report_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Report */
-        patch: operations["update_report_reports__report_id__patch"];
         trace?: never;
     };
     "/saved-clubs/": {
@@ -1380,180 +1680,6 @@ export interface paths {
         get: operations["get_school_endpoint_schools__slug__get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sponsor-submissions/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Submissions */
-        get: operations["list_submissions_sponsor_submissions__get"];
-        put?: never;
-        /** Create Submission */
-        post: operations["create_submission_sponsor_submissions__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sponsor-submissions/{submission_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Review Submission */
-        patch: operations["review_submission_sponsor_submissions__submission_id__patch"];
-        trace?: never;
-    };
-    "/submissions/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Submissions */
-        get: operations["list_submissions_submissions__get"];
-        put?: never;
-        /** Create Submission */
-        post: operations["create_submission_submissions__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/submissions/{submission_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Submission */
-        get: operations["get_submission_submissions__submission_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Submission */
-        delete: operations["delete_submission_submissions__submission_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Submission */
-        patch: operations["update_submission_submissions__submission_id__patch"];
-        trace?: never;
-    };
-    "/uploads/event-image": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Event Image Unsigned */
-        post: operations["upload_event_image_unsigned_uploads_event_image_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/event-image/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Event Image */
-        post: operations["upload_event_image_uploads_event_image__event_id__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/avatar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Avatar */
-        post: operations["upload_avatar_uploads_avatar_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/club-logo/{club_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Club Logo */
-        post: operations["upload_club_logo_uploads_club_logo__club_id__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/qr-asset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Qr Asset */
-        post: operations["upload_qr_asset_uploads_qr_asset_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/claim-proof": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Claim Proof */
-        post: operations["upload_claim_proof_uploads_claim_proof_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1681,132 +1807,6 @@ export interface paths {
         patch: operations["update_user_role_users__user_id__role_patch"];
         trace?: never;
     };
-    "/v1/saved-events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Saved Events */
-        get: operations["list_saved_events_v1_saved_events__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/saved-events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Save Event */
-        put: operations["save_event_v1_saved_events__event_id__put"];
-        post?: never;
-        /** Unsave Event */
-        delete: operations["unsave_event_v1_saved_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/webhooks/automate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Receive Automate Log */
-        post: operations["receive_automate_log_webhooks_automate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/webhooks/event-change-alerts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Send Event Change Alerts
-         * @description Called every minute by the scheduled event change alerts call.
-         */
-        post: operations["send_event_change_alerts_webhooks_event_change_alerts_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/webhooks/automate/logs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Automate Logs */
-        get: operations["get_automate_logs_webhooks_automate_logs_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Health */
-        get: operations["health_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/site-banner": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Site Banner Endpoint
-         * @description Public: the banner shown above the navigation, or nothing when disabled.
-         */
-        get: operations["get_site_banner_endpoint_site_banner_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1830,27 +1830,6 @@ export interface components {
             period_end: string;
             /** Review History */
             review_history: components["schemas"]["PayoutReviewEvent"][];
-        };
-        /**
-         * AppConstantsResponse
-         * @description Shared domain constants that the frontend must stay in sync with.
-         *
-         *     The frontend fetches this once on app init so both layers
-         *     always agree on categories, interest mappings, and status enums.
-         */
-        AppConstantsResponse: {
-            /** Event Categories */
-            event_categories: string[];
-            /** Club Categories */
-            club_categories: string[];
-            /** Interests */
-            interests: string[];
-            /** Interest To Categories */
-            interest_to_categories: {
-                [key: string]: string[];
-            };
-            /** Report Statuses */
-            report_statuses: string[];
         };
         /** AutomateLogPayload */
         AutomateLogPayload: {
@@ -1946,68 +1925,6 @@ export interface components {
             /** Cells */
             cells: components["schemas"]["CampusCoverageCell"][];
         };
-        /** CampusSeasonWindow */
-        CampusSeasonWindow: {
-            /**
-             * Start Date
-             * Format: date
-             */
-            start_date: string;
-            /**
-             * End Date
-             * Format: date
-             */
-            end_date: string;
-        };
-        /** ClubClaimCreate */
-        ClubClaimCreate: {
-            /** Executive Role */
-            executive_role: string;
-            /** Proof Url */
-            proof_url?: string | null;
-        };
-        /** ClubClaimResponse */
-        ClubClaimResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Club Id */
-            club_id: number;
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
-            /** Executive Role */
-            executive_role: string;
-            /** Proof Url */
-            proof_url: string | null;
-            /** Status */
-            status: string;
-            /** Rejection Reason */
-            rejection_reason?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            clubs?: components["schemas"]["ClubResponse"] | null;
-            users?: components["schemas"]["UserResponse"] | null;
-        };
-        /** ClubClaimUpdate */
-        ClubClaimUpdate: {
-            /** Status */
-            status: string;
-            /** Rejection Reason */
-            rejection_reason?: string | null;
-        };
         /**
          * ClubCohostResponse
          * @description An additional existing club sharing an event or position.
@@ -2027,226 +1944,6 @@ export interface components {
             ig?: string | null;
             /** Discord */
             discord?: string | null;
-        };
-        /** ClubCreate */
-        ClubCreate: {
-            /** Submitted By Email */
-            submitted_by_email?: string | null;
-            /** Club Name */
-            club_name: string;
-            /** Categories */
-            categories?: string[] | null;
-            /** Club Page */
-            club_page?: string | null;
-            /** Ig */
-            ig?: string | null;
-            /** Discord */
-            discord?: string | null;
-            /**
-             * Club Type
-             * @default independent
-             */
-            club_type: string;
-            /** Logo Url */
-            logo_url?: string | null;
-            /**
-             * School
-             * @default uwaterloo
-             */
-            school: string;
-        };
-        /** ClubInvitationCreate */
-        ClubInvitationCreate: {
-            /**
-             * Email
-             * @description Email to invite
-             */
-            email: string;
-        };
-        /** ClubInvitationPublicResponse */
-        ClubInvitationPublicResponse: {
-            /** Club Name */
-            club_name: string;
-            /** Email */
-            email: string;
-            /**
-             * Expires At
-             * Format: date-time
-             */
-            expires_at: string;
-        };
-        /** ClubInvitationResponse */
-        ClubInvitationResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Club Id */
-            club_id: number;
-            /** Email */
-            email: string;
-            /**
-             * Token
-             * Format: uuid
-             */
-            token: string;
-            /**
-             * Invited By
-             * Format: uuid
-             */
-            invited_by: string;
-            /** Status */
-            status: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Expires At
-             * Format: date-time
-             */
-            expires_at: string;
-        };
-        /** ClubMemberAdd */
-        ClubMemberAdd: {
-            /** Email */
-            email: string;
-        };
-        /** ClubMemberResponse */
-        ClubMemberResponse: {
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
-            /** Email */
-            email: string;
-            /** Full Name */
-            full_name?: string | null;
-            /** Avatar Url */
-            avatar_url?: string | null;
-            /** Role */
-            role: string;
-            /**
-             * Joined At
-             * Format: date-time
-             */
-            joined_at: string;
-        };
-        /** ClubResponse */
-        ClubResponse: {
-            /** Id */
-            id: number;
-            /** Club Name */
-            club_name: string;
-            /**
-             * Status
-             * @default approved
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected";
-            /** Categories */
-            categories?: string[] | null;
-            /** Club Page */
-            club_page?: string | null;
-            /** Ig */
-            ig?: string | null;
-            /** Discord */
-            discord?: string | null;
-            /**
-             * Club Type
-             * @default independent
-             */
-            club_type: string;
-            /** Logo Url */
-            logo_url?: string | null;
-            /** Created By */
-            created_by?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /** School */
-            school?: string | null;
-            /** Owner Email */
-            owner_email?: string | null;
-            /**
-             * Event Count
-             * @default 0
-             */
-            event_count: number;
-            /**
-             * Position Count
-             * @default 0
-             */
-            position_count: number;
-        };
-        /** ClubSubmissionResponse */
-        ClubSubmissionResponse: {
-            /** Id */
-            id: number;
-            /** Club Name */
-            club_name: string;
-            /**
-             * Status
-             * @default approved
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected";
-            /** Categories */
-            categories?: string[] | null;
-            /** Club Page */
-            club_page?: string | null;
-            /** Ig */
-            ig?: string | null;
-            /** Discord */
-            discord?: string | null;
-            /**
-             * Club Type
-             * @default independent
-             */
-            club_type: string;
-            /** Logo Url */
-            logo_url?: string | null;
-            /** Created By */
-            created_by?: string | null;
-            /** Created At */
-            created_at?: string | null;
-            /** School */
-            school?: string | null;
-            /** Owner Email */
-            owner_email?: string | null;
-            /**
-             * Event Count
-             * @default 0
-             */
-            event_count: number;
-            /**
-             * Position Count
-             * @default 0
-             */
-            position_count: number;
-            /** Submitted By Email */
-            submitted_by_email?: string | null;
-        };
-        /** ClubUpdate */
-        ClubUpdate: {
-            /** Club Name */
-            club_name?: string | null;
-            /** Categories */
-            categories?: string[] | null;
-            /** Club Page */
-            club_page?: string | null;
-            /** Ig */
-            ig?: string | null;
-            /** Discord */
-            discord?: string | null;
-            /** Club Type */
-            club_type?: string | null;
-            /** Logo Url */
-            logo_url?: string | null;
-            /** School */
-            school?: string | null;
         };
         /** CompetitorPainPointResponse */
         CompetitorPainPointResponse: {
@@ -2328,60 +2025,6 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /** DiscoveryQueryCreate */
-        DiscoveryQueryCreate: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** School */
-            school: string;
-            /**
-             * Surface
-             * @enum {string}
-             */
-            surface: "events" | "clubs" | "positions";
-            /** Search Query */
-            search_query: string;
-            /**
-             * Page Url
-             * Format: uri
-             */
-            page_url: string;
-            /** Filters */
-            filters: {
-                [key: string]: unknown;
-            };
-        };
-        /** DiscoveryQueryResponse */
-        DiscoveryQueryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** School */
-            school: string;
-            /**
-             * Surface
-             * @enum {string}
-             */
-            surface: "events" | "clubs" | "positions";
-            /** Search Query */
-            search_query: string;
-            /** Page Url */
-            page_url: string;
-            /** Filters */
-            filters: {
-                [key: string]: unknown;
-            };
             /**
              * Created At
              * Format: date-time
@@ -3028,33 +2671,6 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /** HourlyIngestionLatency */
-        HourlyIngestionLatency: {
-            /**
-             * Hour
-             * Format: date-time
-             */
-            hour: string;
-            /** Count */
-            count: number;
-            /** Mean Minutes */
-            mean_minutes: number;
-            /** Median Minutes */
-            median_minutes: number;
-        };
-        /** IngestionLatencyResponse */
-        IngestionLatencyResponse: {
-            /**
-             * Since
-             * Format: date-time
-             */
-            since: string;
-            overall: components["schemas"]["LatencyStats"];
-            /** Schools */
-            schools: components["schemas"]["SchoolIngestionLatency"][];
-            /** Hourly */
-            hourly: components["schemas"]["HourlyIngestionLatency"][];
-        };
         /** InstagramAccountPostResponse */
         InstagramAccountPostResponse: {
             /** Media Id */
@@ -3430,15 +3046,6 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        /** LatencyStats */
-        LatencyStats: {
-            /** Count */
-            count: number;
-            /** Mean Minutes */
-            mean_minutes: number | null;
-            /** Median Minutes */
-            median_minutes: number | null;
-        };
         /** LatestAddedItem */
         LatestAddedItem: {
             /** Title */
@@ -3645,45 +3252,6 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
-        /** PaginatedResponse[ClubClaimResponse] */
-        PaginatedResponse_ClubClaimResponse_: {
-            /** Items */
-            items: components["schemas"]["ClubClaimResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[ClubResponse] */
-        PaginatedResponse_ClubResponse_: {
-            /** Items */
-            items: components["schemas"]["ClubResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[ClubSubmissionResponse] */
-        PaginatedResponse_ClubSubmissionResponse_: {
-            /** Items */
-            items: components["schemas"]["ClubSubmissionResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
         /** PaginatedResponse[CompetitorPainPointResponse] */
         PaginatedResponse_CompetitorPainPointResponse_: {
             /** Items */
@@ -3701,19 +3269,6 @@ export interface components {
         PaginatedResponse_DailyReportResponse_: {
             /** Items */
             items: components["schemas"]["DailyReportResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[DiscoveryQueryResponse] */
-        PaginatedResponse_DiscoveryQueryResponse_: {
-            /** Items */
-            items: components["schemas"]["DiscoveryQueryResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -3978,21 +3533,6 @@ export interface components {
             /** Source Image Url */
             source_image_url?: string | null;
         };
-        /** PositionDirectoryResponse */
-        PositionDirectoryResponse: {
-            /** Items */
-            items: components["schemas"]["PositionResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-            /** @description School freshness metadata on the first page only. */
-            latest_added_position?: components["schemas"]["LatestAddedItem"] | null;
-        };
         /** PositionImageResponse */
         PositionImageResponse: {
             /** Title */
@@ -4022,77 +3562,6 @@ export interface components {
             deadline_at?: string | null;
             /** Source Image Url */
             source_image_url?: string | null;
-        };
-        /** PositionResponse */
-        PositionResponse: {
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /**
-             * Position Type
-             * @enum {string}
-             */
-            position_type: "executive" | "committee" | "volunteer" | "staff" | "internship" | "general";
-            /** Requirements */
-            requirements?: string[];
-            /** Commitment */
-            commitment?: string | null;
-            /** Compensation */
-            compensation?: string | null;
-            /** Is Paid */
-            is_paid?: boolean | null;
-            /** Location */
-            location?: string | null;
-            /** Contact Email */
-            contact_email?: string | null;
-            /** Deadline Date */
-            deadline_date?: string | null;
-            /** Deadline At */
-            deadline_at?: string | null;
-            /** Source Video Url */
-            source_video_url?: string | null;
-            /** Id */
-            id: number;
-            /** Club Id */
-            club_id: number;
-            /** Source Url */
-            source_url: string;
-            /** Source Image Url */
-            source_image_url?: string | null;
-            /** Is Active */
-            is_active: boolean;
-            /**
-             * Added At
-             * Format: date-time
-             */
-            added_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            /** Club Name */
-            club_name: string;
-            /** Club Logo Url */
-            club_logo_url?: string | null;
-            /** Cohosts */
-            cohosts?: components["schemas"]["ClubCohostResponse"][];
-            /** Club Type */
-            club_type?: string | null;
-            /** Club Page */
-            club_page?: string | null;
-            /** Club Ig */
-            club_ig?: string | null;
-            /** Club Discord */
-            club_discord?: string | null;
-            /** School */
-            school: string;
-        };
-        /** PositionStatsResponse */
-        PositionStatsResponse: {
-            /** Click Count */
-            click_count: number;
         };
         /** PositionSubmissionCreate */
         PositionSubmissionCreate: {
@@ -4243,19 +3712,6 @@ export interface components {
             active_slots_limit: number;
             /** Program Enabled */
             program_enabled: boolean;
-        };
-        /** PromoterEnrollmentUpdate */
-        PromoterEnrollmentUpdate: {
-            /**
-             * Payout Email
-             * Format: email
-             */
-            payout_email: string;
-            /**
-             * Accept Tos
-             * @default false
-             */
-            accept_tos: boolean;
         };
         /**
          * PromoterPosterBatchCreate
@@ -4562,105 +4018,6 @@ export interface components {
              */
             status: "pending" | "resolved" | "dismissed";
         };
-        /**
-         * SaveClubStatusResponse
-         * @description Locks the save/unsave status contract at the OpenAPI boundary.
-         */
-        SaveClubStatusResponse: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "saved" | "unsaved";
-        };
-        /** School */
-        School: {
-            /** Slug */
-            slug: string;
-            /** Name */
-            name: string;
-            /** City */
-            city?: string | null;
-            /** Primary Color */
-            primary_color: string;
-            /** Secondary Color */
-            secondary_color: string;
-            /** Timezone */
-            timezone: string;
-            /**
-             * Language
-             * @default en
-             * @enum {string}
-             */
-            language: "en" | "fr";
-            /** Faculties */
-            faculties?: string[];
-            /** Location Examples */
-            location_examples?: string[];
-            /** Event Seasons */
-            event_seasons?: components["schemas"]["SchoolEventSeason"][];
-            /** Recipient Id */
-            recipient_id?: string | null;
-            /** Semester Start */
-            semester_start?: string | null;
-            /** Semester End */
-            semester_end?: string | null;
-            /** Social Preview Image Url */
-            social_preview_image_url?: string | null;
-        };
-        /** SchoolEventSeason */
-        SchoolEventSeason: {
-            /** Id */
-            id: string;
-            /** Classification Id */
-            classification_id: string;
-            /** Labels */
-            labels: {
-                [key: string]: string;
-            };
-            /** Display Windows */
-            display_windows: components["schemas"]["CampusSeasonWindow"][];
-        };
-        /** SchoolIngestionLatency */
-        SchoolIngestionLatency: {
-            /** Count */
-            count: number;
-            /** Mean Minutes */
-            mean_minutes: number | null;
-            /** Median Minutes */
-            median_minutes: number | null;
-            /** School */
-            school: string;
-        };
-        /** SchoolSummary */
-        SchoolSummary: {
-            /** Slug */
-            slug: string;
-            /** Name */
-            name: string;
-            /** City */
-            city?: string | null;
-            /** Primary Color */
-            primary_color: string;
-            /** Secondary Color */
-            secondary_color: string;
-            /** Timezone */
-            timezone: string;
-            /**
-             * Language
-             * @default en
-             * @enum {string}
-             */
-            language: "en" | "fr";
-            /** Faculties */
-            faculties?: string[];
-            /** Location Examples */
-            location_examples?: string[];
-            /** Event Seasons */
-            event_seasons?: components["schemas"]["SchoolEventSeason"][];
-            /** Email Domains */
-            email_domains?: string[];
-        };
         /** SendOtpRequest */
         SendOtpRequest: {
             /**
@@ -4845,94 +4202,6 @@ export interface components {
              */
             created_at: string;
         };
-        /** UserProfileUpdate */
-        UserProfileUpdate: {
-            /** Faculty */
-            faculty?: string | null;
-            /** School */
-            school?: string | null;
-            /** Interests */
-            interests?: string[] | null;
-            /** Is First Year */
-            is_first_year?: boolean | null;
-        };
-        /** UserResponse */
-        UserResponse: {
-            /** Email */
-            email: string;
-            /** Full Name */
-            full_name?: string | null;
-            /** Avatar Url */
-            avatar_url?: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Faculty */
-            faculty?: string | null;
-            /** School */
-            school?: string | null;
-            /** Interests */
-            interests?: string[] | null;
-            /**
-             * Is First Year
-             * @default false
-             */
-            is_first_year: boolean;
-            /**
-             * Role
-             * @default user
-             * @enum {string}
-             */
-            role: "user" | "admin";
-            /** Payout Email */
-            payout_email?: string | null;
-            /** Promoter Tos Accepted At */
-            promoter_tos_accepted_at?: string | null;
-            /** Promoter Tos Version */
-            promoter_tos_version?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /**
-         * UserRoleUpdate
-         * @description Admin-only payload for rotating a user's role.
-         *
-         *     Separate from ``UserUpdate`` so ``role`` never leaks into a self-service
-         *     update path - one shared model across trust boundaries would be a
-         *     defense-in-depth gap.
-         */
-        UserRoleUpdate: {
-            /**
-             * Role
-             * @enum {string}
-             */
-            role: "user" | "admin";
-        };
-        /** UserUpdate */
-        UserUpdate: {
-            /** Full Name */
-            full_name?: string | null;
-            /** Avatar Url */
-            avatar_url?: string | null;
-            /** Faculty */
-            faculty?: string | null;
-            /** School */
-            school?: string | null;
-            /** Interests */
-            interests?: string[] | null;
-            /** Is First Year */
-            is_first_year?: boolean | null;
-        };
         /** V1SavedEventStatusResponse */
         V1SavedEventStatusResponse: {
             /**
@@ -4965,6 +4234,371 @@ export interface components {
             token: string;
         };
         /**
+         * @description Shared domain constants that the frontend must stay in sync with.
+         *
+         *     The frontend fetches this once on app init so both layers
+         *     always agree on categories, interest mappings, and status enums.
+         */
+        AppConstantsResponse: {
+            event_categories: string[];
+            club_categories: string[];
+            interests: string[];
+            interest_to_categories: {
+                [key: string]: string[];
+            };
+            report_statuses: string[];
+        };
+        CampusSeasonWindow: {
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date: string;
+        };
+        ClubClaimCreate: {
+            executive_role: string;
+            proof_url?: string | null;
+        };
+        ClubClaimResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            club_id: number;
+            /** Format: uuid */
+            user_id: string;
+            executive_role: string;
+            proof_url: string | null;
+            status: string;
+            rejection_reason?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            clubs?: components["schemas"]["ClubResponse"] | null;
+            users?: components["schemas"]["UserResponse"] | null;
+        };
+        ClubClaimUpdate: {
+            status: string;
+            rejection_reason?: string | null;
+        };
+        /** @description The OpenAPI request bodies. */
+        ClubCreate: {
+            /** Format: email */
+            submitted_by_email?: string | null;
+            club_name: string;
+            categories?: string[] | null;
+            club_page?: string | null;
+            ig?: string | null;
+            discord?: string | null;
+            /** @default independent */
+            club_type: string;
+            logo_url?: string | null;
+            /** @default uwaterloo */
+            school: string;
+        };
+        ClubInvitationCreate: {
+            /** @description Email to invite */
+            email: string;
+        };
+        ClubInvitationPublicResponse: {
+            club_name: string;
+            email: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        ClubInvitationResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            club_id: number;
+            email: string;
+            /** Format: uuid */
+            token: string;
+            /** Format: uuid */
+            invited_by: string;
+            status: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        ClubMemberAdd: {
+            email: string;
+        };
+        ClubMemberResponse: {
+            /** Format: uuid */
+            user_id: string;
+            email: string;
+            full_name?: string | null;
+            avatar_url?: string | null;
+            role: string;
+            /** Format: date-time */
+            joined_at: string;
+        };
+        /** @description A club as the API returns it (`ClubResponse`). */
+        ClubResponse: {
+            /** Format: int32 */
+            id: number;
+            club_name: string;
+            /** @enum {string} */
+            status: "pending" | "approved" | "rejected";
+            categories?: string[] | null;
+            club_page?: string | null;
+            ig?: string | null;
+            discord?: string | null;
+            club_type: string;
+            logo_url?: string | null;
+            created_by?: string | null;
+            /** Format: date-time */
+            created_at?: string | null;
+            school?: string | null;
+            owner_email?: string | null;
+            /**
+             * Format: int64
+             * @default 0
+             */
+            event_count: number;
+            /**
+             * Format: int64
+             * @default 0
+             */
+            position_count: number;
+        };
+        /** @description A club in the admin review queue, with who submitted it. */
+        ClubSubmissionResponse: components["schemas"]["ClubResponse"] & {
+            submitted_by_email?: string | null;
+        };
+        ClubUpdate: {
+            club_name?: string | null;
+            categories?: string[] | null;
+            club_page?: string | null;
+            ig?: string | null;
+            discord?: string | null;
+            club_type?: string | null;
+            logo_url?: string | null;
+            school?: string | null;
+        };
+        /** @description The request body, documented for the OpenAPI schema. */
+        DiscoveryQueryCreate: {
+            /** Format: uuid */
+            id: string;
+            school: string;
+            /** @enum {string} */
+            surface: "events" | "clubs" | "positions";
+            search_query: string;
+            /** Format: uri */
+            page_url: string;
+            filters: {
+                [key: string]: unknown;
+            };
+        };
+        DiscoveryQueryResponse: {
+            /** Format: uuid */
+            id: string;
+            school: string;
+            /** @enum {string} */
+            surface: "events" | "clubs" | "positions";
+            search_query: string;
+            page_url: string;
+            filters: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at: string;
+        };
+        HourlyIngestionLatency: {
+            /** Format: date-time */
+            hour: string;
+            /** Format: int64 */
+            count: number;
+            /** Format: double */
+            mean_minutes: number;
+            /** Format: double */
+            median_minutes: number;
+        };
+        IngestionLatencyResponse: {
+            /** Format: date-time */
+            since: string;
+            overall: components["schemas"]["LatencyStats"];
+            schools: components["schemas"]["SchoolIngestionLatency"][];
+            hourly: components["schemas"]["HourlyIngestionLatency"][];
+        };
+        LatencyStats: {
+            /** Format: int64 */
+            count: number;
+            /** Format: double */
+            mean_minutes: number | null;
+            /** Format: double */
+            median_minutes: number | null;
+        };
+        /** @description `Union[ClubMemberResponse, ClubInvitationResponse]`. */
+        MemberOrInvitation: components["schemas"]["ClubMemberResponse"] | components["schemas"]["ClubInvitationResponse"];
+        PaginatedResponse_ClubClaimResponse_: {
+            items: components["schemas"]["ClubClaimResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
+        PaginatedResponse_ClubResponse_: {
+            items: components["schemas"]["ClubResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
+        PaginatedResponse_ClubSubmissionResponse_: {
+            items: components["schemas"]["ClubSubmissionResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
+        PaginatedResponse_DiscoveryQueryResponse_: {
+            items: components["schemas"]["DiscoveryQueryResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
+        PositionDirectoryResponse: {
+            items: components["schemas"]["PositionResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+            latest_added_position?: components["schemas"]["LatestAddedItem"] | null;
+        };
+        /** @description A position as cards and detail pages show it, with its club and school. */
+        PositionResponse: {
+            title: string;
+            description: string;
+            /** @enum {string} */
+            position_type: "executive" | "committee" | "volunteer" | "staff" | "internship" | "general";
+            requirements?: string[];
+            commitment?: string | null;
+            compensation?: string | null;
+            is_paid?: boolean | null;
+            location?: string | null;
+            contact_email?: string | null;
+            /** Format: date */
+            deadline_date?: string | null;
+            /** Format: date-time */
+            deadline_at?: string | null;
+            source_video_url?: string | null;
+            /** Format: int64 */
+            id: number;
+            /** Format: int32 */
+            club_id: number;
+            source_url: string;
+            source_image_url?: string | null;
+            is_active: boolean;
+            /** Format: date-time */
+            added_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            club_name: string;
+            club_logo_url?: string | null;
+            cohosts?: components["schemas"]["ClubCohostResponse"][];
+            club_type?: string | null;
+            club_page?: string | null;
+            club_ig?: string | null;
+            club_discord?: string | null;
+            school: string;
+        };
+        PositionStatsResponse: {
+            /** Format: int64 */
+            click_count: number;
+        };
+        PromoterEnrollmentUpdate: {
+            /** Format: email */
+            payout_email: string;
+            /** @default false */
+            accept_tos: boolean;
+        };
+        /** @description Locks the save/unsave status contract at the OpenAPI boundary. */
+        SaveClubStatusResponse: {
+            /** @enum {string} */
+            status: "saved" | "unsaved";
+        };
+        /** @description One school's public profile. */
+        School: {
+            slug: string;
+            name: string;
+            city?: string | null;
+            primary_color: string;
+            secondary_color: string;
+            timezone: string;
+            /**
+             * @description `Literal["en", "fr"]`; any other stored value fails like pydantic's validation.
+             * @enum {string}
+             */
+            language: "en" | "fr";
+            faculties?: string[];
+            location_examples?: string[];
+            event_seasons?: components["schemas"]["SchoolEventSeason"][];
+            recipient_id?: string | null;
+            /** Format: date */
+            semester_start?: string | null;
+            /** Format: date */
+            semester_end?: string | null;
+            social_preview_image_url?: string | null;
+        };
+        SchoolEventSeason: {
+            id: string;
+            classification_id: string;
+            labels: {
+                [key: string]: string;
+            };
+            display_windows: components["schemas"]["CampusSeasonWindow"][];
+        };
+        SchoolIngestionLatency: {
+            /** Format: int64 */
+            count: number;
+            /** Format: double */
+            mean_minutes: number | null;
+            /** Format: double */
+            median_minutes: number | null;
+            school: string;
+        };
+        /** @description A school as the directory lists it, with its sign-in email domains. */
+        SchoolSummary: {
+            slug: string;
+            name: string;
+            city?: string | null;
+            primary_color: string;
+            secondary_color: string;
+            timezone: string;
+            /**
+             * @description `Literal["en", "fr"]`; any other stored value fails like pydantic's validation.
+             * @enum {string}
+             */
+            language: "en" | "fr";
+            faculties?: string[];
+            location_examples?: string[];
+            event_seasons?: components["schemas"]["SchoolEventSeason"][];
+            email_domains?: string[];
+        };
+        /**
          * SiteBannerResponse
          * @description The single site-wide banner, as shown above the navigation.
          */
@@ -4972,6 +4606,52 @@ export interface components {
             message_translation_key: string;
             cta_label_translation_key: string;
             cta_href: string;
+        };
+        UserProfileUpdate: {
+            faculty?: string | null;
+            school?: string | null;
+            interests?: string[] | null;
+            is_first_year?: boolean | null;
+        };
+        /**
+         * @description `UserResponse`, in the model's field order. It also reads a stored
+         *     `users` row as JSON (an embedded claimant), which has no `school`.
+         */
+        UserResponse: {
+            email: string;
+            full_name?: string | null;
+            avatar_url?: string | null;
+            /** Format: uuid */
+            id: string;
+            faculty?: string | null;
+            school?: string | null;
+            interests?: string[] | null;
+            is_first_year: boolean;
+            /** @enum {string} */
+            role: "user" | "admin";
+            /** Format: email */
+            payout_email?: string | null;
+            /** Format: date-time */
+            promoter_tos_accepted_at?: string | null;
+            promoter_tos_version?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description Admin-only payload for rotating a user's role. */
+        UserRoleUpdate: {
+            /** @enum {string} */
+            role: "user" | "admin";
+        };
+        /** @description Request bodies, documented for the OpenAPI schema. */
+        UserUpdate: {
+            full_name?: string | null;
+            avatar_url?: string | null;
+            faculty?: string | null;
+            school?: string | null;
+            interests?: string[] | null;
+            is_first_year?: boolean | null;
         };
     };
     responses: never;
@@ -5288,625 +4968,6 @@ export interface operations {
             };
         };
     };
-    list_clubs_clubs__get: {
-        parameters: {
-            query?: {
-                club_type?: string | null;
-                school?: string | null;
-                search?: string | null;
-                categories?: string[] | null;
-                ids?: number[] | null;
-                min_events?: number;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_ClubResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_club_clubs__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClubCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_clubs_for_review_clubs_review_get: {
-        parameters: {
-            query?: {
-                club_status?: ("pending" | "approved" | "rejected") | null;
-                school?: string | null;
-                search?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_ClubSubmissionResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_my_clubs_clubs_mine_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubResponse"][];
-                };
-            };
-        };
-    };
-    list_claims_clubs_claims_get: {
-        parameters: {
-            query?: {
-                status?: string | null;
-                school?: string | null;
-                search?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_ClubClaimResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_club_clubs__club_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_club_clubs__club_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_club_clubs__club_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClubUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    review_club_clubs__club_id__review_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubmissionUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_club_members_clubs__club_id__members_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubMemberResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_club_member_clubs__club_id__members_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClubMemberAdd"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubMemberResponse"] | components["schemas"]["ClubInvitationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_club_member_clubs__club_id__members__user_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-                user_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_invitations_clubs__club_id__invitations_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubInvitationResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_invitation_clubs__club_id__invitations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClubInvitationCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubInvitationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    revoke_invitation_clubs__club_id__invitations__invitation_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-                invitation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_invitation_by_token_clubs_invitations__token__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubInvitationPublicResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    accept_invitation_clubs_invitations__token__accept_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_claim_clubs__club_id__claims_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClubClaimCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubClaimResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_claim_clubs_claims__claim_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                claim_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClubClaimUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClubClaimResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_pain_points_competitor_pain_points__get: {
         parameters: {
             query?: {
@@ -6036,73 +5097,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MessageResponse"];
                 };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_queries_discovery_queries__get: {
-        parameters: {
-            query?: {
-                school?: string | null;
-                search?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_DiscoveryQueryResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    record_query_discovery_queries__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DiscoveryQueryCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -6483,37 +5477,6 @@ export interface operations {
             };
         };
     };
-    get_ingestion_latency_ingestion_latency__get: {
-        parameters: {
-            query?: {
-                days?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IngestionLatencyResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_instagram_publish_batches_instagram_publishing_batches__get: {
         parameters: {
             query?: {
@@ -6851,26 +5814,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_constants_meta_constants_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AppConstantsResponse"];
                 };
             };
         };
@@ -7376,112 +6319,6 @@ export interface operations {
             };
         };
     };
-    list_positions_positions__get: {
-        parameters: {
-            query?: {
-                school?: string | null;
-                search?: string | null;
-                position_type?: ("executive" | "committee" | "volunteer" | "staff" | "internship" | "general") | null;
-                club_id?: number | null;
-                include_closed?: boolean;
-                added_since?: string | null;
-                paid_only?: boolean;
-                sort_order?: "asc" | "desc";
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PositionDirectoryResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_position_stats_positions_stats_get: {
-        parameters: {
-            query: {
-                school: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: components["schemas"]["PositionStatsResponse"];
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_position_positions__position_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                position_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PositionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_qr_codes_qr__get: {
         parameters: {
             query?: {
@@ -7866,151 +6703,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_saved_clubs_saved_clubs__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": number[];
-                };
-            };
-        };
-    };
-    save_club_saved_clubs__club_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveClubStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unsave_club_saved_clubs__club_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveClubStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_schools_endpoint_schools_get: {
-        parameters: {
-            query?: {
-                q?: string;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SchoolSummary"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_school_endpoint_schools__slug__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["School"];
                 };
             };
             /** @description Validation Error */
@@ -8496,6 +7188,1201 @@ export interface operations {
             };
         };
     };
+    list_saved_events_v1_saved_events__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number[];
+                };
+            };
+        };
+    };
+    save_event_v1_saved_events__event_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsave_event_v1_saved_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    receive_automate_log_webhooks_automate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutomateLogPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_event_change_alerts_webhooks_event_change_alerts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_automate_logs_webhooks_automate_logs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                sender_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    health_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_site_banner_endpoint_site_banner_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteBannerResponse"] | null;
+                };
+            };
+        };
+    };
+    list_clubs_clubs__get: {
+        parameters: {
+            query?: {
+                club_type?: string | null;
+                school?: string | null;
+                search?: string | null;
+                categories?: string[] | null;
+                ids?: number[] | null;
+                min_events?: number;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_ClubResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_club_clubs__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_clubs_for_review_clubs_review_get: {
+        parameters: {
+            query?: {
+                club_status?: ("pending" | "approved" | "rejected") | null;
+                school?: string | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_ClubSubmissionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_my_clubs_clubs_mine_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"][];
+                };
+            };
+        };
+    };
+    list_claims_clubs_claims_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                school?: string | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_ClubClaimResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_club_clubs__club_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_club_clubs__club_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_club_clubs__club_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_club_clubs__club_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_club_members_clubs__club_id__members_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubMemberResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_club_member_clubs__club_id__members_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubMemberAdd"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberOrInvitation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_club_member_clubs__club_id__members__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_invitations_clubs__club_id__invitations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubInvitationResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_invitation_clubs__club_id__invitations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubInvitationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubInvitationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_invitation_clubs__club_id__invitations__invitation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+                invitation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_invitation_by_token_clubs_invitations__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubInvitationPublicResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_invitation_clubs_invitations__token__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_claim_clubs__club_id__claims_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubClaimCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubClaimResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_claim_clubs_claims__claim_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                claim_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubClaimUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubClaimResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_queries_discovery_queries__get: {
+        parameters: {
+            query?: {
+                school?: string | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_DiscoveryQueryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_query_discovery_queries__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryQueryCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ingestion_latency_ingestion_latency__get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IngestionLatencyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_constants_meta_constants_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppConstantsResponse"];
+                };
+            };
+        };
+    };
+    list_positions_positions__get: {
+        parameters: {
+            query?: {
+                school?: string | null;
+                search?: string | null;
+                position_type?: ("executive" | "committee" | "volunteer" | "staff" | "internship" | "general") | null;
+                club_id?: number | null;
+                include_closed?: boolean;
+                added_since?: string | null;
+                paid_only?: boolean;
+                sort_order?: "asc" | "desc";
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionDirectoryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_position_stats_positions_stats_get: {
+        parameters: {
+            query: {
+                school: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["PositionStatsResponse"];
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_position_positions__position_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                position_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_saved_clubs_saved_clubs__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number[];
+                };
+            };
+        };
+    };
+    save_club_saved_clubs__club_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveClubStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsave_club_saved_clubs__club_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveClubStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_schools_endpoint_schools_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_school_endpoint_schools__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["School"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_me_users_me_get: {
         parameters: {
             query?: never;
@@ -8738,213 +8625,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_saved_events_v1_saved_events__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": number[];
-                };
-            };
-        };
-    };
-    save_event_v1_saved_events__event_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unsave_event_v1_saved_events__event_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["V1SavedEventStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    receive_automate_log_webhooks_automate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AutomateLogPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    send_event_change_alerts_webhooks_event_change_alerts_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    get_automate_logs_webhooks_automate_logs_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                sender_id?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    health_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    get_site_banner_endpoint_site_banner_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SiteBannerResponse"] | null;
                 };
             };
         };

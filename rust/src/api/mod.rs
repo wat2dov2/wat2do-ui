@@ -9,9 +9,12 @@
 
 pub mod allowed_emails;
 pub mod auth;
+pub mod body;
 pub mod client_ip;
 pub mod cors;
+pub mod email_address;
 pub mod errors;
+pub mod json;
 pub mod messages;
 pub mod pagination;
 pub mod proxy;
@@ -77,12 +80,76 @@ fn rust_routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(routes::health::health))
         .routes(routes!(routes::site_banner::get_site_banner))
+        // routers/clubs.py
+        .routes(routes!(
+            routes::clubs::list_clubs,
+            routes::clubs::create_club
+        ))
+        .routes(routes!(routes::clubs::list_clubs_for_review))
+        .routes(routes!(routes::clubs::list_my_clubs))
+        .routes(routes!(routes::clubs::claims::list_claims))
+        .routes(routes!(
+            routes::clubs::get_club_route,
+            routes::clubs::update_club,
+            routes::clubs::delete_club
+        ))
+        .routes(routes!(routes::clubs::review_club))
+        .routes(routes!(
+            routes::clubs::members::list_club_members,
+            routes::clubs::members::add_club_member
+        ))
+        .routes(routes!(routes::clubs::members::remove_club_member))
+        .routes(routes!(
+            routes::clubs::invitations::create_invitation,
+            routes::clubs::invitations::list_invitations
+        ))
+        .routes(routes!(routes::clubs::invitations::revoke_invitation))
+        .routes(routes!(routes::clubs::invitations::get_invitation_by_token))
+        .routes(routes!(routes::clubs::invitations::accept_invitation))
+        .routes(routes!(routes::clubs::claims::create_claim))
+        .routes(routes!(routes::clubs::claims::update_claim))
+        // routers/discovery_queries.py
+        .routes(routes!(
+            routes::discovery_queries::record_query,
+            routes::discovery_queries::list_queries
+        ))
+        .routes(routes!(routes::ingestion_latency::get_ingestion_latency))
+        .routes(routes!(routes::meta::get_constants))
+        // routers/positions.py
+        .routes(routes!(routes::positions::list_positions))
+        .routes(routes!(routes::positions::get_position_stats))
+        .routes(routes!(routes::positions::get_position))
+        // routers/saved_clubs.py
+        .routes(routes!(routes::saved_clubs::list_saved_clubs))
+        .routes(routes!(
+            routes::saved_clubs::save_club,
+            routes::saved_clubs::unsave_club
+        ))
+        // routers/schools.py
+        .routes(routes!(routes::schools::search_schools))
+        .routes(routes!(routes::schools::get_school))
+        // routers/users.py
+        .routes(routes!(routes::users::get_me, routes::users::update_me))
+        .routes(routes!(routes::users::update_profile))
+        .routes(routes!(routes::users::update_promoter_enrollment))
+        .routes(routes!(routes::users::list_users))
+        .routes(routes!(
+            routes::users::get_user_route,
+            routes::users::delete_user
+        ))
+        .routes(routes!(routes::users::update_user_role))
 }
 
 /// The OpenAPI paths and schemas of the Rust routes, merged into FastAPI's
 /// schema by `backend/core/openapi.py`.
 pub fn openapi() -> utoipa::openapi::OpenApi {
-    rust_routes().into_openapi()
+    let mut document = rust_routes().into_openapi();
+    if let Some(components) = document.components.as_mut() {
+        for name in routes::FASTAPI_SCHEMAS {
+            components.schemas.remove(name);
+        }
+    }
+    document
 }
 
 /// The routed application between the steps that run before and after routing.

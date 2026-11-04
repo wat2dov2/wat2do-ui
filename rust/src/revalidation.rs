@@ -10,6 +10,7 @@ use crate::settings::settings;
 /// Ask the frontend to refresh `resources` for each school, once per school.
 pub async fn revalidate_schools(schools: &[String], resources: &[&str]) {
     let Ok(settings) = settings() else { return };
+    // Settings arrive stripped (as Python's `.strip()`); blank means dry-run.
     let url = settings.event_feed_revalidation_url.as_str();
     if url.is_empty() {
         return;
