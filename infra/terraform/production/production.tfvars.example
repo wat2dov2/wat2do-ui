@@ -10,11 +10,10 @@ cloudfront_origin_secret = "replace-with-a-random-64-character-hexadecimal-value
 # token when it calls the event change alerts webhook every minute.
 event_change_alerts_key = "replace-with-the-runtime-secret-event-change-alerts-key"
 
-# Build and push the two ARM64 application images and the x86-64 preview image
-# first. The initial production apply creates the ECS service and Lambda from
-# these immutable digests; subsequent releases are owned by GitHub Actions.
+# Build and push the two ARM64 application images first. The initial production
+# apply creates the ECS service from these immutable digests; subsequent
+# releases are owned by GitHub Actions.
 frontend_image = "058264255918.dkr.ecr.ca-central-1.amazonaws.com/wat2do/frontend@sha256:replace-with-first-release-digest"
 backend_image  = "058264255918.dkr.ecr.ca-central-1.amazonaws.com/wat2do/backend@sha256:replace-with-first-release-digest"
-social_preview_image = "058264255918.dkr.ecr.ca-central-1.amazonaws.com/wat2do/social-preview@sha256:replace-with-first-release-digest"
 
 email_from = "wat2do <newsletter@wat2do.io>"

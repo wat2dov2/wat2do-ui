@@ -8,6 +8,7 @@ import ts from "typescript";
 import sharp from "sharp";
 import imageDelivery from "../../backend/controlbox/image_delivery.json" with { type: "json" };
 import instagramPublishing from "../../backend/controlbox/instagram_publishing.json" with { type: "json" };
+import socialPreviews from "../../backend/controlbox/social_previews.json" with { type: "json" };
 
 let renderedSlide: ReactElement<{ model: { imageSrc?: string; avatarSrc?: string; siteName?: string; tiles?: string[]; cards?: { title: string; club: string; when: string; location: string; posterSrc: string }[]; hiddenCount?: number; poster: { width: number; height: number } } }> | undefined;
 let requestSchool = "uwaterloo";
@@ -50,9 +51,14 @@ function loadComponent(path: string): Record<string, React.ComponentType<Record<
       if (id.endsWith(".webp")) return { src: `/_next/static/media/${id.split("/").pop()}`, width: 1280, height: 960, blurDataURL: "data:image/webp;base64,UklGRg==" };
       if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string) => key }) };
       if (id === "@/shared/layout") return loadComponent("shared/layout/stack");
+      // The school link preview counts the feed's upcoming events; slides never read it.
+      if (id === "@/features/events/api/eventFeed.server" && path === "app/og-image.png/route") return { getSchoolBrowseSnapshot: async () => ({ items: [] }) };
       if (id === "@/features/clubs/api/clubDirectory.server" || id === "@/features/events/api/eventFeed.server") throw new Error("Slide rendering must not request club activity");
-      if (id === "@/shared/api/schools.server") return { getSchool: async () => ({ slug: "uwaterloo", name: "University of Waterloo", language: "en", primary_color: "#6b238e", secondary_color: "#ffd54f" }) };
-      if (id === "@/features/admin/components/instagram/slides/SlideTemplates") return loadComponent(id.slice(2));
+      if (id === "@/shared/api/schools.server") return {
+        getRequestSchool: async () => requestSchool,
+        getSchool: async () => ({ slug: "uwaterloo", name: "University of Waterloo", language: "en", primary_color: "#6b238e", secondary_color: "#ffd54f" }),
+      };
+      if (id === "@/features/admin/components/instagram/slides/SlideTemplates" || id === "@/features/events/components/SchoolShareImage") return loadComponent(id.slice(2));
       if (id === "satori") {
         const satori = require(id).default;
         return async (element: typeof renderedSlide, options: object) => {
@@ -788,4 +794,37 @@ test("the cover fan draws its cards right to left so the first event sits on top
   // satori paints in document order, so the last card drawn covers the others.
   expect(drawn[2]).toBeLessThan(drawn[1]);
   expect(drawn[1]).toBeLessThan(drawn[0]);
+});
+
+test.describe("School link preview", () => {
+  const originalLogo = process.env.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG;
+  test.beforeAll(() => {
+    process.env.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG = readFileSync(new URL("../public/instagram-cover-logo.svg", import.meta.url), "utf8");
+  });
+  test.afterAll(() => {
+    if (originalLogo === undefined) delete process.env.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG;
+    else process.env.NEXT_PUBLIC_INSTAGRAM_COVER_LOGO_SVG = originalLogo;
+  });
+
+  test("draws the requesting school's card in its colours and lets the CDN keep it", async () => {
+    const { GET } = loadComponent("app/og-image.png/route") as unknown as typeof import("../src/app/og-image.png/route");
+    const response = await GET();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("image/png");
+    expect(response.headers.get("cache-control")).toBe(`public, max-age=${socialPreviews.cache_max_age_seconds}`);
+
+    const png = Buffer.from(await response.arrayBuffer());
+    expect(await sharp(png).metadata()).toMatchObject({ format: "png", width: socialPreviews.width, height: socialPreviews.height });
+    const { data } = await sharp(png).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    const pixel = (x: number, y: number) => [...data.subarray((y * socialPreviews.width + x) * 3, (y * socialPreviews.width + x) * 3 + 3)];
+    // The school's primary colour fills the card, including behind the wordmark's square.
+    expect(pixel(2, 2)).toEqual([0x6b, 0x23, 0x8e]);
+    expect(pixel(socialPreviews.width - 3, socialPreviews.height - 3)).toEqual([0x6b, 0x23, 0x8e]);
+    // The name, the events line, the address and the wordmark are drawn in the secondary colour.
+    let secondary = 0;
+    for (let offset = 0; offset < data.length; offset += 3) {
+      if (Math.abs(data[offset] - 0xff) + Math.abs(data[offset + 1] - 0xd5) + Math.abs(data[offset + 2] - 0x4f) < 12) secondary += 1;
+    }
+    expect(secondary).toBeGreaterThan(20_000);
+  });
 });

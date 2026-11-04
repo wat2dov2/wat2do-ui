@@ -14924,12 +14924,6 @@
               "null"
             ],
             "format": "date"
-          },
-          "social_preview_image_url": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         }
       },

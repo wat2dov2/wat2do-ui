@@ -196,8 +196,8 @@ The first scoped SEO foundation now covers the school event feed, event detail, 
 - Each school host now serves a crawl policy and a school-scoped sitemap containing only non-empty public directories and indexable event and organization detail URLs.
 - Event structured data is emitted only when the record passes conservative public-attendance, single-occurrence, future-date, organizer, source-image, source-link, and structured-address gates.
 - Structured data uses the same canonical URL, visible event description, organizer relationship, image, occurrence, and cancellation state as the public page.
-- After a CacheEntID scrape finishes, a bounded screenshot worker captures each affected school's changed canonical event feed at 1200 by 630 pixels and publishes the newest successful image as that feed's Open Graph and Twitter preview.
-- Event and occurrence writes advance a school revision so the next post-scrape render cannot silently miss changed content; failed jobs retry through a dead-lettered queue without replacing the last good preview.
+- Each school's event feed declares a 1200 by 630 pixel Open Graph and Twitter preview that the frontend draws on request at `/og-image.png` on the school's host: the school's name and colours, the Wat2Do wordmark, and how many listed events have not ended.
+- The preview URL carries a hash of everything the card draws, so it changes exactly when the card does, and the image is cached for `controlbox/social_previews.json` `cache_max_age_seconds`.
 
 Search Console verification and social-client preview testing remain operational follow-up work.
 

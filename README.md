@@ -147,12 +147,12 @@ Sign-in, sessions and access tokens are the backend's own (`backend/services/aut
 Uploaded and ingested media are files under `MEDIA_ROOT`, one folder per bucket, which the web server serves at `STORAGE_PUBLIC_BASE_URL` (`https://wat2do.io/media`).
 The web server, not the code, sends their immutable `Cache-Control` header and `Content-Disposition: attachment` for `.svg` files.
 Discovery snapshots are files under the frontend's `DISCOVERY_CACHE_DIR`, which must sit outside `MEDIA_ROOT`; production refuses to start without it.
-An isolated, concurrency-limited Lambda captures changed school event feeds as social-preview images after their CacheEntID media finishes scraping, then stores the immutable JPEG in the existing S3 and CloudFront asset path.
+Each school's link preview is drawn by the frontend on request (`frontend/src/app/og-image.png/route.tsx`) with Next.js `ImageResponse`, from the school and its event feed, with no browser.
 The encrypted Terraform state bucket and DynamoDB lock table remain in `us-west-2`; they do not affect Canadian application traffic.
 
 Terraform is split into `infra/terraform/foundation` and `infra/terraform/production`.
-Foundation creates the encrypted, versioned S3 state bucket, Route 53 zone, three ECR repositories, secret containers, and GitHub OIDC roles.
-Production creates the VPC, private Fargate workload, RDS database, PostgREST data API service, the per-minute event change alerts schedule, social-preview Lambda and queues, CloudFront, certificates, logging, and alarms.
+Foundation creates the encrypted, versioned S3 state bucket, Route 53 zone, two ECR repositories, secret containers, and GitHub OIDC roles.
+Production creates the VPC, private Fargate workload, RDS database, PostgREST data API service, the per-minute event change alerts schedule, CloudFront, certificates, logging, and alarms.
 
 The first foundation apply intentionally starts with local state because the state bucket does not yet exist.
 Temporarily move `infra/terraform/foundation/backend.tf` outside that directory for this one local apply, then restore it before state migration.
@@ -160,8 +160,8 @@ After it creates the bucket, immediately migrate state to S3 using the `foundati
 Populate the two Secrets Manager secret values from protected local files, not from Terraform variables or committed `.tfvars` files.
 Before switching registrar nameservers, inventory every current Vercel DNS record and add all non-application records to `foundation.tfvars`.
 
-The first ARM64 frontend and backend images, plus the x86-64 social-preview image, must be pushed to ECR by digest before the initial production apply.
-Once production exists, pushes to `main` use GitHub OIDC to build all three images, tag them with the full commit SHA, update the ECS task definition, and update the Lambda image.
+The first ARM64 frontend and backend images must be pushed to ECR by digest before the initial production apply.
+Once production exists, pushes to `main` use GitHub OIDC to build both images, tag them with the full commit SHA, and update the ECS task definition.
 Event and position ingestion runs through one database table, `public.ingestion_items`, with one row per Instagram post or directory page, run by the Rust binary `wat2do-ingest` (`rust/src/ingestion`).
 Instagram notifications come from a physical Android phone running Automate, which triggers the `process-notification` workflow.
 The workflow records exact post URLs in the notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker, and a database trigger adds each post to `ingestion_items`.
