@@ -405,9 +405,9 @@ def test_discovery_controls_load_checked_in_feature_sources():
     assert controlbox.image_delivery.optimized_remote_path == "/media/"
 
 
-def test_ecs_runtime_keeps_redundancy_and_memory_headroom():
+def test_ecs_runtime_keeps_memory_headroom():
     runtime = controlbox.ecs_runtime
-    assert runtime.desired_count == 2
+    assert runtime.desired_count == 1
     assert runtime.task_cpu == runtime.frontend_cpu + runtime.backend_cpu == 1024
     assert runtime.task_memory_mib == 2048
     assert runtime.frontend_heap_mib == 768
@@ -422,7 +422,7 @@ def test_ecs_runtime_keeps_redundancy_and_memory_headroom():
 @pytest.mark.parametrize(
     "patch,message",
     [
-        ({"desired_count": 1}, "desired_count"),
+        ({"desired_count": 0}, "desired_count"),
         ({"frontend_heap_mib": 0}, "frontend_heap_mib"),
         ({"frontend_heap_mib": 1024}, "headroom"),
         ({"frontend_heap_mib": 1025}, "headroom"),

@@ -626,7 +626,7 @@ Configure:
 
 Create one ECS service with:
 
-- Desired count: `ecs_runtime.json`'s `desired_count`, currently 2.
+- Desired count: `ecs_runtime.json`'s `desired_count`, currently 1 (cut from 2 on 2026-11-03 to stop the AWS spend while the app moves to the Mac mini).
 - Fargate capacity provider.
 - Public subnets across two Availability Zones.
 - Public IP assignment enabled for outbound access, with inbound traffic restricted to the load balancer.

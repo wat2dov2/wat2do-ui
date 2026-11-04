@@ -332,7 +332,7 @@ class ImageDeliveryControl(_ControlModel):
 class EcsRuntimeControl(_ControlModel):
     task_cpu: int = Field(gt=0)
     task_memory_mib: int = Field(gt=0)
-    desired_count: int = Field(ge=2)
+    desired_count: int = Field(ge=1)
     frontend_cpu: int = Field(gt=0)
     backend_cpu: int = Field(gt=0)
     frontend_memory_reservation_mib: int = Field(gt=0)
