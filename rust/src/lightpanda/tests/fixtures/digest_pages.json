@@ -1,0 +1,56 @@
+{
+  "about": "Three SubscriptionDigestFeedQuery pages shaped like the ones Instagram returned to Lightpanda on 2026-11-03: each media item carries only its \"<media>_<owner>\" id and strong_id__ (no pk), and paging_info holds a string max_id. IDs and cursors are made up; captions, owners and URLs are left out.",
+  "pages": [
+    {
+      "status": 200,
+      "body": {
+        "data": {
+          "subscription_digest_feed": {
+            "items": [
+              {"media": {"id": "3758830211000000001_41000000001", "strong_id__": "3758830211000000001_41000000001", "media_type": 8}},
+              {"media": {"id": "3758830211000000002_41000000002", "strong_id__": "3758830211000000002_41000000002", "media_type": 1}},
+              {"media": null}
+            ],
+            "paging_info": {"max_id": "cursor-page-2", "more_available": true}
+          }
+        },
+        "errors": [{"message": "execution error", "severity": "ERROR"}],
+        "extensions": {"is_final": true},
+        "status": "ok"
+      }
+    },
+    {
+      "status": 200,
+      "body": {
+        "data": {
+          "subscription_digest_feed": {
+            "items": [
+              {"media": {"id": "3758830211000000003_41000000003", "strong_id__": "3758830211000000003_41000000003", "media_type": 2}},
+              {"media": {"strong_id__": "3758830211000000004_41000000004", "context__": null}},
+              {"media": {"id": "3758830211000000001_41000000001", "strong_id__": "3758830211000000001_41000000001", "media_type": 8}}
+            ],
+            "paging_info": {"max_id": "cursor-page-3", "more_available": true}
+          }
+        },
+        "extensions": {"is_final": true},
+        "status": "ok"
+      }
+    },
+    {
+      "status": 200,
+      "body": {
+        "data": {
+          "subscription_digest_feed": {
+            "items": [
+              {"media": {"id": "3758830211000000005_41000000005", "strong_id__": "3758830211000000005_41000000005", "media_type": 1}},
+              {"media": {"context__": null}}
+            ],
+            "paging_info": {"more_available": false}
+          }
+        },
+        "extensions": {"is_final": true},
+        "status": "ok"
+      }
+    }
+  ]
+}

@@ -524,3 +524,27 @@ Each typed reply is confirmed by seeing it appear in the thread.
 A reply or story repost that cannot be confirmed pauses the worker for a person to check the thread and story, and it is never sent twice.
 DM text is never logged.
 
+
+## Lightpanda digest reader (shadow mode)
+
+Lightpanda is a light headless browser (about 250 MB per account instead of Brave's 1.4 GB, with no window, AppleScript or Automation approval) that can read notification digests in place of Brave.
+The Rust binary `wat2do-lightpanda` (`rust/src/lightpanda`) runs one `lightpanda serve` process at a time, for one school account, with that account's own owner-only cookie jar in `~/.local/state/wat2do/instagram-browser/lightpanda/<account>.json`, and drives it over CDP on an owner-only Unix socket.
+It sends the same digest query as Brave (the same script, paging, failures and `maximum_pages`).
+Nothing in production uses it yet: `controlbox/instagram_digest.json` `digest_engine` stays `"brave"` until the shadow comparison matches.
+
+```bash
+cd backend
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-lightpanda -- install
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-lightpanda -- login --account wat2do.<school>
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-lightpanda -- shadow
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-lightpanda -- shadow --account wat2do.<school> --log-in
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-lightpanda -- resume --account wat2do.<school>
+```
+
+`install` puts the release pinned in `controlbox/instagram_lightpanda.json` at `~/.local/libexec/wat2do/lightpanda`; `login` and `shadow` refuse to run a binary whose version differs from the pin.
+A login types the account's Keychain password (`instagram_browser.json` `login_keychain_service`) and, when Instagram asks, the code it emailed to `login_code_email`.
+It spends the account's login for the day from the budget Brave uses (`account_login_daily_limit`, one per account a day, kept in the worker's `jobs.sqlite3`), and a first login, a new device to Instagram, also spends one of `new_login_daily_limit` places a day.
+A wrong password, a security check or a page the login does not recognise pauses the account (`lightpanda_paused:<account>` in the worker's settings) until a person runs `resume`; nothing is retried blindly.
+`shadow` reads the worker's recent succeeded digest jobs read-only, replays the newest `shadow_jobs_per_account` per account (within `shadow_lookback_hours`) one account at a time with pauses between them, compares the media IDs with Brave's, and saves a report under `~/.local/state/wat2do/instagram-browser/lightpanda/shadow/`.
+It does not start while the worker holds Instagram requests after a 429, and a 429 stops it.
+An older digest can lose a post Instagram has since removed, so compare fresh digests before switching.
