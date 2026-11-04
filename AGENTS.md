@@ -91,6 +91,12 @@ Each account's password is entered at most once a day and `account_login_daily_l
 Once a password has been submitted, any failure (including a timeout) pauses browser work for a person and is never retried automatically.
 Passwords go to the page through osascript's stdin, never a command line, log or file.
 A refused password or any other challenge waits for a person.
+Second exception (approved 2026-11-03): digests can be read with Lightpanda instead (`rust/src/lightpanda`, binary `wat2do-lightpanda`), one `lightpanda serve` process per school account, each with its own owner-only (0600) cookie jar in `~/.local/state/wat2do/instagram-browser/lightpanda/`.
+The worker may create, keep and replace those jars and log the accounts in to them itself, typing the Keychain password and the emailed code over CDP on an owner-only Unix socket; neither, nor any jar's contents, is ever logged, copied elsewhere or put on a command line.
+An account counts as logged in when its jar holds a non-empty `sessionid`.
+Lightpanda logins share Brave's budget above, and first logins (a new device to Instagram) are also capped at `controlbox/instagram_lightpanda.json` `new_login_daily_limit` a day.
+A wrong password, a security check or any page the login does not recognise pauses that account until a person runs `wat2do-lightpanda resume --account <account>`.
+Until `controlbox/instagram_digest.json` `digest_engine` says `"lightpanda"`, Lightpanda only runs in shadow mode (`wat2do-lightpanda shadow`): it replays the digests Brave resolved, compares the media IDs and writes nothing to the worker's queue.
 School accounts' direct messages are not taken from notifications.
 One Mac LaunchAgent (`backend/jobs/run_instagram_worker.py`, `io.wat2do.instagram.worker`) is the only thing that drives the emulator (`backend/services/instagram_worker.py`).
 It visits one school account at a time: it picks the account with the most urgent work (a carousel waiting for its song, then an inbox due a check, then follows, then crawling), switches the app to it once, and does everything that account needs before moving on.
@@ -236,6 +242,7 @@ The scheduled competitor pain point sweep is a standing, human-approved exceptio
 Safari window to read X search results in a session a person logged in.
 It only reads what the page shows, never posts, likes, replies or follows, and
 never reads or stores cookies; it never uses the Instagram worker's Brave.
+The worker's Lightpanda (`wat2do-lightpanda`) is the other standing exception: it runs one headless process at a time, for one account, and stops it when that account is done.
 Standing permission from an earlier task does not carry over.
 When you are done with anything you were explicitly asked to start, shut it down.
 

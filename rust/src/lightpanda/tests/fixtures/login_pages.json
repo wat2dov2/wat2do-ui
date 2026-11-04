@@ -1,0 +1,15 @@
+{
+  "about": "What Lightpanda's page showed at each step of an Instagram login (the page_state.js snapshot), modelled on the login page Instagram serves Lightpanda (fields email and pass) and on Instagram's code, checkpoint and refusal pages. No account details.",
+  "pages": [
+    {"name": "login form", "expect": "pending", "state": {"path": "/accounts/login/", "login_form": true, "code_field": false, "text": "Log into Instagram Mobile number, username or email Password Log in Forgot password? Create new account Meta"}},
+    {"name": "logged-in home", "expect": "pending", "state": {"path": "/", "login_form": false, "code_field": false, "text": "Home Search Explore Reels Messages Notifications Create Profile Suggested for you"}},
+    {"name": "wrong password", "expect": "wrong_password", "state": {"path": "/accounts/login/", "login_form": true, "code_field": false, "text": "Log into Instagram Sorry, your password was incorrect. Please double-check your password. Log in"}},
+    {"name": "new-device code page", "expect": "code", "state": {"path": "/auth_platform/codeentry/", "login_form": false, "code_field": false, "text": "Check your email Enter the code we sent to your email address. Code Continue Get a new code"}},
+    {"name": "code field", "expect": "code", "state": {"path": "/accounts/login/", "login_form": false, "code_field": true, "text": "Enter confirmation code"}},
+    {"name": "checkpoint asking for a code", "expect": "code", "state": {"path": "/challenge/action/", "login_form": false, "code_field": false, "text": "Enter the 6-digit code we sent to your email Submit"}},
+    {"name": "checkpoint without a code", "expect": "challenge", "state": {"path": "/challenge/", "login_form": false, "code_field": false, "text": "We detected an unusual login attempt. To secure your account, confirm it's you. This was me This wasn't me"}},
+    {"name": "suspended", "expect": "challenge", "state": {"path": "/accounts/suspended/", "login_form": false, "code_field": false, "text": "We suspended your account"}},
+    {"name": "slow down", "expect": "challenge", "state": {"path": "/accounts/login/", "login_form": true, "code_field": false, "text": "Please wait a few minutes before you try again. Log in"}},
+    {"name": "automated behaviour", "expect": "challenge", "state": {"path": "/", "login_form": false, "code_field": false, "text": "We suspect automated behavior on your account Dismiss"}}
+  ]
+}

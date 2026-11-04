@@ -5,7 +5,8 @@
 //!
 //! AGENTS.md "Instagram notification ingestion direction" is the contract: two worker
 //! tabs (account switching and serialized engagement on the first, digest queries and
-//! profile listings on the second), credentials that never leave Brave, and a failed
+//! profile listings on the second), credentials that never leave Brave (Lightpanda's
+//! per-account jars, `crate::lightpanda`, are the one exception), and a failed
 //! expansion that stops before anything is recorded.
 
 pub mod account_login;
