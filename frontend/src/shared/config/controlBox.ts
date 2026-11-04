@@ -70,9 +70,8 @@ export const controlBox = {
     eventImageMaxSizeBytes: uploads.event_image_max_size_bytes,
   },
   socialPreviews: {
-    outputWidth:
-      socialPreviews.viewport_width * socialPreviews.device_scale_factor,
-    outputHeight:
-      socialPreviews.viewport_height * socialPreviews.device_scale_factor,
+    width: socialPreviews.width,
+    height: socialPreviews.height,
+    cacheMaxAgeSeconds: socialPreviews.cache_max_age_seconds,
   },
 } as const;

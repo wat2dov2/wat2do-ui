@@ -136,7 +136,6 @@ pub struct School {
     #[schema(value_type = Option<String>, format = Date)]
     #[serde(serialize_with = "crate::api::json::option_date")]
     pub semester_end: Option<NaiveDate>,
-    pub social_preview_image_url: Option<String>,
 }
 
 /// `Literal["en", "fr"]`; any other stored value fails like pydantic's validation.
@@ -192,7 +191,6 @@ struct SchoolRow {
     recipient_id: Option<String>,
     semester_start: Option<NaiveDate>,
     semester_end: Option<NaiveDate>,
-    social_preview_image_url: Option<String>,
 }
 
 #[derive(sqlx::FromRow)]
@@ -389,8 +387,8 @@ pub async fn get_school(
     let row = read_with_retry(|| {
         sqlx::query_as::<_, SchoolRow>(
             "SELECT slug, name, city, primary_color, secondary_color, timezone, language, \
-             faculties, location_examples, recipient_id, semester_start, semester_end, \
-             social_preview_image_url FROM public.schools WHERE slug = $1 LIMIT 1",
+             faculties, location_examples, recipient_id, semester_start, semester_end \
+             FROM public.schools WHERE slug = $1 LIMIT 1",
         )
         .bind(&slug)
         .fetch_optional(&state.db)
@@ -411,7 +409,6 @@ pub async fn get_school(
         location_examples: row.location_examples,
         semester_start: row.semester_start,
         semester_end: row.semester_end,
-        social_preview_image_url: row.social_preview_image_url,
     }))
 }
 

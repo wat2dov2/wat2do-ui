@@ -57,19 +57,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "assets" {
   }
 
   rule {
-    id     = "expire-replaced-social-previews"
-    status = "Enabled"
-
-    filter {
-      prefix = "media/social-previews/"
-    }
-
-    expiration {
-      days = local.social_preview_control.asset_retention_days
-    }
-  }
-
-  rule {
     id     = "expire-discovery-generations"
     status = "Enabled"
     filter {

@@ -4,13 +4,15 @@ import { EventRoutePage } from "@/app/event-route-page";
 import imgContactHero from "@/assets/contact_hero.png";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
+import {
+  buildSchoolShareCard,
+  buildSchoolShareImage,
+} from "@/features/events/lib/schoolShareCard";
 import { getRequestSchool, getSchool } from "@/shared/api/schools.server";
 import { ROUTES } from "@/shared/constants/routes";
-import { controlBox } from "@/shared/config/controlBox";
 import {
   buildPublicPageMetadata,
   getSchoolCanonicalUrl,
-  selectSeoImage,
 } from "@/shared/lib/seo";
 
 export const revalidate = 0;
@@ -35,29 +37,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const schoolName = schoolRecord?.name ?? school;
   const title = `${schoolName} Events and Things to Do | Wat2Do`;
   const description = `Discover current events, activities, and things to do for students at ${schoolName}. Explore campus events by date, category, cost, and more.`;
-  const featuredEvent =
-    snapshot?.items.find((event) => event.source_image_url);
-  const fallbackImage = selectSeoImage(
-    featuredEvent?.source_image_url,
-    featuredEvent ? `${featuredEvent.title} event poster` : "",
-    {
-      url: imgContactHero.src,
-      alt: `Discover events and student life at ${schoolName} with Wat2Do`,
-      width: imgContactHero.width,
-      height: imgContactHero.height,
-      type: "image/png",
-    },
-  );
-  const image = selectSeoImage(
-    schoolRecord?.social_preview_image_url,
-    `Upcoming events at ${schoolName} on Wat2Do`,
-    fallbackImage,
-    {
-      width: controlBox.socialPreviews.outputWidth,
-      height: controlBox.socialPreviews.outputHeight,
-      type: "image/jpeg",
-    },
-  );
+  // The school's card needs its feed; without either, the generic hero stands in.
+  const image =
+    schoolRecord && snapshot
+      ? buildSchoolShareImage(
+          schoolRecord.slug,
+          buildSchoolShareCard(schoolRecord, snapshot.items, Date.now()),
+        )
+      : {
+          url: imgContactHero.src,
+          alt: `Discover events and student life at ${schoolName} with Wat2Do`,
+          width: imgContactHero.width,
+          height: imgContactHero.height,
+          type: "image/png",
+        };
 
   return buildPublicPageMetadata({
     title,
