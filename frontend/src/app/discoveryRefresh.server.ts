@@ -36,8 +36,9 @@ const globalResources = Object.keys(globalBuilders) as Array<
 const processState = globalThis as typeof globalThis & {
   discoveryWorker?: {
     running?: Promise<void>;
+    rerun?: boolean;
     timer?: ReturnType<typeof setInterval>;
-    warmed?: Map<string, number>;
+    warmed?: Map<string, string>;
     warming?: Promise<void>;
   };
 };
@@ -45,8 +46,17 @@ const worker = (processState.discoveryWorker ??= {});
 
 /** Each task serializes builds; shared per-key leases prevent duplicate builds. */
 export function reconcileDiscoverySnapshots(): Promise<void> {
-  if (worker.running) return worker.running;
-  worker.running = reconcile().finally(() => {
+  if (worker.running) {
+    // A request made mid-pass may sit behind an entry this pass already visited.
+    worker.rerun = true;
+    return worker.running;
+  }
+  worker.running = (async () => {
+    do {
+      worker.rerun = false;
+      await reconcile();
+    } while (worker.rerun);
+  })().finally(() => {
     worker.running = undefined;
   });
   return worker.running;
@@ -87,8 +97,8 @@ async function reconcile(): Promise<void> {
   );
   const publicOrigin = process.env.STORAGE_PUBLIC_BASE_URL
     ? new URL(process.env.STORAGE_PUBLIC_BASE_URL).origin : null;
-  const warmUrls: string[] = [];
-  const warmed = (worker.warmed ??= new Map<string, number>());
+  const warmUrls: Array<{ url: string; revision: string }> = [];
+  const warmed = (worker.warmed ??= new Map<string, string>());
   for (const state of states) {
     try {
       await discoveryStore.refresh<unknown>(state.school, state.resource, () =>
@@ -100,8 +110,9 @@ async function reconcile(): Promise<void> {
         if (publicOrigin && state.resource !== "branding") {
           const url = new URL("/api/discovery", publicOrigin);
           url.search = new URLSearchParams({ school: state.school, resource: state.resource }).toString();
-          if (Date.now() - (warmed.get(url.href) ?? 0) >= controls.cdn_ttl_seconds * 500)
-            warmUrls.push(url.href);
+          // Warm each generation once; rewarming unchanged data only buys CDN transfer.
+          if (warmed.get(url.href) !== snapshot.revision)
+            warmUrls.push({ url: url.href, revision: snapshot.revision });
         }
       }
     } catch (error) {
@@ -120,9 +131,12 @@ async function reconcile(): Promise<void> {
   }
 }
 
-async function warmDiscoveryUrls(warmUrls: string[], warmed: Map<string, number>): Promise<void> {
+async function warmDiscoveryUrls(
+  warmUrls: Array<{ url: string; revision: string }>,
+  warmed: Map<string, string>,
+): Promise<void> {
   for (let offset = 0; offset < warmUrls.length; offset += controls.page_concurrency) {
-    await Promise.all(warmUrls.slice(offset, offset + controls.page_concurrency).map(async url => {
+    await Promise.all(warmUrls.slice(offset, offset + controls.page_concurrency).map(async ({ url, revision }) => {
       try {
         const response = await fetch(url, {
           credentials: "omit",
@@ -133,7 +147,7 @@ async function warmDiscoveryUrls(warmUrls: string[], warmed: Map<string, number>
           throw new Error(`Discovery CDN returned ${response.status}`);
         }
         await response.arrayBuffer();
-        warmed.set(url, Date.now());
+        warmed.set(url, revision);
       } catch (error) {
         console.error("discovery_cdn_warm_failed", { url, error });
       }
@@ -219,7 +233,7 @@ export async function initializeDiscoverySnapshots(): Promise<void> {
             console.error("discovery_startup_pending", error);
           }
           await new Promise((resolve) =>
-            setTimeout(resolve, controls.worker_interval_seconds * 1000),
+            setTimeout(resolve, controls.snapshot_check_seconds * 1000),
           );
         }
         throw new Error(

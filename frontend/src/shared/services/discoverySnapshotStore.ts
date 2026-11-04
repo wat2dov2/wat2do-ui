@@ -95,7 +95,7 @@ export class DiscoverySnapshotStore {
     const now = this.now();
     if (
       cached &&
-      now - cached.checkedAt < control.worker_interval_seconds * 1000 &&
+      now - cached.checkedAt < control.snapshot_check_seconds * 1000 &&
       now - cached.snapshot.generatedAt <
         control.maximum_snapshot_age_seconds * 1000
     )
@@ -243,7 +243,7 @@ export class DiscoverySnapshotStore {
         durationMs: this.now() - now,
         bytes: Buffer.byteLength(JSON.stringify(data)),
       });
-      return published;
+      if (!updated || currentRevision) return published;
     } catch (error) {
       // Keep the published pointer untouched. A later worker retries durable dirty state.
       await this.updateLease(school, resource, owner, (current) => ({
@@ -263,6 +263,8 @@ export class DiscoverySnapshotStore {
     } finally {
       clearInterval(heartbeat);
     }
+    // A newer request arrived mid-build; rebuild now instead of at the next sweep.
+    return this.refresh(school, resource, build);
   }
 
   private async updateLease(

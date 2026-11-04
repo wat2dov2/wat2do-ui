@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const snapshot = await readers[resource as keyof typeof readers](school);
     return NextResponse.json(snapshot, {
       headers: {
-        "Cache-Control": `public, max-age=0, s-maxage=${controls.cdn_ttl_seconds}, stale-while-revalidate=${controls.worker_interval_seconds}`,
+        "Cache-Control": `public, max-age=0, s-maxage=${controls.cdn_ttl_seconds}, stale-while-revalidate=${controls.snapshot_check_seconds}`,
         "Server-Timing": `snapshot;dur=${(performance.now() - start).toFixed(1)}`,
         "X-Snapshot-Generated-At": String(snapshot.generated_at),
       },

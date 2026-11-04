@@ -81,20 +81,22 @@ test("concurrent workers share one lease", async () => {
   expect(await build).toBe(true);
 });
 
-test("writes during generation keep last-good data and require a new build", async () => {
+test("writes during generation keep last-good data and rebuild at once", async () => {
   const store = new DiscoverySnapshotStore(new MemoryStorage());
   await store.refresh("uwo", "events", async () => [1]);
   await store.invalidate("uwo", "events");
+  let builds = 0;
   expect(
     await store.refresh("uwo", "events", async () => {
-      await store.invalidate("uwo", "events");
-      return [2];
+      builds += 1;
+      if (builds === 1) await store.invalidate("uwo", "events");
+      else expect((await store.read("uwo", "events"))?.data).toEqual([1]);
+      return [builds + 1];
     }),
-  ).toBe(false);
-  expect((await store.read("uwo", "events"))?.data).toEqual([1]);
-  expect((await store.inspect("uwo", "events")).dirty).toBe(true);
-  await store.refresh("uwo", "events", async () => [3]);
+  ).toBe(true);
+  expect(builds).toBe(2);
   expect((await store.read("uwo", "events"))?.data).toEqual([3]);
+  expect((await store.inspect("uwo", "events")).dirty).toBe(false);
 });
 
 test("failed and abandoned leases can be recovered after their deadline", async () => {
@@ -534,7 +536,7 @@ schoolModule.exports = originalSchoolModule;
 
 test("readiness covers every school, waits for a failed dataset, and retains coverage during refresh failure", async () => {
   workerStorage.objects.clear();
-  workerNow += discoveryControls.worker_interval_seconds * 1000;
+  workerNow += discoveryControls.snapshot_check_seconds * 1000;
   let failWesternEvents = true;
   globalThis.fetch = async (input) => {
     const url = new URL(String(input));
@@ -584,7 +586,7 @@ test("readiness covers every school, waits for a failed dataset, and retains cov
 
 test("the banner is warmed globally and invalidation leaves school data untouched", async () => {
   workerStorage.objects.clear();
-  workerNow += discoveryControls.worker_interval_seconds * 1000;
+  workerNow += discoveryControls.snapshot_check_seconds * 1000;
   await workerStore.refresh("_global", "schools", async () => [
     { slug: "uwo" },
     { slug: "uwaterloo" },
@@ -616,9 +618,50 @@ test("the banner is warmed globally and invalidation leaves school data untouche
   expect(await workerStore.read("uwo", "site-banner")).toBeNull();
 });
 
+test("the CDN is warmed once per published generation, not on every pass", async () => {
+  workerStorage.objects.clear();
+  workerNow += discoveryControls.refresh_interval_seconds * 1000;
+  const originalPublicBase = process.env.STORAGE_PUBLIC_BASE_URL;
+  process.env.STORAGE_PUBLIC_BASE_URL = "https://wat2do.example/media";
+  const warmed: string[] = [];
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname === "/api/discovery") {
+      warmed.push(url.search);
+      return Response.json({});
+    }
+    if (url.pathname === "/schools")
+      return Response.json([{ slug: "uwo" }, { slug: "uwaterloo" }]);
+    if (url.pathname.startsWith("/schools/"))
+      return Response.json({ slug: url.pathname.split("/").pop() });
+    if (url.pathname === "/site-banner") return new Response(null, { status: 204 });
+    return Response.json({ items: [], total: 0, page: 1, page_size: 20, total_pages: 0 });
+  };
+  const processState = globalThis as typeof globalThis & {
+    discoveryWorker?: { warming?: Promise<void> };
+  };
+  const pass = async () => {
+    await worker.reconcileDiscoverySnapshots();
+    await processState.discoveryWorker?.warming;
+    workerNow += discoveryControls.snapshot_check_seconds * 1000;
+  };
+  try {
+    await pass();
+    expect(warmed).toHaveLength(6);
+    await pass();
+    expect(warmed).toHaveLength(6);
+    await worker.queueDiscoveryRefresh("uwo", ["events"]);
+    await pass();
+    expect(warmed.slice(6)).toEqual(["?school=uwo&resource=events"]);
+  } finally {
+    if (originalPublicBase === undefined) delete process.env.STORAGE_PUBLIC_BASE_URL;
+    else process.env.STORAGE_PUBLIC_BASE_URL = originalPublicBase;
+  }
+});
+
 test("persisted usable snapshots admit a replacement task before stalled upstream refreshes finish", async () => {
   workerStorage.objects.clear();
-  workerNow += discoveryControls.worker_interval_seconds * 1000;
+  workerNow += discoveryControls.snapshot_check_seconds * 1000;
   await workerStore.refresh("_global", "schools", async () => [
     { slug: "uwo" },
     { slug: "uwaterloo" },
@@ -697,12 +740,12 @@ test("warm reads detect another task's published revision without redownloading 
   await writer.refresh("uwo", "events", async () => [1]);
   await reader.read("uwo", "events");
   storage.gets = [];
-  now += discoveryControls.worker_interval_seconds * 1000;
+  now += discoveryControls.snapshot_check_seconds * 1000;
   expect((await reader.read("uwo", "events"))?.data).toEqual([1]);
   expect(storage.gets).toHaveLength(1);
   await writer.invalidate("uwo", "events");
   await writer.refresh("uwo", "events", async () => [2]);
-  now += discoveryControls.worker_interval_seconds * 1000;
+  now += discoveryControls.snapshot_check_seconds * 1000;
   expect((await reader.read("uwo", "events"))?.data).toEqual([2]);
   now += discoveryControls.maximum_snapshot_age_seconds * 1000;
   expect(await reader.read("uwo", "events")).toBeNull();

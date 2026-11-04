@@ -380,6 +380,7 @@ class DiscoveryCacheControl(_ControlModel):
     storage_prefix: str = Field(min_length=1)
     refresh_interval_seconds: int = Field(gt=0)
     worker_interval_seconds: int = Field(gt=0)
+    snapshot_check_seconds: int = Field(gt=0)
     lease_seconds: int = Field(gt=0)
     request_timeout_seconds: int = Field(gt=0)
     page_concurrency: int = Field(ge=1, le=8)
@@ -404,6 +405,8 @@ class DiscoveryCacheControl(_ControlModel):
             raise ValueError("generation_retention_days must outlast the maximum snapshot age")
         if self.worker_interval_seconds > self.refresh_interval_seconds:
             raise ValueError("worker_interval_seconds cannot exceed the refresh interval")
+        if self.snapshot_check_seconds > self.cdn_ttl_seconds:
+            raise ValueError("snapshot_check_seconds cannot exceed the CDN TTL")
         if self.request_timeout_seconds >= self.lease_seconds:
             raise ValueError("request_timeout_seconds must be shorter than the lease")
         if any(part in {"", ".", ".."} for part in self.storage_prefix.split("/")):
