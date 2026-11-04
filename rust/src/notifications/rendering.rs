@@ -273,7 +273,7 @@ fn grid_card(href: &str, media: &CardMedia, title: &str, details: &[String]) -> 
             escape(src)
         ),
         _ => format!(
-            r#"<div style="padding:56px 12px;background:{SURFACE_ELEVATED};border-radius:12px;color:{FOREGROUND};text-align:center;font:600 15px/1.3 {FONT};">{}</div>"#,
+            r#"<div class="w2d-elevated" style="padding:56px 12px;background:{SURFACE_ELEVATED};border-radius:12px;color:{FOREGROUND};text-align:center;font:600 15px/1.3 {FONT};">{}</div>"#,
             escape(title)
         ),
     };
