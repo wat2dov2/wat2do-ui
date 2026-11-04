@@ -125,6 +125,13 @@ def database(tmp_path):
     return FakeDatabase(tmp_path, [THIRD, FIRST, SECOND])
 
 
+RELOAD = "NOTIFY pgrst, 'reload schema'"
+
+
+def reloads(database: FakeDatabase) -> int:
+    return sum(call["commands"] == [RELOAD] for call in database.write_calls())
+
+
 def history_versions(database: FakeDatabase) -> list[str]:
     return [version for version, _ in database.state()["history"]]
 
@@ -142,12 +149,14 @@ def test_run_applies_only_files_the_history_does_not_record(database):
         ["20260201000000", "second"],
         ["20260301000000", "third"],
     ]
-    (applying,) = database.write_calls()
+    applying, reload = database.write_calls()
     # The record is written in the same transaction as, and before, the file.
     assert applying["single_transaction"]
     assert applying["commands"][0].startswith("INSERT INTO public.schema_migrations")
     assert "'20260301000000', 'third'" in applying["commands"][0]
     assert applying["files"] == [THIRD]
+    # The data API only sees new tables after a schema reload.
+    assert reload["commands"] == [RELOAD]
 
 
 def test_second_run_applies_nothing(database):
@@ -157,6 +166,7 @@ def test_second_run_applies_nothing(database):
     assert result.returncode == 0, result.stderr
     assert "No pending migrations." in result.stdout
     assert database.state()["applied"] == [SECOND, THIRD]
+    assert reloads(database) == 1
 
 
 def test_dry_run_lists_pending_files_without_writing(database):
@@ -198,6 +208,7 @@ def test_failed_migration_stops_the_run_unrecorded(database):
     assert result.returncode != 0
     assert database.state()["applied"] == []
     assert history_versions(database) == ["20260101000000"]
+    assert reloads(database) == 0
 
 
 def test_empty_database_starts_from_baseline(database):
@@ -207,12 +218,13 @@ def test_empty_database_starts_from_baseline(database):
     result = database.migrate()
     assert result.returncode == 0, result.stderr
     assert "every migration through 20260201000000" in result.stdout
-    baseline, applying = database.write_calls()
+    baseline, applying, reload = database.write_calls()
     assert baseline["single_transaction"]
     assert "CREATE TABLE public.schema_migrations" in baseline["commands"][0]
     assert "('20260101000000', 'first'), ('20260201000000', 'second')" in baseline["commands"][1]
     assert baseline["files"] == ["baseline.sql"]
     assert applying["files"] == [THIRD]
+    assert reload["commands"] == [RELOAD]
     assert history_versions(database) == ["20260101000000", "20260201000000", "20260301000000"]
 
 

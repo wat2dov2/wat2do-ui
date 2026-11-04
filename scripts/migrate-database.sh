@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Applies backend/database/migrations to DATABASE_URL in version order.
+# Applies backend/database/migrations to DATABASE_URL in version order, then
+# tells the data API (PostgREST) to reload its schema cache.
 #
 # Each migration runs in one transaction with the row that records it in
 # public.schema_migrations, so a failed migration leaves no trace and the next
@@ -237,3 +238,7 @@ while read -r version name <&3; do
     --file="$migrations_dir/${version}_${name}.sql"
 done 3<<<"$migrations"
 echo "Applied $(count "$pending") migrations."
+
+# The data API (PostgREST) caches the schema when it starts and answers
+# "Could not find the table" for anything newer until it is told to reload.
+run_psql --command="NOTIFY pgrst, 'reload schema'"
