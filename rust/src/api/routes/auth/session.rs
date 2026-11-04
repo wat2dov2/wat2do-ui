@@ -75,6 +75,16 @@ fn loggable(value: &str) -> String {
     value.replace('\r', "\\r").replace('\n', "\\n")
 }
 
+/// At most 64 characters of a caller's value, for a log line (`{:?}` escapes it).
+fn log_excerpt(value: &str) -> String {
+    const LIMIT: usize = 64;
+    let mut excerpt: String = value.chars().take(LIMIT).collect();
+    if value.chars().nth(LIMIT).is_some() {
+        excerpt.push_str("...");
+    }
+    excerpt
+}
+
 /// Python's `str.strip().lower()`.
 pub fn clean_email(email: &str) -> String {
     crate::text::python_strip(email).to_lowercase()
@@ -156,6 +166,17 @@ pub async fn prepare_otp_email(
     signup_school: Option<String>,
 ) -> Result<EmailMessage, ApiError> {
     let email = clean_email(email);
+    // Counted before anything else is looked up, so every address, known or
+    // not, gets the same answer.
+    LOGIN_EMAILS
+        .admit(
+            db,
+            &email,
+            Utc::now(),
+            AUTHENTICATION.code_send_limit,
+            Duration::minutes(AUTHENTICATION.code_send_window_minutes),
+        )
+        .await?;
     let mut recipient_school = signup_school;
     if let Some(token) = invitation_token.filter(|token| !token.is_empty()) {
         match invitation_school(db, &email, token).await {
@@ -222,9 +243,13 @@ async fn invitation_school(
     token: &str,
 ) -> anyhow::Result<Option<Option<String>>> {
     // PostgREST refused a token that is not a UUID; Python logged and went on.
-    let token: Uuid = token
-        .parse()
-        .map_err(|_| anyhow::anyhow!("invalid input syntax for type uuid: \"{token}\""))?;
+    // The token is the caller's, so the log gets a short, escaped excerpt.
+    let token: Uuid = token.parse().map_err(|_| {
+        anyhow::anyhow!(
+            "invalid input syntax for type uuid: {:?}",
+            log_excerpt(token)
+        )
+    })?;
     let club_id = read_with_retry(|| {
         sqlx::query_scalar::<_, i32>(
             "SELECT club_id FROM public.club_invitations \
@@ -246,8 +271,16 @@ async fn invitation_school(
 }
 
 /// `verify_otp`: accept the six-digit code or the link token from the latest
-/// login email. Wrong codes count toward the address's lockout; link tokens
-/// carry 256 random bits and are exempt.
+/// login email. Code attempts count toward the address's lockout; link
+/// tokens carry 256 random bits and are exempt.
+///
+/// Two deliberate changes from Python, which had both gaps:
+/// - A code attempt is recorded before the window is counted (Python counted
+///   first and recorded only misses), so concurrent wrong codes cannot all
+///   read a count under the limit.
+/// - The matching token is consumed in the statement that finds it (Python
+///   read it, then deleted the address's tokens), so two requests with the
+///   same code or link cannot both sign in.
 pub async fn verify_otp(
     db: &PgPool,
     tokens: &AccessTokens,
@@ -260,28 +293,37 @@ pub async fn verify_otp(
     let now = Utc::now();
     let is_code = secret.chars().count() == CODE_DIGITS;
     if is_code {
-        check_code_guesses(db, &email, now).await?;
+        CODE_GUESSES
+            .admit(
+                db,
+                &email,
+                now,
+                AUTHENTICATION.code_guess_limit,
+                guess_window(),
+            )
+            .await?;
     }
-    let found = read_with_retry(|| {
-        sqlx::query_scalar::<_, bool>(
-            "SELECT EXISTS (SELECT 1 FROM public.verification_tokens \
-             WHERE identifier = $1 AND token = $2 AND expires > $3)",
-        )
-        .bind(&email)
-        .bind(sha256_hex(secret))
-        .bind(now)
-        .fetch_one(db)
-    })
-    .await
-    .unwrap_or_else(|error| {
-        tracing::error!("Failed to query verification token: {error}");
-        false
-    });
-    if !found {
-        if is_code {
-            record_code_miss(db, &email, now).await?;
+    let consumed = sqlx::query_scalar::<_, i32>(
+        "DELETE FROM public.verification_tokens \
+         WHERE identifier = $1 AND token = $2 AND expires > $3 RETURNING 1",
+    )
+    .bind(&email)
+    .bind(sha256_hex(secret))
+    .bind(now)
+    .fetch_optional(db)
+    .await;
+    match consumed {
+        Ok(Some(_)) => {}
+        // A wrong code's attempt stays recorded: it is the miss.
+        Ok(None) => return Err(ApiError::authentication(INVALID_OR_EXPIRED_TOKEN)),
+        Err(error) => {
+            // Nothing was checked, so the attempt is not a miss.
+            tracing::error!("Failed to query verification token: {error}");
+            if is_code {
+                CODE_GUESSES.forget(db, &email, now).await;
+            }
+            return Err(ApiError::authentication(INVALID_OR_EXPIRED_TOKEN));
         }
-        return Err(ApiError::authentication(INVALID_OR_EXPIRED_TOKEN));
     }
     if let Err(error) = clear_login_state(db, &email).await {
         tracing::warn!("Failed to delete used verification tokens: {error}");
@@ -289,7 +331,7 @@ pub async fn verify_otp(
     complete_session(db, tokens, &email, now, signup_school).await
 }
 
-/// The used tokens and the address's recorded misses go together.
+/// The address's other tokens and its recorded misses go with a sign-in.
 async fn clear_login_state(db: &PgPool, email: &str) -> Result<(), sqlx::Error> {
     sqlx::query("DELETE FROM public.verification_tokens WHERE identifier = $1")
         .bind(email)
@@ -306,59 +348,104 @@ fn guess_window() -> Duration {
     Duration::minutes(AUTHENTICATION.code_guess_window_minutes)
 }
 
-/// `_check_code_guesses`: `code_guess_limit` misses in the window lock the
-/// address's codes (429) until the oldest ages out.
-async fn check_code_guesses(db: &PgPool, email: &str, now: DateTime<Utc>) -> Result<(), ApiError> {
-    let window = guess_window();
-    let misses: Vec<DateTime<Utc>> = read_with_retry(|| {
-        sqlx::query_scalar(
-            "SELECT failed_at FROM public.verification_failures \
-             WHERE identifier = $1 AND failed_at > $2",
-        )
-        .bind(email)
-        .bind(now - window)
-        .fetch_all(db)
-    })
-    .await?;
-    match locked_out(&misses, now) {
-        Some(retry_after) => Err(ApiError::RateLimited {
-            detail: RATE_LIMIT_EXCEEDED.to_owned(),
-            retry_after,
-        }),
-        None => Ok(()),
-    }
+/// Recent attempts per address, in a table of `(identifier, <column>)` rows.
+struct Attempts {
+    table: &'static str,
+    column: &'static str,
 }
 
-/// The seconds until the oldest of the window's misses ages out, when the
-/// address has used up its guesses (`max(1, ceil(...))`).
-fn locked_out(misses: &[DateTime<Utc>], now: DateTime<Utc>) -> Option<u64> {
-    if misses.len() < AUTHENTICATION.code_guess_limit {
-        return None;
-    }
-    let oldest = misses.iter().min()?;
-    let wait = (*oldest + guess_window() - now)
-        .num_microseconds()
-        .unwrap_or(0) as f64
-        / 1e6;
-    Some((wait.ceil() as i64).max(1) as u64)
-}
+/// `_check_code_guesses` and `_record_code_miss`: code attempts, kept as misses.
+const CODE_GUESSES: Attempts = Attempts {
+    table: "verification_failures",
+    column: "failed_at",
+};
 
-/// `_record_code_miss`: one row per wrong code, pruning the address's rows
-/// older than the window.
-async fn record_code_miss(db: &PgPool, email: &str, now: DateTime<Utc>) -> Result<(), ApiError> {
-    sqlx::query("INSERT INTO public.verification_failures (identifier, failed_at) VALUES ($1, $2)")
-        .bind(email)
+/// Login emails sent, for the per-address cap (new in Rust).
+const LOGIN_EMAILS: Attempts = Attempts {
+    table: "verification_sends",
+    column: "sent_at",
+};
+
+impl Attempts {
+    /// Record one attempt at `now`, then count the window, this attempt
+    /// included. Over `limit`, the attempt is refused (429 until the oldest
+    /// ages out) and forgotten again; concurrent attempts each see the
+    /// others' rows, so no more than `limit` get through. Rows older than the
+    /// window are pruned.
+    async fn admit(
+        &self,
+        db: &PgPool,
+        identifier: &str,
+        now: DateTime<Utc>,
+        limit: usize,
+        window: Duration,
+    ) -> Result<(), ApiError> {
+        let Self { table, column } = self;
+        sqlx::query(&format!(
+            "INSERT INTO public.{table} (identifier, {column}) VALUES ($1, $2)"
+        ))
+        .bind(identifier)
         .bind(now)
         .execute(db)
         .await?;
-    sqlx::query(
-        "DELETE FROM public.verification_failures WHERE identifier = $1 AND failed_at < $2",
-    )
-    .bind(email)
-    .bind(now - guess_window())
-    .execute(db)
-    .await?;
-    Ok(())
+        let recent: Vec<DateTime<Utc>> = sqlx::query_scalar(&format!(
+            "SELECT {column} FROM public.{table} WHERE identifier = $1 AND {column} > $2"
+        ))
+        .bind(identifier)
+        .bind(now - window)
+        .fetch_all(db)
+        .await?;
+        if let Some(retry_after) = over_limit(&recent, limit, window, now) {
+            self.forget(db, identifier, now).await;
+            return Err(ApiError::RateLimited {
+                detail: RATE_LIMIT_EXCEEDED.to_owned(),
+                retry_after,
+            });
+        }
+        if let Err(error) = sqlx::query(&format!(
+            "DELETE FROM public.{table} WHERE identifier = $1 AND {column} < $2"
+        ))
+        .bind(identifier)
+        .bind(now - window)
+        .execute(db)
+        .await
+        {
+            tracing::warn!("Failed to prune old {table} rows: {error}");
+        }
+        Ok(())
+    }
+
+    /// Remove the one attempt recorded at `now`.
+    async fn forget(&self, db: &PgPool, identifier: &str, now: DateTime<Utc>) {
+        let Self { table, column } = self;
+        if let Err(error) = sqlx::query(&format!(
+            "DELETE FROM public.{table} WHERE ctid IN (SELECT ctid FROM public.{table} \
+             WHERE identifier = $1 AND {column} = $2 LIMIT 1)"
+        ))
+        .bind(identifier)
+        .bind(now)
+        .execute(db)
+        .await
+        {
+            tracing::warn!("Failed to forget a refused {table} row: {error}");
+        }
+    }
+}
+
+/// The seconds until the oldest of the window's attempts ages out, when the
+/// window holds more than `limit` (`max(1, ceil(...))`).
+fn over_limit(
+    recent: &[DateTime<Utc>],
+    limit: usize,
+    window: Duration,
+    now: DateTime<Utc>,
+) -> Option<u64> {
+    if recent.len() <= limit {
+        return None;
+    }
+    let oldest = recent.iter().min()?;
+    let wait = (*oldest + window - now).num_microseconds().unwrap_or(0) as f64 / 1e6;
+    Some((wait.ceil() as i64).max(1) as u64)
 }
 
 /// `verify_google_oauth`: exchange Google's code for a verified email and
@@ -381,17 +468,9 @@ fn registration_failed() -> ApiError {
     service_error(REGISTRATION_FAILED)
 }
 
-/// `_complete_authenticated_session`: the existing user's school, or a new
-/// `users` row (at the signup site's school) that joins the clubs it was
-/// invited to; then a new session.
-async fn complete_session(
-    db: &PgPool,
-    tokens: &AccessTokens,
-    email: &str,
-    now: DateTime<Utc>,
-    signup_school: Option<String>,
-) -> Result<SignedIn, ApiError> {
-    let existing = read_with_retry(|| {
+/// The `users` row for `email`: its auth id and school slug.
+async fn find_user_by_email(db: &PgPool, email: &str) -> Option<(String, Option<String>)> {
+    read_with_retry(|| {
         sqlx::query_as::<_, (String, Option<String>)>(
             "SELECT u.auth_id, NULLIF(s.slug, '') FROM public.users u \
              LEFT JOIN public.schools s ON s.id = u.school_id WHERE u.email = $1 LIMIT 1",
@@ -403,16 +482,34 @@ async fn complete_session(
     .unwrap_or_else(|error| {
         tracing::warn!("Failed to look up DB user: {error}");
         None
-    });
-    let (auth_id, school, onboarding_required) = match existing {
-        Some((auth_id, school)) => {
-            if school.is_some() && registered_school(db, school.as_deref()).await?.is_none() {
-                tracing::error!("Existing user is not assigned to a registered school");
-                return Err(registration_failed());
-            }
-            let onboarding_required = school.is_none();
-            (auth_id, school, onboarding_required)
-        }
+    })
+}
+
+/// An existing user signs in at their own school (none yet means onboarding).
+async fn existing_user(
+    db: &PgPool,
+    (auth_id, school): (String, Option<String>),
+) -> Result<(String, Option<String>, bool), ApiError> {
+    if school.is_some() && registered_school(db, school.as_deref()).await?.is_none() {
+        tracing::error!("Existing user is not assigned to a registered school");
+        return Err(registration_failed());
+    }
+    let onboarding_required = school.is_none();
+    Ok((auth_id, school, onboarding_required))
+}
+
+/// `_complete_authenticated_session`: the existing user's school, or a new
+/// `users` row (at the signup site's school) that joins the clubs it was
+/// invited to; then a new session.
+pub(super) async fn complete_session(
+    db: &PgPool,
+    tokens: &AccessTokens,
+    email: &str,
+    now: DateTime<Utc>,
+    signup_school: Option<String>,
+) -> Result<SignedIn, ApiError> {
+    let (auth_id, school, onboarding_required) = match find_user_by_email(db, email).await {
+        Some(found) => existing_user(db, found).await?,
         None => {
             let school_id = registered_school(db, signup_school.as_deref()).await?;
             if signup_school
@@ -423,8 +520,18 @@ async fn complete_session(
                 tracing::error!("Signup site resolved to an unregistered school");
                 return Err(registration_failed());
             }
-            let auth_id = create_user(db, email, school_id, now).await?;
-            (auth_id, signup_school, true)
+            match create_user(db, email, school_id, now).await? {
+                Some(auth_id) => (auth_id, signup_school, true),
+                // Another first sign-in for this address created the row a
+                // moment ago; this one signs in to it.
+                None => match find_user_by_email(db, email).await {
+                    Some(found) => existing_user(db, found).await?,
+                    None => {
+                        tracing::error!("No users row after a conflicting insert");
+                        return Err(registration_failed());
+                    }
+                },
+            }
         }
     };
     let refresh_token = new_refresh_token();
@@ -441,26 +548,33 @@ async fn complete_session(
 }
 
 /// Insert the `users` row, then accept every pending invitation to its
-/// address. Returns the new account's auth id.
+/// address. Returns the new account's auth id, or `None` when a concurrent
+/// sign-in inserted the address first (Python failed that sign-in).
 async fn create_user(
     db: &PgPool,
     email: &str,
     school_id: Option<i32>,
     now: DateTime<Utc>,
-) -> Result<String, ApiError> {
+) -> Result<Option<String>, ApiError> {
     let user_id = Uuid::new_v4();
     let auth_id = Uuid::new_v4().to_string();
-    sqlx::query("INSERT INTO public.users (id, auth_id, email, school_id) VALUES ($1, $2, $3, $4)")
-        .bind(user_id)
-        .bind(&auth_id)
-        .bind(email)
-        .bind(school_id)
-        .execute(db)
-        .await
-        .map_err(|error| {
-            tracing::error!("Failed to create public.users record: {error}");
-            registration_failed()
-        })?;
+    let inserted = sqlx::query_scalar::<_, Uuid>(
+        "INSERT INTO public.users (id, auth_id, email, school_id) VALUES ($1, $2, $3, $4) \
+         ON CONFLICT DO NOTHING RETURNING id",
+    )
+    .bind(user_id)
+    .bind(&auth_id)
+    .bind(email)
+    .bind(school_id)
+    .fetch_optional(db)
+    .await
+    .map_err(|error| {
+        tracing::error!("Failed to create public.users record: {error}");
+        registration_failed()
+    })?;
+    if inserted.is_none() {
+        return Ok(None);
+    }
     tracing::info!(
         "Created public.users record for {} (id={user_id})",
         loggable(email)
@@ -468,7 +582,7 @@ async fn create_user(
     if let Err(error) = accept_invitations(db, email, user_id, now).await {
         tracing::warn!("Failed to process auto-join for user {user_id}: {error}");
     }
-    Ok(auth_id)
+    Ok(Some(auth_id))
 }
 
 async fn accept_invitations(
@@ -787,23 +901,48 @@ mod tests {
         // test_code_misses_lock_the_address_but_not_the_link, test_code_misses_outside_the_window_are_pruned
         let now = "2026-11-04T00:30:00Z".parse::<DateTime<Utc>>().unwrap();
         let limit = AUTHENTICATION.code_guess_limit;
-        let window = AUTHENTICATION.code_guess_window_minutes;
-        let minutes_ago = |minutes: i64| now - Duration::minutes(minutes);
-        let misses: Vec<_> = (0..limit as i64)
+        let minutes = AUTHENTICATION.code_guess_window_minutes;
+        let window = guess_window();
+        let minutes_ago = |ago: i64| now - Duration::minutes(ago);
+        // The window holds `limit` earlier misses and this attempt, recorded first.
+        let attempts: Vec<_> = (0..limit as i64)
             .map(|minute| minutes_ago(minute + 1))
+            .chain([now])
             .collect();
         // The oldest miss is `limit` minutes old, so the lock lasts `window - limit` minutes more.
         assert_eq!(
-            locked_out(&misses, now),
-            Some(((window - limit as i64) * 60) as u64)
+            over_limit(&attempts, limit, window, now),
+            Some(((minutes - limit as i64) * 60) as u64)
         );
-        assert_eq!(locked_out(&misses[1..], now), None);
+        // One miss fewer and this attempt is the last one allowed.
+        assert_eq!(over_limit(&attempts[1..], limit, window, now), None);
         // A miss about to age out still leaves at least one second.
         let edge: Vec<_> = (0..limit)
-            .map(|_| now - Duration::minutes(window) + Duration::milliseconds(10))
+            .map(|_| now - window + Duration::milliseconds(10))
+            .chain([now])
             .collect();
-        assert_eq!(locked_out(&edge, now), Some(1));
-        assert!(locked_out(&misses, now).unwrap() <= (window * 60) as u64);
+        assert_eq!(over_limit(&edge, limit, window, now), Some(1));
+        assert!(over_limit(&attempts, limit, window, now).unwrap() <= (minutes * 60) as u64);
+        // The send cap counts the same way.
+        let sends: Vec<_> = (0..=AUTHENTICATION.code_send_limit as i64)
+            .map(minutes_ago)
+            .collect();
+        let send_window = Duration::minutes(AUTHENTICATION.code_send_window_minutes);
+        assert!(over_limit(&sends, AUTHENTICATION.code_send_limit, send_window, now).is_some());
+        assert_eq!(
+            over_limit(
+                &sends[1..],
+                AUTHENTICATION.code_send_limit,
+                send_window,
+                now
+            ),
+            None
+        );
+        assert_eq!(
+            log_excerpt(&"x".repeat(70)),
+            format!("{}...", "x".repeat(64))
+        );
+        assert_eq!(format!("{:?}", log_excerpt("a\nb\"")), r#""a\nb\"""#);
     }
 
     #[test]

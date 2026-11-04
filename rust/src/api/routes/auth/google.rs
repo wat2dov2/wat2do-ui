@@ -2,11 +2,11 @@
 //! and `_google_verified_email`): an authorization URL with PKCE and a state,
 //! then the code traded for an ID token whose verified email signs the user in.
 
-use std::sync::LazyLock;
+use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use base64::Engine;
-use jsonwebtoken::jwk::JwkSet;
+use jsonwebtoken::jwk::{Jwk, JwkSet};
 use jsonwebtoken::{Algorithm, DecodingKey, Validation};
 use serde_json::{Map, Value};
 
@@ -67,12 +67,18 @@ struct Certs {
     last_unknown_refetch: Option<Instant>,
 }
 
-static CERTS: LazyLock<tokio::sync::Mutex<Certs>> = LazyLock::new(|| {
-    tokio::sync::Mutex::new(Certs {
-        fetched: None,
-        last_unknown_refetch: None,
-    })
+/// Held only to read or store the cache, never across a fetch, so one slow
+/// fetch does not queue every other Google sign-in behind it.
+static CERTS: Mutex<Certs> = Mutex::new(Certs {
+    fetched: None,
+    last_unknown_refetch: None,
 });
+
+fn certs() -> std::sync::MutexGuard<'static, Certs> {
+    CERTS
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
 
 async fn fetch_certs() -> anyhow::Result<JwkSet> {
     let client = wreq::Client::builder().timeout(CERTS_TIMEOUT).build()?;
@@ -86,37 +92,59 @@ async fn fetch_certs() -> anyhow::Result<JwkSet> {
     Ok(serde_json::from_slice(&body)?)
 }
 
+fn no_key(kid: &str) -> anyhow::Error {
+    anyhow::anyhow!("Unable to find a signing key that matches: \"{kid}\"")
+}
+
+/// What the cache holds for `kid`.
+enum Cached {
+    Key(Box<Jwk>),
+    /// The set is fresh but has no such key.
+    Unknown,
+    /// Nothing fetched yet, or the set is over an hour old.
+    Stale,
+}
+
+fn cached(kid: &str) -> Cached {
+    match &certs().fetched {
+        Some((at, set)) if at.elapsed() < CERTS_LIFESPAN => match set.find(kid) {
+            Some(jwk) => Cached::Key(Box::new(jwk.clone())),
+            None => Cached::Unknown,
+        },
+        _ => Cached::Stale,
+    }
+}
+
+/// Fetch the set (outside the lock), keep it, and find `kid` in it.
+async fn refetch(kid: &str) -> anyhow::Result<Jwk> {
+    let set = fetch_certs().await?;
+    let jwk = set.find(kid).cloned();
+    certs().fetched = Some((Instant::now(), set));
+    jwk.ok_or_else(|| no_key(kid))
+}
+
 /// `_google_keys.get_signing_key_from_jwt`: the key the token names.
 async fn signing_key(kid: &str) -> anyhow::Result<DecodingKey> {
-    let mut certs = CERTS.lock().await;
-    let fresh = certs
-        .fetched
-        .as_ref()
-        .is_some_and(|(at, _)| at.elapsed() < CERTS_LIFESPAN);
-    if !fresh {
-        certs.fetched = Some((Instant::now(), fetch_certs().await?));
-    }
-    let find = |certs: &Certs| {
-        certs
-            .fetched
-            .as_ref()
-            .and_then(|(_, set)| set.find(kid).cloned())
-    };
-    let jwk = match find(&certs) {
-        Some(jwk) => jwk,
-        None => {
-            let may_refetch = certs
-                .last_unknown_refetch
-                .is_none_or(|at| at.elapsed() >= UNKNOWN_KID_REFETCH);
-            anyhow::ensure!(
-                may_refetch,
-                "Unable to find a signing key that matches: \"{kid}\""
-            );
-            certs.last_unknown_refetch = Some(Instant::now());
-            certs.fetched = Some((Instant::now(), fetch_certs().await?));
-            find(&certs).ok_or_else(|| {
-                anyhow::anyhow!("Unable to find a signing key that matches: \"{kid}\"")
-            })?
+    let jwk = match cached(kid) {
+        Cached::Key(jwk) => *jwk,
+        Cached::Stale => refetch(kid).await?,
+        Cached::Unknown => {
+            // Google may have rotated its keys since the set was fetched; a
+            // key nobody has seen refetches the set at most this often.
+            let may_refetch = {
+                let mut certs = certs();
+                let may = certs
+                    .last_unknown_refetch
+                    .is_none_or(|at| at.elapsed() >= UNKNOWN_KID_REFETCH);
+                if may {
+                    certs.last_unknown_refetch = Some(Instant::now());
+                }
+                may
+            };
+            if !may_refetch {
+                return Err(no_key(kid));
+            }
+            refetch(kid).await?
         }
     };
     Ok(DecodingKey::from_jwk(&jwk)?)

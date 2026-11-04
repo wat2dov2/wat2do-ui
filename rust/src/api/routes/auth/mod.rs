@@ -283,6 +283,17 @@ fn python_b64decode(text: &str) -> Option<Vec<u8>> {
     (quad == 0).then_some(out)
 }
 
+/// The return path a state cookie carries, checked again before it reaches
+/// the redirect (the cookie is not signed); one that fails is dropped.
+fn state_return_to(value: Option<&str>) -> Option<String> {
+    let value = value.filter(|value| !value.is_empty())?;
+    let safe = safe_return_to(value);
+    if safe.is_none() {
+        tracing::warn!("Dropped an unsafe return path from the Google sign-in state");
+    }
+    safe
+}
+
 /// `_decode_google_oauth_state`: `None` for anything we did not write.
 fn decode_state(value: Option<&str>) -> Option<OAuthState> {
     let value = value.filter(|value| !value.is_empty() && value.is_ascii())?;
@@ -500,11 +511,8 @@ pub async fn complete_google_oauth(
         ("school", school.as_str()),
         ("onboardingRequired", onboarding),
     ];
-    if let Some(return_to) = payload
-        .return_to
-        .as_deref()
-        .filter(|value| !value.is_empty())
-    {
+    let return_to = state_return_to(payload.return_to.as_deref());
+    if let Some(return_to) = return_to.as_deref() {
         params.push(("returnTo", return_to));
     }
     let location = frontend_page(&callback_url, "/auth/callback", &params)?;
@@ -738,5 +746,7 @@ pub async fn logout(
     Ok(response)
 }
 
+#[cfg(test)]
+mod database_tests;
 #[cfg(test)]
 mod tests;

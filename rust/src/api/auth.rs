@@ -12,6 +12,7 @@
 //!
 //! `require_owner_or_admin` and `authorized_resource` cover ownership checks.
 
+use aws_lc_rs::encoding::AsBigEndian;
 use aws_lc_rs::signature::{ECDSA_P256_SHA256_FIXED_SIGNING, EcdsaKeyPair, KeyPair};
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
@@ -110,6 +111,22 @@ const P256_SPKI_PREFIX: [u8; 26] = [
     0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 0x03, 0x42, 0x00,
 ];
 
+/// The canonical PKCS#8 DER of a P-256 key, as Python's `private_bytes(DER,
+/// PKCS8)` writes it whatever form the setting held: the curve named once
+/// in the algorithm, the 32-byte scalar, and always the public point.
+fn canonical_pkcs8(scalar: &[u8], point: &[u8]) -> Vec<u8> {
+    // SEQUENCE { 0, { id-ecPublicKey, prime256v1 }, OCTET STRING { ECPrivateKey
+    // SEQUENCE { 1, OCTET STRING <scalar> ...
+    const BEFORE_SCALAR: [u8; 36] = [
+        0x30, 0x81, 0x87, 0x02, 0x01, 0x00, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d,
+        0x02, 0x01, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 0x04, 0x6d, 0x30,
+        0x6b, 0x02, 0x01, 0x01, 0x04, 0x20,
+    ];
+    // ... [1] BIT STRING <uncompressed point> } } }
+    const BEFORE_POINT: [u8; 5] = [0xa1, 0x44, 0x03, 0x42, 0x00];
+    [&BEFORE_SCALAR[..], scalar, &BEFORE_POINT, point].concat()
+}
+
 fn sha256(parts: &[&[u8]]) -> [u8; 32] {
     use sha2::Digest;
     let mut digest = sha2::Sha256::new();
@@ -143,12 +160,17 @@ fn signing_keys(encoded: &str) -> Result<SigningKeys, String> {
     // curve is refused like Python's `secp256r1` check.
     let pair = EcdsaKeyPair::from_private_key_der(&ECDSA_P256_SHA256_FIXED_SIGNING, &der)
         .map_err(|_| "AUTH_SIGNING_KEY must be an EC P-256 private key".to_owned())?;
-    // Python derives from the key re-encoded as PKCS#8 (with the public key),
-    // whatever form the setting holds.
-    let pkcs8 = pair
-        .to_pkcs8v1()
-        .map_err(|_| "AUTH_SIGNING_KEY could not be encoded as PKCS#8".to_owned())?;
     let point = pair.public_key().as_ref();
+    let scalar = pair
+        .private_key()
+        .as_be_bytes()
+        .map_err(|_| "AUTH_SIGNING_KEY could not be read".to_owned())?;
+    if scalar.as_ref().len() != 32 || point.len() != 65 {
+        return Err("AUTH_SIGNING_KEY must be an EC P-256 private key".to_owned());
+    }
+    // Python derives from the key re-encoded as PKCS#8 with its public point,
+    // even when the setting's DER left the point out.
+    let pkcs8 = canonical_pkcs8(scalar.as_ref(), point);
     let kid = sha256(&[&P256_SPKI_PREFIX, point])
         .iter()
         .take(8)
@@ -157,9 +179,9 @@ fn signing_keys(encoded: &str) -> Result<SigningKeys, String> {
     Ok(SigningKeys {
         // The uncompressed point, which is the form the ES256 verifier takes.
         decoding: DecodingKey::from_ec_der(point),
-        encoding: jsonwebtoken::EncodingKey::from_ec_der(pkcs8.as_ref()),
+        encoding: jsonwebtoken::EncodingKey::from_ec_der(&pkcs8),
         kid,
-        rotation: sha256(&[b"wat2do refresh token rotation\x00", pkcs8.as_ref()]),
+        rotation: sha256(&[b"wat2do refresh token rotation\x00", &pkcs8]),
     })
 }
 
@@ -188,6 +210,15 @@ impl AccessTokens {
             keys: signing_keys(&settings.auth_signing_key),
             issuer: &crate::controlbox::AUTHENTICATION.token_issuer,
         }
+    }
+
+    /// Whether `AUTH_SIGNING_KEY` gives working keys; the server refuses to
+    /// start without them rather than answer every signed-in request with a 500.
+    pub fn check(&self) -> anyhow::Result<()> {
+        self.keys
+            .as_ref()
+            .map(|_| ())
+            .map_err(|reason| anyhow::anyhow!(reason.clone()))
     }
 
     fn keys(&self) -> Result<&SigningKeys, ApiError> {
@@ -810,6 +841,7 @@ mod tests {
         ] {
             let tokens = AccessTokens::new(&test_settings(&[("AUTH_SIGNING_KEY", key)]));
             assert!(tokens.keys.is_err(), "{key}");
+            assert!(tokens.check().is_err(), "{key}");
             for token in ["not-a-jwt".to_owned(), access_token("auth-id-1")] {
                 assert!(matches!(
                     tokens.current(&bearer(&token)),
@@ -840,6 +872,10 @@ mod tests {
 
     /// `core/auth_tokens.py` with a fixed PKCS#8 key (cryptography's form).
     const PYTHON_KEY: &str = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgHy49TFtqeYgXJjVEU2JxgKm4x9bl9AMSITBPXm18i5qhRANCAAS4X5B7zMC1NVUdsbdkG2qWnxdB2S9VPxAAQyGvBqHJoBTWaryq0dGYpwcP221176dbWSA6E/CqbahI96rfOsI9";
+    /// `PYTHON_KEY` as a PKCS#8 that leaves the public point out; Python reads
+    /// it, re-encodes it with the point and derives exactly what it derives
+    /// from `PYTHON_KEY` (checked with cryptography 50).
+    const PYTHON_KEY_WITHOUT_POINT: &str = "MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCAfLj1MW2p5iBcmNURTYnGAqbjH1uX0AxIhME9ebXyLmg==";
     /// The same module with the RFC 5915 form `openssl genpkey` writes here.
     const OPENSSL_KEY: &str = "MHcCAQEEIOuOMAukw52wX4gM8+KE9eP8yf8An+9mWHUUY0JC8gHwoAoGCCqGSM49AwEHoUQDQgAEOL/C01c6c6PhIJv0nVx4lDsGSxfD00O3MdOdI7WFGO0WS+8x3qX1KdXejosMZ7y+IFq5HxTwtStHHsrxvTVhPg==";
 
@@ -853,6 +889,11 @@ mod tests {
                 "oH6KXG9BJltdEAlw2zZ4eXSTvB2lH5PlPqsSjPga2-8",
             ),
             (
+                PYTHON_KEY_WITHOUT_POINT,
+                "267049282c57741a",
+                "oH6KXG9BJltdEAlw2zZ4eXSTvB2lH5PlPqsSjPga2-8",
+            ),
+            (
                 OPENSSL_KEY,
                 "74d5edf4270cf8c6",
                 "BJch-CegKOCUdljEJeIcNuqcb3DtYQe5ZmllWIhbN2o",
@@ -862,6 +903,17 @@ mod tests {
             assert_eq!(tokens.keys.as_ref().unwrap().kid, kid);
             assert_eq!(tokens.next_refresh_token("refresh-token-1").unwrap(), next);
         }
+        // cryptography's own PKCS#8 of PYTHON_KEY is the canonical form, byte for byte.
+        let der = base64::engine::general_purpose::STANDARD
+            .decode(PYTHON_KEY)
+            .unwrap();
+        let pair =
+            EcdsaKeyPair::from_private_key_der(&ECDSA_P256_SHA256_FIXED_SIGNING, &der).unwrap();
+        let scalar = pair.private_key().as_be_bytes().unwrap();
+        assert_eq!(
+            canonical_pkcs8(scalar.as_ref(), pair.public_key().as_ref()),
+            der
+        );
         assert_eq!(
             sha256_hex("refresh-token-1"),
             "154f43e8c9b56a01e25dcba6f7aef62d23a3e91264e818124f6adf721d6a8e33"

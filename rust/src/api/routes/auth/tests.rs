@@ -384,6 +384,21 @@ fn return_paths_must_stay_inside_the_app() {
         safe_return_to("%2Fevents%3Fa%3D1").as_deref(),
         Some("/events?a=1")
     );
+    // The Google state cookie's path is checked again at the callback.
+    for forged in [
+        "//evil.example",
+        "https://evil.example",
+        "/a\\b",
+        "/x\u{7f}",
+    ] {
+        assert_eq!(state_return_to(Some(forged)), None, "{forged}");
+    }
+    assert_eq!(state_return_to(Some("")), None);
+    assert_eq!(state_return_to(None), None);
+    assert_eq!(
+        state_return_to(Some("/events?a=1")).as_deref(),
+        Some("/events?a=1")
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -690,6 +705,26 @@ async fn production_refuses_insecure_cookies() {
             .to_string()
             .contains("COOKIE_SECURE must be true in production")
     );
+}
+
+#[tokio::test]
+async fn the_server_refuses_to_start_without_a_working_signing_key() {
+    for (key, reason) in [
+        ("", "AUTH_SIGNING_KEY is not set"),
+        ("bm90IGEga2V5", "must be an EC P-256 private key"),
+    ] {
+        let settings: &'static Settings =
+            Box::leak(Box::new(test_settings(&[("AUTH_SIGNING_KEY", key)])));
+        let db = crate::db::connect_lazy(
+            "postgres://localhost:1/none".parse().unwrap(),
+            1,
+            Duration::from_secs(1),
+            Duration::from_millis(200),
+            false,
+        );
+        let error = AppState::new(settings, db, None).err().unwrap();
+        assert!(error.to_string().contains(reason), "{error}");
+    }
 }
 
 // ---------------------------------------------------------------------------

@@ -48,6 +48,9 @@ pub struct Authentication {
     /// Wrong six-digit codes an address may try per window.
     pub code_guess_limit: usize,
     pub code_guess_window_minutes: i64,
+    /// Login emails one address may be sent per window.
+    pub code_send_limit: usize,
+    pub code_send_window_minutes: i64,
     /// A just-rotated refresh token still returns its successor for this long.
     pub refresh_token_reuse_seconds: i64,
     /// The `iss` of every access token we sign and accept.

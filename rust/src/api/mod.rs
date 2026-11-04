@@ -74,10 +74,12 @@ impl AppState {
             "CORS_ORIGINS must not contain '*' when credentials are enabled. \
              Set explicit origins, e.g. CORS_ORIGINS=[\"https://wat2do.io\"]"
         );
+        let auth = AccessTokens::new(settings);
+        auth.check()?;
         Ok(Self {
             settings,
             db,
-            auth: Arc::new(AccessTokens::new(settings)),
+            auth: Arc::new(auth),
             trust: Arc::new(ProxyTrust::new(settings)),
             upstream,
         })

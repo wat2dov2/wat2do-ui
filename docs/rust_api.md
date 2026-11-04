@@ -75,6 +75,8 @@ Port one whole router (every path under its prefix) per change, so no path is se
    Mirror any new constant in `rust/src/constants.rs` and extend `backend/tests/test_rust_constants.py`.
    When the router's schemas are shared with routes still in Python (or the generated types must not change), commit FastAPI's operations and schemas for its paths as `rust/src/api/routes/<router>_openapi.json`, cut from `frontend/src/shared/generated/openapi.json` before the Python router is deleted, and list it in `api/contract.rs`: it replaces what utoipa generated, keeps FastAPI's method order for 405 `Allow` headers, and maps a suffixed path such as `/calendar/feed/{token}.ics` to the axum route `/calendar/feed/{token}`.
 5. Port the Python tests to Rust tests next to the code, plus the edge cases you find.
+   Statements whose correctness depends on Postgres itself (concurrent requests, conflicts, row locks) also get database tests, like `rust/src/api/routes/auth/database_tests.rs`.
+   They run only when `WAT2DO_TEST_DATABASE_URL` is set, which CI's "Rust database tests" job does against a `postgres:17` service loaded with the baseline and every migration; a plain `cargo test` skips them, and agents never start a database on the Mac.
 6. Regenerate the route inventory: `cargo run --bin wat2do-api -- openapi > ../backend/core/rust_openapi.json` in `rust/` (a Rust test fails while it is stale), then `npm run generate-types` in `frontend/` and check that `api-types.ts` only moves.
 7. Run the parity harness (below) against production, read-only, with a reference checkout that still has the Python router.
 8. Delete the Python router, its service, schemas and tests in the same change, and every import of them that no other Python code needs.
@@ -140,6 +142,8 @@ The backend image builds `wat2do-api` in a Rust stage and runs it as the non-roo
 The ECS task needs egress to Postgres on 5432 (the `task_postgres` rule in `infra/terraform/production/security-groups.tf`).
 The server reads every address from its environment (`DATABASE_URL`, `AUTH_SIGNING_KEY`, CORS and cookie settings), so moving hosts only changes those values.
 The image is built and smoke-tested by the "Backend image build" CI job on every pull request and before every deploy.
+The server refuses to start when `AUTH_SIGNING_KEY` is missing or is not an EC P-256 private key.
+On SIGTERM it stops accepting, lets in-flight requests and the emails they queued (login codes among them) finish within `shutdown_drain_seconds` (14), then stops the Python app.
 Container PID 1 is `wat2do-api`; like uvicorn before it, it reaps only its own child.
 
 ### Database connections
