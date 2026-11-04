@@ -751,6 +751,8 @@ class InstagramDigestControl(_ControlModel):
     client_doc_id: str = Field(pattern=r"^[0-9]{20,40}$")
     web_app_id: str = Field(pattern=r"^[0-9]{10,20}$")
     maximum_pages: int = Field(gt=0, le=100)
+    # The browser the worker reads digests with; Lightpanda runs in shadow mode first.
+    digest_engine: Literal["brave", "lightpanda"]
 
     @model_validator(mode="after")
     def validate_endpoint(self) -> "InstagramDigestControl":
@@ -758,6 +760,38 @@ class InstagramDigestControl(_ControlModel):
             raise ValueError("Instagram digest endpoint must use i.instagram.com")
         if self.endpoint_url.path != "/graphql/query":
             raise ValueError("Instagram digest endpoint must use /graphql/query")
+        return self
+
+
+class InstagramLightpandaControl(_ControlModel):
+    """Lightpanda, the light headless browser that reads Instagram digests per account.
+
+    The worker installs the pinned release (its download must match ``sha256``) and runs
+    one process per school account with that account's own cookie jar.
+    """
+
+    version: str = Field(pattern=r"^[0-9]+[.][0-9]+[.][0-9]+$")
+    download_url: HttpUrl
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    startup_timeout_seconds: float = Field(gt=0, le=120)
+    navigation_timeout_seconds: float = Field(gt=0, le=300)
+    shutdown_timeout_seconds: float = Field(gt=0, le=60)
+    login_wait_seconds: float = Field(gt=0, le=300)
+    login_poll_seconds: float = Field(gt=0, le=30)
+    # Accounts logging in to Lightpanda for the first time, a new device to Instagram, per day.
+    new_login_daily_limit: int = Field(ge=0, le=50)
+    # Shadow mode replays Brave's recent digests in Lightpanda and compares the media IDs.
+    shadow_lookback_hours: float = Field(gt=0, le=168)
+    shadow_jobs_per_account: int = Field(ge=1, le=50)
+    shadow_digest_pause_seconds: float = Field(ge=0, le=600)
+    shadow_account_pause_seconds: float = Field(ge=0, le=3600)
+
+    @model_validator(mode="after")
+    def validate_download(self) -> "InstagramLightpandaControl":
+        if self.download_url.host != "github.com":
+            raise ValueError("Lightpanda downloads must come from its GitHub releases")
+        if f"/releases/download/{self.version}/" not in (self.download_url.path or ""):
+            raise ValueError("Lightpanda's download must be the pinned version's release")
         return self
 
 
@@ -1435,6 +1469,7 @@ class ControlBox(_ControlModel):
     runner_setup: RunnerSetupControl
     instagram_bell_setup: InstagramBellSetupControl
     instagram_digest: InstagramDigestControl
+    instagram_lightpanda: InstagramLightpandaControl
     instagram_publishing: InstagramPublishingControl
     competitor_pain_points: CompetitorPainPointsControl
     outreach: OutreachControl
