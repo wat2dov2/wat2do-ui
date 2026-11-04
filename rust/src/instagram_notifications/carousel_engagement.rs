@@ -286,11 +286,11 @@ fn source_activation(
     now: DateTime<Utc>,
 ) -> Result<DateTime<Utc>> {
     let activated_at = queue.get_setting(ACTIVATION_SETTING)?;
-    let stored = |activated_at: &Value| parse_utc(&crate::python_json::str(activated_at));
+    let stored = |activated_at: &Value| parse_utc(&crate::pyjson::str(activated_at));
     if queue
         .get_setting(SOURCE_REGISTRATION_SETTING)?
         .as_ref()
-        .is_some_and(crate::python_json::truthy)
+        .is_some_and(crate::pyjson::truthy)
     {
         return stored(&activated_at.unwrap_or(Value::Null));
     }

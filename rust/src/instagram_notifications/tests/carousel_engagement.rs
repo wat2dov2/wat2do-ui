@@ -1,6 +1,6 @@
 //! Ported from `tests/services/instagram_notifications/test_carousel_engagement.py`.
 //!
-//! Python's fake Supabase client recorded the query filters and update payloads it
+//! Python's fake data API client recorded the query filters and update payloads it
 //! received. Here `FakeStore` stands in for the publishing tables and records the
 //! arguments of each `PublishingStore` call instead: the `since`/`until` bounds, the
 //! delivery generation and keyset cursor of each batch page, the batches whose items

@@ -19,8 +19,6 @@ pub mod logs;
 pub mod notification_retry;
 pub mod notifications;
 pub mod pyjson;
-pub mod python_json;
-pub mod python_url;
 pub mod revalidation;
 pub mod schools;
 pub mod settings;

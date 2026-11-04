@@ -24,7 +24,7 @@ use super::browser_session::{canonical_post_url, validate_account_username};
 use super::errors::{BrowserError, BrowserResult, StorageError};
 use crate::controlbox::instagram_browser as control;
 use crate::host::{Event, Host};
-use crate::python_json;
+use crate::pyjson;
 use crate::schools::validate_recipient_id;
 
 pub const WORKER_INSTALLATION_PAUSE: &str = "Browser worker installation in progress";
@@ -84,7 +84,7 @@ const OBSOLETE_SETTINGS: [&str; 17] = [
     "notification_import_status",
     "notification_import_error",
     "review_storage_status",
-    // Notified posts now reach the Supabase ingestion queue without Brave.
+    // Notified posts now reach the ingestion queue without Brave.
     "notification_delivery:*",
     "notification_ledger_claim",
     "notification_browser_import_claim",
@@ -193,7 +193,7 @@ impl BrowserJob {
 
     /// Whether this is an inspection-only engagement.
     pub fn dry_run(&self) -> bool {
-        self.payload.get("dry_run").is_some_and(python_json::truthy)
+        self.payload.get("dry_run").is_some_and(pyjson::truthy)
     }
 }
 
@@ -354,7 +354,7 @@ impl BrowserJobQueue {
             .map_err(storage)?
             .is_some();
         if !retired {
-            // Their posts moved to the Supabase queue, which fetches them without Brave.
+            // Their posts moved to the ingestion queue, which fetches them without Brave.
             db.execute(
                 "UPDATE jobs SET state='cancelled',finished_at=? WHERE kind='retrieval' AND state='pending'",
                 [self.host.time()],
@@ -367,9 +367,10 @@ impl BrowserJobQueue {
         }
         db.execute(
             "INSERT INTO settings VALUES ('delivery_generation',?) ON CONFLICT(key) DO NOTHING",
-            [python_json::dumps(&Value::from(
-                uuid::Uuid::new_v4().to_string(),
-            ))],
+            [pyjson::dumps(
+                &Value::from(uuid::Uuid::new_v4().to_string()),
+                None,
+            )],
         )
         .map_err(storage)?;
         let raw: String = db
@@ -656,7 +657,7 @@ impl BrowserJobQueue {
     /// `get_setting(key)`: the stored JSON value, None when unset.
     pub fn get_setting(&self, key: &str) -> BrowserResult<Option<Value>> {
         if key == "paused"
-            && let Some(pending) = self.pending_pause().filter(python_json::truthy)
+            && let Some(pending) = self.pending_pause().filter(pyjson::truthy)
         {
             return Ok(Some(pending));
         }
@@ -679,14 +680,14 @@ impl BrowserJobQueue {
 
     /// Whether the worker is paused (any truthy pause).
     pub fn paused(&self) -> BrowserResult<bool> {
-        Ok(python_json::truthy(
+        Ok(pyjson::truthy(
             &self.setting_or("paused", Value::Bool(false))?,
         ))
     }
 
     pub fn set_setting(&self, key: &str, value: Value) -> BrowserResult<()> {
         self.retry_storage(|| {
-            let previous = if key == "paused" && python_json::truthy(&value) {
+            let previous = if key == "paused" && pyjson::truthy(&value) {
                 // A full disk must not erase an auth or uncertain-action safety hold.
                 let previous = self.get_setting(key);
                 self.set_pending_pause(Some(value.clone()));
@@ -697,14 +698,14 @@ impl BrowserJobQueue {
                 None
             };
             let db = self.connect()?;
-            db.execute(UPSERT_SETTING, params![key, python_json::dumps(&value)])
+            db.execute(UPSERT_SETTING, params![key, pyjson::dumps(&value, None)])
                 .map_err(storage)?;
             drop(db);
             if key == "paused" {
                 self.set_pending_pause(None);
-                if !python_json::equal(&previous.unwrap_or(Value::Null), &value) {
+                if !pyjson::equal(&previous.unwrap_or(Value::Null), &value) {
                     self.record_diagnostic(
-                        if python_json::truthy(&value) {
+                        if pyjson::truthy(&value) {
                             "paused"
                         } else {
                             "resumed"
@@ -725,8 +726,8 @@ impl BrowserJobQueue {
             return Ok(swapped);
         }
         self.retry_storage(|| {
-            if let Some(pending) = self.pending_pause().filter(python_json::truthy)
-                && !python_json::equal(&pending, expected)
+            if let Some(pending) = self.pending_pause().filter(pyjson::truthy)
+                && !pyjson::equal(&pending, expected)
             {
                 return Ok(false);
             }
@@ -740,21 +741,24 @@ impl BrowserJobQueue {
                 let current = raw
                     .map(|raw| serde_json::from_str(&raw).unwrap_or(Value::Null))
                     .unwrap_or(Value::Bool(false));
-                if !python_json::equal(&current, expected) {
+                if !pyjson::equal(&current, expected) {
                     return Ok(false);
                 }
-                db.execute(UPSERT_SETTING, params!["paused", python_json::dumps(value)])
-                    .map_err(storage)?;
+                db.execute(
+                    UPSERT_SETTING,
+                    params!["paused", pyjson::dumps(value, None)],
+                )
+                .map_err(storage)?;
                 Ok(true)
             })?;
             if !swapped {
                 return Ok(false);
             }
-            if python_json::equal(&self.pending_pause().unwrap_or(Value::Null), expected) {
+            if pyjson::equal(&self.pending_pause().unwrap_or(Value::Null), expected) {
                 self.set_pending_pause(None);
             }
             self.record_diagnostic(
-                if python_json::truthy(value) {
+                if pyjson::truthy(value) {
                     "paused"
                 } else {
                     "resumed"
@@ -827,7 +831,7 @@ impl BrowserJobQueue {
             (format!("{scope}_rate_limit_until"), deadline),
             (format!("{scope}_rate_limit_backoff_seconds"), backoff),
         ] {
-            db.execute(UPSERT_SETTING, params![key, python_json::float_repr(value)])
+            db.execute(UPSERT_SETTING, params![key, pyjson::float_repr(value)])
                 .map_err(storage)?;
         }
         Ok(())
@@ -854,7 +858,7 @@ impl BrowserJobQueue {
             .optional()
             .map_err(storage)?;
         Ok(paused.is_some_and(|paused| {
-            python_json::truthy(&serde_json::from_str(&paused).unwrap_or(Value::Null))
+            pyjson::truthy(&serde_json::from_str(&paused).unwrap_or(Value::Null))
         }) || now < rate_limit_state(db, BROWSER_SCOPE)?.0)
     }
 
@@ -881,7 +885,7 @@ impl BrowserJobQueue {
             let post_url = job.map(|job| {
                 job.payload
                     .get("url")
-                    .filter(|url| python_json::truthy(url))
+                    .filter(|url| pyjson::truthy(url))
                     .or_else(|| job.payload.get("post_url"))
                     .cloned()
                     .unwrap_or(Value::Null)
@@ -905,7 +909,7 @@ impl BrowserJobQueue {
                 "INSERT INTO diagnostic_events VALUES (?,?,?)",
                 params![
                     uuid::Uuid::new_v4().simple().to_string(),
-                    python_json::dumps(&event),
+                    pyjson::dumps(&event, None),
                     self.host.time()
                 ],
             )
@@ -976,7 +980,7 @@ impl BrowserJobQueue {
         let attempts =
             recent_timestamps(&self.setting_or("account_login_attempts", json!([]))?, now);
         let key = format!("account_login_at:{username}");
-        let last = python_json::number(&self.setting_or(&key, json!(0))?).unwrap_or(0.0);
+        let last = pyjson::number(&self.setting_or(&key, json!(0))?).unwrap_or(0.0);
         if attempts.len() >= control().account_login_daily_limit || now - last < 86_400.0 {
             return Ok(false);
         }
@@ -1083,10 +1087,10 @@ impl BrowserJobQueue {
             let username = validate_account_username(username).map_err(BrowserError::Value)?;
             let mut identity = vec![kind.to_owned(), recipient_id.clone(), username.clone()];
             match kind {
-                "digest" => identity.push(python_json::str(&payload["cache_ent_id"])),
+                "digest" => identity.push(pyjson::str(&payload["cache_ent_id"])),
                 "retrieval" => {
-                    identity.push(python_json::str(&payload["url"]));
-                    identity.push(python_json::str(&payload["cutoff_days"]));
+                    identity.push(pyjson::str(&payload["url"]));
+                    identity.push(pyjson::str(&payload["cutoff_days"]));
                 }
                 // p/ and reel/ can reference the same media. Dedupe by its shortcode.
                 _ => identity.push(
@@ -1100,11 +1104,11 @@ impl BrowserJobQueue {
                         .to_owned(),
                 ),
             }
-            if payload.get("dry_run").is_some_and(python_json::truthy) {
+            if payload.get("dry_run").is_some_and(pyjson::truthy) {
                 identity.push("inspect".to_owned());
                 identity.push(uuid::Uuid::new_v4().simple().to_string());
             }
-            let dedupe_key = hex::encode(Sha256::digest(python_json::dumps(&Value::from(identity)).as_bytes()));
+            let dedupe_key = hex::encode(Sha256::digest(pyjson::dumps(&Value::from(identity), None).as_bytes()));
             let (job, inserted) = self.immediate(|db| {
                 let existing: Option<(String, String)> = db
                     .query_row("SELECT id,state FROM jobs WHERE dedupe_key=?", [&dedupe_key], |row| {
@@ -1134,7 +1138,7 @@ impl BrowserJobQueue {
                         school,
                         recipient_id,
                         username,
-                        python_json::dumps(&Value::Object(payload.clone())),
+                        pyjson::dumps(&Value::Object(payload.clone()), None),
                         self.host.time()
                     ],
                 )
@@ -1208,7 +1212,7 @@ impl BrowserJobQueue {
                         UPSERT_SETTING,
                         params![
                             "engagement_school",
-                            python_json::dumps(&Value::from(row.school.clone()))
+                            pyjson::dumps(&Value::from(row.school.clone()), None)
                         ],
                     )
                     .map_err(storage)?;
@@ -1313,7 +1317,7 @@ impl BrowserJobQueue {
                 "A rate-limited claim refund requires a failed running safe read retry".to_owned(),
             ));
         }
-        let result_truthy = result.as_ref().is_some_and(python_json::truthy);
+        let result_truthy = result.as_ref().is_some_and(pyjson::truthy);
         let state = if requeue {
             "pending"
         } else if error.as_deref().is_some_and(|error| !error.is_empty()) {
@@ -1359,7 +1363,7 @@ impl BrowserJobQueue {
                      WHERE id=? AND state='running' AND attempts=? AND started_at=?",
                     params![
                         state,
-                        (result_truthy && !requeue).then(|| python_json::dumps(result.as_ref().expect("truthy result"))),
+                        (result_truthy && !requeue).then(|| pyjson::dumps(result.as_ref().expect("truthy result"), None)),
                         if requeue { None } else { error.clone() },
                         if requeue { None } else { Some(now) },
                         requeue,
@@ -1416,8 +1420,8 @@ impl BrowserJobQueue {
     pub fn recover_interrupted(&self) -> BrowserResult<()> {
         self.retry_storage(|| {
             let newly_paused = self.immediate(|db| {
-                if let Some(pending) = self.pending_pause().filter(python_json::truthy) {
-                    db.execute(UPSERT_SETTING, params!["paused", python_json::dumps(&pending)])
+                if let Some(pending) = self.pending_pause().filter(pyjson::truthy) {
+                    db.execute(UPSERT_SETTING, params!["paused", pyjson::dumps(&pending, None)])
                         .map_err(storage)?;
                 }
                 if self.pending_rate_limit.load(Ordering::SeqCst) {
@@ -1438,7 +1442,7 @@ impl BrowserJobQueue {
                     .optional()
                     .map_err(storage)?;
                 let paused = paused.is_some_and(|paused| {
-                    python_json::truthy(&serde_json::from_str(&paused).unwrap_or(Value::Null))
+                    pyjson::truthy(&serde_json::from_str(&paused).unwrap_or(Value::Null))
                 });
                 let mut newly_paused = false;
                 if uncertain_action && !paused {
@@ -1446,9 +1450,9 @@ impl BrowserJobQueue {
                         UPSERT_SETTING,
                         params![
                             "paused",
-                            python_json::dumps(&Value::from(
+                            pyjson::dumps(&Value::from(
                                 "Worker interrupted during engagement; inspect browser state before resuming"
-                            ))
+                            ), None)
                         ],
                     )
                     .map_err(storage)?;
@@ -1574,14 +1578,14 @@ impl BrowserJobQueue {
         )?;
         drop(db);
         let until = self.setting_or("browser_rate_limit_until", json!(0))?;
-        let remaining = python_json::number(&until).unwrap_or(0.0) - self.host.time();
+        let remaining = pyjson::number(&until).unwrap_or(0.0) - self.host.time();
         Ok(json!({
             "queues": groups,
             "recent_failures": recent,
             "worker": self.get_setting("worker")?,
             "paused": self.setting_or("paused", json!(false))?,
             "rate_limit": {
-                "retry_at": if python_json::truthy(&until) { until.clone() } else { Value::Null },
+                "retry_at": if pyjson::truthy(&until) { until.clone() } else { Value::Null },
                 "remaining_seconds": if remaining > 0.0 { json!(remaining) } else { json!(0) },
                 "backoff_seconds": self.setting_or("browser_rate_limit_backoff_seconds", json!(0))?,
             },
@@ -1623,10 +1627,8 @@ impl BrowserJobQueue {
             let job = self.get(&submitted.id).map_err(storage_unavailable)?;
             if let Some(job) = &job {
                 if job.state == "succeeded"
-                    && let Some(result) = job
-                        .result
-                        .as_ref()
-                        .filter(|result| python_json::truthy(result))
+                    && let Some(result) =
+                        job.result.as_ref().filter(|result| pyjson::truthy(result))
                 {
                     return DigestResolution::from_value(result);
                 }
@@ -1648,13 +1650,13 @@ impl BrowserJobQueue {
             let paused = self
                 .setting_or("paused", json!(false))
                 .map_err(storage_unavailable)?;
-            let running = worker.get("running").is_some_and(python_json::truthy);
+            let running = worker.get("running").is_some_and(pyjson::truthy);
             let heartbeat = worker
                 .get("heartbeat")
-                .and_then(python_json::number)
+                .and_then(pyjson::number)
                 .unwrap_or(0.0);
             if paused != json!(WORKER_INSTALLATION_PAUSE)
-                && (python_json::truthy(&paused)
+                && (pyjson::truthy(&paused)
                     || !running
                     || self.host.time() - heartbeat
                         > control().job_timeout_seconds + control().request_timeout_seconds)
@@ -1737,7 +1739,7 @@ pub(crate) fn recent_timestamps(attempts: &Value, now: f64) -> Vec<Value> {
         .map(|attempts| {
             attempts
                 .iter()
-                .filter(|at| python_json::number(at).is_some_and(|at| now - at < 86_400.0))
+                .filter(|at| pyjson::number(at).is_some_and(|at| now - at < 86_400.0))
                 .cloned()
                 .collect()
         })
@@ -1835,7 +1837,7 @@ fn select_engagement(
         && serde_json::from_str::<Value>(&cooldown)
             .ok()
             .as_ref()
-            .and_then(python_json::number)
+            .and_then(pyjson::number)
             .is_some_and(|cooldown| now < cooldown)
     {
         return Ok(None);

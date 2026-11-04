@@ -26,8 +26,8 @@ use crate::controlbox::instagram_browser as control;
 use crate::db::BlockingPool;
 use crate::host::{Event, Host, RealHost};
 use crate::launch_agents::{self, Launchctl, Plist};
-use crate::schools::SchoolRouting;
-use crate::{logs, python_json};
+use crate::schools::School;
+use crate::{logs, pyjson};
 
 pub const LAUNCH_AGENT_LABEL: &str = "io.wat2do.instagram-browser.worker";
 pub const RETRY_LAUNCH_AGENT_LABEL: &str = "io.wat2do.notification-retry";
@@ -38,7 +38,7 @@ pub const AUTOMATION_APPROVAL: &str = "Replaced: on its first browser job, allow
 pub trait CliServices {
     fn host(&self) -> Arc<dyn Host>;
     /// `school_service.get_school`.
-    fn school_by_slug(&self, slug: &str) -> anyhow::Result<Option<SchoolRouting>>;
+    fn school_by_slug(&self, slug: &str) -> anyhow::Result<Option<School>>;
     /// The publishing tables.
     fn publishing(&self) -> anyhow::Result<&dyn PublishingStore>;
     /// `items.queue_instagram`: how many posts were new to the ingestion queue.
@@ -91,10 +91,10 @@ impl CliServices for LiveCli {
         RealHost::shared()
     }
 
-    fn school_by_slug(&self, slug: &str) -> anyhow::Result<Option<SchoolRouting>> {
+    fn school_by_slug(&self, slug: &str) -> anyhow::Result<Option<School>> {
         let slug = slug.to_owned();
         self.database()?
-            .run(|pool| async move { crate::schools::routing_by_slug(&pool, &slug).await })
+            .run(|pool| async move { crate::schools::by_slug(&pool, &slug).await })
     }
 
     fn publishing(&self) -> anyhow::Result<&dyn PublishingStore> {
@@ -197,7 +197,7 @@ pub fn main() -> ExitCode {
 /// Run one operator command: its exit code, what it prints and what it reports.
 pub fn run(cli: Cli, services: &dyn CliServices) -> (u8, String, String) {
     match operate(cli, services) {
-        Ok(Some(result)) => (0, python_json::dumps_pretty_sorted(&result), String::new()),
+        Ok(Some(result)) => (0, pyjson::dumps_sorted(&result, Some(2)), String::new()),
         Ok(None) => (0, String::new(), String::new()),
         Err(error) => (1, String::new(), describe(&error)),
     }
@@ -682,7 +682,7 @@ fn install(
             .downcast_ref::<launch_agents::RecoveryUncertain>()
             .is_some()
     {
-        let restored = if python_json::truthy(&previous_pause) {
+        let restored = if pyjson::truthy(&previous_pause) {
             previous_pause.clone()
         } else {
             json!("Browser worker installation recovery is uncertain; inspect before resuming")

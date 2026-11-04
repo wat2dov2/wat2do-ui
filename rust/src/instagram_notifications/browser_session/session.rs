@@ -16,8 +16,8 @@ use super::bridge::{Bridge, TAB_CLOSED, TAB_LOADING};
 use super::runner::{JavascriptRunner, PinnedRunner};
 use super::{account_profile_url, canonical_post_url, validate_account_username};
 use crate::controlbox::instagram_browser as control;
-use crate::python_url::urlsplit;
 use crate::schools::validate_recipient_id;
+use crate::urls::urlsplit;
 
 static USERNAME_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[A-Za-z0-9._]{1,30}$").expect("valid regex"));
@@ -171,7 +171,7 @@ impl BrowserInstagramSession {
     /// Navigate from the page itself, which loads without raising Brave.
     pub fn navigate(&mut self, url: &str, reload: bool) -> BrowserResult<String> {
         let invalid = || BrowserError::session("Instagram browser navigation target is invalid");
-        let target = urlsplit(url).map_err(|_| invalid())?;
+        let target = urlsplit(url, "").map_err(|_| invalid())?;
         if target.scheme != "https"
             || target.netloc != "www.instagram.com"
             || !target.path.starts_with('/')
@@ -631,7 +631,7 @@ impl BrowserInstagramSession {
         Ok(match serde_json::from_str::<Value>(&raw) {
             Ok(Value::Object(state)) => state
                 .get("state")
-                .map(crate::python_json::str)
+                .map(crate::pyjson::str)
                 .unwrap_or_default(),
             // Python called .get on whatever json.loads returned; only a dict answers.
             Ok(_) => {

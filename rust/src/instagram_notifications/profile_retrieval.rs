@@ -10,7 +10,7 @@ use serde_json::{Value, json};
 use super::browser_queue::BrowserJobQueue;
 use super::browser_session::canonical_post_url;
 use super::errors::BrowserError;
-use crate::python_json::truthy;
+use crate::pyjson::truthy;
 
 /// Queue each requested profile's listed posts through `queue_posts` (the
 /// ingestion queue's `queue_instagram`), once per finished retrieval.

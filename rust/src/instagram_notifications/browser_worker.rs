@@ -25,7 +25,7 @@ use super::profile_retrieval;
 use crate::controlbox::{InheritedControls, instagram_browser as control};
 use crate::db::BlockingPool;
 use crate::host::Event;
-use crate::python_json::{self, truthy};
+use crate::pyjson::{self, truthy};
 
 /// Shared with every process that drives the worker's Brave windows.
 pub const BROWSER_LOCK_PATH: &str = "/tmp/wat2do_instagram_browser.lock";
@@ -158,9 +158,9 @@ impl Worker {
                     // Asked while Brave's lock is held: a short wait, then the queued name.
                     let school = db
                         .run_within(std::time::Duration::from_secs(5), |pool| async move {
-                            crate::schools::routing_by_recipient_id(&pool, &recipient_id).await
+                            crate::schools::by_recipient_id(&pool, &recipient_id).await
                         })
-                        // Keep the queued name when Supabase is unreachable.
+                        // Keep the queued name when the database is unreachable.
                         .ok()??;
                     school_account_username(&school.slug).ok()
                 }),
@@ -351,7 +351,7 @@ impl Worker {
             }
         }
         let first = match self.queue.setting_or("browser_tab_ids", json!([]))? {
-            Value::Array(ids) => ids.first().map(python_json::str),
+            Value::Array(ids) => ids.first().map(pyjson::str),
             _ => None,
         };
         let mut session = match first {
@@ -373,8 +373,8 @@ impl Worker {
             &queue.setting_or("login_recovery_attempts", json!([]))?,
             now(),
         );
-        let next_at = python_json::number(&queue.setting_or("login_recovery_next_at", json!(0))?)
-            .unwrap_or(0.0);
+        let next_at =
+            pyjson::number(&queue.setting_or("login_recovery_next_at", json!(0))?).unwrap_or(0.0);
         if attempts.len() >= control().login_recovery_daily_limit || now() < next_at {
             return Ok(false);
         }
@@ -840,12 +840,7 @@ pub fn execute_job(
     session: &mut BrowserInstagramSession,
     on_rate_limit: Option<&dyn Fn(&BrowserError)>,
 ) -> BrowserResult<Value> {
-    let text = |key: &str| {
-        job.payload
-            .get(key)
-            .map(python_json::str)
-            .unwrap_or_default()
-    };
+    let text = |key: &str| job.payload.get(key).map(pyjson::str).unwrap_or_default();
     let executed = match job.kind.as_str() {
         "digest" => browser_digest::resolve(
             session,

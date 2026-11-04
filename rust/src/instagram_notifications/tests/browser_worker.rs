@@ -409,7 +409,7 @@ impl Tab {
             if let Some(answer) = navigation(url, reload, &mut page) {
                 return answer;
             }
-            page.path = crate::python_url::urlsplit(url).expect("valid URL").path;
+            page.path = crate::urls::urlsplit(url, "").expect("valid URL").path;
             Ok("navigating".to_owned())
         });
         let pinned = secondary.then(|| {
@@ -1361,7 +1361,7 @@ fn test_execute_job_shares_pinned_session_without_repeating_successful_operation
         if dry_run {
             job.payload.insert("dry_run".to_owned(), json!(true));
         }
-        let text = |key: &str| python_json::str(job.payload.get(key).unwrap());
+        let text = |key: &str| pyjson::str(job.payload.get(key).unwrap());
 
         let direct = Tab::new(0);
         let direct_page = direct.page();
@@ -1646,7 +1646,7 @@ fn test_ten_retrievals_overlap_and_release_lock_only_after_cleanup() {
     let worker = env.worker(
         pool,
         settling(move |job, _| {
-            let url = python_json::str(&job.payload["url"]);
+            let url = pyjson::str(&job.payload["url"]);
             if !url.ends_with("/Post10/") {
                 check.check(barrier.wait(), "ten reads overlap");
             }
@@ -2210,7 +2210,7 @@ fn test_blank_first_target_does_not_prevent_other_slots_visiting_their_own_targe
             .collect();
         // Reproduce the old pool broadcast. A slot must reach its own target before
         // waiting for that target's readiness, even after this stale page.
-        let url = python_json::str(&job.payload["url"]);
+        let url = pyjson::str(&job.payload["url"]);
         for session in &mut sessions {
             session.navigate(&url, true)?;
         }
@@ -2395,7 +2395,7 @@ fn test_target_auth_redirect_pauses_before_any_media_query_or_publication() {
         let page = page.lock().unwrap();
         assert_eq!(
             page.navigations,
-            vec![(python_json::str(&stored.payload["url"]), true)],
+            vec![(pyjson::str(&stored.payload["url"]), true)],
             "{redirect}"
         );
         assert_eq!(stored.state, "failed", "{redirect}");
@@ -3595,7 +3595,7 @@ fn test_a_rerun_digest_uses_the_renamed_school_accounts_current_name() {
             ..job.clone()
         }
     );
-    // Other kinds, unknown recipients and an unreachable Supabase keep the queued name.
+    // Other kinds, unknown recipients and an unreachable database keep the queued name.
     for kept in [
         BrowserJob {
             kind: "engagement".to_owned(),

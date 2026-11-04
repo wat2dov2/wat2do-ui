@@ -127,13 +127,9 @@ pub fn list_failed_runs(
             let id = row.get("databaseId").ok_or_else(|| {
                 GitHubCliError("gh returned a run without its databaseId".to_owned())
             })?;
-            let text = |key: &str| {
-                row.get(key)
-                    .map(crate::python_json::str)
-                    .unwrap_or_default()
-            };
+            let text = |key: &str| row.get(key).map(crate::pyjson::str).unwrap_or_default();
             runs.push(WorkflowRun {
-                id: crate::python_json::str(id),
+                id: crate::pyjson::str(id),
                 title: text("displayTitle"),
                 url: text("url"),
                 created_at: created,
@@ -167,7 +163,7 @@ fn load_state(path: &std::path::Path) -> Map<String, Value> {
 }
 
 fn number(value: Option<&Value>) -> f64 {
-    value.and_then(crate::python_json::number).unwrap_or(0.0)
+    value.and_then(crate::pyjson::number).unwrap_or(0.0)
 }
 
 /// Keep a run's history a little past the lookback so a persistent failure keeps
@@ -227,13 +223,13 @@ pub fn retry_failed_notifications(
     for run in &failed {
         let entry = state["runs"]
             .get(&run.id)
-            .filter(|entry| crate::python_json::truthy(entry))
+            .filter(|entry| crate::pyjson::truthy(entry))
             .cloned()
             .unwrap_or_else(|| json!({"count": 0, "last_at": 0.0}));
         let count = number(entry.get("count")) as i64;
         if count >= control().max_reruns_per_run {
             push(&mut result, "escalated", &run.id);
-            let reruns = crate::python_json::str(entry.get("count").unwrap_or(&Value::Null));
+            let reruns = crate::pyjson::str(entry.get("count").unwrap_or(&Value::Null));
             tracing::warn!(
                 "Run {} ({}) still failing after {} reruns; an account likely needs a manual re-login in Brave: {}",
                 run.id,
@@ -266,7 +262,7 @@ pub fn retry_failed_notifications(
         push(&mut result, "reran", &run.id);
         tracing::info!("Reran {} ({})", run.id, run.title);
     }
-    let serialized = crate::python_json::dumps_sorted(&Value::Object(state));
+    let serialized = crate::pyjson::dumps_sorted(&Value::Object(state), None);
     if let Some(parent) = state_path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
@@ -347,7 +343,7 @@ pub fn run_once(
 ) -> (u8, String) {
     let result = retry_failed_notifications(services, state_path, now);
     let code = u8::from(result.get("error").is_some());
-    (code, crate::python_json::dumps_sorted(&result))
+    (code, crate::pyjson::dumps_sorted(&result, None))
 }
 
 /// The Python suite's cases, ported.

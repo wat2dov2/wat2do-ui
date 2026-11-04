@@ -241,7 +241,7 @@ fn complete_next(queue: &BrowserJobQueue, allow_engagement: bool) -> Option<Brow
 }
 
 fn paused(queue: &BrowserJobQueue) -> bool {
-    python_json::truthy(&queue.setting_or("paused", json!(false)).unwrap())
+    pyjson::truthy(&queue.setting_or("paused", json!(false)).unwrap())
 }
 
 fn setting_f64(queue: &BrowserJobQueue, key: &str) -> Option<f64> {
@@ -695,7 +695,7 @@ fn test_rate_limit_uses_existing_sanitized_diagnostics_without_changing_the_job(
         event["post_url"],
         "https://www.instagram.com/p/RateDiagnostic/"
     );
-    assert!(!python_json::dumps(event).contains("must-not-be-logged"));
+    assert!(!pyjson::dumps(event, None).contains("must-not-be-logged"));
 }
 
 #[test]
@@ -1230,8 +1230,8 @@ fn test_digest_expires_normally_when_progressive_hold_exceeds_caller_deadline() 
 #[test]
 fn test_invalid_progressive_backoff_cannot_admit_or_extend_browser_work() {
     // `json.dumps` of False, "later", [], nan, inf, -1, 1, backoff - 1, max + 1.
-    let below = python_json::float_repr(backoff() - 1.0);
-    let above = python_json::float_repr(control().rate_limit_max_backoff_seconds + 1.0);
+    let below = pyjson::float_repr(backoff() - 1.0);
+    let above = pyjson::float_repr(control().rate_limit_max_backoff_seconds + 1.0);
     for raw in [
         "false",
         "\"later\"",
@@ -2258,7 +2258,7 @@ fn test_safe_read_retry_preserves_diagnostic_reason_without_exposing_terminal_fa
             keys,
             HashSet::from(["state", "job_id", "kind", "reason", "recorded_at"])
         );
-        assert!(!python_json::dumps(&events[1]).contains("must-not-be-logged"));
+        assert!(!pyjson::dumps(&events[1], None).contains("must-not-be-logged"));
         assert_eq!(claim(queue).unwrap().attempts, 2);
     }
 }
@@ -3358,7 +3358,7 @@ fn test_first_upgrade_cancels_waiting_notification_reads_once() {
     let waiting = retrieval(&queue, "https://www.instagram.com/p/NotifiedBefore/");
 
     let upgraded = open(&queue.state_directory, &clock);
-    // Its post now waits in the Supabase ingestion queue instead.
+    // Its post now waits in the ingestion queue instead.
     assert_eq!(job(&upgraded, &waiting).state, "cancelled");
     let later = retrieval(&upgraded, "https://www.instagram.com/ubcclub/");
     assert_eq!(

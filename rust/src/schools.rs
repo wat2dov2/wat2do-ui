@@ -19,10 +19,13 @@ pub struct School {
     pub timezone: String,
     pub semester_start: Option<NaiveDate>,
     pub semester_end: Option<NaiveDate>,
+    /// The Instagram account ID whose notifications belong to this school.
+    pub recipient_id: Option<String>,
 }
 
-const COLUMNS: &str = "id, slug, name, timezone, semester_start, semester_end";
+const COLUMNS: &str = "id, slug, name, timezone, semester_start, semester_end, recipient_id";
 
+/// `school_service.get_school`: a school by slug.
 pub async fn by_slug(pool: &PgPool, slug: &str) -> Result<Option<School>> {
     let slug = slug.trim().to_lowercase();
     Ok(sqlx::query_as(&format!(
@@ -80,7 +83,10 @@ pub fn frontend_url(configured: &str, slug: Option<&str>) -> Result<String> {
         )
     };
     let parsed = parsed.expect("parsed above");
-    let port = explicit_port(base_url)
+    // The port the URL spells out, even the scheme's default, as Python reads it.
+    let port = crate::urls::urlsplit(base_url, "")
+        .ok()
+        .and_then(|split| split.port().ok().flatten())
         .map(|port| format!(":{port}"))
         .unwrap_or_default();
     Ok(format!(
@@ -88,19 +94,6 @@ pub fn frontend_url(configured: &str, slug: Option<&str>) -> Result<String> {
         parsed.scheme(),
         parsed.path().trim_end_matches('/')
     ))
-}
-
-/// The port a URL spells out, even the scheme's default, as Python's `urlsplit` reads it.
-fn explicit_port(url: &str) -> Option<u16> {
-    let authority = url.split_once("://")?.1.split(['/', '?', '#']).next()?;
-    let host_and_port = authority
-        .rsplit_once('@')
-        .map_or(authority, |(_, host)| host);
-    let (host, port) = host_and_port.rsplit_once(':')?;
-    if host.starts_with('[') && !host.ends_with(']') {
-        return None;
-    }
-    port.parse().ok()
 }
 
 /// `schemas.school.validate_recipient_id`: one canonical numeric notification recipient ID.
@@ -114,59 +107,17 @@ pub fn validate_recipient_id(value: &str) -> Result<String, String> {
     Ok(value.to_owned())
 }
 
-/// The fields Instagram routing needs from a school.
-#[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
-pub struct SchoolRouting {
-    pub id: i32,
-    pub slug: String,
-    pub recipient_id: Option<String>,
-}
-
-/// `school_service.get_school`: a school by slug.
-pub async fn routing_by_slug(pool: &PgPool, slug: &str) -> Result<Option<SchoolRouting>> {
-    let slug = slug.trim().to_lowercase();
-    if slug.is_empty() {
-        return Ok(None);
-    }
-    Ok(
-        sqlx::query_as("SELECT id, slug, recipient_id FROM public.schools WHERE slug = $1 LIMIT 1")
-            .bind(slug)
-            .fetch_optional(pool)
-            .await?,
-    )
-}
-
 /// `school_service.get_school_by_recipient_id`: the school an Instagram account notifies.
-pub async fn routing_by_recipient_id(
-    pool: &PgPool,
-    recipient_id: &str,
-) -> Result<Option<SchoolRouting>> {
+pub async fn by_recipient_id(pool: &PgPool, recipient_id: &str) -> Result<Option<School>> {
     let Ok(recipient_id) = validate_recipient_id(recipient_id.trim()) else {
         return Ok(None);
     };
-    Ok(sqlx::query_as(
-        "SELECT id, slug, recipient_id FROM public.schools WHERE recipient_id = $1 LIMIT 1",
-    )
+    Ok(sqlx::query_as(&format!(
+        "SELECT {COLUMNS} FROM public.schools WHERE recipient_id = $1 LIMIT 1"
+    ))
     .bind(recipient_id)
     .fetch_optional(pool)
     .await?)
-}
-
-/// `school_service.get_school_id`: a school's ID by slug, else by name.
-pub async fn id_by_slug_or_name(pool: &PgPool, value: &str) -> Result<Option<i32>> {
-    if let Some(school) = routing_by_slug(pool, value).await? {
-        return Ok(Some(school.id));
-    }
-    let name = value.trim();
-    if name.is_empty() {
-        return Ok(None);
-    }
-    Ok(
-        sqlx::query_scalar("SELECT id FROM public.schools WHERE name ILIKE $1 LIMIT 1")
-            .bind(name)
-            .fetch_optional(pool)
-            .await?,
-    )
 }
 
 impl School {

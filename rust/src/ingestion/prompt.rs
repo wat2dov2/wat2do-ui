@@ -196,6 +196,7 @@ mod tests {
             timezone: "America/Toronto".into(),
             semester_start: None,
             semester_end: None,
+            recipient_id: None,
         };
         let post = serde_json::json!({"url": "https://www.instagram.com/p/ABC/"});
         let rendered = render(&Source {

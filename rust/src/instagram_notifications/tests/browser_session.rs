@@ -27,7 +27,7 @@ use super::tab_pool::{BrowserTabPool, TabPool};
 use super::{canonical_post_url, school_account_username, validate_account_username};
 use crate::controlbox::{InheritedControls, instagram_browser as control, overrides};
 use crate::host::{CommandError, CommandOutput, Event, Host};
-use crate::python_json;
+use crate::pyjson;
 
 // ---------------------------------------------------------------------------------------
 // Doubles
@@ -588,7 +588,7 @@ fn evaluate_account_identity(html: &str, ready_state: &str) -> Option<Value> {
       document.readyState = {ready};
       console.log(JSON.stringify({source}));
     "#,
-        ready = python_json::string(ready_state),
+        ready = pyjson::string(ready_state),
         source = scripts::CURRENT_ACCOUNT_USERNAME,
     );
     node_json(&script)
@@ -3712,7 +3712,7 @@ fn test_viewport_probe_skips_native_loading_wait_but_business_source_keeps_it() 
     setup();
     assert!(scripts::EXECUTE_TAB.contains(&format!(
         "if javascriptSource is not {} and loading of browserTab",
-        python_json::string(scripts::VIEWPORT)
+        pyjson::string(scripts::VIEWPORT)
     )));
 }
 

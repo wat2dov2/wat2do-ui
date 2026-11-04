@@ -12,7 +12,7 @@ use serde_json::{Map, Value, json};
 use super::browser_session::{BrowserInstagramSession, canonical_post_url};
 use super::errors::{BrowserError, BrowserResult, SessionKind};
 use super::scripts;
-use crate::python_url::urlsplit;
+use crate::urls::urlsplit;
 
 static PROFILE_PATH: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^/([A-Za-z0-9._]{1,30})/?$").expect("valid regex"));
@@ -30,7 +30,7 @@ pub fn canonical_target_url(url: &str) -> BrowserResult<String> {
     if PROFILE_PATH.is_match(&format!("/{username}/")) {
         url = format!("https://www.instagram.com/{username}/");
     }
-    let parsed = urlsplit(&url).map_err(BrowserError::Value)?;
+    let parsed = urlsplit(&url, "").map_err(BrowserError::Value)?;
     let host = parsed.hostname();
     if !matches!(host.as_deref(), Some("instagram.com" | "www.instagram.com"))
         || parsed.scheme != "https"
@@ -108,7 +108,7 @@ pub fn retrieve(
     cutoff_days: i64,
 ) -> BrowserResult<Value> {
     let target = canonical_target_url(url)?;
-    let target_path = urlsplit(&target).map_err(BrowserError::Value)?.path;
+    let target_path = urlsplit(&target, "").map_err(BrowserError::Value)?.path;
     let profile = PROFILE_PATH
         .captures(&target_path)
         .map(|found| found[1].to_owned());
@@ -291,7 +291,7 @@ fn validate_post(post: &Value) -> BrowserResult<(Map<String, Value>, DateTime<Ut
         return Err(omitted());
     }
     let children = post.get("childPosts").cloned().unwrap_or(json!([]));
-    let children_empty = !crate::python_json::truthy(&children);
+    let children_empty = !crate::pyjson::truthy(&children);
     if post.get("type") == Some(&json!("Sidecar")) && children_empty {
         return Err(omitted());
     }
@@ -312,7 +312,7 @@ fn validate_post(post: &Value) -> BrowserResult<(Map<String, Value>, DateTime<Ut
         }
         let video = item
             .get("videoUrl")
-            .filter(|video| crate::python_json::truthy(video));
+            .filter(|video| crate::pyjson::truthy(video));
         if item.get("type") == Some(&json!("Video")) && video.is_none() {
             return Err(omitted());
         }
@@ -329,7 +329,7 @@ fn public_media_url(value: Option<&Value>) -> BrowserResult<bool> {
     };
     let omitted =
         || BrowserError::session("Instagram retrieval omitted required caption or media fields");
-    let parsed = urlsplit(value).map_err(|_| omitted())?;
+    let parsed = urlsplit(value, "").map_err(|_| omitted())?;
     let host = parsed.hostname().unwrap_or_default();
     Ok(parsed.scheme == "https"
         && (host.ends_with(".cdninstagram.com") || host.ends_with(".fbcdn.net"))

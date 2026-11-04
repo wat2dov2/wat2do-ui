@@ -5,7 +5,7 @@
 //! value is never scanned again) and JSON values are encoded as Python's `json.dumps`.
 
 use crate::controlbox::{INSTAGRAM_DIGEST, SCRAPING, instagram_browser};
-use crate::python_json;
+use crate::pyjson;
 
 pub const VIEWPORT: &str = include_str!("scripts/viewport.js");
 pub const LOGGED_OUT: &str = include_str!("scripts/logged_out.js");
@@ -72,7 +72,7 @@ fn render(template: &str, values: &[(&str, &str)]) -> String {
 }
 
 fn json(text: &str) -> String {
-    python_json::string(text)
+    pyjson::string(text)
 }
 
 /// `_click_account_source`: select the switcher entry for `username`.

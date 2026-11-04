@@ -23,9 +23,22 @@ use crate::instagram_notifications::carousel_engagement::{
 };
 use crate::instagram_notifications::test_support::{FakeHost, HostCall, ok, queue as open_queue};
 use crate::logs::{PythonFormat, RotatingLog, Style};
-use crate::schools::SchoolRouting;
+use crate::schools::School;
 
 const AUTH_HOLD: &str = "Instagram account requires reauthentication";
+
+/// The school `retrieve` resolves, with its notification recipient.
+fn ubc() -> School {
+    School {
+        id: 3,
+        slug: "ubc".into(),
+        name: "University of British Columbia".into(),
+        timezone: "America/Vancouver".into(),
+        semester_start: None,
+        semester_end: None,
+        recipient_id: Some("12342599092".into()),
+    }
+}
 
 /// Only `enabled_accounts` is reachable from `inspect`.
 struct Accounts(Vec<PublishingAccount>);
@@ -73,7 +86,7 @@ impl PublishingStore for Accounts {
 struct FakeCli {
     host: Arc<FakeHost>,
     home: PathBuf,
-    school: Option<SchoolRouting>,
+    school: Option<School>,
     publishing: Accounts,
     queued: Mutex<Vec<(Vec<String>, String)>>,
     workers: Mutex<Vec<(bool, bool)>>,
@@ -118,7 +131,7 @@ impl CliServices for FakeCli {
         self.host.clone()
     }
 
-    fn school_by_slug(&self, _slug: &str) -> anyhow::Result<Option<SchoolRouting>> {
+    fn school_by_slug(&self, _slug: &str) -> anyhow::Result<Option<School>> {
         Ok(self.school.clone())
     }
 
@@ -826,11 +839,7 @@ fn test_resume_preserves_installer_owned_pause() {
 fn test_retrieve_sends_a_post_straight_to_the_ingestion_queue() {
     let directory = tempfile::tempdir().unwrap();
     let mut services = FakeCli::new(directory.path());
-    services.school = Some(SchoolRouting {
-        id: 3,
-        slug: "ubc".into(),
-        recipient_id: Some("12342599092".into()),
-    });
+    services.school = Some(ubc());
 
     let (code, stdout, stderr) = main_with(
         &services,
@@ -865,11 +874,7 @@ fn test_retrieve_sends_a_post_straight_to_the_ingestion_queue() {
 fn test_retrieve_asks_brave_to_list_a_profile() {
     let directory = tempfile::tempdir().unwrap();
     let mut services = FakeCli::new(directory.path());
-    services.school = Some(SchoolRouting {
-        id: 3,
-        slug: "ubc".into(),
-        recipient_id: Some("12342599092".into()),
-    });
+    services.school = Some(ubc());
 
     let (code, stdout, stderr) = main_with(
         &services,

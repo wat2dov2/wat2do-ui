@@ -44,10 +44,10 @@ impl DigestResolution {
             .get("page_count")
             .ok_or_else(|| missing("page_count"))?;
         Ok(Self {
-            account_username: crate::python_json::str(account_username),
+            account_username: crate::pyjson::str(account_username),
             media_ids: media_ids
                 .as_array()
-                .map(|ids| ids.iter().map(crate::python_json::str).collect())
+                .map(|ids| ids.iter().map(crate::pyjson::str).collect())
                 .unwrap_or_default(),
             page_count: page_count.as_i64().unwrap_or_default(),
         })

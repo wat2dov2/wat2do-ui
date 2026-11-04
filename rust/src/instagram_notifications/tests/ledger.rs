@@ -1,7 +1,7 @@
 //! Ported from `tests/services/instagram_notifications/test_ledger.py`.
 //!
 //! Python asserted the `record_instagram_notification_media` RPC parameters its fake
-//! Supabase client received; Rust builds those in `NotificationRecord::arguments()`.
+//! data API client received; Rust builds those in `NotificationRecord::arguments()`.
 //! The RPC's returned `(notification_id, newly_inserted_count)` comes from Postgres and
 //! is not reachable without a database.
 

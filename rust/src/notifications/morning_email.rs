@@ -527,6 +527,7 @@ mod tests {
                 timezone: timezone.to_owned(),
                 semester_start: None,
                 semester_end: None,
+                recipient_id: None,
             }),
         }
     }

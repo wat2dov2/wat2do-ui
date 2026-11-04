@@ -13,8 +13,8 @@ rust/src/notification_retry.rs
 rust/src/launch_agents.rs
 rust/src/logs.rs
 rust/src/host.rs
-rust/src/python_json.rs
-rust/src/python_url.rs
+rust/src/pyjson.rs
+rust/src/urls.rs
 rust/src/automate_logs.rs
 rust/src/controlbox.rs
 rust/src/db.rs

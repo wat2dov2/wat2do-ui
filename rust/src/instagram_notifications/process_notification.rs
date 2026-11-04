@@ -477,7 +477,7 @@ impl NotificationServices for LiveServices {
     ) -> anyhow::Result<Option<(i32, String)>> {
         let recipient_id = recipient_id.to_owned();
         let school = self.database()?.run(|pool| async move {
-            crate::schools::routing_by_recipient_id(&pool, &recipient_id).await
+            crate::schools::by_recipient_id(&pool, &recipient_id).await
         })?;
         Ok(school.map(|school| (school.id, school.slug)))
     }

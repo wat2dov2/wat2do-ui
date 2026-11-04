@@ -23,7 +23,7 @@ pub use session::{
 pub use tab_pool::{BrowserTabPool, TabPool};
 
 use super::errors::{BrowserError, BrowserResult};
-use crate::python_url::urlsplit;
+use crate::urls::urlsplit;
 
 static USERNAME_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[A-Za-z0-9._]{1,30}$").expect("valid regex"));
@@ -53,7 +53,7 @@ pub fn validate_account_username(value: &str) -> Result<String, String> {
 /// Only allow an Instagram post/reel permalink, never arbitrary navigation.
 pub fn canonical_post_url(post_url: &str) -> BrowserResult<String> {
     let invalid = || BrowserError::session("Instagram engagement post URL is invalid");
-    let parsed = urlsplit(post_url.trim()).map_err(|_| invalid())?;
+    let parsed = urlsplit(post_url.trim(), "").map_err(|_| invalid())?;
     if parsed.scheme != "https"
         || !["instagram.com", "www.instagram.com"].contains(&parsed.netloc.as_str())
         || !POST_PATH.is_match(&parsed.path)

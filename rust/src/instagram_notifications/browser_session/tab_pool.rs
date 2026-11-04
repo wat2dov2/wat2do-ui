@@ -20,7 +20,7 @@ use super::runner::{JavascriptRunner, PinnedRunner};
 use super::session::{BrowserInstagramSession, CANCELLATION_UNCONFIRMED, LOGGED_OUT_PAUSE};
 use super::{WAT2DO_ACCOUNT_PATTERN, account_profile_url, school_account_username};
 use crate::controlbox::instagram_browser as control;
-use crate::python_json;
+use crate::pyjson;
 
 /// What the worker asks of its tabs; the browser pool, or a test's stand-in.
 pub trait TabPool {
@@ -199,7 +199,7 @@ impl BrowserTabPool {
             return Ok(username.to_owned());
         }
         if let Some(stored) = self.queue.get_setting("retrieval_pool_account")?
-            && python_json::truthy(&stored)
+            && pyjson::truthy(&stored)
         {
             return Ok(stored
                 .as_str()
@@ -414,7 +414,7 @@ impl TabPool for BrowserTabPool {
             let shown = clicked
                 .first()
                 .cloned()
-                .unwrap_or_else(|| python_json::str(&preferred));
+                .unwrap_or_else(|| pyjson::str(&preferred));
             let username = account_login::canonical_account(&shown);
             let Some(password) = account_login::account_password(&self.bridge, &username) else {
                 return Err(BrowserError::session(format!(
