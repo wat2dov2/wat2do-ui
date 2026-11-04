@@ -197,7 +197,7 @@ Run `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo 
 The public API is served by `wat2do-api` (`rust/src/api`), which listens on port 8000, runs the FastAPI app on loopback as its child, answers the routes already ported to Rust and proxies every other request to Python unchanged.
 Porting a router means writing its handlers with the shared extractors, errors and validation in `rust/src/api`, registering them in `rust_routes()`, regenerating `backend/core/rust_openapi.json`, proving parity with `backend/scripts/api_parity.py` against production read-only, and deleting the Python router, service, schemas and tests in the same change.
 `docs/rust_api.md` is the step-by-step guide.
-Read-only production checks through the pooler must `SET default_transaction_read_only = on` on each session-mode connection and confirm it with `SHOW`; the pooler ignores `PGOPTIONS`.
+Read-only production checks must `SET default_transaction_read_only = on`, a 10 second `statement_timeout` and a 15 second `idle_in_transaction_session_timeout` on every connection (at most 2), confirm read-only with `SHOW`, run one at a time and never retry a failed run.
 
 ### Bug fixes and testing
 

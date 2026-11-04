@@ -11,9 +11,8 @@ pub struct Settings {
     /// "development", "testing" or "production".
     pub environment: String,
     pub database_url: String,
-    pub supabase_url: String,
-    pub supabase_jwt_issuer: String,
-    pub supabase_secret_key: String,
+    /// Base64 PKCS#8 DER of the EC P-256 key that signs our access tokens.
+    pub auth_signing_key: String,
     pub ingest_agent_database_url: String,
     pub aws_region: String,
     pub storage_bucket_name: String,
@@ -85,9 +84,7 @@ impl Settings {
         Ok(Self {
             environment: or_default("ENVIRONMENT", "development"),
             database_url: required("DATABASE_URL")?,
-            supabase_url: required("SUPABASE_URL")?,
-            supabase_jwt_issuer: optional("SUPABASE_JWT_ISSUER"),
-            supabase_secret_key: required("SUPABASE_SECRET_KEY")?,
+            auth_signing_key: optional("AUTH_SIGNING_KEY"),
             ingest_agent_database_url: optional("INGEST_AGENT_DATABASE_URL"),
             aws_region: or_default("AWS_REGION", "ca-central-1"),
             storage_bucket_name: optional("STORAGE_BUCKET_NAME"),
@@ -164,12 +161,14 @@ pub fn settings() -> Result<&'static Settings> {
 #[cfg(test)]
 pub(crate) fn test_settings(overrides: &[(&str, &str)]) -> Settings {
     let mut values: std::collections::HashMap<String, String> = [
-        ("DATABASE_URL", "postgres://localhost/wat2do"),
-        ("SUPABASE_URL", "https://example.supabase.co"),
-        ("SUPABASE_SECRET_KEY", "test-service-role-key"),
+        ("DATABASE_URL", "postgres://localhost/wat2do".to_owned()),
+        (
+            "AUTH_SIGNING_KEY",
+            crate::api::auth::test_tokens::signing_key(),
+        ),
     ]
     .into_iter()
-    .map(|(name, value)| (name.to_owned(), value.to_owned()))
+    .map(|(name, value)| (name.to_owned(), value))
     .collect();
     for (name, value) in overrides {
         values.insert((*name).to_owned(), (*value).to_owned());

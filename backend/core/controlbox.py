@@ -516,11 +516,13 @@ class ApiServerControl(_ControlModel):
     python_shutdown_seconds: int = Field(gt=0)
     shutdown_drain_seconds: int = Field(gt=0)
     upstream_idle_seconds: int = Field(gt=0)
-    # Session-mode pooler connections are scarce: every task holds at most this many.
-    database_connections: int = Field(ge=1, le=6)
+    # A small pool: every task holds at most this many Postgres connections.
+    database_connections: int = Field(ge=1, le=5)
     database_idle_seconds: int = Field(gt=0)
     # A request waits at most this long for a free connection, then fails with 503.
     database_acquire_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
+    # Each statement's limit, the same as the data API role's (authenticator, 8 s).
+    database_statement_timeout_milliseconds: int = Field(ge=1000, le=60000)
 
     @model_validator(mode="after")
     def validate_keep_alive(self) -> "ApiServerControl":

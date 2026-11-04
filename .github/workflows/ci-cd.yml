@@ -185,9 +185,8 @@ jobs:
           # and SIGTERM must stop both processes cleanly.
           container_id="$(docker run --detach --read-only --tmpfs /tmp \
             --env ENVIRONMENT=testing \
-            --env SUPABASE_URL=https://example.supabase.co \
-            --env SUPABASE_KEY=test-anon-key \
-            --env SUPABASE_SECRET_KEY=test-service-role-key \
+            --env DATA_API_URL=https://data.example.test \
+            --env DATA_API_KEY=test-service-key \
             --env DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/postgres \
             --publish 127.0.0.1::8000 "$image")"
           cleanup() {

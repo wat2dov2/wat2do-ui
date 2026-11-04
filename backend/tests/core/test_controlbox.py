@@ -1028,7 +1028,8 @@ def test_login_recovery_must_cover_the_security_code_wait(tmp_path) -> None:
     [
         ({"python_keep_alive_seconds": 60}, "must exceed upstream_idle_seconds"),
         ({"python_port": 8000}, "must differ from the public API port"),
-        ({"database_connections": 7}, "less than or equal to 6"),
+        ({"database_connections": 6}, "less than or equal to 5"),
+        ({"database_statement_timeout_milliseconds": 0}, "greater than or equal to 1000"),
         ({"shutdown_drain_seconds": 15}, "30 second stop timeout"),
     ],
 )

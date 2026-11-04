@@ -142,15 +142,13 @@ pub fn connect_options() -> Result<PgConnectOptions> {
 }
 
 /// A pool that opens connections only when a query needs one and closes them
-/// after `idle`, so a server holds no scarce session-mode slots while quiet
-/// and starts even while the database is unreachable. Connections are not
-/// pinged before each use (a round trip per query); a read that meets a dead
-/// connection is retried by `read_with_retry`.
+/// after `idle`, so a server holds no idle connections while quiet and starts
+/// even while the database is unreachable. Connections are not pinged before
+/// each use (a round trip per query); a read that meets a dead connection is
+/// retried by `read_with_retry`.
 ///
-/// With `read_only`, every connection runs `SET default_transaction_read_only
-/// = on` and checks it took effect before its first query. (The pooler drops
-/// the `options` startup parameter, so PGOPTIONS cannot do this; session mode
-/// keeps the setting on the server connection pinned to ours.)
+/// With `read_only`, every connection runs [`READ_ONLY_SESSION`] and checks
+/// that `default_transaction_read_only` took effect before its first query.
 pub fn connect_lazy(
     options: PgConnectOptions,
     max_connections: u32,
@@ -167,9 +165,9 @@ pub fn connect_lazy(
         .after_connect(move |connection, _| {
             Box::pin(async move {
                 if read_only {
-                    sqlx::query("SET default_transaction_read_only = on")
-                        .execute(&mut *connection)
-                        .await?;
+                    for setting in READ_ONLY_SESSION {
+                        sqlx::query(setting).execute(&mut *connection).await?;
+                    }
                     let setting: String = sqlx::query_scalar("SHOW default_transaction_read_only")
                         .fetch_one(&mut *connection)
                         .await?;

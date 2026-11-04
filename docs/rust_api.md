@@ -40,7 +40,7 @@ Port one whole router (every path under its prefix) per change, so no path is se
 
    | Python | Rust |
    |---|---|
-   | `Depends(get_current_user)` | `CurrentUser` extractor |
+   | `Depends(get_current_user)` (`core/auth_tokens.decode_access_token`) | `CurrentUser` extractor (`auth::AccessTokens`, the public half of `AUTH_SIGNING_KEY`) |
    | `Depends(get_optional_user)` | `OptionalUser` |
    | `Depends(get_db_user)` | `DbUser` (`User`: id, email, role, school) |
    | `Depends(get_admin_user)` | `AdminUser` |
@@ -74,20 +74,24 @@ A case file is a JSON list (see `rust/parity/pilot.json`):
 [
   {"name": "site banner", "path": "/site-banner"},
   {"name": "admin list", "path": "/clubs/?page=2", "headers": {"origin": "https://wat2do.io"},
-   "identity": {"id": "<users.supabase_auth_id>", "email": "admin@example.com", "aud": "authenticated", "role": "authenticated"}},
+   "identity": {"id": "<users.auth_id>", "email": "admin@example.com"}},
   {"name": "refused POST", "method": "POST", "path": "/site-banner", "safe": true}
 ]
 ```
 
-`identity` stands in for a verified token on both sides (`dependency_overrides` in Python, a fixed identity in Rust), because Supabase-signed tokens cannot be minted.
-Use the `supabase_auth_id` of a real user so `DbUser` resolves the same row on both sides.
+The harness gives both sides one throwaway `AUTH_SIGNING_KEY` for the run (it overrides any key in the environment and is never printed), and sends each case with an `identity` with the access token our auth would issue that user (`sub` = `id`, a fresh `session_id`, 15 minutes).
+Each side then verifies the token itself, so authentication is compared too.
+Use the `auth_id` of a real user so `DbUser` resolves the same row on both sides.
+A case can also send its own `authorization` header, such as a token we did not sign.
 `json` sends a JSON body and `body` a raw one.
-Only GET, HEAD and OPTIONS cases run unless a case is marked `"safe": true` or `--allow-writes` is given, and `--allow-writes` only runs against a local Supabase.
-The Rust side's connections run `SET default_transaction_read_only = on` and check it with `SHOW` before any query (the pooler ignores `PGOPTIONS`).
+Only GET, HEAD and OPTIONS cases run unless a case is marked `"safe": true` or `--allow-writes` is given, and `--allow-writes` only runs when `DATABASE_URL` and `DATA_API_URL` are local.
+The Rust side uses at most 2 connections, and each runs `SET default_transaction_read_only = on`, `statement_timeout = '10s'` and `idle_in_transaction_session_timeout = '15s'`, and checks the first with `SHOW` before any query.
 The FastAPI side cannot be made read-only through PostgREST, so never mark a case safe if its Python handler could write.
 The FastAPI lifespan, and with it the map-location thread, is never started.
 
-Run it against production with the Python router still in a reference checkout:
+Run it against production with the Python router still in a reference checkout.
+Production runs go one at a time (take the shared `parity.lock` first), with at most 20 iterations and no retry of a failed run; stop at the first timeout.
+The Python side reads through the data API, whose role already has an 8 second statement timeout:
 
 ```bash
 git -C ~/Desktop/projects/2026/wat2do-v2 worktree add --detach /tmp/wat2do-ref origin/main
@@ -108,22 +112,21 @@ Remove the reference worktree afterwards.
 ## Local development
 
 `make dev` builds the backend image (Rust included) and runs `wat2do-api serve --reload`, so Python changes reload while Rust changes need `make dev` again.
-`DEV_DATABASE_URL` points the Rust server at the local Supabase Postgres.
+The Rust server reads the compose `database` service directly (`DATABASE_URL` in `docker-compose.dev.yml`) and verifies the access tokens the local backend signs with the development `AUTH_SIGNING_KEY`.
 To run Rust alone without Docker, use the parity harness or `cargo test`; agents never start servers on the Mac.
 
 ## Production
 
 The backend image builds `wat2do-api` in a Rust stage and runs it as the non-root `wat2do` user on a read-only root filesystem.
 The ECS task needs egress to Postgres on 5432 (the `task_postgres` rule in `infra/terraform/production/security-groups.tf`).
+The server reads every address from its environment (`DATABASE_URL`, `AUTH_SIGNING_KEY`, CORS and cookie settings), so moving hosts only changes those values.
 The image is built and smoke-tested by the "Backend image build" CI job on every pull request and before every deploy.
 Container PID 1 is `wat2do-api`; like uvicorn before it, it reaps only its own child.
 
-### Database connection budget
+### Database connections
 
-`wat2do-api` reads Postgres through the pooler's session mode (5432), where every client connection pins a server connection, so its pool is small and bounded (`controlbox/api_server.json`).
-Each task holds at most `database_connections` (3), opens them only when a query needs one (no minimum), closes them after `database_idle_seconds` (60) idle, and waits at most `database_acquire_seconds` (3) for a free one before answering 503 instead of queueing.
-Production allows 60 connections, and about 33 are in use (PostgREST 11, Supavisor 8, realtime and internals about 14).
-Rust services add the ingestion processor (6), directory runs (4 while running) and the hourly email job (a few, say 2), which is 12.
-Two API tasks add 6, and a rolling deploy briefly runs four tasks, adding 12.
-The worst case is 33 + 12 + 12 = 57 of 60, so raise `database_connections` only after PostgREST traffic has moved to Rust and the in-use count has dropped.
+`wat2do-api` connects to `DATABASE_URL` exactly as given (production: the RDS database `wat2do` as `wat2do_owner`, with no pooler in between), so it runs wherever that address is reachable.
+Its pool is small and bounded (`controlbox/api_server.json`): each process holds at most `database_connections` (3), opens them only when a query needs one (no minimum), closes them after `database_idle_seconds` (60) idle, and waits at most `database_acquire_seconds` (3) for a free one before answering 503 instead of queueing.
+Every connection starts with `statement_timeout` set to `database_statement_timeout_milliseconds` (8000), the same limit the data API's role has, so a slow query fails the request instead of holding the database.
+RDS allows 400 connections; the API's few sit next to PostgREST's pool, the ingestion processor's 6 and the scheduled jobs'.
 When the last Python router is gone, replace the container health check command and the `python` runtime with the Rust binary alone.

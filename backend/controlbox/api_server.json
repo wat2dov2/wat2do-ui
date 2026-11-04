@@ -8,5 +8,6 @@
   "upstream_idle_seconds": 60,
   "database_connections": 3,
   "database_idle_seconds": 60,
-  "database_acquire_seconds": 3
+  "database_acquire_seconds": 3,
+  "database_statement_timeout_milliseconds": 8000
 }

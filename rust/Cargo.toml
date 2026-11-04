@@ -9,6 +9,7 @@ description = "wat2do backend services ported from Python"
 anyhow = "1"
 axum = "0.8"
 aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-lc-rs = "1"
 aws-sdk-s3 = "1"
 aws-sdk-sesv2 = "1"
 base64 = "0.22"

@@ -19,12 +19,9 @@ const CSP_DIRECTIVES: [(&str, &str); 11] = [
     ("font-src", "'self' https://fonts.gstatic.com"),
     (
         "img-src",
-        "'self' data: blob: https://*.supabase.co https://*.amazonaws.com https://images.unsplash.com https://tiles.openfreemap.org",
+        "'self' data: blob: https://*.amazonaws.com https://images.unsplash.com https://tiles.openfreemap.org",
     ),
-    (
-        "connect-src",
-        "'self' https://*.supabase.co https://tiles.openfreemap.org",
-    ),
+    ("connect-src", "'self' https://tiles.openfreemap.org"),
     ("worker-src", "'self' blob:"),
     ("object-src", "'none'"),
     ("frame-ancestors", "'self'"),
@@ -83,9 +80,9 @@ mod tests {
         assert_eq!(
             content_security_policy(),
             "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; \
-             font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co \
+             font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: \
              https://*.amazonaws.com https://images.unsplash.com https://tiles.openfreemap.org; connect-src 'self' \
-             https://*.supabase.co https://tiles.openfreemap.org; worker-src 'self' blob:; object-src 'none'; \
+             https://tiles.openfreemap.org; worker-src 'self' blob:; object-src 'none'; \
              frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
         );
     }

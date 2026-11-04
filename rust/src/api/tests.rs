@@ -33,7 +33,7 @@ fn state(upstream: Option<Arc<Upstream>>) -> AppState {
         Duration::from_secs(1),
         false,
     );
-    AppState::new(settings(), db, None, upstream).unwrap()
+    AppState::new(settings(), db, upstream).unwrap()
 }
 
 struct Reply {

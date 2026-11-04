@@ -3,8 +3,9 @@
 Runs every case in a JSON file through FastAPI's ``TestClient`` in process and
 through ``wat2do-api replay`` (the Rust router, in process), then compares the
 status, the headers and the body of each response. A case's ``identity``
-stands in for a verified access token on both sides (``dependency_overrides``
-here, a fixed identity in Rust), since Supabase-signed tokens cannot be minted.
+(``{"id": "<users.auth_id>", "email": ...}``) becomes an access token signed
+with a throwaway ``AUTH_SIGNING_KEY`` that both sides are given, so each side
+verifies the token exactly as it would a real one. The key is never printed.
 
 Usage (see docs/rust_api.md):
     cd backend && .venv/bin/python scripts/api_parity.py ../rust/parity/pilot.json \\
@@ -12,26 +13,35 @@ Usage (see docs/rust_api.md):
 
 Only GET, HEAD and OPTIONS cases (or cases marked ``"safe": true``, such as a
 POST that must be refused with 405) run unless ``--allow-writes`` is given, which
-is refused unless ``SUPABASE_URL`` points at a local Supabase. The Rust side's
-database session is read-only unless ``--allow-writes`` is given. The FastAPI
-lifespan (the map-location thread) is never started.
+is refused unless ``DATABASE_URL`` and ``DATA_API_URL`` both name a local host.
+The Rust side's database sessions are read-only, with a 10 second statement
+timeout, unless ``--allow-writes`` is given. The FastAPI lifespan (the
+map-location thread) is never started.
 """
 
 import argparse
+import base64
 import json
 import math
 import os
 import subprocess
 import sys
+import tempfile
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+import jwt
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+
 BACKEND = Path(__file__).resolve().parents[1]
 RUST = BACKEND.parent / "rust"
 READ_METHODS = {"GET", "HEAD", "OPTIONS"}
-LOCAL_HOSTS = {"localhost", "127.0.0.1", "host.docker.internal"}
+LOCAL_HOSTS = {"localhost", "127.0.0.1", "host.docker.internal", "database"}
+IDENTITY_FIELDS = {"id", "email"}
 # Set by the HTTP layer rather than the application; bodies are compared instead.
 IGNORED_HEADERS = {"content-length", "date", "server"}
 
@@ -52,24 +62,61 @@ def _latency(samples: list[float]) -> dict[str, float]:
     }
 
 
+def _throwaway_signing_key() -> ec.EllipticCurvePrivateKey:
+    """A P-256 key for this run only, set as both sides' ``AUTH_SIGNING_KEY``."""
+    key = ec.generate_private_key(ec.SECP256R1())
+    os.environ["AUTH_SIGNING_KEY"] = base64.b64encode(
+        key.private_bytes(
+            serialization.Encoding.DER,
+            serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption(),
+        )
+    ).decode("ascii")
+    return key
+
+
+def _sign_identities(
+    cases: list[dict[str, Any]], key: ec.EllipticCurvePrivateKey
+) -> list[dict[str, Any]]:
+    """The cases, each ``identity`` replaced by the access token our auth would issue it."""
+    control = json.loads((BACKEND / "controlbox/authentication.json").read_text())
+    signed = []
+    for case in cases:
+        identity = case.get("identity")
+        case = {name: value for name, value in case.items() if name != "identity"}
+        if identity is not None:
+            if set(identity) - IDENTITY_FIELDS or "id" not in identity:
+                raise SystemExit(f"{case['name']}: identity takes only {sorted(IDENTITY_FIELDS)}")
+            now = int(time.time())
+            # The claims core/auth_tokens.issue_access_token signs.
+            claims = {
+                "iss": control["token_issuer"],
+                "aud": "authenticated",
+                "role": "authenticated",
+                "sub": identity["id"],
+                "email": identity.get("email"),
+                "session_id": str(uuid.uuid4()),
+                "iat": now,
+                "exp": now + control["access_token_minutes"] * 60,
+            }
+            token = jwt.encode(claims, key, algorithm="ES256")
+            case["headers"] = {**(case.get("headers") or {}), "authorization": f"Bearer {token}"}
+        signed.append(case)
+    return signed
+
+
 def run_python(cases: list[dict[str, Any]], backend: Path, iterations: int) -> list[dict[str, Any]]:
     """Run each case through the FastAPI app of *backend* in this process."""
     sys.path.insert(0, str(backend))
     os.chdir(backend)
     from fastapi.testclient import TestClient
 
-    from core.auth import get_current_user, get_optional_user
     from main import app
 
     # No `with`: the lifespan (and its background thread) must not start.
     client = TestClient(app, raise_server_exceptions=False)
     outcomes = []
     for case in cases:
-        identity = case.get("identity")
-        if identity is not None:
-            user = {"email": None, "aud": None, "role": None, **identity}
-            app.dependency_overrides[get_current_user] = lambda user=user: user
-            app.dependency_overrides[get_optional_user] = lambda user=user: user
         samples = []
         for _ in range(iterations):
             started = time.perf_counter()
@@ -82,8 +129,6 @@ def run_python(cases: list[dict[str, Any]], backend: Path, iterations: int) -> l
                 follow_redirects=False,
             )
             samples.append((time.perf_counter() - started) * 1000)
-        app.dependency_overrides.pop(get_current_user, None)
-        app.dependency_overrides.pop(get_optional_user, None)
         headers: dict[str, list[str]] = {}
         for name, value in response.headers.multi_items():
             headers.setdefault(name.lower(), []).append(value)
@@ -166,13 +211,17 @@ def main() -> int:
     ]
     if writes and not args.allow_writes:
         parser.error(f"cases that may write need --allow-writes: {writes}")
-    if (
-        args.allow_writes
-        and urlparse(os.environ.get("SUPABASE_URL", "")).hostname not in LOCAL_HOSTS
+    if args.allow_writes and not all(
+        urlparse(os.environ.get(name, "")).hostname in LOCAL_HOSTS
+        for name in ("DATABASE_URL", "DATA_API_URL")
     ):
-        parser.error("--allow-writes runs only against a local Supabase")
+        parser.error("--allow-writes runs only against a local database and data API")
 
-    rust = run_rust(args.cases, args.rust_binary, args.allow_writes, args.iterations)
+    cases = _sign_identities(cases, _throwaway_signing_key())
+    with tempfile.NamedTemporaryFile("w", suffix=".json", encoding="utf-8") as signed:
+        json.dump(cases, signed)
+        signed.flush()
+        rust = run_rust(Path(signed.name), args.rust_binary, args.allow_writes, args.iterations)
     python = run_python(cases, args.python_backend.resolve(), args.iterations)
     if args.json_out:
         args.json_out.write_text(json.dumps({"python": python, "rust": rust}, indent=2) + "\n")

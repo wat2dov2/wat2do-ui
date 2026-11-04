@@ -35,6 +35,25 @@ pub struct ApiServer {
     pub database_connections: u32,
     pub database_idle_seconds: u64,
     pub database_acquire_seconds: f64,
+    pub database_statement_timeout_milliseconds: u64,
+}
+
+/// `controlbox/authentication.json`, every field.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Authentication {
+    pub session_cookie_days: i64,
+    pub verification_token_minutes: i64,
+    pub access_token_minutes: i64,
+    /// Wrong six-digit codes an address may try per window.
+    pub code_guess_limit: usize,
+    pub code_guess_window_minutes: i64,
+    /// A just-rotated refresh token still returns its successor for this long.
+    pub refresh_token_reuse_seconds: i64,
+    /// The `iss` of every access token we sign and accept.
+    pub token_issuer: String,
+    pub google_client_id: String,
+    pub legacy_frontend_origins: Vec<String>,
 }
 
 /// The read retry policy in `controlbox/database.json`.
@@ -292,6 +311,12 @@ pub static API_SERVER: LazyLock<ApiServer> = LazyLock::new(|| {
         include_str!("../../backend/controlbox/api_server.json"),
     )
 });
+pub static AUTHENTICATION: LazyLock<Authentication> = LazyLock::new(|| {
+    parse(
+        "authentication",
+        include_str!("../../backend/controlbox/authentication.json"),
+    )
+});
 pub static DATABASE: LazyLock<Database> = LazyLock::new(|| {
     parse(
         "database",
@@ -466,6 +491,7 @@ mod tests {
     #[test]
     fn every_control_file_parses() {
         assert!(API_SERVER.database_connections > 0);
+        assert!(AUTHENTICATION.access_token_minutes > 0);
         assert!(DATABASE.read_attempts > 0);
         assert!(RATE_LIMITS.default.maximum_requests > 0);
         assert!(INGESTION.parallel_agents > 0);

@@ -58,9 +58,14 @@
     "path": "/site-banner",
     "identity": {
       "id": "11111111-1111-1111-1111-111111111111",
-      "email": "test@example.com",
-      "aud": "authenticated",
-      "role": "authenticated"
+      "email": "test@example.com"
+    }
+  },
+  {
+    "name": "site banner with a token we did not sign",
+    "path": "/site-banner",
+    "headers": {
+      "authorization": "Bearer not-a-jwt"
     }
   },
   {

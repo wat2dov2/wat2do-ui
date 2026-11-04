@@ -9,7 +9,6 @@ pub const ADMIN_ACCESS_REQUIRED: &str = "Admin access required";
 pub const CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED: &str = "Club manager or admin access required";
 pub const NOT_AUTHORIZED: &str = "Not authorized";
 pub const RATE_LIMIT_EXCEEDED: &str = "Too many requests \u{2014} please wait before trying again.";
-pub const AUTHENTICATION_ERROR: &str = "Authentication error";
 pub const DB_OPERATION_FAILED: &str = "Database operation failed";
 pub const INTERNAL_SERVER_ERROR: &str = "Internal server error";
 

@@ -85,8 +85,10 @@ async fn stop_python(child: &mut Child) {
 /// Run the server and the Python app until a signal or a failure; returns the exit code.
 pub async fn serve(port: u16, reload: bool) -> Result<i32> {
     let settings = crate::settings::settings()?;
+    // Every connection carries its own statement timeout, like the data API's role.
+    let statement_timeout = format!("{}ms", API_SERVER.database_statement_timeout_milliseconds);
     let db = crate::db::connect_lazy(
-        crate::db::connect_options()?,
+        crate::db::connect_options()?.options([("statement_timeout", statement_timeout.as_str())]),
         API_SERVER.database_connections,
         Duration::from_secs(API_SERVER.database_idle_seconds),
         Duration::from_secs_f64(API_SERVER.database_acquire_seconds),
@@ -96,7 +98,7 @@ pub async fn serve(port: u16, reload: bool) -> Result<i32> {
         API_SERVER.python_port,
         Duration::from_secs(API_SERVER.upstream_idle_seconds),
     ));
-    let state = AppState::new(settings, db, None, Some(upstream.clone()))?;
+    let state = AppState::new(settings, db, Some(upstream.clone()))?;
     let listener = tokio::net::TcpListener::bind(SocketAddr::from(([0, 0, 0, 0], port)))
         .await
         .with_context(|| format!("could not listen on port {port}"))?;

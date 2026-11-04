@@ -33,7 +33,7 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
 use crate::settings::Settings;
-use auth::{AuthUser, Authenticator, JwksVerifier};
+use auth::AccessTokens;
 use client_ip::ProxyTrust;
 use proxy::Upstream;
 
@@ -42,18 +42,16 @@ use proxy::Upstream;
 pub struct AppState {
     pub settings: &'static Settings,
     pub db: PgPool,
-    pub auth: Arc<Authenticator>,
+    pub auth: Arc<AccessTokens>,
     pub trust: Arc<ProxyTrust>,
     /// The Python app; `None` when Rust runs alone (the parity replay).
     pub upstream: Option<Arc<Upstream>>,
 }
 
 impl AppState {
-    /// `fixed_identity` stands in for every request's token (replay only).
     pub fn new(
         settings: &'static Settings,
         db: PgPool,
-        fixed_identity: Option<AuthUser>,
         upstream: Option<Arc<Upstream>>,
     ) -> anyhow::Result<Self> {
         // Starlette reflects the caller's Origin for "*" with credentials,
@@ -66,10 +64,7 @@ impl AppState {
         Ok(Self {
             settings,
             db,
-            auth: Arc::new(Authenticator {
-                jwks: JwksVerifier::new(settings),
-                fixed: fixed_identity,
-            }),
+            auth: Arc::new(AccessTokens::new(settings)),
             trust: Arc::new(ProxyTrust::new(settings)),
             upstream,
         })

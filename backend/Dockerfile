@@ -33,6 +33,8 @@ COPY rust/ .
 COPY backend/controlbox/ /src/backend/controlbox/
 COPY backend/schemas/event_discovery_fields.json /src/backend/schemas/event_discovery_fields.json
 COPY backend/services/ingestion/prompt.md /src/backend/services/ingestion/prompt.md
+COPY backend/services/ingestion/directory_prompt.md /src/backend/services/ingestion/directory_prompt.md
+COPY backend/services/wat2do-logo.png /src/backend/services/wat2do-logo.png
 RUN cargo build --release --locked --bin wat2do-api \
     && cp target/release/wat2do-api /usr/local/bin/wat2do-api
 

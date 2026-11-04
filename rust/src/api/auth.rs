@@ -1,5 +1,6 @@
-//! `core/auth.py`: Supabase access tokens verified locally against the
-//! project's JWKS, and the extractors routes declare to require them.
+//! `core/auth.py` and `core/auth_tokens.py`: our own ES256 access tokens,
+//! verified locally with the public half of `AUTH_SIGNING_KEY`, and the
+//! extractors routes declare to require them.
 //!
 //! | Python dependency | Rust extractor |
 //! |---|---|
@@ -11,14 +12,11 @@
 //!
 //! `require_owner_or_admin` and `authorized_resource` cover ownership checks.
 
-use std::collections::HashMap;
-use std::sync::Mutex;
-use std::time::{Duration, Instant};
-
+use aws_lc_rs::signature::{ECDSA_P256_SHA256_FIXED_SIGNING, EcdsaKeyPair, KeyPair};
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
-use axum::http::{HeaderMap, StatusCode, header};
-use jsonwebtoken::jwk::Jwk;
+use axum::http::{HeaderMap, header};
+use base64::Engine;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation};
 use serde_json::{Map, Value};
 use uuid::Uuid;
@@ -26,8 +24,8 @@ use uuid::Uuid;
 use super::AppState;
 use super::errors::ApiError;
 use super::messages::{
-    ADMIN_ACCESS_REQUIRED, AUTHENTICATION_ERROR, CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED,
-    CREDENTIALS_INVALID, INVALID_OR_EXPIRED_TOKEN, NOT_AUTHORIZED, USER_NOT_FOUND,
+    ADMIN_ACCESS_REQUIRED, CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED, CREDENTIALS_INVALID,
+    INVALID_OR_EXPIRED_TOKEN, NOT_AUTHORIZED, USER_NOT_FOUND,
 };
 use crate::settings::Settings;
 
@@ -36,22 +34,13 @@ pub const ROLE_ADMIN: &str = "admin";
 
 /// FastAPI's `HTTPBearer` answer to a missing or non-Bearer `Authorization` header.
 const NOT_AUTHENTICATED: &str = "Not authenticated";
-/// Only asymmetric algorithms: HS256 here would allow algorithm confusion.
-const ALGORITHMS: [Algorithm; 3] = [Algorithm::RS256, Algorithm::ES256, Algorithm::EdDSA];
+/// `ACCESS_TOKEN_AUDIENCE`.
 const AUDIENCE: &str = "authenticated";
-/// `PyJWKClient(lifespan=600)`: the fetched key set is reused for ten minutes.
-const JWKS_LIFESPAN: Duration = Duration::from_secs(600);
-/// `PyJWKClient(cache_keys=True)`: up to 16 keys by `kid`, kept for the process.
-const CACHED_KEYS: usize = 16;
-/// A token naming an unknown `kid` refetches the key set at most this often;
-/// in between, such tokens fail like any invalid token. (PyJWKClient refetched
-/// for every one, which let anyone make the API hammer the key endpoint.)
-const UNKNOWN_KID_REFETCH: Duration = Duration::from_secs(30);
-/// `PyJWKClient`'s default fetch timeout.
-const JWKS_TIMEOUT: Duration = Duration::from_secs(30);
+/// `decode_access_token`'s `options={"require": [...]}`: present and not null.
+const REQUIRED_CLAIMS: [&str; 4] = ["exp", "iat", "sub", "session_id"];
 
-/// The identity a verified token carries (`AuthUser`). `id` is the Supabase
-/// auth id (`sub`), not `users.id`.
+/// The identity a verified token carries (`AuthUser`). `id` is the auth id
+/// (`sub`, `users.auth_id`), not `users.id`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuthUser {
     pub id: String,
@@ -81,163 +70,94 @@ impl User {
 enum VerifyError {
     /// 401 `INVALID_OR_EXPIRED_TOKEN` (or `CREDENTIALS_INVALID` without a subject).
     Invalid(String),
-    /// 503: the key endpoint could not be reached, so the token is not proven bad.
-    Unavailable(String),
-    /// 500: the key endpoint answered with something that is not JSON.
-    Malformed(String),
+    /// 500: `AUTH_SIGNING_KEY` is missing or not an EC P-256 private key, so no
+    /// token can be checked (Python's `_private_key` raises `RuntimeError`).
+    NoKey(String),
 }
 
 impl VerifyError {
     fn into_api_error(self) -> ApiError {
         match self {
             Self::Invalid(reason) => {
-                tracing::warn!("JWKS verification failed: {reason}");
+                tracing::warn!("Access token verification failed: {reason}");
                 if reason == CREDENTIALS_INVALID {
                     ApiError::authentication(CREDENTIALS_INVALID)
                 } else {
                     ApiError::authentication(INVALID_OR_EXPIRED_TOKEN)
                 }
             }
-            Self::Unavailable(reason) => {
-                tracing::warn!("JWKS endpoint unavailable: {reason}");
-                ApiError::http(StatusCode::SERVICE_UNAVAILABLE, AUTHENTICATION_ERROR)
-            }
-            Self::Malformed(reason) => {
-                ApiError::Internal(anyhow::anyhow!("JWKS response: {reason}"))
-            }
+            Self::NoKey(reason) => ApiError::Internal(anyhow::anyhow!(reason)),
         }
     }
 }
 
-struct KeySet {
-    fetched: Instant,
-    /// Signing keys (`use` absent or "sig", with a `kid`) that parsed.
-    keys: Vec<(String, Jwk)>,
+/// `_public_key()`: the verifying half of `AUTH_SIGNING_KEY`, a base64 PKCS#8
+/// DER EC P-256 private key (`openssl genpkey -algorithm EC -pkeyopt
+/// ec_paramgen_curve:P-256 -outform DER | base64`).
+fn verifying_key(encoded: &str) -> Result<DecodingKey, String> {
+    if encoded.is_empty() {
+        return Err(
+            "AUTH_SIGNING_KEY is not set. Generate one with `openssl genpkey \
+                    -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -outform DER | base64` \
+                    and put it in your .env file."
+                .to_owned(),
+        );
+    }
+    // `base64.b64decode` skips characters outside the alphabet, such as line breaks.
+    let alphabet: String = encoded
+        .chars()
+        .filter(|character| character.is_ascii_alphanumeric() || "+/=".contains(*character))
+        .collect();
+    let der = base64::engine::general_purpose::STANDARD
+        .decode(alphabet)
+        .map_err(|error| format!("AUTH_SIGNING_KEY is not base64: {error}"))?;
+    // PKCS#8, or the RFC 5915 form `load_der_private_key` also reads; any other
+    // curve is refused like Python's `secp256r1` check.
+    let pair = EcdsaKeyPair::from_private_key_der(&ECDSA_P256_SHA256_FIXED_SIGNING, &der)
+        .map_err(|_| "AUTH_SIGNING_KEY must be an EC P-256 private key".to_owned())?;
+    // The uncompressed point, which is the form the ES256 verifier takes.
+    Ok(DecodingKey::from_ec_der(pair.public_key().as_ref()))
 }
 
-/// Verifies Supabase access tokens with the project's public keys.
-pub struct JwksVerifier {
-    url: String,
-    issuer: String,
-    key_set: tokio::sync::Mutex<Option<KeySet>>,
-    keys: Mutex<HashMap<String, Jwk>>,
-    last_refetch: Mutex<Option<Instant>>,
+/// Verifies the access tokens `services/auth_service.py` issues.
+pub struct AccessTokens {
+    key: Result<DecodingKey, String>,
+    /// `controlbox/authentication.json` `token_issuer`.
+    issuer: &'static str,
 }
 
-impl JwksVerifier {
+impl AccessTokens {
     pub fn new(settings: &Settings) -> Self {
-        let project = settings.supabase_url.trim_end_matches('/');
-        let issuer = if settings.supabase_jwt_issuer.is_empty() {
-            format!("{project}/auth/v1")
-        } else {
-            settings.supabase_jwt_issuer.clone()
-        };
         Self {
-            url: format!("{project}/auth/v1/.well-known/jwks.json"),
-            issuer,
-            key_set: tokio::sync::Mutex::new(None),
-            keys: Mutex::new(HashMap::new()),
-            last_refetch: Mutex::new(None),
+            key: verifying_key(&settings.auth_signing_key),
+            issuer: &crate::controlbox::AUTHENTICATION.token_issuer,
         }
     }
 
-    async fn fetch(&self) -> Result<Vec<(String, Jwk)>, VerifyError> {
-        let client = wreq::Client::builder()
-            .timeout(JWKS_TIMEOUT)
-            .build()
-            .map_err(|error| VerifyError::Unavailable(error.to_string()))?;
-        let body = client
-            .get(&self.url)
-            .send()
-            .await
-            .and_then(wreq::Response::error_for_status)
-            .map_err(|error| VerifyError::Unavailable(error.to_string()))?
-            .bytes()
-            .await
-            .map_err(|error| VerifyError::Unavailable(error.to_string()))?;
-        let document: Value = serde_json::from_slice(&body)
-            .map_err(|error| VerifyError::Malformed(error.to_string()))?;
-        signing_keys(&document)
-    }
-
-    async fn signing_keys(&self, refresh: bool) -> Result<Vec<(String, Jwk)>, VerifyError> {
-        let mut key_set = self.key_set.lock().await;
-        if !refresh
-            && let Some(cached) = key_set.as_ref()
-            && cached.fetched.elapsed() < JWKS_LIFESPAN
-        {
-            return Ok(cached.keys.clone());
-        }
-        let keys = self.fetch().await?;
-        *key_set = Some(KeySet {
-            fetched: Instant::now(),
-            keys: keys.clone(),
-        });
-        Ok(keys)
-    }
-
-    async fn key(&self, kid: Option<&str>) -> Result<Jwk, VerifyError> {
-        let kid = kid.unwrap_or_default();
-        if let Some(key) = self.keys.lock().expect("key cache").get(kid) {
-            return Ok(key.clone());
-        }
-        let find = |keys: Vec<(String, Jwk)>| {
-            keys.into_iter()
-                .find(|(key_id, _)| key_id == kid)
-                .map(|(_, key)| key)
-        };
-        let unknown = || {
-            VerifyError::Invalid(format!(
-                "Unable to find a signing key that matches: \"{kid}\""
-            ))
-        };
-        let key = match find(self.signing_keys(false).await?) {
-            Some(key) => key,
-            None => {
-                if !self.may_refetch() {
-                    return Err(unknown());
-                }
-                find(self.signing_keys(true).await?).ok_or_else(unknown)?
-            }
-        };
-        let mut cache = self.keys.lock().expect("key cache");
-        if cache.len() >= CACHED_KEYS {
-            cache.clear();
-        }
-        cache.insert(kid.to_owned(), key.clone());
-        Ok(key)
-    }
-
-    /// Whether an unknown `kid` may refetch the key set now (and record it if so).
-    fn may_refetch(&self) -> bool {
-        let mut last = self.last_refetch.lock().expect("refetch time");
-        if last.is_some_and(|at| at.elapsed() < UNKNOWN_KID_REFETCH) {
-            return false;
-        }
-        *last = Some(Instant::now());
-        true
-    }
-
-    async fn verify(&self, token: &str) -> Result<AuthUser, VerifyError> {
+    /// `decode_access_token` followed by `_payload_to_user`.
+    fn verify(&self, token: &str) -> Result<AuthUser, VerifyError> {
+        // Python reads the key before it parses the token, so a missing key
+        // fails every presented token, well formed or not.
+        let key = self
+            .key
+            .as_ref()
+            .map_err(|reason| VerifyError::NoKey(reason.clone()))?;
         let header = jsonwebtoken::decode_header(token)
             .map_err(|error| VerifyError::Invalid(error.to_string()))?;
-        let jwk = self.key(header.kid.as_deref()).await?;
-        if !ALGORITHMS.contains(&header.alg) {
+        if header.alg != Algorithm::ES256 {
             return Err(VerifyError::Invalid(
                 "The specified alg value is not allowed".into(),
             ));
         }
-        let key =
-            DecodingKey::from_jwk(&jwk).map_err(|error| VerifyError::Invalid(error.to_string()))?;
-        let mut validation = Validation::new(header.alg);
+        let mut validation = Validation::new(Algorithm::ES256);
         // Claims are checked below exactly as PyJWT checks them.
         validation.validate_exp = false;
         validation.validate_aud = false;
         validation.required_spec_claims.clear();
-        let claims = jsonwebtoken::decode::<Map<String, Value>>(token, &key, &validation)
+        let claims = jsonwebtoken::decode::<Map<String, Value>>(token, key, &validation)
             .map_err(|error| VerifyError::Invalid(error.to_string()))?
             .claims;
-        validate_claims(&claims, &self.issuer, now_seconds())?;
+        validate_claims(&claims, self.issuer, now_seconds())?;
         user_from_claims(&claims)
     }
 }
@@ -247,43 +167,6 @@ fn now_seconds() -> f64 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|duration| duration.as_secs_f64())
         .unwrap_or_default()
-}
-
-/// `PyJWKSet` and `get_signing_keys`: usable signing keys with a `kid`.
-fn signing_keys(document: &Value) -> Result<Vec<(String, Jwk)>, VerifyError> {
-    let entries = document
-        .get("keys")
-        .and_then(Value::as_array)
-        .filter(|keys| !keys.is_empty())
-        .ok_or_else(|| VerifyError::Invalid("The JWK Set did not contain any keys".into()))?;
-    let usable: Vec<(Option<String>, Option<String>, Jwk)> = entries
-        .iter()
-        .filter_map(|entry| {
-            let jwk: Jwk = serde_json::from_value(entry.clone()).ok()?;
-            DecodingKey::from_jwk(&jwk).ok()?;
-            let text = |name: &str| entry.get(name).and_then(Value::as_str).map(str::to_owned);
-            Some((text("kid"), text("use"), jwk))
-        })
-        .collect();
-    if usable.is_empty() {
-        return Err(VerifyError::Invalid(
-            "The JWK Set did not contain any usable keys".into(),
-        ));
-    }
-    let keys: Vec<(String, Jwk)> = usable
-        .into_iter()
-        .filter(|(kid, key_use, _)| {
-            kid.as_deref().is_some_and(|kid| !kid.is_empty())
-                && key_use.as_deref().is_none_or(|key_use| key_use == "sig")
-        })
-        .map(|(kid, _, jwk)| (kid.unwrap_or_default(), jwk))
-        .collect();
-    if keys.is_empty() {
-        return Err(VerifyError::Invalid(
-            "The JWKS endpoint did not contain any signing keys".into(),
-        ));
-    }
-    Ok(keys)
 }
 
 /// Python's `int(value)` for a numeric claim.
@@ -296,10 +179,27 @@ fn claim_integer(value: &Value) -> Option<f64> {
     }
 }
 
-/// PyJWT's `_validate_claims` with `audience="authenticated"`, the expected
-/// issuer and no leeway.
+/// Python's truthiness of a JSON value.
+fn is_truthy(value: &Value) -> bool {
+    match value {
+        Value::Null => false,
+        Value::Bool(flag) => *flag,
+        Value::Number(number) => number.as_f64().is_some_and(|number| number != 0.0),
+        Value::String(text) => !text.is_empty(),
+        Value::Array(values) => !values.is_empty(),
+        Value::Object(fields) => !fields.is_empty(),
+    }
+}
+
+/// PyJWT's `_validate_claims` for `decode_access_token`: the required claims,
+/// `audience="authenticated"`, our issuer and no leeway.
 fn validate_claims(claims: &Map<String, Value>, issuer: &str, now: f64) -> Result<(), VerifyError> {
     let invalid = |reason: &str| Err(VerifyError::Invalid(reason.to_owned()));
+    for claim in REQUIRED_CLAIMS {
+        if claims.get(claim).is_none_or(Value::is_null) {
+            return invalid(&format!("Token is missing the \"{claim}\" claim"));
+        }
+    }
     if let Some(iat) = claims.get("iat") {
         match claim_integer(iat) {
             None => return invalid("Issued At claim (iat) must be an integer."),
@@ -324,12 +224,15 @@ fn validate_claims(claims: &Map<String, Value>, issuer: &str, now: f64) -> Resul
     match claims.get("iss") {
         None => return invalid("Token is missing the \"iss\" claim"),
         Some(Value::String(value)) if value == issuer => {}
-        Some(_) => return invalid("Invalid issuer"),
+        Some(Value::String(_)) => return invalid("Invalid issuer"),
+        Some(_) => return invalid("Payload Issuer (iss) must be a string"),
     }
     let audiences: Vec<&Value> = match claims.get("aud") {
-        None | Some(Value::Null) => return invalid("Token is missing the \"aud\" claim"),
+        Some(value) if !is_truthy(value) => return invalid("Token is missing the \"aud\" claim"),
+        None => return invalid("Token is missing the \"aud\" claim"),
         Some(Value::Array(values)) => values.iter().collect(),
-        Some(value) => vec![value],
+        Some(value @ Value::String(_)) => vec![value],
+        Some(_) => return invalid("Invalid claim format in token"),
     };
     if !audiences.iter().all(|value| value.is_string()) {
         return invalid("Invalid claim format in token");
@@ -367,13 +270,6 @@ fn user_from_claims(claims: &Map<String, Value>) -> Result<AuthUser, VerifyError
     })
 }
 
-/// Where identities come from: verified tokens, or one fixed identity that
-/// stands in for every request (the parity replay's `dependency_overrides`).
-pub struct Authenticator {
-    pub jwks: JwksVerifier,
-    pub fixed: Option<AuthUser>,
-}
-
 /// `HTTPBearer`: the credentials of a `Bearer` authorization header.
 fn bearer_token(headers: &HeaderMap) -> Option<&str> {
     let authorization = headers.get(header::AUTHORIZATION)?.to_str().ok()?;
@@ -382,34 +278,23 @@ fn bearer_token(headers: &HeaderMap) -> Option<&str> {
     (scheme.eq_ignore_ascii_case("bearer") && !credentials.is_empty()).then_some(credentials)
 }
 
-impl Authenticator {
-    async fn current(&self, headers: &HeaderMap) -> Result<AuthUser, ApiError> {
-        if let Some(user) = &self.fixed {
-            return Ok(user.clone());
-        }
+impl AccessTokens {
+    fn current(&self, headers: &HeaderMap) -> Result<AuthUser, ApiError> {
         let token =
             bearer_token(headers).ok_or_else(|| ApiError::authentication(NOT_AUTHENTICATED))?;
-        self.jwks
-            .verify(token)
-            .await
-            .map_err(VerifyError::into_api_error)
+        self.verify(token).map_err(VerifyError::into_api_error)
     }
 
-    async fn optional(&self, headers: &HeaderMap) -> Result<Option<AuthUser>, ApiError> {
-        if let Some(user) = &self.fixed {
-            return Ok(Some(user.clone()));
-        }
+    fn optional(&self, headers: &HeaderMap) -> Result<Option<AuthUser>, ApiError> {
         let Some(token) = bearer_token(headers) else {
             return Ok(None);
         };
-        match self.jwks.verify(token).await {
+        match self.verify(token) {
             Ok(user) => Ok(Some(user)),
-            Err(VerifyError::Malformed(reason)) => {
-                Err(VerifyError::Malformed(reason).into_api_error())
-            }
+            Err(error @ VerifyError::NoKey(_)) => Err(error.into_api_error()),
             Err(error) => {
                 let detail = match error.into_api_error() {
-                    ApiError::Authentication(detail) | ApiError::Http { detail, .. } => detail,
+                    ApiError::Authentication(detail) => detail,
                     other => format!("{other:?}"),
                 };
                 tracing::warn!(
@@ -428,7 +313,7 @@ impl FromRequestParts<AppState> for CurrentUser {
     type Rejection = ApiError;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
-        state.auth.current(&parts.headers).await.map(Self)
+        state.auth.current(&parts.headers).map(Self)
     }
 }
 
@@ -439,21 +324,18 @@ impl FromRequestParts<AppState> for OptionalUser {
     type Rejection = ApiError;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
-        state.auth.optional(&parts.headers).await.map(Self)
+        state.auth.optional(&parts.headers).map(Self)
     }
 }
 
-/// `resolve_db_user`: the `users` row of a Supabase auth id, read fresh.
-pub async fn find_user(
-    db: &sqlx::PgPool,
-    supabase_auth_id: &str,
-) -> Result<Option<User>, ApiError> {
+/// `resolve_db_user`: the `users` row of an auth id, read fresh.
+pub async fn find_user(db: &sqlx::PgPool, auth_id: &str) -> Result<Option<User>, ApiError> {
     Ok(sqlx::query_as::<_, User>(
         "SELECT users.id, users.email, users.role, users.school_id, schools.slug AS school \
          FROM public.users LEFT JOIN public.schools ON schools.id = users.school_id \
-         WHERE users.supabase_auth_id = $1 LIMIT 1",
+         WHERE users.auth_id = $1 LIMIT 1",
     )
-    .bind(supabase_auth_id)
+    .bind(auth_id)
     .fetch_optional(db)
     .await?)
 }
@@ -546,20 +428,86 @@ pub fn authorized_resource<T>(
     Ok(resource)
 }
 
+/// A throwaway signing key and tokens signed with it, for tests anywhere in
+/// the crate (`test_settings` sets `AUTH_SIGNING_KEY` to this key).
+#[cfg(test)]
+pub(crate) mod test_tokens {
+    use std::sync::LazyLock;
+
+    use aws_lc_rs::rand::SystemRandom;
+    use aws_lc_rs::signature::{ECDSA_P256_SHA256_FIXED_SIGNING, EcdsaKeyPair};
+    use base64::Engine;
+    use jsonwebtoken::{Algorithm, EncodingKey, Header};
+    use serde_json::{Value, json};
+
+    fn new_key() -> Vec<u8> {
+        EcdsaKeyPair::generate_pkcs8(&ECDSA_P256_SHA256_FIXED_SIGNING, &SystemRandom::new())
+            .expect("a P-256 key")
+            .as_ref()
+            .to_vec()
+    }
+
+    static KEY: LazyLock<Vec<u8>> = LazyLock::new(new_key);
+
+    /// `AUTH_SIGNING_KEY` for tests: base64 PKCS#8 DER, as `openssl` writes it.
+    pub(crate) fn signing_key() -> String {
+        base64::engine::general_purpose::STANDARD.encode(&*KEY)
+    }
+
+    /// The claims `issue_access_token` signs, now and for 15 minutes.
+    pub(crate) fn claims(subject: &str) -> Value {
+        let now = chrono::Utc::now().timestamp();
+        json!({
+            "iss": crate::controlbox::AUTHENTICATION.token_issuer,
+            "aud": "authenticated",
+            "role": "authenticated",
+            "sub": subject,
+            "email": "student@example.com",
+            "session_id": "session-1",
+            "iat": now,
+            "exp": now + 900,
+        })
+    }
+
+    fn sign_with(claims: &Value, key: &[u8]) -> String {
+        let mut header = Header::new(Algorithm::ES256);
+        header.kid = Some("test".into());
+        jsonwebtoken::encode(&header, claims, &EncodingKey::from_ec_der(key)).expect("a token")
+    }
+
+    /// `claims` signed with the test key.
+    pub(crate) fn sign(claims: &Value) -> String {
+        sign_with(claims, &KEY)
+    }
+
+    /// `claims` signed with a key nobody configured.
+    pub(crate) fn sign_with_another_key(claims: &Value) -> String {
+        sign_with(claims, &new_key())
+    }
+
+    /// An access token for `subject`, as `issue_access_token` would sign it.
+    pub(crate) fn access_token(subject: &str) -> String {
+        sign(&claims(subject))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::settings::test_settings;
+    use base64::Engine;
     use serde_json::json;
+    use test_tokens::{access_token, claims as token_claims, sign, sign_with_another_key};
 
     fn claims(value: Value) -> Map<String, Value> {
         value.as_object().unwrap().clone()
     }
 
-    const ISSUER: &str = "https://example.supabase.co/auth/v1";
+    const ISSUER: &str = "wat2do";
 
     fn valid() -> Value {
-        json!({"sub": "abc", "aud": "authenticated", "iss": ISSUER, "exp": 2000.0, "iat": 1000, "email": "a@b.ca", "role": "authenticated"})
+        json!({"sub": "abc", "aud": "authenticated", "iss": ISSUER, "exp": 2000.0, "iat": 1000,
+            "session_id": "s", "email": "a@b.ca", "role": "authenticated"})
     }
 
     fn reason(result: Result<(), VerifyError>) -> String {
@@ -570,22 +518,177 @@ mod tests {
         }
     }
 
-    #[test]
-    fn issuer_defaults_to_the_project_auth_url() {
-        let verifier = JwksVerifier::new(&test_settings(&[(
-            "SUPABASE_URL",
-            "https://example.supabase.co/",
-        )]));
-        assert_eq!(verifier.issuer, ISSUER);
-        assert_eq!(
-            verifier.url,
-            "https://example.supabase.co/auth/v1/.well-known/jwks.json"
+    fn tokens() -> AccessTokens {
+        AccessTokens::new(&test_settings(&[]))
+    }
+
+    fn bearer(token: &str) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            header::AUTHORIZATION,
+            format!("Bearer {token}").parse().unwrap(),
         );
-        let custom = JwksVerifier::new(&test_settings(&[(
-            "SUPABASE_JWT_ISSUER",
-            "http://127.0.0.1:54321/auth/v1",
-        )]));
-        assert_eq!(custom.issuer, "http://127.0.0.1:54321/auth/v1");
+        headers
+    }
+
+    fn rejection(result: Result<AuthUser, ApiError>) -> String {
+        match result {
+            Err(ApiError::Authentication(detail)) => detail,
+            other => format!("{other:?}"),
+        }
+    }
+
+    #[test]
+    fn the_issuer_is_the_controlbox_one() {
+        assert_eq!(tokens().issuer, "wat2do");
+        assert_eq!(crate::controlbox::AUTHENTICATION.token_issuer, ISSUER);
+    }
+
+    #[test]
+    fn our_access_token_resolves_to_its_user() {
+        // test_auth.py::test_our_access_token_resolves_to_its_user
+        let user = tokens()
+            .current(&bearer(&access_token("auth-id-1")))
+            .unwrap();
+        assert_eq!(
+            user,
+            AuthUser {
+                id: "auth-id-1".into(),
+                email: Some("student@example.com".into()),
+                aud: Some("authenticated".into()),
+                role: Some("authenticated".into()),
+            }
+        );
+    }
+
+    #[test]
+    fn tokens_we_did_not_sign_are_rejected() {
+        // test_auth.py::test_tokens_we_did_not_sign_are_rejected
+        let claims = token_claims("auth-id-1");
+        let hmac = jsonwebtoken::encode(
+            &jsonwebtoken::Header::new(Algorithm::HS256),
+            &claims,
+            &jsonwebtoken::EncodingKey::from_secret(b"shared-secret"),
+        )
+        .unwrap();
+        let encode = |value: &Value| {
+            base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(value.to_string())
+        };
+        let unsigned = format!(
+            "{}.{}.",
+            encode(&json!({"alg": "none", "typ": "JWT"})),
+            encode(&claims)
+        );
+        for token in [
+            sign_with_another_key(&claims),
+            hmac,
+            unsigned,
+            "not-a-jwt".to_owned(),
+        ] {
+            assert_eq!(
+                rejection(tokens().current(&bearer(&token))),
+                INVALID_OR_EXPIRED_TOKEN
+            );
+        }
+    }
+
+    #[test]
+    fn expired_or_misaddressed_tokens_are_rejected() {
+        // test_auth.py::test_expired_or_misaddressed_tokens_are_rejected
+        let now = chrono::Utc::now().timestamp();
+        for (name, value) in [
+            ("exp", json!(now - 1)),
+            ("aud", json!("anon")),
+            ("iss", json!("https://other-issuer.example/auth/v1")),
+            ("session_id", Value::Null),
+            ("sub", Value::Null),
+            ("iat", Value::Null),
+        ] {
+            let mut claims = token_claims("auth-id-1");
+            if value.is_null() {
+                claims.as_object_mut().unwrap().remove(name);
+            } else {
+                claims[name] = value;
+            }
+            assert_eq!(
+                rejection(tokens().current(&bearer(&sign(&claims)))),
+                INVALID_OR_EXPIRED_TOKEN,
+                "{name}"
+            );
+        }
+        // A null required claim counts as missing.
+        let mut claims = token_claims("auth-id-1");
+        claims["session_id"] = Value::Null;
+        assert_eq!(
+            rejection(tokens().current(&bearer(&sign(&claims)))),
+            INVALID_OR_EXPIRED_TOKEN
+        );
+        // An empty subject passes PyJWT but names nobody.
+        let mut claims = token_claims("auth-id-1");
+        claims["sub"] = json!("");
+        assert_eq!(
+            rejection(tokens().current(&bearer(&sign(&claims)))),
+            CREDENTIALS_INVALID
+        );
+    }
+
+    #[test]
+    fn optional_auth_treats_a_bad_token_as_anonymous() {
+        // test_auth.py::test_optional_auth_treats_a_bad_token_as_anonymous
+        assert_eq!(tokens().optional(&bearer("not-a-jwt")).unwrap(), None);
+        assert_eq!(tokens().optional(&HeaderMap::new()).unwrap(), None);
+        let mut claims = token_claims("auth-id-1");
+        claims["sub"] = json!("");
+        assert_eq!(tokens().optional(&bearer(&sign(&claims))).unwrap(), None);
+        assert_eq!(
+            tokens()
+                .optional(&bearer(&access_token("auth-id-1")))
+                .unwrap()
+                .map(|user| user.id),
+            Some("auth-id-1".to_owned())
+        );
+        assert!(matches!(
+            tokens().current(&HeaderMap::new()),
+            Err(ApiError::Authentication(detail)) if detail == NOT_AUTHENTICATED
+        ));
+    }
+
+    #[test]
+    fn without_a_signing_key_every_token_is_a_server_error() {
+        // `_private_key` raises RuntimeError, which neither dependency catches.
+        for key in [
+            "",
+            "bm90IGEga2V5",
+            "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQ",
+        ] {
+            let tokens = AccessTokens::new(&test_settings(&[("AUTH_SIGNING_KEY", key)]));
+            assert!(tokens.key.is_err(), "{key}");
+            for token in ["not-a-jwt".to_owned(), access_token("auth-id-1")] {
+                assert!(matches!(
+                    tokens.current(&bearer(&token)),
+                    Err(ApiError::Internal(_))
+                ));
+                assert!(matches!(
+                    tokens.optional(&bearer(&token)),
+                    Err(ApiError::Internal(_))
+                ));
+            }
+            // No token at all never needs the key.
+            assert_eq!(tokens.optional(&HeaderMap::new()).unwrap(), None);
+        }
+    }
+
+    #[test]
+    fn the_key_may_carry_line_breaks() {
+        let key = test_tokens::signing_key();
+        let wrapped = key
+            .as_bytes()
+            .chunks(76)
+            .map(|line| std::str::from_utf8(line).unwrap())
+            .collect::<Vec<_>>()
+            .join("\n");
+        let tokens = AccessTokens::new(&test_settings(&[("AUTH_SIGNING_KEY", &wrapped)]));
+        assert!(tokens.current(&bearer(&access_token("a"))).is_ok());
     }
 
     #[test]
@@ -613,6 +716,13 @@ mod tests {
             reason(validate_claims(&claims(wrong.clone()), ISSUER, 1500.0)),
             "Audience doesn't match"
         );
+        wrong["aud"] = json!("");
+        assert!(reason(validate_claims(&claims(wrong.clone()), ISSUER, 1500.0)).contains("aud"));
+        wrong["aud"] = json!(5);
+        assert_eq!(
+            reason(validate_claims(&claims(wrong.clone()), ISSUER, 1500.0)),
+            "Invalid claim format in token"
+        );
         wrong = valid();
         wrong.as_object_mut().unwrap().remove("aud");
         assert!(reason(validate_claims(&claims(wrong), ISSUER, 1500.0)).contains("aud"));
@@ -621,6 +731,12 @@ mod tests {
         assert_eq!(
             reason(validate_claims(&claims(wrong), ISSUER, 1500.0)),
             "Invalid issuer"
+        );
+        wrong = valid();
+        wrong["iss"] = json!(["wat2do"]);
+        assert_eq!(
+            reason(validate_claims(&claims(wrong), ISSUER, 1500.0)),
+            "Payload Issuer (iss) must be a string"
         );
         wrong = valid();
         wrong["sub"] = json!(5);
@@ -635,11 +751,19 @@ mod tests {
             "The token is not yet valid (nbf)"
         );
         wrong = valid();
-        wrong.as_object_mut().unwrap().remove("exp");
+        wrong["iat"] = json!("1000");
         assert_eq!(
             reason(validate_claims(&claims(wrong), ISSUER, 1500.0)),
             "ok"
         );
+        for required in REQUIRED_CLAIMS {
+            wrong = valid();
+            wrong.as_object_mut().unwrap().remove(required);
+            assert_eq!(
+                reason(validate_claims(&claims(wrong), ISSUER, 1500.0)),
+                format!("Token is missing the \"{required}\" claim")
+            );
+        }
     }
 
     #[test]
@@ -663,31 +787,6 @@ mod tests {
     }
 
     #[test]
-    fn signing_keys_follow_pyjwkset() {
-        // backend/tests/core/test_auth.py: an empty key set is an invalid token, not an outage.
-        assert!(matches!(
-            signing_keys(&json!({"keys": []})),
-            Err(VerifyError::Invalid(_))
-        ));
-        assert!(matches!(
-            signing_keys(&json!({})),
-            Err(VerifyError::Invalid(_))
-        ));
-        let ec = json!({"kty": "EC", "crv": "P-256", "kid": "k1", "use": "sig", "alg": "ES256",
-            "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU", "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"});
-        let keys = signing_keys(&json!({"keys": [ec.clone(), {"kty": "unknown"}]}))
-            .ok()
-            .unwrap();
-        assert_eq!(keys.len(), 1);
-        let mut encryption = ec.clone();
-        encryption["use"] = json!("enc");
-        assert!(signing_keys(&json!({"keys": [encryption]})).is_err());
-        let mut no_kid = ec;
-        no_kid.as_object_mut().unwrap().remove("kid");
-        assert!(signing_keys(&json!({"keys": [no_kid]})).is_err());
-    }
-
-    #[test]
     fn bearer_parsing_matches_httpbearer() {
         let headers = |value: &str| {
             let mut map = HeaderMap::new();
@@ -699,68 +798,6 @@ mod tests {
         assert_eq!(bearer_token(&headers("Basic abc")), None);
         assert_eq!(bearer_token(&headers("Bearer")), None);
         assert_eq!(bearer_token(&HeaderMap::new()), None);
-    }
-
-    #[tokio::test]
-    async fn unreachable_keys_are_a_503_and_optional_auth_is_anonymous() {
-        // backend/tests/core/test_auth.py::test_cold_process_key_fetch_failure_is_retryable
-        let settings = test_settings(&[("SUPABASE_URL", "http://127.0.0.1:9")]);
-        let authenticator = Authenticator {
-            jwks: JwksVerifier::new(&settings),
-            fixed: None,
-        };
-        let mut headers = HeaderMap::new();
-        let header_token = "Bearer eyJhbGciOiJFUzI1NiIsImtpZCI6ImsxIn0.e30.c2ln";
-        headers.insert(header::AUTHORIZATION, header_token.parse().unwrap());
-        let error = authenticator.current(&headers).await.unwrap_err();
-        assert!(
-            matches!(error, ApiError::Http { status: StatusCode::SERVICE_UNAVAILABLE, ref detail } if detail == AUTHENTICATION_ERROR)
-        );
-        assert_eq!(authenticator.optional(&headers).await.unwrap(), None);
-        assert!(matches!(
-            authenticator.current(&HeaderMap::new()).await.unwrap_err(),
-            ApiError::Authentication(detail) if detail == NOT_AUTHENTICATED
-        ));
-        let garbage = {
-            let mut map = HeaderMap::new();
-            map.insert(header::AUTHORIZATION, "Bearer not-a-jwt".parse().unwrap());
-            map
-        };
-        assert!(matches!(
-            authenticator.current(&garbage).await.unwrap_err(),
-            ApiError::Authentication(detail) if detail == INVALID_OR_EXPIRED_TOKEN
-        ));
-    }
-
-    #[tokio::test]
-    async fn unknown_kids_refetch_the_key_set_at_most_every_30_seconds() {
-        // Nothing listens on port 9, so any fetch fails as unavailable (503).
-        let verifier = JwksVerifier::new(&test_settings(&[("SUPABASE_URL", "http://127.0.0.1:9")]));
-        let ec = json!({"kty": "EC", "crv": "P-256", "kid": "k1", "use": "sig", "alg": "ES256",
-            "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU", "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"});
-        let keys = signing_keys(&json!({"keys": [ec]})).ok().unwrap();
-        *verifier.key_set.lock().await = Some(KeySet {
-            fetched: Instant::now(),
-            keys,
-        });
-        assert!(verifier.key(Some("k1")).await.is_ok());
-        // The first unknown kid refetches (and the fetch fails here).
-        assert!(matches!(
-            verifier.key(Some("rotated")).await,
-            Err(VerifyError::Unavailable(_))
-        ));
-        // Within 30 seconds another unknown kid fails at once, like an invalid token.
-        assert!(matches!(
-            verifier.key(Some("forged")).await,
-            Err(VerifyError::Invalid(_))
-        ));
-        *verifier.last_refetch.lock().unwrap() = Some(Instant::now() - UNKNOWN_KID_REFETCH);
-        assert!(matches!(
-            verifier.key(Some("forged")).await,
-            Err(VerifyError::Unavailable(_))
-        ));
-        // Known keys never wait on a refetch.
-        assert!(verifier.key(Some("k1")).await.is_ok());
     }
 
     fn user(role: &str) -> User {

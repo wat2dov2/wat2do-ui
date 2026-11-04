@@ -2,10 +2,10 @@
 //! process, with no server, and print what each returned.
 //!
 //! `backend/scripts/api_parity.py` runs the same cases through FastAPI's
-//! `TestClient` and compares the two. Each case's `identity` stands in for a
-//! verified token, as `dependency_overrides` does on the Python side, because
-//! production tokens are signed by Supabase and cannot be minted here. The
-//! database connection is read-only unless `--allow-writes` is given.
+//! `TestClient` and compares the two. Signed-in cases carry an access token the
+//! harness signed with a throwaway `AUTH_SIGNING_KEY` it gives both sides, so
+//! each side verifies the token itself. The database connections are
+//! read-only, with short statement timeouts, unless `--allow-writes` is given.
 
 use std::collections::BTreeMap;
 use std::time::Duration;
@@ -19,7 +19,6 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 use super::AppState;
-use super::auth::AuthUser;
 use super::client_ip::Peer;
 use super::proxy::NotServedByRust;
 
@@ -39,21 +38,6 @@ pub struct Case {
     /// A raw text body.
     #[serde(default)]
     pub body: Option<String>,
-    /// The verified identity (`AuthUser`: `id` is the Supabase auth id), or
-    /// `null` to verify the request's own `Authorization` header.
-    #[serde(default)]
-    pub identity: Option<Identity>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct Identity {
-    pub id: String,
-    #[serde(default)]
-    pub email: Option<String>,
-    #[serde(default)]
-    pub aud: Option<String>,
-    #[serde(default)]
-    pub role: Option<String>,
 }
 
 fn default_method() -> String {
@@ -134,24 +118,12 @@ fn build_request(case: &Case) -> Result<Request<Body>> {
     Ok(request)
 }
 
-/// The application for one case, carrying the case's identity.
+/// The application, with no Python app behind it.
 pub fn app_for(
     settings: &'static crate::settings::Settings,
     db: &sqlx::PgPool,
-    case: &Case,
 ) -> Result<axum::Router> {
-    let identity = case.identity.clone().map(|identity| AuthUser {
-        id: identity.id,
-        email: identity.email,
-        aud: identity.aud,
-        role: identity.role,
-    });
-    Ok(super::router(AppState::new(
-        settings,
-        db.clone(),
-        identity,
-        None,
-    )?))
+    Ok(super::router(AppState::new(settings, db.clone(), None)?))
 }
 
 /// Run one case through `app` and time it.
@@ -203,12 +175,12 @@ pub async fn replay(path: &std::path::Path, allow_writes: bool, iterations: usiz
         Duration::from_secs(30),
         !allow_writes,
     );
+    let app = app_for(settings, &db)?;
     let mut outcomes = Vec::with_capacity(cases.len());
     for case in &cases {
         // Extra iterations measure latency; the last outcome is reported.
         let mut samples = Vec::with_capacity(iterations);
         let mut last = None;
-        let app = app_for(settings, &db, case)?;
         for _ in 0..iterations.max(1) {
             let (outcome, elapsed_ms) = run_case(app.clone(), case).await?;
             samples.push(elapsed_ms);
