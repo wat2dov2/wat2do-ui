@@ -78,6 +78,7 @@
   "reclaim_android_users": [10, 11, 12],
   "reclaim_packages": ["com.google.android.gms"],
   "reclaim_interval_hours": 24,
+  "restart_timeout_seconds": 900,
   "action_start_hour": 9,
   "action_end_hour": 23,
   "follow_start_hour": 0,

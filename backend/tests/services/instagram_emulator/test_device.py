@@ -221,7 +221,8 @@ def test_reclaiming_deletes_instagram_caches_and_clears_the_listed_apps(reclaime
     users = sorted(set(module.CONTROL.android_user_by_school.values()))
     clears = len(module.CONTROL.reclaim_android_users) * len(module.CONTROL.reclaim_packages)
     commands = []
-    outputs = [(0, "")] * len(users) + [(0, "Success\n")] * clears + [(0, _df(800_000))]
+    restart = [(0, ""), (1, ""), (0, "1\n"), (0, ""), (0, "")]
+    outputs = [(0, "")] * len(users) + [(0, "Success\n")] * clears + restart + [(0, _df(800_000))]
     assert _device(outputs, commands).reclaim_data() == 781
     deletes = commands[: len(users)]
     for user, command in zip(users, deletes, strict=True):
@@ -230,13 +231,15 @@ def test_reclaiming_deletes_instagram_caches_and_clears_the_listed_apps(reclaime
         assert f"am force-stop --user {user} com.instagram.android" in script
         assert f"/data/user/{user}/com.instagram.android/files/one_cache_path" in script
         assert "databases" not in script and "shared_prefs" not in script
-    cleared = [command[-4:] for command in commands[len(users) : -1]]
+    cleared = [command[-4:] for command in commands[len(users) : len(users) + clears]]
     assert cleared == [
         ["clear", "--user", str(user), package]
         for user in module.CONTROL.reclaim_android_users
         for package in module.CONTROL.reclaim_packages
     ]
     assert reclaimed_path.exists()
+    # The emulator restarts last, after the record that stops tomorrow's repeat.
+    assert commands[len(users) + clears][3:] == ["emu", "kill"]
 
 
 def _inbox(account):
@@ -343,3 +346,37 @@ def test_a_check_mark_is_read_from_the_icons_middle(checked) -> None:
     device = module.EmulatorDevice(run=run, sleep=lambda _seconds: None)
     icon = module.Node("", "Repost", (100, 100, 200, 200))
     assert device.marked(icon) is checked
+
+
+def _restarting_device(outputs, commands, clock):
+    def run(command, **_kwargs):
+        commands.append(command[3:])
+        returncode, stdout = outputs.pop(0) if outputs else (1, "")
+        return subprocess.CompletedProcess(command, returncode, stdout=stdout, stderr="")
+
+    def sleep(seconds):
+        clock[0] += seconds
+
+    return module.EmulatorDevice(
+        run=run, sleep=sleep, monotonic=lambda: clock[0], rng=random.Random(4)
+    )
+
+
+def test_restart_waits_for_the_old_emulator_to_exit_before_trusting_a_boot() -> None:
+    commands = []
+    # kill; the old one still answers and reports booted; then it is gone; then a new
+    # one is booting, then booted; then wake.
+    outputs = [(0, ""), (0, "device\n"), (1, ""), (0, "0\n"), (0, "1\n"), (0, ""), (0, "")]
+    _restarting_device(outputs, commands, [0.0]).restart()
+    assert commands[0] == ["emu", "kill"]
+    assert commands.count(["get-state"]) == 2
+    assert commands.count(["shell", "getprop", "sys.boot_completed"]) == 2
+    assert commands[-2:] == [
+        ["shell", "input", "keyevent", "KEYCODE_WAKEUP"],
+        ["shell", "wm", "dismiss-keyguard"],
+    ]
+
+
+def test_restart_gives_up_when_the_emulator_never_comes_back() -> None:
+    with pytest.raises(module.EmulatorError, match="did not come back"):
+        _restarting_device([(0, "")], [], [0.0]).restart()

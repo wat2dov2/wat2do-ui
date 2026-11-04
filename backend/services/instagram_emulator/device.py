@@ -38,6 +38,7 @@ _LOCK_PATH = Path.home() / ".local/state/wat2do/instagram-emulator.lock"
 # clearing them on every visit only keeps the disk busy.
 _RECLAIMED_PATH = Path.home() / ".local/state/wat2do/instagram-emulator-reclaimed"
 _held = threading.local()
+_RESTART_POLL_SECONDS = 5
 _SELECT_ALL = ("113", "29")  # KEYCODE_CTRL_LEFT + KEYCODE_A
 # Share of dark pixels in an icon's middle that means a check mark is drawn there.
 _MARKED_DARK_SHARE = 0.2
@@ -357,7 +358,8 @@ class EmulatorDevice:
         so on every Android user that holds accounts the app is stopped and those
         folders, listed in the controlbox, are deleted as root. Its login, databases and
         settings stay, so no account is logged out. Apps listed in ``reclaim_packages``
-        are cleared on Android users without a Google account. It runs at most once per
+        are cleared on Android users without a Google account. The emulator is then
+        restarted, since its host process leaks memory. It runs at most once per
         ``reclaim_interval_hours``.
         """
         if _reclaimed_recently():
@@ -379,7 +381,35 @@ class EmulatorDevice:
                 self.adb("shell", "pm", "clear", "--user", str(user), cleared)
         _RECLAIMED_PATH.parent.mkdir(parents=True, exist_ok=True)
         _RECLAIMED_PATH.touch()
+        self.restart()
         return self.free_data_megabytes()
+
+    def restart(self) -> None:
+        """Stop the emulator and wait for the ``run`` LaunchAgent to boot a fresh one.
+
+        The emulator's host process grows by about 3 GB a day with ``-gpu host`` and
+        only gives the memory back when it exits. Its accounts live on the device's
+        disk, so they stay logged in.
+        """
+        self.adb("emu", "kill")
+        deadline = self._monotonic() + CONTROL.restart_timeout_seconds
+        stopped = False
+        while self._monotonic() < deadline:
+            # The old emulator answers until it exits; only a new one's boot counts.
+            if not stopped:
+                stopped = not self.is_online()
+            elif self._booted():
+                self._sleep(CONTROL.screen_wait_seconds)
+                self.wake()
+                return
+            self._sleep(_RESTART_POLL_SECONDS)
+        raise EmulatorError("The emulator did not come back after a restart")
+
+    def _booted(self) -> bool:
+        try:
+            return self.adb("shell", "getprop", "sys.boot_completed").strip() == "1"
+        except EmulatorError:
+            return False
 
     def wake(self) -> None:
         self.adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")

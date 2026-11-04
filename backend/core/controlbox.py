@@ -1139,6 +1139,8 @@ class InstagramEmulatorControl(_ControlModel):
     reclaim_android_users: tuple[Annotated[int, Field(ge=1)], ...]
     reclaim_packages: tuple[Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.]+$")], ...]
     reclaim_interval_hours: float = Field(gt=0, le=168, allow_inf_nan=False)
+    # The daily reclaim restarts the emulator and waits this long for it to boot again.
+    restart_timeout_seconds: int = Field(ge=60, le=3600)
     # The one worker that drives the emulator visits one account at a time. Replies
     # and post edits happen only between the action hours, follows only between the
     # follow hours (local time); otherwise it only reads, crawling Following lists in
