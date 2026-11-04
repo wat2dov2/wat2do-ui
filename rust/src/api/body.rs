@@ -1231,6 +1231,23 @@ impl Body {
         }
     }
 
+    /// A required, non-null `EmailStr`.
+    pub fn required_email(&mut self, name: &'static str) -> Option<String> {
+        if !self.has_field(name) {
+            self.known.push(name);
+            self.missing(name);
+            return None;
+        }
+        match self.email(name) {
+            Input::Given(address) => Some(address),
+            Input::Null => {
+                self.check_string(self.loc(name), &Value::Null, &Str::new());
+                None
+            }
+            Input::Missing => None,
+        }
+    }
+
     /// pydantic's `HttpUrl` (at most 2083 characters, http or https), as the
     /// normalized URL text pydantic would store.
     pub fn required_http_url(&mut self, name: &'static str, strip: bool) -> Option<String> {

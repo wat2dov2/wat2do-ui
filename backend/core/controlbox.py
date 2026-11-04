@@ -441,6 +441,10 @@ class AuthenticationControl(_ControlModel):
     # the cap holds across IPs, app tasks and freshly sent codes.
     code_guess_limit: int = Field(ge=1, le=20)
     code_guess_window_minutes: int = Field(gt=0, le=1440)
+    # Login emails one address may be sent per window, counted in the database for
+    # the same reason, so nobody can flood an inbox from many IPs.
+    code_send_limit: int = Field(ge=1, le=50)
+    code_send_window_minutes: int = Field(gt=0, le=1440)
     # A just-rotated refresh token still returns its successor for this long, so
     # parallel refreshes from one browser do not log it out.
     refresh_token_reuse_seconds: int = Field(ge=0, le=300)

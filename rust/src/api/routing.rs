@@ -197,9 +197,15 @@ pub async fn redirect_slash(State(state): State<AppState>, request: Request) -> 
     if let Some(query) = raw.query() {
         url = format!("{url}?{query}");
     }
-    let location = utf8_percent_encode(&url, REDIRECT_SAFE).to_string();
+    redirect(StatusCode::TEMPORARY_REDIRECT, &url)
+}
+
+/// Starlette's `RedirectResponse(url, status)`: an empty body and the URL
+/// quoted the way Starlette quotes a `Location`.
+pub fn redirect(status: StatusCode, url: &str) -> Response {
+    let location = utf8_percent_encode(url, REDIRECT_SAFE).to_string();
     let mut response = Response::new(Body::empty());
-    *response.status_mut() = StatusCode::TEMPORARY_REDIRECT;
+    *response.status_mut() = status;
     if let Ok(location) = HeaderValue::from_str(&location) {
         response.headers_mut().insert(LOCATION, location);
     }

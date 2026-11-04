@@ -1,7 +1,9 @@
 //! Routes ported from `backend/routers`, one module per FastAPI router.
 
+pub mod auth;
 pub mod calendar;
 pub mod clubs;
+pub mod contact;
 pub mod discovery_queries;
 pub mod events;
 pub mod going_events;
@@ -16,6 +18,7 @@ pub mod reports;
 pub mod saved_clubs;
 pub mod schools;
 pub mod site_banner;
+pub mod sponsor_submissions;
 pub mod users;
 pub mod v1_saved_events;
 

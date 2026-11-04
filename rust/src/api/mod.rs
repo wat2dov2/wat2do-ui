@@ -12,6 +12,7 @@ pub mod auth;
 pub mod body;
 pub mod client_ip;
 pub mod contract;
+pub mod cookies;
 pub mod cors;
 pub mod email_address;
 pub mod errors;
@@ -60,6 +61,12 @@ impl AppState {
         db: PgPool,
         upstream: Option<Arc<Upstream>>,
     ) -> anyhow::Result<Self> {
+        // The refresh token is a long-lived credential: never outside TLS.
+        anyhow::ensure!(
+            !settings.is_production() || settings.cookie_secure,
+            "COOKIE_SECURE must be true in production (environment=production). \
+             The refresh-token cookie cannot be served over plain HTTP."
+        );
         // Starlette reflects the caller's Origin for "*" with credentials,
         // which would let any site make authenticated requests.
         anyhow::ensure!(
@@ -67,10 +74,12 @@ impl AppState {
             "CORS_ORIGINS must not contain '*' when credentials are enabled. \
              Set explicit origins, e.g. CORS_ORIGINS=[\"https://wat2do.io\"]"
         );
+        let auth = AccessTokens::new(settings);
+        auth.check()?;
         Ok(Self {
             settings,
             db,
-            auth: Arc::new(AccessTokens::new(settings)),
+            auth: Arc::new(auth),
             trust: Arc::new(ProxyTrust::new(settings)),
             upstream,
         })
@@ -82,6 +91,13 @@ impl AppState {
 fn rust_routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(routes::health::health))
+        // routers/auth.py
+        .routes(routes!(routes::auth::start_google_oauth))
+        .routes(routes!(routes::auth::complete_google_oauth))
+        .routes(routes!(routes::auth::send_otp))
+        .routes(routes!(routes::auth::verify_otp))
+        .routes(routes!(routes::auth::refresh))
+        .routes(routes!(routes::auth::logout))
         .routes(routes!(routes::calendar::get_calendar_token))
         .routes(routes!(routes::calendar::regenerate_calendar_token))
         .routes(routes!(routes::calendar::get_calendar_feed))
@@ -137,6 +153,7 @@ fn rust_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(routes::clubs::invitations::accept_invitation))
         .routes(routes!(routes::clubs::claims::create_claim))
         .routes(routes!(routes::clubs::claims::update_claim))
+        .routes(routes!(routes::contact::submit_contact_message))
         // routers/discovery_queries.py
         .routes(routes!(
             routes::discovery_queries::record_query,
@@ -178,6 +195,12 @@ fn rust_routes() -> OpenApiRouter<AppState> {
         // routers/schools.py
         .routes(routes!(routes::schools::search_schools))
         .routes(routes!(routes::schools::get_school))
+        // routers/sponsor_submissions.py
+        .routes(routes!(
+            routes::sponsor_submissions::create_submission,
+            routes::sponsor_submissions::list_submissions
+        ))
+        .routes(routes!(routes::sponsor_submissions::review_submission))
         // routers/users.py
         .routes(routes!(routes::users::get_me, routes::users::update_me))
         .routes(routes!(routes::users::update_profile))

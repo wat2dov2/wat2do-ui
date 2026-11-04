@@ -69,3 +69,11 @@ pub const INVALID_SCAN_CONFIRMATION: &str = "Invalid or expired scan confirmatio
 pub const PAYOUT_NOTES_REQUIRED: &str = "Notes are required when holding or voiding a payout";
 pub const PAYOUT_EXPORT_PENDING_ONLY: &str = "Only pending payouts can be exported";
 pub const INVALID_PAYOUT_FILTERS: &str = "Invalid payout filter range";
+
+// The auth, contact and sponsor submission routes.
+pub const NO_REFRESH_TOKEN: &str = "No refresh token";
+pub const SESSION_REFRESH_FAILED: &str = "Could not refresh session \u{2014} please log in again";
+pub const FAILED_TO_SAVE_TOKEN: &str = "Unable to save verification token. Please try again later.";
+pub const REGISTRATION_FAILED: &str = "Unable to complete registration. Please try again later.";
+pub const SPONSOR_SUBMISSION_NOT_FOUND: &str = "Sponsor submission not found";
+pub const SUBMISSION_SCHOOL_REQUIRED: &str = "Submission club school is not registered";

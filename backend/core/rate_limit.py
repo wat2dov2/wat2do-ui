@@ -76,10 +76,6 @@ from fastapi import Depends, Request
 
 from core.client_ip import get_client_ip
 from core.constants import (
-    AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS,
-    AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS,
-    AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
-    AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS,
     RATE_LIMIT_MAX_REQUESTS,
     RATE_LIMIT_WINDOW_SECONDS,
 )
@@ -286,19 +282,3 @@ class RateLimiter:
 # behind the same NAT would lock out login too.  Separating the buckets keeps
 # each endpoint's budget independent.
 ai_parse_event_image_rate_limiter = RateLimiter()
-# Auth endpoints: stricter limits to prevent credential stuffing / brute force.
-# send-otp & verify-otp: strict to prevent email-bomb and brute-force abuse.
-# Separate buckets so a send burst does not block verification.
-send_otp_rate_limiter = RateLimiter(
-    max_requests=AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
-    window_seconds=AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS,
-)
-verify_otp_rate_limiter = RateLimiter(
-    max_requests=AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
-    window_seconds=AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS,
-)
-# refresh: more generous since legitimate clients auto-refresh frequently.
-auth_refresh_rate_limiter = RateLimiter(
-    max_requests=AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS,
-    window_seconds=AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS,
-)

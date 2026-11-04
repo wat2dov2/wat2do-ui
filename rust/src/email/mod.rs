@@ -7,6 +7,7 @@
 pub mod layout;
 mod mime;
 
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, LazyLock};
 use std::time::Duration;
 
@@ -14,7 +15,7 @@ use aws_sdk_sesv2::error::{ProvideErrorMetadata, SdkError};
 use aws_sdk_sesv2::primitives::Blob;
 use aws_sdk_sesv2::types::{Destination, EmailContent, RawMessage};
 use regex::Regex;
-use tokio::sync::OnceCell;
+use tokio::sync::{Notify, OnceCell};
 
 use crate::controlbox::EMAIL_DELIVERY;
 use crate::settings::settings;
@@ -152,6 +153,80 @@ pub async fn send(message: &EmailMessage) -> Result<(), SendError> {
     }
 }
 
+/// Background sends still running, so a graceful shutdown can wait for them.
+struct Pending {
+    count: AtomicUsize,
+    finished: Notify,
+}
+
+static PENDING: LazyLock<Pending> = LazyLock::new(|| Pending {
+    count: AtomicUsize::new(0),
+    finished: Notify::new(),
+});
+
+/// Counts one background send until it is dropped, finished or not.
+struct PendingSend;
+
+impl PendingSend {
+    fn start() -> Self {
+        PENDING.count.fetch_add(1, Ordering::SeqCst);
+        Self
+    }
+}
+
+impl Drop for PendingSend {
+    fn drop(&mut self) {
+        PENDING.count.fetch_sub(1, Ordering::SeqCst);
+        PENDING.finished.notify_waiters();
+    }
+}
+
+/// Every message `send_in_background` queued in tests, instead of nothing,
+/// so a test can read a login code the way its recipient would.
+#[cfg(test)]
+pub static SENT_IN_BACKGROUND: std::sync::Mutex<Vec<EmailMessage>> =
+    std::sync::Mutex::new(Vec::new());
+
+/// `email_service.send_safely` as a FastAPI background task: send after the
+/// response, logging (never raising) a failure. A graceful shutdown waits
+/// for it ([`drain_background`]).
+pub fn send_in_background(message: EmailMessage) {
+    #[cfg(test)]
+    SENT_IN_BACKGROUND
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .push(message.clone());
+    let pending = PendingSend::start();
+    tokio::spawn(async move {
+        let _pending = pending;
+        if let Err(error) = send(&message).await {
+            tracing::error!(
+                "Background email dispatch failed for subject={:?}: {error}",
+                message.subject
+            );
+        }
+    });
+}
+
+/// Wait until every background send has finished or `deadline` passes, so
+/// login codes being sent when a deploy stops the task still go out.
+/// Returns how many were still running at the deadline.
+pub async fn drain_background(deadline: tokio::time::Instant) -> usize {
+    loop {
+        let finished = PENDING.finished.notified();
+        tokio::pin!(finished);
+        // Registered before the count is read, so a send that ends in between still wakes us.
+        finished.as_mut().enable();
+        let running = PENDING.count.load(Ordering::SeqCst);
+        if running == 0 {
+            return 0;
+        }
+        if tokio::time::timeout_at(deadline, finished).await.is_err() {
+            return PENDING.count.load(Ordering::SeqCst);
+        }
+    }
+}
+
 static SES: OnceCell<aws_sdk_sesv2::Client> = OnceCell::const_new();
 
 async fn ses() -> anyhow::Result<&'static aws_sdk_sesv2::Client> {
@@ -186,6 +261,32 @@ mod tests {
             body_text: body_text.to_owned(),
             ..EmailMessage::default()
         }
+    }
+
+    #[tokio::test]
+    async fn a_graceful_shutdown_waits_for_background_sends() {
+        let now = tokio::time::Instant::now;
+        // A send still running holds the drain until the deadline.
+        let held = PendingSend::start();
+        assert!(drain_background(now() + Duration::from_millis(50)).await >= 1);
+        // Once it ends, the drain returns before its deadline.
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            drop(held);
+        });
+        let started = now();
+        assert_eq!(drain_background(now() + Duration::from_secs(10)).await, 0);
+        assert!(started.elapsed() < Duration::from_secs(10));
+        // A queued message is kept for tests and counted until its send ends.
+        send_in_background(message("<p>Hi</p>", "Hi"));
+        assert!(
+            SENT_IN_BACKGROUND
+                .lock()
+                .unwrap()
+                .iter()
+                .any(|sent| sent.subject == "Wat2do update")
+        );
+        assert_eq!(drain_background(now() + Duration::from_secs(10)).await, 0);
     }
 
     #[test]

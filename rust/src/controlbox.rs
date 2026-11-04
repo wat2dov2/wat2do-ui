@@ -48,12 +48,30 @@ pub struct Authentication {
     /// Wrong six-digit codes an address may try per window.
     pub code_guess_limit: usize,
     pub code_guess_window_minutes: i64,
+    /// Login emails one address may be sent per window.
+    pub code_send_limit: usize,
+    pub code_send_window_minutes: i64,
     /// A just-rotated refresh token still returns its successor for this long.
     pub refresh_token_reuse_seconds: i64,
     /// The `iss` of every access token we sign and accept.
     pub token_issuer: String,
     pub google_client_id: String,
     pub legacy_frontend_origins: Vec<String>,
+}
+
+/// `controlbox/contact.json`: who receives contact and sponsor messages, and their limits.
+#[derive(Debug, Deserialize)]
+pub struct Contact {
+    pub recipient_emails: Vec<String>,
+    pub maximum_message_length: usize,
+    pub business_support: BusinessSupport,
+    pub rate_limit: RateLimit,
+}
+
+/// The sponsor nomination field limits in `controlbox/contact.json`.
+#[derive(Debug, Deserialize)]
+pub struct BusinessSupport {
+    pub business_name: usize,
 }
 
 /// The read retry policy in `controlbox/database.json`.
@@ -434,6 +452,12 @@ pub static AUTHENTICATION: LazyLock<Authentication> = LazyLock::new(|| {
         include_str!("../../backend/controlbox/authentication.json"),
     )
 });
+pub static CONTACT: LazyLock<Contact> = LazyLock::new(|| {
+    parse(
+        "contact",
+        include_str!("../../backend/controlbox/contact.json"),
+    )
+});
 pub static DATABASE: LazyLock<Database> = LazyLock::new(|| {
     parse(
         "database",
@@ -645,6 +669,8 @@ mod tests {
     fn every_control_file_parses() {
         assert!(API_SERVER.database_connections > 0);
         assert!(AUTHENTICATION.access_token_minutes > 0);
+        assert!(!CONTACT.recipient_emails.is_empty());
+        assert!(CONTACT.business_support.business_name > 0);
         assert!(DATABASE.read_attempts > 0);
         assert!(RATE_LIMITS.default.maximum_requests > 0);
         assert!(INGESTION.parallel_agents > 0);

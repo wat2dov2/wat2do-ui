@@ -146,7 +146,7 @@ Wat2Do serves the application from one private AWS ECS Fargate task in `ca-centr
 The task contains the Next.js frontend on port 3000 and the FastAPI backend on port 8000.
 CloudFront is the public edge and an Application Load Balancer is the HTTPS origin.
 The database is Amazon RDS for PostgreSQL 17 (database `wat2do`), which the backend reads and writes through our own PostgREST data API at `https://data.wat2do.io`.
-Sign-in, sessions and access tokens are the backend's own (`backend/services/auth_service.py`), and uploaded images live in S3 behind CloudFront.
+Sign-in, sessions and access tokens are the backend's own (`rust/src/api/routes/auth`, verified in Python by `backend/core/auth_tokens.py`), and uploaded images live in S3 behind CloudFront.
 An isolated, concurrency-limited Lambda captures changed school event feeds as social-preview images after their CacheEntID media finishes scraping, then stores the immutable JPEG in the existing S3 and CloudFront asset path.
 The encrypted Terraform state bucket and DynamoDB lock table remain in `us-west-2`; they do not affect Canadian application traffic.
 
