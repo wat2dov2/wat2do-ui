@@ -378,13 +378,6 @@ class TestSendOtp:
 class TestVerifyOtp:
     """Tests for the verify-otp endpoint."""
 
-    def test_verify_otp_counts_guesses_per_address(self, client, monkeypatch):
-        monkeypatch.setattr(auth, "verify_otp", MagicMock(return_value=_verify_result()))
-
-        client.post("/auth/verify-otp", json={**VALID_VERIFY_OTP, "email": "Student@UWaterloo.ca"})
-
-        assert "email:student@uwaterloo.ca" in verify_otp_rate_limiter._requests
-
     def test_verify_otp_success(self, client, monkeypatch):
         """Successful verify-otp returns tokens and sets refresh cookie."""
         result = _verify_result()

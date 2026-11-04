@@ -9,6 +9,7 @@ short-lived ES256 JWTs from ``core.auth_tokens``.  Sync.
 import base64
 import hashlib
 import hmac
+import math
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -31,15 +32,17 @@ from core.controlbox import controlbox
 from core.errors import (
     FAILED_TO_SAVE_TOKEN,
     INVALID_OR_EXPIRED_TOKEN,
+    RATE_LIMIT_EXCEEDED,
     REGISTRATION_FAILED,
     SESSION_REFRESH_FAILED,
 )
 from core.exceptions import (
     AuthenticationError,
+    RateLimitExceeded,
     ServiceError,
 )
 from core.logging import logger
-from core.tables import AUTH_SESSIONS, USERS, VERIFICATION_TOKENS
+from core.tables import AUTH_SESSIONS, USERS, VERIFICATION_FAILURES, VERIFICATION_TOKENS
 from schemas.auth import (
     TokenResponse,
 )
@@ -60,6 +63,7 @@ GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_CERTS_URL = "https://www.googleapis.com/oauth2/v3/certs"
 GOOGLE_ISSUERS = ("https://accounts.google.com", "accounts.google.com")
 _GOOGLE_TIMEOUT_SECONDS = 10
+_CODE_DIGITS = 6
 _google_keys = jwt.PyJWKClient(GOOGLE_CERTS_URL, cache_keys=True, lifespan=3600)
 
 
@@ -214,7 +218,7 @@ class AuthService:
         ).isoformat()
 
         # One six-digit code to type and one link token to click; only hashes are stored.
-        code = f"{secrets.randbelow(1_000_000):06d}"
+        code = f"{secrets.randbelow(10**_CODE_DIGITS):0{_CODE_DIGITS}d}"
         link_token = secrets.token_urlsafe(32)
 
         try:
@@ -292,8 +296,6 @@ class AuthService:
                 "email": email_clean,
                 "school_id": school_record.id if school_record else None,
             }
-            if email_clean == "tqiu@uwaterloo.ca":
-                payload["role"] = "admin"
             try:
                 self._db.table(USERS).insert(payload).execute()
                 logger.info("Created public.users record for %s (id=%s)", email_clean, user_id)
@@ -344,14 +346,20 @@ class AuthService:
     def verify_otp(self, email: str, token: str, signup_school: str | None = None) -> AuthResult:
         """Accept the six-digit code or the link token from the latest login email."""
         email_clean = email.strip().lower()
-        now_str = datetime.now(timezone.utc).isoformat()
+        secret = token.strip()
+        now = datetime.now(timezone.utc)
+        now_str = now.isoformat()
+        # Only the six-digit code can be guessed; the link token carries 256 random bits.
+        is_code = len(secret) == _CODE_DIGITS
+        if is_code:
+            self._check_code_guesses(email_clean, now)
 
         try:
             r = (
                 self._db.table(VERIFICATION_TOKENS)
                 .select("identifier")
                 .eq("identifier", email_clean)
-                .eq("token", _token_digest(token.strip()))
+                .eq("token", _token_digest(secret))
                 .gt("expires", now_str)
                 .execute()
             )
@@ -359,10 +367,13 @@ class AuthService:
             logger.error("Failed to query verification token: %s", e)
             raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
         if not r.data:
+            if is_code:
+                self._record_code_miss(email_clean, now)
             raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
 
         try:
             self._db.table(VERIFICATION_TOKENS).delete().eq("identifier", email_clean).execute()
+            self._db.table(VERIFICATION_FAILURES).delete().eq("identifier", email_clean).execute()
         except Exception as e:
             logger.warning("Failed to delete used verification tokens: %s", e)
 
@@ -380,10 +391,15 @@ class AuthService:
             raise AuthenticationError(SESSION_REFRESH_FAILED)
 
         auth_id = session["auth_id"]
+        email = self._email_for(auth_id)
+        if email is None:
+            # The account was deleted, so its sessions end with it.
+            self.revoke_sessions(auth_id)
+            raise AuthenticationError(SESSION_REFRESH_FAILED)
         return AuthResult(
             body=TokenResponse(
                 access_token=issue_access_token(
-                    subject=auth_id, email=self._email_for(auth_id), session_id=session["id"]
+                    subject=auth_id, email=email, session_id=session["id"]
                 ),
                 expires_in=access_token_seconds(),
                 user_id=auth_id,
@@ -398,9 +414,41 @@ class AuthService:
         except jwt.InvalidTokenError as exc:
             logger.warning("Logout with an invalid access token: %s", exc)
             raise AuthenticationError(INVALID_OR_EXPIRED_TOKEN)
+        self.revoke_sessions(claims["sub"])
+
+    def revoke_sessions(self, auth_id: str) -> None:
+        """End every live session of one account."""
         self._db.table(AUTH_SESSIONS).update(
             {"revoked_at": datetime.now(timezone.utc).isoformat()}
-        ).eq("auth_id", claims["sub"]).is_("revoked_at", "null").execute()
+        ).eq("auth_id", auth_id).is_("revoked_at", "null").execute()
+
+    def _check_code_guesses(self, email: str, now: datetime) -> None:
+        """Refuse code guesses for an address that missed too often in the window."""
+        control = controlbox.authentication
+        window = timedelta(minutes=control.code_guess_window_minutes)
+        misses = (
+            self._db.table(VERIFICATION_FAILURES)
+            .select("failed_at")
+            .eq("identifier", email)
+            .gt("failed_at", (now - window).isoformat())
+            .execute()
+            .data
+        )
+        if len(misses) >= control.code_guess_limit:
+            oldest = min(datetime.fromisoformat(row["failed_at"]) for row in misses)
+            raise RateLimitExceeded(
+                RATE_LIMIT_EXCEEDED,
+                retry_after=max(1, math.ceil((oldest + window - now).total_seconds())),
+            )
+
+    def _record_code_miss(self, email: str, now: datetime) -> None:
+        window = timedelta(minutes=controlbox.authentication.code_guess_window_minutes)
+        self._db.table(VERIFICATION_FAILURES).insert(
+            {"identifier": email, "failed_at": now.isoformat()}
+        ).execute()
+        self._db.table(VERIFICATION_FAILURES).delete().eq("identifier", email).lt(
+            "failed_at", (now - window).isoformat()
+        ).execute()
 
     def _start_session(self, auth_id: str, email: str | None) -> _Session:
         refresh_token = new_refresh_token()

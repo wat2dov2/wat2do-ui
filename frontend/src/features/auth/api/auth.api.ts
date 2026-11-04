@@ -137,6 +137,9 @@ export async function completeGoogleOAuthAPI(): Promise<UserProfile> {
 
 export async function logoutAPI(): Promise<void> {
   try {
+    // An idle tab's access token has expired, and logout needs a valid one to end the
+    // server session; the refresh cookie is scoped to /auth/refresh and never sent here.
+    await refreshAccessToken();
     await api.post("/auth/logout");
   } catch (err) {
     console.error("Logout API call failed, clearing local state anyway:", err);

@@ -365,8 +365,6 @@ def verify_otp(
     response: Response,
     _rl: None = Depends(verify_otp_rate_limiter.ip_dependency()),
 ):
-    # Codes are six digits, so guesses are also capped per address across all IPs.
-    verify_otp_rate_limiter.check(f"email:{data.email.strip().lower()}")
     result = auth.verify_otp(data.email, data.token, signup_school=_request_school(request))
     if result.refresh_token:
         _set_refresh_cookie(response, result.refresh_token, request)

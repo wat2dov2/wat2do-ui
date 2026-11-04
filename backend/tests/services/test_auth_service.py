@@ -14,8 +14,8 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from core import auth_tokens
 from core.controlbox import controlbox
 from core.errors import INVALID_OR_EXPIRED_TOKEN, SESSION_REFRESH_FAILED
-from core.exceptions import AuthenticationError
-from core.tables import AUTH_SESSIONS, USERS, VERIFICATION_TOKENS
+from core.exceptions import AuthenticationError, RateLimitExceeded
+from core.tables import AUTH_SESSIONS, USERS, VERIFICATION_FAILURES, VERIFICATION_TOKENS
 from services import auth_service
 from services.auth_service import AuthService
 
@@ -59,6 +59,12 @@ class _Query:
     def gt(self, column, value):
         self._filters.append(
             lambda row: row.get(column) is not None and _moment(row[column]) > _moment(value)
+        )
+        return self
+
+    def lt(self, column, value):
+        self._filters.append(
+            lambda row: row.get(column) is not None and _moment(row[column]) < _moment(value)
         )
         return self
 
@@ -207,6 +213,44 @@ def test_wrong_or_expired_code_is_rejected_and_kept(service, db):
         service.verify_otp("student@uwaterloo.ca", _login_code(message))
 
 
+def _wrong_code(message) -> str:
+    return next(code for code in ("000000", "111111") if code != _login_code(message))
+
+
+def test_code_misses_lock_the_address_but_not_the_link(service, db):
+    message = service.prepare_otp_email("student@uwaterloo.ca")
+    for _ in range(controlbox.authentication.code_guess_limit):
+        with pytest.raises(AuthenticationError):
+            service.verify_otp("student@uwaterloo.ca", _wrong_code(message))
+
+    with pytest.raises(RateLimitExceeded) as exc:
+        service.verify_otp("Student@UWaterloo.ca", _login_code(message))
+    assert 0 < exc.value.retry_after <= controlbox.authentication.code_guess_window_minutes * 60
+    assert len(db.tables[VERIFICATION_FAILURES]) == controlbox.authentication.code_guess_limit
+
+    _existing_user(db)
+    service.verify_otp("student@uwaterloo.ca", _login_link_token(message))
+    assert db.tables[VERIFICATION_FAILURES] == []
+
+
+def test_code_misses_outside_the_window_are_pruned(service, db):
+    message = service.prepare_otp_email("student@uwaterloo.ca")
+    stale = datetime.now(timezone.utc) - timedelta(
+        minutes=controlbox.authentication.code_guess_window_minutes + 1
+    )
+    db.tables[VERIFICATION_FAILURES] = [
+        {"identifier": "student@uwaterloo.ca", "failed_at": stale.isoformat()}
+        for _ in range(controlbox.authentication.code_guess_limit)
+    ]
+
+    with pytest.raises(AuthenticationError):
+        service.verify_otp("student@uwaterloo.ca", _wrong_code(message))
+
+    assert [row["failed_at"] > stale.isoformat() for row in db.tables[VERIFICATION_FAILURES]] == [
+        True
+    ]
+
+
 def test_first_login_creates_the_user_with_a_new_auth_id(service, db):
     message = service.prepare_otp_email("tqiu@uwaterloo.ca")
 
@@ -214,7 +258,7 @@ def test_first_login_creates_the_user_with_a_new_auth_id(service, db):
 
     created = db.tables[USERS][0]
     assert created["email"] == "tqiu@uwaterloo.ca"
-    assert created["role"] == "admin"
+    assert "role" not in created
     assert created["school_id"] == 1
     assert created["auth_id"] == result.body.user_id
     assert created["id"] != created["auth_id"]
@@ -321,6 +365,17 @@ def test_a_session_copied_in_by_the_auth_sessions_migration_refreshes(service, d
     claims = auth_tokens.decode_access_token(result.body.access_token)
     assert claims["session_id"] == "imported-session"
     assert claims["sub"] == "auth-id-1"
+
+
+def test_a_deleted_account_cannot_refresh_and_its_sessions_end(service, db):
+    login = _signed_in(service, db)
+    db.tables[USERS].clear()
+
+    with pytest.raises(AuthenticationError) as exc:
+        service.refresh(login.refresh_token)
+
+    assert exc.value.detail == SESSION_REFRESH_FAILED
+    assert db.tables[AUTH_SESSIONS][0]["revoked_at"] is not None
 
 
 def test_logout_ends_every_session_of_the_user(service, db):

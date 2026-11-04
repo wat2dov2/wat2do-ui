@@ -437,6 +437,10 @@ class AuthenticationControl(_ControlModel):
     session_cookie_days: int = Field(gt=0)
     verification_token_minutes: int = Field(gt=0)
     access_token_minutes: int = Field(gt=0, le=1440)
+    # Wrong six-digit codes an address may try per window, counted in the database so
+    # the cap holds across IPs, app tasks and freshly sent codes.
+    code_guess_limit: int = Field(ge=1, le=20)
+    code_guess_window_minutes: int = Field(gt=0, le=1440)
     # A just-rotated refresh token still returns its successor for this long, so
     # parallel refreshes from one browser do not log it out.
     refresh_token_reuse_seconds: int = Field(ge=0, le=300)

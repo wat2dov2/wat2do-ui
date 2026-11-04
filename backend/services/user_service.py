@@ -21,6 +21,7 @@ from core.exceptions import ValidationError
 from core.tables import POSTER_PAYOUT_REVIEWS, POSTER_PAYOUTS, QR_CODES, USERS
 from schemas.user import PromoterEnrollmentUpdate, UserResponse, UserUpdate
 from services import school_service
+from services.auth_service import auth
 from services.school_context import canonical_school_key
 
 _USER_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
@@ -234,4 +235,6 @@ def delete_user(user_id: UUID) -> bool:
     if review_response.count or review_response.data:
         raise ValidationError(USER_HAS_PAYOUT_REVIEWS)
     r = get_sb().table(USERS).delete().eq("id", str(user_id)).execute()
+    for row in r.data:
+        auth.revoke_sessions(row["auth_id"])
     return bool(r.data)

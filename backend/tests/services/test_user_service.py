@@ -296,13 +296,18 @@ def test_delete_user_rejects_payout_reviewer_removal(fake_sb, patch_sb):
     fake_sb.delete.assert_not_called()
 
 
-def test_delete_user_without_payouts_deletes_profile(fake_sb, patch_sb):
+def test_delete_user_without_payouts_deletes_profile_and_ends_sessions(
+    fake_sb, patch_sb, monkeypatch
+):
     patch_sb("services.user_service")
     user_id = uuid4()
-    fake_sb.queue_responses([[], [], [], [{"id": str(user_id)}]])
+    fake_sb.queue_responses([[], [], [], [{"id": str(user_id), "auth_id": "auth-id-1"}]])
+    revoked = []
+    monkeypatch.setattr(user_service.auth, "revoke_sessions", revoked.append)
 
     assert user_service.delete_user(user_id) is True
     fake_sb.delete.assert_called_once()
+    assert revoked == ["auth-id-1"]
 
 
 @pytest.mark.parametrize("count", [0, 1, 999, 1000, 1001, 2001])
