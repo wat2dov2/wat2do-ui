@@ -51,6 +51,9 @@ pub struct Links<'a> {
 }
 
 const FOOTER: &str = "wat2do helps students discover campus events.";
+// Half the shell's 640px content width, less a little so two cards always fit a row.
+const GRID_CARD_MAX_WIDTH_PX: u32 = 318;
+const GRID_GUTTER_PX: u32 = 16;
 const REMINDER_INTRO: &str = "You're going to this event. It starts in about an hour.";
 
 fn or<'a>(value: &'a str, fallback: &'a str) -> &'a str {
@@ -229,38 +232,37 @@ fn event_url(id: i64, frontend_url: &str) -> String {
     format!("{frontend_url}/events/{id}")
 }
 
+/// Two cards per row that wrap to one column on screens too narrow for two.
+///
+/// Each card is an inline block capped at half the shell's width, so phones stack
+/// them without media queries, which many email apps ignore. Every card keeps its
+/// gutter on the right, so stacked cards stay aligned with the heading.
 fn grid_section(title: &str, cards: &[String]) -> String {
-    let rows: String = cards
-        .chunks(2)
-        .map(|pair| {
-            let cells: String = pair
-                .iter()
-                .enumerate()
-                .map(|(side, card)| {
-                    let (left, right) = if side == 0 { (6, 0) } else { (0, 6) };
-                    format!(
-                        r#"<td width="50%" valign="top" style="width:50%;padding:0 {left}px 20px {right}px;">{card}</td>"#
-                    )
-                })
-                .collect();
-            let filler = if pair.len() == 1 {
-                r#"<td width="50%" style="width:50%;"></td>"#
-            } else {
-                ""
-            };
-            format!("<tr>{cells}{filler}</tr>")
+    let blocks: String = cards
+        .iter()
+        .map(|card| {
+            format!(
+                concat!(
+                    r#"<div style="display:inline-block;box-sizing:border-box;width:100%;"#,
+                    "max-width:{max_width}px;padding:0 {gutter}px 20px 0;",
+                    r#"vertical-align:top;text-align:left;font:15px/1.35 {font};">{card}</div>"#,
+                ),
+                max_width = GRID_CARD_MAX_WIDTH_PX,
+                gutter = GRID_GUTTER_PX,
+                font = FONT,
+                card = card,
+            )
         })
         .collect();
     format!(
         concat!(
             r#"<h2 style="margin:24px 0 12px;color:{fg};font:700 19px {font};">{title}</h2>"#,
-            r#"<table role="presentation" width="100%" cellpadding="0" cellspacing="0" "#,
-            r#"style="width:100%;border-collapse:collapse;table-layout:fixed;">{rows}</table>"#,
+            r#"<div style="font-size:0;line-height:0;">{blocks}</div>"#,
         ),
         fg = FOREGROUND,
         font = FONT,
         title = escape(title),
-        rows = rows,
+        blocks = blocks,
     )
 }
 
@@ -529,15 +531,16 @@ mod tests {
     }
 
     #[test]
-    fn the_morning_html_lays_cards_out_two_per_row() {
+    fn the_morning_html_lays_cards_out_two_per_row_and_stacks_them_on_phones() {
         let events: Vec<EventCard> = (1..=3)
             .map(|id| card(event(id, "Tea Tasting"), None))
             .collect();
         let html =
             render_morning_email_html("2 new events", &events, &[position()], TORONTO, &LINKS);
         let (events_table, positions_table) = html.split_once("New positions").unwrap();
-        assert_eq!(events_table.matches("<tr>").count(), 2);
-        assert_eq!(events_table.matches(r#"width="50%""#).count(), 4);
+        let card = "display:inline-block;box-sizing:border-box;width:100%;max-width:318px;";
+        assert_eq!(events_table.matches(card).count(), 3);
+        assert_eq!(positions_table.matches(card).count(), 1);
         assert!(events_table.contains("Tea Tasting"));
         assert!(positions_table.contains(r#"src="cid:position-7""#));
         assert!(positions_table.contains("Apply by Thu, May 7"));

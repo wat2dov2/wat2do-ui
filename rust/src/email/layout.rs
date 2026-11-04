@@ -46,7 +46,8 @@ pub fn escape(value: &str) -> String {
     escaped
 }
 
-/// Logo, heading, content and footer on the light card. Send with [`LOGO`] inline.
+/// Heading, content and a footer signed with a small logo on the light card.
+/// Send with [`LOGO`] inline.
 pub fn shell(heading: &str, content: &str, footer_links: &[(&str, &str)]) -> String {
     let links = footer_links
         .iter()
@@ -59,10 +60,16 @@ pub fn shell(heading: &str, content: &str, footer_links: &[(&str, &str)]) -> Str
         })
         .collect::<Vec<_>>()
         .join(" &middot; ");
-    let links = if links.is_empty() {
-        links
+    // Links, when there are any, get their own line above the signature.
+    let (footer_links, signature_margin) = if links.is_empty() {
+        (String::new(), "24px")
     } else {
-        links + "<br>"
+        (
+            format!(
+                r#"<p style="margin:24px 0 0;color:{MUTED_FOREGROUND};font:12px/1.6 {FONT};">{links}</p>"#
+            ),
+            "8px",
+        )
     };
     format!(
         concat!(
@@ -70,28 +77,31 @@ pub fn shell(heading: &str, content: &str, footer_links: &[(&str, &str)]) -> Str
             r#"<div style="margin:0;background:{background};padding:28px 16px;">"#,
             r#"<div style="max-width:640px;margin:0 auto;background:{surface};"#,
             r#"border:1px solid {border};border-radius:16px;padding:24px;">"#,
-            r#"<img src="cid:{logo}" alt="wat2do" width="80" height="57" "#,
-            r#"style="display:block;margin:0 0 16px;border:0;">"#,
             r#"<h1 style="margin:0 0 24px;color:{foreground};"#,
             r#"font:800 28px {font};">{heading}</h1>"#,
             "{content}",
-            r#"<p style="margin:24px 0 0;color:{muted};"#,
-            r#"font:12px/1.6 {font};">"#,
-            "{links}",
-            "wat2do helps students discover campus events.",
-            "</p></div></div>",
+            "{footer_links}",
+            r#"<table role="presentation" cellpadding="0" cellspacing="0" "#,
+            r#"style="border-collapse:collapse;margin:{signature_margin} 0 0;"><tr>"#,
+            r#"<td width="24" valign="middle" style="width:24px;padding:0 6px 0 0;">"#,
+            r#"<img src="cid:{logo}" alt="wat2do" width="24" height="17" "#,
+            r#"style="display:block;width:24px;height:17px;border:0;"></td>"#,
+            r#"<td valign="middle" style="color:{muted};"#,
+            r#"font:12px/1.6 {font};">wat2do helps students discover campus events.</td>"#,
+            "</tr></table></div></div>",
         ),
         font_import = FONT_IMPORT,
         background = BACKGROUND,
         surface = SURFACE,
         border = BORDER,
-        logo = LOGO.content_id,
         foreground = FOREGROUND,
         font = FONT,
         heading = escape(heading),
         content = content,
+        footer_links = footer_links,
+        signature_margin = signature_margin,
+        logo = LOGO.content_id,
         muted = MUTED_FOREGROUND,
-        links = links,
     )
 }
 
@@ -129,15 +139,30 @@ mod tests {
         );
     }
 
+    // `email_shell` output from `services/email_layout.py`, byte for byte.
+    const PYTHON_SHELL_WITH_LINKS: &str = r#"<style>@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap');</style><div style="margin:0;background:#f9f9f9;padding:28px 16px;"><div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #d6d6d6;border-radius:16px;padding:24px;"><h1 style="margin:0 0 24px;color:#171717;font:800 28px Satoshi,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">Hi &amp; &lt;you&gt;</h1><p>c</p><p style="margin:24px 0 0;color:#5c5c5c;font:12px/1.6 Satoshi,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;"><a style="color:#171717;" href="https://x.test/a?b=1&amp;c=2">Settings</a> &middot; <a style="color:#171717;" href="u">Unsubscribe</a></p><table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:8px 0 0;"><tr><td width="24" valign="middle" style="width:24px;padding:0 6px 0 0;"><img src="cid:wat2do-logo" alt="wat2do" width="24" height="17" style="display:block;width:24px;height:17px;border:0;"></td><td valign="middle" style="color:#5c5c5c;font:12px/1.6 Satoshi,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">wat2do helps students discover campus events.</td></tr></table></div></div>"#;
+    const PYTHON_SHELL_WITHOUT_LINKS: &str = r#"<style>@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap');</style><div style="margin:0;background:#f9f9f9;padding:28px 16px;"><div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #d6d6d6;border-radius:16px;padding:24px;"><h1 style="margin:0 0 24px;color:#171717;font:800 28px Satoshi,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">Hi</h1><p>c</p><table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:24px 0 0;"><tr><td width="24" valign="middle" style="width:24px;padding:0 6px 0 0;"><img src="cid:wat2do-logo" alt="wat2do" width="24" height="17" style="display:block;width:24px;height:17px;border:0;"></td><td valign="middle" style="color:#5c5c5c;font:12px/1.6 Satoshi,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">wat2do helps students discover campus events.</td></tr></table></div></div>"#;
+
     #[test]
-    fn shell_without_links_has_no_separator() {
-        let html = shell("Hi", "<p>x</p>", &[]);
-        assert!(html.contains("font:12px/1.6 Satoshi"));
-        assert!(html.contains(r#"Arial,sans-serif;">wat2do helps students"#));
-        assert!(
-            html.starts_with(
-                "<style>@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400"
-            )
+    fn shell_matches_python_byte_for_byte() {
+        assert_eq!(
+            shell(
+                "Hi & <you>",
+                "<p>c</p>",
+                &[
+                    ("Settings", "https://x.test/a?b=1&c=2"),
+                    ("Unsubscribe", "u")
+                ],
+            ),
+            PYTHON_SHELL_WITH_LINKS
         );
+        assert_eq!(shell("Hi", "<p>c</p>", &[]), PYTHON_SHELL_WITHOUT_LINKS);
+    }
+
+    #[test]
+    fn shell_signs_the_card_with_the_logo_after_the_content() {
+        let html = shell("Your code", "<p>Codes expire in 15 minutes.</p>", &[]);
+        let logo = html.find(r#"<img src="cid:wat2do-logo""#).unwrap();
+        assert!(logo > html.find("expire in 15").unwrap());
     }
 }
