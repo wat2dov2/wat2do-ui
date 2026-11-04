@@ -17,7 +17,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::api::AppState;
-use crate::api::auth::{AdminUser, CurrentUser, DbUser, ROLE_ADMIN};
+use crate::api::auth::{AdminUser, CurrentUser, DbUser, ROLE_ADMIN, revoke_sessions};
 use crate::api::body::{Body, Extra, Input, Str, merge_issues};
 use crate::api::errors::{ApiError, get_or_404};
 use crate::api::json;
@@ -221,7 +221,7 @@ pub async fn get_me(
     State(state): State<AppState>,
     CurrentUser(auth_user): CurrentUser,
 ) -> Result<Json<UserResponse>, ApiError> {
-    let sql = user_query("u.supabase_auth_id = $1 LIMIT 1");
+    let sql = user_query("u.auth_id = $1 LIMIT 1");
     let user = read_with_retry(|| {
         sqlx::query_as::<_, UserResponse>(&sql)
             .bind(&auth_user.id)
@@ -767,14 +767,21 @@ pub async fn delete_user(
     if let Some(refusal) = delete_refusal(records) {
         return Err(ApiError::validation(refusal));
     }
-    let deleted = sqlx::query("DELETE FROM public.users WHERE id = $1")
-        .bind(id)
-        .execute(&state.db)
-        .await?
-        .rows_affected();
-    if deleted == 0 {
+    // The account's sessions end with it (`delete_user` then `auth.revoke_sessions`),
+    // in one transaction so a failed revocation leaves the account in place.
+    let mut transaction = state.db.begin().await?;
+    let deleted: Vec<String> =
+        sqlx::query_scalar("DELETE FROM public.users WHERE id = $1 RETURNING auth_id")
+            .bind(id)
+            .fetch_all(&mut *transaction)
+            .await?;
+    if deleted.is_empty() {
         return Err(ApiError::not_found(USER_NOT_FOUND));
     }
+    for auth_id in &deleted {
+        revoke_sessions(&mut *transaction, auth_id).await?;
+    }
+    transaction.commit().await?;
     Ok(no_content())
 }
 

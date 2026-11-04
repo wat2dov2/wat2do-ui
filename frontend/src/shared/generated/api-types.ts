@@ -1166,7 +1166,7 @@ export interface paths {
         put?: never;
         /**
          * Send Event Change Alerts
-         * @description Called every minute by Supabase pg_cron while event changes are pending.
+         * @description Called every minute by the scheduled event change alerts call.
          */
         post: operations["send_event_change_alerts_webhooks_event_change_alerts_post"];
         delete?: never;
@@ -2411,8 +2411,8 @@ export interface components {
          *     fetch.
          *
          *     ``created_by`` is intentionally omitted - this response is returned on
-         *     public GET /events/ and would otherwise leak the creator's Supabase
-         *     auth UID to anonymous callers.
+         *     public GET /events/ and would otherwise leak the creator's user ID
+         *     to anonymous callers.
          */
         EventSummaryResponse: {
             /**
@@ -2619,7 +2619,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "pending" | "approved" | "rejected" | "followed";
+            status: "pending" | "approved" | "rejected" | "followed" | "unfollow";
             /** Read Status */
             read_status?: ("ok" | "no_posts" | "failed") | null;
             /** Followers Count */
@@ -4766,6 +4766,7 @@ export interface operations {
         parameters: {
             query?: {
                 code?: string | null;
+                state?: string | null;
                 error?: string | null;
             };
             header?: never;
@@ -5718,7 +5719,7 @@ export interface operations {
     list_follow_candidates_instagram_publishing_follow_candidates__get: {
         parameters: {
             query?: {
-                status?: "pending" | "approved" | "rejected" | "followed";
+                status?: "pending" | "approved" | "rejected" | "followed" | "unfollow";
                 school?: string | null;
                 /** @description Page number (1-indexed) */
                 page?: number;

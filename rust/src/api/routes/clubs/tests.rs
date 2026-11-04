@@ -27,14 +27,27 @@ fn state() -> AppState {
         Duration::from_millis(200),
         false,
     );
-    AppState::new(settings, db, None, None).unwrap()
+    AppState::new(settings, db, None).unwrap()
 }
 
 async fn call(method: Method, path: &str, body: Option<Value>) -> (StatusCode, Value) {
+    call_as(None, method, path, body).await
+}
+
+/// `call` with `Authorization: Bearer <token>`.
+async fn call_as(
+    token: Option<&str>,
+    method: Method,
+    path: &str,
+    body: Option<Value>,
+) -> (StatusCode, Value) {
     let mut builder = Request::builder()
         .method(method)
         .uri(path)
         .header(header::HOST, "testserver");
+    if let Some(token) = token {
+        builder = builder.header(header::AUTHORIZATION, format!("Bearer {token}"));
+    }
     let body = match body {
         Some(json) => {
             builder = builder.header(header::CONTENT_TYPE, "application/json");
@@ -356,4 +369,32 @@ fn club_review_decisions_are_announced_only_on_change() {
     // test_club_status_change_refreshes_visibility_dependencies
     assert!(decision_changed("pending", "approved"));
     assert!(!decision_changed("approved", "approved"));
+}
+
+#[tokio::test]
+async fn users_me_takes_our_access_tokens() {
+    // test_users.py::test_an_expired_access_token_is_refused and
+    // ::test_our_access_token_reaches_the_user_without_any_key_fetch.
+    use crate::api::auth::test_tokens;
+    let mut claims = test_tokens::claims("auth-id-1");
+    claims["exp"] = json!(chrono::Utc::now().timestamp() - 1);
+    let (status, body) = call_as(
+        Some(&test_tokens::sign(&claims)),
+        Method::GET,
+        "/users/me",
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(body, json!({"detail": "Invalid or expired token"}));
+    // A valid token gets past authentication to the users lookup, which has
+    // no database here.
+    let (status, _) = call_as(
+        Some(&test_tokens::access_token("auth-id-1")),
+        Method::GET,
+        "/users/me",
+        None,
+    )
+    .await;
+    assert!(status.is_server_error(), "{status}");
 }

@@ -340,6 +340,21 @@ pub async fn find_user(db: &sqlx::PgPool, auth_id: &str) -> Result<Option<User>,
     .await?)
 }
 
+/// `AuthService.revoke_sessions`: end every live session of one account.
+pub async fn revoke_sessions(
+    db: impl sqlx::PgExecutor<'_>,
+    auth_id: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE public.auth_sessions SET revoked_at = now() \
+         WHERE auth_id = $1 AND revoked_at IS NULL",
+    )
+    .bind(auth_id)
+    .execute(db)
+    .await?;
+    Ok(())
+}
+
 /// `get_db_user`: authenticated, with a `users` row (404 before signup completes).
 pub struct DbUser(pub User);
 
