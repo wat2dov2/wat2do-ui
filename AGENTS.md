@@ -192,6 +192,7 @@ A ported component replaces its Python code in the same change; never keep both 
 Rust reads the same `backend/controlbox/*.json` (embedded at build time), `backend/.env` settings and Postgres tables as Python, and talks to Postgres directly through `DATABASE_URL`.
 Constants Rust mirrors from `backend/core/constants` live in `rust/src/constants.rs`, guarded by `backend/tests/test_rust_constants.py`.
 The scheduled notification emails (morning email and event reminders) are sent by `wat2do-send-notifications` (`rust/src/notifications`, `rust/src/email`), which `.github/workflows/scheduled-emails.yml` builds and runs; event change emails and the preference and unsubscribe routes are still Python and share `notifications_log`, the unsubscribe token format and the email layout with it.
+The monthly promoter poster payouts are computed by `wat2do-poster-payouts` (`rust/src/poster_payouts`), which `.github/workflows/monthly-poster-payouts.yml` builds and runs; `--plan` shows what a run would write without writing.
 Run `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` in `rust/` alongside the backend checks.
 
 The public API is served by `wat2do-api` (`rust/src/api`), which listens on port 8000, runs the FastAPI app on loopback as its child, answers the routes already ported to Rust and proxies every other request to Python unchanged.

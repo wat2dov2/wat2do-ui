@@ -431,108 +431,6 @@ export interface paths {
         patch: operations["update_lead_outreach_leads__lead_id__patch"];
         trace?: never;
     };
-    "/payouts/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Own Payouts */
-        get: operations["list_own_payouts_payouts__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payouts/admin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Admin Payouts */
-        get: operations["list_admin_payouts_payouts_admin_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payouts/admin/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Export Pending Payouts */
-        post: operations["export_pending_payouts_payouts_admin_export_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payouts/admin/{payout_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Admin Payout Detail */
-        get: operations["get_admin_payout_detail_payouts_admin__payout_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payouts/admin/{payout_id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Transition Payout */
-        patch: operations["transition_payout_payouts_admin__payout_id__status_patch"];
-        trace?: never;
-    };
-    "/payouts/admin/mark-paid": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Bulk Mark Paid */
-        post: operations["bulk_mark_paid_payouts_admin_mark_paid_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/position-submissions/": {
         parameters: {
             query?: never;
@@ -566,114 +464,6 @@ export interface paths {
         head?: never;
         /** Review Submission */
         patch: operations["review_submission_position_submissions__submission_id__patch"];
-        trace?: never;
-    };
-    "/qr/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Qr Codes
-         * @description List manageable QR codes with explicit active-state and recency filters.
-         */
-        get: operations["list_qr_codes_qr__get"];
-        put?: never;
-        /** Create Poster */
-        post: operations["create_poster_qr__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/scans": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Scans */
-        get: operations["list_scans_qr_scans_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/earnings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Promoter Earnings */
-        get: operations["get_promoter_earnings_qr_earnings_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/scans/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Confirm Scan */
-        post: operations["confirm_scan_qr_scans_confirm_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/map": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Campus Coverage */
-        get: operations["get_campus_coverage_qr_map_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/qr/{qr_code_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Resolve Qr And Record Scan */
-        get: operations["resolve_qr_and_record_scan_qr__qr_code_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Poster */
-        delete: operations["delete_poster_qr__qr_code_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Poster */
-        patch: operations["update_poster_qr__qr_code_id__patch"];
         trace?: never;
     };
     "/sponsor-submissions/": {
@@ -1522,6 +1312,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/payouts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Own Payouts */
+        get: operations["list_own_payouts_payouts__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Admin Payouts */
+        get: operations["list_admin_payouts_payouts_admin_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export Pending Payouts */
+        post: operations["export_pending_payouts_payouts_admin_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin/{payout_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Admin Payout Detail */
+        get: operations["get_admin_payout_detail_payouts_admin__payout_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payouts/admin/{payout_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Transition Payout */
+        patch: operations["transition_payout_payouts_admin__payout_id__status_patch"];
+        trace?: never;
+    };
+    "/payouts/admin/mark-paid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Mark Paid */
+        post: operations["bulk_mark_paid_payouts_admin_mark_paid_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/positions/": {
         parameters: {
             query?: never;
@@ -1571,6 +1463,114 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/qr/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Qr Codes
+         * @description List manageable QR codes with explicit active-state and recency filters.
+         */
+        get: operations["list_qr_codes_qr__get"];
+        put?: never;
+        /** Create Poster */
+        post: operations["create_poster_qr__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/scans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Scans */
+        get: operations["list_scans_qr_scans_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/earnings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Promoter Earnings */
+        get: operations["get_promoter_earnings_qr_earnings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/scans/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Scan */
+        post: operations["confirm_scan_qr_scans_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Campus Coverage */
+        get: operations["get_campus_coverage_qr_map_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/qr/{qr_code_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolve Qr And Record Scan */
+        get: operations["resolve_qr_and_record_scan_qr__qr_code_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Poster */
+        delete: operations["delete_poster_qr__qr_code_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Poster */
+        patch: operations["update_poster_qr__qr_code_id__patch"];
         trace?: never;
     };
     "/saved-clubs/": {
@@ -1811,26 +1811,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AdminPayoutDetail */
-        AdminPayoutDetail: {
-            payout: components["schemas"]["PosterPayoutResponse"];
-            /** Fraud Reasons */
-            fraud_reasons: components["schemas"]["PayoutFraudReason"][];
-            /** Contributions */
-            contributions: components["schemas"]["PosterPayoutContribution"][];
-            /**
-             * Period Start
-             * Format: date-time
-             */
-            period_start: string;
-            /**
-             * Period End
-             * Format: date-time
-             */
-            period_end: string;
-            /** Review History */
-            review_history: components["schemas"]["PayoutReviewEvent"][];
-        };
         /** AutomateLogPayload */
         AutomateLogPayload: {
             /** Event */
@@ -1887,33 +1867,6 @@ export interface components {
         Body_upload_qr_asset_uploads_qr_asset_post: {
             /** File */
             file: string;
-        };
-        /** CampusCoverageCell */
-        CampusCoverageCell: {
-            /** Latitude */
-            latitude: number;
-            /** Longitude */
-            longitude: number;
-            /** Poster Count */
-            poster_count: number;
-            /** Recent Poster Count */
-            recent_poster_count: number;
-            /** Quiet Poster Count */
-            quiet_poster_count: number;
-            /**
-             * Confirmed Visitor Bucket
-             * @enum {string}
-             */
-            confirmed_visitor_bucket: "none" | "low" | "medium" | "high";
-        };
-        /** CampusCoverageResponse */
-        CampusCoverageResponse: {
-            /** School */
-            school: string;
-            /** Quiet After Days */
-            quiet_after_days: number;
-            /** Cells */
-            cells: components["schemas"]["CampusCoverageCell"][];
         };
         /**
          * ClubCohostResponse
@@ -2891,45 +2844,6 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
-        /** PaginatedResponse[PosterPayoutResponse] */
-        PaginatedResponse_PosterPayoutResponse_: {
-            /** Items */
-            items: components["schemas"]["PosterPayoutResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[QrCodeResponse] */
-        PaginatedResponse_QrCodeResponse_: {
-            /** Items */
-            items: components["schemas"]["QrCodeResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[QrCodeScanResponse] */
-        PaginatedResponse_QrCodeScanResponse_: {
-            /** Items */
-            items: components["schemas"]["QrCodeScanResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
         /** PaginatedResponse[SponsorSubmissionResponse] */
         PaginatedResponse_SponsorSubmissionResponse_: {
             /** Items */
@@ -2955,84 +2869,6 @@ export interface components {
             page_size: number;
             /** Total Pages */
             total_pages: number;
-        };
-        /** PaginatedResponse[UserPosterPayoutResponse] */
-        PaginatedResponse_UserPosterPayoutResponse_: {
-            /** Items */
-            items: components["schemas"]["UserPosterPayoutResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PayoutCsvExportResponse */
-        PayoutCsvExportResponse: {
-            /** Filename */
-            filename: string;
-            /** Content */
-            content: string;
-        };
-        /** PayoutFraudReason */
-        PayoutFraudReason: {
-            /** Code */
-            code: string;
-            /** Points */
-            points: number;
-            /** Affected Scan Count */
-            affected_scan_count: number;
-            /** Evidence */
-            evidence: {
-                [key: string]: unknown;
-            };
-        };
-        /** PayoutReviewEvent */
-        PayoutReviewEvent: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * From Status
-             * @enum {string}
-             */
-            from_status: "pending" | "held" | "paid" | "voided";
-            /**
-             * To Status
-             * @enum {string}
-             */
-            to_status: "pending" | "held" | "paid" | "voided";
-            /** Notes */
-            notes: string | null;
-            /**
-             * Reviewed By
-             * Format: uuid
-             */
-            reviewed_by: string;
-            /**
-             * Reviewed At
-             * Format: date-time
-             */
-            reviewed_at: string;
-        };
-        /** PayoutSelectionRequest */
-        PayoutSelectionRequest: {
-            /** Payout Ids */
-            payout_ids: string[];
-        };
-        /** PayoutStatusUpdate */
-        PayoutStatusUpdate: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "held" | "paid" | "voided";
-            /** Notes */
-            notes?: string | null;
         };
         /** PositionCreate */
         PositionCreate: {
@@ -3132,341 +2968,6 @@ export interface components {
             /** Submitted By Email */
             submitted_by_email?: string | null;
             position_data: components["schemas"]["PositionCreate"];
-        };
-        /** PosterEarningsItem */
-        PosterEarningsItem: {
-            /** Qr Code Id */
-            qr_code_id: string;
-            /** Name */
-            name: string;
-            /** Latest Scan */
-            latest_scan: string | null;
-            /** Latitude */
-            latitude: number;
-            /** Longitude */
-            longitude: number;
-            /** Poster Template Id */
-            poster_template_id: string | null;
-            /** Template Preview Url */
-            template_preview_url: string | null;
-            /** Lifetime Unique Scans */
-            lifetime_unique_scans: number;
-            /** Period Unique Scans */
-            period_unique_scans: number;
-            /** Period Creditable Scans */
-            period_creditable_scans: number;
-            /** Pending Cents */
-            pending_cents: number;
-        };
-        /** PosterPayoutContribution */
-        PosterPayoutContribution: {
-            /** Qr Code Id */
-            qr_code_id: string;
-            /** Name */
-            name: string;
-            /** Poster Template Id */
-            poster_template_id: string | null;
-            /** Scan Count */
-            scan_count: number;
-            /** Amount Cents */
-            amount_cents: number;
-        };
-        /** PosterPayoutResponse */
-        PosterPayoutResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
-            /**
-             * Period
-             * Format: date
-             */
-            period: string;
-            /**
-             * Payout Email
-             * Format: email
-             */
-            payout_email: string;
-            /** Rate Cents */
-            rate_cents: number;
-            /** Amount Cents */
-            amount_cents: number;
-            /** Scan Count */
-            scan_count: number;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "held" | "paid" | "voided";
-            /**
-             * Fraud Status
-             * @default clear
-             * @enum {string}
-             */
-            fraud_status: "flagged" | "clear";
-            /** Paid At */
-            paid_at: string | null;
-            /** Notes */
-            notes: string | null;
-            /** Reviewed By */
-            reviewed_by: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /** PromoterEarningsResponse */
-        PromoterEarningsResponse: {
-            /** Period */
-            period: string;
-            /** Posters */
-            posters: components["schemas"]["PosterEarningsItem"][];
-            /** Period Creditable Scans */
-            period_creditable_scans: number;
-            /** Period Unqualified Scans */
-            period_unqualified_scans: number;
-            /** Pending Cents */
-            pending_cents: number;
-            /** Lifetime Paid Cents */
-            lifetime_paid_cents: number;
-            /** Active Slots Used */
-            active_slots_used: number;
-            /** Active Slots Limit */
-            active_slots_limit: number;
-            /** Program Enabled */
-            program_enabled: boolean;
-        };
-        /**
-         * PromoterPosterBatchCreate
-         * @description Create one or more independently tracked posters in one transaction.
-         */
-        PromoterPosterBatchCreate: {
-            /**
-             * Program
-             * @constant
-             */
-            program: "promoter";
-            /** Poster Template Id */
-            poster_template_id: string;
-            /** Name */
-            name: string;
-            /**
-             * Copies
-             * @default 1
-             */
-            copies: number;
-        };
-        /** PromoterPosterBatchResponse */
-        PromoterPosterBatchResponse: {
-            /** Posters */
-            posters: components["schemas"]["QrCodeResponse"][];
-        };
-        /**
-         * QrCodeCreate
-         * @description Create one standard club or administrator QR code.
-         */
-        QrCodeCreate: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Destination Type
-             * @enum {string}
-             */
-            destination_type: "event" | "events-list" | "custom-url";
-            /** Destination Id */
-            destination_id?: string | number | null;
-            /** Filters */
-            filters?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
-            /** Image Url */
-            image_url?: string | null;
-            /**
-             * Latitude
-             * @default 0
-             */
-            latitude: number;
-            /**
-             * Longitude
-             * @default 0
-             */
-            longitude: number;
-            /** Id */
-            id: string;
-            /**
-             * Program
-             * @default standard
-             * @constant
-             */
-            program: "standard";
-        };
-        /**
-         * QrCodeRedirect
-         * @description Redirect config for a QR scan; the scan itself is recorded server-side.
-         */
-        QrCodeRedirect: {
-            /**
-             * Destination Type
-             * @enum {string}
-             */
-            destination_type: "event" | "events-list" | "custom-url";
-            /** Destination Id */
-            destination_id?: string | number | null;
-            /** Filters */
-            filters?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
-            /** Query Params */
-            query_params?: {
-                [key: string]: string;
-            } | null;
-            /** Scan Confirmation Token */
-            scan_confirmation_token?: string | null;
-        };
-        /** QrCodeResponse */
-        QrCodeResponse: {
-            /** Id */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string | null;
-            /**
-             * Destination Type
-             * @enum {string}
-             */
-            destination_type: "event" | "events-list" | "custom-url";
-            /** Destination Id */
-            destination_id: string | null;
-            /** Filters */
-            filters: {
-                [key: string]: unknown;
-            } | unknown[] | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Created By */
-            created_by: string;
-            /** Is Active */
-            is_active: boolean;
-            /**
-             * Program
-             * @enum {string}
-             */
-            program: "standard" | "promoter";
-            /** Latest Scan */
-            latest_scan?: string | null;
-            /** Poster Template Id */
-            poster_template_id?: string | null;
-            /** Image Url */
-            image_url: string | null;
-            /** Latitude */
-            latitude: number;
-            /** Longitude */
-            longitude: number;
-        };
-        /** QrCodeScanResponse */
-        QrCodeScanResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Qr Code Id */
-            qr_code_id: string;
-            /**
-             * Scanned At
-             * Format: date-time
-             */
-            scanned_at: string;
-            /** Visitor Reference */
-            visitor_reference: string;
-            /** Browser Family */
-            browser_family: string | null;
-            /** Os Family */
-            os_family: string | null;
-            /** Asn */
-            asn: number | null;
-            /** Country */
-            country: string | null;
-            /** Landing Confirmed At */
-            landing_confirmed_at: string | null;
-            /** Risk Score */
-            risk_score: number;
-            /** Risk Flags */
-            risk_flags: {
-                [key: string]: unknown;
-            }[];
-            /** Risk Evaluated At */
-            risk_evaluated_at: string | null;
-            /** Risk Rules Version */
-            risk_rules_version: string | null;
-        };
-        /**
-         * QrCodeUpdate
-         * @description Update editable QR content without accepting lifecycle or program fields.
-         */
-        QrCodeUpdate: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /**
-             * Destination Type
-             * @enum {string}
-             */
-            destination_type: "event" | "events-list" | "custom-url";
-            /** Destination Id */
-            destination_id?: string | number | null;
-            /** Filters */
-            filters?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
-            /** Image Url */
-            image_url?: string | null;
-            /**
-             * Latitude
-             * @default 0
-             */
-            latitude: number;
-            /**
-             * Longitude
-             * @default 0
-             */
-            longitude: number;
-            /** Id */
-            id: string;
-        };
-        /** QrScanConfirmRequest */
-        QrScanConfirmRequest: {
-            /** Token */
-            token: string;
-        };
-        /** QrScanConfirmResponse */
-        QrScanConfirmResponse: {
-            /** Confirmed */
-            confirmed: boolean;
-            /**
-             * Landing Confirmed At
-             * Format: date-time
-             */
-            landing_confirmed_at: string;
         };
         /**
          * ReportSuggestion
@@ -3651,42 +3152,6 @@ export interface components {
             /** Url */
             url: string;
         };
-        /** UserPosterPayoutResponse */
-        UserPosterPayoutResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Period
-             * Format: date
-             */
-            period: string;
-            /**
-             * Payout Email
-             * Format: email
-             */
-            payout_email: string;
-            /** Rate Cents */
-            rate_cents: number;
-            /** Amount Cents */
-            amount_cents: number;
-            /** Scan Count */
-            scan_count: number;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "held" | "paid" | "voided";
-            /** Paid At */
-            paid_at: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -3709,6 +3174,17 @@ export interface components {
             email: string;
             /** Token */
             token: string;
+        };
+        /** @description `AdminPayoutDetail`. */
+        AdminPayoutDetail: {
+            payout: components["schemas"]["PosterPayoutResponse"];
+            fraud_reasons: components["schemas"]["PayoutFraudReason"][];
+            contributions: components["schemas"]["PosterPayoutContribution"][];
+            /** Format: date-time */
+            period_start: string;
+            /** Format: date-time */
+            period_end: string;
+            review_history: components["schemas"]["PayoutReviewEvent"][];
         };
         /**
          * @description Shared domain constants that the frontend must stay in sync with.
@@ -3734,6 +3210,28 @@ export interface components {
             token: string;
             /** Feed Url */
             feed_url: string;
+        };
+        /** @description `CampusCoverageCell`: one rounded map cell, with no poster or owner id. */
+        CampusCoverageCell: {
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            /** Format: int64 */
+            poster_count: number;
+            /** Format: int64 */
+            recent_poster_count: number;
+            /** Format: int64 */
+            quiet_poster_count: number;
+            /** @enum {string} */
+            confirmed_visitor_bucket: "none" | "low" | "medium" | "high";
+        };
+        /** @description `CampusCoverageResponse`. */
+        CampusCoverageResponse: {
+            school: string;
+            /** Format: int64 */
+            quiet_after_days: number;
+            cells: components["schemas"]["CampusCoverageCell"][];
         };
         CampusSeasonWindow: {
             /** Format: date */
@@ -4405,6 +3903,39 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        PaginatedResponse_PosterPayoutResponse_: {
+            items: components["schemas"]["PosterPayoutResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
+        PaginatedResponse_QrCodeResponse_: {
+            items: components["schemas"]["QrCodeResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
+        PaginatedResponse_QrCodeScanResponse_: {
+            items: components["schemas"]["QrCodeScanResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
         /** PaginatedResponse[ReportResponse] */
         PaginatedResponse_ReportResponse_: {
             /** Items */
@@ -4417,6 +3948,56 @@ export interface components {
             page_size: number;
             /** Total Pages */
             total_pages: number;
+        };
+        PaginatedResponse_UserPosterPayoutResponse_: {
+            items: components["schemas"]["UserPosterPayoutResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
+        /** @description `PayoutCsvExportResponse`. */
+        PayoutCsvExportResponse: {
+            filename: string;
+            content: string;
+        };
+        /** @description `PayoutFraudReason`. */
+        PayoutFraudReason: {
+            code: string;
+            /** Format: int64 */
+            points: number;
+            /** Format: int64 */
+            affected_scan_count: number;
+            evidence: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description `PayoutReviewEvent`: one entry of the append-only review history. */
+        PayoutReviewEvent: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            from_status: "pending" | "held" | "paid" | "voided";
+            /** @enum {string} */
+            to_status: "pending" | "held" | "paid" | "voided";
+            notes: string | null;
+            /** Format: uuid */
+            reviewed_by: string;
+            /** Format: date-time */
+            reviewed_at: string;
+        };
+        PayoutSelectionRequest: {
+            payout_ids: string[];
+        };
+        /** @description The OpenAPI request bodies. */
+        PayoutStatusUpdate: {
+            /** @enum {string} */
+            status: "pending" | "held" | "paid" | "voided";
+            notes?: string | null;
         };
         PositionDirectoryResponse: {
             items: components["schemas"]["PositionResponse"][];
@@ -4471,11 +4052,228 @@ export interface components {
             /** Format: int64 */
             click_count: number;
         };
+        /** @description `PosterEarningsItem`: one active poster's earnings this month. */
+        PosterEarningsItem: {
+            qr_code_id: string;
+            name: string;
+            /** Format: date-time */
+            latest_scan: string | null;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            poster_template_id: string | null;
+            template_preview_url: string | null;
+            /** Format: int64 */
+            lifetime_unique_scans: number;
+            /** Format: int64 */
+            period_unique_scans: number;
+            /** Format: int64 */
+            period_creditable_scans: number;
+            /** Format: int64 */
+            pending_cents: number;
+        };
+        /** @description `PosterPayoutContribution`: one poster's share of a payout. */
+        PosterPayoutContribution: {
+            qr_code_id: string;
+            name: string;
+            poster_template_id: string | null;
+            /** Format: int64 */
+            scan_count: number;
+            /** Format: int64 */
+            amount_cents: number;
+        };
+        /** @description `PosterPayoutResponse`: the administrator view of a payout. */
+        PosterPayoutResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            /** Format: date */
+            period: string;
+            /** Format: email */
+            payout_email: string;
+            /** Format: int64 */
+            rate_cents: number;
+            /** Format: int64 */
+            amount_cents: number;
+            /** Format: int64 */
+            scan_count: number;
+            /** @enum {string} */
+            status: "pending" | "held" | "paid" | "voided";
+            /** @enum {string} */
+            fraud_status: "flagged" | "clear";
+            /** Format: date-time */
+            paid_at: string | null;
+            notes: string | null;
+            /** Format: uuid */
+            reviewed_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description `PromoterEarningsResponse`. */
+        PromoterEarningsResponse: {
+            period: string;
+            posters: components["schemas"]["PosterEarningsItem"][];
+            /** Format: int64 */
+            period_creditable_scans: number;
+            /** Format: int64 */
+            period_unqualified_scans: number;
+            /** Format: int64 */
+            pending_cents: number;
+            /** Format: int64 */
+            lifetime_paid_cents: number;
+            /** Format: int64 */
+            active_slots_used: number;
+            /** Format: int64 */
+            active_slots_limit: number;
+            program_enabled: boolean;
+        };
         PromoterEnrollmentUpdate: {
             /** Format: email */
             payout_email: string;
             /** @default false */
             accept_tos: boolean;
+        };
+        PromoterPosterBatchCreate: {
+            /** @enum {string} */
+            program: "promoter";
+            poster_template_id: string;
+            name: string;
+            /**
+             * Format: int64
+             * @default 1
+             */
+            copies: number;
+        };
+        /** @description `PromoterPosterBatchResponse`. */
+        PromoterPosterBatchResponse: {
+            posters: components["schemas"]["QrCodeResponse"][];
+        };
+        /** @description The OpenAPI request bodies. */
+        QrCodeCreate: {
+            name: string;
+            description?: string | null;
+            /** @enum {string} */
+            destination_type: "event" | "events-list" | "custom-url";
+            destination_id?: (string | number) | null;
+            filters?: ({
+                [key: string]: unknown;
+            } | unknown[]) | null;
+            image_url?: string | null;
+            /**
+             * Format: double
+             * @default 0
+             */
+            latitude: number;
+            /**
+             * Format: double
+             * @default 0
+             */
+            longitude: number;
+            id: string;
+            /**
+             * @default standard
+             * @enum {string}
+             */
+            program: "standard";
+        };
+        /** @description `QrCodeRedirect`: where a scan goes; the scan itself is recorded server-side. */
+        QrCodeRedirect: {
+            /** @enum {string} */
+            destination_type: "event" | "events-list" | "custom-url";
+            destination_id?: (string | number) | null;
+            filters?: ({
+                [key: string]: unknown;
+            } | unknown[]) | null;
+            query_params?: {
+                [key: string]: string;
+            } | null;
+            scan_confirmation_token?: string | null;
+        };
+        /** @description A poster as the API returns it (`QrCodeResponse`). */
+        QrCodeResponse: {
+            id: string;
+            name: string;
+            description: string | null;
+            /** @enum {string} */
+            destination_type: "event" | "events-list" | "custom-url";
+            destination_id: string | null;
+            filters: ({
+                [key: string]: unknown;
+            } | unknown[]) | null;
+            /** Format: date-time */
+            created_at: string;
+            created_by: string;
+            is_active: boolean;
+            /** @enum {string} */
+            program: "standard" | "promoter";
+            /** Format: date-time */
+            latest_scan?: string | null;
+            poster_template_id?: string | null;
+            image_url: string | null;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+        };
+        /** @description `QrCodeScanResponse`: one scan, with only a short visitor reference. */
+        QrCodeScanResponse: {
+            /** Format: uuid */
+            id: string;
+            qr_code_id: string;
+            /** Format: date-time */
+            scanned_at: string;
+            visitor_reference: string;
+            browser_family: string | null;
+            os_family: string | null;
+            /** Format: int64 */
+            asn: number | null;
+            country: string | null;
+            /** Format: date-time */
+            landing_confirmed_at: string | null;
+            /** Format: int64 */
+            risk_score: number;
+            risk_flags: {
+                [key: string]: unknown;
+            }[];
+            /** Format: date-time */
+            risk_evaluated_at: string | null;
+            risk_rules_version: string | null;
+        };
+        QrCodeUpdate: {
+            name: string;
+            description?: string | null;
+            /** @enum {string} */
+            destination_type: "event" | "events-list" | "custom-url";
+            destination_id?: (string | number) | null;
+            filters?: ({
+                [key: string]: unknown;
+            } | unknown[]) | null;
+            image_url?: string | null;
+            /**
+             * Format: double
+             * @default 0
+             */
+            latitude: number;
+            /**
+             * Format: double
+             * @default 0
+             */
+            longitude: number;
+            id: string;
+        };
+        /** @description The OpenAPI request body. */
+        QrScanConfirmRequest: {
+            token: string;
+        };
+        /** @description `QrScanConfirmResponse`. */
+        QrScanConfirmResponse: {
+            confirmed: boolean;
+            /** Format: date-time */
+            landing_confirmed_at: string;
         };
         /**
          * RecordInteractionsResponse
@@ -4598,6 +4396,30 @@ export interface components {
             message_translation_key: string;
             cta_label_translation_key: string;
             cta_href: string;
+        };
+        /**
+         * @description `UserPosterPayoutResponse`: what a promoter sees of their own payout
+         *     (no notes, reviewer or fraud status).
+         */
+        UserPosterPayoutResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            period: string;
+            /** Format: email */
+            payout_email: string;
+            /** Format: int64 */
+            rate_cents: number;
+            /** Format: int64 */
+            amount_cents: number;
+            /** Format: int64 */
+            scan_count: number;
+            /** @enum {string} */
+            status: "pending" | "held" | "paid" | "voided";
+            /** Format: date-time */
+            paid_at: string | null;
+            /** Format: date-time */
+            created_at: string;
         };
         UserProfileUpdate: {
             faculty?: string | null;
@@ -5534,216 +5356,6 @@ export interface operations {
             };
         };
     };
-    list_own_payouts_payouts__get: {
-        parameters: {
-            query?: {
-                payout_status?: ("pending" | "held" | "paid" | "voided") | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_UserPosterPayoutResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_admin_payouts_payouts_admin_get: {
-        parameters: {
-            query?: {
-                user_id?: string | null;
-                payout_status?: ("pending" | "held" | "paid" | "voided") | null;
-                period?: string | null;
-                payout_email?: string | null;
-                period_from?: string | null;
-                period_to?: string | null;
-                min_amount_cents?: number | null;
-                max_amount_cents?: number | null;
-                fraud_status?: ("flagged" | "clear") | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_PosterPayoutResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    export_pending_payouts_payouts_admin_export_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PayoutSelectionRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PayoutCsvExportResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_admin_payout_detail_payouts_admin__payout_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                payout_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminPayoutDetail"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    transition_payout_payouts_admin__payout_id__status_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                payout_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PayoutStatusUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PosterPayoutResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bulk_mark_paid_payouts_admin_mark_paid_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PayoutSelectionRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PosterPayoutResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_submissions_position_submissions__get: {
         parameters: {
             query?: {
@@ -5836,298 +5448,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PositionSubmissionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_qr_codes_qr__get: {
-        parameters: {
-            query?: {
-                school?: string | null;
-                program?: ("standard" | "promoter") | null;
-                is_active?: boolean | null;
-                latest_scan_before?: string | null;
-                latest_scan_after?: string | null;
-                never_scanned?: boolean | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_QrCodeResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_poster_qr__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["QrCodeCreate"] | components["schemas"]["PromoterPosterBatchCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QrCodeResponse"] | components["schemas"]["PromoterPosterBatchResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_scans_qr_scans_get: {
-        parameters: {
-            query?: {
-                qr_code_id?: string | null;
-                from_time?: string | null;
-                to_time?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_QrCodeScanResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_promoter_earnings_qr_earnings_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PromoterEarningsResponse"];
-                };
-            };
-        };
-    };
-    confirm_scan_qr_scans_confirm_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["QrScanConfirmRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QrScanConfirmResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_campus_coverage_qr_map_get: {
-        parameters: {
-            query: {
-                school: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CampusCoverageResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    resolve_qr_and_record_scan_qr__qr_code_id__get: {
-        parameters: {
-            query?: {
-                lat?: number | null;
-                lon?: number | null;
-            };
-            header?: never;
-            path: {
-                qr_code_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QrCodeRedirect"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_poster_qr__qr_code_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                qr_code_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_poster_qr__qr_code_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                qr_code_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["QrCodeUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QrCodeResponse"];
                 };
             };
             /** @description Validation Error */
@@ -8050,6 +7370,216 @@ export interface operations {
             };
         };
     };
+    list_own_payouts_payouts__get: {
+        parameters: {
+            query?: {
+                payout_status?: ("pending" | "held" | "paid" | "voided") | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_UserPosterPayoutResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_admin_payouts_payouts_admin_get: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+                payout_status?: ("pending" | "held" | "paid" | "voided") | null;
+                period?: string | null;
+                payout_email?: string | null;
+                period_from?: string | null;
+                period_to?: string | null;
+                min_amount_cents?: number | null;
+                max_amount_cents?: number | null;
+                fraud_status?: ("flagged" | "clear") | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_PosterPayoutResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_pending_payouts_payouts_admin_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayoutSelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutCsvExportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_admin_payout_detail_payouts_admin__payout_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPayoutDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transition_payout_payouts_admin__payout_id__status_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payout_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayoutStatusUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosterPayoutResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_mark_paid_payouts_admin_mark_paid_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayoutSelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PosterPayoutResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_positions_positions__get: {
         parameters: {
             query?: {
@@ -8143,6 +7673,298 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PositionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_qr_codes_qr__get: {
+        parameters: {
+            query?: {
+                school?: string | null;
+                program?: ("standard" | "promoter") | null;
+                is_active?: boolean | null;
+                latest_scan_before?: string | null;
+                latest_scan_after?: string | null;
+                never_scanned?: boolean | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_QrCodeResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_poster_qr__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QrCodeCreate"] | components["schemas"]["PromoterPosterBatchCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrCodeResponse"] | components["schemas"]["PromoterPosterBatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_scans_qr_scans_get: {
+        parameters: {
+            query?: {
+                qr_code_id?: string | null;
+                from_time?: string | null;
+                to_time?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_QrCodeScanResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_promoter_earnings_qr_earnings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromoterEarningsResponse"];
+                };
+            };
+        };
+    };
+    confirm_scan_qr_scans_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QrScanConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrScanConfirmResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_campus_coverage_qr_map_get: {
+        parameters: {
+            query: {
+                school: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampusCoverageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_qr_and_record_scan_qr__qr_code_id__get: {
+        parameters: {
+            query?: {
+                lat?: number | null;
+                lon?: number | null;
+            };
+            header?: never;
+            path: {
+                qr_code_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrCodeRedirect"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_poster_qr__qr_code_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qr_code_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_poster_qr__qr_code_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                qr_code_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QrCodeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QrCodeResponse"];
                 };
             };
             /** @description Validation Error */

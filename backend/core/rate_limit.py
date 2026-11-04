@@ -80,8 +80,6 @@ from core.constants import (
     AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS,
     AUTH_SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
     AUTH_SENSITIVE_RATE_LIMIT_WINDOW_SECONDS,
-    QR_SCAN_RATE_LIMIT_MAX_REQUESTS,
-    QR_SCAN_RATE_LIMIT_WINDOW_SECONDS,
     RATE_LIMIT_MAX_REQUESTS,
     RATE_LIMIT_WINDOW_SECONDS,
 )
@@ -303,10 +301,4 @@ verify_otp_rate_limiter = RateLimiter(
 auth_refresh_rate_limiter = RateLimiter(
     max_requests=AUTH_REFRESH_RATE_LIMIT_MAX_REQUESTS,
     window_seconds=AUTH_REFRESH_RATE_LIMIT_WINDOW_SECONDS,
-)
-# QR scan recording (GET /qr/{id}).  Normal usage is one scan per QR code;
-# repeated rapid scans from the same IP are clearly automated.
-qr_scan_rate_limiter = RateLimiter(
-    max_requests=QR_SCAN_RATE_LIMIT_MAX_REQUESTS,
-    window_seconds=QR_SCAN_RATE_LIMIT_WINDOW_SECONDS,
 )

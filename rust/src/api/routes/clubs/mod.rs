@@ -54,7 +54,7 @@ pub const CLUB_TYPE_PATTERN: &str = "^[a-z0-9]+(?:-[a-z0-9]+)*$";
 pub static CLUB_TYPE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(CLUB_TYPE_PATTERN).expect("club type pattern"));
 const CLUB_STATUSES: &[&str] = &["pending", "approved", "rejected"];
-const SCHOOL_NOT_REGISTERED: &str = "School is not registered";
+pub const SCHOOL_NOT_REGISTERED: &str = "School is not registered";
 /// Resources a club change can make stale on the frontend.
 const CLUB_RESOURCES: &[&str] = &["clubs"];
 const ALL_RESOURCES: &[&str] = &["events", "positions", "clubs"];

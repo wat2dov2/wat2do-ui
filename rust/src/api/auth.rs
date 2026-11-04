@@ -393,31 +393,39 @@ impl FromRequestParts<AppState> for ClubOwnerOrAdmin {
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
         let DbUser(user) = DbUser::from_request_parts(parts, state).await?;
-        if user.is_admin() {
-            return Ok(Self(user));
-        }
-        let is_member = sqlx::query_scalar::<_, bool>(
-            "SELECT EXISTS (SELECT 1 FROM public.club_members \
-             JOIN public.clubs ON clubs.id = club_members.club_id \
-             WHERE club_members.user_id = $1)",
-        )
-        .bind(user.id)
-        .fetch_one(&state.db)
-        .await
-        // As in `list_clubs_by_owner`, a failed lookup reads as no clubs.
-        .unwrap_or_else(|error| {
-            tracing::warn!(
-                "Failed to query club_members for owner_id {}: {error}",
-                user.id
-            );
-            false
-        });
-        if !is_member {
-            return Err(ApiError::authorization(
-                CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED,
-            ));
-        }
+        require_club_owner_or_admin(&state.db, &user).await?;
         Ok(Self(user))
+    }
+}
+
+/// `get_club_owner_or_admin` called on a user a route already has: 403
+/// unless an admin or a member of at least one club.
+pub async fn require_club_owner_or_admin(db: &sqlx::PgPool, user: &User) -> Result<(), ApiError> {
+    if user.is_admin() {
+        return Ok(());
+    }
+    let is_member = sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS (SELECT 1 FROM public.club_members \
+         JOIN public.clubs ON clubs.id = club_members.club_id \
+         WHERE club_members.user_id = $1)",
+    )
+    .bind(user.id)
+    .fetch_one(db)
+    .await
+    // As in `list_clubs_by_owner`, a failed lookup reads as no clubs.
+    .unwrap_or_else(|error| {
+        tracing::warn!(
+            "Failed to query club_members for owner_id {}: {error}",
+            user.id
+        );
+        false
+    });
+    if is_member {
+        Ok(())
+    } else {
+        Err(ApiError::authorization(
+            CLUB_MEMBER_OR_ADMIN_ACCESS_REQUIRED,
+        ))
     }
 }
 

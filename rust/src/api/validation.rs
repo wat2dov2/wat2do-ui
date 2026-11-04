@@ -85,7 +85,7 @@ impl Limits {
     }
 
     /// pydantic checks `gt`, `ge`, `lt`, `le` in that order and reports the first failure.
-    fn violation(&self, value: i64) -> Option<(&'static str, String, Value)> {
+    pub fn violation(&self, value: i64) -> Option<(&'static str, String, Value)> {
         if let Some(bound) = self.gt.filter(|bound| value <= *bound) {
             return Some((
                 "greater_than",
@@ -478,6 +478,12 @@ pub fn parse_datetime(raw: &str) -> Result<ParsedDatetime, &'static str> {
     if let Some(value) = timestamp_from_text(raw)? {
         return Ok(ParsedDatetime::Aware(value));
     }
+    parse_calendar_datetime(raw)
+}
+
+/// `parse_datetime` for text that is not a Unix timestamp: `YYYY-MM-DD` and
+/// an optional time.
+fn parse_calendar_datetime(raw: &str) -> Result<ParsedDatetime, &'static str> {
     let bytes = raw.as_bytes();
     if bytes.len() < 10 {
         return Err("input is too short");
@@ -524,6 +530,46 @@ pub fn parse_datetime(raw: &str) -> Result<ParsedDatetime, &'static str> {
             .map(ParsedDatetime::Aware)
             .ok_or(extra),
     }
+}
+
+/// Why pydantic refuses a string as a `date`.
+#[derive(Debug, PartialEq)]
+pub enum DateError {
+    /// `date_from_datetime_inexact`: a datetime whose time is not midnight.
+    Inexact,
+    /// `date_from_datetime_parsing` with speedate's reason.
+    Invalid(&'static str),
+}
+
+/// pydantic's (speedate's) `date` from a string: `YYYY-MM-DD`, or a
+/// datetime or Unix timestamp whose local time is exactly midnight.
+pub fn parse_date(raw: &str) -> Result<NaiveDate, DateError> {
+    let is_timestamp = !matches!(timestamp_from_text(raw), Ok(None));
+    if !is_timestamp
+        && raw.len() > 10
+        && let Some(head) = raw.get(..10)
+    {
+        // The date itself must parse first, as in speedate (as a date, never
+        // as a timestamp).
+        parse_calendar_datetime(head).map_err(DateError::Invalid)?;
+        if !matches!(raw.as_bytes()[10], b'T' | b't' | b'_' | b' ') {
+            return Err(DateError::Invalid(
+                "invalid datetime separator, expected `T`, `t`, `_` or space",
+            ));
+        }
+        if raw.len() < 16 {
+            // A time needs at least `HH:MM`.
+            return Err(DateError::Invalid("input is too short"));
+        }
+    }
+    let local = match parse_datetime(raw).map_err(DateError::Invalid)? {
+        ParsedDatetime::Aware(value) => value.naive_local(),
+        ParsedDatetime::Naive(value) => value,
+    };
+    if local.time() != NaiveTime::MIN {
+        return Err(DateError::Inexact);
+    }
+    Ok(local.date())
 }
 
 /// `AwareDatetime`: `parse_datetime` refusing values without an offset.
@@ -1229,6 +1275,33 @@ impl FloatLimits {
         self.le = Some(bound);
         self
     }
+
+    /// pydantic's check: NaN fails `le` when there is one and `ge`
+    /// otherwise; the bound is shown as written in `msg` and as a float in `ctx`.
+    pub fn violation(&self, value: f64) -> Option<(&'static str, String, Value)> {
+        let below = |bound: f64| value < bound || (value.is_nan() && self.le.is_none());
+        if let Some(bound) = self.ge.filter(|bound| below(*bound)) {
+            return Some((
+                "greater_than_equal",
+                format!(
+                    "Input should be greater than or equal to {}",
+                    bound_text(bound)
+                ),
+                json!({ "ge": bound }),
+            ));
+        }
+        if let Some(bound) = self.le.filter(|bound| value.is_nan() || value > *bound) {
+            return Some((
+                "less_than_equal",
+                format!(
+                    "Input should be less than or equal to {}",
+                    bound_text(bound)
+                ),
+                json!({ "le": bound }),
+            ));
+        }
+        None
+    }
 }
 
 /// pydantic's message shows a bound as Python prints it (`100000`, `0.5`).
@@ -1330,36 +1403,8 @@ impl Field<'_> {
             );
             return None;
         };
-        if let Some(bound) = limits.ge.filter(|bound| value < *bound) {
-            self.push_issue(
-                "greater_than_equal",
-                format!(
-                    "Input should be greater than or equal to {}",
-                    bound_text(bound)
-                ),
-                json!(raw),
-                loc,
-                Some(json!({ "ge": bound })),
-            );
-            return None;
-        }
-        if let Some(bound) = limits.le.filter(|bound| {
-            // NaN fails too, as in pydantic.
-            !matches!(
-                value.partial_cmp(bound),
-                Some(std::cmp::Ordering::Less | std::cmp::Ordering::Equal)
-            )
-        }) {
-            self.push_issue(
-                "less_than_equal",
-                format!(
-                    "Input should be less than or equal to {}",
-                    bound_text(bound)
-                ),
-                json!(raw),
-                loc,
-                Some(json!({ "le": bound })),
-            );
+        if let Some((kind, msg, ctx)) = limits.violation(value) {
+            self.push_issue(kind, msg, json!(raw), loc, Some(ctx));
             return None;
         }
         Some(value)
@@ -1397,6 +1442,31 @@ impl Field<'_> {
                     None,
                 );
                 PyInt::Small(0)
+            }
+        }
+    }
+
+    /// An optional `date` (`date | None = Query(None)`).
+    pub fn optional_date(mut self) -> Option<NaiveDate> {
+        let raw = self.raw?;
+        match parse_date(raw) {
+            Ok(value) => Some(value),
+            Err(DateError::Inexact) => {
+                self.issue(
+                    "date_from_datetime_inexact",
+                    "Datetimes provided to dates should have zero time - e.g. be exact dates"
+                        .to_owned(),
+                    None,
+                );
+                None
+            }
+            Err(DateError::Invalid(error)) => {
+                self.issue(
+                    "date_from_datetime_parsing",
+                    format!("Input should be a valid date or datetime, {error}"),
+                    Some(json!({ "error": error })),
+                );
+                None
             }
         }
     }
@@ -1562,6 +1632,61 @@ mod feed_parameter_tests {
                 Err(other) => panic!("{other:?}"),
             }
         }
+    }
+
+    #[test]
+    fn dates_match_pydantic() {
+        // pydantic 2's `date` from these strings.
+        let inexact = Err(DateError::Inexact);
+        for (raw, expected) in [
+            ("2026-01-01", Ok("2026-01-01")),
+            ("2026-01-01T00:00:00", Ok("2026-01-01")),
+            ("2026-01-01T00:00:00+05:00", Ok("2026-01-01")),
+            ("1699920000", Ok("2023-11-14")),
+        ] {
+            assert_eq!(
+                parse_date(raw).map(|date| date.to_string()),
+                expected.map(str::to_owned),
+                "{raw}"
+            );
+        }
+        for raw in ["2026-01-01T01:00", "1700000000", "99999999999999"] {
+            assert_eq!(parse_date(raw), inexact, "{raw}");
+        }
+        for (raw, reason) in [
+            ("9999999999999999", TOO_LARGE),
+            ("99999999999999999999", DATE_SEPARATOR),
+            (
+                "2026-01-01X",
+                "invalid datetime separator, expected `T`, `t`, `_` or space",
+            ),
+            ("2026-01-01T0", TOO_SHORT),
+            ("1e3", TOO_SHORT),
+            ("  ", TOO_SHORT),
+        ] {
+            assert_eq!(parse_date(raw), Err(DateError::Invalid(reason)), "{raw}");
+        }
+        // A multi-byte character inside the first ten bytes is no panic.
+        assert!(parse_date("2026-01-é1T00:00").is_err());
+    }
+
+    #[test]
+    fn float_bounds_check_nan_like_pydantic() {
+        let both = FloatLimits::default().ge(-90.0).le(90.0);
+        let kind = |limits: FloatLimits, value: f64| limits.violation(value).map(|issue| issue.0);
+        assert_eq!(kind(both, f64::NAN), Some("less_than_equal"));
+        assert_eq!(kind(both, f64::INFINITY), Some("less_than_equal"));
+        assert_eq!(kind(both, f64::NEG_INFINITY), Some("greater_than_equal"));
+        assert_eq!(kind(both, 0.25), None);
+        let only_ge = FloatLimits::default().ge(0.5);
+        assert_eq!(kind(only_ge, f64::NAN), Some("greater_than_equal"));
+        assert_eq!(kind(only_ge, f64::INFINITY), None);
+        let (_, msg, ctx) = only_ge.violation(0.25).unwrap();
+        assert_eq!(msg, "Input should be greater than or equal to 0.5");
+        assert_eq!(ctx, json!({"ge": 0.5}));
+        let (_, msg, ctx) = both.violation(100.0).unwrap();
+        assert_eq!(msg, "Input should be less than or equal to 90");
+        assert_eq!(ctx.to_string(), r#"{"le":90.0}"#);
     }
 
     #[test]

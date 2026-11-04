@@ -197,6 +197,19 @@ impl Body {
         }
     }
 
+    /// One member of a union body (`A | B`): pydantic validates the object
+    /// against each member and names the member in every issue's `loc`.
+    pub fn member(object: Map<String, Value>, extra: Extra, label: &'static str) -> Self {
+        Self {
+            object,
+            extra,
+            known: Vec::new(),
+            issues: Vec::new(),
+            prefix: vec![json!("body"), json!(label)],
+            extras_checked: false,
+        }
+    }
+
     /// A field's location, as pydantic reports it.
     pub fn loc(&self, name: &str) -> Vec<Value> {
         let mut loc = self.prefix.clone();
@@ -212,6 +225,125 @@ impl Body {
     /// The object as sent (a model validator's `input`).
     pub fn input(&self) -> Value {
         Value::Object(self.object.clone())
+    }
+
+    /// A `model_validator`'s `ValueError(message)`, reported at the model.
+    pub fn model_error(&mut self, message: &str) {
+        let (loc, input) = (self.model_loc(), self.input());
+        self.value_error(loc, input, message);
+    }
+
+    /// An issue below a field (`loc` continues with `path`), such as one
+    /// member of a field's own union.
+    pub fn nested_issue(&mut self, path: &[&str], kind: &str, msg: &str, input: &Value) {
+        let mut loc = self.model_loc();
+        loc.extend(path.iter().map(|part| json!(part)));
+        self.issue(kind, loc, msg.into(), input.clone(), None);
+    }
+
+    /// A `Literal[...]` field with a default: missing reads as `default`,
+    /// and `null` is refused like any other value.
+    pub fn literal_or(
+        &mut self,
+        name: &'static str,
+        default: &'static str,
+        choices: &'static [&'static str],
+    ) -> Option<String> {
+        match self.take(name) {
+            Input::Missing => Some(default.to_owned()),
+            Input::Null => {
+                let loc = self.loc(name);
+                self.literal_error(loc, Value::Null, choices);
+                None
+            }
+            Input::Given(value) => {
+                let loc = self.loc(name);
+                self.check_string(loc, &value, &Str::new().one_of(choices))
+            }
+        }
+    }
+
+    /// `int` with a default when missing (not `Optional`: `null` is
+    /// refused), checked against `limits`.
+    pub fn int_or(
+        &mut self,
+        name: &'static str,
+        default: i64,
+        limits: super::validation::Limits,
+    ) -> Option<i64> {
+        let before = self.issues.len();
+        let input = self.object.get(name).cloned().unwrap_or(Value::Null);
+        match self.int(name) {
+            Input::Given(integer) => {
+                if let Some((kind, msg, ctx)) = limits.violation(integer) {
+                    let loc = self.loc(name);
+                    self.issue(kind, loc, msg, input, Some(ctx));
+                    return None;
+                }
+                Some(integer)
+            }
+            Input::Null => {
+                let loc = self.loc(name);
+                self.issue(
+                    "int_type",
+                    loc,
+                    "Input should be a valid integer".into(),
+                    Value::Null,
+                    None,
+                );
+                None
+            }
+            Input::Missing => (self.issues.len() == before).then_some(default),
+        }
+    }
+
+    /// pydantic's lax `float` from JSON (a number, a bool or a numeric
+    /// string), with a default when missing; `null` is refused.
+    pub fn float_or(
+        &mut self,
+        name: &'static str,
+        default: f64,
+        limits: super::validation::FloatLimits,
+    ) -> Option<f64> {
+        let value = match self.take(name) {
+            Input::Missing => return Some(default),
+            Input::Null => Value::Null,
+            Input::Given(value) => value,
+        };
+        let loc = self.loc(name);
+        let parsed = match &value {
+            Value::Bool(flag) => Some(f64::from(u8::from(*flag))),
+            Value::Number(number) => number.as_f64(),
+            Value::String(text) => match super::validation::parse_python_float(text) {
+                Some(float) => Some(float),
+                None => {
+                    self.issue(
+                        "float_parsing",
+                        loc,
+                        "Input should be a valid number, unable to parse string as a number".into(),
+                        value.clone(),
+                        None,
+                    );
+                    return None;
+                }
+            },
+            _ => None,
+        };
+        let Some(float) = parsed else {
+            self.issue(
+                "float_type",
+                loc,
+                "Input should be a valid number".into(),
+                value,
+                None,
+            );
+            return None;
+        };
+        if let Some((kind, msg, ctx)) = limits.violation(float) {
+            self.issue(kind, loc, msg, value, Some(ctx));
+            return None;
+        }
+        Some(float)
     }
 
     fn take(&mut self, name: &'static str) -> Input<Value> {
@@ -948,6 +1080,37 @@ impl Body {
         Input::Given(parsed)
     }
 
+    /// A required `list[UUID]` of `min..=max` items, each bad item reported
+    /// at its index.
+    pub fn required_uuid_list(
+        &mut self,
+        name: &'static str,
+        min: usize,
+        max: usize,
+    ) -> Option<Vec<Uuid>> {
+        if !self.has_field(name) {
+            self.missing(name);
+            return None;
+        }
+        match self.list(name, min, max, |body, loc, value| {
+            body.uuid_item(loc, value)
+        }) {
+            Input::Given(ids) => Some(ids),
+            Input::Null => {
+                let loc = self.loc(name);
+                self.issue(
+                    "list_type",
+                    loc,
+                    "Input should be a valid list".into(),
+                    Value::Null,
+                    None,
+                );
+                None
+            }
+            Input::Missing => None,
+        }
+    }
+
     /// One nested model in a list: `read` gets its own `Body` at `loc`,
     /// whose problems join this one's.
     pub fn nested_item<T>(
@@ -1448,5 +1611,93 @@ mod tests {
             "'events', 'clubs' or 'positions'"
         );
         assert_eq!(expected_choices(&["only"]), "'only'");
+    }
+
+    #[test]
+    fn a_required_uuid_list_reports_like_pydantic() {
+        // pydantic 2 for `payout_ids: list[UUID] = Field(min_length=1, max_length=3)`.
+        let read = |value: Value| {
+            let mut body = Body::from_value(value, Extra::Forbid);
+            let ids = body.required_uuid_list("payout_ids", 1, 3);
+            (ids, body.into_issues())
+        };
+        let (ids, found) = read(json!({}));
+        assert_eq!(ids, None);
+        assert_eq!(
+            json!(found),
+            json!([{"type": "missing", "loc": ["body", "payout_ids"], "msg": "Field required", "input": {}}])
+        );
+        let (_, found) = read(json!({"payout_ids": null}));
+        assert_eq!(
+            json!(found),
+            json!([{"type": "list_type", "loc": ["body", "payout_ids"], "msg": "Input should be a valid list", "input": null}])
+        );
+        let (_, found) = read(json!({"payout_ids": []}));
+        assert_eq!(
+            json!(found),
+            json!([{"type": "too_short", "loc": ["body", "payout_ids"],
+                "msg": "List should have at least 1 item after validation, not 0", "input": [],
+                "ctx": {"field_type": "List", "min_length": 1, "actual_length": 0}}])
+        );
+        let id = "00000000-0000-0000-0000-000000000001";
+        let (_, found) = read(json!({"payout_ids": [id, id, id, id]}));
+        assert_eq!(
+            json!(found),
+            json!([{"type": "too_long", "loc": ["body", "payout_ids"],
+                "msg": "List should have at most 3 items after validation, not 4", "input": [id, id, id, id],
+                "ctx": {"field_type": "List", "max_length": 3, "actual_length": 4}}])
+        );
+        let (_, found) = read(json!({"payout_ids": ["x", 5]}));
+        let found = json!(found);
+        assert_eq!(found[0]["type"], "uuid_parsing");
+        assert_eq!(found[0]["loc"], json!(["body", "payout_ids", 0]));
+        assert_eq!(
+            found[1],
+            json!({"type": "uuid_type", "loc": ["body", "payout_ids", 1],
+                "msg": "UUID input should be a string, bytes or UUID object", "input": 5})
+        );
+        let (ids, found) = read(json!({"payout_ids": [id]}));
+        assert_eq!(ids, Some(vec![Uuid::parse_str(id).unwrap()]));
+        assert!(found.is_empty());
+    }
+
+    #[test]
+    fn a_union_member_names_itself_after_body() {
+        let object = json!({"copies": "x", "nope": 1})
+            .as_object()
+            .unwrap()
+            .clone();
+        let mut body = Body::member(object, Extra::Forbid, "PromoterPosterBatchCreate");
+        body.int_or("copies", 1, crate::api::validation::Limits::default().ge(1));
+        body.model_error("check failed");
+        let found = json!(body.into_issues());
+        assert_eq!(
+            found[0]["loc"],
+            json!(["body", "PromoterPosterBatchCreate", "copies"])
+        );
+        assert_eq!(
+            found[1]["loc"],
+            json!(["body", "PromoterPosterBatchCreate"])
+        );
+        assert_eq!(found[1]["msg"], "Value error, check failed");
+        assert_eq!(
+            found[2]["loc"],
+            json!(["body", "PromoterPosterBatchCreate", "nope"])
+        );
+    }
+
+    #[test]
+    fn a_defaulted_float_takes_pydantic_bounds() {
+        let limits = crate::api::validation::FloatLimits::default()
+            .ge(-90.0)
+            .le(90.0);
+        let mut body = Body::from_value(json!({"latitude": "nan"}), Extra::Ignore);
+        assert_eq!(body.float_or("latitude", 0.0, limits), None);
+        assert_eq!(body.float_or("longitude", 0.0, limits), Some(0.0));
+        assert_eq!(
+            issues(body),
+            json!([{"type": "less_than_equal", "loc": ["body", "latitude"],
+                "msg": "Input should be less than or equal to 90", "input": "nan", "ctx": {"le": 90.0}}])
+        );
     }
 }

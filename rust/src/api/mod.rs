@@ -144,10 +144,31 @@ fn rust_routes() -> OpenApiRouter<AppState> {
         ))
         .routes(routes!(routes::ingestion_latency::get_ingestion_latency))
         .routes(routes!(routes::meta::get_constants))
+        // routers/payouts.py
+        .routes(routes!(routes::payouts::list_own_payouts))
+        .routes(routes!(routes::payouts::list_admin_payouts))
+        .routes(routes!(routes::payouts::export_pending_payouts))
+        .routes(routes!(routes::payouts::get_admin_payout_detail))
+        .routes(routes!(routes::payouts::transition_payout))
+        .routes(routes!(routes::payouts::bulk_mark_paid))
         // routers/positions.py
         .routes(routes!(routes::positions::list_positions))
         .routes(routes!(routes::positions::get_position_stats))
         .routes(routes!(routes::positions::get_position))
+        // routers/qr.py
+        .routes(routes!(
+            routes::qr::list_qr_codes_route,
+            routes::qr::posters::create_poster
+        ))
+        .routes(routes!(routes::qr::list_scans))
+        .routes(routes!(routes::qr::get_promoter_earnings))
+        .routes(routes!(routes::qr::scans::confirm_scan))
+        .routes(routes!(routes::qr::get_campus_coverage))
+        .routes(routes!(
+            routes::qr::scans::resolve_qr_and_record_scan,
+            routes::qr::posters::update_poster,
+            routes::qr::posters::delete_poster
+        ))
         // routers/saved_clubs.py
         .routes(routes!(routes::saved_clubs::list_saved_clubs))
         .routes(routes!(
@@ -212,7 +233,7 @@ pub fn router(state: AppState) -> Router {
         }
     }
     let settings = state.settings;
-    router
+    routes::static_path_fallbacks(router)
         .route_layer(from_fn(routing::starlette_methods))
         .route_layer(from_fn(errors::log_errors))
         .route_layer(from_fn_with_state(

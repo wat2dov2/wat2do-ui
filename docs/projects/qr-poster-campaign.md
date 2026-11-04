@@ -574,7 +574,7 @@ No transition out of `paid` or `voided` is allowed.
 
 ## Monthly payout job
 
-Job: `backend/jobs/run_poster_payouts.py`.
+Job: `wat2do-poster-payouts` (`rust/src/poster_payouts`), run by `.github/workflows/monthly-poster-payouts.yml`.
 
 For a closed period, the job:
 
@@ -586,6 +586,9 @@ For a closed period, the job:
 6. Excludes held and zero-value rows from the Interac CSV.
 7. Emits payout email, amount, scan count, and status.
 8. Leaves already paid rows unchanged on rerun.
+
+Each promoter's payout row and scan risk are written in one transaction, and a run holds a database advisory lock, so a crash leaves every promoter either finished or untouched and a rerun is safe.
+`--plan` reads the database read-only and prints every payout and scan risk the run would write, writing nothing.
 
 The job records money that is ready for external settlement.
 It does not send Interac transfers.

@@ -26,6 +26,7 @@ use crate::api::messages::{
     PROMOTER_TOS_REQUIRED, USER_HAS_PAYOUT_REVIEWS, USER_HAS_PAYOUTS, USER_HAS_PROMOTER_POSTERS,
     USER_NOT_FOUND, USER_PROFILE_NOT_FOUND,
 };
+use crate::api::routes::clubs::SCHOOL_NOT_REGISTERED;
 use crate::api::validation::{Limits, PathParams, QueryParams, Validator};
 use crate::constants::{
     MAX_AVATAR_URL_LENGTH, MAX_FACULTY_LENGTH, MAX_FULL_NAME_LENGTH, MAX_INTEREST_LENGTH,
@@ -35,7 +36,6 @@ use crate::controlbox::PROMOTER_PROGRAM;
 use crate::db::read_with_retry;
 use crate::schools::normalize_slug;
 
-const SCHOOL_NOT_REGISTERED: &str = "School is not registered";
 const FACULTY_NOT_OFFERED: &str = "Faculty is not offered by the selected school";
 const ROLES: &[&str] = &["user", "admin"];
 

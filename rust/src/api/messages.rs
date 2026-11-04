@@ -50,3 +50,22 @@ pub const INVALID_EVENT_OCCURRENCE: &str = "One or more occurrences do not belon
 pub const OCCURRENCE_NOT_SELECTABLE: &str = "One or more occurrences can no longer be selected";
 pub const CLUB_PENDING_REVIEW: &str =
     "This club is still awaiting review. You can publish events once it is approved.";
+
+// The qr and payouts routes.
+pub const POSTER_NOT_FOUND: &str = "Poster not found";
+pub const PAYOUT_NOT_FOUND: &str = "Payout not found";
+pub const ID_MISMATCH: &str = "ID mismatch";
+pub const REQUIRES_LOCATION: &str = "requires_location";
+pub const PROMOTER_ENROLLMENT_REQUIRED: &str = "Promoter enrollment is required";
+pub const PROMOTER_POSTER_LIMIT_REACHED: &str = "Maximum active promoter poster limit reached";
+pub const PROMOTER_POSTERS_CANNOT_BE_DELETED: &str = "Promoter posters cannot be deleted";
+pub const PROMOTER_POSTERS_CANNOT_BE_UPDATED: &str = "Promoter posters cannot be updated";
+pub const PROMOTER_TEMPLATE_NOT_FOUND: &str = "Approved poster template not found";
+pub const PROMOTER_TEMPLATE_UNAVAILABLE: &str =
+    "This poster template is not available for new posters";
+pub const PROMOTER_TEMPLATE_SCHOOL_MISMATCH: &str =
+    "This poster template is not available for your school";
+pub const INVALID_SCAN_CONFIRMATION: &str = "Invalid or expired scan confirmation";
+pub const PAYOUT_NOTES_REQUIRED: &str = "Notes are required when holding or voiding a payout";
+pub const PAYOUT_EXPORT_PENDING_ONLY: &str = "Only pending payouts can be exported";
+pub const INVALID_PAYOUT_FILTERS: &str = "Invalid payout filter range";

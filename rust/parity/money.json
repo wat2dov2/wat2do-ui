@@ -1,0 +1,1285 @@
+[
+  {
+    "name": "qr list anonymous",
+    "path": "/qr/"
+  },
+  {
+    "name": "qr list plain user",
+    "path": "/qr/",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "qr list club owner",
+    "path": "/qr/",
+    "identity": {
+      "id": "owner-auth-id",
+      "email": "owner@example.com"
+    }
+  },
+  {
+    "name": "qr list promoter",
+    "path": "/qr/",
+    "identity": {
+      "id": "promoter-auth-id",
+      "email": "promoter@example.com"
+    }
+  },
+  {
+    "name": "qr list admin",
+    "path": "/qr/",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io"
+    }
+  },
+  {
+    "name": "qr list admin ?program=promoter",
+    "path": "/qr/?program=promoter",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?program=standard&is_active=true",
+    "path": "/qr/?program=standard&is_active=true",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?is_active=false",
+    "path": "/qr/?is_active=false",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?never_scanned=true",
+    "path": "/qr/?never_scanned=true",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?never_scanned=false&page_size=5",
+    "path": "/qr/?never_scanned=false&page_size=5",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?latest_scan_after=2026-09-01",
+    "path": "/qr/?latest_scan_after=2026-09-01",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?latest_scan_before=2026-10-01T00:00:00Z",
+    "path": "/qr/?latest_scan_before=2026-10-01T00:00:00Z",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?latest_scan_after=2026-09-01T00:00:00-04:00&latest_scan_befo",
+    "path": "/qr/?latest_scan_after=2026-09-01T00:00:00-04:00&latest_scan_before=1790000000",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?school=uwaterloo",
+    "path": "/qr/?school=uwaterloo",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?school=%20UWaterloo%20",
+    "path": "/qr/?school=%20UWaterloo%20",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?school=University%20of%20Waterloo",
+    "path": "/qr/?school=University%20of%20Waterloo",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?school=nowhere",
+    "path": "/qr/?school=nowhere",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?school=",
+    "path": "/qr/?school=",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?page=2&page_size=3",
+    "path": "/qr/?page=2&page_size=3",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?page=1000",
+    "path": "/qr/?page=1000",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?page_size=100",
+    "path": "/qr/?page_size=100",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?program=x&is_active=maybe&latest_scan_after=bad&never_scanne",
+    "path": "/qr/?program=x&is_active=maybe&latest_scan_after=bad&never_scanned=2&page=0",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?latest_scan_before=2026-13-01",
+    "path": "/qr/?latest_scan_before=2026-13-01",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list admin ?school=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "path": "/qr/?school=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr list promoter ?program=standard",
+    "path": "/qr/?program=standard",
+    "identity": {
+      "id": "promoter-auth-id",
+      "email": "promoter@example.com"
+    }
+  },
+  {
+    "name": "qr scans anonymous",
+    "path": "/qr/scans"
+  },
+  {
+    "name": "qr scans plain user",
+    "path": "/qr/scans",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "qr scans club owner",
+    "path": "/qr/scans",
+    "identity": {
+      "id": "owner-auth-id",
+      "email": "owner@example.com"
+    }
+  },
+  {
+    "name": "qr scans club owner own poster",
+    "path": "/qr/scans?qr_code_id={OWNED_STANDARD_QR}",
+    "identity": {
+      "id": "owner-auth-id",
+      "email": "owner@example.com"
+    }
+  },
+  {
+    "name": "qr scans club owner promoter poster",
+    "path": "/qr/scans?qr_code_id={PLACED_PROMOTER_QR}",
+    "identity": {
+      "id": "owner-auth-id",
+      "email": "owner@example.com"
+    }
+  },
+  {
+    "name": "qr scans admin",
+    "path": "/qr/scans",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr scans admin ?page_size=5",
+    "path": "/qr/scans?page_size=5",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr scans admin ?qr_code_id={PLACED_PROMOTER_QR}",
+    "path": "/qr/scans?qr_code_id={PLACED_PROMOTER_QR}",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr scans admin ?qr_code_id=",
+    "path": "/qr/scans?qr_code_id=",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr scans admin ?from_time=2026-10-01&to_time=2026-11-01T00:00:00Z",
+    "path": "/qr/scans?from_time=2026-10-01&to_time=2026-11-01T00:00:00Z",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr scans admin ?from_time=x&qr_code_id=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "path": "/qr/scans?from_time=x&qr_code_id=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr scans admin ?page=1000",
+    "path": "/qr/scans?page=1000",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "qr scans admin ?qr_code_id=nonexistent",
+    "path": "/qr/scans?qr_code_id=nonexistent",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "earnings anonymous",
+    "path": "/qr/earnings"
+  },
+  {
+    "name": "earnings not enrolled",
+    "path": "/qr/earnings",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "earnings promoter",
+    "path": "/qr/earnings",
+    "identity": {
+      "id": "promoter-auth-id",
+      "email": "promoter@example.com"
+    }
+  },
+  {
+    "name": "qr map ?school=uwaterloo",
+    "path": "/qr/map?school=uwaterloo"
+  },
+  {
+    "name": "qr map ?school=%20UWaterloo%20",
+    "path": "/qr/map?school=%20UWaterloo%20"
+  },
+  {
+    "name": "qr map ?school=utsg",
+    "path": "/qr/map?school=utsg"
+  },
+  {
+    "name": "qr map ?school=nowhere",
+    "path": "/qr/map?school=nowhere"
+  },
+  {
+    "name": "qr map ?school=%20",
+    "path": "/qr/map?school=%20"
+  },
+  {
+    "name": "qr map ?",
+    "path": "/qr/map"
+  },
+  {
+    "name": "qr map ?school=",
+    "path": "/qr/map?school="
+  },
+  {
+    "name": "qr map ?school=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "path": "/qr/map?school=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  {
+    "name": "scan unknown poster",
+    "path": "/qr/parity-no-such-poster",
+    "headers": {
+      "cookie": "wat2do_poster_visitor=parity-visitor"
+    }
+  },
+  {
+    "name": "scan bad coordinates",
+    "path": "/qr/parity-no-such-poster?lat=91&lon=abc",
+    "headers": {
+      "cookie": "wat2do_poster_visitor=parity-visitor"
+    }
+  },
+  {
+    "name": "scan archived poster",
+    "path": "/qr/{INACTIVE_QR}",
+    "headers": {
+      "cookie": "wat2do_poster_visitor=parity-visitor"
+    }
+  },
+  {
+    "name": "scan archived poster with location",
+    "path": "/qr/{INACTIVE_QR}?lat=43.47&lon=-80.54",
+    "headers": {
+      "cookie": "wat2do_poster_visitor=parity-visitor"
+    }
+  },
+  {
+    "name": "scan new standard poster without location",
+    "path": "/qr/{NEW_STANDARD_QR}",
+    "headers": {
+      "cookie": "wat2do_poster_visitor=parity-visitor"
+    }
+  },
+  {
+    "name": "scan unplaced promoter poster without location",
+    "path": "/qr/{UNPLACED_PROMOTER_QR}",
+    "headers": {
+      "cookie": "wat2do_poster_visitor=parity-visitor"
+    }
+  },
+  {
+    "name": "scan trailing slash",
+    "path": "/qr/{INACTIVE_QR}/",
+    "headers": {
+      "cookie": "wat2do_poster_visitor=parity-visitor"
+    }
+  },
+  {
+    "name": "qr list no slash",
+    "path": "/qr",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "confirm without cookie",
+    "path": "/qr/scans/confirm",
+    "method": "POST",
+    "json": {
+      "token": "signed"
+    },
+    "safe": true
+  },
+  {
+    "name": "confirm bad token",
+    "path": "/qr/scans/confirm",
+    "method": "POST",
+    "json": {
+      "token": "signed.token"
+    },
+    "headers": {
+      "cookie": "wat2do_poster_visitor=parity-visitor"
+    },
+    "safe": true
+  },
+  {
+    "name": "confirm empty body",
+    "path": "/qr/scans/confirm",
+    "method": "POST",
+    "json": {},
+    "safe": true
+  },
+  {
+    "name": "confirm malformed",
+    "path": "/qr/scans/confirm",
+    "method": "POST",
+    "body": "{bad",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "safe": true
+  },
+  {
+    "name": "create anonymous",
+    "path": "/qr/",
+    "method": "POST",
+    "json": {
+      "id": "parity-new-poster",
+      "name": "Parity",
+      "destination_type": "custom-url",
+      "destination_id": "https://example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "create malformed anonymous",
+    "path": "/qr/",
+    "method": "POST",
+    "body": "{bad",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "safe": true
+  },
+  {
+    "name": "create plain user standard",
+    "path": "/qr/",
+    "method": "POST",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "json": {
+      "id": "parity-new-poster",
+      "name": "Parity",
+      "destination_type": "custom-url",
+      "destination_id": "https://example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "create admin existing id",
+    "path": "/qr/",
+    "method": "POST",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "id": "{INACTIVE_QR}",
+      "name": "Parity",
+      "destination_type": "custom-url",
+      "destination_id": "https://example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "create admin unknown school",
+    "path": "/qr/",
+    "method": "POST",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "id": "parity-new-poster",
+      "name": "Parity",
+      "destination_type": "custom-url",
+      "destination_id": "https://example.com",
+      "filters": {
+        "school": "parity-nowhere"
+      }
+    },
+    "safe": true
+  },
+  {
+    "name": "create admin invalid union",
+    "path": "/qr/",
+    "method": "POST",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "id": "a b",
+      "name": "",
+      "destination_type": "custom-url",
+      "destination_id": "javascript:x"
+    },
+    "safe": true
+  },
+  {
+    "name": "create admin empty",
+    "path": "/qr/",
+    "method": "POST",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {},
+    "safe": true
+  },
+  {
+    "name": "create admin list body",
+    "path": "/qr/",
+    "method": "POST",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": [
+      1
+    ],
+    "safe": true
+  },
+  {
+    "name": "create promoter batch not enrolled",
+    "path": "/qr/",
+    "method": "POST",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "json": {
+      "program": "promoter",
+      "poster_template_id": "campus-colour",
+      "name": "P"
+    },
+    "safe": true
+  },
+  {
+    "name": "create promoter batch unknown template",
+    "path": "/qr/",
+    "method": "POST",
+    "identity": {
+      "id": "promoter-auth-id",
+      "email": "promoter@example.com"
+    },
+    "json": {
+      "program": "promoter",
+      "poster_template_id": "parity-none",
+      "name": "P"
+    },
+    "safe": true
+  },
+  {
+    "name": "create promoter batch over the cap",
+    "path": "/qr/",
+    "method": "POST",
+    "identity": {
+      "id": "promoter-auth-id",
+      "email": "promoter@example.com"
+    },
+    "json": {
+      "program": "promoter",
+      "poster_template_id": "campus-colour",
+      "name": "P",
+      "copies": 51
+    },
+    "safe": true
+  },
+  {
+    "name": "create promoter batch extra fields",
+    "path": "/qr/",
+    "method": "POST",
+    "identity": {
+      "id": "promoter-auth-id",
+      "email": "promoter@example.com"
+    },
+    "json": {
+      "program": "promoter",
+      "poster_template_id": "campus-colour",
+      "name": "P",
+      "latitude": 4
+    },
+    "safe": true
+  },
+  {
+    "name": "update anonymous",
+    "path": "/qr/{OWNED_STANDARD_QR}",
+    "method": "PATCH",
+    "json": {
+      "id": "{OWNED_STANDARD_QR}",
+      "name": "Parity",
+      "destination_type": "events-list"
+    },
+    "safe": true
+  },
+  {
+    "name": "update plain user",
+    "path": "/qr/{OWNED_STANDARD_QR}",
+    "method": "PATCH",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "json": {
+      "id": "{OWNED_STANDARD_QR}",
+      "name": "Parity",
+      "destination_type": "events-list"
+    },
+    "safe": true
+  },
+  {
+    "name": "update admin id mismatch",
+    "path": "/qr/{OWNED_STANDARD_QR}",
+    "method": "PATCH",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "id": "other",
+      "name": "Parity",
+      "destination_type": "events-list"
+    },
+    "safe": true
+  },
+  {
+    "name": "update admin unknown poster",
+    "path": "/qr/parity-no-such-poster",
+    "method": "PATCH",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "id": "parity-no-such-poster",
+      "name": "Parity",
+      "destination_type": "events-list"
+    },
+    "safe": true
+  },
+  {
+    "name": "update admin promoter poster",
+    "path": "/qr/{PLACED_PROMOTER_QR}",
+    "method": "PATCH",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "id": "{PLACED_PROMOTER_QR}",
+      "name": "Parity",
+      "destination_type": "events-list"
+    },
+    "safe": true
+  },
+  {
+    "name": "update owner someone else's poster",
+    "path": "/qr/{OTHER_STANDARD_QR}",
+    "method": "PATCH",
+    "identity": {
+      "id": "owner-auth-id",
+      "email": "owner@example.com"
+    },
+    "json": {
+      "id": "{OTHER_STANDARD_QR}",
+      "name": "Parity",
+      "destination_type": "events-list"
+    },
+    "safe": true
+  },
+  {
+    "name": "update admin unknown school",
+    "path": "/qr/{OWNED_STANDARD_QR}",
+    "method": "PATCH",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "id": "{OWNED_STANDARD_QR}",
+      "name": "Parity",
+      "destination_type": "events-list",
+      "filters": {
+        "school": "parity-nowhere"
+      }
+    },
+    "safe": true
+  },
+  {
+    "name": "update admin invalid",
+    "path": "/qr/{OWNED_STANDARD_QR}",
+    "method": "PATCH",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "id": "{OWNED_STANDARD_QR}",
+      "name": "Parity",
+      "destination_type": "events-list",
+      "program": "standard",
+      "latitude": 91
+    },
+    "safe": true
+  },
+  {
+    "name": "update admin static path",
+    "path": "/qr/scans",
+    "method": "PATCH",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "id": "scans",
+      "name": "Parity",
+      "destination_type": "events-list"
+    },
+    "safe": true
+  },
+  {
+    "name": "delete anonymous",
+    "path": "/qr/{OWNED_STANDARD_QR}",
+    "method": "DELETE",
+    "safe": true
+  },
+  {
+    "name": "delete plain user",
+    "path": "/qr/{OWNED_STANDARD_QR}",
+    "method": "DELETE",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "delete admin unknown",
+    "path": "/qr/parity-no-such-poster",
+    "method": "DELETE",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "delete admin promoter poster",
+    "path": "/qr/{PLACED_PROMOTER_QR}",
+    "method": "DELETE",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "delete owner someone else's",
+    "path": "/qr/{OTHER_STANDARD_QR}",
+    "method": "DELETE",
+    "identity": {
+      "id": "owner-auth-id",
+      "email": "owner@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "delete admin static path",
+    "path": "/qr/map",
+    "method": "DELETE",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "qr scans POST",
+    "path": "/qr/scans",
+    "method": "POST",
+    "safe": true
+  },
+  {
+    "name": "qr confirm GET",
+    "path": "/qr/scans/confirm"
+  },
+  {
+    "name": "qr list HEAD",
+    "path": "/qr/",
+    "method": "HEAD"
+  },
+  {
+    "name": "own payouts anonymous",
+    "path": "/payouts/"
+  },
+  {
+    "name": "own payouts plain user",
+    "path": "/payouts/",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "own payouts promoter",
+    "path": "/payouts/",
+    "identity": {
+      "id": "promoter-auth-id",
+      "email": "promoter@example.com"
+    }
+  },
+  {
+    "name": "own payouts promoter ?payout_status=paid",
+    "path": "/payouts/?payout_status=paid",
+    "identity": {
+      "id": "promoter-auth-id",
+      "email": "promoter@example.com"
+    }
+  },
+  {
+    "name": "own payouts promoter ?payout_status=pending&page_size=1",
+    "path": "/payouts/?payout_status=pending&page_size=1",
+    "identity": {
+      "id": "promoter-auth-id",
+      "email": "promoter@example.com"
+    }
+  },
+  {
+    "name": "own payouts promoter ?payout_status=bad",
+    "path": "/payouts/?payout_status=bad",
+    "identity": {
+      "id": "promoter-auth-id",
+      "email": "promoter@example.com"
+    }
+  },
+  {
+    "name": "own payouts promoter ?page=1000",
+    "path": "/payouts/?page=1000",
+    "identity": {
+      "id": "promoter-auth-id",
+      "email": "promoter@example.com"
+    }
+  },
+  {
+    "name": "admin payouts plain user",
+    "path": "/payouts/admin",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "admin payouts promoter",
+    "path": "/payouts/admin",
+    "identity": {
+      "id": "promoter-auth-id",
+      "email": "promoter@example.com"
+    }
+  },
+  {
+    "name": "admin payouts admin",
+    "path": "/payouts/admin",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?user_id={PROMOTER_USER_ID}",
+    "path": "/payouts/admin?user_id={PROMOTER_USER_ID}",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?payout_status=paid",
+    "path": "/payouts/admin?payout_status=paid",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?payout_status=held",
+    "path": "/payouts/admin?payout_status=held",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?period=2026-10-01",
+    "path": "/payouts/admin?period=2026-10-01",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?period=2026-10-01T00:00:00",
+    "path": "/payouts/admin?period=2026-10-01T00:00:00",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?payout_email=e",
+    "path": "/payouts/admin?payout_email=e",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?payout_email=*",
+    "path": "/payouts/admin?payout_email=*",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?period_from=2026-01-01&period_to=2026-12-01",
+    "path": "/payouts/admin?period_from=2026-01-01&period_to=2026-12-01",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?min_amount_cents=1&max_amount_cents=100000",
+    "path": "/payouts/admin?min_amount_cents=1&max_amount_cents=100000",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?fraud_status=flagged",
+    "path": "/payouts/admin?fraud_status=flagged",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?fraud_status=clear",
+    "path": "/payouts/admin?fraud_status=clear",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?page_size=1&page=2",
+    "path": "/payouts/admin?page_size=1&page=2",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?page=1000",
+    "path": "/payouts/admin?page=1000",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?period_from=2026-07-01&period_to=2026-06-01",
+    "path": "/payouts/admin?period_from=2026-07-01&period_to=2026-06-01",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?min_amount_cents=500&max_amount_cents=100",
+    "path": "/payouts/admin?min_amount_cents=500&max_amount_cents=100",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?user_id=x&payout_status=z&period=2026-06&period_to=2026-06-0",
+    "path": "/payouts/admin?user_id=x&payout_status=z&period=2026-06&period_to=2026-06-01T01:00:00&min_amount_cents=-1&fraud_status=y",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?period=1700000000",
+    "path": "/payouts/admin?period=1700000000",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?period=2026-02-30",
+    "path": "/payouts/admin?period=2026-02-30",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "admin payouts ?payout_email=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "path": "/payouts/admin?payout_email=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "payout detail plain user",
+    "path": "/payouts/admin/{PAYOUT_ID}",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "payout detail admin",
+    "path": "/payouts/admin/{PAYOUT_ID}",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "payout detail admin held",
+    "path": "/payouts/admin/{HELD_PAYOUT_ID}",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "payout detail admin unknown",
+    "path": "/payouts/admin/00000000-0000-0000-0000-000000000001",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "payout detail admin bad id",
+    "path": "/payouts/admin/not-a-uuid",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "payout detail GET export",
+    "path": "/payouts/admin/export",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "payout detail GET mark-paid",
+    "path": "/payouts/admin/mark-paid",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "export plain user",
+    "path": "/payouts/admin/export",
+    "method": "POST",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "json": {
+      "payout_ids": [
+        "{PAYOUT_ID}"
+      ]
+    },
+    "safe": true
+  },
+  {
+    "name": "export admin unknown",
+    "path": "/payouts/admin/export",
+    "method": "POST",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "payout_ids": [
+        "00000000-0000-0000-0000-000000000001"
+      ]
+    },
+    "safe": true
+  },
+  {
+    "name": "export admin not pending",
+    "path": "/payouts/admin/export",
+    "method": "POST",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "payout_ids": [
+        "{NOT_PENDING_PAYOUT_ID}"
+      ]
+    },
+    "safe": true
+  },
+  {
+    "name": "export admin invalid",
+    "path": "/payouts/admin/export",
+    "method": "POST",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "payout_ids": [
+        "x",
+        1,
+        null
+      ],
+      "extra": 1
+    },
+    "safe": true
+  },
+  {
+    "name": "export admin empty",
+    "path": "/payouts/admin/export",
+    "method": "POST",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "payout_ids": []
+    },
+    "safe": true
+  },
+  {
+    "name": "export malformed anonymous",
+    "path": "/payouts/admin/export",
+    "method": "POST",
+    "body": "{bad",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "safe": true
+  },
+  {
+    "name": "transition anonymous",
+    "path": "/payouts/admin/{PAYOUT_ID}/status",
+    "method": "PATCH",
+    "json": {
+      "status": "held",
+      "notes": "x"
+    },
+    "safe": true
+  },
+  {
+    "name": "transition plain user",
+    "path": "/payouts/admin/{PAYOUT_ID}/status",
+    "method": "PATCH",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "json": {
+      "status": "held",
+      "notes": "x"
+    },
+    "safe": true
+  },
+  {
+    "name": "transition admin invalid",
+    "path": "/payouts/admin/{PAYOUT_ID}/status",
+    "method": "PATCH",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "status": "bad",
+      "notes": 5
+    },
+    "safe": true
+  },
+  {
+    "name": "transition admin bad id and body",
+    "path": "/payouts/admin/bad/status",
+    "method": "PATCH",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "status": "x"
+    },
+    "safe": true
+  },
+  {
+    "name": "mark paid plain user",
+    "path": "/payouts/admin/mark-paid",
+    "method": "POST",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "json": {
+      "payout_ids": [
+        "{PAYOUT_ID}"
+      ]
+    },
+    "safe": true
+  },
+  {
+    "name": "mark paid admin invalid",
+    "path": "/payouts/admin/mark-paid",
+    "method": "POST",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "payout_ids": "x"
+    },
+    "safe": true
+  },
+  {
+    "name": "payouts DELETE",
+    "path": "/payouts/",
+    "method": "DELETE",
+    "safe": true
+  }
+]

@@ -20,6 +20,7 @@ pub mod logs;
 pub mod map_locations;
 pub mod notification_retry;
 pub mod notifications;
+pub mod poster_payouts;
 pub mod pyjson;
 pub mod revalidation;
 pub mod schools;
