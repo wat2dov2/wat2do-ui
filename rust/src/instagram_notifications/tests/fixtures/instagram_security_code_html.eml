@@ -1,0 +1,23 @@
+From: Instagram <security@mail.instagram.com>
+To: codes@example.com
+Subject: Verify your Instagram account
+Date: Mon, 02 Nov 2026 14:05:09 +0000
+Message-ID: <fixture.0002@mail.instagram.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html><html><head><meta http-equiv=3D"Content-Type" content=3D"tex=
+t/html; charset=3Dutf-8"><style type=3D"text/css">body{color:#123456;backgr=
+ound:#fafafa}.card{width: 600px;border:1px solid #dbdbdb}.code{color:#26262=
+6;font-size:32px}</style><script type=3D"text/javascript">var sent =3D 1793=
+448000; var track =3D "998877"; var build =3D 554433;</script></head><body>=
+<!-- template 765432 --><table class=3D"card" width=3D"600" cellpadding=3D"=
+0"><tr><td><img src=3D"https://static.cdninstagram.com/rsrc.php/v3/logo.png=
+" width=3D"111111" height=3D"222222" alt=3D"Instagram"></td></tr><tr><td st=
+yle=3D"color:#262626;padding:121212px">Hi wat2do.ubc,</td></tr><tr><td>&#12=
+3456; Someone tried to log in to your Instagram account. If this was you, p=
+lease use the following code to confirm your identity:</td></tr><tr><td cla=
+ss=3D"code" style=3D"color:#336699">482913</td></tr><tr><td style=3D"color:=
+#8e8e8e">If this wasn=E2=80=99t you, please reset your password.</td></tr><=
+/table></body></html>

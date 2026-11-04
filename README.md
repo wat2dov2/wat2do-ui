@@ -189,7 +189,7 @@ The sweep's limits, the sender and the club link live in `backend/controlbox/out
 Install its LaunchAgent with `cd backend && .venv/bin/python jobs/find_outreach_leads.py install-schedule`, or run one sweep with `sweep`.
 Every local agent runs through `backend/services/claude_code.py` (Python jobs) or `rust/src/claude.rs` (the ingestion binary), which pass no application secrets unless the caller supplies them.
 Notifications and recommendation compute run on GitHub-hosted runners.
-Queue a post by hand with `cd backend && cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-ingest -- enqueue --school <slug> --url <post url>` (`status` shows the queue counts); `scripts/instagram_browser.py retrieve` also accepts a profile, which the Brave worker lists before its posts are queued.
+Queue a post by hand with `cd backend && cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-ingest -- enqueue --school <slug> --url <post url>` (`status` shows the queue counts); `wat2do-browser retrieve` (Rust, `rust/src/bin/wat2do-browser.rs`) also accepts a profile, which the Brave worker lists before its posts are queued.
 Profile-logo backfills and single-post media repairs remain separate Apify operator tools.
 For a read-only live retrieval check, run `cd backend && python scripts/probe_instagram_post.py --url https://www.instagram.com/p/SHORTCODE/`.
 

@@ -17,6 +17,7 @@ from typing import Any
 
 from core.controlbox import controlbox
 from services.ingestion import items
+from services.instagram_accounts import BrowserEngagementUncertain, BrowserSessionError
 from services.instagram_dms.decide import DmDecision, decide, sender, their_latest_words
 from services.instagram_emulator.device import CONTROL as EMULATOR
 from services.instagram_emulator.device import (
@@ -33,10 +34,6 @@ from services.instagram_emulator.inbox import (
     raise_if_messaging_limited,
 )
 from services.instagram_emulator.story import share_to_story
-from services.instagram_notifications.browser_session import (
-    BrowserEngagementUncertain,
-    BrowserSessionError,
-)
 from services.instagram_publishing.service import exclude_club
 
 CONTROL = controlbox.instagram_dms

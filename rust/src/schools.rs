@@ -19,10 +19,13 @@ pub struct School {
     pub timezone: String,
     pub semester_start: Option<NaiveDate>,
     pub semester_end: Option<NaiveDate>,
+    /// The Instagram account ID whose notifications belong to this school.
+    pub recipient_id: Option<String>,
 }
 
-const COLUMNS: &str = "id, slug, name, timezone, semester_start, semester_end";
+const COLUMNS: &str = "id, slug, name, timezone, semester_start, semester_end, recipient_id";
 
+/// `school_service.get_school`: a school by slug.
 pub async fn by_slug(pool: &PgPool, slug: &str) -> Result<Option<School>> {
     let slug = slug.trim().to_lowercase();
     Ok(sqlx::query_as(&format!(
@@ -80,7 +83,10 @@ pub fn frontend_url(configured: &str, slug: Option<&str>) -> Result<String> {
         )
     };
     let parsed = parsed.expect("parsed above");
-    let port = explicit_port(base_url)
+    // The port the URL spells out, even the scheme's default, as Python reads it.
+    let port = crate::urls::urlsplit(base_url, "")
+        .ok()
+        .and_then(|split| split.port().ok().flatten())
         .map(|port| format!(":{port}"))
         .unwrap_or_default();
     Ok(format!(
@@ -90,17 +96,28 @@ pub fn frontend_url(configured: &str, slug: Option<&str>) -> Result<String> {
     ))
 }
 
-/// The port a URL spells out, even the scheme's default, as Python's `urlsplit` reads it.
-fn explicit_port(url: &str) -> Option<u16> {
-    let authority = url.split_once("://")?.1.split(['/', '?', '#']).next()?;
-    let host_and_port = authority
-        .rsplit_once('@')
-        .map_or(authority, |(_, host)| host);
-    let (host, port) = host_and_port.rsplit_once(':')?;
-    if host.starts_with('[') && !host.ends_with(']') {
-        return None;
+/// `schemas.school.validate_recipient_id`: one canonical numeric notification recipient ID.
+pub fn validate_recipient_id(value: &str) -> Result<String, String> {
+    if !(1..=32).contains(&value.len())
+        || !value.bytes().all(|byte| byte.is_ascii_digit())
+        || value.starts_with('0')
+    {
+        return Err("recipient_id must be a canonical numeric identifier".to_owned());
     }
-    port.parse().ok()
+    Ok(value.to_owned())
+}
+
+/// `school_service.get_school_by_recipient_id`: the school an Instagram account notifies.
+pub async fn by_recipient_id(pool: &PgPool, recipient_id: &str) -> Result<Option<School>> {
+    let Ok(recipient_id) = validate_recipient_id(recipient_id.trim()) else {
+        return Ok(None);
+    };
+    Ok(sqlx::query_as(&format!(
+        "SELECT {COLUMNS} FROM public.schools WHERE recipient_id = $1 LIMIT 1"
+    ))
+    .bind(recipient_id)
+    .fetch_optional(pool)
+    .await?)
 }
 
 impl School {

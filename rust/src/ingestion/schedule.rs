@@ -6,14 +6,18 @@
 //! kickstart. Each keeps a log under the ingestion state directory.
 
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::Result;
 
 use super::state_directory_under;
 use crate::controlbox::INGESTION;
-use crate::launch_agents::{Launchctl, Plist, claude_code_path, home, install_launch_agent};
+use crate::host::RealHost;
+use crate::launch_agents::{
+    Launchctl, Plist, agent_path, claude_code_path, home, install_launch_agent,
+    repository_directory,
+};
 
 /// One scheduled `wat2do-ingest` subcommand.
 pub struct Job {
@@ -44,14 +48,6 @@ pub fn jobs() -> [Job; 2] {
             stderr: "directories.log",
         },
     ]
-}
-
-/// The checkout this binary was built from.
-pub fn repository_directory() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("the crate lives in the repository")
-        .to_path_buf()
 }
 
 /// Where the jobs keep their state under launchd, which passes them only PATH,
@@ -131,10 +127,12 @@ pub fn install_schedule(launchctl: &Launchctl) -> Result<()> {
     for job in jobs() {
         // An interrupt between agents leaves the next one as it was.
         launchctl.check_interrupted()?;
-        let path = home()
-            .join("Library/LaunchAgents")
-            .join(format!("{}.plist", job.label));
-        install_launch_agent(&path, job.label, &launch_agent_payload(&job), launchctl)?;
+        install_launch_agent(
+            &agent_path(job.label),
+            job.label,
+            &launch_agent_payload(&job),
+            launchctl,
+        )?;
         match job.interval {
             Some(seconds) => println!("Installed {} every {seconds} seconds", job.label),
             None => println!("Installed {} (always on)", job.label),
@@ -143,12 +141,15 @@ pub fn install_schedule(launchctl: &Launchctl) -> Result<()> {
     Ok(())
 }
 
-/// launchctl with the control box's timeout, polled every second.
+/// launchctl with the control box's timeout, polled every second; SIGINT and SIGTERM
+/// put a replaced agent back before the install stops.
 pub fn launchctl() -> Result<Launchctl> {
     Launchctl::new(
+        RealHost::shared(),
         Duration::from_secs_f64(INGESTION.launch_agent_timeout_seconds),
         Duration::from_secs(1),
     )
+    .stop_on_signals()
 }
 
 #[cfg(test)]

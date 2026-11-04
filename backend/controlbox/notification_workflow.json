@@ -1,13 +1,8 @@
 {
-  "uv_version": "0.12.23",
   "minimum_free_disk_mb": 2048,
-  "cache_max_mb": 512,
-  "cleanup_free_disk_mb": 4096,
-  "uv_tool_versions_to_keep": 2,
-  "setup_timeout_minutes": 5,
-  "install_timeout_minutes": 12,
-  "process_timeout_minutes": 8,
-  "http_timeout_seconds": 30,
-  "http_retries": 2,
-  "cache_cleanup_timeout_seconds": 30
+  "build_target_max_mb": 6144,
+  "build_jobs": 4,
+  "binaries_to_keep": 5,
+  "build_timeout_minutes": 25,
+  "process_timeout_minutes": 8
 }

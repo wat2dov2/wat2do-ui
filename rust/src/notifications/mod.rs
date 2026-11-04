@@ -217,6 +217,7 @@ mod tests {
             timezone: "America/Toronto".to_owned(),
             semester_start: None,
             semester_end: None,
+            recipient_id: None,
         };
         let recipients = attach_schools(
             vec![

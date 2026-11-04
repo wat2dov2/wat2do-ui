@@ -90,7 +90,7 @@ Meta documents the distinction in its official [Instagram API with Instagram Log
 
 Do not modify the notification ingestion path merely because a new publishing token was added.
 
-`backend/jobs/process_notification.py` resolves a notification's school from its intended recipient ID through `school_service`, and each recorded post joins the ingestion queue (`public.ingestion_items`) with that school.
+The workflow's Rust job (`rust/src/instagram_notifications/process_notification.rs`) resolves a notification's school from its intended recipient ID from the `schools` table, and each recorded post joins the ingestion queue (`public.ingestion_items`) with that school.
 
 It does not use the Meta publishing token or publishing user ID.
 

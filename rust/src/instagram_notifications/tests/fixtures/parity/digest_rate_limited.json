@@ -1,0 +1,720 @@
+{
+ "calls": [
+  {
+   "args": [
+    "-e",
+    "on run argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    set foundIds to \"\"\n    tell application \"Brave Browser\"\n        repeat with browserWindowId in (get id of every window)\n            try\n                set browserWindow to window id (contents of browserWindowId)\n                repeat with browserTabId in (get id of every tab of browserWindow)\n                    set tabId to (contents of browserTabId) as text\n                    if argv contains tabId then\n                        try\n                            if URL of tab id tabId of browserWindow starts with \"https://www.instagram.com/\" then\n                                set foundIds to foundIds & tabId & linefeed\n                            end if\n                        on error detail number errorCode\n                            if errorCode is not -1719 and errorCode is not -1728 then error detail number errorCode\n                        end try\n                    end if\n                end repeat\n            on error detail number errorCode\n                if errorCode is not -1719 and errorCode is not -1728 then error detail number errorCode\n            end try\n        end repeat\n    end tell\n    return foundIds\nend run",
+    "--",
+    "11",
+    "12"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "11\n12\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        repeat with browserWindowId in (get id of every window)\n            try\n                set browserWindow to window id (contents of browserWindowId)\n                if (get id of every tab of browserWindow) contains (item 1 of argv) then\n                    return (id of browserWindow) as text\n                end if\n            on error detail number errorCode\n                if errorCode is not -1719 and errorCode is not -1728 then error detail number errorCode\n                if exists window id (contents of browserWindowId) then error detail number errorCode\n            end try\n        end repeat\n    end tell\n    error \"Pinned Instagram tab is closed.\"\nend run",
+    "--",
+    "11"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "900\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "JSON.stringify({width: window.innerWidth, height: window.innerHeight})",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "{\"width\": 1280, \"height\": 900}\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "window.location.pathname",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "/wat2do.ubc/\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "(() => {\n  if (document.readyState !== \"complete\") return \"\";\n  const profileLabel = element => [element.getAttribute(\"aria-label\"),\n    element.getAttribute(\"title\"), element.innerText || element.textContent || \"\"]\n    .some(value => (value || \"\").trim().toLowerCase() === \"profile\");\n  const compactNavigation = candidate => {\n    let scope = candidate.parentElement;\n    for (let depth = 1; scope && depth <= 8; depth++, scope = scope.parentElement) {\n      if (scope.matches('body,html,main,article,[role=\"main\"],[role=\"dialog\"]')) return false;\n      const links = [...scope.querySelectorAll(\"a[href]\")];\n      const core = [\"/explore/\", \"/reels/\", \"/direct/inbox/\"]\n        .map(route => links.find(link => link.getAttribute(\"href\") === route));\n      if (core.some(link => !link)) continue;\n      // Find the actual route container, rather than accepting a page wrapper\n      // that happens to contain both navigation and a viewed profile avatar.\n      let navigation = core[0].parentElement;\n      while (navigation !== scope && !core.every(link => navigation.contains(link))) {\n        navigation = navigation.parentElement;\n      }\n      if (navigation.contains(candidate) &&\n          !navigation.querySelector('main,article,[role=\"main\"],[role=\"dialog\"]') &&\n          [...navigation.querySelectorAll(\"a[href]\")].some(link => link.getAttribute(\"href\") === \"/\")) {\n        return true;\n      }\n    }\n    return false;\n  };\n  const anchors = [...document.querySelectorAll(\"a[href]\")].filter(candidate => {\n    // Viewed profile headers and post avatars do not identify the logged account.\n    // During navigation hydration, a public avatar may occupy the sidebar's old position.\n    if (candidate.closest('main,article,[role=\"main\"],[role=\"dialog\"],[aria-hidden=\"true\"]')) return false;\n    const image = candidate.querySelector(\"img[alt]\");\n    const avatarUsername = (image?.getAttribute(\"alt\") || \"\").match(/^([A-Za-z0-9._]{1,30})'s profile picture$/)?.[1];\n    const hrefUsername = (candidate.getAttribute(\"href\") || \"\").match(/^\\/([A-Za-z0-9._]{1,30})\\/$/)?.[1];\n    if (!avatarUsername || !hrefUsername || avatarUsername.toLowerCase() !== hrefUsername.toLowerCase()) return false;\n    const ownedControl = candidate.closest('nav,[role=\"navigation\"]') || profileLabel(candidate) ||\n      [...candidate.querySelectorAll('[aria-label],title')].some(profileLabel) || compactNavigation(candidate);\n    if (!ownedControl) return false;\n    const bounds = candidate.getBoundingClientRect();\n    const style = getComputedStyle(candidate);\n    return bounds.width > 0 && bounds.height > 0 &&\n      style.display !== \"none\" && style.visibility !== \"hidden\";\n  });\n  const usernames = [...new Set(anchors.map(anchor =>\n    anchor.getAttribute(\"href\").split(\"/\").filter(Boolean)[0].toLowerCase()))];\n  return usernames.length > 1 ? \"!ambiguous\" : (usernames[0] || \"\");\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "wat2do.ubc\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        repeat with browserWindowId in (get id of every window)\n            try\n                set browserWindow to window id (contents of browserWindowId)\n                if (get id of every tab of browserWindow) contains (item 1 of argv) then\n                    return (id of browserWindow) as text\n                end if\n            on error detail number errorCode\n                if errorCode is not -1719 and errorCode is not -1728 then error detail number errorCode\n                if exists window id (contents of browserWindowId) then error detail number errorCode\n            end try\n        end repeat\n    end tell\n    error \"Pinned Instagram tab is closed.\"\nend run",
+    "--",
+    "11"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "900\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "JSON.stringify({width: window.innerWidth, height: window.innerHeight})",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "{\"width\": 1280, \"height\": 900}\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "(() => {\n  const request = window[\"__wat2doInstagramBrowserRequest\"];\n  if (!request || request.settled) return \"settled\";\n  request.controller.abort();\n  return \"pending\";\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "settled\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "delete window[\"__wat2doInstagramBrowserRequest\"]; 'cleared'",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "cleared\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        repeat with browserWindowId in (get id of every window)\n            try\n                set browserWindow to window id (contents of browserWindowId)\n                if (get id of every tab of browserWindow) contains (item 1 of argv) then\n                    return (id of browserWindow) as text\n                end if\n            on error detail number errorCode\n                if errorCode is not -1719 and errorCode is not -1728 then error detail number errorCode\n                if exists window id (contents of browserWindowId) then error detail number errorCode\n            end try\n        end repeat\n    end tell\n    error \"Pinned Instagram tab is closed.\"\nend run",
+    "--",
+    "12"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "900\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "JSON.stringify({width: window.innerWidth, height: window.innerHeight})",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "{\"width\": 1280, \"height\": 900}\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "(() => {\n  const request = window[\"__wat2doInstagramBrowserRequest\"];\n  if (!request || request.settled) return \"settled\";\n  request.controller.abort();\n  return \"pending\";\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "settled\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "delete window[\"__wat2doInstagramBrowserRequest\"]; 'cleared'",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "cleared\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "(() => {\n const request = new XMLHttpRequest();\n request.open(\"GET\", \"/accounts/edit/\", false);\n request.send();\n return new URL(request.responseURL).pathname.startsWith(\"/accounts/login\") ? \"logged_out\" : \"logged_in\";\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "logged_in\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "(() => {\n  const request = window[\"__wat2doInstagramBrowserRequest\"];\n  if (!request || request.settled) return \"settled\";\n  request.controller.abort();\n  return \"pending\";\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "settled\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "delete window[\"__wat2doInstagramBrowserRequest\"]; 'cleared'",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "cleared\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "JSON.stringify({width: window.innerWidth, height: window.innerHeight})",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "{\"width\": 1280, \"height\": 900}\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "(() => {\n  if (document.readyState !== \"complete\") return \"\";\n  const profileLabel = element => [element.getAttribute(\"aria-label\"),\n    element.getAttribute(\"title\"), element.innerText || element.textContent || \"\"]\n    .some(value => (value || \"\").trim().toLowerCase() === \"profile\");\n  const compactNavigation = candidate => {\n    let scope = candidate.parentElement;\n    for (let depth = 1; scope && depth <= 8; depth++, scope = scope.parentElement) {\n      if (scope.matches('body,html,main,article,[role=\"main\"],[role=\"dialog\"]')) return false;\n      const links = [...scope.querySelectorAll(\"a[href]\")];\n      const core = [\"/explore/\", \"/reels/\", \"/direct/inbox/\"]\n        .map(route => links.find(link => link.getAttribute(\"href\") === route));\n      if (core.some(link => !link)) continue;\n      // Find the actual route container, rather than accepting a page wrapper\n      // that happens to contain both navigation and a viewed profile avatar.\n      let navigation = core[0].parentElement;\n      while (navigation !== scope && !core.every(link => navigation.contains(link))) {\n        navigation = navigation.parentElement;\n      }\n      if (navigation.contains(candidate) &&\n          !navigation.querySelector('main,article,[role=\"main\"],[role=\"dialog\"]') &&\n          [...navigation.querySelectorAll(\"a[href]\")].some(link => link.getAttribute(\"href\") === \"/\")) {\n        return true;\n      }\n    }\n    return false;\n  };\n  const anchors = [...document.querySelectorAll(\"a[href]\")].filter(candidate => {\n    // Viewed profile headers and post avatars do not identify the logged account.\n    // During navigation hydration, a public avatar may occupy the sidebar's old position.\n    if (candidate.closest('main,article,[role=\"main\"],[role=\"dialog\"],[aria-hidden=\"true\"]')) return false;\n    const image = candidate.querySelector(\"img[alt]\");\n    const avatarUsername = (image?.getAttribute(\"alt\") || \"\").match(/^([A-Za-z0-9._]{1,30})'s profile picture$/)?.[1];\n    const hrefUsername = (candidate.getAttribute(\"href\") || \"\").match(/^\\/([A-Za-z0-9._]{1,30})\\/$/)?.[1];\n    if (!avatarUsername || !hrefUsername || avatarUsername.toLowerCase() !== hrefUsername.toLowerCase()) return false;\n    const ownedControl = candidate.closest('nav,[role=\"navigation\"]') || profileLabel(candidate) ||\n      [...candidate.querySelectorAll('[aria-label],title')].some(profileLabel) || compactNavigation(candidate);\n    if (!ownedControl) return false;\n    const bounds = candidate.getBoundingClientRect();\n    const style = getComputedStyle(candidate);\n    return bounds.width > 0 && bounds.height > 0 &&\n      style.display !== \"none\" && style.visibility !== \"hidden\";\n  });\n  const usernames = [...new Set(anchors.map(anchor =>\n    anchor.getAttribute(\"href\").split(\"/\").filter(Boolean)[0].toLowerCase()))];\n  return usernames.length > 1 ? \"!ambiguous\" : (usernames[0] || \"\");\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "wat2do.ubc\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "(() => {\n  if (document.readyState !== \"complete\") return \"\";\n  const profileLabel = element => [element.getAttribute(\"aria-label\"),\n    element.getAttribute(\"title\"), element.innerText || element.textContent || \"\"]\n    .some(value => (value || \"\").trim().toLowerCase() === \"profile\");\n  const compactNavigation = candidate => {\n    let scope = candidate.parentElement;\n    for (let depth = 1; scope && depth <= 8; depth++, scope = scope.parentElement) {\n      if (scope.matches('body,html,main,article,[role=\"main\"],[role=\"dialog\"]')) return false;\n      const links = [...scope.querySelectorAll(\"a[href]\")];\n      const core = [\"/explore/\", \"/reels/\", \"/direct/inbox/\"]\n        .map(route => links.find(link => link.getAttribute(\"href\") === route));\n      if (core.some(link => !link)) continue;\n      // Find the actual route container, rather than accepting a page wrapper\n      // that happens to contain both navigation and a viewed profile avatar.\n      let navigation = core[0].parentElement;\n      while (navigation !== scope && !core.every(link => navigation.contains(link))) {\n        navigation = navigation.parentElement;\n      }\n      if (navigation.contains(candidate) &&\n          !navigation.querySelector('main,article,[role=\"main\"],[role=\"dialog\"]') &&\n          [...navigation.querySelectorAll(\"a[href]\")].some(link => link.getAttribute(\"href\") === \"/\")) {\n        return true;\n      }\n    }\n    return false;\n  };\n  const anchors = [...document.querySelectorAll(\"a[href]\")].filter(candidate => {\n    // Viewed profile headers and post avatars do not identify the logged account.\n    // During navigation hydration, a public avatar may occupy the sidebar's old position.\n    if (candidate.closest('main,article,[role=\"main\"],[role=\"dialog\"],[aria-hidden=\"true\"]')) return false;\n    const image = candidate.querySelector(\"img[alt]\");\n    const avatarUsername = (image?.getAttribute(\"alt\") || \"\").match(/^([A-Za-z0-9._]{1,30})'s profile picture$/)?.[1];\n    const hrefUsername = (candidate.getAttribute(\"href\") || \"\").match(/^\\/([A-Za-z0-9._]{1,30})\\/$/)?.[1];\n    if (!avatarUsername || !hrefUsername || avatarUsername.toLowerCase() !== hrefUsername.toLowerCase()) return false;\n    const ownedControl = candidate.closest('nav,[role=\"navigation\"]') || profileLabel(candidate) ||\n      [...candidate.querySelectorAll('[aria-label],title')].some(profileLabel) || compactNavigation(candidate);\n    if (!ownedControl) return false;\n    const bounds = candidate.getBoundingClientRect();\n    const style = getComputedStyle(candidate);\n    return bounds.width > 0 && bounds.height > 0 &&\n      style.display !== \"none\" && style.visibility !== \"hidden\";\n  });\n  const usernames = [...new Set(anchors.map(anchor =>\n    anchor.getAttribute(\"href\").split(\"/\").filter(Boolean)[0].toLowerCase()))];\n  return usernames.length > 1 ? \"!ambiguous\" : (usernames[0] || \"\");\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "wat2do.ubc\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "(() => {\n  const entry = document.cookie.split(\";\").map(value => value.trim())\n    .find(value => value.startsWith(\"ds_user_id=\"));\n  const activeRecipient = entry?.slice(\"ds_user_id=\".length) || \"\";\n  return activeRecipient === \"12342599092\" ? \"true\" : \"false\";\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "true\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "11",
+    "(() => [...document.querySelectorAll('h1,[role=\"heading\"]')]\n  .some(element =>\n    (element.innerText || element.textContent || \"\").trim() === \"Switch accounts\"\n  )\n  ? \"ready\" : \"pending\")()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "pending\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set targetUrl to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    set reloadTarget to item 4 of argv\n    set navigationSource to item 5 of argv\n    if application \"Brave Browser\" is not running then error \"Brave is not running.\"\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then error \"Worker browser window is closed.\"\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then error \"Pinned Instagram tab is closed.\"\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then error \"Pinned Instagram tab changed site.\"\n        set currentUrl to URL of browserTab\n        if currentUrl starts with \"https://www.instagram.com/accounts/login\" or currentUrl starts with \"https://www.instagram.com/accounts/suspended\" or currentUrl starts with \"https://www.instagram.com/challenge\" or currentUrl starts with \"https://www.instagram.com/checkpoint\" then error \"Instagram requires human account recovery.\"\n        if reloadTarget is \"false\" and URL of browserTab is targetUrl then return \"already_open\"\n        try\n            with timeout of 2 seconds\n                execute browserTab javascript navigationSource\n            end timeout\n        on error errorMessage number errorCode\n            if errorCode is not -1712 then error errorMessage number errorCode\n            -- Brave's URL setter also raises the app, so it only rescues a hung page.\n            set URL of browserTab to targetUrl\n        end try\n        return \"navigating\"\n    end tell\nend run",
+    "--",
+    "12",
+    "https://www.instagram.com/wat2do.ubc/",
+    "900",
+    "true",
+    "setTimeout(() => window.location.assign(\"https://www.instagram.com/wat2do.ubc/\"), 0); 1"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "navigating\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "JSON.stringify({width: window.innerWidth, height: window.innerHeight})",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "{\"width\": 1280, \"height\": 900}\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "JSON.stringify({\n path: window.location.pathname,\n rate_limited: document.readyState === \"complete\" &&\n  document.title === \"www.instagram.com\" &&\n  document.querySelector(\"#main-frame-error .error-code\")?.textContent.trim() === \"HTTP ERROR 429\"\n})",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "{\"path\": \"/wat2do.ubc/\", \"rate_limited\": false}\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "(() => {\n  if (document.readyState !== \"complete\") return \"\";\n  const profileLabel = element => [element.getAttribute(\"aria-label\"),\n    element.getAttribute(\"title\"), element.innerText || element.textContent || \"\"]\n    .some(value => (value || \"\").trim().toLowerCase() === \"profile\");\n  const compactNavigation = candidate => {\n    let scope = candidate.parentElement;\n    for (let depth = 1; scope && depth <= 8; depth++, scope = scope.parentElement) {\n      if (scope.matches('body,html,main,article,[role=\"main\"],[role=\"dialog\"]')) return false;\n      const links = [...scope.querySelectorAll(\"a[href]\")];\n      const core = [\"/explore/\", \"/reels/\", \"/direct/inbox/\"]\n        .map(route => links.find(link => link.getAttribute(\"href\") === route));\n      if (core.some(link => !link)) continue;\n      // Find the actual route container, rather than accepting a page wrapper\n      // that happens to contain both navigation and a viewed profile avatar.\n      let navigation = core[0].parentElement;\n      while (navigation !== scope && !core.every(link => navigation.contains(link))) {\n        navigation = navigation.parentElement;\n      }\n      if (navigation.contains(candidate) &&\n          !navigation.querySelector('main,article,[role=\"main\"],[role=\"dialog\"]') &&\n          [...navigation.querySelectorAll(\"a[href]\")].some(link => link.getAttribute(\"href\") === \"/\")) {\n        return true;\n      }\n    }\n    return false;\n  };\n  const anchors = [...document.querySelectorAll(\"a[href]\")].filter(candidate => {\n    // Viewed profile headers and post avatars do not identify the logged account.\n    // During navigation hydration, a public avatar may occupy the sidebar's old position.\n    if (candidate.closest('main,article,[role=\"main\"],[role=\"dialog\"],[aria-hidden=\"true\"]')) return false;\n    const image = candidate.querySelector(\"img[alt]\");\n    const avatarUsername = (image?.getAttribute(\"alt\") || \"\").match(/^([A-Za-z0-9._]{1,30})'s profile picture$/)?.[1];\n    const hrefUsername = (candidate.getAttribute(\"href\") || \"\").match(/^\\/([A-Za-z0-9._]{1,30})\\/$/)?.[1];\n    if (!avatarUsername || !hrefUsername || avatarUsername.toLowerCase() !== hrefUsername.toLowerCase()) return false;\n    const ownedControl = candidate.closest('nav,[role=\"navigation\"]') || profileLabel(candidate) ||\n      [...candidate.querySelectorAll('[aria-label],title')].some(profileLabel) || compactNavigation(candidate);\n    if (!ownedControl) return false;\n    const bounds = candidate.getBoundingClientRect();\n    const style = getComputedStyle(candidate);\n    return bounds.width > 0 && bounds.height > 0 &&\n      style.display !== \"none\" && style.visibility !== \"hidden\";\n  });\n  const usernames = [...new Set(anchors.map(anchor =>\n    anchor.getAttribute(\"href\").split(\"/\").filter(Boolean)[0].toLowerCase()))];\n  return usernames.length > 1 ? \"!ambiguous\" : (usernames[0] || \"\");\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "wat2do.ubc\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "(() => {\n  const request = window[\"__wat2doInstagramBrowserRequest\"];\n  if (!request || request.settled) return \"settled\";\n  request.controller.abort();\n  return \"pending\";\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "settled\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "delete window[\"__wat2doInstagramBrowserRequest\"]; 'cleared'",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "cleared\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "(() => {\n  if (document.readyState !== \"complete\") return \"\";\n  const profileLabel = element => [element.getAttribute(\"aria-label\"),\n    element.getAttribute(\"title\"), element.innerText || element.textContent || \"\"]\n    .some(value => (value || \"\").trim().toLowerCase() === \"profile\");\n  const compactNavigation = candidate => {\n    let scope = candidate.parentElement;\n    for (let depth = 1; scope && depth <= 8; depth++, scope = scope.parentElement) {\n      if (scope.matches('body,html,main,article,[role=\"main\"],[role=\"dialog\"]')) return false;\n      const links = [...scope.querySelectorAll(\"a[href]\")];\n      const core = [\"/explore/\", \"/reels/\", \"/direct/inbox/\"]\n        .map(route => links.find(link => link.getAttribute(\"href\") === route));\n      if (core.some(link => !link)) continue;\n      // Find the actual route container, rather than accepting a page wrapper\n      // that happens to contain both navigation and a viewed profile avatar.\n      let navigation = core[0].parentElement;\n      while (navigation !== scope && !core.every(link => navigation.contains(link))) {\n        navigation = navigation.parentElement;\n      }\n      if (navigation.contains(candidate) &&\n          !navigation.querySelector('main,article,[role=\"main\"],[role=\"dialog\"]') &&\n          [...navigation.querySelectorAll(\"a[href]\")].some(link => link.getAttribute(\"href\") === \"/\")) {\n        return true;\n      }\n    }\n    return false;\n  };\n  const anchors = [...document.querySelectorAll(\"a[href]\")].filter(candidate => {\n    // Viewed profile headers and post avatars do not identify the logged account.\n    // During navigation hydration, a public avatar may occupy the sidebar's old position.\n    if (candidate.closest('main,article,[role=\"main\"],[role=\"dialog\"],[aria-hidden=\"true\"]')) return false;\n    const image = candidate.querySelector(\"img[alt]\");\n    const avatarUsername = (image?.getAttribute(\"alt\") || \"\").match(/^([A-Za-z0-9._]{1,30})'s profile picture$/)?.[1];\n    const hrefUsername = (candidate.getAttribute(\"href\") || \"\").match(/^\\/([A-Za-z0-9._]{1,30})\\/$/)?.[1];\n    if (!avatarUsername || !hrefUsername || avatarUsername.toLowerCase() !== hrefUsername.toLowerCase()) return false;\n    const ownedControl = candidate.closest('nav,[role=\"navigation\"]') || profileLabel(candidate) ||\n      [...candidate.querySelectorAll('[aria-label],title')].some(profileLabel) || compactNavigation(candidate);\n    if (!ownedControl) return false;\n    const bounds = candidate.getBoundingClientRect();\n    const style = getComputedStyle(candidate);\n    return bounds.width > 0 && bounds.height > 0 &&\n      style.display !== \"none\" && style.visibility !== \"hidden\";\n  });\n  const usernames = [...new Set(anchors.map(anchor =>\n    anchor.getAttribute(\"href\").split(\"/\").filter(Boolean)[0].toLowerCase()))];\n  return usernames.length > 1 ? \"!ambiguous\" : (usernames[0] || \"\");\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "wat2do.ubc\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "(() => {\n  if (document.readyState !== \"complete\") return \"\";\n  const profileLabel = element => [element.getAttribute(\"aria-label\"),\n    element.getAttribute(\"title\"), element.innerText || element.textContent || \"\"]\n    .some(value => (value || \"\").trim().toLowerCase() === \"profile\");\n  const compactNavigation = candidate => {\n    let scope = candidate.parentElement;\n    for (let depth = 1; scope && depth <= 8; depth++, scope = scope.parentElement) {\n      if (scope.matches('body,html,main,article,[role=\"main\"],[role=\"dialog\"]')) return false;\n      const links = [...scope.querySelectorAll(\"a[href]\")];\n      const core = [\"/explore/\", \"/reels/\", \"/direct/inbox/\"]\n        .map(route => links.find(link => link.getAttribute(\"href\") === route));\n      if (core.some(link => !link)) continue;\n      // Find the actual route container, rather than accepting a page wrapper\n      // that happens to contain both navigation and a viewed profile avatar.\n      let navigation = core[0].parentElement;\n      while (navigation !== scope && !core.every(link => navigation.contains(link))) {\n        navigation = navigation.parentElement;\n      }\n      if (navigation.contains(candidate) &&\n          !navigation.querySelector('main,article,[role=\"main\"],[role=\"dialog\"]') &&\n          [...navigation.querySelectorAll(\"a[href]\")].some(link => link.getAttribute(\"href\") === \"/\")) {\n        return true;\n      }\n    }\n    return false;\n  };\n  const anchors = [...document.querySelectorAll(\"a[href]\")].filter(candidate => {\n    // Viewed profile headers and post avatars do not identify the logged account.\n    // During navigation hydration, a public avatar may occupy the sidebar's old position.\n    if (candidate.closest('main,article,[role=\"main\"],[role=\"dialog\"],[aria-hidden=\"true\"]')) return false;\n    const image = candidate.querySelector(\"img[alt]\");\n    const avatarUsername = (image?.getAttribute(\"alt\") || \"\").match(/^([A-Za-z0-9._]{1,30})'s profile picture$/)?.[1];\n    const hrefUsername = (candidate.getAttribute(\"href\") || \"\").match(/^\\/([A-Za-z0-9._]{1,30})\\/$/)?.[1];\n    if (!avatarUsername || !hrefUsername || avatarUsername.toLowerCase() !== hrefUsername.toLowerCase()) return false;\n    const ownedControl = candidate.closest('nav,[role=\"navigation\"]') || profileLabel(candidate) ||\n      [...candidate.querySelectorAll('[aria-label],title')].some(profileLabel) || compactNavigation(candidate);\n    if (!ownedControl) return false;\n    const bounds = candidate.getBoundingClientRect();\n    const style = getComputedStyle(candidate);\n    return bounds.width > 0 && bounds.height > 0 &&\n      style.display !== \"none\" && style.visibility !== \"hidden\";\n  });\n  const usernames = [...new Set(anchors.map(anchor =>\n    anchor.getAttribute(\"href\").split(\"/\").filter(Boolean)[0].toLowerCase()))];\n  return usernames.length > 1 ? \"!ambiguous\" : (usernames[0] || \"\");\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "wat2do.ubc\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "(() => {\n  const entry = document.cookie.split(\";\").map(value => value.trim())\n    .find(value => value.startsWith(\"ds_user_id=\"));\n  const activeRecipient = entry?.slice(\"ds_user_id=\".length) || \"\";\n  return activeRecipient === \"12342599092\" ? \"true\" : \"false\";\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "true\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "(() => [...document.querySelectorAll('h1,[role=\"heading\"]')]\n  .some(element =>\n    (element.innerText || element.textContent || \"\").trim() === \"Switch accounts\"\n  )\n  ? \"ready\" : \"pending\")()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "pending\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "(() => {\n  const request = window[\"__wat2doInstagramBrowserRequest\"];\n  if (!request || request.settled) return \"settled\";\n  request.controller.abort();\n  return \"pending\";\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "settled\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "delete window[\"__wat2doInstagramBrowserRequest\"]; 'cleared'",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "cleared\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "(() => {\n  const requestKey = \"__wat2doInstagramBrowserRequest\";\n  const request = {controller: new AbortController(), settled: false,\n    result: {state: \"pending\"}};\n  window[requestKey] = request;\n  (async () => {\n    try {\n      const csrf = document.cookie.split(\";\").map(value => value.trim())\n        .find(value => value.startsWith(\"csrftoken=\"))?.slice(\"csrftoken=\".length);\n      if (!csrf) {\n        request.result = {state: \"failed\", reason: \"auth_required\"};\n        return;\n      }\n      const mediaIds = [];\n      const seenMedia = new Set();\n      const seenCursors = new Set();\n      let maxId = null;\n      for (let pageCount = 1; pageCount <= 25; pageCount += 1) {\n        if (((() => {\n  const entry = document.cookie.split(\";\").map(value => value.trim())\n    .find(value => value.startsWith(\"ds_user_id=\"));\n  const activeRecipient = entry?.slice(\"ds_user_id=\".length) || \"\";\n  return activeRecipient === \"12342599092\" ? \"true\" : \"false\";\n})()) !== \"true\" ||\n            request.controller.signal.aborted) {\n          request.result = {state: \"failed\", reason: \"account_changed\"};\n          return;\n        }\n        const variables = {\n          request: {cache_ent_id: \"cache-entry:2\", max_id: maxId},\n          enable_audience_in_light_media: false,\n          enable_clips_metadata_in_light_media: false,\n          enable_likers_in_full_media: false,\n          enable_thumbnails_in_light_media: false,\n          enable_video_versions_in_light_media: false,\n          exclude_caption_user_field: false,\n          exclude_main_user_field: false,\n          include_attribution_ui_data: false\n        };\n        const body = new URLSearchParams({\n          signed_body: \"SIGNATURE.\",\n          vc_policy: \"default\",\n          locale: \"en_US\",\n          client_doc_id: \"20099285643937437306465362209\",\n          variables: JSON.stringify(variables),\n          strip_nulls: \"true\",\n          strip_defaults: \"true\"\n        });\n        const response = await fetch(\"https://i.instagram.com/graphql/query\", {\n          method: \"POST\",\n          credentials: \"include\",\n          signal: request.controller.signal,\n          headers: {\n            \"content-type\": \"application/x-www-form-urlencoded\",\n            \"x-csrftoken\": csrf,\n            \"x-ig-app-id\": \"936619743392459\",\n            \"x-requested-with\": \"XMLHttpRequest\",\n            \"x-client-doc-id\": \"20099285643937437306465362209\",\n            \"x-fb-friendly-name\": \"SubscriptionDigestFeedQuery\",\n            \"x-ig-timezone-offset\": String(-new Date().getTimezoneOffset() * 60),\n            \"x-graphql-client-library\": \"minimal\"\n          },\n          body: body.toString()\n        });\n        if (response.status === 401 || response.status === 403) {\n          request.result = {state: \"failed\", reason: \"auth_required\"};\n          return;\n        }\n        if (response.status === 429) {\n          request.result = {state: \"failed\", reason: \"rate_limited\"};\n          return;\n        }\n        if (response.status >= 500) {\n          request.result = {state: \"failed\", reason: \"temporarily_unavailable\"};\n          return;\n        }\n        if (!response.ok) {\n          request.result = {state: \"failed\", reason: \"query_rejected\"};\n          return;\n        }\n        const payload = await response.json();\n        if (((() => {\n  const entry = document.cookie.split(\";\").map(value => value.trim())\n    .find(value => value.startsWith(\"ds_user_id=\"));\n  const activeRecipient = entry?.slice(\"ds_user_id=\".length) || \"\";\n  return activeRecipient === \"12342599092\" ? \"true\" : \"false\";\n})()) !== \"true\") {\n          request.result = {state: \"failed\", reason: \"account_changed\"};\n          return;\n        }\n        const feed = payload?.data?.subscription_digest_feed;\n        if (!feed || !Array.isArray(feed.items) || typeof feed.paging_info !== \"object\") {\n          request.result = {state: \"failed\", reason: \"invalid_response\"};\n          return;\n        }\n        for (const item of feed.items) {\n          const media = item?.media;\n          // Instagram nulls a post it could not load (deleted or restricted)\n          // and reports an execution error; the rest of the page is still good.\n          if (media === null || media === undefined) continue;\n          let candidates = [media?.pk, media?.id]\n            .filter(value => value !== undefined && value !== null)\n            .map(value => String(value).split(\"_\", 1)[0]);\n          // A partly loaded post keeps only its \"<media>_<owner>\" strong ID.\n          if (!candidates.length && typeof media.strong_id__ === \"string\") {\n            candidates = [media.strong_id__.split(\"_\", 1)[0]];\n          }\n          if (!candidates.length) continue;\n          if (!candidates.length || candidates.some(value => value !== candidates[0]) ||\n              !/^[1-9][0-9]{0,31}$/.test(candidates[0])) {\n            request.result = {state: \"failed\", reason: \"invalid_response\"};\n            return;\n          }\n          if (!seenMedia.has(candidates[0])) {\n            seenMedia.add(candidates[0]);\n            mediaIds.push(candidates[0]);\n          }\n        }\n        if (feed.paging_info.more_available !== true) {\n          request.result = {\n            state: \"succeeded\",\n            media_ids: mediaIds,\n            page_count: pageCount\n          };\n          return;\n        }\n        const nextCursor = feed.paging_info.max_id;\n        if (typeof nextCursor !== \"string\" || !nextCursor || seenCursors.has(nextCursor)) {\n          request.result = {state: \"failed\", reason: \"invalid_response\"};\n          return;\n        }\n        seenCursors.add(nextCursor);\n        maxId = nextCursor;\n      }\n      request.result = {state: \"failed\", reason: \"page_limit\"};\n    } catch (_error) {\n      request.result = {state: \"failed\", reason: \"request_failed\"};\n    } finally {\n      request.settled = true;\n    }\n  })();\n  return \"started\";\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "started\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "JSON.stringify((() => {\n const request = window[\"__wat2doInstagramBrowserRequest\"];\n return request ? {result: request.result ?? null, settled: request.settled} : null;\n})())",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "{\"result\": {\"state\": \"failed\", \"reason\": \"rate_limited\"}, \"settled\": true}\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "(() => {\n  const request = window[\"__wat2doInstagramBrowserRequest\"];\n  if (!request || request.settled) return \"settled\";\n  request.controller.abort();\n  return \"pending\";\n})()",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "settled\n",
+   "timeout": 3.0
+  },
+  {
+   "args": [
+    "-e",
+    "on run argv\n    set intendedTabId to item 1 of argv\n    set javascriptSource to item 2 of argv\n    set intendedWindowId to item 3 of argv\n    if application \"Brave Browser\" is not running then\n        error \"Brave is not running.\"\n    end if\n    tell application \"Brave Browser\"\n        if not (exists window id intendedWindowId) then\n            error \"Worker browser window is closed.\"\n        end if\n        set browserWindow to window id intendedWindowId\n        if not (exists tab id intendedTabId of browserWindow) then\n            error \"Pinned Instagram tab is closed.\"\n        end if\n        set browserTab to tab id intendedTabId of browserWindow\n        if URL of browserTab does not start with \"https://www.instagram.com/\" then\n            error \"Pinned Instagram tab changed site.\"\n        end if\n        if javascriptSource is not \"JSON.stringify({width: window.innerWidth, height: window.innerHeight})\" and loading of browserTab then error \"Pinned Instagram tab is loading.\"\n        return execute browserTab javascript javascriptSource\n    end tell\nend run",
+    "--",
+    "12",
+    "delete window[\"__wat2doInstagramBrowserRequest\"]; 'cleared'",
+    "900"
+   ],
+   "code": 0,
+   "program": "/usr/bin/osascript",
+   "stderr": "",
+   "stdin": null,
+   "stdout": "cleared\n",
+   "timeout": 3.0
+  }
+ ],
+ "final": {
+  "events": [
+   {
+    "event": "Browser worker: queued",
+    "ig_account": "wat2do.ubc",
+    "payload": {
+     "job_id": "<job>",
+     "kind": "digest",
+     "reason": null,
+     "state": "queued"
+    },
+    "post_url": null,
+    "school": "",
+    "sender_id": "instagram-browser-worker"
+   },
+   {
+    "event": "Browser worker: running",
+    "ig_account": "wat2do.ubc",
+    "payload": {
+     "job_id": "<job>",
+     "kind": "digest",
+     "reason": null,
+     "state": "running"
+    },
+    "post_url": null,
+    "school": "",
+    "sender_id": "instagram-browser-worker"
+   },
+   {
+    "event": "Browser worker: rate_limited",
+    "ig_account": "wat2do.ubc",
+    "payload": {
+     "job_id": "<job>",
+     "kind": "digest",
+     "reason": "Instagram digest is rate limited (HTTP 429)",
+     "state": "rate_limited"
+    },
+    "post_url": null,
+    "school": "",
+    "sender_id": "instagram-browser-worker"
+   },
+   {
+    "event": "Browser worker: retrying",
+    "ig_account": "wat2do.ubc",
+    "payload": {
+     "job_id": "<job>",
+     "kind": "digest",
+     "reason": "Instagram digest is rate limited (HTTP 429)",
+     "state": "retrying"
+    },
+    "post_url": null,
+    "school": "",
+    "sender_id": "instagram-browser-worker"
+   },
+   {
+    "event": "Browser worker: pending",
+    "ig_account": "wat2do.ubc",
+    "payload": {
+     "job_id": "<job>",
+     "kind": "digest",
+     "reason": null,
+     "state": "pending"
+    },
+    "post_url": null,
+    "school": "",
+    "sender_id": "instagram-browser-worker"
+   }
+  ],
+  "jobs": [
+   {
+    "account_username": "wat2do.ubc",
+    "attempts": 0,
+    "error": null,
+    "kind": "digest",
+    "payload": "{\"cache_ent_id\": \"cache-entry:2\"}",
+    "recipient_id": "12342599092",
+    "result": null,
+    "school": "",
+    "state": "pending"
+   }
+  ],
+  "settings": {
+   "browser_rate_limit_backoff_seconds": "120.0",
+   "browser_rate_limit_until": "1800000120.0",
+   "browser_tab_ids": "[\"11\", \"12\"]",
+   "notification_retrievals_retired": "true"
+  }
+ },
+ "name": "digest_rate_limited",
+ "outcomes": [
+  null,
+  null,
+  true
+ ],
+ "scenario": {
+  "accounts": {
+   "wat2do.ubc": "12342599092"
+  },
+  "digest_result": {
+   "reason": "rate_limited",
+   "state": "failed"
+  },
+  "live_tabs": [
+   "11",
+   "12"
+  ],
+  "name": "digest_rate_limited",
+  "recipient": "12342599092",
+  "steps": [
+   {
+    "key": "browser_tab_ids",
+    "op": "set_setting",
+    "value": [
+     "11",
+     "12"
+    ]
+   },
+   {
+    "account_username": "wat2do.ubc",
+    "cache_ent_id": "cache-entry:2",
+    "op": "enqueue_digest",
+    "recipient_id": "12342599092"
+   },
+   {
+    "op": "process_next_job"
+   }
+  ],
+  "username": "wat2do.ubc"
+ }
+}

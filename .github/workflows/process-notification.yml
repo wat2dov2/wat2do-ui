@@ -73,12 +73,8 @@ jobs:
     env:
       AWS_REGION: ca-central-1
       AWS_DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      AWS_RUNTIME_SECRET_ARN: ${{ vars.AWS_RUNTIME_SECRET_ARN }}
       ENVIRONMENT: production
-      FRONTEND_URL: ${{ vars.FRONTEND_URL }}
-      DATA_API_URL: ${{ secrets.DATA_API_URL }}
-      DATA_API_KEY: ${{ secrets.DATA_API_KEY }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      EVENT_FEED_REVALIDATION_SECRET: ${{ secrets.EVENT_FEED_REVALIDATION_SECRET }}
       POSTER_ID: ${{ inputs.poster_id }}
       INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || github.event.client_payload.notification_dict['com.instagram.android.igns.logging.intended_recipient_id'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.intended_recipient_id'] }}
       TARGET_SCHOOL: ${{ github.event_name == 'workflow_dispatch' && inputs.school || '' }}
@@ -86,19 +82,15 @@ jobs:
       NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Prepare notification runtime
         run: |
           # Runner context is unavailable in job-level env. These default runner
           # variables are available after the job has been assigned to a runner.
-          # The runtime survives checkout's git clean across lockfile revisions.
-          runtime_root="$RUNNER_TOOL_CACHE/wat2do-notification-$RUNNER_OS-$RUNNER_ARCH"
+          # The runtime survives checkout's git clean, so a built binary is reused.
           {
-            printf '%s\n' "NOTIFICATION_RUNTIME_ROOT=$runtime_root"
-            printf '%s\n' "NOTIFICATION_RUNNER_NAME=$RUNNER_NAME"
-            printf '%s\n' "UV_CACHE_DIR=$runtime_root/uv-cache"
-            printf '%s\n' "UV_PYTHON_INSTALL_DIR=$runtime_root/python"
+            printf '%s\n' "NOTIFICATION_RUNTIME_ROOT=$RUNNER_TOOL_CACHE/wat2do-notification-$RUNNER_OS-$RUNNER_ARCH"
             printf '%s\n' "TMPDIR=$RUNNER_TEMP"
           } >> "$GITHUB_ENV"
 
@@ -106,7 +98,7 @@ jobs:
         run: echo "$NOTIFICATION_JSON" > notification_payload.json
 
       - name: Upload notification payload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: notification-payload
           path: notification_payload.json
@@ -115,11 +107,7 @@ jobs:
       - name: Validate job inputs
         run: |
           test -n "$AWS_DEPLOY_ROLE_ARN"
-          test -n "$FRONTEND_URL"
-          test -n "$DATA_API_URL"
-          test -n "$DATA_API_KEY"
-          test -n "$OPENAI_API_KEY"
-          test -n "$EVENT_FEED_REVALIDATION_SECRET"
+          test -n "$AWS_RUNTIME_SECRET_ARN"
           if [[ -z "$INTENDED_RECIPIENT_ID" && -z "$TARGET_SCHOOL" ]]; then
             echo "::error::Notification routing is missing: provide intended_recipient_id or school, then rerun this notification." >&2
             exit 1
@@ -133,71 +121,72 @@ jobs:
             exit 1
           fi
 
+      # The binary is built before any credential reaches the environment.
+      - name: Read notification controls
+        id: controls
+        run: bash scripts/notification-binary.sh controls
+
+      - name: Restore notification binary
+        id: binary-cache
+        if: ${{ !contains(needs.route.outputs.runner, 'self-hosted') }}
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.NOTIFICATION_RUNTIME_ROOT }}/bin/${{ steps.controls.outputs.fingerprint }}
+          key: wat2do-browser-${{ runner.os }}-${{ runner.arch }}-${{ steps.controls.outputs.fingerprint }}
+
+      - name: Set up Rust
+        if: ${{ !contains(needs.route.outputs.runner, 'self-hosted') && steps.binary-cache.outputs.cache-hit != 'true' }}
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+
+      - name: Cache Rust dependencies
+        if: ${{ !contains(needs.route.outputs.runner, 'self-hosted') && steps.binary-cache.outputs.cache-hit != 'true' }}
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          workspaces: rust
+
+      - name: Build notification binary
+        timeout-minutes: ${{ fromJSON(steps.controls.outputs.build_timeout_minutes) }}
+        env:
+          CARGO_TARGET_DIR: ${{ !contains(needs.route.outputs.runner, 'self-hosted') && format('{0}/rust/target', github.workspace) || '' }}
+        run: bash scripts/notification-binary.sh ensure
+
+      - name: Save notification binary
+        if: ${{ !contains(needs.route.outputs.runner, 'self-hosted') && steps.binary-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.NOTIFICATION_RUNTIME_ROOT }}/bin/${{ steps.controls.outputs.fingerprint }}
+          key: wat2do-browser-${{ runner.os }}-${{ runner.arch }}-${{ steps.controls.outputs.fingerprint }}
+
       - name: Configure AWS credentials with GitHub OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
         with:
           role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Configure application storage
+      - name: Read database configuration
         run: |
-          account_id="$(aws sts get-caller-identity --query Account --output text)"
-          echo "STORAGE_BUCKET_NAME=wat2do-production-assets-$account_id" >> "$GITHUB_ENV"
-          echo "STORAGE_PUBLIC_BASE_URL=https://wat2do.io/media" >> "$GITHUB_ENV"
-
-      - name: Check dependency setup capacity
-        id: dependencies
-        run: |
-          python3 backend/scripts/notification_runtime.py prepare
-
-      - name: Install uv
-        id: uv
-        timeout-minutes: ${{ fromJSON(steps.dependencies.outputs.setup_timeout_minutes) }}
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: ${{ steps.dependencies.outputs.uv_version }}
-          enable-cache: ${{ !contains(needs.route.outputs.runner, 'self-hosted') }}
-          cache-dependency-glob: "backend/requirements.lock"
-          cache-local-path: ${{ env.UV_CACHE_DIR }}
-
-      - name: Set up Python
-        timeout-minutes: ${{ fromJSON(steps.dependencies.outputs.setup_timeout_minutes) }}
-        working-directory: backend
-        run: |
-          if "$NOTIFICATION_VENV/bin/python" -c 'import sys; assert sys.version_info[:2] == (3, 12)' > /dev/null 2>&1; then
-            echo "Reusing the runner's notification Python environment."
-          elif ! uv venv --clear --python 3.12 "$NOTIFICATION_VENV"; then
-            echo "::error::Notification Python setup failed. Check runner disk capacity and Python download connectivity, then rerun this notification; its media has not been processed." >&2
-            exit 1
-          fi
-
-      - name: Install dependencies
-        timeout-minutes: ${{ fromJSON(steps.dependencies.outputs.install_timeout_minutes) }}
-        working-directory: backend
-        run: |
-          if ! uv pip sync --python "$NOTIFICATION_VENV/bin/python" requirements.lock; then
-            echo "::error::Notification dependency installation failed. Check runner disk capacity and package download connectivity, then rerun this notification; its media has not been processed." >&2
-            exit 1
-          fi
+          secret_json="$(aws secretsmanager get-secret-value \
+            --secret-id "$AWS_RUNTIME_SECRET_ARN" \
+            --query SecretString \
+            --output text)"
+          database_url="$(printf '%s' "$secret_json" | python3 -c 'import json, sys; print(json.load(sys.stdin)["DATABASE_URL"])')"
+          unset secret_json
+          echo "::add-mask::$database_url"
+          echo "DATABASE_URL=$database_url" >> "$GITHUB_ENV"
 
       - name: Process the Instagram account
-        timeout-minutes: ${{ fromJSON(steps.dependencies.outputs.process_timeout_minutes) }}
+        timeout-minutes: ${{ fromJSON(steps.controls.outputs.process_timeout_minutes) }}
         working-directory: backend
         run: |
-          export EVENT_FEED_REVALIDATION_URL="${FRONTEND_URL%/}/api/revalidate-events"
           if [[ "$NOTIFICATION_JSON" != "null" && -n "$NOTIFICATION_JSON" ]]; then
             echo "Processing raw notification payload..."
-            "$NOTIFICATION_VENV/bin/python" jobs/process_notification.py
+            "$NOTIFICATION_BINARY" process-notification
           else
-            "$NOTIFICATION_VENV/bin/python" scripts/instagram_browser.py retrieve \
+            "$NOTIFICATION_BINARY" retrieve \
               --school "$TARGET_SCHOOL" \
               --url "$POSTER_ID" \
               --cutoff-days "$CUTOFF_DAYS"
             echo "Queued $POSTER_ID for ingestion; the Mac's processor picks it up within seconds."
           fi
-
-      - name: Maintain notification dependency cache
-        if: always()
-        working-directory: backend
-        run: |
-          python3 scripts/notification_runtime.py maintain

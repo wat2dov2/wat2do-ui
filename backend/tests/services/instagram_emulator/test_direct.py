@@ -1,13 +1,10 @@
 import pytest
 
+from services.instagram_accounts import BrowserEngagementUncertain, BrowserSessionError
 from services.instagram_dms.decide import DmDecision
 from services.instagram_emulator import direct as module
 from services.instagram_emulator.device import Node
 from services.instagram_emulator.inbox import InboxRow
-from services.instagram_notifications.browser_session import (
-    BrowserEngagementUncertain,
-    BrowserSessionError,
-)
 
 POST = "https://www.instagram.com/p/ABC123/"
 # The executor tests swap in _Reader; the reader's own tests use the real one.

@@ -23,15 +23,15 @@ from typing import Any
 from core.controlbox import controlbox
 from core.launch_agents import atomic_write
 from services import school_service
-from services.instagram_emulator.device import CONTROL as EMULATOR
-from services.instagram_emulator.device import EmulatorDevice
-from services.instagram_emulator.direct import EmulatorDirectExecutor
-from services.instagram_emulator.inbox import InboxRow, MessagingLimited, read_inbox
-from services.instagram_notifications.browser_session import (
+from services.instagram_accounts import (
     BrowserEngagementUncertain,
     BrowserSessionError,
     school_account_username,
 )
+from services.instagram_emulator.device import CONTROL as EMULATOR
+from services.instagram_emulator.device import EmulatorDevice
+from services.instagram_emulator.direct import EmulatorDirectExecutor
+from services.instagram_emulator.inbox import InboxRow, MessagingLimited, read_inbox
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.instagram_dms

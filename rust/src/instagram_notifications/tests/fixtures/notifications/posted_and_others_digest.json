@@ -1,0 +1,12 @@
+{
+  "android.title": "Instagram",
+  "android.text": "fixture_club and 2 others posted for the first time in a while.",
+  "android.subText": "wat2do.ubc",
+  "android.showWhen": true,
+  "com.instagram.android.igns.logging.ig_action": "clips_home?media_list=3456789012345678902_4567890123&cache_ent_id=fixture-cache-0002&total_non_mmc_media_count=3",
+  "com.instagram.android.igns.logging.push_category": "subscription_daily_digest",
+  "com.instagram.android.igns.logging.push_id": "fixture-push-0002",
+  "com.instagram.android.igns.logging.intended_recipient_id": "12342599092",
+  "cache_ent_id": "fixture-cache-0002",
+  "total_non_mmc_media_count": 3
+}

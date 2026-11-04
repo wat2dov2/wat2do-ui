@@ -1,9 +1,12 @@
 //! URL splitting and joining with the exact rules of Python's `urllib.parse`.
 //!
 //! Directory agents report URLs as they appear in a page, and a page names its
-//! poster relative to itself. Code that checks or resolves those strings keeps
-//! them as written (no percent-encoding or normalisation), the way the Python
-//! services did, so stored URLs do not change form when the service moves.
+//! poster relative to itself; the Brave worker's validators accept or refuse
+//! Instagram URLs. Code that checks or resolves those strings keeps them as
+//! written (no percent-encoding or normalisation), the way the Python services
+//! did, so stored URLs and validation decisions do not change when a service
+//! moves. WHATWG parsers (the `url` crate) normalise hosts and paths that Python
+//! keeps, so they cannot stand in here.
 
 /// Schemes `urljoin` resolves relative references against.
 const USES_RELATIVE: [&str; 20] = [
@@ -60,9 +63,9 @@ pub struct Split {
     pub fragment: String,
 }
 
-/// `urllib.parse.urlsplit(url, default_scheme)`; `None` where Python raises
-/// ("Invalid IPv6 URL").
-pub fn urlsplit(url: &str, default_scheme: &str) -> Option<Split> {
+/// `urllib.parse.urlsplit(url, default_scheme)`; `Err` with Python's `ValueError`
+/// message where Python raises.
+pub fn urlsplit(url: &str, default_scheme: &str) -> Result<Split, String> {
     let mut url: String = url
         .trim_start_matches(is_c0_or_space)
         .chars()
@@ -89,7 +92,7 @@ pub fn urlsplit(url: &str, default_scheme: &str) -> Option<Split> {
         netloc = rest[..end].to_owned();
         url = rest[end..].to_owned();
         if netloc.contains('[') != netloc.contains(']') {
-            return None;
+            return Err("Invalid IPv6 URL".to_owned());
         }
     }
     let mut fragment = String::new();
@@ -102,7 +105,7 @@ pub fn urlsplit(url: &str, default_scheme: &str) -> Option<Split> {
         query = after.to_owned();
         url = before.to_owned();
     }
-    Some(Split {
+    Ok(Split {
         scheme,
         netloc,
         path: url,
@@ -112,12 +115,19 @@ pub fn urlsplit(url: &str, default_scheme: &str) -> Option<Split> {
 }
 
 impl Split {
+    fn userinfo(&self) -> Option<&str> {
+        self.netloc.rsplit_once('@').map(|(userinfo, _)| userinfo)
+    }
+
+    fn hostinfo(&self) -> &str {
+        self.netloc
+            .rsplit_once('@')
+            .map_or(self.netloc.as_str(), |(_, host)| host)
+    }
+
     /// `SplitResult.hostname`: the host without user, port or brackets, lowercased.
     pub fn hostname(&self) -> Option<String> {
-        let hostinfo = self
-            .netloc
-            .rsplit_once('@')
-            .map_or(self.netloc.as_str(), |(_, host)| host);
+        let hostinfo = self.hostinfo();
         let host = match hostinfo.split_once('[') {
             Some((_, bracketed)) => bracketed.split_once(']').map_or(bracketed, |(h, _)| h),
             None => hostinfo.split_once(':').map_or(hostinfo, |(h, _)| h),
@@ -130,6 +140,44 @@ impl Split {
             Some((address, zone)) => format!("{}%{zone}", address.to_lowercase()),
             None => host.to_lowercase(),
         })
+    }
+
+    /// `SplitResult.username`.
+    pub fn username(&self) -> Option<String> {
+        self.userinfo()
+            .map(|userinfo| userinfo.split(':').next().unwrap_or_default().to_owned())
+    }
+
+    /// `SplitResult.password`.
+    pub fn password(&self) -> Option<String> {
+        self.userinfo()
+            .and_then(|userinfo| userinfo.split_once(':'))
+            .map(|(_, password)| password.to_owned())
+    }
+
+    /// `SplitResult.port`; `Err` with Python's `ValueError` message where it raises.
+    pub fn port(&self) -> Result<Option<u16>, String> {
+        let host = self.hostinfo();
+        let port = if host.contains('[') {
+            host.split_once(']')
+                .map(|(_, rest)| rest.split_once(':').map_or("", |(_, port)| port))
+                .unwrap_or("")
+        } else {
+            host.split_once(':').map_or("", |(_, port)| port)
+        };
+        if port.is_empty() {
+            return Ok(None);
+        }
+        if !port.bytes().all(|byte| byte.is_ascii_digit()) {
+            return Err(format!(
+                "Port could not be cast to integer value as '{port}'"
+            ));
+        }
+        port.parse::<u32>()
+            .ok()
+            .filter(|port| *port <= 65_535)
+            .map(|port| Some(port as u16))
+            .ok_or_else(|| "Port out of range 0-65535".to_owned())
     }
 }
 
@@ -196,9 +244,9 @@ pub fn urljoin(base: &str, url: &str) -> Option<String> {
     if url.is_empty() {
         return Some(base.to_owned());
     }
-    let base_parts = urlsplit(base, "")?;
+    let base_parts = urlsplit(base, "").ok()?;
     let (bpath, bparams) = split_params(&base_parts.scheme, &base_parts.path);
-    let mut parts = urlsplit(url, &base_parts.scheme)?;
+    let mut parts = urlsplit(url, &base_parts.scheme).ok()?;
     let (path, mut params) = split_params(&parts.scheme, &parts.path);
     parts.path = path;
 
@@ -272,7 +320,7 @@ mod tests {
 
     #[test]
     fn hostnames_follow_python() {
-        let host = |url: &str| urlsplit(url, "").and_then(|split| split.hostname());
+        let host = |url: &str| urlsplit(url, "").ok().and_then(|split| split.hostname());
         assert_eq!(
             host("https://User@Clubs.Example.EDU:8443/x"),
             Some("clubs.example.edu".into())
@@ -281,6 +329,10 @@ mod tests {
         assert_eq!(host("https:///x"), None);
         assert_eq!(host("mailto:a@b.c"), None);
         assert_eq!(host("https://[::1/x"), None);
+        assert_eq!(
+            urlsplit("https://[::1/x", ""),
+            Err("Invalid IPv6 URL".to_owned())
+        );
         assert_eq!(urlsplit("HTTPS://a/b", "").unwrap().scheme, "https");
         assert_eq!(urlsplit("1http://a/b", "").unwrap().scheme, "");
         assert_eq!(
@@ -292,6 +344,34 @@ mod tests {
                 query: "q".into(),
                 fragment: "f".into(),
             }
+        );
+    }
+
+    #[test]
+    fn credentials_and_ports_follow_python() {
+        let split = urlsplit(" HTTPS://User:Pw@WWW.Instagram.com:443/p/AB\tC/?x=1#y", "").unwrap();
+        assert_eq!(split.scheme, "https");
+        assert_eq!(split.netloc, "User:Pw@WWW.Instagram.com:443");
+        assert_eq!(split.path, "/p/ABC/");
+        assert_eq!(split.query, "x=1");
+        assert_eq!(split.fragment, "y");
+        assert_eq!(split.hostname().as_deref(), Some("www.instagram.com"));
+        assert_eq!(split.username().as_deref(), Some("User"));
+        assert_eq!(split.password().as_deref(), Some("Pw"));
+        assert_eq!(split.port(), Ok(Some(443)));
+        assert!(urlsplit("https://host:x/", "").unwrap().port().is_err());
+        assert_eq!(
+            urlsplit("https://host:70000/", "").unwrap().port(),
+            Err("Port out of range 0-65535".to_owned())
+        );
+        let bare = urlsplit("instagram.com/p/x", "").unwrap();
+        assert_eq!(
+            (
+                bare.scheme.as_str(),
+                bare.netloc.as_str(),
+                bare.path.as_str()
+            ),
+            ("", "", "instagram.com/p/x")
         );
     }
 

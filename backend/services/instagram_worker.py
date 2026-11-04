@@ -23,10 +23,10 @@ from datetime import datetime, timedelta, timezone
 from itertools import groupby
 
 from core.controlbox import controlbox
+from services.instagram_accounts import school_account_username
 from services.instagram_dms import sweep
 from services.instagram_emulator.device import CONTROL, EmulatorDevice, exclusive
 from services.instagram_follow import candidates, crawl, follows, scoring
-from services.instagram_notifications.browser_session import school_account_username
 from services.instagram_publishing import music
 
 log = logging.getLogger(__name__)

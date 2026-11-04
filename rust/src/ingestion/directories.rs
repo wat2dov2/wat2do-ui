@@ -445,6 +445,7 @@ async fn save(
     let statuses = prepared.statuses();
     let page = htmlize::unescape(String::from_utf8_lossy(&prepared.listing)).into_owned();
     let host = urlsplit(&source.url, "")
+        .ok()
         .and_then(|split| split.hostname())
         .unwrap_or_default();
     for item in reported.iter().take(INGESTION.directory_items_per_run) {
@@ -481,7 +482,7 @@ async fn save(
 
 /// A reported URL must appear in the listing or live on the directory's own site.
 fn plausible(url: &str, page: &str, listing_host: &str) -> bool {
-    let Some(parts) = urlsplit(url, "") else {
+    let Ok(parts) = urlsplit(url, "") else {
         return false;
     };
     let Some(hostname) = parts.hostname() else {
