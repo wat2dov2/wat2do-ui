@@ -143,7 +143,7 @@ Wat2Do serves the application from one private AWS ECS Fargate task in `ca-centr
 The task contains the Next.js frontend on port 3000 and the FastAPI backend on port 8000.
 CloudFront is the public edge and an Application Load Balancer is the HTTPS origin.
 The database is Amazon RDS for PostgreSQL 17 (database `wat2do`), which the backend reads and writes through our own PostgREST data API at `https://data.wat2do.io`.
-Sign-in, sessions and access tokens are the backend's own (`backend/services/auth_service.py`).
+Sign-in, sessions and access tokens are the backend's own (`rust/src/api/routes/auth`, verified in Python by `backend/core/auth_tokens.py`).
 Uploaded and ingested media are files under `MEDIA_ROOT`, one folder per bucket, which the web server serves at `STORAGE_PUBLIC_BASE_URL` (`https://wat2do.io/media`).
 The web server, not the code, sends their immutable `Cache-Control` header and `Content-Disposition: attachment` for `.svg` files.
 Discovery snapshots are files under the frontend's `DISCOVERY_CACHE_DIR`, which must sit outside `MEDIA_ROOT`; production refuses to start without it.

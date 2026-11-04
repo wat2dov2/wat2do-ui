@@ -89,7 +89,7 @@ def _sign_identities(
             if set(identity) - IDENTITY_FIELDS or "id" not in identity:
                 raise SystemExit(f"{case['name']}: identity takes only {sorted(IDENTITY_FIELDS)}")
             now = int(time.time())
-            # The claims core/auth_tokens.issue_access_token signs.
+            # The claims the Rust API's AccessTokens::issue signs.
             claims = {
                 "iss": control["token_issuer"],
                 "aud": "authenticated",

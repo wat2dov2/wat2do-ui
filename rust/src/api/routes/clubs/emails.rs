@@ -7,6 +7,7 @@ use std::sync::Arc;
 use crate::controlbox::{CLUB_MANAGEMENT, EMAIL_DELIVERY};
 use crate::email::layout::{self, escape};
 use crate::email::{self, EmailMessage};
+use crate::text::python_splitlines;
 
 const CLOSING: &str = "Questions? Reply to this email and our team will get back to you.";
 
@@ -15,41 +16,6 @@ const CLOSING: &str = "Questions? Reply to this email and our team will get back
 pub enum Reviewed {
     Club,
     Claim,
-}
-
-/// Python's `str.splitlines()` boundaries.
-fn split_lines(text: &str) -> Vec<&str> {
-    let mut lines = Vec::new();
-    let mut start = 0;
-    let mut characters = text.char_indices().peekable();
-    while let Some((index, character)) = characters.next() {
-        let boundary = matches!(
-            character,
-            '\n' | '\r'
-                | '\u{b}'
-                | '\u{c}'
-                | '\u{1c}'
-                | '\u{1d}'
-                | '\u{1e}'
-                | '\u{85}'
-                | '\u{2028}'
-                | '\u{2029}'
-        );
-        if !boundary {
-            continue;
-        }
-        lines.push(&text[start..index]);
-        let mut end = index + character.len_utf8();
-        if character == '\r' && characters.peek().is_some_and(|(_, next)| *next == '\n') {
-            characters.next();
-            end += 1;
-        }
-        start = end;
-    }
-    if start < text.len() {
-        lines.push(&text[start..]);
-    }
-    lines
 }
 
 /// `build_review_decision_email`.
@@ -107,7 +73,7 @@ pub fn review_decision(
         let (html, text) = match rejection_reason {
             Some(reason) => (
                 layout::paragraph("Reason:", true)
-                    + &layout::quote(&split_lines(&escape(reason)).join("<br>")),
+                    + &layout::quote(&python_splitlines(&escape(reason)).join("<br>")),
                 format!("Reason: {reason}"),
             ),
             None => (String::new(), String::new()),
@@ -327,12 +293,5 @@ mod tests {
         );
         assert!(message.body_text.ends_with("This invitation expires in 7 days. If you did not expect it, you can safely ignore this email."));
         assert!(message.body_html.contains("font:13px/1.6"));
-    }
-
-    #[test]
-    fn lines_split_like_python() {
-        assert_eq!(split_lines("a\r\nb\nc\u{2028}d\n"), ["a", "b", "c", "d"]);
-        assert_eq!(split_lines(""), Vec::<&str>::new());
-        assert_eq!(split_lines("one"), ["one"]);
     }
 }

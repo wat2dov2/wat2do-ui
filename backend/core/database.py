@@ -3,7 +3,7 @@
 :func:`get_sb` returns the client every service uses for reads, writes and
 RPCs.  Each request carries the service JWT from ``DATA_API_KEY``, which maps
 to a role that bypasses RLS, so the backend sees every row.  Sessions and
-login live in our own auth service (``services/auth_service.py``), not here.
+login live in the Rust API's auth routes (``rust/src/api/routes/auth``), not here.
 """
 
 import httpx

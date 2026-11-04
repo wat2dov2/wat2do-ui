@@ -19,9 +19,9 @@ class Settings(BaseSettings):
     # backend request carries (it maps to a role that bypasses RLS).
     data_api_url: str
     data_api_key: str = ""
-    # PEM EC P-256 private key that signs our ES256 access tokens.
+    # Base64 PKCS#8 DER EC P-256 key whose public half verifies our ES256 access
+    # tokens (the Rust API signs them).
     auth_signing_key: str = ""
-    google_oauth_client_secret: str = ""
     database_url: str = ""
     # Scoped login the local ingestion agent uses for events and positions.
     ingest_agent_database_url: str = ""

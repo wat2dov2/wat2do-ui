@@ -7,8 +7,9 @@
 //! - `/health` fails until the Python app answers, and whenever it stops answering.
 //! - If the Python app exits, the server exits non-zero so ECS replaces the task.
 //! - On SIGTERM or SIGINT the server stops accepting, lets in-flight requests
-//!   finish, then asks the Python app to stop the same way (its lifespan
-//!   shutdown runs) and exits 0.
+//!   and the emails they queued finish (within `shutdown_drain_seconds`),
+//!   then asks the Python app to stop the same way (its lifespan shutdown
+//!   runs) and exits 0.
 
 use std::net::SocketAddr;
 use std::process::Stdio;
@@ -146,8 +147,14 @@ pub async fn serve(port: u16, reload: bool) -> Result<i32> {
             tracing::info!("{signal} received; draining requests");
             let _ = stop_lookups.send(true);
             stop_accepting.notify_one();
-            if tokio::time::timeout(drain, &mut server).await.is_err() {
+            // Requests, then the emails they queued (login codes), share one drain.
+            let deadline = tokio::time::Instant::now() + drain;
+            if tokio::time::timeout_at(deadline, &mut server).await.is_err() {
                 tracing::warn!("Requests still open after {drain:?}; stopping anyway");
+            }
+            let unsent = crate::email::drain_background(deadline).await;
+            if unsent > 0 {
+                tracing::warn!("{unsent} background emails still sending after {drain:?}; stopping anyway");
             }
             stop_python(&mut child).await;
             0

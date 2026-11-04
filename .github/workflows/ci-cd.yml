@@ -130,6 +130,55 @@ jobs:
       - name: Run tests
         run: cargo test
 
+  rust-database:
+    name: Rust database tests
+    # The Rust API's session statements (sign-in, refresh rotation, the code
+    # lockout and single use) against a real Postgres holding our schema.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username postgres"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load the schema
+        # As scripts/dev.py loads the local database: the roles, then the
+        # baseline and every migration after it. The image's own psql reads the
+        # baseline's pg_dump 17 commands.
+        run: |
+          docker run --rm --network host --volume "$PWD:/workspace:ro" --env DATABASE_URL postgres:17 \
+            bash -c 'psql "$DATABASE_URL" --no-psqlrc --quiet -v ON_ERROR_STOP=1 \
+                       -f /workspace/backend/database/local-roles.sql &&
+                     bash /workspace/scripts/migrate-database.sh'
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust builds
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
+      - name: Run database tests
+        working-directory: rust
+        env:
+          WAT2DO_TEST_DATABASE_URL: ${{ env.DATABASE_URL }}
+          # A missing URL fails the run instead of skipping every test.
+          WAT2DO_DATABASE_TESTS_REQUIRED: "1"
+        run: cargo test --lib api::routes::auth::database_tests
+
   backend-image:
     name: Backend image build
     # Builds and smoke-tests the backend image that docker-compose.yml runs, so a
@@ -161,9 +210,12 @@ jobs:
           docker run --rm "$image" wat2do-api openapi | diff - backend/core/rust_openapi.json
           # Serve with throwaway settings (no database is reached): /health must turn
           # healthy once uvicorn is up, a FastAPI route must answer through the proxy,
-          # and SIGTERM must stop both processes cleanly.
+          # and SIGTERM must stop both processes cleanly. The server refuses to
+          # start without a signing key, so it gets a throwaway one.
+          signing_key="$(openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -outform DER | base64 --wrap=0)"
           container_id="$(docker run --detach --read-only --tmpfs /tmp \
             --env ENVIRONMENT=testing \
+            --env AUTH_SIGNING_KEY="$signing_key" \
             --env DATA_API_URL=https://data.example.test \
             --env DATA_API_KEY=test-service-key \
             --env DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/postgres \
@@ -195,6 +247,7 @@ jobs:
       - backend
       - frontend
       - rust
+      - rust-database
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
     # A deploy is never cancelled halfway; a newer push waits and then deploys.

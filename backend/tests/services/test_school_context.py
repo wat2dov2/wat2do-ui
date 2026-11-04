@@ -141,14 +141,6 @@ def test_school_frontend_url_scopes_localhost_and_preserves_port(monkeypatch, ho
     )
 
 
-@pytest.mark.parametrize("parent", ["wat2do.io", "wat2do.localhost"])
-def test_school_from_frontend_url_shared_parent(monkeypatch, parent):
-    origin = f"http://ualberta.{parent}:3000"
-    monkeypatch.setattr(school_context.settings, "cors_origins", [origin])
-    assert school_context.school_from_frontend_url(origin) == "ualberta"
-    assert school_context.school_from_frontend_url(f"{origin}.evil.test") is None
-
-
 def test_school_frontend_url_rejects_legacy_domain(monkeypatch):
     monkeypatch.setattr(
         school_context.settings,

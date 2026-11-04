@@ -13,6 +13,8 @@ pub struct Settings {
     pub database_url: String,
     /// Base64 PKCS#8 DER of the EC P-256 key that signs our access tokens.
     pub auth_signing_key: String,
+    /// Google sign-in's client secret (the client id is in `controlbox/authentication.json`).
+    pub google_oauth_client_secret: String,
     pub ingest_agent_database_url: String,
     pub aws_region: String,
     /// Absolute directory of uploaded and ingested media, one folder per bucket.
@@ -90,6 +92,8 @@ impl Settings {
             environment: or_default("ENVIRONMENT", "development"),
             database_url: required("DATABASE_URL")?,
             auth_signing_key: optional("AUTH_SIGNING_KEY"),
+            // Untrimmed, like Python: Google compares it byte for byte.
+            google_oauth_client_secret: lookup("GOOGLE_OAUTH_CLIENT_SECRET").unwrap_or_default(),
             ingest_agent_database_url: optional("INGEST_AGENT_DATABASE_URL"),
             aws_region: or_default("AWS_REGION", "ca-central-1"),
             media_root: optional("MEDIA_ROOT"),
