@@ -22,7 +22,12 @@ locals {
   image_origin  = "image"
   assets_origin = "assets"
   media_origin  = "media"
-  api_origin    = "api"
+  # Until every file under ~/wat2do-data/media is in the bucket, a file S3 does
+  # not have yet comes from the Mac's disk (Caddy's /media/* on api.wat2do.io).
+  # Remove this origin, the origin group and Caddy's media block once it is.
+  media_on_mac_origin = "media-on-mac"
+  media_group         = "media-group"
+  api_origin          = "api"
 }
 
 data "aws_cloudfront_cache_policy" "caching_disabled" {
@@ -227,6 +232,31 @@ resource "aws_cloudfront_distribution" "web" {
   }
 
   origin {
+    origin_id   = local.media_on_mac_origin
+    domain_name = var.api_origin
+    origin_path = "/media"
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  origin_group {
+    origin_id = local.media_group
+    failover_criteria {
+      status_codes = [403, 404]
+    }
+    member {
+      origin_id = local.media_origin
+    }
+    member {
+      origin_id = local.media_on_mac_origin
+    }
+  }
+
+  origin {
     origin_id   = local.api_origin
     domain_name = var.api_origin
     custom_header {
@@ -258,7 +288,7 @@ resource "aws_cloudfront_distribution" "web" {
 
   ordered_cache_behavior {
     path_pattern             = "/media/*"
-    target_origin_id         = local.media_origin
+    target_origin_id         = local.media_group
     viewer_protocol_policy   = "redirect-to-https"
     allowed_methods          = ["GET", "HEAD", "OPTIONS"]
     cached_methods           = ["GET", "HEAD"]

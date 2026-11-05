@@ -7,6 +7,6 @@ data="$HOME/wat2do-data"
 set -a
 . "$data/config/caddy.env"
 set +a
-export XDG_DATA_HOME="$data/caddy" XDG_CONFIG_HOME="$data/caddy"
+export WAT2DO_DATA="$data" XDG_DATA_HOME="$data/caddy" XDG_CONFIG_HOME="$data/caddy"
 exec /opt/homebrew/bin/caddy run \
   --config "$data/releases/current/infra/mac-mini/Caddyfile" --adapter caddyfile

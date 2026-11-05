@@ -73,11 +73,12 @@ CloudFront caches `/api/discovery` for `cdn_ttl_seconds` per school and resource
 
 1. `terraform apply` (above) creates everything; the functions start with a placeholder.
 2. Copy media into the bucket with its headers: `aws s3 sync ~/wat2do-data/media s3://wat2do-media-291667884807/ --cache-control 'public, max-age=31536000, immutable'`, with `.svg` files again with `--content-type image/svg+xml --content-disposition attachment`.
+   The 9.9 GB take hours over the Mac's uplink (capped with `aws configure set default.s3.max_bandwidth` so the API keeps some), so until it finishes CloudFront falls back to the Mac's disk for any file S3 does not have (`media_on_mac_origin`, and the `/media/*` block in the Caddyfile).
 3. Create the two IAM users' access keys: `wat2do-api`'s goes in `backend.env` (replacing `wat2do-ses-sender`'s) with `STORAGE_BUCKET_NAME=wat2do-media-291667884807`, and `wat2do-web-deploy`'s is the AWS CLI profile `wat2do-deploy`.
 4. Rewrite `web-build.env` to the two settings above, then deploy the branch's website with `deploy.sh`'s upload steps and check it through CloudFront before any DNS change (`curl --resolve wat2do.io:443:<CloudFront address>`).
 5. Point `wat2do.io`, `www` and `*` in Cloudflare at the distribution's domain, DNS-only.
 6. Merge; the deploy job deploys the same commit, and `install.py io.wat2do.caddy io.wat2do.api` reloads Caddy (now API-only) and gives the API its 30 second stop timeout.
-7. Copy media written since step 2 once more, then delete `~/wat2do-data/media`, `~/wat2do-data/discovery-cache`, `web.env`, the `io.wat2do.web` job, the Vercel project and the IAM user `wat2do-ses-sender`.
+7. Copy media written since step 2 once more, remove the media fallback (Terraform's `media_on_mac_origin` and origin group, the Caddyfile's `/media/*` block, `WAT2DO_DATA` in `bin/run-caddy`), then delete `~/wat2do-data/media`, `~/wat2do-data/discovery-cache`, `web.env`, the `io.wat2do.web` job, the Vercel project and the IAM user `wat2do-ses-sender`.
 
 ## Status
 

@@ -16,6 +16,18 @@
 http://api.wat2do.io:8080 {
 	bind 127.0.0.1
 
+	# Media S3 does not have yet: CloudFront falls back here
+	# (infra/terraform/web, media_on_mac_origin) until ~/wat2do-data/media is
+	# fully in the bucket; remove this block with that origin.
+	handle /media/* {
+		root * {$WAT2DO_DATA}
+		header Cache-Control "public, max-age=31536000, immutable"
+		header X-Content-Type-Options nosniff
+		@svg path *.svg
+		header @svg Content-Disposition attachment
+		file_server
+	}
+
 	# Never true without the secret (an unset ORIGIN_VERIFY_SECRET trusts no one).
 	@cloudfront expression `{http.request.header.X-Wat2Do-Origin-Verify} == "{$ORIGIN_VERIFY_SECRET}" && "{$ORIGIN_VERIFY_SECRET}" != ""`
 	handle @cloudfront {

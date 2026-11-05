@@ -26,7 +26,7 @@ health_timeout_seconds=900
 # infra/terraform/web's outputs; the AWS CLI profile is its wat2do-web-deploy user.
 export AWS_PROFILE=wat2do-deploy AWS_REGION=ca-central-1 AWS_PAGER=""
 web_bucket="wat2do-web-291667884807"
-distribution_id="${WAT2DO_DISTRIBUTION_ID:?}"
+distribution_id="E2O3B7GJXMY1W8"
 site="https://wat2do.io"
 
 export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:/opt/homebrew/opt/postgresql@17/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -152,11 +152,15 @@ aws s3 sync "$open_next/assets" "s3://$web_bucket/_assets" --exclude "_next/stat
 aws s3 sync "$open_next/cache" "s3://$web_bucket/_cache" --only-show-errors
 
 log "deploying $sha to the website's functions"
+# Each bundle goes through the web bucket: S3 retries a slow upload in parts,
+# where Lambda's own upload drops it on the Mac's uplink.
 update_function() {
   local name="$1" bundle="$2" zip
   zip="$(mktemp -t "$name").zip"
   (cd "$bundle" && rm -f "$zip" && zip -qr -X "$zip" .)
-  aws lambda update-function-code --function-name "$name" --zip-file "fileb://$zip" >/dev/null
+  aws s3 cp "$zip" "s3://$web_bucket/_deploy/$name.zip" --only-show-errors
+  aws lambda update-function-code --function-name "$name" \
+    --s3-bucket "$web_bucket" --s3-key "_deploy/$name.zip" >/dev/null
   aws lambda wait function-updated-v2 --function-name "$name"
   rm -f "$zip"
 }
