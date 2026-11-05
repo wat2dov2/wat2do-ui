@@ -96,15 +96,9 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
         "exam_destress",
         "finals_prep",
     }
-    assert controlbox.social_previews.stale_check_interval_minutes == 30
-    assert controlbox.social_previews.capture_path == "/"
-    assert controlbox.social_previews.viewport_width == 1200
-    assert controlbox.social_previews.viewport_height == 630
-    assert controlbox.social_previews.capture_scale == 0.6
-    assert controlbox.social_previews.device_scale_factor == 1
-    assert controlbox.social_previews.jpeg_quality == 90
-    assert controlbox.social_previews.reserved_concurrency == 2
-    assert controlbox.social_previews.asset_retention_days == 30
+    assert controlbox.social_previews.width == 1200
+    assert controlbox.social_previews.height == 630
+    assert controlbox.social_previews.cache_max_age_seconds == 86400
     assert str(controlbox.authentication.legacy_frontend_origins[0]) == "https://wat2do.ca/"
     assert controlbox.club_management.directory_page_size == 20
     assert [str(email) for email in controlbox.contact.recipient_emails] == [
@@ -210,18 +204,16 @@ def test_duplicate_upload_mime_types_are_rejected(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("field", "value"),
     [
-        ("stale_check_interval_minutes", 4),
-        ("stale_check_interval_minutes", 1441),
-        ("capture_scale", 0.4),
-        ("device_scale_factor", 4),
-        ("asset_retention_days", 6),
-        ("capture_path", "/events"),
+        ("width", 599),
+        ("height", 1261),
+        ("cache_max_age_seconds", 59),
+        ("cache_max_age_seconds", 604_801),
     ],
 )
 def test_invalid_social_preview_control_is_rejected(
     tmp_path: Path,
     field: str,
-    value: float | int | str,
+    value: int,
 ) -> None:
     path = _write_control(
         tmp_path,
@@ -230,21 +222,6 @@ def test_invalid_social_preview_control_is_rejected(
     )
 
     with pytest.raises(ValidationError, match=field):
-        load_controlbox(path)
-
-
-def test_social_preview_navigation_must_fit_inside_function_timeout(
-    tmp_path: Path,
-) -> None:
-    path = _write_control(
-        tmp_path,
-        "social_previews",
-        lambda payload: payload.update(
-            {"navigation_timeout_seconds": payload["function_timeout_seconds"]}
-        ),
-    )
-
-    with pytest.raises(ValidationError, match="navigation timeout"):
         load_controlbox(path)
 
 

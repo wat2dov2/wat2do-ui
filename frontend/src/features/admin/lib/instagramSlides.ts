@@ -13,7 +13,7 @@ import {
 import { getAppConstantsSnapshot } from "@/shared/api/metaApi";
 import { getSchoolPublicUrl } from "@/shared/constants/schools";
 import { getSchoolColors, type SchoolColors } from "@/shared/lib/schoolBranding";
-import { buildInstagramCoverLogo } from "@/features/admin/lib/instagramCoverLogo";
+import { buildInstagramCoverLogo } from "@/shared/lib/instagramCoverLogo";
 import { createInstance, type i18n } from "i18next";
 import type { School } from "@/shared/api/schools.api";
 import type { ApiInstagramPublishBatchResponse } from "@/shared/generated";

@@ -1,94 +1,145 @@
-import { Readable } from "node:stream";
-import controls from "../../../../backend/controlbox/discovery_cache.json" with { type: "json" };
+import { createHash, randomUUID } from "node:crypto";
 import {
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
+import path from "node:path";
 import {
   DiscoverySnapshotStore,
   type DiscoveryResource,
   type SnapshotStorage,
 } from "@/shared/services/discoverySnapshotStore";
 
-/** A single deadline covers SDK retries, response headers, and the complete body. */
-export class S3SnapshotStorage implements SnapshotStorage {
-  constructor(
-    private bucket: string,
-    private client = new S3Client({}),
-  ) {}
+// Instrumentation and routes are separate Next bundles, but share one warm store
+// and one set of write locks.
+const processState = globalThis as typeof globalThis & {
+  discoverySnapshotStore?: DiscoverySnapshotStore;
+  discoverySnapshotLocks?: Map<string, Promise<unknown>>;
+};
+const locks = (processState.discoverySnapshotLocks ??= new Map());
+
+/**
+ * Snapshot files under one directory that only this process writes.
+ * The etag is the SHA-256 of a file's content. A conditional write holds the
+ * process-wide lock for its file while it compares, then renames a complete
+ * temporary file into place, so readers see either the old file or the new one.
+ */
+export class FileSnapshotStorage implements SnapshotStorage {
+  private root: string;
+
+  constructor(root: string) {
+    if (!path.isAbsolute(root))
+      throw new Error("DISCOVERY_CACHE_DIR must be an absolute path");
+    this.root = path.resolve(root);
+  }
 
   async get(key: string) {
-    const signal = AbortSignal.timeout(controls.request_timeout_seconds * 1000);
-    try {
-      const result = await this.client.send(
-        new GetObjectCommand({ Bucket: this.bucket, Key: key }),
-        { abortSignal: signal },
-      );
-      const body = result.Body;
-      if (!(body instanceof Readable))
-        throw new Error("Discovery storage returned no Node response stream");
-      const abortBody = () => {
-        body.destroy(signal.reason);
-      };
-      signal.addEventListener("abort", abortBody, { once: true });
-      try {
-        signal.throwIfAborted();
-        const value = await body.transformToString();
-        signal.throwIfAborted();
-        return { value, etag: result.ETag! };
-      } finally {
-        signal.removeEventListener("abort", abortBody);
-        if (signal.aborted) body.destroy();
-      }
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        (error.name === "NoSuchKey" || error.name === "NotFound")
-      )
-        return null;
-      throw error;
-    }
+    const value = await readIfPresent(this.file(key));
+    return value === null ? null : { value, etag: contentEtag(value) };
   }
 
   async put(key: string, value: string, etag?: string) {
-    const signal = AbortSignal.timeout(controls.request_timeout_seconds * 1000);
-    try {
-      await this.client.send(
-        new PutObjectCommand({
-          Bucket: this.bucket,
-          Key: key,
-          Body: value,
-          ContentType: "application/json",
-          CacheControl: key.endsWith("/state.json")
-            ? "no-store"
-            : "public, max-age=31536000, immutable",
-          ServerSideEncryption: "AES256",
-          ...(etag ? { IfMatch: etag } : { IfNoneMatch: "*" }),
-        }),
-        { abortSignal: signal },
-      );
-      signal.throwIfAborted();
+    const file = this.file(key);
+    return withLock(file, async () => {
+      const current = await readIfPresent(file);
+      const matches =
+        etag === undefined
+          ? current === null
+          : current !== null && contentEtag(current) === etag;
+      if (!matches) return false;
+      await writeAtomically(file, value);
       return true;
+    });
+  }
+
+  async deleteOlderThan(prefix: string, cutoff: number) {
+    const directory = this.file(prefix);
+    let names: string[];
+    try {
+      names = await readdir(directory);
     } catch (error) {
-      if (
-        error instanceof Error &&
-        (error.name === "PreconditionFailed" ||
-          error.name === "ConditionalRequestConflict")
-      )
-        return false;
+      if (isMissing(error)) return;
       throw error;
     }
+    for (const name of names) {
+      const file = path.join(directory, name);
+      try {
+        const info = await stat(file);
+        if (info.isFile() && info.mtimeMs < cutoff)
+          await rm(file, { force: true });
+      } catch (error) {
+        if (!isMissing(error)) throw error;
+      }
+    }
+  }
+
+  private file(key: string) {
+    const file = path.resolve(this.root, key);
+    if (
+      key
+        .split("/")
+        .some((part) => part === "" || part === "." || part === "..") ||
+      !file.startsWith(this.root + path.sep)
+    )
+      throw new Error(`Invalid discovery storage key: ${key}`);
+    return file;
   }
 }
-const bucket = process.env.STORAGE_BUCKET_NAME;
-// Instrumentation and routes are separate Next bundles, but share one warm store.
-const processState = globalThis as typeof globalThis & {
-  discoverySnapshotStore?: DiscoverySnapshotStore;
-};
-export const discoveryStore = bucket
+
+function contentEtag(value: string) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function isMissing(error: unknown) {
+  return (error as NodeJS.ErrnoException | null)?.code === "ENOENT";
+}
+
+async function readIfPresent(file: string) {
+  try {
+    return await readFile(file, "utf8");
+  } catch (error) {
+    if (isMissing(error)) return null;
+    throw error;
+  }
+}
+
+/** Runs `write` once every earlier write to `file` in this process has settled. */
+async function withLock<T>(file: string, write: () => Promise<T>): Promise<T> {
+  const result = (locks.get(file) ?? Promise.resolve()).then(write);
+  const settled = result.catch(() => undefined);
+  locks.set(file, settled);
+  try {
+    return await result;
+  } finally {
+    if (locks.get(file) === settled) locks.delete(file);
+  }
+}
+
+async function writeAtomically(file: string, value: string) {
+  await mkdir(path.dirname(file), { recursive: true });
+  const temporary = path.join(
+    path.dirname(file),
+    `.${path.basename(file)}.${randomUUID()}.tmp`,
+  );
+  try {
+    // Flushed before the rename, so a crash cannot leave a truncated file.
+    await writeFile(temporary, value, { flush: true });
+    await rename(temporary, file);
+  } catch (error) {
+    await rm(temporary, { force: true });
+    throw error;
+  }
+}
+
+const directory = process.env.DISCOVERY_CACHE_DIR;
+export const discoveryStore = directory
   ? (processState.discoverySnapshotStore ??= new DiscoverySnapshotStore(
-      new S3SnapshotStorage(bucket),
+      new FileSnapshotStorage(directory),
     ))
   : null;
 
@@ -103,7 +154,7 @@ export async function readDiscoverySnapshot<T>(
       process.env.PLAYWRIGHT_TEST !== "1"
     )
       throw new Error(
-        "STORAGE_BUCKET_NAME is required for discovery snapshots",
+        "DISCOVERY_CACHE_DIR is required for discovery snapshots",
       );
     const generatedAt = Date.now();
     const data = await build();

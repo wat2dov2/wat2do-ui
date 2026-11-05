@@ -11,11 +11,11 @@ Brave never opens individual posts for ingestion.
 
 ## Repair an existing poster or scraped video
 
-New scraped videos are copied to owned S3 storage and played on event and position detail views, with their images retained as posters.
+New scraped videos are copied to owned media storage and played on event and position detail views, with their images retained as posters.
 Previously processed posts remain deduplicated during ordinary scraping, so deploying video support does not redownload historical posts or rerun AI extraction.
 Use the targeted media repair command for an existing event or position.
-It uses the same S3 storage, limits, and rendition rules as new uploads.
-Configure the intended database, `STORAGE_BUCKET_NAME`, `STORAGE_PUBLIC_BASE_URL`, and discovery revalidation settings in the command's environment before applying a repair.
+It uses the same media storage, limits, and rendition rules as new uploads.
+Configure the intended database, `MEDIA_ROOT`, `STORAGE_PUBLIC_BASE_URL`, and discovery revalidation settings in the command's environment before applying a repair.
 
 ```sh
 cd backend
@@ -469,8 +469,8 @@ A device moved to another system image keeps its data only if the emulator's reb
 
 ### Account stats and token refresh
 
-The `Instagram account stats` GitHub workflow (`.github/workflows/instagram-account-stats.yml`) runs `backend/jobs/snapshot_instagram_accounts.py` daily at 11:00 UTC.
-It reads `INSTAGRAM_TOKEN_ENCRYPTION_KEY` from the production runtime secret, which the Mac does not hold, so it is also where expiring tokens are refreshed.
+The Mac mini's `io.wat2do.instagram-account-stats` launchd timer (`infra/mac-mini`) runs `backend/jobs/snapshot_instagram_accounts.py` daily at 6:00 a.m. Toronto.
+It reads `INSTAGRAM_TOKEN_ENCRYPTION_KEY` from the production settings in `~/wat2do-data/config/backend.env`, so it is also where expiring tokens are refreshed.
 It then reads every account with a working token through the Graph API, using only `instagram_business_basic`: followers, follows and post counts, plus the newest `stats_media_limit` posts with their like and comment counts.
 `instagram_account_snapshots` keeps one row per account per day, and `instagram_account_media` holds each account's newest posts, replaced on every run.
 Reach, views, saves and shares need the `instagram_business_manage_insights` permission, which the stored tokens were not granted.

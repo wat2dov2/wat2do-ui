@@ -17,7 +17,6 @@ WORKFLOW = yaml.safe_load((REPO_ROOT / ".github/workflows/process-notification.y
 JOB = WORKFLOW["jobs"]["process-post"]
 STEPS = {step["name"]: step for step in JOB["steps"] if "name" in step}
 SCRIPT = REPO_ROOT / "scripts/notification-binary.sh"
-HOSTED_ONLY = "!contains(needs.route.outputs.runner, 'self-hosted')"
 
 
 @pytest.fixture
@@ -433,16 +432,14 @@ def test_the_binary_is_ready_before_any_notification_is_processed():
     order = [
         "Validate job inputs",
         "Read notification controls",
-        "Restore notification binary",
-        "Set up Rust",
-        "Cache Rust dependencies",
         "Build notification binary",
-        "Save notification binary",
-        "Configure AWS credentials with GitHub OIDC",
         "Read database configuration",
         "Process the Instagram account",
     ]
     assert [name for name in names if name in order] == order
+    # The Mac mini hosts the database, so every notification runs on its runner,
+    # which keeps one incremental build of the binary in its tool cache.
+    assert JOB["runs-on"] == ["self-hosted", "wat2do-macmini-browser"]
     assert STEPS["Read notification controls"]["run"].strip() == (
         "bash scripts/notification-binary.sh controls"
     )
@@ -451,32 +448,22 @@ def test_the_binary_is_ready_before_any_notification_is_processed():
     assert build["timeout-minutes"] == (
         "${{ fromJSON(steps.controls.outputs.build_timeout_minutes) }}"
     )
-    assert "if" not in build
-    # Hosted runners build in the checkout, where the restored dependency cache lives;
-    # the Mac keeps its own incremental build in the runner's tool cache.
-    assert build["env"]["CARGO_TARGET_DIR"] == (
-        "${{ !contains(needs.route.outputs.runner, 'self-hosted') && "
-        "format('{0}/rust/target', github.workspace) || '' }}"
-    )
-    assert STEPS["Cache Rust dependencies"]["with"]["workspaces"] == "rust"
+    assert "if" not in build and "env" not in build
     process = STEPS["Process the Instagram account"]
     assert process["timeout-minutes"] == (
         "${{ fromJSON(steps.controls.outputs.process_timeout_minutes) }}"
     )
     assert '"$NOTIFICATION_BINARY" process-notification' in process["run"]
     assert '"$NOTIFICATION_BINARY" retrieve' in process["run"]
-    for name in ("Restore notification binary", "Save notification binary"):
-        assert HOSTED_ONLY in STEPS[name]["if"]
-        assert STEPS[name]["with"]["key"].endswith("${{ steps.controls.outputs.fingerprint }}")
-    for name in ("Set up Rust", "Cache Rust dependencies"):
-        assert HOSTED_ONLY in STEPS[name]["if"]
-        assert "steps.binary-cache.outputs.cache-hit != 'true'" in STEPS[name]["if"]
     assert not any("uv" in (name or "").lower() or "Python" in (name or "") for name in names)
     # No credential is in the environment while the binary is built.
     assert "secrets." not in json.dumps(JOB["env"])
     assert "DATABASE_URL" not in json.dumps(JOB["env"])
-    # The job reads DATABASE_URL from Secrets Manager; no repository secret reaches it.
+    # The job reads DATABASE_URL from the Mac's production settings; no repository
+    # secret or cloud credential reaches it.
     assert "secrets." not in json.dumps(JOB)
+    assert "id-token" not in json.dumps(JOB)
+    assert "wat2do-data/config/backend.env" in STEPS["Read database configuration"]["run"]
     for step in JOB["steps"]:
         uses = step.get("uses", "")
         if uses:

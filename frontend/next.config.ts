@@ -122,17 +122,15 @@ const nextConfig: NextConfig = {
     ),
     NEXT_PUBLIC_PROMOTER_PROGRAM: JSON.stringify(publicPromoterProgram),
   },
-  // The slide renderer reads its fonts and the resvg wasm binary from disk at
-  // request time, so dependency tracing cannot see them and the standalone
-  // image would ship without them.
+  // The image routes read their fonts (and the slide renderer its resvg wasm
+  // binary) from disk at request time, so dependency tracing cannot see them
+  // and the standalone image would ship without them.
   outputFileTracingIncludes: {
     "/api/render-instagram-slide": [
-      "./public/fonts/slides/Satoshi-400.ttf",
-      "./public/fonts/slides/Satoshi-500.ttf",
-      "./public/fonts/slides/Satoshi-600.ttf",
-      "./public/fonts/slides/Satoshi-700.ttf",
+      "./public/fonts/slides/*.ttf",
       "./node_modules/@resvg/resvg-wasm/index_bg.wasm",
     ],
+    "/og-image.png": ["./public/fonts/slides/*.ttf"],
   },
   reactStrictMode: true,
   skipTrailingSlashRedirect: true,

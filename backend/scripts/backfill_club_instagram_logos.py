@@ -3,13 +3,13 @@
 
 The source profile metadata comes from Apify's dedicated Instagram profile
 actor. Instagram CDN URLs are downloaded immediately, validated through the
-shared storage service, copied to the canonical ``organization-logos`` S3
-prefix, and then persisted in ``clubs.logo_url``.
+shared storage service, copied to the canonical ``organization-logos``
+media bucket, and then persisted in ``clubs.logo_url``.
 
 The operation is re-runnable. Clubs that already have ``logo_url`` are
 skipped, and each successful row is committed before the next image starts.
 Without ``--apply`` the script only reports eligible rows and makes no Apify,
-S3, or database writes.
+media, or database writes.
 """
 
 from __future__ import annotations
@@ -187,7 +187,7 @@ def main() -> int:
     parser.add_argument(
         "--apply",
         action="store_true",
-        help="Call Apify, upload to S3, and update clubs",
+        help="Call Apify, store the logos, and update clubs",
     )
     parser.add_argument(
         "--profile-cache",

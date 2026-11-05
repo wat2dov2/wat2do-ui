@@ -17,7 +17,8 @@ pub struct Settings {
     pub google_oauth_client_secret: String,
     pub ingest_agent_database_url: String,
     pub aws_region: String,
-    pub storage_bucket_name: String,
+    /// Absolute directory of uploaded and ingested media, one folder per bucket.
+    pub media_root: String,
     pub storage_public_base_url: String,
     pub event_feed_revalidation_url: String,
     pub event_feed_revalidation_secret: String,
@@ -95,7 +96,7 @@ impl Settings {
             google_oauth_client_secret: lookup("GOOGLE_OAUTH_CLIENT_SECRET").unwrap_or_default(),
             ingest_agent_database_url: optional("INGEST_AGENT_DATABASE_URL"),
             aws_region: or_default("AWS_REGION", "ca-central-1"),
-            storage_bucket_name: optional("STORAGE_BUCKET_NAME"),
+            media_root: optional("MEDIA_ROOT"),
             storage_public_base_url: optional("STORAGE_PUBLIC_BASE_URL")
                 .trim_end_matches('/')
                 .to_owned(),

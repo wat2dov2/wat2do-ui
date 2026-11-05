@@ -3,7 +3,7 @@
 Status: implemented.
 Owner: Tony.
 
-The scheduled sender is Rust: `.github/workflows/scheduled-emails.yml` runs `wat2do-send-notifications` (`rust/src/notifications`) every hour.
+The scheduled sender is Rust: the Mac mini's `io.wat2do.scheduled-emails` launchd timer runs `wat2do-send-notifications` (`rust/src/notifications`) every hour.
 `--render-only <directory>` writes every email a run would send to disk instead, reading the database through read-only connections whose statements stop after 10 seconds.
 `EMAIL_DELIVERY_ENABLED=false` is not a preview: it only skips the SES call, so a run against the real database still claims each delivery and marks it sent, and those users get nothing that day.
 Use `--render-only` to preview or compare emails against production.

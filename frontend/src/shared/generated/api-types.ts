@@ -4246,7 +4246,6 @@ export interface components {
             semester_start?: string | null;
             /** Format: date */
             semester_end?: string | null;
-            social_preview_image_url?: string | null;
         };
         SchoolEventSeason: {
             id: string;

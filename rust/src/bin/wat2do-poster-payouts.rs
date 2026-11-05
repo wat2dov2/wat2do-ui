@@ -1,7 +1,7 @@
 //! `wat2do-poster-payouts`: freeze one closed UTC month's promoter poster
 //! payouts and write the Interac CSV (`poster_payouts::run`).
-//! `.github/workflows/monthly-poster-payouts.yml` runs it on the first of
-//! each month for the month before.
+//! The Mac mini's `io.wat2do.poster-payouts` launchd timer runs it on the
+//! first of each month for the month before.
 //!
 //! `--plan` reads the database read-only and prints, as JSON, every payout
 //! and scan risk the run would write, writing nothing.

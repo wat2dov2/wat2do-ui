@@ -1,0 +1,10 @@
+#!/bin/bash
+# The website (Next standalone server on 127.0.0.1:3000) from the current release.
+set -euo pipefail
+data="$HOME/wat2do-data"
+set -a
+. "$data/config/web.env"
+set +a
+release="$(cd "$data/releases/current" && pwd -P)"
+cd "$release/web/frontend"
+exec "$release/bin/node" server.js

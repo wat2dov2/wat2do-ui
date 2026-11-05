@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Preview or repair one event/position poster or missing Instagram media.
 
-The default is read-only. Image repairs inspect the owned S3 asset and reuse
+The default is read-only. Image repairs inspect the owned stored asset and reuse
 the upload rendition rules. Missing Instagram image and video repairs require exact-post provider data;
 --fetch explicitly retrieves just the target's original post through Apify.
 --apply stores a new immutable asset, conditionally updates the selected row,

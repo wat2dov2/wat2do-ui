@@ -22,6 +22,7 @@ import {
 } from "@/features/admin/lib/instagramSlides";
 import { getSchool } from "@/shared/api/schools.server";
 import { getSchoolColors } from "@/shared/lib/schoolBranding";
+import { loadImageFonts } from "@/shared/services/imageFonts.server";
 import instagramPublishing from "../../../../../backend/controlbox/instagram_publishing.json" with { type: "json" };
 
 export const runtime = "nodejs";
@@ -55,47 +56,11 @@ interface OutroSlideRequest {
 type SlideRequest = EventSlideRequest | CoverSlideRequest | OutroSlideRequest;
 
 const MAX_SOURCE_IMAGE_BYTES = 15 * 1024 * 1024;
-// The slide templates mirror the event card's type scale, which uses regular,
-// medium, semibold, and bold. satori substitutes the nearest weight it has, so
-// every weight the templates ask for is loaded here.
-//
-// Satoshi, so a published slide is set in the same face as the site. These are
-// static instances rather than the variable `Satoshi-Variable.woff2` the app
-// itself loads, for two reasons: satori reads ttf/otf/woff and not woff2, and
-// it renders a variable font at a single instance rather than honouring the
-// weight axis. Generated from that same source file with fontTools:
-//   instantiateVariableFont(TTFont(src), {"wght": w}) for w in 400/500/600/700.
-const FONT_FILES = [
-  { file: "Satoshi-400.ttf", weight: 400 as const },
-  { file: "Satoshi-500.ttf", weight: 500 as const },
-  { file: "Satoshi-600.ttf", weight: 600 as const },
-  { file: "Satoshi-700.ttf", weight: 700 as const },
-];
-
-type SlideFontWeight = (typeof FONT_FILES)[number]["weight"];
-
-let fontsPromise: Promise<
-  { name: string; data: Buffer; weight: SlideFontWeight; style: "normal" }[]
-> | null = null;
 // Next hot reloads this route while retaining the WASM package instance.
 // Keep its one-time initialization promise alive across route reloads too.
 const rendererState = globalThis as typeof globalThis & {
   instagramSlideRenderer?: Promise<void>;
 };
-
-function loadFonts() {
-  fontsPromise ??= Promise.all(
-    FONT_FILES.map(async ({ file, weight }) => ({
-      name: "Satoshi",
-      data: await readFile(
-        path.join(process.cwd(), "public", "fonts", "slides", file),
-      ),
-      weight,
-      style: "normal" as const,
-    })),
-  );
-  return fontsPromise;
-}
 
 function loadRenderer() {
   rendererState.instagramSlideRenderer ??= readFile(
@@ -259,7 +224,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "A cover needs at least one event" }, { status: 400 });
   }
 
-  const [fonts, , slide] = await Promise.all([loadFonts(), loadRenderer(), buildSlide(body)]);
+  const [fonts, , slide] = await Promise.all([loadImageFonts(), loadRenderer(), buildSlide(body)]);
   const svg = await satori(slide, {
     width: SLIDE_WIDTH,
     height: SLIDE_HEIGHT,
