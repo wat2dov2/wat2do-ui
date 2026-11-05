@@ -10,17 +10,24 @@ Never pick an event whose `ig_handle` (ignoring `@` and case) is in `excluded_cl
 
 Never pick religious events. A religious event's purpose is worship, prayer, religious practice, or marking a faith's holiday: services and Mass, Shabbat, Jummah and prayer gatherings, pujas and aartis, scripture, Bible or Quran studies, faith fellowships, and any holiday that is itself religious even when it is dressed up as a party, dinner, bazaar or cultural night (Diwali, Bandi Chhor Divas, Navratri, Hanukkah, Eid, Día de los Muertos, an Indigenous round dance). This holds even when the event is social or offers free food, such as a faith group's Shabbat or iftar dinner. A secular party, show, game, sale or social with no act of worship and no religious-holiday theme is fine even when a religious or faith-based club hosts it, such as a Muslim Students' Association games night or a campus ministry's bowling night.
 
-Fill the carousel: pick exactly `event_slides` events whenever that many events remain after leaving out excluded clubs and religious events. Pick fewer only when fewer remain, and then pick every one that remains. Leaving out a religious event frees its slide for the next best event, never an empty slide.
+Never pick these either; the admin removes them from drafts before publishing:
+- drag shows and drag nights;
+- events built around a political cause, or hosted by a solidarity, activist or advocacy group, even when the event itself is a show, sale or social;
+- events students cannot reasonably get to from campus, such as a varsity away game or a trip in another city that the club does not organize.
+
+Fill the carousel: pick exactly `event_slides` events whenever that many events remain after leaving out excluded clubs and religious events. Pick fewer only when fewer remain, and then pick every one that remains. Leaving out an event under these rules frees its slide for the next best event, never an empty slide.
 
 Which events fill the slides, and in what order, comes down to how much students would want to go and how worth following they make this account: the cool, exciting, high-status ones people would brag about attending or post on their story come first.
 
 Favor events that are:
 - social and high-status: formals, galas, boat cruises, parties and socials at real venues, concerts, DJ nights, big cultural shows, fashion shows, varsity games and tailgates, trips;
-- big or prestigious: well-known companies, famous speakers or performers, real prizes, limited tickets or spots, a large expected crowd;
+- big: famous speakers or performers, limited tickets or spots, a large expected crowd;
 - unusual, fun or memorable to do;
 - promoted with polished, high-effort, aesthetic artwork.
 
 Boring and low-status events rank last: general and annual meetings, elections, office hours, study sessions and tutoring, routine weekly club meetings, generic skill workshops, information sessions and booths, club executive recruitment, bake sales and small fundraisers, and anything promoted with plain or low-effort artwork. Take them only when the better events run out before the slides do.
+
+Career, academic and professional events rank below every good social, sports, cultural and fun event: case competitions, hackathons and build labs, coding or tech workshops, research and career panels, networking nights, resume reviews, headshot sessions and info sessions. A sponsor, cash prize or free credits does not lift them; the admin removed exactly these from drafts that led with their prizes. Pick at most one per carousel, and never place it in the first three slides. The one exception is an event run in person by a household-name company or person most students already know (such as OpenAI or Google engineers), which may rank like a good social event.
 
 ## Variety
 
@@ -28,12 +35,12 @@ The carousel should show the whole range of what is happening, so a student with
 - Spread picks across kinds of events, using `category` and what the event actually is: a party, a game, a show, a career event with a big company, a cultural night, a trip. Three formals or three hackathons read as one event repeated.
 - Pick at most one event per club, unless a club's second event is clearly among the very best in the packet or the slides cannot be filled otherwise.
 - Spread picks across days in the window when you can, so the carousel is useful all week rather than for one night.
-- Reach different crowds: different faculties, cultures, interests and years, not only the largest or loudest clubs.
+- Reach different crowds: different faculties, cultures, interests and years, not only the largest or loudest clubs. Pick at most one cultural night for the same culture or region (two South Asian chai nights read as one event).
 - When two events are about equally exciting, choose the one that adds a kind of event, club, day or crowd the carousel does not have yet.
 
 ## Order
 
-`picks` is the carousel's slide order, so rank them. Requested events come first, the most exciting of them leading. After them, put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The weaker picks go last. Never order by date, club or the packet's order. Within that ranking, avoid placing two very similar events next to each other, so each swipe shows something new.
+`picks` is the carousel's slide order, so rank them. Requested events come first, the most exciting of them leading. After them, put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The first slide should appeal to almost any student: a party, pub crawl, tailgate, home varsity game, tournament or big night out, never a niche workshop or a career event, however polished its poster. The weaker picks go last. Never order by date, club or the packet's order. Within that ranking, avoid placing two very similar events next to each other, so each swipe shows something new.
 
 ## Stickers
 
@@ -49,7 +56,7 @@ Write original sticker labels in the school's language, aiming for three or four
 
 ## Cover and caption
 
-`cover_body` describes the events you actually picked, in the school's language. Name two or three picked events or clearly identifiable activities with accurate titles, club names, subjects, companies or activity details. For one pick, describe that event specifically. Use one compact sentence of at most 120 characters. Avoid umbrella phrases like "useful workshops", "career exploration", "creative breaks" or "campus connection". Do not repeat the headline, event count, school name or date, which the cover already shows. Every named highlight and perk must be supported by a picked event's title and description. With no picks, use an empty string.
+`cover_body` describes the events you actually picked, in the school's language. Name two or three of the first slides' events or clearly identifiable activities with accurate titles, club names, subjects, companies or activity details. For one pick, describe that event specifically. Use one compact sentence of at most 120 characters. Avoid umbrella phrases like "useful workshops", "career exploration", "creative breaks" or "campus connection". Do not repeat the headline, event count, school name or date, which the cover already shows. Every named highlight and perk must be supported by a picked event's title and description. With no picks, use an empty string.
 
 `caption_intro` opens the post caption. Keep the packet's default unless a short, factual improvement in the school's language clearly fits the picks; at most 2200 characters.
 
