@@ -119,7 +119,7 @@ The fake account cannot publish, and Picsum images are not accepted by the produ
 ## Feature control boxes
 
 Non-secret feature and algorithm tuning lives in one file per feature under [`backend/controlbox`](backend/controlbox).
-These files are the single editable sources for event discovery and ISR, frontend cache policy, recommendations, morning-email selection, authentication lifetimes, club invitations, notification defaults, interaction behavior and abuse bounds, API rate limits, scraper behavior, email delivery, AI output size, admin pagination, public attendee previews, and Instagram publishing accounts.
+These files are the single editable sources for event discovery and ISR, frontend cache policy, morning-email selection, authentication lifetimes, club invitations, notification defaults, interaction behavior and abuse bounds, API rate limits, scraper behavior, email delivery, AI output size, admin pagination, public attendee previews, and Instagram publishing accounts.
 The backend validates the complete directory at startup, rejects missing or unknown feature files, and rejects invalid values or conflicting limits, while the frontend imports only the feature files it needs at build time.
 Environment-specific credentials, infrastructure sizing, database constraints, and UI constants intentionally stay with their owning systems.
 Changes take effect after rebuilding the applications or restarting a scheduled Python job.
@@ -188,7 +188,7 @@ Nothing is sent automatically.
 The sweep's limits, the sender and the club link live in `backend/controlbox/outreach.json`.
 Install its LaunchAgent with `cd backend && .venv/bin/python jobs/find_outreach_leads.py install-schedule`, or run one sweep with `sweep`.
 Every local agent runs through `backend/services/claude_code.py` (Python jobs) or `rust/src/claude.rs` (the ingestion binary), which pass no application secrets unless the caller supplies them.
-Notifications and recommendation compute run on GitHub-hosted runners.
+Notifications run on GitHub-hosted runners.
 Queue a post by hand with `cd backend && cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-ingest -- enqueue --school <slug> --url <post url>` (`status` shows the queue counts); `wat2do-browser retrieve` (Rust, `rust/src/bin/wat2do-browser.rs`) also accepts a profile, which the Brave worker lists before its posts are queued.
 Profile-logo backfills and single-post media repairs remain separate Apify operator tools.
 For a read-only live retrieval check, run `cd backend && python scripts/probe_instagram_post.py --url https://www.instagram.com/p/SHORTCODE/`.

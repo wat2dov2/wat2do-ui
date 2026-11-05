@@ -773,7 +773,7 @@ pub fn login_email(email: &str, code: &str, callback_url: &str) -> EmailMessage 
     );
     let code_box = format!(
         concat!(
-            r#"<div style="margin:0 0 20px;padding:16px;background:{};"#,
+            r#"<div class="w2d-elevated" style="margin:0 0 20px;padding:16px;background:{};"#,
             "border:1px solid {};border-radius:12px;text-align:center;",
             r#"color:{};font:800 30px monospace;letter-spacing:8px;">"#,
             "{}</div>",

@@ -25,9 +25,21 @@ EMAIL_THEME = {
 EMAIL_FONT = (
     "Satoshi,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif"
 )
-_EMAIL_FONT_IMPORT = (
+_EMAIL_HEAD = (
+    '<meta name="color-scheme" content="light only">'
+    '<meta name="supported-color-schemes" content="light only">'
     "<style>@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800"
-    "&display=swap');</style>"
+    "&display=swap');"
+    # Keep the light card in dark mode: clients that honour color-scheme stop
+    # recolouring, and Outlook's apps restore colours they rewrote (data-ogsb/ogsc).
+    ":root{color-scheme:light only;supported-color-schemes:light only;}"
+    f"[data-ogsb] .w2d-page{{background-color:{EMAIL_THEME['background']}!important;}}"
+    f"[data-ogsb] .w2d-card{{background-color:{EMAIL_THEME['surface']}!important;}}"
+    f"[data-ogsb] .w2d-elevated{{background-color:{EMAIL_THEME['surface_elevated']}!important;}}"
+    f"[data-ogsb] .w2d-button{{background-color:{EMAIL_THEME['foreground']}!important;}}"
+    f"[data-ogsc] .w2d-card,[data-ogsc] .w2d-card *{{color:{EMAIL_THEME['foreground']}!important;}}"
+    f"[data-ogsc] .w2d-card .w2d-button{{color:{EMAIL_THEME['background']}!important;}}"
+    "</style>"
 )
 
 # Embedded in every email; the shell shows it as cid:wat2do-logo.
@@ -58,9 +70,9 @@ def email_shell(
         else ""
     )
     return (
-        f"{_EMAIL_FONT_IMPORT}"
-        f'<div style="margin:0;background:{EMAIL_THEME["background"]};padding:28px 16px;">'
-        f'<div style="max-width:640px;margin:0 auto;background:{EMAIL_THEME["surface"]};'
+        f"{_EMAIL_HEAD}"
+        f'<div class="w2d-page" style="margin:0;background:{EMAIL_THEME["background"]};padding:28px 16px;">'
+        f'<div class="w2d-card" style="max-width:640px;margin:0 auto;background:{EMAIL_THEME["surface"]};'
         f'border:1px solid {EMAIL_THEME["border"]};border-radius:16px;padding:24px;">'
         f'<h1 style="margin:0 0 24px;color:{EMAIL_THEME["foreground"]};'
         f'font:800 28px {EMAIL_FONT};">{escape(heading)}</h1>'
@@ -94,7 +106,7 @@ def email_note(html: str) -> str:
 def email_quote(html: str) -> str:
     """Someone's own words, such as a contact message or a rejection reason; ``html`` must already be escaped."""
     return (
-        f'<div style="margin:0 0 18px;padding:16px;background:{EMAIL_THEME["surface_elevated"]};'
+        f'<div class="w2d-elevated" style="margin:0 0 18px;padding:16px;background:{EMAIL_THEME["surface_elevated"]};'
         f"border:1px solid {EMAIL_THEME['border']};border-radius:12px;"
         f'color:{EMAIL_THEME["foreground"]};font:15px/1.6 {EMAIL_FONT};">{html}</div>'
     )
@@ -102,7 +114,7 @@ def email_quote(html: str) -> str:
 
 def email_button(href: str, label: str) -> str:
     return (
-        f'<a href="{escape(href, quote=True)}" style="display:inline-block;margin:4px 0 20px;'
+        f'<a class="w2d-button" href="{escape(href, quote=True)}" style="display:inline-block;margin:4px 0 20px;'
         f"padding:12px 20px;background:{EMAIL_THEME['foreground']};"
         f"color:{EMAIL_THEME['background']};border-radius:999px;font:700 14px {EMAIL_FONT};"
         f'text-decoration:none;">{escape(label)}</a>'

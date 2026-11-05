@@ -340,8 +340,8 @@ def prepare_image_rendition(
     """
     try:
         # Pillow is imported lazily so the rest of the codebase (tests,
-        # recommendations worker, etc.) doesn't need to pay the import
-        # cost unless something actually uploads a raster image.
+        # jobs, etc.) doesn't need to pay the import cost unless something
+        # actually uploads a raster image.
         from PIL import Image  # type: ignore[import-untyped]
     except ImportError:
         log.warning("Pillow not installed; skipping EXIF strip for %s", content_type)

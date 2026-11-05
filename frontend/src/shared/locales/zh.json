@@ -748,5 +748,12 @@
     "copyright": "© {{year}} Wat2Do",
     "madeBy": "由学生打造，为学生而生。",
     "social": "社交媒体"
+  },
+  "notFound": {
+    "eyebrow": "页面未找到",
+    "title": "此页面不存在。",
+    "description": "链接可能已失效，或页面已被移动。返回看看有什么活动吧。",
+    "browseEvents": "浏览活动",
+    "browseClubs": "浏览社团"
   }
 }

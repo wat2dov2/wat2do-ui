@@ -909,15 +909,7 @@ Do not create one schedule per school.
 
 ### 18.4 Recommendation computation
 
-Keep `.github/workflows/nightly-recs.yml` on a GitHub-hosted runner.
-
-Run:
-
-```text
-python -m recommender.job
-```
-
-Keep the existing nightly schedule.
+Removed on 2026-11-01: recommendations were switched off on 2026-06-24, so the nightly job and `user_recommendations` were deleted.
 
 ### 18.5 Instagram notification processing
 

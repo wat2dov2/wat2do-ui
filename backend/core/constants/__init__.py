@@ -10,7 +10,6 @@ from core.constants.clubs import (
 )
 from core.constants.events import EVENT_CATEGORIES, INTEREST_TO_CATEGORIES
 from core.constants.interactions import (
-    DEFAULT_INTERACTION_LIMIT,
     INTERACTION_CLICK,
     INTERACTION_TYPES,
 )
@@ -129,7 +128,6 @@ __all__ = (
     "BUCKET_EVENT_VIDEOS",
     "BUCKET_QR_ASSETS",
     "BUCKET_CLAIM_PROOFS",
-    "DEFAULT_INTERACTION_LIMIT",
     "DEFAULT_LIST_LIMIT",
     "DEFAULT_PAGE_SIZE",
     "EVENT_CATEGORIES",

@@ -775,5 +775,12 @@
     "copyright": "© {{year}} Wat2Do",
     "madeBy": "Stworzone przez studentów, dla studentów.",
     "social": "Media społecznościowe"
+  },
+  "notFound": {
+    "eyebrow": "Nie znaleziono strony",
+    "title": "Ta strona nie istnieje.",
+    "description": "Link może być nieprawidłowy lub strona została przeniesiona. Wróć i znajdź coś do roboty.",
+    "browseEvents": "Przeglądaj wydarzenia",
+    "browseClubs": "Przeglądaj kluby"
   }
 }
