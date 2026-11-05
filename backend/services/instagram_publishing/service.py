@@ -72,11 +72,9 @@ from services.school_context import resolve_school_timezone
 
 log = logging.getLogger(__name__)
 _CONTROL = controlbox.instagram_publishing
-_SUCCESSFUL_CUTOFF_STATUSES = (
-    INSTAGRAM_BATCH_READY_FOR_REVIEW,
-    INSTAGRAM_BATCH_PUBLISHED,
-    INSTAGRAM_BATCH_EMPTY,
-)
+# Only a carousel that reached Instagram, or a day with nothing worth posting, closes its
+# window. Events in a draft left unpublished roll into the next day's draft.
+_CUTOFF_STATUSES = (INSTAGRAM_BATCH_PUBLISHED, INSTAGRAM_BATCH_EMPTY)
 _EVENT_COLUMNS = "id,title,description,location,club,ig_handle,source_image_url,category,employers_on_campus,price,food,registration,carousel_requested_at"
 _BATCH_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
 
@@ -298,6 +296,16 @@ def claim_batch_for_publishing(
         raise ValidationError(
             f"Choose at most {_CONTROL.maximum_event_slides} event slides before publishing"
         )
+    # An unpublished draft's events also roll into later drafts, so one may already be
+    # posted from another draft; refuse before Instagram posts it a second time.
+    already_posted = _published_event_ids(account_key, [int(item["event_id"]) for item in items])
+    if already_posted:
+        titles = ", ".join(
+            item["event"].title for item in items if int(item["event_id"]) in already_posted
+        )
+        raise ValidationError(
+            f"Already posted in another carousel, remove before publishing: {titles}"
+        )
 
     claimed = (
         get_sb()
@@ -474,6 +482,29 @@ def save_review_draft(selection: DraftSelection) -> dict[str, Any]:
     return {"outcome": "saved" if selected else "empty", "batch": get_batch(batch_id)}
 
 
+def _published_event_ids(account_key: str, event_ids: list[int]) -> set[int]:
+    """The given events this account has already posted in a carousel."""
+    if not event_ids:
+        return set()
+    published = fetch_all_pages(
+        lambda offset, limit: (
+            (
+                get_sb()
+                .table(INSTAGRAM_PUBLISH_ITEMS)
+                .select("event_id")
+                .eq("account_key", account_key)
+                .in_("event_id", event_ids)
+                .not_.is_("published_at", "null")
+                .order("id")
+                .range(offset, offset + limit - 1)
+                .execute()
+            ).data
+            or []
+        )
+    )
+    return {int(row["event_id"]) for row in published}
+
+
 def _load_candidates(
     *,
     account_key: str,
@@ -511,23 +542,7 @@ def _load_candidates(
         return []
 
     event_ids = [int(event["id"]) for event in events]
-    published = fetch_all_pages(
-        lambda offset, limit: (
-            (
-                get_sb()
-                .table(INSTAGRAM_PUBLISH_ITEMS)
-                .select("event_id")
-                .eq("account_key", account_key)
-                .in_("event_id", event_ids)
-                .not_.is_("published_at", "null")
-                .order("id")
-                .range(offset, offset + limit - 1)
-                .execute()
-            ).data
-            or []
-        )
-    )
-    published_ids = {int(row["event_id"]) for row in published}
+    published_ids = _published_event_ids(account_key, event_ids)
 
     occurrence_start = window_end + timedelta(hours=_CONTROL.minimum_lead_hours)
     occurrence_end = window_end + timedelta(days=_CONTROL.maximum_lead_days)
@@ -940,7 +955,7 @@ def _last_successful_cutoff(
         .select("window_end")
         .eq("account_key", account_key)
         .eq("batch_kind", batch_kind)
-        .in_("status", list(_SUCCESSFUL_CUTOFF_STATUSES))
+        .in_("status", list(_CUTOFF_STATUSES))
         .order("window_end", desc=True)
         .limit(1)
         .execute()

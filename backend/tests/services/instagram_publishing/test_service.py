@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import Mock
 from uuid import uuid4
@@ -700,6 +700,7 @@ def test_publish_batch_renders_the_slides_from_live_event_data(
         "get_sb",
         lambda: SimpleNamespace(table=lambda name: _FakeQuery([{}], table_calls)),
     )
+    monkeypatch.setattr(service, "_published_event_ids", lambda *_: set())
     monkeypatch.setattr(
         service,
         "render_event_asset",
@@ -1106,6 +1107,81 @@ def test_batch_cutoffs_and_daily_existence_are_scoped_to_kind(monkeypatch):
     assert calls.count(("eq", ("batch_kind", "employers_on_campus"), {})) == 2
 
 
+class _BatchHistory:
+    """Batch rows filtered the way the cutoff query asks: by status, latest window first."""
+
+    def __init__(self, rows: list[dict]):
+        self._rows = rows
+        self._statuses: list[str] | None = None
+
+    def in_(self, column, values):
+        assert column == "status"
+        self._statuses = list(values)
+        return self
+
+    def __getattr__(self, _name):
+        return lambda *_args, **_kwargs: self
+
+    def execute(self):
+        rows = [row for row in self._rows if row["status"] in (self._statuses or [])]
+        rows.sort(key=lambda row: row["window_end"], reverse=True)
+        return SimpleNamespace(data=rows[:1])
+
+
+def _cutoff_after(monkeypatch, rows: list[dict]):
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _: _BatchHistory(rows))
+    )
+    return service._last_successful_cutoff("torontomu")
+
+
+@pytest.mark.parametrize("status", ["ready_for_review", "generating", "publishing", "failed"])
+def test_a_draft_that_never_reached_instagram_does_not_move_the_cutoff(monkeypatch, status):
+    rows = [
+        {"status": "published", "window_end": "2026-11-02T14:00:00+00:00"},
+        {"status": status, "window_end": "2026-11-04T00:50:00+00:00"},
+    ]
+    assert _cutoff_after(monkeypatch, rows) == datetime(2026, 11, 2, 14, tzinfo=timezone.utc)
+
+
+@pytest.mark.parametrize("status", ["published", "empty"])
+def test_a_published_or_empty_batch_moves_the_cutoff(monkeypatch, status):
+    rows = [
+        {"status": "published", "window_end": "2026-11-02T14:00:00+00:00"},
+        {"status": "ready_for_review", "window_end": "2026-11-03T14:00:00+00:00"},
+        {"status": status, "window_end": "2026-11-04T00:50:00+00:00"},
+    ]
+    assert _cutoff_after(monkeypatch, rows) == datetime(2026, 11, 4, 0, 50, tzinfo=timezone.utc)
+
+
+def test_without_a_published_or_empty_batch_the_window_falls_back(monkeypatch):
+    now = datetime(2026, 11, 4, 14, tzinfo=timezone.utc)
+    rows = [{"status": "ready_for_review", "window_end": "2026-11-04T00:50:00+00:00"}]
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _: _BatchHistory(rows))
+    )
+    fallback = timedelta(hours=service._CONTROL.fallback_window_hours)
+    assert service._draft_window_start("torontomu", now) == now - fallback
+
+
+def test_publishing_refuses_events_already_posted_from_another_draft(monkeypatch):
+    batch = _batch([1, 2])
+    batch["items"][1]["event"] = _event(2, "Fall formal")
+    monkeypatch.setattr(service, "get_batch", lambda _: batch)
+    monkeypatch.setattr(service, "_enabled_accounts", lambda: [{"account_key": "uwaterloo"}])
+    monkeypatch.setattr(
+        service,
+        "load_account_credentials",
+        lambda _: SimpleNamespace(instagram_user_id=batch["instagram_user_id"]),
+    )
+    monkeypatch.setattr(service, "_published_event_ids", lambda _account, _ids: {2})
+    database = Mock()
+    monkeypatch.setattr(service, "get_sb", database)
+    with pytest.raises(service.ValidationError, match="Fall formal"):
+        service.claim_batch_for_publishing("batch-1", InstagramPublishBatchPublish(version=3))
+    database.assert_not_called()
+
+
 def test_draft_selection_edits_do_not_change_featured(monkeypatch, draft_editor, feed_revalidation):
     batch = _batch([1])
     batch["items"][0]["event"] = _event(1).model_copy(update={"school": "wlu"})
@@ -1377,6 +1453,7 @@ def test_publishing_binds_a_newly_connected_identity_to_unconnected_draft(monkey
             table=lambda _: _FakeQuery([{"instagram_user_id": "12345"}], calls),
         ),
     )
+    monkeypatch.setattr(service, "_published_event_ids", lambda *_: set())
     batch = service.claim_batch_for_publishing("batch-1", InstagramPublishBatchPublish(version=3))
     assert batch["instagram_user_id"] == "12345"
     update = next(args[0] for name, args, _ in calls if name == "update")
