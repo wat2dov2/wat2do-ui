@@ -35,7 +35,7 @@ Cloudflare (DNS, CDN, TLS) sits in front of everything.
 ## The website on Vercel
 
 `infra/mac-mini/deploy.sh` deploys every commit to Vercel production after the Mac's release is healthy, so the API and its migrations always go first.
-It runs `vercel deploy --prod` (CLI pinned in the script) from the build checkout with the token in `~/wat2do-data/config/vercel.token` (mode 0600, never committed), and Vercel builds `frontend/` there.
+It runs `vercel deploy --prod` (CLI pinned in the script) from the build checkout using the Mac user's own Vercel CLI login (`vercel login`, refreshed by the CLI), and Vercel builds `frontend/` there.
 `.vercelignore` uploads only `frontend/` and `backend/controlbox/`, the one directory outside the Root Directory that the website imports.
 
 Project settings, set once in the dashboard:
@@ -92,7 +92,7 @@ Steps 1 to 4 come before this change merges, because its deploy job deploys to V
 
 1. Create `~/wat2do-data/config/caddy.env` (mode 0600) with `ORIGIN_VERIFY_SECRET=<openssl rand -hex 32>`.
 2. Create the Vercel project with the settings and environment variables above, without domains yet.
-3. Save a Vercel token for `tonyqiu123s-projects` in `~/wat2do-data/config/vercel.token` (mode 0600).
+3. Log the Mac user in to the Vercel CLI (`npx vercel login`) with an account in `tonyqiu123s-projects`.
 4. In Cloudflare, add `api` as a proxied CNAME to `5f02d299-baa4-4862-8c4a-b50717a6098f.cfargotunnel.com` (the tunnel's wildcard ingress already sends it to Caddy).
 5. Merge; the deploy job builds the Mac release and the first Vercel deployment.
 6. Run `python3 ~/wat2do-data/releases/current/infra/mac-mini/install.py io.wat2do.caddy`, which moves Caddy to `bin/run-caddy` (reads `caddy.env`) and loads the `api.wat2do.io` site.

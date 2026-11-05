@@ -22,7 +22,7 @@ releases="$data/releases"
 release="$releases/$sha"
 domain="gui/$(id -u)"
 health_timeout_seconds=900
-vercel_cli="vercel@56.2.0"
+vercel_cli="vercel@65.11.0"
 vercel_scope="tonyqiu123s-projects"
 vercel_project="wat2do"
 
@@ -124,11 +124,10 @@ if ! healthy; then
 fi
 
 # The API and its migrations go first, so the website never runs ahead of them.
-# The token (0600, never committed) lives beside the Mac's other secrets.
+# The Vercel CLI uses the Mac user's own login (vercel login, kept in its
+# auth.json and refreshed by the CLI), so no token file is kept here.
 log "deploying $sha to Vercel"
-vercel_token="$(cat "$data/config/vercel.token")"
-VERCEL_TOKEN="$vercel_token" \
-  npx --yes "$vercel_cli" deploy "$build" --prod --yes \
+npx --yes "$vercel_cli" deploy "$build" --prod --yes \
   --scope "$vercel_scope" --project "$vercel_project" \
   --build-env "APP_VERSION=$sha"
 
