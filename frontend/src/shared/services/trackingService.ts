@@ -38,15 +38,6 @@ function isExpectedFlushAbort(err: unknown): boolean {
   return message === "Failed to fetch" && document.visibilityState === "hidden";
 }
 
-function isExpectedLocalDevNetworkMiss(err: unknown): boolean {
-  const message = err instanceof Error ? err.message : String(err);
-  const localApi =
-    API_BASE_URL.startsWith("http://localhost") ||
-    API_BASE_URL.startsWith("http://127.0.0.1");
-
-  return process.env.NODE_ENV === "development" && localApi && message === "Failed to fetch";
-}
-
 /** Shared unload-safe transport; telemetry never enters the UI API/error path. */
 function postTrackingPayload(path: string, body: string, signal?: AbortSignal) {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -152,7 +143,7 @@ class Tracker {
         }
       })
       .catch((err: unknown) => {
-        if (isExpectedFlushAbort(err) || isExpectedLocalDevNetworkMiss(err)) return;
+        if (isExpectedFlushAbort(err)) return;
         this.queue.unshift(...batch);
         console.error("Failed to flush interaction batch:", err);
       })

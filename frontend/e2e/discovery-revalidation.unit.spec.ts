@@ -1,27 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { createRequire } from "node:module";
+import discoveryControls from "../../backend/controlbox/discovery_cache.json" with { type: "json" };
 
 const require = createRequire(import.meta.url);
 const server = require("next/server");
-const callbacks: Array<() => Promise<void>> = [];
-const queued: Array<{ school: string; resources: string[] }> = [];
-let failQueue = false;
-const serverModule = require.cache[require.resolve("next/server")]!;
-serverModule.exports = {
-  ...server,
-  after: (callback: () => Promise<void>) => callbacks.push(callback),
-};
-require("../src/app/discoveryRefresh.server");
-const refreshModule =
-  require.cache[require.resolve("../src/app/discoveryRefresh.server")]!;
-const refresh = refreshModule.exports;
-refreshModule.exports = {
-  ...refresh,
-  queueDiscoveryRefresh: async (school: string, resources: string[]) => {
-    if (failQueue) throw new Error("storage unavailable");
-    queued.push({ school, resources });
-  },
-  reconcileDiscoverySnapshots: async () => {},
+const nextCache = require("next/cache");
+const revalidated: Array<{ tag: string; profile: unknown }> = [];
+let directoryFails = false;
+const nextCacheModule = require.cache[require.resolve("next/cache")]!;
+nextCacheModule.exports = {
+  ...nextCache,
+  revalidateTag: (tag: string, profile: unknown) =>
+    revalidated.push({ tag, profile }),
 };
 require("../src/shared/api/schools.server");
 const schoolsModule =
@@ -29,19 +19,23 @@ const schoolsModule =
 const schools = schoolsModule.exports;
 schoolsModule.exports = {
   ...schools,
-  getSchoolDirectory: async () => [{ slug: "uwo" }],
+  getSchoolDirectory: async () => {
+    if (directoryFails) throw new Error("directory unavailable");
+    return [{ slug: "uwo" }];
+  },
 };
 const {
   POST,
 }: typeof import("../src/app/api/revalidate-events/route") = require("../src/app/api/revalidate-events/route");
-serverModule.exports = server;
-refreshModule.exports = refresh;
+nextCacheModule.exports = nextCache;
 schoolsModule.exports = schools;
 const originalSecret = process.env.EVENT_FEED_REVALIDATION_SECRET;
+const tag = (scope: string, resource: string) =>
+  `discovery:v${discoveryControls.schema_version}:${scope}:${resource}`;
 
 test.beforeEach(() => {
-  callbacks.length = queued.length = 0;
-  failQueue = false;
+  revalidated.length = 0;
+  directoryFails = false;
   process.env.EVENT_FEED_REVALIDATION_SECRET = "test-revalidation-secret";
 });
 test.afterEach(() => {
@@ -61,7 +55,7 @@ function request(body: unknown, secret = "test-revalidation-secret") {
 }
 const eventRequest = { school: "uwo", resources: ["events", "clubs"] };
 
-test("acknowledges durable scoped work without claiming a completed warm", async () => {
+test("marks only the school's named snapshots stale, keeping them readable", async () => {
   const response = await POST(request(eventRequest));
   expect(response.status).toBe(202);
   expect(await response.json()).toEqual({
@@ -69,24 +63,27 @@ test("acknowledges durable scoped work without claiming a completed warm", async
     school: "uwo",
     resources: ["events", "clubs"],
   });
-  expect(queued).toEqual([{ school: "uwo", resources: ["events", "clubs"] }]);
-  expect(callbacks).toHaveLength(1);
+  expect(revalidated).toEqual([
+    { tag: tag("uwo", "events"), profile: "max" },
+    { tag: tag("uwo", "clubs"), profile: "max" },
+  ]);
 });
 
-test("failed durable writes are errors, not successful warming responses", async () => {
-  failQueue = true;
-  expect((await POST(request(eventRequest))).status).toBe(503);
-  expect(callbacks).toEqual([]);
-});
-
-test("accepts a banner refresh through the shared durable worker", async () => {
+test("a banner refresh marks the one banner every school shares", async () => {
   const response = await POST(request({ school: "uwo", resources: ["site-banner"] }));
   expect(response.status).toBe(202);
-  expect(queued).toEqual([{ school: "uwo", resources: ["site-banner"] }]);
-  expect(callbacks).toHaveLength(1);
+  expect(revalidated).toEqual([
+    { tag: tag("_global", "site-banner"), profile: "max" },
+  ]);
 });
 
-test("invalid and unauthorized requests never schedule work", async () => {
+test("an unreadable school directory is an error, not an acknowledgement", async () => {
+  directoryFails = true;
+  expect((await POST(request(eventRequest))).status).toBe(503);
+  expect(revalidated).toEqual([]);
+});
+
+test("invalid and unauthorized requests never revalidate", async () => {
   expect((await POST(request(eventRequest, "wrong"))).status).toBe(401);
   for (const body of [
     { ...eventRequest, school: "western" },
@@ -95,6 +92,5 @@ test("invalid and unauthorized requests never schedule work", async () => {
   ]) {
     expect((await POST(request(body))).status).toBe(400);
   }
-  expect(queued).toEqual([]);
-  expect(callbacks).toEqual([]);
+  expect(revalidated).toEqual([]);
 });

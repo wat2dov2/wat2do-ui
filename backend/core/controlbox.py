@@ -8,7 +8,15 @@ from datetime import date
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, HttpUrl, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    HttpUrl,
+    IPvAnyNetwork,
+    model_validator,
+)
 
 _CONTROLBOX_DIRECTORY = Path(__file__).resolve().parents[1] / "controlbox"
 _INSTAGRAM_ACCOUNTS_PER_APP = 10
@@ -189,21 +197,18 @@ class ImageDeliveryControl(_ControlModel):
     optimized_format: Literal["image/webp"]
     optimized_remote_host: str = Field(min_length=1)
     optimized_remote_path: str = Field(pattern=r"^/.*\/$")
-    warm_widths: tuple[int, ...] = Field(min_length=1)
-    warm_concurrency: int = Field(ge=1, le=8)
-    warm_request_timeout_seconds: int = Field(gt=0)
-    warm_retry_seconds: int = Field(gt=0)
-    warm_success_ttl_seconds: int = Field(gt=0)
+    # The width a video's poster frame is delivered at (its 2x candidate).
+    video_poster_width: int = Field(gt=0)
 
     @model_validator(mode="after")
     def validate_sizes(self) -> "ImageDeliveryControl":
-        for sizes in (self.device_sizes, self.image_sizes, self.warm_widths):
+        for sizes in (self.device_sizes, self.image_sizes):
             if min(sizes) <= 0 or list(sizes) != sorted(set(sizes)):
                 raise ValueError("image sizes must be positive, unique and ascending")
         if max(self.image_sizes) >= min(self.device_sizes):
             raise ValueError("image_sizes must be smaller than the smallest device_sizes entry")
-        if not set(self.warm_widths).issubset((*self.device_sizes, *self.image_sizes)):
-            raise ValueError("warm_widths must be configured image or device sizes")
+        if self.video_poster_width not in (*self.device_sizes, *self.image_sizes):
+            raise ValueError("video_poster_width must be a configured image or device size")
         if any(character in self.optimized_remote_host for character in "/:?#@* "):
             raise ValueError("optimized_remote_host must be a hostname without a scheme or path")
         if any(part in {".", ".."} for part in self.optimized_remote_path.split("/")):
@@ -256,43 +261,29 @@ class EcsRuntimeControl(_ControlModel):
 
 
 class DiscoveryCacheControl(_ControlModel):
+    """Discovery snapshots in Next's data cache (`discoveryCache.server.ts`)."""
+
     cdn_ttl_seconds: int = Field(gt=0, le=300)
-    generation_retention_days: int = Field(ge=2)
     schema_version: int = Field(ge=1)
-    # The old S3 snapshot prefix. Only Terraform's bucket lifecycle and
-    # CloudFront rules still read it; snapshots now live in DISCOVERY_CACHE_DIR.
-    storage_prefix: str = Field(min_length=1)
+    # A snapshot older than this is rebuilt on its next read, which still gets
+    # the old copy; backend revalidation notices mark it stale sooner.
     refresh_interval_seconds: int = Field(gt=0)
-    worker_interval_seconds: int = Field(gt=0)
+    # The stale-while-revalidate window of a CDN-cached /api/discovery response.
     snapshot_check_seconds: int = Field(gt=0)
-    lease_seconds: int = Field(gt=0)
     request_timeout_seconds: int = Field(gt=0)
     page_concurrency: int = Field(ge=1, le=8)
     maximum_page_count: int = Field(gt=0)
-    state_write_attempts: int = Field(gt=0)
-    failure_backoff_seconds: int = Field(gt=0)
-    maximum_snapshot_age_seconds: int = Field(gt=0)
+    # Only the AWS Terraform (S3 lifecycle, CloudFront, ECS health checks) still
+    # reads these, until that stack is torn down.
+    storage_prefix: str = Field(min_length=1)
+    generation_retention_days: int = Field(ge=2)
     readiness_timeout_seconds: int = Field(gt=0)
     startup_grace_seconds: int = Field(gt=0)
-    deployment_timeout_seconds: int = Field(gt=0)
 
     @model_validator(mode="after")
     def validate_lifecycle(self) -> "DiscoveryCacheControl":
-        if (
-            self.deployment_timeout_seconds
-            <= self.readiness_timeout_seconds + self.startup_grace_seconds
-        ):
-            raise ValueError("deployment_timeout_seconds must exceed readiness and startup grace")
-        if self.maximum_snapshot_age_seconds <= self.refresh_interval_seconds:
-            raise ValueError("maximum_snapshot_age_seconds must exceed the refresh interval")
-        if self.generation_retention_days * 86400 <= self.maximum_snapshot_age_seconds:
-            raise ValueError("generation_retention_days must outlast the maximum snapshot age")
-        if self.worker_interval_seconds > self.refresh_interval_seconds:
-            raise ValueError("worker_interval_seconds cannot exceed the refresh interval")
         if self.snapshot_check_seconds > self.cdn_ttl_seconds:
             raise ValueError("snapshot_check_seconds cannot exceed the CDN TTL")
-        if self.request_timeout_seconds >= self.lease_seconds:
-            raise ValueError("request_timeout_seconds must be shorter than the lease")
         if any(part in {"", ".", ".."} for part in self.storage_prefix.split("/")):
             raise ValueError("storage_prefix must be a nonempty relative object prefix")
         return self
@@ -423,6 +414,14 @@ class ApiServerControl(_ControlModel):
         if self.shutdown_drain_seconds + self.python_shutdown_seconds >= 30:
             raise ValueError("shutdown must finish within ECS's 30 second stop timeout")
         return self
+
+
+class ViewerIpControl(_ControlModel):
+    """How the frontend's proxy (`frontend/src/proxy.ts`) finds a visitor's address."""
+
+    # Cloudflare's published edge ranges (https://www.cloudflare.com/ips/). A
+    # request reaching Vercel from one of them names its visitor in CF-Connecting-IP.
+    cloudflare_networks: tuple[IPvAnyNetwork, ...] = Field(min_length=1)
 
 
 class RateLimitControl(_ControlModel):
@@ -1213,6 +1212,7 @@ class NotificationRetryControl(_ControlModel):
 
 class ControlBox(_ControlModel):
     api_server: ApiServerControl
+    viewer_ip: ViewerIpControl
     positions: PositionsControl
     database: DatabaseControl
     ecs_runtime: EcsRuntimeControl

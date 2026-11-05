@@ -6,10 +6,8 @@
 	persist_config off
 }
 
-http://:8080 {
-	bind 127.0.0.1
-
-	# Uploaded and ingested media, at the same URLs S3 served them from.
+# Uploaded and ingested media, at the same URLs S3 served them from.
+(media) {
 	handle /media/* {
 		root * {$WAT2DO_DATA}
 		header Cache-Control "public, max-age=31536000, immutable"
@@ -19,11 +17,44 @@ http://:8080 {
 		header @svg Content-Disposition attachment
 		file_server
 	}
+}
+
+# The API host. The website on Vercel rewrites /api/* and /media/* here
+# (frontend/next.config.ts), and its proxy (frontend/src/proxy.ts) adds the
+# visitor's address and the shared X-Wat2Do-Origin-Verify secret. Only a
+# request carrying that secret keeps its X-Wat2Do-Viewer-Ip; any other request
+# gets Cloudflare's CF-Connecting-IP instead, whatever it sent. The API trusts
+# the header from loopback (core/client_ip.py, rust/src/api/client_ip.rs).
+http://api.wat2do.io:8080 {
+	bind 127.0.0.1
+
+	import media
+
+	# Never true without the secret (an unset ORIGIN_VERIFY_SECRET trusts no one).
+	@website expression `{http.request.header.X-Wat2Do-Origin-Verify} == "{$ORIGIN_VERIFY_SECRET}" && "{$ORIGIN_VERIFY_SECRET}" != ""`
+	handle @website {
+		reverse_proxy 127.0.0.1:8000 {
+			header_up -X-Wat2Do-Origin-Verify
+		}
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:8000 {
+			header_up X-Wat2Do-Viewer-Ip {http.request.header.CF-Connecting-IP}
+		}
+	}
+}
+
+# wat2do.io and every school subdomain on the Mac's own Next server: the
+# rollback while the website moves to Vercel, removed once Vercel is verified.
+http://:8080 {
+	bind 127.0.0.1
+
+	import media
 
 	# Everything else, including /api/*, which Next proxies to the API on 8000.
 	# Cloudflare's CF-Connecting-IP becomes the viewer address the API trusts from
-	# loopback (core/client_ip.py, rust/src/api/client_ip.rs); setting it here
-	# replaces any value a visitor sends.
+	# loopback; setting it here replaces any value a visitor sends.
 	handle {
 		reverse_proxy 127.0.0.1:3000 {
 			header_up X-Wat2Do-Viewer-Ip {http.request.header.CF-Connecting-IP}

@@ -1,7 +1,9 @@
 import { replaceEqualDeep } from "@tanstack/react-query";
 import { resolveSchool } from "@/shared/constants/schools";
 import { ApiError } from "@/shared/services/apiClient";
-import type { DiscoveryResource } from "@/shared/services/discoverySnapshotStore";
+
+export type DiscoveryResource =
+  "events" | "positions" | "clubs" | "branding" | "schools" | "site-banner";
 
 export interface DiscoverySnapshotMetadata {
   /** Start of the canonical snapshot's source read, in milliseconds. */

@@ -1,11 +1,12 @@
 import imageDelivery from "../backend/controlbox/image_delivery.json" with { type: "json" };
 import eventDiscovery from "../backend/controlbox/event_discovery.json" with { type: "json" };
 import openApi from "./src/shared/generated/openapi.json" with { type: "json" };
+import { getServerApiBaseUrl } from "./src/shared/services/serverApi";
 import type { NextConfig } from "next";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const apiRewriteUrl = (process.env.API_REWRITE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+const apiUrl = getServerApiBaseUrl();
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const instagramCoverLogoSvg = readFileSync(
   fileURLToPath(
@@ -145,11 +146,17 @@ const nextConfig: NextConfig = {
     return [
       ...apiCollectionPaths.map((path) => ({
         source: `/api/${path}/`,
-        destination: `${apiRewriteUrl}/${path}/`,
+        destination: `${apiUrl}/${path}/`,
       })),
       {
         source: "/api/:path*",
-        destination: `${apiRewriteUrl}/:path*`,
+        destination: `${apiUrl}/:path*`,
+      },
+      // Media keeps its public https://wat2do.io/media/ URLs (stored in the
+      // database) and is served from the API host's disk.
+      {
+        source: "/media/:path*",
+        destination: `${apiUrl}/media/:path*`,
       },
     ];
   },
