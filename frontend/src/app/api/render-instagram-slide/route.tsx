@@ -233,10 +233,13 @@ export async function POST(request: NextRequest) {
   const png = new Resvg(svg, { fitTo: { mode: "width", value: SLIDE_WIDTH } })
     .render()
     .asPng();
+  // Meta downloads every slide from our media host while publishing; a JPEG is
+  // about a sixth of the PNG, so several carousels can publish at once.
+  const jpeg = await sharp(png).jpeg({ quality: 95, mozjpeg: true, chromaSubsampling: "4:4:4" }).toBuffer();
 
-  return new NextResponse(new Uint8Array(png), {
+  return new NextResponse(new Uint8Array(jpeg), {
     headers: {
-      "content-type": "image/png",
+      "content-type": "image/jpeg",
       "cache-control": "no-store",
     },
   });
