@@ -344,6 +344,13 @@ fn agent_environment() -> Result<HashMap<String, String>> {
         .filter(|url| url.host_str().is_some() && !url.username().is_empty())
         .context("INGEST_AGENT_DATABASE_URL is not configured")?;
     let decode = |value: &str| percent_decode_str(value).decode_utf8_lossy().into_owned();
+    // The URL's own sslmode wins; the Mac's loopback Postgres has no TLS, so
+    // forcing `require` there made every agent query fail.
+    let ssl_mode = database
+        .query_pairs()
+        .find(|(key, _)| key == "sslmode")
+        .map(|(_, value)| value.into_owned())
+        .unwrap_or_else(|| "prefer".to_owned());
     let mut env = claude::claude_environment();
     env.extend([
         (
@@ -366,7 +373,7 @@ fn agent_environment() -> Result<HashMap<String, String>> {
                 .unwrap_or("postgres")
                 .to_owned(),
         ),
-        ("PGSSLMODE".to_owned(), "require".to_owned()),
+        ("PGSSLMODE".to_owned(), ssl_mode),
         ("PGAPPNAME".to_owned(), "wat2do-ingestion-agent".to_owned()),
     ]);
     Ok(env)
