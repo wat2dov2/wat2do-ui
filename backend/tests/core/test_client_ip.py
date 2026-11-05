@@ -37,7 +37,7 @@ class TestGetClientIp:
         )
         assert get_client_ip(req) == "8.8.8.8"
 
-    def test_trusted_peer_prefers_cloudfront_function_viewer_ip(self):
+    def test_trusted_peer_prefers_viewer_ip_header(self):
         req = _make_request(
             "127.0.0.1",
             headers={
@@ -48,7 +48,7 @@ class TestGetClientIp:
 
         assert get_client_ip(req) == "203.0.113.25"
 
-    def test_trusted_peer_accepts_ipv6_cloudfront_function_viewer_ip(self):
+    def test_trusted_peer_accepts_ipv6_viewer_ip_header(self):
         req = _make_request(
             "127.0.0.1",
             headers={"x-wat2do-viewer-ip": "2001:0db8:0000:0000::1"},
@@ -56,7 +56,7 @@ class TestGetClientIp:
 
         assert get_client_ip(req) == "2001:db8::1"
 
-    def test_invalid_cloudfront_function_header_falls_back_to_xff(self):
+    def test_invalid_viewer_ip_header_falls_back_to_xff(self):
         req = _make_request(
             "127.0.0.1",
             headers={

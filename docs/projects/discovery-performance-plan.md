@@ -96,7 +96,7 @@ No production latency or LCP improvement is claimed from unit tests or build suc
 
 Browser-free regressions cover cache tags and refresh scope, school isolation, incomplete pagination, confirmed edits, navigation scheduling, responsive image markup, and real Sharp/Satori/Resvg output.
 Browser integration regressions are authored but remain unrun under the repository's no-browser/no-server rule.
-The release gates include frontend lint/i18n/type checks/build, backend formatting/lint/types/tests, generated API contracts, Terraform validation, and migration alignment.
+The release gates include frontend lint/i18n/type checks/build, backend formatting/lint/types/tests, generated API contracts, and migration alignment.
 
 Remaining release validation is an end-user pass across Western, Waterloo, an empty school, and the largest catalog on desktop and mobile, followed by like-for-like production measurements.
 The initial performance targets remain targets until measured: lower first-screen image transfer, smaller compressed discovery responses, fast navigation, and timely refresh across all enrolled schools.

@@ -304,7 +304,7 @@ mod tests {
     }
 
     #[test]
-    fn trusted_peer_prefers_the_cloudfront_viewer_ip() {
+    fn trusted_peer_prefers_the_viewer_ip_header() {
         let request = headers(&[
             ("x-wat2do-viewer-ip", "203.0.113.25"),
             ("x-forwarded-for", "198.51.100.10, 192.0.2.8"),
@@ -361,9 +361,9 @@ mod tests {
     }
 
     #[test]
-    fn production_chain_matches_uvicorn_then_get_client_ip() {
-        // CloudFront sets the viewer IP and X-Forwarded-For; the ALB appends the
-        // CloudFront edge; Next.js forwards over loopback without appending.
+    fn forwarded_chain_matches_uvicorn_then_get_client_ip() {
+        // A loopback proxy forwards the viewer IP and an X-Forwarded-For whose
+        // rightmost entry is an edge address.
         let request = headers(&[
             ("x-wat2do-viewer-ip", "203.0.113.9"),
             ("x-forwarded-for", "203.0.113.9, 130.176.1.1"),

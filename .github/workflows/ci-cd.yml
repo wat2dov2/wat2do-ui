@@ -178,8 +178,9 @@ jobs:
 
   backend-image:
     name: Backend image build
-    # Builds and smoke-tests the backend image that docker-compose.yml runs, so a
-    # broken Dockerfile or Rust build is caught before merge.
+    # Builds and smoke-tests the backend image that make dev runs
+    # (docker-compose.dev.yml), so a broken Dockerfile or Rust build is caught
+    # before merge.
     runs-on: ubuntu-24.04-arm
 
     steps:

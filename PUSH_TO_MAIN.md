@@ -91,37 +91,18 @@ npm run build
 
 ---
 
-## 4. Terraform checks
+## 4. Database migrations
 
-Run these checks whenever `infra/terraform/` or the Terraform workflow changes.
-
-```bash
-terraform fmt -check -recursive infra/terraform
-(cd infra/terraform/foundation && terraform init -backend=false && terraform validate)
-(cd infra/terraform/production && terraform init -backend=false && terraform validate)
-```
-
-Run `tflint` in each root when it is installed locally or rely on the Terraform workflow's dedicated TFLint job.
-
-A push to `main` cancels the CI/CD deploy already running, and the Terraform apply for that earlier push then stops at "Wait for the matching application release" without applying.
-After the latest deploy on `main` succeeds, apply the pending changes with `gh workflow run terraform.yml --ref main`; a manual run on `main` plans and applies against that release.
-
----
-
-## 5. Database migrations
-
-**Production's database is the Amazon RDS for PostgreSQL 17 instance `wat2do-production`, database `wat2do`, in `ca-central-1`.**
-The deploy job reaches it through the production environment's `DATABASE_URL` secret, and the app task through the `DATABASE_URL` key of the runtime secret.
+**Production's database is PostgreSQL 17 on the Mac mini, database `wat2do`, data in `~/wat2do-data/postgres`.**
+The deploy job and the API read it through the `DATABASE_URL` in `~/wat2do-data/config/backend.env`.
 Confirm which database `DATABASE_URL` names before running anything destructive.
 This prints only the URL's host and database name, never its password:
 
 ```bash
-aws secretsmanager get-secret-value --region ca-central-1 \
-  --secret-id wat2do/production/runtime --query SecretString --output text \
-  | python3 -c "import json,sys; from urllib.parse import urlsplit; url = urlsplit(json.load(sys.stdin)['DATABASE_URL']); print(url.hostname, url.path.lstrip('/'))"
+(set -a; . ~/wat2do-data/config/backend.env; python3 -c "import os; from urllib.parse import urlsplit; url = urlsplit(os.environ['DATABASE_URL']); print(url.hostname, url.path.lstrip('/'))")
 ```
 
-The host should start with `wat2do-production.` and end in `.rds.amazonaws.com`, and the database should be `wat2do`.
+The host should be `127.0.0.1` and the database `wat2do`.
 
 Check what a push would apply before it runs, with `DATABASE_URL` set to the same connection string the deploy job uses:
 
@@ -133,8 +114,7 @@ The dry run only reads, and lists the migration files the database has not recor
 It fails, as the deploy would, when the database records a version that has no file or when a pending file is dated before the newest applied one.
 
 Schema must land **before** the code that reads it.
-The deploy job applies migrations automatically ahead of the ECS rollout with `scripts/migrate-database.sh`, using the production environment's `DATABASE_URL` secret.
-When that secret is unset, a push that adds migration files fails the deploy rather than shipping code against a database that lacks the column.
+The deploy job applies migrations with `scripts/migrate-database.sh` before it switches the Mac to the new release, so a failed migration stops the deploy rather than shipping code against a database that lacks the column.
 
 Prefer additive migrations (`ADD COLUMN ... DEFAULT`, new tables, new indexes).
 An additive migration is safe to apply while the previous build is still serving traffic, because unknown columns are ignored by the response models.
@@ -142,7 +122,7 @@ A destructive migration is not, and needs a two-step rollout.
 
 ---
 
-## 6. Commit
+## 5. Commit
 
 Only commit when the user asked you to, or when your task explicitly includes landing on `main`.
 
@@ -159,20 +139,19 @@ Follow the repo's existing commit message style (`git log -5`).
 
 ---
 
-## 7. Push
+## 6. Push
 
 ```bash
 git push origin main
 ```
 
 After push, CI/CD runs the backend, Rust and frontend checks.
-The deploy job then applies pending database migrations, rolls out ECS, and finishes with `scripts/smoke-subdomains.sh`, which asserts a school subdomain never serves another school's feed.
-The Wat2Do frontend and backend deploy together to ECS through GitHub OIDC and the immutable ECR release flow.
-A green local run means those check jobs should pass; the AWS deployment requires the repository variables and Secrets Manager values documented in the Terraform roots.
+The deploy job then runs `infra/mac-mini/deploy.sh` on the Mac's own runner: it builds the release, applies pending database migrations, switches the Mac to it, deploys the same commit to Vercel, and finishes with `scripts/smoke-subdomains.sh`, which asserts a school subdomain never serves another school's feed.
+A green local run means those check jobs should pass; the deploy also needs the Mac's configuration under `~/wat2do-data/config` (`docs/projects/mac-mini-hosting.md`).
 
 Agent handoff after a successful push:
 - Report the pushed commit and GitHub Actions run URL, then stop.
-- Do not wait for CI or the AWS rollout unless the human explicitly requested deployment monitoring or production verification.
+- Do not wait for CI or the deploy unless the human explicitly requested deployment monitoring or production verification.
 - Treat GitHub Actions as the owner of the asynchronous deployment and use its failure notification as the signal for follow-up.
 
 ---

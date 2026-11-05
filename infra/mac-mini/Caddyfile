@@ -6,7 +6,7 @@
 	persist_config off
 }
 
-# Uploaded and ingested media, at the same URLs S3 served them from.
+# Uploaded and ingested media, at their public URLs (https://wat2do.io/media/...).
 (media) {
 	handle /media/* {
 		root * {$WAT2DO_DATA}

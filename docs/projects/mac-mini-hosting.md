@@ -27,7 +27,7 @@ Cloudflare (DNS, CDN, TLS) sits in front of everything.
 | Media | `~/wat2do-data/media/<bucket>/<file>` (`MEDIA_ROOT`); public URLs stay `https://wat2do.io/media/...` |
 | Event change alerts | launchd timer every minute, replacing EventBridge |
 | Log pruning | launchd timer daily, replacing pg_cron |
-| Email | SES through a send-only IAM key |
+| Email | SES in AWS account 291667884807, through the send-only IAM user `wat2do-ses-sender` |
 | Process Notifications | the Mac's existing runner (`wat2do-macmini-browser`), since GitHub-hosted runners cannot reach a home Postgres |
 | Scheduled emails, poster payouts, Instagram account stats | launchd timers running the deployed release |
 | Deploys | a job on a second Mac runner (`wat2do-macmini-deploy`): build in a persistent build checkout, assemble `~/wat2do-data/releases/<sha>`, migrate, switch `current`, restart, health check, roll back on failure, then `vercel deploy --prod` of the same checkout |
@@ -118,13 +118,13 @@ Once Vercel is verified, remove the Mac's website: the `io.wat2do.web` job, `bin
 - [ ] Website on Vercel (branch `vercel-frontend`), then the rollout above.
 - [ ] Remove the Mac's website once Vercel is verified.
 - [ ] Cache rules for the tunnel (skipped for now).
-- [ ] Teardown: ECS, ALB, CloudFront, RDS, S3, Lambda, SQS, EventBridge, Secrets Manager, Route 53 (after a day or two on the Mac).
+- [x] Teardown (2026-11-05): ECS, ALB, CloudFront, RDS, S3, Lambda, SQS, EventBridge, Route 53, ECR, Secrets Manager and the GitHub OIDC roles in the old AWS account 058264255918 are deleted, along with the repository's `AWS_*` GitHub variables.
+  The Terraform roots, the Terraform workflow and the ECS release scripts are gone from the repository.
+- [x] SES moved to the wat2do AWS account 291667884807, the only AWS service still in use.
+  The app sends through the send-only IAM user `wat2do-ses-sender`, whose key is `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in `~/wat2do-data/config/backend.env`, beside `AWS_REGION` and `EMAIL_FROM`.
 - [ ] LaunchDaemons so the site starts at boot without a login (needs Tony's admin password once).
 
 ## Notes for other sessions
 
-- 2026-11-04: `infra/terraform/production/locals.tf` now escapes every dot in `CORS_ORIGIN_REGEX` (`^https://[a-z0-9-]+[.]wat2do[.]io$`).
-  The Rust tests at `rust/src/api/cors.rs:155` and `rust/src/settings.rs:257` still use the old unescaped string.
 - Browsers never call `api.wat2do.io` directly, so cookies (`Domain=.wat2do.io`, path `/api/auth/refresh`), CORS and the Google sign-in callback (`https://wat2do.io/api/auth/google/callback`) are unchanged.
 - The website reads one API setting, `API_URL` (default `http://127.0.0.1:8000`, which the Mac's own Next uses); `NEXT_PUBLIC_API_URL`, `BACKEND_API_URL`, `API_REWRITE_URL` and `DISCOVERY_CACHE_DIR` in `web.env` and `web-build.env` are no longer read, and `~/wat2do-data/discovery-cache` can be deleted.
-- The AWS Terraform still reads `storage_prefix`, `generation_retention_days`, `readiness_timeout_seconds` and `startup_grace_seconds` from `discovery_cache.json`; drop them with the teardown.

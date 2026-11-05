@@ -386,8 +386,9 @@ Backend consumers must read the validated `core.controlbox.controlbox` source.
 Frontend consumers may import only the specific feature control files they need.
 
 Secrets and environment-specific credentials never belong in control-box files.
-Keep secrets in ignored local `.env` files and the production secret manager, with
-only the corresponding typed runtime setting in source code.
+Keep secrets in ignored local `.env` files and the production Mac's
+`~/wat2do-data/config/backend.env`, with only the corresponding typed runtime
+setting in source code.
 
 When adding a feature control file, extend the validated control-box schema and
 tests in the same change.

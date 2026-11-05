@@ -216,50 +216,6 @@ class ImageDeliveryControl(_ControlModel):
         return self
 
 
-class EcsRuntimeControl(_ControlModel):
-    task_cpu: int = Field(gt=0)
-    task_memory_mib: int = Field(gt=0)
-    desired_count: int = Field(ge=1)
-    frontend_cpu: int = Field(gt=0)
-    backend_cpu: int = Field(gt=0)
-    frontend_memory_reservation_mib: int = Field(gt=0)
-    backend_memory_reservation_mib: int = Field(gt=0)
-    cache_init_memory_reservation_mib: int = Field(gt=0)
-    frontend_heap_mib: int = Field(gt=0)
-
-    @model_validator(mode="after")
-    def validate_capacity(self) -> "EcsRuntimeControl":
-        # AWS Fargate Linux task sizes, in CPU units and MiB:
-        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-        memory_sizes: dict[int, range | tuple[int, ...]] = {
-            256: (512, 1024, 2048),
-            512: range(1024, 4097, 1024),
-            1024: range(2048, 8193, 1024),
-            2048: range(4096, 16385, 1024),
-            4096: range(8192, 30721, 1024),
-            8192: range(16384, 61441, 4096),
-            16384: range(32768, 122881, 8192),
-            32768: (61440, 122880, 249856),
-        }
-        if self.task_memory_mib not in memory_sizes.get(self.task_cpu, ()):
-            raise ValueError("task CPU and memory must be a supported Fargate combination")
-        if self.frontend_cpu + self.backend_cpu > self.task_cpu:
-            raise ValueError("container CPU shares cannot exceed task CPU")
-        reservations = (
-            self.frontend_memory_reservation_mib
-            + self.backend_memory_reservation_mib
-            + self.cache_init_memory_reservation_mib
-        )
-        if reservations > self.task_memory_mib:
-            raise ValueError("container memory reservations cannot exceed task memory")
-        # V8 old space excludes young-generation, native image buffers and Node
-        # overhead. The checked-in budget leaves 256 MiB inside the frontend
-        # reservation, plus unreserved task memory for transient allocation.
-        if self.frontend_heap_mib >= self.frontend_memory_reservation_mib:
-            raise ValueError("frontend heap must leave headroom below its memory reservation")
-        return self
-
-
 class DiscoveryCacheControl(_ControlModel):
     """Discovery snapshots in Next's data cache (`discoveryCache.server.ts`)."""
 
@@ -273,19 +229,11 @@ class DiscoveryCacheControl(_ControlModel):
     request_timeout_seconds: int = Field(gt=0)
     page_concurrency: int = Field(ge=1, le=8)
     maximum_page_count: int = Field(gt=0)
-    # Only the AWS Terraform (S3 lifecycle, CloudFront, ECS health checks) still
-    # reads these, until that stack is torn down.
-    storage_prefix: str = Field(min_length=1)
-    generation_retention_days: int = Field(ge=2)
-    readiness_timeout_seconds: int = Field(gt=0)
-    startup_grace_seconds: int = Field(gt=0)
 
     @model_validator(mode="after")
     def validate_lifecycle(self) -> "DiscoveryCacheControl":
         if self.snapshot_check_seconds > self.cdn_ttl_seconds:
             raise ValueError("snapshot_check_seconds cannot exceed the CDN TTL")
-        if any(part in {"", ".", ".."} for part in self.storage_prefix.split("/")):
-            raise ValueError("storage_prefix must be a nonempty relative object prefix")
         return self
 
 
@@ -412,7 +360,7 @@ class ApiServerControl(_ControlModel):
         if self.python_port == 8000:
             raise ValueError("python_port must differ from the public API port 8000")
         if self.shutdown_drain_seconds + self.python_shutdown_seconds >= 30:
-            raise ValueError("shutdown must finish within ECS's 30 second stop timeout")
+            raise ValueError("shutdown must finish within a 30 second stop timeout")
         return self
 
 
@@ -1215,7 +1163,6 @@ class ControlBox(_ControlModel):
     viewer_ip: ViewerIpControl
     positions: PositionsControl
     database: DatabaseControl
-    ecs_runtime: EcsRuntimeControl
     image_delivery: ImageDeliveryControl
     discovery_cache: DiscoveryCacheControl
     discovery_queries: DiscoveryQueriesControl

@@ -78,7 +78,7 @@ function getBearerSecret(request: NextRequest): string | null {
 /**
  * Inline slide artwork as a data URI.
  *
- * Slide images are only ever our own CloudFront storage objects; anything else is
+ * Slide images are only ever our own media files (STORAGE_PUBLIC_BASE_URL); anything else is
  * rejected rather than fetched, so this route can never be pointed at an
  * internal host.
  */

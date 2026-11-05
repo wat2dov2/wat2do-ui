@@ -14,15 +14,6 @@ venv/
 /media/
 .vercel/
 
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-*.tfvars
-!*.tfvars.example
-*.tfplan
-crash.log
-
 # Node
 node_modules/
 dist/

@@ -46,7 +46,7 @@ Do not introduce a second source of truth.
 | Club-type presentation | `frontend/src/shared/data/clubTypeAssets.ts` and `frontend/public/icons/club-types/` | A `<schoolslug>:<club_type>` signature selects the association SVG. |
 | Expected Instagram publishing accounts | `backend/controlbox/instagram_publishing.json` | This contains non-secret account keys, school slugs, usernames, and enablement only. |
 | Instagram publishing identity and credentials | `public.instagram_publishing_accounts` | This service-role-only table stores the validated user ID, username, encrypted token, expiry, and reauthorization state. |
-| Instagram token encryption key | Ignored backend environment file and production secret manager | Never store it in a controlbox file, migration, document, or task output. |
+| Instagram token encryption key | Ignored backend environment file and the Mac's `~/wat2do-data/config/backend.env` | Never store it in a controlbox file, migration, document, or task output. |
 | Notification-to-school routing | `public.schools.recipient_id` | This is the identifier observed from the Android Automate notification payload. |
 | Single-account scrape school resolution | `backend/services/scraper/single_user.py` | It resolves `INTENDED_RECIPIENT_ID` through the database and already accepts database-added schools. |
 | Club following targets | Database clubs for the school | Follow the verified target set through the logged-in Android account while browser-cookie automation is paused. |

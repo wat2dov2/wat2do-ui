@@ -114,39 +114,6 @@ test("lazy posters have responsive native image URLs before hydration or measure
   expect(html).toContain('sizes="auto, (max-width: 639px) calc(50vw - 16px), 320px"');
 });
 
-test("CloudFront shares browser and warmer image variants without changing unsupported clients or page requests", () => {
-  const terraform = readFileSync(new URL("../../infra/terraform/production/cloudfront.tf", import.meta.url), "utf8");
-  const source = terraform.match(/code = <<-EOT\n([\s\S]*?)\n {2}EOT/)?.[1];
-  expect(source).toBeDefined();
-  const rendered = source!.replace("${jsonencode(local.image_delivery_control.optimized_format)}", JSON.stringify(imageDelivery.optimized_format));
-  type Header = { value: string; multiValue?: { value: string }[] };
-  type Request = { uri: string; headers: Record<string, Header> };
-  const handler = runInNewContext(`${rendered}\nhandler`) as (event: { viewer: { ip: string }; request: Request }) => Request;
-  const invoke = (accept?: string | Header, uri = "/_next/image") => handler({
-    viewer: { ip: "192.0.2.1" },
-    request: { uri, headers: { host: { value: "uwo.wat2do.io" },
-      ...(accept === undefined ? {} : { accept: typeof accept === "string" ? { value: accept } : accept }) } },
-  });
-  for (const accept of [
-    imageDelivery.optimized_format,
-    "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-    "image/webp;q=0.5,image/png;q=1",
-    "IMAGE/WEBP; Q=0.8",
-    { value: "image/png", multiValue: [{ value: "image/png" }, { value: "image/webp;q=0.9" }] },
-  ]) {
-    expect(invoke(accept).headers.accept).toEqual({ value: imageDelivery.optimized_format });
-  }
-  for (const accept of [undefined, "*/*", "image/*", "image/png,image/jpeg", "image/webp;q=0,*/*;q=1", "image/webp;q=0.0", "image/webp;q=invalid", "image/webp;q=2"]) {
-    expect(invoke(accept).headers.accept).toEqual({ value: "*/*" });
-  }
-  const page = invoke("text/html,image/webp", "/events");
-  expect(page.headers.accept).toEqual({ value: "text/html,image/webp" });
-  expect(page.headers["x-forwarded-host"]).toEqual({ value: "uwo.wat2do.io" });
-  expect(page.headers["x-wat2do-viewer-ip"]).toEqual({ value: "192.0.2.1" });
-  const imageBehavior = terraform.match(/path_pattern\s+= "\/_next\/image\*"([\s\S]*?)\n {2}}/)?.[1];
-  expect(imageBehavior).toContain("function_arn = aws_cloudfront_function.forward_viewer_host.arn");
-});
-
 test("measured cutouts mask the HTML image face and eager posters receive priority", () => {
   const html = render(EventImageCutout, {
     backgroundColor: "var(--surface-elevated)", imageSrc: posterUrl, imageAlt: "Campus poster",

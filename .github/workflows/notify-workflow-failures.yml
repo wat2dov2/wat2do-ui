@@ -4,11 +4,7 @@ on:
   workflow_run:
     workflows:
       - CI/CD
-      - Instagram account stats
-      - Monthly promoter poster payouts
       - Process Notifications
-      - Scheduled notification emails
-      - Terraform
     branches: [main]
     types: [completed]
 

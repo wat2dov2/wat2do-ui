@@ -1,11 +1,11 @@
-//! `wat2do-api serve`: the container's main process.
+//! `wat2do-api serve`: the API's main process.
 //!
 //! It listens where uvicorn used to (port 8000) and runs the Python app as a
 //! child on loopback (`controlbox/api_server.json` `python_port`) for the
 //! routes Rust does not serve yet.
 //!
 //! - `/health` fails until the Python app answers, and whenever it stops answering.
-//! - If the Python app exits, the server exits non-zero so ECS replaces the task.
+//! - If the Python app exits, the server exits non-zero so launchd restarts it.
 //! - On SIGTERM or SIGINT the server stops accepting, lets in-flight requests
 //!   and the emails they queued finish (within `shutdown_drain_seconds`),
 //!   then asks the Python app to stop the same way (its lifespan shutdown
@@ -136,7 +136,7 @@ pub async fn serve(port: u16, reload: bool) -> Result<i32> {
     let drain = Duration::from_secs(API_SERVER.shutdown_drain_seconds);
     let exit_code = tokio::select! {
         status = child.wait() => {
-            // Without the Python app most routes fail: let ECS replace the task.
+            // Without the Python app most routes fail: let launchd restart the server.
             let status = status.context("could not wait for the Python app")?;
             tracing::error!("Python app exited unexpectedly ({status}); stopping");
             stop_accepting.notify_one();

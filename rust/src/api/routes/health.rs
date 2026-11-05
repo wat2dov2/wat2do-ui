@@ -1,8 +1,9 @@
-//! `GET /health`: the container health check.
+//! `GET /health`: the health check the deploy job waits on.
 //!
-//! Healthy only while the Python app behind the server also answers, so ECS
-//! replaces a task whose Python half is starting or stuck. Without a Python
-//! app (the parity replay) the Rust server alone answers.
+//! Healthy only while the Python app behind the server also answers, so the
+//! deploy (`infra/mac-mini/deploy.sh`) rolls back a release whose Python half
+//! never comes up. Without a Python app (the parity replay) the Rust server
+//! alone answers.
 
 use std::time::Duration;
 
