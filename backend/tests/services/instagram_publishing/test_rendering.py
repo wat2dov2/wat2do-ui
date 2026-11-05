@@ -39,11 +39,11 @@ class _FakeResponse:
 def _capture_render(
     monkeypatch: pytest.MonkeyPatch,
     *,
-    payload: bytes = b"\x89PNG rendered",
-    content_type: str = "image/png",
-) -> tuple[list[dict], list[bytes]]:
+    payload: bytes = b"\xff\xd8 rendered",
+    content_type: str = "image/jpeg",
+) -> tuple[list[dict], list[tuple[bytes, str]]]:
     requests: list[dict] = []
-    uploads: list[bytes] = []
+    uploads: list[tuple[bytes, str]] = []
 
     @contextmanager
     def fake_stream(method, url, *, json, headers, timeout, follow_redirects):
@@ -56,32 +56,33 @@ def _capture_render(
     monkeypatch.setattr(
         rendering.storage,
         "upload_file",
-        lambda _bucket, uploaded, _content_type: (
-            uploads.append(uploaded) or "https://asset.test/slide.png"
+        lambda _bucket, uploaded, content_type: (
+            uploads.append((uploaded, content_type)) or "https://asset.test/slide.jpg"
         ),
     )
     return requests, uploads
 
 
-def test_render_event_asset_posts_the_event_and_uploads_the_png(monkeypatch: pytest.MonkeyPatch):
+def test_render_event_asset_posts_the_event_and_uploads_the_jpeg(monkeypatch: pytest.MonkeyPatch):
     requests, uploads = _capture_render(monkeypatch)
     event = _event(1)
 
-    assert rendering.render_event_asset(event) == "https://asset.test/slide.png"
+    assert rendering.render_event_asset(event) == "https://asset.test/slide.jpg"
 
     assert requests[0]["url"] == "https://web.test/render"
     assert requests[0]["json"]["kind"] == "event"
     assert requests[0]["json"]["event"] == event
     assert requests[0]["json"]["school"] == "uwaterloo"
     assert requests[0]["headers"]["Authorization"] == "Bearer shared-secret"
-    assert uploads[0] == b"\x89PNG rendered"
+    assert requests[0]["headers"]["Accept"] == "image/jpeg"
+    assert uploads[0] == (b"\xff\xd8 rendered", "image/jpeg")
 
 
 def test_render_cover_asset_posts_every_slide_event_and_the_body(monkeypatch: pytest.MonkeyPatch):
     requests, _ = _capture_render(monkeypatch)
 
     assert rendering.render_cover_asset([_event(1), _event(2)], "uwaterloo", "This week") == (
-        "https://asset.test/slide.png"
+        "https://asset.test/slide.jpg"
     )
 
     assert requests[0]["json"]["kind"] == "cover"
@@ -94,10 +95,10 @@ def test_render_cover_asset_requires_at_least_one_event():
         rendering.render_cover_asset([], "uwaterloo")
 
 
-def test_render_rejects_a_non_png_response(monkeypatch: pytest.MonkeyPatch):
+def test_render_rejects_a_non_jpeg_response(monkeypatch: pytest.MonkeyPatch):
     _capture_render(monkeypatch, content_type="text/html")
 
-    with pytest.raises(ValueError, match="did not return a PNG"):
+    with pytest.raises(ValueError, match="did not return a JPEG"):
         rendering.render_event_asset(_event(1))
 
 
@@ -117,7 +118,7 @@ def test_employer_cover_passes_its_kind_to_the_shared_renderer(monkeypatch):
 def test_render_outro_asset_posts_the_other_events_even_when_there_are_none(monkeypatch):
     requests, _ = _capture_render(monkeypatch)
 
-    assert rendering.render_outro_asset([], "uwaterloo") == "https://asset.test/slide.png"
+    assert rendering.render_outro_asset([], "uwaterloo") == "https://asset.test/slide.jpg"
     rendering.render_outro_asset([_event(3)], "uwaterloo", batch_kind="employers_on_campus")
 
     assert requests[0]["json"] == {

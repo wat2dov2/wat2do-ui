@@ -3,7 +3,7 @@
 Slides are HTML templates that live in the frontend
 (``src/features/admin/components/instagram/slides``) and are rasterized by
 satori. This module is the thin backend side of that contract: it posts live
-event data to the Next.js render route at publish time and stores the PNG it
+event data to the Next.js render route at publish time and stores the JPEG it
 returns. Nothing is rendered before then - the admin editor previews the app's
 own event card, not the poster.
 """
@@ -24,7 +24,7 @@ _MAX_RENDERED_IMAGE_BYTES = 15 * 1024 * 1024
 
 def render_event_asset(event: dict[str, Any]) -> str:
     """Render and upload one Instagram carousel slide for a single event."""
-    return _upload_png(_render({"kind": "event", "event": event, "school": event.get("school")}))
+    return _upload_jpeg(_render({"kind": "event", "event": event, "school": event.get("school")}))
 
 
 def render_cover_asset(
@@ -39,7 +39,7 @@ def render_cover_asset(
     """Render and upload the cover slide compiled from the selected events."""
     if not events:
         raise ValueError("at least one event is required to render a cover")
-    return _upload_png(
+    return _upload_jpeg(
         _render(
             {
                 "kind": "cover",
@@ -61,7 +61,7 @@ def render_outro_asset(
     batch_kind: InstagramPublishBatchKind = "events",
 ) -> str:
     """Render and upload the last slide, listing the scrape's other events."""
-    return _upload_png(
+    return _upload_jpeg(
         _render({"kind": "outro", "batch_kind": batch_kind, "events": events, "school": school})
     )
 
@@ -71,7 +71,7 @@ def _render(slide: dict[str, Any]) -> bytes:
     if not url:
         raise ValueError("Instagram slide renderer URL is not configured")
 
-    headers = {"Accept": "image/png"}
+    headers = {"Accept": "image/jpeg"}
     secret = settings.instagram_slide_render_secret.strip()
     if secret:
         headers["Authorization"] = f"Bearer {secret}"
@@ -86,8 +86,8 @@ def _render(slide: dict[str, Any]) -> bytes:
         follow_redirects=False,
     ) as response:
         response.raise_for_status()
-        if not (response.headers.get("content-type") or "").lower().startswith("image/png"):
-            raise ValueError("Instagram slide renderer did not return a PNG")
+        if not (response.headers.get("content-type") or "").lower().startswith("image/jpeg"):
+            raise ValueError("Instagram slide renderer did not return a JPEG")
         for chunk in response.iter_bytes():
             payload.extend(chunk)
             if len(payload) > _MAX_RENDERED_IMAGE_BYTES:
@@ -98,5 +98,5 @@ def _render(slide: dict[str, Any]) -> bytes:
     return bytes(payload)
 
 
-def _upload_png(payload: bytes) -> str:
-    return storage.upload_file(BUCKET_EVENT_IMAGES, payload, "image/png")
+def _upload_jpeg(payload: bytes) -> str:
+    return storage.upload_file(BUCKET_EVENT_IMAGES, payload, "image/jpeg")

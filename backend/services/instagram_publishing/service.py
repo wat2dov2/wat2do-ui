@@ -693,7 +693,7 @@ def _publish_claimed_batch(
     published_at = _iso_now()
     permalink = _permalink(client, media_id)
     # The slides are now history: the events behind them keep changing, so a
-    # published batch shows the PNGs that were posted rather than re-rendering.
+    # published batch shows the slides that were posted rather than re-rendering.
     try:
         for item in items:
             (
