@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
     .asPng();
   // Meta downloads every slide from our media host while publishing; a JPEG is
   // about a sixth of the PNG, so several carousels can publish at once.
-  const jpeg = await sharp(png).jpeg({ quality: 92, mozjpeg: true }).toBuffer();
+  const jpeg = await sharp(png).jpeg({ quality: 95, mozjpeg: true, chromaSubsampling: "4:4:4" }).toBuffer();
 
   return new NextResponse(new Uint8Array(jpeg), {
     headers: {

@@ -301,6 +301,13 @@ test.describe("Instagram raster preparation", () => {
     else process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = originalMapKey;
   });
 
+  // Published slides are JPEG, so a channel can land a few levels off its source colour.
+  function expectColor(actual: Iterable<number>, expected: readonly number[]) {
+    const channels = [...actual];
+    expect(channels).toHaveLength(expected.length);
+    for (const [channel, value] of expected.entries()) expect(Math.abs(channels[channel] - value)).toBeLessThanOrEqual(6);
+  }
+
   function request(body: object) {
     const secret = process.env.INSTAGRAM_SLIDE_RENDER_SECRET?.trim();
     return new NextRequest("http://localhost/api/render-instagram-slide", {
@@ -363,12 +370,12 @@ test.describe("Instagram raster preparation", () => {
       const topEdge = Math.round(cardTop + 132);
       for (const { right, bottom, color } of corners) {
         const pixel = await sharp(output).extract({ left: leftEdge + (right ? fitted.width - 3 : 2), top: topEdge + (bottom ? fitted.height - 3 : 2), width: 1, height: 1 }).removeAlpha().raw().toBuffer();
-        expect([...pixel]).toEqual(color);
+        expectColor(pixel, color);
       }
       const firstPosterPixel = await sharp(output).extract({ left: leftEdge + 2, top: Math.ceil(cardTop + 132) + 1, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
-      expect([...firstPosterPixel]).toEqual(corners[0].color);
+      expectColor(firstPosterPixel, corners[0].color);
       const firstFooterPixel = await sharp(output).extract({ left: 540, top: Math.ceil(cardTop + 132 + fitted.height) + 1, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
-      expect([...firstFooterPixel]).toEqual([255, 255, 255]);
+      expectColor(firstFooterPixel, [255, 255, 255]);
       expect(metadata.width! / metadata.height!).toBeCloseTo(width / height, 2);
       const artifact = test.info().outputPath(`${kind}-full-poster.png`);
       writeFileSync(artifact, output);
@@ -445,13 +452,13 @@ test.describe("Instagram raster preparation", () => {
       const label = await sharp(output).extract({ left, top, width: 160, height: 54 }).removeAlpha().raw().toBuffer();
       let textPixels = 0;
       for (let index = 0; index < label.length; index += 3) {
-        if ([0, 1, 2].every(channel => Math.abs(label[index + channel] - 23) <= 3)) textPixels++;
+        if ([0, 1, 2].every(channel => Math.abs(label[index + channel] - 23) <= 10)) textPixels++;
       }
       expect(textPixels).toBeGreaterThan(80);
     }
     const pixel = async (left: number, top: number) => [...await sharp(output).extract({ left, top, width: 1, height: 1 }).removeAlpha().raw().toBuffer()];
-    expect(await pixel(540, 600)).toEqual([239, 80, 20]);
-    expect(await pixel(540, 1160)).toEqual([255, 255, 255]);
+    expectColor(await pixel(540, 600), [239, 80, 20]);
+    expectColor(await pixel(540, 1160), [255, 255, 255]);
     for (const [left, top] of [[10, 10], [1070, 600], [10, 600], [540, 1340]]) {
       expect(await pixel(left, top)).not.toEqual([255, 255, 255]);
     }
@@ -506,7 +513,7 @@ test.describe("Instagram raster preparation", () => {
       expect(renderToStaticMarkup(renderedSlide!)).toContain("CA</div>");
       const output = Buffer.from(await response.arrayBuffer());
       const pixels = await sharp(output).extract({ left: 540, top: 400, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
-      expect([...pixels]).toEqual([239, 80, 20]);
+      expectColor(pixels, [239, 80, 20]);
     });
   }
 
