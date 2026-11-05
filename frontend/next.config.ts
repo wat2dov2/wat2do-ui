@@ -152,12 +152,6 @@ const nextConfig: NextConfig = {
         source: "/api/:path*",
         destination: `${apiUrl}/:path*`,
       },
-      // Media keeps its public https://wat2do.io/media/ URLs (stored in the
-      // database) and is served from the API host's disk.
-      {
-        source: "/media/:path*",
-        destination: `${apiUrl}/media/:path*`,
-      },
     ];
   },
   allowedDevOrigins: ["127.0.0.1", "localhost", "wat2do.localhost", "*.wat2do.localhost"],

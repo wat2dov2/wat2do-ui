@@ -10,9 +10,8 @@ venv/
 .env.local
 # Local backend's access-token signing key (scripts/dev.py makes it).
 .dev-auth-signing-key
-# Local development uploads (MEDIA_ROOT in docker-compose.dev.yml).
-/media/
-.vercel/
+# Terraform's providers and module cache (state lives in S3).
+.terraform/
 
 # Node
 node_modules/

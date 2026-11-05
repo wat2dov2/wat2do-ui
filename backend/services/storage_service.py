@@ -1,19 +1,20 @@
-"""Validated file storage on local disk under MEDIA_ROOT.
+"""Validated file storage in Amazon S3, served publicly through CloudFront.
 
-A file in bucket ``event-images`` named ``<uuid>.jpg`` lives at
-``$MEDIA_ROOT/event-images/<uuid>.jpg`` and is served by the web server at
-``$STORAGE_PUBLIC_BASE_URL/event-images/<uuid>.jpg``. The web server owns the
-response headers: an immutable ``Cache-Control`` for every file and
-``Content-Disposition: attachment`` for ``.svg`` files (audit U8), so the
-extension written here must always match the validated content type.
+A file in bucket ``event-images`` named ``<uuid>.jpg`` is the object
+``event-images/<uuid>.jpg`` in ``STORAGE_BUCKET_NAME`` and is served at
+``$STORAGE_PUBLIC_BASE_URL/event-images/<uuid>.jpg``. Each object carries its
+own response headers: the validated ``Content-Type``, an immutable
+``Cache-Control`` and, for SVGs, ``Content-Disposition: attachment`` (audit U8).
 """
 
 import logging
 import os
 import uuid
 from io import BytesIO
-from pathlib import Path
 from urllib.parse import urlparse
+
+import boto3  # type: ignore[import-untyped]
+from botocore.config import Config  # type: ignore[import-untyped]
 
 from core.config import settings
 from core.constants import (
@@ -28,7 +29,6 @@ from core.constants import (
 )
 from core.controlbox import controlbox
 from core.exceptions import ValidationError
-from core.launch_agents import atomic_write
 from core.logging import logger
 from core.svg_sanitize import looks_like_svg, sanitize_svg
 
@@ -84,31 +84,39 @@ _MIME_TO_EXT = {
     "image/gif": ".gif",
     "image/svg+xml": ".svg",
 }
-_EXT_TO_MIME = {ext: mime for mime, ext in _MIME_TO_EXT.items()}
 
 
 class StorageService:
     def __init__(
         self,
+        s3_client=None,
         *,
-        media_root: str | None = None,
+        bucket_name: str | None = None,
         public_base_url: str | None = None,
         buckets: dict[str, dict] | None = None,
     ):
-        self._media_root = media_root if media_root is not None else settings.media_root
+        self._s3 = s3_client
+        self._bucket_name = bucket_name if bucket_name is not None else settings.storage_bucket_name
         configured_base_url = (
             public_base_url if public_base_url is not None else settings.storage_public_base_url
         )
         self._public_base_url = configured_base_url.rstrip("/")
         self.BUCKETS = buckets if buckets is not None else _DEFAULT_BUCKETS
 
-    def _require_configuration(self) -> None:
-        if not self._media_root or not self._public_base_url:
-            raise RuntimeError(
-                "Media storage is not configured. Set MEDIA_ROOT and STORAGE_PUBLIC_BASE_URL."
+    def _get_s3_client(self):
+        if self._s3 is None:
+            self._s3 = boto3.client(
+                "s3",
+                region_name=settings.aws_region,
+                config=Config(retries={"max_attempts": 4, "mode": "standard"}),
             )
-        if not os.path.isabs(self._media_root):
-            raise RuntimeError("MEDIA_ROOT must be an absolute path.")
+        return self._s3
+
+    def _require_configuration(self) -> None:
+        if not self._bucket_name or not self._public_base_url:
+            raise RuntimeError(
+                "S3 storage is not configured. Set STORAGE_BUCKET_NAME and STORAGE_PUBLIC_BASE_URL."
+            )
 
     def get_allowed_mime_types(self, bucket: str) -> list[str]:
         """Return the allowed MIME types for *bucket*, or an empty list."""
@@ -196,41 +204,57 @@ class StorageService:
         return data, content_type
 
     def upload_file(self, bucket: str, file_bytes: bytes, content_type: str) -> str:
-        """Store a file and return its public URL.
+        """Upload a file and return its public URL.
 
-        The stored file's extension is derived exclusively from the
+        The stored object's extension is derived exclusively from the
         *validated* ``content_type``.  This prevents the "upload as
         evil.html with Content-Type image/png" trick where the public URL ends
         in ``.html`` even though our MIME sniffer accepted the bytes (audit U7).
-        It also keeps sanitized SVGs under ``.svg``, the name the web server
-        serves with ``Content-Disposition: attachment`` (audit U8).
         """
         ext = _MIME_TO_EXT.get(content_type, ".bin")
         self._require_configuration()
         path = f"{uuid.uuid4().hex}{ext}"
-        target = self._file_path(bucket, path)
-        if target is None:
+        key = self._object_key(bucket, path)
+        if key is None:
             raise ValidationError("Invalid storage asset path")
-        # Readers see no file or the whole file: a flushed temporary file in
-        # the bucket directory is renamed into place.
-        atomic_write(target, file_bytes)
-        # Media is public, and the web server may run as another user.
-        target.chmod(0o644)
+
+        put_options: dict[str, object] = {
+            "Bucket": self._bucket_name,
+            "Key": key,
+            "Body": file_bytes,
+            "ContentType": content_type,
+            "CacheControl": "public, max-age=31536000, immutable",
+            "ServerSideEncryption": "AES256",
+        }
+        # For SVGs, force ``Content-Disposition: attachment`` so the
+        # browser downloads the file instead of rendering it inline on a
+        # top-level navigation.  Combined with the sanitizer this is
+        # defense-in-depth - even if a bypass is found later, the file
+        # won't execute scripts in the storage origin (audit U8).
+        if content_type == "image/svg+xml":
+            put_options["ContentDisposition"] = "attachment"
+
+        self._get_s3_client().put_object(**put_options)
+
         return f"{self._public_base_url}/{bucket}/{path}"
 
     def download_file(self, bucket: str, path: str) -> tuple[bytes, str]:
-        """Read one owned asset for repair from the same files uploads write."""
+        """Read one owned asset for repair through the same S3 configuration as uploads."""
         self._require_configuration()
-        target = self._file_path(bucket, path)
-        if target is None:
+        key = self._object_key(bucket, path)
+        if key is None:
             raise ValidationError("Invalid storage asset path")
-        # Repairs must obey the same bounded media contract as new uploads.
-        limit = self.get_file_size_limit(bucket)
-        with target.open("rb") as file:
-            data = file.read(limit + 1)
-        if len(data) > limit:
-            raise ValidationError("Stored asset exceeds the configured media size limit")
-        return data, _EXT_TO_MIME.get(target.suffix, "")
+        response = self._get_s3_client().get_object(Bucket=self._bucket_name, Key=key)
+        body = response["Body"]
+        try:
+            # Repairs must obey the same bounded media contract as new uploads.
+            limit = self.get_file_size_limit(bucket)
+            data = body.read(limit + 1)
+            if len(data) > limit:
+                raise ValidationError("Stored asset exceeds the configured media size limit")
+            return data, response.get("ContentType", "")
+        finally:
+            body.close()
 
     def delete_file(self, bucket: str, path: str) -> None:
         """Delete a file by its path within a bucket.
@@ -238,16 +262,16 @@ class StorageService:
         Rejects paths containing ``..`` or absolute path prefixes after
         normalization - prevents an attacker who controls
         ``source_image_url`` / ``logo_url`` / ``avatar_url`` from
-        deleting unrelated files via path traversal (audit U10).
+        deleting unrelated objects via path traversal (audit U10).
         """
         self._require_configuration()
-        target = self._file_path(bucket, path)
-        if target is None:
+        key = self._object_key(bucket, path)
+        if key is None:
             logger.warning("Refusing to delete suspicious path %s/%s", bucket, path)
             return
         try:
-            target.unlink(missing_ok=True)
-        except OSError as e:
+            self._get_s3_client().delete_object(Bucket=self._bucket_name, Key=key)
+        except Exception as e:
             logger.warning("Failed to delete %s/%s: %s", bucket, path, e)
 
     def path_from_url(self, url: str, bucket: str) -> str | None:
@@ -275,19 +299,14 @@ class StorageService:
             return None
         return path
 
-    def _file_path(self, bucket: str, path: str) -> Path | None:
-        """Return where *bucket*/*path* lives, or None if it is not a plain file in a bucket.
+    def _object_key(self, bucket: str, path: str) -> str | None:
+        """Return the S3 key of *bucket*/*path*, or None if it is not a plain file in a known bucket.
 
-        The resolved path must stay inside its bucket directory, so neither a
-        crafted name nor a symlink can reach a file outside ``MEDIA_ROOT``.
+        Keys mirror public URLs: ``<bucket>/<file>`` under STORAGE_PUBLIC_BASE_URL.
         """
         if bucket not in self.BUCKETS or not _is_safe_storage_path(path):
             return None
-        bucket_root = (Path(self._media_root) / bucket).resolve()
-        target = (bucket_root / path).resolve()
-        if not target.is_relative_to(bucket_root):
-            return None
-        return target
+        return f"{bucket}/{path}"
 
 
 def _is_safe_storage_path(path: str) -> bool:

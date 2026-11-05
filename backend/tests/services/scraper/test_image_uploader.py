@@ -2,7 +2,7 @@
 
 Focus on the SSRF allowlist (``_is_safe_image_url``). The download +
 upload path is intentionally not exercised here - that wires through
-real httpx + media storage and is covered by the pipeline integration
+real httpx + S3 storage and is covered by the pipeline integration
 test instead.
 """
 
@@ -221,7 +221,9 @@ def test_oversized_instagram_poster_is_resized_before_stored_size_validation(mon
     client.__enter__.return_value.get.return_value = response
     monkeypatch.setattr(image_uploader.httpx, "Client", lambda **kwargs: client)
     monkeypatch.setattr(image_uploader, "_is_safe_image_url", lambda *args, **kwargs: True)
-    storage = StorageService(media_root="/srv/media", public_base_url="https://wat2do.io/media")
+    storage = StorageService(
+        MagicMock(), bucket_name="test", public_base_url="https://wat2do.io/media"
+    )
     monkeypatch.setattr(image_uploader, "storage", storage)
     monkeypatch.setattr(storage, "get_file_size_limit", lambda *_: 15000)
     upload = MagicMock(return_value="https://wat2do.io/media/event-images/new.jpg")

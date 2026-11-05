@@ -64,8 +64,9 @@ JOBS: dict[str, dict[str, object]] = {
         [str(HOME / ".local/libexec/wat2do/postgrest"), str(DATA / "config/postgrest.conf")],
     ),
     "io.wat2do.caddy": service("io.wat2do.caddy", [str(CURRENT / "run-caddy")]),
-    "io.wat2do.api": service("io.wat2do.api", [str(CURRENT / "run-api")]),
-    "io.wat2do.web": service("io.wat2do.web", [str(CURRENT / "run-web")]),
+    # launchd's default 20 second stop timeout would cut the API's graceful
+    # shutdown (controlbox/api_server.json) short.
+    "io.wat2do.api": service("io.wat2do.api", [str(CURRENT / "run-api")], ExitTimeOut=30),
     "io.wat2do.event-change-alerts": timer(
         "io.wat2do.event-change-alerts", "event-change-alerts", StartInterval=60
     ),

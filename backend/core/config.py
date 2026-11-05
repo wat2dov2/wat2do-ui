@@ -26,9 +26,9 @@ class Settings(BaseSettings):
     # Scoped login the local ingestion agent uses for events and positions.
     ingest_agent_database_url: str = ""
     aws_region: str = "ca-central-1"
-    # Absolute directory holding uploaded and ingested media, one folder per
-    # bucket; the web server serves it at STORAGE_PUBLIC_BASE_URL.
-    media_root: str = ""
+    # S3 bucket in ``aws_region`` holding uploaded and ingested media under
+    # ``<bucket>/<file>`` keys; CloudFront serves it at STORAGE_PUBLIC_BASE_URL.
+    storage_bucket_name: str = ""
     storage_public_base_url: str = ""
     openai_api_key: str = ""
     # Required only for manual username lookups and profile-logo backfills.

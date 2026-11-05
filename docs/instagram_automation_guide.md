@@ -11,11 +11,11 @@ Brave never opens individual posts for ingestion.
 
 ## Repair an existing poster or scraped video
 
-New scraped videos are copied to owned media storage and played on event and position detail views, with their images retained as posters.
+New scraped videos are copied to owned S3 storage and played on event and position detail views, with their images retained as posters.
 Previously processed posts remain deduplicated during ordinary scraping, so deploying video support does not redownload historical posts or rerun AI extraction.
 Use the targeted media repair command for an existing event or position.
-It uses the same media storage, limits, and rendition rules as new uploads.
-Configure the intended database, `MEDIA_ROOT`, `STORAGE_PUBLIC_BASE_URL`, and discovery revalidation settings in the command's environment before applying a repair.
+It uses the same S3 storage, limits, and rendition rules as new uploads.
+Configure the intended database, `STORAGE_BUCKET_NAME`, `STORAGE_PUBLIC_BASE_URL`, and discovery revalidation settings in the command's environment before applying a repair.
 
 ```sh
 cd backend

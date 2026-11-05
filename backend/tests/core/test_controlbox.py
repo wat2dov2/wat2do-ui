@@ -353,9 +353,6 @@ def test_discovery_controls_load_checked_in_feature_sources():
     assert controlbox.image_delivery.optimized_format == "image/webp"
     assert controlbox.image_delivery.optimized_remote_host == "wat2do.io"
     assert controlbox.image_delivery.optimized_remote_path == "/media/"
-    assert "173.245.48.0/20" in {
-        str(network) for network in controlbox.viewer_ip.cloudflare_networks
-    }
 
 
 @pytest.mark.parametrize(
@@ -380,9 +377,6 @@ def test_discovery_controls_load_checked_in_feature_sources():
             {"snapshot_check_seconds": controlbox.discovery_cache.cdn_ttl_seconds + 1},
         ),
         ("discovery_cache", {"refresh_interval_seconds": 0}),
-        ("viewer_ip", {"cloudflare_networks": []}),
-        ("viewer_ip", {"cloudflare_networks": ["not-a-network"]}),
-        ("viewer_ip", {"cloudflare_networks": ["173.245.48.1/20"]}),
         ("image_delivery", {"device_sizes": []}),
         ("image_delivery", {"device_sizes": [640, 256]}),
         ("image_delivery", {"device_sizes": [256, 256]}),

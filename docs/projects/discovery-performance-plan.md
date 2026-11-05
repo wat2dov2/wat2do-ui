@@ -13,7 +13,7 @@ The old directory fetch-cache tags, unconditional five-resource invalidation, an
 Event and club details use current source reads, memoized within their route render, so task-local detail caches cannot retain another task's stale club fields.
 
 Snapshots were first kept in S3, then (on the Mac mini) as files written by a worker inside the one Next process.
-Since 2026-11-05 the website runs on Vercel, where no process lives long and no disk is shared, so each snapshot is one `unstable_cache` entry in Next's data cache, which Vercel shares across every instance and deployment.
+Since 2026-11-05 the website runs on AWS Lambda (OpenNext), where no process lives long and no disk is shared, so each snapshot is one `unstable_cache` entry in Next's data cache, which OpenNext keeps in S3 (tags in DynamoDB) for every instance and deployment.
 Its tag is `discovery:v<schema_version>:<school>:<resource>` (`_global` for the school directory and banner).
 The refresh endpoint checks the shared secret and the school, marks the named tags stale with `revalidateTag(tag, "max")` and returns HTTP 202.
 A stale snapshot is still served; the next read rebuilds it in the background, and so does any read once it is older than `refresh_interval_seconds`.
@@ -76,7 +76,7 @@ The first six cards load eagerly; subsequent posters use native lazy loading.
 The transparent cutout artwork remains owned by the existing mask primitive.
 Source changes reset loading/error state, tiny badges request small candidates, and fullscreen posters retain their larger source.
 
-Optimized posters are no longer warmed ahead of visitors; Vercel's image optimizer caches each variant on first request.
+Optimized posters are no longer warmed ahead of visitors; the image optimizer function makes each variant on first request and CloudFront caches it.
 
 Instagram rendering retains PNG normalization before Resvg, including for WebP sources.
 Poster preparation resizes to the template's actual region before embedding, and repeated cover posters share one download/preparation.

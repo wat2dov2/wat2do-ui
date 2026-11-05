@@ -9,6 +9,8 @@ lerna-debug.log*
 
 node_modules
 .next
+# OpenNext's AWS build (infra/mac-mini/deploy.sh)
+.open-next
 dist
 dist-ssr
 *.local

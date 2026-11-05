@@ -14,7 +14,6 @@ from pydantic import (
     EmailStr,
     Field,
     HttpUrl,
-    IPvAnyNetwork,
     model_validator,
 )
 
@@ -362,14 +361,6 @@ class ApiServerControl(_ControlModel):
         if self.shutdown_drain_seconds + self.python_shutdown_seconds >= 30:
             raise ValueError("shutdown must finish within a 30 second stop timeout")
         return self
-
-
-class ViewerIpControl(_ControlModel):
-    """How the frontend's proxy (`frontend/src/proxy.ts`) finds a visitor's address."""
-
-    # Cloudflare's published edge ranges (https://www.cloudflare.com/ips/). A
-    # request reaching Vercel from one of them names its visitor in CF-Connecting-IP.
-    cloudflare_networks: tuple[IPvAnyNetwork, ...] = Field(min_length=1)
 
 
 class RateLimitControl(_ControlModel):
@@ -1160,7 +1151,6 @@ class NotificationRetryControl(_ControlModel):
 
 class ControlBox(_ControlModel):
     api_server: ApiServerControl
-    viewer_ip: ViewerIpControl
     positions: PositionsControl
     database: DatabaseControl
     image_delivery: ImageDeliveryControl
