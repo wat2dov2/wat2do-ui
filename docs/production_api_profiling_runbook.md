@@ -125,7 +125,7 @@ These metrics are populated for every successful endpoint regardless of the conf
 An endpoint with no measured samples reports `null` metrics alongside its error.
 The output does not contain warm-up timing because warm-up requests are preparation rather than measured samples.
 `response_bytes` measures the downloaded response body size.
-`cache_statuses` records `cf-cache-status` or `x-cache` when present.
+`cache_statuses` records Cloudflare's `cf-cache-status` when present.
 `server_timings` records the `Server-Timing` header when present.
 `latency-distributions.svg` sorts endpoints by median latency and gives every endpoint one row.
 Each gold dot is a measured request, the gray line is its observed range, and the cyan tick is its median.

@@ -375,11 +375,6 @@ def test_offline_validator_requires_preprovisioned_cache_without_downloading(
 
 
 def test_missing_routing_fails_without_logging_payload(runner, monkeypatch):
-    for name in (
-        "AWS_DEPLOY_ROLE_ARN",
-        "AWS_RUNTIME_SECRET_ARN",
-    ):
-        monkeypatch.setenv(name, "configured")
     monkeypatch.setenv("INTENDED_RECIPIENT_ID", "")
     monkeypatch.setenv("TARGET_SCHOOL", "")
     result = run_step("Validate job inputs")

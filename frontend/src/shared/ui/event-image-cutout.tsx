@@ -14,7 +14,7 @@ import {
 import { cn } from "@/shared/lib/utils";
 import type { BadgeMaskVariant } from "@/shared/ui/badge-mask-paths";
 import { LazyImage } from "@/shared/ui/lazy-image";
-import { CARD_GRID_IMAGE_SIZES } from "@/shared/constants/ui";
+import { posterThumbnailUrl } from "@/shared/utils/media";
 
 const useSafeLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -130,7 +130,6 @@ interface EventImageCutoutProps {
   videoSrc?: string | null;
   /** Load the poster immediately for LCP candidates; defer off-screen cards. */
   imageLoading?: "eager" | "lazy";
-  imageSizes?: string;
   imageFallback?: ReactNode;
   /** Custom image content shares the same measured transparent face. */
   imageContent?: ReactNode;
@@ -188,7 +187,6 @@ export function EventImageCutout({
   imageVariant = "poster",
   videoSrc,
   imageLoading = "eager",
-  imageSizes = CARD_GRID_IMAGE_SIZES,
   imageFallback,
   imageContent,
   cutouts,
@@ -218,10 +216,11 @@ export function EventImageCutout({
         {imageContent ?? (
           <div className={cn("absolute inset-0", compactProfile && "flex items-center justify-center")}>
             <LazyImage
-              src={imageSrc}
+              // A poster frame is at most about 480 px wide, which the stored
+              // thumbnail covers at 2x; the full image opens on demand.
+              src={imageSrc && posterThumbnailUrl(imageSrc)}
               alt={imageAlt}
               videoSrc={videoSrc}
-              sizes={compactProfile ? "96px" : imageSizes}
               fit={compactProfile ? "contain" : "cover"}
               loading={imageLoading}
               fallback={imageFallback}

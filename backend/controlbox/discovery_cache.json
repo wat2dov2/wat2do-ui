@@ -1,13 +1,9 @@
 {
   "schema_version": 2,
-  "storage_prefix": "media/discovery-cache",
   "refresh_interval_seconds": 3600,
   "snapshot_check_seconds": 15,
   "request_timeout_seconds": 20,
   "page_concurrency": 2,
   "maximum_page_count": 200,
-  "readiness_timeout_seconds": 600,
-  "startup_grace_seconds": 90,
-  "generation_retention_days": 2,
   "cdn_ttl_seconds": 60
 }

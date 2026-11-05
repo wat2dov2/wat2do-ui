@@ -7,6 +7,7 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import sharp from "sharp";
 import imageDelivery from "../../backend/controlbox/image_delivery.json" with { type: "json" };
+import uploads from "../../backend/controlbox/uploads.json" with { type: "json" };
 import instagramPublishing from "../../backend/controlbox/instagram_publishing.json" with { type: "json" };
 import socialPreviews from "../../backend/controlbox/social_previews.json" with { type: "json" };
 
@@ -81,14 +82,8 @@ const { imageConfigDefault } = require("next/dist/shared/lib/image-config");
 // Loaded on use: the slide module reads its logo source once the tests have configured it.
 const slideLayout = (): typeof import("../src/features/admin/lib/instagramSlides") =>
   require("../src/features/admin/lib/instagramSlides");
-const imageConfig = {
-  ...imageConfigDefault,
-  formats: [imageDelivery.optimized_format],
-  deviceSizes: imageDelivery.device_sizes,
-  imageSizes: imageDelivery.image_sizes,
-  qualities: [imageDelivery.quality],
-  remotePatterns: [{ protocol: "https", hostname: imageDelivery.optimized_remote_host, pathname: `${imageDelivery.optimized_remote_path}**` }],
-};
+// next.config.ts serves every image as stored (images.unoptimized).
+const imageConfig = { ...imageConfigDefault, unoptimized: true };
 // Public getImageProps captures build configuration at module load. The VM
 // loader supplies that configuration to the same Next image pipeline locally.
 const { EventImageCutout } = loadComponent("shared/ui/event-image-cutout");
@@ -96,12 +91,13 @@ const { LazyImage } = loadComponent("shared/ui/lazy-image");
 const { AvatarStack } = loadComponent("shared/ui/avatar-stack");
 const { SchoolPhotoCarousel } = loadComponent("features/contact/components/SchoolPhotoCarousel");
 const { EventCardImage } = loadComponent("features/events/components/EventCardImage");
-const posterUrl = "https://wat2do.io/media/event-images/poster.jpg";
+const posterUrl = `${imageDelivery.media_origin}/event-images/poster.jpg`;
+const posterThumbnailUrl = `${imageDelivery.media_origin}/event-images/poster${uploads.event_image_thumbnail_suffix}`;
 function render(component: React.ComponentType<Record<string, unknown>>, props: Record<string, unknown>) {
   return renderToStaticMarkup(createElement(ImageConfigContext.Provider, { value: imageConfig }, createElement(component, props)));
 }
 
-test("lazy posters have responsive native image URLs before hydration or measurement", () => {
+test("poster frames load the stored thumbnail before hydration, never a resized copy", () => {
   const html = render(EventImageCutout, {
     backgroundColor: "var(--surface-elevated)", imageSrc: posterUrl, imageAlt: "Campus poster",
     imageLoading: "lazy", cutouts: [], width: 0, height: 0,
@@ -109,42 +105,9 @@ test("lazy posters have responsive native image URLs before hydration or measure
   expect(html).toContain('<img alt="Campus poster"');
   expect(html).toContain('loading="lazy"');
   expect(html).toContain('decoding="async"');
-  expect(html).toContain('srcSet="/_next/image?url=');
-  expect(html).toContain(`&amp;q=${imageDelivery.quality}`);
-  expect(html).toContain('sizes="auto, (max-width: 639px) calc(50vw - 16px), 320px"');
-});
-
-test("CloudFront shares browser and warmer image variants without changing unsupported clients or page requests", () => {
-  const terraform = readFileSync(new URL("../../infra/terraform/production/cloudfront.tf", import.meta.url), "utf8");
-  const source = terraform.match(/code = <<-EOT\n([\s\S]*?)\n {2}EOT/)?.[1];
-  expect(source).toBeDefined();
-  const rendered = source!.replace("${jsonencode(local.image_delivery_control.optimized_format)}", JSON.stringify(imageDelivery.optimized_format));
-  type Header = { value: string; multiValue?: { value: string }[] };
-  type Request = { uri: string; headers: Record<string, Header> };
-  const handler = runInNewContext(`${rendered}\nhandler`) as (event: { viewer: { ip: string }; request: Request }) => Request;
-  const invoke = (accept?: string | Header, uri = "/_next/image") => handler({
-    viewer: { ip: "192.0.2.1" },
-    request: { uri, headers: { host: { value: "uwo.wat2do.io" },
-      ...(accept === undefined ? {} : { accept: typeof accept === "string" ? { value: accept } : accept }) } },
-  });
-  for (const accept of [
-    imageDelivery.optimized_format,
-    "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-    "image/webp;q=0.5,image/png;q=1",
-    "IMAGE/WEBP; Q=0.8",
-    { value: "image/png", multiValue: [{ value: "image/png" }, { value: "image/webp;q=0.9" }] },
-  ]) {
-    expect(invoke(accept).headers.accept).toEqual({ value: imageDelivery.optimized_format });
-  }
-  for (const accept of [undefined, "*/*", "image/*", "image/png,image/jpeg", "image/webp;q=0,*/*;q=1", "image/webp;q=0.0", "image/webp;q=invalid", "image/webp;q=2"]) {
-    expect(invoke(accept).headers.accept).toEqual({ value: "*/*" });
-  }
-  const page = invoke("text/html,image/webp", "/events");
-  expect(page.headers.accept).toEqual({ value: "text/html,image/webp" });
-  expect(page.headers["x-forwarded-host"]).toEqual({ value: "uwo.wat2do.io" });
-  expect(page.headers["x-wat2do-viewer-ip"]).toEqual({ value: "192.0.2.1" });
-  const imageBehavior = terraform.match(/path_pattern\s+= "\/_next\/image\*"([\s\S]*?)\n {2}}/)?.[1];
-  expect(imageBehavior).toContain("function_arn = aws_cloudfront_function.forward_viewer_host.arn");
+  expect(html).toContain(`src="${posterThumbnailUrl}"`);
+  expect(html).not.toContain("/_next/image");
+  expect(html).not.toContain("srcSet=");
 });
 
 test("measured cutouts mask the HTML image face and eager posters receive priority", () => {
@@ -156,8 +119,7 @@ test("measured cutouts mask the HTML image face and eager posters receive priori
   expect(html).toContain('data-slot="event-image-face"');
   expect(html).toContain('loading="eager"');
   expect(html).toContain('fetchpriority="high"');
-  expect(html).toContain('sizes="(max-width: 639px) calc(50vw - 16px), 320px"');
-  expect(html).not.toContain('sizes="auto,');
+  expect(html).toContain(`src="${posterThumbnailUrl}"`);
 });
 
 test("direct clipping pixels remove each measured corner while preserving the image face", async () => {
@@ -196,9 +158,10 @@ test("custom carousel photos stay inside the measured transparent face", () => {
   expect(html).not.toContain('data-slot="lazy-image"');
 });
 
-test("attendee avatars are discoverable before hydration and request avatar-sized candidates", () => {
+test("attendee avatars are discoverable before hydration and load the stored file", () => {
+  const avatar = `${imageDelivery.media_origin}/avatars/student.jpg`;
   const html = render(AvatarStack, {
-    avatars: [{ src: "https://wat2do.io/media/avatars/student.jpg", name: "Taylor Q." }],
+    avatars: [{ src: avatar, name: "Taylor Q." }],
     overflowCount: 2,
     overflowLabel: "2 more attendees",
   });
@@ -206,47 +169,34 @@ test("attendee avatars are discoverable before hydration and request avatar-size
   expect(html).toContain('<img alt="Taylor Q."');
   expect(html).toContain('loading="lazy"');
   expect(html).toContain('width="32" height="32"');
-  expect(html).toContain(`&amp;w=32&amp;q=${imageDelivery.quality} 1x`);
-  expect(html).toContain(`&amp;w=64&amp;q=${imageDelivery.quality} 2x`);
-  expect(html).not.toContain("&amp;w=1080");
+  expect(html).toContain(`src="${avatar}"`);
+  expect(html).not.toContain("/_next/image");
   expect(html).toContain('aria-label="2 more attendees"');
 });
 
-test("stored poster templates use responsive thumbnails without requesting the full print image", () => {
-  const src = "/poster-templates/campus-colour-v1.png";
-  const html = render(LazyImage, { src, alt: "Campus Colour", sizes: "80px" });
-  expect(html).toContain('sizes="auto, 80px"');
-  expect(html).toContain('loading="lazy"');
-  expect(html).toContain(`srcSet="/_next/image?url=${encodeURIComponent(src)}`);
-  expect(html).not.toContain(`src="${src}"`);
-});
-
-test("tiny owned logos get tiny candidates while external and local preview sources remain usable", () => {
-  const logo = render(LazyImage, { src: posterUrl, alt: "", width: 12, height: 12 });
-  expect(logo).toContain(`&amp;w=${imageDelivery.image_sizes[0]}&amp;q=${imageDelivery.quality}`);
-  expect(logo).not.toContain("&amp;w=1080");
-  for (const src of ["https://external.example/poster.jpg", "https://legacy-storage.example/event-images/poster.jpg", "blob:http://localhost/preview", "data:image/png;base64,AA=="]) {
-    const html = render(LazyImage, { src, alt: "Preview", sizes: "320px" });
+test("images outside poster frames load exactly the source they were given", () => {
+  for (const src of ["/poster-templates/campus-colour-v1.png", posterUrl, "https://external.example/poster.jpg", "https://legacy-storage.example/event-images/poster.jpg", "blob:http://localhost/preview", "data:image/png;base64,AA=="]) {
+    const html = render(LazyImage, { src, alt: "Preview" });
     expect(html).toContain(`src="${src}"`);
     expect(html).not.toContain("/_next/image");
   }
 });
 
 test("missing posters render an accessible fallback without an empty network request", () => {
-  const html = render(LazyImage, { src: null, alt: "Campus poster", sizes: "320px" });
+  const html = render(LazyImage, { src: null, alt: "Campus poster" });
   expect(html).toContain('data-image-state="missing"');
   expect(html).toContain('role="img" aria-label="Campus poster"');
   expect(html).not.toContain("<img ");
 });
 
-test("video details keep an optimized poster and defer video bytes until playback", () => {
-  const videoUrl = "https://wat2do.io/media/event-videos/reel.mp4";
+test("video details show the poster thumbnail and defer video bytes until playback", () => {
+  const videoUrl = `${imageDelivery.media_origin}/event-videos/reel.mp4`;
   const html = render(EventImageCutout, {
     backgroundColor: "var(--surface-elevated)", imageSrc: posterUrl, imageAlt: "Campus reel",
     videoSrc: videoUrl, cutouts: [], width: 320, height: 320,
   });
   expect(html).toContain(`<video src="${videoUrl}"`);
-  expect(html).toContain('poster="/_next/image?url=');
+  expect(html).toContain(`poster="${posterThumbnailUrl}"`);
   expect(html).toContain('preload="none"');
   expect(html).toContain('controls=""');
   expect(html).toContain('playsinline=""');
@@ -290,7 +240,7 @@ test.describe("Instagram raster preparation", () => {
     else process.env.NEXT_PUBLIC_CLUB_CATEGORY_DOODLE_SVGS = originalDoodles;
   });
   test.beforeEach(() => {
-    process.env.STORAGE_PUBLIC_BASE_URL = "https://wat2do.io/media";
+    process.env.STORAGE_PUBLIC_BASE_URL = "https://media.wat2do.io";
     delete process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   });
   test.afterEach(() => {
@@ -384,7 +334,7 @@ test.describe("Instagram raster preparation", () => {
   }
 
   test("club avatars survive the actual published PNG render", async () => {
-    const avatarUrl = "https://wat2do.io/media/club-logos/film-club.webp";
+    const avatarUrl = "https://media.wat2do.io/club-logos/film-club.webp";
     const poster = await sharp({ create: { width: 1600, height: 2000, channels: 3, background: "#ef5014" } }).webp().toBuffer();
     const avatar = await sharp({ create: { width: 320, height: 320, channels: 3, background: "#2e5ac8" } }).webp().toBuffer();
     const fetched: string[] = [];
@@ -491,7 +441,7 @@ test.describe("Instagram raster preparation", () => {
 
   for (const failure of ["404", "non-image"] as const) {
     test(`an optional avatar ${failure} preserves the event poster`, async () => {
-      const avatarUrl = "https://wat2do.io/media/club-logos/missing.png";
+      const avatarUrl = "https://media.wat2do.io/club-logos/missing.png";
       const poster = await sharp({ create: { width: 1080, height: 840, channels: 3, background: "#ef5014" } }).png().toBuffer();
       const fetched: string[] = [];
       globalThis.fetch = async url => {
@@ -673,7 +623,7 @@ test("Going uses the top-left badge without obscuring posters or detail videos",
     for (const variant of ["card", "detail"]) {
       const html = render(EventCardImage, { event: {
         id: 42, title: "Campus event", occurrences: [], source_image_url: posterUrl,
-        source_video_url: variant === "detail" ? "https://wat2do.io/media/event.mp4" : undefined,
+        source_video_url: variant === "detail" ? "https://media.wat2do.io/event.mp4" : undefined,
         added_at: new Date().toISOString(),
       }, variant });
       expect(html).toContain("events.going");
@@ -722,14 +672,14 @@ test("About loading preserves the carousel frame, greeting, caption and controls
 
 for (const variant of ["card", "detail"]) {
   test(`directory ${variant} uses a compact club profile picture`, () => {
-    const logo = "https://wat2do.io/media/organization-logos/laurier.jpg";
+    const logo = "https://media.wat2do.io/organization-logos/laurier.jpg";
     const html = render(EventCardImage, { variant, event: {
       id: 42, title: "Laurier event", occurrences: [], added_at: "2026-09-01T00:00:00Z",
       is_directory_event: true, source_image_url: null, club_logo_url: logo,
     }});
-    expect(html).toContain(encodeURIComponent(logo));
+    expect(html).toContain(`src="${logo}"`);
     expect(html).toContain("object-contain");
-    expect(html).toContain("96px");
+    expect(html).toContain("size-24");
     expect(html).not.toContain("cursor-zoom-in");
   });
 
@@ -745,24 +695,24 @@ for (const variant of ["card", "detail"]) {
 }
 
 test("ordinary events retain their event poster even with a club profile picture", () => {
-  const logo = "https://wat2do.io/media/organization-logos/club.jpg";
+  const logo = "https://media.wat2do.io/organization-logos/club.jpg";
   const html = render(EventCardImage, { variant: "card", event: {
     id: 42, title: "Real event poster", occurrences: [], added_at: "2026-09-01T00:00:00Z",
     is_directory_event: false, source_image_url: posterUrl, club_logo_url: logo,
   }});
-  expect(html).toContain(encodeURIComponent(posterUrl));
-  expect(html).not.toContain(encodeURIComponent(logo));
+  expect(html).toContain(`src="${posterThumbnailUrl}"`);
+  expect(html).not.toContain(logo);
 });
 
 for (const variant of ["card", "detail"]) {
   test(`directory ${variant} prefers event artwork over the club profile picture`, () => {
-    const logo = "https://wat2do.io/media/organization-logos/club.jpg";
+    const logo = "https://media.wat2do.io/organization-logos/club.jpg";
     const html = render(EventCardImage, { variant, event: {
       id: 19199, title: "Sidewalk Sale", occurrences: [], added_at: "2026-09-01T00:00:00Z",
       is_directory_event: true, source_image_url: posterUrl, club_logo_url: logo,
     }});
-    expect(html).toContain(encodeURIComponent(posterUrl));
-    expect(html).not.toContain(encodeURIComponent(logo));
+    expect(html).toContain(`src="${posterThumbnailUrl}"`);
+    expect(html).not.toContain(logo);
     expect(html.includes("cursor-zoom-in")).toBe(variant === "detail");
   });
 }

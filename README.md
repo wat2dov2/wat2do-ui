@@ -63,16 +63,16 @@ Run `make dev` again after changing dependencies or environment settings.
 Use `docker compose -p wat2do-dev -f docker-compose.dev.yml logs -f` to inspect app logs.
 Stop manually started frontend/backend processes before switching to this workflow; ports 3000 and 8000 must be free.
 Never use Compose `down -v` unless intentionally deleting local data.
-The regular `docker-compose.yml` remains the production-style image configuration, not the local startup entry point.
 
 ## Repeatable local demo data
 
 ### Development image storage
 
-Uploaded images are files on disk, as in production.
-`make dev` sets `MEDIA_ROOT` to the git-ignored `media/` folder at the repository root, one folder per bucket (`media/event-images/<uuid>.jpg`).
-The Compose `media` service serves that folder at `http://localhost:55434/media`, the backend's `STORAGE_PUBLIC_BASE_URL`.
-Delete files under `media/` to clear local uploads; the local database keeps their URLs.
+Uploaded images go through the same S3 API code as production, with a local S3 server standing in for the R2 bucket.
+The Compose `media` service runs SeaweedFS's single-process S3 server with bucket `media`, kept in the `media_data` volume.
+`make dev` points the backend's storage settings at it (`STORAGE_ENDPOINT_URL`, with placeholder `STORAGE_ACCESS_KEY_ID` and `STORAGE_SECRET_ACCESS_KEY`), while SES still goes to AWS with the AWS credentials.
+The server runs without credentials: it accepts the backend's signed requests and serves objects to browsers at `http://localhost:55434/media`, the backend's `STORAGE_PUBLIC_BASE_URL`.
+Remove the `media_data` volume to clear local uploads; the local database keeps their URLs.
 Discovery snapshots live in Next's data cache under `frontend/.next/cache` in development; the backend's revalidation notices (`EVENT_FEED_REVALIDATION_URL`) mark them stale.
 Keep `OPENAI_API_KEY` in the ignored backend environment and restart the backend after environment changes.
 
@@ -139,28 +139,20 @@ Employer recruiting continues to use `employers_on_campus` independently of thes
 
 ## Production deployment
 
-The website (Next.js, `frontend/`) runs on Vercel, and the Mac mini serves the API, the data API, Postgres and media at `https://api.wat2do.io` through a Cloudflare Tunnel; [`docs/projects/mac-mini-hosting.md`](docs/projects/mac-mini-hosting.md) is the runbook.
-The website rewrites `/api/*` and `/media/*` to `API_URL` (`frontend/next.config.ts`), and its server code reads the API at the same `API_URL`.
+The website (Next.js, `frontend/`) runs on AWS in account 291667884807: CloudFront in front of Lambda functions built by OpenNext (`infra/terraform/web`), with media in Cloudflare R2. The Mac mini serves the API, the data API and Postgres at `https://api.wat2do.io` through a Cloudflare Tunnel, and CloudFront sends the website's `/api/*` there; [`docs/projects/mac-mini-hosting.md`](docs/projects/mac-mini-hosting.md) is the runbook.
+The website's server code reads the API at `API_URL`.
 The database is PostgreSQL 17 (database `wat2do`), which the backend reads and writes through our own PostgREST data API.
 Sign-in, sessions and access tokens are the backend's own (`rust/src/api/routes/auth`, verified in Python by `backend/core/auth_tokens.py`).
-Uploaded and ingested media are files under `MEDIA_ROOT`, one folder per bucket, which the web server serves at `STORAGE_PUBLIC_BASE_URL` (`https://wat2do.io/media`).
-The web server, not the code, sends their immutable `Cache-Control` header and `Content-Disposition: attachment` for `.svg` files.
-Discovery snapshots live in Next's data cache, which every Vercel instance and deployment shares (`frontend/src/shared/services/discoveryCache.server.ts`).
+Uploaded and ingested media are objects in the Cloudflare R2 bucket `STORAGE_BUCKET_NAME`, written through R2's S3 API at `STORAGE_ENDPOINT_URL` with their own key (`STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY`), keyed `<bucket>/<file>` (`event-images/<uuid>.jpg`) and served at `STORAGE_PUBLIC_BASE_URL` (`https://media.wat2do.io`).
+Each object carries its validated `Content-Type`, an immutable `Cache-Control` header and, for `.svg` files, `Content-Disposition: attachment`.
+Each event image also gets a WebP thumbnail beside it at upload (`<name>.thumb.webp`, `backend/services/event_image_thumbnails.py`), which event cards show, so nothing resizes images on request; `backend/scripts/make_event_image_thumbnails.py` makes the missing ones in a local copy of the bucket.
+Discovery snapshots live in Next's data cache, which every Lambda instance and deployment shares through S3 and DynamoDB (`frontend/src/shared/services/discoveryCache.server.ts`).
 Each school's link preview is drawn by the frontend on request (`frontend/src/app/og-image.png/route.tsx`) with Next.js `ImageResponse`, from the school and its event feed, with no browser.
-The encrypted Terraform state bucket and DynamoDB lock table remain in `us-west-2`; they do not affect Canadian application traffic.
+DNS is on Cloudflare.
+Email goes out through Amazon SES, and the API and ingestion write media to S3, both with one key limited to sending email and to the media bucket's objects, in the Mac's `~/wat2do-data/config/backend.env`.
+Production secrets live in that file and the other files under `~/wat2do-data/config`, never in the repository.
+Each push to `main` runs the CI/CD deploy job on the Mac's own runner (`infra/mac-mini/deploy.sh`), which builds the release, applies migrations, switches the Mac to it and then uploads the same commit's website to AWS.
 
-Terraform is split into `infra/terraform/foundation` and `infra/terraform/production`.
-Foundation creates the encrypted, versioned S3 state bucket, Route 53 zone, two ECR repositories, secret containers, and GitHub OIDC roles.
-Production creates the VPC, private Fargate workload, RDS database, PostgREST data API service, the per-minute event change alerts schedule, CloudFront, certificates, logging, and alarms.
-
-The first foundation apply intentionally starts with local state because the state bucket does not yet exist.
-Temporarily move `infra/terraform/foundation/backend.tf` outside that directory for this one local apply, then restore it before state migration.
-After it creates the bucket, immediately migrate state to S3 using the `foundation/terraform.tfstate` key and the `wat2do-terraform-state-lock` DynamoDB lock table.
-Populate the two Secrets Manager secret values from protected local files, not from Terraform variables or committed `.tfvars` files.
-Before switching registrar nameservers, inventory every current Vercel DNS record and add all non-application records to `foundation.tfvars`.
-
-The first ARM64 frontend and backend images must be pushed to ECR by digest before the initial production apply.
-Once production exists, pushes to `main` use GitHub OIDC to build both images, tag them with the full commit SHA, and update the ECS task definition.
 Event and position ingestion runs through one database table, `public.ingestion_items`, with one row per Instagram post or directory page, run by the Rust binary `wat2do-ingest` (`rust/src/ingestion`).
 Instagram notifications come from a physical Android phone running Automate, which triggers the `process-notification` workflow.
 The workflow records exact post URLs in the notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker, and a database trigger adds each post to `ingestion_items`.
@@ -187,7 +179,7 @@ Nothing is sent automatically.
 The sweep's limits, the sender and the club link live in `backend/controlbox/outreach.json`.
 Install its LaunchAgent with `cd backend && .venv/bin/python jobs/find_outreach_leads.py install-schedule`, or run one sweep with `sweep`.
 Every local agent runs through `backend/services/claude_code.py` (Python jobs) or `rust/src/claude.rs` (the ingestion binary), which pass no application secrets unless the caller supplies them.
-Notifications run on GitHub-hosted runners.
+Notifications run on the Mac's self-hosted runner (`wat2do-macmini-browser`), since the database is on the Mac.
 Queue a post by hand with `cd backend && cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-ingest -- enqueue --school <slug> --url <post url>` (`status` shows the queue counts); `wat2do-browser retrieve` (Rust, `rust/src/bin/wat2do-browser.rs`) also accepts a profile, which the Brave worker lists before its posts are queued.
 Profile-logo backfills and single-post media repairs remain separate Apify operator tools.
 For a read-only live retrieval check, run `cd backend && python scripts/probe_instagram_post.py --url https://www.instagram.com/p/SHORTCODE/`.

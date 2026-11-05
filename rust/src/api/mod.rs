@@ -36,6 +36,7 @@ use axum::Router;
 use axum::middleware::{from_fn, from_fn_with_state};
 use axum::routing::any;
 use sqlx::PgPool;
+use tower_http::compression::CompressionLayer;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
@@ -265,6 +266,9 @@ pub fn router(state: AppState) -> Router {
         ))
         .route_layer(from_fn_with_state(settings, cors::cors))
         .fallback(proxy::to_python)
+        // Responses leave the Mac over its slow uplink, so they go compressed
+        // (Rust's and Python's alike) to every client that accepts it.
+        .layer(CompressionLayer::new())
         .with_state(state)
 }
 

@@ -7,7 +7,6 @@ import pytest
 from pydantic import ValidationError
 
 from core.controlbox import (
-    EcsRuntimeControl,
     GoogleAnalyticsControl,
     controlbox,
     load_controlbox,
@@ -172,6 +171,8 @@ def test_upload_contract_matches_event_image_bucket() -> None:
     assert storage.get_file_size_limit(BUCKET_EVENT_IMAGES) == 5 * 1024 * 1024
     # Posters are stored at this width, so it is what every viewer receives.
     assert controlbox.uploads.event_image_rendition_width_pixels == 1080
+    assert controlbox.uploads.event_image_thumbnail_width_pixels == 640
+    assert controlbox.uploads.event_image_thumbnail_suffix == ".thumb.webp"
     assert controlbox.uploads.event_image_allowed_mime_types == storage.get_allowed_mime_types(
         BUCKET_EVENT_IMAGES
     )
@@ -351,75 +352,8 @@ def test_discovery_query_limits_are_validated(tmp_path, field, value):
 
 def test_discovery_controls_load_checked_in_feature_sources():
     assert controlbox.database.read_attempts == 3
-    assert controlbox.discovery_cache.storage_prefix == "media/discovery-cache"
-    assert controlbox.discovery_cache.startup_grace_seconds == 90
-    assert controlbox.image_delivery.optimized_format == "image/webp"
-    assert controlbox.image_delivery.optimized_remote_host == "wat2do.io"
-    assert controlbox.image_delivery.optimized_remote_path == "/media/"
-    assert "173.245.48.0/20" in {
-        str(network) for network in controlbox.viewer_ip.cloudflare_networks
-    }
-
-
-def test_ecs_runtime_keeps_memory_headroom():
-    runtime = controlbox.ecs_runtime
-    assert runtime.desired_count == 1
-    assert runtime.task_cpu == runtime.frontend_cpu + runtime.backend_cpu == 1024
-    assert runtime.task_memory_mib == 2048
-    assert runtime.frontend_heap_mib == 768
-    assert runtime.frontend_memory_reservation_mib - runtime.frontend_heap_mib == 256
-    assert (
-        runtime.frontend_memory_reservation_mib
-        + runtime.backend_memory_reservation_mib
-        + runtime.cache_init_memory_reservation_mib
-    ) < runtime.task_memory_mib
-
-
-@pytest.mark.parametrize(
-    "patch,message",
-    [
-        ({"desired_count": 0}, "desired_count"),
-        ({"frontend_heap_mib": 0}, "frontend_heap_mib"),
-        ({"frontend_heap_mib": 1024}, "headroom"),
-        ({"frontend_heap_mib": 1025}, "headroom"),
-        ({"frontend_cpu": 513}, "CPU shares"),
-        ({"backend_cpu": 0}, "backend_cpu"),
-        ({"backend_memory_reservation_mib": 993}, "memory reservations"),
-        ({"cache_init_memory_reservation_mib": 513}, "memory reservations"),
-        ({"cache_init_memory_reservation_mib": 0}, "cache_init_memory_reservation_mib"),
-        ({"task_cpu": 1000}, "Fargate combination"),
-        ({"task_memory_mib": 1024}, "Fargate combination"),
-        ({"task_memory_mib": 2049}, "Fargate combination"),
-        ({"task_memory_mib": 9216}, "Fargate combination"),
-        ({"task_cpu": 8192, "task_memory_mib": 17408}, "Fargate combination"),
-        ({"task_cpu": 16384, "task_memory_mib": 36864}, "Fargate combination"),
-    ],
-)
-def test_ecs_runtime_rejects_unsafe_capacity(tmp_path, patch, message):
-    directory = _write_control(tmp_path, "ecs_runtime", lambda payload: payload.update(patch))
-    with pytest.raises(ValidationError, match=message):
-        load_controlbox(directory)
-
-
-@pytest.mark.parametrize(
-    "cpu,memory_mib",
-    [
-        (256, 2048),
-        (512, 4096),
-        (1024, 8192),
-        (2048, 16384),
-        (4096, 30720),
-        (8192, 61440),
-        (16384, 122880),
-        (32768, 249856),
-    ],
-)
-def test_ecs_runtime_accepts_supported_fargate_sizes(cpu, memory_mib):
-    values = controlbox.ecs_runtime.model_dump()
-    values.update(
-        task_cpu=cpu, task_memory_mib=memory_mib, frontend_cpu=cpu // 2, backend_cpu=cpu // 2
-    )
-    assert EcsRuntimeControl.model_validate(values).task_memory_mib == memory_mib
+    assert controlbox.image_delivery.first_row_image_count == 6
+    assert controlbox.image_delivery.media_origin == "https://media.wat2do.io"
 
 
 @pytest.mark.parametrize(
@@ -439,33 +373,23 @@ def test_ecs_runtime_accepts_supported_fargate_sizes(cpu, memory_mib):
         ("discovery_cache", {"page_concurrency": 0}),
         ("discovery_cache", {"page_concurrency": 9}),
         ("discovery_cache", {"maximum_page_count": 0}),
-        ("discovery_cache", {"startup_grace_seconds": 0}),
         (
             "discovery_cache",
             {"snapshot_check_seconds": controlbox.discovery_cache.cdn_ttl_seconds + 1},
         ),
-        ("discovery_cache", {"storage_prefix": "/media/discovery-cache"}),
-        ("discovery_cache", {"storage_prefix": "media/../discovery-cache"}),
-        ("discovery_cache", {"storage_prefix": "media//discovery-cache"}),
         ("discovery_cache", {"refresh_interval_seconds": 0}),
-        ("viewer_ip", {"cloudflare_networks": []}),
-        ("viewer_ip", {"cloudflare_networks": ["not-a-network"]}),
-        ("viewer_ip", {"cloudflare_networks": ["173.245.48.1/20"]}),
-        ("image_delivery", {"device_sizes": []}),
-        ("image_delivery", {"device_sizes": [640, 256]}),
-        ("image_delivery", {"device_sizes": [256, 256]}),
-        ("image_delivery", {"image_sizes": [0, 16]}),
-        ("image_delivery", {"image_sizes": [256]}),
         ("uploads", {"event_video_max_size_bytes": 0}),
         ("uploads", {"event_video_download_timeout_seconds": 0}),
-        ("image_delivery", {"video_poster_width": 385}),
-        ("image_delivery", {"quality": 0}),
-        ("image_delivery", {"quality": 101}),
+        ("image_delivery", {"first_row_image_count": 0}),
         ("image_delivery", {"first_row_image_count": 25}),
-        ("image_delivery", {"optimized_format": "image/avif"}),
-        ("image_delivery", {"optimized_remote_host": "https://wat2do.io"}),
-        ("image_delivery", {"optimized_remote_host": "*.wat2do.io"}),
-        ("image_delivery", {"optimized_remote_path": "/media/../"}),
+        ("image_delivery", {"media_origin": "http://media.wat2do.io"}),
+        ("image_delivery", {"media_origin": "https://media.wat2do.io/"}),
+        ("image_delivery", {"media_origin": "https://wat2do.io/media"}),
+        ("uploads", {"event_image_thumbnail_width_pixels": 1080}),
+        ("uploads", {"event_image_thumbnail_quality": 0}),
+        ("uploads", {"event_image_thumbnail_suffix": ".webp"}),
+        ("uploads", {"event_image_thumbnail_suffix": "/thumb.webp"}),
+        ("uploads", {"event_image_thumbnail_suffix": ".thumb.jpg"}),
     ],
 )
 def test_discovery_control_limits_reject_unsafe_configuration(tmp_path, feature, patch):

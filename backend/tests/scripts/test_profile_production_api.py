@@ -37,7 +37,7 @@ def test_profile_endpoint_records_metadata_without_response_body():
             content=b'{"private":"response"}',
             headers={
                 "content-type": "application/json",
-                "x-cache": "Miss from cloudfront",
+                "cf-cache-status": "MISS",
             },
         )
 
@@ -55,8 +55,8 @@ def test_profile_endpoint_records_metadata_without_response_body():
     assert result.response_bytes == [22, 22]
     assert result.content_types == ["application/json", "application/json"]
     assert result.cache_statuses == [
-        "Miss from cloudfront",
-        "Miss from cloudfront",
+        "MISS",
+        "MISS",
     ]
     assert result.mean_ms is not None
     assert result.median_ms is not None

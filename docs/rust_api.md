@@ -13,9 +13,9 @@ Only hop-by-hop headers are dropped.
 The proxy connects over loopback, which uvicorn trusts for `X-Forwarded-For` and `X-Forwarded-Proto`, so Python sees the same client and scheme as before.
 A request from a peer uvicorn would not have trusted reaches Python with `X-Forwarded-For` set to that peer and no `X-Forwarded-Proto`, as if uvicorn had read the socket itself.
 
-`/health` answers 200 only while the Python app also answers, so the ECS container health check (unchanged, `python -c ... /health`) covers both processes.
-If uvicorn exits, `wat2do-api` exits non-zero and ECS replaces the task.
-On SIGTERM it stops accepting connections, finishes in-flight requests (`shutdown_drain_seconds`, 14), then sends SIGTERM to uvicorn, gives it `python_shutdown_seconds` (15) and exits 0, inside ECS's 30 second stop timeout.
+`/health` answers 200 only while the Python app also answers, so the deploy job's health check (`infra/mac-mini/deploy.sh`) and the development container's cover both processes.
+If uvicorn exits, `wat2do-api` exits non-zero and launchd (`io.wat2do.api`, `KeepAlive`) restarts it.
+On SIGTERM it stops accepting connections, finishes in-flight requests (`shutdown_drain_seconds`, 14), then sends SIGTERM to uvicorn, gives it `python_shutdown_seconds` (15) and exits 0, within 30 seconds (`api_server.json` keeps the two under 30).
 Each server also runs the map location worker (`rust/src/map_locations.rs`): it looks up waiting `map_locations` rows with Nominatim, and `claim_map_location` lets only one lookup be outstanding across every server, so the app keeps to Nominatim's one request a second.
 SIGTERM stops it with the server; a lookup cut short leaves its claim to lapse, and the place is tried again.
 
@@ -138,13 +138,12 @@ To run Rust alone without Docker, use the parity harness or `cargo test`; agents
 
 ## Production
 
-The backend image builds `wat2do-api` in a Rust stage and runs it as the non-root `wat2do` user on a read-only root filesystem.
-The ECS task needs egress to Postgres on 5432 (the `task_postgres` rule in `infra/terraform/production/security-groups.tf`).
-The server reads every address from its environment (`DATABASE_URL`, `AUTH_SIGNING_KEY`, CORS and cookie settings), so moving hosts only changes those values.
-The image is built and smoke-tested by the "Backend image build" CI job on every pull request and before every deploy.
+On the Mac mini, the deploy job (`infra/mac-mini/deploy.sh`) builds `wat2do-api` into each release, and the `io.wat2do.api` LaunchAgent runs it on 127.0.0.1:8000 from the current release (`infra/mac-mini/bin/run-api`), behind Caddy and the Cloudflare Tunnel.
+The server reads every address from its environment (`DATABASE_URL`, `AUTH_SIGNING_KEY`, CORS and cookie settings), which `run-api` loads from `~/wat2do-data/config/backend.env`, so moving hosts only changes those values.
+The backend image that `make dev` runs is built and smoke-tested by the "Backend image build" CI job on every pull request and push to `main`.
 The server refuses to start when `AUTH_SIGNING_KEY` is missing or is not an EC P-256 private key.
 On SIGTERM it stops accepting, lets in-flight requests and the emails they queued (login codes among them) finish within `shutdown_drain_seconds` (14), then stops the Python app.
-Container PID 1 is `wat2do-api`; like uvicorn before it, it reaps only its own child.
+Like uvicorn before it, `wat2do-api` reaps only its own child.
 
 ### Database connections
 

@@ -272,7 +272,7 @@ mod tests {
                 dtstart_utc: Some(Utc.with_ymd_and_hms(2026, 5, 1, 15, 0, 0).unwrap()),
                 dtend_utc: None,
             },
-            source_image_url: Some("https://wat2do.io/media/poster.jpg".to_owned()),
+            source_image_url: Some("https://media.wat2do.io/poster.jpg".to_owned()),
         };
         let poster = Arc::new(InlineImage {
             content_id: "event-image".to_owned(),
@@ -319,7 +319,7 @@ mod tests {
         assert!(
             linked
                 .body_html
-                .contains(r#"<img src="https://wat2do.io/media/poster.jpg""#)
+                .contains(r#"<img src="https://media.wat2do.io/poster.jpg""#)
         );
         assert_eq!(linked.inline_images.len(), 1);
     }

@@ -2,7 +2,9 @@ import discoveryCache from "../../../../backend/controlbox/discovery_cache.json"
 
 /**
  * The API's origin (`API_URL`), read by server code and by next.config.ts's
- * /api and /media rewrites, so every request reaches the same API.
+ * /api rewrites, so every request reaches the same API. In production
+ * CloudFront sends /api straight to the API (infra/terraform/web), so the
+ * rewrites serve local development.
  */
 export function getServerApiBaseUrl(): string {
   return (process.env.API_URL?.trim() || "http://127.0.0.1:8000").replace(/\/$/, "");

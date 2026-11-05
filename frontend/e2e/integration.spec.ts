@@ -2499,8 +2499,8 @@ test.describe("Events Page", () => {
   });
 
   test("scraped video controls receive pointer input and a failed video retains the poster", async ({ page, next }) => {
-    const posterUrl = "https://wat2do.io/media/event-images/video-poster.png";
-    const videoUrl = "https://wat2do.io/media/event-videos/event.mp4";
+    const posterUrl = "https://media.wat2do.io/event-images/video-poster.png";
+    const videoUrl = "https://media.wat2do.io/event-videos/event.mp4";
     const event = {
       id: 1, club_id: 1, title: "Campus video", description: "A recorded invitation",
       location: "SLC", school: "uwaterloo", club: "UW Tech Club", category: "Career",
@@ -2546,7 +2546,7 @@ test.describe("Events Page", () => {
   }) => {
     const now = new Date();
     const startsAt = new Date(now.getTime() + 86_400_000).toISOString();
-    const posterUrl = "https://wat2do.io/media/e2e-event-poster.png";
+    const posterUrl = "https://media.wat2do.io/e2e-event-poster.png";
     const posterBytes = Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
       "base64",
@@ -5027,7 +5027,7 @@ test.describe("Standalone submission pages", () => {
 test.describe("Navigation", () => {
   for (const format of ["webp", "png", "jpeg"] as const) {
     test(`includes ${format} poster pixels in the published Instagram slide`, async ({ page, next }) => {
-      const storageBase = process.env.STORAGE_PUBLIC_BASE_URL ?? "https://wat2do.io/media";
+      const storageBase = process.env.STORAGE_PUBLIC_BASE_URL ?? "https://media.wat2do.io";
       const sourceUrl = `${storageBase.replace(/\/$/, "")}/event-images/wat-300.${format}`;
       const poster = await sharp({ create: {
         width: 100, height: 100, channels: 3, background: { r: 240, g: 80, b: 20 },

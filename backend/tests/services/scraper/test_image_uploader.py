@@ -2,7 +2,7 @@
 
 Focus on the SSRF allowlist (``_is_safe_image_url``). The download +
 upload path is intentionally not exercised here - that wires through
-real httpx + media storage and is covered by the pipeline integration
+real httpx + S3 storage and is covered by the pipeline integration
 test instead.
 """
 
@@ -122,7 +122,7 @@ def test_upload_validates_bytes_for_requested_bucket(monkeypatch):
     monkeypatch.setattr(image_uploader, "_is_safe_image_url", lambda *args, **kwargs: True)
 
     validate = MagicMock(return_value=(b"clean-image", "image/jpeg"))
-    upload = MagicMock(return_value="https://wat2do.io/media/organization-logos/logo.jpg")
+    upload = MagicMock(return_value="https://media.wat2do.io/organization-logos/logo.jpg")
     monkeypatch.setattr(image_uploader.storage, "validate_and_prepare", validate)
     monkeypatch.setattr(image_uploader.storage, "upload_file", upload)
 
@@ -131,7 +131,7 @@ def test_upload_validates_bytes_for_requested_bucket(monkeypatch):
         bucket="organization-logos",
     )
 
-    assert result == "https://wat2do.io/media/organization-logos/logo.jpg"
+    assert result == "https://media.wat2do.io/organization-logos/logo.jpg"
     validate.assert_called_once_with("organization-logos", b"raw-image", "image/jpeg")
     upload.assert_called_once_with(
         "organization-logos",
@@ -221,10 +221,12 @@ def test_oversized_instagram_poster_is_resized_before_stored_size_validation(mon
     client.__enter__.return_value.get.return_value = response
     monkeypatch.setattr(image_uploader.httpx, "Client", lambda **kwargs: client)
     monkeypatch.setattr(image_uploader, "_is_safe_image_url", lambda *args, **kwargs: True)
-    storage = StorageService(media_root="/srv/media", public_base_url="https://wat2do.io/media")
+    storage = StorageService(
+        MagicMock(), bucket_name="test", public_base_url="https://media.wat2do.io"
+    )
     monkeypatch.setattr(image_uploader, "storage", storage)
     monkeypatch.setattr(storage, "get_file_size_limit", lambda *_: 15000)
-    upload = MagicMock(return_value="https://wat2do.io/media/event-images/new.jpg")
+    upload = MagicMock(return_value="https://media.wat2do.io/event-images/new.jpg")
     monkeypatch.setattr(storage, "upload_file", upload)
 
     assert len(response.content) > 15000
@@ -261,7 +263,7 @@ def test_directory_image_redirects_validate_each_destination_before_download(mon
         lambda **kwargs: client_class(transport=httpx.MockTransport(respond), **kwargs),
     )
     monkeypatch.setattr(image_uploader.socket, "getaddrinfo", _mock_addrinfo)
-    upload = MagicMock(return_value="https://wat2do.io/media/event-images/event.jpg")
+    upload = MagicMock(return_value="https://media.wat2do.io/event-images/event.jpg")
     monkeypatch.setattr(image_uploader.storage, "upload_file", upload)
     assert image_uploader.upload_image_from_url(
         "https://wusa.ca/poster", bucket=BUCKET_EVENT_IMAGES, allow_all_domains=True

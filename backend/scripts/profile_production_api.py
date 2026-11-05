@@ -209,9 +209,7 @@ def profile_endpoint(
             samples_ms.append(round(elapsed_ms, 1))
             response_bytes.append(len(response.content))
             content_types.append(response.headers.get("content-type", ""))
-            cache_statuses.append(
-                response.headers.get("cf-cache-status") or response.headers.get("x-cache") or ""
-            )
+            cache_statuses.append(response.headers.get("cf-cache-status") or "")
             server_timings.append(response.headers.get("server-timing", ""))
 
         return EndpointResult(

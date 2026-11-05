@@ -86,7 +86,6 @@ export function EventCardImage({
           videoSrc={variant === "detail" ? event.source_video_url : undefined}
           imageAlt={event.title}
           imageLoading={eagerImage ? "eager" : "lazy"}
-          imageSizes={variant === "detail" ? "(max-width: 767px) 384px, 320px" : undefined}
           imageFallback={
             <div data-slot="event-poster-fallback" className="flex size-full flex-col items-center justify-center gap-3 px-8 py-10 text-center">
               <Calendar aria-hidden="true" className="size-8 text-primary" />

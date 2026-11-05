@@ -50,7 +50,7 @@ def test_already_repaired_video_skips_provider_even_with_fetch(target, monkeypat
         script,
         "load_media_target",
         lambda *_: replace(
-            target, source_video_url="https://wat2do.io/media/event-videos/existing.mp4"
+            target, source_video_url="https://media.wat2do.io/event-videos/existing.mp4"
         ),
     )
     provider = MagicMock()

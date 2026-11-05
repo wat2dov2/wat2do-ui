@@ -11,11 +11,11 @@ Brave never opens individual posts for ingestion.
 
 ## Repair an existing poster or scraped video
 
-New scraped videos are copied to owned media storage and played on event and position detail views, with their images retained as posters.
+New scraped videos are copied to owned S3 storage and played on event and position detail views, with their images retained as posters.
 Previously processed posts remain deduplicated during ordinary scraping, so deploying video support does not redownload historical posts or rerun AI extraction.
 Use the targeted media repair command for an existing event or position.
-It uses the same media storage, limits, and rendition rules as new uploads.
-Configure the intended database, `MEDIA_ROOT`, `STORAGE_PUBLIC_BASE_URL`, and discovery revalidation settings in the command's environment before applying a repair.
+It uses the same S3 storage, limits, and rendition rules as new uploads.
+Configure the intended database, the `STORAGE_*` media settings (endpoint, keys, bucket and public base URL), and discovery revalidation settings in the command's environment before applying a repair.
 
 ```sh
 cd backend
@@ -115,7 +115,7 @@ The binary is built before the job reads any credential, and its third-party act
 When the source changed, the job builds it again (`cargo build --release --locked`, incremental in the runner's `rust-target` directory on the Mac) before processing anything.
 A missing `cargo`, a failed build, too little free disk or a binary that still does not match the checkout fails the job loudly, before any media is recorded, so the notification can be rerun.
 `backend/controlbox/notification_workflow.json` owns the disk reserve, the build cache's size cap (above it the cache is cleared and rebuilt), the build's parallelism and the build and processing deadlines.
-The job reads `DATABASE_URL` from the runtime secret (`AWS_RUNTIME_SECRET_ARN`) through GitHub OIDC and masks it before use.
+The job reads `DATABASE_URL` from the Mac's `~/wat2do-data/config/backend.env` and masks it before use.
 
 SQLite contention and temporary storage failures use the bounded storage controls in `instagram_browser.json`.
 Optional diagnostic publication cannot invalidate a committed queue transition.

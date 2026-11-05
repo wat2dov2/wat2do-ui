@@ -19,7 +19,7 @@ def target():
         id=29122,
         school="uwaterloo",
         source_url="https://www.instagram.com/p/ORIGINAL/",
-        source_image_url="https://wat2do.io/media/event-images/original.jpg",
+        source_image_url="https://media.wat2do.io/event-images/original.jpg",
         source_video_url=None,
     )
 
@@ -38,36 +38,38 @@ def persistence(monkeypatch):
 
 
 @pytest.fixture
-def assets(monkeypatch, tmp_path):
-    storage = StorageService(media_root=str(tmp_path), public_base_url="https://wat2do.io/media")
+def assets(monkeypatch):
+    client = MagicMock()
+    storage = StorageService(client, bucket_name="test", public_base_url="https://media.wat2do.io")
     monkeypatch.setattr(module, "storage", storage)
-    monkeypatch.setattr(storage, "download_file", MagicMock(wraps=storage.download_file))
     monkeypatch.setattr(
         storage,
         "upload_file",
-        MagicMock(return_value="https://wat2do.io/media/event-images/new.jpg"),
+        MagicMock(return_value="https://media.wat2do.io/event-images/new.jpg"),
     )
     monkeypatch.setattr(storage, "delete_file", MagicMock())
-    return storage, tmp_path
+    return storage, client
 
 
-def stored_poster(media_root, width=2160):
+def stored_poster(client, width=2160):
     image = BytesIO()
     Image.new("RGB", (width, width // 2), "red").save(image, format="JPEG")
-    (media_root / "event-images").mkdir(exist_ok=True)
-    (media_root / "event-images" / "original.jpg").write_bytes(image.getvalue())
+    stream = BytesIO(image.getvalue())
+    client.get_object.return_value = {"Body": stream, "ContentType": "image/jpeg"}
+    return stream
 
 
-def test_image_preview_reads_current_stored_asset_without_writing(target, assets, persistence):
-    storage, media_root = assets
-    stored_poster(media_root)
+def test_image_preview_reads_current_s3_asset_without_writing(target, assets, persistence):
+    storage, client = assets
+    stream = stored_poster(client)
     db, _, refresh = persistence
     result = module.repair_stored_image(target)
     assert result["status"] == "ready"
     assert result["new_width"] == 1080
     assert result["new_height"] == 540
     assert result["new_bytes"] < result["original_bytes"]
-    storage.download_file.assert_called_once_with(BUCKET_EVENT_IMAGES, "original.jpg")
+    client.get_object.assert_called_once_with(Bucket="test", Key="event-images/original.jpg")
+    assert stream.closed
     storage.upload_file.assert_not_called()
     db.table.assert_not_called()
     refresh.assert_not_called()
@@ -76,13 +78,13 @@ def test_image_preview_reads_current_stored_asset_without_writing(target, assets
 def test_image_repair_keeps_old_immutable_asset_and_updates_only_expected_reference(
     target, assets, persistence
 ):
-    storage, media_root = assets
-    stored_poster(media_root)
+    storage, client = assets
+    stored_poster(client)
     _, query, refresh = persistence
     result = module.repair_stored_image(target, apply=True)
     assert result["status"] == "updated"
     query.update.assert_called_once_with(
-        {"source_image_url": "https://wat2do.io/media/event-images/new.jpg"}
+        {"source_image_url": "https://media.wat2do.io/event-images/new.jpg"}
     )
     assert ("id", 29122) in [call.args for call in query.eq.call_args_list]
     assert ("source_image_url", target.source_image_url) in [
@@ -93,8 +95,8 @@ def test_image_repair_keeps_old_immutable_asset_and_updates_only_expected_refere
 
 
 def test_changed_image_target_does_not_overwrite_newer_reference(target, assets, persistence):
-    storage, media_root = assets
-    stored_poster(media_root)
+    storage, client = assets
+    stored_poster(client)
     _, query, refresh = persistence
     query.execute.return_value = SimpleNamespace(data=[])
     assert module.repair_stored_image(target, apply=True)["status"] == "conflict"
@@ -103,8 +105,8 @@ def test_changed_image_target_does_not_overwrite_newer_reference(target, assets,
 
 
 def test_uncertain_database_result_preserves_uploaded_asset(target, assets, persistence):
-    storage, media_root = assets
-    stored_poster(media_root)
+    storage, client = assets
+    stored_poster(client)
     _, query, _ = persistence
     query.execute.side_effect = RuntimeError("response lost after commit")
     with pytest.raises(RuntimeError):
@@ -113,18 +115,18 @@ def test_uncertain_database_result_preserves_uploaded_asset(target, assets, pers
 
 
 def test_small_image_and_foreign_asset_never_write(target, assets):
-    storage, media_root = assets
-    stored_poster(media_root, width=320)
+    storage, client = assets
+    stored_poster(client, width=320)
     assert module.repair_stored_image(target, apply=True)["status"] == "already_sized"
     foreign = replace(target, source_image_url="https://other.example/image.jpg")
     assert module.repair_stored_image(foreign, apply=True)["status"] == "unavailable"
     storage.upload_file.assert_not_called()
-    assert storage.download_file.call_count == 1
+    assert client.get_object.call_count == 1
 
 
 @pytest.fixture
 def video_upload(monkeypatch):
-    upload = MagicMock(return_value="https://wat2do.io/media/event-videos/repaired.mp4")
+    upload = MagicMock(return_value="https://media.wat2do.io/event-videos/repaired.mp4")
     monkeypatch.setattr(module, "upload_video_from_url", upload)
     return upload
 
@@ -164,7 +166,7 @@ def test_video_repairs_only_missing_selected_row_and_refreshes_position_director
 
 
 def test_existing_video_is_not_downloaded_again(target, video_upload):
-    target = replace(target, source_video_url="https://wat2do.io/media/event-videos/old.mp4")
+    target = replace(target, source_video_url="https://media.wat2do.io/event-videos/old.mp4")
     assert (
         module.repair_stored_video(target, video_post(), apply=True)["status"] == "already_present"
     )
@@ -226,7 +228,7 @@ def test_missing_instagram_image_uses_exact_post_cover_and_conditional_write(
     target, persistence, monkeypatch
 ):
     target = replace(target, source_image_url=None)
-    upload = MagicMock(return_value="https://wat2do.io/media/event-images/new.jpg")
+    upload = MagicMock(return_value="https://media.wat2do.io/event-images/new.jpg")
     monkeypatch.setattr(module, "upload_image_from_url", upload)
     post = {
         "url": target.source_url,

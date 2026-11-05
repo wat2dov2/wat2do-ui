@@ -1,7 +1,7 @@
 #!/bin/bash
 # The Mac's one origin (Caddy on 127.0.0.1:8080) from the current release's
-# Caddyfile. caddy.env holds ORIGIN_VERIFY_SECRET, which the website's proxy on
-# Vercel sends to api.wat2do.io with each visitor's address.
+# Caddyfile. caddy.env holds ORIGIN_VERIFY_SECRET, which CloudFront sends to
+# api.wat2do.io with each visitor's address (infra/terraform/web).
 set -euo pipefail
 data="$HOME/wat2do-data"
 set -a

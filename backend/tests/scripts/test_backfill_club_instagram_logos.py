@@ -99,7 +99,7 @@ def test_backfill_school_updates_matches_and_reports_not_found(monkeypatch):
         module,
         "upload_image_from_url",
         lambda url, **kwargs: (
-            f"https://wat2do.io/media/organization-logos/{url.rsplit('/', 1)[-1]}"
+            f"https://media.wat2do.io/organization-logos/{url.rsplit('/', 1)[-1]}"
         ),
     )
     update = MagicMock(return_value=SimpleNamespace(id=1))
@@ -119,7 +119,7 @@ def test_backfill_school_reuses_profile_cache_without_apify(monkeypatch):
     monkeypatch.setattr(module, "list_school_clubs", lambda school: [club])
     scraper = MagicMock()
     monkeypatch.setattr(module, "get_scraper", lambda: scraper)
-    upload = MagicMock(side_effect=[None, "https://wat2do.io/media/organization-logos/cached.jpg"])
+    upload = MagicMock(side_effect=[None, "https://media.wat2do.io/organization-logos/cached.jpg"])
     monkeypatch.setattr(module, "upload_image_from_url", upload)
     monkeypatch.setattr(
         module.club_service,

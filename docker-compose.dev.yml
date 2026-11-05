@@ -68,8 +68,12 @@ services:
       CORS_ORIGIN_REGEX: '^http://[a-z0-9-]+[.]wat2do[.]localhost:3000$$'
       EMAIL_DELIVERY_ENABLED: "true"
       AWS_REGION: ${AWS_REGION:-ca-central-1}
-      # Uploads land in the git-ignored ./media folder, which the media service serves.
-      MEDIA_ROOT: /workspace/media
+      # Uploads go to the media service's local S3 bucket; SES still uses AWS.
+      # The local server checks no keys, but the client needs some to sign with.
+      STORAGE_ENDPOINT_URL: http://media:8333
+      STORAGE_ACCESS_KEY_ID: local
+      STORAGE_SECRET_ACCESS_KEY: local
+      STORAGE_BUCKET_NAME: media
       STORAGE_PUBLIC_BASE_URL: http://localhost:55434/media
       EVENT_FEED_REVALIDATION_URL: ""
       WATCHFILES_FORCE_POLLING: "true"
@@ -80,7 +84,6 @@ services:
     volumes:
       - ./backend:/workspace/backend
       - ./scripts:/workspace/scripts:ro
-      - ./media:/workspace/media
     command: wat2do-api serve --reload
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
@@ -89,15 +92,18 @@ services:
       retries: 3
       start_period: 10s
 
-  # Serves uploaded media at the URLs the backend returns, as Caddy serves
-  # MEDIA_ROOT at /media in production.
+  # A local S3 server standing in for the production R2 bucket. It runs
+  # without credentials, so it accepts the backend's signed requests and serves
+  # bucket "media" to browsers at the URLs the backend returns.
   media:
-    image: caddy:2.11-alpine
-    command: ["caddy", "file-server", "--root", "/srv", "--listen", ":80"]
+    image: chrislusf/seaweedfs:4.48
+    command: ["mini", "-dir=/data", "-master.telemetry=false"]
+    environment:
+      S3_BUCKET: media
     ports:
-      - "127.0.0.1:55434:80"
+      - "127.0.0.1:55434:8333"
     volumes:
-      - ./media:/srv/media:ro
+      - media_data:/data
 
   frontend:
     build:
@@ -128,5 +134,6 @@ services:
 
 volumes:
   database_data:
+  media_data:
   frontend_modules:
   frontend_next:

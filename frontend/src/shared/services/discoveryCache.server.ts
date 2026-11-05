@@ -13,7 +13,7 @@ export function discoveryTag(school: string, resource: DiscoveryResource) {
 
 /**
  * One complete snapshot per school and resource, kept in Next's data cache,
- * which every server instance and deployment shares (Vercel's runtime cache).
+ * which every server instance and deployment shares (S3 and DynamoDB on AWS, frontend/open-next.config.ts).
  * The backend's revalidation notice marks a snapshot stale, and so does age
  * past `refresh_interval_seconds`; the next read serves the stale copy while
  * one rebuild runs. A failed rebuild keeps the last complete snapshot, since

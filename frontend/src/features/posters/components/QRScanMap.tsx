@@ -113,7 +113,6 @@ function ExactMarker({
               <LazyImage
                 src={marker.imageUrl}
                 alt={marker.name}
-                sizes="176px"
                 className="aspect-[8.5/11] max-h-48 w-full rounded-md"
               />
             )}

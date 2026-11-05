@@ -1,38 +1,37 @@
-# The Mac mini's one origin. cloudflared sends every request for wat2do.io and
-# *.wat2do.io here; nothing listens on a public interface.
+# The Mac mini's one origin: the API at api.wat2do.io. cloudflared sends it
+# here; nothing listens on a public interface. The website and media are on AWS
+# (infra/terraform/web).
 {
 	admin off
 	auto_https off
 	persist_config off
 }
 
-# Uploaded and ingested media, at the same URLs S3 served them from.
-(media) {
+# CloudFront sends the website's /api/* requests here (without the /api prefix)
+# with the visitor's address in X-Wat2Do-Viewer-Ip and the shared
+# X-Wat2Do-Origin-Verify secret. Only a request carrying that secret keeps its
+# X-Wat2Do-Viewer-Ip; any other request gets Cloudflare's CF-Connecting-IP
+# instead, whatever it sent. The API trusts the header from loopback
+# (core/client_ip.py, rust/src/api/client_ip.rs).
+http://api.wat2do.io:8080 {
+	bind 127.0.0.1
+
+	# Media from the Mac's disk, for the website on Vercel (its /media rewrite)
+	# until wat2do.io moves to CloudFront, which redirects /media/* to
+	# media.wat2do.io (Cloudflare R2). Remove this block, WAT2DO_DATA in
+	# bin/run-caddy and ~/wat2do-data/media then.
 	handle /media/* {
 		root * {$WAT2DO_DATA}
 		header Cache-Control "public, max-age=31536000, immutable"
 		header X-Content-Type-Options nosniff
-		# A sanitized SVG still downloads instead of rendering on our origin.
 		@svg path *.svg
 		header @svg Content-Disposition attachment
 		file_server
 	}
-}
-
-# The API host. The website on Vercel rewrites /api/* and /media/* here
-# (frontend/next.config.ts), and its proxy (frontend/src/proxy.ts) adds the
-# visitor's address and the shared X-Wat2Do-Origin-Verify secret. Only a
-# request carrying that secret keeps its X-Wat2Do-Viewer-Ip; any other request
-# gets Cloudflare's CF-Connecting-IP instead, whatever it sent. The API trusts
-# the header from loopback (core/client_ip.py, rust/src/api/client_ip.rs).
-http://api.wat2do.io:8080 {
-	bind 127.0.0.1
-
-	import media
 
 	# Never true without the secret (an unset ORIGIN_VERIFY_SECRET trusts no one).
-	@website expression `{http.request.header.X-Wat2Do-Origin-Verify} == "{$ORIGIN_VERIFY_SECRET}" && "{$ORIGIN_VERIFY_SECRET}" != ""`
-	handle @website {
+	@cloudfront expression `{http.request.header.X-Wat2Do-Origin-Verify} == "{$ORIGIN_VERIFY_SECRET}" && "{$ORIGIN_VERIFY_SECRET}" != ""`
+	handle @cloudfront {
 		reverse_proxy 127.0.0.1:8000 {
 			header_up -X-Wat2Do-Origin-Verify
 		}
@@ -40,23 +39,6 @@ http://api.wat2do.io:8080 {
 
 	handle {
 		reverse_proxy 127.0.0.1:8000 {
-			header_up X-Wat2Do-Viewer-Ip {http.request.header.CF-Connecting-IP}
-		}
-	}
-}
-
-# wat2do.io and every school subdomain on the Mac's own Next server: the
-# rollback while the website moves to Vercel, removed once Vercel is verified.
-http://:8080 {
-	bind 127.0.0.1
-
-	import media
-
-	# Everything else, including /api/*, which Next proxies to the API on 8000.
-	# Cloudflare's CF-Connecting-IP becomes the viewer address the API trusts from
-	# loopback; setting it here replaces any value a visitor sends.
-	handle {
-		reverse_proxy 127.0.0.1:3000 {
 			header_up X-Wat2Do-Viewer-Ip {http.request.header.CF-Connecting-IP}
 		}
 	}

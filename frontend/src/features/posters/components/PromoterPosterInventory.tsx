@@ -143,7 +143,6 @@ export function PromoterPosterInventory({
                     <LazyImage
                       src={poster.templatePreviewUrl ?? template?.assetPath}
                       alt={template?.name ?? poster.name}
-                      sizes="80px"
                       className="size-full"
                     />
                   ) : (

@@ -447,7 +447,7 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     )
 
     event = _event(
-        source_video_url="https://wat2do.io/media/event-videos/reel.mp4",
+        source_video_url="https://media.wat2do.io/event-videos/reel.mp4",
         employers_on_campus=True,
         sports_game=False,
         campus_season_ids=["foreign-school", "hoco", "hoco"],
@@ -466,7 +466,7 @@ def test_write_event_inserts_one_event_row_plus_occurrences(fake_sb, patch_sb, m
     assert len(insert_calls) == 1
     payload = insert_calls[0][0][0]
     assert payload["title"] == "Tea Tasting"
-    assert payload["source_video_url"] == "https://wat2do.io/media/event-videos/reel.mp4"
+    assert payload["source_video_url"] == "https://media.wat2do.io/event-videos/reel.mp4"
     assert payload["ingestion_source"] == "instagram_scraper"
     assert payload["employers_on_campus"] is True
     assert payload["sports_game"] is False

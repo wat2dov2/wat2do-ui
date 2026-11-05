@@ -57,7 +57,6 @@ export function PositionCardImage({
         videoSrc={variant === "detail" ? position.source_video_url : undefined}
         imageAlt={position.title}
         imageLoading={variant === "detail" || priority ? "eager" : "lazy"}
-        imageSizes={variant === "detail" ? "(max-width: 767px) calc(100vw - 48px), 480px" : undefined}
         cutouts={cutouts}
         width={box.width}
         height={box.height}

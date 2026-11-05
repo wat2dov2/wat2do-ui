@@ -8,6 +8,7 @@ export default defineConfig([
   globalIgnores([
     "dist",
     ".next",
+    ".open-next",
     "node_modules",
     "coverage",
     "playwright-report",

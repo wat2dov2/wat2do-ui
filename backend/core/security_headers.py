@@ -39,14 +39,11 @@ CSP_DIRECTIVES: list[tuple[str, str]] = [
     ("style-src", "'self' 'unsafe-inline' https://fonts.googleapis.com"),
     # Fonts: self + Google Fonts static files.
     ("font-src", "'self' https://fonts.gstatic.com"),
-    # Images: self + S3 event images + Unsplash editorial images +
-    # OpenFreeMap tiles + data: URIs (SVG fallbacks) + blob: (QR generator).
+    # Images: self + Unsplash editorial images + OpenFreeMap tiles +
+    # data: URIs (SVG fallbacks) + blob: (QR generator).
     (
         "img-src",
-        "'self' data: blob: "
-        "https://*.amazonaws.com "
-        "https://images.unsplash.com "
-        "https://tiles.openfreemap.org",
+        "'self' data: blob: https://images.unsplash.com https://tiles.openfreemap.org",
     ),
     # XHR / fetch / WebSocket connections: own API + OpenFreeMap.
     ("connect-src", "'self' https://tiles.openfreemap.org"),

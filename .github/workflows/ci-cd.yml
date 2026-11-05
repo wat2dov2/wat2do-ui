@@ -178,8 +178,9 @@ jobs:
 
   backend-image:
     name: Backend image build
-    # Builds and smoke-tests the backend image that docker-compose.yml runs, so a
-    # broken Dockerfile or Rust build is caught before merge.
+    # Builds and smoke-tests the backend image that make dev runs
+    # (docker-compose.dev.yml), so a broken Dockerfile or Rust build is caught
+    # before merge.
     runs-on: ubuntu-24.04-arm
 
     steps:
@@ -238,8 +239,8 @@ jobs:
 
   deploy-wat2do:
     name: Deploy Wat2Do to the Mac mini
-    # The Mac mini serves the API, data and media behind a Cloudflare Tunnel, and the
-    # website runs on Vercel (docs/projects/mac-mini-hosting.md).
+    # The Mac mini serves the API and data behind a Cloudflare Tunnel, and the
+    # website and media run on AWS (docs/projects/mac-mini-hosting.md).
     runs-on: [self-hosted, wat2do-macmini-deploy]
     needs:
       - backend
@@ -258,7 +259,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build, migrate and switch the release, then deploy the website to Vercel
+      - name: Build, migrate and switch the release, then deploy the website to AWS
         timeout-minutes: 60
         run: bash infra/mac-mini/deploy.sh "$GITHUB_SHA"
 

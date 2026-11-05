@@ -92,7 +92,6 @@ const SlideCanvas = memo(function SlideCanvas({
       <LazyImage
         src={src}
         alt=""
-        sizes={`${Math.ceil(width * previewScale)}px`}
         fallback={fallback}
         fit={src === event?.source_image_url ? "contain" : "cover"}
         onLoad={image => { if (src === event?.source_image_url && (!poster || poster.width !== image.naturalWidth || poster.height !== image.naturalHeight)) setPosterResult({ src, width: image.naturalWidth, height: image.naturalHeight }); }}
@@ -130,7 +129,7 @@ const SlideCanvas = memo(function SlideCanvas({
           style={{ width: "100%", height: SLIDE_HEIGHT * previewScale }}
         >
           {publishedAssetUrl ? (
-            <LazyImage src={publishedAssetUrl} alt="" sizes={`${previewWidth}px`} className="absolute inset-0" />
+            <LazyImage src={publishedAssetUrl} alt="" className="absolute inset-0" />
           ) : <div
             style={{
               width: SLIDE_WIDTH,

@@ -14,7 +14,6 @@ from pydantic import (
     EmailStr,
     Field,
     HttpUrl,
-    IPvAnyNetwork,
     model_validator,
 )
 
@@ -190,74 +189,10 @@ class DatabaseControl(_ControlModel):
 
 
 class ImageDeliveryControl(_ControlModel):
-    device_sizes: tuple[int, ...] = Field(min_length=1)
-    image_sizes: tuple[int, ...] = Field(min_length=1)
-    quality: int = Field(ge=1, le=100)
     first_row_image_count: int = Field(ge=1, le=24)
-    optimized_format: Literal["image/webp"]
-    optimized_remote_host: str = Field(min_length=1)
-    optimized_remote_path: str = Field(pattern=r"^/.*\/$")
-    # The width a video's poster frame is delivered at (its 2x candidate).
-    video_poster_width: int = Field(gt=0)
-
-    @model_validator(mode="after")
-    def validate_sizes(self) -> "ImageDeliveryControl":
-        for sizes in (self.device_sizes, self.image_sizes):
-            if min(sizes) <= 0 or list(sizes) != sorted(set(sizes)):
-                raise ValueError("image sizes must be positive, unique and ascending")
-        if max(self.image_sizes) >= min(self.device_sizes):
-            raise ValueError("image_sizes must be smaller than the smallest device_sizes entry")
-        if self.video_poster_width not in (*self.device_sizes, *self.image_sizes):
-            raise ValueError("video_poster_width must be a configured image or device size")
-        if any(character in self.optimized_remote_host for character in "/:?#@* "):
-            raise ValueError("optimized_remote_host must be a hostname without a scheme or path")
-        if any(part in {".", ".."} for part in self.optimized_remote_path.split("/")):
-            raise ValueError("optimized_remote_path cannot contain relative path segments")
-        return self
-
-
-class EcsRuntimeControl(_ControlModel):
-    task_cpu: int = Field(gt=0)
-    task_memory_mib: int = Field(gt=0)
-    desired_count: int = Field(ge=1)
-    frontend_cpu: int = Field(gt=0)
-    backend_cpu: int = Field(gt=0)
-    frontend_memory_reservation_mib: int = Field(gt=0)
-    backend_memory_reservation_mib: int = Field(gt=0)
-    cache_init_memory_reservation_mib: int = Field(gt=0)
-    frontend_heap_mib: int = Field(gt=0)
-
-    @model_validator(mode="after")
-    def validate_capacity(self) -> "EcsRuntimeControl":
-        # AWS Fargate Linux task sizes, in CPU units and MiB:
-        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-        memory_sizes: dict[int, range | tuple[int, ...]] = {
-            256: (512, 1024, 2048),
-            512: range(1024, 4097, 1024),
-            1024: range(2048, 8193, 1024),
-            2048: range(4096, 16385, 1024),
-            4096: range(8192, 30721, 1024),
-            8192: range(16384, 61441, 4096),
-            16384: range(32768, 122881, 8192),
-            32768: (61440, 122880, 249856),
-        }
-        if self.task_memory_mib not in memory_sizes.get(self.task_cpu, ()):
-            raise ValueError("task CPU and memory must be a supported Fargate combination")
-        if self.frontend_cpu + self.backend_cpu > self.task_cpu:
-            raise ValueError("container CPU shares cannot exceed task CPU")
-        reservations = (
-            self.frontend_memory_reservation_mib
-            + self.backend_memory_reservation_mib
-            + self.cache_init_memory_reservation_mib
-        )
-        if reservations > self.task_memory_mib:
-            raise ValueError("container memory reservations cannot exceed task memory")
-        # V8 old space excludes young-generation, native image buffers and Node
-        # overhead. The checked-in budget leaves 256 MiB inside the frontend
-        # reservation, plus unreserved task memory for transient allocation.
-        if self.frontend_heap_mib >= self.frontend_memory_reservation_mib:
-            raise ValueError("frontend heap must leave headroom below its memory reservation")
-        return self
+    # Where uploaded media is served (an https origin, no path); the frontend
+    # finds a poster's thumbnail by its URL starting here.
+    media_origin: str = Field(pattern=r"^https://[a-z0-9-]+(\.[a-z0-9-]+)+$")
 
 
 class DiscoveryCacheControl(_ControlModel):
@@ -273,19 +208,11 @@ class DiscoveryCacheControl(_ControlModel):
     request_timeout_seconds: int = Field(gt=0)
     page_concurrency: int = Field(ge=1, le=8)
     maximum_page_count: int = Field(gt=0)
-    # Only the AWS Terraform (S3 lifecycle, CloudFront, ECS health checks) still
-    # reads these, until that stack is torn down.
-    storage_prefix: str = Field(min_length=1)
-    generation_retention_days: int = Field(ge=2)
-    readiness_timeout_seconds: int = Field(gt=0)
-    startup_grace_seconds: int = Field(gt=0)
 
     @model_validator(mode="after")
     def validate_lifecycle(self) -> "DiscoveryCacheControl":
         if self.snapshot_check_seconds > self.cdn_ttl_seconds:
             raise ValueError("snapshot_check_seconds cannot exceed the CDN TTL")
-        if any(part in {"", ".", ".."} for part in self.storage_prefix.split("/")):
-            raise ValueError("storage_prefix must be a nonempty relative object prefix")
         return self
 
 
@@ -412,16 +339,8 @@ class ApiServerControl(_ControlModel):
         if self.python_port == 8000:
             raise ValueError("python_port must differ from the public API port 8000")
         if self.shutdown_drain_seconds + self.python_shutdown_seconds >= 30:
-            raise ValueError("shutdown must finish within ECS's 30 second stop timeout")
+            raise ValueError("shutdown must finish within a 30 second stop timeout")
         return self
-
-
-class ViewerIpControl(_ControlModel):
-    """How the frontend's proxy (`frontend/src/proxy.ts`) finds a visitor's address."""
-
-    # Cloudflare's published edge ranges (https://www.cloudflare.com/ips/). A
-    # request reaching Vercel from one of them names its visitor in CF-Connecting-IP.
-    cloudflare_networks: tuple[IPvAnyNetwork, ...] = Field(min_length=1)
 
 
 class RateLimitControl(_ControlModel):
@@ -526,6 +445,18 @@ class UploadsControl(_ControlModel):
     # upscaled pixels, and the detail view is the widest place one is shown.
     event_image_rendition_width_pixels: int = Field(ge=640, le=2400)
     event_image_rendition_quality: int = Field(ge=1, le=100)
+    # Cards show a WebP thumbnail made once at upload, at most this wide. It is
+    # stored next to the poster, its extension replaced by the suffix, which
+    # keeps a segment before ".webp" so it never names a WebP poster itself.
+    event_image_thumbnail_width_pixels: int = Field(ge=128, le=1080)
+    event_image_thumbnail_quality: int = Field(ge=1, le=100)
+    event_image_thumbnail_suffix: str = Field(pattern=r"^(\.[a-z0-9]+)+\.webp$")
+
+    @model_validator(mode="after")
+    def _validate_thumbnail_width(self) -> "UploadsControl":
+        if self.event_image_thumbnail_width_pixels >= self.event_image_rendition_width_pixels:
+            raise ValueError("event image thumbnails must be narrower than the rendition")
+        return self
 
     @model_validator(mode="after")
     def _validate_mime_types(self) -> "UploadsControl":
@@ -1212,10 +1143,8 @@ class NotificationRetryControl(_ControlModel):
 
 class ControlBox(_ControlModel):
     api_server: ApiServerControl
-    viewer_ip: ViewerIpControl
     positions: PositionsControl
     database: DatabaseControl
-    ecs_runtime: EcsRuntimeControl
     image_delivery: ImageDeliveryControl
     discovery_cache: DiscoveryCacheControl
     discovery_queries: DiscoveryQueriesControl
