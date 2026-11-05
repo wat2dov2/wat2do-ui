@@ -10,7 +10,3 @@ output "distribution_domain" {
 output "web_bucket" {
   value = aws_s3_bucket.web.id
 }
-
-output "media_bucket" {
-  value = aws_s3_bucket.media.id
-}

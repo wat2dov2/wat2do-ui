@@ -157,14 +157,14 @@ def test_delete_unreferenced_logos_preserves_referenced_objects(monkeypatch):
     deleted = module.delete_unreferenced_logos(
         sb,
         {
-            "https://wat2do.io/media/organization-logos/kept.jpg",
-            "https://wat2do.io/media/organization-logos/orphan.jpg",
+            "https://media.wat2do.io/organization-logos/kept.jpg",
+            "https://media.wat2do.io/organization-logos/orphan.jpg",
         },
     )
 
     assert deleted == 1
     path_from_url.assert_called_once_with(
-        "https://wat2do.io/media/organization-logos/orphan.jpg",
+        "https://media.wat2do.io/organization-logos/orphan.jpg",
         module.BUCKET_CLUB_LOGOS,
     )
     delete_file.assert_called_once_with(

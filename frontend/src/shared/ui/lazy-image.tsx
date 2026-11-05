@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import Image, { getImageProps } from "next/image";
-import imageDelivery from "../../../../backend/controlbox/image_delivery.json" with { type: "json" };
+import Image from "next/image";
 import { ImageOff } from "lucide-react";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
@@ -17,27 +16,15 @@ type LazyImageProps = {
   fallback?: ReactNode;
   fit?: "cover" | "contain";
   onLoad?: (image: HTMLImageElement) => void;
-} & (
-  | { sizes: string; width?: never; height?: never }
-  | { width: number; height: number; sizes?: never }
-);
-
-function canOptimizeImage(src: string): boolean {
-  if (src.startsWith("/") && !src.startsWith("//")) return true;
-  try {
-    const url = new URL(src);
-    return url.origin === `https://${imageDelivery.optimized_remote_host}` &&
-      url.pathname.startsWith(imageDelivery.optimized_remote_path);
-  } catch {
-    return false;
-  }
-}
+  /** Fixed pixel size; without one the image fills its positioned parent. */
+  width?: number;
+  height?: number;
+};
 
 function ImageContent({
   src,
   alt,
   videoSrc,
-  sizes,
   width,
   height,
   loading = "lazy",
@@ -50,16 +37,6 @@ function ImageContent({
   const [videoFailed, setVideoFailed] = useState(false);
   const showVideo = Boolean(videoSrc) && !videoFailed;
   const unavailable = !showVideo && (!src || status === "error");
-  // getImageProps selects the 2x candidate for src.
-  const posterSize = imageDelivery.video_poster_width / 2;
-  const poster = showVideo && src ? getImageProps({
-    src,
-    alt,
-    width: posterSize,
-    height: posterSize,
-    quality: imageDelivery.quality,
-    unoptimized: !canOptimizeImage(src),
-  }).props.src : undefined;
 
   return (
     <div
@@ -79,7 +56,7 @@ function ImageContent({
         <video
           key={videoSrc}
           src={videoSrc!}
-          poster={poster}
+          poster={src ?? undefined}
           controls
           data-vaul-no-drag
           playsInline
@@ -97,11 +74,6 @@ function ImageContent({
             fill={width === undefined}
             width={width}
             height={height}
-            // Lazy images can select a candidate from their actual rendered
-            // width; eager images still need the supplied size before layout.
-            sizes={sizes && loading === "lazy" ? `auto, ${sizes}` : sizes}
-            quality={imageDelivery.quality}
-            unoptimized={!canOptimizeImage(src!)}
             loading={loading}
             fetchPriority={loading === "eager" ? "high" : undefined}
             decoding="async"

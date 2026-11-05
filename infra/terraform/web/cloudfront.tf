@@ -1,9 +1,9 @@
 # wat2do.io, www and every school subdomain. Paths go to:
-#   /media/*             the media bucket
+#   /media/*             a redirect to media.wat2do.io (Cloudflare R2), for links made
+#                        before media moved there
 #   /api/* (most)        the API on the Mac mini (api.wat2do.io), with the /api prefix removed
 #   /api/discovery, /api/revalidate-events, /api/render-instagram-slide
 #                        Next's own routes on the server function
-#   /_next/image*        the image optimizer
 #   /_next/*, public/    the web bucket's _assets/
 #   everything else      the server function
 
@@ -18,16 +18,11 @@ locals {
   discovery_cache = jsondecode(file("${path.module}/../../../backend/controlbox/discovery_cache.json"))
   next_routes     = ["/api/discovery", "/api/revalidate-events", "/api/render-instagram-slide"]
 
+  image_delivery = jsondecode(file("${path.module}/../../../backend/controlbox/image_delivery.json"))
+
   server_origin = "server"
-  image_origin  = "image"
   assets_origin = "assets"
-  media_origin  = "media"
-  # Until every file under ~/wat2do-data/media is in the bucket, a file S3 does
-  # not have yet comes from the Mac's disk (Caddy's /media/* on api.wat2do.io).
-  # Remove this origin, the origin group and Caddy's media block once it is.
-  media_on_mac_origin = "media-on-mac"
-  media_group         = "media-group"
-  api_origin          = "api"
+  api_origin    = "api"
 }
 
 data "aws_cloudfront_cache_policy" "caching_disabled" {
@@ -83,28 +78,39 @@ resource "aws_cloudfront_function" "api" {
   EOT
 }
 
-# Media keys have no media/ prefix.
-resource "aws_cloudfront_function" "media" {
-  name    = "wat2do-web-media"
+# Media lives on Cloudflare R2 at media.wat2do.io (r2.tf), where bandwidth is
+# free. Links from before the move (wat2do.io/media/<bucket>/<file>) redirect.
+resource "aws_cloudfront_function" "media_redirect" {
+  name    = "wat2do-web-media-redirect"
   runtime = "cloudfront-js-2.0"
-  comment = "Drop the /media prefix."
+  comment = "Redirect /media/* to media.wat2do.io."
   publish = true
   code    = <<-EOT
     function handler(event) {
-      var request = event.request;
-      request.uri = request.uri.substring(6);
-      return request;
+      return {
+        statusCode: 301,
+        statusDescription: 'Moved Permanently',
+        headers: {
+          location: { value: '${local.image_delivery.media_origin}' + event.request.uri.substring(6) },
+          'cache-control': { value: 'public, max-age=31536000' },
+        },
+      };
     }
   EOT
 }
 
-# Pages are cached only when Next marks them public (s-maxage); the school host
-# and the RSC request headers are part of the key.
+# Every page reads its school from the host, so Next renders each one per
+# request and marks it no-store. A page's HTML is the same for every visitor of
+# that subdomain (sign-in lives in the browser and no page sets a cookie), so
+# CloudFront keeps each page for the snapshot TTL whatever Next says: a minimum
+# TTL above zero overrides no-store. The school host and the RSC request
+# headers are part of the key, so the server function renders a page about once
+# a minute per school, not once per visitor.
 resource "aws_cloudfront_cache_policy" "server" {
   name        = "wat2do-web-server"
-  min_ttl     = 0
-  default_ttl = 0
-  max_ttl     = 31536000
+  min_ttl     = local.discovery_cache.cdn_ttl_seconds
+  default_ttl = local.discovery_cache.cdn_ttl_seconds
+  max_ttl     = local.discovery_cache.cdn_ttl_seconds
 
   parameters_in_cache_key_and_forwarded_to_origin {
     enable_accept_encoding_brotli = true
@@ -156,30 +162,6 @@ resource "aws_cloudfront_cache_policy" "discovery" {
   }
 }
 
-resource "aws_cloudfront_cache_policy" "image" {
-  name        = "wat2do-web-image"
-  min_ttl     = 0
-  default_ttl = 86400
-  max_ttl     = 31536000
-
-  parameters_in_cache_key_and_forwarded_to_origin {
-    enable_accept_encoding_brotli = true
-    enable_accept_encoding_gzip   = true
-    cookies_config {
-      cookie_behavior = "none"
-    }
-    headers_config {
-      header_behavior = "whitelist"
-      headers {
-        items = ["accept"]
-      }
-    }
-    query_strings_config {
-      query_string_behavior = "all"
-    }
-  }
-}
-
 resource "aws_cloudfront_origin_access_control" "s3" {
   name                              = "wat2do-web-s3"
   origin_access_control_origin_type = "s3"
@@ -208,52 +190,10 @@ resource "aws_cloudfront_distribution" "web" {
   }
 
   origin {
-    origin_id   = local.image_origin
-    domain_name = trimsuffix(trimprefix(aws_lambda_function_url.image.function_url, "https://"), "/")
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-  }
-
-  origin {
     origin_id                = local.assets_origin
     domain_name              = aws_s3_bucket.web.bucket_regional_domain_name
     origin_path              = "/_assets"
     origin_access_control_id = aws_cloudfront_origin_access_control.s3.id
-  }
-
-  origin {
-    origin_id                = local.media_origin
-    domain_name              = aws_s3_bucket.media.bucket_regional_domain_name
-    origin_access_control_id = aws_cloudfront_origin_access_control.s3.id
-  }
-
-  origin {
-    origin_id   = local.media_on_mac_origin
-    domain_name = var.api_origin
-    origin_path = "/media"
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-  }
-
-  origin_group {
-    origin_id = local.media_group
-    failover_criteria {
-      status_codes = [403, 404]
-    }
-    member {
-      origin_id = local.media_origin
-    }
-    member {
-      origin_id = local.media_on_mac_origin
-    }
   }
 
   origin {
@@ -287,17 +227,15 @@ resource "aws_cloudfront_distribution" "web" {
   }
 
   ordered_cache_behavior {
-    path_pattern             = "/media/*"
-    target_origin_id         = local.media_group
-    viewer_protocol_policy   = "redirect-to-https"
-    allowed_methods          = ["GET", "HEAD", "OPTIONS"]
-    cached_methods           = ["GET", "HEAD"]
-    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_optimized.id
-    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.none.id
-    compress                 = true
+    path_pattern           = "/media/*"
+    target_origin_id       = local.server_origin
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+    cache_policy_id        = data.aws_cloudfront_cache_policy.caching_disabled.id
     function_association {
       event_type   = "viewer-request"
-      function_arn = aws_cloudfront_function.media.arn
+      function_arn = aws_cloudfront_function.media_redirect.arn
     }
   }
 
@@ -343,16 +281,6 @@ resource "aws_cloudfront_distribution" "web" {
       event_type   = "viewer-request"
       function_arn = aws_cloudfront_function.api.arn
     }
-  }
-
-  ordered_cache_behavior {
-    path_pattern           = "/_next/image*"
-    target_origin_id       = local.image_origin
-    viewer_protocol_policy = "redirect-to-https"
-    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
-    cached_methods         = ["GET", "HEAD"]
-    cache_policy_id        = aws_cloudfront_cache_policy.image.id
-    compress               = true
   }
 
   ordered_cache_behavior {

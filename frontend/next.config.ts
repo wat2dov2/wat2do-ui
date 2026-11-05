@@ -1,4 +1,3 @@
-import imageDelivery from "../backend/controlbox/image_delivery.json" with { type: "json" };
 import eventDiscovery from "../backend/controlbox/event_discovery.json" with { type: "json" };
 import openApi from "./src/shared/generated/openapi.json" with { type: "json" };
 import { getServerApiBaseUrl } from "./src/shared/services/serverApi";
@@ -95,19 +94,9 @@ const apiCollectionPaths = Object.keys(openApi.paths)
 const nextConfig: NextConfig = {
   experimental: { testProxy: process.env.PLAYWRIGHT_TEST === "1" },
   output: "standalone",
-  images: {
-    formats: [imageDelivery.optimized_format as "image/webp"],
-    deviceSizes: imageDelivery.device_sizes,
-    imageSizes: imageDelivery.image_sizes,
-    qualities: [imageDelivery.quality],
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: imageDelivery.optimized_remote_host,
-        pathname: `${imageDelivery.optimized_remote_path}**`,
-      },
-    ],
-  },
+  // Images are served as stored: the backend saves each poster's thumbnail at
+  // upload (frontend/src/shared/utils/media.ts), so nothing is resized per view.
+  images: { unoptimized: true },
   env: {
     NEXT_PUBLIC_EVENT_DISCOVERY: JSON.stringify({
       new_event_window_hours: eventDiscovery.new_event_window_hours,

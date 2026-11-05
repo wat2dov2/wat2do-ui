@@ -6,7 +6,7 @@ locals {
   # api.wat2do.io is the API every server-side fetch and /api rewrite targets.
   website_environment = {
     API_URL                        = "https://${var.api_origin}"
-    STORAGE_PUBLIC_BASE_URL        = "https://${var.domain_name}/media"
+    STORAGE_PUBLIC_BASE_URL        = local.image_delivery.media_origin
     EVENT_FEED_REVALIDATION_SECRET = var.event_feed_revalidation_secret
     INSTAGRAM_SLIDE_RENDER_SECRET  = var.instagram_slide_render_secret
   }
@@ -154,84 +154,6 @@ resource "aws_lambda_permission" "server_invoke" {
   statement_id             = "AllowInvokeThroughFunctionUrl"
   action                   = "lambda:InvokeFunction"
   function_name            = aws_lambda_function.server.function_name
-  principal                = "*"
-  invoked_via_function_url = true
-}
-
-# --- Image optimizer: /_next/image ---
-
-resource "aws_iam_role" "image" {
-  name               = "wat2do-web-image"
-  assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
-}
-
-resource "aws_iam_role_policy_attachment" "image_logs" {
-  role       = aws_iam_role.image.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
-
-data "aws_iam_policy_document" "image" {
-  statement {
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.web.arn}/_assets/*"]
-  }
-}
-
-resource "aws_iam_role_policy" "image" {
-  role   = aws_iam_role.image.id
-  policy = data.aws_iam_policy_document.image.json
-}
-
-resource "aws_cloudwatch_log_group" "image" {
-  name              = "/aws/lambda/wat2do-web-image"
-  retention_in_days = local.log_retention_days
-}
-
-resource "aws_lambda_function" "image" {
-  function_name = "wat2do-web-image"
-  role          = aws_iam_role.image.arn
-  runtime       = "nodejs22.x"
-  architectures = ["arm64"]
-  handler       = "index.handler"
-  memory_size   = 1536
-  timeout       = 25
-  filename      = data.archive_file.placeholder.output_path
-
-  environment {
-    variables = {
-      BUCKET_NAME       = aws_s3_bucket.web.id
-      BUCKET_KEY_PREFIX = "_assets"
-    }
-  }
-
-  logging_config {
-    log_format = "Text"
-    log_group  = aws_cloudwatch_log_group.image.name
-  }
-
-  lifecycle {
-    ignore_changes = [filename, source_code_hash]
-  }
-}
-
-resource "aws_lambda_function_url" "image" {
-  function_name      = aws_lambda_function.image.function_name
-  authorization_type = "NONE"
-}
-
-# A public function URL needs both grants since AWS's October 2025 change.
-resource "aws_lambda_permission" "image_url" {
-  statement_id           = "AllowPublicFunctionUrl"
-  action                 = "lambda:InvokeFunctionUrl"
-  function_name          = aws_lambda_function.image.function_name
-  principal              = "*"
-  function_url_auth_type = "NONE"
-}
-
-resource "aws_lambda_permission" "image_invoke" {
-  statement_id             = "AllowInvokeThroughFunctionUrl"
-  action                   = "lambda:InvokeFunction"
-  function_name            = aws_lambda_function.image.function_name
   principal                = "*"
   invoked_via_function_url = true
 }

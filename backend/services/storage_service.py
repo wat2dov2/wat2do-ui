@@ -1,10 +1,13 @@
-"""Validated file storage in Amazon S3, served publicly through CloudFront.
+"""Validated file storage in Cloudflare R2 through its S3 API, served publicly.
 
 A file in bucket ``event-images`` named ``<uuid>.jpg`` is the object
 ``event-images/<uuid>.jpg`` in ``STORAGE_BUCKET_NAME`` and is served at
 ``$STORAGE_PUBLIC_BASE_URL/event-images/<uuid>.jpg``. Each object carries its
 own response headers: the validated ``Content-Type``, an immutable
 ``Cache-Control`` and, for SVGs, ``Content-Disposition: attachment`` (audit U8).
+
+Every event image also gets a small WebP thumbnail next to it, named by
+``event_image_thumbnail_path``, which event cards show instead of the poster.
 """
 
 import logging
@@ -31,6 +34,11 @@ from core.controlbox import controlbox
 from core.exceptions import ValidationError
 from core.logging import logger
 from core.svg_sanitize import looks_like_svg, sanitize_svg
+from services.event_image_thumbnails import (
+    event_image_thumbnail_path,
+    make_event_image_thumbnail,
+    scale_to_width,
+)
 
 log = logging.getLogger(__name__)
 
@@ -105,10 +113,31 @@ class StorageService:
 
     def _get_s3_client(self):
         if self._s3 is None:
+            if not (
+                settings.storage_endpoint_url
+                and settings.storage_access_key_id
+                and settings.storage_secret_access_key
+            ):
+                raise RuntimeError(
+                    "S3 storage is not configured. Set STORAGE_ENDPOINT_URL, "
+                    "STORAGE_ACCESS_KEY_ID and STORAGE_SECRET_ACCESS_KEY."
+                )
+            # Storage has its own endpoint and keys (R2 in production, the
+            # local S3 server in development); SES keeps the AWS credentials.
             self._s3 = boto3.client(
                 "s3",
-                region_name=settings.aws_region,
-                config=Config(retries={"max_attempts": 4, "mode": "standard"}),
+                endpoint_url=settings.storage_endpoint_url,
+                aws_access_key_id=settings.storage_access_key_id,
+                aws_secret_access_key=settings.storage_secret_access_key,
+                region_name="auto",
+                config=Config(
+                    s3={"addressing_style": "path"},
+                    retries={"max_attempts": 4, "mode": "standard"},
+                    # Checksums only where the API requires them, which R2 and
+                    # the local server both accept.
+                    request_checksum_calculation="when_required",
+                    response_checksum_validation="when_required",
+                ),
             )
         return self._s3
 
@@ -210,6 +239,9 @@ class StorageService:
         *validated* ``content_type``.  This prevents the "upload as
         evil.html with Content-Type image/png" trick where the public URL ends
         in ``.html`` even though our MIME sniffer accepted the bytes (audit U7).
+
+        An event image's thumbnail is stored first, so a poster is never
+        published without the thumbnail its cards ask for.
         """
         ext = _MIME_TO_EXT.get(content_type, ".bin")
         self._require_configuration()
@@ -218,13 +250,23 @@ class StorageService:
         if key is None:
             raise ValidationError("Invalid storage asset path")
 
+        if bucket == BUCKET_EVENT_IMAGES:
+            self._put_object(
+                f"{bucket}/{event_image_thumbnail_path(path)}",
+                make_event_image_thumbnail(file_bytes),
+                "image/webp",
+            )
+        self._put_object(key, file_bytes, content_type)
+
+        return f"{self._public_base_url}/{bucket}/{path}"
+
+    def _put_object(self, key: str, body: bytes, content_type: str) -> None:
         put_options: dict[str, object] = {
             "Bucket": self._bucket_name,
             "Key": key,
-            "Body": file_bytes,
+            "Body": body,
             "ContentType": content_type,
             "CacheControl": "public, max-age=31536000, immutable",
-            "ServerSideEncryption": "AES256",
         }
         # For SVGs, force ``Content-Disposition: attachment`` so the
         # browser downloads the file instead of rendering it inline on a
@@ -235,8 +277,6 @@ class StorageService:
             put_options["ContentDisposition"] = "attachment"
 
         self._get_s3_client().put_object(**put_options)
-
-        return f"{self._public_base_url}/{bucket}/{path}"
 
     def download_file(self, bucket: str, path: str) -> tuple[bytes, str]:
         """Read one owned asset for repair through the same S3 configuration as uploads."""
@@ -257,7 +297,7 @@ class StorageService:
             body.close()
 
     def delete_file(self, bucket: str, path: str) -> None:
-        """Delete a file by its path within a bucket.
+        """Delete a file by its path within a bucket, with an event image's thumbnail.
 
         Rejects paths containing ``..`` or absolute path prefixes after
         normalization - prevents an attacker who controls
@@ -269,10 +309,14 @@ class StorageService:
         if key is None:
             logger.warning("Refusing to delete suspicious path %s/%s", bucket, path)
             return
-        try:
-            self._get_s3_client().delete_object(Bucket=self._bucket_name, Key=key)
-        except Exception as e:
-            logger.warning("Failed to delete %s/%s: %s", bucket, path, e)
+        keys = [key]
+        if bucket == BUCKET_EVENT_IMAGES:
+            keys.append(f"{bucket}/{event_image_thumbnail_path(path)}")
+        for object_key in keys:
+            try:
+                self._get_s3_client().delete_object(Bucket=self._bucket_name, Key=object_key)
+            except Exception as e:
+                logger.warning("Failed to delete %s: %s", object_key, e)
 
     def path_from_url(self, url: str, bucket: str) -> str | None:
         """Extract the storage path from a public URL for deletion.
@@ -374,10 +418,8 @@ def prepare_image_rendition(
             # metadata being re-attached by the encoder.
             # Animation is resized frame by frame or not at all; a single
             # resample would flatten it, so animated images keep their size.
-            is_animated = getattr(im, "is_animated", False)
-            if max_width and not is_animated and im.width > max_width:
-                height = round(im.height * (max_width / im.width))
-                im = im.resize((max_width, max(height, 1)), Image.LANCZOS)
+            if max_width and not getattr(im, "is_animated", False):
+                im = scale_to_width(im, max_width)
 
             pil_format = im.format
             if pil_format is None:

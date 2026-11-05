@@ -301,7 +301,7 @@ def test_reconciliation_retains_uploaded_video_instead_of_model_url():
     )
     result = reconcile_events(
         extracted_events=[
-            {"title": "Tea", "source_video_url": "https://wat2do.io/media/event-videos/reel.mp4"}
+            {"title": "Tea", "source_video_url": "https://media.wat2do.io/event-videos/reel.mp4"}
         ],
         candidates_by_index=[[]],
         caption_text="Tea",
@@ -309,7 +309,7 @@ def test_reconciliation_retains_uploaded_video_instead_of_model_url():
         complete=complete,
     )
     assert result is not None
-    assert result[0]["source_video_url"] == "https://wat2do.io/media/event-videos/reel.mp4"
+    assert result[0]["source_video_url"] == "https://media.wat2do.io/event-videos/reel.mp4"
 
 
 def test_reconciliation_pairs_video_by_owned_poster_when_results_are_collapsed():
@@ -317,13 +317,13 @@ def test_reconciliation_pairs_video_by_owned_poster_when_results_are_collapsed()
 
     first = {
         "title": "Tea",
-        "source_image_url": "https://wat2do.io/media/event-images/tea.jpg",
-        "source_video_url": "https://wat2do.io/media/event-videos/tea.mp4",
+        "source_image_url": "https://media.wat2do.io/event-images/tea.jpg",
+        "source_video_url": "https://media.wat2do.io/event-videos/tea.mp4",
     }
     second = {
         "title": "Coffee",
-        "source_image_url": "https://wat2do.io/media/event-images/coffee.jpg",
-        "source_video_url": "https://wat2do.io/media/event-videos/coffee.mp4",
+        "source_image_url": "https://media.wat2do.io/event-images/coffee.jpg",
+        "source_video_url": "https://media.wat2do.io/event-videos/coffee.mp4",
     }
     complete = _completion(
         json.dumps(

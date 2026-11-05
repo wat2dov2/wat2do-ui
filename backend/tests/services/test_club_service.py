@@ -228,7 +228,7 @@ def test_create_club_refreshes_public_directory_only_when_approved(
         ({"categories": ["Arts & Culture"]}, ("clubs",)),
         ({"club_type": "wusa"}, ("events", "positions", "clubs")),
         (
-            {"logo_url": "https://wat2do.io/media/organization-logos/tea.jpg"},
+            {"logo_url": "https://media.wat2do.io/organization-logos/tea.jpg"},
             ("events", "positions", "clubs"),
         ),
         ({"club_name": "New club name"}, ("events", "positions", "clubs")),

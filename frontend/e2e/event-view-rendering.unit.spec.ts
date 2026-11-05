@@ -600,8 +600,13 @@ test("calendar tiles retain host and cohost pictures and route selection to the 
   const props = surface.props.children.props.children.props as CalendarProps<CalendarEvent>;
   const occurrence = props.events![0];
   const { TooltipProvider } = loadComponent("shared/ui/tooltip") as typeof import("../src/shared/ui/tooltip");
-  const html = renderToStaticMarkup(createElement(TooltipProvider, null,
-    createElement(props.components!.event!, { event: occurrence, title: occurrence.title })));
+  // next.config.ts serves every image as stored (images.unoptimized).
+  const nodeRequire = createRequire(import.meta.url);
+  const { ImageConfigContext } = nodeRequire("next/dist/shared/lib/image-config-context.shared-runtime");
+  const { imageConfigDefault } = nodeRequire("next/dist/shared/lib/image-config");
+  const html = renderToStaticMarkup(createElement(ImageConfigContext.Provider, { value: { ...imageConfigDefault, unoptimized: true } },
+    createElement(TooltipProvider, null,
+      createElement(props.components!.event!, { event: occurrence, title: occurrence.title }))));
   expect(html).toContain(listing.title);
   expect(html).toContain(listing.club);
   expect(html).toContain('src="https://example.com/host.png"');

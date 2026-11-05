@@ -16,9 +16,10 @@
 http://api.wat2do.io:8080 {
 	bind 127.0.0.1
 
-	# Media S3 does not have yet: CloudFront falls back here
-	# (infra/terraform/web, media_on_mac_origin) until ~/wat2do-data/media is
-	# fully in the bucket; remove this block with that origin.
+	# Media from the Mac's disk, for the website on Vercel (its /media rewrite)
+	# until wat2do.io moves to CloudFront, which redirects /media/* to
+	# media.wat2do.io (Cloudflare R2). Remove this block, WAT2DO_DATA in
+	# bin/run-caddy and ~/wat2do-data/media then.
 	handle /media/* {
 		root * {$WAT2DO_DATA}
 		header Cache-Control "public, max-age=31536000, immutable"

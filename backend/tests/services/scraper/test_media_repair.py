@@ -19,7 +19,7 @@ def target():
         id=29122,
         school="uwaterloo",
         source_url="https://www.instagram.com/p/ORIGINAL/",
-        source_image_url="https://wat2do.io/media/event-images/original.jpg",
+        source_image_url="https://media.wat2do.io/event-images/original.jpg",
         source_video_url=None,
     )
 
@@ -40,12 +40,12 @@ def persistence(monkeypatch):
 @pytest.fixture
 def assets(monkeypatch):
     client = MagicMock()
-    storage = StorageService(client, bucket_name="test", public_base_url="https://wat2do.io/media")
+    storage = StorageService(client, bucket_name="test", public_base_url="https://media.wat2do.io")
     monkeypatch.setattr(module, "storage", storage)
     monkeypatch.setattr(
         storage,
         "upload_file",
-        MagicMock(return_value="https://wat2do.io/media/event-images/new.jpg"),
+        MagicMock(return_value="https://media.wat2do.io/event-images/new.jpg"),
     )
     monkeypatch.setattr(storage, "delete_file", MagicMock())
     return storage, client
@@ -84,7 +84,7 @@ def test_image_repair_keeps_old_immutable_asset_and_updates_only_expected_refere
     result = module.repair_stored_image(target, apply=True)
     assert result["status"] == "updated"
     query.update.assert_called_once_with(
-        {"source_image_url": "https://wat2do.io/media/event-images/new.jpg"}
+        {"source_image_url": "https://media.wat2do.io/event-images/new.jpg"}
     )
     assert ("id", 29122) in [call.args for call in query.eq.call_args_list]
     assert ("source_image_url", target.source_image_url) in [
@@ -126,7 +126,7 @@ def test_small_image_and_foreign_asset_never_write(target, assets):
 
 @pytest.fixture
 def video_upload(monkeypatch):
-    upload = MagicMock(return_value="https://wat2do.io/media/event-videos/repaired.mp4")
+    upload = MagicMock(return_value="https://media.wat2do.io/event-videos/repaired.mp4")
     monkeypatch.setattr(module, "upload_video_from_url", upload)
     return upload
 
@@ -166,7 +166,7 @@ def test_video_repairs_only_missing_selected_row_and_refreshes_position_director
 
 
 def test_existing_video_is_not_downloaded_again(target, video_upload):
-    target = replace(target, source_video_url="https://wat2do.io/media/event-videos/old.mp4")
+    target = replace(target, source_video_url="https://media.wat2do.io/event-videos/old.mp4")
     assert (
         module.repair_stored_video(target, video_post(), apply=True)["status"] == "already_present"
     )
@@ -228,7 +228,7 @@ def test_missing_instagram_image_uses_exact_post_cover_and_conditional_write(
     target, persistence, monkeypatch
 ):
     target = replace(target, source_image_url=None)
-    upload = MagicMock(return_value="https://wat2do.io/media/event-images/new.jpg")
+    upload = MagicMock(return_value="https://media.wat2do.io/event-images/new.jpg")
     monkeypatch.setattr(module, "upload_image_from_url", upload)
     post = {
         "url": target.source_url,

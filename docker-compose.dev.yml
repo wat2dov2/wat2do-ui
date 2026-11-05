@@ -69,7 +69,10 @@ services:
       EMAIL_DELIVERY_ENABLED: "true"
       AWS_REGION: ${AWS_REGION:-ca-central-1}
       # Uploads go to the media service's local S3 bucket; SES still uses AWS.
-      AWS_ENDPOINT_URL_S3: http://media:8333
+      # The local server checks no keys, but the client needs some to sign with.
+      STORAGE_ENDPOINT_URL: http://media:8333
+      STORAGE_ACCESS_KEY_ID: local
+      STORAGE_SECRET_ACCESS_KEY: local
       STORAGE_BUCKET_NAME: media
       STORAGE_PUBLIC_BASE_URL: http://localhost:55434/media
       EVENT_FEED_REVALIDATION_URL: ""
@@ -89,7 +92,7 @@ services:
       retries: 3
       start_period: 10s
 
-  # A local S3 server standing in for the production media bucket. It runs
+  # A local S3 server standing in for the production R2 bucket. It runs
   # without credentials, so it accepts the backend's signed requests and serves
   # bucket "media" to browsers at the URLs the backend returns.
   media:

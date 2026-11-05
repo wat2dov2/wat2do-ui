@@ -1,4 +1,4 @@
-# The Mac mini's API and ingestion jobs: email through SES and media in S3.
+# The Mac mini's API and jobs: email through SES (media is on Cloudflare R2, r2.tf).
 # Its access key is created by hand and kept in ~/wat2do-data/config/backend.env.
 resource "aws_iam_user" "api" {
   name = "wat2do-api"
@@ -13,10 +13,6 @@ data "aws_iam_policy_document" "api" {
       variable = "ses:FromAddress"
       values   = ["*@${var.domain_name}"]
     }
-  }
-  statement {
-    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
-    resources = ["${aws_s3_bucket.media.arn}/*"]
   }
 }
 
@@ -46,7 +42,6 @@ data "aws_iam_policy_document" "deploy" {
     actions = ["lambda:UpdateFunctionCode", "lambda:GetFunction", "lambda:GetFunctionConfiguration"]
     resources = [
       aws_lambda_function.server.arn,
-      aws_lambda_function.image.arn,
       aws_lambda_function.revalidation.arn,
       aws_lambda_function.warmer.arn,
     ]

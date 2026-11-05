@@ -33,3 +33,8 @@ variable "instagram_slide_render_secret" {
   type      = string
   sensitive = true
 }
+
+variable "budget_alert_email" {
+  type    = string
+  default = "tonyqiu@wat2do.io"
+}

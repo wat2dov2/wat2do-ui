@@ -15,7 +15,7 @@ New scraped videos are copied to owned S3 storage and played on event and positi
 Previously processed posts remain deduplicated during ordinary scraping, so deploying video support does not redownload historical posts or rerun AI extraction.
 Use the targeted media repair command for an existing event or position.
 It uses the same S3 storage, limits, and rendition rules as new uploads.
-Configure the intended database, `STORAGE_BUCKET_NAME`, `STORAGE_PUBLIC_BASE_URL`, and discovery revalidation settings in the command's environment before applying a repair.
+Configure the intended database, the `STORAGE_*` media settings (endpoint, keys, bucket and public base URL), and discovery revalidation settings in the command's environment before applying a repair.
 
 ```sh
 cd backend

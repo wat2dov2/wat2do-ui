@@ -140,6 +140,9 @@ pub struct Uploads {
     pub event_image_max_size_bytes: usize,
     pub event_image_rendition_width_pixels: u32,
     pub event_image_rendition_quality: u8,
+    pub event_image_thumbnail_width_pixels: u32,
+    pub event_image_thumbnail_quality: u8,
+    pub event_image_thumbnail_suffix: String,
     pub event_video_max_size_bytes: usize,
     pub event_video_download_timeout_seconds: u64,
 }

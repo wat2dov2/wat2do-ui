@@ -68,9 +68,9 @@ Never use Compose `down -v` unless intentionally deleting local data.
 
 ### Development image storage
 
-Uploaded images go to S3 through the same code as production, with a local S3 server standing in for the bucket.
+Uploaded images go through the same S3 API code as production, with a local S3 server standing in for the R2 bucket.
 The Compose `media` service runs SeaweedFS's single-process S3 server with bucket `media`, kept in the `media_data` volume.
-`make dev` points the backend's S3 client at it with the AWS SDKs' standard `AWS_ENDPOINT_URL_S3` setting, so SES still goes to AWS.
+`make dev` points the backend's storage settings at it (`STORAGE_ENDPOINT_URL`, with placeholder `STORAGE_ACCESS_KEY_ID` and `STORAGE_SECRET_ACCESS_KEY`), while SES still goes to AWS with the AWS credentials.
 The server runs without credentials: it accepts the backend's signed requests and serves objects to browsers at `http://localhost:55434/media`, the backend's `STORAGE_PUBLIC_BASE_URL`.
 Remove the `media_data` volume to clear local uploads; the local database keeps their URLs.
 Discovery snapshots live in Next's data cache under `frontend/.next/cache` in development; the backend's revalidation notices (`EVENT_FEED_REVALIDATION_URL`) mark them stale.
@@ -139,12 +139,13 @@ Employer recruiting continues to use `employers_on_campus` independently of thes
 
 ## Production deployment
 
-The website (Next.js, `frontend/`) runs on AWS in account 291667884807: CloudFront in front of Lambda functions built by OpenNext, with media in S3 (`infra/terraform/web`). The Mac mini serves the API, the data API and Postgres at `https://api.wat2do.io` through a Cloudflare Tunnel, and CloudFront sends the website's `/api/*` there; [`docs/projects/mac-mini-hosting.md`](docs/projects/mac-mini-hosting.md) is the runbook.
-The website rewrites `/api/*` and `/media/*` to `API_URL` (`frontend/next.config.ts`), and its server code reads the API at the same `API_URL`.
+The website (Next.js, `frontend/`) runs on AWS in account 291667884807: CloudFront in front of Lambda functions built by OpenNext (`infra/terraform/web`), with media in Cloudflare R2. The Mac mini serves the API, the data API and Postgres at `https://api.wat2do.io` through a Cloudflare Tunnel, and CloudFront sends the website's `/api/*` there; [`docs/projects/mac-mini-hosting.md`](docs/projects/mac-mini-hosting.md) is the runbook.
+The website's server code reads the API at `API_URL`.
 The database is PostgreSQL 17 (database `wat2do`), which the backend reads and writes through our own PostgREST data API.
 Sign-in, sessions and access tokens are the backend's own (`rust/src/api/routes/auth`, verified in Python by `backend/core/auth_tokens.py`).
-Uploaded and ingested media are objects in the private S3 bucket `STORAGE_BUCKET_NAME` in `AWS_REGION`, keyed `<bucket>/<file>` (`event-images/<uuid>.jpg`), which CloudFront serves at `STORAGE_PUBLIC_BASE_URL` (`https://wat2do.io/media`).
+Uploaded and ingested media are objects in the Cloudflare R2 bucket `STORAGE_BUCKET_NAME`, written through R2's S3 API at `STORAGE_ENDPOINT_URL` with their own key (`STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY`), keyed `<bucket>/<file>` (`event-images/<uuid>.jpg`) and served at `STORAGE_PUBLIC_BASE_URL` (`https://media.wat2do.io`).
 Each object carries its validated `Content-Type`, an immutable `Cache-Control` header and, for `.svg` files, `Content-Disposition: attachment`.
+Each event image also gets a WebP thumbnail beside it at upload (`<name>.thumb.webp`, `backend/services/event_image_thumbnails.py`), which event cards show, so nothing resizes images on request; `backend/scripts/make_event_image_thumbnails.py` makes the missing ones in a local copy of the bucket.
 Discovery snapshots live in Next's data cache, which every Lambda instance and deployment shares through S3 and DynamoDB (`frontend/src/shared/services/discoveryCache.server.ts`).
 Each school's link preview is drawn by the frontend on request (`frontend/src/app/og-image.png/route.tsx`) with Next.js `ImageResponse`, from the school and its event feed, with no browser.
 DNS is on Cloudflare.

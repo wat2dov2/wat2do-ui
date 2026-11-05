@@ -171,6 +171,8 @@ def test_upload_contract_matches_event_image_bucket() -> None:
     assert storage.get_file_size_limit(BUCKET_EVENT_IMAGES) == 5 * 1024 * 1024
     # Posters are stored at this width, so it is what every viewer receives.
     assert controlbox.uploads.event_image_rendition_width_pixels == 1080
+    assert controlbox.uploads.event_image_thumbnail_width_pixels == 640
+    assert controlbox.uploads.event_image_thumbnail_suffix == ".thumb.webp"
     assert controlbox.uploads.event_image_allowed_mime_types == storage.get_allowed_mime_types(
         BUCKET_EVENT_IMAGES
     )
@@ -350,9 +352,8 @@ def test_discovery_query_limits_are_validated(tmp_path, field, value):
 
 def test_discovery_controls_load_checked_in_feature_sources():
     assert controlbox.database.read_attempts == 3
-    assert controlbox.image_delivery.optimized_format == "image/webp"
-    assert controlbox.image_delivery.optimized_remote_host == "wat2do.io"
-    assert controlbox.image_delivery.optimized_remote_path == "/media/"
+    assert controlbox.image_delivery.first_row_image_count == 6
+    assert controlbox.image_delivery.media_origin == "https://media.wat2do.io"
 
 
 @pytest.mark.parametrize(
@@ -377,21 +378,18 @@ def test_discovery_controls_load_checked_in_feature_sources():
             {"snapshot_check_seconds": controlbox.discovery_cache.cdn_ttl_seconds + 1},
         ),
         ("discovery_cache", {"refresh_interval_seconds": 0}),
-        ("image_delivery", {"device_sizes": []}),
-        ("image_delivery", {"device_sizes": [640, 256]}),
-        ("image_delivery", {"device_sizes": [256, 256]}),
-        ("image_delivery", {"image_sizes": [0, 16]}),
-        ("image_delivery", {"image_sizes": [256]}),
         ("uploads", {"event_video_max_size_bytes": 0}),
         ("uploads", {"event_video_download_timeout_seconds": 0}),
-        ("image_delivery", {"video_poster_width": 385}),
-        ("image_delivery", {"quality": 0}),
-        ("image_delivery", {"quality": 101}),
+        ("image_delivery", {"first_row_image_count": 0}),
         ("image_delivery", {"first_row_image_count": 25}),
-        ("image_delivery", {"optimized_format": "image/avif"}),
-        ("image_delivery", {"optimized_remote_host": "https://wat2do.io"}),
-        ("image_delivery", {"optimized_remote_host": "*.wat2do.io"}),
-        ("image_delivery", {"optimized_remote_path": "/media/../"}),
+        ("image_delivery", {"media_origin": "http://media.wat2do.io"}),
+        ("image_delivery", {"media_origin": "https://media.wat2do.io/"}),
+        ("image_delivery", {"media_origin": "https://wat2do.io/media"}),
+        ("uploads", {"event_image_thumbnail_width_pixels": 1080}),
+        ("uploads", {"event_image_thumbnail_quality": 0}),
+        ("uploads", {"event_image_thumbnail_suffix": ".webp"}),
+        ("uploads", {"event_image_thumbnail_suffix": "/thumb.webp"}),
+        ("uploads", {"event_image_thumbnail_suffix": ".thumb.jpg"}),
     ],
 )
 def test_discovery_control_limits_reject_unsafe_configuration(tmp_path, feature, patch):

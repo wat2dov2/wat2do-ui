@@ -6,7 +6,7 @@ from PIL import Image
 
 from services.notifications import email_images
 
-URL = "https://wat2do.io/media/event-images/poster"
+URL = "https://media.wat2do.io/event-images/poster"
 
 
 def _poster(fmt: str, size: tuple[int, int]) -> bytes:

@@ -28,7 +28,6 @@ export function SocialPostTile({ post, username }: SocialPostTileProps) {
         <LazyImage
           src={post.image_url}
           alt={post.caption?.slice(0, 120) ?? ""}
-          sizes="(min-width: 1024px) 220px, 45vw"
           className="aspect-square w-full rounded-lg border border-border"
         />
         {username ? <span className="truncate text-xs font-semibold">@{username}</span> : null}

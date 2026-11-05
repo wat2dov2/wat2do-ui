@@ -271,9 +271,9 @@ async fn proxied_requests_and_responses_pass_through_untouched() {
     let cookies: Vec<_> = reply.headers.get_all(header::SET_COOKIE).iter().collect();
     assert_eq!(cookies, ["a=1; Path=/", "b=2; HttpOnly"]);
     assert_eq!(reply.headers[header::LOCATION], "/elsewhere");
-    // Proxied responses get no Rust headers; Python adds its own.
+    // Proxied responses get no Rust headers but compression's Vary; Python adds its own.
     assert!(reply.headers.get("x-content-type-options").is_none());
-    assert!(reply.headers.get(header::VARY).is_none());
+    assert_eq!(reply.headers[header::VARY], "accept-encoding");
     let echo: Value = serde_json::from_slice(&reply.body).unwrap();
     assert_eq!(echo["method"], "POST");
     assert_eq!(echo["uri"], "/uploads/image?school=uwaterloo&a=%2F");
@@ -401,6 +401,24 @@ async fn event_routes_validate_parameters_like_fastapi() {
     )
     .await;
     assert_eq!(reply.status, StatusCode::UNPROCESSABLE_ENTITY);
+}
+
+#[tokio::test]
+async fn responses_are_compressed_for_clients_that_accept_it() {
+    let mut request = get("/events/?page_size=0&sort_order=up");
+    request
+        .headers_mut()
+        .insert(header::ACCEPT_ENCODING, "gzip".parse().unwrap());
+    let reply = send(state(None), request, "testclient").await;
+    assert_eq!(reply.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(reply.headers[header::CONTENT_ENCODING], "gzip");
+    let plain = send(
+        state(None),
+        get("/events/?page_size=0&sort_order=up"),
+        "testclient",
+    )
+    .await;
+    assert!(plain.headers.get(header::CONTENT_ENCODING).is_none());
 }
 
 #[tokio::test]

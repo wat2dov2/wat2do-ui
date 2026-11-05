@@ -17,7 +17,11 @@ pub struct Settings {
     pub google_oauth_client_secret: String,
     pub ingest_agent_database_url: String,
     pub aws_region: String,
-    /// S3 bucket in `aws_region` holding uploaded and ingested media.
+    /// The S3 API (Cloudflare R2 in production) holding uploaded and ingested
+    /// media, with its own keys; SES keeps the AWS credentials.
+    pub storage_endpoint_url: String,
+    pub storage_access_key_id: String,
+    pub storage_secret_access_key: String,
     pub storage_bucket_name: String,
     pub storage_public_base_url: String,
     pub event_feed_revalidation_url: String,
@@ -96,6 +100,9 @@ impl Settings {
             google_oauth_client_secret: lookup("GOOGLE_OAUTH_CLIENT_SECRET").unwrap_or_default(),
             ingest_agent_database_url: optional("INGEST_AGENT_DATABASE_URL"),
             aws_region: or_default("AWS_REGION", "ca-central-1"),
+            storage_endpoint_url: optional("STORAGE_ENDPOINT_URL"),
+            storage_access_key_id: optional("STORAGE_ACCESS_KEY_ID"),
+            storage_secret_access_key: optional("STORAGE_SECRET_ACCESS_KEY"),
             storage_bucket_name: optional("STORAGE_BUCKET_NAME"),
             storage_public_base_url: optional("STORAGE_PUBLIC_BASE_URL")
                 .trim_end_matches('/')

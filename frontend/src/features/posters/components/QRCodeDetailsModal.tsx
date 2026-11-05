@@ -74,7 +74,6 @@ export function QRCodeDetailsModal({ isOpen, onClose, qrCode }: QRCodeDetailsMod
                   <LazyImage
                     src={posterImageSrc}
                     alt={qrCode.name}
-                    sizes={`${previewSize}px`}
                     className="size-full"
                   />
                 ) : (

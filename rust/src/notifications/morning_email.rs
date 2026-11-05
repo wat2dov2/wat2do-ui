@@ -610,8 +610,8 @@ mod tests {
     fn club_logo_content_ids_hash_the_url() {
         // "club-" + hashlib.sha256(url.encode()).hexdigest()[:16]
         assert_eq!(
-            club_content_id("https://wat2do.io/media/club.png"),
-            "club-5e5ab40f36ff1c93"
+            club_content_id("https://media.wat2do.io/club.png"),
+            "club-77645932f26a760d"
         );
     }
 
@@ -719,10 +719,10 @@ mod tests {
 
     #[test]
     fn card_images_embed_posters_and_each_club_logo_once() {
-        let logo = "https://wat2do.io/media/club.png";
+        let logo = "https://media.wat2do.io/club.png";
         let events: Vec<NewItem<Event>> = vec![
-            new_item(1, Some("https://wat2do.io/media/ok.jpg"), Some(logo)),
-            new_item(2, Some("https://wat2do.io/media/broken.jpg"), Some(logo)),
+            new_item(1, Some("https://media.wat2do.io/ok.jpg"), Some(logo)),
+            new_item(2, Some("https://media.wat2do.io/broken.jpg"), Some(logo)),
         ];
         let positions: Vec<NewItem<PositionCard>> = vec![new_item(7, None, None)];
 
@@ -734,10 +734,10 @@ mod tests {
         assert_eq!(
             requested,
             [
-                (Some("https://wat2do.io/media/ok.jpg"), "event-1", 480),
-                (Some("https://wat2do.io/media/broken.jpg"), "event-2", 480),
+                (Some("https://media.wat2do.io/ok.jpg"), "event-1", 480),
+                (Some("https://media.wat2do.io/broken.jpg"), "event-2", 480),
                 (None, "position-7", 480),
-                (Some(logo), "club-5e5ab40f36ff1c93", 64),
+                (Some(logo), "club-77645932f26a760d", 64),
             ]
         );
 
@@ -746,7 +746,7 @@ mod tests {
             embedded("event-1"),
             None,
             None,
-            embedded("club-5e5ab40f36ff1c93"),
+            embedded("club-77645932f26a760d"),
         ];
         let digest = assemble(&events, &positions, &logo_urls, images);
 
@@ -755,7 +755,7 @@ mod tests {
             .iter()
             .map(|image| image.content_id.as_str())
             .collect();
-        assert_eq!(ids, ["event-1", "club-5e5ab40f36ff1c93"]);
+        assert_eq!(ids, ["event-1", "club-77645932f26a760d"]);
         let sources: Vec<Option<&str>> = digest
             .events
             .iter()
@@ -767,13 +767,13 @@ mod tests {
             sources,
             [
                 Some("cid:event-1"),
-                Some("https://wat2do.io/media/broken.jpg"),
+                Some("https://media.wat2do.io/broken.jpg"),
                 None
             ]
         );
         assert_eq!(
             digest.events[0].media.club_logo_src.as_deref(),
-            Some("cid:club-5e5ab40f36ff1c93")
+            Some("cid:club-77645932f26a760d")
         );
         assert_eq!(
             digest.events[1].media.club_logo_src,

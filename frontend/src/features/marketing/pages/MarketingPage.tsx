@@ -76,7 +76,6 @@ export function MarketingPage({ events }: MarketingPageProps) {
                   <LazyImage
                     src={qr.imageUrl}
                     alt={qr.name}
-                    sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw"
                     className="size-full"
                   />
                 ) : (

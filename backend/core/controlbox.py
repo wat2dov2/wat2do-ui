@@ -189,30 +189,10 @@ class DatabaseControl(_ControlModel):
 
 
 class ImageDeliveryControl(_ControlModel):
-    device_sizes: tuple[int, ...] = Field(min_length=1)
-    image_sizes: tuple[int, ...] = Field(min_length=1)
-    quality: int = Field(ge=1, le=100)
     first_row_image_count: int = Field(ge=1, le=24)
-    optimized_format: Literal["image/webp"]
-    optimized_remote_host: str = Field(min_length=1)
-    optimized_remote_path: str = Field(pattern=r"^/.*\/$")
-    # The width a video's poster frame is delivered at (its 2x candidate).
-    video_poster_width: int = Field(gt=0)
-
-    @model_validator(mode="after")
-    def validate_sizes(self) -> "ImageDeliveryControl":
-        for sizes in (self.device_sizes, self.image_sizes):
-            if min(sizes) <= 0 or list(sizes) != sorted(set(sizes)):
-                raise ValueError("image sizes must be positive, unique and ascending")
-        if max(self.image_sizes) >= min(self.device_sizes):
-            raise ValueError("image_sizes must be smaller than the smallest device_sizes entry")
-        if self.video_poster_width not in (*self.device_sizes, *self.image_sizes):
-            raise ValueError("video_poster_width must be a configured image or device size")
-        if any(character in self.optimized_remote_host for character in "/:?#@* "):
-            raise ValueError("optimized_remote_host must be a hostname without a scheme or path")
-        if any(part in {".", ".."} for part in self.optimized_remote_path.split("/")):
-            raise ValueError("optimized_remote_path cannot contain relative path segments")
-        return self
+    # Where uploaded media is served (an https origin, no path); the frontend
+    # finds a poster's thumbnail by its URL starting here.
+    media_origin: str = Field(pattern=r"^https://[a-z0-9-]+(\.[a-z0-9-]+)+$")
 
 
 class DiscoveryCacheControl(_ControlModel):
@@ -465,6 +445,18 @@ class UploadsControl(_ControlModel):
     # upscaled pixels, and the detail view is the widest place one is shown.
     event_image_rendition_width_pixels: int = Field(ge=640, le=2400)
     event_image_rendition_quality: int = Field(ge=1, le=100)
+    # Cards show a WebP thumbnail made once at upload, at most this wide. It is
+    # stored next to the poster, its extension replaced by the suffix, which
+    # keeps a segment before ".webp" so it never names a WebP poster itself.
+    event_image_thumbnail_width_pixels: int = Field(ge=128, le=1080)
+    event_image_thumbnail_quality: int = Field(ge=1, le=100)
+    event_image_thumbnail_suffix: str = Field(pattern=r"^(\.[a-z0-9]+)+\.webp$")
+
+    @model_validator(mode="after")
+    def _validate_thumbnail_width(self) -> "UploadsControl":
+        if self.event_image_thumbnail_width_pixels >= self.event_image_rendition_width_pixels:
+            raise ValueError("event image thumbnails must be narrower than the rendition")
+        return self
 
     @model_validator(mode="after")
     def _validate_mime_types(self) -> "UploadsControl":

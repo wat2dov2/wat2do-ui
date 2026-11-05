@@ -165,7 +165,6 @@ update_function() {
   rm -f "$zip"
 }
 update_function wat2do-web-server "$open_next/server-functions/default"
-update_function wat2do-web-image "$open_next/image-optimization-function"
 update_function wat2do-web-revalidation "$open_next/revalidation-function"
 update_function wat2do-web-warmer "$open_next/warmer-function"
 

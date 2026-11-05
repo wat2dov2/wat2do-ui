@@ -379,7 +379,7 @@ def _store_in_fake_s3(monkeypatch) -> MagicMock:
     fake_s3 = MagicMock()
     monkeypatch.setattr(storage, "_s3", fake_s3)
     monkeypatch.setattr(storage, "_bucket_name", "wat2do-test-media")
-    monkeypatch.setattr(storage, "_public_base_url", "https://wat2do.io/media")
+    monkeypatch.setattr(storage, "_public_base_url", "https://media.wat2do.io")
     return fake_s3
 
 
@@ -398,7 +398,7 @@ def test_upload_ignores_user_supplied_filename_extension(authenticated_client, m
     stored_key = fake_s3.put_object.call_args.kwargs["Key"]
     assert stored_key.startswith("qr-assets/")
     assert stored_key.endswith(".png")
-    assert resp.json()["url"] == f"https://wat2do.io/media/{stored_key}"
+    assert resp.json()["url"] == f"https://media.wat2do.io/{stored_key}"
 
 
 # ── Regression: audit U8 - SVGs download instead of rendering inline ──
@@ -534,25 +534,25 @@ def test_path_from_url_rejects_traversal():
     service = StorageService(
         MagicMock(),
         bucket_name="wat2do-test-media",
-        public_base_url="https://wat2do.io/media",
+        public_base_url="https://media.wat2do.io",
     )
 
     ok = service.path_from_url(
-        "https://wat2do.io/media/event-images/abc123.png",
+        "https://media.wat2do.io/event-images/abc123.png",
         "event-images",
     )
     assert ok == "abc123.png"
 
     # Traversal is refused.
     bad = service.path_from_url(
-        "https://wat2do.io/media/event-images/../shared.png",
+        "https://media.wat2do.io/event-images/../shared.png",
         "event-images",
     )
     assert bad is None
 
     # Absolute path is refused.
     bad_abs = service.path_from_url(
-        "https://wat2do.io/media/event-images//etc/passwd",
+        "https://media.wat2do.io/event-images//etc/passwd",
         "event-images",
     )
     assert bad_abs is None
@@ -563,21 +563,24 @@ def test_upload_file_writes_an_immutable_s3_object_at_its_public_url():
     service = StorageService(
         s3,
         bucket_name="wat2do-test-media",
-        public_base_url="https://wat2do.io/media/",
+        public_base_url="https://media.wat2do.io/",
     )
 
-    url = service.upload_file("event-images", b"image-bytes", "image/png")
+    url = service.upload_file("avatars", b"image-bytes", "image/png")
 
-    assert url.startswith("https://wat2do.io/media/event-images/")
+    assert url.startswith("https://media.wat2do.io/avatars/")
     assert url.endswith(".png")
     put = s3.put_object.call_args.kwargs
     assert put["Bucket"] == "wat2do-test-media"
     # The key is the public URL's path below STORAGE_PUBLIC_BASE_URL.
-    assert url == f"https://wat2do.io/media/{put['Key']}"
-    assert put["Body"] == b"image-bytes"
-    assert put["ContentType"] == "image/png"
-    assert put["CacheControl"] == "public, max-age=31536000, immutable"
-    assert put["ServerSideEncryption"] == "AES256"
+    assert url == f"https://media.wat2do.io/{put['Key']}"
+    assert put == {
+        "Bucket": "wat2do-test-media",
+        "Key": put["Key"],
+        "Body": b"image-bytes",
+        "ContentType": "image/png",
+        "CacheControl": "public, max-age=31536000, immutable",
+    }
 
 
 def test_storage_refuses_paths_outside_their_bucket():
@@ -589,7 +592,7 @@ def test_storage_refuses_paths_outside_their_bucket():
     service = StorageService(
         s3,
         bucket_name="wat2do-test-media",
-        public_base_url="https://wat2do.io/media",
+        public_base_url="https://media.wat2do.io",
     )
 
     for bucket, path in [
@@ -609,7 +612,7 @@ def test_storage_refuses_paths_outside_their_bucket():
 def test_storage_requires_a_bucket_and_public_url():
     import pytest
 
-    for bucket_name, public_base_url in (("", "https://wat2do.io/media"), ("media", "")):
+    for bucket_name, public_base_url in (("", "https://media.wat2do.io"), ("media", "")):
         service = StorageService(
             MagicMock(), bucket_name=bucket_name, public_base_url=public_base_url
         )
@@ -617,12 +620,43 @@ def test_storage_requires_a_bucket_and_public_url():
             service.upload_file("avatars", b"bytes", "image/png")
 
 
+def test_storage_client_uses_its_own_endpoint_and_keys(monkeypatch):
+    import pytest
+
+    import services.storage_service as storage_module
+
+    for name, value in (
+        ("storage_endpoint_url", "https://account.r2.cloudflarestorage.com"),
+        ("storage_access_key_id", "storage-key"),
+        ("storage_secret_access_key", "storage-secret"),
+    ):
+        monkeypatch.setattr(storage_module.settings, name, value)
+    build = MagicMock()
+    monkeypatch.setattr(storage_module.boto3, "client", build)
+
+    StorageService(bucket_name="media", public_base_url="https://media.wat2do.io")._get_s3_client()
+
+    kwargs = build.call_args.kwargs
+    assert build.call_args.args == ("s3",)
+    assert kwargs["endpoint_url"] == "https://account.r2.cloudflarestorage.com"
+    assert kwargs["aws_access_key_id"] == "storage-key"
+    assert kwargs["aws_secret_access_key"] == "storage-secret"
+    assert kwargs["region_name"] == "auto"
+    assert kwargs["config"].s3 == {"addressing_style": "path"}
+
+    monkeypatch.setattr(storage_module.settings, "storage_secret_access_key", "")
+    with pytest.raises(RuntimeError, match="STORAGE_SECRET_ACCESS_KEY"):
+        StorageService(
+            bucket_name="media", public_base_url="https://media.wat2do.io"
+        )._get_s3_client()
+
+
 def test_delete_file_deletes_only_the_expected_s3_key():
     s3 = MagicMock()
     service = StorageService(
         s3,
         bucket_name="wat2do-test-media",
-        public_base_url="https://wat2do.io/media",
+        public_base_url="https://media.wat2do.io",
     )
 
     service.delete_file("avatars", "abc123.jpg")

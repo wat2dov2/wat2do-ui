@@ -1,4 +1,4 @@
-//! Validated uploads to S3, served through CloudFront (`services/storage_service.py`).
+//! Validated uploads to Cloudflare R2 through its S3 API (`services/storage_service.py`).
 //!
 //! A file in bucket `event-images` named `<uuid>.jpg` is the object
 //! `event-images/<uuid>.jpg` in `STORAGE_BUCKET_NAME` and is served at
@@ -6,17 +6,21 @@
 //! `Cache-Control` and validated `Content-Type` the object carries.
 //!
 //! Raster images are always re-encoded from their pixels, which drops EXIF, XMP
-//! and other metadata; event posters are also scaled down to the rendition width.
+//! and other metadata; event posters are also scaled down to the rendition width
+//! and get a WebP thumbnail next to them (`thumbnail_key`) for event cards.
 
 use std::io::Cursor;
+use std::path::Path;
 
 use anyhow::{Context, Result, bail};
+use aws_sdk_s3::config::{
+    BehaviorVersion, Credentials, Region, RequestChecksumCalculation, ResponseChecksumValidation,
+};
 use aws_sdk_s3::primitives::ByteStream;
-use aws_sdk_s3::types::ServerSideEncryption;
 use image::codecs::gif::{GifDecoder, GifEncoder, Repeat};
 use image::codecs::jpeg::JpegEncoder;
 use image::imageops::FilterType;
-use image::{AnimationDecoder, DynamicImage, ImageFormat, ImageReader};
+use image::{AnimationDecoder, DynamicImage, ImageDecoder, ImageFormat, ImageReader};
 use tokio::sync::OnceCell;
 
 use crate::constants::{
@@ -125,12 +129,8 @@ pub fn prepare_rendition(
         .decode()
         .context("Uploaded file could not be decoded as a valid image.")?;
     let image = match max_width {
-        Some(width) if decoded.width() > width => {
-            let height =
-                ((decoded.height() as f64) * (width as f64 / decoded.width() as f64)).round();
-            decoded.resize_exact(width, (height as u32).max(1), FilterType::Lanczos3)
-        }
-        _ => decoded,
+        Some(width) => narrower(decoded, width),
+        None => decoded,
     };
     match format.unwrap_or(ImageFormat::Png) {
         ImageFormat::Jpeg => {
@@ -148,40 +148,118 @@ pub fn prepare_rendition(
     Ok(out)
 }
 
+/// An image scaled down to `width` wide, keeping its aspect ratio; a narrower
+/// one is left alone, since enlarging adds bytes without adding detail.
+fn narrower(image: DynamicImage, width: u32) -> DynamicImage {
+    if image.width() <= width {
+        return image;
+    }
+    let height = ((image.height() as f64) * (width as f64 / image.width() as f64)).round();
+    image.resize_exact(width, (height as u32).max(1), FilterType::Lanczos3)
+}
+
+/// `event_image_thumbnail_path`: the thumbnail's key next to event image `key`
+/// (`event-images/<uuid>.jpg` -> `event-images/<uuid>.thumb.webp`).
+pub fn thumbnail_key(key: &str) -> String {
+    let stem = Path::new(key).with_extension("");
+    format!(
+        "{}{}",
+        stem.to_string_lossy(),
+        UPLOADS.event_image_thumbnail_suffix
+    )
+}
+
+/// `make_event_image_thumbnail`: the WebP thumbnail of an event image, at most
+/// the thumbnail width wide; an animated GIF's is its first frame.
+pub fn make_thumbnail(data: &[u8]) -> Result<Vec<u8>> {
+    let mut decoder = ImageReader::new(Cursor::new(data))
+        .with_guessed_format()?
+        .into_decoder()?;
+    let orientation = decoder.orientation()?;
+    let mut image = DynamicImage::from_decoder(decoder)
+        .context("Uploaded file could not be decoded as a valid image.")?;
+    image.apply_orientation(orientation);
+    let image = narrower(image, UPLOADS.event_image_thumbnail_width_pixels);
+    let pixels = if image.color().has_alpha() {
+        DynamicImage::ImageRgba8(image.to_rgba8())
+    } else {
+        DynamicImage::ImageRgb8(image.to_rgb8())
+    };
+    let encoder = webp::Encoder::from_image(&pixels).map_err(|e| anyhow::anyhow!("{e}"))?;
+    Ok(encoder
+        .encode(f32::from(UPLOADS.event_image_thumbnail_quality))
+        .to_vec())
+}
+
 static S3: OnceCell<aws_sdk_s3::Client> = OnceCell::const_new();
 
+/// The storage client, with its own endpoint and keys (R2 in production, the
+/// local S3 server in development); SES keeps the AWS credentials.
 async fn s3() -> Result<&'static aws_sdk_s3::Client> {
-    let region = settings()?.aws_region.clone();
+    let settings = settings()?;
+    if settings.storage_endpoint_url.is_empty()
+        || settings.storage_access_key_id.is_empty()
+        || settings.storage_secret_access_key.is_empty()
+    {
+        bail!(
+            "S3 storage is not configured. Set STORAGE_ENDPOINT_URL, STORAGE_ACCESS_KEY_ID and STORAGE_SECRET_ACCESS_KEY."
+        );
+    }
     Ok(S3
         .get_or_init(|| async {
-            let config = aws_config::from_env()
-                .region(aws_config::Region::new(region))
+            let shared = aws_config::defaults(BehaviorVersion::latest())
+                .region(Region::new("auto"))
+                .endpoint_url(&settings.storage_endpoint_url)
+                .credentials_provider(Credentials::new(
+                    &settings.storage_access_key_id,
+                    &settings.storage_secret_access_key,
+                    None,
+                    None,
+                    "storage",
+                ))
+                .retry_config(aws_config::retry::RetryConfig::standard().with_max_attempts(4))
+                // Checksums only where the API requires them, which R2 and the
+                // local server both accept.
+                .request_checksum_calculation(RequestChecksumCalculation::WhenRequired)
+                .response_checksum_validation(ResponseChecksumValidation::WhenRequired)
                 .load()
                 .await;
-            aws_sdk_s3::Client::new(&config)
+            let config = aws_sdk_s3::config::Builder::from(&shared)
+                .force_path_style(true)
+                .build();
+            aws_sdk_s3::Client::from_conf(config)
         })
         .await)
 }
 
 /// `upload_file`: store prepared bytes under a random name and return the public URL.
+/// An event image's thumbnail is stored first, so a poster is never published
+/// without the thumbnail its cards ask for.
 pub async fn upload(bucket_name: &str, data: Vec<u8>, content_type: &str) -> Result<String> {
     let settings = settings()?;
     if settings.storage_bucket_name.is_empty() || settings.storage_public_base_url.is_empty() {
         bail!("S3 storage is not configured. Set STORAGE_BUCKET_NAME and STORAGE_PUBLIC_BASE_URL.");
     }
     let key = new_object_key(bucket_name, content_type)?;
+    if bucket_name == BUCKET_EVENT_IMAGES {
+        put(&thumbnail_key(&key), make_thumbnail(&data)?, "image/webp").await?;
+    }
+    put(&key, data, content_type).await?;
+    Ok(format!("{}/{key}", settings.storage_public_base_url))
+}
+
+async fn put(key: &str, data: Vec<u8>, content_type: &str) -> Result<()> {
     s3().await?
         .put_object()
-        .bucket(&settings.storage_bucket_name)
-        .key(&key)
+        .bucket(&settings()?.storage_bucket_name)
+        .key(key)
         .body(ByteStream::from(data))
         .content_type(content_type)
         .cache_control("public, max-age=31536000, immutable")
-        .server_side_encryption(ServerSideEncryption::Aes256)
         .send()
         .await
         .context("S3 upload failed")?;
-    Ok(format!("{}/{key}", settings.storage_public_base_url))
+    Ok(())
 }
 
 /// The key of a new object, which is also its URL path below the public base
@@ -272,6 +350,45 @@ mod tests {
             validate_and_prepare(BUCKET_EVENT_IMAGES, jpeg(2160, 1080), "image/jpeg").unwrap();
         let decoded = image::load_from_memory(&prepared).unwrap();
         assert_eq!((decoded.width(), decoded.height()), (1080, 540));
+    }
+
+    #[test]
+    fn thumbnails_are_small_webps_named_like_pythons() {
+        assert_eq!(
+            thumbnail_key("event-images/abc.jpg"),
+            "event-images/abc.thumb.webp"
+        );
+        assert_eq!(
+            thumbnail_key("event-images/abc.webp"),
+            "event-images/abc.thumb.webp"
+        );
+        let thumbnail = make_thumbnail(&jpeg(1080, 1350)).unwrap();
+        assert_eq!(image::guess_format(&thumbnail).unwrap(), ImageFormat::WebP);
+        let decoded = image::load_from_memory(&thumbnail).unwrap();
+        assert_eq!((decoded.width(), decoded.height()), (640, 800));
+        let small = image::load_from_memory(&make_thumbnail(&jpeg(200, 100)).unwrap()).unwrap();
+        assert_eq!((small.width(), small.height()), (200, 100));
+    }
+
+    #[test]
+    fn an_animated_gifs_thumbnail_is_its_first_frame() {
+        use image::{Delay, Frame, Rgba, RgbaImage};
+        let frames = [Rgba([255, 0, 0, 255]), Rgba([0, 0, 255, 255])].map(|color| {
+            Frame::from_parts(
+                RgbaImage::from_pixel(800, 400, color),
+                0,
+                0,
+                Delay::from_numer_denom_ms(100, 1),
+            )
+        });
+        let mut gif = Vec::new();
+        let mut encoder = GifEncoder::new(&mut gif);
+        encoder.encode_frames(frames).unwrap();
+        drop(encoder);
+        let thumbnail = image::load_from_memory(&make_thumbnail(&gif).unwrap()).unwrap();
+        assert_eq!(thumbnail.width(), 640);
+        let pixel = thumbnail.to_rgb8().get_pixel(10, 10).0;
+        assert!(pixel[0] > 200 && pixel[2] < 50);
     }
 
     #[test]

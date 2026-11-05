@@ -3,7 +3,8 @@
 Started 2026-11-03.
 Tony asked to move all hosting off AWS onto the Mac mini, keeping only email (SES) on AWS, after the October AWS bill.
 Production moved onto the Mac on 2026-11-05.
-The Mac's home uplink is slow (about 14 Mbps), so pages were slow; the website moved to Vercel the same day, and then Tony decided to put the website and media in the wat2do AWS account (291667884807) instead, with the Mac staying the server.
+The Mac's home uplink is slow (about 7 to 14 Mbps), so pages were slow; the website moved to Vercel the same day, and then Tony decided to put the website in the wat2do AWS account (291667884807) and media on Cloudflare R2, with the Mac staying the server.
+The aim is a site that is fast and costs close to nothing: nothing runs all the time in the cloud, media bandwidth is free, and a page view rarely reaches a function or the Mac.
 
 ## Target
 
@@ -13,10 +14,11 @@ The Mac's home uplink is slow (about 14 Mbps), so pages were slow; the website m
 
 | Piece | Where |
 |---|---|
-| Website | Next on Lambda, built by OpenNext (`frontend/open-next.config.ts`): `wat2do-web-server` (streaming function URL), `wat2do-web-image` (`/_next/image`), `wat2do-web-revalidation` (SQS) and `wat2do-web-warmer` (every 5 minutes) |
+| Website | Next on Lambda, built by OpenNext (`frontend/open-next.config.ts`): `wat2do-web-server` (streaming function URL), `wat2do-web-revalidation` (SQS) and `wat2do-web-warmer` (every 5 minutes); CloudFront keeps every page for `cdn_ttl_seconds` per school subdomain, so the server function renders a page about once a minute per school |
 | Static files | `wat2do-web-291667884807/_assets` (`/_next/*` and every top-level entry of `frontend/public`) |
 | Feed snapshots | Next's data cache: entries in `wat2do-web-291667884807/_cache`, tag revalidation times in DynamoDB `wat2do-web-next-tags` |
-| Media | S3 `wat2do-media-291667884807`, keys `<bucket>/<file>`, served at `https://wat2do.io/media/<bucket>/<file>`; the API and ingestion write it through `STORAGE_BUCKET_NAME` |
+| Media | Cloudflare R2 bucket `wat2do-media` (`infra/terraform/web/r2.tf`), keys `<bucket>/<file>`, served at `https://media.wat2do.io/<bucket>/<file>` through Cloudflare's cache (free bandwidth); the API and ingestion write it through `STORAGE_ENDPOINT_URL`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` and `STORAGE_BUCKET_NAME`; old `wat2do.io/media/...` links redirect there |
+| Images | Served as stored (`images.unoptimized`), never resized per view: every poster gets a WebP thumbnail at upload (`event-images/<stem>.thumb.webp`, `uploads.json`), which poster frames show (`frontend/src/shared/utils/media.ts`) |
 | `/api/*` | CloudFront sends it straight to `api.wat2do.io` without the `/api` prefix, except Next's own `/api/discovery`, `/api/revalidate-events` and `/api/render-instagram-slide` |
 | Visitor address | CloudFront sets `X-Wat2Do-Viewer-Ip` and the shared `X-Wat2Do-Origin-Verify` secret on every `/api` request |
 | Edge to the Mac | `cloudflared` tunnel `wat2do-mac` to `http://127.0.0.1:8080` |
@@ -27,7 +29,8 @@ The Mac's home uplink is slow (about 14 Mbps), so pages were slow; the website m
 | Event change alerts | launchd timer every minute |
 | Log pruning | launchd timer daily |
 | Email | SES in AWS account 291667884807 |
-| AWS access from the Mac | IAM user `wat2do-api` (SES send and the media bucket), whose key is in `~/wat2do-data/config/backend.env`; IAM user `wat2do-web-deploy` (the web bucket, the functions' code, CloudFront invalidations), AWS CLI profile `wat2do-deploy` |
+| AWS access from the Mac | IAM user `wat2do-api` (SES send), whose key is in `~/wat2do-data/config/backend.env`; IAM user `wat2do-web-deploy` (the web bucket, the functions' code, CloudFront invalidations), AWS CLI profile `wat2do-deploy` |
+| Spend alert | AWS budget `wat2do-monthly`: email at 80% of $30 actual and at a forecast above $30 |
 | Process Notifications | the Mac's existing runner (`wat2do-macmini-browser`), since GitHub-hosted runners cannot reach a home Postgres |
 | Scheduled emails, poster payouts, Instagram account stats | launchd timers running the deployed release |
 | Deploys | a job on a second Mac runner (`wat2do-macmini-deploy`), below |
@@ -48,13 +51,13 @@ A new top-level entry in `frontend/public` needs its own CloudFront behavior, so
 
 ```sh
 cd infra/terraform/web
-export CLOUDFLARE_API_TOKEN="$(security find-generic-password -s cloudflare-api-token -w)"
+export CLOUDFLARE_API_TOKEN="$(security find-generic-password -s cloudflare-api-token-r2 -w)"
 terraform init
 terraform apply -var-file="$HOME/wat2do-data/config/web.tfvars"
 ```
 
 The default AWS CLI profile (`tony-cli`, administrator) runs Terraform; the deploy user cannot.
-The certificate's validation records are Terraform's; the site's own Cloudflare records (`wat2do.io`, `www`, `*` as DNS-only CNAMEs to the distribution, `api` to the tunnel) are set in Cloudflare.
+The R2 bucket, `media.wat2do.io`, tiered cache, the CAA record and the certificate's validation records are Terraform's; the site's own Cloudflare records (`wat2do.io`, `www`, `*` as DNS-only CNAMEs to the distribution, `api` to the tunnel) are set in Cloudflare.
 
 ### Visitor addresses
 
@@ -69,23 +72,28 @@ Each school's events, positions, clubs and branding, plus the school directory a
 The backend's notices (`EVENT_FEED_REVALIDATION_URL`, `POST /api/revalidate-events`) mark a snapshot stale; the next read still gets the old copy and rebuilds it through the API in the background, and so does a read of a snapshot older than `refresh_interval_seconds` (`backend/controlbox/discovery_cache.json`).
 CloudFront caches `/api/discovery` for `cdn_ttl_seconds` per school and resource.
 
-## Moving from Vercel to AWS (2026-11-05)
+## Lambda concurrency
+
+A new AWS account may run only 10 Lambda functions at once (`aws lambda get-account-settings`).
+On 2026-11-05 the first switch to CloudFront hit it within minutes: one school page started about 48 image resizes at once, and visitors got "concurrent invocation limit exceeded"; DNS went back to Vercel and a raise to 1,000 was requested (Service Quotas `L-B99A9384`).
+Since then a page view needs no function at all (cached pages, stored thumbnails), and the switch waits for the raise and a concurrent load test.
+
+## Moving from Vercel to AWS and R2
 
 1. `terraform apply` (above) creates everything; the functions start with a placeholder.
-2. Copy media into the bucket with its headers: `aws s3 sync ~/wat2do-data/media s3://wat2do-media-291667884807/ --cache-control 'public, max-age=31536000, immutable'`, with `.svg` files again with `--content-type image/svg+xml --content-disposition attachment`.
-   The 9.9 GB take hours over the Mac's uplink (capped with `aws configure set default.s3.max_bandwidth` so the API keeps some), so until it finishes CloudFront falls back to the Mac's disk for any file S3 does not have (`media_on_mac_origin`, and the `/media/*` block in the Caddyfile).
-3. Create the two IAM users' access keys: `wat2do-api`'s goes in `backend.env` (replacing `wat2do-ses-sender`'s) with `STORAGE_BUCKET_NAME=wat2do-media-291667884807`, and `wat2do-web-deploy`'s is the AWS CLI profile `wat2do-deploy`.
-4. Rewrite `web-build.env` to the two settings above, then deploy the branch's website with `deploy.sh`'s upload steps and check it through CloudFront before any DNS change (`curl --resolve wat2do.io:443:<CloudFront address>`).
-5. Point `wat2do.io`, `www` and `*` in Cloudflare at the distribution's domain, DNS-only.
-6. Merge; the deploy job deploys the same commit, and `install.py io.wat2do.caddy io.wat2do.api` reloads Caddy (now API-only) and gives the API its 30 second stop timeout.
-7. Copy media written since step 2 once more, remove the media fallback (Terraform's `media_on_mac_origin` and origin group, the Caddyfile's `/media/*` block, `WAT2DO_DATA` in `bin/run-caddy`), then delete `~/wat2do-data/media`, `~/wat2do-data/discovery-cache`, `web.env`, the `io.wat2do.web` job, the Vercel project and the IAM user `wat2do-ses-sender`.
+2. Make the thumbnails for the stored posters: `backend/.venv/bin/python backend/scripts/make_event_image_thumbnails.py --media-dir ~/wat2do-data/media`.
+3. Copy `~/wat2do-data/media` (with the thumbnails) into R2 at the same keys, with `Cache-Control: public, max-age=31536000, immutable` and the SVG `Content-Disposition`; it takes hours over the Mac's uplink.
+4. Put the R2 key and `STORAGE_*` settings in `backend.env` and the runtime checkout's `.env`, and `wat2do-api`'s AWS key for SES.
+5. Deploy the branch's website (`deploy.sh`'s upload steps) and load-test it through CloudFront before any DNS change (`curl --resolve wat2do.io:443:<CloudFront address>`).
+6. Merge: the deploy job applies the migration that moves stored media URLs to `https://media.wat2do.io/`, deploys the API and the website, and `install.py io.wat2do.caddy io.wat2do.api` reloads Caddy (API-only) and gives the API its 30 second stop timeout.
+7. Copy media written since step 3 once more, point `wat2do.io`, `www` and `*` in Cloudflare at the distribution's domain (DNS-only), then delete `~/wat2do-data/media`, `~/wat2do-data/discovery-cache`, `web.env`, the `io.wat2do.web` job, the Vercel project and the IAM user `wat2do-ses-sender`.
 
 ## Status
 
 - [x] Cutover to the Mac (2026-11-05).
 - [x] Teardown of the old AWS account 058264255918 (2026-11-05): every wat2do resource is deleted; the account also holds unrelated sobaii resources.
 - [x] SES in the wat2do AWS account 291667884807.
-- [ ] Website and media on AWS (branch `aws-frontend`), then the move above.
+- [ ] Website on AWS and media on R2 (branch `aws-frontend`), then the move above.
 - [ ] Cache rules for the tunnel (skipped for now).
 - [ ] LaunchDaemons so the API starts at boot without a login (needs Tony's admin password once).
 

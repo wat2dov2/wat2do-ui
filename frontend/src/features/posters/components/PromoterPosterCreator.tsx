@@ -50,7 +50,6 @@ import { LazyImage } from "@/shared/ui/lazy-image";
 import { toast } from "@/shared/hooks/use-toast";
 
 /** The three-column form grid is capped by the poster dialog's width. */
-const POSTER_PREVIEW_SIZES = "(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 384px";
 
 interface PromoterPosterCreatorProps {
   school: string;
@@ -81,7 +80,6 @@ function PosterPreview({
         <LazyImage
           src={template.assetPath}
           alt={template.name}
-          sizes={POSTER_PREVIEW_SIZES}
           fit="contain"
           className="absolute inset-0"
         />
@@ -308,7 +306,6 @@ export function PromoterPosterCreator({
                         <LazyImage
                           src={template.assetPath}
                           alt={template.name}
-                          sizes={POSTER_PREVIEW_SIZES}
                           className="aspect-[8.5/11] w-full bg-secondary"
                         />
                         <CardHeader>
