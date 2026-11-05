@@ -96,9 +96,6 @@ jobs:
 
       - name: Build
         working-directory: frontend
-        env:
-          NEXT_PUBLIC_API_URL: /api
-          BACKEND_API_URL: http://localhost:8000
         run: npm run build
 
   rust:
@@ -241,7 +238,8 @@ jobs:
 
   deploy-wat2do:
     name: Deploy Wat2Do to the Mac mini
-    # The Mac mini serves production behind a Cloudflare Tunnel (docs/projects/mac-mini-hosting.md).
+    # The Mac mini serves the API, data and media behind a Cloudflare Tunnel, and the
+    # website runs on Vercel (docs/projects/mac-mini-hosting.md).
     runs-on: [self-hosted, wat2do-macmini-deploy]
     needs:
       - backend
@@ -260,23 +258,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build, migrate and switch the release
-        timeout-minutes: 45
+      - name: Build, migrate and switch the release, then deploy the website to Vercel
+        timeout-minutes: 60
         run: bash infra/mac-mini/deploy.sh "$GITHUB_SHA"
 
-      - name: Verify all-school discovery readiness
+      # The first read after a deploy may rebuild the snapshot through the API.
+      - name: Verify the website reads discovery through the API
         run: |
-          timeout_seconds="$(jq -r '.readiness_timeout_seconds' backend/controlbox/discovery_cache.json)"
-          request_timeout="$(jq -r '.request_timeout_seconds' backend/controlbox/discovery_cache.json)"
-          poll_interval="$(jq -r '.snapshot_check_seconds' backend/controlbox/discovery_cache.json)"
-          deadline=$((SECONDS + timeout_seconds))
-          until curl --fail --silent --show-error --max-time "$request_timeout" https://wat2do.io/api/discovery/readiness; do
-            if [ "$SECONDS" -ge "$deadline" ]; then
-              echo "::error::Discovery snapshots are not ready for every school."
-              exit 1
-            fi
-            sleep "$poll_interval"
-          done
+          curl --fail --silent --show-error --output /dev/null --max-time 120 \
+            --retry 3 --retry-all-errors --retry-delay 10 \
+            'https://wat2do.io/api/discovery?school=uwaterloo&resource=events'
 
       - name: Smoke test school subdomain scoping
         run: ./scripts/smoke-subdomains.sh

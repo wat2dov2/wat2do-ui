@@ -47,7 +47,7 @@ def _is_trusted(addr: str) -> bool:
 
 
 def _trusted_viewer_ip(value: str | None) -> str | None:
-    """Validate the viewer IP supplied by the CloudFront request function."""
+    """Validate the viewer IP that Caddy sets or passes on (infra/mac-mini/Caddyfile)."""
     if not value:
         return None
     try:
@@ -63,8 +63,9 @@ def get_client_ip(request: Request) -> str:
 
     1. If the direct peer (``request.client.host``) is **not** a trusted
        proxy, return it directly - the headers cannot be trusted.
-    2. ``X-Wat2Do-Viewer-IP``: prefer the viewer address overwritten by the
-       production CloudFront request function.
+    2. ``X-Wat2Do-Viewer-IP``: prefer the viewer address Caddy sets from
+       Cloudflare's ``CF-Connecting-IP``, or passes on from the website's proxy
+       beside the shared origin secret.
     3. ``X-Forwarded-For``: walk the comma-separated list from right to
        left and return the first (rightmost) IP that is not a trusted
        proxy.  This is the address appended by the outermost trusted

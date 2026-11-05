@@ -86,7 +86,7 @@ npm run lint
 npm run audit:i18n
 npm run type-check
 npm test
-NEXT_PUBLIC_API_URL=/api npm run build
+npm run build
 ```
 
 ---
@@ -205,7 +205,7 @@ bash scripts/check-notification-workflow.sh
   npm run audit:i18n && \
   npm run type-check && \
   npm test && \
-  NEXT_PUBLIC_API_URL=/api npm run build)
+  npm run build)
 
 ```
 

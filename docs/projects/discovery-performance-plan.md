@@ -6,49 +6,25 @@ Western's canonical school slug is `uwo`.
 
 ## Implemented design
 
-Events, Positions, Clubs, school branding, the school directory, and the site-wide banner use complete snapshots stored as files under the frontend's `DISCOVERY_CACHE_DIR`.
+Events, Positions, Clubs, school branding, the school directory, and the site-wide banner use complete snapshots kept in Next's data cache.
 Server rendering and browser directory refreshes read the same published data.
-Snapshot ownership lives in `discoverySnapshotStore.ts`; feature server loaders own source assembly; `app/discoveryRefresh.server.ts` composes the all-school worker.
+Snapshot caching lives in `shared/services/discoveryCache.server.ts`; feature server loaders own source assembly.
 The old directory fetch-cache tags, unconditional five-resource invalidation, and recursive navigation warmer have been removed.
 Event and club details use current source reads, memoized within their route render, so task-local detail caches cannot retain another task's stale club fields.
 
-Snapshots were first kept in S3 for its conditional writes; production now runs one Next process on one machine, so local files give the same guarantees.
-`FileSnapshotStorage` (`shared/services/discoveryCache.server.ts`) uses each file's SHA-256 as its etag.
-A conditional write holds a process-wide lock for its file, shared by every Next bundle, while it compares the etag and renames a flushed temporary file into place.
-It stores a small mutable state record and immutable complete payloads under a versioned school/resource key.
-There is one authoritative directory snapshot path, without a second independent Next fetch cache for these datasets.
-No new database schema, Redis deployment, or SQS resource is required.
-`DISCOVERY_CACHE_DIR` must sit outside the publicly served `MEDIA_ROOT`.
+Snapshots were first kept in S3, then (on the Mac mini) as files written by a worker inside the one Next process.
+Since 2026-11-05 the website runs on Vercel, where no process lives long and no disk is shared, so each snapshot is one `unstable_cache` entry in Next's data cache, which Vercel shares across every instance and deployment.
+Its tag is `discovery:v<schema_version>:<school>:<resource>` (`_global` for the school directory and banner).
+The refresh endpoint checks the shared secret and the school, marks the named tags stale with `revalidateTag(tag, "max")` and returns HTTP 202.
+A stale snapshot is still served; the next read rebuilds it in the background, and so does any read once it is older than `refresh_interval_seconds`.
+A build reads every source page or throws, and a throwing rebuild leaves the last complete snapshot in place, so a failed read, incomplete page set or upstream outage never publishes a partial catalog.
+`generated_at` is when the rebuild's source reads began.
+There is no startup readiness gate, background worker or image warmer any more: a snapshot nobody reads is never rebuilt, and the first read of a cold one waits for its build.
 
-A refresh claims a conditional lease, builds all source pages, uploads a complete payload, and conditionally publishes its pointer.
-The generation timestamp records when source reads began, so a build that began before a confirmed edit cannot pretend to be newer than it.
-Another mutation during construction leaves the previous generation published and requests another build.
-An expired worker cannot publish over its replacement.
-A failed read, incomplete page set, interrupted upload, or failed publication leaves the last successful generation available.
-Empty directories are successful only when the source confirms a complete empty result.
-
-The refresh endpoint returns HTTP 202 only after recording the requested dirty revisions.
-The endpoint no longer describes acceptance as completed warming.
-Its `after()` callback only expedites the durable work; a continuously running reconciliation loop owns recovery.
-Backend notifications are still sent after the database write, so notification delivery and mutation commit are not transactional.
-A periodic hourly refresh repairs missed notifications and reconciles date/deadline transitions.
-Mutation invalidations bypass that age interval, while the frontend filters expired events and positions from cached data.
-The worker continues warming published snapshots independently of source rebuilds.
-During persistent upstream failure, valid published data remains usable for up to the configured one-day maximum age.
-These are explicit freshness limits, not a guarantee of current data during an unlimited outage.
-
-Each task serializes catalog builds and each key has a shared lease across overlapping tasks.
 Page reads have bounded fan-out and deadlines.
 Pagination requires stable ordering, matching totals, and a complete set of distinct IDs.
 This rejects detected offset-pagination drift; it does not claim a transactional database snapshot across multiple HTTP reads.
-The current school directory contract supports fewer than 50 returned schools; reaching its limit fails readiness rather than silently excluding additional schools.
-
-The worker enumerates every school from the canonical directory.
-Next's instrumentation initialization waits for complete usable coverage before accepting requests, so the existing ALB health check cannot admit a cold new task.
-After startup, `/healthz` remains liveness and `/api/discovery/readiness` reports current coverage.
-ECS startup grace and the deployment deadline derive from the discovery control box.
-CI checks the exact requested task revision, rejects rollout failure or rollback, and verifies coverage after deployment.
-Existing healthy tasks continue serving while a new task warms.
+The current school directory contract supports fewer than 50 returned schools; reaching its limit fails the directory build rather than silently excluding additional schools.
 
 ## Scoped invalidation and upstream recovery
 
@@ -86,10 +62,9 @@ The perpetual invalidation/prefetch loop was removed.
 
 About (`/about`) and plain `/login` also use that full-payload navigation cache, including their navigation and banner links.
 Only exact public route URLs are warmed; login links carrying email, invitation tokens, or redirect parameters remain separate requests.
-About's content is already bundled, and its banner now shares the durable global snapshot worker instead of a separate task-local Next fetch cache.
+About's content is already bundled, and its banner shares the global banner snapshot.
 The root layout passes its school name into the banner, and a dismissed banner skips the snapshot read entirely.
 Banner refresh failures preserve the last good generation; a confirmed disabled banner is a valid cached null.
-Startup requires that global generation alongside school coverage, so a new deployment cannot serve a cold banner.
 Login selects four distinct active or upcoming events from the same school Events snapshot and reuses one request-scoped lookup for metadata and page rendering.
 There is no independent preview cache to invalidate or rebuild.
 These changes cache public data and browser navigation payloads; document rendering still respects request-specific login parameters and banner cookies.
@@ -101,10 +76,7 @@ The first six cards load eagerly; subsequent posters use native lazy loading.
 The transparent cutout artwork remains owned by the existing mask primitive.
 Source changes reset loading/error state, tiny badges request small candidates, and fullscreen posters retain their larger source.
 
-Canonical first-screen poster variants are warmed serially through the existing public image cache after snapshot publication.
-CloudFront normalizes image format negotiation so browser requests can reuse the same warmed variant.
-Warming failures do not block or discard catalog snapshots.
-This primes the reached CDN path and does not claim to prepopulate every worldwide cache location.
+Optimized posters are no longer warmed ahead of visitors; Vercel's image optimizer caches each variant on first request.
 
 Instagram rendering retains PNG normalization before Resvg, including for WebP sources.
 Poster preparation resizes to the template's actual region before embedding, and repeated cover posters share one download/preparation.
@@ -114,17 +86,15 @@ Publishing concurrency and a separate render worker remain contingent on measuri
 ## Operations and verification
 
 Feature settings live in `backend/controlbox/database.json`, `discovery_cache.json`, `image_delivery.json`, and their existing feature control files.
-Snapshot schema changes require a version bump and readiness warming before traffic.
-After each refresh, the store deletes that school/resource's generations older than `generation_retention_days`; state pointers do not expire independently.
-Structured refresh logs identify school, resource, success/failure, duration, and bytes.
-The discovery endpoint includes generation and Server-Timing headers; readiness identifies missing school/resource coverage.
+Snapshot schema changes require a `schema_version` bump, which starts a new set of cache tags and keys.
+The discovery endpoint includes generation and Server-Timing headers.
 
 The existing production profiler supports an explicit school selection and retains its classified OpenAPI inventory.
 Use the profiling runbook for authenticated measurements, deployment alignment, and first-observed versus steady-state sampling.
 API latency, document/RSC latency, image transfer, and browser paint need separate measurements.
 No production latency or LCP improvement is claimed from unit tests or build success.
 
-Browser-free regressions cover retained data on failures, competing/expired workers, changes during a build, school isolation, incomplete pagination, readiness recovery, confirmed edits, navigation scheduling, responsive image markup, and real Sharp/Satori/Resvg output.
+Browser-free regressions cover cache tags and refresh scope, school isolation, incomplete pagination, confirmed edits, navigation scheduling, responsive image markup, and real Sharp/Satori/Resvg output.
 Browser integration regressions are authored but remain unrun under the repository's no-browser/no-server rule.
 The release gates include frontend lint/i18n/type checks/build, backend formatting/lint/types/tests, generated API contracts, Terraform validation, and migration alignment.
 

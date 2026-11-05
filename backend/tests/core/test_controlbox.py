@@ -356,6 +356,9 @@ def test_discovery_controls_load_checked_in_feature_sources():
     assert controlbox.image_delivery.optimized_format == "image/webp"
     assert controlbox.image_delivery.optimized_remote_host == "wat2do.io"
     assert controlbox.image_delivery.optimized_remote_path == "/media/"
+    assert "173.245.48.0/20" in {
+        str(network) for network in controlbox.viewer_ip.cloudflare_networks
+    }
 
 
 def test_ecs_runtime_keeps_memory_headroom():
@@ -436,41 +439,26 @@ def test_ecs_runtime_accepts_supported_fargate_sizes(cpu, memory_mib):
         ("discovery_cache", {"page_concurrency": 0}),
         ("discovery_cache", {"page_concurrency": 9}),
         ("discovery_cache", {"maximum_page_count": 0}),
-        ("discovery_cache", {"state_write_attempts": 0}),
         ("discovery_cache", {"startup_grace_seconds": 0}),
-        ("discovery_cache", {"deployment_timeout_seconds": 690}),
-        ("discovery_cache", {"maximum_snapshot_age_seconds": 300}),
-        (
-            "discovery_cache",
-            {"generation_retention_days": 2, "maximum_snapshot_age_seconds": 172800},
-        ),
-        (
-            "discovery_cache",
-            {"worker_interval_seconds": controlbox.discovery_cache.refresh_interval_seconds + 1},
-        ),
         (
             "discovery_cache",
             {"snapshot_check_seconds": controlbox.discovery_cache.cdn_ttl_seconds + 1},
         ),
-        ("discovery_cache", {"lease_seconds": 20, "request_timeout_seconds": 20}),
         ("discovery_cache", {"storage_prefix": "/media/discovery-cache"}),
         ("discovery_cache", {"storage_prefix": "media/../discovery-cache"}),
         ("discovery_cache", {"storage_prefix": "media//discovery-cache"}),
+        ("discovery_cache", {"refresh_interval_seconds": 0}),
+        ("viewer_ip", {"cloudflare_networks": []}),
+        ("viewer_ip", {"cloudflare_networks": ["not-a-network"]}),
+        ("viewer_ip", {"cloudflare_networks": ["173.245.48.1/20"]}),
         ("image_delivery", {"device_sizes": []}),
         ("image_delivery", {"device_sizes": [640, 256]}),
         ("image_delivery", {"device_sizes": [256, 256]}),
         ("image_delivery", {"image_sizes": [0, 16]}),
         ("image_delivery", {"image_sizes": [256]}),
-        ("image_delivery", {"warm_widths": []}),
-        ("image_delivery", {"warm_concurrency": 0}),
-        ("image_delivery", {"warm_concurrency": 9}),
         ("uploads", {"event_video_max_size_bytes": 0}),
         ("uploads", {"event_video_download_timeout_seconds": 0}),
-        ("image_delivery", {"warm_widths": [385]}),
-        ("image_delivery", {"warm_widths": [640, 384]}),
-        ("image_delivery", {"warm_request_timeout_seconds": 0}),
-        ("image_delivery", {"warm_retry_seconds": 0}),
-        ("image_delivery", {"warm_success_ttl_seconds": 0}),
+        ("image_delivery", {"video_poster_width": 385}),
         ("image_delivery", {"quality": 0}),
         ("image_delivery", {"quality": 101}),
         ("image_delivery", {"first_row_image_count": 25}),

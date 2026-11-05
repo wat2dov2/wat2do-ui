@@ -1,3 +1,2 @@
-const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-
-export const API_BASE_URL = configuredApiUrl || "/api";
+/** The browser reaches the API on the site's own origin; next.config.ts rewrites /api/* to API_URL. */
+export const API_BASE_URL = "/api";

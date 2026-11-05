@@ -63,22 +63,7 @@ JOBS: dict[str, dict[str, object]] = {
         "io.wat2do.postgrest",
         [str(HOME / ".local/libexec/wat2do/postgrest"), str(DATA / "config/postgrest.conf")],
     ),
-    "io.wat2do.caddy": service(
-        "io.wat2do.caddy",
-        [
-            "/opt/homebrew/bin/caddy",
-            "run",
-            "--config",
-            str(DATA / "releases/current/infra/mac-mini/Caddyfile"),
-            "--adapter",
-            "caddyfile",
-        ],
-        EnvironmentVariables={
-            "WAT2DO_DATA": str(DATA),
-            "XDG_DATA_HOME": str(DATA / "caddy"),
-            "XDG_CONFIG_HOME": str(DATA / "caddy"),
-        },
-    ),
+    "io.wat2do.caddy": service("io.wat2do.caddy", [str(CURRENT / "run-caddy")]),
     "io.wat2do.api": service("io.wat2do.api", [str(CURRENT / "run-api")]),
     "io.wat2do.web": service("io.wat2do.web", [str(CURRENT / "run-web")]),
     "io.wat2do.event-change-alerts": timer(

@@ -50,8 +50,8 @@ function ImageContent({
   const [videoFailed, setVideoFailed] = useState(false);
   const showVideo = Boolean(videoSrc) && !videoFailed;
   const unavailable = !showVideo && (!src || status === "error");
-  // getImageProps selects the 2x candidate for src. Reuse a warmed variant.
-  const posterSize = imageDelivery.warm_widths.at(-1)! / 2;
+  // getImageProps selects the 2x candidate for src.
+  const posterSize = imageDelivery.video_poster_width / 2;
   const poster = showVideo && src ? getImageProps({
     src,
     alt,

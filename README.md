@@ -73,7 +73,7 @@ Uploaded images are files on disk, as in production.
 `make dev` sets `MEDIA_ROOT` to the git-ignored `media/` folder at the repository root, one folder per bucket (`media/event-images/<uuid>.jpg`).
 The Compose `media` service serves that folder at `http://localhost:55434/media`, the backend's `STORAGE_PUBLIC_BASE_URL`.
 Delete files under `media/` to clear local uploads; the local database keeps their URLs.
-Discovery snapshots are built on each request in development, since `DISCOVERY_CACHE_DIR` is unset.
+Discovery snapshots live in Next's data cache under `frontend/.next/cache` in development; the backend's revalidation notices (`EVENT_FEED_REVALIDATION_URL`) mark them stale.
 Keep `OPENAI_API_KEY` in the ignored backend environment and restart the backend after environment changes.
 
 ### Shared local login configuration
@@ -139,14 +139,13 @@ Employer recruiting continues to use `employers_on_campus` independently of thes
 
 ## Production deployment
 
-Wat2Do serves the application from one private AWS ECS Fargate task in `ca-central-1`.
-The task contains the Next.js frontend on port 3000 and the FastAPI backend on port 8000.
-CloudFront is the public edge and an Application Load Balancer is the HTTPS origin.
-The database is Amazon RDS for PostgreSQL 17 (database `wat2do`), which the backend reads and writes through our own PostgREST data API at `https://data.wat2do.io`.
+The website (Next.js, `frontend/`) runs on Vercel, and the Mac mini serves the API, the data API, Postgres and media at `https://api.wat2do.io` through a Cloudflare Tunnel; [`docs/projects/mac-mini-hosting.md`](docs/projects/mac-mini-hosting.md) is the runbook.
+The website rewrites `/api/*` and `/media/*` to `API_URL` (`frontend/next.config.ts`), and its server code reads the API at the same `API_URL`.
+The database is PostgreSQL 17 (database `wat2do`), which the backend reads and writes through our own PostgREST data API.
 Sign-in, sessions and access tokens are the backend's own (`rust/src/api/routes/auth`, verified in Python by `backend/core/auth_tokens.py`).
 Uploaded and ingested media are files under `MEDIA_ROOT`, one folder per bucket, which the web server serves at `STORAGE_PUBLIC_BASE_URL` (`https://wat2do.io/media`).
 The web server, not the code, sends their immutable `Cache-Control` header and `Content-Disposition: attachment` for `.svg` files.
-Discovery snapshots are files under the frontend's `DISCOVERY_CACHE_DIR`, which must sit outside `MEDIA_ROOT`; production refuses to start without it.
+Discovery snapshots live in Next's data cache, which every Vercel instance and deployment shares (`frontend/src/shared/services/discoveryCache.server.ts`).
 Each school's link preview is drawn by the frontend on request (`frontend/src/app/og-image.png/route.tsx`) with Next.js `ImageResponse`, from the school and its event feed, with no browser.
 The encrypted Terraform state bucket and DynamoDB lock table remain in `us-west-2`; they do not affect Canadian application traffic.
 

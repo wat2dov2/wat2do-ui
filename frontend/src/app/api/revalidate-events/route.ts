@@ -1,10 +1,8 @@
-import { after, NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { NextRequest, NextResponse } from "next/server";
 import { getSchoolDirectory } from "@/shared/api/schools.server";
-import {
-  queueDiscoveryRefresh,
-  reconcileDiscoverySnapshots,
-} from "@/app/discoveryRefresh.server";
-import type { DiscoveryResource } from "@/shared/services/discoverySnapshotStore";
+import type { DiscoveryResource } from "@/shared/api/discovery.api";
+import { discoveryTag } from "@/shared/services/discoveryCache.server";
 
 export const runtime = "nodejs";
 const resources: DiscoveryResource[] = [
@@ -51,13 +49,6 @@ export async function POST(request: NextRequest) {
       )
     )
       return NextResponse.json({ error: "Unknown school" }, { status: 400 });
-    // Only acknowledge durable dirty revisions. Background reconciliation owns completion.
-    await queueDiscoveryRefresh(body.school, requested);
-    after(() => reconcileDiscoverySnapshots());
-    return NextResponse.json(
-      { accepted: true, school: body.school, resources: requested },
-      { status: 202 },
-    );
   } catch (error) {
     console.error("discovery_invalidation_failed", {
       school: body.school,
@@ -69,4 +60,11 @@ export async function POST(request: NextRequest) {
       { status: 503 },
     );
   }
+  // Readers keep the last snapshot while the next visit rebuilds it.
+  for (const resource of requested)
+    revalidateTag(discoveryTag(body.school, resource), "max");
+  return NextResponse.json(
+    { accepted: true, school: body.school, resources: requested },
+    { status: 202 },
+  );
 }

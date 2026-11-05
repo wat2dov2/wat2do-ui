@@ -1,12 +1,14 @@
 #!/bin/bash
 #
-# Deploys one commit of wat2do to the Mac mini.
+# Deploys one commit of wat2do: the Mac mini's release, then the website on Vercel.
 #
 # Builds in a persistent checkout (~/wat2do-build, so cargo and npm reuse their
 # caches), assembles ~/wat2do-data/releases/<sha>, applies pending migrations,
 # switches ~/wat2do-data/releases/current to it and restarts the API and the
-# website. When either fails its health check, current goes back to the previous
-# release and both restart again. Keeps the three newest releases.
+# Mac's website. When either fails its health check, current goes back to the
+# previous release and both restart again. Keeps the three newest releases.
+# Once the Mac is healthy, the same checkout deploys to Vercel production, which
+# builds frontend/ there (docs/projects/mac-mini-hosting.md).
 #
 # Usage: infra/mac-mini/deploy.sh <commit sha>
 # The workflow job that runs it allows one deploy at a time.
@@ -20,6 +22,9 @@ releases="$data/releases"
 release="$releases/$sha"
 domain="gui/$(id -u)"
 health_timeout_seconds=900
+vercel_cli="vercel@56.2.0"
+vercel_scope="tonyqiu123s-projects"
+vercel_project="wat2do"
 
 export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:/opt/homebrew/opt/postgresql@17/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 # shellcheck disable=SC1091
@@ -117,6 +122,15 @@ if ! healthy; then
   fi
   exit 1
 fi
+
+# The API and its migrations go first, so the website never runs ahead of them.
+# The token (0600, never committed) lives beside the Mac's other secrets.
+log "deploying $sha to Vercel"
+vercel_token="$(cat "$data/config/vercel.token")"
+VERCEL_TOKEN="$vercel_token" \
+  npx --yes "$vercel_cli" deploy "$build" --prod --yes \
+  --scope "$vercel_scope" --project "$vercel_project" \
+  --build-env "APP_VERSION=$sha"
 
 # Keep the three newest releases, never the one current points at.
 current_target="$(readlink "$releases/current")"
