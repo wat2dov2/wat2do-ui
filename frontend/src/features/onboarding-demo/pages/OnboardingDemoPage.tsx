@@ -16,11 +16,13 @@ import { ProUnlockStep } from "../components/steps/ProUnlockStep";
 import { ProChallengeStep } from "../components/steps/ProChallengeStep";
 import { HomeLandingStep } from "../components/steps/HomeLandingStep";
 
+// Steps overlap: the next one arrives while the last one leaves (popLayout),
+// easing out on the way in and leaving 20% faster, easing in.
 const stepVariants = {
   enter: { opacity: 0, y: 20 },
-  center: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 },
-};
+  center: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.24, ease: "easeIn" } },
+} as const;
 
 const NEXT_LABEL_KEYS: Record<string, string> = {
   build_week: "onboardingDemo.actions.showMyWeek",
@@ -83,15 +85,14 @@ export function OnboardingDemoPage() {
       </header>
 
       <div className="flex-1 flex flex-col px-4 sm:px-6 py-6 sm:py-8 overflow-y-auto">
-        <div className="w-full max-w-6xl mx-auto flex-1 flex flex-col justify-center min-h-0">
-          <AnimatePresence mode="wait">
+        <div className="relative w-full max-w-6xl mx-auto flex-1 flex flex-col justify-center min-h-0">
+          <AnimatePresence mode="popLayout">
             <m.div
               key={flow.currentStep}
               variants={stepVariants}
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.3, ease: "easeOut" }}
               className="w-full"
             >
               {stepContent}

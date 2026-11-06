@@ -1,0 +1,112 @@
+/*
+ * App-wide motion rules. Floating surfaces (menus, popovers, selects,
+ * tooltips, dialogs) get their timing here by data-slot, so no call site sets
+ * its own durations.
+ *
+ *   Entrances ease out; exits ease in and run about 20% shorter.
+ *   Menus and popovers open in 200ms and close in 160ms.
+ *   Dialogs open in 250ms and close in 200ms.
+ *   Menu rows stagger in 30ms apart.
+ *   Moves that start and end on screen ease in and out.
+ *
+ * Scale-from-0.95 and transform-origin-at-the-trigger come from each
+ * primitive's own classes (zoom-in-95 and origin-(--radix-…-transform-origin)).
+ */
+:root {
+  --ease-out-ui: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-ui: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-in-out-ui: cubic-bezier(0.65, 0, 0.35, 1);
+  --motion-menu-in: 200ms;
+  --motion-menu-out: 160ms;
+  --motion-dialog-in: 250ms;
+  --motion-dialog-out: 200ms;
+  --motion-row-stagger: 30ms;
+}
+
+:is(
+    [data-slot="dropdown-menu-content"],
+    [data-slot="popover-content"],
+    [data-slot="select-content"],
+    [data-slot="tooltip-content"]
+  ) {
+  --tw-animation-duration: var(--motion-menu-in);
+  --tw-ease: var(--ease-out-ui);
+}
+:is(
+    [data-slot="dropdown-menu-content"],
+    [data-slot="popover-content"],
+    [data-slot="select-content"],
+    [data-slot="tooltip-content"]
+  )[data-state="closed"] {
+  --tw-animation-duration: var(--motion-menu-out);
+  --tw-ease: var(--ease-in-ui);
+}
+
+:is([data-slot="dialog-content"], [data-slot="dialog-overlay"]) {
+  --tw-animation-duration: var(--motion-dialog-in);
+  --tw-ease: var(--ease-out-ui);
+}
+:is([data-slot="dialog-content"], [data-slot="dialog-overlay"])[data-state="closed"] {
+  --tw-animation-duration: var(--motion-dialog-out);
+  --tw-ease: var(--ease-in-ui);
+}
+
+/* Menu rows arrive one after another rather than all at once. Rows past the
+   eighth share the last delay so a long list doesn't keep the reader waiting. */
+@keyframes menu-row-in {
+  from {
+    opacity: 0;
+    translate: 0 -2px;
+  }
+}
+:is([data-slot="dropdown-menu-content"], [data-slot="select-content"])[data-state="open"]
+  :is([data-slot="dropdown-menu-item"], [data-slot="select-item"]) {
+  animation: menu-row-in var(--motion-menu-in) var(--ease-out-ui) both;
+  animation-delay: calc(var(--row, 8) * var(--motion-row-stagger));
+}
+:is([data-slot="dropdown-menu-item"], [data-slot="select-item"]):nth-child(1) { --row: 0; }
+:is([data-slot="dropdown-menu-item"], [data-slot="select-item"]):nth-child(2) { --row: 1; }
+:is([data-slot="dropdown-menu-item"], [data-slot="select-item"]):nth-child(3) { --row: 2; }
+:is([data-slot="dropdown-menu-item"], [data-slot="select-item"]):nth-child(4) { --row: 3; }
+:is([data-slot="dropdown-menu-item"], [data-slot="select-item"]):nth-child(5) { --row: 4; }
+:is([data-slot="dropdown-menu-item"], [data-slot="select-item"]):nth-child(6) { --row: 5; }
+:is([data-slot="dropdown-menu-item"], [data-slot="select-item"]):nth-child(7) { --row: 6; }
+:is([data-slot="dropdown-menu-item"], [data-slot="select-item"]):nth-child(8) { --row: 7; }
+
+/* A switch knob stretches about 12% along its path while it travels, keeping
+   its area (wider and shorter), then settles round.
+   This is a transition, not a keyframe animation, so it runs only when the
+   switch actually flips: never on first paint or on hover. The two states
+   differ in scale by a hair (0.0001), and the scale easing overshoots that
+   hair 1200 times at the midpoint before landing, which is +12% wide and -12%
+   tall. Each state's easing is signed for the direction it is entered from. */
+[data-slot="switch-thumb"] {
+  scale: 1 1;
+  transition:
+    translate 220ms var(--ease-in-out-ui),
+    scale 220ms linear(0, -1200 45%, 1);
+}
+[data-slot="switch-thumb"][data-state="checked"] {
+  scale: 1.0001 0.9999;
+  transition-timing-function: var(--ease-in-out-ui), linear(0, 1200 45%, 1);
+}
+
+/* One pulse to confirm something worked: a copied link, a followed club, an event you're going to. */
+@keyframes success-pulse {
+  0% { scale: 1; }
+  40% { scale: 1.08; }
+  100% { scale: 1; }
+}
+.animate-success-pulse {
+  animation: success-pulse 360ms var(--ease-out-ui);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is([data-slot="dropdown-menu-item"], [data-slot="select-item"]),
+  .animate-success-pulse {
+    animation: none !important;
+  }
+  [data-slot="switch-thumb"] {
+    transition: none !important;
+  }
+}

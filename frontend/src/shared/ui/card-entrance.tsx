@@ -10,7 +10,9 @@ import { useEffect, useRef, type ReactNode } from "react";
  * each grid, so every card in the app arrives the same way.
  */
 const ENTRANCE_DURATION_SECONDS = 0.5;
-const STAGGER_STEP_SECONDS = 0.033;
+const STAGGER_STEP_SECONDS = 0.03;
+/** Details marked data-settle (badges) trail the card by this much as it settles. */
+const SETTLE_LAG_SECONDS = 0.05;
 const ENTRANCE_EASE = "cubic-bezier(0.18, 0.39, 0.14, 0.9)";
 
 /**
@@ -58,24 +60,29 @@ export function CardEntrance({
       return;
     }
 
-    let animation: Animation | undefined;
+    let animations: Animation[] = [];
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return;
       hasEntered.current = true;
       observer.disconnect();
-      animation = element.animate(
-        [{ opacity: 0, transform: "translateY(20px)" }, { opacity: 1, transform: "translateY(0)" }],
-        {
-          duration: ENTRANCE_DURATION_SECONDS * 1000,
-          delay: (index % STAGGER_CYCLE) * STAGGER_STEP_SECONDS * 1000,
-          easing: ENTRANCE_EASE,
-          fill: "backwards",
-        },
-      );
+      const delay = (index % STAGGER_CYCLE) * STAGGER_STEP_SECONDS * 1000;
+      const timing = { duration: ENTRANCE_DURATION_SECONDS * 1000, easing: ENTRANCE_EASE, fill: "backwards" } as const;
+      animations = [
+        element.animate(
+          [{ opacity: 0, transform: "translateY(20px)" }, { opacity: 1, transform: "translateY(0)" }],
+          { ...timing, delay },
+        ),
+        ...Array.from(element.querySelectorAll("[data-settle]"), (detail) =>
+          detail.animate(
+            [{ translate: "0 6px" }, { translate: "0 0" }],
+            { ...timing, delay: delay + SETTLE_LAG_SECONDS * 1000 },
+          ),
+        ),
+      ];
     }, { threshold: 0.1 });
     const stop = () => {
       observer.disconnect();
-      animation?.cancel();
+      animations.forEach((animation) => animation.cancel());
     };
     const handleMotionChange = () => {
       if (reducedMotion.matches) {

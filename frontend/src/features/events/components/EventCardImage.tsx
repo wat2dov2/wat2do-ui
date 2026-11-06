@@ -63,6 +63,15 @@ export function EventCardImage({
     [goingSelections, event.id],
   );
   const status = getEventImageStatus(event, isGoing);
+  // Pulse the Going badge only when the reader marks it here, not for events
+  // that were already Going when the selections loaded.
+  const selectionsLoaded = goingSelections !== undefined;
+  const [previous, setPrevious] = useState({ isGoing, selectionsLoaded });
+  const [justWentGoing, setJustWentGoing] = useState(false);
+  if (previous.isGoing !== isGoing || previous.selectionsLoaded !== selectionsLoaded) {
+    setPrevious({ isGoing, selectionsLoaded });
+    setJustWentGoing(isGoing && previous.selectionsLoaded);
+  }
 
   return (
     <>
@@ -113,7 +122,12 @@ export function EventCardImage({
 
         {status && (
           <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
-            <Badge variant={status} size="md">
+            <Badge
+              variant={status}
+              size="md"
+              data-settle=""
+              className={cn(justWentGoing && status === "going" && "animate-success-pulse")}
+            >
               {t(`events.${status}`)}
             </Badge>
           </BadgeMask>
@@ -121,7 +135,7 @@ export function EventCardImage({
 
         {isLive && (
           <BadgeMask variant="top-right" cutout containerRef={registerCorner("top-right")}>
-            <Badge variant="live" size="md" className="flex items-center">
+            <Badge variant="live" size="md" className="flex items-center" data-settle="">
               {t("common.live")}
             </Badge>
           </BadgeMask>

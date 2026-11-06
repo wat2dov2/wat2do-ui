@@ -198,7 +198,7 @@ export function EventShareDialog({
               size="sm"
               className="shrink-0 gap-1.5 rounded-lg px-3 text-xs"
             >
-              {copied && <Check className="size-3.5" />}
+              {copied && <Check className="size-3.5 animate-success-pulse" />}
               {t("events.shareDialog.copy")}
             </Button>
           </div>

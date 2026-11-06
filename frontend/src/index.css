@@ -186,8 +186,7 @@
   [data-radix-popper-content-wrapper] > * {
     box-shadow: var(--app-shadow-floating) !important;
   }
-  [data-elevation="control"],
-  [data-elevation="control-active"][data-state="active"] {
+  [data-elevation="control"] {
     box-shadow: var(--app-shadow-control) !important;
   }
   body {

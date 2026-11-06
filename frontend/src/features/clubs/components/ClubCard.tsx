@@ -3,6 +3,8 @@ import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import { Check, Plus } from "lucide-react";
+import { IconSwap } from "@/shared/ui/icon-swap";
+import { cn } from "@/shared/lib/utils";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { Button } from "@/shared/ui/button";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
@@ -125,10 +127,11 @@ function ClubCardComponent({
               variant="outline"
               size="sm"
               selected={isSaved}
+              selectionIndicator="none"
               onClick={toggleFollow}
               aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
             >
-              {isSaved ? <Check /> : <Plus />}
+              <IconSwap showAlternate={isSaved} icon={<Plus />} alternate={<Check className={cn(isSaved && "animate-success-pulse")} />} />
               {isSaved ? t("clubs.following") : t("clubs.follow")}
             </Button>
           )}

@@ -18,11 +18,13 @@ import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { getSafeReturnTo } from "@/features/auth/utils/returnTo";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
+// Steps overlap: the next one arrives while the last one leaves (popLayout),
+// easing out on the way in and leaving 20% faster, easing in.
 const stepVariants = {
   enter: { opacity: 0, y: 20 },
-  center: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 },
-};
+  center: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.24, ease: "easeIn" } },
+} as const;
 
 const GOOSE_MESSAGE_KEYS: Record<number, string> = {
   0: "onboarding.gooseStep0",
@@ -160,15 +162,14 @@ export function OnboardingPage() {
           of overlapping it. */}
       <div className="flex-1 flex flex-col overflow-y-auto pt-20">
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
-          <div className="w-full max-w-3xl">
-            <AnimatePresence mode="wait">
+          <div className="relative w-full max-w-3xl">
+            <AnimatePresence mode="popLayout">
               <m.div
                 key={flow.currentStep}
                 variants={stepVariants}
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.3, ease: "easeOut" }}
                 className="w-full"
               >
                 {stepContent[flow.currentStep]}

@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, Check, ExternalLink, HelpCircle, Instagram, Plus } from "lucide-react";
+import { IconSwap } from "@/shared/ui/icon-swap";
+import { cn } from "@/shared/lib/utils";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { DiscordIcon } from "@/shared/ui/platform-icons";
 import { Button } from "@/shared/ui/button";
@@ -120,10 +122,11 @@ function ClubDetailsContent({
                       type="button"
                       variant="outline"
                       selected={isSaved}
+                      selectionIndicator="none"
                       onClick={() => requireSignIn(() => toggleSave(club.id), "clubs.signInToFollow")}
                       aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
                     >
-                      {isSaved ? <Check /> : <Plus />}
+                      <IconSwap showAlternate={isSaved} icon={<Plus />} alternate={<Check className={cn(isSaved && "animate-success-pulse")} />} />
                       {isSaved ? t("clubs.following") : t("clubs.follow")}
                     </Button>
                     <Button

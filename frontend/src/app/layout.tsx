@@ -10,6 +10,7 @@ import { getRequestSchool, getSchoolDirectory } from "@/shared/api/schools.serve
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { getSchoolThemeStyle } from "@/shared/lib/schoolBranding";
 import "../index.css";
+import "@/styles/motion.css";
 
 // Satoshi ships as a single variable file per style, so one declaration covers
 // every weight the UI asks for. Self-hosted rather than fetched: the licence

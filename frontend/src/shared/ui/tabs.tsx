@@ -2,20 +2,45 @@
 
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
+import { LayoutGroup, motion, useReducedMotion } from "framer-motion"
 
 import { useMobileClickActivation } from "@/shared/hooks/useMouseDownPress"
 import { cn } from "@/shared/lib/utils"
 
+/**
+ * The active tab's pill is one element that slides between triggers (a shared
+ * layoutId), so each tab set tracks its current value to know where it sits.
+ */
+const ActiveTabContext = React.createContext<string | undefined>(undefined)
+
+const INDICATOR_TRANSITION = { duration: 0.25, ease: [0.65, 0, 0.35, 1] } as const
+
 function Tabs({
   className,
+  value,
+  defaultValue,
+  onValueChange,
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.Root>) {
+  const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue)
+  const activeValue = value ?? uncontrolledValue
+  const groupId = React.useId()
+
   return (
-    <TabsPrimitive.Root
-      data-slot="tabs"
-      className={cn(className)}
-      {...props}
-    />
+    <ActiveTabContext.Provider value={activeValue}>
+      <LayoutGroup id={groupId}>
+        <TabsPrimitive.Root
+          data-slot="tabs"
+          className={cn(className)}
+          value={activeValue}
+          onValueChange={(next) => {
+            setUncontrolledValue(next)
+            onValueChange?.(next)
+          }}
+          {...props}
+        />
+      </LayoutGroup>
+    </ActiveTabContext.Provider>
   )
 }
 
@@ -39,12 +64,15 @@ function TabsList({
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & { count?: number }
->(({ className, children, count, onMouseDown, onClick, ...props }, ref) => {
+>(({ className, children, count, value, onMouseDown, onClick, ...props }, ref) => {
   const preferClick = useMobileClickActivation()
+  const isActive = React.useContext(ActiveTabContext) === value
+  const prefersReducedMotion = useReducedMotion()
   return (
   <TabsPrimitive.Trigger
     ref={ref}
     data-slot="tabs-trigger"
+    value={value}
     onMouseDown={event => {
       onMouseDown?.(event)
       if (preferClick || event.currentTarget.closest('[data-activation="click"]')) event.preventDefault()
@@ -55,14 +83,21 @@ const TabsTrigger = React.forwardRef<
         event.currentTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }))
       }
     }}
-    data-elevation="control-active"
     className={cn(
-      "inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-xl px-3 py-1 text-sm font-medium text-foreground/75 ring-offset-background transition-all disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      "data-[state=active]:bg-surface-elevated data-[state=active]:text-foreground hover:bg-surface-hover hover:text-foreground",
+      "relative isolate inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-xl px-3 py-1 text-sm font-medium text-foreground/75 ring-offset-background transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      "data-[state=active]:text-foreground data-[state=inactive]:hover:bg-surface-hover hover:text-foreground",
       className
     )}
     {...props}
   >
+    {isActive ? (
+      <motion.span
+        layoutId="tabs-active-indicator"
+        data-elevation="control"
+        className="absolute inset-0 -z-10 rounded-xl bg-surface-elevated"
+        transition={prefersReducedMotion ? { duration: 0 } : INDICATOR_TRANSITION}
+      />
+    ) : null}
     {children}
     {count !== undefined && count > 0 ? (
       <span data-slot="tabs-count" className="ms-1.5 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 px-1.5 text-[10px] font-bold text-primary">

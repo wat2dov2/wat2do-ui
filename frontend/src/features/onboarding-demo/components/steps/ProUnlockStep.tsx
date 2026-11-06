@@ -21,6 +21,7 @@ export function ProUnlockStep() {
         <m.div
           initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
           className="space-y-6"
         >
           <Badge className="bg-primary text-primary-foreground">
@@ -48,7 +49,7 @@ export function ProUnlockStep() {
         <m.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.15 }}
+          transition={{ delay: 0.15, duration: 0.4, ease: "easeOut" }}
           className="rounded-2xl bg-primary p-8 min-h-[280px] flex flex-col items-center justify-center relative overflow-hidden"
         >
           <div className="absolute inset-0 opacity-20" aria-hidden>

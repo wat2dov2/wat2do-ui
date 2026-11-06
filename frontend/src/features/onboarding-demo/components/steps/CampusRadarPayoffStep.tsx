@@ -18,7 +18,7 @@ export function CampusRadarPayoffStep({ flow }: CampusRadarPayoffStepProps) {
       <m.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
         className="w-full max-w-2xl space-y-8 text-center"
       >
         <h1 className="font-sans font-semibold text-3xl sm:text-5xl leading-tight">
@@ -56,7 +56,7 @@ export function CampusRadarPayoffStep({ flow }: CampusRadarPayoffStepProps) {
                 key={event.id}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + i * 0.1 }}
+                transition={{ delay: 0.2 + i * 0.1, duration: 0.4, ease: "easeOut" }}
                 className="scale-90 sm:scale-100"
               >
                 <PreviewStyleEventCard event={event} data-event-id={event.id} />
