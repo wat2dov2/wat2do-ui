@@ -174,10 +174,13 @@ begin
 end;
 $$;
 
-create trigger skip_ingestion_writes_to_ticketed_events
+-- Postgres fires BEFORE triggers in name order, and a skipped row stops the
+-- rest: this name sorts before every other trigger on these tables, so a
+-- write the agent cannot make never records a change alert either.
+create trigger agent_skips_ticketed_events
 before update or delete on public.events
 for each row execute function public.skip_ingestion_writes_to_ticketed_events();
-create trigger skip_ingestion_writes_to_ticketed_events
+create trigger agent_skips_ticketed_events
 before insert or update or delete on public.event_dates
 for each row execute function public.skip_ingestion_writes_to_ticketed_events();
 

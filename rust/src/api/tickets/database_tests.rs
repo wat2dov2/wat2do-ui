@@ -514,33 +514,68 @@ async fn the_ingestion_agent_leaves_an_event_with_tickets_as_the_club_set_it() {
     let state = state(db.clone());
     let officer = person(&db, "officer").await;
     let (event, dates) = club_event(&db, &officer).await;
+    let (plain, plain_dates) = club_event(&db, &officer).await;
     ticketing::configure(&state, event, free(None), &officer)
         .await
         .unwrap();
+    // A ticket holder is going, so a change the agent made would email them.
+    let guest = person(&db, "guest").await;
+    admission::take_free(&state, event, dates[0], &guest)
+        .await
+        .unwrap();
+
     let mut transaction = db.begin().await.unwrap();
-    sqlx::query("SET LOCAL ROLE wat2do_ingest_agent")
-        .execute(&mut *transaction)
-        .await
-        .unwrap();
-    sqlx::query("UPDATE public.events SET title = 'Renamed by the agent' WHERE id = $1")
-        .bind(event as i32)
-        .execute(&mut *transaction)
-        .await
-        .unwrap();
-    sqlx::query("DELETE FROM public.event_dates WHERE id = $1")
-        .bind(dates[0])
-        .execute(&mut *transaction)
-        .await
-        .unwrap();
-    transaction.commit().await.unwrap();
-    let (title, dates_left): (String, i64) = sqlx::query_as(
-        "SELECT title, (SELECT count(*) FROM public.event_dates WHERE event_id = $1) \
-         FROM public.events WHERE id = $1",
+    // The test schema comes from a baseline without privileges, so the agent
+    // gets its production grants (20261010200000_ingestion_agent.sql) here;
+    // the rollback below takes them away.
+    for statement in [
+        "GRANT SELECT, INSERT, UPDATE, DELETE ON public.events, public.event_dates \
+         TO wat2do_ingest_agent",
+        "GRANT SELECT ON public.clubs, public.schools TO wat2do_ingest_agent",
+        "SET LOCAL ROLE wat2do_ingest_agent",
+    ] {
+        sqlx::query(statement)
+            .execute(&mut *transaction)
+            .await
+            .unwrap();
+    }
+    sqlx::query(
+        "UPDATE public.events SET title = 'Renamed by the agent', location = 'Elsewhere' \
+         WHERE id = ANY($1)",
     )
-    .bind(event as i32)
-    .fetch_one(&db)
+    .bind([event as i32, plain as i32])
+    .execute(&mut *transaction)
     .await
     .unwrap();
-    assert_eq!(title, "Board Games Night");
-    assert_eq!(dates_left, 2);
+    sqlx::query("DELETE FROM public.event_dates WHERE id = ANY($1)")
+        .bind([dates[0], plain_dates[0]])
+        .execute(&mut *transaction)
+        .await
+        .unwrap();
+    sqlx::query("RESET ROLE")
+        .execute(&mut *transaction)
+        .await
+        .unwrap();
+    let read = |id: i64| {
+        sqlx::query_as::<_, (String, i64)>(
+            "SELECT title, (SELECT count(*) FROM public.event_dates WHERE event_id = $1) \
+             FROM public.events WHERE id = $1",
+        )
+        .bind(id as i32)
+    };
+    let ticketed = read(event).fetch_one(&mut *transaction).await.unwrap();
+    let plain_after = read(plain).fetch_one(&mut *transaction).await.unwrap();
+    let alerts: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM public.event_change_alerts WHERE event_id = $1")
+            .bind(event as i32)
+            .fetch_one(&mut *transaction)
+            .await
+            .unwrap();
+    transaction.rollback().await.unwrap();
+
+    // The agent still edits events without tickets, so the trigger is what held.
+    assert_eq!(plain_after, ("Renamed by the agent".to_owned(), 1));
+    assert_eq!(ticketed, ("Board Games Night".to_owned(), 2));
+    // The skipped write fired no other trigger, so its holder hears about nothing.
+    assert_eq!(alerts, 0);
 }
