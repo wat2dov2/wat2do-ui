@@ -3,7 +3,7 @@
     "backToPanel": "Quay lại bảng điều khiển tổ chức",
     "title": "Bảng điều khiển tổ chức",
     "description": "Quản lý sự kiện, vị trí và thành viên của tổ chức bạn",
-    "eventsDesc": "Các sự kiện sắp tới và đã qua của tổ chức bạn",
+    "eventsDesc": "Sự kiện của tổ chức bạn và vé cho các sự kiện đó",
     "positionsDesc": "Các vị trí đang tuyển của tổ chức bạn",
     "members": "Đội Quản Lý",
     "membersDesc": "Quản lý thành viên tổ chức",
@@ -45,6 +45,36 @@
     "addManagerFailed": "Thêm quản lý hoặc gửi lời mời không thành công.",
     "invitationRevokedSuccess": "Thu hồi lời mời thành công!",
     "revokeInvitationFailed": "Thu hồi lời mời không thành công.",
-    "loadManagementFailed": "Tải chi tiết quản lý không thành công."
+    "loadManagementFailed": "Tải chi tiết quản lý không thành công.",
+    "payoutsDesc": "Nhận tiền bán vé qua Stripe",
+    "payouts": {
+      "title": "Nhận tiền",
+      "intro": "Khi tổ chức của bạn bán vé, tiền sẽ chuyển thẳng vào tài khoản ngân hàng của tổ chức qua Stripe.",
+      "fees": "Stripe giữ lại khoảng 2,9% + 30 xu trên mỗi đơn hàng. Phần còn lại thuộc về tổ chức của bạn.",
+      "timing": "Stripe tự động chuyển tiền vào tài khoản ngân hàng của bạn, thường là vài ngày làm việc sau mỗi lần bán. Lần nhận tiền đầu tiên có thể mất từ 7 đến 14 ngày.",
+      "currency": "Vé của bạn được định giá bằng {{currency}}.",
+      "setUp": "Thiết lập nhận tiền",
+      "continueSetup": "Tiếp tục thiết lập",
+      "openDashboard": "Mở bảng điều khiển Stripe",
+      "failed": "Không thể kết nối với Stripe. Vui lòng thử lại.",
+      "states": {
+        "notConnected": {
+          "label": "Chưa thiết lập",
+          "description": "Mất khoảng 5 phút trên trang bảo mật của Stripe: tài khoản ngân hàng của tổ chức và giấy tờ tùy thân của một cán bộ."
+        },
+        "inProgress": {
+          "label": "Sắp xong rồi",
+          "description": "Stripe cần thêm một vài thông tin trước khi tổ chức của bạn có thể nhận thanh toán."
+        },
+        "payoutsPaused": {
+          "label": "Cần xử lý",
+          "description": "Tổ chức của bạn có thể bán vé, nhưng Stripe cần thêm thông tin trước khi chuyển tiền vào ngân hàng của bạn."
+        },
+        "ready": {
+          "label": "Sẵn sàng",
+          "description": "Tổ chức của bạn có thể bán vé. Tiền sẽ tự động về tài khoản ngân hàng."
+        }
+      }
+    }
   }
 }

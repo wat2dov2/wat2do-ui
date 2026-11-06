@@ -5,6 +5,7 @@ pub mod calendar;
 pub mod clubs;
 pub mod contact;
 pub mod discovery_queries;
+pub mod event_ticketing;
 pub mod events;
 pub mod going_events;
 pub mod health;
@@ -19,6 +20,8 @@ pub mod saved_clubs;
 pub mod schools;
 pub mod site_banner;
 pub mod sponsor_submissions;
+pub mod stripe_webhook;
+pub mod tickets;
 pub mod users;
 pub mod v1_saved_events;
 

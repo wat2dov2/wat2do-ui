@@ -13,7 +13,7 @@ import { useAdminPosterPayouts } from "@/features/admin/hooks/useAdminPosterPayo
 import { FormGrid, Section, Stack } from "@/shared/layout";
 import { toast } from "@/shared/hooks/use-toast";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
-import { formatCadCents } from "@/shared/utils/currency";
+import { formatCents } from "@/shared/utils/currency";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
@@ -162,7 +162,7 @@ export function AdminPayoutsPanel() {
   );
 
   const formatCurrency = (cents: number) =>
-    formatCadCents(cents, i18n.language);
+    formatCents(cents, "cad", i18n.language);
   const formatDate = (value: string | null) => {
     if (!value) return t("admin.posterPayouts.notAvailable");
     const date = new Date(value.includes("T") ? value : `${value}T00:00:00Z`);

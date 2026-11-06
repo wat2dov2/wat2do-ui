@@ -96,7 +96,8 @@
     "primary": "Hauptnavigation",
     "openMenu": "Navigationsmenü öffnen",
     "switchToLightMode": "Zum hellen Modus wechseln",
-    "switchToDarkMode": "Zum dunklen Modus wechseln"
+    "switchToDarkMode": "Zum dunklen Modus wechseln",
+    "myTickets": "Meine Tickets"
   },
   "siteBanner": {
     "businessSupport": {

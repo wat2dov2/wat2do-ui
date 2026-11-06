@@ -3,7 +3,7 @@
     "backToPanel": "Zurück zum Organisationspanel",
     "title": "Organisationspanel",
     "description": "Verwalten Sie die Veranstaltungen, Stellen und Mitglieder Ihrer Organisation",
-    "eventsDesc": "Kommende und vergangene Veranstaltungen Ihrer Organisation",
+    "eventsDesc": "Veranstaltungen deiner Organisation und die Tickets dafür",
     "positionsDesc": "Offene Stellen Ihrer Organisation",
     "members": "Management-Team",
     "membersDesc": "Organisationmitglieder verwalten",
@@ -45,6 +45,36 @@
     "addManagerFailed": "Manager konnte nicht hinzugefügt oder Einladung nicht gesendet werden.",
     "invitationRevokedSuccess": "Einladung erfolgreich zurückgezogen!",
     "revokeInvitationFailed": "Einladung konnte nicht zurückgezogen werden.",
-    "loadManagementFailed": "Verwaltungsdetails konnten nicht geladen werden."
+    "loadManagementFailed": "Verwaltungsdetails konnten nicht geladen werden.",
+    "payoutsDesc": "Ticketeinnahmen über Stripe erhalten",
+    "payouts": {
+      "title": "Auszahlungen",
+      "intro": "Wenn deine Organisation Tickets verkauft, geht das Geld über Stripe direkt auf ihr Bankkonto.",
+      "fees": "Stripe behält etwa 2,9 % + 30 Cent pro Bestellung ein. Den Rest bekommt deine Organisation.",
+      "timing": "Stripe überweist das Geld automatisch auf das Bankkonto deiner Organisation, meist ein paar Werktage nach jedem Verkauf. Die erste Auszahlung kann 7 bis 14 Tage dauern.",
+      "currency": "Die Preise deiner Tickets sind in {{currency}} angegeben.",
+      "setUp": "Auszahlungen einrichten",
+      "continueSetup": "Einrichtung fortsetzen",
+      "openDashboard": "Stripe-Dashboard öffnen",
+      "failed": "Stripe war nicht erreichbar. Bitte versuch es noch einmal.",
+      "states": {
+        "notConnected": {
+          "label": "Nicht eingerichtet",
+          "description": "Etwa 5 Minuten auf der sicheren Seite von Stripe: das Bankkonto deiner Organisation und der Ausweis einer verantwortlichen Person."
+        },
+        "inProgress": {
+          "label": "Fast geschafft",
+          "description": "Stripe braucht noch ein paar Angaben, bevor deine Organisation Zahlungen annehmen kann."
+        },
+        "payoutsPaused": {
+          "label": "Aktion erforderlich",
+          "description": "Deine Organisation kann Tickets verkaufen, aber Stripe braucht noch weitere Angaben, bevor Geld auf ihr Bankkonto fließen kann."
+        },
+        "ready": {
+          "label": "Bereit",
+          "description": "Deine Organisation kann Tickets verkaufen. Auszahlungen gehen automatisch auf ihr Bankkonto."
+        }
+      }
+    }
   }
 }

@@ -19,7 +19,7 @@ from zoneinfo import ZoneInfo
 from core.constants import NOTIFICATION_TYPE_EVENT_CHANGE
 from core.controlbox import controlbox
 from core.database import get_sb
-from core.tables import EVENT_CHANGE_ALERTS, USERS
+from core.tables import EVENT_CHANGE_ALERTS, TICKETS, USERS
 from schemas.event import EventResponse
 from services import event_service
 from services.email_layout import EMAIL_LOGO
@@ -132,6 +132,7 @@ def enqueue_event_change(
     change_hash = _compute_change_hash(diff)
     target_id = f"{event_id}:{change_hash}"
     image = event_hero_image(event.source_image_url)
+    refund_links = _refund_links(event, user_ids) if _offers_refund(diff) else {}
 
     sent = 0
     for user_id in user_ids:
@@ -147,9 +148,46 @@ def enqueue_event_change(
             diff=diff,
             image=image,
             target_id=target_id,
+            refund_url=refund_links.get(user_id),
         ):
             sent += 1
     return sent
+
+
+def _offers_refund(diff: dict[str, dict[str, Any]]) -> bool:
+    """A new time or place can leave a ticket holder unable to go; a cancellation refunds itself."""
+    if diff.get("cancelled", {}).get("new") is True:
+        return False
+    return "location" in diff or "occurrences" in diff
+
+
+def _refund_links(event: EventResponse, user_ids: list[str]) -> dict[str, str]:
+    """Where each holder of a paid ticket asks the club for a refund.
+
+    One ticket opens its page with the request ready; several open My tickets.
+    The ticket page itself decides whether a request can still be made.
+    """
+    codes: dict[str, list[str]] = {}
+    for chunk in batched(user_ids, 500):
+        rows = (
+            get_sb()
+            .table(TICKETS)
+            .select("holder_user_id,code")
+            .eq("event_id", event.id)
+            .eq("status", "valid")
+            .not_.is_("order_id", "null")
+            .in_("holder_user_id", list(chunk))
+            .execute()
+        ).data or []
+        for row in rows:
+            codes.setdefault(str(row["holder_user_id"]), []).append(row["code"])
+    frontend = school_frontend_url(event.school)
+    return {
+        holder: f"{frontend}/tickets/{held[0]}?refund=1"
+        if len(held) == 1
+        else f"{frontend}/tickets"
+        for holder, held in codes.items()
+    }
 
 
 def _send_event_change(
@@ -160,6 +198,7 @@ def _send_event_change(
     diff: dict,
     image: InlineImage | None,
     target_id: str,
+    refund_url: str | None,
 ) -> bool:
     # Render before claiming, so a rendering failure cannot strand a pending delivery.
     message = _event_change_message(
@@ -169,6 +208,7 @@ def _send_event_change(
         diff=diff,
         image=image,
         target_id=target_id,
+        refund_url=refund_url,
     )
     row_id = claim_delivery(
         user_id=user_id,
@@ -194,6 +234,7 @@ def _event_change_message(
     diff: dict,
     image: InlineImage | None,
     target_id: str,
+    refund_url: str | None,
 ) -> EmailMessage:
     school = event_summary.get("school")
     frontend_url = school_frontend_url(school)
@@ -214,6 +255,7 @@ def _event_change_message(
             frontend_url=frontend_url,
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
+            refund_url=refund_url,
         ),
         body_text=render_event_change_text(
             subject=subject,
@@ -223,6 +265,7 @@ def _event_change_message(
             frontend_url=frontend_url,
             preferences_url=preferences_url,
             unsubscribe_url=unsubscribe,
+            refund_url=refund_url,
         ),
         idempotency_key=f"{NOTIFICATION_TYPE_EVENT_CHANGE}:{user_id}:{target_id}",
         headers={

@@ -329,6 +329,34 @@ pub struct PromoterProgram {
     pub approved_templates: Vec<PromoterTemplate>,
 }
 
+/// `controlbox/ticketing.json`, every field (Python's `TicketingControl`
+/// validates it): club tickets, free and paid.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Ticketing {
+    /// Free tickets are always on; paid ones wait for Stripe to be configured.
+    pub paid_tickets_enabled: bool,
+    /// A school's country ("CA", "US") to its ticket currency ("cad", "usd").
+    pub currency_by_country: HashMap<String, String>,
+    pub minimum_price_cents: i32,
+    pub maximum_price_cents: i32,
+    /// Per date of an event.
+    pub maximum_capacity: i32,
+    pub maximum_tickets_per_order: i32,
+    pub checkout_minutes: i64,
+    pub reservation_grace_minutes: i64,
+    /// The door admits a ticket from this long before its date starts until
+    /// this long after it ends.
+    pub check_in_opens_hours_before: i64,
+    pub check_in_closes_hours_after: i64,
+    /// Per person, across taking free tickets and starting checkouts.
+    pub rate_limit: RateLimit,
+    pub stripe_api_version: String,
+    pub stripe_timeout_seconds: f64,
+    pub stripe_network_retries: u32,
+    pub webhook_tolerance_seconds: i64,
+}
+
 /// One approved poster template of the promoter program.
 #[derive(Debug, Clone, Deserialize)]
 pub struct PromoterTemplate {
@@ -533,6 +561,12 @@ pub static PROMOTER_PROGRAM: LazyLock<PromoterProgram> = LazyLock::new(|| {
         include_str!("../../backend/controlbox/promoter_program.json"),
     )
 });
+pub static TICKETING: LazyLock<Ticketing> = LazyLock::new(|| {
+    parse(
+        "ticketing",
+        include_str!("../../backend/controlbox/ticketing.json"),
+    )
+});
 pub static POSITIONS: LazyLock<Positions> = LazyLock::new(|| {
     parse(
         "positions",
@@ -685,6 +719,7 @@ mod tests {
         assert!(CLUB_MANAGEMENT.invite_expiration_days > 0);
         assert!(DISCOVERY_QUERIES.maximum_filters_bytes > 0);
         assert!(!PROMOTER_PROGRAM.tos_version.is_empty());
+        assert!(TICKETING.maximum_tickets_per_order > 0);
         assert!(POSITIONS.undated_visibility_months > 0);
         assert!(!NOTIFICATION_DEFAULTS.enabled("unknown_type"));
 

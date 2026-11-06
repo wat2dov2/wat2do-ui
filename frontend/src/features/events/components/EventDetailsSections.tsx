@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { useEventView } from "@/features/events/hooks/useEventStats";
 import publicAttendance from "../../../../../backend/controlbox/public_attendance.json";
+import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +15,7 @@ import {
   getPrimaryOccurrence,
   hasActiveEventOccurrence,
 } from "@/shared/utils/date";
-import { Calendar, DollarSign, Edit, Flag, MapPin, Share2, Trash2, Utensils } from "lucide-react";
+import { Calendar, DollarSign, Edit, Flag, MapPin, Share2, Ticket, Trash2, Utensils } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -50,7 +51,10 @@ import { useUIStore } from "@/shared/store/ui.store";
 import { controlBox } from "@/shared/config/controlBox";
 import { translateFood } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { ROUTES } from "@/shared/constants/routes";
+import { ROUTES, clubPanelEventTicketsPath } from "@/shared/constants/routes";
+import { EventTicketCard, useEventTicketing } from "@/features/tickets";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { formatCents } from "@/shared/utils/currency";
 import { toast } from "@/shared/hooks/use-toast";
 import type { Event } from "@/shared/types";
 
@@ -184,15 +188,52 @@ function EventFoodCell({ event }: { event: Event }) {
 }
 
 function EventCostCell({ event }: { event: Event }) {
-  const { t } = useTranslation();
-  if (event.price == null) return null;
+  const { t, i18n } = useTranslation();
+  // An event with tickets costs what its tickets cost.
+  const { data: ticketing } = useEventTicketing(ticketedEventId(event));
+  const cost = ticketing
+    ? ticketing.price_cents === 0
+      ? t("common.free")
+      : formatCents(ticketing.price_cents, ticketing.currency ?? "cad", i18n.language)
+    : event.price == null
+      ? null
+      : event.price === 0
+        ? t("common.free")
+        : `$${event.price}`;
+  if (cost == null) return null;
   return (
     <Stack direction="horizontal" gap={3} align="center">
       <EventInfoTile icon={DollarSign} />
-      <p className="text-sm font-semibold text-foreground">
-        {event.price === 0 ? t("common.free") : `$${event.price}`}
-      </p>
+      <p className="text-sm font-semibold text-foreground">{cost}</p>
     </Stack>
+  );
+}
+
+/**
+ * The event to look up tickets for, or null. Turning tickets on also marks
+ * the event as needing registration, so most events never wait on the lookup.
+ */
+function ticketedEventId(event: Event): number | null {
+  return event.registration && event.id > 0 ? event.id : null;
+}
+
+/** How someone gets in: a ticket when the club runs tickets, otherwise Register. */
+function EventAdmissionCard({
+  event,
+  school,
+}: {
+  event: Event;
+  school: string | null | undefined;
+}) {
+  const ticketedId = ticketedEventId(event);
+  const { data: ticketing, isPending } = useEventTicketing(ticketedId);
+  if (ticketedId != null && isPending) {
+    return <Skeleton className="h-40 w-full rounded-xl" />;
+  }
+  return ticketing ? (
+    <EventTicketCard event={event} ticketing={ticketing} />
+  ) : (
+    <EventRegistrationCard event={event} school={school} />
   );
 }
 
@@ -497,6 +538,14 @@ export function EventActions({
       </EventCalendarDownloadMenu>
       {canManage && (
         <>
+          {event.club_id != null ? (
+            <Button type="button" variant="outline" size="sm" asChild>
+              <NextLink href={clubPanelEventTicketsPath(event.id)}>
+                <Ticket className="size-4" />
+                {t("tickets.manage")}
+              </NextLink>
+            </Button>
+          ) : null}
           <Button type="button" variant="outline" size="sm" onClick={handleEdit}>
             <Edit className="size-4" />
             {t("common.edit")}
@@ -605,7 +654,7 @@ export function EventDetailsBody({
             <EventCostCell event={event} />
           </FormGrid>
 
-          <EventRegistrationCard event={event} school={school} />
+          <EventAdmissionCard event={event} school={school} />
         </Stack>
 
         <Stack gap={6} className="order-4">

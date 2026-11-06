@@ -3,7 +3,7 @@
     "backToPanel": "Retour au panneau de l'organisation",
     "title": "Panneau de l'organisation",
     "description": "Gérez les événements, les postes et les membres de votre organisation",
-    "eventsDesc": "Les événements à venir et passés de votre organisation",
+    "eventsDesc": "Les événements de votre organisation et leurs billets",
     "positionsDesc": "Les postes ouverts de votre organisation",
     "members": "Équipe de direction",
     "membersDesc": "Gérer les membres de l'organisation",
@@ -45,6 +45,36 @@
     "addManagerFailed": "Échec de l'ajout du responsable ou de l'envoi de l'invitation.",
     "invitationRevokedSuccess": "Invitation révoquée avec succès !",
     "revokeInvitationFailed": "Échec de la révocation de l'invitation.",
-    "loadManagementFailed": "Échec du chargement des détails de gestion."
+    "loadManagementFailed": "Échec du chargement des détails de gestion.",
+    "payoutsDesc": "Recevez l'argent des billets via Stripe",
+    "payouts": {
+      "title": "Versements",
+      "intro": "Quand votre organisation vend des billets, l'argent arrive directement sur son compte bancaire via Stripe.",
+      "fees": "Stripe garde environ 2,9 % + 30 ¢ par commande. Le reste revient à votre organisation.",
+      "timing": "Stripe envoie automatiquement l'argent sur votre compte bancaire, généralement quelques jours ouvrés après chaque vente. Le premier versement peut prendre de 7 à 14 jours.",
+      "currency": "Vos billets sont vendus en {{currency}}.",
+      "setUp": "Configurer les versements",
+      "continueSetup": "Continuer la configuration",
+      "openDashboard": "Ouvrir le tableau de bord Stripe",
+      "failed": "Impossible de joindre Stripe. Veuillez réessayer.",
+      "states": {
+        "notConnected": {
+          "label": "Non configuré",
+          "description": "Environ 5 minutes sur la page sécurisée de Stripe : le compte bancaire de votre organisation et la pièce d'identité d'un responsable."
+        },
+        "inProgress": {
+          "label": "Presque fini",
+          "description": "Stripe a besoin de quelques informations de plus avant que votre organisation puisse accepter des paiements."
+        },
+        "payoutsPaused": {
+          "label": "Action requise",
+          "description": "Votre organisation peut vendre des billets, mais Stripe a besoin de plus d'informations avant de pouvoir envoyer l'argent sur votre compte bancaire."
+        },
+        "ready": {
+          "label": "Prêt",
+          "description": "Votre organisation peut vendre des billets. Les versements arrivent automatiquement sur votre compte bancaire."
+        }
+      }
+    }
   }
 }

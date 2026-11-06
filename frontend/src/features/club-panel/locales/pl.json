@@ -3,7 +3,7 @@
     "backToPanel": "Powrót do panelu organizacji",
     "title": "Panel organizacji",
     "description": "Zarządzaj wydarzeniami, stanowiskami i członkami swojej organizacji",
-    "eventsDesc": "Nadchodzące i minione wydarzenia Twojej organizacji",
+    "eventsDesc": "Wydarzenia Twojej organizacji i bilety na nie",
     "positionsDesc": "Otwarte stanowiska Twojej organizacji",
     "members": "Zespół zarządzający",
     "membersDesc": "Zarządzaj członkami organizacji",
@@ -45,6 +45,36 @@
     "addManagerFailed": "Nie udało się dodać menedżera ani wysłać zaproszenia.",
     "invitationRevokedSuccess": "Zaproszenie cofnięto pomyślnie!",
     "revokeInvitationFailed": "Nie udało się cofnąć zaproszenia.",
-    "loadManagementFailed": "Nie udało się załadować szczegółów zarządzania."
+    "loadManagementFailed": "Nie udało się załadować szczegółów zarządzania.",
+    "payoutsDesc": "Otrzymuj pieniądze za bilety przez Stripe",
+    "payouts": {
+      "title": "Wypłaty",
+      "intro": "Gdy Twoja organizacja sprzedaje bilety, pieniądze trafiają przez Stripe prosto na jej konto bankowe.",
+      "fees": "Stripe pobiera około 2,9% + 30 centów od każdego zamówienia. Resztę dostaje Twoja organizacja.",
+      "timing": "Stripe automatycznie przesyła pieniądze na konto bankowe Twojej organizacji, zwykle kilka dni roboczych po każdej sprzedaży. Pierwsza wypłata może potrwać od 7 do 14 dni.",
+      "currency": "Ceny Twoich biletów są w {{currency}}.",
+      "setUp": "Skonfiguruj wypłaty",
+      "continueSetup": "Kontynuuj konfigurację",
+      "openDashboard": "Otwórz panel Stripe",
+      "failed": "Nie udało się połączyć ze Stripe. Spróbuj ponownie.",
+      "states": {
+        "notConnected": {
+          "label": "Nieskonfigurowane",
+          "description": "Około 5 minut na bezpiecznej stronie Stripe: konto bankowe Twojej organizacji i dokument tożsamości jednej osoby z zarządu."
+        },
+        "inProgress": {
+          "label": "Prawie gotowe",
+          "description": "Stripe potrzebuje jeszcze kilku informacji, zanim Twoja organizacja będzie mogła przyjmować płatności."
+        },
+        "payoutsPaused": {
+          "label": "Wymagane działanie",
+          "description": "Twoja organizacja może sprzedawać bilety, ale Stripe potrzebuje więcej informacji, zanim prześle pieniądze na jej konto bankowe."
+        },
+        "ready": {
+          "label": "Gotowe",
+          "description": "Twoja organizacja może sprzedawać bilety. Wypłaty trafiają automatycznie na jej konto bankowe."
+        }
+      }
+    }
   }
 }

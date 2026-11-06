@@ -25,20 +25,13 @@ import {
 } from "@/shared/layout";
 import { EmptyState } from "@/shared/feedback";
 import { PosterMapSkeleton } from "@/features/posters/components/PosterMapSkeleton";
-import { Skeleton } from "@/shared/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { Link } from "@/shared/ui/link";
 import { LoadingPage } from "@/shared/ui/loading-page";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from "@/shared/ui/card";
+import { StatCard } from "@/shared/ui/stat-card";
 import { Coins, DollarSign, MapPin, QrCode, ShieldAlert, Users } from "lucide-react";
-import { formatCadCents } from "@/shared/utils/currency";
+import { formatCents } from "@/shared/utils/currency";
 
 export function PromoterPostersPage() {
   const { t, i18n } = useTranslation();
@@ -81,7 +74,7 @@ export function PromoterPostersPage() {
       key: "pending",
       icon: DollarSign,
       label: t("posters.dashboard.pendingEarnings"),
-      value: earnings ? formatCadCents(earnings.pendingCents, i18n.language) : null,
+      value: earnings ? formatCents(earnings.pendingCents, "cad", i18n.language) : null,
     },
     {
       key: "visitors",
@@ -99,7 +92,7 @@ export function PromoterPostersPage() {
       key: "paid",
       icon: Coins,
       label: t("posters.dashboard.lifetimePaid"),
-      value: earnings ? formatCadCents(earnings.lifetimePaidCents, i18n.language) : null,
+      value: earnings ? formatCents(earnings.lifetimePaidCents, "cad", i18n.language) : null,
     },
     {
       key: "slots",
@@ -176,31 +169,14 @@ export function PromoterPostersPage() {
         )}
 
         {(earnings || dashboard.earnings.isLoading) && <FormGrid columns={2} collapse={false}>
-          {summary.map(({ key, icon: Icon, label, value }) => (
-            <Card key={key}>
-              <CardHeader>
-                <CardDescription>{label}</CardDescription>
-                <CardAction>
-                  <Icon className="size-5 text-primary" />
-                </CardAction>
-              </CardHeader>
-              <CardContent>
-                <Stack gap={1}>
-                  {value === null ? (
-                    <Skeleton className="h-8 w-24" aria-busy={dashboard.earnings.isLoading} />
-                  ) : (
-                    <p className="text-2xl font-semibold text-foreground">
-                      {value}
-                    </p>
-                  )}
-                  {key !== "slots" && (
-                    <p className="text-xs text-muted-foreground">
-                      {t("posters.dashboard.updatedDaily")}
-                    </p>
-                  )}
-                </Stack>
-              </CardContent>
-            </Card>
+          {summary.map(({ key, icon, label, value }) => (
+            <StatCard
+              key={key}
+              icon={icon}
+              label={label}
+              value={value}
+              note={key === "slots" ? undefined : t("posters.dashboard.updatedDaily")}
+            />
           ))}
         </FormGrid>}
 

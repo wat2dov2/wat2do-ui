@@ -28,6 +28,7 @@ pub mod routing;
 pub mod secrets;
 pub mod security_headers;
 pub mod supervisor;
+pub mod tickets;
 pub mod validation;
 
 use std::sync::Arc;
@@ -119,6 +120,34 @@ fn rust_routes() -> OpenApiRouter<AppState> {
             routes::going_events::mark_going,
             routes::going_events::unmark_going
         ))
+        // Club tickets (api/tickets)
+        .routes(routes!(
+            routes::event_ticketing::get_event_ticketing,
+            routes::event_ticketing::configure_event_ticketing,
+            routes::event_ticketing::stop_event_ticketing
+        ))
+        .routes(routes!(routes::event_ticketing::take_free_ticket))
+        .routes(routes!(routes::event_ticketing::start_ticket_checkout))
+        .routes(routes!(routes::event_ticketing::get_ticket_desk))
+        .routes(routes!(routes::event_ticketing::set_ticket_check_in))
+        .routes(routes!(routes::event_ticketing::refund_ticket))
+        .routes(routes!(
+            routes::event_ticketing::decline_ticket_refund_request
+        ))
+        .routes(routes!(routes::event_ticketing::refund_remaining_tickets))
+        .routes(routes!(routes::tickets::list_my_tickets))
+        .routes(routes!(routes::tickets::get_my_ticket_order))
+        .routes(routes!(
+            routes::tickets::get_ticket,
+            routes::tickets::return_ticket
+        ))
+        .routes(routes!(routes::tickets::request_ticket_refund))
+        .routes(routes!(routes::clubs::payouts::get_club_payouts))
+        .routes(routes!(
+            routes::clubs::payouts::start_club_payout_onboarding
+        ))
+        .routes(routes!(routes::clubs::payouts::list_club_ticket_sales))
+        .routes(routes!(routes::stripe_webhook::receive_stripe_event))
         .routes(routes!(routes::interactions::record_interactions))
         .routes(routes!(
             routes::reports::create_report,

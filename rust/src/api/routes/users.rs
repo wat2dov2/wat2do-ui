@@ -24,7 +24,7 @@ use crate::api::json;
 use crate::api::messages::{
     CANNOT_DELETE_SELF, LAST_ADMIN_REQUIRED, PROMOTER_PROGRAM_PAUSED, PROMOTER_SCHOOL_REQUIRED,
     PROMOTER_TOS_REQUIRED, USER_HAS_PAYOUT_REVIEWS, USER_HAS_PAYOUTS, USER_HAS_PROMOTER_POSTERS,
-    USER_NOT_FOUND, USER_PROFILE_NOT_FOUND,
+    USER_HAS_TICKET_ORDERS, USER_NOT_FOUND, USER_PROFILE_NOT_FOUND,
 };
 use crate::api::routes::clubs::SCHOOL_NOT_REGISTERED;
 use crate::api::validation::{Limits, PathParams, QueryParams, Validator};
@@ -759,7 +759,7 @@ pub async fn delete_user(
     }
     // Financial and promoter records keep their user; refuse rather than orphan them.
     let records = read_with_retry(|| {
-        sqlx::query_as::<_, (bool, bool, bool)>(USER_RECORDS_SQL)
+        sqlx::query_as::<_, (bool, bool, bool, bool)>(USER_RECORDS_SQL)
             .bind(id)
             .fetch_one(&state.db)
     })
@@ -770,6 +770,14 @@ pub async fn delete_user(
     // The account's sessions end with it (`delete_user` then `auth.revoke_sessions`),
     // in one transaction so a failed revocation leaves the account in place.
     let mut transaction = state.db.begin().await?;
+    // Checkouts that never became tickets keep nothing worth the account.
+    sqlx::query(
+        "DELETE FROM public.ticket_orders WHERE buyer_user_id = $1 AND status <> 'paid' \
+         AND NOT (status = 'pending' AND reserved_until > now())",
+    )
+    .bind(id)
+    .execute(&mut *transaction)
+    .await?;
     let deleted: Vec<String> =
         sqlx::query_scalar("DELETE FROM public.users WHERE id = $1 RETURNING auth_id")
             .bind(id)
@@ -785,21 +793,29 @@ pub async fn delete_user(
     Ok(no_content())
 }
 
-/// Whether the user has payouts, promoter posters, or payout reviews they made.
+/// Whether the user has payouts, promoter posters, payout reviews they made,
+/// or ticket orders they paid for or are paying for now.
 const USER_RECORDS_SQL: &str = "SELECT \
      EXISTS (SELECT 1 FROM public.poster_payouts WHERE user_id = $1), \
      EXISTS (SELECT 1 FROM public.qr_codes WHERE created_by = $1 AND program = 'promoter'), \
-     EXISTS (SELECT 1 FROM public.poster_payout_reviews WHERE reviewed_by = $1)";
+     EXISTS (SELECT 1 FROM public.poster_payout_reviews WHERE reviewed_by = $1), \
+     EXISTS (SELECT 1 FROM public.ticket_orders WHERE buyer_user_id = $1 \
+             AND (status = 'paid' OR (status = 'pending' AND reserved_until > now())))";
 
 /// Financial and promoter records keep their user: refuse to delete it, in
-/// Python's order (payouts, promoter posters, payout reviews).
-fn delete_refusal((payouts, posters, reviews): (bool, bool, bool)) -> Option<&'static str> {
+/// Python's order (payouts, promoter posters, payout reviews), then ticket
+/// orders. Free tickets and checkouts that never became tickets go with it.
+fn delete_refusal(
+    (payouts, posters, reviews, orders): (bool, bool, bool, bool),
+) -> Option<&'static str> {
     if payouts {
         Some(USER_HAS_PAYOUTS)
     } else if posters {
         Some(USER_HAS_PROMOTER_POSTERS)
     } else if reviews {
         Some(USER_HAS_PAYOUT_REVIEWS)
+    } else if orders {
+        Some(USER_HAS_TICKET_ORDERS)
     } else {
         None
     }
@@ -915,22 +931,34 @@ mod tests {
         // test_delete_user_rejects_promoter_poster_removal,
         // test_delete_user_rejects_payout_reviewer_removal,
         // test_delete_user_without_payouts_deletes_profile
-        assert_eq!(delete_refusal((true, true, true)), Some(USER_HAS_PAYOUTS));
         assert_eq!(
-            delete_refusal((false, true, true)),
+            delete_refusal((true, true, true, true)),
+            Some(USER_HAS_PAYOUTS)
+        );
+        assert_eq!(
+            delete_refusal((false, true, true, true)),
             Some(USER_HAS_PROMOTER_POSTERS)
         );
         assert_eq!(
-            delete_refusal((false, false, true)),
+            delete_refusal((false, false, true, true)),
             Some(USER_HAS_PAYOUT_REVIEWS)
         );
-        assert_eq!(delete_refusal((false, false, false)), None);
+        assert_eq!(
+            delete_refusal((false, false, false, true)),
+            Some(USER_HAS_TICKET_ORDERS)
+        );
+        assert_eq!(delete_refusal((false, false, false, false)), None);
         // Only promoter posters count, and reviews by the user, not of them.
         assert!(
             USER_RECORDS_SQL.contains("qr_codes WHERE created_by = $1 AND program = 'promoter'")
         );
         assert!(USER_RECORDS_SQL.contains("poster_payout_reviews WHERE reviewed_by = $1"));
         assert!(USER_RECORDS_SQL.contains("poster_payouts WHERE user_id = $1"));
+        // Only paid orders and live checkouts keep the user.
+        assert!(
+            USER_RECORDS_SQL
+                .contains("(status = 'paid' OR (status = 'pending' AND reserved_until > now()))")
+        );
     }
 
     #[test]

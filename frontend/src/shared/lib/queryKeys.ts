@@ -113,6 +113,19 @@ export const queryKeys = {
     all: ["going-events"] as const,
     byUser: (userId: string) => [...queryKeys.goingEvents.all, userId] as const,
   },
+  tickets: {
+    all: ["tickets"] as const,
+    event: (eventId: number) => [...queryKeys.tickets.all, "event", eventId] as const,
+    desk: (eventId: number) => [...queryKeys.tickets.all, "desk", eventId] as const,
+    mine: (userId: string | null) => [...queryKeys.tickets.all, "mine", userId ?? ""] as const,
+    ticket: (code: string) => [...queryKeys.tickets.all, "ticket", code] as const,
+    order: (orderId: string) => [...queryKeys.tickets.all, "order", orderId] as const,
+  },
+  clubTicketing: {
+    all: ["club-ticketing"] as const,
+    payouts: (clubId: number) => [...queryKeys.clubTicketing.all, "payouts", clubId] as const,
+    sales: (clubId: number) => [...queryKeys.clubTicketing.all, "sales", clubId] as const,
+  },
   notificationPreferences: {
     all: ["notification-preferences"] as const,
     byUser: (userId: string) =>

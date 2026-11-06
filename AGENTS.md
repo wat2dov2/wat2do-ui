@@ -202,6 +202,15 @@ Porting a router means writing its handlers with the shared extractors, errors a
 Each `wat2do-api` server also runs the map location worker (`rust/src/map_locations.rs`), which looks up waiting `map_locations` with Nominatim; `claim_map_location` keeps every server to one lookup at a time between them.
 Read-only production checks must `SET default_transaction_read_only = on`, a 10 second `statement_timeout` and a 15 second `idle_in_transaction_session_timeout` on every connection (at most 2), confirm read-only with `SHOW`, run one at a time and never retry a failed run.
 
+### Club tickets and money
+
+Clubs give out free tickets and sell paid ones to their events; both are the same tickets at the door (`rust/src/api/tickets`).
+Paid tickets go through each club's own Stripe Connect Standard account, which the club signs in to itself: every charge is a direct charge on the club's account, so ticket money never sits with wat2do, and the club pays Stripe's fees and carries its refunds and disputes.
+`rust/src/api/tickets/stripe.rs` is the only code that calls Stripe, and each call that touches money names the club's connected account.
+Never use live Stripe keys outside production, never log or store card details, and keep Stripe keys in `backend/.env` locally and the Mac's `~/wat2do-data/config/backend.env` in production.
+Webhooks are trusted only with a valid, recent Stripe signature, and every charge and refund carries an idempotency key so a retry can never charge or refund twice.
+Read `docs/club_tickets_runbook.md` before changing tickets or turning paid tickets on.
+
 ### Bug fixes and testing
 
 When doing bug fixes, always start with reproducing the bug in an E2E setting as

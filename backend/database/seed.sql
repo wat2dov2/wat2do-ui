@@ -774,3 +774,19 @@ SET map_location = format('%s, %s, %s', event.location, school.name, school.city
 FROM public.schools AS school
 WHERE school.id = event.school_id
   AND (event.map_location IS NULL OR event.map_location = event.location);
+
+-- Free QR tickets on a few upcoming club events, so the ticket card, the
+-- club's desk and the door scanner have something to show locally.
+INSERT INTO public.event_ticketing (event_id, price_cents, capacity)
+SELECT event.id, 0, 40
+FROM public.events AS event
+WHERE event.ingestion_source = 'seed'
+  AND event.club_id IS NOT NULL
+  AND NOT event.cancelled
+  AND EXISTS (
+      SELECT 1 FROM public.event_dates AS event_date
+      WHERE event_date.event_id = event.id AND event_date.dtstart_utc > now()
+  )
+ORDER BY event.id
+LIMIT 3
+ON CONFLICT (event_id) DO NOTHING;

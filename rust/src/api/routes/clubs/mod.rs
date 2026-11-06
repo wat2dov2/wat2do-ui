@@ -9,6 +9,7 @@ pub mod claims;
 pub mod emails;
 pub mod invitations;
 pub mod members;
+pub mod payouts;
 
 use std::sync::LazyLock;
 
@@ -32,7 +33,7 @@ use crate::api::body::{Body, Extra, Input, Str, check_json_syntax, merge_issues}
 use crate::api::client_ip::ClientIp;
 use crate::api::errors::ApiError;
 use crate::api::json;
-use crate::api::messages::{CLUB_NOT_FOUND, NOT_AUTHORIZED, USER_NOT_FOUND};
+use crate::api::messages::{CLUB_NOT_FOUND, CLUB_SELLS_TICKETS, NOT_AUTHORIZED, USER_NOT_FOUND};
 use crate::api::pagination::{Paginated, Pagination};
 use crate::api::rate_limit::RateLimiter;
 use crate::api::routes::positions::OpenWindow;
@@ -1181,6 +1182,10 @@ pub async fn delete_club(
 ) -> Result<Response, ApiError> {
     let id = club_id(&path)?;
     let existing = managed_club(&state.db, id, &user).await?;
+    // Its Stripe account and ticket orders keep the club; refuse rather than orphan them.
+    if crate::api::tickets::store::club_sells_tickets(&state.db, id).await? {
+        return Err(ApiError::validation(CLUB_SELLS_TICKETS));
+    }
     let deleted = sqlx::query("DELETE FROM public.clubs WHERE id = $1")
         .bind(id)
         .execute(&state.db)

@@ -5,6 +5,7 @@ import type eventDiscoveryControl from "../../../../backend/controlbox/event_dis
 import interactionTracking from "../../../../backend/controlbox/interaction_tracking.json" with { type: "json" };
 import clubManagement from "../../../../backend/controlbox/club_management.json" with { type: "json" };
 import socialPreviews from "../../../../backend/controlbox/social_previews.json" with { type: "json" };
+import ticketing from "../../../../backend/controlbox/ticketing.json" with { type: "json" };
 import uploads from "../../../../backend/controlbox/uploads.json" with { type: "json" };
 
 const serializedEventDiscovery = process.env.NEXT_PUBLIC_EVENT_DISCOVERY;
@@ -73,5 +74,10 @@ export const controlBox = {
     width: socialPreviews.width,
     height: socialPreviews.height,
     cacheMaxAgeSeconds: socialPreviews.cache_max_age_seconds,
+  },
+  ticketing: {
+    minimumPriceCents: ticketing.minimum_price_cents,
+    maximumPriceCents: ticketing.maximum_price_cents,
+    maximumCapacity: ticketing.maximum_capacity,
   },
 } as const;

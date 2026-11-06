@@ -3,7 +3,7 @@
     "backToPanel": "返回組織面板",
     "title": "組織面板",
     "description": "管理你組織嘅活動、職位同成員",
-    "eventsDesc": "你組織即將舉行同過往嘅活動",
+    "eventsDesc": "你組織嘅活動，同埋活動門票",
     "positionsDesc": "你組織開放緊嘅職位",
     "members": "管理團隊",
     "membersDesc": "管理組織成員",
@@ -45,6 +45,36 @@
     "addManagerFailed": "新增管理員或發送邀請失敗。",
     "invitationRevokedSuccess": "邀請已成功撤回！",
     "revokeInvitationFailed": "撤回邀請失敗。",
-    "loadManagementFailed": "無法加載管理詳情。"
+    "loadManagementFailed": "無法加載管理詳情。",
+    "payoutsDesc": "經 Stripe 收門票錢",
+    "payouts": {
+      "title": "收款",
+      "intro": "你嘅組織賣出門票之後，啲錢會經 Stripe 直接轉入組織嘅銀行戶口。",
+      "fees": "Stripe 會喺每張訂單收取大約 2.9% + 30¢，其餘嘅錢歸你嘅組織。",
+      "timing": "Stripe 會自動將啲錢轉入你嘅銀行戶口，通常每次賣出門票之後幾個工作天就會到。第一次收款可能要 7 至 14 日。",
+      "currency": "你嘅門票以 {{currency}} 定價。",
+      "setUp": "設定收款",
+      "continueSetup": "繼續設定",
+      "openDashboard": "打開 Stripe 控制台",
+      "failed": "連唔到 Stripe，請再試一次。",
+      "states": {
+        "notConnected": {
+          "label": "未設定",
+          "description": "喺 Stripe 嘅安全頁面大約用 5 分鐘：準備好組織嘅銀行戶口同一位幹事嘅身份證明文件。"
+        },
+        "inProgress": {
+          "label": "就快搞掂",
+          "description": "Stripe 仲需要多啲資料，你嘅組織先可以收款。"
+        },
+        "payoutsPaused": {
+          "label": "需要處理",
+          "description": "你嘅組織可以賣門票，但 Stripe 要多啲資料先可以將錢轉去你嘅銀行戶口。"
+        },
+        "ready": {
+          "label": "已準備好",
+          "description": "你嘅組織可以賣門票。啲錢會自動轉入你嘅銀行戶口。"
+        }
+      }
+    }
   }
 }

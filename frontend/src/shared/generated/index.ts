@@ -104,3 +104,16 @@ export type ApiPayoutStatusUpdate =
   components["schemas"]["PayoutStatusUpdate"];
 export type ApiPaginatedPosterPayoutResponse =
   components["schemas"]["PaginatedResponse_PosterPayoutResponse_"];
+
+// ── Tickets ─────────────────────────────────────────────────────────
+export type ApiEventTicketingResponse = components["schemas"]["EventTicketingResponse"];
+export type ApiEventTicketingUpdate = components["schemas"]["EventTicketingUpdate"];
+export type ApiEventTicketDeskResponse = components["schemas"]["EventTicketDeskResponse"];
+export type ApiTicketResponse = components["schemas"]["TicketResponse"];
+export type ApiTicketOrderResponse = components["schemas"]["TicketOrderResponse"];
+export type ApiTicketAttendee = components["schemas"]["TicketAttendee"];
+export type ApiTicketCheckInResponse = components["schemas"]["TicketCheckInResponse"];
+export type ApiTicketCheckoutResponse = components["schemas"]["TicketCheckoutResponse"];
+export type ApiTicketRefundsResponse = components["schemas"]["TicketRefundsResponse"];
+export type ApiClubPayoutStatus = components["schemas"]["ClubPayoutStatus"];
+export type ApiStripeRedirectResponse = components["schemas"]["StripeRedirectResponse"];

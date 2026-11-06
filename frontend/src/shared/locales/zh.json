@@ -93,7 +93,8 @@
     "primary": "主导航",
     "openMenu": "打开导航菜单",
     "switchToLightMode": "切换到浅色模式",
-    "switchToDarkMode": "切换到深色模式"
+    "switchToDarkMode": "切换到深色模式",
+    "myTickets": "我的门票"
   },
   "siteBanner": {
     "businessSupport": {
