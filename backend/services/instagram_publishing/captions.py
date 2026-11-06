@@ -21,9 +21,9 @@ def default_caption_intro(school: str, batch_kind: InstagramPublishBatchKind = "
     french = school_record is not None and school_record.language == "fr"
     if batch_kind == "employers_on_campus":
         return (
-            f"Employeurs sur le campus à {school_slug} 👀"
+            f"Occasions de réseautage à {school_slug} 👀"
             if french
-            else f"Employers on campus at {school_slug} 👀"
+            else f"Networking opportunities at {school_slug} 👀"
         )
     if french:
         return (
