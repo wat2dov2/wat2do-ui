@@ -500,6 +500,9 @@ class InstagramPublishingControl(_ControlModel):
     # Later runs draft only schools still missing today's draft, so one failed run is retried.
     curation_hours: tuple[Annotated[int, Field(ge=0, le=23)], ...] = Field(min_length=1)
     curation_minute: int = Field(ge=0, le=59)
+    # Every ready draft for today is published at this Toronto time, after the first curation run.
+    auto_publish_hour: int = Field(ge=0, le=23)
+    auto_publish_minute: int = Field(ge=0, le=59)
     poster_timeout_seconds: float = Field(gt=0, le=120)
     # Some minutes after a carousel publishes, the Mac's emulator likes, reposts and adds
     # a song to it, waiting music_retry_minutes after a failed try.

@@ -429,7 +429,9 @@ The renderer no longer requests maps or club hiring data.
 
 ### Daily publishing schedule
 
-The `io.wat2do.instagram.curate` LaunchAgent on the Mac mini runs `curate` daily at each of the `curation_hours`, at `curation_minute`, in `backend/controlbox/instagram_publishing.json` (9 a.m., then 11 a.m., 1 p.m. and 3 p.m. Toronto); install or update it with `generate_instagram_posts.py install-schedule`.
+The `io.wat2do.instagram.curate` LaunchAgent on the Mac mini runs `curate` daily at each of the `curation_hours`, at `curation_minute`, in `backend/controlbox/instagram_publishing.json` (9 a.m., then 11 a.m., 1 p.m. and 3 p.m. Toronto); install or update it (and the publish job below) with `generate_instagram_posts.py install-schedule`.
+
+The `io.wat2do.instagram.publish` LaunchAgent runs `generate_instagram_posts.py publish` daily at `auto_publish_hour`:`auto_publish_minute` (9:35 a.m. Toronto). It publishes every school's events draft for today that is still `ready_for_review`, one school at a time, so admins have until then to edit a draft or publish it by hand. Curation and publishing share a file lock, so a publish run waits for a curation run that is still writing drafts. Drafts saved by the later curation runs stay in review.
 launchd runs a missed time once the Mac wakes, and a skipped day is not lost: the next draft window starts at the last successful cutoff.
 The job keeps no logs and exits non-zero when any school fails; each later run retries them, since `curate` skips schools already drafted today.
 The model, parallel agents, attempts, timeout and poster size are the `curation_*` controlbox settings.
