@@ -21,13 +21,13 @@ Which events fill the slides, and in what order, comes down to how much students
 
 Favor events that are:
 - social and high-status: formals, galas, boat cruises, parties and socials at real venues, concerts, DJ nights, big cultural shows, fashion shows, varsity games and tailgates, trips;
-- big: famous speakers or performers, limited tickets or spots, a large expected crowd;
+- big: real, sizable prizes (cash, trips, tech, a prize pool), well-known companies, famous speakers or performers, limited tickets or spots, a large expected crowd;
 - unusual, fun or memorable to do;
 - promoted with polished, high-effort, aesthetic artwork.
 
 Boring and low-status events rank last: general and annual meetings, elections, office hours, study sessions and tutoring, routine weekly club meetings, generic skill workshops, information sessions and booths, club executive recruitment, bake sales and small fundraisers, and anything promoted with plain or low-effort artwork. Take them only when the better events run out before the slides do.
 
-Career, academic and professional events rank below every good social, sports, cultural and fun event: case competitions, hackathons and build labs, coding or tech workshops, research and career panels, networking nights, resume reviews, headshot sessions and info sessions. A sponsor, cash prize or free credits does not lift them; the admin removed exactly these from drafts that led with their prizes. Pick at most one per carousel, and never place it in the first three slides. The one exception is an event run in person by a household-name company or person most students already know (such as OpenAI or Google engineers), which may rank like a good social event.
+Career, academic and professional events rank below every good social, sports, cultural and fun event: case competitions, hackathons and build labs, coding or tech workshops, research and career panels, networking nights, resume reviews, headshot sessions and info sessions. Pick at most one of these per carousel, and never place it in the first three slides. Two kinds are exceptions and rank like a good social event: one with a big, real prize (a cash prize or prize pool in the hundreds of dollars or more, a trip, real tech), and one run in person by a household-name company or person most students already know (such as OpenAI or Google engineers). Free credits, swag or a sponsor logo are not a big prize.
 
 ## Variety
 
