@@ -1,5 +1,5 @@
 (() => {
-  const headings = [...document.querySelectorAll('h1,[role="heading"]')].filter(element =>
+  const headings = [...document.querySelectorAll('h1,h2,[role="heading"]')].filter(element =>
     (element.innerText || element.textContent || "").trim() === "Switch accounts");
   if (headings.length !== 1) return "missing";
   const dialog = headings[0].closest('[role="dialog"]');
