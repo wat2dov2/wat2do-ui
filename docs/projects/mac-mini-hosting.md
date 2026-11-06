@@ -86,7 +86,7 @@ Since then a page view needs no function at all (cached pages, stored thumbnails
 4. Put the R2 key and `STORAGE_*` settings in `backend.env` and the runtime checkout's `.env`, and `wat2do-api`'s AWS key for SES.
 5. Deploy the branch's website (`deploy.sh`'s upload steps) and load-test it through CloudFront before any DNS change (`curl --resolve wat2do.io:443:<CloudFront address>`).
 6. Merge: the deploy job applies the migration that moves stored media URLs to `https://media.wat2do.io/`, deploys the API and the website, and `install.py io.wat2do.caddy io.wat2do.api` reloads Caddy (API-only) and gives the API its 30 second stop timeout.
-7. Copy media written since step 3 once more, point `wat2do.io`, `www` and `*` in Cloudflare at the distribution's domain (DNS-only), then delete `~/wat2do-data/media`, `~/wat2do-data/discovery-cache`, `web.env`, the `io.wat2do.web` job, the Vercel project and the IAM user `wat2do-ses-sender`.
+7. Copy media written since step 3 once more, point `wat2do.io`, `www` and `*` in Cloudflare at the distribution's domain (DNS-only), then delete `~/wat2do-data/discovery-cache`, `web.env`, the `io.wat2do.web` job, the Vercel project and the IAM user `wat2do-ses-sender`.
 
 ## Status
 
