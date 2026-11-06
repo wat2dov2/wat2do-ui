@@ -10,12 +10,12 @@ Never pick an event whose `ig_handle` (ignoring `@` and case) is in `excluded_cl
 
 Never pick religious events. A religious event's purpose is worship, prayer, religious practice, or marking a faith's holiday: services and Mass, Shabbat, Jummah and prayer gatherings, pujas and aartis, scripture, Bible or Quran studies, faith fellowships, and any holiday that is itself religious even when it is dressed up as a party, dinner, bazaar or cultural night (Diwali, Bandi Chhor Divas, Navratri, Hanukkah, Eid, Día de los Muertos, an Indigenous round dance). This holds even when the event is social or offers free food, such as a faith group's Shabbat or iftar dinner. A secular party, show, game, sale or social with no act of worship and no religious-holiday theme is fine even when a religious or faith-based club hosts it, such as a Muslim Students' Association games night or a campus ministry's bowling night.
 
-Never pick these either; the admin removes them from drafts before publishing:
+Fill the carousel: pick exactly `event_slides` events whenever that many events remain after leaving out excluded clubs and religious events, the only two hard rules. Pick fewer only when fewer remain, and then pick every one that remains. Every other rule below only ranks events; none of them ever leaves a slide empty while an eligible event is unpicked.
+
+These rank below every other event, because the admin removes them from drafts whenever something else can take their slide; use them only to fill slides that would otherwise be empty:
 - drag shows and drag nights;
 - events built around a political cause, or hosted by a solidarity, activist or advocacy group, even when the event itself is a show, sale or social;
 - events students cannot reasonably get to from campus, such as a varsity away game or a trip in another city that the club does not organize.
-
-Fill the carousel: pick exactly `event_slides` events whenever that many events remain after leaving out excluded clubs and religious events. Pick fewer only when fewer remain, and then pick every one that remains. Leaving out an event under these rules frees its slide for the next best event, never an empty slide.
 
 Which events fill the slides, and in what order, comes down to how much students would want to go and how worth following they make this account: the cool, exciting, high-status ones people would brag about attending or post on their story come first.
 
@@ -27,7 +27,7 @@ Favor events that are:
 
 Boring and low-status events rank last: general and annual meetings, elections, office hours, study sessions and tutoring, routine weekly club meetings, generic skill workshops, information sessions and booths, club executive recruitment, bake sales and small fundraisers, and anything promoted with plain or low-effort artwork. Take them only when the better events run out before the slides do.
 
-Career, academic and professional events rank below every good social, sports, cultural and fun event: case competitions, hackathons and build labs, coding or tech workshops, research and career panels, networking nights, resume reviews, headshot sessions and info sessions. Pick at most one of these per carousel, and never place it in the first three slides. Two kinds are exceptions and rank like a good social event: one with a big, real prize (a cash prize or prize pool in the hundreds of dollars or more, a trip, real tech), and one run in person by a household-name company or person most students already know (such as OpenAI or Google engineers). Free credits, swag or a sponsor logo are not a big prize.
+Career, academic and professional events rank below every good social, sports, cultural and fun event: case competitions, hackathons and build labs, coding or tech workshops, research and career panels, networking nights, resume reviews, headshot sessions and info sessions. Pick at most one of these per carousel while other events can fill the slides, and never place one in the first three slides. Two kinds are exceptions and rank like a good social event: one with a big, real prize (a cash prize or prize pool in the hundreds of dollars or more, a trip, real tech), and one run in person by a household-name company or person most students already know (such as OpenAI or Google engineers). Free credits, swag or a sponsor logo are not a big prize.
 
 ## Variety
 
