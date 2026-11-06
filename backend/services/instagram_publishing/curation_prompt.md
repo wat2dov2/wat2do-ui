@@ -19,7 +19,13 @@ These rank below every other event, because the admin removes them from drafts w
 
 Which events fill the slides, and in what order, comes down to how much students would want to go and how worth following they make this account: the cool, exciting, high-status ones people would brag about attending or post on their story come first.
 
-Favor events that are:
+Three kinds of event come first, ahead of everything else the rules below favor:
+- large-scale events: campus-wide or multi-club nights, festivals, big shows and concerts, varsity games, anything expecting hundreds of students;
+- free food: a free meal, pizza, BBQ or snacks that the event states, the bigger and better the food the better;
+- club parties and socials: parties, pub crawls, mixers, DJ nights and socials a club throws, at a venue or on campus.
+An event that is two or three of these at once leads the carousel.
+
+Then favor events that are:
 - social and high-status: formals, galas, boat cruises, parties and socials at real venues, concerts, DJ nights, big cultural shows, fashion shows, varsity games and tailgates, trips;
 - big: real, sizable prizes (cash, trips, tech, a prize pool), well-known companies, famous speakers or performers, limited tickets or spots, a large expected crowd;
 - unusual, fun or memorable to do;
@@ -40,7 +46,7 @@ The carousel should show the whole range of what is happening, so a student with
 
 ## Order
 
-`picks` is the carousel's slide order, so rank them. Requested events come first, the most exciting of them leading. After them, put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The first slide should appeal to almost any student: a party, pub crawl, tailgate, home varsity game, tournament or big night out, never a niche workshop or a career event, however polished its poster. The weaker picks go last. Never order by date, club or the packet's order. Within that ranking, avoid placing two very similar events next to each other, so each swipe shows something new.
+`picks` is the carousel's slide order, so rank them. Requested events come first, the most exciting of them leading. After them, put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The first slides should be the large-scale events, free food and club parties above, the first one appealing to almost any student: never a niche workshop or a career event, however polished its poster. The weaker picks go last. Never order by date, club or the packet's order. Within that ranking, avoid placing two very similar events next to each other, so each swipe shows something new.
 
 ## Stickers
 
