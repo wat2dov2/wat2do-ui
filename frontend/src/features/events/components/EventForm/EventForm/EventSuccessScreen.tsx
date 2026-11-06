@@ -46,7 +46,7 @@ export function EventSuccessScreen({
   };
 
   return (
-    <Section variant="surface" className="mx-auto w-full max-w-md">
+    <Section variant="surface" data-content-width="sm">
       <div className="flex flex-col items-center gap-y-4 py-4 text-center">
           <div className="relative">
             <div className="size-16 rounded-full bg-success flex items-center justify-center">

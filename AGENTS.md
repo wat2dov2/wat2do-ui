@@ -450,6 +450,9 @@ When cleaning frontend code:
 - Pages and feature components must compose existing UI and layout primitives by selecting semantic variants.
   They must not hand-roll visual styles in `className` when a token, primitive, layout helper, feature component, or component variant owns the design decision.
   If the needed semantic distinction does not exist, add it to the lowest owning component and use that single variant instead of styling call sites.
+- A page's `Container` is the single owner of its width: the `PageHeader` and the content below it always share that width, so the back button and title line up with the content.
+  Content components never cap or centre themselves (`mx-auto max-w-*`).
+  Pick the `Container` size that fits the page's content; a step that is naturally narrower than the rest of its page marks itself `data-content-width="sm"` and the `Container` narrows, header included, while it shows.
 - Use layout primitives for page and feature structure, including flex direction, grid columns, alignment, wrapping, spacing, sections, and form actions.
   A genuine one-off positioning constraint may remain at a call site only when it describes that instance's relationship to its parent, no reusable owner can express it, and the reason is documented beside the class.
   It must not encode the child component's visual design or interactive states.

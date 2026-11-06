@@ -26,7 +26,7 @@ export function SubmitPositionPage() {
   // Admins and the club's own team publish straight away; the server decides the same.
   const canPublish = isAdmin || managedClubs.some(club => club.id === data.club_id);
   return (
-    <Container size="lg">
+    <Container size="sm">
       <Stack gap={6}>
         <PageHeader title={t("positions.addPosition")} back={{ href: ROUTES.POSITIONS, label: t("navigation.positions") }} />
         {form.submitted ? (

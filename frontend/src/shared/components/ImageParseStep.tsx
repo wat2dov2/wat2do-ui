@@ -24,7 +24,7 @@ export function ImageParseStep({
   const { t } = useTranslation();
 
   return (
-    <Section variant="surface" className="mx-auto w-full max-w-2xl">
+    <Section variant="surface" data-content-width="sm">
       <Stack align="center" gap={4}>
         <Stack align="center" gap={1} className="text-center">
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
