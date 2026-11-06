@@ -10,6 +10,7 @@ import en8 from "@/features/settings/locales/en.json";
 import en9 from "@/features/onboarding-demo/locales/en.json";
 import en10 from "@/features/posters/locales/en.json";
 import en11 from "@/features/positions/locales/en.json";
+import en12 from "@/features/tickets/locales/en.json";
 
 /**
  * Register English before anything renders.
@@ -27,7 +28,7 @@ import en11 from "@/features/positions/locales/en.json";
  */
 const ENGLISH_TRANSLATIONS: Record<string, unknown> = Object.assign(
   {},
-  en0, en1, en2, en3, en4, en5, en7, en8, en9, en10, en11,
+  en0, en1, en2, en3, en4, en5, en7, en8, en9, en10, en11, en12,
 );
 
 i18n.addResourceBundle("en", "translation", ENGLISH_TRANSLATIONS);

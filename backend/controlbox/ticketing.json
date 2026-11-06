@@ -1,0 +1,21 @@
+{
+  "paid_tickets_enabled": false,
+  "currency_by_country": {
+    "CA": "cad",
+    "US": "usd"
+  },
+  "minimum_price_cents": 100,
+  "maximum_price_cents": 50000,
+  "maximum_capacity": 10000,
+  "maximum_tickets_per_order": 6,
+  "checkout_minutes": 30,
+  "reservation_grace_minutes": 15,
+  "rate_limit": {
+    "maximum_requests": 10,
+    "window_seconds": 600
+  },
+  "stripe_api_version": "2025-10-29.clover",
+  "stripe_timeout_seconds": 20,
+  "stripe_network_retries": 2,
+  "webhook_tolerance_seconds": 300
+}

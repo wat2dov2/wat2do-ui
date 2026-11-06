@@ -60,6 +60,24 @@ fn group_selections(rows: Vec<(i64, Uuid)>) -> Vec<GoingSelection> {
         .collect()
 }
 
+/// The dates of one event the user is going to, in the order they chose them.
+pub async fn occurrence_ids(
+    db: &PgPool,
+    user_id: Uuid,
+    event_id: i64,
+) -> Result<Vec<Uuid>, ApiError> {
+    Ok(read_with_retry(|| {
+        sqlx::query_scalar::<_, Uuid>(
+            "SELECT event_date_id FROM public.user_going_events \
+             WHERE user_id = $1 AND event_id = $2 ORDER BY going_at",
+        )
+        .bind(user_id)
+        .bind(event_id)
+        .fetch_all(db)
+    })
+    .await?)
+}
+
 /// `GoingEventStatusResponse`.
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct GoingStatus {
@@ -185,14 +203,18 @@ pub async fn attendees(db: &PgPool, event_id: i64) -> Result<Attendees, ApiError
     .await?;
     // Distinct users by first Going time, reading pages only until the
     // display cap is reached (Python read every page, then kept the first few).
+    // Ticket holders count toward Going but are never named: a ticket should
+    // not put anyone's name and face on a public list.
     let cap = PUBLIC_ATTENDANCE.maximum_display_names;
     let mut user_ids: Vec<Uuid> = Vec::new();
     let mut offset = 0;
     while user_ids.len() < cap {
         let page: Vec<Uuid> = read_with_retry(|| {
             sqlx::query_scalar::<_, Uuid>(
-                "SELECT user_id FROM public.user_going_events WHERE event_id = $1 \
-                 ORDER BY going_at LIMIT $2 OFFSET $3",
+                "SELECT g.user_id FROM public.user_going_events g WHERE g.event_id = $1 \
+                 AND NOT EXISTS (SELECT 1 FROM public.tickets t WHERE t.event_id = g.event_id \
+                                 AND t.holder_user_id = g.user_id AND t.status = 'valid') \
+                 ORDER BY g.going_at LIMIT $2 OFFSET $3",
             )
             .bind(event_id)
             .bind(LOAD_PAGE_SIZE)

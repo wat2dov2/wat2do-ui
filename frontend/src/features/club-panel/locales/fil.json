@@ -3,7 +3,7 @@
     "backToPanel": "Bumalik sa panel ng organisasyon",
     "title": "Panel ng organisasyon",
     "description": "Pamahalaan ang mga kaganapan, posisyon, at miyembro ng inyong organisasyon",
-    "eventsDesc": "Mga paparating at nakaraang kaganapan ng inyong organisasyon",
+    "eventsDesc": "Mga kaganapan ng organisasyon mo, at ang mga tiket para sa mga ito",
     "positionsDesc": "Mga bukas na posisyon ng inyong organisasyon",
     "members": "Koponan sa Pamamahala",
     "membersDesc": "Pamahalaan ang mga miyembro ng organisasyon",
@@ -45,6 +45,36 @@
     "addManagerFailed": "Nabigong idagdag ang manager o ipadala ang imbitasyon.",
     "invitationRevokedSuccess": "Matagumpay na nabawi ang imbitasyon!",
     "revokeInvitationFailed": "Nabigong bawiin ang imbitasyon.",
-    "loadManagementFailed": "Nabigong i-load ang detalye ng pamamahala."
+    "loadManagementFailed": "Nabigong i-load ang detalye ng pamamahala.",
+    "payoutsDesc": "Tanggapin ang bayad sa mga tiket sa pamamagitan ng Stripe",
+    "payouts": {
+      "title": "Mga payout",
+      "intro": "Kapag nagbenta ng tiket ang organisasyon mo, diretsong napupunta ang pera sa bank account nito sa pamamagitan ng Stripe.",
+      "fees": "Kinukuha ng Stripe ang mga 2.9% + 30¢ ng bawat order. Mapupunta sa organisasyon mo ang natitira.",
+      "timing": "Awtomatikong ipinapadala ng Stripe ang pera sa bangko mo, kadalasan ilang business day pagkatapos ng bawat benta. Puwedeng abutin ng 7 hanggang 14 na araw ang unang payout.",
+      "currency": "Naka-presyo sa {{currency}} ang mga tiket mo.",
+      "setUp": "I-set up ang mga payout",
+      "continueSetup": "Ituloy ang setup",
+      "openDashboard": "Buksan ang Stripe dashboard",
+      "failed": "Hindi maabot ang Stripe. Pakisubukang muli.",
+      "states": {
+        "notConnected": {
+          "label": "Hindi pa naka-set up",
+          "description": "Mga 5 minuto sa secure na page ng Stripe: ang bank account ng organisasyon mo at ID ng isang opisyal."
+        },
+        "inProgress": {
+          "label": "Konti na lang",
+          "description": "Kailangan pa ng Stripe ng ilang detalye bago makatanggap ng bayad ang organisasyon mo."
+        },
+        "payoutsPaused": {
+          "label": "Kailangan ng aksyon",
+          "description": "Puwedeng magbenta ng tiket ang organisasyon mo, pero kailangan pa ng Stripe ng mas maraming detalye bago ito makapagpadala ng pera sa bangko mo."
+        },
+        "ready": {
+          "label": "Handa na",
+          "description": "Puwede nang magbenta ng tiket ang organisasyon mo. Awtomatikong napupunta ang mga payout sa bank account mo."
+        }
+      }
+    }
   }
 }

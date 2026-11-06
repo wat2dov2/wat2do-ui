@@ -9,6 +9,7 @@ pub mod claims;
 pub mod emails;
 pub mod invitations;
 pub mod members;
+pub mod payouts;
 
 use std::sync::LazyLock;
 

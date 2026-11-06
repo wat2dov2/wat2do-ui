@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { useId, type ComponentProps, type ReactNode } from "react";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import {
@@ -30,6 +30,9 @@ interface BaseFormFieldProps {
 interface FormInputProps extends BaseFormFieldProps {
   disabled?: boolean;
   type?: "text" | "email" | "number" | "time" | "tel" | "url";
+  /** Digits only, as typed; unlike type "number", clearing it leaves it empty. */
+  format?: "integer";
+  inputMode?: ComponentProps<"input">["inputMode"];
   value: string | number;
   onChange: (value: string | number) => void;
   placeholder?: string;
@@ -70,6 +73,8 @@ export function FormInput({
   onBlur,
   labelIcon,
   type = "text",
+  format,
+  inputMode,
   value,
   onChange,
   placeholder,
@@ -88,6 +93,8 @@ export function FormInput({
       id={id}
       disabled={disabled}
       type={type}
+      format={format}
+      inputMode={inputMode}
       required={required}
       value={value}
       onChange={(e) => {

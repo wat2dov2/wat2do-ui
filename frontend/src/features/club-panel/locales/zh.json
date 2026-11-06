@@ -3,7 +3,7 @@
     "backToPanel": "返回组织面板",
     "title": "组织面板",
     "description": "管理您组织的活动、职位和成员",
-    "eventsDesc": "您组织即将举行和过往的活动",
+    "eventsDesc": "你组织的活动及其门票",
     "positionsDesc": "您组织正在招募的职位",
     "members": "管理团队",
     "membersDesc": "管理组织成员",
@@ -45,6 +45,36 @@
     "addManagerFailed": "添加管理员或发送邀请失败。",
     "invitationRevokedSuccess": "邀请已成功撤销！",
     "revokeInvitationFailed": "撤销邀请失败。",
-    "loadManagementFailed": "加载管理团队信息失败。"
+    "loadManagementFailed": "加载管理团队信息失败。",
+    "payoutsDesc": "通过 Stripe 收取门票款项",
+    "payouts": {
+      "title": "收款",
+      "intro": "你的组织售出门票后，款项会通过 Stripe 直接转入组织的银行账户。",
+      "fees": "Stripe 会从每笔订单中收取约 2.9% + 30¢ 的手续费，其余款项归你的组织。",
+      "timing": "Stripe 会自动把款项转入你的银行账户，通常在每笔订单完成后的几个工作日内到账。首次收款可能需要 7 到 14 天。",
+      "currency": "你的门票以 {{currency}} 定价。",
+      "setUp": "设置收款",
+      "continueSetup": "继续设置",
+      "openDashboard": "打开 Stripe 控制台",
+      "failed": "无法连接 Stripe，请重试。",
+      "states": {
+        "notConnected": {
+          "label": "未设置",
+          "description": "在 Stripe 的安全页面上大约需要 5 分钟：填写组织的银行账户，并提供一位干事的身份证件。"
+        },
+        "inProgress": {
+          "label": "快完成了",
+          "description": "Stripe 还需要一些信息，你的组织才能收款。"
+        },
+        "payoutsPaused": {
+          "label": "需要处理",
+          "description": "你的组织可以售票，但 Stripe 需要更多信息才能把钱转到你的银行账户。"
+        },
+        "ready": {
+          "label": "已就绪",
+          "description": "你的组织可以售票了。款项会自动转入你的银行账户。"
+        }
+      }
+    }
   }
 }

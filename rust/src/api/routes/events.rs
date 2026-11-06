@@ -17,6 +17,7 @@ use crate::api::events::store::{self, DateWindow, LatestAdded, ScanFilters};
 use crate::api::events::{feed, requests, writes};
 use crate::api::messages::EVENT_NOT_FOUND;
 use crate::api::pagination::{Paginated, Pagination};
+use crate::api::tickets::refunds;
 use crate::api::validation::{FloatLimits, Length, PathParams, PyInt, QueryParams, Validator};
 
 use crate::constants::{MAX_EVENT_PRICE, MAX_LIST_LIMIT, MAX_SEARCH_QUERY_LENGTH};
@@ -434,6 +435,10 @@ pub async fn update_event(
     let updated = writes::update(&state.db, existing.id, input, new_club.as_ref())
         .await?
         .ok_or_else(|| ApiError::not_found(EVENT_NOT_FOUND))?;
+    if updated.cancelled && !existing.cancelled {
+        // Everyone who paid for a ticket gets their money back, then an email.
+        refunds::refund_cancelled_in_background(state.clone(), updated.id, Some(user.id));
+    }
     Ok(Json(updated.full()).into_response())
 }
 

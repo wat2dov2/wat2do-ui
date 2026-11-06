@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -134,7 +135,7 @@ def test_event_change_empty_diff_is_noop():
     assert event_change.enqueue_event_change(None, {}, []) == 0
 
 
-def _change_email(diff, image_src=None, **event_fields):
+def _change_email(diff, image_src=None, refund_url=None, **event_fields):
     args = {
         "subject": "Changed: Tea Tasting",
         "event": _event(**event_fields),
@@ -144,6 +145,7 @@ def _change_email(diff, image_src=None, **event_fields):
         "frontend_url": "https://uwaterloo.wat2do.io",
         "preferences_url": "https://uwaterloo.wat2do.io/settings",
         "unsubscribe_url": "https://uwaterloo.wat2do.io/unsubscribe",
+        "refund_url": refund_url,
     }
     html = rendering.render_event_change_html(**args)
     del args["image_src"]
@@ -216,8 +218,48 @@ def test_event_change_rendering_failure_claims_no_delivery(monkeypatch):
             diff={"location": {"old": "SLC", "new": "DC"}},
             image=None,
             target_id="42:abc",
+            refund_url=None,
         )
     claim.assert_not_called()
+
+
+def test_event_change_email_offers_a_paid_holder_a_refund():
+    refund = "https://uwaterloo.wat2do.io/tickets/AAAABBBBCCCCDDDDEEEEFFFF?refund=1"
+    html, text = _change_email({"location": {"old": "SLC", "new": "DC"}}, refund_url=refund)
+    assert rendering.REFUND_OFFER in text
+    assert f"Request a refund: {refund}" in text
+    assert f'href="{refund}"' in html
+    _html, plain = _change_email({"location": {"old": "SLC", "new": "DC"}})
+    assert rendering.REFUND_OFFER not in plain
+
+
+def test_only_a_new_time_or_place_offers_a_refund():
+    assert event_change._offers_refund({"location": {"old": "SLC", "new": "DC"}})
+    assert event_change._offers_refund({"occurrences": {"old": [], "new": []}})
+    assert not event_change._offers_refund({"title": {"old": "A", "new": "B"}})
+    # A cancellation refunds every ticket by itself.
+    assert not event_change._offers_refund(
+        {"cancelled": {"old": False, "new": True}, "location": {"old": "SLC", "new": "DC"}}
+    )
+
+
+def test_refund_links_open_one_ticket_or_all_of_them(fake_sb, patch_sb, monkeypatch):
+    patch_sb("services.notifications.event_change")
+    monkeypatch.setattr(
+        event_change, "school_frontend_url", lambda school: "https://uwaterloo.wat2do.io"
+    )
+    fake_sb.set_response(
+        data=[
+            {"holder_user_id": "one", "code": "AAAA"},
+            {"holder_user_id": "two", "code": "BBBB"},
+            {"holder_user_id": "two", "code": "CCCC"},
+        ]
+    )
+    links = event_change._refund_links(SimpleNamespace(id=42, school="uwaterloo"), ["one", "two"])
+    assert links == {
+        "one": "https://uwaterloo.wat2do.io/tickets/AAAA?refund=1",
+        "two": "https://uwaterloo.wat2do.io/tickets",
+    }
 
 
 def test_unsubscribe_token_round_trip_and_tamper(monkeypatch):

@@ -904,3 +904,26 @@ def test_api_server_rejects_unsafe_settings(tmp_path: Path, patch, message) -> N
 
     with pytest.raises(ValidationError, match=message):
         load_controlbox(path)
+
+
+def test_ticketing_ships_with_paid_tickets_off() -> None:
+    control = controlbox.ticketing
+    assert control.paid_tickets_enabled is False
+    assert control.currency_by_country == {"CA": "cad", "US": "usd"}
+    assert control.minimum_price_cents <= control.maximum_price_cents
+
+
+@pytest.mark.parametrize(
+    ("patch", "message"),
+    [
+        ({"minimum_price_cents": 60_000}, "minimum_price_cents cannot exceed"),
+        ({"currency_by_country": {"CA": "cad"}}, "every school country"),
+        ({"minimum_price_cents": 10}, "greater than or equal to 50"),
+        ({"checkout_minutes": 20}, "greater than or equal to 30"),
+        ({"stripe_api_version": "latest"}, "String should match pattern"),
+    ],
+)
+def test_ticketing_rejects_unsafe_settings(tmp_path: Path, patch, message) -> None:
+    path = _write_control(tmp_path, "ticketing", lambda payload: payload.update(patch))
+    with pytest.raises(ValidationError, match=message):
+        load_controlbox(path)

@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { ExternalLink } from "lucide-react";
-import { formatCadCents } from "@/shared/utils/currency";
+import { formatCents } from "@/shared/utils/currency";
 
 interface PromoterTermsDialogProps {
   open: boolean;
@@ -73,7 +73,7 @@ export function PromoterTermsDialog({
 
   const termsValues = {
     seconds: promoterProgram.landingConfirmationSeconds,
-    rate: formatCadCents(promoterProgram.rateCents, i18n.language),
+    rate: formatCents(promoterProgram.rateCents, "cad", i18n.language),
     payoutDay: formatPayoutDay(promoterProgram.payoutDayOfMonth, i18n.language),
   };
 

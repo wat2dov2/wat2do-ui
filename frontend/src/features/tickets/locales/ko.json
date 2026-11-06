@@ -1,0 +1,193 @@
+{
+  "tickets": {
+    "title": "내 티켓",
+    "description": "입장할 때 티켓의 QR 코드를 보여 주세요.",
+    "upcoming": "다가오는 일정",
+    "past": "지난 일정",
+    "manage": "티켓",
+    "setUp": "티켓 설정하기",
+    "empty": {
+      "title": "아직 티켓이 없어요",
+      "description": "이벤트 티켓을 받으면 여기에 표시돼요.",
+      "action": "이벤트 찾기"
+    },
+    "notFound": {
+      "title": "존재하지 않는 티켓이에요",
+      "description": "링크를 확인하거나 '내 티켓'에서 티켓을 찾아보세요."
+    },
+    "status": {
+      "valid": "유효",
+      "checkedIn": "체크인 완료",
+      "refunded": "환불됨"
+    },
+    "card": {
+      "freeTitle": "무료 티켓",
+      "freeDescription": "지금 티켓을 받고, 입장할 때 QR 코드를 보여 주세요.",
+      "paidTitle": "티켓",
+      "price": "티켓당 {{price}}",
+      "noFees": "예매 수수료 없음",
+      "left": "{{count}}장 남음",
+      "left_other": "{{count}}장 남음",
+      "quantity": "티켓 수량",
+      "getFree": "무료 티켓 받기",
+      "buy": "티켓 구매 · {{total}}",
+      "continueToPayment": "결제 계속하기",
+      "payNote": "Stripe로 안전하게 결제돼요. 체크인을 위해 {{club}}에 이름과 이메일이 전달돼요.",
+      "checkInNote": "체크인을 위해 {{club}}에 이름과 이메일이 전달돼요.",
+      "youreIn": "티켓을 받았어요",
+      "showAtDoor": "입장할 때 이 QR 코드를 보여 주세요. 이메일로도 보내 드렸어요.",
+      "openTicket": "티켓 열기",
+      "anotherDate": "다른 날짜 티켓 받기",
+      "youHave": "티켓 {{count}}장 보유 중",
+      "youHave_other": "티켓 {{count}}장 보유 중",
+      "viewTickets": "내 티켓 보기",
+      "unavailable": {
+        "cancelled": "취소된 이벤트예요.",
+        "paused": "지금은 티켓 발급이 잠시 중단됐어요.",
+        "soldOut": "남은 티켓이 없어요.",
+        "closed": "더 이상 티켓을 받을 수 없어요.",
+        "notYet": "아직 티켓을 받을 수 없어요."
+      }
+    },
+    "pass": {
+      "when": "일시",
+      "where": "장소",
+      "holder": "티켓 소지자",
+      "code": "코드",
+      "locationTba": "장소 추후 공지",
+      "qrLabel": "이 티켓의 QR 코드",
+      "showAtDoor": "입장할 때 이 QR 코드를 보여 주세요.",
+      "refundedNote": "환불된 티켓이라 사용할 수 없어요.",
+      "viewEvent": "이벤트 보기"
+    },
+    "door": {
+      "checkIn": "체크인",
+      "undo": "체크인 취소",
+      "teamNote": "{{club}} 운영진이라서 이 티켓을 체크인할 수 있어요.",
+      "checkedInAt": "{{time}}에 체크인 완료",
+      "results": {
+        "checked_in": "체크인 완료. 입장시켜 주세요.",
+        "already_checked_in": "이미 체크인된 티켓이에요",
+        "undone": "체크인을 취소했어요",
+        "refunded": "환불된 티켓이에요. 입장시키지 마세요.",
+        "not_for_this_event": "다른 이벤트의 티켓이에요",
+        "not_found": "이 코드와 일치하는 티켓이 없어요"
+      }
+    },
+    "return": {
+      "prompt": "참석이 어려우세요? 티켓 반납하기",
+      "title": "티켓을 반납할까요?",
+      "description": "다른 사람이 그 자리를 이용할 수 있어요. 나중에 티켓이 남아 있으면 새로 받을 수 있어요.",
+      "keep": "유지하기",
+      "confirm": "반납하기",
+      "done": "티켓을 반납했어요"
+    },
+    "order": {
+      "confirming": "결제를 확인하고 있어요",
+      "confirmingDescription": "보통 몇 초면 끝나요. 티켓은 이메일로도 보내 드려요.",
+      "paidTitle": "구매 완료!",
+      "paidDescription": "티켓 {{count}}장은 아래에서 확인할 수 있고, 이메일로도 보내 드렸어요.",
+      "paidDescription_other": "티켓 {{count}}장은 아래에서 확인할 수 있고, 이메일로도 보내 드렸어요.",
+      "shareNote": "티켓마다 QR 코드가 따로 있어요. 각 티켓 링크를 그 티켓을 사용할 친구에게 보내 주세요.",
+      "failedTitle": "결제가 완료되지 않았어요",
+      "failedDescription": "요금은 청구되지 않았고, 티켓도 다시 풀렸어요.",
+      "notFound": "주문을 찾을 수 없어요",
+      "backToEvent": "이벤트로 돌아가기",
+      "allTickets": "내 티켓 전체 보기"
+    },
+    "desk": {
+      "title": "티켓",
+      "notFound": "더 이상 존재하지 않는 이벤트예요",
+      "setupTitle": "이 이벤트의 티켓",
+      "setupDescription": "모든 참가자가 QR 코드가 담긴 티켓을 받고, 입구에서 이 코드를 스캔해 체크인해요.",
+      "settingsTitle": "티켓 설정",
+      "settingsDescription": "티켓 수를 바꾸거나 잠시 발급을 멈출 수 있어요.",
+      "free": "무료",
+      "freeHint": "날짜마다 1인당 티켓 1장이에요.",
+      "paid": "유료",
+      "paidHint": "참가자가 Stripe로 결제하고, 금액은 조직으로 들어가요.",
+      "price": "티켓 가격({{currency}})",
+      "priceLocked": "누군가 티켓을 받은 뒤에는 가격을 바꿀 수 없어요.",
+      "priceRange": "{{minimum}}에서 {{maximum}} 사이의 가격을 입력하세요.",
+      "capacity": "날짜별 티켓 수",
+      "capacityPlaceholder": "제한 없음",
+      "capacityRange": "1에서 {{maximum}} 사이의 숫자를 입력하거나, 제한을 두지 않으려면 비워 두세요.",
+      "pause": "티켓 발급 일시 중지",
+      "pauseHint": "이 설정을 끄기 전까지는 아무도 새로 티켓을 받을 수 없어요.",
+      "fees": "Stripe는 주문마다 약 2.9% + 30센트를 가져가요. 나머지는 조직이 받아요.",
+      "goingNote": "이미 참석한다고 한 모든 사람에게 이메일로 티켓을 보내요.",
+      "payoutsNeeded": "판매 금액을 받을 수 있도록 먼저 정산을 설정하세요.",
+      "setUpPayouts": "정산 설정",
+      "turnOnFree": "무료 티켓 켜기",
+      "startSelling": "판매 시작",
+      "freeStarted": "무료 티켓을 켰어요",
+      "sellingStarted": "티켓 판매를 시작했어요",
+      "save": "변경 사항 저장",
+      "saved": "티켓 설정을 저장했어요",
+      "turnOff": "티켓 끄기",
+      "turnedOff": "이제 이 이벤트에는 티켓이 없어요",
+      "openScanner": "티켓 스캔",
+      "attendees": "입장 명단",
+      "attendeesEmpty": "아직 티켓을 받은 사람이 없어요",
+      "search": "이름, 이메일 또는 코드로 검색",
+      "noMatches": "검색과 일치하는 사람이 없어요",
+      "columns": {
+        "holder": "티켓 소지자",
+        "date": "날짜",
+        "status": "상태",
+        "actions": "작업"
+      },
+      "stats": {
+        "issued": "티켓",
+        "checkedIn": "체크인",
+        "remaining": "잔여",
+        "revenue": "매출",
+        "unlimited": "제한 없음"
+      },
+      "refund": "환불",
+      "refundTitle": "이 티켓을 환불할까요?",
+      "refundDescription": "{{name}} 님의 카드로 {{amount}} 환불이 진행되고 이메일도 발송돼요. Stripe는 수수료를 조직에 돌려주지 않아요.",
+      "refundConfirm": "{{amount}} 환불",
+      "refundRequested": "환불 요청됨",
+      "decline": "거절",
+      "declineTitle": "이 환불 요청을 거절할까요?",
+      "declineDescription": "{{name}} 님에게 조직이 환불을 거절했다는 이메일이 발송돼요. 티켓은 계속 사용할 수 있어요.",
+      "declineConfirm": "요청 거절",
+      "declined": "환불 요청을 거절했어요",
+      "cancelledTitle": "취소된 이벤트예요",
+      "cancelledDescription": "모든 유료 티켓은 자동으로 환불돼요. 아직 유효한 티켓이 있다면 Stripe에 잠시 연결되지 않았던 것이니, 여기서 나머지를 환불해 주세요.",
+      "refundRemaining": "남은 티켓 환불",
+      "refundedCount": "티켓 {{count}}장을 환불했어요",
+      "refundedCount_other": "티켓 {{count}}장을 환불했어요"
+    },
+    "refund": {
+      "prompt": "참석이 어려우세요?",
+      "promptDescription": "{{club}}에 환불을 요청해 보세요. 환불 여부는 조직에서 결정하며, 결과와 관계없이 이메일로 알려 드려요.",
+      "request": "환불 요청하기",
+      "signIn": "로그인하고 환불 요청하기",
+      "title": "{{club}}에 환불을 요청할까요?",
+      "description": "{{club}}에서 동의하면 티켓 금액 전액이 카드로 환불돼요. 결과와 관계없이 이메일로 알려 드려요.",
+      "noteLabel": "조직에 전할 내용이 있나요? (선택)",
+      "notePlaceholder": "예: 변경된 날짜에는 참석할 수 없어요.",
+      "send": "요청 보내기",
+      "sent": "{{club}}에 환불 요청을 보냈어요",
+      "pending": "{{date}}에 {{club}}에 환불을 요청했어요. 결정이 나면 이메일로 알려 드려요.",
+      "declined": "{{club}}에서 {{date}}에 환불 요청을 거절했어요. 티켓은 계속 사용할 수 있어요.",
+      "theClub": "주최 조직"
+    },
+    "scanner": {
+      "title": "티켓 스캔",
+      "description": "카메라를 티켓의 QR 코드에 맞춰 주세요.",
+      "admitted": "{{issued}}장 중 {{checkedIn}}장 체크인",
+      "startCamera": "카메라 켜기",
+      "stopCamera": "카메라 끄기",
+      "cameraLabel": "티켓 스캔용 카메라 화면",
+      "cameraBlocked": "티켓을 스캔하려면 카메라 접근을 허용하거나, 아래에 코드를 입력해 주세요.",
+      "manual": "티켓 코드",
+      "manualPlaceholder": "QR 코드 아래에 있는 코드를 입력하세요"
+    },
+    "errors": {
+      "generic": "문제가 발생했어요. 다시 시도해 주세요."
+    }
+  }
+}

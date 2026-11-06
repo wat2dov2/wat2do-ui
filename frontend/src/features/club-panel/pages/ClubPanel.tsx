@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { Briefcase, Building2, Calendar, Users } from "lucide-react";
+import { Briefcase, Building2, Calendar, Coins, Users } from "lucide-react";
 import { useActiveClub } from "@/features/club-panel/hooks/useActiveClub";
+import { useClubPayouts } from "@/features/club-panel/hooks/useClubPayouts";
 import { FormGrid, PageHeader, Stack } from "@/shared/layout";
 import { AdminCard } from "@/shared/ui/AdminCard";
 import type { ClubPanelRouteKey } from "@/shared/constants/routes";
@@ -11,7 +12,9 @@ interface ClubPanelProps {
 
 export function ClubPanel({ onNavigate }: ClubPanelProps) {
   const { t } = useTranslation();
-  const { club } = useActiveClub();
+  const { clubId, club } = useActiveClub();
+  // Payouts matter only once wat2do sells paid tickets; free tickets need none.
+  const { data: payouts } = useClubPayouts(clubId);
 
   return (
     <Stack gap={5}>
@@ -39,6 +42,14 @@ export function ClubPanel({ onNavigate }: ClubPanelProps) {
           description={t("clubPanel.membersDesc")}
           onClick={() => onNavigate("club-panel-members")}
         />
+        {payouts?.paid_tickets_enabled ? (
+          <AdminCard
+            icon={Coins}
+            title={t("clubPanel.payouts.title")}
+            description={t("clubPanel.payoutsDesc")}
+            onClick={() => onNavigate("club-panel-payouts")}
+          />
+        ) : null}
       </FormGrid>
     </Stack>
   );

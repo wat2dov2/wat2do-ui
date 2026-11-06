@@ -1,9 +1,10 @@
 //! Event writes (`event_service.create_event`, `update_event`, `delete_event`)
 //! and who may make them (`routers/events.py` with `club_service.publish_refusal`).
 //!
-//! Updates and deletes are single statements (the update RPC is one
-//! transaction); a create inserts the event and its occurrences in one
-//! transaction.
+//! An update (the occurrences RPC) and a delete each run in one transaction
+//! with the event's tickets locked, so neither strands a ticket someone holds
+//! (`tickets::ticketing::guard_edit`, `guard_delete`); a create inserts the
+//! event and its occurrences in one transaction.
 
 use serde_json::{Value, json};
 use sqlx::PgPool;
@@ -268,6 +269,13 @@ pub async fn update(
             campus_season_ids(&seasons, school.as_deref())?,
         );
     }
+    // An edit keeps the dates it names by id; the rest are removed.
+    let kept_dates: Option<Vec<uuid::Uuid>> = input.occurrences.as_ref().map(|occurrences| {
+        occurrences
+            .iter()
+            .filter_map(|occurrence| occurrence.id)
+            .collect()
+    });
     let occurrences = input.occurrences.map(|occurrences| {
         Value::Array(
             occurrences
@@ -276,12 +284,22 @@ pub async fn update(
                 .collect(),
         )
     });
+    let mut transaction = db.begin().await?;
+    crate::api::tickets::ticketing::guard_edit(
+        &mut transaction,
+        &existing,
+        new_club.map(|club| club.id),
+        kept_dates.as_deref(),
+        chrono::Utc::now(),
+    )
+    .await?;
     sqlx::query("SELECT public.update_event_with_occurrences($1, $2, $3)")
         .bind(event_id as i32)
         .bind(Value::Object(payload))
         .bind(occurrences)
-        .execute(db)
+        .execute(&mut *transaction)
         .await?;
+    transaction.commit().await?;
     let updated = store::event_by_id(db, event_id).await?;
     if let Some(updated) = &updated {
         let schools: Vec<String> = [existing.school.clone(), updated.school.clone()]
@@ -295,11 +313,15 @@ pub async fn update(
 
 /// `delete_event`: delete it, then refresh its school's feed if a row went.
 pub async fn delete(db: &PgPool, existing: &Event) -> Result<(), ApiError> {
+    let mut transaction = db.begin().await?;
+    crate::api::tickets::ticketing::guard_delete(&mut transaction, existing.id, chrono::Utc::now())
+        .await?;
     let deleted = sqlx::query("DELETE FROM public.events WHERE id = $1")
         .bind(existing.id)
-        .execute(db)
+        .execute(&mut *transaction)
         .await?
         .rows_affected();
+    transaction.commit().await?;
     if deleted > 0 {
         crate::revalidation::revalidate_schools(
             &existing.school.iter().cloned().collect::<Vec<_>>(),

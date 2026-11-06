@@ -3,7 +3,7 @@
     "backToPanel": "Torna al pannello dell'organizzazione",
     "title": "Pannello dell'organizzazione",
     "description": "Gestisci gli eventi, le posizioni e i membri della tua organizzazione",
-    "eventsDesc": "Gli eventi futuri e passati della tua organizzazione",
+    "eventsDesc": "Gli eventi della tua organizzazione e i relativi biglietti",
     "positionsDesc": "Le posizioni aperte della tua organizzazione",
     "members": "Team di gestione",
     "membersDesc": "Gestisci i membri dell'organizzazione",
@@ -45,6 +45,36 @@
     "addManagerFailed": "Impossibile aggiungere il responsabile o inviare l'invito.",
     "invitationRevokedSuccess": "Invito revocato con successo!",
     "revokeInvitationFailed": "Impossibile revocare l'invito.",
-    "loadManagementFailed": "Impossibile caricare i dettagli di gestione."
+    "loadManagementFailed": "Impossibile caricare i dettagli di gestione.",
+    "payoutsDesc": "Ricevi i soldi dei biglietti tramite Stripe",
+    "payouts": {
+      "title": "Accrediti",
+      "intro": "Quando la tua organizzazione vende biglietti, i soldi arrivano direttamente sul suo conto bancario tramite Stripe.",
+      "fees": "Stripe trattiene circa il 2,9% + 30 centesimi su ogni ordine. Il resto va alla tua organizzazione.",
+      "timing": "Stripe invia i soldi alla tua banca in automatico, di solito qualche giorno lavorativo dopo ogni vendita. Il primo accredito può richiedere da 7 a 14 giorni.",
+      "currency": "I prezzi dei tuoi biglietti sono in {{currency}}.",
+      "setUp": "Imposta gli accrediti",
+      "continueSetup": "Continua la configurazione",
+      "openDashboard": "Apri la dashboard di Stripe",
+      "failed": "Impossibile contattare Stripe. Riprova.",
+      "states": {
+        "notConnected": {
+          "label": "Non configurato",
+          "description": "Circa 5 minuti sulla pagina sicura di Stripe: il conto bancario della tua organizzazione e un documento d'identità di un responsabile."
+        },
+        "inProgress": {
+          "label": "Quasi fatto",
+          "description": "Stripe ha bisogno di qualche altro dato prima che la tua organizzazione possa ricevere pagamenti."
+        },
+        "payoutsPaused": {
+          "label": "Azione richiesta",
+          "description": "La tua organizzazione può vendere biglietti, ma Stripe ha bisogno di altri dati prima di poter inviare i soldi alla tua banca."
+        },
+        "ready": {
+          "label": "Pronto",
+          "description": "La tua organizzazione può vendere biglietti. Gli accrediti arrivano sul tuo conto in automatico."
+        }
+      }
+    }
   }
 }

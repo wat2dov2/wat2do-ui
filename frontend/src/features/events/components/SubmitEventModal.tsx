@@ -222,6 +222,7 @@ export function SubmitEventFlow({
           onClose={onClose ?? NOOP}
           isEditMode={isEditMode}
           isSubmissionOnly={submitResult?.createdEventId == null}
+          createdEventId={submitResult?.createdEventId ?? null}
         />
       </EventFormProvider>
     );

@@ -77,3 +77,43 @@ pub const FAILED_TO_SAVE_TOKEN: &str = "Unable to save verification token. Pleas
 pub const REGISTRATION_FAILED: &str = "Unable to complete registration. Please try again later.";
 pub const SPONSOR_SUBMISSION_NOT_FOUND: &str = "Sponsor submission not found";
 pub const SUBMISSION_SCHOOL_REQUIRED: &str = "Submission club school is not registered";
+
+// Club tickets and payouts (`api/tickets` and its routes).
+pub const PAID_TICKETS_DISABLED: &str = "Paid tickets aren't available yet";
+pub const TICKETS_REQUIRE_CLUB: &str = "Only an event hosted by a club can have tickets";
+pub const PAYOUTS_NOT_READY: &str = "Finish setting up payouts before selling tickets";
+pub const TICKETS_NOT_AVAILABLE: &str = "This event doesn't have tickets";
+pub const TICKETS_PAUSED: &str = "Tickets are paused for this event";
+pub const TICKETS_CLOSED: &str = "Tickets for this date are no longer available";
+pub const TICKETS_SOLD_OUT: &str = "There aren't enough tickets left for this date";
+pub const TICKET_DATE_NOT_FOUND: &str = "That date isn't part of this event";
+pub const TICKETED_EVENT_CANCELLED: &str = "This event was cancelled";
+pub const TICKET_QUANTITY_TOO_HIGH: &str = "That's more tickets than one order allows";
+pub const TICKET_PRICE_OUT_OF_RANGE: &str = "Enter a ticket price within the allowed range";
+pub const TICKET_CAPACITY_TOO_HIGH: &str = "That capacity is too high";
+pub const TICKET_PRICE_LOCKED: &str = "The price can't change once people have tickets";
+pub const TICKET_CAPACITY_BELOW_ISSUED: &str =
+    "Capacity can't be lower than the tickets already taken for a date";
+pub const TICKETS_ALREADY_TAKEN: &str =
+    "People already have tickets for this event. Pause tickets instead.";
+pub const TICKET_REFUNDS_NEED_CANCELLATION: &str = "Cancel the event first to refund every ticket";
+pub const EVENT_HAS_PAID_TICKETS: &str =
+    "This event has sold tickets. Cancel it instead, and every buyer is refunded.";
+pub const TICKETED_EVENT_CLUB_LOCKED: &str =
+    "An event with tickets stays with the club running them";
+pub const TICKETED_DATE_IN_USE: &str =
+    "A date with sold tickets can't be removed. Refund those tickets first.";
+pub const TICKET_NOT_FOUND: &str = "Ticket not found";
+pub const TICKET_ORDER_NOT_FOUND: &str = "Order not found";
+pub const TICKET_ALREADY_REFUNDED: &str = "This ticket was already refunded";
+pub const TICKET_ALREADY_USED: &str = "This ticket was already used at the door";
+pub const TICKET_REFUND_ALREADY_DECLINED: &str =
+    "The club already declined a refund for this ticket";
+pub const TICKET_REFUND_NOT_REQUESTED: &str = "Nobody asked for a refund on this ticket";
+pub const FREE_TICKET_NOT_REFUNDABLE: &str = "A free ticket has nothing to refund";
+pub const PAID_TICKET_NOT_RETURNABLE: &str =
+    "A paid ticket can't be given back. Ask the club for a refund instead.";
+pub const USER_HAS_TICKET_ORDERS: &str = "Users who bought tickets cannot be deleted";
+pub const PAYMENT_PROVIDER_UNAVAILABLE: &str =
+    "Payments are unavailable right now. Please try again in a minute.";
+pub const STRIPE_SIGNATURE_INVALID: &str = "Invalid Stripe signature";

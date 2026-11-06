@@ -3,7 +3,7 @@
     "backToPanel": "Voltar ao painel da organização",
     "title": "Painel da Organização",
     "description": "Gerencie os eventos, as vagas e os membros da sua organização",
-    "eventsDesc": "Os eventos futuros e passados da sua organização",
+    "eventsDesc": "Os eventos da sua organização e os ingressos para eles",
     "positionsDesc": "As vagas abertas da sua organização",
     "members": "Equipe de Gestão",
     "membersDesc": "Gerenciar membros da organização",
@@ -45,6 +45,36 @@
     "addManagerFailed": "Falha ao adicionar gerente ou enviar convite.",
     "invitationRevokedSuccess": "Convite revogado com sucesso!",
     "revokeInvitationFailed": "Falha ao revogar o convite.",
-    "loadManagementFailed": "Falha ao carregar detalhes de gerenciamento."
+    "loadManagementFailed": "Falha ao carregar detalhes de gerenciamento.",
+    "payoutsDesc": "Receba pelos ingressos através da Stripe",
+    "payouts": {
+      "title": "Repasses",
+      "intro": "Quando a sua organização vende ingressos, o dinheiro vai direto para a conta bancária dela pela Stripe.",
+      "fees": "A Stripe fica com cerca de 2,9% + 30 centavos de cada pedido. O resto vai para a sua organização.",
+      "timing": "A Stripe envia o dinheiro para o seu banco automaticamente, geralmente alguns dias úteis depois de cada venda. O primeiro repasse pode levar de 7 a 14 dias.",
+      "currency": "Os preços dos seus ingressos estão em {{currency}}.",
+      "setUp": "Configurar repasses",
+      "continueSetup": "Continuar configuração",
+      "openDashboard": "Abrir painel da Stripe",
+      "failed": "Não foi possível conectar à Stripe. Tente novamente.",
+      "states": {
+        "notConnected": {
+          "label": "Não configurado",
+          "description": "Cerca de 5 minutos na página segura da Stripe: a conta bancária da sua organização e um documento de identidade de um responsável."
+        },
+        "inProgress": {
+          "label": "Quase lá",
+          "description": "A Stripe precisa de mais alguns dados antes que sua organização possa receber pagamentos."
+        },
+        "payoutsPaused": {
+          "label": "Ação necessária",
+          "description": "Sua organização pode vender ingressos, mas a Stripe precisa de mais dados antes de enviar dinheiro para o seu banco."
+        },
+        "ready": {
+          "label": "Pronto",
+          "description": "Sua organização pode vender ingressos. Os repasses caem na sua conta bancária automaticamente."
+        }
+      }
+    }
   }
 }

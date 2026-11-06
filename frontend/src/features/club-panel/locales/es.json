@@ -3,7 +3,7 @@
     "backToPanel": "Volver al panel de la organización",
     "title": "Panel de la organización",
     "description": "Administra los eventos, puestos y miembros de tu organización",
-    "eventsDesc": "Los eventos próximos y pasados de tu organización",
+    "eventsDesc": "Los eventos de tu organización y sus boletos",
     "positionsDesc": "Los puestos abiertos de tu organización",
     "members": "Equipo de gestión",
     "membersDesc": "Administrar miembros de la organización",
@@ -45,6 +45,36 @@
     "addManagerFailed": "Error al agregar al gerente o enviar la invitación.",
     "invitationRevokedSuccess": "¡Invitación revocada con éxito!",
     "revokeInvitationFailed": "Error al revocar la invitación.",
-    "loadManagementFailed": "Error al cargar los detalles de gestión."
+    "loadManagementFailed": "Error al cargar los detalles de gestión.",
+    "payoutsDesc": "Recibe el dinero de los boletos a través de Stripe",
+    "payouts": {
+      "title": "Cobros",
+      "intro": "Cuando tu organización vende boletos, el dinero va directo a su cuenta bancaria a través de Stripe.",
+      "fees": "Stripe se queda con cerca del 2.9% + 30 centavos de cada pedido. Tu organización recibe el resto.",
+      "timing": "Stripe envía el dinero a tu banco automáticamente, por lo general unos días hábiles después de cada venta. El primer cobro puede tardar de 7 a 14 días.",
+      "currency": "Tus boletos se venden en {{currency}}.",
+      "setUp": "Configurar cobros",
+      "continueSetup": "Continuar configuración",
+      "openDashboard": "Abrir el panel de Stripe",
+      "failed": "No se pudo conectar con Stripe. Inténtalo de nuevo.",
+      "states": {
+        "notConnected": {
+          "label": "Sin configurar",
+          "description": "Unos 5 minutos en la página segura de Stripe: la cuenta bancaria de tu organización y la identificación de un responsable."
+        },
+        "inProgress": {
+          "label": "Casi listo",
+          "description": "Stripe necesita algunos datos más antes de que tu organización pueda recibir pagos."
+        },
+        "payoutsPaused": {
+          "label": "Acción necesaria",
+          "description": "Tu organización puede vender boletos, pero Stripe necesita más datos antes de poder enviar dinero a tu banco."
+        },
+        "ready": {
+          "label": "Listo",
+          "description": "Tu organización puede vender boletos. Los cobros llegan a tu cuenta bancaria automáticamente."
+        }
+      }
+    }
   }
 }

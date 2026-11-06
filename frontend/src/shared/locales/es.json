@@ -99,7 +99,8 @@
     "primary": "Navegación principal",
     "openMenu": "Abrir menú de navegación",
     "switchToLightMode": "Cambiar al modo claro",
-    "switchToDarkMode": "Cambiar al modo oscuro"
+    "switchToDarkMode": "Cambiar al modo oscuro",
+    "myTickets": "Mis boletos"
   },
   "siteBanner": {
     "businessSupport": {

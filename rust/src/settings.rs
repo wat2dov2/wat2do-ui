@@ -44,6 +44,10 @@ pub struct Settings {
     /// `POSTER_CONFIRMATION_SECRET`: signs promoter scan confirmation tokens.
     pub poster_confirmation_secret: String,
     pub frontend_url: String,
+    /// The platform's Stripe secret key and its Connect webhook's signing
+    /// secret, for paid club tickets (`api/tickets`). Only Rust reads them.
+    pub stripe_secret_key: String,
+    pub stripe_webhook_secret: String,
     /// `TRUSTED_PROXIES`: peers whose client-IP headers `client_ip` believes.
     pub trusted_proxies: Vec<String>,
     /// uvicorn's `FORWARDED_ALLOW_IPS`: peers whose `X-Forwarded-For` and
@@ -130,6 +134,8 @@ impl Settings {
             poster_hash_secret: lookup("POSTER_HASH_SECRET").unwrap_or_default(),
             poster_confirmation_secret: lookup("POSTER_CONFIRMATION_SECRET").unwrap_or_default(),
             frontend_url: or_default("FRONTEND_URL", "http://localhost:3000"),
+            stripe_secret_key: optional("STRIPE_SECRET_KEY"),
+            stripe_webhook_secret: optional("STRIPE_WEBHOOK_SECRET"),
             trusted_proxies: list("TRUSTED_PROXIES", DEFAULT_TRUSTED_PROXIES)?,
             forwarded_allow_ips: or_default("FORWARDED_ALLOW_IPS", DEFAULT_FORWARDED_ALLOW_IPS)
                 .split(',')

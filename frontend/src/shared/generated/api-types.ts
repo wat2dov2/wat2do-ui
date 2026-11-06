@@ -851,6 +851,355 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events/{event_id}/ticketing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event Ticketing
+         * @description What the event's tickets offer, or null when it has none.
+         */
+        get: operations["get_event_ticketing_events__event_id__ticketing_get"];
+        /**
+         * Configure Event Ticketing
+         * @description Turn tickets on for the club's event, or change them. A price of zero gives free tickets.
+         */
+        put: operations["configure_event_ticketing_events__event_id__ticketing_put"];
+        post?: never;
+        /**
+         * Stop Event Ticketing
+         * @description Turn tickets off for an event nobody has a ticket to yet.
+         */
+        delete: operations["stop_event_ticketing_events__event_id__ticketing_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}/ticketing/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Take Free Ticket
+         * @description Take the event's free ticket to one date; taking it again returns the same ticket.
+         */
+        post: operations["take_free_ticket_events__event_id__ticketing_tickets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}/ticketing/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Ticket Checkout
+         * @description Hold the seats and open Stripe Checkout on the club's account.
+         */
+        post: operations["start_ticket_checkout_events__event_id__ticketing_checkout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}/ticketing/desk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ticket Desk
+         * @description The club's counts and door list for one event.
+         */
+        get: operations["get_ticket_desk_events__event_id__ticketing_desk_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}/ticketing/check-ins/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Ticket Check In
+         * @description Admit a scanned or typed ticket at the door, or undo it.
+         */
+        put: operations["set_ticket_check_in_events__event_id__ticketing_check_ins__code__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}/ticketing/tickets/{ticket_id}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refund Ticket */
+        post: operations["refund_ticket_events__event_id__ticketing_tickets__ticket_id__refund_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}/ticketing/tickets/{ticket_id}/refund-request/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decline Ticket Refund Request
+         * @description The club keeps the money; the holder gets an email and keeps the ticket.
+         */
+        post: operations["decline_ticket_refund_request_events__event_id__ticketing_tickets__ticket_id__refund_request_decline_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}/ticketing/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refund Remaining Tickets
+         * @description Refund every paid ticket still valid on a cancelled event.
+         */
+        post: operations["refund_remaining_tickets_events__event_id__ticketing_refunds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickets/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List My Tickets
+         * @description Every ticket the user holds, soonest date first.
+         */
+        get: operations["list_my_tickets_tickets_mine_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickets/orders/{order_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Ticket Order
+         * @description The buyer's own order, polled while Stripe confirms the payment.
+         */
+        get: operations["get_my_ticket_order_tickets_orders__order_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickets/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ticket
+         * @description Anyone with the code sees the ticket; the club's team can also admit it.
+         */
+        get: operations["get_ticket_tickets__code__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Return Ticket
+         * @description Give a free ticket back, so someone else can take the seat.
+         */
+        delete: operations["return_ticket_tickets__code__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickets/{code}/refund-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Ticket Refund
+         * @description The holder asks the club for a refund; everyone on the club's team gets an email.
+         */
+        post: operations["request_ticket_refund_tickets__code__refund_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Club Payouts
+         * @description Whether the club can sell tickets, and what Stripe still needs from it.
+         */
+        get: operations["get_club_payouts_clubs__club_id__payouts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/payouts/onboarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Club Payout Onboarding
+         * @description A one-time link to Stripe's onboarding, creating the club's account on first use.
+         */
+        post: operations["start_club_payout_onboarding_clubs__club_id__payouts_onboarding_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/payouts/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open Club Payout Dashboard
+         * @description A one-time login to the club's Stripe Express dashboard.
+         */
+        post: operations["open_club_payout_dashboard_clubs__club_id__payouts_dashboard_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clubs/{club_id}/ticket-sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Club Ticket Sales
+         * @description Every event of the club that has tickets, with its counts.
+         */
+        get: operations["list_club_ticket_sales_clubs__club_id__ticket_sales_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/stripe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Receive Stripe Event
+         * @description Stripe Connect events for club tickets: paid and expired checkouts, and account updates.
+         */
+        post: operations["receive_stripe_event_webhooks_stripe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/interactions/batch": {
         parameters: {
             query?: never;
@@ -3115,6 +3464,11 @@ export interface components {
             /** Format: date */
             end_date: string;
         };
+        /**
+         * @description What scanning or typing a code at the door did.
+         * @enum {string}
+         */
+        CheckInResult: "checked_in" | "already_checked_in" | "undone" | "refunded" | "not_for_this_event" | "not_found";
         ClubClaimCreate: {
             executive_role: string;
             proof_url?: string | null;
@@ -3156,6 +3510,28 @@ export interface components {
             /** @default uwaterloo */
             school: string;
         };
+        /** @description One event with tickets on a club's dashboard. */
+        ClubEventTicketSummary: {
+            /** Format: int64 */
+            event_id: number;
+            /** Format: int32 */
+            price_cents: number;
+            currency: string | null;
+            /** Format: int32 */
+            capacity: number | null;
+            paused: boolean;
+            /** Format: int64 */
+            issued: number;
+            /** Format: int64 */
+            checked_in: number;
+            /** Format: int64 */
+            revenue_cents: number;
+            /**
+             * Format: int64
+             * @description Holders waiting for the club to refund or decline.
+             */
+            refund_requests: number;
+        };
         ClubInvitationCreate: {
             /** @description Email to invite */
             email: string;
@@ -3194,6 +3570,18 @@ export interface components {
             role: string;
             /** Format: date-time */
             joined_at: string;
+        };
+        /** @description Whether a club can sell tickets, and what Stripe still needs from it. */
+        ClubPayoutStatus: {
+            /** @description Paid tickets are on in this environment. */
+            paid_tickets_enabled: boolean;
+            connected: boolean;
+            charges_enabled: boolean;
+            payouts_enabled: boolean;
+            details_submitted: boolean;
+            requirements_due: string[];
+            country: string;
+            currency: string;
         };
         /** @description A club as the API returns it (`ClubResponse`). */
         ClubResponse: {
@@ -3527,6 +3915,60 @@ export interface components {
              */
             going_count: number;
         };
+        /** @description Everything a club needs at its desk and at the door for one event. */
+        EventTicketDeskResponse: {
+            ticketing: components["schemas"]["EventTicketingResponse"];
+            /**
+             * Format: int64
+             * @description Valid tickets: taken for free, or sold and not refunded.
+             */
+            issued: number;
+            /** Format: int64 */
+            checked_in: number;
+            /** Format: int64 */
+            refunded: number;
+            /** Format: int64 */
+            revenue_cents: number;
+            dates: components["schemas"]["TicketDateCounts"][];
+            attendees: components["schemas"]["TicketAttendee"][];
+        };
+        /**
+         * @description How people get into an event, or null when it has no tickets. A price of
+         *     zero means free tickets, one per person and date.
+         */
+        EventTicketingResponse: {
+            /** Format: int64 */
+            event_id: number;
+            /** Format: int32 */
+            price_cents: number;
+            /** @description "cad" or "usd" for paid tickets; null for free ones. */
+            currency: string | null;
+            /** Format: int32 */
+            capacity: number | null;
+            paused: boolean;
+            /** @description Some date is open and the event takes tickets right now. */
+            available: boolean;
+            /**
+             * Format: int32
+             * @description The most tickets one person gets at a time: one when they are free.
+             */
+            maximum_per_order: number;
+            dates: components["schemas"]["TicketDateAvailability"][];
+        };
+        /** @description A club turning tickets on for its event, or changing them. */
+        EventTicketingUpdate: {
+            /**
+             * Format: int32
+             * @description Zero for free tickets.
+             */
+            price_cents: number;
+            /**
+             * Format: int32
+             * @description Tickets per date; null for no limit.
+             */
+            capacity?: number | null;
+            paused: boolean;
+        };
         /** EventUpdate */
         EventUpdate: {
             /**
@@ -3577,6 +4019,10 @@ export interface components {
             ig_handle?: string | null;
             /** Cancelled */
             cancelled?: boolean | null;
+        };
+        FreeTicketCreate: {
+            /** Format: uuid */
+            event_date_id: string;
         };
         /** GoingEventSelection */
         GoingEventSelection: {
@@ -4323,6 +4769,150 @@ export interface components {
             /** @enum {string} */
             status: "approved" | "rejected";
         };
+        /** @description A one-time Stripe page the browser opens: onboarding or the Express dashboard. */
+        StripeRedirectResponse: {
+            url: string;
+        };
+        /** @description One ticket on a club's door list. */
+        TicketAttendee: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            status: components["schemas"]["TicketStatus"];
+            /** Format: uuid */
+            event_date_id: string;
+            holder_name: string;
+            holder_email: string;
+            /**
+             * Format: date-time
+             * @description When the ticket was taken or paid for.
+             */
+            issued_at: string;
+            /** Format: date-time */
+            checked_in_at: string | null;
+            /** Format: date-time */
+            refunded_at: string | null;
+            /**
+             * Format: int32
+             * @description What the holder paid; zero for a free ticket.
+             */
+            amount_cents: number;
+            /** Format: date-time */
+            refund_requested_at: string | null;
+            refund_request_note: string | null;
+            /** Format: date-time */
+            refund_declined_at: string | null;
+        };
+        TicketCheckInResponse: {
+            result: components["schemas"]["CheckInResult"];
+            attendee: components["schemas"]["TicketAttendee"] | null;
+        };
+        TicketCheckInUpdate: {
+            checked_in: boolean;
+        };
+        TicketCheckoutCreate: {
+            /** Format: uuid */
+            event_date_id: string;
+            /** Format: int32 */
+            quantity: number;
+        };
+        TicketCheckoutResponse: {
+            /** Format: uuid */
+            order_id: string;
+            checkout_url: string;
+        };
+        /** @description One date of an event with tickets, as anyone viewing the event sees it. */
+        TicketDateAvailability: {
+            /** Format: uuid */
+            event_date_id: string;
+            /** Format: date-time */
+            dtstart_utc: string;
+            /** Format: date-time */
+            dtend_utc: string | null;
+            /**
+             * Format: int64
+             * @description Null when the event has no capacity limit.
+             */
+            remaining: number | null;
+            /** @description Someone could take or buy a ticket for this date right now. */
+            open: boolean;
+        };
+        TicketDateCounts: {
+            /** Format: uuid */
+            event_date_id: string;
+            /** Format: date-time */
+            dtstart_utc: string;
+            /** Format: int64 */
+            issued: number;
+            /** Format: int64 */
+            checked_in: number;
+            /** Format: int64 */
+            remaining: number | null;
+        };
+        /** @description A buyer's own checkout, polled after Stripe sends them back. */
+        TicketOrderResponse: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["TicketOrderStatus"];
+            /** Format: int64 */
+            event_id: number;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: int32 */
+            unit_amount_cents: number;
+            currency: string;
+            tickets: components["schemas"]["TicketResponse"][];
+        };
+        /** @enum {string} */
+        TicketOrderStatus: "pending" | "paid" | "expired" | "failed";
+        /** @description A holder asking the club for their money back. */
+        TicketRefundRequestCreate: {
+            note?: string | null;
+        };
+        TicketRefundsResponse: {
+            /** Format: int64 */
+            refunded: number;
+        };
+        /** @description One admission as its holder, or a club member opening its link, sees it. */
+        TicketResponse: {
+            code: string;
+            status: components["schemas"]["TicketStatus"];
+            /** @description Bought through Stripe; false for a free ticket. */
+            paid: boolean;
+            /** Format: date-time */
+            checked_in_at: string | null;
+            /** Format: int64 */
+            event_id: number;
+            event_title: string;
+            /** Format: uuid */
+            event_date_id: string;
+            /** Format: date-time */
+            dtstart_utc: string;
+            /** Format: date-time */
+            dtend_utc: string | null;
+            location: string | null;
+            /** Format: int64 */
+            club_id: number | null;
+            club_name: string | null;
+            school: string | null;
+            image_url: string | null;
+            holder_name: string;
+            /** @description The viewer is on the club's team and can admit this ticket. */
+            can_check_in: boolean;
+            /** Format: date-time */
+            refund_requested_at: string | null;
+            /** Format: date-time */
+            refund_declined_at: string | null;
+            /** @description The viewer bought this ticket and can still ask the club for a refund. */
+            can_request_refund: boolean;
+            /** @description The viewer holds this free ticket and can still give it back. */
+            can_return: boolean;
+        };
+        /**
+         * @description A ticket's state: a refunded ticket no longer admits anyone.
+         * @enum {string}
+         */
+        TicketStatus: "valid" | "refunded";
         TokenResponse: {
             access_token: string;
             /** @default bearer */
@@ -6275,6 +6865,623 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_event_ticketing_events__event_id__ticketing_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventTicketingResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    configure_event_ticketing_events__event_id__ticketing_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventTicketingUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventTicketingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_event_ticketing_events__event_id__ticketing_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    take_free_ticket_events__event_id__ticketing_tickets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FreeTicketCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_ticket_checkout_events__event_id__ticketing_checkout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketCheckoutCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketCheckoutResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ticket_desk_events__event_id__ticketing_desk_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventTicketDeskResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_ticket_check_in_events__event_id__ticketing_check_ins__code__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketCheckInUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketCheckInResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refund_ticket_events__event_id__ticketing_tickets__ticket_id__refund_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+                ticket_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketAttendee"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decline_ticket_refund_request_events__event_id__ticketing_tickets__ticket_id__refund_request_decline_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+                ticket_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketAttendee"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refund_remaining_tickets_events__event_id__ticketing_refunds_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketRefundsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_my_tickets_tickets_mine_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketResponse"][];
+                };
+            };
+        };
+    };
+    get_my_ticket_order_tickets_orders__order_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                order_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketOrderResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ticket_tickets__code__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    return_ticket_tickets__code__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_ticket_refund_tickets__code__refund_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketRefundRequestCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_club_payouts_clubs__club_id__payouts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubPayoutStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_club_payout_onboarding_clubs__club_id__payouts_onboarding_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StripeRedirectResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_club_payout_dashboard_clubs__club_id__payouts_dashboard_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StripeRedirectResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_club_ticket_sales_clubs__club_id__ticket_sales_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubEventTicketSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    receive_stripe_event_webhooks_stripe_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
                 };
             };
         };

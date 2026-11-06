@@ -1,5 +1,7 @@
-import { Check, Sparkles } from "lucide-react";
+import NextLink from "next/link";
+import { Check, Sparkles, Ticket } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { clubPanelEventTicketsPath } from "@/shared/constants/routes";
 import { Button } from "@/shared/ui/button";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
@@ -11,12 +13,15 @@ interface EventSuccessScreenProps {
   onClose: () => void;
   isEditMode: boolean;
   isSubmissionOnly: boolean;
+  /** The published event, so its club can turn tickets on for it straight away. */
+  createdEventId: number | null;
 }
 
 export function EventSuccessScreen({
   onClose,
   isEditMode,
   isSubmissionOnly,
+  createdEventId,
 }: EventSuccessScreenProps) {
   const { t, i18n } = useTranslation();
   const { formData, selectedClubName, previewEvent } = useEventFormContext();
@@ -86,6 +91,14 @@ export function EventSuccessScreen({
             <Button variant="outline" onMouseDown={handleDone} className="flex-1">
               {t("common.done")}
             </Button>
+            {createdEventId != null && formData.club_id != null && !isEditMode ? (
+              <Button asChild className="flex-1">
+                <NextLink href={clubPanelEventTicketsPath(createdEventId)} onClick={onClose}>
+                  <Ticket className="size-4" />
+                  {t("tickets.setUp")}
+                </NextLink>
+              </Button>
+            ) : null}
           </div>
       </div>
     </Section>

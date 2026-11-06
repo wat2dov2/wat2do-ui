@@ -377,7 +377,7 @@ fn event_spotlight(
     )
 }
 
-fn detail_row(label: &str, value: &str) -> String {
+pub(crate) fn detail_row(label: &str, value: &str) -> String {
     format!(
         concat!(
             r#"<div style="padding:12px 0;border-top:1px solid {border};">"#,
@@ -437,8 +437,17 @@ fn format_position_deadline(position: &PositionCard, tz: Tz) -> Option<String> {
 
 /// (local day, local time range) for one occurrence.
 fn local_occurrence(event: &Event, tz: Tz) -> (String, String) {
-    let (day, start) = format_event_date_time(event.dtstart_utc, tz);
-    match event.dtend_utc {
+    occurrence_times(event.dtstart_utc, event.dtend_utc, tz)
+}
+
+/// ("Fri, May 1", "11 AM - 2 PM") in the school's time zone.
+pub(crate) fn occurrence_times(
+    start: Option<DateTime<Utc>>,
+    end: Option<DateTime<Utc>>,
+    tz: Tz,
+) -> (String, String) {
+    let (day, start) = format_event_date_time(start, tz);
+    match end {
         Some(end) => (
             day,
             format!("{start} - {}", time_label(end.with_timezone(&tz))),

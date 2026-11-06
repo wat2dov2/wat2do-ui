@@ -3,7 +3,7 @@
     "backToPanel": "Back to club panel",
     "title": "Club Panel",
     "description": "Manage your club's events, positions, and members",
-    "eventsDesc": "Your club's upcoming and past events",
+    "eventsDesc": "Your club's events, and tickets for them",
     "positionsDesc": "Your club's open positions",
     "members": "Management Team",
     "membersDesc": "Manage club members",
@@ -45,6 +45,36 @@
     "addManagerFailed": "Failed to add manager or send invitation.",
     "invitationRevokedSuccess": "Invitation revoked successfully!",
     "revokeInvitationFailed": "Failed to revoke invitation.",
-    "loadManagementFailed": "Failed to load management details."
+    "loadManagementFailed": "Failed to load management details.",
+    "payoutsDesc": "Get paid for tickets through Stripe",
+    "payouts": {
+      "title": "Payouts",
+      "intro": "When your club sells tickets, the money goes straight to your club's bank account through Stripe.",
+      "fees": "Stripe keeps about 2.9% + 30¢ of each order. Your club gets the rest.",
+      "timing": "Stripe sends the money to your bank automatically, usually a few business days after each sale. The first payout can take 7 to 14 days.",
+      "currency": "Your tickets are priced in {{currency}}.",
+      "setUp": "Set up payouts",
+      "continueSetup": "Continue setup",
+      "openDashboard": "Open Stripe dashboard",
+      "failed": "Stripe couldn't be reached. Please try again.",
+      "states": {
+        "notConnected": {
+          "label": "Not set up",
+          "description": "About 5 minutes on Stripe's secure page: your club's bank account and one officer's ID."
+        },
+        "inProgress": {
+          "label": "Almost there",
+          "description": "Stripe needs a few more details before your club can take payments."
+        },
+        "payoutsPaused": {
+          "label": "Action needed",
+          "description": "Your club can sell tickets, but Stripe needs more details before it can send money to your bank."
+        },
+        "ready": {
+          "label": "Ready",
+          "description": "Your club can sell tickets. Payouts reach your bank account automatically."
+        }
+      }
+    }
   }
 }

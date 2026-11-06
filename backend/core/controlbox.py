@@ -1141,6 +1141,51 @@ class NotificationRetryControl(_ControlModel):
     max_reruns_per_run: int = Field(ge=1, le=10)
 
 
+TicketCountry = Literal["CA", "US"]
+TicketCurrency = Literal["cad", "usd"]
+
+
+class TicketingControl(_ControlModel):
+    """Club tickets: free QR tickets, and paid ones sold through each club's Stripe account.
+
+    The Rust API (``rust/src/api/tickets``) reads this file; Python only validates it.
+    """
+
+    # Off until the Stripe keys and the Connect webhook exist in an environment;
+    # free tickets need neither and are always available.
+    paid_tickets_enabled: bool
+    # A school's country picks both its clubs' Stripe account country and their ticket currency.
+    currency_by_country: dict[TicketCountry, TicketCurrency]
+    # Stripe refuses card charges under 50 cents.
+    minimum_price_cents: int = Field(ge=50, le=100_000)
+    maximum_price_cents: int = Field(gt=0, le=1_000_000)
+    # Capacity is per date of an event.
+    maximum_capacity: int = Field(gt=0, le=100_000)
+    maximum_tickets_per_order: int = Field(gt=0, le=20)
+    # Stripe Checkout sessions last 30 minutes to 24 hours.
+    checkout_minutes: int = Field(ge=30, le=1440)
+    # Seats stay held this long after a Checkout session ends, so a payment
+    # Stripe reports late never loses its seats to another buyer.
+    reservation_grace_minutes: int = Field(ge=0, le=120)
+    # Per person, across taking free tickets and starting checkouts.
+    rate_limit: RateLimitControl
+    # Every Stripe request names this API version, so an account default never changes our payloads.
+    stripe_api_version: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}\.[a-z]+$")
+    stripe_timeout_seconds: float = Field(gt=0, le=60)
+    # Retries of a request that failed in transit; every write carries an idempotency key.
+    stripe_network_retries: int = Field(ge=0, le=5)
+    # A webhook signed longer ago than this is refused, so a captured one cannot be replayed.
+    webhook_tolerance_seconds: int = Field(ge=60, le=3600)
+
+    @model_validator(mode="after")
+    def _prices_and_countries(self) -> TicketingControl:
+        if self.minimum_price_cents > self.maximum_price_cents:
+            raise ValueError("minimum_price_cents cannot exceed maximum_price_cents")
+        if set(self.currency_by_country) != {"CA", "US"}:
+            raise ValueError("currency_by_country must cover every school country")
+        return self
+
+
 class ControlBox(_ControlModel):
     api_server: ApiServerControl
     positions: PositionsControl
@@ -1183,6 +1228,7 @@ class ControlBox(_ControlModel):
     instagram_emulator: InstagramEmulatorControl
     workflow_failure_alerts: WorkflowFailureAlertsControl
     promoter_program: PromoterProgramControl
+    ticketing: TicketingControl
 
 
 def load_controlbox(directory: Path = _CONTROLBOX_DIRECTORY) -> ControlBox:

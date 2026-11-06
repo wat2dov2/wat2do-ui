@@ -52,6 +52,7 @@ def render_event_change_text(
     frontend_url: str,
     preferences_url: str,
     unsubscribe_url: str,
+    refund_url: str | None,
 ) -> str:
     lines = [subject, "", "You're going to this event. Here's what changed:", ""]
     for label, old, new in _describe_changes(diff, tz):
@@ -59,6 +60,8 @@ def render_event_change_text(
             lines.append(f"- {label}: {old} -> {new}")
         else:
             lines.append(f"- {label}: {new or f'{old} (removed)'}")
+    if refund_url:
+        lines.extend(["", f"{REFUND_OFFER} Request a refund: {refund_url}"])
     lines.extend(
         [
             "",
@@ -83,7 +86,15 @@ def render_event_change_html(
     frontend_url: str,
     preferences_url: str,
     unsubscribe_url: str,
+    refund_url: str | None,
 ) -> str:
+    refund = (
+        '<div style="height:24px;"></div>'
+        + email_paragraph(escape(REFUND_OFFER))
+        + email_button(refund_url, "Request a refund")
+        if refund_url
+        else ""
+    )
     return email_shell(
         heading=subject,
         content=_event_spotlight(
@@ -92,12 +103,17 @@ def render_event_change_html(
             image_src=image_src,
             frontend_url=frontend_url,
             rows=_describe_changes(diff, tz),
-        ),
+        )
+        + refund,
         footer_links=[
             ("Manage email preferences", preferences_url),
             ("Unsubscribe", unsubscribe_url),
         ],
     )
+
+
+# Shown to holders of paid tickets when an event's time or place changes.
+REFUND_OFFER = "Your ticket still works. If the change doesn't suit you, ask the club for a refund."
 
 
 def _event_spotlight(

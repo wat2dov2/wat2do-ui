@@ -7,6 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
+import { StatCard } from "@/shared/ui/stat-card";
+import { Ticket } from "lucide-react";
 import { ShowcaseBlock } from "./ShowcaseBlock";
 
 export function CardsSection() {
@@ -32,6 +34,11 @@ export function CardsSection() {
             <Button size="sm">View details</Button>
           </CardContent>
         </Card>
+      </ShowcaseBlock>
+      <ShowcaseBlock label="Stat card">
+        <div className="max-w-xs">
+          <StatCard icon={Ticket} label="Tickets" value="128" note="Updated just now" />
+        </div>
       </ShowcaseBlock>
     </Section>
   );

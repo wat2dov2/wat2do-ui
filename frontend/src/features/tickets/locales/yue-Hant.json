@@ -1,0 +1,193 @@
+{
+  "tickets": {
+    "title": "我嘅門票",
+    "description": "入場時喺門口出示門票嘅 QR code。",
+    "upcoming": "即將舉行",
+    "past": "已完結",
+    "manage": "門票",
+    "setUp": "設定門票",
+    "empty": {
+      "title": "未有門票",
+      "description": "攞到活動門票之後，門票就會喺呢度出現。",
+      "action": "搵活動"
+    },
+    "notFound": {
+      "title": "呢張門票唔存在",
+      "description": "檢查下條連結，或者去「我嘅門票」搵返你啲門票。"
+    },
+    "status": {
+      "valid": "有效",
+      "checkedIn": "已簽到",
+      "refunded": "已退款"
+    },
+    "card": {
+      "freeTitle": "免費門票",
+      "freeDescription": "而家就攞你張門票，入場時喺門口出示佢嘅 QR code 就得。",
+      "paidTitle": "門票",
+      "price": "每張 {{price}}",
+      "noFees": "冇手續費",
+      "left": "仲有 {{count}} 張",
+      "left_other": "仲有 {{count}} 張",
+      "quantity": "要幾多張",
+      "getFree": "攞免費門票",
+      "buy": "買門票 · {{total}}",
+      "continueToPayment": "繼續付款",
+      "payNote": "經 Stripe 安全付款。{{club}} 會收到你嘅名同電郵，用嚟簽到。",
+      "checkInNote": "{{club}} 會收到你嘅名同電郵，用嚟簽到。",
+      "youreIn": "攞到門票喇",
+      "showAtDoor": "入場時喺門口出示呢個 QR code。你嘅電郵入面都有。",
+      "openTicket": "睇門票",
+      "anotherDate": "攞另一個日期嘅門票",
+      "youHave": "你有 {{count}} 張門票",
+      "youHave_other": "你有 {{count}} 張門票",
+      "viewTickets": "睇我嘅門票",
+      "unavailable": {
+        "cancelled": "呢個活動已經取消咗。",
+        "paused": "門票暫時停止發放。",
+        "soldOut": "門票已經冇晒。",
+        "closed": "已經攞唔到門票。",
+        "notYet": "門票仲未開放。"
+      }
+    },
+    "pass": {
+      "when": "時間",
+      "where": "地點",
+      "holder": "持票人",
+      "code": "票碼",
+      "locationTba": "地點稍後公佈",
+      "qrLabel": "呢張門票嘅 QR code",
+      "showAtDoor": "入場時喺門口出示呢個 QR code。",
+      "refundedNote": "呢張門票已經退款，用唔到。",
+      "viewEvent": "睇活動"
+    },
+    "door": {
+      "checkIn": "簽到",
+      "undo": "取消簽到",
+      "teamNote": "你負責管理 {{club}}，所以可以幫呢張門票簽到。",
+      "checkedInAt": "已喺 {{time}} 簽到",
+      "results": {
+        "checked_in": "簽到咗，可以畀佢入場。",
+        "already_checked_in": "之前已經簽到咗",
+        "undone": "已取消簽到",
+        "refunded": "門票已退款，唔好畀佢入場。",
+        "not_for_this_event": "呢張門票係另一個活動嘅",
+        "not_found": "搵唔到對應呢個票碼嘅門票"
+      }
+    },
+    "return": {
+      "prompt": "去唔到？退返張門票",
+      "title": "退返你張門票？",
+      "description": "咁其他人就可以頂你個位。如果之後仲有剩，你可以再攞過一張新門票。",
+      "keep": "保留",
+      "confirm": "退返",
+      "done": "已經退返門票"
+    },
+    "order": {
+      "confirming": "確認緊你嘅付款",
+      "confirmingDescription": "通常幾秒就搞掂。你嘅門票亦會經電郵寄畀你。",
+      "paidTitle": "買到啦！",
+      "paidDescription": "你嘅 {{count}} 張門票喺下面，亦已經寄咗去你嘅電郵。",
+      "paidDescription_other": "你嘅 {{count}} 張門票喺下面，亦已經寄咗去你嘅電郵。",
+      "shareNote": "每張門票都有自己嘅 QR code。將每張門票嘅連結傳畀用佢嘅朋友就得。",
+      "failedTitle": "今次付款唔成功",
+      "failedDescription": "冇扣到你錢，啲門票亦已經放返出嚟。",
+      "notFound": "搵唔到呢張訂單",
+      "backToEvent": "返去活動",
+      "allTickets": "我所有嘅門票"
+    },
+    "desk": {
+      "title": "門票",
+      "notFound": "呢個活動已經唔存在",
+      "setupTitle": "呢個活動嘅門票",
+      "setupDescription": "每個人都會收到一張有 QR code 嘅門票，你喺門口掃一掃就可以幫佢哋簽到。",
+      "settingsTitle": "門票設定",
+      "settingsDescription": "改門票數量，或者暫停發放一陣。",
+      "free": "免費",
+      "freeHint": "每個日期每人一張。",
+      "paid": "收費",
+      "paidHint": "大家經 Stripe 畀錢，啲錢會轉去你嘅組織。",
+      "price": "門票價錢 ({{currency}})",
+      "priceLocked": "一有人攞咗門票，價錢就唔可以再改。",
+      "priceRange": "輸入 {{minimum}} 至 {{maximum}} 之間嘅價錢。",
+      "capacity": "每場門票數量",
+      "capacityPlaceholder": "冇上限",
+      "capacityRange": "輸入 1 至 {{maximum}} 之間嘅數字，或者留空代表冇上限。",
+      "pause": "暫停發放門票",
+      "pauseHint": "喺你關閉呢個設定之前，唔會再有新嘅人攞到門票。",
+      "fees": "Stripe 會喺每張訂單收取大約 2.9% + 30¢，其餘嘅錢歸你嘅組織。",
+      "goingNote": "所有已經話會去嘅人都會經電郵收到門票。",
+      "payoutsNeeded": "請先設定收款，等啲錢有地方去。",
+      "setUpPayouts": "設定收款",
+      "turnOnFree": "開啟免費門票",
+      "startSelling": "開始發售",
+      "freeStarted": "已經開啟免費門票",
+      "sellingStarted": "門票已經開賣",
+      "save": "儲存更改",
+      "saved": "已儲存門票設定",
+      "turnOff": "關閉門票",
+      "turnedOff": "呢個活動已經冇門票",
+      "openScanner": "掃描門票",
+      "attendees": "入場名單",
+      "attendeesEmpty": "暫時未有人攞門票",
+      "search": "用名、電郵或票碼搜尋",
+      "noMatches": "搵唔到符合搜尋嘅人",
+      "columns": {
+        "holder": "持票人",
+        "date": "日期",
+        "status": "狀態",
+        "actions": "操作"
+      },
+      "stats": {
+        "issued": "門票",
+        "checkedIn": "已簽到",
+        "remaining": "剩餘",
+        "revenue": "收入",
+        "unlimited": "冇上限"
+      },
+      "refund": "退款",
+      "refundTitle": "要退呢張門票嘅錢？",
+      "refundDescription": "{{name}} 會喺張卡收返 {{amount}}，仲會收到一封電郵。Stripe 唔會將手續費退返畀你嘅組織。",
+      "refundConfirm": "退款 {{amount}}",
+      "refundRequested": "已申請退款",
+      "decline": "拒絕",
+      "declineTitle": "要拒絕呢個退款申請？",
+      "declineDescription": "{{name}} 會收到電郵，通知佢你嘅組織拒絕咗退款。佢張門票仍然有效。",
+      "declineConfirm": "拒絕申請",
+      "declined": "已拒絕退款申請",
+      "cancelledTitle": "呢個活動已經取消咗",
+      "cancelledDescription": "所有收費門票都會自動退款。如果仲有門票有效，即係 Stripe 之前有一陣連唔到：喺度完成餘下嘅退款。",
+      "refundRemaining": "幫剩低嘅門票退款",
+      "refundedCount": "已經幫 {{count}} 張門票退款",
+      "refundedCount_other": "已經幫 {{count}} 張門票退款"
+    },
+    "refund": {
+      "prompt": "去唔到？",
+      "promptDescription": "可以向 {{club}} 申請退款。退唔退由佢哋決定，無論結果點樣都會有電郵通知你。",
+      "request": "申請退款",
+      "signIn": "登入後申請退款",
+      "title": "要向 {{club}} 申請退款？",
+      "description": "如果 {{club}} 同意，全數票價會退返去你張卡。無論結果點樣，你都會收到電郵。",
+      "noteLabel": "有冇嘢想話畀組織知？（選填）",
+      "notePlaceholder": "例如：改期之後我去唔到。",
+      "send": "發送申請",
+      "sent": "已向 {{club}} 發送退款申請",
+      "pending": "你喺 {{date}} 向 {{club}} 申請咗退款。佢哋決定之後會發電郵通知你。",
+      "declined": "{{club}} 喺 {{date}} 拒絕咗你嘅退款申請。你張門票仍然有效。",
+      "theClub": "主辦組織"
+    },
+    "scanner": {
+      "title": "掃描門票",
+      "description": "將鏡頭對住門票嘅 QR code。",
+      "admitted": "已簽到 {{checkedIn}} / {{issued}}",
+      "startCamera": "開鏡頭",
+      "stopCamera": "閂鏡頭",
+      "cameraLabel": "用嚟掃描門票嘅鏡頭畫面",
+      "cameraBlocked": "允許使用鏡頭先可以掃描門票，或者喺下面輸入票碼。",
+      "manual": "票碼",
+      "manualPlaceholder": "輸入 QR code 下面嘅票碼"
+    },
+    "errors": {
+      "generic": "出咗啲問題，請再試一次。"
+    }
+  }
+}

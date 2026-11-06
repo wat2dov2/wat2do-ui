@@ -1,0 +1,193 @@
+{
+  "tickets": {
+    "title": "My tickets",
+    "description": "Show a ticket's QR code at the door.",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "manage": "Tickets",
+    "setUp": "Set up tickets",
+    "empty": {
+      "title": "No tickets yet",
+      "description": "When you get a ticket to an event, it shows up here.",
+      "action": "Find events"
+    },
+    "notFound": {
+      "title": "This ticket doesn't exist",
+      "description": "Check the link, or find your tickets in My tickets."
+    },
+    "status": {
+      "valid": "Valid",
+      "checkedIn": "Checked in",
+      "refunded": "Refunded"
+    },
+    "card": {
+      "freeTitle": "Free tickets",
+      "freeDescription": "Get your ticket now, then show its QR code at the door.",
+      "paidTitle": "Tickets",
+      "price": "{{price}} per ticket",
+      "noFees": "No booking fees",
+      "left": "{{count}} left",
+      "left_other": "{{count}} left",
+      "quantity": "How many tickets",
+      "getFree": "Get free ticket",
+      "buy": "Get tickets · {{total}}",
+      "continueToPayment": "Continue to payment",
+      "payNote": "Secure payment through Stripe. {{club}} gets your name and email for check-in.",
+      "checkInNote": "{{club}} gets your name and email for check-in.",
+      "youreIn": "You're in",
+      "showAtDoor": "Show this QR code at the door. It's in your email too.",
+      "openTicket": "Open ticket",
+      "anotherDate": "Get a ticket for another date",
+      "youHave": "You have {{count}} ticket",
+      "youHave_other": "You have {{count}} tickets",
+      "viewTickets": "View my tickets",
+      "unavailable": {
+        "cancelled": "This event was cancelled.",
+        "paused": "Tickets are paused for now.",
+        "soldOut": "No tickets are left.",
+        "closed": "Tickets are no longer available.",
+        "notYet": "Tickets aren't available yet."
+      }
+    },
+    "pass": {
+      "when": "When",
+      "where": "Where",
+      "holder": "Ticket holder",
+      "code": "Code",
+      "locationTba": "Location to be announced",
+      "qrLabel": "QR code for this ticket",
+      "showAtDoor": "Show this QR code at the door.",
+      "refundedNote": "This ticket was refunded and can't be used.",
+      "viewEvent": "View event"
+    },
+    "door": {
+      "checkIn": "Check in",
+      "undo": "Undo check-in",
+      "teamNote": "You run {{club}}, so you can check this ticket in.",
+      "checkedInAt": "Checked in at {{time}}",
+      "results": {
+        "checked_in": "Checked in. Let them in.",
+        "already_checked_in": "Already checked in",
+        "undone": "Check-in undone",
+        "refunded": "Refunded ticket. Don't let them in.",
+        "not_for_this_event": "This ticket is for a different event",
+        "not_found": "No ticket matches that code"
+      }
+    },
+    "return": {
+      "prompt": "Can't make it? Give your ticket back",
+      "title": "Give your ticket back?",
+      "description": "Someone else can take your spot. If any are left later, you can get a new ticket.",
+      "keep": "Keep it",
+      "confirm": "Give it back",
+      "done": "Ticket given back"
+    },
+    "order": {
+      "confirming": "Confirming your payment",
+      "confirmingDescription": "This usually takes a few seconds. Your tickets are also on their way by email.",
+      "paidTitle": "You're in!",
+      "paidDescription": "You have {{count}} ticket. It's below and in your email.",
+      "paidDescription_other": "You have {{count}} tickets. They're below and in your email.",
+      "shareNote": "Each ticket has its own QR code. Send a ticket's link to the friend who's using it.",
+      "failedTitle": "This checkout didn't go through",
+      "failedDescription": "You weren't charged, and the tickets were released.",
+      "notFound": "We couldn't find this order",
+      "backToEvent": "Back to the event",
+      "allTickets": "All my tickets"
+    },
+    "desk": {
+      "title": "Tickets",
+      "notFound": "This event doesn't exist anymore",
+      "setupTitle": "Tickets for this event",
+      "setupDescription": "Everyone gets a ticket with a QR code, and you scan it at the door to check them in.",
+      "settingsTitle": "Ticket settings",
+      "settingsDescription": "Change how many tickets there are, or pause them for a while.",
+      "free": "Free",
+      "freeHint": "One ticket per person for each date.",
+      "paid": "Paid",
+      "paidHint": "People pay through Stripe, and the money goes to your club.",
+      "price": "Ticket price ({{currency}})",
+      "priceLocked": "The price can't change once someone has a ticket.",
+      "priceRange": "Enter a price between {{minimum}} and {{maximum}}.",
+      "capacity": "Tickets per date",
+      "capacityPlaceholder": "No limit",
+      "capacityRange": "Enter a number from 1 to {{maximum}}, or leave it empty for no limit.",
+      "pause": "Pause tickets",
+      "pauseHint": "Nobody new can get a ticket until you turn this off.",
+      "fees": "Stripe keeps about 2.9% + 30¢ of each order. Your club gets the rest.",
+      "goingNote": "Everyone who already said they're going gets a ticket by email.",
+      "payoutsNeeded": "Set up payouts first, so the money has somewhere to go.",
+      "setUpPayouts": "Set up payouts",
+      "turnOnFree": "Turn on free tickets",
+      "startSelling": "Start selling",
+      "freeStarted": "Free tickets are on",
+      "sellingStarted": "Tickets are on sale",
+      "save": "Save changes",
+      "saved": "Ticket settings saved",
+      "turnOff": "Turn tickets off",
+      "turnedOff": "This event no longer has tickets",
+      "openScanner": "Scan tickets",
+      "attendees": "Door list",
+      "attendeesEmpty": "Nobody has a ticket yet",
+      "search": "Search by name, email or code",
+      "noMatches": "Nobody matches that search",
+      "columns": {
+        "holder": "Ticket holder",
+        "date": "Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "stats": {
+        "issued": "Tickets",
+        "checkedIn": "Checked in",
+        "remaining": "Left",
+        "revenue": "Revenue",
+        "unlimited": "No limit"
+      },
+      "refund": "Refund",
+      "refundTitle": "Refund this ticket?",
+      "refundDescription": "{{name}} gets {{amount}} back on their card, plus an email. Stripe doesn't return its fee to your club.",
+      "refundConfirm": "Refund {{amount}}",
+      "refundRequested": "Refund requested",
+      "decline": "Decline",
+      "declineTitle": "Decline this refund request?",
+      "declineDescription": "{{name}} gets an email saying the club declined. Their ticket still works.",
+      "declineConfirm": "Decline request",
+      "declined": "Refund request declined",
+      "cancelledTitle": "This event was cancelled",
+      "cancelledDescription": "Every paid ticket is refunded automatically. If some are still valid, Stripe was briefly unreachable: finish the rest here.",
+      "refundRemaining": "Refund remaining tickets",
+      "refundedCount": "{{count}} ticket refunded",
+      "refundedCount_other": "{{count}} tickets refunded"
+    },
+    "refund": {
+      "prompt": "Can't make it?",
+      "promptDescription": "Ask {{club}} for a refund. They decide, and you'll get an email either way.",
+      "request": "Request a refund",
+      "signIn": "Sign in to request a refund",
+      "title": "Ask {{club}} for a refund?",
+      "description": "If {{club}} agrees, the full price goes back to your card. You'll get an email either way.",
+      "noteLabel": "Anything the club should know? (optional)",
+      "notePlaceholder": "For example: I can't make the new date.",
+      "send": "Send request",
+      "sent": "Refund request sent to {{club}}",
+      "pending": "On {{date}}, you asked {{club}} for a refund. You'll get an email when they decide.",
+      "declined": "On {{date}}, {{club}} declined your refund request. Your ticket still works.",
+      "theClub": "the club"
+    },
+    "scanner": {
+      "title": "Scan tickets",
+      "description": "Point the camera at a ticket's QR code.",
+      "admitted": "{{checkedIn}} of {{issued}} checked in",
+      "startCamera": "Start camera",
+      "stopCamera": "Stop camera",
+      "cameraLabel": "Camera view for scanning tickets",
+      "cameraBlocked": "Allow camera access to scan tickets, or type the code below.",
+      "manual": "Ticket code",
+      "manualPlaceholder": "Type the code under the QR code"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  }
+}
