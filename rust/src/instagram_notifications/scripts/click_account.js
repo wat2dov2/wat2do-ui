@@ -1,7 +1,7 @@
 (() => {
   const username = @@USERNAME@@;
   const switcherUsername = @@SWITCHER_USERNAME@@;
-  const heading = [...document.querySelectorAll('h1,[role="heading"]')]
+  const heading = [...document.querySelectorAll('h1,h2,[role="heading"]')]
     .find(element =>
       (element.innerText || element.textContent || "").trim() === "Switch accounts"
     );
