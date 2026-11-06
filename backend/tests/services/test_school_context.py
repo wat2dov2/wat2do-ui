@@ -105,7 +105,7 @@ def test_campus_season_prompt_is_school_specific_and_not_clock_gated(monkeypatch
     assert "Explicit homecoming theme required." in prompt
     assert "MIT school context" not in prompt
     assert "never a date alone" in prompt
-    assert "Employer recruiting belongs in employers_on_campus" in prompt
+    assert "belong in employers_on_campus, not a campus-season ID" in prompt
     assert "Classify announced future events" in prompt
     assert "Return campus_season_ids: []" in school_context.campus_season_prompt("mit")
     assert "Return campus_season_ids: []" in school_context.campus_season_prompt("unknown")

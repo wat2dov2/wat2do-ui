@@ -292,15 +292,13 @@ def test_extraction_prompt_has_strict_event_and_position_eligibility_gates(monke
     assert "a program reveal" in prompt
     assert "one object per logical event" in prompt
     assert extractor.EVENT_DISCOVERY_RULES in prompt
-    assert "Require event-specific evidence of an employment purpose" in prompt
-    assert "Student unions and university publishers do not qualify merely by organizing" in prompt
-    assert "Food or affordable produce distributions, Sexpectations, queer life" in prompt
-    assert "current vacancies" in prompt
-    assert "co-op or internship information" in prompt
+    assert "Networking opportunities: true when meeting people who can help" in prompt
+    assert "hackathons, designathons, datathons, case competitions" in prompt
+    assert "including ones led by upper-year students" in prompt
+    assert "language and gift exchanges, study-abroad" in prompt
     assert "link-in-bio or weekly roundup post, establishes nothing" in prompt
     assert "Classify this individual event, not other events in a shared caption" in prompt
-    assert "Organization booths, sponsorship, professional status" in prompt
-    assert "off-campus events do not qualify" in prompt
+    assert "Online events and events off campus qualify" in prompt
     assert (
         "Classify this individual event, not other events mentioned in a shared caption" in prompt
     )

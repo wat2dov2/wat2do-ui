@@ -121,8 +121,8 @@ def test_memorial_caption_uses_french_and_newfoundland_time(monkeypatch):
 def test_employer_carousel_caption_intro_identifies_the_topic_in_both_languages():
     assert (
         default_caption_intro("uwaterloo", "employers_on_campus")
-        == "Employers on campus at uwaterloo 👀"
+        == "Networking opportunities at uwaterloo 👀"
     )
     assert (
-        default_caption_intro("uqam", "employers_on_campus") == "Employeurs sur le campus à uqam 👀"
+        default_caption_intro("uqam", "employers_on_campus") == "Occasions de réseautage à uqam 👀"
     )

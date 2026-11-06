@@ -342,10 +342,10 @@ export function buildCoverSlideModel({
     dateLine: formatCoverDate(localDate, language),
     newEventCount,
     headline: batchKind === "employers_on_campus"
-      ? (language === "fr" ? "EMPLOYEURS SUR LE CAMPUS" : "EMPLOYERS ON CAMPUS")
+      ? (language === "fr" ? "OCCASIONS DE RÉSEAUTAGE" : "NETWORKING OPPORTUNITIES")
       : (language === "fr" ? "NOUVEAUX ÉVÉNEMENTS À DÉCOUVRIR" : "NEW EVENTS TO EXPLORE"),
     body: text(body, batchKind === "employers_on_campus"
-      ? (language === "fr" ? `${eventCount} occasions de rencontrer des employeurs` : `${eventCount} opportunities to meet employers`)
+      ? (language === "fr" ? `${eventCount} occasions de réseauter` : `${eventCount} chances to meet people who can help your career`)
       : defaultCoverBody(eventCount, language)),
     swipeLine: language === "fr" ? "Voir les événements" : "Swipe to see the events",
     siteLine: `${language === "fr" ? "Plus d’infos sur" : "More info on"} ${getSchoolPublicUrl(school)}`,
@@ -406,10 +406,10 @@ export function buildOutroSlideModel({
     doodleIcons: getClubCategoryDoodleDataUris(colors.secondary, 42),
     headline: cards.length
       ? employers
-        ? (language === "fr" ? "AUTRES EMPLOYEURS SUR LE CAMPUS" : "MORE EMPLOYERS ON CAMPUS")
+        ? (language === "fr" ? "AUTRES OCCASIONS DE RÉSEAUTAGE" : "MORE NETWORKING")
         : (language === "fr" ? "AUSSI AJOUTÉS AUJOURD’HUI" : "ALSO NEW TODAY")
       : employers
-        ? (language === "fr" ? "DÉCOUVREZ TOUS LES EMPLOYEURS" : "CHECK OUT EVERY EMPLOYER")
+        ? (language === "fr" ? "DÉCOUVREZ TOUTES LES OCCASIONS" : "CHECK OUT EVERY ONE")
         : (language === "fr" ? "DÉCOUVREZ TOUS LES ÉVÉNEMENTS" : "CHECK OUT EVERY EVENT"),
     cards,
     hiddenCount,

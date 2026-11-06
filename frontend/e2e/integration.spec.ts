@@ -3852,7 +3852,7 @@ test.describe("Events Page", () => {
     await page.goto(BASE);
     const cards = page.locator("article[data-event-id]");
     const filters = page.getByTestId("event-quick-filter-scroll");
-    const employers = filters.getByRole("button", { name: "Employers on campus", exact: true });
+    const employers = filters.getByRole("button", { name: "Networking opportunities", exact: true });
     const food = filters.getByRole("button", { name: "Free food", exact: true });
     const varsity = filters.getByRole("button", { name: "Varsity games", exact: true });
     await expect(cards).toHaveCount(8);
