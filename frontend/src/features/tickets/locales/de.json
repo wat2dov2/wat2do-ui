@@ -72,6 +72,7 @@
         "already_checked_in": "Bereits eingelassen",
         "undone": "Einlass rückgängig gemacht",
         "refunded": "Erstattetes Ticket. Nicht einlassen.",
+        "wrong_date": "Dieses Ticket gilt für einen anderen Termin",
         "not_for_this_event": "Dieses Ticket gilt für eine andere Veranstaltung",
         "not_found": "Kein Ticket passt zu diesem Code"
       }

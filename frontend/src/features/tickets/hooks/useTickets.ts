@@ -18,7 +18,11 @@ import {
   stopEventTicketing,
   takeFreeTicket,
 } from "@/features/tickets/api/tickets.api";
-import type { ApiEventTicketingUpdate, ApiTicketOrderResponse } from "@/shared/generated";
+import type {
+  ApiEventTicketingUpdate,
+  ApiTicketCheckInResponse,
+  ApiTicketOrderResponse,
+} from "@/shared/generated";
 import { toast } from "@/shared/hooks/use-toast";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
@@ -157,13 +161,32 @@ export function useTicketingSettings(eventId: number) {
   return { save, stop };
 }
 
-export function useTicketCheckIn(eventId: number) {
+// What the door turns away; every other result admitted a ticket or undid an admission.
+const TURNED_AWAY: ReadonlySet<ApiTicketCheckInResponse["result"]> = new Set([
+  "refunded",
+  "wrong_date",
+  "not_for_this_event",
+  "not_found",
+]);
+
+/**
+ * Check a ticket in, or undo it. A code the door turns away (another date, a
+ * refunded ticket) shows as a toast, unless the screen shows every result
+ * itself, as the door scanner does.
+ */
+export function useTicketCheckIn(eventId: number, { showsResults = false } = {}) {
+  const { t } = useTranslation();
   const invalidate = useInvalidateEventTickets(eventId);
   const showError = useErrorToast();
   return useMutation({
     mutationFn: ({ code, checkedIn }: { code: string; checkedIn: boolean }) =>
       setTicketCheckIn(eventId, code, checkedIn),
-    onSuccess: invalidate,
+    onSuccess: ({ result }) => {
+      if (!showsResults && TURNED_AWAY.has(result)) {
+        toast({ description: t(`tickets.door.results.${result}`), variant: "destructive" });
+      }
+      return invalidate();
+    },
     onError: showError,
   });
 }

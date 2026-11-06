@@ -94,6 +94,8 @@ pub async fn authorize_club(db: &PgPool, club_id: PyInt, user: &User) -> Result<
 }
 
 /// `_get_event_or_404_authorized`: its creator, an admin, or its club's team.
+/// An event with tickets answers only to its club's current team (or an
+/// admin): its creator may since have left the club.
 pub async fn authorized_event(
     db: &PgPool,
     event_id: PyInt,
@@ -102,8 +104,15 @@ pub async fn authorized_event(
     let event = store::event_by_id(db, int4(event_id)?)
         .await?
         .ok_or_else(|| ApiError::not_found(EVENT_NOT_FOUND))?;
+    if user.is_admin() {
+        return Ok(event);
+    }
     let is_creator = event.created_by.is_some_and(|creator| creator == user.id);
-    if is_creator || user.is_admin() {
+    if is_creator
+        && crate::api::tickets::store::ticketing(db, event.id)
+            .await?
+            .is_none()
+    {
         return Ok(event);
     }
     let Some(club_id) = event.club_id else {

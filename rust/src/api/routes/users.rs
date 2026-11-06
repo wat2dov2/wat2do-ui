@@ -770,6 +770,14 @@ pub async fn delete_user(
     // The account's sessions end with it (`delete_user` then `auth.revoke_sessions`),
     // in one transaction so a failed revocation leaves the account in place.
     let mut transaction = state.db.begin().await?;
+    // Checkouts that never became tickets keep nothing worth the account.
+    sqlx::query(
+        "DELETE FROM public.ticket_orders WHERE buyer_user_id = $1 AND status <> 'paid' \
+         AND NOT (status = 'pending' AND reserved_until > now())",
+    )
+    .bind(id)
+    .execute(&mut *transaction)
+    .await?;
     let deleted: Vec<String> =
         sqlx::query_scalar("DELETE FROM public.users WHERE id = $1 RETURNING auth_id")
             .bind(id)
@@ -786,16 +794,17 @@ pub async fn delete_user(
 }
 
 /// Whether the user has payouts, promoter posters, payout reviews they made,
-/// or ticket orders they paid for.
+/// or ticket orders they paid for or are paying for now.
 const USER_RECORDS_SQL: &str = "SELECT \
      EXISTS (SELECT 1 FROM public.poster_payouts WHERE user_id = $1), \
      EXISTS (SELECT 1 FROM public.qr_codes WHERE created_by = $1 AND program = 'promoter'), \
      EXISTS (SELECT 1 FROM public.poster_payout_reviews WHERE reviewed_by = $1), \
-     EXISTS (SELECT 1 FROM public.ticket_orders WHERE buyer_user_id = $1)";
+     EXISTS (SELECT 1 FROM public.ticket_orders WHERE buyer_user_id = $1 \
+             AND (status = 'paid' OR (status = 'pending' AND reserved_until > now())))";
 
 /// Financial and promoter records keep their user: refuse to delete it, in
 /// Python's order (payouts, promoter posters, payout reviews), then ticket
-/// orders. Free tickets go with their holder.
+/// orders. Free tickets and checkouts that never became tickets go with it.
 fn delete_refusal(
     (payouts, posters, reviews, orders): (bool, bool, bool, bool),
 ) -> Option<&'static str> {
@@ -945,6 +954,11 @@ mod tests {
         );
         assert!(USER_RECORDS_SQL.contains("poster_payout_reviews WHERE reviewed_by = $1"));
         assert!(USER_RECORDS_SQL.contains("poster_payouts WHERE user_id = $1"));
+        // Only paid orders and live checkouts keep the user.
+        assert!(
+            USER_RECORDS_SQL
+                .contains("(status = 'paid' OR (status = 'pending' AND reserved_until > now()))")
+        );
     }
 
     #[test]

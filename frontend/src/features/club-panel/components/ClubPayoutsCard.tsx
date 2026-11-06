@@ -1,8 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { usePayoutRedirects } from "@/features/club-panel/hooks/useClubPayouts";
+import { usePayoutOnboarding } from "@/features/club-panel/hooks/useClubPayouts";
 import type { ApiClubPayoutStatus } from "@/shared/generated";
 import { Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
 import {
   Card,
   CardAction,
@@ -31,13 +32,14 @@ const BADGE_VARIANT = {
   ready: "success",
 } as const;
 
+// The club's own Stripe account: its team signs in there with their own login.
+const STRIPE_DASHBOARD_URL = "https://dashboard.stripe.com/";
+
 /** Where a club stands with Stripe, and the one next step to take. */
 export function ClubPayoutsCard({ clubId, status }: { clubId: number; status: ApiClubPayoutStatus }) {
   const { t } = useTranslation();
-  const { onboarding, dashboard } = usePayoutRedirects(clubId);
+  const onboarding = usePayoutOnboarding(clubId);
   const state = payoutState(status);
-  // Both stay busy after success: the browser is already leaving for Stripe.
-  const openingDashboard = dashboard.isPending || dashboard.isSuccess;
 
   return (
     <Card data-slot="club-payouts-card">
@@ -63,6 +65,7 @@ export function ClubPayoutsCard({ clubId, status }: { clubId: number; status: Ap
           {state === "ready" ? null : (
             <LoadingButton
               type="button"
+              // Busy after success too: the browser is already leaving for Stripe.
               isLoading={onboarding.isPending || onboarding.isSuccess}
               onClick={() => onboarding.mutate()}
             >
@@ -72,15 +75,12 @@ export function ClubPayoutsCard({ clubId, status }: { clubId: number; status: Ap
             </LoadingButton>
           )}
           {status.details_submitted ? (
-            <LoadingButton
-              type="button"
-              variant={state === "ready" ? "outline" : "ghost"}
-              isLoading={openingDashboard}
-              onClick={() => dashboard.mutate()}
-            >
-              <ExternalLink className="size-4" />
-              {t("clubPanel.payouts.openDashboard")}
-            </LoadingButton>
+            <Button variant={state === "ready" ? "outline" : "ghost"} asChild>
+              <a href={STRIPE_DASHBOARD_URL} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="size-4" />
+                {t("clubPanel.payouts.openDashboard")}
+              </a>
+            </Button>
           ) : null}
         </Stack>
       </CardFooter>

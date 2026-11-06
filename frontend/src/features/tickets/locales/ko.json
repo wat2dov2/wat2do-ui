@@ -70,6 +70,7 @@
         "already_checked_in": "이미 체크인된 티켓이에요",
         "undone": "체크인을 취소했어요",
         "refunded": "환불된 티켓이에요. 입장시키지 마세요.",
+        "wrong_date": "다른 날짜의 티켓이에요",
         "not_for_this_event": "다른 이벤트의 티켓이에요",
         "not_found": "이 코드와 일치하는 티켓이 없어요"
       }

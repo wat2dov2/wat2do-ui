@@ -72,6 +72,7 @@
         "already_checked_in": "Naka-check in na dati",
         "undone": "Na-undo ang check-in",
         "refunded": "Na-refund na ang tiket. Huwag papasukin.",
+        "wrong_date": "Para sa ibang petsa ang tiket na ito",
         "not_for_this_event": "Para sa ibang kaganapan ang tiket na ito",
         "not_found": "Walang tiket na tugma sa code na iyan"
       }

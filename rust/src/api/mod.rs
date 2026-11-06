@@ -146,7 +146,6 @@ fn rust_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(
             routes::clubs::payouts::start_club_payout_onboarding
         ))
-        .routes(routes!(routes::clubs::payouts::open_club_payout_dashboard))
         .routes(routes!(routes::clubs::payouts::list_club_ticket_sales))
         .routes(routes!(routes::stripe_webhook::receive_stripe_event))
         .routes(routes!(routes::interactions::record_interactions))

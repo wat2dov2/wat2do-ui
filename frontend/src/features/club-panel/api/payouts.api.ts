@@ -10,8 +10,3 @@ export function fetchClubPayouts(clubId: number): Promise<ApiClubPayoutStatus> {
 export function startPayoutOnboarding(clubId: number): Promise<ApiStripeRedirectResponse> {
   return api.post<ApiStripeRedirectResponse>(`/clubs/${clubId}/payouts/onboarding`);
 }
-
-/** A one-time login to the club's Stripe Express dashboard. */
-export function openPayoutDashboard(clubId: number): Promise<ApiStripeRedirectResponse> {
-  return api.post<ApiStripeRedirectResponse>(`/clubs/${clubId}/payouts/dashboard`);
-}

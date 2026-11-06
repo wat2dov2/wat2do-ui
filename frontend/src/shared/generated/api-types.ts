@@ -1140,26 +1140,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/clubs/{club_id}/payouts/dashboard": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Open Club Payout Dashboard
-         * @description A one-time login to the club's Stripe Express dashboard.
-         */
-        post: operations["open_club_payout_dashboard_clubs__club_id__payouts_dashboard_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/clubs/{club_id}/ticket-sales": {
         parameters: {
             query?: never;
@@ -3468,7 +3448,7 @@ export interface components {
          * @description What scanning or typing a code at the door did.
          * @enum {string}
          */
-        CheckInResult: "checked_in" | "already_checked_in" | "undone" | "refunded" | "not_for_this_event" | "not_found";
+        CheckInResult: "checked_in" | "already_checked_in" | "undone" | "refunded" | "wrong_date" | "not_for_this_event" | "not_found";
         ClubClaimCreate: {
             executive_role: string;
             proof_url?: string | null;
@@ -4769,7 +4749,7 @@ export interface components {
             /** @enum {string} */
             status: "approved" | "rejected";
         };
-        /** @description A one-time Stripe page the browser opens: onboarding or the Express dashboard. */
+        /** @description A one-time Stripe page the browser opens: the club's onboarding. */
         StripeRedirectResponse: {
             url: string;
         };
@@ -4896,7 +4876,11 @@ export interface components {
             club_name: string | null;
             school: string | null;
             image_url: string | null;
-            holder_name: string;
+            /**
+             * @description The holder's name as anyone with the code sees it ("Ada L."), never
+             *     anything from their email; `None` without a profile name.
+             */
+            holder_name: string | null;
             /** @description The viewer is on the club's team and can admit this ticket. */
             can_check_in: boolean;
             /** Format: date-time */
@@ -7374,37 +7358,6 @@ export interface operations {
         };
     };
     start_club_payout_onboarding_clubs__club_id__payouts_onboarding_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StripeRedirectResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    open_club_payout_dashboard_clubs__club_id__payouts_dashboard_post: {
         parameters: {
             query?: never;
             header?: never;

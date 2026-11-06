@@ -345,6 +345,10 @@ pub struct Ticketing {
     pub maximum_tickets_per_order: i32,
     pub checkout_minutes: i64,
     pub reservation_grace_minutes: i64,
+    /// The door admits a ticket from this long before its date starts until
+    /// this long after it ends.
+    pub check_in_opens_hours_before: i64,
+    pub check_in_closes_hours_after: i64,
     /// Per person, across taking free tickets and starting checkouts.
     pub rate_limit: RateLimit,
     pub stripe_api_version: String,

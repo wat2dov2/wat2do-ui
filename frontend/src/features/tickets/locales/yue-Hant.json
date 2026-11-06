@@ -70,6 +70,7 @@
         "already_checked_in": "之前已經簽到咗",
         "undone": "已取消簽到",
         "refunded": "門票已退款，唔好畀佢入場。",
+        "wrong_date": "呢張門票係另一日嘅",
         "not_for_this_event": "呢張門票係另一個活動嘅",
         "not_found": "搵唔到對應呢個票碼嘅門票"
       }

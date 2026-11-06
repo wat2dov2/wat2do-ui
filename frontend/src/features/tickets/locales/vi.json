@@ -70,6 +70,7 @@
         "already_checked_in": "Vé này đã check-in rồi",
         "undone": "Đã hủy check-in",
         "refunded": "Vé đã hoàn tiền. Không cho vào.",
+        "wrong_date": "Vé này dành cho ngày khác",
         "not_for_this_event": "Vé này dành cho sự kiện khác",
         "not_found": "Không có vé nào khớp với mã này"
       }

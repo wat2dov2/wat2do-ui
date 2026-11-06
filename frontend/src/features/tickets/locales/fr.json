@@ -74,6 +74,7 @@
         "already_checked_in": "Entrée déjà validée",
         "undone": "Validation annulée",
         "refunded": "Billet remboursé. Ne pas laisser entrer.",
+        "wrong_date": "Ce billet est pour une autre date",
         "not_for_this_event": "Ce billet est pour un autre événement",
         "not_found": "Aucun billet ne correspond à ce code"
       }

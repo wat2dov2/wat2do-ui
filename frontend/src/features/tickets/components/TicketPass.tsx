@@ -32,7 +32,8 @@ export function TicketPass({ ticket, children }: TicketPassProps) {
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
   const when = formatOccurrence(ticket, getSchoolTimezone(ticket.school), i18n.language);
-  const details: Array<[string, string]> = [
+  // A holder without a profile name gets no row: the pass never shows anything from their email.
+  const details: Array<[string, string | null]> = [
     [t("tickets.pass.when"), when],
     [t("tickets.pass.where"), ticket.location ?? t("tickets.pass.locationTba")],
     [t("tickets.pass.holder"), ticket.holder_name],
@@ -62,7 +63,9 @@ export function TicketPass({ ticket, children }: TicketPassProps) {
           )}
           {children}
           <Stack gap={1}>
-            {details.map(([label, value]) => (
+            {details
+              .filter(([, value]) => value)
+              .map(([label, value]) => (
               <Item key={label} size="sm" variant="muted">
                 <ItemContent>
                   <ItemDescription>{label}</ItemDescription>

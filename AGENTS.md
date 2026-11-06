@@ -205,7 +205,7 @@ Read-only production checks must `SET default_transaction_read_only = on`, a 10 
 ### Club tickets and money
 
 Clubs give out free tickets and sell paid ones to their events; both are the same tickets at the door (`rust/src/api/tickets`).
-Paid tickets go through each club's own Stripe Connect Express account: every charge is a direct charge on the club's account, so ticket money never sits with wat2do.
+Paid tickets go through each club's own Stripe Connect Standard account, which the club signs in to itself: every charge is a direct charge on the club's account, so ticket money never sits with wat2do, and the club pays Stripe's fees and carries its refunds and disputes.
 `rust/src/api/tickets/stripe.rs` is the only code that calls Stripe, and each call that touches money names the club's connected account.
 Never use live Stripe keys outside production, never log or store card details, and keep Stripe keys in `backend/.env` locally and the Mac's `~/wat2do-data/config/backend.env` in production.
 Webhooks are trusted only with a valid, recent Stripe signature, and every charge and refund carries an idempotency key so a retry can never charge or refund twice.

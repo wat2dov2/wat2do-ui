@@ -74,6 +74,7 @@
         "already_checked_in": "Ingresso già registrato",
         "undone": "Ingresso annullato",
         "refunded": "Biglietto rimborsato. Non far entrare.",
+        "wrong_date": "Questo biglietto è per un'altra data",
         "not_for_this_event": "Questo biglietto è per un altro evento",
         "not_found": "Nessun biglietto corrisponde a questo codice"
       }

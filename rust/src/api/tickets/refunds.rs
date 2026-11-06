@@ -14,6 +14,7 @@ use super::{codes, emails, holders, store};
 use crate::api::AppState;
 use crate::api::auth::User;
 use crate::api::errors::ApiError;
+use crate::api::events::model::Event;
 use crate::api::events::store::event_by_id;
 use crate::api::messages::{
     EVENT_NOT_FOUND, FREE_TICKET_NOT_REFUNDABLE, TICKET_ALREADY_REFUNDED, TICKET_ALREADY_USED,
@@ -51,7 +52,7 @@ pub async fn refund_ticket(
 ) -> Result<TicketAttendee, ApiError> {
     let event = managed_event(state, event_id, manager).await?;
     let (ticket, order) = paid_ticket(state, event_id, ticket_id).await?;
-    refund(
+    let refunded = refund(
         state,
         &order,
         &[ticket.id],
@@ -59,15 +60,17 @@ pub async fn refund_ticket(
         &format!("ticket-refund-{ticket_id}"),
     )
     .await?;
-    emails::send_refund_notice(
-        state.settings,
-        &event,
-        &order.buyer_email,
-        1,
-        i64::from(order.unit_amount_cents),
-        &order.currency,
-        false,
-    );
+    if refunded > 0 {
+        emails::send_refund_notice(
+            state.settings,
+            &event,
+            &order.buyer_email,
+            1,
+            i64::from(order.unit_amount_cents),
+            &order.currency,
+            false,
+        );
+    }
     let refunded = store::ticket_by_id(&state.db, ticket_id)
         .await?
         .ok_or_else(|| ApiError::not_found(TICKET_NOT_FOUND))?;
@@ -207,50 +210,66 @@ pub async fn refund_cancelled_event(
     let tickets = store::tickets_for_event(&state.db, event_id).await?;
     let mut refunded = 0;
     for order in store::paid_orders(&state.db, event_id).await? {
-        let valid: Vec<Uuid> = tickets
-            .iter()
-            .filter(|ticket| ticket.order_id == Some(order.id) && ticket.is_valid())
-            .map(|ticket| ticket.id)
-            .collect();
-        if valid.is_empty() {
-            continue;
-        }
-        // The same set of tickets always refunds under the same key.
-        let mut ids: Vec<String> = valid.iter().map(Uuid::to_string).collect();
-        ids.sort();
-        let digest = hex::encode(Sha256::digest(ids.join(",").as_bytes()));
-        let key = format!("order-refund-{}-{}", order.id, &digest[..16]);
-        if refund(state, &order, &valid, refunded_by, &key)
-            .await
-            .is_err()
-        {
-            tracing::error!(
-                "Could not refund order {} of cancelled event {event_id}",
+        match refund_cancelled_order(state, &event, &order, &tickets, refunded_by).await {
+            Ok(count) => refunded += count,
+            Err(error) => tracing::error!(
+                "Could not refund order {} of cancelled event {event_id}: {error:?}",
                 order.id
-            );
-            continue;
+            ),
         }
-        refunded += valid.len() as i64;
-        emails::send_refund_notice(
-            state.settings,
-            &event,
-            &order.buyer_email,
-            valid.len(),
-            i64::from(order.unit_amount_cents) * valid.len() as i64,
-            &order.currency,
-            true,
-        );
     }
     Ok(refunded)
 }
 
+/// Refund the order's valid tickets among `tickets` because its event was
+/// cancelled, and tell the buyer. The same tickets always refund under the
+/// same key, so Stripe refunds them once however often this runs (the
+/// cancellation's sweep, or the webhook of an order paid after it). Returns
+/// the tickets refunded.
+pub async fn refund_cancelled_order(
+    state: &AppState,
+    event: &Event,
+    order: &OrderRow,
+    tickets: &[TicketRow],
+    refunded_by: Option<Uuid>,
+) -> Result<i64, ApiError> {
+    let valid: Vec<Uuid> = tickets
+        .iter()
+        .filter(|ticket| ticket.order_id == Some(order.id) && ticket.is_valid())
+        .map(|ticket| ticket.id)
+        .collect();
+    if valid.is_empty() {
+        return Ok(0);
+    }
+    let mut ids: Vec<String> = valid.iter().map(Uuid::to_string).collect();
+    ids.sort();
+    let digest = hex::encode(Sha256::digest(ids.join(",").as_bytes()));
+    let key = format!("order-refund-{}-{}", order.id, &digest[..16]);
+    let refunded = refund(state, order, &valid, refunded_by, &key).await?;
+    if refunded > 0 {
+        emails::send_refund_notice(
+            state.settings,
+            event,
+            &order.buyer_email,
+            refunded as usize,
+            i64::from(order.unit_amount_cents) * refunded as i64,
+            &order.currency,
+            true,
+        );
+    }
+    Ok(refunded as i64)
+}
+
+/// Refund these tickets of one order on the club's account, then mark them
+/// refunded. Returns how many this call marked, so when two calls race to the
+/// same refund only one tells the buyer.
 async fn refund(
     state: &AppState,
     order: &OrderRow,
     ticket_ids: &[Uuid],
     refunded_by: Option<Uuid>,
     key: &str,
-) -> Result<(), ApiError> {
+) -> Result<u64, ApiError> {
     let payment_intent = order.stripe_payment_intent_id.as_deref().ok_or_else(|| {
         ApiError::Internal(anyhow::anyhow!("paid order {} has no payment", order.id))
     })?;
@@ -266,7 +285,7 @@ async fn refund(
             }),
         )
         .await?;
-    sqlx::query(
+    Ok(sqlx::query(
         "UPDATE public.tickets SET status = 'refunded', refunded_at = now(), refunded_by = $2, \
          stripe_refund_id = $3 WHERE id = ANY($1) AND status = 'valid'",
     )
@@ -274,6 +293,6 @@ async fn refund(
     .bind(refunded_by)
     .bind(&refund_id)
     .execute(&state.db)
-    .await?;
-    Ok(())
+    .await?
+    .rows_affected())
 }

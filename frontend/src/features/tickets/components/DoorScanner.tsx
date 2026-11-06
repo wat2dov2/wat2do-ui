@@ -25,7 +25,7 @@ type CameraState = "starting" | "scanning" | "stopped" | "blocked";
 /** A phone at the door: each QR code scanned checks its ticket in, with a glance at the result. */
 export function DoorScanner({ eventId }: { eventId: number }) {
   const { t, i18n } = useTranslation();
-  const checkIn = useTicketCheckIn(eventId);
+  const checkIn = useTicketCheckIn(eventId, { showsResults: true });
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastCode = useRef<{ code: string; at: number } | null>(null);

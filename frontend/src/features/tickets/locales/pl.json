@@ -76,6 +76,7 @@
         "already_checked_in": "Ta osoba już weszła",
         "undone": "Cofnięto wejście",
         "refunded": "Bilet zwrócony. Nie wpuszczaj.",
+        "wrong_date": "Ten bilet jest na inny termin",
         "not_for_this_event": "Ten bilet jest na inne wydarzenie",
         "not_found": "Żaden bilet nie pasuje do tego kodu"
       }

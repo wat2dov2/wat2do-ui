@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use chrono::Utc;
+use chrono::{DateTime, Duration, Utc};
 use sqlx::Row;
 use uuid::Uuid;
 
@@ -11,12 +11,14 @@ use super::model::{
     CheckInResult, ClubEventTicketSummary, EventTicketDeskResponse, TicketAttendee,
     TicketCheckInResponse, TicketDateCounts, TicketRow, TicketStatus,
 };
-use super::ticketing::{managed_event, view};
+use super::ticketing::{closes_at, managed_event, view};
 use super::{codes, store};
 use crate::api::AppState;
 use crate::api::auth::User;
 use crate::api::errors::ApiError;
+use crate::api::events::model::Event;
 use crate::api::messages::{TICKET_NOT_FOUND, TICKETS_NOT_AVAILABLE};
+use crate::controlbox::TICKETING;
 use crate::db::read_with_retry;
 
 /// One ticket on the door list: the holder's full name and email, so the
@@ -39,6 +41,32 @@ pub fn attendee(ticket: &TicketRow) -> TicketAttendee {
     }
 }
 
+/// The date the door admits tickets to at `now`: of the event's dates open at
+/// the door (from `check_in_opens_hours_before` their start until
+/// `check_in_closes_hours_after` their end), the one closest to `now`, so a
+/// ticket to a later session the same day still waits its turn.
+pub fn door_date(event: &Event, now: DateTime<Utc>) -> Option<Uuid> {
+    event
+        .occurrences
+        .iter()
+        .filter_map(|occurrence| {
+            let (start, end) = (occurrence.dtstart_utc, closes_at(occurrence));
+            let opens = start - Duration::hours(TICKETING.check_in_opens_hours_before);
+            let closes = end + Duration::hours(TICKETING.check_in_closes_hours_after);
+            if now < opens || now > closes {
+                return None;
+            }
+            let distance = if now < start {
+                start - now
+            } else {
+                (now - end).max(Duration::zero())
+            };
+            Some((distance, occurrence.id))
+        })
+        .min_by_key(|(distance, _)| *distance)
+        .map(|(_, id)| id)
+}
+
 /// Admit a scanned or typed code, or undo an admission. A second scan of the
 /// same ticket says when it was first admitted rather than admitting it twice.
 pub async fn set_check_in(
@@ -48,7 +76,7 @@ pub async fn set_check_in(
     checked_in: bool,
     manager: &User,
 ) -> Result<TicketCheckInResponse, ApiError> {
-    managed_event(state, event_id, manager).await?;
+    let event = managed_event(state, event_id, manager).await?;
     let Some(ticket) = store::ticket_by_code(&state.db, &codes::normalize(code)).await? else {
         return Ok(TicketCheckInResponse {
             result: CheckInResult::NotFound,
@@ -64,6 +92,12 @@ pub async fn set_check_in(
     if !ticket.is_valid() {
         return Ok(TicketCheckInResponse {
             result: CheckInResult::Refunded,
+            attendee: Some(attendee(&ticket)),
+        });
+    }
+    if checked_in && door_date(&event, Utc::now()) != Some(ticket.event_date_id) {
+        return Ok(TicketCheckInResponse {
+            result: CheckInResult::WrongDate,
             attendee: Some(attendee(&ticket)),
         });
     }
@@ -198,4 +232,36 @@ pub async fn club_summaries(
         })
         .collect::<Result<_, sqlx::Error>>()
         .map_err(ApiError::from)
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::TimeZone;
+
+    use super::*;
+    use crate::api::tickets::tests::event_with_dates;
+
+    #[test]
+    fn the_door_admits_the_date_closest_to_now() {
+        // Three-hour sessions at 13:00 and 18:00 one day, and 18:00 a week later.
+        let event = event_with_dates(
+            42,
+            &[(2026, 11, 20, 13), (2026, 11, 20, 18), (2026, 11, 27, 18)],
+        );
+        let ids: Vec<Uuid> = event.occurrences.iter().map(|date| date.id).collect();
+        let at = |day, hour, minute| {
+            Utc.with_ymd_and_hms(2026, 11, day, hour, minute, 0)
+                .unwrap()
+        };
+        assert_eq!(door_date(&event, at(20, 12, 0)), Some(ids[0]));
+        assert_eq!(door_date(&event, at(20, 15, 0)), Some(ids[0]));
+        // Between the sessions, the evening's ticket waits until it is the closer one.
+        assert_eq!(door_date(&event, at(20, 16, 30)), Some(ids[0]));
+        assert_eq!(door_date(&event, at(20, 17, 30)), Some(ids[1]));
+        assert_eq!(door_date(&event, at(20, 23, 0)), Some(ids[1]));
+        assert_eq!(door_date(&event, at(27, 17, 0)), Some(ids[2]));
+        // Nothing is open a week before, or long after the last session.
+        assert_eq!(door_date(&event, at(13, 18, 0)), None);
+        assert_eq!(door_date(&event, at(28, 12, 0)), None);
+    }
 }

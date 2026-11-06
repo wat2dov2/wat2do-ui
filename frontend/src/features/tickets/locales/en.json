@@ -70,6 +70,7 @@
         "already_checked_in": "Already checked in",
         "undone": "Check-in undone",
         "refunded": "Refunded ticket. Don't let them in.",
+        "wrong_date": "This ticket is for a different date",
         "not_for_this_event": "This ticket is for a different event",
         "not_found": "No ticket matches that code"
       }

@@ -94,6 +94,8 @@ pub const TICKET_CAPACITY_TOO_HIGH: &str = "That capacity is too high";
 pub const TICKET_PRICE_LOCKED: &str = "The price can't change once people have tickets";
 pub const TICKET_CAPACITY_BELOW_ISSUED: &str =
     "Capacity can't be lower than the tickets already taken for a date";
+pub const TICKET_CAPACITY_BELOW_GOING: &str =
+    "Capacity can't be lower than the people already going to a date";
 pub const TICKETS_ALREADY_TAKEN: &str =
     "People already have tickets for this event. Pause tickets instead.";
 pub const TICKET_REFUNDS_NEED_CANCELLATION: &str = "Cancel the event first to refund every ticket";
@@ -114,6 +116,7 @@ pub const FREE_TICKET_NOT_REFUNDABLE: &str = "A free ticket has nothing to refun
 pub const PAID_TICKET_NOT_RETURNABLE: &str =
     "A paid ticket can't be given back. Ask the club for a refund instead.";
 pub const USER_HAS_TICKET_ORDERS: &str = "Users who bought tickets cannot be deleted";
+pub const CLUB_SELLS_TICKETS: &str = "Clubs that sell tickets cannot be deleted";
 pub const PAYMENT_PROVIDER_UNAVAILABLE: &str =
     "Payments are unavailable right now. Please try again in a minute.";
 pub const STRIPE_SIGNATURE_INVALID: &str = "Invalid Stripe signature";

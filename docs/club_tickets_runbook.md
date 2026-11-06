@@ -6,9 +6,9 @@ The club scans it at the door with the scanner in its club panel, or with any ph
 
 Tickets are free or paid, and both work the same way at the door.
 Free tickets need nothing set up: a club turns them on for an event, and anyone signed in takes one in a tap.
-Paid tickets are sold through the club's own Stripe Connect Express account: every ticket is a direct charge on that account, so the money never passes through wat2do.
-Stripe pays the club, takes its fee from the club's payout, and takes refunds from the club's balance.
-wat2do takes no fee.
+Paid tickets are sold through the club's own Stripe account (a Connect Standard account the club owns and signs in to at dashboard.stripe.com): every ticket is a direct charge on that account, so the money never passes through wat2do.
+Stripe pays the club, charges its fees to the club, and takes refunds and disputes from the club's balance.
+wat2do takes no fee and pays no Connect fees.
 
 ## How it fits together
 
@@ -16,14 +16,18 @@ wat2do takes no fee.
   Every Stripe call that touches money names the club's connected account, and every write carries an idempotency key.
 - The routes are `/events/{event_id}/ticketing` (an event's tickets, the desk, the door and refunds), `/tickets` (tickets as their holders see them), `/clubs/{club_id}/payouts` and `/clubs/{club_id}/ticket-sales`, and `POST /webhooks/stripe`.
 - `backend/database/migrations/20261106010000_club_tickets.sql` holds the tables: `event_ticketing` (a price of zero is free), `ticket_orders` (one Stripe Checkout each), `tickets` and `club_payment_accounts`.
-- Every change to an event's tickets locks its `event_ticketing` row first, so two people can never both take the last seat.
+- Every change to an event's tickets locks the event's row, then its `event_ticketing` row, the order an event's edit takes them too, so two people can never both take the last seat and a cancellation is seen by every change after it.
 - A paid checkout holds its seats in Postgres while the buyer is on Stripe Checkout, and becomes tickets exactly once however often Stripe repeats its webhook.
 - Taking or buying a ticket marks the holder going, so reminders and change alerts reach them; ticket holders count toward Going but are never named on the public list.
-- Turning free tickets on hands a ticket, by email, to everyone already going to the event's upcoming dates.
+- Turning free tickets on hands a ticket, by email, to everyone already going to the event's upcoming dates, so a capacity below the people already going to a date is refused.
 - A free ticket's holder can give it back until the date ends; a paid ticket's holder asks the club for a refund instead, and everyone on the club's team gets an email.
 - Cancelling an event refunds every paid ticket in the background; the club's desk can finish any refund Stripe could not make at the time.
+  An order paid after the cancellation is refunded when its webhook arrives, and Stripe repeats that webhook until the refund goes through.
   An event people paid for can't be deleted, only cancelled, and a date with paid tickets can't be removed.
+- Only the club's current team (or an admin) edits, cancels or deletes an event with tickets, whoever first created it.
+- A club with a Stripe account or ticket orders can't be deleted, and neither can a person who bought tickets or is paying for some now.
 - The Instagram ingestion agent cannot change an event with tickets or its dates: a database trigger skips its writes.
+- A paid Checkout whose order is gone is only logged (`names unknown order`): that takes a webhook delayed past the order's hold while someone removed its date, event or buyer, so refund it on the club's account by hand.
 - `backend/controlbox/ticketing.json` holds the limits and `paid_tickets_enabled`, which ships off.
 
 ## Running the door
@@ -34,12 +38,13 @@ wat2do takes no fee.
   It starts the camera when it opens, buzzes once for a good ticket and three times for anything to look at, and takes typed codes when a phone won't scan.
 - A ticket's QR code opens `/tickets/<code>`; someone on the club's team who opens it sees a Check in button.
 - Scanning a ticket twice says when it was first checked in rather than admitting it twice.
+- The door admits a ticket only to its own date: from `check_in_opens_hours_before` the date starts until `check_in_closes_hours_after` it ends, and when two dates are open, the closer one.
+  A ticket to another date says so instead of checking in.
 
 ## Costs of paid tickets
 
-Stripe keeps about 2.9% + 30¢ of each card payment, deducted from the club's payout.
-Express accounts also cost the platform about $2 a month for each club that receives a payout that month, plus about 0.25% + 25¢ per payout.
-wat2do pays those Connect fees.
+Stripe keeps about 2.9% + 30¢ of each card payment, charged to the club's own account.
+Standard accounts cost the platform nothing: the club pays Stripe's fees and carries refunds and disputes itself.
 
 ## Test mode
 

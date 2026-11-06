@@ -53,6 +53,8 @@ pub enum CheckInResult {
     AlreadyCheckedIn,
     Undone,
     Refunded,
+    /// A ticket to another date of the event, which the door is not open for.
+    WrongDate,
     NotForThisEvent,
     NotFound,
 }
@@ -157,7 +159,10 @@ pub struct TicketResponse {
     pub school: Option<String>,
     #[schema(required = true)]
     pub image_url: Option<String>,
-    pub holder_name: String,
+    /// The holder's name as anyone with the code sees it ("Ada L."), never
+    /// anything from their email; `None` without a profile name.
+    #[schema(required = true)]
+    pub holder_name: Option<String>,
     /// The viewer is on the club's team and can admit this ticket.
     pub can_check_in: bool,
     #[serde(serialize_with = "json::option_datetime")]
@@ -300,7 +305,7 @@ pub struct ClubEventTicketSummary {
     pub refund_requests: i64,
 }
 
-/// A one-time Stripe page the browser opens: onboarding or the Express dashboard.
+/// A one-time Stripe page the browser opens: the club's onboarding.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct StripeRedirectResponse {
     pub url: String,

@@ -1,8 +1,9 @@
-//! Connecting a club's Stripe Express account, so the club can sell tickets.
+//! Connecting a club's Stripe account, so the club can sell tickets.
 //!
 //! Each club has at most one account, created the first time a member starts
 //! onboarding. The app never replaces it, so no member can redirect a club's
 //! payouts; only Stripe's own onboarding collects bank and identity details.
+//! It is a standard account: the club signs in to its own Stripe dashboard.
 
 use sqlx::PgPool;
 
@@ -133,18 +134,6 @@ pub async fn onboarding_url(
         .await
 }
 
-/// A one-time login to the club's Stripe Express dashboard.
-pub async fn dashboard_url(state: &AppState, club: &ClubResponse) -> Result<String, ApiError> {
-    require_paid_tickets(state.settings)?;
-    let account = store::payment_account(&state.db, club.id.into())
-        .await?
-        .filter(|account| account.details_submitted)
-        .ok_or_else(|| ApiError::validation(PAYOUTS_NOT_READY))?;
-    Stripe::new(state.settings)?
-        .dashboard_link(&account.stripe_account_id)
-        .await
-}
-
 /// Apply Stripe's latest view of an account, as `account.updated` reports it.
 pub async fn sync_account(db: &PgPool, account: &ConnectedAccount) -> Result<(), ApiError> {
     if store_account(db, account).await?.is_none() {
@@ -167,7 +156,7 @@ async fn connect_new_account(
     // Stripe's idempotency key is the club, so two members starting at once
     // share one account; the first row stored wins.
     let created = stripe
-        .create_express_account(
+        .create_club_account(
             club.id.into(),
             &club.club_name,
             &format!("{site}/clubs/{}", club.id),

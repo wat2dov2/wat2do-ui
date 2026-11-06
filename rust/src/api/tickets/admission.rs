@@ -12,8 +12,8 @@ use uuid::Uuid;
 
 use super::model::{OrderRow, TicketCheckoutResponse, TicketResponse, TicketingRow};
 use super::stripe::{ConnectedAccount, Stripe, WebhookEvent};
-use super::ticketing::refuse_unless_open;
-use super::{codes, emails, holders, payouts, store};
+use super::ticketing::{lock_for_change, refuse_unless_open};
+use super::{codes, emails, holders, payouts, refunds, store};
 use crate::api::AppState;
 use crate::api::auth::User;
 use crate::api::errors::ApiError;
@@ -57,7 +57,7 @@ pub async fn take_free(
     let (event, occurrence) = event_and_date(state, event_id, event_date_id).await?;
     let now = Utc::now();
     let mut transaction = state.db.begin().await?;
-    let row = store::lock_ticketing(&mut *transaction, event_id)
+    let row = lock_for_change(&mut transaction, event_id)
         .await?
         .filter(TicketingRow::is_free)
         .ok_or_else(|| ApiError::validation(TICKETS_NOT_AVAILABLE))?;
@@ -65,7 +65,7 @@ pub async fn take_free(
         drop(transaction);
         return holders::by_code(state, &code, Some(user)).await;
     }
-    refuse_unless_open(&event, &row, &occurrence, now)?;
+    refuse_unless_open(&row, &occurrence, now)?;
     if let Some(capacity) = row.capacity
         && store::seats_taken(&mut *transaction, event_date_id, now).await? >= i64::from(capacity)
     {
@@ -207,11 +207,11 @@ async fn reserve(
         .ok_or_else(|| ApiError::validation(TICKETS_NOT_AVAILABLE))?;
     let account = payouts::ready_account(&state.db, club_id).await?;
     let mut transaction = state.db.begin().await?;
-    let row = store::lock_ticketing(&mut *transaction, event.id)
+    let row = lock_for_change(&mut transaction, event.id)
         .await?
         .filter(|row| !row.is_free())
         .ok_or_else(|| ApiError::validation(TICKETS_NOT_AVAILABLE))?;
-    refuse_unless_open(event, &row, occurrence, now)?;
+    refuse_unless_open(&row, occurrence, now)?;
     if let Some(capacity) = row.capacity
         && store::seats_taken(&mut *transaction, occurrence.id, now).await? + i64::from(quantity)
             > i64::from(capacity)
@@ -325,9 +325,10 @@ pub async fn handle_webhook(state: &AppState, event: WebhookEvent) -> Result<(),
             };
             let session_id = session["id"].as_str().unwrap_or_default();
             let payment_intent = session["payment_intent"].as_str();
-            if fulfil(state, order_id, session_id, payment_intent).await? {
-                after_fulfilment(state, order_id).await?;
-            }
+            fulfil(state, order_id, session_id, payment_intent).await?;
+            // Every delivery finishes the order, so Stripe's retry finishes
+            // one that failed after its tickets were issued.
+            after_fulfilment(state, order_id).await?;
         }
         "checkout.session.expired" | "checkout.session.async_payment_failed" => {
             if let Some(order_id) = known_order(state, session).await? {
@@ -363,19 +364,19 @@ async fn known_order(state: &AppState, session: &Value) -> Result<Option<Uuid>, 
     Ok(Some(order_id))
 }
 
-/// Issue the order's tickets; true only for the delivery that issued them.
+/// Issue the order's tickets, once however often Stripe repeats the webhook.
 async fn fulfil(
     state: &AppState,
     order_id: Uuid,
     session_id: &str,
     payment_intent: Option<&str>,
-) -> Result<bool, ApiError> {
+) -> Result<(), ApiError> {
     let mut transaction = state.db.begin().await?;
     let order = store::lock_order(&mut *transaction, order_id)
         .await?
         .ok_or_else(|| ApiError::not_found(TICKET_ORDER_NOT_FOUND))?;
     if order.status == "paid" {
-        return Ok(false);
+        return Ok(());
     }
     if order
         .stripe_checkout_session_id
@@ -409,11 +410,37 @@ async fn fulfil(
     .execute(&mut *transaction)
     .await?;
     transaction.commit().await?;
-    Ok(true)
+    Ok(())
 }
 
-/// Mark the buyer going and send the receipt, once per order.
+/// Mark the buyer going and send their tickets, once per order. An order paid
+/// after its event was cancelled missed the cancellation's refunds, so it is
+/// refunded instead; until that refund goes through, the webhook fails and
+/// Stripe delivers it again.
 async fn after_fulfilment(state: &AppState, order_id: Uuid) -> Result<(), ApiError> {
+    let order = store::order(&state.db, order_id)
+        .await?
+        .ok_or_else(|| ApiError::not_found(TICKET_ORDER_NOT_FOUND))?;
+    let event_id = i64::from(order.event_id);
+    let Some(event) = event_by_id(&state.db, event_id).await? else {
+        tracing::error!("Paid order {order_id} has no event to confirm");
+        return Ok(());
+    };
+    let tickets = store::tickets_for_order(&state.db, order_id).await?;
+    if event.cancelled {
+        refunds::refund_cancelled_order(state, &event, &order, &tickets, None).await?;
+        return Ok(());
+    }
+    let Some(occurrence) = event
+        .occurrences
+        .iter()
+        .find(|occurrence| occurrence.id == order.event_date_id)
+        .cloned()
+    else {
+        tracing::error!("Paid order {order_id} has no date to confirm");
+        return Ok(());
+    };
+    // Claimed last, so a delivery that failed before here is redone in full.
     let claimed: Option<Uuid> = sqlx::query_scalar(
         "UPDATE public.ticket_orders SET confirmation_sent_at = now() \
          WHERE id = $1 AND confirmation_sent_at IS NULL RETURNING id",
@@ -424,29 +451,8 @@ async fn after_fulfilment(state: &AppState, order_id: Uuid) -> Result<(), ApiErr
     if claimed.is_none() {
         return Ok(());
     }
-    let Some(order) = store::order(&state.db, order_id).await? else {
-        return Ok(());
-    };
-    let event_id = i64::from(order.event_id);
     mark_going(state, order.buyer_user_id, event_id, order.event_date_id).await;
-    let Some(event) = event_by_id(&state.db, event_id).await? else {
-        tracing::error!("Paid order {order_id} has no event to confirm");
-        return Ok(());
-    };
-    let Some(occurrence) = event
-        .occurrences
-        .iter()
-        .find(|occurrence| occurrence.id == order.event_date_id)
-        .cloned()
-    else {
-        tracing::error!("Paid order {order_id} has no date to confirm");
-        return Ok(());
-    };
-    let codes = store::tickets_for_order(&state.db, order_id)
-        .await?
-        .into_iter()
-        .map(|ticket| ticket.code)
-        .collect();
+    let codes = tickets.into_iter().map(|ticket| ticket.code).collect();
     emails::send_tickets(
         state.db.clone(),
         state.settings,

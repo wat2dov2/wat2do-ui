@@ -74,6 +74,7 @@
         "already_checked_in": "Check-in já feito",
         "undone": "Check-in desfeito",
         "refunded": "Ingresso reembolsado. Não libere a entrada.",
+        "wrong_date": "Este ingresso é para outra data",
         "not_for_this_event": "Este ingresso é de outro evento",
         "not_found": "Nenhum ingresso corresponde a esse código"
       }

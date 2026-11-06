@@ -920,6 +920,7 @@ def test_ticketing_ships_with_paid_tickets_off() -> None:
         ({"currency_by_country": {"CA": "cad"}}, "every school country"),
         ({"minimum_price_cents": 10}, "greater than or equal to 50"),
         ({"checkout_minutes": 20}, "greater than or equal to 30"),
+        ({"check_in_opens_hours_before": -1}, "greater than or equal to 0"),
         ({"stripe_api_version": "latest"}, "String should match pattern"),
     ],
 )

@@ -1167,6 +1167,10 @@ class TicketingControl(_ControlModel):
     # Seats stay held this long after a Checkout session ends, so a payment
     # Stripe reports late never loses its seats to another buyer.
     reservation_grace_minutes: int = Field(ge=0, le=120)
+    # The door admits a ticket from this long before its date starts until this
+    # long after it ends, so a ticket to another date of a series waits its turn.
+    check_in_opens_hours_before: int = Field(ge=0, le=48)
+    check_in_closes_hours_after: int = Field(ge=0, le=48)
     # Per person, across taking free tickets and starting checkouts.
     rate_limit: RateLimitControl
     # Every Stripe request names this API version, so an account default never changes our payloads.

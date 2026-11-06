@@ -70,6 +70,7 @@
         "already_checked_in": "已经签到过了",
         "undone": "已撤销签到",
         "refunded": "门票已退款，请勿放行。",
+        "wrong_date": "这张门票属于其他日期",
         "not_for_this_event": "这张门票属于其他活动",
         "not_found": "没有与该票码匹配的门票"
       }

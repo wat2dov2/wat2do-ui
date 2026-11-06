@@ -22,8 +22,9 @@ use crate::api::auth::User;
 use crate::api::errors::ApiError;
 use crate::api::events::going;
 use crate::api::messages::{
-    EVENT_HAS_PAID_TICKETS, TICKET_ALREADY_USED, TICKET_CAPACITY_BELOW_ISSUED,
-    TICKETED_DATE_IN_USE, TICKETS_ALREADY_TAKEN, TICKETS_SOLD_OUT,
+    EVENT_HAS_PAID_TICKETS, TICKET_ALREADY_USED, TICKET_CAPACITY_BELOW_GOING,
+    TICKET_CAPACITY_BELOW_ISSUED, TICKETED_DATE_IN_USE, TICKETED_EVENT_CANCELLED,
+    TICKETS_ALREADY_TAKEN, TICKETS_SOLD_OUT,
 };
 use crate::settings::{Settings, test_settings};
 
@@ -77,6 +78,20 @@ async fn person(db: &PgPool, label: &str) -> User {
 /// A club whose team is `officer`, with an event on two dates a week apart:
 /// (event id, its date ids).
 async fn club_event(db: &PgPool, officer: &User) -> (i64, Vec<Uuid>) {
+    club_event_at(
+        db,
+        officer,
+        &[chrono::Duration::days(7), chrono::Duration::days(14)],
+    )
+    .await
+}
+
+/// `club_event` with three-hour dates starting `starts` from now.
+async fn club_event_at(
+    db: &PgPool,
+    officer: &User,
+    starts: &[chrono::Duration],
+) -> (i64, Vec<Uuid>) {
     let school: i32 = sqlx::query_scalar("SELECT id FROM public.schools WHERE slug = 'uwaterloo'")
         .fetch_one(db)
         .await
@@ -106,8 +121,8 @@ async fn club_event(db: &PgPool, officer: &User) -> (i64, Vec<Uuid>) {
     .await
     .unwrap();
     let mut dates = Vec::new();
-    for days in [7, 14] {
-        let start: DateTime<Utc> = Utc::now() + chrono::Duration::days(days);
+    for offset in starts {
+        let start: DateTime<Utc> = Utc::now() + *offset;
         let id: Uuid = sqlx::query_scalar(
             "INSERT INTO public.event_dates (event_id, dtstart_utc, dtend_utc) \
              VALUES ($1, $2, $3) RETURNING id",
@@ -264,6 +279,67 @@ async fn turning_free_tickets_on_hands_one_to_everyone_going() {
 }
 
 #[tokio::test]
+async fn free_tickets_go_on_only_with_room_for_everyone_going() {
+    let Some(db) = database() else { return };
+    let state = state(db.clone());
+    let officer = person(&db, "officer").await;
+    let (event, dates) = club_event(&db, &officer).await;
+    for name in ["early", "earlier"] {
+        let user = person(&db, name).await;
+        going::set_occurrences(&db, user.id, event, &dates[..1])
+            .await
+            .unwrap();
+    }
+    let refused = ticketing::configure(&state, event, free(Some(1)), &officer)
+        .await
+        .unwrap_err();
+    assert_eq!(detail(refused), TICKET_CAPACITY_BELOW_GOING);
+    assert!(store::ticketing(&db, event).await.unwrap().is_none());
+    ticketing::configure(&state, event, free(Some(2)), &officer)
+        .await
+        .unwrap();
+    let issued = store::valid_tickets_by_date(&db, event).await.unwrap();
+    assert_eq!(issued[&dates[0]], 2);
+}
+
+#[tokio::test]
+async fn a_cancelled_event_takes_no_tickets() {
+    let Some(db) = database() else { return };
+    let state = state(db.clone());
+    let officer = person(&db, "officer").await;
+    let (event, dates) = club_event(&db, &officer).await;
+    ticketing::configure(&state, event, free(None), &officer)
+        .await
+        .unwrap();
+    cancel(&db, event).await;
+    let guest = person(&db, "guest").await;
+    assert_eq!(
+        detail(
+            admission::take_free(&state, event, dates[0], &guest)
+                .await
+                .unwrap_err()
+        ),
+        TICKETED_EVENT_CANCELLED
+    );
+    assert_eq!(
+        detail(
+            ticketing::configure(&state, event, free(Some(5)), &officer)
+                .await
+                .unwrap_err()
+        ),
+        TICKETED_EVENT_CANCELLED
+    );
+}
+
+async fn cancel(db: &PgPool, event: i64) {
+    sqlx::query("UPDATE public.events SET cancelled = true WHERE id = $1")
+        .bind(event as i32)
+        .execute(db)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn capacity_never_drops_below_the_tickets_taken() {
     let Some(db) = database() else { return };
     let state = state(db.clone());
@@ -289,13 +365,22 @@ async fn a_ticket_is_admitted_once_and_only_at_its_own_event() {
     let Some(db) = database() else { return };
     let state = state(db.clone());
     let officer = person(&db, "officer").await;
-    let (event, dates) = club_event(&db, &officer).await;
+    // One date started an hour ago; the other is next week.
+    let (event, dates) = club_event_at(
+        &db,
+        &officer,
+        &[chrono::Duration::hours(-1), chrono::Duration::days(7)],
+    )
+    .await;
     let (other_event, _) = club_event(&db, &officer).await;
     ticketing::configure(&state, event, free(None), &officer)
         .await
         .unwrap();
     let guest = person(&db, "guest").await;
     let ticket = admission::take_free(&state, event, dates[0], &guest)
+        .await
+        .unwrap();
+    let next_week = admission::take_free(&state, event, dates[1], &guest)
         .await
         .unwrap();
     // Scanned as a link, from any phone camera.
@@ -319,6 +404,11 @@ async fn a_ticket_is_admitted_once_and_only_at_its_own_event() {
     assert_eq!(
         admit(other_event, ticket.code.clone()).await,
         CheckInResult::NotForThisEvent
+    );
+    // Next week's ticket waits for next week.
+    assert_eq!(
+        admit(event, next_week.code.clone()).await,
+        CheckInResult::WrongDate
     );
     assert_eq!(admit(event, "NOPE".into()).await, CheckInResult::NotFound);
     // A used ticket can't be given back.
@@ -382,6 +472,53 @@ async fn pending_order(
     (event, dates[0], order)
 }
 
+/// Stripe's word that Checkout session `session` of `order` was paid.
+fn paid(session: &str, order: Uuid) -> WebhookEvent {
+    WebhookEvent {
+        kind: "checkout.session.completed".into(),
+        object: json!({
+            "id": session,
+            "client_reference_id": order.to_string(),
+            "payment_status": "paid",
+            "payment_intent": "pi_test",
+        }),
+    }
+}
+
+#[tokio::test]
+async fn an_order_paid_after_its_event_was_cancelled_is_refunded_not_confirmed() {
+    let Some(db) = database() else { return };
+    let state = state(db.clone());
+    let officer = person(&db, "officer").await;
+    let buyer = person(&db, "buyer").await;
+    let session = format!("cs_test_{}", Uuid::new_v4().simple());
+    let (event, _, order) = pending_order(&db, &officer, &buyer, &session).await;
+    cancel(&db, event).await;
+    // The refund needs Stripe, which tests have no key for: the delivery
+    // fails, and Stripe sends it again until the refund goes through.
+    assert!(
+        admission::handle_webhook(&state, paid(&session, order))
+            .await
+            .is_err()
+    );
+    let confirmed: Option<DateTime<Utc>> =
+        sqlx::query_scalar("SELECT confirmation_sent_at FROM public.ticket_orders WHERE id = $1")
+            .bind(order)
+            .fetch_one(&db)
+            .await
+            .unwrap();
+    assert!(
+        confirmed.is_none(),
+        "no tickets are sent for a cancelled event"
+    );
+    assert!(
+        going::occurrence_ids(&db, buyer.id, event)
+            .await
+            .unwrap()
+            .is_empty()
+    );
+}
+
 #[tokio::test]
 async fn a_paid_checkout_becomes_tickets_exactly_once() {
     let Some(db) = database() else { return };
@@ -393,17 +530,12 @@ async fn a_paid_checkout_becomes_tickets_exactly_once() {
     // Two seats are held while the buyer is on Checkout.
     assert_eq!(store::seats_taken(&db, date, Utc::now()).await.unwrap(), 2);
 
-    let paid = || WebhookEvent {
-        kind: "checkout.session.completed".into(),
-        object: json!({
-            "id": session,
-            "client_reference_id": order.to_string(),
-            "payment_status": "paid",
-            "payment_intent": "pi_test",
-        }),
-    };
-    admission::handle_webhook(&state, paid()).await.unwrap();
-    admission::handle_webhook(&state, paid()).await.unwrap();
+    admission::handle_webhook(&state, paid(&session, order))
+        .await
+        .unwrap();
+    admission::handle_webhook(&state, paid(&session, order))
+        .await
+        .unwrap();
     let tickets = store::tickets_for_order(&db, order).await.unwrap();
     assert_eq!(tickets.len(), 2, "a repeated webhook issues nothing more");
     assert!(

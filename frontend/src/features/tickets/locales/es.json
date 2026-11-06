@@ -74,6 +74,7 @@
         "already_checked_in": "Entrada ya registrada",
         "undone": "Entrada anulada",
         "refunded": "Boleto reembolsado. No dejar pasar.",
+        "wrong_date": "Este boleto es para otra fecha",
         "not_for_this_event": "Este boleto es de otro evento",
         "not_found": "Ningún boleto coincide con ese código"
       }

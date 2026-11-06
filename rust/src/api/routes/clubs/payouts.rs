@@ -67,29 +67,6 @@ pub async fn start_club_payout_onboarding(
 }
 
 #[utoipa::path(
-    post,
-    path = "/clubs/{club_id}/payouts/dashboard",
-    tag = "club-ticketing",
-    operation_id = "open_club_payout_dashboard_clubs__club_id__payouts_dashboard_post",
-    summary = "Open Club Payout Dashboard",
-    description = "A one-time login to the club's Stripe Express dashboard.",
-    params(("club_id" = i64, Path)),
-    responses(
-        (status = 200, description = "Successful Response", body = StripeRedirectResponse),
-        (status = 422, description = "Validation Error", body = crate::api::routes::HttpValidationError),
-    )
-)]
-pub async fn open_club_payout_dashboard(
-    State(state): State<AppState>,
-    DbUser(user): DbUser,
-    path: PathParams,
-) -> Result<Json<StripeRedirectResponse>, ApiError> {
-    let club = managed_club(&state.db, club_id(&path)?, &user).await?;
-    let url = payouts::dashboard_url(&state, &club).await?;
-    Ok(Json(StripeRedirectResponse { url }))
-}
-
-#[utoipa::path(
     get,
     path = "/clubs/{club_id}/ticket-sales",
     tag = "club-ticketing",

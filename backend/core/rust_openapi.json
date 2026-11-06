@@ -2007,49 +2007,6 @@
         }
       }
     },
-    "/clubs/{club_id}/payouts/dashboard": {
-      "post": {
-        "tags": [
-          "club-ticketing"
-        ],
-        "summary": "Open Club Payout Dashboard",
-        "description": "A one-time login to the club's Stripe Express dashboard.",
-        "operationId": "open_club_payout_dashboard_clubs__club_id__payouts_dashboard_post",
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StripeRedirectResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/clubs/{club_id}/ticket-sales": {
       "get": {
         "tags": [
@@ -5942,6 +5899,7 @@
           "already_checked_in",
           "undone",
           "refunded",
+          "wrong_date",
           "not_for_this_event",
           "not_found"
         ]
@@ -11033,7 +10991,7 @@
       },
       "StripeRedirectResponse": {
         "type": "object",
-        "description": "A one-time Stripe page the browser opens: onboarding or the Express dashboard.",
+        "description": "A one-time Stripe page the browser opens: the club's onboarding.",
         "required": [
           "url"
         ],
@@ -11442,7 +11400,11 @@
             ]
           },
           "holder_name": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The holder's name as anyone with the code sees it (\"Ada L.\"), never\nanything from their email; `None` without a profile name."
           },
           "can_check_in": {
             "type": "boolean",

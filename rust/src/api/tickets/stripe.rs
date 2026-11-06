@@ -1,11 +1,13 @@
 //! The one place wat2do talks to Stripe.
 //!
-//! Clubs are Stripe Connect Express accounts, and every charge is a direct
-//! charge on the club's own account. Each call that touches money therefore
-//! names that connected account (`Stripe-Account`), so a checkout or a refund
-//! can only ever reach the right club's money. Every write carries an
-//! idempotency key, so a retry never charges, refunds or creates twice.
-//! Callers get plain values back, never Stripe's objects.
+//! Each club has its own standard Stripe account, and every charge is a
+//! direct charge on it: the club pays Stripe's fees, Stripe recovers any
+//! refund or dispute from the club, and wat2do is never liable for either.
+//! Each call that touches money therefore names that connected account
+//! (`Stripe-Account`), so a checkout or a refund can only ever reach the right
+//! club's money. Every write carries an idempotency key, so a retry never
+//! charges, refunds or creates twice. Callers get plain values back, never
+//! Stripe's objects.
 
 use std::sync::LazyLock;
 use std::time::Duration;
@@ -92,8 +94,10 @@ impl<'a> Stripe<'a> {
         })
     }
 
-    /// A new Express account for one club; Stripe collects every requirement itself.
-    pub async fn create_express_account(
+    /// A new standard account for one club, with its own full Stripe dashboard.
+    /// The club pays Stripe's fees and Stripe holds it liable for refunds and
+    /// disputes (an Express dashboard would make wat2do pay and carry both).
+    pub async fn create_club_account(
         &self,
         club_id: i64,
         club_name: &str,
@@ -103,9 +107,9 @@ impl<'a> Stripe<'a> {
     ) -> Result<ConnectedAccount, ApiError> {
         let params = json!({
             "controller": {
-                "stripe_dashboard": {"type": "express"},
-                "fees": {"payer": "application"},
-                "losses": {"payments": "application"},
+                "stripe_dashboard": {"type": "full"},
+                "fees": {"payer": "account"},
+                "losses": {"payments": "stripe"},
                 "requirement_collection": "stripe",
             },
             "country": country,
@@ -160,21 +164,6 @@ impl<'a> Stripe<'a> {
         let key = format!("onboarding-link-{}", crate::api::secrets::token_urlsafe(12));
         let link = self
             .post("/account_links", &params, None, &key, "onboarding link")
-            .await?;
-        string_field(&link, "url")
-    }
-
-    /// A one-time login to the club's Express dashboard: balances and payouts.
-    pub async fn dashboard_link(&self, account_id: &str) -> Result<String, ApiError> {
-        let key = format!("dashboard-link-{}", crate::api::secrets::token_urlsafe(12));
-        let link = self
-            .post(
-                &format!("/accounts/{account_id}/login_links"),
-                &json!({}),
-                None,
-                &key,
-                "dashboard link",
-            )
             .await?;
         string_field(&link, "url")
     }

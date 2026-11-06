@@ -28,8 +28,6 @@ pub fn response(
         .iter()
         .find(|occurrence| occurrence.id == ticket.event_date_id);
     let holds = viewer.is_some_and(|viewer| viewer.id == ticket.holder_user_id);
-    let holder =
-        abbreviate(ticket.holder_full_name.as_deref()).unwrap_or_else(|| ticket.holder_name());
     TicketResponse {
         code: ticket.code.clone(),
         status: TicketStatus::from_db(&ticket.status),
@@ -48,7 +46,7 @@ pub fn response(
         club_name: event.club.clone(),
         school: event.school.clone(),
         image_url: event.source_image_url.clone(),
-        holder_name: holder,
+        holder_name: abbreviate(ticket.holder_full_name.as_deref()),
         can_check_in,
         refund_requested_at: ticket.refund_requested_at,
         refund_declined_at: ticket.refund_declined_at,

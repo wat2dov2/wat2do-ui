@@ -58,9 +58,23 @@ pub async fn ticketing(db: &PgPool, event_id: i64) -> Result<Option<TicketingRow
     .await
 }
 
-/// The event's ticketing row, locked until the transaction ends: every change
-/// to an event's tickets takes this lock first, so two people can never both
-/// take the last seat.
+/// The event's row, locked until the transaction ends, and whether it is
+/// cancelled (`None` when it is gone). Every change to an event's tickets
+/// locks its event first and its ticketing row second, the order an event's
+/// edit takes them too: the first time tickets are turned on is serialized
+/// like every later change, and a cancellation is seen by every change after it.
+pub async fn lock_event(
+    executor: impl PgExecutor<'_>,
+    event_id: i64,
+) -> Result<Option<bool>, sqlx::Error> {
+    sqlx::query_scalar("SELECT cancelled FROM public.events WHERE id = $1 FOR UPDATE")
+        .bind(event_id as i32)
+        .fetch_optional(executor)
+        .await
+}
+
+/// The event's ticketing row, locked until the transaction ends (after
+/// `lock_event`), so two people can never both take the last seat.
 pub async fn lock_ticketing(
     executor: impl PgExecutor<'_>,
     event_id: i64,
@@ -69,6 +83,23 @@ pub async fn lock_ticketing(
         .bind(event_id)
         .fetch_optional(executor)
         .await
+}
+
+/// How many people are going to each of these dates.
+pub async fn going_by_date(
+    executor: impl PgExecutor<'_>,
+    event_id: i64,
+    date_ids: &[Uuid],
+) -> Result<HashMap<Uuid, i64>, sqlx::Error> {
+    let rows: Vec<(Uuid, i64)> = sqlx::query_as(
+        "SELECT event_date_id, count(*) FROM public.user_going_events \
+         WHERE event_id = $1 AND event_date_id = ANY($2) GROUP BY event_date_id",
+    )
+    .bind(event_id as i32)
+    .bind(date_ids)
+    .fetch_all(executor)
+    .await?;
+    Ok(rows.into_iter().collect())
 }
 
 /// Seats one date has given out: valid tickets, plus seats a buyer still holds
@@ -182,12 +213,14 @@ pub async fn dates_with_paid_orders_or_holds(
     .await
 }
 
-/// Delete what pins an event's dates without holding anything: free tickets
-/// and finished holds on the given dates, or on every date (`None`).
+/// Delete what pins an event's dates without holding anything: free tickets,
+/// and checkouts that ended or whose hold ran out (Stripe's session expires
+/// before the hold does), on the given dates or on every date (`None`).
 pub async fn release_dates(
     connection: &mut sqlx::PgConnection,
     event_id: i64,
     date_ids: Option<&[Uuid]>,
+    now: DateTime<Utc>,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         "DELETE FROM public.tickets WHERE event_id = $1 AND order_id IS NULL \
@@ -198,11 +231,13 @@ pub async fn release_dates(
     .execute(&mut *connection)
     .await?;
     sqlx::query(
-        "DELETE FROM public.ticket_orders WHERE event_id = $1 AND status IN ('expired', 'failed') \
+        "DELETE FROM public.ticket_orders WHERE event_id = $1 \
+         AND (status IN ('expired', 'failed') OR (status = 'pending' AND reserved_until <= $3)) \
          AND ($2::uuid[] IS NULL OR event_date_id = ANY($2))",
     )
     .bind(event_id)
     .bind(date_ids)
+    .bind(now)
     .execute(&mut *connection)
     .await?;
     Ok(())
@@ -354,6 +389,20 @@ pub async fn payment_account(
         )
         .bind(club_id)
         .fetch_optional(db)
+    })
+    .await
+}
+
+/// The club connected a Stripe account or took an order, either of which
+/// keeps the club.
+pub async fn club_sells_tickets(db: &PgPool, club_id: i64) -> Result<bool, sqlx::Error> {
+    read_with_retry(|| {
+        sqlx::query_scalar(
+            "SELECT EXISTS (SELECT 1 FROM public.club_payment_accounts WHERE club_id = $1) \
+                 OR EXISTS (SELECT 1 FROM public.ticket_orders WHERE club_id = $1)",
+        )
+        .bind(club_id)
+        .fetch_one(db)
     })
     .await
 }
