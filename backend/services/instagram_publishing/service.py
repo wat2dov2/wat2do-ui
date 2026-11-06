@@ -361,6 +361,42 @@ def publish_claimed_batch(batch: dict[str, Any]) -> None:
         )
 
 
+def publish_ready_drafts(now: datetime | None = None) -> dict[str, int]:
+    """Publish every school's ready events draft for today, one school at a time.
+
+    An admin can still edit a draft before this runs or publish it by hand; a
+    draft that is already publishing or published is left alone.
+    """
+    local_date = (
+        (now or datetime.now(timezone.utc))
+        .astimezone(ZoneInfo(_CONTROL.generation_timezone))
+        .date()
+    )
+    rows = (
+        get_sb()
+        .table(INSTAGRAM_PUBLISH_BATCHES)
+        .select("id,account_key,version")
+        .eq("batch_kind", "events")
+        .eq("local_date", local_date.isoformat())
+        .eq("status", INSTAGRAM_BATCH_READY_FOR_REVIEW)
+        .order("account_key")
+        .execute()
+    ).data or []
+    outcomes: dict[str, int] = defaultdict(int)
+    for row in rows:
+        try:
+            batch = claim_batch_for_publishing(
+                row["id"], InstagramPublishBatchPublish(version=int(row["version"]))
+            )
+        except Exception:
+            log.exception("Instagram draft %s could not be claimed", row["account_key"])
+            outcomes["skipped"] += 1
+            continue
+        publish_claimed_batch(batch)
+        outcomes[str(get_batch(row["id"])["status"])] += 1
+    return dict(outcomes)
+
+
 def _enabled_accounts() -> list[dict[str, Any]]:
     """Enabled connected accounts for publication and safe draft account metadata."""
     response = (

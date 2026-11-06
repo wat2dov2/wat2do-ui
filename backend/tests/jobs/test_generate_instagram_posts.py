@@ -55,3 +55,21 @@ def test_launch_agent_runs_curate_daily_without_logs():
         {"Hour": hour, "Minute": 0} for hour in (9, 11, 13, 15)
     ]
     assert payload["StandardOutPath"] == "/dev/null"
+
+
+@pytest.mark.parametrize(
+    ("outcomes", "code"), [({"published": 3}, 0), ({"published": 1, "failed": 1}, 1)]
+)
+def test_publish_command_reports_outcomes(monkeypatch, tmp_path, capsys, outcomes, code):
+    monkeypatch.setattr(sys, "argv", ["job", "publish"])
+    monkeypatch.setattr(job, "LOCK_PATH", tmp_path / "lock")
+    monkeypatch.setattr(job, "publish_ready_drafts", lambda: outcomes)
+    assert job.main() == code
+    assert json.loads(capsys.readouterr().out) == outcomes
+
+
+def test_publish_launch_agent_runs_at_nine_thirty_five():
+    payload = job.publish_launch_agent_payload()
+    assert payload["Label"] == "io.wat2do.instagram.publish"
+    assert payload["ProgramArguments"][-1] == "publish"
+    assert payload["StartCalendarInterval"] == [{"Hour": 9, "Minute": 35}]

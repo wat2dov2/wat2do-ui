@@ -24,6 +24,8 @@
   "curation_poster_pixels": 512,
   "curation_hours": [9, 11, 13, 15],
   "curation_minute": 0,
+  "auto_publish_hour": 9,
+  "auto_publish_minute": 35,
   "poster_timeout_seconds": 30,
   "launch_agent_timeout_seconds": 30,
   "music_model": "claude-haiku-5-5",

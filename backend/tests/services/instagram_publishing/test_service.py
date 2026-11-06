@@ -1409,3 +1409,31 @@ def test_a_club_that_opts_out_is_left_out_once_by_its_plain_handle(monkeypatch):
         ({"ig_handle": "uwviva", "reason": "Asked in wat2do.uwaterloo's DMs"},),
         {"on_conflict": "ig_handle", "ignore_duplicates": True},
     ) in calls
+
+
+def test_publish_ready_drafts_publishes_todays_drafts_one_by_one(monkeypatch):
+    calls = []
+    rows = [
+        {"id": "a", "account_key": "uwaterloo", "version": 2},
+        {"id": "b", "account_key": "utsg", "version": 1},
+    ]
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _name: _FakeQuery(rows, calls))
+    )
+
+    def claim(batch_id, data):
+        if batch_id == "b":
+            raise service.ConflictError("edited meanwhile")
+        return {"id": batch_id, "version": data.version + 1}
+
+    monkeypatch.setattr(service, "claim_batch_for_publishing", claim)
+    published = Mock()
+    monkeypatch.setattr(service, "publish_claimed_batch", published)
+    monkeypatch.setattr(service, "get_batch", lambda batch_id: {"status": "published"})
+
+    outcomes = service.publish_ready_drafts(datetime(2026, 11, 6, 14, 35, tzinfo=timezone.utc))
+
+    assert outcomes == {"published": 1, "skipped": 1}
+    published.assert_called_once_with({"id": "a", "version": 3})
+    assert ("eq", ("local_date", "2026-11-06"), {}) in calls
+    assert ("eq", ("status", "ready_for_review"), {}) in calls
