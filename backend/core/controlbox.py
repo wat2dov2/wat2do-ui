@@ -860,6 +860,10 @@ class InstagramFollowControl(_ControlModel):
 
     # Each school's crawl starts at most once per interval.
     crawl_interval_days: int = Field(ge=1, le=60)
+    # A crawl ends after this many profiles, so every school gets its turn.
+    crawl_max_profiles: int = Field(ge=10, le=5000)
+    # A follow that failed is tried again only after this long.
+    follow_retry_hours: int = Field(ge=1, le=168)
     # A crawl stops after this many visited accounts in a row turn up nothing new.
     crawl_miss_streak: int = Field(ge=1, le=100)
     crawl_max_scrolls: int = Field(ge=1, le=200)

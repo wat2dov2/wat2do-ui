@@ -11,7 +11,7 @@ Rejecting an account the school already follows queues an unfollow instead.
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
 
@@ -23,11 +23,14 @@ from core.constants import (
     FOLLOW_CANDIDATE_UNFOLLOW,
     FOLLOW_SOURCE_CLUB,
 )
+from core.controlbox import controlbox
 from core.database import get_sb
 from core.errors import FOLLOW_CANDIDATE_SCHOOL_NOT_FOUND
 from core.exceptions import NotFoundError
 from core.pagination import fetch_all_pages
 from core.tables import CLUBS, INSTAGRAM_FOLLOW_CANDIDATES
+
+CONTROL = controlbox.instagram_follow
 from schemas.club import CLUB_STATUS_APPROVED, ClubCreate
 from services import club_service, school_service
 from services.instagram_emulator.device import CONTROL as EMULATOR
@@ -261,14 +264,17 @@ def approved(school_id: int, limit: int) -> list[dict[str, Any]]:
     """Approved accounts waiting to be followed, in the order they were approved.
 
     Accounts whose follow failed go after the rest, least recently tried first, so one
-    that keeps failing never holds up the others.
+    that keeps failing never holds up the others; one that failed within
+    ``follow_retry_hours`` is not offered again yet, so it never keeps the worker busy.
     """
+    retry_before = datetime.now(timezone.utc) - timedelta(hours=CONTROL.follow_retry_hours)
     response = (
         get_sb()
         .table(INSTAGRAM_FOLLOW_CANDIDATES)
         .select("id,handle")
         .eq("school_id", school_id)
         .eq("status", FOLLOW_CANDIDATE_APPROVED)
+        .or_(f'follow_error.is.null,updated_at.lt."{retry_before.isoformat()}"')
         .order("follow_error", nullsfirst=True)
         .order("updated_at")
         .order("decided_at")
