@@ -206,6 +206,15 @@ class EmulatorDevice:
         Instagram draws a few states, such as a post we reposted, only as a check mark
         inside the icon and leaves its label unchanged, so the screen's pixels are read.
         """
+        x1, y1, x2, y2 = icon.bounds
+        x, y, half = (x1 + x2) // 2, (y1 + y2) // 2, max(1, (x2 - x1) // 6)
+        with Image.open(io.BytesIO(self.screenshot())) as screenshot:
+            middle = screenshot.convert("L").crop((x - half, y - half, x + half, y + half))
+            shades = middle.histogram()
+        return sum(shades[:128]) / sum(shades) > _MARKED_DARK_SHARE
+
+    def screenshot(self) -> bytes:
+        """The screen as PNG bytes."""
         try:
             completed = self._run(
                 [self._adb, "-s", CONTROL.serial, "exec-out", "screencap", "-p"],
@@ -217,12 +226,7 @@ class EmulatorDevice:
             raise EmulatorError("adb screencap did not complete") from exc
         if completed.returncode != 0:
             raise EmulatorError("adb screencap failed")
-        x1, y1, x2, y2 = icon.bounds
-        x, y, half = (x1 + x2) // 2, (y1 + y2) // 2, max(1, (x2 - x1) // 6)
-        with Image.open(io.BytesIO(completed.stdout)) as screenshot:
-            middle = screenshot.convert("L").crop((x - half, y - half, x + half, y + half))
-            shades = middle.histogram()
-        return sum(shades[:128]) / sum(shades) > _MARKED_DARK_SHARE
+        return completed.stdout
 
     def find(self, pattern: re.Pattern[str], nodes: Iterable[Node] | None = None) -> Node | None:
         return next(

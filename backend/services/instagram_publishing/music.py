@@ -5,11 +5,14 @@ publishes, the emulator worker visits its school's account and ``finish_due`` op
 the live post, likes and reposts it, and tries the songs in random order: Instagram's
 music search finds candidates and Claude Haiku picks the track the admin meant, or none
 so the next song is tried. A song marked Asian or K-pop is tried only at the control
-box's ``asian_song_schools``.
+box's ``asian_song_schools``. On the first try it also comments a GIF: Haiku names a
+movie or show scene that fits the carousel's first event (or none), and picks a real
+movie or show clip from GIPHY's results (or none, so nothing is commented).
 """
 
 from __future__ import annotations
 
+import io
 import json
 import logging
 import random
@@ -34,10 +37,10 @@ from core.errors import (
     INSTAGRAM_SONG_NOT_FOUND,
 )
 from core.exceptions import ConflictError, NotFoundError
-from core.tables import INSTAGRAM_PUBLISH_BATCHES, INSTAGRAM_SONGS
+from core.tables import INSTAGRAM_PUBLISH_BATCHES, INSTAGRAM_PUBLISH_ITEMS, INSTAGRAM_SONGS
 from services import school_service
 from services.claude_code import ClaudeCodeError, run_agent
-from services.instagram_emulator.audio import SongNotFound, finish_post
+from services.instagram_emulator.audio import GifComment, SongNotFound, finish_post
 from services.instagram_emulator.device import EmulatorDevice
 
 log = logging.getLogger(__name__)
@@ -45,6 +48,14 @@ log = logging.getLogger(__name__)
 _CONTROL = controlbox.instagram_publishing
 WORKDIR_PREFIX = "wat2do-music-"
 PROMPT = (Path(__file__).parent / "music_prompt.md").read_text()
+GIF_QUERY_PROMPT = (Path(__file__).parent / "gif_query_prompt.md").read_text()
+GIF_PICK_PROMPT = (Path(__file__).parent / "gif_pick_prompt.md").read_text()
+GIF_QUERY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {"query": {"type": ["string", "null"]}, "reason": {"type": "string"}},
+    "required": ["query", "reason"],
+    "additionalProperties": False,
+}
 
 ANSWER_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -137,8 +148,10 @@ def _pending_batches(now: datetime) -> list[dict[str, Any]]:
 
 def _add_music(device: EmulatorDevice, batch: dict[str, Any], songs: Sequence[str]) -> str:
     attempts = int(batch["music_attempts"]) + 1
+    # Only the first try comments, so a retry never posts a second GIF.
+    gif = gif_comment(batch["id"]) if attempts == 1 and _CONTROL.gif_comments else None
     try:
-        added = finish_post(device, batch["school"], batch["permalink"], songs, choose_track)
+        added = finish_post(device, batch["school"], batch["permalink"], songs, choose_track, gif)
     except SongNotFound as exc:
         _record(batch["id"], INSTAGRAM_MUSIC_FAILED, attempts, error=str(exc))
         return INSTAGRAM_MUSIC_FAILED
@@ -150,6 +163,91 @@ def _add_music(device: EmulatorDevice, batch: dict[str, Any], songs: Sequence[st
         return status
     _record(batch["id"], INSTAGRAM_MUSIC_ADDED, attempts, track=added.track)
     return INSTAGRAM_MUSIC_ADDED
+
+
+def gif_comment(batch_id: str) -> GifComment | None:
+    """The GIF search for the carousel's first event, or None when no scene fits."""
+    try:
+        event = _first_event(batch_id)
+        if event is None:
+            return None
+        workdir = tempfile.mkdtemp(prefix=WORKDIR_PREFIX)
+        try:
+            (Path(workdir) / "event.json").write_text(json.dumps(event, ensure_ascii=False))
+            answer = run_agent(
+                GIF_QUERY_PROMPT,
+                workdir=workdir,
+                model=_CONTROL.music_model,
+                tools=("Read",),
+                allowed_tools=("Read(./**)",),
+                schema=GIF_QUERY_SCHEMA,
+                timeout=_CONTROL.music_agent_timeout_seconds,
+            )
+        finally:
+            shutil.rmtree(workdir, ignore_errors=True)
+    except Exception:
+        log.warning("No GIF search for Instagram batch %s", batch_id, exc_info=True)
+        return None
+    query = " ".join(str(answer.get("query") or "").split())[:60]
+    if not query:
+        return None
+    return GifComment(query, lambda screenshot, boxes: pick_gif(event, query, screenshot, boxes))
+
+
+def pick_gif(
+    event: dict[str, Any],
+    query: str,
+    screenshot: bytes,
+    boxes: Sequence[tuple[int, int, int, int]],
+) -> int | None:
+    """The index of the result that is a fitting movie or show clip, or None."""
+    from PIL import Image, ImageDraw
+
+    workdir = tempfile.mkdtemp(prefix=WORKDIR_PREFIX)
+    try:
+        with Image.open(io.BytesIO(screenshot)) as shot:
+            image = shot.convert("RGB")
+        draw = ImageDraw.Draw(image)
+        for index, (x1, y1, x2, y2) in enumerate(boxes):
+            draw.rectangle((x1, y1, x2, y2), outline=(255, 0, 0), width=6)
+            draw.rectangle((x1, y1, x1 + 70, y1 + 70), fill=(255, 0, 0))
+            draw.text((x1 + 18, y1 + 8), str(index), fill=(255, 255, 255), font_size=50)
+        top = min(box[1] for box in boxes)
+        bottom = max(box[3] for box in boxes)
+        image.crop((0, top, image.width, bottom)).save(Path(workdir) / "results.png")
+        (Path(workdir) / "event.json").write_text(json.dumps(event, ensure_ascii=False))
+        answer = run_agent(
+            GIF_PICK_PROMPT.replace("{{query}}", query),
+            workdir=workdir,
+            model=_CONTROL.music_model,
+            tools=("Read",),
+            allowed_tools=("Read(./**)",),
+            schema=ANSWER_SCHEMA,
+            timeout=_CONTROL.music_agent_timeout_seconds,
+        )
+    except Exception:
+        log.warning("The GIF picker did not answer", exc_info=True)
+        return None
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
+    index = answer.get("index")
+    return index if isinstance(index, int) and 0 <= index < len(boxes) else None
+
+
+def _first_event(batch_id: str) -> dict[str, Any] | None:
+    rows = (
+        get_sb()
+        .table(INSTAGRAM_PUBLISH_ITEMS)
+        .select("position,event:events(title,description,category,club)")
+        .eq("batch_id", str(batch_id))
+        .order("position")
+        .limit(1)
+        .execute()
+    ).data or []
+    event = rows[0].get("event") if rows else None
+    if not event:
+        return None
+    return {**event, "description": (event.get("description") or "")[:1500]}
 
 
 def choose_track(query: str, tracks: Sequence[str]) -> int | None:
