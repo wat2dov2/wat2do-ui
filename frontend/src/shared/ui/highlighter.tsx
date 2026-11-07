@@ -1,115 +1,33 @@
-import { useEffect, useRef } from "react"
-import type React from "react"
-import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver"
+import type { CSSProperties, ReactNode } from "react"
 import { cn } from "@/shared/lib/utils"
 
-type AnnotationAction =
-  | "highlight"
-  | "underline"
-  | "box"
-  | "circle"
-  | "strike-through"
-  | "crossed-off"
-  | "bracket"
-
 interface HighlighterProps {
-  children: React.ReactNode
-  action?: AnnotationAction
+  children: ReactNode
+  /** The marker colour drawn behind the text. */
   color?: string
-  strokeWidth?: number
-  animationDuration?: number
-  iterations?: number
+  /** How far the marker reaches past the text on each side, in px. */
   padding?: number
-  multiline?: boolean
-  isView?: boolean
-  /** Extra classes for the annotated wrapper (e.g. to bound its width so a
-   * truncating child keeps the annotation aligned to the visible text). */
+  /** Extra classes for the highlighted wrapper (e.g. to bound its width so a
+   * truncating child keeps the marker aligned to the visible text). */
   className?: string
 }
 
-export function Highlighter({
-  children,
-  action = "highlight",
-  color = "var(--muted)",
-  strokeWidth = 1.5,
-  animationDuration = 600,
-  iterations = 2,
-  padding = 2,
-  multiline = true,
-  isView = false,
-  className,
-}: HighlighterProps) {
-  const annotationRef = useRef<import("rough-notation/lib/model").RoughAnnotation | null>(null)
-  const { ref: elementRef, hasIntersected } = useIntersectionObserver<HTMLSpanElement>({
-    rootMargin: "-10%",
-    enabled: isView,
-  })
-  const shouldShow = !isView || hasIntersected
-
-  useEffect(() => {
-    if (!shouldShow) return
-
-    const element = elementRef.current
-    if (!element) return
-
-    const annotationConfig = {
-      type: action,
-      color,
-      strokeWidth,
-      animationDuration,
-      iterations,
-      padding,
-      multiline,
-    }
-
-    let isObsolete = false
-    let resizeObserver: ResizeObserver | null = null
-
-    import("rough-notation").then(({ annotate }) => {
-      if (isObsolete) return
-
-      const annotation = annotate(element, annotationConfig)
-      annotationRef.current = annotation
-      annotationRef.current.show()
-
-      resizeObserver = new ResizeObserver(() => {
-        annotation.hide()
-        annotation.show()
-      })
-
-      resizeObserver.observe(element)
-      resizeObserver.observe(document.body)
-    }).catch(err => {
-      console.error("Failed to load rough-notation dynamically:", err)
-    })
-
-    return () => {
-      isObsolete = true
-      if (annotationRef.current) {
-        try {
-          annotationRef.current.remove()
-        } catch {
-          console.warn("annotation remove failed")
-        }
-      }
-      if (resizeObserver) {
-        resizeObserver.disconnect()
-      }
-    }
-  }, [
-    shouldShow,
-    elementRef,
-    action,
-    color,
-    strokeWidth,
-    animationDuration,
-    iterations,
-    padding,
-    multiline,
-  ])
-
+/**
+ * A marker highlight behind text, drawn with CSS (`.highlighter` in index.css).
+ *
+ * It used to be drawn by rough-notation, which inserted keyframes into the page
+ * when it attached and redrew its SVG whenever the page body resized: on the
+ * school name in the navigation that meant style work on every page and every
+ * layout change. The marker now is a pseudo-element with a static stylesheet
+ * animation, so nothing is injected or redrawn at runtime.
+ */
+export function Highlighter({ children, color = "var(--muted)", padding = 2, className }: HighlighterProps) {
   return (
-    <span ref={elementRef} className={cn("relative inline-block bg-transparent", className)}>
+    <span
+      data-slot="highlighter"
+      className={cn("highlighter", className)}
+      style={{ "--highlighter-color": color, "--highlighter-padding": `${padding}px` } as CSSProperties}
+    >
       {children}
     </span>
   )

@@ -4,7 +4,7 @@ import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { CheckIcon, ChevronDown, ChevronUpIcon } from "lucide-react"
 
-import { useDrawerPortalContainer } from "@/shared/ui/drawer"
+import { useDrawerPortalContainer } from "@/shared/ui/drawer-portal-context"
 import { createAdaptivePressHandlers, useMobileClickActivation } from "@/shared/hooks/useMouseDownPress"
 import { cn } from "@/shared/lib/utils"
 import { buttonVariants } from "@/shared/ui/button"

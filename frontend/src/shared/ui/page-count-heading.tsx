@@ -1,4 +1,3 @@
-import NumberFlow from "@number-flow/react";
 import { Trans, useTranslation } from "react-i18next";
 import { Stack } from "@/shared/layout/stack";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
@@ -31,12 +30,14 @@ export function PageCountHeading({ count, label, latest, currentTimeMs, level = 
     <Heading data-skeleton-key="count-heading" aria-busy={count === null} aria-label={count === null ? label : `${count.toLocaleString(i18n.language)} ${label}`} className="inline-flex items-baseline gap-2 text-left text-2xl font-bold text-foreground sm:text-3xl">
       {/* Tabular digits keep the label still as the count changes. The placeholder is an invisible
           count, so it takes the real count's box; the bar covers the digits' cap height. */}
+      {/* Plain text: an animated counter (number-flow) registered CSS properties on the
+          document as it loaded, a style recalculation on every page with a count. */}
       {count === null ? (
         <span aria-hidden="true" className="relative inline-flex shrink-0 items-center">
-          <NumberFlow value={PLACEHOLDER_COUNT} className="invisible tabular-nums" />
+          <span className="invisible tabular-nums">{PLACEHOLDER_COUNT.toLocaleString(i18n.language)}</span>
           <Skeleton className="absolute inset-x-0 h-[1cap]" />
         </span>
-      ) : <NumberFlow value={count} className="tabular-nums" respectMotionPreference />}
+      ) : <span className="tabular-nums">{count.toLocaleString(i18n.language)}</span>}
       <span data-skeleton-key="count-label">{label}</span>
     </Heading>
     {latest !== undefined && (count === null || latest) ? (
