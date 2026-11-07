@@ -24,7 +24,8 @@ function LandingStat({ value, label, badge }: StatProps) {
   const { ref, value: shown } = useCountUp<HTMLParagraphElement>(value);
   return (
     <LandingCard corners={badge ? { "top-right": <LandingNotchLabel tone={badge.tone}>{badge.text}</LandingNotchLabel> } : undefined}>
-      <Stack gap={2}>
+      {/* Held to the card's foot, so figures line up across a row whether or not a card carries a badge. */}
+      <Stack gap={2} className="h-full justify-end">
         {/* Large figures carry side bearing; the nudge lines the digit's edge up with the label below. */}
         <p ref={ref} className="-ml-[0.05em] text-4xl font-normal tracking-[-0.04em] tabular-nums text-foreground sm:text-6xl">
           {formatLandingCount(shown, i18n.language)}

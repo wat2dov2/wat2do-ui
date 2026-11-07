@@ -85,10 +85,10 @@
      wash of the hue behind text and icon in a darker (light theme) or lighter
      (dark theme) shade of the same hue, which keeps both at WCAG AA. Each hue is
      the one the product already uses for that meaning. */
-  --tint-school: color-mix(in oklab, var(--school-marker) 28%, var(--background));
-  --tint-school-foreground: color-mix(in oklab, var(--school-marker) 45%, var(--foreground));
-  --tint-live: color-mix(in oklab, var(--destructive) 18%, var(--background));
-  --tint-live-foreground: color-mix(in oklab, var(--destructive) 45%, var(--foreground));
+  --tint-school: var(--school-marker);
+  --tint-school-foreground: var(--school-marker-foreground);
+  --tint-live: color-mix(in oklab, var(--success) 20%, var(--background));
+  --tint-live-foreground: color-mix(in oklab, var(--success) 45%, var(--foreground));
   --tint-free: color-mix(in oklab, var(--success) 20%, var(--background));
   --tint-free-foreground: color-mix(in oklab, var(--success) 45%, var(--foreground));
   --tint-new: color-mix(in oklab, var(--badge-new) 20%, var(--background));

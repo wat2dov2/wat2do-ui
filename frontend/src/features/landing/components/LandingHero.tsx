@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
-import { EventPixelMosaic, LandingMosaicScrim } from "@/features/landing/components/EventPixelMosaic";
+import { EventPixelMosaic } from "@/features/landing/components/EventPixelMosaic";
 import { LandingCard, LandingNotchLabel } from "@/features/landing/components/LandingCard";
 import { LandingEventViews, type LandingEventView } from "@/features/landing/components/LandingEventViews";
 import { LandingRotatingWord } from "@/features/landing/components/LandingRotatingWord";
@@ -14,7 +14,7 @@ import { formatLandingCount } from "@/features/landing/lib/landingStats";
 import { ROUTES } from "@/shared/constants/routes";
 import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
-import { ArrowRight, Check, MapPin, Radio, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Instagram, MapPin, Radio } from "lucide-react";
 import { Highlighter } from "@/shared/ui/highlighter";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
@@ -86,13 +86,12 @@ export function LandingHero({ schoolName, events, clubCount, isLoading }: Landin
           // An empty feed leaves the corner whole rather than notching it for a zero.
           "top-right": isLoading || events.length > 0 ? <HeroLiveCount events={events} isLoading={isLoading} /> : null,
           "bottom-left": <LandingNotchLabel size="display" tone="free" icon={Check}>{t("landing.hero.badges.free")}</LandingNotchLabel>,
-          "bottom-right": <LandingNotchLabel size="display" tone="new" icon={Sparkles}>{t("landing.hero.badges.source")}</LandingNotchLabel>,
+          "bottom-right": <LandingNotchLabel size="display" tone="new" icon={Instagram}>{t("landing.hero.badges.source")}</LandingNotchLabel>,
         }}
       >
         {/* Where the mosaic draws the logo, clear of the text below it. */}
         <div ref={logoRegion} className="h-48 sm:h-80" />
         <Stack gap={8} align="center" className="relative">
-          <LandingMosaicScrim />
           <div className="relative w-full">
             <LandingHeading
               as="h1"

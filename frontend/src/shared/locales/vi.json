@@ -686,7 +686,7 @@
     },
     "features": {
       "filters": {
-        "title": "Đồ ăn miễn phí chỉ sau hai lần chạm",
+        "title": "Đồ ăn miễn phí chỉ với một lần chạm",
         "description": "Lọc nhanh đồ ăn miễn phí, nhà tuyển dụng tại trường và cuộc thi. Hoặc thu hẹp theo ngày, giá, tổ chức và địa điểm."
       },
       "reminders": {
