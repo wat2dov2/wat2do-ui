@@ -37,8 +37,13 @@ const SCHOOL = {
     display_windows: [{ start_date: new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10), end_date: new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10) }],
   }],
 };
-const EVENT_CATEGORIES = ["Academic", "Career", "Cultural", "Social", "Sports", "Technology", "Arts", "Wellness"];
-const CLUB_CATEGORIES = ["Academic", "Cultural", "Social", "Sports", "Technology", "Arts"];
+// The backend's categories, which the app also ships as its first-paint fallback.
+const CATEGORIES = [
+  "Arts & Culture", "Academics & Science", "Business", "Community Service", "Environment",
+  "Games & Recreation", "Health", "Media & Web", "Politics & Advocacy", "Religion & Spirituality",
+];
+const EVENT_CATEGORIES = CATEGORIES;
+const CLUB_CATEGORIES = CATEGORIES;
 const MEDIA = "https://media.skeleton.test";
 
 const EVENT_TITLES = [
@@ -67,7 +72,8 @@ const CLUB_NAMES = [
   "Investment Club", "Formula Electric", "Climbing Club", "Anime Club",
 ];
 
-type Box = { x: number; y: number; w: number; h: number };
+/** A landmark's box; `label` names a filter control in reports and is not compared. */
+type Box = { x: number; y: number; w: number; h: number; label?: string };
 type Shift = { value: number; hadRecentInput: boolean; t: number; sources: { node: string; prev: Box; cur: Box }[] };
 
 /** Next's own route handlers stay real; everything else under /api is the backend. */
@@ -272,7 +278,7 @@ const OBSERVE_SHIFTS = () => {
 async function landmarks(page: Page, within?: string): Promise<Record<string, Box>> {
   return page.evaluate((scope) => {
     const root = scope ? document.querySelector(scope) : document;
-    const result: Record<string, { x: number; y: number; w: number; h: number }> = {};
+    const result: Record<string, { x: number; y: number; w: number; h: number; label?: string }> = {};
     const seen = new Map<string, number>();
     // Filter controls are compared one by one: a chip that appears late pushes the rest along.
     const chips = "[data-skeleton-key=filter-bar] [role=group] > :not([aria-hidden=true]), [data-skeleton-key=filter-bar] [data-slot=select-trigger]";
@@ -282,7 +288,7 @@ async function landmarks(page: Page, within?: string): Promise<Record<string, Bo
       seen.set(key, index + 1);
       const r = element.getBoundingClientRect();
       if (r.width === 0 && r.height === 0) continue;
-      result[`${key}#${index}`] = { x: r.x, y: r.y, w: r.width, h: r.height };
+      result[`${key}#${index}`] = { x: r.x, y: r.y, w: r.width, h: r.height, label: element.dataset.skeletonKey ? undefined : element.textContent?.trim() };
     }
     return result;
   }, within ?? null);
@@ -384,6 +390,14 @@ async function measureSwap(page: Page, gates: Gates, loaded: string, name: strin
   return { ...(await shiftsSince(page, since)), comparison: compare(loadingBoxes, loadedBoxes, viewportHeight) };
 }
 
+/** `SKELETON_LAYOUT_CPU_THROTTLE=4` runs the page like a mid-range phone. */
+async function throttleCpu(page: Page) {
+  const rate = Number(process.env.SKELETON_LAYOUT_CPU_THROTTLE ?? 1);
+  if (rate <= 1) return;
+  const session = await page.context().newCDPSession(page);
+  await session.send("Emulation.setCPUThrottlingRate", { rate });
+}
+
 interface RouteSurface {
   name: string;
   path: string;
@@ -412,6 +426,7 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       test(`${surface.name} keeps its layout when content replaces the loading state`, async ({ page, next }) => {
         const gates: Gates = { data: new Gate(), late: new Gate() };
         await installMocks(page, next, gates, surface.held);
+        await throttleCpu(page);
         await page.addInitScript(OBSERVE_SHIFTS);
 
         await page.goto(`${BASE}${surface.path}`, { waitUntil: "commit" });

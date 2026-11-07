@@ -28,32 +28,23 @@ const LoginLoading = lazy(async () => {
     },
   };
 });
-/** The events, clubs and positions lists' loading state; those pages are also warmed in idle time. */
-const DiscoveryLoading = lazy(() =>
-  import("@/app/routes/DiscoveryLoading").then((module) => ({ default: module.DiscoveryLoading })),
-);
-const EventDetailsPageSkeleton = lazy(() =>
-  import("@/features/events/pages/EventDetailsPageContainer").then((module) => ({
-    default: module.EventDetailsPageSkeleton,
-  })),
-);
-const ClubDetailsSkeleton = lazy(() =>
-  import("@/features/clubs/components/ClubDetailsSkeleton").then((module) => ({
-    default: module.ClubDetailsSkeleton,
-  })),
-);
+/**
+ * Shared by native route streaming, lazy route chunks, and auth gates.
+ * The events, clubs and positions lists and the event and club pages have
+ * their own loading files, so their skeletons ship with their routes and are
+ * ready before hydration: a lazy skeleton that is still downloading when the
+ * page hydrates is dropped and leaves the screen blank. Until their own
+ * loading state streams in, this one draws nothing, so nothing appears only
+ * to be replaced.
+ */
+const OWN_LOADING_ROUTE = /^\/(?:events|clubs|positions|events\/\d+|clubs\/\d+)\/?$/;
 
-/** Shared by native route streaming, lazy route chunks, and auth gates. */
 export function RouteLoading() {
   const pathname = usePathname();
   if (pathname === ROUTES.LANDING_PREVIEW) return <Suspense><LandingPage snapshot={null} /></Suspense>;
   if (pathname === ROUTES.ABOUT) return <Suspense><AboutPage isLoading /></Suspense>;
   if (pathname === ROUTES.LOGIN) return <Suspense><LoginLoading /></Suspense>;
-  if (pathname === ROUTES.EVENTS) return <Suspense><DiscoveryLoading resource="events" /></Suspense>;
-  if (pathname === ROUTES.CLUBS) return <Suspense><DiscoveryLoading resource="clubs" /></Suspense>;
-  if (pathname === ROUTES.POSITIONS) return <Suspense><DiscoveryLoading resource="positions" /></Suspense>;
-  if (/^\/clubs\/\d+\/?$/.test(pathname)) return <Suspense><ClubDetailsSkeleton /></Suspense>;
-  if (/^\/events\/\d+\/?$/.test(pathname)) return <Suspense><EventDetailsPageSkeleton /></Suspense>;
+  if (OWN_LOADING_ROUTE.test(pathname)) return null;
   if (pathname in PAGE_SHELLS) return <PageShellLoading route={pathname} />;
   return <LoadingPage />;
 }

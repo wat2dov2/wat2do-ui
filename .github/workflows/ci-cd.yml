@@ -132,6 +132,8 @@ jobs:
         working-directory: frontend
         env:
           PLAYWRIGHT_TEST: '1'
+          # A phone-speed CPU, where a page hydrates before slow code arrives.
+          SKELETON_LAYOUT_CPU_THROTTLE: '4'
         run: |
           npx next start -p 3000 -H 127.0.0.1 > next.log 2>&1 &
           for attempt in $(seq 1 60); do

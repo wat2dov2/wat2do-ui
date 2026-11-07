@@ -14,6 +14,8 @@ type PageFrameProps = React.ComponentProps<"div"> & {
  * padding so feature pages never select their own outer margin or padding,
  * including the breathing room between the fixed navigation and the first
  * thing on the page.
+ * Outside a viewport layout its padding never depends on what the page renders, so content never moves
+ * when a loading state gives way to the page.
  * The page's content fills at least the frame's height, so the footer never
  * shows on the first screen while a page loads and then jumps away when the
  * content arrives.
@@ -24,7 +26,7 @@ function PageFrame({ className, children, footer, ...props }: PageFrameProps) {
   return (
     <div
       data-slot="page-frame"
-      className={cn("overscroll-y-none w-full px-2 pt-8 pb-8 sm:px-4 sm:pt-12 sm:pb-8 has-[[data-slot=page-header][data-variant=listing]]:pt-0 has-[[data-page-layout=viewport]]:overflow-y-hidden has-[[data-page-layout=viewport]]:pb-2 has-[[data-page-layout=viewport]]:[&>[data-slot=site-footer]]:hidden", className)}
+      className={cn("overscroll-y-none w-full px-2 pt-8 pb-8 sm:px-4 sm:pt-12 sm:pb-8 has-[[data-page-layout=viewport]]:pt-0 has-[[data-page-layout=viewport]]:overflow-y-hidden has-[[data-page-layout=viewport]]:pb-2 has-[[data-page-layout=viewport]]:[&>[data-slot=site-footer]]:hidden", className)}
       {...props}
     >
       <div data-slot="page-content" className="min-h-full has-[>[data-page-layout=viewport]]:h-full [&>[data-page-layout=viewport]]:h-full [&>[data-page-layout=viewport]]:min-h-0">
