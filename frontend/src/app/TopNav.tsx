@@ -42,8 +42,8 @@ import imgImage1 from "@/assets/wat2do-logo-nav.webp";
 
 type NavClub = AuthState["clubs"][number];
 
-/** The header's id, which the first paint waits for (see the expect link below). */
-const TOP_NAV_ID = "top-nav";
+/** The empty element that closes the header, which the first paint waits for (see the expect link below). */
+const TOP_NAV_END_ID = "top-nav-end";
 
 interface Wat2DoLogoLinkProps {
   label: string;
@@ -204,15 +204,17 @@ export function TopNav() {
   );
 
   return (
-    <header id={TOP_NAV_ID} data-slot="top-nav" className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-surface px-2 sm:gap-2 sm:px-4">
+    <header data-slot="top-nav" className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-surface px-2 sm:gap-2 sm:px-4">
       {/*
         Chromium paints as soon as its HTML parser pauses, which on a slow CPU
         can fall inside this header: the first frame showed the primary
         navigation alone, then the controls parsed after it pushed it aside.
-        This holds the first paint until the whole header is parsed. React
-        hoists the link into <head>, the only place it takes effect.
+        This link holds the first paint until the parser reaches the empty
+        marker that closes the header. Chromium lets go as soon as the target
+        element is inserted, so the target is that last marker, not the header.
+        React hoists the link into <head>, the only place it takes effect.
       */}
-      <link rel="expect" href={`#${TOP_NAV_ID}`} blocking="render" />
+      <link rel="expect" href={`#${TOP_NAV_END_ID}`} blocking="render" />
       <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
         <Wat2DoLogoLink label={t("navigation.events")} />
         <span className="hidden text-muted-foreground text-lg font-light sm:inline">/</span>
@@ -422,6 +424,7 @@ export function TopNav() {
           </Tooltip>
         )}
       </div>
+      <span id={TOP_NAV_END_ID} hidden />
     </header>
   );
 }
