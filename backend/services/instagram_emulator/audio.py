@@ -137,6 +137,9 @@ def finish_post(
     device.tap_when(_POST_OPTIONS)
     device.tap_when(_EDIT)
     device.wait_for(_EDIT_INFO)
+    # The place goes first, while the edit screen is as it opened: a song just added
+    # grows its row, and the rows below it move under a tap read before they did.
+    tagged = place is not None and _tagged(device, place, permalink)
     audio = _scroll_to(device, _AUDIO_ROW)
     adding_song = audio.labelled(_ADD_AUDIO)
     if adding_song:
@@ -151,7 +154,6 @@ def finish_post(
     else:
         # An earlier try saved a song but failed before it was recorded.
         added = AddedTrack("", audio.text)
-    tagged = place is not None and _tagged(device, place, permalink)
     if adding_song or tagged:
         device.tap_when(_DONE)
         device.wait_until_gone(_EDIT_INFO, seconds=CONTROL.audio_save_wait_seconds)
