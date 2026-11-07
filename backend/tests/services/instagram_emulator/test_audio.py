@@ -135,20 +135,40 @@ def test_tries_songs_until_one_matches_then_saves_the_post(screens) -> None:
     ]
 
 
-def test_results_under_a_filter_button_are_read_like_lyrics_tabs(screens) -> None:
-    # Some accounts show a Filter button where others show a Lyrics tab.
-    filtered = _screen(
+@pytest.mark.parametrize("filters", [("Lyrics",), ("Filter",), ()])
+def test_results_are_read_whatever_filters_the_account_shows(screens, filters) -> None:
+    # Accounts show a Lyrics tab, a Filter button or nothing above the results.
+    results = _screen(
         "Clear text",
-        "Filter",
+        *filters,
         "Select track After Hours (Live) by The Weeknd,4:27",
         "Select track After Hours by The Weeknd,6:01",
     )
-    device = screens(SUGGESTIONS, filtered)
+    device = screens(SUGGESTIONS, results)
     device.type_text("the weeknd after hours")
     assert [label for label, _ in module._results(device)] == [
         "After Hours (Live) by The Weeknd,4:27",
         "After Hours by The Weeknd,6:01",
     ]
+
+
+def test_a_search_that_finds_nothing_has_no_results(screens) -> None:
+    device = screens(SUGGESTIONS, _screen("Clear text", "No results"))
+    device.type_text("a song nobody has")
+    assert module._results(device) == []
+
+
+def test_a_cleared_search_waits_for_the_empty_field_not_the_suggestions(screens) -> None:
+    # Some accounts never show For you again after Clear text.
+    cleared = _screen("Search...", "Trending")
+    device = screens(SUGGESTIONS, SUGGESTIONS, NO_MATCH, cleared, RESULTS, CLIP, EDITED)
+
+    def choose(query, tracks):
+        return 1 if query == "the weeknd after hours" else None
+
+    added = module._pick_track(device, ["beyonce halo", "the weeknd after hours"], choose)
+    assert added.track == "After Hours by The Weeknd,6:01"
+    assert device.typed == ["beyonce halo", "the weeknd after hours"]
 
 
 def test_no_matching_song_discards_the_edit(screens) -> None:
