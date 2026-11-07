@@ -34,7 +34,7 @@ use crate::settings::Settings;
 pub const ROLE_ADMIN: &str = "admin";
 
 /// FastAPI's `HTTPBearer` answer to a missing or non-Bearer `Authorization` header.
-const NOT_AUTHENTICATED: &str = "Not authenticated";
+pub(crate) const NOT_AUTHENTICATED: &str = "Not authenticated";
 /// `ACCESS_TOKEN_AUDIENCE`.
 const AUDIENCE: &str = "authenticated";
 /// `decode_access_token`'s `options={"require": [...]}`: present and not null.

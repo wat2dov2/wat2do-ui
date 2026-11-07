@@ -35,8 +35,9 @@ REPOSITORY = Path(__file__).resolve().parents[3]
 WORKDIR_PREFIX = "wat2do-pain-point-report-"
 MAX_SUGGESTIONS = 8
 # The code the agent may read: the site, minus translations other than English
-# and generated files, and the API routers. No secrets live in either.
-CODE_FOLDERS = ("frontend/src", "backend/routers")
+# and generated files, and the API routes (Rust, and the routers still in Python).
+# No secrets live in any of them.
+CODE_FOLDERS = ("frontend/src", "rust/src/api/routes", "backend/routers")
 _SKIPPED_CODE = shutil.ignore_patterns("generated", "*.test.*", "*.spec.*", "__pycache__")
 
 _TEXT = {"type": "string"}

@@ -70,9 +70,6 @@ class Settings(BaseSettings):
     instagram_slide_render_url: str = ""
     instagram_slide_render_secret: str = ""
     instagram_slide_render_timeout: float = 30.0
-    automate_webhook_key: str = ""
-    # Bearer key the scheduled event change alerts call sends to its webhook.
-    event_change_alerts_key: str = ""
 
     @property
     def is_production(self) -> bool:

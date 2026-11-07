@@ -17,7 +17,7 @@ const PUSH_ID: &str = "push-123";
 const PUSH_CATEGORY: &str = "subscription_daily_digest";
 
 struct FakeServices {
-    /// `get_school_by_recipient_id`: `None` maps every recipient to this school.
+    /// `schools::by_recipient_id`: `None` maps every recipient to this school.
     school: Option<(i32, String)>,
     only_recipient: Option<String>,
     /// What the digest resolver returns; `None` means it must not run.

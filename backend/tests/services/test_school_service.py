@@ -73,7 +73,6 @@ def test_season_projection_is_school_scoped_static_and_public(fake_sb, patch_sb,
     for lookup, argument in [
         (school_service.get_school, "uwaterloo"),
         (school_service.get_school_by_name, "University of Waterloo"),
-        (school_service.get_school_by_recipient_id, "12345"),
     ]:
         school = lookup(argument)
         assert school.model_dump(mode="json")["event_seasons"] == expected
@@ -104,7 +103,6 @@ SCHOOL_ROWS = [
     [
         ("get_school", "uwaterloo"),
         ("get_school_by_name", "University of Waterloo"),
-        ("get_school_by_recipient_id", "76214170483"),
     ],
 )
 def test_school_identity_lookups_include_city(lookup, argument, fake_sb, patch_sb):
@@ -118,43 +116,6 @@ def test_school_identity_lookups_include_city(lookup, argument, fake_sb, patch_s
     assert school is not None
     assert school.city == "Waterloo"
     assert "city" in [column.strip() for column in fake_sb.select.call_args.args[0].split(",")]
-
-
-def test_get_school_by_recipient_id(fake_sb, patch_sb):
-    patch_sb("services.school_service")
-    fake_sb.set_response(
-        data=[
-            {
-                "id": 1,
-                "slug": "uwaterloo",
-                "name": "University of Waterloo",
-                "primary_color": "#FFD54F",
-                "secondary_color": "#111111",
-                "timezone": "America/Toronto",
-                "recipient_id": "76214170483",
-                "semester_start": "2026-05-01",
-                "semester_end": "2026-08-31",
-            }
-        ]
-    )
-
-    school = school_service.get_school_by_recipient_id("76214170483")
-
-    assert school is not None
-    assert school.slug == "uwaterloo"
-    fake_sb.eq.assert_called_once_with("recipient_id", "76214170483")
-
-
-@pytest.mark.parametrize("recipient_id", ["0", "012345", "not-numeric"])
-def test_get_school_by_recipient_id_rejects_noncanonical_values(
-    recipient_id,
-    fake_sb,
-    patch_sb,
-):
-    patch_sb("services.school_service")
-
-    assert school_service.get_school_by_recipient_id(recipient_id) is None
-    fake_sb.table.assert_not_called()
 
 
 def test_holiday_windows_project_specific_filters_without_reclassifying_events():

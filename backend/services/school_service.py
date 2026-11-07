@@ -8,12 +8,7 @@ from typing import Final
 from core.controlbox import controlbox
 from core.database import get_sb
 from core.tables import SCHOOLS
-from schemas.school import (
-    CampusSeasonWindow,
-    SchoolEventSeason,
-    SchoolRecord,
-    validate_recipient_id,
-)
+from schemas.school import CampusSeasonWindow, SchoolEventSeason, SchoolRecord
 
 SCHOOL_COLUMNS: Final[str] = (
     "id, slug, name, city, primary_color, secondary_color, timezone, language, faculties, location_examples, "
@@ -96,28 +91,6 @@ def get_school_by_id(school_id: int | None) -> SchoolRecord | None:
     return _school_record(response.data[0])
 
 
-@lru_cache(maxsize=128)
-def get_school_by_recipient_id(recipient_id: str | None) -> SchoolRecord | None:
-    normalized_recipient_id = (recipient_id or "").strip()
-    if not normalized_recipient_id:
-        return None
-    try:
-        normalized_recipient_id = validate_recipient_id(normalized_recipient_id)
-    except ValueError:
-        return None
-    response = (
-        get_sb()
-        .table(SCHOOLS)
-        .select(SCHOOL_COLUMNS)
-        .eq("recipient_id", normalized_recipient_id)
-        .limit(1)
-        .execute()
-    )
-    if not response.data:
-        return None
-    return _school_record(response.data[0])
-
-
 def get_school_id(slug_or_name: str | None) -> int | None:
     school = get_school(slug_or_name) or get_school_by_name(slug_or_name)
     return school.id if school is not None else None
@@ -158,7 +131,6 @@ def get_school_by_name(name: str | None) -> SchoolRecord | None:
 __all__ = [
     "campus_season_ids",
     "get_school",
-    "get_school_by_recipient_id",
     "get_school_by_name",
     "get_school_id",
     "normalize_school_slug",

@@ -29,11 +29,6 @@ class CompetitorPainPointResponse(FoundPainPoint):
     status: PainPointStatus
 
 
-class CompetitorPainPointReview(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    status: PainPointStatus
-
-
 SuggestionPriority = Literal["high", "medium", "low"]
 
 
@@ -70,8 +65,3 @@ class DailyReport(BaseModel):
     summary: str = Field(min_length=1, max_length=4000)
     themes: list[ReportTheme] = Field(default_factory=list, max_length=20)
     suggestions: list[ReportSuggestion] = Field(default_factory=list, max_length=20)
-
-
-class DailyReportResponse(DailyReport):
-    id: UUID
-    created_at: datetime

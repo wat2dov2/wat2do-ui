@@ -4,57 +4,6 @@
  */
 
 export interface paths {
-    "/competitor-pain-points/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Pain Points */
-        get: operations["list_pain_points_competitor_pain_points__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/competitor-pain-points/reports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Reports */
-        get: operations["list_reports_competitor_pain_points_reports_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/competitor-pain-points/{pain_point_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Review Pain Point */
-        patch: operations["review_pain_point_competitor_pain_points__pain_point_id__patch"];
-        trace?: never;
-    };
     "/instagram-publishing/batches/": {
         parameters: {
             query?: never;
@@ -230,94 +179,6 @@ export interface paths {
         put?: never;
         /** Apply Unsubscribe */
         post: operations["apply_unsubscribe_notification_preferences_unsubscribe_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/outreach/leads/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Leads */
-        get: operations["list_leads_outreach_leads__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/outreach/leads/{lead_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Lead */
-        patch: operations["update_lead_outreach_leads__lead_id__patch"];
-        trace?: never;
-    };
-    "/webhooks/automate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Receive Automate Log */
-        post: operations["receive_automate_log_webhooks_automate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/webhooks/event-change-alerts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Send Event Change Alerts
-         * @description Called every minute by the scheduled event change alerts call.
-         */
-        post: operations["send_event_change_alerts_webhooks_event_change_alerts_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/webhooks/automate/logs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Automate Logs */
-        get: operations["get_automate_logs_webhooks_automate_logs_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2136,27 +1997,149 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/competitor-pain-points/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pain Points */
+        get: operations["list_pain_points_competitor_pain_points__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/competitor-pain-points/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Reports */
+        get: operations["list_reports_competitor_pain_points_reports_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/competitor-pain-points/{pain_point_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Review Pain Point */
+        patch: operations["review_pain_point_competitor_pain_points__pain_point_id__patch"];
+        trace?: never;
+    };
+    "/outreach/leads/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Leads */
+        get: operations["list_leads_outreach_leads__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/outreach/leads/{lead_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Lead */
+        patch: operations["update_lead_outreach_leads__lead_id__patch"];
+        trace?: never;
+    };
+    "/webhooks/automate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Receive Automate Log */
+        post: operations["receive_automate_log_webhooks_automate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/event-change-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Event Change Alerts
+         * @description Called every minute by the scheduled event change alerts call.
+         */
+        post: operations["send_event_change_alerts_webhooks_event_change_alerts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/automate/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Automate Logs */
+        get: operations["get_automate_logs_webhooks_automate_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AutomateLogPayload */
-        AutomateLogPayload: {
-            /** Event */
-            event: string;
-            /** Sender */
-            sender?: string | null;
-            /** School */
-            school?: string | null;
-            /** Ig Account */
-            ig_account?: string | null;
-            /** Post Url */
-            post_url?: string | null;
-            /** Payload */
-            payload?: {
-                [key: string]: unknown;
-            } | null;
-        };
         /**
          * ClubCohostResponse
          * @description An additional existing club sharing an event or position.
@@ -2176,82 +2159,6 @@ export interface components {
             ig?: string | null;
             /** Discord */
             discord?: string | null;
-        };
-        /** CompetitorPainPointResponse */
-        CompetitorPainPointResponse: {
-            /** Competitor */
-            competitor: string;
-            /** Source */
-            source: string;
-            /** Url */
-            url: string;
-            /**
-             * Author
-             * @default
-             */
-            author: string;
-            /** Quote */
-            quote: string;
-            /** Pain Point */
-            pain_point: string;
-            /**
-             * Audience
-             * @enum {string}
-             */
-            audience: "organizer" | "attendee" | "other";
-            /** Posted At */
-            posted_at?: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Found At
-             * Format: date-time
-             */
-            found_at: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "new" | "seen" | "dismissed";
-        };
-        /** CompetitorPainPointReview */
-        CompetitorPainPointReview: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "new" | "seen" | "dismissed";
-        };
-        /** DailyReportResponse */
-        DailyReportResponse: {
-            /**
-             * Report Date
-             * Format: date
-             */
-            report_date: string;
-            /** Model */
-            model: string;
-            /** Complaint Count */
-            complaint_count: number;
-            /** Summary */
-            summary: string;
-            /** Themes */
-            themes?: components["schemas"]["ReportTheme"][];
-            /** Suggestions */
-            suggestions?: components["schemas"]["ReportSuggestion"][];
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
         };
         /**
          * EventSummaryResponse
@@ -2853,93 +2760,6 @@ export interface components {
             /** Dtend Utc */
             dtend_utc?: string | null;
         };
-        /**
-         * OutreachLeadResponse
-         * @description One unclaimed club, its email, and what to send it to claim its page.
-         */
-        OutreachLeadResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Club Id */
-            club_id: number;
-            /** Club Name */
-            club_name: string;
-            /** Club Url */
-            club_url: string;
-            /** Listings */
-            listings: number;
-            /** School Slug */
-            school_slug: string;
-            /** School Name */
-            school_name: string;
-            /** Email */
-            email: string;
-            /** Email Source Url */
-            email_source_url: string;
-            /**
-             * Email Found By
-             * @enum {string}
-             */
-            email_found_by: "club_page" | "research";
-            /** Email Subject */
-            email_subject: string;
-            /** Email Body */
-            email_body: string;
-            /** Follow Up */
-            follow_up: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "new" | "contacted" | "replied" | "claimed" | "not_interested" | "dismissed";
-            /** Notes */
-            notes: string;
-            /**
-             * Found At
-             * Format: date-time
-             */
-            found_at: string;
-            /** Formality */
-            formality: number | null;
-            /** Formality Signals */
-            formality_signals: ("directory_page" | "own_website" | "school_email" | "own_domain_email" | "free_email" | "many_listings" | "some_listings" | "few_listings" | "instagram" | "formal_name" | "informal_account")[];
-        };
-        /** OutreachLeadUpdate */
-        OutreachLeadUpdate: {
-            /** Status */
-            status?: ("new" | "contacted" | "replied" | "claimed" | "not_interested" | "dismissed") | null;
-            /** Notes */
-            notes?: string | null;
-        };
-        /** PaginatedResponse[CompetitorPainPointResponse] */
-        PaginatedResponse_CompetitorPainPointResponse_: {
-            /** Items */
-            items: components["schemas"]["CompetitorPainPointResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[DailyReportResponse] */
-        PaginatedResponse_DailyReportResponse_: {
-            /** Items */
-            items: components["schemas"]["DailyReportResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
         /** PaginatedResponse[FollowCandidateResponse] */
         PaginatedResponse_FollowCandidateResponse_: {
             /** Items */
@@ -2965,54 +2785,6 @@ export interface components {
             page_size: number;
             /** Total Pages */
             total_pages: number;
-        };
-        /** PaginatedResponse[OutreachLeadResponse] */
-        PaginatedResponse_OutreachLeadResponse_: {
-            /** Items */
-            items: components["schemas"]["OutreachLeadResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /**
-         * ReportSuggestion
-         * @description One change to wat2do.io the report suggests, and the complaints behind it.
-         */
-        ReportSuggestion: {
-            /** Title */
-            title: string;
-            /**
-             * Priority
-             * @enum {string}
-             */
-            priority: "high" | "medium" | "low";
-            /** Problem */
-            problem: string;
-            /** Change */
-            change: string;
-            /** Where */
-            where?: string[];
-            /** Complaint Urls */
-            complaint_urls?: string[];
-        };
-        /**
-         * ReportTheme
-         * @description A complaint that keeps coming up in one day's findings.
-         */
-        ReportTheme: {
-            /** Theme */
-            theme: string;
-            /** Detail */
-            detail: string;
-            /** Competitors */
-            competitors?: string[];
-            /** Complaint Urls */
-            complaint_urls?: string[];
         };
         /** ValidationError */
         ValidationError: {
@@ -3052,6 +2824,16 @@ export interface components {
                 [key: string]: string[];
             };
             report_statuses: string[];
+        };
+        AutomateLogPayload: {
+            event: string;
+            sender?: string | null;
+            school?: string | null;
+            ig_account?: string | null;
+            post_url?: string | null;
+            payload?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** Body_parse_event_image_ai_parse_event_image_post */
         Body_parse_event_image_ai_parse_event_image_post: {
@@ -3293,10 +3075,47 @@ export interface components {
             logo_url?: string | null;
             school?: string | null;
         };
+        CompetitorPainPointResponse: {
+            competitor: string;
+            source: string;
+            url: string;
+            /** @default  */
+            author: string;
+            quote: string;
+            pain_point: string;
+            /** @enum {string} */
+            audience: "organizer" | "attendee" | "other";
+            /** Format: date-time */
+            posted_at?: string | null;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            found_at: string;
+            /** @enum {string} */
+            status: "new" | "seen" | "dismissed";
+        };
+        CompetitorPainPointReview: {
+            /** @enum {string} */
+            status: "new" | "seen" | "dismissed";
+        };
         ContactCreate: {
             /** Format: email */
             email: string;
             message: string;
+        };
+        DailyReportResponse: {
+            /** Format: date */
+            report_date: string;
+            model: string;
+            /** Format: int64 */
+            complaint_count: number;
+            summary: string;
+            themes?: components["schemas"]["ReportTheme"][];
+            suggestions?: components["schemas"]["ReportSuggestion"][];
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
         };
         /** @description The request body, documented for the OpenAPI schema. */
         DiscoveryQueryCreate: {
@@ -3969,6 +3788,38 @@ export interface components {
             /** Id */
             id?: string | null;
         };
+        /** @description One unclaimed club, its email, and what to send it to claim its page. */
+        OutreachLeadResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int64 */
+            club_id: number;
+            club_name: string;
+            club_url: string;
+            /** Format: int64 */
+            listings: number;
+            school_slug: string;
+            school_name: string;
+            email: string;
+            email_source_url: string;
+            /** @enum {string} */
+            email_found_by: "club_page" | "research";
+            email_subject: string;
+            email_body: string;
+            follow_up: string;
+            /** @enum {string} */
+            status: "new" | "contacted" | "replied" | "claimed" | "not_interested" | "dismissed";
+            notes: string;
+            /** Format: date-time */
+            found_at: string;
+            /** Format: int64 */
+            formality: number | null;
+            formality_signals: ("directory_page" | "own_website" | "school_email" | "own_domain_email" | "free_email" | "many_listings" | "some_listings" | "few_listings" | "instagram" | "formal_name" | "informal_account")[];
+        };
+        OutreachLeadUpdate: {
+            status?: ("new" | "contacted" | "replied" | "claimed" | "not_interested" | "dismissed") | null;
+            notes?: string | null;
+        };
         PaginatedResponse_ClubClaimResponse_: {
             items: components["schemas"]["ClubClaimResponse"][];
             /** Format: int64 */
@@ -4002,6 +3853,28 @@ export interface components {
             /** Format: int64 */
             total_pages: number;
         };
+        PaginatedResponse_CompetitorPainPointResponse_: {
+            items: components["schemas"]["CompetitorPainPointResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
+        PaginatedResponse_DailyReportResponse_: {
+            items: components["schemas"]["DailyReportResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
+            total_pages: number;
+        };
         PaginatedResponse_DiscoveryQueryResponse_: {
             items: components["schemas"]["DiscoveryQueryResponse"][];
             /** Format: int64 */
@@ -4024,6 +3897,17 @@ export interface components {
             /** Page Size */
             page_size: number;
             /** Total Pages */
+            total_pages: number;
+        };
+        PaginatedResponse_OutreachLeadResponse_: {
+            items: components["schemas"]["OutreachLeadResponse"][];
+            /** Format: int64 */
+            total: number;
+            /** Format: int64 */
+            page: number;
+            /** Format: int64 */
+            page_size: number;
+            /** Format: int64 */
             total_pages: number;
         };
         /** PaginatedResponse[PositionSubmissionResponse] */
@@ -4576,6 +4460,23 @@ export interface components {
             /** Resolved At */
             resolved_at?: string | null;
         };
+        /** @description One change to wat2do.io the report suggests, and the complaints behind it. */
+        ReportSuggestion: {
+            title: string;
+            /** @enum {string} */
+            priority: "high" | "medium" | "low";
+            problem: string;
+            change: string;
+            where?: string[];
+            complaint_urls?: string[];
+        };
+        /** @description A complaint that keeps coming up in one day's findings. */
+        ReportTheme: {
+            theme: string;
+            detail: string;
+            competitors?: string[];
+            complaint_urls?: string[];
+        };
         /** ReportUpdate */
         ReportUpdate: {
             /**
@@ -5000,114 +4901,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_pain_points_competitor_pain_points__get: {
-        parameters: {
-            query?: {
-                competitor?: string | null;
-                source?: string | null;
-                audience?: ("organizer" | "attendee" | "other") | null;
-                pain_point_status?: ("new" | "seen" | "dismissed") | null;
-                search?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_CompetitorPainPointResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_reports_competitor_pain_points_reports_get: {
-        parameters: {
-            query?: {
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_DailyReportResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    review_pain_point_competitor_pain_points__pain_point_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                pain_point_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CompetitorPainPointReview"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CompetitorPainPointResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_instagram_publish_batches_instagram_publishing_batches__get: {
         parameters: {
             query?: {
@@ -5516,164 +5309,6 @@ export interface operations {
                 };
                 content: {
                     "text/html": string;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_leads_outreach_leads__get: {
-        parameters: {
-            query?: {
-                sort?: "newest" | "formality";
-                lead_status?: ("new" | "contacted" | "replied" | "claimed" | "not_interested" | "dismissed") | null;
-                school?: string | null;
-                search?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_OutreachLeadResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_lead_outreach_leads__lead_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                lead_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OutreachLeadUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OutreachLeadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    receive_automate_log_webhooks_automate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AutomateLogPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    send_event_change_alerts_webhooks_event_change_alerts_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    get_automate_logs_webhooks_automate_logs_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                sender_id?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -9540,6 +9175,272 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["V1SavedEventStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_pain_points_competitor_pain_points__get: {
+        parameters: {
+            query?: {
+                competitor?: string | null;
+                source?: string | null;
+                audience?: ("organizer" | "attendee" | "other") | null;
+                pain_point_status?: ("new" | "seen" | "dismissed") | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_CompetitorPainPointResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_reports_competitor_pain_points_reports_get: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_DailyReportResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_pain_point_competitor_pain_points__pain_point_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pain_point_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompetitorPainPointReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetitorPainPointResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_leads_outreach_leads__get: {
+        parameters: {
+            query?: {
+                sort?: "newest" | "formality";
+                lead_status?: ("new" | "contacted" | "replied" | "claimed" | "not_interested" | "dismissed") | null;
+                school?: string | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_OutreachLeadResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_lead_outreach_leads__lead_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lead_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OutreachLeadUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutreachLeadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    receive_automate_log_webhooks_automate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutomateLogPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_event_change_alerts_webhooks_event_change_alerts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_automate_logs_webhooks_automate_logs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                sender_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

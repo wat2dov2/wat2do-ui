@@ -130,7 +130,7 @@ pub fn validate_recipient_id(value: &str) -> Result<String, String> {
     Ok(value.to_owned())
 }
 
-/// `school_service.get_school_by_recipient_id`: the school an Instagram account notifies.
+/// The school an Instagram account (`schools.recipient_id`) notifies.
 pub async fn by_recipient_id(pool: &PgPool, recipient_id: &str) -> Result<Option<School>> {
     let Ok(recipient_id) = validate_recipient_id(recipient_id.trim()) else {
         return Ok(None);

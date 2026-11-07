@@ -5,291 +5,6 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/competitor-pain-points/": {
-      "get": {
-        "tags": [
-          "competitor-pain-points"
-        ],
-        "summary": "List Pain Points",
-        "operationId": "list_pain_points_competitor_pain_points__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "competitor",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 64,
-                  "pattern": "^[a-z0-9_]+$"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Competitor"
-            }
-          },
-          {
-            "name": "source",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 64,
-                  "pattern": "^[a-z0-9_]+$"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Source"
-            }
-          },
-          {
-            "name": "audience",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "organizer",
-                    "attendee",
-                    "other"
-                  ],
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Audience"
-            }
-          },
-          {
-            "name": "pain_point_status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "new",
-                    "seen",
-                    "dismissed"
-                  ],
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Pain Point Status"
-            }
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 200
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Search"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 1000,
-              "minimum": 1,
-              "description": "Page number (1-indexed)",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "Page number (1-indexed)"
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "Items per page (max 100)",
-              "default": 50,
-              "title": "Page Size"
-            },
-            "description": "Items per page (max 100)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_CompetitorPainPointResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/competitor-pain-points/reports": {
-      "get": {
-        "tags": [
-          "competitor-pain-points"
-        ],
-        "summary": "List Reports",
-        "operationId": "list_reports_competitor_pain_points_reports_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 1000,
-              "minimum": 1,
-              "description": "Page number (1-indexed)",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "Page number (1-indexed)"
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "Items per page (max 100)",
-              "default": 50,
-              "title": "Page Size"
-            },
-            "description": "Items per page (max 100)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_DailyReportResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/competitor-pain-points/{pain_point_id}": {
-      "patch": {
-        "tags": [
-          "competitor-pain-points"
-        ],
-        "summary": "Review Pain Point",
-        "operationId": "review_pain_point_competitor_pain_points__pain_point_id__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "pain_point_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Pain Point Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CompetitorPainPointReview"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CompetitorPainPointResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/instagram-publishing/batches/": {
       "get": {
         "tags": [
@@ -979,333 +694,6 @@
                 "schema": {
                   "type": "string"
                 }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/outreach/leads/": {
-      "get": {
-        "tags": [
-          "outreach"
-        ],
-        "summary": "List Leads",
-        "operationId": "list_leads_outreach_leads__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "sort",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "enum": [
-                "newest",
-                "formality"
-              ],
-              "type": "string",
-              "default": "newest",
-              "title": "Sort"
-            }
-          },
-          {
-            "name": "lead_status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "new",
-                    "contacted",
-                    "replied",
-                    "claimed",
-                    "not_interested",
-                    "dismissed"
-                  ],
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Lead Status"
-            }
-          },
-          {
-            "name": "school",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^[a-z0-9-]{1,80}$"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "School"
-            }
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 200
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Search"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 1000,
-              "minimum": 1,
-              "description": "Page number (1-indexed)",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "Page number (1-indexed)"
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "Items per page (max 100)",
-              "default": 50,
-              "title": "Page Size"
-            },
-            "description": "Items per page (max 100)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_OutreachLeadResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/outreach/leads/{lead_id}": {
-      "patch": {
-        "tags": [
-          "outreach"
-        ],
-        "summary": "Update Lead",
-        "operationId": "update_lead_outreach_leads__lead_id__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "lead_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Lead Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OutreachLeadUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OutreachLeadResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/webhooks/automate": {
-      "post": {
-        "tags": [
-          "webhooks"
-        ],
-        "summary": "Receive Automate Log",
-        "operationId": "receive_automate_log_webhooks_automate_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AutomateLogPayload"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/webhooks/event-change-alerts": {
-      "post": {
-        "tags": [
-          "webhooks"
-        ],
-        "summary": "Send Event Change Alerts",
-        "description": "Called every minute by the scheduled event change alerts call.",
-        "operationId": "send_event_change_alerts_webhooks_event_change_alerts_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/webhooks/automate/logs": {
-      "get": {
-        "tags": [
-          "webhooks"
-        ],
-        "summary": "Get Automate Logs",
-        "operationId": "get_automate_logs_webhooks_automate_logs_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 50,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "sender_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Sender Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           },
@@ -7939,79 +7327,532 @@
           }
         }
       }
+    },
+    "/competitor-pain-points/": {
+      "get": {
+        "tags": [
+          "competitor-pain-points"
+        ],
+        "summary": "List Pain Points",
+        "operationId": "list_pain_points_competitor_pain_points__get",
+        "parameters": [
+          {
+            "name": "competitor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 64,
+              "pattern": "^[a-z0-9_]+$"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 64,
+              "pattern": "^[a-z0-9_]+$"
+            }
+          },
+          {
+            "name": "audience",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "organizer",
+                    "attendee",
+                    "other"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          {
+            "name": "pain_point_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "new",
+                    "seen",
+                    "dismissed"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 1000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Items per page (max 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_CompetitorPainPointResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/competitor-pain-points/reports": {
+      "get": {
+        "tags": [
+          "competitor-pain-points"
+        ],
+        "summary": "List Reports",
+        "operationId": "list_reports_competitor_pain_points_reports_get",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 1000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Items per page (max 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_DailyReportResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/competitor-pain-points/{pain_point_id}": {
+      "patch": {
+        "tags": [
+          "competitor-pain-points"
+        ],
+        "summary": "Review Pain Point",
+        "operationId": "review_pain_point_competitor_pain_points__pain_point_id__patch",
+        "parameters": [
+          {
+            "name": "pain_point_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompetitorPainPointReview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitorPainPointResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outreach/leads/": {
+      "get": {
+        "tags": [
+          "outreach"
+        ],
+        "summary": "List Leads",
+        "operationId": "list_leads_outreach_leads__get",
+        "parameters": [
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "newest",
+                "formality"
+              ]
+            }
+          },
+          {
+            "name": "lead_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "new",
+                    "contacted",
+                    "replied",
+                    "claimed",
+                    "not_interested",
+                    "dismissed"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[a-z0-9-]{1,80}$"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 1000,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "Items per page (max 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_OutreachLeadResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/outreach/leads/{lead_id}": {
+      "patch": {
+        "tags": [
+          "outreach"
+        ],
+        "summary": "Update Lead",
+        "operationId": "update_lead_outreach_leads__lead_id__patch",
+        "parameters": [
+          {
+            "name": "lead_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutreachLeadUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutreachLeadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/automate": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Receive Automate Log",
+        "operationId": "receive_automate_log_webhooks_automate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutomateLogPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/event-change-alerts": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Send Event Change Alerts",
+        "description": "Called every minute by the scheduled event change alerts call.",
+        "operationId": "send_event_change_alerts_webhooks_event_change_alerts_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/automate/logs": {
+      "get": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Get Automate Logs",
+        "operationId": "get_automate_logs_webhooks_automate_logs_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "sender_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
-      "AutomateLogPayload": {
-        "properties": {
-          "event": {
-            "type": "string",
-            "title": "Event"
-          },
-          "sender": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sender"
-          },
-          "school": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "School"
-          },
-          "ig_account": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ig Account"
-          },
-          "post_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Post Url"
-          },
-          "payload": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Payload"
-          }
-        },
-        "type": "object",
-        "required": [
-          "event"
-        ],
-        "title": "AutomateLogPayload"
-      },
       "ClubCohostResponse": {
         "properties": {
           "id": {
@@ -8086,176 +7927,6 @@
         ],
         "title": "ClubCohostResponse",
         "description": "An additional existing club sharing an event or position."
-      },
-      "CompetitorPainPointResponse": {
-        "properties": {
-          "competitor": {
-            "type": "string",
-            "pattern": "^[a-z0-9_]+$",
-            "title": "Competitor"
-          },
-          "source": {
-            "type": "string",
-            "pattern": "^[a-z0-9_]+$",
-            "title": "Source"
-          },
-          "url": {
-            "type": "string",
-            "maxLength": 2000,
-            "pattern": "^https://\\S+$",
-            "title": "Url"
-          },
-          "author": {
-            "type": "string",
-            "maxLength": 200,
-            "title": "Author",
-            "default": ""
-          },
-          "quote": {
-            "type": "string",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Quote"
-          },
-          "pain_point": {
-            "type": "string",
-            "maxLength": 300,
-            "minLength": 1,
-            "title": "Pain Point"
-          },
-          "audience": {
-            "type": "string",
-            "enum": [
-              "organizer",
-              "attendee",
-              "other"
-            ],
-            "title": "Audience"
-          },
-          "posted_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Posted At"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "found_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Found At"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "new",
-              "seen",
-              "dismissed"
-            ],
-            "title": "Status"
-          }
-        },
-        "type": "object",
-        "required": [
-          "competitor",
-          "source",
-          "url",
-          "quote",
-          "pain_point",
-          "audience",
-          "id",
-          "found_at",
-          "status"
-        ],
-        "title": "CompetitorPainPointResponse"
-      },
-      "CompetitorPainPointReview": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "new",
-              "seen",
-              "dismissed"
-            ],
-            "title": "Status"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "status"
-        ],
-        "title": "CompetitorPainPointReview"
-      },
-      "DailyReportResponse": {
-        "properties": {
-          "report_date": {
-            "type": "string",
-            "format": "date",
-            "title": "Report Date"
-          },
-          "model": {
-            "type": "string",
-            "title": "Model"
-          },
-          "complaint_count": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Complaint Count"
-          },
-          "summary": {
-            "type": "string",
-            "maxLength": 4000,
-            "minLength": 1,
-            "title": "Summary"
-          },
-          "themes": {
-            "items": {
-              "$ref": "#/components/schemas/ReportTheme"
-            },
-            "type": "array",
-            "maxItems": 20,
-            "title": "Themes"
-          },
-          "suggestions": {
-            "items": {
-              "$ref": "#/components/schemas/ReportSuggestion"
-            },
-            "type": "array",
-            "maxItems": 20,
-            "title": "Suggestions"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "report_date",
-          "model",
-          "complaint_count",
-          "summary",
-          "id",
-          "created_at"
-        ],
-        "title": "DailyReportResponse"
       },
       "EventSummaryResponse": {
         "properties": {
@@ -9873,252 +9544,6 @@
         "title": "OccurrenceSummaryResponse",
         "description": "Browse dates retain selection identity without repeated parent/import fields."
       },
-      "OutreachLeadResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "club_id": {
-            "type": "integer",
-            "title": "Club Id"
-          },
-          "club_name": {
-            "type": "string",
-            "title": "Club Name"
-          },
-          "club_url": {
-            "type": "string",
-            "title": "Club Url"
-          },
-          "listings": {
-            "type": "integer",
-            "title": "Listings"
-          },
-          "school_slug": {
-            "type": "string",
-            "title": "School Slug"
-          },
-          "school_name": {
-            "type": "string",
-            "title": "School Name"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email"
-          },
-          "email_source_url": {
-            "type": "string",
-            "title": "Email Source Url"
-          },
-          "email_found_by": {
-            "type": "string",
-            "enum": [
-              "club_page",
-              "research"
-            ],
-            "title": "Email Found By"
-          },
-          "email_subject": {
-            "type": "string",
-            "title": "Email Subject"
-          },
-          "email_body": {
-            "type": "string",
-            "title": "Email Body"
-          },
-          "follow_up": {
-            "type": "string",
-            "title": "Follow Up"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "new",
-              "contacted",
-              "replied",
-              "claimed",
-              "not_interested",
-              "dismissed"
-            ],
-            "title": "Status"
-          },
-          "notes": {
-            "type": "string",
-            "title": "Notes"
-          },
-          "found_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Found At"
-          },
-          "formality": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Formality"
-          },
-          "formality_signals": {
-            "items": {
-              "type": "string",
-              "enum": [
-                "directory_page",
-                "own_website",
-                "school_email",
-                "own_domain_email",
-                "free_email",
-                "many_listings",
-                "some_listings",
-                "few_listings",
-                "instagram",
-                "formal_name",
-                "informal_account"
-              ]
-            },
-            "type": "array",
-            "title": "Formality Signals"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "club_id",
-          "club_name",
-          "club_url",
-          "listings",
-          "school_slug",
-          "school_name",
-          "email",
-          "email_source_url",
-          "email_found_by",
-          "email_subject",
-          "email_body",
-          "follow_up",
-          "status",
-          "notes",
-          "found_at",
-          "formality",
-          "formality_signals"
-        ],
-        "title": "OutreachLeadResponse",
-        "description": "One unclaimed club, its email, and what to send it to claim its page."
-      },
-      "OutreachLeadUpdate": {
-        "properties": {
-          "status": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "new",
-                  "contacted",
-                  "replied",
-                  "claimed",
-                  "not_interested",
-                  "dismissed"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 4000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "OutreachLeadUpdate"
-      },
-      "PaginatedResponse_CompetitorPainPointResponse_": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/CompetitorPainPointResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "page_size": {
-            "type": "integer",
-            "title": "Page Size"
-          },
-          "total_pages": {
-            "type": "integer",
-            "title": "Total Pages"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total",
-          "page",
-          "page_size",
-          "total_pages"
-        ],
-        "title": "PaginatedResponse[CompetitorPainPointResponse]"
-      },
-      "PaginatedResponse_DailyReportResponse_": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/DailyReportResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "page_size": {
-            "type": "integer",
-            "title": "Page Size"
-          },
-          "total_pages": {
-            "type": "integer",
-            "title": "Total Pages"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total",
-          "page",
-          "page_size",
-          "total_pages"
-        ],
-        "title": "PaginatedResponse[DailyReportResponse]"
-      },
       "PaginatedResponse_FollowCandidateResponse_": {
         "properties": {
           "items": {
@@ -10190,137 +9615,6 @@
           "total_pages"
         ],
         "title": "PaginatedResponse[InstagramPublishBatchSummaryResponse]"
-      },
-      "PaginatedResponse_OutreachLeadResponse_": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/OutreachLeadResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "page_size": {
-            "type": "integer",
-            "title": "Page Size"
-          },
-          "total_pages": {
-            "type": "integer",
-            "title": "Total Pages"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total",
-          "page",
-          "page_size",
-          "total_pages"
-        ],
-        "title": "PaginatedResponse[OutreachLeadResponse]"
-      },
-      "ReportSuggestion": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "maxLength": 300,
-            "minLength": 1,
-            "title": "Title"
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "high",
-              "medium",
-              "low"
-            ],
-            "title": "Priority"
-          },
-          "problem": {
-            "type": "string",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Problem"
-          },
-          "change": {
-            "type": "string",
-            "maxLength": 4000,
-            "minLength": 1,
-            "title": "Change"
-          },
-          "where": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "maxItems": 20,
-            "title": "Where"
-          },
-          "complaint_urls": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "maxItems": 30,
-            "title": "Complaint Urls"
-          }
-        },
-        "type": "object",
-        "required": [
-          "title",
-          "priority",
-          "problem",
-          "change"
-        ],
-        "title": "ReportSuggestion",
-        "description": "One change to wat2do.io the report suggests, and the complaints behind it."
-      },
-      "ReportTheme": {
-        "properties": {
-          "theme": {
-            "type": "string",
-            "maxLength": 300,
-            "minLength": 1,
-            "title": "Theme"
-          },
-          "detail": {
-            "type": "string",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Detail"
-          },
-          "competitors": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "maxItems": 30,
-            "title": "Competitors"
-          },
-          "complaint_urls": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "maxItems": 30,
-            "title": "Complaint Urls"
-          }
-        },
-        "type": "object",
-        "required": [
-          "theme",
-          "detail"
-        ],
-        "title": "ReportTheme",
-        "description": "A complaint that keeps coming up in one day's findings."
       },
       "ValidationError": {
         "properties": {
@@ -10449,6 +9743,51 @@
           "report_statuses": {
             "type": "array",
             "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AutomateLogPayload": {
+        "type": "object",
+        "required": [
+          "event"
+        ],
+        "properties": {
+          "event": {
+            "type": "string"
+          },
+          "sender": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "school": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ig_account": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "post_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "payload": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {},
+            "propertyNames": {
               "type": "string"
             }
           }
@@ -11276,6 +10615,97 @@
           }
         }
       },
+      "CompetitorPainPointResponse": {
+        "type": "object",
+        "required": [
+          "competitor",
+          "source",
+          "url",
+          "quote",
+          "pain_point",
+          "audience",
+          "id",
+          "found_at",
+          "status"
+        ],
+        "properties": {
+          "competitor": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "source": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "pattern": "^https://\\S+$"
+          },
+          "author": {
+            "type": "string",
+            "default": "",
+            "maxLength": 200
+          },
+          "quote": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "pain_point": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "organizer",
+              "attendee",
+              "other"
+            ]
+          },
+          "posted_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "found_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "seen",
+              "dismissed"
+            ]
+          }
+        }
+      },
+      "CompetitorPainPointReview": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "seen",
+              "dismissed"
+            ]
+          }
+        }
+      },
       "ContactCreate": {
         "type": "object",
         "required": [
@@ -11291,6 +10721,58 @@
             "type": "string",
             "maxLength": 5000,
             "minLength": 1
+          }
+        }
+      },
+      "DailyReportResponse": {
+        "type": "object",
+        "required": [
+          "report_date",
+          "model",
+          "complaint_count",
+          "summary",
+          "id",
+          "created_at"
+        ],
+        "properties": {
+          "report_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "model": {
+            "type": "string"
+          },
+          "complaint_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "themes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportTheme"
+            },
+            "maxItems": 20
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportSuggestion"
+            },
+            "maxItems": 20
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -13281,6 +12763,152 @@
         "title": "OccurrenceUpdate",
         "description": "Occurrence payload for event edits.\n\nAn ID retains an existing occurrence. A missing ID creates a new one."
       },
+      "OutreachLeadResponse": {
+        "type": "object",
+        "description": "One unclaimed club, its email, and what to send it to claim its page.",
+        "required": [
+          "id",
+          "club_id",
+          "club_name",
+          "club_url",
+          "listings",
+          "school_slug",
+          "school_name",
+          "email",
+          "email_source_url",
+          "email_found_by",
+          "email_subject",
+          "email_body",
+          "follow_up",
+          "status",
+          "notes",
+          "found_at",
+          "formality",
+          "formality_signals"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "club_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "club_name": {
+            "type": "string"
+          },
+          "club_url": {
+            "type": "string"
+          },
+          "listings": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "school_slug": {
+            "type": "string"
+          },
+          "school_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "email_source_url": {
+            "type": "string"
+          },
+          "email_found_by": {
+            "type": "string",
+            "enum": [
+              "club_page",
+              "research"
+            ]
+          },
+          "email_subject": {
+            "type": "string"
+          },
+          "email_body": {
+            "type": "string"
+          },
+          "follow_up": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "contacted",
+              "replied",
+              "claimed",
+              "not_interested",
+              "dismissed"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "found_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "formality": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "formality_signals": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "directory_page",
+                "own_website",
+                "school_email",
+                "own_domain_email",
+                "free_email",
+                "many_listings",
+                "some_listings",
+                "few_listings",
+                "instagram",
+                "formal_name",
+                "informal_account"
+              ]
+            }
+          }
+        }
+      },
+      "OutreachLeadUpdate": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "new",
+                  "contacted",
+                  "replied",
+                  "claimed",
+                  "not_interested",
+                  "dismissed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 4000
+          }
+        }
+      },
       "PaginatedResponse_ClubClaimResponse_": {
         "type": "object",
         "required": [
@@ -13383,6 +13011,74 @@
           }
         }
       },
+      "PaginatedResponse_CompetitorPainPointResponse_": {
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompetitorPainPointResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PaginatedResponse_DailyReportResponse_": {
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyReportResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "PaginatedResponse_DiscoveryQueryResponse_": {
         "type": "object",
         "required": [
@@ -13452,6 +13148,40 @@
           "total_pages"
         ],
         "title": "PaginatedResponse[EventSummaryResponse]"
+      },
+      "PaginatedResponse_OutreachLeadResponse_": {
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OutreachLeadResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
       },
       "PaginatedResponse_PositionSubmissionResponse_": {
         "properties": {
@@ -15452,6 +15182,89 @@
           "reported_at"
         ],
         "title": "ReportResponse"
+      },
+      "ReportSuggestion": {
+        "type": "object",
+        "description": "One change to wat2do.io the report suggests, and the complaints behind it.",
+        "required": [
+          "title",
+          "priority",
+          "problem",
+          "change"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "problem": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "change": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "where": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20
+          },
+          "complaint_urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 30
+          }
+        }
+      },
+      "ReportTheme": {
+        "type": "object",
+        "description": "A complaint that keeps coming up in one day's findings.",
+        "required": [
+          "theme",
+          "detail"
+        ],
+        "properties": {
+          "theme": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1
+          },
+          "detail": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "competitors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 30
+          },
+          "complaint_urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 30
+          }
+        }
       },
       "ReportUpdate": {
         "properties": {

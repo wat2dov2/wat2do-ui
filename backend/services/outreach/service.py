@@ -1,102 +1,19 @@
-"""Store the unclaimed clubs the daily sweep finds emails for and serve them to the admin page.
+"""Store the unclaimed clubs the daily sweep finds emails for.
 
-Every lead is one club. Its email, follow-up and claim link are written from the club
-when the page reads it, so the copy always matches the club's current page.
+Every lead is one club. The admin page (``rust/src/api/routes/outreach``) writes each
+lead's email, follow-up and claim link from the club when it reads the lead.
 """
 
 from __future__ import annotations
 
-import re
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
-from core.controlbox import controlbox
 from core.database import get_sb
-from core.errors import OUTREACH_LEAD_NOT_FOUND
-from core.exceptions import NotFoundError
 from core.pagination import fetch_all_pages
-from core.sanitize import sanitize_postgrest_value
 from core.tables import OUTREACH_LEADS
-from schemas.outreach import (
-    EmailFoundBy,
-    FoundClubEmail,
-    LeadSort,
-    OutreachLeadResponse,
-    OutreachLeadUpdate,
-)
-from services import school_service
+from schemas.outreach import EmailFoundBy, FoundClubEmail
 from services.outreach.formality import ClubFacts
-
-CONTROL = controlbox.outreach
-_LEAD_COLUMNS = "*,club:clubs!inner(club_name,school_id,school:schools(slug,name))"
-_SECTIONS = re.compile(r"^## (.+)$", re.MULTILINE)
-
-
-def _load_template() -> dict[str, str]:
-    """claim_email.md's sections by heading: Subject, Body and Follow-up."""
-    parts = _SECTIONS.split((Path(__file__).with_name("claim_email.md")).read_text())
-    return {heading: text.strip() for heading, text in zip(parts[1::2], parts[2::2], strict=True)}
-
-
-_TEMPLATE = _load_template()
-
-
-def list_leads(
-    *,
-    sort: LeadSort,
-    status: str | None,
-    school: str | None,
-    search: str | None,
-    offset: int,
-    limit: int,
-) -> tuple[list[OutreachLeadResponse], int]:
-    """Clubs with an email, newest or most formal first."""
-    query = (
-        get_sb()
-        .table(OUTREACH_LEADS)
-        .select(_LEAD_COLUMNS, count="exact")
-        .not_.is_("email", "null")
-    )
-    if status:
-        query = query.eq("status", status)
-    if school:
-        school_id = school_service.get_school_id(school)
-        if school_id is None:
-            return [], 0
-        query = query.eq("club.school_id", school_id)
-    if search and search.strip():
-        term = sanitize_postgrest_value(search.strip())
-        query = (
-            query.ilike("email", f"%{term}%")
-            if "@" in term
-            else query.ilike("club.club_name", f"%{term}%")
-        )
-    if sort == "formality":
-        query = query.order("formality", desc=True, nullsfirst=False)
-    result = (
-        query.order("found_at", desc=True).order("id").range(offset, offset + limit - 1).execute()
-    )
-    return _leads(result.data or []), result.count or 0
-
-
-def update_lead(lead_id: str, data: OutreachLeadUpdate) -> OutreachLeadResponse:
-    changes = data.model_dump(exclude_none=True)
-    if changes:
-        updated = get_sb().table(OUTREACH_LEADS).update(changes).eq("id", lead_id).execute()
-        if not updated.data:
-            raise NotFoundError(OUTREACH_LEAD_NOT_FOUND)
-    result = (
-        get_sb()
-        .table(OUTREACH_LEADS)
-        .select(_LEAD_COLUMNS)
-        .eq("id", lead_id)
-        .not_.is_("email", "null")
-        .execute()
-    )
-    if not result.data:
-        raise NotFoundError(OUTREACH_LEAD_NOT_FOUND)
-    return _leads(result.data)[0]
 
 
 def new_clubs(limit: int) -> list[dict[str, Any]]:
@@ -244,53 +161,3 @@ def _email_columns(found: FoundClubEmail | None, found_by: EmailFoundBy) -> dict
         "email_found_by": found_by,
         "found_at": datetime.now(UTC).isoformat(),
     }
-
-
-def _leads(rows: list[dict[str, Any]]) -> list[OutreachLeadResponse]:
-    club_ids = [row["club_id"] for row in rows]
-    listings = (
-        {
-            row["club_id"]: row["listings"]
-            for row in get_sb().rpc("club_listing_counts", {"p_club_ids": club_ids}).execute().data
-            or []
-        }
-        if club_ids
-        else {}
-    )
-    return [_lead(row, listings.get(row["club_id"], 0)) for row in rows]
-
-
-def _lead(row: dict[str, Any], listings: int) -> OutreachLeadResponse:
-    club = row.pop("club")
-    school = club["school"]
-    club_url = CONTROL.club_url_template.replace("{school}", school["slug"]).replace(
-        "{club_id}", str(row["club_id"])
-    )
-    values = {
-        "club_name": club["club_name"],
-        "school_name": school["name"],
-        "club_url": club_url,
-        "sender_name": CONTROL.sender_name,
-    }
-    subject, body, follow_up = (
-        _fill(_TEMPLATE[section], values) for section in ("Subject", "Body", "Follow-up")
-    )
-    return OutreachLeadResponse.model_validate(
-        {
-            **row,
-            "club_name": club["club_name"],
-            "club_url": club_url,
-            "listings": listings,
-            "school_slug": school["slug"],
-            "school_name": school["name"],
-            "email_subject": subject,
-            "email_body": body,
-            "follow_up": follow_up,
-        }
-    )
-
-
-def _fill(text: str, values: dict[str, str]) -> str:
-    for key, value in values.items():
-        text = text.replace("{{" + key + "}}", value)
-    return text
