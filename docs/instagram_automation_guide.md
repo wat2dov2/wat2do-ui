@@ -385,6 +385,7 @@ Review the actual poster before relying on artwork quality; an image URL alone i
 Clubs that asked not to be posted are rows in `public.instagram_excluded_clubs`, keyed by lowercase Instagram handle without `@`.
 The DM sweep adds a row when a club asks in our DMs; add one by hand when a club asks anywhere else.
 Each candidate packet carries those handles as `excluded_clubs`, the curation prompt forbids picking their events, and the outro leaves them out.
+The prompt also never picks religious or political events (causes, protests, vigils, strikes, Model UN, anything hosted by an activist, advocacy or partisan group), and the outro leaves out the Politics & Advocacy and Religion & Spirituality categories.
 An admin can still add such an event to a draft by hand, so check before adding one manually.
 Order retained events for engaging review, without filling slots or discarding good events to fit the publishing limit.
 The publishing limit applies only when the admin publishes the final carousel.

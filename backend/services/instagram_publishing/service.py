@@ -79,6 +79,8 @@ _SUCCESSFUL_CUTOFF_STATUSES = (
 )
 _EVENT_COLUMNS = "id,title,description,location,club,ig_handle,source_image_url,category,employers_on_campus,price,food,registration,carousel_requested_at"
 _BATCH_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
+# The outro is listed without an editor, so it leaves out whole categories the carousel never posts.
+_OUTRO_HIDDEN_CATEGORIES = frozenset({"Politics & Advocacy", "Religion & Spirituality"})
 _ITEM_COUNT_EMBED = f"items:{INSTAGRAM_PUBLISH_ITEMS}(count)"
 
 
@@ -910,7 +912,9 @@ def _summarize_recent_events(
     others = [
         event
         for event in _load_slide_events(sorted(recent_ids - carousel_ids)).values()
-        if not has_ended(event, now=now) and _club_handle(event.ig_handle) not in excluded
+        if not has_ended(event, now=now)
+        and _club_handle(event.ig_handle) not in excluded
+        and event.category not in _OUTRO_HIDDEN_CATEGORIES
     ]
     others.sort(key=lambda event: (event.occurrences[0].dtstart_utc, event.id))
     return new_event_count, others
