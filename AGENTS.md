@@ -145,6 +145,7 @@ worker opens the live post, likes it, reposts it unless the Repost icon already 
 Edit, Add audio,
 searches the admin's song list in random order, and Claude Haiku picks the matching
 track or none.
+The same edit tags the post with the school's own place: the first one Instagram's location search lists under the school's exact name (`schools.name`), else the one Claude Haiku recognizes as the school, or none; a place that cannot be tagged never holds up the song.
 A song the admin marks as Asian or K-pop is tried only at the campuses in
 `controlbox/instagram_publishing.json` `asian_song_schools`.
 The emulator also finds and follows the clubs each school account should follow.
