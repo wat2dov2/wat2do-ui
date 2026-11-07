@@ -16,6 +16,7 @@ const ICON_SIZE: Record<BadgeSize, number> = {
   sm: 10,
   md: 14,
   lg: 16,
+  stacked: 14,
   xl: 18,
 };
 
