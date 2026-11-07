@@ -19,7 +19,9 @@ import { mockApi } from "./api-fixture";
  * on both sides must keep its box (within 1px) across the swap, and the page
  * must record no layout shift while it loads, swaps and settles. The events
  * list paints its server-rendered first screen before the complete feed
- * arrives, so that first screen is held to the same standard.
+ * arrives, so that first screen is held to the same standard. The top bar is
+ * also loaded with its HTML paused partway through, as a slow CPU or network
+ * can leave it, and must not shift either.
  */
 
 const BASE = process.env.SKELETON_LAYOUT_BASE_URL ?? "http://127.0.0.1:3000";
@@ -433,6 +435,37 @@ async function throttleCpu(page: Page) {
   await session.send("Emulation.setCPUThrottlingRate", { rate });
 }
 
+/**
+ * Serves the next visit to `path` with a slow, parser-blocking script right after
+ * the top bar's primary navigation, so the browser may paint the page with the bar
+ * half-parsed: the pause a slow CPU or network leaves there at random.
+ */
+async function pauseParsingInsideTopBar(page: Page, path: string, nextWorker: { proxyPort: number }) {
+  const pause = `${BASE}/__parser-pause.js`;
+  await page.route(pause, async (route) => {
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    await route.fulfill({ contentType: "text/javascript", body: "" });
+  });
+  await page.route(url => url.pathname === path, async (route) => {
+    if (!route.request().isNavigationRequest()) return route.fallback();
+    // Next's testmode adds these in its own route, which this one stands in for.
+    const response = await route.fetch({ headers: {
+      ...route.request().headers(),
+      "next-test-proxy-port": String(nextWorker.proxyPort),
+      "next-test-data": test.info().testId,
+    } });
+    const html = await response.text();
+    const header = html.indexOf('data-slot="top-nav"');
+    const navigationEnd = header < 0 ? -1 : html.indexOf("</nav>", header);
+    if (navigationEnd < 0) throw new Error("The document has no top bar navigation to pause after");
+    const at = navigationEnd + "</nav>".length;
+    // The body goes back decoded, so the original encoding and length no longer apply.
+    const headers = Object.fromEntries(Object.entries(response.headers())
+      .filter(([name]) => !["content-encoding", "content-length", "transfer-encoding"].includes(name)));
+    await route.fulfill({ status: response.status(), headers, body: `${html.slice(0, at)}<script src="${pause}"></script>${html.slice(at)}` });
+  });
+}
+
 interface RouteSurface {
   name: string;
   path: string;
@@ -608,6 +641,20 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
 
       const { cls, shifts } = await shiftsSince(page, openedAt);
       await report(`event-drawer-${viewportName}`, compare(loadingBoxes, loadedBoxes, viewport.height), cls, shifts);
+    });
+
+    test("the top bar never paints half-parsed when the page's HTML pauses inside it", async ({ page, next, _nextWorker }) => {
+      const gates: Gates = { data: new Gate(), late: new Gate() };
+      gates.data.open();
+      gates.late.open();
+      await installMocks(page, next, gates, () => false);
+      await pauseParsingInsideTopBar(page, "/clubs", _nextWorker);
+      await page.addInitScript(OBSERVE_SHIFTS);
+      await page.goto(`${BASE}/clubs`);
+      await page.locator("[data-club-card]").first().waitFor();
+      await settle(page);
+      const { cls, shifts } = await shiftsSince(page);
+      await report(`top-bar-parse-pause-${viewportName}`, compare({}, {}, viewport.height), cls, shifts);
     });
   });
 }
