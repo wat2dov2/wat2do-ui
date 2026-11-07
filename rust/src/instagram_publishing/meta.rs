@@ -173,14 +173,29 @@ impl MetaClient {
         required_string(&payload, "id")
     }
 
+    /// Post a ready container. Meta can refuse it as not ready for a moment
+    /// after it reads FINISHED, which posts nothing, so that answer is waited
+    /// out the way `wait_until_ready` waits.
     pub async fn publish(&self, user_id: &str, creation_id: &str) -> Result<String> {
-        let payload = self
-            .post(
-                &format!("/{user_id}/media_publish"),
-                &[("creation_id", creation_id)],
-            )
-            .await?;
-        required_string(&payload, "id")
+        let mut attempt = 1;
+        loop {
+            let published = self
+                .post(
+                    &format!("/{user_id}/media_publish"),
+                    &[("creation_id", creation_id)],
+                )
+                .await;
+            match published {
+                Ok(payload) => return required_string(&payload, "id"),
+                Err(error)
+                    if not_ready(&error) && attempt < INSTAGRAM_PUBLISHING.meta_poll_attempts =>
+                {
+                    attempt += 1;
+                    tokio::time::sleep(self.poll_interval).await;
+                }
+                Err(error) => return Err(error),
+            }
+        }
     }
 
     pub async fn get_permalink(&self, media_id: &str) -> Result<String> {
@@ -247,6 +262,33 @@ impl MetaClient {
     }
 }
 
+/// Meta's "Media ID is not available": the container cannot be published yet,
+/// which Meta can still answer for a moment after it reads FINISHED.
+const MEDIA_NOT_READY: i64 = 9007;
+
+/// An error answer from the Graph API: Meta's error code, if it gave one, and
+/// its message, which is all the error says.
+#[derive(Debug)]
+struct GraphError {
+    code: Option<i64>,
+    message: String,
+}
+
+impl std::fmt::Display for GraphError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for GraphError {}
+
+/// Whether Meta refused a publish only because the container is not ready yet.
+fn not_ready(error: &anyhow::Error) -> bool {
+    error
+        .downcast_ref::<GraphError>()
+        .is_some_and(|error| error.code == Some(MEDIA_NOT_READY))
+}
+
 /// `_response_json`: the JSON object Meta answered with, or its error
 /// message. A transport error never names the URL, which can carry a token.
 async fn response_json(
@@ -262,15 +304,19 @@ async fn response_json(
         bail!("Meta Graph API returned HTTP {}", status.as_u16());
     };
     if status.is_client_error() || status.is_server_error() {
-        let message = payload
-            .get("error")
+        let error = payload.get("error");
+        let message = error
             .and_then(|error| error.get("message"))
             .filter(|message| crate::pyjson::truthy(message))
             .map(crate::pyjson::str);
-        bail!(
-            "{}",
-            message.unwrap_or_else(|| format!("Meta Graph API returned HTTP {}", status.as_u16()))
-        );
+        return Err(GraphError {
+            code: error
+                .and_then(|error| error.get("code"))
+                .and_then(Value::as_i64),
+            message: message
+                .unwrap_or_else(|| format!("Meta Graph API returned HTTP {}", status.as_u16())),
+        }
+        .into());
     }
     match payload {
         Value::Object(payload) => Ok(payload),
@@ -470,6 +516,77 @@ mod tests {
         assert_eq!(
             pending.recorded().len(),
             INSTAGRAM_PUBLISHING.meta_poll_attempts as usize
+        );
+    }
+
+    fn not_ready_reply() -> crate::instagram_publishing::fake_http::Reply {
+        (
+            400,
+            "application/json",
+            br#"{"error": {"message": "Media ID is not available", "code": 9007, "error_subcode": 2207027}}"#
+                .to_vec(),
+        )
+    }
+
+    #[tokio::test]
+    async fn a_publish_meta_finds_not_ready_is_asked_again() {
+        let calls = std::sync::atomic::AtomicUsize::new(0);
+        let graph = serve(move |_| {
+            // Meta refuses the first two tries, then takes the post.
+            if calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst) < 2 {
+                not_ready_reply()
+            } else {
+                json_reply(json!({"id": "media-1"}))
+            }
+        })
+        .await;
+        let client = MetaClient::with_host(&graph.url, "token")
+            .unwrap()
+            .poll_interval(Duration::ZERO);
+        assert_eq!(
+            client.publish("1784", "carousel-1").await.unwrap(),
+            "media-1"
+        );
+        assert_eq!(graph.recorded().len(), 3);
+    }
+
+    #[tokio::test]
+    async fn a_publish_fails_on_any_other_error_or_once_meta_never_gets_ready() {
+        let graph = serve(|request| {
+            if request.text().contains("broken") {
+                (
+                    400,
+                    "application/json",
+                    br#"{"error": {"message": "Invalid parameter", "code": 100}}"#.to_vec(),
+                )
+            } else {
+                not_ready_reply()
+            }
+        })
+        .await;
+        let client = MetaClient::with_host(&graph.url, "token")
+            .unwrap()
+            .poll_interval(Duration::ZERO);
+        assert_eq!(
+            client
+                .publish("1784", "broken")
+                .await
+                .unwrap_err()
+                .to_string(),
+            "Invalid parameter"
+        );
+        assert_eq!(graph.recorded().len(), 1);
+        assert_eq!(
+            client
+                .publish("1784", "carousel-1")
+                .await
+                .unwrap_err()
+                .to_string(),
+            "Media ID is not available"
+        );
+        assert_eq!(
+            graph.recorded().len(),
+            1 + INSTAGRAM_PUBLISHING.meta_poll_attempts as usize
         );
     }
 
