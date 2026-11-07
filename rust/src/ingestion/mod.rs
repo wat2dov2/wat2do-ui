@@ -15,6 +15,9 @@ pub mod prompt;
 pub mod schedule;
 pub mod stop;
 
+#[cfg(test)]
+mod database_tests;
+
 use std::path::PathBuf;
 
 /// `~/.local/state/wat2do/ingestion` (under `XDG_STATE_HOME` when set): locks,
