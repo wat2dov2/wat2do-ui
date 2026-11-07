@@ -34,6 +34,8 @@ interface EventListProps {
   eventStats: Record<string, EventStats> | null;
   isLoading?: boolean;
   groupByDateSections?: boolean;
+  /** The reader's query (search, filters, sort); only a change here returns the list to its first batch. */
+  resetKey?: string;
 }
 
 interface EventCardsGridProps {
@@ -54,6 +56,7 @@ function EventCardsGrid({
       {events.map((event, index) => (
         <CardEntrance
           key={event.id}
+          entryKey={`event-${event.id}`}
           index={index}
           role="listitem"
           className="h-full min-w-0"
@@ -120,6 +123,7 @@ export function EventList({
   eventStats,
   isLoading = false,
   groupByDateSections = true,
+  resetKey,
 }: EventListProps) {
   const { getSchoolTimezone } = useSchoolDirectory();
   const { t, i18n } = useTranslation();
@@ -135,7 +139,7 @@ export function EventList({
         : events,
     [dateSectionGroups, groupByDateSections, events],
   );
-  const { visibleItems: visibleEvents, visibleCount: visibleEventCount, hasMore: hasMoreEvents, loadMoreRef } = useProgressiveList(sectionOrderedEvents, controlBox.eventDiscovery.initialRenderCount);
+  const { visibleItems: visibleEvents, visibleCount: visibleEventCount, hasMore: hasMoreEvents, loadMoreRef } = useProgressiveList(sectionOrderedEvents, controlBox.eventDiscovery.initialRenderCount, resetKey);
   const visibleDateSectionGroups = useMemo(
     () => {
       let remaining = visibleEventCount;

@@ -26,6 +26,13 @@ const ENTRANCE_EASE = "cubic-bezier(0.18, 0.39, 0.14, 0.9)";
  */
 const STAGGER_CYCLE = 8;
 
+/**
+ * Cards that have already made their entrance, by `entryKey`. A card can remount
+ * while the reader browses (a list refreshes, a section regroups, the reader comes
+ * back to the page); it should simply be there, not rise in a second time.
+ */
+const enteredKeys = new Set<string>();
+
 interface CardEntranceProps {
   children: ReactNode;
   /** Position in the grid; only decides this card's share of the stagger. */
@@ -33,6 +40,8 @@ interface CardEntranceProps {
   className?: string;
   /** Carried by this element, so a grid needs no separate wrapper for it. */
   role?: string;
+  /** Stable identity of the card (for example `event-12`), so it enters only once per visit. */
+  entryKey?: string;
 }
 
 /**
@@ -45,6 +54,7 @@ export function CardEntrance({
   index,
   className,
   role,
+  entryKey,
 }: CardEntranceProps) {
   const elementRef = useRef<HTMLDivElement>(null);
   const hasEntered = useRef(false);
@@ -52,18 +62,26 @@ export function CardEntrance({
   useEffect(() => {
     const element = elementRef.current;
     if (!element || hasEntered.current) return;
+    const markEntered = () => {
+      hasEntered.current = true;
+      if (entryKey) enteredKeys.add(entryKey);
+    };
+    if (entryKey && enteredKeys.has(entryKey)) {
+      hasEntered.current = true;
+      return;
+    }
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const bounds = element.getBoundingClientRect();
     if (reducedMotion.matches || bounds.top < window.innerHeight) {
-      hasEntered.current = true;
+      markEntered();
       return;
     }
 
     let animations: Animation[] = [];
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return;
-      hasEntered.current = true;
+      markEntered();
       observer.disconnect();
       const delay = (index % STAGGER_CYCLE) * STAGGER_STEP_SECONDS * 1000;
       const timing = { duration: ENTRANCE_DURATION_SECONDS * 1000, easing: ENTRANCE_EASE, fill: "backwards" } as const;
@@ -86,7 +104,7 @@ export function CardEntrance({
     };
     const handleMotionChange = () => {
       if (reducedMotion.matches) {
-        hasEntered.current = true;
+        markEntered();
         stop();
       }
     };
@@ -96,7 +114,7 @@ export function CardEntrance({
       stop();
       reducedMotion.removeEventListener("change", handleMotionChange);
     };
-  }, [index]);
+  }, [entryKey, index]);
 
   return (
     <div

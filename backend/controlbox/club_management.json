@@ -1,6 +1,6 @@
 {
   "directory_page_size": 20,
   "invite_expiration_days": 7,
-  "initial_render_count": 24,
+  "initial_render_count": 16,
   "school_lookup_cache_seconds": 60
 }

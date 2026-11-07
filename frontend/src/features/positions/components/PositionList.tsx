@@ -76,6 +76,7 @@ export function PositionList({
       {positions.map((position, index) => (
         <CardEntrance
           key={position.id}
+          entryKey={`position-${position.id}`}
           index={index}
           role="listitem"
           className="h-full min-w-0"

@@ -108,6 +108,7 @@ export function EventsPageContainer({
               hasActiveFilters={filters.filterCount > 0 || filters.searchQuery.trim().length > 0}
               eventStats={eventStats}
               isLoading={isLoading}
+              resetKey={appliedQueryKey}
               groupByDateSections={
                 filters.sortBy === "date" && filters.sortOrder === "asc"
               }

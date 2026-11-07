@@ -93,6 +93,7 @@ export function ClubsPage({
           clubs={clubs}
           savedClubIds={savedClubIds}
           isLoading={isLoading}
+          resetKey={clubsPage.appliedQueryKey}
           onClubClick={(club) =>
             router.push(clubPagePath(club.id))
           }
