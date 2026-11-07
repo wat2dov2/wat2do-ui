@@ -9,6 +9,7 @@ import {
 import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { useEventBadges } from "@/features/events/hooks/useEventBadges";
+import { usePrefetchEventOnPress } from "@/features/events/hooks/usePrefetchEventOnPress";
 import { useCardMouseDownActivate, useMobileClickActivation } from "@/shared/hooks";
 import { cn } from "@/shared/lib/utils";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
@@ -105,6 +106,7 @@ function EventCardComponent({
   const cardTime = formatCardTime(event, getSchoolTimezone(event.school), i18n.language);
 
   const handleCardActivate = useCallback(() => onEventClick?.(event), [event, onEventClick]);
+  const pressPrefetch = usePrefetchEventOnPress(event.id);
 
   const preferClickPress = useMobileClickActivation();
 
@@ -144,6 +146,7 @@ function EventCardComponent({
         role: "button",
         tabIndex: 0,
         "aria-label": `Event: ${event.title}`,
+        ...pressPrefetch,
         onMouseDown: handleCardMouseDown,
         onClick: handleCardClick,
         onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
