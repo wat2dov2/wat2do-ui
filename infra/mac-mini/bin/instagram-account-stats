@@ -7,4 +7,4 @@ set -a
 set +a
 release="$(cd "$data/releases/current" && pwd -P)"
 cd "$release/backend"
-exec "$data/venv/bin/python" jobs/snapshot_instagram_accounts.py
+exec "$release/bin/wat2do-instagram" stats

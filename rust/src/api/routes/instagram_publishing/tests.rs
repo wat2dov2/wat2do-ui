@@ -1,5 +1,5 @@
 //! The request bodies, checked as pydantic checks them
-//! (`schemas/instagram_publishing.py`).
+//! (the admin routes' pydantic schemas, ported with them).
 
 use serde_json::{Value, json};
 

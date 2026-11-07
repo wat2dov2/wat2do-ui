@@ -1,9 +1,11 @@
-//! `build_caption` (`services/instagram_publishing/captions.py`): the factual
-//! caption a carousel posts with, built from its events' live data.
+//! `build_caption` and `default_caption_intro`
+//! (`services/instagram_publishing/captions.py`): the factual caption a
+//! carousel posts with, built from its events' live data, and the intro a
+//! daily draft starts with.
 //!
-//! Python's daily drafts build the same caption when they save a draft; the
-//! two must stay byte for byte alike (`backend/tests/.../test_captions.py`
-//! and the tests below share their cases).
+//! The editor and the daily drafts (`crate::instagram_publishing::drafts`)
+//! both build captions here; the tests below carry Python's
+//! `test_captions.py` cases.
 
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
@@ -64,6 +66,24 @@ fn truncate(value: &str, length: usize) -> String {
         .take(length.saturating_sub(1).max(1))
         .collect();
     format!("{}…", kept.trim_end_matches(python_space))
+}
+
+/// `default_caption_intro`: the line a draft's caption opens with, in the
+/// school's language; an employer carousel names its topic.
+pub fn default_caption_intro(school: &CaptionSchool<'_>, batch_kind: &str) -> String {
+    let slug = school.slug;
+    match (batch_kind == "employers_on_campus", school.french) {
+        (true, true) => format!("Occasions de réseautage à {slug} 👀"),
+        (true, false) => format!("Networking opportunities at {slug} 👀"),
+        (false, true) => {
+            format!(
+                "Nouveaux événements à {slug}, ajoutés à Wat2Do dans les dernières 24 heures 👀"
+            )
+        }
+        (false, false) => {
+            format!("Fresh events at {slug}, added to Wat2Do in the last 24 hours 👀")
+        }
+    }
 }
 
 /// `build_caption`.
@@ -259,6 +279,85 @@ mod tests {
         assert!(caption.starts_with(&format!("1. {}… - {club}\n", &title[..89])));
         let too_long = build_caption(&events, &school("uwaterloo", false), &"x".repeat(2200));
         assert!(matches!(too_long, Err(ApiError::Validation { .. })));
+    }
+
+    fn titled(title: &str, start: DateTime<Utc>) -> CaptionEvent<'_> {
+        CaptionEvent {
+            title,
+            club: None,
+            ig_handle: None,
+            location: None,
+            start,
+        }
+    }
+
+    #[test]
+    fn default_intros_name_the_school_in_its_language() {
+        // test_build_caption_uses_canonical_handle_time_location_and_cta,
+        // test_french_school_caption_uses_french_copy_and_local_time and
+        // test_employer_carousel_caption_intro_identifies_the_topic_in_both_languages
+        assert_eq!(
+            default_caption_intro(&school("utm", false), "events"),
+            "Fresh events at utm, added to Wat2Do in the last 24 hours 👀"
+        );
+        assert_eq!(
+            default_caption_intro(&school("uqam", true), "events"),
+            "Nouveaux événements à uqam, ajoutés à Wat2Do dans les dernières 24 heures 👀"
+        );
+        assert_eq!(
+            default_caption_intro(&school("uwaterloo", false), "employers_on_campus"),
+            "Networking opportunities at uwaterloo 👀"
+        );
+        assert_eq!(
+            default_caption_intro(&school("uqam", true), "employers_on_campus"),
+            "Occasions de réseautage à uqam 👀"
+        );
+    }
+
+    #[test]
+    fn the_intro_leads_and_the_events_keep_their_order() {
+        // test_intro_is_preserved_and_event_suffix_follows_order
+        let start = Utc.with_ymd_and_hms(2026, 9, 9, 23, 30, 0).unwrap();
+        let events = [titled("Second", start), titled("First", start)];
+        let utsg = school("utsg", false);
+        let suffix = build_caption(&events, &utsg, "").unwrap();
+        assert_eq!(
+            build_caption(&events, &utsg, "Hello\nYour campus plans").unwrap(),
+            format!("Hello\nYour campus plans\n\n{suffix}")
+        );
+        assert!(suffix.find("1. Second").unwrap() < suffix.find("2. First").unwrap());
+        let intro = default_caption_intro(&utsg, "events");
+        assert_eq!(
+            build_caption(&events, &utsg, &intro).unwrap(),
+            format!("{intro}\n\n{suffix}")
+        );
+        assert!(!suffix.contains("Fresh events"));
+        // test_oversized_intro_is_rejected
+        assert!(matches!(
+            build_caption(&[], &utsg, &"x".repeat(2200)),
+            Err(ApiError::Validation { detail, .. }) if detail == CAPTION_TOO_LONG
+        ));
+    }
+
+    #[test]
+    fn memorial_prints_french_newfoundland_times() {
+        // test_memorial_caption_uses_french_and_newfoundland_time
+        let mun = CaptionSchool {
+            slug: "mun",
+            timezone: "America/St_Johns".parse().unwrap(),
+            french: true,
+        };
+        let start = Utc.with_ymd_and_hms(2026, 9, 23, 22, 0, 0).unwrap();
+        let caption = build_caption(
+            &[titled("Soirée", start)],
+            &mun,
+            &default_caption_intro(&mun, "events"),
+        )
+        .unwrap();
+        assert!(caption.starts_with("Nouveaux événements à mun"));
+        assert!(caption.contains("23/09/2026 · 19 h 30"));
+        assert!(caption.contains("À quel événement"));
+        assert!(caption.contains("mun.wat2do.io"));
     }
 
     #[test]

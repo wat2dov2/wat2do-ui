@@ -40,7 +40,7 @@ log "building $sha"
 git -C "$build" fetch --quiet origin
 git -C "$build" checkout --quiet --detach "$sha"
 
-binaries=(wat2do-api wat2do-send-notifications wat2do-poster-payouts)
+binaries=(wat2do-api wat2do-instagram wat2do-send-notifications wat2do-poster-payouts)
 (cd "$build/rust" && cargo build --release --quiet "${binaries[@]/#/--bin=}")
 
 # Dependencies change rarely; reinstall only when their lockfile does.

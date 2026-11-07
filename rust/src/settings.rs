@@ -37,6 +37,11 @@ pub struct Settings {
     pub email_unsubscribe_secret: String,
     /// Decrypts the stored Instagram publishing tokens (a Fernet key).
     pub instagram_token_encryption_key: String,
+    /// The website route that draws carousel slides as JPEGs, the bearer
+    /// secret it expects, and how long a slide may take.
+    pub instagram_slide_render_url: String,
+    pub instagram_slide_render_secret: String,
+    pub instagram_slide_render_timeout_seconds: f64,
     /// Exact origins the API answers cross-origin requests from.
     pub cors_origins: Vec<String>,
     /// Trusted dynamic origins (school subdomains), matched in full.
@@ -137,6 +142,11 @@ impl Settings {
             // Untrimmed, like Python: the signing key must match the API's byte for byte.
             email_unsubscribe_secret: lookup("EMAIL_UNSUBSCRIBE_SECRET").unwrap_or_default(),
             instagram_token_encryption_key: optional("INSTAGRAM_TOKEN_ENCRYPTION_KEY"),
+            instagram_slide_render_url: optional("INSTAGRAM_SLIDE_RENDER_URL"),
+            instagram_slide_render_secret: optional("INSTAGRAM_SLIDE_RENDER_SECRET"),
+            instagram_slide_render_timeout_seconds: optional("INSTAGRAM_SLIDE_RENDER_TIMEOUT")
+                .parse()
+                .unwrap_or(30.0),
             cors_origins: list("CORS_ORIGINS", DEFAULT_CORS_ORIGINS)?,
             cors_origin_regex,
             cookie_domain: optional("COOKIE_DOMAIN"),

@@ -31,7 +31,7 @@ The application-layer encryption key is stored as `INSTAGRAM_TOKEN_ENCRYPTION_KE
 The plaintext tokens are never stored in source, control-box files, logs, or client responses.
 There is intentionally no account-management UI.
 
-Manual imports use `backend/scripts/import_instagram_tokens.py`.
+Manual imports use `wat2do-instagram import-tokens` (`rust/src/instagram_publishing/tokens.rs`).
 For every supplied token, the importer calls Instagram's `/me` endpoint and assigns the token by the returned username matched against the control-box account username.
 The scoped user ID returned by `/me` is stored with the encrypted credential and is the only ID used to create and publish media.
 It does not trust the human label in the import file.

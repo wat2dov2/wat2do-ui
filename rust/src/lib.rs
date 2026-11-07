@@ -15,6 +15,7 @@ pub mod host;
 pub mod images;
 pub mod ingestion;
 pub mod instagram_notifications;
+pub mod instagram_publishing;
 pub mod launch_agents;
 pub mod logs;
 pub mod map_locations;

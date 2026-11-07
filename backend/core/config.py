@@ -61,15 +61,6 @@ class Settings(BaseSettings):
     event_feed_revalidation_url: str = ""
     event_feed_revalidation_secret: str = ""
     event_feed_revalidation_timeout: float = 3.0
-    # Server-only key for encrypting per-account Instagram access tokens before
-    # they are stored in the database. Generate with Fernet.generate_key().
-    instagram_token_encryption_key: str = ""
-    # Next.js slide renderer. The carousel slide templates live in the frontend
-    # so the admin preview and the published PNG come from one source; this is
-    # the route that rasterizes them.
-    instagram_slide_render_url: str = ""
-    instagram_slide_render_secret: str = ""
-    instagram_slide_render_timeout: float = 30.0
 
     @property
     def is_production(self) -> bool:

@@ -363,12 +363,12 @@ Unconfirmed changes are reported as failures for inspection rather than retried 
 ## Carousel draft selection and artwork
 
 A daily Claude job owns event selection, carousel order, sticker choices, caption introduction, and cover copy.
-`backend/jobs/generate_instagram_posts.py curate` runs one Claude Code agent per school that has no draft for today, in parallel (`services/instagram_publishing/curation.py`, prompt in `curation_prompt.md`).
+`wat2do-instagram curate` (`rust/src/instagram_publishing`, binary `wat2do-instagram`) runs one Claude Code agent per school that has no draft for today, in parallel (`curation.rs`, prompt in `rust/src/instagram_publishing/curation_prompt.md`).
 Each agent gets only Read access to a private folder holding the school's candidate packet and downscaled posters, and no application secrets.
-Its structured answer is validated through the same `DraftSelection` contract and saved with `save_review_draft`; a rejected answer is retried once with the reason.
+Its structured answer is validated as a `DraftSelection` (`selection.rs`) and saved with `save_review_draft` (`drafts.rs`); a rejected answer is retried once with the reason.
 Schools with no eligible events get an empty draft without an agent.
 A packet holds the events added since the account's last carousel (`new: true`) and, when those are fewer than `fill_candidate_count`, upcoming events the account has never posted, soonest first (`new: false`), so the agent can always fill all `maximum_event_slides` slides; networking events are candidates like any other. A carousel with fewer than `minimum_event_slides` event slides is never published: the 9:35 run leaves it in review and the Publish button refuses it.
-The `candidates` and `save <selection.json>` commands remain for manual review.
+The `wat2do-instagram candidates` and `wat2do-instagram save <selection.json>` commands remain for manual review.
 Every registered school receives a candidate packet and may save a review draft, even before an Instagram publishing account is connected.
 The school directory is the generation roster; connected account `enabled` controls publication only.
 Unconnected drafts keep `instagram_user_id` null, never a fabricated account ID.
@@ -431,14 +431,21 @@ The renderer no longer requests maps or club hiring data.
 
 ### Daily publishing schedule
 
-The `io.wat2do.instagram.curate` LaunchAgent on the Mac mini runs `curate` daily at each of the `curation_hours`, at `curation_minute`, in `backend/controlbox/instagram_publishing.json` (9 a.m., then 11 a.m., 1 p.m. and 3 p.m. Toronto); install or update it (and the publish job below) with `generate_instagram_posts.py install-schedule`.
+The `io.wat2do.instagram.curate` LaunchAgent on the Mac mini runs `wat2do-instagram curate` daily at each of the `curation_hours`, at `curation_minute`, in `backend/controlbox/instagram_publishing.json` (9 a.m., then 11 a.m., 1 p.m. and 3 p.m. Toronto).
+Install or update it (and the publish job below) with `cargo run --release --bin wat2do-instagram -- install-schedule` in `rust/` of the runtime checkout.
+Like the ingestion agents, both run `cargo run --release` against the checkout that installed them, from its `backend/` folder (for `backend/.env`).
 
-The `io.wat2do.instagram.publish` LaunchAgent runs `generate_instagram_posts.py publish` daily at `auto_publish_hour`:`auto_publish_minute` (9:35 a.m. Toronto). It publishes every school's events draft for today that is still `ready_for_review`, one school at a time, so admins have until then to edit a draft or publish it by hand. Curation and publishing share a file lock, so a publish run waits for a curation run that is still writing drafts. Drafts saved by the later curation runs stay in review.
+The `io.wat2do.instagram.publish` LaunchAgent runs `wat2do-instagram publish` daily at `auto_publish_hour`:`auto_publish_minute` (9:35 a.m. Toronto).
+It publishes every school's events draft for today that is still `ready_for_review`, one school at a time, so admins have until then to edit a draft or publish it by hand.
+Curation and publishing share a file lock (`$TMPDIR/wat2do-instagram-carousels.lock`), so a publish run waits for a curation run that is still writing drafts.
+Drafts saved by the later curation runs stay in review.
+The admin's Publish button claims the batch in the API, which then starts `wat2do-instagram publish-batch <id>` from the binary beside `wat2do-api` as a detached process; a process that cannot start or crashes marks the batch failed.
+Publishing draws each slide through the website's render route (`INSTAGRAM_SLIDE_RENDER_URL` and `INSTAGRAM_SLIDE_RENDER_SECRET`), stores the JPEGs in media storage and posts the carousel through the Graph API.
 launchd runs a missed time once the Mac wakes, and a skipped day is not lost: the next draft window starts at the last successful cutoff.
-The job keeps no logs and exits non-zero when any school fails; each later run retries them, since `curate` skips schools already drafted today.
+The jobs keep no logs and exit non-zero when any school fails; each later run retries them, since `curate` skips schools already drafted today.
 The model, parallel agents, attempts, timeout and poster size are the `curation_*` controlbox settings.
-The job uses the repository's existing production configuration and authenticated AWS access without printing or persisting credentials.
-It does not refresh tokens: the Mac has no token encryption key, so the daily `Instagram account stats` GitHub workflow refreshes expiring tokens (see below).
+The jobs use the checkout's production configuration without printing or persisting credentials.
+They do not refresh tokens; the daily account stats run does (see below).
 
 The command interface never selects events itself and never publishes them.
 Each selection JSON contains `account_key`, the candidate packet's timezone-aware `window_end`, `caption_intro`, `cover_body`, and ordered `picks` with `event_id` and `sticker_labels`.
@@ -474,8 +481,9 @@ A device moved to another system image keeps its data only if the emulator's reb
 
 ### Account stats and token refresh
 
-The Mac mini's `io.wat2do.instagram-account-stats` launchd timer (`infra/mac-mini`) runs `backend/jobs/snapshot_instagram_accounts.py` daily at 6:00 a.m. Toronto.
-It reads `INSTAGRAM_TOKEN_ENCRYPTION_KEY` from the production settings in `~/wat2do-data/config/backend.env`, so it is also where expiring tokens are refreshed.
+The Mac mini's `io.wat2do.instagram-account-stats` launchd timer (`infra/mac-mini`) runs the deployed release's `wat2do-instagram stats` daily at 6:00 a.m. Toronto.
+It reads `INSTAGRAM_TOKEN_ENCRYPTION_KEY` from the production settings in `~/wat2do-data/config/backend.env`, so it is also where expiring tokens are refreshed (`rust/src/instagram_publishing/tokens.rs`), before the stats are read.
+A token a person generated is stored with `wat2do-instagram import-tokens <file>`, whose leading lines are `account_key=token`.
 It then reads every account with a working token through the Graph API, using only `instagram_business_basic`: followers, follows and post counts, plus the newest `stats_media_limit` posts with their like and comment counts.
 `instagram_account_snapshots` keeps one row per account per day, and `instagram_account_media` holds each account's newest posts, replaced on every run.
 Reach, views, saves and shares need the `instagram_business_manage_insights` permission, which the stored tokens were not granted.

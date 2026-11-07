@@ -12,25 +12,40 @@ use serde_json::{Map, Value};
 /// value's order.
 pub fn dumps(value: &Value, indent: Option<usize>) -> String {
     let mut out = String::new();
-    write_value(&mut out, value, false, indent, 0);
+    write_value(&mut out, value, false, indent, 0, true);
+    out
+}
+
+/// `json.dumps(value, ensure_ascii=False)`, indented like [`dumps`]: non-ASCII
+/// characters are written as they are.
+pub fn dumps_unicode(value: &Value, indent: Option<usize>) -> String {
+    let mut out = String::new();
+    write_value(&mut out, value, false, indent, 0, false);
     out
 }
 
 /// `json.dumps(value, sort_keys=True)`, indented like [`dumps`].
 pub fn dumps_sorted(value: &Value, indent: Option<usize>) -> String {
     let mut out = String::new();
-    write_value(&mut out, value, true, indent, 0);
+    write_value(&mut out, value, true, indent, 0, true);
     out
 }
 
 /// `json.dumps(text)` for one string.
 pub fn string(text: &str) -> String {
     let mut out = String::new();
-    write_string(&mut out, text);
+    write_string(&mut out, text, true);
     out
 }
 
-fn write_value(out: &mut String, value: &Value, sort: bool, indent: Option<usize>, depth: usize) {
+fn write_value(
+    out: &mut String,
+    value: &Value,
+    sort: bool,
+    indent: Option<usize>,
+    depth: usize,
+    ascii: bool,
+) {
     match value {
         Value::Null => out.push_str("null"),
         Value::Bool(true) => out.push_str("true"),
@@ -44,7 +59,7 @@ fn write_value(out: &mut String, value: &Value, sort: bool, indent: Option<usize
                 out.push_str(&float_repr(number.as_f64().unwrap_or(f64::NAN)));
             }
         }
-        Value::String(text) => write_string(out, text),
+        Value::String(text) => write_string(out, text, ascii),
         Value::Array(items) => {
             if items.is_empty() {
                 out.push_str("[]");
@@ -59,12 +74,12 @@ fn write_value(out: &mut String, value: &Value, sort: bool, indent: Option<usize
                     }
                 }
                 newline(out, indent, depth + 1);
-                write_value(out, item, sort, indent, depth + 1);
+                write_value(out, item, sort, indent, depth + 1, ascii);
             }
             newline(out, indent, depth);
             out.push(']');
         }
-        Value::Object(map) => write_object(out, map, sort, indent, depth),
+        Value::Object(map) => write_object(out, map, sort, indent, depth, ascii),
     }
 }
 
@@ -74,6 +89,7 @@ fn write_object(
     sort: bool,
     indent: Option<usize>,
     depth: usize,
+    ascii: bool,
 ) {
     if map.is_empty() {
         out.push_str("{}");
@@ -93,9 +109,9 @@ fn write_object(
             }
         }
         newline(out, indent, depth + 1);
-        write_string(out, key);
+        write_string(out, key, ascii);
         out.push_str(": ");
-        write_value(out, item, sort, indent, depth + 1);
+        write_value(out, item, sort, indent, depth + 1, ascii);
     }
     newline(out, indent, depth);
     out.push('}');
@@ -108,7 +124,7 @@ fn newline(out: &mut String, indent: Option<usize>, depth: usize) {
     }
 }
 
-fn write_string(out: &mut String, text: &str) {
+fn write_string(out: &mut String, text: &str, ascii: bool) {
     out.push('"');
     for character in text.chars() {
         match character {
@@ -120,6 +136,7 @@ fn write_string(out: &mut String, text: &str) {
             '\u{8}' => out.push_str("\\b"),
             '\u{c}' => out.push_str("\\f"),
             ' '..='~' => out.push(character),
+            _ if !ascii && character > '~' => out.push(character),
             _ => {
                 let mut units = [0u16; 2];
                 for unit in character.encode_utf16(&mut units) {
