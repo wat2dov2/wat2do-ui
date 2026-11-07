@@ -552,12 +552,17 @@
   },
   "landing": {
     "hero": {
-      "note": "Kostenlos für alle · Finanziert durch Auszeichnungen für studentisches Engagement",
       "badges": {
         "free": "Kostenlos, ohne Konto",
         "source": "Direkt von Instagram"
       },
-      "titleLead": "Jede Campus-Veranstaltung,",
+      "titleLeadBefore": "Jede",
+      "titleWords": {
+        "event": "Campus-Veranstaltung",
+        "networking": "Campus-Veranstaltung",
+        "social": "Campus-Veranstaltung",
+        "position": "Campus-Veranstaltung"
+      },
       "titleHighlight": "bevor sie vorbei ist.",
       "description": "Club-Events gehen auf Hunderten Instagram-Accounts unter. Wat2Do bündelt sie alle in einem Feed.",
       "primaryAction": "Was ist los?",
@@ -583,11 +588,7 @@
           "title": "Deshalb wirkt es, als wäre nichts los",
           "description": "Wenn Veranstaltungen über Hunderte Accounts verstreut sind, wirkt der Campus ruhig. Ist er aber nicht. Du siehst es nur nicht."
         }
-      },
-      "story": "Tony hat eine Instagram-Story über italienische Kochkurse für nur $5 gefunden. Sie war drei Tage vorher gepostet worden.",
-      "storyOver": "Die Veranstaltung war schon vorbei.",
-      "storyEnd": "Also haben wir den Ort gebaut, den wir uns gewünscht hätten.",
-      "signature": "Tony & Erica, Gründer von Wat2Do"
+      }
     },
     "solution": {
       "title": "Ein Feed. Jeder Club. Kein Suchen.",
@@ -686,13 +687,7 @@
     "features": {
       "capture": {
         "title": "Vom Instagram-Flyer zur Veranstaltung, ganz automatisch",
-        "description": "Clubs posten weiter wie immer. Wat2Do liest jeden Flyer und zieht Datum, Uhrzeit, Ort und Preis heraus, sodass die Veranstaltung im Feed landet, ohne dass jemand ein Formular ausfüllt.",
-        "mockHandle": "@italian.club",
-        "mockTitle": "Italienischer Kochkurs",
-        "mockDate": "Donnerstag, 18:00 Uhr",
-        "mockPlace": "Küche im Studierendenzentrum",
-        "mockPrice": "$5",
-        "mockAdded": "Aus dem Post des Clubs hinzugefügt"
+        "description": "Clubs posten weiter wie immer. Wat2Do liest jeden Flyer und zieht Datum, Uhrzeit, Ort und Preis heraus, sodass die Veranstaltung im Feed landet, ohne dass jemand ein Formular ausfüllt."
       },
       "filters": {
         "title": "Kostenloses Essen mit zwei Taps",

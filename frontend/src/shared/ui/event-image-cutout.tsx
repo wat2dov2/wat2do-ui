@@ -172,7 +172,7 @@ interface EventImageCutoutProps {
  * A direct CSS path clips the photo, video and loading state together without
  * SVG fragment references, image decoding or alpha-mask compositing.
  */
-function createClipPath(cutouts: MeasuredCutout[], { width, height, fillet, radius: innerRadius }: CutoutBox) {
+export function createClipPath(cutouts: MeasuredCutout[], { width, height, fillet, radius: innerRadius }: CutoutBox) {
   if (width <= 0 || height <= 0) return undefined;
 
   const corners: BadgeMaskVariant[] = ["top-left", "top-right", "bottom-right", "bottom-left"];

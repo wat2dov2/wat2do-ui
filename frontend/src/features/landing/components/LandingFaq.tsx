@@ -1,19 +1,12 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { Clock, Gift, PenLine, School, Users, type LucideIcon } from "lucide-react";
-import { LandingCard, LandingCardCopy, LandingNotchIcon } from "@/features/landing/components/LandingCard";
+import { LandingCard, LandingCardCopy } from "@/features/landing/components/LandingCard";
 import { LandingHeading } from "@/features/landing/components/LandingSection";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { Stack } from "@/shared/layout";
 
-const QUESTIONS: readonly { key: string; icon: LucideIcon }[] = [
-  { key: "free", icon: Gift },
-  { key: "clubs", icon: Users },
-  { key: "speed", icon: Clock },
-  { key: "submit", icon: PenLine },
-  { key: "schools", icon: School },
-];
+const QUESTIONS = ["free", "clubs", "speed", "submit", "schools"] as const;
 
 /** Each question on its own card beside the heading, which stays in view while the answers scroll. */
 export function LandingFaq() {
@@ -26,8 +19,8 @@ export function LandingFaq() {
         <LandingHeading title={t("landing.faq.title")} />
       </div>
       <Stack gap={3}>
-        {QUESTIONS.map(({ key, icon }) => (
-          <LandingCard key={key} corners={{ "top-left": <LandingNotchIcon icon={icon} /> }}>
+        {QUESTIONS.map((key) => (
+          <LandingCard key={key}>
             <LandingCardCopy
               title={t(`landing.faq.items.${key}.question`)}
               description={t(`landing.faq.items.${key}.answer`, { count: schools.length })}

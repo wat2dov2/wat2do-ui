@@ -552,13 +552,18 @@
   },
   "landing": {
     "hero": {
-      "note": "Libre para sa lahat · Pinopondohan ng mga student impact award",
       "badges": {
         "free": "Libre, walang account",
         "source": "Kinuha mula sa Instagram"
       },
-      "titleLead": "Bawat kaganapan sa campus,",
-      "titleHighlight": "bago pa ito matapos.",
+      "titleLeadBefore": "Bawat",
+      "titleWords": {
+        "event": "kaganapan sa campus",
+        "networking": "networking na pagkakataon sa campus",
+        "social": "social event sa campus",
+        "position": "posisyon sa club sa campus"
+      },
+      "titleHighlight": "bago mo pa ito makaligtaan.",
       "description": "Natatabunan ang mga kaganapan ng mga organisasyon sa daan-daang Instagram account. Inilalagay ng Wat2Do ang lahat ng ito sa iisang feed.",
       "primaryAction": "Tingnan kung ano'ng meron",
       "secondaryAction": "Paano ito gumagana"
@@ -583,11 +588,7 @@
           "title": "Kaya parang walang nangyayari",
           "description": "Kapag kalat ang mga kaganapan sa daan-daang account, parang tahimik ang campus. Pero hindi. Hindi mo lang ito nakikita."
         }
-      },
-      "story": "Nakakita si Tony ng Instagram story para sa Italian cooking lessons, $5 lang. Tatlong araw na pala itong naka-post.",
-      "storyOver": "Tapos na ang kaganapan.",
-      "storyEnd": "Kaya ginawa namin ang lugar na matagal na naming hinihiling na meron.",
-      "signature": "Tony & Erica, mga founder ng Wat2Do"
+      }
     },
     "solution": {
       "title": "Iisang feed. Bawat organisasyon. Walang paghahanap.",
@@ -686,13 +687,7 @@
     "features": {
       "capture": {
         "title": "Mula Instagram flyer hanggang kaganapan, awtomatiko",
-        "description": "Tuloy lang ang mga organisasyon sa pag-post gaya ng dati. Binabasa ng Wat2Do ang bawat flyer at kinukuha ang petsa, oras, lugar at presyo, kaya napupunta ang kaganapan sa feed nang walang kailangang mag-fill out ng form.",
-        "mockHandle": "@italian.club",
-        "mockTitle": "Italian cooking class",
-        "mockDate": "Huwebes, 6:00 PM",
-        "mockPlace": "Kusina ng student centre",
-        "mockPrice": "$5",
-        "mockAdded": "Naidagdag mula sa post ng organisasyon"
+        "description": "Tuloy lang ang mga organisasyon sa pag-post gaya ng dati. Binabasa ng Wat2Do ang bawat flyer at kinukuha ang petsa, oras, lugar at presyo, kaya napupunta ang kaganapan sa feed nang walang kailangang mag-fill out ng form."
       },
       "filters": {
         "title": "Libreng pagkain sa dalawang tap",

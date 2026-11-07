@@ -2,11 +2,11 @@
 
 import { useRequestSchool } from "@/app/client-providers";
 import type { LandingSnapshot } from "@/features/landing/api/landing.server";
-import { LandingMosaicBand } from "@/features/landing/components/LandingCard";
 import { LandingClosing } from "@/features/landing/components/LandingClosing";
 import { LandingDifferent } from "@/features/landing/components/LandingDifferent";
 import { LandingFaq } from "@/features/landing/components/LandingFaq";
 import { LandingHero } from "@/features/landing/components/LandingHero";
+import { LandingMosaicBand } from "@/features/landing/components/LandingMosaicBand";
 import { LandingProblem } from "@/features/landing/components/LandingProblem";
 import { LandingSolution } from "@/features/landing/components/LandingSolution";
 import { LandingUseCases } from "@/features/landing/components/LandingUseCases";
@@ -26,9 +26,9 @@ export function LandingPage({ snapshot }: LandingPageProps) {
   return (
     <Container size="lg">
       <Stack gap={12} className="pb-12 sm:gap-40 sm:pb-24">
-        <LandingHero schoolName={schoolName} events={snapshot?.events ?? []} isLoading={!snapshot} />
+        <LandingHero schoolName={schoolName} events={snapshot?.events ?? []} clubCount={snapshot ? snapshot.clubCount : undefined} isLoading={!snapshot} />
         <LandingProblem schoolName={schoolName} />
-        <LandingMosaicBand />
+        <LandingMosaicBand newThisWeekCount={snapshot?.newThisWeekCount ?? null} />
         <LandingSolution schoolName={schoolName} snapshot={snapshot} />
         <LandingDifferent />
         <LandingUseCases schoolName={schoolName} />

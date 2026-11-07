@@ -36,6 +36,12 @@ const badgeVariants = cva(
           "border-badge-updated bg-badge-updated",
         going:
           "border-badge-going bg-badge-going text-badge-going-foreground",
+        // Tinted badges carry one meaning each, in the hue the product uses for it (decorative-tokens.css).
+        "tint-school": "border-transparent bg-tint-school text-tint-school-foreground",
+        "tint-live": "border-transparent bg-tint-live text-tint-live-foreground",
+        "tint-free": "border-transparent bg-tint-free text-tint-free-foreground",
+        "tint-new": "border-transparent bg-tint-new text-tint-new-foreground",
+        "tint-time": "border-transparent bg-tint-time text-tint-time-foreground",
         category:
           "border-transparent gap-1.5 leading-none",
       },

@@ -1,20 +1,21 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { ScanText, type LucideIcon } from "lucide-react";
-import { EventPixelMosaic } from "@/features/landing/components/EventPixelMosaic";
+import { Fragment, useMemo, type ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 import { Stack } from "@/shared/layout";
 import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { BadgeMask } from "@/shared/ui/badge-mask";
 import type { BadgeMaskVariant } from "@/shared/ui/badge-mask-paths";
-import { EventImageCutout, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
+import { EventImageCutout, createClipPath, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
 
 /** `display` for the hero and closing; `section` for the cards that explain Wat2Do. */
 export type LandingCardSize = "display" | "section";
 
 /** What sits in each corner that carries a badge. */
 export type LandingCardCorners = Partial<Record<BadgeMaskVariant, ReactNode>>;
+
+const CORNERS: readonly BadgeMaskVariant[] = ["top-left", "top-right", "bottom-left", "bottom-right"];
 
 const CONTENT_PADDING: Record<LandingCardSize, string> = {
   display: "px-4 py-10 sm:px-12 sm:py-16",
@@ -27,6 +28,12 @@ interface LandingCardProps {
   size?: LandingCardSize;
   /** What the face shows under the content, clipped by the notches like an event card's poster; plain when left out. */
   face?: ReactNode;
+  /**
+   * The content runs edge to edge under the corner badges and is cut by the
+   * same notches, like the poster on an event card. For live product surfaces
+   * such as the feed's map.
+   */
+  bleed?: boolean;
   children: ReactNode;
 }
 
@@ -37,12 +44,13 @@ interface LandingCardProps {
  * the card's flow, so content always starts below the tallest one, however
  * a translation wraps it.
  */
-export function LandingCard({ corners = {}, size = "section", face, children }: LandingCardProps) {
+export function LandingCard({ corners = {}, size = "section", face, bleed = false, children }: LandingCardProps) {
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
+  const bleedClipPath = useMemo(() => (bleed ? createClipPath(cutouts, box) : undefined), [bleed, cutouts, box]);
 
   const corner = (variant: BadgeMaskVariant) =>
     corners[variant] ? (
-      <BadgeMask variant={variant} cutout inFlow containerRef={registerCorner(variant)}>
+      <BadgeMask variant={variant} cutout inFlow={!bleed} containerRef={registerCorner(variant)}>
         {corners[variant]}
       </BadgeMask>
     ) : null;
@@ -74,35 +82,55 @@ export function LandingCard({ corners = {}, size = "section", face, children }: 
         box={box}
         className="absolute inset-0"
       />
-      {row("top-left", "top-right", "start")}
-      <div className={cn("relative flex-1", CONTENT_PADDING[size])}>{children}</div>
-      {row("bottom-left", "bottom-right", "end")}
+      {bleed ? (
+        <>
+          <div className="relative flex-1" style={{ clipPath: bleedClipPath, WebkitClipPath: bleedClipPath }}>{children}</div>
+          {CORNERS.map((variant) => <Fragment key={variant}>{corner(variant)}</Fragment>)}
+        </>
+      ) : (
+        <>
+          {row("top-left", "top-right", "start")}
+          <div className={cn("relative flex-1", CONTENT_PADDING[size])}>{children}</div>
+          {row("bottom-left", "bottom-right", "end")}
+        </>
+      )}
     </div>
   );
 }
 
+/**
+ * What a notched label means, as the colour the product uses for it. The legend
+ * is the same everywhere on the page:
+ * - `school`: the school itself, in its own colour.
+ * - `live`: happening or counted right now.
+ * - `free`: costs nothing, needs no account.
+ * - `new`: freshly read from clubs' posts.
+ * - `neutral`: everything else; colour is kept for meaning.
+ */
+export type LandingNotchTone = "school" | "live" | "free" | "new" | "neutral";
+
+const TONE_VARIANTS = {
+  school: "tint-school",
+  live: "tint-live",
+  free: "tint-free",
+  new: "tint-new",
+  neutral: "plain",
+} as const satisfies Record<LandingNotchTone, string>;
+
 interface LandingNotchLabelProps {
   icon?: LucideIcon;
+  tone?: LandingNotchTone;
   /** Matches the card it is notched into. */
   size?: LandingCardSize;
   children: ReactNode;
 }
 
-/** A plain label in a notch, like the club name on an event card. Long text truncates. */
-export function LandingNotchLabel({ icon: Icon, size = "section", children }: LandingNotchLabelProps) {
+/** A label in a notch, like the club name on an event card, tinted by what it means. Long text truncates. */
+export function LandingNotchLabel({ icon: Icon, tone = "neutral", size = "section", children }: LandingNotchLabelProps) {
   return (
-    <Badge variant="plain" size={size === "display" ? "display" : "lg"} className="min-w-0 gap-1.5">
+    <Badge variant={TONE_VARIANTS[tone]} size={size === "display" ? "display" : "lg"} className="min-w-0 gap-1.5 tabular-nums">
       {Icon ? <Icon aria-hidden="true" className="size-[1.15em] shrink-0" /> : null}
       <span className="truncate">{children}</span>
-    </Badge>
-  );
-}
-
-/** The filled icon chip that marks what an explainer card is about. */
-export function LandingNotchIcon({ icon: Icon }: { icon: LucideIcon }) {
-  return (
-    <Badge variant="default" size="lg" aria-hidden="true">
-      <Icon className="size-4" />
     </Badge>
   );
 }
@@ -116,20 +144,11 @@ export function LandingCardGrid({ columns, children }: { columns: 2 | 3; childre
   );
 }
 
-/** A card that holds one product illustration beside its feature copy, marked with what it shows. */
-export function LandingStage({ icon, face, children }: { icon: LucideIcon; face?: ReactNode; children: ReactNode }) {
+/** A card that holds one product surface beside its feature copy. */
+export function LandingStage({ face, children }: { face?: ReactNode; children: ReactNode }) {
   return (
-    <LandingCard face={face} corners={{ "top-left": <LandingNotchIcon icon={icon} /> }}>
-      <div className="flex min-h-72 items-center justify-center sm:px-6 sm:pb-6">{children}</div>
-    </LandingCard>
-  );
-}
-
-/** A strip of the posters Wat2Do has read, at nearly full colour, between the problem and its fix. */
-export function LandingMosaicBand() {
-  return (
-    <LandingCard face={<EventPixelMosaic variant="band" />} corners={{ "top-left": <LandingNotchIcon icon={ScanText} /> }}>
-      <div className="h-16 sm:h-28" />
+    <LandingCard face={face}>
+      <div className="flex min-h-64 items-center justify-center sm:p-4">{children}</div>
     </LandingCard>
   );
 }

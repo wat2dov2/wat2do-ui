@@ -555,12 +555,17 @@
   },
   "landing": {
     "hero": {
-      "note": "Grátis para todos · Financiado por prêmios de impacto estudantil",
       "badges": {
         "free": "Grátis, sem conta",
         "source": "Direto do Instagram"
       },
-      "titleLead": "Todos os eventos do campus,",
+      "titleLeadBefore": "Todos os",
+      "titleWords": {
+        "event": "eventos do campus",
+        "networking": "eventos do campus",
+        "social": "eventos do campus",
+        "position": "eventos do campus"
+      },
       "titleHighlight": "antes que acabem.",
       "description": "Os eventos dos clubes ficam soterrados em centenas de contas do Instagram. O Wat2Do reúne todos em um só feed.",
       "primaryAction": "Ver o que está rolando",
@@ -586,11 +591,7 @@
           "title": "Aí parece que nada acontece",
           "description": "Quando os eventos estão espalhados por centenas de contas, o campus parece parado. Não está. Você só não consegue ver."
         }
-      },
-      "story": "Tony achou um story do Instagram sobre aulas de culinária italiana, por só $5. Tinha sido postado três dias antes.",
-      "storyOver": "O evento já tinha acabado.",
-      "storyEnd": "Então criamos o lugar que a gente queria que existisse.",
-      "signature": "Tony & Erica, fundadores do Wat2Do"
+      }
     },
     "solution": {
       "title": "Um feed. Todos os clubes. Sem procurar.",
@@ -692,13 +693,7 @@
     "features": {
       "capture": {
         "title": "Do cartaz no Instagram ao evento, automaticamente",
-        "description": "Os clubes continuam postando como sempre. O Wat2Do lê cada cartaz e extrai a data, o horário, o local e o preço, para o evento cair no feed sem ninguém preencher formulário.",
-        "mockHandle": "@italian.club",
-        "mockTitle": "Aula de culinária italiana",
-        "mockDate": "Quinta-feira, 18:00",
-        "mockPlace": "Cozinha do centro estudantil",
-        "mockPrice": "$5",
-        "mockAdded": "Adicionado a partir da publicação do clube"
+        "description": "Os clubes continuam postando como sempre. O Wat2Do lê cada cartaz e extrai a data, o horário, o local e o preço, para o evento cair no feed sem ninguém preencher formulário."
       },
       "filters": {
         "title": "Comida grátis em dois toques",

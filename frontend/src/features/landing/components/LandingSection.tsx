@@ -31,7 +31,8 @@ export function LandingHeading({
         className={cn(
           "font-medium text-balance text-foreground",
           Heading === "h1"
-            ? "text-[clamp(2rem,7.4vw,5.75rem)] leading-[0.98] tracking-[-0.04em]"
+            // Full width, so a line of its own (the rotating phrase) can centre and fit across the whole column.
+            ? "w-full text-[clamp(1.75rem,6.6vw,5.25rem)] leading-[1.02] tracking-[-0.04em]"
             : "max-w-4xl text-[clamp(2.25rem,4.6vw,3.75rem)] leading-[1.02] tracking-[-0.035em]",
         )}
       >

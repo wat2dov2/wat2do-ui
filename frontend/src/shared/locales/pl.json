@@ -558,12 +558,17 @@
   },
   "landing": {
     "hero": {
-      "note": "Za darmo dla wszystkich · Finansowane z nagród za studencki wpływ",
       "badges": {
         "free": "Za darmo, bez konta",
         "source": "Prosto z Instagrama"
       },
-      "titleLead": "Każde wydarzenie na kampusie,",
+      "titleLeadBefore": "Każde",
+      "titleWords": {
+        "event": "wydarzenie na kampusie",
+        "networking": "wydarzenie na kampusie",
+        "social": "wydarzenie na kampusie",
+        "position": "wydarzenie na kampusie"
+      },
       "titleHighlight": "zanim się skończy.",
       "description": "Wydarzenia organizacji giną wśród setek kont na Instagramie. Wat2Do zbiera je wszystkie w jednym feedzie.",
       "primaryAction": "Zobacz, co się dzieje",
@@ -589,11 +594,7 @@
           "title": "I wydaje się, że nic się nie dzieje",
           "description": "Gdy wydarzenia są rozrzucone po setkach kont, kampus wydaje się cichy. A wcale nie jest. Po prostu tego nie widzisz."
         }
-      },
-      "story": "Tony trafił na relację o lekcjach kuchni włoskiej, tylko $5. Wrzucono ją trzy dni wcześniej.",
-      "storyOver": "Wydarzenie już się skończyło.",
-      "storyEnd": "Więc zbudowaliśmy miejsce, którego sami nam brakowało.",
-      "signature": "Tony & Erica, założyciele Wat2Do"
+      }
     },
     "solution": {
       "title": "Jeden feed. Każda organizacja. Bez szukania.",
@@ -698,13 +699,7 @@
     "features": {
       "capture": {
         "title": "Z plakatu na Instagramie w wydarzenie, automatycznie",
-        "description": "Organizacje publikują tak jak zawsze. Wat2Do czyta każdy plakat i wyciąga datę, godzinę, miejsce i cenę, więc wydarzenie trafia do feedu bez wypełniania żadnego formularza.",
-        "mockHandle": "@italian.club",
-        "mockTitle": "Warsztaty kuchni włoskiej",
-        "mockDate": "Czwartek, 18:00",
-        "mockPlace": "Kuchnia w centrum studenckim",
-        "mockPrice": "$5",
-        "mockAdded": "Dodano z posta organizacji"
+        "description": "Organizacje publikują tak jak zawsze. Wat2Do czyta każdy plakat i wyciąga datę, godzinę, miejsce i cenę, więc wydarzenie trafia do feedu bez wypełniania żadnego formularza."
       },
       "filters": {
         "title": "Darmowe jedzenie w dwa kliknięcia",

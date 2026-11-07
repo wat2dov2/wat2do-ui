@@ -1,66 +1,113 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import atlasImage from "@/assets/event-mosaic-uwaterloo.webp";
-import atlasManifest from "@/assets/event-mosaic-uwaterloo.json";
-import { startEventPixelMosaic, type MosaicLook } from "@/features/landing/lib/eventPixelMosaic";
+import { useEffect, useRef, useState, type RefObject } from "react";
+import { loadFullAtlas, loadMosaicManifest, loadPreviewAtlas } from "@/features/landing/lib/eventMosaicAtlas";
+import { startEventPixelMosaic, type MosaicController, type MosaicLook } from "@/features/landing/lib/eventPixelMosaic";
 import { cn } from "@/shared/lib/utils";
 
 /**
- * - `spotlight`: large cells behind a headline, calm in the middle where the words sit.
- * - `ambient`: smaller cells under a product illustration, evenly dimmed.
- * - `band`: smaller cells shown nearly at full colour, where nothing has to be read.
+ * - `logo`: small cells that spell the Wat2Do logo in its colours out of a muted
+ *   grid; still until its page asks for a wave.
+ * - `band`: large cells in full colour, for a strip people can explore.
+ * - `ambient`: muted cells behind a product surface or a closing line.
+ * The band and ambient mosaics run one slow wave of the whole collection now and then.
  */
-export type EventPixelMosaicVariant = "spotlight" | "ambient" | "band";
+export type EventPixelMosaicVariant = "logo" | "band" | "ambient";
 
 const LOOKS: Record<EventPixelMosaicVariant, MosaicLook> = {
-  spotlight: { tileSize: 36, gutter: 2, waveSpeed: 9, twinkle: 0.01 },
-  ambient: { tileSize: 24, gutter: 1, waveSpeed: 12, twinkle: 0.015 },
-  band: { tileSize: 24, gutter: 1, waveSpeed: 14, twinkle: 0.02 },
+  logo: { tileSize: 10, gutter: 1, waveMs: 900, tone: "logo" },
+  band: { tileSize: 40, gutter: 2, waveMs: 1600, idleWaveMs: 9000, tone: "full" },
+  ambient: { tileSize: 28, gutter: 2, waveMs: 1800, idleWaveMs: 11000, tone: "muted" },
 };
 
-/** The page's background washed over the posters, so text and cards on top stay readable in either theme. */
-const SCRIMS: Record<EventPixelMosaicVariant, string> = {
-  spotlight:
-    "bg-background/85 sm:bg-transparent sm:bg-[radial-gradient(ellipse_70%_65%_at_center,color-mix(in_oklab,var(--background)_94%,transparent)_35%,color-mix(in_oklab,var(--background)_45%,transparent)_100%)]",
-  ambient: "bg-background/75",
-  band: "bg-background/15",
-};
+interface EventPixelMosaicProps {
+  variant: EventPixelMosaicVariant;
+  /** For `logo`: the element the logo is drawn behind, in the same card. */
+  logoRegion?: RefObject<HTMLElement | null>;
+  /** Hands over the running mosaic, for a page that drives its waves or lets people explore its cells. */
+  onReady?: (controller: MosaicController, canvas: HTMLCanvasElement) => void;
+}
 
 /**
- * A full-bleed grid of real scraped event posters, each a few pixels square,
- * swapping in waves. Fills its positioned parent; decorative only. Under
- * reduced motion it is a still mosaic.
+ * A grid of real scraped event posters. Fills its positioned parent and is
+ * decorative. Nothing downloads until it nears the viewport; an 8 px copy
+ * paints first and the sharp atlas follows. Under reduced motion it is a still
+ * mosaic of every poster.
  */
-export function EventPixelMosaic({ variant }: { variant: EventPixelMosaicVariant }) {
+export function EventPixelMosaic({ variant, logoRegion, onReady }: EventPixelMosaicProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [ready, setReady] = useState(false);
+  const onReadyRef = useRef(onReady);
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const image = new Image();
-    let stop = () => {};
-    const start = () => {
-      if (!image.complete || image.naturalWidth === 0) return;
-      stop();
-      stop = startEventPixelMosaic(canvas, { image, ...atlasManifest }, LOOKS[variant], !motion.matches);
+    let controller: MosaicController | null = null;
+    let cancelled = false;
+
+    const region = () => {
+      const element = logoRegion?.current;
+      if (!element) return null;
+      const box = element.getBoundingClientRect();
+      const origin = canvas.getBoundingClientRect();
+      return { left: box.left - origin.left, top: box.top - origin.top, width: box.width, height: box.height };
     };
-    image.decoding = "async";
-    image.onload = start;
-    image.src = atlasImage.src;
-    motion.addEventListener("change", start);
+
+    const start = async () => {
+      const [manifest, preview] = await Promise.all([loadMosaicManifest(), loadPreviewAtlas()]);
+      if (cancelled) return;
+      controller?.stop();
+      controller = startEventPixelMosaic(canvas, preview, LOOKS[variant], !motion.matches, {
+        posters: manifest.posters,
+        logoMask: manifest.logoMask,
+        logoColours: manifest.logoColours,
+        logoRegion: region,
+      });
+      setReady(true);
+      onReadyRef.current?.(controller, canvas);
+      const full = await loadFullAtlas();
+      if (!cancelled) controller.setAtlas(full);
+    };
+    const restart = () => void start().catch(() => {});
+
+    // Wait until the mosaic is about to scroll into view before fetching anything.
+    const nearby = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      nearby.disconnect();
+      restart();
+    }, { rootMargin: "400px" });
+    nearby.observe(canvas);
+    motion.addEventListener("change", restart);
     return () => {
-      image.onload = null;
-      motion.removeEventListener("change", start);
-      stop();
+      cancelled = true;
+      nearby.disconnect();
+      motion.removeEventListener("change", restart);
+      controller?.stop();
     };
-  }, [variant]);
+  }, [variant, logoRegion]);
 
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-      <canvas ref={canvasRef} data-slot="event-pixel-mosaic" className="block [image-rendering:pixelated]" />
-      <div className={cn("absolute inset-0", SCRIMS[variant])} />
+    // Until the first atlas paints, the face shows the skeleton tone the rest of the app loads with.
+    <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0 overflow-hidden", !ready && "bg-muted")}>
+      <canvas
+        ref={canvasRef}
+        data-slot="event-pixel-mosaic"
+        className={cn("block motion-safe:transition-opacity motion-safe:duration-500", ready ? "opacity-100" : "opacity-0")}
+      />
     </div>
+  );
+}
+
+/** A soft wash of the card's face behind a block of text on a mosaic, so the text reads at AA whatever the posters are. */
+export function LandingMosaicScrim() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute -inset-x-6 -inset-y-10 bg-[radial-gradient(closest-side,var(--surface-elevated)_72%,transparent)] sm:-inset-x-24 sm:-inset-y-16"
+    />
   );
 }

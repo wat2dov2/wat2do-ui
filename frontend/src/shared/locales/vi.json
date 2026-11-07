@@ -549,13 +549,18 @@
   },
   "landing": {
     "hero": {
-      "note": "Miễn phí cho mọi người · Được tài trợ bởi các giải thưởng tác động sinh viên",
       "badges": {
         "free": "Miễn phí, không cần tài khoản",
         "source": "Lấy từ Instagram"
       },
-      "titleLead": "Mọi sự kiện trong trường,",
-      "titleHighlight": "trước khi kịp kết thúc.",
+      "titleLeadBefore": "Mọi",
+      "titleWords": {
+        "event": "sự kiện trong trường",
+        "networking": "cơ hội kết nối trong trường",
+        "social": "buổi giao lưu trong trường",
+        "position": "vị trí câu lạc bộ trong trường"
+      },
+      "titleHighlight": "trước khi bạn bỏ lỡ.",
       "description": "Sự kiện của các tổ chức bị chìm nghỉm giữa hàng trăm tài khoản Instagram. Wat2Do gom tất cả vào một bảng tin.",
       "primaryAction": "Xem có gì hay",
       "secondaryAction": "Cách hoạt động"
@@ -580,11 +585,7 @@
           "title": "Nên cứ ngỡ chẳng có gì diễn ra",
           "description": "Khi sự kiện nằm rải rác trên hàng trăm tài khoản, trường có vẻ yên ắng. Thật ra không phải vậy. Chỉ là bạn không nhìn thấy."
         }
-      },
-      "story": "Tony thấy một Instagram story về lớp học nấu món Ý, chỉ $5. Nhưng nó đã được đăng từ ba ngày trước.",
-      "storyOver": "Sự kiện đã kết thúc rồi.",
-      "storyEnd": "Vậy nên chúng tôi tự tạo ra nơi mà mình từng ước là có.",
-      "signature": "Tony & Erica, nhà sáng lập Wat2Do"
+      }
     },
     "solution": {
       "title": "Một bảng tin. Mọi tổ chức. Không cần tìm kiếm.",
@@ -680,13 +681,7 @@
     "features": {
       "capture": {
         "title": "Từ poster Instagram thành sự kiện, hoàn toàn tự động",
-        "description": "Các tổ chức cứ đăng bài như mọi khi. Wat2Do đọc từng poster và lấy ra ngày, giờ, địa điểm và giá, để sự kiện tự lên bảng tin mà không ai phải điền form.",
-        "mockHandle": "@italian.club",
-        "mockTitle": "Lớp nấu món Ý",
-        "mockDate": "Thứ Năm, 18:00",
-        "mockPlace": "Bếp trung tâm sinh viên",
-        "mockPrice": "$5",
-        "mockAdded": "Đã thêm từ bài đăng của tổ chức"
+        "description": "Các tổ chức cứ đăng bài như mọi khi. Wat2Do đọc từng poster và lấy ra ngày, giờ, địa điểm và giá, để sự kiện tự lên bảng tin mà không ai phải điền form."
       },
       "filters": {
         "title": "Đồ ăn miễn phí chỉ sau hai lần chạm",

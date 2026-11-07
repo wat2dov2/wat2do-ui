@@ -549,13 +549,18 @@
   },
   "landing": {
     "hero": {
-      "note": "모두에게 무료 · 학생 임팩트 어워드 지원",
       "badges": {
         "free": "무료, 계정 필요 없음",
         "source": "인스타그램에서 가져옴"
       },
-      "titleLead": "캠퍼스의 모든 이벤트,",
-      "titleHighlight": "끝나기 전에.",
+      "titleLeadBefore": "캠퍼스의 모든",
+      "titleWords": {
+        "event": "이벤트",
+        "networking": "네트워킹 기회",
+        "social": "소셜 이벤트",
+        "position": "동아리 자리"
+      },
+      "titleHighlight": "놓치기 전에.",
       "description": "조직 이벤트는 수백 개의 Instagram 계정 속에 묻혀 버려요. Wat2Do는 모두 하나의 피드에 모아 드려요.",
       "primaryAction": "지금 뭐 하는지 보기",
       "secondaryAction": "작동 방식"
@@ -580,11 +585,7 @@
           "title": "그래서 아무 일도 없는 것 같아요",
           "description": "이벤트가 수백 개의 계정에 흩어져 있으면 캠퍼스가 조용해 보여요. 사실은 아니에요. 그냥 안 보일 뿐이에요."
         }
-      },
-      "story": "Tony는 단돈 $5짜리 이탈리안 요리 수업 Instagram 스토리를 발견했어요. 그런데 3일 전에 올라온 거였죠.",
-      "storyOver": "이벤트는 이미 끝나 있었어요.",
-      "storyEnd": "그래서 우리가 바라던 바로 그곳을 직접 만들었어요.",
-      "signature": "Tony & Erica, Wat2Do 창업자"
+      }
     },
     "solution": {
       "title": "하나의 피드. 모든 조직. 검색할 필요 없이.",
@@ -680,13 +681,7 @@
     "features": {
       "capture": {
         "title": "Instagram 포스터가 자동으로 이벤트로",
-        "description": "조직은 늘 하던 대로 글을 올리면 돼요. Wat2Do가 포스터를 읽고 날짜, 시간, 장소, 가격을 뽑아내서, 아무도 양식을 채우지 않아도 이벤트가 피드에 올라가요.",
-        "mockHandle": "@italian.club",
-        "mockTitle": "이탈리안 요리 수업",
-        "mockDate": "목요일 오후 6:00",
-        "mockPlace": "학생회관 주방",
-        "mockPrice": "$5",
-        "mockAdded": "조직 게시물에서 추가됨"
+        "description": "조직은 늘 하던 대로 글을 올리면 돼요. Wat2Do가 포스터를 읽고 날짜, 시간, 장소, 가격을 뽑아내서, 아무도 양식을 채우지 않아도 이벤트가 피드에 올라가요."
       },
       "filters": {
         "title": "두 번 탭하면 무료 음식",

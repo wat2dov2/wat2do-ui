@@ -549,13 +549,18 @@
   },
   "landing": {
     "hero": {
-      "note": "全部免費 · 由學生影響力獎項資助",
       "badges": {
         "free": "免費，唔使帳戶",
         "source": "直接由 Instagram 嚟"
       },
-      "titleLead": "校園每一個活動，",
-      "titleHighlight": "趁未完就睇到。",
+      "titleLeadBefore": "校園每一個",
+      "titleWords": {
+        "event": "活動",
+        "networking": "社交機會",
+        "social": "社交活動",
+        "position": "學會職位"
+      },
+      "titleHighlight": "趁仲嚟得切。",
       "description": "組織嘅活動散落喺幾百個 Instagram 帳戶，好易就沉咗落去。Wat2Do 將佢哋全部放埋喺同一個 feed。",
       "primaryAction": "睇吓有咩搞",
       "secondaryAction": "點樣運作"
@@ -580,11 +585,7 @@
           "title": "所以好似咩都冇發生",
           "description": "活動散晒喺幾百個帳戶，校園就顯得好靜。其實唔係，只係你睇唔到。"
         }
-      },
-      "story": "Tony 見到一個意大利煮食班嘅 Instagram 限時動態，只係 $5。點知佢三日前已經 post 咗。",
-      "storyOver": "個活動早就完咗。",
-      "storyEnd": "所以我哋就整咗一個自己一直想有嘅地方。",
-      "signature": "Tony & Erica，Wat2Do 創辦人"
+      }
     },
     "solution": {
       "title": "一個 feed。所有組織。唔使搵。",
@@ -680,13 +681,7 @@
     "features": {
       "capture": {
         "title": "Instagram 海報自動變活動",
-        "description": "組織照舊 post 就得。Wat2Do 會讀每張海報，抽出日期、時間、地點同價錢，活動自動出現喺 feed，唔使任何人填表。",
-        "mockHandle": "@italian.club",
-        "mockTitle": "意大利煮食班",
-        "mockDate": "星期四 下午 6:00",
-        "mockPlace": "學生中心廚房",
-        "mockPrice": "$5",
-        "mockAdded": "由組織嘅 post 加入"
+        "description": "組織照舊 post 就得。Wat2Do 會讀每張海報，抽出日期、時間、地點同價錢，活動自動出現喺 feed，唔使任何人填表。"
       },
       "filters": {
         "title": "撳兩下就搵到免費餐飲",

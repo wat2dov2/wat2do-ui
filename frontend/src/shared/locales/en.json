@@ -549,13 +549,18 @@
   },
   "landing": {
     "hero": {
-      "note": "Free for everyone · Funded by student impact awards",
       "badges": {
         "free": "Free, no account",
         "source": "Pulled from Instagram"
       },
-      "titleLead": "Every campus event,",
-      "titleHighlight": "before it's over.",
+      "titleLeadBefore": "Every campus",
+      "titleWords": {
+        "event": "event",
+        "networking": "networking opportunity",
+        "social": "social event",
+        "position": "club position"
+      },
+      "titleHighlight": "before it's gone.",
       "description": "Club events get buried across hundreds of Instagram accounts. Wat2Do puts them all in one feed.",
       "primaryAction": "See what's on",
       "secondaryAction": "How it works"
@@ -580,11 +585,7 @@
           "title": "So it feels like nothing happens",
           "description": "When events are scattered across hundreds of accounts, campus feels quiet. It isn't. You just can't see it."
         }
-      },
-      "story": "Tony found an Instagram story for Italian cooking lessons, just $5. It had been posted three days earlier.",
-      "storyOver": "The event was already over.",
-      "storyEnd": "So we built the one place we wished existed.",
-      "signature": "Tony & Erica, founders of Wat2Do"
+      }
     },
     "solution": {
       "title": "One feed. Every club. No searching.",
@@ -680,13 +681,7 @@
     "features": {
       "capture": {
         "title": "From Instagram flyer to event, automatically",
-        "description": "Clubs keep posting the way they always have. Wat2Do reads each flyer and pulls out the date, time, place and price, so the event lands in the feed without anyone filling out a form.",
-        "mockHandle": "@italian.club",
-        "mockTitle": "Italian cooking class",
-        "mockDate": "Thursday, 6:00 PM",
-        "mockPlace": "Student centre kitchen",
-        "mockPrice": "$5",
-        "mockAdded": "Added from the club's post"
+        "description": "Clubs keep posting the way they always have. Wat2Do reads each flyer and pulls out the date, time, place and price, so the event lands in the feed without anyone filling out a form."
       },
       "filters": {
         "title": "Free food in two taps",

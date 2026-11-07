@@ -5183,7 +5183,7 @@ test.describe("Navigation", () => {
     // The preview is shared by link only, so search engines must never index it.
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("before it's over.");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("before it's gone.");
     await expect(page.getByRole("heading", { name: "Campus is NOT boring. Its events are just hidden." })).toBeVisible();
     // The hero is the school's live event map, and its corner and the stats are counted from its feeds.
     await expect(page.getByLabel("Map", { exact: true }).first()).toBeVisible();

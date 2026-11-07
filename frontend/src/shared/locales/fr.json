@@ -555,12 +555,17 @@
   },
   "landing": {
     "hero": {
-      "note": "Gratuit pour tous · Financé par des prix d'impact étudiant",
       "badges": {
         "free": "Gratuit, sans compte",
         "source": "Tiré d'Instagram"
       },
-      "titleLead": "Tous les événements du campus,",
+      "titleLeadBefore": "Tous les",
+      "titleWords": {
+        "event": "événements du campus",
+        "networking": "événements du campus",
+        "social": "événements du campus",
+        "position": "événements du campus"
+      },
       "titleHighlight": "avant qu'ils soient finis.",
       "description": "Les événements des clubs se perdent sur des centaines de comptes Instagram. Wat2Do les réunit tous dans un seul fil.",
       "primaryAction": "Voir ce qui se passe",
@@ -586,11 +591,7 @@
           "title": "Alors on a l'impression qu'il ne se passe rien",
           "description": "Quand les événements sont éparpillés sur des centaines de comptes, le campus paraît calme. Il ne l'est pas. Vous ne le voyez simplement pas."
         }
-      },
-      "story": "Tony est tombé sur une story Instagram pour des cours de cuisine italienne, à seulement $5. Elle avait été publiée trois jours plus tôt.",
-      "storyOver": "L'événement était déjà terminé.",
-      "storyEnd": "Alors on a créé l'endroit qu'on aurait voulu avoir.",
-      "signature": "Tony & Erica, fondateurs de Wat2Do"
+      }
     },
     "solution": {
       "title": "Un seul fil. Tous les clubs. Aucune recherche.",
@@ -692,13 +693,7 @@
     "features": {
       "capture": {
         "title": "De l'affiche Instagram à l'événement, automatiquement",
-        "description": "Les clubs continuent de publier comme d'habitude. Wat2Do lit chaque affiche et en extrait la date, l'heure, le lieu et le prix, pour que l'événement arrive dans le fil sans que personne ne remplisse de formulaire.",
-        "mockHandle": "@italian.club",
-        "mockTitle": "Cours de cuisine italienne",
-        "mockDate": "Jeudi, 18 h 00",
-        "mockPlace": "Cuisine du centre étudiant",
-        "mockPrice": "$5",
-        "mockAdded": "Ajouté depuis la publication du club"
+        "description": "Les clubs continuent de publier comme d'habitude. Wat2Do lit chaque affiche et en extrait la date, l'heure, le lieu et le prix, pour que l'événement arrive dans le fil sans que personne ne remplisse de formulaire."
       },
       "filters": {
         "title": "La nourriture gratuite en deux clics",

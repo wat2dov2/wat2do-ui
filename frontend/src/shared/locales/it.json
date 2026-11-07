@@ -555,12 +555,17 @@
   },
   "landing": {
     "hero": {
-      "note": "Gratis per tutti · Finanziato da premi per l'impatto studentesco",
       "badges": {
         "free": "Gratis, senza account",
         "source": "Preso da Instagram"
       },
-      "titleLead": "Tutti gli eventi del campus,",
+      "titleLeadBefore": "Tutti gli",
+      "titleWords": {
+        "event": "eventi del campus",
+        "networking": "eventi del campus",
+        "social": "eventi del campus",
+        "position": "eventi del campus"
+      },
       "titleHighlight": "prima che finiscano.",
       "description": "Gli eventi dei club finiscono sepolti tra centinaia di account Instagram. Wat2Do li raccoglie tutti in un unico feed.",
       "primaryAction": "Scopri cosa c'è",
@@ -586,11 +591,7 @@
           "title": "Così sembra che non succeda niente",
           "description": "Quando gli eventi sono sparsi su centinaia di account, il campus sembra tranquillo. Non lo è. Semplicemente non lo vedi."
         }
-      },
-      "story": "Tony ha trovato una storia di Instagram per delle lezioni di cucina italiana, a soli $5. Era stata pubblicata tre giorni prima.",
-      "storyOver": "L'evento era già finito.",
-      "storyEnd": "Così abbiamo creato il posto che avremmo voluto avere.",
-      "signature": "Tony & Erica, fondatori di Wat2Do"
+      }
     },
     "solution": {
       "title": "Un solo feed. Tutti i club. Niente ricerche.",
@@ -692,13 +693,7 @@
     "features": {
       "capture": {
         "title": "Dalla locandina su Instagram all'evento, in automatico",
-        "description": "I club continuano a pubblicare come hanno sempre fatto. Wat2Do legge ogni locandina e ricava data, ora, luogo e prezzo, così l'evento finisce nel feed senza che nessuno compili un modulo.",
-        "mockHandle": "@italian.club",
-        "mockTitle": "Corso di cucina italiana",
-        "mockDate": "Giovedì, 18:00",
-        "mockPlace": "Cucina del centro studentesco",
-        "mockPrice": "$5",
-        "mockAdded": "Aggiunto dal post del club"
+        "description": "I club continuano a pubblicare come hanno sempre fatto. Wat2Do legge ogni locandina e ricava data, ora, luogo e prezzo, così l'evento finisce nel feed senza che nessuno compili un modulo."
       },
       "filters": {
         "title": "Cibo gratis in due tocchi",
