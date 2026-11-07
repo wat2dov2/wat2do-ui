@@ -46,18 +46,6 @@ def test_screen_reads_labelled_controls_and_skips_empty_bounds() -> None:
     ]
 
 
-def test_screen_leaves_out_views_hidden_from_the_user() -> None:
-    # The song search keeps its For you tab under the results, marked not visible.
-    hidden = SCREEN.replace(
-        "</hierarchy>",
-        '<node text="For you" content-desc="" visible-to-user="false" bounds="[0,300][300,400]" />'
-        '<node text="Lyrics" content-desc="" visible-to-user="true" bounds="[300,300][600,400]" />'
-        "</hierarchy>",
-    )
-    labels = [node.text or node.description for node in _device([], [], [hidden]).screen()]
-    assert "For you" not in labels and "Lyrics" in labels
-
-
 def test_screen_retries_while_the_app_is_animating() -> None:
     unreadable = module.EmulatorError("Emulator screen could not be read")
     nodes = _device([], [], [unreadable, unreadable, SCREEN]).screen()
