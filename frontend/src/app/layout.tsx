@@ -6,7 +6,11 @@ import type { ReactNode } from "react";
 import { AppShell } from "@/app/app-shell";
 import { ClientProviders } from "@/app/client-providers";
 import { SiteBanner } from "@/app/SiteBanner";
-import { getRequestSchool, getSchoolDirectoryForPage } from "@/shared/api/schools.server";
+import {
+  getRequestHostnameSchoolStatus,
+  getRequestSchool,
+  getSchoolDirectoryForPage,
+} from "@/shared/api/schools.server";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { getSchoolThemeStyle } from "@/shared/lib/schoolBranding";
 import "../index.css";
@@ -116,6 +120,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const initialSchool = await getRequestSchool();
+  const hostnameSchoolStatus = await getRequestHostnameSchoolStatus();
   const initialSchools = await getSchoolDirectoryForPage(initialSchool).catch(
     (error: unknown) => {
       console.error("Failed to preload the school directory:", error);
@@ -145,7 +150,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           initialSchools={initialSchools}
         >
           <SiteBanner schoolName={school?.name} />
-          <AppShell>{children}</AppShell>
+          <AppShell hostnameSchoolStatus={hostnameSchoolStatus}>{children}</AppShell>
         </ClientProviders>
         {process.env.NODE_ENV === "production" && googleAnalytics.measurement_id ? (
           <GoogleAnalyticsAfterLoad measurementId={googleAnalytics.measurement_id} />

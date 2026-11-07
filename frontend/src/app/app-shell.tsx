@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense, useEffect, useMemo, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AppLayout } from "@/app/AppLayout";
 import { CommandPaletteHotkeys } from "@/app/CommandPaletteHotkeys";
@@ -13,7 +13,6 @@ import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { getRouteDocumentTitle, ROUTES } from "@/shared/constants/routes";
 import {
   DEFAULT_SCHOOL,
-  getHostnameSchoolStatus,
   type HostnameSchoolStatus,
 } from "@/shared/constants/schools";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
@@ -83,7 +82,14 @@ function AppNavigation() {
  * Root layout keeps chrome and subscriptions mounted across navigation.
  * Route pages own only their server data and feature content.
  */
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  hostnameSchoolStatus: requestHostnameSchoolStatus,
+}: {
+  children: ReactNode;
+  /** The request host's school status, read by the root layout from the Host header. */
+  hostnameSchoolStatus: HostnameSchoolStatus;
+}) {
   const authReady = useAuthReady();
   const pathname = usePathname();
   const userEmail = useUserEmail();
@@ -96,12 +102,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const skipSchoolCheck = routeMatches(pathname, "/qr");
   const toasterRequested = useToasterRequested();
 
-  const hostnameSchoolStatus = useMemo<HostnameSchoolStatus>(() => {
-    if (typeof window === "undefined" || skipSchoolCheck) {
-      return { school: DEFAULT_SCHOOL, candidate: null };
-    }
-    return getHostnameSchoolStatus(window.location.hostname);
-  }, [skipSchoolCheck]);
+  // Taken from the request on the server rather than window.location in the browser,
+  // so the server renders the same page the browser hydrates: an unknown subdomain
+  // gets the unknown-school page from the first paint, never the app with it below.
+  const hostnameSchoolStatus = skipSchoolCheck
+    ? { school: DEFAULT_SCHOOL, candidate: null }
+    : requestHostnameSchoolStatus;
 
   useEffect(() => {
     if (routeOwnsServerMetadata(pathname)) return;
