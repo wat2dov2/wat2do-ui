@@ -1,45 +1,66 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { discoverySnapshotSeed } from "@/shared/api/discovery.api";
 import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
 import { storeStatesToFilterState, useSearchStore, useSearch } from "@/features/search";
+import {
+  EMPTY_FILTER_STATE,
+  feedFilterAvailability,
+  isSameFilterState,
+} from "@/features/search/api/filterService";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import {
   useCurrentTime,
   useGoingEvents,
 } from "@/features/events/hooks/useGoingEvents";
 import { resolveSchool } from "@/shared/constants/schools";
+import type { Event } from "@/shared/types";
 import { getUniqueEvents } from "@/shared/utils/event";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
 import i18n from "@/shared/lib/i18n";
 import {
   eventFeedQueryOptions,
   latestVisibleAddedEvent,
-  type PaginatedEventsResponse,
 } from "@/features/events/api/events.api";
+import type { EventFeedFirstScreen } from "@/features/events/lib/eventFeedFirstScreen";
+
+const NO_EVENTS: Event[] = [];
 
 interface UseEventsPageDataOptions {
-  /** The server's browse snapshot, or null when that fetch failed. */
-  initialSnapshot: PaginatedEventsResponse | null;
+  /** The server's first screen of the feed, or null when it could not read the feed. */
+  firstScreen: EventFeedFirstScreen | null;
   initialSchool: string;
+}
+
+/** What the page lists for the reader's query. */
+export interface EventListing {
+  /** The events to show, in order. */
+  events: Event[];
+  /** How many events the list holds: the page's count. */
+  total: number;
+  /**
+   * False while `events` is only the server's first screen of the default list;
+   * the map, the calendar and More events wait for the rest.
+   */
+  complete: boolean;
 }
 
 /**
  * Hook that aggregates data orchestration for the EventsPageContainer:
- * embedded browse snapshot, going events, client-side counts overlay,
+ * the school's feed, going events, client-side counts overlay,
  * search/filters, and derived ordered events.
  */
 export function useEventsPageData({
-  initialSnapshot,
+  firstScreen: serverFirstScreen,
   initialSchool,
 }: UseEventsPageDataOptions) {
   const schoolFilter = resolveSchool(initialSchool);
-  const query = useQuery({
-    ...eventFeedQueryOptions(schoolFilter),
-    ...discoverySnapshotSeed(initialSnapshot),
-  });
-  const events = useMemo(() => query.data?.items ?? [], [query.data]);
-  const isLoading = query.isLoading;
+  // The complete feed comes from the edge right after the page paints. Until it
+  // arrives, the server's first screen stands in for the start of the default list.
+  const query = useQuery(eventFeedQueryOptions(schoolFilter));
+  const feed = query.data;
+  const firstScreen = feed ? null : serverFirstScreen;
+  const events = feed?.items ?? firstScreen?.events ?? NO_EVENTS;
+  const isLoading = query.isLoading && firstScreen === null;
   const error = query.isLoadingError ? i18n.t("events.loadFailed") : null;
   const { data: goingSelections = [], isSuccess: goingEventsReady } = useGoingEvents();
   const currentTimeMs = useCurrentTime();
@@ -65,19 +86,25 @@ export function useEventsPageData({
     [listTimeMs, events],
   );
   const latestAddedEvent = useMemo(
-    () => latestVisibleAddedEvent(query.data?.latest_added_event ?? null, events, visibleEvents),
-    [events, query.data, visibleEvents],
+    () => feed
+      ? latestVisibleAddedEvent(feed.latest_added_event, events, visibleEvents)
+      : firstScreen?.latestAddedEvent ?? null,
+    [events, feed, firstScreen, visibleEvents],
+  );
+  const filterAvailability = useMemo(
+    () => feed ? feedFilterAvailability(feed.items, schoolFilter) : firstScreen?.filterAvailability ?? null,
+    [feed, firstScreen, schoolFilter],
   );
 
   const filters = useSearch({
     events: visibleEvents,
-    eventsReady: query.data !== undefined,
+    availability: filterAvailability,
     goingEventIds,
     goingCounts: eventStats,
     school: schoolFilter,
-    // Until the browser clock starts, the snapshot's own time decides which
+    // Until the browser clock starts, the time the data was cut decides which
     // calendar chips show, so the server's filter row already has them.
-    currentTimeMs: listTimeMs ?? query.data?.generated_at ?? null,
+    currentTimeMs: listTimeMs ?? (feed ? feed.generated_at : firstScreen?.listedAtMs) ?? null,
   });
 
   const orderedEvents = useMemo(
@@ -85,14 +112,22 @@ export function useEventsPageData({
     [filters.filteredEvents],
   );
 
-  const totalEvents = filters.filteredEvents.length;
-  const { searchQuery, ...appliedFilters } = storeStatesToFilterState(filters);
+  const appliedFilterState = storeStatesToFilterState(filters);
+  const { searchQuery, ...appliedFilters } = appliedFilterState;
   useDiscoveryQueryTracking({
     school: schoolFilter,
     surface: "events",
     search_query: searchQuery,
     filters: appliedFilters,
   }, queryRevision);
+
+  // The first screen holds only the start of the default list, so any other
+  // query waits for the complete feed rather than show a partial answer.
+  const listing: EventListing | null = feed
+    ? { events: orderedEvents, total: filters.filteredEvents.length, complete: true }
+    : firstScreen && isSameFilterState(appliedFilterState, EMPTY_FILTER_STATE)
+      ? { events: orderedEvents, total: firstScreen.total, complete: false }
+      : null;
 
   const refreshEvents = useCallback(() => {
     void query.refetch();
@@ -104,12 +139,12 @@ export function useEventsPageData({
     isLoading,
     error,
     refreshEvents,
-    totalEvents,
     eventStats,
     goingEventsReady,
     latestAddedEvent,
     filters,
-    orderedEvents,
+    /** Null while the reader's results wait for the complete feed. */
+    listing,
     allEvents: visibleEvents,
   };
 }

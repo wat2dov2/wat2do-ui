@@ -1,6 +1,6 @@
 import type { Event, EventDateFilter, FilterState } from "@/shared/types";
 import type { SchoolSummary } from "@/shared/api/schools.api";
-import { hasActiveEventOccurrence, parseLocalDateValue, schoolCalendarDate } from "@/shared/utils/date";
+import { eventVisibleUntilMs, parseLocalDateValue, schoolCalendarDate } from "@/shared/utils/date";
 import { getEventFilterCategories } from "@/shared/constants/eventFilters";
 
 // Shared normalization for visual filters and QR handoff.
@@ -132,6 +132,36 @@ export function normalizeFilterState(filters: FilterStateInput): FilterState {
   };
 }
 
+/** Map the shared filter shape to the store's UI-oriented names, normalizing it first. */
+export function filterStateToStoreValues(filters: FilterState): SearchStoreFilterValues {
+  const normalized = normalizeFilterState(filters);
+  return {
+    searchQuery: normalized.searchQuery,
+    selectedCategories: normalized.categories,
+    selectedLocations: normalized.locations,
+    selectedFoods: normalized.foods,
+    selectedDays: normalized.days,
+    selectedClubs: normalized.clubs,
+    minPrice: normalized.minPrice,
+    maxPrice: normalized.maxPrice,
+    minGoing: normalized.minGoing,
+    registration: normalized.registration,
+    hasFoodFilter: normalized.hasFood,
+    employersOnCampus: normalized.employersOnCampus,
+    competitions: normalized.competitions,
+    featured: normalized.featured,
+    sportsGame: normalized.sportsGame,
+    recurring: normalized.recurring,
+    campusSeasonIds: normalized.campusSeasonIds,
+    goingFilter: normalized.going,
+    sortBy: normalized.sortBy,
+    sortOrder: normalized.sortOrder,
+    addedSince: normalized.addedSince,
+    dateFilter: normalized.dateFilter,
+    customDate: normalized.customDate,
+  };
+}
+
 /** Map UI-oriented store names to the shared filter shape. */
 export function storeStatesToFilterState(
   values: SearchStoreFilterValues,
@@ -176,19 +206,52 @@ export function isSameFilterState(a: FilterState, b: FilterState): boolean {
   return JSON.stringify(normalizeFilterState(a)) === JSON.stringify(normalizeFilterState(b));
 }
 
+/**
+ * What the whole school feed offers the filters that only show while they can
+ * find something: the last moment each still has an event on. Kept as moments
+ * rather than yes or no, it answers for any time exactly as the feed's events
+ * would, so the server's first screen of the feed can carry it in place of them.
+ */
+export interface FeedFilterAvailability {
+  /** When the school's last varsity game stops being on, or null when it has none. */
+  sportsGameUntilMs: number | null;
+  /** For each campus season (by classification id), when its last uncancelled event stops being on. */
+  campusSeasonUntilMs: Record<string, number>;
+}
+
 /** Availability comes from the complete school feed, before any narrowing filters. */
+export function feedFilterAvailability(events: readonly Event[], school: string): FeedFilterAvailability {
+  let sportsGameUntilMs: number | null = null;
+  const campusSeasonUntilMs: Record<string, number> = {};
+  for (const event of events) {
+    const untilMs = event.school === school ? eventVisibleUntilMs(event) : null;
+    if (untilMs === null) continue;
+    if (event.sports_game === true) sportsGameUntilMs = Math.max(sportsGameUntilMs ?? untilMs, untilMs);
+    if (event.cancelled) continue;
+    for (const seasonId of event.campus_season_ids ?? []) {
+      campusSeasonUntilMs[seasonId] = Math.max(campusSeasonUntilMs[seasonId] ?? untilMs, untilMs);
+    }
+  }
+  return { sportsGameUntilMs, campusSeasonUntilMs };
+}
+
+/** Whether a campus season (by classification id) still has an event on at `currentTimeMs`. */
+function hasCampusSeasonEvent(availability: FeedFilterAvailability, seasonId: string, currentTimeMs: number): boolean {
+  return Object.hasOwn(availability.campusSeasonUntilMs, seasonId) &&
+    availability.campusSeasonUntilMs[seasonId]! >= currentTimeMs;
+}
+
+/** Whether the varsity chip shows at `currentTimeMs`, and whether a selection of it still narrows. */
 export function resolveVarsityGamesFilter(
-  events: readonly Event[] | null,
-  school: string,
+  availability: FeedFilterAvailability | null,
   currentTimeMs: number | null,
   selected: boolean,
 ) {
-  const ready = events !== null && currentTimeMs !== null;
-  const available = ready && events.some(event =>
-    event.school === school && event.sports_game === true &&
-    hasActiveEventOccurrence(event, currentTimeMs),
-  );
-  return { ready, available, selected: selected && available };
+  if (availability === null || currentTimeMs === null) {
+    return { ready: false, available: false, selected: false };
+  }
+  const available = availability.sportsGameUntilMs !== null && availability.sportsGameUntilMs >= currentTimeMs;
+  return { ready: true, available, selected: selected && available };
 }
 
 export interface CampusSeasonFilterOption {
@@ -198,25 +261,25 @@ export interface CampusSeasonFilterOption {
   windows: SchoolSummary["event_seasons"][number]["display_windows"];
 }
 
-/** Window visibility and applied selections share the current school's calendar. */
+/**
+ * Window visibility and applied selections share the current school's calendar.
+ * `availability` must describe this school's feed.
+ */
 export function resolveCampusSeasonFilters(
   school: SchoolSummary | undefined,
   currentTimeMs: number | null,
   language: string,
   selectedIds: readonly string[],
-  events: readonly Event[] | null,
+  availability: FeedFilterAvailability | null,
 ) {
-  if (!school || school.event_seasons === undefined || currentTimeMs === null || events === null) {
+  if (!school || school.event_seasons === undefined || currentTimeMs === null || availability === null) {
     return { ready: false, options: [] as CampusSeasonFilterOption[], selectedIds: [] };
   }
   const today = schoolCalendarDate(currentTimeMs, school.timezone).toISOString().slice(0, 10);
   const options = school.event_seasons
     .filter(season => season.display_windows.some(window => window.start_date <= today && today <= window.end_date))
-    .filter(season => season.classification_id !== "exam_destress" || events.some(event =>
-      event.school === school.slug && !event.cancelled &&
-      event.campus_season_ids?.includes(season.classification_id) &&
-      hasActiveEventOccurrence(event, currentTimeMs),
-    ))
+    .filter(season => season.classification_id !== "exam_destress" ||
+      hasCampusSeasonEvent(availability, season.classification_id, currentTimeMs))
     .map(season => ({
       id: season.id,
       classificationId: season.classification_id,

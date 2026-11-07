@@ -17,7 +17,7 @@ import { create } from "zustand";
 import type { FilterState } from "@/shared/types/filter.types";
 import {
   EMPTY_FILTER_STATE,
-  normalizeFilterState,
+  filterStateToStoreValues,
   type SearchStoreFilterValues,
 } from "@/features/search/api/filterService";
 
@@ -30,42 +30,13 @@ interface SearchStoreState extends SearchStoreFilterValues {
   clearAllFilters: () => void;
 }
 
-function toStoreValues(filters: FilterState): SearchStoreFilterValues {
-  const normalized = normalizeFilterState(filters);
-  return {
-    searchQuery: normalized.searchQuery,
-    selectedCategories: normalized.categories,
-    selectedLocations: normalized.locations,
-    selectedFoods: normalized.foods,
-    selectedDays: normalized.days,
-    selectedClubs: normalized.clubs,
-    minPrice: normalized.minPrice,
-    maxPrice: normalized.maxPrice,
-    minGoing: normalized.minGoing,
-    registration: normalized.registration,
-    hasFoodFilter: normalized.hasFood,
-    employersOnCampus: normalized.employersOnCampus,
-    competitions: normalized.competitions,
-    featured: normalized.featured,
-    sportsGame: normalized.sportsGame,
-    recurring: normalized.recurring,
-    campusSeasonIds: normalized.campusSeasonIds,
-    goingFilter: normalized.going,
-    sortBy: normalized.sortBy,
-    sortOrder: normalized.sortOrder,
-    addedSince: normalized.addedSince,
-    dateFilter: normalized.dateFilter,
-    customDate: normalized.customDate,
-  };
-}
-
-const emptyFilters = toStoreValues(EMPTY_FILTER_STATE);
+const emptyFilters = filterStateToStoreValues(EMPTY_FILTER_STATE);
 
 export const useSearchStore = create<SearchStoreState>((set) => ({
   ...emptyFilters,
   queryRevision: 0,
   setFilterState: (filters, source = "user") => set((state) => ({
-    ...toStoreValues(filters), queryRevision: state.queryRevision + (source === "user" ? 1 : 0),
+    ...filterStateToStoreValues(filters), queryRevision: state.queryRevision + (source === "user" ? 1 : 0),
   })),
   clearAllFilters: () => startTransition(() => set((state) => ({
     ...emptyFilters, queryRevision: state.queryRevision + 1,

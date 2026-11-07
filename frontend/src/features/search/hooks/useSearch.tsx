@@ -8,7 +8,11 @@ import { availableDays, getEventFilterCategories } from "@/shared/constants/even
 import { translateCategory } from "@/shared/utils/event";
 import type { Event } from "@/shared/types";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { resolveCampusSeasonFilters, resolveVarsityGamesFilter } from "@/features/search/api/filterService";
+import {
+  resolveCampusSeasonFilters,
+  resolveVarsityGamesFilter,
+  type FeedFilterAvailability,
+} from "@/features/search/api/filterService";
 
 /**
  * Search/filter orchestration: useFilterState for store state, searchService for logic.
@@ -16,7 +20,8 @@ import { resolveCampusSeasonFilters, resolveVarsityGamesFilter } from "@/feature
  */
 interface UseSearchOptions {
   events: Event[];
-  eventsReady: boolean;
+  /** What `school`'s whole feed offers the filter row; null until the feed (or its first screen) is here. */
+  availability: FeedFilterAvailability | null;
   goingEventIds: number[];
   goingCounts: Readonly<Record<string, { going_count: number }>> | null;
   school: string;
@@ -25,7 +30,7 @@ interface UseSearchOptions {
 
 export function useSearch({
   events,
-  eventsReady,
+  availability,
   goingEventIds,
   goingCounts,
   school,
@@ -37,14 +42,14 @@ export function useSearch({
 
   const filterState = useFilterState();
   const varsityGames = useMemo(
-    () => resolveVarsityGamesFilter(eventsReady ? events : null, school, currentTimeMs, filterState.sportsGame),
-    [events, eventsReady, school, currentTimeMs, filterState.sportsGame],
+    () => resolveVarsityGamesFilter(availability, currentTimeMs, filterState.sportsGame),
+    [availability, currentTimeMs, filterState.sportsGame],
   );
   const schoolRecord = schoolBySlug.get(school);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const campusSeasons = useMemo(
-    () => resolveCampusSeasonFilters(schoolRecord, currentTimeMs, language, filterState.campusSeasonIds, eventsReady ? events : null),
-    [schoolRecord, currentTimeMs, language, filterState.campusSeasonIds, eventsReady, events],
+    () => resolveCampusSeasonFilters(schoolRecord, currentTimeMs, language, filterState.campusSeasonIds, availability),
+    [schoolRecord, currentTimeMs, language, filterState.campusSeasonIds, availability],
   );
   const { setCampusSeasonIds, setSportsGame } = filterState;
   useEffect(() => {

@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { EventRoutePage } from "@/app/event-route-page";
 import imgContactHero from "@/assets/contact_hero.png";
-import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
+import {
+  getEventFeedFirstScreen,
+  getSchoolBrowseSnapshot,
+} from "@/features/events/api/eventFeed.server";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
 import {
   buildSchoolShareCard,
@@ -64,6 +67,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function EventsPage() {
   const school = await getRequestSchool();
   const snapshot = await loadInitialSnapshot(school);
+  const firstScreen = snapshot && await getEventFeedFirstScreen(snapshot, school);
 
-  return <EventRoutePage initialSnapshot={snapshot} initialSchool={school} />;
+  return <EventRoutePage firstScreen={firstScreen} initialSchool={school} />;
 }

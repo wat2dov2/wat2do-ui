@@ -14,6 +14,7 @@ import {
   EventActions,
   EventDetailsBody,
   EventDetailsSimilarEvents,
+  EventDetailsSimilarEventsSkeleton,
 } from "@/features/events/components/EventDetailsSections";
 import { DrawerBody, Stack } from "@/shared/layout";
 import { fetchEventById } from "@/features/events/api/events.api";
@@ -25,7 +26,8 @@ interface EventDetailsModalProps {
   eventId?: number | null;
   event: Event | null;
   onClose: () => void;
-  allEvents: Event[];
+  /** The list the drawer steps through and draws More events from; null while that list is still loading. */
+  allEvents: Event[] | null;
   /** When true, the More events section is hidden (e.g. in admin panel). */
   hideSimilarEvents?: boolean;
 }
@@ -90,7 +92,7 @@ export function EventDetailsModal({
     },
     [onClose],
   );
-  const navigationEvents = allEvents;
+  const navigationEvents = allEvents ?? [];
   const navigationIndex = navigationEvents.findIndex((item) => item.id === displayedEvent?.id);
   const previousEvent = navigationIndex > 0 ? navigationEvents[navigationIndex - 1] : undefined;
   const nextEvent = navigationIndex >= 0 ? navigationEvents[navigationIndex + 1] : undefined;
@@ -144,12 +146,14 @@ export function EventDetailsModal({
                   )}
                 />
 
-                {!hideSimilarEvents && (
+                {hideSimilarEvents ? null : allEvents ? (
                   <EventDetailsSimilarEvents
                     event={displayedEvent}
                     events={allEvents}
                     onEventClick={handleSimilarEventClick}
                   />
+                ) : (
+                  <EventDetailsSimilarEventsSkeleton />
                 )}
               </DrawerBody>
             </>

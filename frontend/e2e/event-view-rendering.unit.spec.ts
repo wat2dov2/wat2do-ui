@@ -368,6 +368,32 @@ test("event and position loading cards include the same measured New badge place
   }
 });
 
+test("a first screen of the feed lays out like the start of the complete list", () => {
+  const { EventList } = loadComponent("features/events/components/EventList", {
+    "@/features/events/components/EventCard": { EventCard: ({ event: card }: { event: Event }) => createElement("article", { "data-card": card.id }) },
+  }) as typeof import("../src/features/events/components/EventList");
+  const startMs = Date.now() + 2 * 3_600_000;
+  const listed = Array.from({ length: 40 }, (_, index) => ({
+    ...event, id: index + 1, school: "uwaterloo",
+    occurrences: [{ dtstart_utc: new Date(startMs + index * 60_000).toISOString(), dtend_utc: null }],
+  }) as Event);
+  const firstScreen = listed.slice(0, controlBox.eventDiscovery.initialRenderCount);
+  const render = (props: Partial<ComponentProps<typeof EventList>>) =>
+    renderToStaticMarkup(createElement(EventList, { events: listed, eventStats: null, ...props }));
+
+  const partial = render({ events: firstScreen, totalCount: listed.length });
+  // The same cards, sections and loading row as the complete list, which announces the same count.
+  expect(partial).toBe(render({}));
+  expect(partial).toContain('data-testid="event-list-sentinel"');
+  expect(partial).toContain(`aria-label="${listed.length} events found"`);
+  expect(partial.match(/data-card=/g)).toHaveLength(firstScreen.length);
+  // A first screen that is the whole list reads like the whole list.
+  expect(render({ events: firstScreen, totalCount: firstScreen.length })).toBe(render({ events: firstScreen }));
+  expect(render({ events: firstScreen })).not.toContain("event-list-sentinel");
+  // Events still on their way are not an empty list.
+  expect(render({ events: [], totalCount: listed.length })).not.toContain("events.noEventsScheduled");
+});
+
 test("an unavailable integer filter disables its actual popover trigger", () => {
   const { IntegerFilter } = loadComponent("shared/ui/integer-filter") as typeof import("../src/shared/ui/integer-filter");
   const html = renderToStaticMarkup(createElement(IntegerFilter, {

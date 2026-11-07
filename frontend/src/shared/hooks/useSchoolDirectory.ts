@@ -3,7 +3,7 @@ import { skipToken, useQuery } from "@tanstack/react-query";
 import {
   type SchoolSummary,
 } from "@/shared/api/schools.api";
-import { resolveSchool } from "@/shared/constants/schools";
+import { lookupSchoolTimezone, resolveSchool } from "@/shared/constants/schools";
 import { queryKeys } from "@/shared/lib/queryKeys";
 
 const EMPTY_SCHOOLS: SchoolSummary[] = [];
@@ -27,13 +27,7 @@ export function useSchoolDirectory() {
   );
 
   const getSchoolTimezone = useCallback(
-    (school: string | null | undefined) => {
-      // Records without a school have no campus clock; label them explicitly in UTC.
-      if (!school) return "UTC";
-      const timezone = schoolBySlug.get(school)?.timezone;
-      if (!timezone) throw new Error(`Missing timezone for school: ${school}`);
-      return timezone;
-    },
+    (school: string | null | undefined) => lookupSchoolTimezone(schoolBySlug, school),
     [schoolBySlug],
   );
 

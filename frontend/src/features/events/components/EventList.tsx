@@ -3,13 +3,8 @@ import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
 import type { Event } from "@/shared/types";
-import {
-  eventDateSectionKey,
-  eventDateSectionOrder,
-  formatEventDateSectionRange,
-  getEventDateSection,
-  type EventDateSection,
-} from "@/shared/utils/date";
+import { formatEventDateSectionRange, type EventDateSection } from "@/shared/utils/date";
+import { groupEventsByDateSection, type DateSectionGroup } from "@/features/events/lib/eventDateSections";
 import { SkeletonLine } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import type { EventStats } from "@/features/events/api/events.api";
@@ -36,6 +31,13 @@ interface EventListProps {
   groupByDateSections?: boolean;
   /** The reader's query (search, filters, sort); only a change here returns the list to its first batch. */
   resetKey?: string;
+  /**
+   * The whole list's length while `events` holds only its start (the server's
+   * first screen, until the complete feed arrives). The list then keeps the
+   * loading row below its first batch and announces the whole count, exactly
+   * as the complete list will, so nothing moves when the rest arrives.
+   */
+  totalCount?: number;
 }
 
 interface EventCardsGridProps {
@@ -73,41 +75,6 @@ function EventCardsGrid({
   );
 }
 
-interface DateSectionGroup {
-  key: string;
-  section: EventDateSection;
-  events: Event[];
-}
-
-/**
- * Bucket events into date sections, ordered Today, Tomorrow, then week by week.
- *
- * Sections are derived from the events themselves, so only weeks that actually
- * have events get a heading. The server returns upcoming-only events; a
- * timezone-skew straggler can still land in the past and is dropped here - the
- * one place this list decides what's shown, so callers bucket unconditionally.
- */
-function groupEventsByDateSection(events: Event[], getSchoolTimezone: ReturnType<typeof useSchoolDirectory>["getSchoolTimezone"]): DateSectionGroup[] {
-  const groups = new Map<string, DateSectionGroup>();
-
-  events.forEach((event) => {
-    const section = getEventDateSection(event, getSchoolTimezone(event.school));
-    if (!section) return;
-
-    const key = eventDateSectionKey(section);
-    const existing = groups.get(key);
-    if (existing) {
-      existing.events.push(event);
-      return;
-    }
-    groups.set(key, { key, section, events: [event] });
-  });
-
-  return [...groups.values()].sort(
-    (a, b) => eventDateSectionOrder(a.section) - eventDateSectionOrder(b.section),
-  );
-}
-
 /**
  * Event list component.
  *
@@ -124,6 +91,7 @@ export function EventList({
   isLoading = false,
   groupByDateSections = true,
   resetKey,
+  totalCount,
 }: EventListProps) {
   const { getSchoolTimezone } = useSchoolDirectory();
   const { t, i18n } = useTranslation();
@@ -139,7 +107,10 @@ export function EventList({
         : events,
     [dateSectionGroups, groupByDateSections, events],
   );
-  const { visibleItems: visibleEvents, visibleCount: visibleEventCount, hasMore: hasMoreEvents, loadMoreRef } = useProgressiveList(sectionOrderedEvents, controlBox.eventDiscovery.initialRenderCount, resetKey);
+  const { visibleItems: visibleEvents, visibleCount: visibleEventCount, hasMore: hasMoreLoaded, loadMoreRef } = useProgressiveList(sectionOrderedEvents, controlBox.eventDiscovery.initialRenderCount, resetKey);
+  // Past a first screen, the next cards are still on their way: the loading row stays
+  // where the complete list will have it, and fills in once those cards arrive.
+  const hasMoreEvents = hasMoreLoaded || (totalCount !== undefined && visibleEventCount < totalCount);
   const visibleDateSectionGroups = useMemo(
     () => {
       let remaining = visibleEventCount;
@@ -191,8 +162,9 @@ export function EventList({
 
   // Guard on what will actually render, not on the raw input: date sectioning
   // can drop events, and checking `events.length` here would render a feed of
-  // zero cards with no empty state at all.
-  if (sectionOrderedEvents.length === 0) {
+  // zero cards with no empty state at all. Events still on their way are not an
+  // empty list.
+  if (sectionOrderedEvents.length === 0 && !hasMoreEvents) {
     return (
       <EmptyState
         icon={<Search />}
@@ -219,7 +191,7 @@ export function EventList({
   }
 
   return (
-    <div className="space-y-5" role="list" aria-label={`${events.length} events found`}>
+    <div className="space-y-5" role="list" aria-label={`${totalCount ?? events.length} events found`}>
       {groupByDateSections ? (
         visibleDateSectionGroups.map((group) => {
           const label = sectionLabel(group.section);

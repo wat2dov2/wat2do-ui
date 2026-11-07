@@ -1,10 +1,10 @@
 "use client";
 
 import { EventsPageContainer } from "@/features/events/pages/EventsPageContainer";
-import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
+import type { EventFeedFirstScreen } from "@/features/events/lib/eventFeedFirstScreen";
 
 interface EventRoutePageProps {
-  initialSnapshot: PaginatedEventsResponse | null;
+  firstScreen: EventFeedFirstScreen | null;
   initialSchool: string;
 }
 

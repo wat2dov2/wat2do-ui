@@ -65,13 +65,27 @@ export function isActiveOrUpcomingOccurrence(
   return visibleUntilMs !== null && visibleUntilMs >= currentTimeMs;
 }
 
+/**
+ * The moment an event's last occurrence stops being visible, or `null` when
+ * none has a usable start. An event is still on exactly until this moment.
+ */
+export function eventVisibleUntilMs(event: { occurrences?: Occurrence[] }): number | null {
+  let latestMs: number | null = null;
+  for (const occurrence of event.occurrences ?? []) {
+    const visibleUntilMs = occurrenceVisibleUntilMs(occurrence);
+    if (visibleUntilMs !== null && (latestMs === null || visibleUntilMs > latestMs)) {
+      latestMs = visibleUntilMs;
+    }
+  }
+  return latestMs;
+}
+
 export function hasActiveEventOccurrence(
   event: { occurrences?: Occurrence[] },
   currentTimeMs: number,
 ): boolean {
-  return (event.occurrences ?? []).some((occurrence) =>
-    isActiveOrUpcomingOccurrence(occurrence, currentTimeMs),
-  );
+  const visibleUntilMs = eventVisibleUntilMs(event);
+  return visibleUntilMs !== null && visibleUntilMs >= currentTimeMs;
 }
 
 const sameDay = (firstDate: Date, secondDate: Date): boolean =>

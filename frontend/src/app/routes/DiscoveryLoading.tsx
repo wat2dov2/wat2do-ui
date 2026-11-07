@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useRequestSchool } from "@/app/client-providers";
@@ -13,7 +13,7 @@ import { ClubsPageHeader, type ClubsHeaderState } from "@/features/clubs/compone
 import { PositionListSkeleton } from "@/features/positions/components/PositionList";
 import { PositionsPageHeader, type PositionsHeaderState } from "@/features/positions/components/PositionsPageHeader";
 import { useSearch } from "@/features/search";
-import { resolveCampusSeasonFilters } from "@/features/search/api/filterService";
+import { feedFilterAvailability, resolveCampusSeasonFilters } from "@/features/search/api/filterService";
 import { Stack } from "@/shared/layout";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
@@ -38,9 +38,10 @@ function EventsLoading() {
   const currentTimeMs = useCurrentTime() ?? renderedAtMs;
   // A feed this visit already holds decides the same chips the page will show; nothing is fetched here.
   const { data: feed } = useQuery({ ...eventFeedQueryOptions(school), enabled: false });
+  const availability = useMemo(() => feed ? feedFilterAvailability(feed.items, school) : null, [feed, school]);
   const search = useSearch({
     events: feed?.items ?? NO_EVENTS,
-    eventsReady: feed !== undefined,
+    availability,
     goingEventIds: NO_IDS,
     goingCounts: null,
     school,
@@ -49,7 +50,7 @@ function EventsLoading() {
   // Without a feed, the calendar still decides most season chips; chips that need the feed's events
   // (varsity games, exam de-stress) can only follow it.
   const campusSeasonOptions = feed ? search.campusSeasonOptions : resolveCampusSeasonFilters(
-    schoolBySlug.get(school), currentTimeMs, i18n.resolvedLanguage ?? i18n.language, [], NO_EVENTS,
+    schoolBySlug.get(school), currentTimeMs, i18n.resolvedLanguage ?? i18n.language, [], feedFilterAvailability(NO_EVENTS, school),
   ).options;
   return (
     <>
