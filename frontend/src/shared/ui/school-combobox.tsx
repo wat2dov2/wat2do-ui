@@ -50,7 +50,6 @@ export function SchoolCombobox({
     variant === "nav" && showHighlight
       ? (label: string) => (
           <Highlighter
-            action="highlight"
             color="var(--school-marker)"
             className="block min-w-0 flex-1 truncate font-bold text-school-marker-foreground"
           >

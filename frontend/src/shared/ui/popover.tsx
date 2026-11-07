@@ -1,7 +1,7 @@
 import * as React from "react"
 import * as PopoverPrimitive from "@radix-ui/react-popover"
 
-import { useDrawerPortalContainer } from "@/shared/ui/drawer"
+import { useDrawerPortalContainer } from "@/shared/ui/drawer-portal-context"
 import { cn } from "@/shared/lib/utils"
 import { useExclusiveDisclosure } from "@/shared/hooks/useExclusiveDisclosure"
 import { createAdaptivePressHandlers } from "@/shared/hooks/useMouseDownPress"
