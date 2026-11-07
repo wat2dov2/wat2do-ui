@@ -111,7 +111,7 @@ export function EventCardContent({
       )}
     >
       <div className="flex h-full flex-1 flex-col gap-2">
-        <div className="min-w-0">
+        <div className="min-w-0" data-skeleton-key="card-title">
           <h3
             className={cn(
               "line-clamp-2 text-[15px] font-semibold leading-[1.1]",
@@ -145,6 +145,7 @@ export function EventCardContent({
         {date || time || location || instagram || badges.length > 0 ? (
           <div
             data-slot="event-card-metadata"
+            data-skeleton-key="card-meta"
             className="flex min-w-0 items-end justify-between gap-1"
           >
             <div className="space-y-0.5 min-w-0 flex-1">

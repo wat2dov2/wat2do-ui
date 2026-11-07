@@ -46,6 +46,7 @@ export function SubmittedSearchInput({
       )}
       data-elevation="control"
       data-size={size}
+      data-skeleton-key="search"
     >
       <input
         type="text"

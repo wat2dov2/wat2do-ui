@@ -21,10 +21,10 @@ interface PositionListProps {
 /** Mirrors EventCardSkeleton: two title lines, then the description beneath. */
 function PositionCardSkeleton() {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl" data-skeleton-key="card">
       <CardImageSkeleton />
       <div className="flex flex-1 flex-col gap-2.5 pb-2.5 pt-3 sm:gap-3 sm:pb-3 sm:pt-4">
-        <div className="space-y-1.5">
+        <div className="space-y-1.5" data-skeleton-key="card-title">
           <Skeleton className="h-4 w-3/4 rounded-lg" />
           <Skeleton className="h-4 w-1/2 rounded-lg" />
         </div>

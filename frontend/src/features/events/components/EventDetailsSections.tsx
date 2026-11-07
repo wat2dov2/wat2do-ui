@@ -637,7 +637,7 @@ export function EventDetailsBody({
       </div>
 
       <div className="contents md:col-start-2 md:row-span-2 md:row-start-1 md:flex md:flex-col md:gap-6">
-        <Stack gap={2} className="order-1">
+        <Stack gap={2} className="order-1" data-skeleton-key="event-title">
           {renderTitle ? (
             renderTitle(event.title)
           ) : (
@@ -646,7 +646,7 @@ export function EventDetailsBody({
           <AddedAt value={event.added_at} timeZone={getSchoolTimezone(event.school)} />
         </Stack>
 
-        <Stack gap={6} className="order-3">
+        <Stack gap={6} className="order-3" data-skeleton-key="event-facts">
           <FormGrid columns={2} collapse={false}>
             <EventDateCell event={event} />
             <EventLocationCell event={event} />
@@ -657,14 +657,14 @@ export function EventDetailsBody({
           <EventAdmissionCard event={event} school={school} />
         </Stack>
 
-        <Stack gap={6} className="order-4">
+        <Stack gap={6} className="order-4" data-skeleton-key="event-about">
           <EventAboutSection event={event} isFetchingDetails={isFetchingDetails} />
 
           <EventMapSection event={event} school={school} />
         </Stack>
       </div>
 
-      <Stack gap={6} className="order-2 md:col-start-1">
+      <Stack gap={6} className="order-2 md:col-start-1" data-skeleton-key="event-host">
         <Section variant="divided" title={t("events.hostedBy")} data-slot="event-host">
             <ClubBadgeLink
               clubId={event.club_id}

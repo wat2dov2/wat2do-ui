@@ -44,7 +44,7 @@ function PageHeader({
 }: PageHeaderProps) {
   const backButton = back ? (
     "href" in back ? (
-      <Button asChild variant="outline" size="sm" data-slot="page-back">
+      <Button asChild variant="outline" size="sm" data-slot="page-back" data-skeleton-key="page-back">
         <Link href={back.href}>
           <ArrowLeft />
           {back.label}
@@ -80,6 +80,7 @@ function PageHeader({
         {title ? (
           <h1
             data-slot="page-header-title"
+            data-skeleton-key="page-title"
             className="text-2xl font-semibold text-foreground"
           >
             {title}
@@ -88,6 +89,7 @@ function PageHeader({
         {description ? (
           <p
             data-slot="page-header-description"
+            data-skeleton-key="page-description"
             className="text-muted-foreground"
           >
             {description}
@@ -100,6 +102,7 @@ function PageHeader({
   const actionGroup = actions ? (
     <Stack
       data-slot="page-header-actions"
+      data-skeleton-key="page-actions"
       direction="horizontal"
       gap={2}
       align="center"

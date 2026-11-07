@@ -16,7 +16,7 @@ export function ClubDetailsSkeleton() {
 
   return (
     <Container size="lg">
-      <Stack gap={6} aria-busy="true">
+      <Stack gap={6} aria-busy="true" data-slot="club-details-loading">
         <PageHeader
           back={{ href: ROUTES.CLUBS, label: t("clubs.allClubs") }}
           title={
@@ -34,7 +34,7 @@ export function ClubDetailsSkeleton() {
             </Stack>
           }
         />
-        <Stack gap={3} aria-hidden="true">
+        <Stack gap={3} aria-hidden="true" data-skeleton-key="club-meta">
           <Skeleton className="h-6 w-20 rounded-full" />
           <Stack direction="horizontal" gap={4}>
             <Skeleton className="h-4 w-48" />

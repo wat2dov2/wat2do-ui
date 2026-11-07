@@ -156,6 +156,7 @@ function EventCardComponent({
 
   return (
     <article
+      data-skeleton-key="card"
       {...activationProps}
       className={cn(
         "flex w-full flex-col rounded-xl",

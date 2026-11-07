@@ -33,6 +33,7 @@ function PositionCardComponent({
 
   return (
     <article
+      data-skeleton-key="card"
       {...pressHandlers}
       role="button"
       tabIndex={0}

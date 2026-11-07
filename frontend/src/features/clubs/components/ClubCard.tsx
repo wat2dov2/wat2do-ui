@@ -97,6 +97,7 @@ function ClubCardComponent({
   return (
     <article
       data-club-card
+      data-skeleton-key="card"
       data-club-id={club.id}
       role="button"
       tabIndex={0}
@@ -113,7 +114,7 @@ function ClubCardComponent({
       className="group relative flex h-full cursor-pointer flex-col gap-4 rounded-2xl border border-border bg-surface p-4 text-foreground transition-[border-color,box-shadow] duration-200 hover:border-border-hover hover:shadow-[0_10px_30px_-18px_rgb(0_0_0/0.35)]"
     >
 
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3" data-skeleton-key="card-top">
         <AvatarStack size="lg" avatars={[{ src: club.logo_url ?? "", name: club.club_name }]} />
         <div data-club-card-action {...stopCardActivation}>
           {managesClub ? (
@@ -138,7 +139,7 @@ function ClubCardComponent({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-1">
+      <div className="flex min-w-0 flex-col gap-1" data-skeleton-key="card-title">
         <h3 className="line-clamp-2 text-base leading-snug font-medium tracking-[-0.01em] text-balance">
           <NextLink href={clubPagePath(club.id)} className="outline-none">
             {club.club_name}
@@ -151,7 +152,7 @@ function ClubCardComponent({
         ) : null}
       </div>
 
-      <div className="mt-auto flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+      <div data-skeleton-key="card-meta" className="mt-auto flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
         {category ? (
           <button
             type="button"

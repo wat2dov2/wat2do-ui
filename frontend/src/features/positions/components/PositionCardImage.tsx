@@ -40,6 +40,7 @@ export function PositionCardImage({
     <div
       ref={surfaceRef}
       data-slot="position-card-image"
+      data-skeleton-key={variant === "card" ? "card-image" : "position-poster"}
       data-variant={variant}
       className={
         variant === "card"

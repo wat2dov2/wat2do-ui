@@ -22,13 +22,13 @@ export function PageCountHeading({ count, label, latest, currentTimeMs, level = 
   const Heading = level === 1 ? "h1" : "h2";
   return (
     <Stack gap={1} className="sm:gap-2">
-    <Heading aria-busy={count === null} aria-label={count === null ? label : `${count.toLocaleString(i18n.language)} ${label}`} className="inline-flex items-baseline gap-2 text-left text-2xl font-bold text-foreground sm:text-3xl">
+    <Heading data-skeleton-key="count-heading" aria-busy={count === null} aria-label={count === null ? label : `${count.toLocaleString(i18n.language)} ${label}`} className="inline-flex items-baseline gap-2 text-left text-2xl font-bold text-foreground sm:text-3xl">
       {/* Cap height follows the visible digits; the font em includes empty vertical space. */}
       {count === null ? <Skeleton className="h-[1cap] w-[2ch] shrink-0" aria-hidden="true" /> : <NumberFlow value={count} respectMotionPreference />}
-      <span>{label}</span>
+      <span data-skeleton-key="count-label">{label}</span>
     </Heading>
     {latest !== undefined && (count === null || latest) ? (
-      <Stack direction="horizontal" align="center" gap={2} data-slot="latest-added-item">
+      <Stack direction="horizontal" align="center" gap={2} data-slot="latest-added-item" data-skeleton-key="latest-added">
         {latest ? <>
           <Badge variant="new" size="sm" className="shrink-0">{t("events.new")}</Badge>
           {/* The club's picture sits closer to its own title than the badge does. min-w-0 lets the title shrink. */}

@@ -26,16 +26,16 @@ export function EventDetailsDrawerSkeleton() {
 /** The event details layout (poster, title, facts, description) before the event loads. */
 export function EventDetailsBodySkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-[320px_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:items-start md:gap-x-8">
-      <Skeleton className="mx-auto aspect-square w-full max-w-sm rounded-xl md:col-start-1 md:mx-0" />
+    <div data-slot="event-details-loading" className="grid grid-cols-1 gap-6 md:grid-cols-[320px_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:items-start md:gap-x-8">
+      <Skeleton data-skeleton-key="event-poster" className="mx-auto aspect-square w-full max-w-sm rounded-xl md:col-start-1 md:mx-0" />
 
       <div className="contents md:col-start-2 md:row-span-2 md:row-start-1 md:flex md:flex-col md:gap-6">
-        <Stack gap={2} className="order-1">
+        <Stack gap={2} className="order-1" data-skeleton-key="event-title">
           <Skeleton className="h-7 w-4/5 rounded-lg sm:h-9" />
           <Skeleton className="h-4 w-48 rounded-lg" />
         </Stack>
 
-        <Stack gap={6} className="order-3">
+        <Stack gap={6} className="order-3" data-skeleton-key="event-facts">
           <FormGrid columns={2} collapse={false}>
             {Array.from({ length: 4 }, (_, index) => (
               <Stack key={index} direction="horizontal" align="center" gap={3}>
@@ -50,7 +50,7 @@ export function EventDetailsBodySkeleton() {
           <Skeleton className="h-32 w-full rounded-xl" />
         </Stack>
 
-        <Stack gap={3} className="order-4">
+        <Stack gap={3} className="order-4" data-skeleton-key="event-about">
           <Stack gap={2}>
             <Skeleton className="h-4 w-24 rounded-lg" />
             <Separator />
@@ -62,7 +62,7 @@ export function EventDetailsBodySkeleton() {
         </Stack>
       </div>
 
-      <Stack gap={6} className="order-2 md:col-start-1">
+      <Stack gap={6} className="order-2 md:col-start-1" data-skeleton-key="event-host">
         <Stack gap={3}>
           <Stack gap={2}>
             <Skeleton className="h-4 w-24 rounded-lg" />

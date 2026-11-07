@@ -168,7 +168,7 @@ export function EventList({
     return (
       <div className="space-y-5" aria-busy="true">
         <section className="space-y-2.5">
-          <Skeleton className="h-5 w-28 rounded-lg" />
+          <Skeleton className="h-5 w-28 rounded-lg" data-skeleton-key="date-heading" />
           <div className={CARD_GRID_CLASS}>
             {Array.from({ length: 12 }).map((_, i) => (
               <EventCardSkeleton key={i} />
@@ -215,7 +215,7 @@ export function EventList({
           const label = sectionLabel(group.section);
           return (
             <section key={group.key} className="space-y-2.5" aria-label={label}>
-              <h2 className="text-base font-normal tracking-normal text-foreground">
+              <h2 data-skeleton-key="date-heading" className="text-base font-normal tracking-normal text-foreground">
                 {label}
               </h2>
               <EventCardsGrid
