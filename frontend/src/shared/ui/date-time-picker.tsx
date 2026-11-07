@@ -18,7 +18,8 @@ interface DateTimePickerProps {
   onBlur?: () => void;
   placeholder?: string;
   className?: string;
-  hasError?: boolean;
+  /** Marks the picker as missing or wrong; the button draws it. */
+  "aria-invalid"?: boolean;
 }
 
 const HOURS = Array.from({ length: 12 }, (_, index) => 12 - index);
@@ -32,7 +33,7 @@ export function DateTimePicker({
   onBlur,
   placeholder = "MM/DD/YYYY hh:mm aa",
   className,
-  hasError = false,
+  "aria-invalid": ariaInvalid,
 }: DateTimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const date = useMemo(() => parseLocalDateValue(value.slice(0, 10)), [value]);
@@ -76,10 +77,10 @@ export function DateTimePicker({
           id={id}
           type="button"
           variant="outline"
+          aria-invalid={ariaInvalid}
           className={cn(
             "w-full min-w-0 justify-start px-3 text-left font-normal",
             !date && "text-muted-foreground",
-            hasError && "ring-2 ring-destructive/50 bg-destructive/10",
             className
           )}
           onBlur={onBlur}

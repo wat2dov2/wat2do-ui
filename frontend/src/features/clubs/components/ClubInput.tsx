@@ -8,6 +8,8 @@ import { FormInput } from "@/shared/ui/form-field";
 interface ClubInputProps {
   value: number | null;
   clubs: Club[];
+  /** Shows the one club the form is for, which cannot be changed (a club owner's own club). */
+  locked?: boolean;
   onChange: (clubId: number | null) => void;
   onBlur?: () => void;
   error?: string;
@@ -18,6 +20,7 @@ interface ClubInputProps {
 export function ClubInput({
   value,
   clubs,
+  locked = false,
   onChange,
   onBlur,
   error,
@@ -31,16 +34,18 @@ export function ClubInput({
 
   const selectedClub = clubs.find(club => club.id === value);
   const selectedHandle = selectedClub ? getClubSocialHandle(selectedClub) ?? "" : "";
-  const inputValue = value !== draft.resolvedId
-    ? selectedHandle
-    : draft.handle || (value != null ? selectedHandle : "");
+  const inputValue = locked
+    ? selectedHandle || (selectedClub?.club_name ?? "")
+    : value !== draft.resolvedId
+      ? selectedHandle
+      : draft.handle || (value != null ? selectedHandle : "");
 
   return (
     <FormInput
       name="club_id"
       label={t("forms.instagramHandle")}
       required
-      disabled={clubs.length === 0}
+      disabled={locked || clubs.length === 0}
       value={inputValue}
       onChange={(nextValue) => {
         const handle = String(nextValue);
@@ -50,7 +55,7 @@ export function ClubInput({
       }}
       onBlur={onBlur}
       placeholder={t("modals.signIn.username")}
-      error={inputValue && value == null ? t("clubs.noClubsFound") : error}
+      error={!locked && inputValue && value == null ? t("clubs.noClubsFound") : error}
       touched={touched}
     />
   );

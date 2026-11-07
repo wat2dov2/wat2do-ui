@@ -17,7 +17,7 @@ function Input({ className, type, size = "default", format, onChange, ...props }
       data-size={size}
       className={cn(
         OUTLINE_CONTROL_STYLES,
-        "flex w-full min-w-0 items-center rounded-xl px-3 py-2 text-base transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 disabled:bg-muted disabled:cursor-not-allowed disabled:opacity-50 file:inline-flex file:h-6 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm md:text-sm",
+        "flex w-full min-w-0 items-center rounded-xl px-3 py-2 text-base transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:ring-2 aria-invalid:ring-destructive/50 aria-invalid:bg-destructive/10 disabled:bg-muted disabled:cursor-not-allowed disabled:opacity-50 file:inline-flex file:h-6 file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm md:text-sm",
         size === "lg" ? "h-11" : size === "compact" ? "h-8 w-48 shrink-0 text-sm" : "h-9",
         className
       )}

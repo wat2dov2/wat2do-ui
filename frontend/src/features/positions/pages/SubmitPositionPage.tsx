@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useAuthState } from "@/features/auth";
 import { usePositionSubmission } from "@/features/positions/hooks/usePositionSubmission";
-import { Container, FormActions, FormGrid, Stack } from "@/shared/layout";
+import { Container, FormActions, FormGrid, FormLayout, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { FormInput, FormSelect, FormTextarea } from "@/shared/ui/form-field";
@@ -22,7 +22,7 @@ export function SubmitPositionPage() {
   const { t } = useTranslation();
   const form = usePositionSubmission();
   const data = form.data;
-  const clubs = form.clubs.data ?? [];
+  const clubs = form.clubs;
   const { isAdmin, clubs: managedClubs } = useAuthState();
   // Admins and the club's own team publish straight away; the server decides the same.
   const canPublish = isAdmin || managedClubs.some(club => club.id === data.club_id);
@@ -41,7 +41,7 @@ export function SubmitPositionPage() {
             onSkip={form.openForm}
           />
         ) : (
-          <form onSubmit={form.submit}>
+          <FormLayout onSubmit={form.submit}>
             <fieldset disabled={form.busy}>
               <Stack gap={5}>
                 <FormInput
@@ -55,8 +55,8 @@ export function SubmitPositionPage() {
                 />
                 <ImageUploadField label={t("forms.clickToUploadImage")} imagePreview={form.image.imagePreview || undefined} onImageUpload={form.image.onImageUpload} onRemoveImage={form.image.onRemoveImage} previewVariant="poster" />
                 <Field>
-                  <ClubInput value={data.club_id || null} clubs={clubs} onChange={clubId => form.edit({ club_id: clubId ?? 0 })} touched />
-                  {form.clubs.isError ? <Button type="button" variant="outline" onClick={() => void form.clubs.refetch()}>{t("common.tryAgain")}</Button> : null}
+                  <ClubInput value={data.club_id || null} clubs={clubs} locked={form.isClubFixed} onChange={clubId => form.edit({ club_id: clubId ?? 0 })} touched />
+                  {form.clubsFailed ? <Button type="button" variant="outline" onClick={() => void form.retryClubs()}>{t("common.tryAgain")}</Button> : null}
                 </Field>
                 <FormInput name="position-title" placeholder={t("positions.placeholders.title")} label={t("positions.title")} required value={data.title} onChange={title => form.edit({ title: String(title) })} />
                 <FormTextarea name="position-description" placeholder={t("positions.placeholders.description")} label={t("forms.description")} required value={data.description} onChange={description => form.edit({ description })} rows={5} />
@@ -72,10 +72,10 @@ export function SubmitPositionPage() {
                 </FormGrid>
                 <FormTextarea name="position-requirements" placeholder={t("positions.placeholders.requirements")} label={t("positions.requirements")} value={(data.requirements ?? []).join("\n")} onChange={value => form.edit({ requirements: value.split("\n") })} />
                 {form.error ? <FieldError role="alert">{form.error}</FieldError> : null}
-                <FormActions><LoadingButton type="submit" isLoading={form.busy} disabled={!clubs.some(club => club.id === data.club_id)}>{t(canPublish ? "positions.addPosition" : "events.submitForReview")}</LoadingButton></FormActions>
+                <FormActions><LoadingButton type="submit" isLoading={form.busy}>{t(canPublish ? "positions.addPosition" : "events.submitForReview")}</LoadingButton></FormActions>
               </Stack>
             </fieldset>
-          </form>
+          </FormLayout>
         )}
       </Stack>
     </Container>

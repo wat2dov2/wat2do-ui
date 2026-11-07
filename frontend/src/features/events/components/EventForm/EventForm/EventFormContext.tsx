@@ -15,6 +15,8 @@ export interface EventFormContextValue {
     field: K,
     value: EventFormData[K]
   ) => void;
+  /** Sets the venue; the map location follows it. */
+  updateLocation: (location: string) => void;
   errors: ValidationErrors;
   touched: Record<string, boolean>;
   handleBlur: (field: string) => void;
@@ -37,7 +39,8 @@ export interface EventFormContextValue {
    * it has.
    */
   isImageRequired: boolean;
-  isMapLocationRequired: boolean;
+  /** A club owner's event is always their own club's, so the club cannot be changed. */
+  isClubFixed: boolean;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: () => void;
   isDarkMode?: boolean;

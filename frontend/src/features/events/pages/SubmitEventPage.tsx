@@ -3,6 +3,7 @@ import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useAuthState } from "@/features/auth";
+import { useOwnClub } from "@/features/clubs";
 import { SubmitEventFlow } from "@/features/events/components/SubmitEventModal";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { createEventAPI } from "@/features/events/api/events.api";
@@ -23,6 +24,8 @@ export function SubmitEventPage() {
   const router = useRouter();
   const { isAdmin, hasClub } = useAuthState();
   const canCreateEvents = hasClub || isAdmin;
+  // A club owner's events are always their own club's, so no list of clubs is offered.
+  const ownClub = useOwnClub();
   const schoolFilter = useEventsStore((state) => state.schoolFilter);
   const school = resolveWritableSchool(
     schoolFilter,
@@ -54,7 +57,7 @@ export function SubmitEventPage() {
       <Stack gap={6}>
         <PageShellHeader
           route={ROUTES.EVENT_SUBMIT}
-          description={t("events.submitEventSchoolDescription", {
+          description={ownClub ? undefined : t("events.submitEventSchoolDescription", {
             school: getSchoolName(school),
           })}
         />

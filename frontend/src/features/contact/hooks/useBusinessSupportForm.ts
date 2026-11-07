@@ -70,12 +70,8 @@ export function useBusinessSupportForm(school: SchoolSummary | undefined) {
     }
     setErrors(nextErrors);
     setSubmissionError(null);
-    const firstInvalidField = Object.keys(nextErrors)[0];
-    if (firstInvalidField) {
-      const input = event.currentTarget.elements.namedItem(firstInvalidField);
-      if (input instanceof HTMLElement) input.focus();
-      return;
-    }
+    // The form brings the first marked field into view.
+    if (Object.keys(nextErrors).length > 0) return;
 
     if (!school) {
       setSubmissionError(t("contact.businessSupport.error"));

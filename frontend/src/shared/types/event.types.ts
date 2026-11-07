@@ -56,7 +56,10 @@ export interface EventFormData {
   description: string;
   occurrences: EventFormOccurrence[];
   location: string;
-  /** Where the map places the event; empty for an online event. */
+  /**
+   * Where the map places the event, never typed: it follows `location`, and
+   * is empty for an online event or a venue still to be announced.
+   */
   map_location: string;
   category: string;
   price: number;
@@ -73,5 +76,4 @@ export interface ValidationErrors {
   club_id?: string;
   occurrences?: string;
   location?: string;
-  map_location?: string;
 }

@@ -103,6 +103,7 @@ export function ImageUploadField({
         <button
           type="button"
           data-elevation="control"
+          aria-invalid={error ? true : undefined}
           onClick={() => fileInputRef.current?.click()}
           className={cn(
             OUTLINE_CONTROL_STYLES,
