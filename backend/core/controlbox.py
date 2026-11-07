@@ -203,7 +203,8 @@ class DiscoveryCacheControl(_ControlModel):
     # A snapshot older than this is rebuilt on its next read, which still gets
     # the old copy; backend revalidation notices mark it stale sooner.
     refresh_interval_seconds: int = Field(gt=0)
-    # The stale-while-revalidate window of a CDN-cached /api/discovery response.
+    # The stale-while-revalidate window of CDN-cached /api/discovery responses
+    # and of the public pages that show them (frontend/next.config.ts).
     snapshot_check_seconds: int = Field(gt=0)
     request_timeout_seconds: int = Field(gt=0)
     page_concurrency: int = Field(ge=1, le=8)
