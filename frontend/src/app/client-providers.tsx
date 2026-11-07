@@ -137,6 +137,10 @@ export function ClientProviders({
     async function initLanguage() {
       try {
         const initialLang = getStoredLanguage(initialSchools?.find((school) => school.slug === initialSchool)?.language ?? "en");
+        // Switching always announces a change, which re-renders every
+        // translated component right after hydration; skip it when the page
+        // is already in this language.
+        if (i18n.language === initialLang && document.documentElement.lang === initialLang) return;
         await loadLanguage(initialLang);
         await i18n.changeLanguage(initialLang);
       } catch (err) {
