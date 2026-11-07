@@ -83,10 +83,30 @@ def test_taps_land_inside_the_middle_of_the_control() -> None:
         assert 150 <= x <= 250 and 250 <= y <= 350
 
 
-def test_switching_android_users_is_confirmed() -> None:
-    outputs = [(0, "0\n"), (0, ""), (0, ""), (0, ""), (0, "0\n")]
+def test_a_user_switch_waits_only_until_the_user_is_in_front_and_unlocked() -> None:
+    commands = []
+    outputs = [
+        (0, "0\n"),  # current user before the switch
+        (0, ""),  # switch-user
+        (0, "0\n"),  # still switching
+        (0, "10\n"),
+        (0, "RUNNING_LOCKED\n"),
+        (0, "10\n"),
+        (0, "RUNNING_UNLOCKED\n"),
+        (0, ""),  # wake
+        (0, ""),
+    ]
+    _device(outputs, commands).use_android_user(10)
+    assert outputs == []
+    assert commands[1][-3:] == ["am", "switch-user", "10"]
+
+
+def test_a_user_that_never_comes_to_the_front_fails(monkeypatch) -> None:
+    device = _device([(0, "0\n"), (0, "")] + [(0, "0\n")] * 20, [])
+    clock = iter(range(0, 1_000, 10))
+    monkeypatch.setattr(device, "_monotonic", lambda: next(clock))
     with pytest.raises(module.EmulatorError, match="switch Android users"):
-        _device(outputs, []).use_android_user(10)
+        device.use_android_user(10)
 
 
 def test_the_current_android_user_is_not_switched_again() -> None:

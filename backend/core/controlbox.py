@@ -989,7 +989,10 @@ class InstagramEmulatorControl(_ControlModel):
         Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")], Annotated[int, Field(ge=0)]
     ] = Field(min_length=1)
     adb_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # A user switch is waited for until the user is in front and unlocked, at most this long;
+    # an account switch settles this long before its inbox is opened.
     user_switch_wait_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    account_switch_settle_seconds: float = Field(ge=0, le=60, allow_inf_nan=False)
     screen_wait_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
     # Every tap and keystroke waits a random human-like pause inside this window.
     step_delay_min_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
