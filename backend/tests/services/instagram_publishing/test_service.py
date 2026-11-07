@@ -1517,3 +1517,22 @@ def test_a_carousel_under_three_events_is_never_published(monkeypatch):
     outcomes = service.publish_ready_drafts(datetime(2026, 11, 6, 14, 35, tzinfo=timezone.utc))
     assert claimed == ["b"]
     assert outcomes == {"too_few_events": 1, "published": 1}
+
+
+def test_outro_leaves_out_political_and_religious_events(monkeypatch):
+    monkeypatch.setattr(
+        service,
+        "get_sb",
+        lambda: SimpleNamespace(
+            table=lambda _name: _FakeQuery([{"id": i} for i in (11, 12, 13)], [])
+        ),
+    )
+    political = _event(12).model_copy(update={"category": "Politics & Advocacy"})
+    religious = _event(13).model_copy(update={"category": "Religion & Spirituality"})
+    monkeypatch.setattr(
+        service, "_load_slide_events", lambda _ids: {11: _event(11), 12: political, 13: religious}
+    )
+
+    _count, others = service._summarize_recent_events(_batch([]))
+
+    assert [event.id for event in others] == [11]

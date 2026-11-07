@@ -180,7 +180,7 @@ Columns:
   Also use `'[]'` when food or drinks are only sold (bake sales, fundraisers, concessions, food trucks, priced items, pub or restaurant deals, dining-hall menus, "available for purchase"), when attendees bring it (potlucks, "bring a snack"), when it is collected or handed out to others (food drives, packing meals for shelters), when it is only a prize, only alcohol, only the theme (a talk about coffee, a pie-throwing fundraiser), or when the post recaps a past event.
   When some items are free and others sold, list only the free ones.
 - `registration`: true only when attendees are clearly told to register, RSVP or sign up.
-- `category`: one of {{categories}}, or NULL.
+- `category`: always one of {{categories}}, the closest fit when none is exact; never NULL. Events without a category are hidden from category filters and never reach the Instagram carousels.
 - `cancelled`: false unless the event is cancelled.
 - Never set `featured`, `created_by`, `display_handle`, `dtstart_utc`, `dtend_utc` or `source_posted_at` on `events`; the system fills them.
 
