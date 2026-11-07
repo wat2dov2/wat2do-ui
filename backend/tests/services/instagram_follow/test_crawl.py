@@ -179,3 +179,19 @@ def test_a_crawl_slice_stops_for_a_waiting_song_and_keeps_its_place(world):
 
     assert result == module.CRAWL_RUNNING
     assert module.json.loads(module._state_path("utm").read_text())["queue"] == ["utmmsa"]
+
+
+def test_a_crawl_ends_after_its_profile_cap(world, monkeypatch):
+    reader = _Reader(
+        {
+            "wat2do.utm": _rows(("utmmsa", "UTM MSA", True)),
+            "utmmsa": _rows(("utmaclub", "UTMAC", False)),
+        }
+    )
+    world(reader)
+    monkeypatch.setattr(
+        module, "CONTROL", module.CONTROL.model_copy(update={"crawl_max_profiles": 1})
+    )
+
+    assert module.crawl_slice(object(), "utm", deadline=float("inf")) == module.CRAWL_FINISHED
+    assert reader.visits == ["wat2do.utm", "utmmsa"]

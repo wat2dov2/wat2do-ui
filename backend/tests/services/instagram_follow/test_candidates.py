@@ -188,3 +188,25 @@ def test_a_follow_that_failed_after_its_tap_is_dated(sb):
 
     module.mark_follow_failed("2", "profile never loaded")
     assert "followed_at" not in sb.update.call_args.args[0]
+
+
+def test_a_recently_failed_follow_is_not_offered_again_yet(monkeypatch):
+    from types import SimpleNamespace
+
+    calls = []
+
+    class _Query:
+        def __getattr__(self, name):
+            def chain(*args, **kwargs):
+                calls.append((name, args))
+                return self
+
+            return chain
+
+        def execute(self):
+            return SimpleNamespace(data=[])
+
+    monkeypatch.setattr(module, "get_sb", lambda: SimpleNamespace(table=lambda _name: _Query()))
+    module.approved(7, 5)
+    (filter_,) = [args[0] for name, args in calls if name == "or_"]
+    assert filter_.startswith("follow_error.is.null,updated_at.lt.")

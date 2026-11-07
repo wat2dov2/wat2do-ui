@@ -40,7 +40,14 @@ def _follow_hours(monkeypatch, start: int, end: int) -> None:
 def due(monkeypatch):
     """What each step reports as due; the steps record what they did."""
     state = SimpleNamespace(
-        music=[], dms=set(), unfollows=set(), follows=set(), crawls=set(), running=set(), done=[]
+        music=[],
+        dms=set(),
+        unfollows=set(),
+        follows=set(),
+        crawls=set(),
+        running=set(),
+        crawled={},
+        done=[],
     )
     monkeypatch.setattr(worker, "exclusive", nullcontext)
     monkeypatch.setattr(worker, "_crawl_rested_until", {})
@@ -70,6 +77,10 @@ def due(monkeypatch):
     monkeypatch.setattr(worker.follows, "follow_due", follow_due)
     monkeypatch.setattr(worker.crawl, "crawl_due", lambda school, now: school in state.crawls)
     monkeypatch.setattr(worker.crawl, "crawl_running", lambda school: school in state.running)
+    monkeypatch.setattr(
+        worker.crawl, "last_crawl_started", lambda school: state.crawled.get(school)
+    )
+    monkeypatch.setattr(worker, "_last_visit_crawled", True)
 
     def crawl_slice(device, school, deadline, stop=None):
         state.done.append(("crawl", school))
@@ -91,7 +102,7 @@ def test_an_account_with_a_carousel_waiting_is_visited_first_and_gets_everything
     assert due.done == [("music", "uwo"), ("dms", "uwo"), ("follows", "uwo")]
 
 
-def test_inboxes_come_before_follows_and_follows_before_crawls(due):
+def test_crawls_take_every_other_visit_while_inboxes_and_follows_wait(due):
     due.dms = {"ubc"}
     due.follows = {"sfu"}
     due.crawls = {"utm"}
@@ -99,10 +110,17 @@ def test_inboxes_come_before_follows_and_follows_before_crawls(due):
     worker.visit_next(device, DAY)
     due.dms.clear()
     worker.visit_next(device, DAY)
-    due.follows.clear()
     worker.visit_next(device, DAY)
-    assert device.accounts == ["wat2do.ubc", "wat2do.sfu", "wat2do.utm"]
-    assert due.done[-2:] == [("crawl", "utm"), "score"]
+    assert device.accounts == ["wat2do.ubc", "wat2do.utm", "wat2do.sfu"]
+    assert ("crawl", "utm") in due.done
+
+
+def test_never_crawled_schools_crawl_first_then_the_oldest(due):
+    due.crawls = {"ubc", "sfu", "utm"}
+    due.crawled = {"ubc": DAY - timedelta(days=9), "sfu": DAY - timedelta(days=20)}
+    assert worker._crawl_order(["ubc", "sfu", "utm"], DAY) == ["utm", "sfu", "ubc"]
+    due.running = {"ubc"}
+    assert worker._crawl_order(["ubc", "sfu", "utm"], DAY) == ["ubc"]
 
 
 def test_at_night_the_worker_only_adds_songs_and_crawls(due, monkeypatch):

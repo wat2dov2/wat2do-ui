@@ -73,7 +73,13 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
                 False,
             )
         )
-    tiers.append((_crawl_order(order, moment), True))
+    crawls = (_crawl_order(order, moment), True)
+    # The crawl runs around the clock: it takes every other visit while follows,
+    # unfollows or DMs are also waiting, rather than only when nothing else is due.
+    if _last_visit_crawled:
+        tiers.append(crawls)
+    else:
+        tiers.insert(1, crawls)
     for schools, crawling in tiers:
         if schools:
             visit(
@@ -88,6 +94,9 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
     return False
 
 
+_last_visit_crawled = False
+
+
 def visit(
     device: EmulatorDevice,
     school: str,
@@ -98,6 +107,8 @@ def visit(
     now: datetime,
 ) -> None:
     """Switch to the school's account once and do everything it needs."""
+    global _last_visit_crawled
+    _last_visit_crawled = crawl_slice
     user = CONTROL.android_user_by_school[school]
     crawled = False
     with exclusive():
@@ -177,7 +188,12 @@ def _crawl_order(order: list[str], now: datetime) -> list[str]:
         for school in order
         if _crawl_rested_until.get(school, now) <= now and crawl.crawl_due(school, now)
     ]
-    return sorted(due, key=lambda school: not crawl.crawl_running(school))
+    running = [school for school in due if crawl.crawl_running(school)]
+    if running:
+        return running
+    # Never-crawled schools first, then the one crawled longest ago.
+    oldest = datetime.min.replace(tzinfo=timezone.utc)
+    return sorted(due, key=lambda school: crawl.last_crawl_started(school) or oldest)
 
 
 def acting_hours(moment: datetime) -> bool:

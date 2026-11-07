@@ -6,6 +6,8 @@
   "profile_read_delay_min_seconds": 3,
   "profile_read_delay_max_seconds": 6,
   "crawl_interval_days": 7,
+  "crawl_max_profiles": 300,
+  "follow_retry_hours": 12,
   "crawl_miss_streak": 20,
   "crawl_max_scrolls": 25,
   "crawl_profile_wait_seconds": 40,

@@ -51,23 +51,27 @@ def crawl_running(school: str) -> bool:
     return _state_path(school).exists()
 
 
-def crawl_due(school: str, now: datetime | None = None) -> bool:
-    """Whether the school has a crawl under way, or none started within the interval."""
-    if crawl_running(school):
-        return True
-    school_id = _school_id(school)
+def last_crawl_started(school: str) -> datetime | None:
+    """When the school's newest crawl started, or None when it was never crawled."""
     latest = (
         get_sb()
         .table(INSTAGRAM_FOLLOW_CRAWLS)
         .select("started_at")
-        .eq("school_id", school_id)
+        .eq("school_id", _school_id(school))
         .order("started_at", desc=True)
         .limit(1)
         .execute()
     ).data
-    if not latest:
+    return datetime.fromisoformat(latest[0]["started_at"]) if latest else None
+
+
+def crawl_due(school: str, now: datetime | None = None) -> bool:
+    """Whether the school has a crawl under way, or none started within the interval."""
+    if crawl_running(school):
         return True
-    started = datetime.fromisoformat(latest[0]["started_at"])
+    started = last_crawl_started(school)
+    if started is None:
+        return True
     now = now or datetime.now(timezone.utc)
     return now - started >= timedelta(days=CONTROL.crawl_interval_days)
 
@@ -98,7 +102,11 @@ def crawl_slice(
         state["seeded"] = True
         _save(school, state)
     failed_in_a_row = 0
-    while state["queue"] and state["streak"] < CONTROL.crawl_miss_streak:
+    while (
+        state["queue"]
+        and state["streak"] < CONTROL.crawl_miss_streak
+        and state["visited"] < CONTROL.crawl_max_profiles
+    ):
         if time.monotonic() >= deadline or (stop is not None and stop()):
             return CRAWL_RUNNING
         seed = state["queue"].pop(0)
