@@ -79,6 +79,12 @@ _SUCCESSFUL_CUTOFF_STATUSES = (
 )
 _EVENT_COLUMNS = "id,title,description,location,club,ig_handle,source_image_url,category,employers_on_campus,price,food,registration,carousel_requested_at"
 _BATCH_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
+_ITEM_COUNT_EMBED = f"items:{INSTAGRAM_PUBLISH_ITEMS}(count)"
+
+
+def _embedded_count(row: dict[str, Any]) -> int:
+    items = row.get("items") or []
+    return int(items[0]["count"]) if items else 0
 
 
 def _with_batch_school(row: dict[str, Any]) -> dict[str, Any]:
@@ -127,12 +133,7 @@ def list_draft_candidates(now_utc: datetime | None = None) -> list[dict[str, Any
             packets.append(packet)
             continue
         window_start = _draft_window_start(account_key, now)
-        events = _load_candidates(
-            account_key=account_key,
-            school=account_key,
-            window_start=window_start,
-            window_end=now,
-        )
+        events = _draft_candidates(account_key, window_start, now)
         packet.update(
             window_start=window_start.isoformat(),
             caption_intro=default_caption_intro(account_key, "events"),
@@ -294,6 +295,10 @@ def claim_batch_for_publishing(
     items = _ordered_items(batch)
     if not items:
         raise ValidationError("Instagram publishing batch has no publishable slides")
+    if len(items) < _CONTROL.minimum_event_slides:
+        raise ValidationError(
+            f"Choose at least {_CONTROL.minimum_event_slides} event slides before publishing"
+        )
     if len(items) > _CONTROL.maximum_event_slides:
         raise ValidationError(
             f"Choose at most {_CONTROL.maximum_event_slides} event slides before publishing"
@@ -375,7 +380,7 @@ def publish_ready_drafts(now: datetime | None = None) -> dict[str, int]:
     rows = (
         get_sb()
         .table(INSTAGRAM_PUBLISH_BATCHES)
-        .select("id,account_key,version")
+        .select(f"id,account_key,version,{_ITEM_COUNT_EMBED}")
         .eq("batch_kind", "events")
         .eq("local_date", local_date.isoformat())
         .eq("status", INSTAGRAM_BATCH_READY_FOR_REVIEW)
@@ -384,6 +389,10 @@ def publish_ready_drafts(now: datetime | None = None) -> dict[str, int]:
     ).data or []
     outcomes: dict[str, int] = defaultdict(int)
     for row in rows:
+        if _embedded_count(row) < _CONTROL.minimum_event_slides:
+            # Too thin to post; it stays in review for an admin to fill or leave.
+            outcomes["too_few_events"] += 1
+            continue
         try:
             batch = claim_batch_for_publishing(
                 row["id"], InstagramPublishBatchPublish(version=int(row["version"]))
@@ -438,12 +447,7 @@ def save_review_draft(selection: DraftSelection) -> dict[str, Any]:
         return {"outcome": "existing", "batch": get_batch(existing["id"])}
 
     window_start = _draft_window_start(account_key, now)
-    candidates = _load_candidates(
-        account_key=account_key,
-        school=account_key,
-        window_start=window_start,
-        window_end=now,
-    )
+    candidates = _draft_candidates(account_key, window_start, now)
     validate_picks(candidates, selection.picks)
     by_id = {event["id"]: event for event in candidates}
     selected = [by_id[pick.event_id] for pick in selection.picks]
@@ -508,6 +512,101 @@ def save_review_draft(selection: DraftSelection) -> dict[str, Any]:
         )
         raise
     return {"outcome": "saved" if selected else "empty", "batch": get_batch(batch_id)}
+
+
+def _draft_candidates(
+    account_key: str, window_start: datetime, window_end: datetime
+) -> list[dict[str, Any]]:
+    """Events new since the last carousel, then enough not-yet-posted upcoming ones to fill it.
+
+    A carousel is better full than limited to brand-new events, so when the new ones
+    are few, upcoming events this account has never posted join the packet, soonest
+    first, marked ``new: false``.
+    """
+    fresh = _load_candidates(
+        account_key=account_key,
+        school=account_key,
+        window_start=window_start,
+        window_end=window_end,
+    )
+    for event in fresh:
+        event["new"] = True
+    room = _CONTROL.fill_candidate_count - len(fresh)
+    if room <= 0:
+        return fresh
+    earlier = _load_unposted_upcoming(
+        account_key, window_end, exclude={event["id"] for event in fresh}, limit=room
+    )
+    for event in earlier:
+        event["new"] = False
+    return fresh + earlier
+
+
+def _load_unposted_upcoming(
+    account_key: str, now: datetime, *, exclude: set[int], limit: int
+) -> list[dict[str, Any]]:
+    """Up to ``limit`` upcoming events of the school never posted on this account, soonest first."""
+    school_id = school_service.get_school_id(account_key)
+    if school_id is None:
+        return []
+    occurrence_start = now + timedelta(hours=_CONTROL.minimum_lead_hours)
+    occurrence_end = now + timedelta(days=_CONTROL.maximum_lead_days)
+    occurrences = fetch_all_pages(
+        lambda offset, limit_: (
+            (
+                get_sb()
+                .table(EVENT_DATES)
+                .select("event_id,dtstart_utc,dtend_utc,tz,events!inner(school_id,cancelled)")
+                .eq("events.school_id", school_id)
+                .eq("events.cancelled", False)
+                .gte("dtstart_utc", occurrence_start.isoformat())
+                .lte("dtstart_utc", occurrence_end.isoformat())
+                .order("dtstart_utc")
+                .order("id")
+                .range(offset, offset + limit_ - 1)
+                .execute()
+            ).data
+            or []
+        )
+    )
+    first_occurrence: dict[int, dict[str, Any]] = {}
+    for occurrence in occurrences:
+        event_id = int(occurrence["event_id"])
+        if event_id not in exclude:
+            first_occurrence.setdefault(event_id, occurrence)
+    if not first_occurrence:
+        return []
+    event_ids = list(first_occurrence)
+    published: set[int] = set()
+    events: dict[int, dict[str, Any]] = {}
+    for start in range(0, len(event_ids), 200):
+        chunk = event_ids[start : start + 200]
+        rows = (
+            get_sb()
+            .table(INSTAGRAM_PUBLISH_ITEMS)
+            .select("event_id")
+            .eq("account_key", account_key)
+            .in_("event_id", chunk)
+            .not_.is_("published_at", "null")
+            .execute()
+        ).data or []
+        published.update(int(row["event_id"]) for row in rows)
+        rows = (get_sb().table(EVENTS).select(_EVENT_COLUMNS).in_("id", chunk).execute()).data or []
+        events.update({int(row["id"]): row for row in rows})
+    candidates = []
+    for event_id in event_ids:  # soonest first
+        event = events.get(event_id)
+        if (
+            event is None
+            or event_id in published
+            or (event.get("category") or "").strip() not in EVENT_CATEGORIES
+            or not (event.get("source_image_url") or "").strip()
+        ):
+            continue
+        candidates.append(_with_occurrence(event, first_occurrence[event_id], account_key))
+        if len(candidates) >= limit:
+            break
+    return candidates
 
 
 def _load_candidates(
@@ -593,7 +692,7 @@ def _load_candidates(
         event_id = int(event["id"])
         occurrence = first_occurrence.get(event_id)
         if (
-            (event.get("employers_on_campus") is True) != (batch_kind == "employers_on_campus")
+            (batch_kind == "employers_on_campus" and event.get("employers_on_campus") is not True)
             or event_id in published_ids
             or occurrence is None
             or (event.get("category") or "").strip() not in EVENT_CATEGORIES
@@ -856,8 +955,6 @@ def _recent_event_ids(batch: dict[str, Any]) -> set[int]:
         )
         if batch["batch_kind"] == "employers_on_campus":
             query = query.eq("employers_on_campus", True)
-        else:
-            query = query.or_("employers_on_campus.is.null,employers_on_campus.eq.false")
         return query.order("id").range(offset, offset + limit - 1).execute().data or []
 
     return {int(row["id"]) for row in fetch_all_pages(page)}

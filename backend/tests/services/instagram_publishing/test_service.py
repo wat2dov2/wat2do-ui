@@ -38,6 +38,24 @@ def feed_revalidation(monkeypatch):
     return revalidation
 
 
+_ORIGINAL_UNPOSTED_UPCOMING = service._load_unposted_upcoming
+
+
+@pytest.fixture(autouse=True)
+def _small_carousels_and_no_fill(monkeypatch):
+    """Most tests use one or two slides and only the new-event pool."""
+    monkeypatch.setattr(
+        service, "_CONTROL", service._CONTROL.model_copy(update={"minimum_event_slides": 1})
+    )
+    monkeypatch.setattr(service, "_load_unposted_upcoming", lambda *_, **__: [])
+
+
+def _minimum_slides(monkeypatch, count):
+    monkeypatch.setattr(
+        service, "_CONTROL", service._CONTROL.model_copy(update={"minimum_event_slides": count})
+    )
+
+
 class _FakeQuery:
     """Data API query builder stub: every call chains, `execute` ends it."""
 
@@ -1008,7 +1026,7 @@ def test_publishable_event_accepts_every_canonical_category(category):
 @pytest.mark.parametrize(
     ("batch_kind", "expected_ids"),
     [
-        ("events", [1, 3]),
+        ("events", [1, 2, 3]),
         ("employers_on_campus", [2]),
     ],
 )
@@ -1414,8 +1432,8 @@ def test_a_club_that_opts_out_is_left_out_once_by_its_plain_handle(monkeypatch):
 def test_publish_ready_drafts_publishes_todays_drafts_one_by_one(monkeypatch):
     calls = []
     rows = [
-        {"id": "a", "account_key": "uwaterloo", "version": 2},
-        {"id": "b", "account_key": "utsg", "version": 1},
+        {"id": "a", "account_key": "uwaterloo", "version": 2, "items": [{"count": 8}]},
+        {"id": "b", "account_key": "utsg", "version": 1, "items": [{"count": 8}]},
     ]
     monkeypatch.setattr(
         service, "get_sb", lambda: SimpleNamespace(table=lambda _name: _FakeQuery(rows, calls))
@@ -1437,3 +1455,65 @@ def test_publish_ready_drafts_publishes_todays_drafts_one_by_one(monkeypatch):
     published.assert_called_once_with({"id": "a", "version": 3})
     assert ("eq", ("local_date", "2026-11-06"), {}) in calls
     assert ("eq", ("status", "ready_for_review"), {}) in calls
+
+
+def test_draft_candidates_fill_with_unposted_upcoming_events(monkeypatch):
+    fresh = [{"id": 1}, {"id": 2}]
+    monkeypatch.setattr(service, "_load_candidates", lambda **_: [dict(e) for e in fresh])
+    seen = {}
+
+    def upcoming(account_key, now, *, exclude, limit):
+        seen.update(exclude=exclude, limit=limit)
+        return [{"id": 7}]
+
+    monkeypatch.setattr(service, "_load_unposted_upcoming", upcoming)
+    result = service._draft_candidates("wlu", datetime(2026, 11, 5), datetime(2026, 11, 6))
+    assert [(e["id"], e["new"]) for e in result] == [(1, True), (2, True), (7, False)]
+    assert seen == {"exclude": {1, 2}, "limit": service._CONTROL.fill_candidate_count - 2}
+
+
+def test_unposted_upcoming_skips_posted_and_unusable_events(monkeypatch):
+    occurrences = [
+        {"event_id": i, "dtstart_utc": f"2026-11-0{i}T19:00:00Z", "dtend_utc": None, "tz": None}
+        for i in (5, 6, 7, 8, 9)
+    ]
+    events = [
+        {"id": 5, "category": "Business", "source_image_url": "https://a.test/5.jpg"},
+        {"id": 6, "category": "Business", "source_image_url": "https://a.test/6.jpg"},
+        {"id": 7, "category": "", "source_image_url": "https://a.test/7.jpg"},
+        {"id": 8, "category": "Business", "source_image_url": ""},
+        {"id": 9, "category": "Business", "source_image_url": "https://a.test/9.jpg"},
+    ]
+    rows = {
+        service.EVENT_DATES: occurrences,
+        service.INSTAGRAM_PUBLISH_ITEMS: [{"event_id": 6}],
+        service.EVENTS: events,
+    }
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda name: _FakeQuery(rows[name], []))
+    )
+    monkeypatch.setattr(service.school_service, "get_school_id", lambda _school: 10)
+    result = _ORIGINAL_UNPOSTED_UPCOMING(
+        "wlu", datetime(2026, 11, 1, tzinfo=timezone.utc), exclude={9}, limit=5
+    )
+    assert [e["id"] for e in result] == [5]
+
+
+def test_a_carousel_under_three_events_is_never_published(monkeypatch):
+    _minimum_slides(monkeypatch, 3)
+    rows = [
+        {"id": "a", "account_key": "wlu", "version": 1, "items": [{"count": 1}]},
+        {"id": "b", "account_key": "ubc", "version": 1, "items": [{"count": 3}]},
+    ]
+    monkeypatch.setattr(
+        service, "get_sb", lambda: SimpleNamespace(table=lambda _name: _FakeQuery(rows, []))
+    )
+    claimed = []
+    monkeypatch.setattr(
+        service, "claim_batch_for_publishing", lambda batch_id, data: claimed.append(batch_id) or {}
+    )
+    monkeypatch.setattr(service, "publish_claimed_batch", Mock())
+    monkeypatch.setattr(service, "get_batch", lambda batch_id: {"status": "published"})
+    outcomes = service.publish_ready_drafts(datetime(2026, 11, 6, 14, 35, tzinfo=timezone.utc))
+    assert claimed == ["b"]
+    assert outcomes == {"too_few_events": 1, "published": 1}
