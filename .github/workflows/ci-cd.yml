@@ -328,6 +328,17 @@ jobs:
       - name: Smoke test school subdomain scoping
         run: ./scripts/smoke-subdomains.sh
 
+      # wat2do.io is served by Vercel. It deploys last, so the API and
+      # database it reads already run this commit.
+      - name: Deploy the website to Vercel
+        timeout-minutes: 20
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npx --yes vercel@65.11.0 deploy . --prod --yes \
+            --token "$VERCEL_TOKEN" --scope tonyqiu123s-projects --project wat2do \
+            --build-env "APP_VERSION=$GITHUB_SHA"
+
       - name: Surface service logs
         if: failure()
         run: tail -n 200 "$HOME/wat2do-data/logs/api.log" "$HOME/wat2do-data/logs/web.log" || true
