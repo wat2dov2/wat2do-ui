@@ -107,8 +107,9 @@ impl Candidate {
         })
     }
 
-    /// What the curation agent reads about the event (`_EVENT_FIELDS`), in
-    /// that order; the caller adds its poster.
+    /// What the curation agent reads about the event (Python's `_EVENT_FIELDS`
+    /// plus `new`, which the prompt ranks by), in that order; the caller adds
+    /// its poster.
     pub fn packet_summary(&self) -> Map<String, Value> {
         let full = self.to_json();
         [
@@ -126,6 +127,7 @@ impl Candidate {
             "food",
             "registration",
             "carousel_requested_at",
+            "new",
         ]
         .into_iter()
         .map(|field| (field.to_owned(), full[field].clone()))
@@ -716,9 +718,16 @@ mod tests {
                 "price",
                 "food",
                 "registration",
-                "carousel_requested_at"
+                "carousel_requested_at",
+                "new"
             ]
         );
+        assert_eq!(summary["new"], true);
+        let fill = Candidate {
+            new: false,
+            ..candidate(18)
+        };
+        assert_eq!(fill.packet_summary()["new"], false);
         assert_eq!(summary["dtstart_utc"], "2026-09-29T22:00:00+00:00");
         assert_eq!(summary["price"], json!(5));
         // test_codex_reads_candidates_without_writing

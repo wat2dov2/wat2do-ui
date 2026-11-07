@@ -238,6 +238,9 @@ async fn candidates_are_new_events_then_unposted_upcoming_ones() {
     assert_eq!(first.tz, "America/Toronto");
     assert_eq!(first.price, Some(json!(5)));
     assert_eq!(first.packet_summary()["title"], "Sooner");
+    // The agent reads which events are new and which only fill the carousel.
+    assert_eq!(first.packet_summary()["new"], true);
+    assert_eq!(candidates[3].packet_summary()["new"], false);
 
     // Every registered school gets a packet; this one has no draft today.
     let packets = drafts::list_draft_candidates(&db, now).await.unwrap();

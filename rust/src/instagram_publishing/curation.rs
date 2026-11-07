@@ -185,15 +185,10 @@ async fn write_packet(db: &PgPool, workdir: &Path, packet: &Packet) -> Result<()
     let open = packet.open.as_ref().context("no candidates")?;
     let posters = workdir.join("posters");
     std::fs::create_dir(&posters)?;
-    let mut events = Vec::new();
+    let mut poster_files = Vec::new();
     for event in &open.events {
-        let mut summary = event.packet_summary();
-        let poster = download_poster(event.source_image_url.as_deref(), &posters, event.id).await;
-        summary.insert(
-            "poster_file".into(),
-            poster.map_or(Value::Null, Value::from),
-        );
-        events.push(Value::Object(summary));
+        poster_files
+            .push(download_poster(event.source_image_url.as_deref(), &posters, event.id).await);
     }
     let language: Option<Option<String>> =
         sqlx::query_scalar("SELECT language FROM public.schools WHERE slug = $1 LIMIT 1")
@@ -204,6 +199,34 @@ async fn write_packet(db: &PgPool, workdir: &Path, packet: &Packet) -> Result<()
         Some(language) => language.map_or(Value::Null, Value::from),
         None => "en".into(),
     };
+    std::fs::write(
+        workdir.join("packet.json"),
+        packet_document(packet, language, &poster_files)?,
+    )?;
+    Ok(())
+}
+
+/// `packet.json`'s text: the school, its language, the default intro, the
+/// slide count, each event with its poster file, and the excluded clubs.
+fn packet_document(
+    packet: &Packet,
+    language: Value,
+    poster_files: &[Option<String>],
+) -> Result<String> {
+    let open = packet.open.as_ref().context("no candidates")?;
+    let events: Vec<Value> = open
+        .events
+        .iter()
+        .zip(poster_files)
+        .map(|(event, poster)| {
+            let mut summary = event.packet_summary();
+            summary.insert(
+                "poster_file".into(),
+                poster.clone().map_or(Value::Null, Value::from),
+            );
+            Value::Object(summary)
+        })
+        .collect();
     let content = json!({
         "school": packet.account_key,
         "language": language,
@@ -212,11 +235,7 @@ async fn write_packet(db: &PgPool, workdir: &Path, packet: &Packet) -> Result<()
         "events": events,
         "excluded_clubs": open.excluded_clubs,
     });
-    std::fs::write(
-        workdir.join("packet.json"),
-        crate::pyjson::dumps_unicode(&content, Some(1)),
-    )?;
-    Ok(())
+    Ok(crate::pyjson::dumps_unicode(&content, Some(1)))
 }
 
 /// `_download_poster`: a small JPEG of the poster for Claude to look at, as
@@ -296,7 +315,7 @@ mod tests {
     use std::sync::Mutex;
 
     use super::*;
-    use crate::instagram_publishing::drafts::OpenPacket;
+    use crate::instagram_publishing::drafts::{Candidate, OpenPacket};
 
     fn packet() -> Packet {
         let now = "2026-10-12T13:00:00Z".parse().unwrap();
@@ -388,6 +407,53 @@ mod tests {
         };
         assert!(answer_with_retries(broken, check).await.is_err());
         assert_eq!(*calls.lock().unwrap(), 1);
+    }
+
+    fn candidate(id: i64, new: bool) -> Candidate {
+        Candidate {
+            id,
+            title: format!("Event {id}"),
+            description: None,
+            location: Some("SLC".into()),
+            club: Some("Club".into()),
+            ig_handle: None,
+            source_image_url: Some(format!("https://media.test/{id}.jpg")),
+            category: Some("Health".into()),
+            employers_on_campus: None,
+            price: None,
+            food: None,
+            registration: false,
+            carousel_requested_at: None,
+            dtstart_utc: "2026-10-14T23:00:00Z".parse().unwrap(),
+            dtend_utc: None,
+            tz: "America/Toronto".into(),
+            new,
+        }
+    }
+
+    #[test]
+    fn the_packet_marks_new_events_and_earlier_fill_events() {
+        // The prompt ranks `new: true` (added since the last carousel) ahead of
+        // `new: false` (upcoming, never posted, filling the carousel).
+        let mut packet = packet();
+        packet.open.as_mut().unwrap().events = vec![candidate(17, true), candidate(9, false)];
+        let text =
+            packet_document(&packet, "fr".into(), &[Some("posters/17.jpg".into()), None]).unwrap();
+        let document: Value = serde_json::from_str(&text).unwrap();
+        let events = document["events"].as_array().unwrap();
+        assert_eq!(
+            events
+                .iter()
+                .map(|event| (event["id"].clone(), event["new"].clone()))
+                .collect::<Vec<_>>(),
+            [(json!(17), json!(true)), (json!(9), json!(false))]
+        );
+        assert_eq!(events[0]["poster_file"], "posters/17.jpg");
+        assert_eq!(events[1]["poster_file"], Value::Null);
+        assert_eq!(document["language"], "fr");
+        // As Python wrote it: one-space indent, `new` just before the poster.
+        assert!(text.contains("\n   \"carousel_requested_at\": null,\n   \"new\": true,\n   \"poster_file\": \"posters/17.jpg\"\n"));
+        assert!(text.contains("\n   \"new\": false,\n   \"poster_file\": null\n"));
     }
 
     #[test]
