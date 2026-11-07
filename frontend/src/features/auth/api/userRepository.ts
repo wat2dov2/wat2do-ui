@@ -7,6 +7,7 @@
 import { StorageService } from "@/shared/services/storageService";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { setAccessToken, clearAccessToken } from "@/shared/services/apiClient";
+import authentication from "../../../../../backend/controlbox/authentication.json" with { type: "json" };
 
 /** Same-tab notification event for cached auth/profile updates. */
 export const AUTH_STATE_REFRESH_EVENT = "auth-state-refresh";
@@ -113,6 +114,30 @@ function clearUserProfile(notify = true): void {
   StorageService.removeItem(STORAGE_KEYS.USER_PROFILE);
   _cachedProfile = null;
   if (notify) notifyAuthStateChanged();
+}
+
+// --- Session presence ---
+
+/**
+ * Whether this browser may hold a session worth refreshing. The API keeps a
+ * readable cookie beside its httpOnly refresh cookie, on every campus and for
+ * the same lifetime: `1` while the browser holds a session, `0` once the API
+ * has found it holds none. Only that `0`, with nothing cached here, rules a
+ * session out. Without the cookie (a new browser, or a session from before
+ * it, whose cache Safari may have deleted) one refresh finds out.
+ */
+export function mayHoldSession(): boolean {
+  return signedInCookie() !== "0" || loadUserEmail() !== null || loadUserProfile() !== null;
+}
+
+function signedInCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const prefix = `${authentication.signed_in_cookie}=`;
+  const cookie = document.cookie
+    .split(";")
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(prefix));
+  return cookie === undefined ? null : cookie.slice(prefix.length);
 }
 
 // --- Tokens (in-memory via apiClient) ---

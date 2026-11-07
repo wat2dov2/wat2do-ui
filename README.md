@@ -83,6 +83,8 @@ Use `http://uwaterloo.wat2do.localhost:3000` and `http://ulaval.wat2do.localhost
 No manual cookie or database environment setup is required.
 If switching from the old campus URLs, sign in once on the new campus URL.
 All campus subdomains share the refresh cookie, just as production uses `.wat2do.io` with secure cookies.
+Beside it the API keeps a readable `wat2do_signed_in` cookie (`controlbox/authentication.json` `signed_in_cookie`) with the same domain and lifetime: `1` while the browser holds a session, `0` after logout or a refresh that found none.
+A page skips `/api/auth/refresh` only when that cookie says `0` and it has no cached profile.
 Old `*.localhost` campus URLs do not share this cookie and should no longer be used.
 
 With the local database running, use the same seed entry point:

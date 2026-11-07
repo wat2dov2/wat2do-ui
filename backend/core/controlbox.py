@@ -244,6 +244,11 @@ class InteractionTrackingControl(_ControlModel):
 
 class AuthenticationControl(_ControlModel):
     session_cookie_days: int = Field(gt=0)
+    # A readable cookie the API keeps beside the httpOnly refresh cookie (same
+    # domain and lifetime): 1 while the browser holds a session, 0 once the API
+    # has found it holds none. The website skips /auth/refresh only when it
+    # says 0 and nothing is cached. Never trusted.
+    signed_in_cookie: str = Field(pattern=r"^[a-z][a-z0-9_]{0,63}$")
     verification_token_minutes: int = Field(gt=0)
     access_token_minutes: int = Field(gt=0, le=1440)
     # Wrong six-digit codes an address may try per window, counted in the database so

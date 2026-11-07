@@ -100,6 +100,7 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     assert controlbox.social_previews.height == 630
     assert controlbox.social_previews.cache_max_age_seconds == 86400
     assert str(controlbox.authentication.legacy_frontend_origins[0]) == "https://wat2do.ca/"
+    assert controlbox.authentication.signed_in_cookie == "wat2do_signed_in"
     assert controlbox.club_management.directory_page_size == 20
     assert [str(email) for email in controlbox.contact.recipient_emails] == [
         "e22han@uwaterloo.ca",
@@ -399,6 +400,11 @@ def test_discovery_controls_load_checked_in_feature_sources():
         ("uploads", {"thumbnail_suffix": ".webp"}),
         ("uploads", {"thumbnail_suffix": "/thumb.webp"}),
         ("uploads", {"thumbnail_suffix": ".thumb.jpg"}),
+        ("authentication", {"signed_in_cookie": ""}),
+        ("authentication", {"signed_in_cookie": "Signed_In"}),
+        ("authentication", {"signed_in_cookie": "signed in"}),
+        ("authentication", {"signed_in_cookie": "signed_in=1"}),
+        ("authentication", {"signed_in_cookie": "signed_in;path"}),
     ],
 )
 def test_discovery_control_limits_reject_unsafe_configuration(tmp_path, feature, patch):

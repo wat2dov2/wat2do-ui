@@ -48,6 +48,28 @@ impl Reply {
             .collect()
     }
 
+    /// Whether this reply tells the browser it holds no session: the
+    /// signed-in cookie says `0`, on every path, for a session's lifetime.
+    fn says_signed_out(&self) -> bool {
+        let signed_out = format!("{}=0; ", AUTHENTICATION.signed_in_cookie);
+        self.cookies().iter().any(|cookie| {
+            cookie.starts_with(&signed_out)
+                && cookie.contains("; Max-Age=2592000; Path=/; SameSite=lax")
+                && !cookie.contains("HttpOnly")
+        })
+    }
+
+    /// Logout: the refresh cookie cleared on the path it was set with, the
+    /// signed-in cookie saying `0`, and nothing else.
+    fn ends_the_session(&self, refresh_path: &str) -> bool {
+        let cookies = self.cookies();
+        let cleared = cookies.iter().any(|cookie| {
+            cookie.starts_with(r#"refresh_token=""; expires="#)
+                && cookie.ends_with(&format!("; Max-Age=0; Path={refresh_path}; SameSite=lax"))
+        });
+        cookies.len() == 2 && cleared && self.says_signed_out()
+    }
+
     fn location(&self) -> &str {
         self.headers[header::LOCATION].to_str().unwrap()
     }
@@ -595,16 +617,26 @@ async fn refresh_needs_a_trusted_origin_and_a_cookie() {
             reply.body,
             json!({"detail": "Cross-origin refresh blocked"})
         );
+        // Another site cannot sign anyone out.
+        assert!(reply.cookies().is_empty());
     }
+    // A browser with no refresh cookie (new, or left with only the signed-in
+    // cookie) is told it holds no session, so its pages stop asking.
+    let leftover = format!("refresh_token=; {}=1", AUTHENTICATION.signed_in_cookie);
     let reply = refresh_with(
         "refresh-no-cookie",
         &[],
-        &[("origin", ALLOWED_ORIGIN), ("cookie", "refresh_token=")],
+        &[("origin", ALLOWED_ORIGIN), ("cookie", &leftover)],
     )
     .await;
     assert_eq!(reply.status, StatusCode::UNAUTHORIZED);
     assert_eq!(reply.body, json!({"detail": NO_REFRESH_TOKEN}));
     assert!(!reply.headers.contains_key(header::WWW_AUTHENTICATE));
+    assert!(
+        reply.cookies().len() == 1 && reply.says_signed_out(),
+        "{:?}",
+        reply.cookies()
+    );
     // A trusted Referer, or an origin the regex allows, reaches the session
     // lookup (which has no database here).
     for (index, (settings, headers)) in [
@@ -627,9 +659,11 @@ async fn refresh_needs_a_trusted_origin_and_a_cookie() {
 }
 
 #[test]
-fn refresh_cookie_attributes_follow_settings_and_origin() {
+fn session_cookie_attributes_follow_settings_and_origin() {
     // TestCookieBehavior: httpOnly, SameSite=lax, the configured path, and a
-    // host-only cookie for the retired frontend.
+    // host-only cookie for the retired frontend. The signed-in cookie shares
+    // the refresh cookie's domain, lifetime and Secure flag, but every page
+    // path can read it.
     for (index, (settings, origin, expected)) in [
         (
             vec![("REFRESH_COOKIE_PATH", "/api/auth/refresh")],
@@ -673,8 +707,16 @@ fn refresh_cookie_attributes_follow_settings_and_origin() {
         let mut headers = HeaderMap::new();
         headers.insert(header::ORIGIN, origin.parse().unwrap());
         let mut response = axum::response::Response::new(HttpBody::empty());
-        set_refresh_cookie(&mut response, &settings, &headers, "tok");
-        let cookie = response.headers()[header::SET_COOKIE].to_str().unwrap();
+        set_session_cookies(&mut response, &settings, &headers, "tok");
+        let cookies: Vec<&str> = response
+            .headers()
+            .get_all(header::SET_COOKIE)
+            .iter()
+            .map(|value| value.to_str().unwrap())
+            .collect();
+        let [cookie, signed_in] = cookies[..] else {
+            panic!("{index}: {cookies:?}");
+        };
         assert!(cookie.starts_with("refresh_token=tok; "), "{cookie}");
         assert!(cookie.contains("; expires="), "{cookie}");
         assert!(cookie.ends_with(expected), "{index}: {cookie}");
@@ -682,6 +724,20 @@ fn refresh_cookie_attributes_follow_settings_and_origin() {
             cookie.contains("; Domain=.wat2do.io; "),
             index == 2,
             "{cookie}"
+        );
+        let readable = expected
+            .replace("; HttpOnly", "")
+            .replace(&settings.refresh_cookie_path, "/");
+        assert!(
+            signed_in.starts_with(&format!("{}=1; ", AUTHENTICATION.signed_in_cookie)),
+            "{signed_in}"
+        );
+        assert!(signed_in.contains("; expires="), "{signed_in}");
+        assert!(signed_in.ends_with(&readable), "{index}: {signed_in}");
+        assert_eq!(
+            signed_in.contains("; Domain=.wat2do.io; "),
+            index == 2,
+            "{signed_in}"
         );
     }
 }
@@ -747,10 +803,11 @@ async fn logout_with_a_token_we_did_not_sign_still_clears_the_cookie() {
         assert_eq!(reply.status, StatusCode::UNAUTHORIZED);
         assert_eq!(reply.body, json!({"detail": INVALID_OR_EXPIRED_TOKEN}));
         assert!(!reply.headers.contains_key(header::WWW_AUTHENTICATE));
-        let cookies = reply.cookies();
-        assert_eq!(cookies.len(), 1);
-        assert!(cookies[0].starts_with(r#"refresh_token=""; expires="#));
-        assert!(cookies[0].ends_with("; Max-Age=0; Path=/auth/refresh; SameSite=lax"));
+        assert!(
+            reply.ends_the_session("/auth/refresh"),
+            "{:?}",
+            reply.cookies()
+        );
     }
     // An expired token of ours is refused the same way.
     let mut claims = test_tokens::claims("auth-id-1");
@@ -813,6 +870,10 @@ async fn logout_without_a_bearer_only_clears_the_cookie() {
         .await;
         assert_eq!(reply.status, StatusCode::OK);
         assert_eq!(reply.body, json!({"message": "Logged out successfully"}));
-        assert_eq!(reply.cookies().len(), 1);
+        assert!(
+            reply.ends_the_session("/auth/refresh"),
+            "{:?}",
+            reply.cookies()
+        );
     }
 }

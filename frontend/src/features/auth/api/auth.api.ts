@@ -16,6 +16,7 @@ import {
   saveUserProfile,
   saveAccessToken,
   clearAllAuthData,
+  mayHoldSession,
   type UserProfile,
 } from "@/features/auth/api/userRepository";
 import type {
@@ -160,15 +161,18 @@ export async function logoutAPI(): Promise<void> {
 
 /**
  * Initialize auth on app startup.
- * Restore the shared httpOnly session even on a campus with no local cache.
- * Refresh the user profile (including role) after the cookie is verified.
+ * Restore the shared httpOnly session, even on a campus with no local cache,
+ * unless the API has already found that this browser holds none; then the page
+ * skips the round trip. Refresh the user profile (including role) after the
+ * cookie is verified.
  *
  * A session that could not be refreshed because the server was unreachable is
  * left alone rather than cleared: the cached session is still the best thing we
  * know, and the next request will refresh it. A definitive rejection clears the
- * cache below.
+ * cache below, and the API's answer marks the browser signed out.
  */
 export async function initializeAuth(): Promise<boolean> {
+  if (!mayHoldSession()) return false;
   const refreshOutcome = await refreshAccessToken();
   if (refreshOutcome === "rejected") {
     clearAllAuthData();

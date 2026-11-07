@@ -45,14 +45,26 @@ struct Reply {
 }
 
 impl Reply {
-    /// The `refresh_token` cookie this response set (empty when it cleared it).
-    fn refresh_cookie(&self) -> Option<String> {
+    /// The value of the cookie named `name` this response set (`""` when it
+    /// cleared it).
+    fn cookie(&self, name: &str) -> Option<String> {
         self.headers
             .get_all(header::SET_COOKIE)
             .iter()
             .filter_map(|value| value.to_str().ok())
-            .find_map(|cookie| cookie.strip_prefix("refresh_token="))
+            .find_map(|cookie| cookie.strip_prefix(&format!("{name}=")))
             .map(|rest| rest.split(';').next().unwrap_or_default().to_owned())
+    }
+
+    /// The `refresh_token` cookie this response set.
+    fn refresh_cookie(&self) -> Option<String> {
+        self.cookie("refresh_token")
+    }
+
+    /// The readable signed-in cookie this response set: `1` beside a new
+    /// refresh token, `0` once the API found the browser holds no session.
+    fn signed_in_cookie(&self) -> Option<String> {
+        self.cookie(&AUTHENTICATION.signed_in_cookie)
     }
 
     fn text(&self, name: &str) -> String {
@@ -235,6 +247,7 @@ async fn a_new_user_signs_in_refreshes_and_logs_out() {
     assert_eq!(signed_in.status, StatusCode::OK, "{}", signed_in.body);
     assert_eq!(signed_in.text("school"), "uwaterloo");
     assert_eq!(signed_in.body["onboarding_required"], true);
+    assert_eq!(signed_in.signed_in_cookie().as_deref(), Some("1"));
     let auth_id = signed_in.text("user_id");
     let school: Option<String> = sqlx::query_scalar(
         "SELECT s.slug FROM public.users u JOIN public.schools s ON s.id = u.school_id \
@@ -267,6 +280,9 @@ async fn a_new_user_signs_in_refreshes_and_logs_out() {
     assert_eq!(rotated.text("user_id"), auth_id);
     let second = rotated.refresh_cookie().unwrap();
     assert_ne!(second, first);
+    // Each rotation renews the signed-in cookie with it, which also gives one
+    // to a session that started before the cookie existed.
+    assert_eq!(rotated.signed_in_cookie().as_deref(), Some("1"));
     let again = refresh(&state, &first).await;
     assert_eq!(again.status, StatusCode::OK, "{}", again.body);
     assert_eq!(again.refresh_cookie().unwrap(), second);
@@ -287,6 +303,10 @@ async fn a_new_user_signs_in_refreshes_and_logs_out() {
     let late = refresh(&state, &second).await;
     assert_eq!(late.status, StatusCode::UNAUTHORIZED, "{}", late.body);
     assert_eq!(live_sessions(&db, &auth_id).await, 0);
+    // The session is over, so the signed-in cookie says so and the pages stop
+    // asking; the refresh cookie is left for whatever replaced it meanwhile.
+    assert_eq!(late.signed_in_cookie().as_deref(), Some("0"));
+    assert_eq!(late.refresh_cookie(), None);
     assert_eq!(
         refresh(&state, &third).await.status,
         StatusCode::UNAUTHORIZED
@@ -312,6 +332,7 @@ async fn a_new_user_signs_in_refreshes_and_logs_out() {
     .await;
     assert_eq!(out.status, StatusCode::OK, "{}", out.body);
     assert_eq!(out.refresh_cookie().as_deref(), Some(r#""""#));
+    assert_eq!(out.signed_in_cookie().as_deref(), Some("0"));
     assert_eq!(live_sessions(&db, &auth_id).await, 0);
     assert_eq!(
         refresh(&state, &other.refresh_cookie().unwrap())
@@ -340,6 +361,7 @@ async fn refreshing_for_a_deleted_user_ends_the_session() {
     assert_eq!(reply.status, StatusCode::UNAUTHORIZED, "{}", reply.body);
     assert_eq!(live_sessions(&db, &auth_id).await, 0);
     assert_eq!(sessions(&db, &auth_id).await, 1);
+    assert_eq!(reply.signed_in_cookie().as_deref(), Some("0"));
 }
 
 #[tokio::test]
