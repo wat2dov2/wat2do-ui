@@ -33,9 +33,10 @@ _ADD_AUDIO = re.compile(r"^Add audio$")
 _AUDIO_ROW = re.compile(r"^(?:Add audio|m2_audio_primary_text)$")
 _SEARCH = re.compile(r"^Search\.\.\.$")
 _CLEAR_SEARCH = re.compile(r"^Clear text$")
-# Suggestions show before a search; result filters replace them once it runs.
+# Suggestions show before a search; result filters replace them once it runs: a
+# Lyrics tab, or on some accounts a single Filter button.
 _SUGGESTIONS = re.compile(r"^For you$")
-_RESULT_FILTERS = re.compile(r"^Lyrics$")
+_RESULT_FILTERS = re.compile(r"^(?:Lyrics|Filter)$")
 _TRACK = re.compile(r"^Select track (?P<label>.+)$")
 _CLIP = re.compile(r"^\d+ second clip$")
 _DONE = re.compile(r"^Done$")

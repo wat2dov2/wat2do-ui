@@ -135,6 +135,22 @@ def test_tries_songs_until_one_matches_then_saves_the_post(screens) -> None:
     ]
 
 
+def test_results_under_a_filter_button_are_read_like_lyrics_tabs(screens) -> None:
+    # Some accounts show a Filter button where others show a Lyrics tab.
+    filtered = _screen(
+        "Clear text",
+        "Filter",
+        "Select track After Hours (Live) by The Weeknd,4:27",
+        "Select track After Hours by The Weeknd,6:01",
+    )
+    device = screens(SUGGESTIONS, filtered)
+    device.type_text("the weeknd after hours")
+    assert [label for label, _ in module._results(device)] == [
+        "After Hours (Live) by The Weeknd,4:27",
+        "After Hours by The Weeknd,6:01",
+    ]
+
+
 def test_no_matching_song_discards_the_edit(screens) -> None:
     device = screens(
         HOME,
