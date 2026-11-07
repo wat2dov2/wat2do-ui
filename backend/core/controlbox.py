@@ -516,6 +516,8 @@ class InstagramPublishingControl(_ControlModel):
     music_delay_minutes: int = Field(ge=1, le=120)
     music_max_age_hours: int = Field(ge=1, le=72)
     music_attempts: int = Field(ge=1, le=10)
+    # On a carousel's first song try, also comment a fitting movie or show GIF.
+    gif_comments: bool
     music_retry_minutes: int = Field(ge=1, le=720)
     # Campuses with large Asian student communities, the only ones that get a song an
     # admin marked as Asian or K-pop.

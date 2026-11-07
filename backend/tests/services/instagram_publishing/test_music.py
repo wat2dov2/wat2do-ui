@@ -68,7 +68,7 @@ def test_pending_carousels_get_a_song_in_random_order(monkeypatch, database):
     finish_post = Mock(return_value=AddedTrack("dua lipa houdini", "Houdini by Dua Lipa,3:05"))
     monkeypatch.setattr(music, "finish_post", finish_post)
     assert music.finish_due(DEVICE, "uwaterloo", NOW) == {"added": 1}
-    device, school, permalink, songs, choose = finish_post.call_args.args
+    device, school, permalink, songs, choose, _gif = finish_post.call_args.args
     assert (device, school, permalink) == (DEVICE, "uwaterloo", POST)
     assert sorted(songs) == ["dua lipa houdini", "the weeknd after hours"]
     assert choose is music.choose_track
@@ -189,7 +189,7 @@ def _tried_songs(monkeypatch, database, school):
     monkeypatch.setattr(
         music,
         "finish_post",
-        lambda _school, _user, _post, songs, _choose: (
+        lambda _school, _user, _post, songs, _choose, _gif=None: (
             tried.append(sorted(songs)) or AddedTrack(songs[0], "After Hours by The Weeknd")
         ),
     )
@@ -219,3 +219,48 @@ def test_a_song_is_stored_with_its_asian_campus_flag(database):
     music.add_song("twice  doughnut", asian_campuses_only=True)
     inserted = [args[0] for name, args, _ in database.calls if name == "insert"]
     assert inserted == [{"query": "twice doughnut", "asian_campuses_only": True}]
+
+
+def test_only_the_first_try_comments_a_gif(monkeypatch, database):
+    asked = []
+    monkeypatch.setattr(music, "gif_comment", lambda batch_id: asked.append(batch_id) or "gif")
+    finish_post = Mock(return_value=AddedTrack("q", "t"))
+    monkeypatch.setattr(music, "finish_post", finish_post)
+    music._add_music(DEVICE, {**BATCH, "school": "uwaterloo", "music_attempts": 0}, ["q"])
+    music._add_music(DEVICE, {**BATCH, "school": "uwaterloo", "music_attempts": 1}, ["q"])
+    assert [call.args[5] for call in finish_post.call_args_list] == ["gif", None]
+    assert asked == [BATCH["id"]]
+
+
+def test_no_fitting_scene_means_no_gif(monkeypatch):
+    monkeypatch.setattr(music, "_first_event", lambda batch_id: {"title": "AGM"})
+    monkeypatch.setattr(
+        music, "run_agent", lambda prompt, **_: {"query": None, "reason": "no scene"}
+    )
+    assert music.gif_comment("batch-1") is None
+
+
+def test_the_picker_reads_numbered_results(monkeypatch):
+    import io
+
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (1080, 2400), (0, 0, 0)).save(buffer, format="PNG")
+    seen = {}
+
+    def run_agent(prompt, *, workdir, **_):
+        from pathlib import Path
+
+        seen["files"] = sorted(path.name for path in Path(workdir).iterdir())
+        seen["prompt"] = prompt
+        return {"index": 1, "reason": "Casino Royale table"}
+
+    monkeypatch.setattr(music, "run_agent", run_agent)
+    boxes = [(40, 320, 532, 625), (548, 320, 1040, 623)]
+    assert (
+        music.pick_gif({"title": "Poker Night"}, "casino royale poker", buffer.getvalue(), boxes)
+        == 1
+    )
+    assert seen["files"] == ["event.json", "results.png"]
+    assert "casino royale poker" in seen["prompt"]

@@ -2,12 +2,14 @@
 
 Instagram's API publishes a carousel without music and cannot like or repost, so the
 app on the emulator opens the live post the way a person would: it likes and reposts
-it, then edits it: More actions, Edit, Add audio, search for a song, pick a track,
-keep the suggested clip, then Done.
+it, comments a GIF from a movie or show scene that fits the carousel's first event
+when one is given, then edits it: More actions, Edit, Add audio, search for a song,
+pick a track, keep the suggested clip, then Done.
 """
 
 from __future__ import annotations
 
+import logging
 import re
 import unicodedata
 from collections.abc import Callable, Sequence
@@ -48,6 +50,16 @@ _REPOST = re.compile(r"^Repost$")
 _FIRST_REPOST_NOTE = re.compile(r"^You reposted ")
 _CLOSE = re.compile(r"^Close$")
 _REPOST_CHECKS = 5
+_COMMENT = re.compile(r"^Comment$")
+_COMMENTS_TITLE = re.compile(r"^Comments$")
+_GIF_BUTTON = re.compile(r"^comment_composer_animated_image_picker_button$")
+_GIF_SEARCH = re.compile(r"^search_edit_text$")
+_GIF_CELL = "gif_image"
+# GIPHY results load a moment after typing; a cell shorter than this is cut off by the keyboard.
+_GIF_RESULT_CHECKS = 8
+_MIN_GIF_HEIGHT = 150
+
+log = logging.getLogger(__name__)
 
 
 class SongNotFound(EmulatorError):
@@ -62,6 +74,16 @@ class AddedTrack:
 
 # Given the admin's song and the visible tracks, the index of the one they meant.
 ChooseTrack = Callable[[str, Sequence[str]], int | None]
+# Given a screenshot and the result cells' bounds, the index of the GIF to post, or None.
+PickGif = Callable[[bytes, Sequence[tuple[int, int, int, int]]], int | None]
+
+
+@dataclass(frozen=True)
+class GifComment:
+    """A GIPHY search for a movie or show scene, and who decides which result fits."""
+
+    query: str
+    pick: PickGif
 
 
 def finish_post(
@@ -70,6 +92,7 @@ def finish_post(
     permalink: str,
     queries: Sequence[str],
     choose: ChooseTrack,
+    gif: GifComment | None = None,
 ) -> AddedTrack:
     """Like and repost the post, then add the first song in ``queries`` that Instagram
     has, and return the track used. A retry only does what is still missing.
@@ -81,6 +104,12 @@ def finish_post(
     user = CONTROL.android_user_by_school[school]
     device.open_instagram(user, permalink)
     _like_and_repost(device)
+    if gif is not None:
+        try:
+            _comment_gif(device, gif)
+        except EmulatorError:
+            # The GIF is a nice extra; it never holds up the song.
+            log.warning("Could not comment a GIF on %s", permalink, exc_info=True)
     # Liking may have scrolled a tall post; open it again so its menu is in view.
     device.open_instagram(user, permalink)
     device.tap_when(_POST_OPTIONS)
@@ -101,6 +130,40 @@ def finish_post(
     device.tap_when(_DONE)
     device.wait_until_gone(_EDIT_INFO, seconds=CONTROL.audio_save_wait_seconds)
     return added
+
+
+def _comment_gif(device: EmulatorDevice, gif: GifComment) -> bool:
+    """Comment the GIF the picker chooses from GIPHY's results; True when one was posted.
+
+    Tapping a result posts it at once, so nothing is tapped unless the picker chose it.
+    """
+    device.tap_when(_COMMENT)
+    device.wait_for(_COMMENTS_TITLE)
+    device.tap_when(_GIF_BUTTON)
+    device.tap(device.wait_for(_GIF_SEARCH))
+    device.type_text(gif.query)
+    cells: list[Node] = []
+    for _ in range(_GIF_RESULT_CHECKS):
+        device.pause()
+        cells = sorted(
+            (
+                node
+                for node in device.screen()
+                if node.resource_id == _GIF_CELL
+                and node.bounds[3] - node.bounds[1] >= _MIN_GIF_HEIGHT
+            ),
+            key=lambda node: (node.bounds[1], node.bounds[0]),
+        )
+        if cells:
+            break
+    if not cells:
+        return False
+    index = gif.pick(device.screenshot(), [cell.bounds for cell in cells])
+    if index is None or not 0 <= index < len(cells):
+        return False
+    device.tap(cells[index])
+    device.pause()
+    return True
 
 
 def _like_and_repost(device: EmulatorDevice) -> None:

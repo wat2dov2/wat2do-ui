@@ -35,6 +35,7 @@
   "music_delay_minutes": 1,
   "music_max_age_hours": 48,
   "music_attempts": 5,
+  "gif_comments": true,
   "music_retry_minutes": 10,
   "stats_media_limit": 25,
   "stats_history_days": 30,
