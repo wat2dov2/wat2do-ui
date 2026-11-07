@@ -305,6 +305,21 @@ def test_no_place_for_the_school_still_adds_and_saves_the_song(screens) -> None:
     assert device.taps[-1] == "Done"
 
 
+def test_a_place_tapped_while_the_keyboard_is_open_is_tapped_again(screens) -> None:
+    # The first tap on the place only closes the keyboard left open by the search.
+    device = screens(
+        *_edit_with_place(
+            PLACES, _edit_rows("Add audio", "University of Waterloo"), *SONG, POST_PAGE
+        )
+    )
+    module.finish_post(
+        device, "uwaterloo", POST, ["the weeknd after hours"], lambda *_: 1, place=WATERLOO
+    )
+    assert device.taps.count("University of Waterloo") == 2
+    assert "back" not in device.taps
+    assert device.taps[-1] == "Done"
+
+
 def test_a_post_with_its_song_and_place_is_left_as_it_is(screens) -> None:
     done = _edit_rows("These Nights", "University of Waterloo")
     device = screens(HOME, LIKED_PAGE, LIKED_PAGE, MENU, done, LIKED_PAGE)

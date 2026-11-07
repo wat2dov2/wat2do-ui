@@ -189,8 +189,7 @@ def _tag_location(device: EmulatorDevice, place: PlaceTag) -> bool:
     if index is None or not 0 <= index < len(places):
         _back_to_edit(device)
         return False
-    device.tap(places[index][1])
-    device.wait_for(_EDIT_INFO)
+    _tap_result(device, places[index][1], _EDIT_INFO)
     return True
 
 
@@ -290,7 +289,7 @@ def _pick_track(device: EmulatorDevice, queries: Sequence[str], choose: ChooseTr
         if index is None:
             continue
         label, node = tracks[index]
-        _select(device, node)
+        _tap_result(device, node, _CLIP)
         # The clip screen opens on Instagram's suggested part of the song.
         device.tap_when(_KEEP_CLIP)
         device.wait_for(_EDIT_INFO)
@@ -310,16 +309,19 @@ def _results(device: EmulatorDevice) -> list[tuple[str, Node]]:
     return tracks
 
 
-def _select(device: EmulatorDevice, track: Node) -> None:
-    # With the keyboard open, the first tap only closes it.
+def _tap_result(device: EmulatorDevice, result: Node, opens: re.Pattern[str]) -> None:
+    """Tap a search result until the screen it ``opens`` shows.
+
+    With the keyboard still open from typing the search, the first tap only closes it.
+    """
     for _ in range(2):
-        device.tap(track)
+        device.tap(result)
         try:
-            device.wait_for(_CLIP, seconds=CONTROL.screen_wait_seconds / 2)
+            device.wait_for(opens, seconds=CONTROL.screen_wait_seconds / 2)
             return
         except EmulatorError:
             continue
-    raise EmulatorError("Instagram did not open the track's clip")
+    raise EmulatorError(f"Instagram never showed {opens.pattern} for the chosen result")
 
 
 def _scroll_to(device: EmulatorDevice, pattern: re.Pattern[str]) -> Node:
