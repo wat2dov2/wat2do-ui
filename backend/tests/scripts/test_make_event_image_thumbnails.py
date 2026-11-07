@@ -3,7 +3,7 @@ from io import BytesIO
 from PIL import Image
 
 from scripts import make_event_image_thumbnails as script
-from services.event_image_thumbnails import make_event_image_thumbnail
+from services.image_thumbnails import Thumbnail
 
 
 def _jpeg(width: int, height: int) -> bytes:
@@ -26,7 +26,7 @@ def test_missing_thumbnails_are_made_beside_their_posters_and_others_left_alone(
     assert script.main(["--media-dir", str(tmp_path), "--workers", "2"]) == 1
 
     # The same bytes an upload of this poster stores.
-    assert (images / "new.thumb.webp").read_bytes() == make_event_image_thumbnail(poster)
+    assert (images / "new.thumb.webp").read_bytes() == Thumbnail.EVENT_IMAGE.make(poster)
     assert (images / "done.thumb.webp").read_bytes() == b"existing thumbnail"
     assert not (images / "broken.thumb.webp").exists()
     assert sorted(path.name for path in images.iterdir()) == [

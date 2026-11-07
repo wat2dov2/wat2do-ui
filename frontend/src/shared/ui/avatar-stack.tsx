@@ -1,4 +1,5 @@
 import { LazyImage } from "@/shared/ui/lazy-image";
+import { logoThumbnailUrl } from "@/shared/utils/media";
 
 interface AvatarStackProps {
   avatars: { src: string; name: string }[];
@@ -26,7 +27,9 @@ export function AvatarStack({ avatars, size = "default", overflowCount = 0, over
           className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-background bg-muted ${box}`}
         >
           <LazyImage
-            src={avatar.src}
+            // Avatars are at most 48 px, so a club logo shows its stored thumbnail.
+            src={logoThumbnailUrl(avatar.src)}
+            fallbackSrc={avatar.src}
             alt={avatar.name}
             width={px}
             height={px}

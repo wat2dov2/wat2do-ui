@@ -134,7 +134,7 @@ pub struct Ingestion {
     pub university_event_schools: Vec<String>,
 }
 
-/// The event image and video limits in `controlbox/uploads.json`.
+/// The event image and video limits and the thumbnail sizes in `controlbox/uploads.json`.
 #[derive(Debug, Deserialize)]
 pub struct Uploads {
     pub event_image_allowed_mime_types: Vec<String>,
@@ -143,7 +143,9 @@ pub struct Uploads {
     pub event_image_rendition_quality: u8,
     pub event_image_thumbnail_width_pixels: u32,
     pub event_image_thumbnail_quality: u8,
-    pub event_image_thumbnail_suffix: String,
+    pub club_logo_thumbnail_size_pixels: u32,
+    pub club_logo_thumbnail_quality: u8,
+    pub thumbnail_suffix: String,
     pub event_video_max_size_bytes: usize,
     pub event_video_download_timeout_seconds: u64,
 }

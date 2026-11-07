@@ -173,7 +173,9 @@ def test_upload_contract_matches_event_image_bucket() -> None:
     # Posters are stored at this width, so it is what every viewer receives.
     assert controlbox.uploads.event_image_rendition_width_pixels == 1080
     assert controlbox.uploads.event_image_thumbnail_width_pixels == 640
-    assert controlbox.uploads.event_image_thumbnail_suffix == ".thumb.webp"
+    # Logos are drawn at most 48 CSS px wide where their thumbnail is shown: 3x that.
+    assert controlbox.uploads.club_logo_thumbnail_size_pixels == 144
+    assert controlbox.uploads.thumbnail_suffix == ".thumb.webp"
     assert controlbox.uploads.event_image_allowed_mime_types == storage.get_allowed_mime_types(
         BUCKET_EVENT_IMAGES
     )
@@ -388,9 +390,12 @@ def test_discovery_controls_load_checked_in_feature_sources():
         ("image_delivery", {"media_origin": "https://wat2do.io/media"}),
         ("uploads", {"event_image_thumbnail_width_pixels": 1080}),
         ("uploads", {"event_image_thumbnail_quality": 0}),
-        ("uploads", {"event_image_thumbnail_suffix": ".webp"}),
-        ("uploads", {"event_image_thumbnail_suffix": "/thumb.webp"}),
-        ("uploads", {"event_image_thumbnail_suffix": ".thumb.jpg"}),
+        ("uploads", {"club_logo_thumbnail_size_pixels": 0}),
+        ("uploads", {"club_logo_thumbnail_size_pixels": 1080}),
+        ("uploads", {"club_logo_thumbnail_quality": 101}),
+        ("uploads", {"thumbnail_suffix": ".webp"}),
+        ("uploads", {"thumbnail_suffix": "/thumb.webp"}),
+        ("uploads", {"thumbnail_suffix": ".thumb.jpg"}),
     ],
 )
 def test_discovery_control_limits_reject_unsafe_configuration(tmp_path, feature, patch):

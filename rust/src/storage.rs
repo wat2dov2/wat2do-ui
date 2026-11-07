@@ -9,8 +9,9 @@
 //! content type, a size limit, and bytes that really are what they claim.
 //! SVGs are sanitized (whatever type the client declared), and raster images
 //! are re-encoded from their pixels, which drops EXIF, XMP and other metadata;
-//! event posters are also scaled down to the rendition width and get a WebP
-//! thumbnail next to them (`thumbnail_key`) for event cards.
+//! event posters are also scaled down to the rendition width. Posters and
+//! raster club logos get a WebP thumbnail next to them (`Thumbnail`,
+//! `thumbnail_key`) for the pages that draw them small.
 
 use std::io::Cursor;
 use std::path::Path;
@@ -286,37 +287,81 @@ fn narrower(image: DynamicImage, width: u32) -> DynamicImage {
     image.resize_exact(width, (height as u32).max(1), FilterType::Lanczos3)
 }
 
-/// `event_image_thumbnail_path`: the thumbnail's key next to event image `key`
+/// `scale_to_fit`: an image scaled down so neither side is longer than `size`,
+/// keeping its aspect ratio; a smaller one is left alone.
+fn within(image: DynamicImage, size: u32) -> DynamicImage {
+    if image.height() <= image.width() {
+        return narrower(image, size);
+    }
+    if image.height() <= size {
+        return image;
+    }
+    // Python's round() rounds halves to even.
+    let width = (f64::from(image.width()) * (f64::from(size) / f64::from(image.height())))
+        .round_ties_even();
+    image.resize_exact((width as u32).max(1), size, FilterType::Lanczos3)
+}
+
+/// `thumbnail_path`: the thumbnail's key next to image `key`
 /// (`event-images/<uuid>.jpg` -> `event-images/<uuid>.thumb.webp`).
 pub fn thumbnail_key(key: &str) -> String {
     let stem = Path::new(key).with_extension("");
-    format!(
-        "{}{}",
-        stem.to_string_lossy(),
-        UPLOADS.event_image_thumbnail_suffix
-    )
+    format!("{}{}", stem.to_string_lossy(), UPLOADS.thumbnail_suffix)
 }
 
-/// `make_event_image_thumbnail`: the WebP thumbnail of an event image, at most
-/// the thumbnail width wide; an animated GIF's is its first frame.
-pub fn make_thumbnail(data: &[u8]) -> Result<Vec<u8>> {
-    let mut decoder = ImageReader::new(Cursor::new(data))
-        .with_guessed_format()?
-        .into_decoder()?;
-    let orientation = decoder.orientation()?;
-    let mut image = DynamicImage::from_decoder(decoder)
-        .context("Uploaded file could not be decoded as a valid image.")?;
-    image.apply_orientation(orientation);
-    let image = narrower(image, UPLOADS.event_image_thumbnail_width_pixels);
-    let pixels = if image.color().has_alpha() {
-        DynamicImage::ImageRgba8(image.to_rgba8())
-    } else {
-        DynamicImage::ImageRgb8(image.to_rgb8())
-    };
-    let encoder = webp::Encoder::from_image(&pixels).map_err(|e| anyhow::anyhow!("{e}"))?;
-    Ok(encoder
-        .encode(f32::from(UPLOADS.event_image_thumbnail_quality))
-        .to_vec())
+/// The thumbnail an image is stored with (`services/image_thumbnails.py`), so
+/// the pages that draw it small never download the original and nothing
+/// resizes images on request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Thumbnail {
+    /// A poster's, at most the event image thumbnail width wide, for poster frames.
+    EventImage,
+    /// A raster club logo's, at most the club logo thumbnail size on its
+    /// longest side, for logos drawn at 64 CSS pixels or less.
+    ClubLogo,
+}
+
+impl Thumbnail {
+    /// `Thumbnail.of`: the thumbnail stored beside `path` in `bucket`, if it
+    /// has one. SVG logos are small already, so they have none.
+    pub fn of(bucket: &str, path: &str) -> Option<Self> {
+        match bucket {
+            BUCKET_EVENT_IMAGES => Some(Self::EventImage),
+            BUCKET_CLUB_LOGOS if !path.to_ascii_lowercase().ends_with(".svg") => {
+                Some(Self::ClubLogo)
+            }
+            _ => None,
+        }
+    }
+
+    /// `Thumbnail.make`: the WebP thumbnail of an image's bytes; an animated
+    /// image's is its first frame.
+    pub fn make(self, data: &[u8]) -> Result<Vec<u8>> {
+        let mut decoder = ImageReader::new(Cursor::new(data))
+            .with_guessed_format()?
+            .into_decoder()?;
+        let orientation = decoder.orientation()?;
+        let mut image = DynamicImage::from_decoder(decoder)
+            .context("Uploaded file could not be decoded as a valid image.")?;
+        image.apply_orientation(orientation);
+        let (image, quality) = match self {
+            Self::EventImage => (
+                narrower(image, UPLOADS.event_image_thumbnail_width_pixels),
+                UPLOADS.event_image_thumbnail_quality,
+            ),
+            Self::ClubLogo => (
+                within(image, UPLOADS.club_logo_thumbnail_size_pixels),
+                UPLOADS.club_logo_thumbnail_quality,
+            ),
+        };
+        let pixels = if image.color().has_alpha() {
+            DynamicImage::ImageRgba8(image.to_rgba8())
+        } else {
+            DynamicImage::ImageRgb8(image.to_rgb8())
+        };
+        let encoder = webp::Encoder::from_image(&pixels).map_err(|e| anyhow::anyhow!("{e}"))?;
+        Ok(encoder.encode(f32::from(quality)).to_vec())
+    }
 }
 
 /// `_is_safe_storage_path`: a plain bucket-relative name, never absolute,
@@ -443,8 +488,8 @@ impl Storage {
     }
 
     /// `upload_file`: store prepared bytes under a random name and return
-    /// the public URL. An event image's thumbnail is stored first, so a
-    /// poster is never published without the thumbnail its cards ask for.
+    /// the public URL. An image's thumbnail is stored first, so a poster or
+    /// logo is never published without the thumbnail its pages ask for.
     pub async fn upload(&self, bucket: &str, data: Vec<u8>, content_type: &str) -> Result<String> {
         let path = format!(
             "{}{}",
@@ -455,16 +500,40 @@ impl Storage {
         let Some(key) = Self::object_key(bucket, &path) else {
             bail!("Invalid storage asset path");
         };
-        if bucket == BUCKET_EVENT_IMAGES {
-            let poster = data.clone();
-            let thumbnail = tokio::task::spawn_blocking(move || make_thumbnail(&poster))
+        if let Some(thumbnail) = Thumbnail::of(bucket, &path) {
+            let image = data.clone();
+            let small = tokio::task::spawn_blocking(move || thumbnail.make(&image))
                 .await
                 .context("thumbnail task")??;
-            self.put(&thumbnail_key(&key), thumbnail, "image/webp")
-                .await?;
+            self.put(&thumbnail_key(&key), small, "image/webp").await?;
         }
         self.put(&key, data, content_type).await?;
         Ok(format!("{}/{key}", self.public_base_url))
+    }
+
+    /// `store_image`: validate fetched image bytes (an event poster over the
+    /// size limit is scaled down first) and upload them; None on any failure.
+    pub async fn store_image(
+        &self,
+        data: Vec<u8>,
+        content_type: &str,
+        bucket_name: &str,
+    ) -> Option<String> {
+        let (prepared, content_type) =
+            match validate_and_prepare_oversized(bucket_name, data, content_type) {
+                Ok(prepared) => prepared,
+                Err(error) => {
+                    tracing::warn!("Failed to prepare image for {bucket_name} ({error})");
+                    return None;
+                }
+            };
+        match self.upload(bucket_name, prepared, &content_type).await {
+            Ok(url) => Some(url),
+            Err(error) => {
+                tracing::warn!("Failed to upload image to {bucket_name} ({error:#})");
+                None
+            }
+        }
     }
 
     /// `_put_object`: one immutable object. An SVG is served as an
@@ -486,7 +555,7 @@ impl Storage {
         Ok(())
     }
 
-    /// `delete_file`: remove one object, with an event image's thumbnail; a
+    /// `delete_file`: remove one object, with its thumbnail if it has one; a
     /// suspicious path is refused and a failed delete only logged.
     /// Unconfigured storage is an error.
     pub async fn delete_file(&self, bucket: &str, path: &str) -> Result<()> {
@@ -496,7 +565,7 @@ impl Storage {
             return Ok(());
         };
         let mut keys = vec![key];
-        if bucket == BUCKET_EVENT_IMAGES {
+        if Thumbnail::of(bucket, path).is_some() {
             keys.push(thumbnail_key(&keys[0]));
         }
         for key in keys {
@@ -543,28 +612,13 @@ pub fn shared() -> Result<&'static Storage> {
     Ok(SHARED.get_or_init(|| Storage::new(settings)))
 }
 
-/// `store_image`: validate fetched image bytes and upload them; None on any failure.
+/// `store_image` with this process's storage: the ingestion processor's
+/// posters and club logos.
 pub async fn store_image(data: Vec<u8>, content_type: &str, bucket_name: &str) -> Option<String> {
-    let prepared = validate_and_prepare_oversized(bucket_name, data, content_type);
-    let storage = match shared() {
-        Ok(storage) => storage,
+    match shared() {
+        Ok(storage) => storage.store_image(data, content_type, bucket_name).await,
         Err(error) => {
             tracing::warn!("Failed to upload image to {bucket_name} ({error:#})");
-            return None;
-        }
-    };
-    match prepared {
-        Ok((prepared, content_type)) => {
-            match storage.upload(bucket_name, prepared, &content_type).await {
-                Ok(url) => Some(url),
-                Err(error) => {
-                    tracing::warn!("Failed to upload image to {bucket_name} ({error:#})");
-                    None
-                }
-            }
-        }
-        Err(error) => {
-            tracing::warn!("Failed to prepare image for {bucket_name} ({error})");
             None
         }
     }
@@ -1113,16 +1167,32 @@ mod tests {
         assert_eq!(requests.len(), 1);
         assert_eq!(requests[0].method, "DELETE");
         assert_eq!(key_of(&requests[0]), "avatars/abc123.jpg");
-        // An event image goes with its thumbnail.
+        // An event image and a raster club logo go with their thumbnails; an
+        // SVG logo has none.
         storage
             .delete_file(BUCKET_EVENT_IMAGES, "abc.jpg")
             .await
             .unwrap();
+        storage
+            .delete_file(BUCKET_CLUB_LOGOS, "logo.png")
+            .await
+            .unwrap();
+        storage
+            .delete_file(BUCKET_CLUB_LOGOS, "vector.svg")
+            .await
+            .unwrap();
         let requests = recorder.0.lock().unwrap().clone();
+        assert!(requests.iter().all(|request| request.method == "DELETE"));
         let deleted: Vec<_> = requests[1..].iter().map(key_of).collect();
         assert_eq!(
             deleted,
-            ["event-images/abc.jpg", "event-images/abc.thumb.webp"]
+            [
+                "event-images/abc.jpg",
+                "event-images/abc.thumb.webp",
+                "organization-logos/logo.png",
+                "organization-logos/logo.thumb.webp",
+                "organization-logos/vector.svg",
+            ]
         );
         let (unconfigured, _) = recording::storage("", "https://media.wat2do.io");
         assert!(unconfigured.delete_file("avatars", "a.jpg").await.is_err());
@@ -1165,12 +1235,135 @@ mod tests {
             thumbnail_key("event-images/abc.webp"),
             "event-images/abc.thumb.webp"
         );
-        let thumbnail = make_thumbnail(&jpeg(1080, 1350)).unwrap();
+        assert_eq!(
+            thumbnail_key("organization-logos/abc.png"),
+            "organization-logos/abc.thumb.webp"
+        );
+        let thumbnail = Thumbnail::EventImage.make(&jpeg(1080, 1350)).unwrap();
         assert_eq!(image::guess_format(&thumbnail).unwrap(), ImageFormat::WebP);
         let decoded = image::load_from_memory(&thumbnail).unwrap();
         assert_eq!((decoded.width(), decoded.height()), (640, 800));
-        let small = image::load_from_memory(&make_thumbnail(&jpeg(200, 100)).unwrap()).unwrap();
+        let small =
+            image::load_from_memory(&Thumbnail::EventImage.make(&jpeg(200, 100)).unwrap()).unwrap();
         assert_eq!((small.width(), small.height()), (200, 100));
+    }
+
+    #[test]
+    fn only_posters_and_raster_logos_have_thumbnails() {
+        assert_eq!(
+            Thumbnail::of(BUCKET_EVENT_IMAGES, "abc.jpg"),
+            Some(Thumbnail::EventImage)
+        );
+        for path in ["abc.jpg", "abc.png", "abc.webp"] {
+            assert_eq!(
+                Thumbnail::of(BUCKET_CLUB_LOGOS, path),
+                Some(Thumbnail::ClubLogo),
+                "{path}"
+            );
+        }
+        for (bucket, path) in [
+            (BUCKET_CLUB_LOGOS, "abc.svg"),
+            (BUCKET_CLUB_LOGOS, "abc.SVG"),
+            (BUCKET_AVATARS, "abc.jpg"),
+            (BUCKET_QR_ASSETS, "abc.png"),
+            (BUCKET_EVENT_VIDEOS, "abc.mp4"),
+        ] {
+            assert_eq!(Thumbnail::of(bucket, path), None, "{bucket}/{path}");
+        }
+    }
+
+    #[test]
+    fn logo_thumbnails_fit_their_longest_side_and_keep_transparency() {
+        // Python's scale_to_fit gives the same sizes.
+        for ((width, height), fitted) in [
+            ((1080, 1080), (144, 144)),
+            ((1080, 540), (144, 72)),
+            ((600, 1200), (72, 144)),
+            ((100, 50), (100, 50)),
+            ((50, 100), (50, 100)),
+        ] {
+            let image = encoded(width, height, ImageFormat::Png);
+            let thumbnail = Thumbnail::ClubLogo.make(&image).unwrap();
+            assert_eq!(image::guess_format(&thumbnail).unwrap(), ImageFormat::WebP);
+            let decoded = image::load_from_memory(&thumbnail).unwrap();
+            assert_eq!((decoded.width(), decoded.height()), fitted);
+        }
+        let mut clear = Vec::new();
+        DynamicImage::new_rgba8(320, 320)
+            .write_to(&mut Cursor::new(&mut clear), ImageFormat::Png)
+            .unwrap();
+        let thumbnail =
+            image::load_from_memory(&Thumbnail::ClubLogo.make(&clear).unwrap()).unwrap();
+        assert_eq!((thumbnail.width(), thumbnail.height()), (144, 144));
+        assert!(thumbnail.color().has_alpha());
+        assert!(Thumbnail::ClubLogo.make(b"not an image").is_err());
+    }
+
+    #[tokio::test]
+    async fn an_uploaded_raster_logo_is_stored_after_its_thumbnail() {
+        // What `/uploads/club-logo/{club_id}` stores (`uploads::replace`).
+        let (storage, recorder) =
+            recording::storage("wat2do-test-media", "https://media.wat2do.io");
+        let url = storage
+            .upload(
+                BUCKET_CLUB_LOGOS,
+                encoded(1080, 1080, ImageFormat::Png),
+                "image/png",
+            )
+            .await
+            .unwrap();
+        let requests = recorder.0.lock().unwrap().clone();
+        assert_eq!(requests.len(), 2);
+        let logo = key_of(&requests[1]);
+        assert!(
+            logo.starts_with("organization-logos/") && logo.ends_with(".png"),
+            "{logo}"
+        );
+        assert_eq!(url, format!("https://media.wat2do.io/{logo}"));
+        assert_eq!(key_of(&requests[0]), thumbnail_key(logo));
+        assert_eq!(requests[0].header("content-type"), Some("image/webp"));
+        assert_eq!(
+            requests[0].header("cache-control"),
+            Some("public, max-age=31536000, immutable")
+        );
+        let thumbnail = image::load_from_memory(&requests[0].body).unwrap();
+        assert_eq!((thumbnail.width(), thumbnail.height()), (144, 144));
+        // An SVG logo is stored alone.
+        storage
+            .upload(BUCKET_CLUB_LOGOS, b"<svg/>".to_vec(), "image/svg+xml")
+            .await
+            .unwrap();
+        let requests = recorder.0.lock().unwrap().clone();
+        assert_eq!(requests.len(), 3);
+        assert!(key_of(&requests[2]).ends_with(".svg"));
+    }
+
+    #[tokio::test]
+    async fn an_instagram_profile_picture_is_stored_as_a_logo_after_its_thumbnail() {
+        // What the ingestion processor's club logo lane stores (`club_logos.rs`).
+        let (storage, recorder) =
+            recording::storage("wat2do-test-media", "https://media.wat2do.io");
+        let url = storage
+            .store_image(jpeg(320, 320), "image/jpeg", BUCKET_CLUB_LOGOS)
+            .await
+            .unwrap();
+        let requests = recorder.0.lock().unwrap().clone();
+        assert_eq!(requests.len(), 2);
+        let logo = key_of(&requests[1]);
+        assert_eq!(url, format!("https://media.wat2do.io/{logo}"));
+        assert!(logo.ends_with(".jpg"), "{logo}");
+        assert_eq!(key_of(&requests[0]), thumbnail_key(logo));
+        assert_eq!(requests[0].header("content-type"), Some("image/webp"));
+        let thumbnail = image::load_from_memory(&requests[0].body).unwrap();
+        assert_eq!((thumbnail.width(), thumbnail.height()), (144, 144));
+        // Bytes that are no image store nothing.
+        assert_eq!(
+            storage
+                .store_image(b"not an image".to_vec(), "image/jpeg", BUCKET_CLUB_LOGOS)
+                .await,
+            None
+        );
+        assert_eq!(recorder.0.lock().unwrap().len(), 2);
     }
 
     #[test]
@@ -1188,7 +1381,8 @@ mod tests {
         let mut encoder = GifEncoder::new(&mut gif);
         encoder.encode_frames(frames).unwrap();
         drop(encoder);
-        let thumbnail = image::load_from_memory(&make_thumbnail(&gif).unwrap()).unwrap();
+        let thumbnail =
+            image::load_from_memory(&Thumbnail::EventImage.make(&gif).unwrap()).unwrap();
         assert_eq!(thumbnail.width(), 640);
         let pixel = thumbnail.to_rgb8().get_pixel(10, 10).0;
         assert!(pixel[0] > 200 && pixel[2] < 50);

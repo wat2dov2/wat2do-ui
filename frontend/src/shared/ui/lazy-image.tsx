@@ -8,6 +8,8 @@ import { cn } from "@/shared/lib/utils";
 
 type LazyImageProps = {
   src?: string | null;
+  /** Loaded instead when `src` fails, such as the original of a stored thumbnail that is missing. */
+  fallbackSrc?: string | null;
   alt: string;
   /** Detail media can play a stored video while retaining this image as its poster. */
   videoSrc?: string | null;
@@ -23,6 +25,7 @@ type LazyImageProps = {
 
 function ImageContent({
   src,
+  fallbackSrc,
   alt,
   videoSrc,
   width,
@@ -34,9 +37,10 @@ function ImageContent({
   onLoad,
 }: LazyImageProps) {
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+  const [imageSrc, setImageSrc] = useState(src);
   const [videoFailed, setVideoFailed] = useState(false);
   const showVideo = Boolean(videoSrc) && !videoFailed;
-  const unavailable = !showVideo && (!src || status === "error");
+  const unavailable = !showVideo && (!imageSrc || status === "error");
 
   return (
     <div
@@ -69,7 +73,7 @@ function ImageContent({
         <>
           {status === "loading" ? <Skeleton className="absolute inset-0 rounded-none" /> : null}
           <Image
-            src={src!}
+            src={imageSrc!}
             alt={alt}
             fill={width === undefined}
             width={width}
@@ -78,7 +82,7 @@ function ImageContent({
             fetchPriority={loading === "eager" ? "high" : undefined}
             decoding="async"
             onLoad={event => { setStatus("loaded"); onLoad?.(event.currentTarget); }}
-            onError={() => setStatus("error")}
+            onError={() => (fallbackSrc && imageSrc !== fallbackSrc ? setImageSrc(fallbackSrc) : setStatus("error"))}
             className={cn("relative", fit === "contain" ? "object-contain" : "object-cover")}
           />
         </>

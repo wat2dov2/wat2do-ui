@@ -446,12 +446,18 @@ class UploadsControl(_ControlModel):
     # upscaled pixels, and the detail view is the widest place one is shown.
     event_image_rendition_width_pixels: int = Field(ge=640, le=2400)
     event_image_rendition_quality: int = Field(ge=1, le=100)
-    # Cards show a WebP thumbnail made once at upload, at most this wide. It is
-    # stored next to the poster, its extension replaced by the suffix, which
-    # keeps a segment before ".webp" so it never names a WebP poster itself.
+    # Cards show a WebP thumbnail made once at upload, at most this wide.
     event_image_thumbnail_width_pixels: int = Field(ge=128, le=1080)
     event_image_thumbnail_quality: int = Field(ge=1, le=100)
-    event_image_thumbnail_suffix: str = Field(pattern=r"^(\.[a-z0-9]+)+\.webp$")
+    # Club logos drawn at 64 CSS px or less (48 px on cards and club pages) show
+    # a WebP thumbnail made once at upload, at most this long on its longest
+    # side: 144 covers a 48 px logo at 3x. SVG logos are small already.
+    club_logo_thumbnail_size_pixels: int = Field(ge=48, le=512)
+    club_logo_thumbnail_quality: int = Field(ge=1, le=100)
+    # Every thumbnail is stored next to its image, the image's extension
+    # replaced by this suffix, which keeps a segment before ".webp" so it never
+    # names a WebP image itself.
+    thumbnail_suffix: str = Field(pattern=r"^(\.[a-z0-9]+)+\.webp$")
 
     @model_validator(mode="after")
     def _validate_thumbnail_width(self) -> "UploadsControl":

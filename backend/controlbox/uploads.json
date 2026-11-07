@@ -10,7 +10,9 @@
   "event_image_rendition_quality": 85,
   "event_image_thumbnail_width_pixels": 640,
   "event_image_thumbnail_quality": 75,
-  "event_image_thumbnail_suffix": ".thumb.webp",
+  "club_logo_thumbnail_size_pixels": 144,
+  "club_logo_thumbnail_quality": 80,
+  "thumbnail_suffix": ".thumb.webp",
   "event_video_max_size_bytes": 24000000,
   "event_video_download_timeout_seconds": 60
 }

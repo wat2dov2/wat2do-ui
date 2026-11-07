@@ -6,8 +6,9 @@ A file in bucket ``event-images`` named ``<uuid>.jpg`` is the object
 own response headers: the validated ``Content-Type``, an immutable
 ``Cache-Control`` and, for SVGs, ``Content-Disposition: attachment`` (audit U8).
 
-Every event image also gets a small WebP thumbnail next to it, named by
-``event_image_thumbnail_path``, which event cards show instead of the poster.
+Every event image and raster club logo also gets a small WebP thumbnail next
+to it (``services.image_thumbnails``), which pages show wherever the image is
+drawn small.
 """
 
 import logging
@@ -34,11 +35,7 @@ from core.controlbox import controlbox
 from core.exceptions import ValidationError
 from core.logging import logger
 from core.svg_sanitize import looks_like_svg, sanitize_svg
-from services.event_image_thumbnails import (
-    event_image_thumbnail_path,
-    make_event_image_thumbnail,
-    scale_to_width,
-)
+from services.image_thumbnails import Thumbnail, scale_to_width, thumbnail_path
 
 log = logging.getLogger(__name__)
 
@@ -240,8 +237,8 @@ class StorageService:
         evil.html with Content-Type image/png" trick where the public URL ends
         in ``.html`` even though our MIME sniffer accepted the bytes (audit U7).
 
-        An event image's thumbnail is stored first, so a poster is never
-        published without the thumbnail its cards ask for.
+        An image's thumbnail is stored first, so a poster or logo is never
+        published without the thumbnail its pages ask for.
         """
         ext = _MIME_TO_EXT.get(content_type, ".bin")
         self._require_configuration()
@@ -250,15 +247,28 @@ class StorageService:
         if key is None:
             raise ValidationError("Invalid storage asset path")
 
-        if bucket == BUCKET_EVENT_IMAGES:
-            self._put_object(
-                f"{bucket}/{event_image_thumbnail_path(path)}",
-                make_event_image_thumbnail(file_bytes),
-                "image/webp",
-            )
+        thumbnail = Thumbnail.of(bucket, path)
+        if thumbnail is not None:
+            self._put_thumbnail(bucket, path, thumbnail.make(file_bytes))
         self._put_object(key, file_bytes, content_type)
 
         return f"{self._public_base_url}/{bucket}/{path}"
+
+    def make_thumbnail(self, bucket: str, path: str) -> None:
+        """Make the thumbnail of stored image *path* and store it beside the image.
+
+        It is the thumbnail the image's upload would have stored, for images
+        stored before they got one. Raises ``ValidationError`` if *path* has no
+        thumbnail or is not an image.
+        """
+        thumbnail = Thumbnail.of(bucket, path)
+        if thumbnail is None:
+            raise ValidationError(f"{bucket}/{path} has no thumbnail")
+        data, _ = self.download_file(bucket, path)
+        self._put_thumbnail(bucket, path, thumbnail.make(data))
+
+    def _put_thumbnail(self, bucket: str, path: str, thumbnail: bytes) -> None:
+        self._put_object(f"{bucket}/{thumbnail_path(path)}", thumbnail, "image/webp")
 
     def _put_object(self, key: str, body: bytes, content_type: str) -> None:
         put_options: dict[str, object] = {
@@ -297,7 +307,7 @@ class StorageService:
             body.close()
 
     def delete_file(self, bucket: str, path: str) -> None:
-        """Delete a file by its path within a bucket, with an event image's thumbnail.
+        """Delete a file by its path within a bucket, with its thumbnail if it has one.
 
         Rejects paths containing ``..`` or absolute path prefixes after
         normalization - prevents an attacker who controls
@@ -310,8 +320,8 @@ class StorageService:
             logger.warning("Refusing to delete suspicious path %s/%s", bucket, path)
             return
         keys = [key]
-        if bucket == BUCKET_EVENT_IMAGES:
-            keys.append(f"{bucket}/{event_image_thumbnail_path(path)}")
+        if Thumbnail.of(bucket, path) is not None:
+            keys.append(f"{bucket}/{thumbnail_path(path)}")
         for object_key in keys:
             try:
                 self._get_s3_client().delete_object(Bucket=self._bucket_name, Key=object_key)
@@ -342,6 +352,23 @@ class StorageService:
         if not _is_safe_storage_path(path):
             return None
         return path
+
+    def list_files(self, bucket: str) -> dict[str, int]:
+        """Return every file directly in *bucket*, by path, with its size in bytes."""
+        self._require_configuration()
+        if bucket not in self.BUCKETS:
+            raise ValidationError("Invalid storage asset path")
+        prefix = f"{bucket}/"
+        pages = (
+            self._get_s3_client()
+            .get_paginator("list_objects_v2")
+            .paginate(Bucket=self._bucket_name, Prefix=prefix, Delimiter="/")
+        )
+        return {
+            item["Key"][len(prefix) :]: item["Size"]
+            for page in pages
+            for item in page.get("Contents", [])
+        }
 
     def _object_key(self, bucket: str, path: str) -> str | None:
         """Return the S3 key of *bucket*/*path*, or None if it is not a plain file in a known bucket.

@@ -23,19 +23,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.constants import BUCKET_EVENT_IMAGES  # noqa: E402
 from core.controlbox import controlbox  # noqa: E402
 from core.exceptions import ValidationError  # noqa: E402
-from services.event_image_thumbnails import (  # noqa: E402
-    event_image_thumbnail_path,
-    make_event_image_thumbnail,
-)
+from services.image_thumbnails import Thumbnail, thumbnail_path  # noqa: E402
 
 
 def make_thumbnail(poster: Path) -> str:
     """Write *poster*'s thumbnail beside it and return "made", or "failed" if it is not an image."""
     try:
-        thumbnail = make_event_image_thumbnail(poster.read_bytes())
+        thumbnail = Thumbnail.EVENT_IMAGE.make(poster.read_bytes())
     except ValidationError:
         return "failed"
-    target = poster.with_name(event_image_thumbnail_path(poster.name))
+    target = poster.with_name(thumbnail_path(poster.name))
     # Written aside and renamed, so an interrupted run never leaves a partial
     # thumbnail that a rerun would skip.
     partial = target.with_name(f".{target.name}.partial")
@@ -53,12 +50,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     folder = args.media_dir / BUCKET_EVENT_IMAGES
     if not folder.is_dir():
         parser.error(f"{folder} is not a folder")
-    suffix = controlbox.uploads.event_image_thumbnail_suffix
+    suffix = controlbox.uploads.thumbnail_suffix
     files = {path.name for path in folder.iterdir() if path.is_file()}
     posters = sorted(
         folder / name for name in files if not name.startswith(".") and not name.endswith(suffix)
     )
-    missing = [path for path in posters if event_image_thumbnail_path(path.name) not in files]
+    missing = [path for path in posters if thumbnail_path(path.name) not in files]
 
     counts: Counter[str] = Counter(already_had=len(posters) - len(missing))
     with ProcessPoolExecutor(max_workers=args.workers) as pool:
