@@ -59,6 +59,7 @@ export const controlBox = {
     adminStaleMs: secondsToMilliseconds(
       clientCache.admin_stale_seconds,
     ),
+    eventFeedRetries: clientCache.event_feed_retries,
   },
   interactionTracking: {
     flushDebounceMs: interactionTracking.flush_debounce_milliseconds,

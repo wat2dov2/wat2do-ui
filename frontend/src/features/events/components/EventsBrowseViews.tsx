@@ -18,7 +18,9 @@ type EventsBrowseViewsProps = ComponentProps<typeof EventList> & {
 export function EventsBrowseViews({ view, school, embedded = false, ...listProps }: EventsBrowseViewsProps) {
   if (view === "grid") return <EventList {...listProps} />;
   // The map and calendar show every event, so they wait while the list holds only its start.
-  if (listProps.isLoading || listProps.totalCount !== undefined) return <EventViewSkeleton variant={view} />;
+  if (listProps.isLoading || listProps.totalCount !== undefined) {
+    return <EventViewSkeleton variant={view}>{listProps.loadFailureNotice}</EventViewSkeleton>;
+  }
   if (view === "map") return <EventsMap key={school} school={school} events={listProps.events} onEventClick={listProps.onEventClick} embedded={embedded} />;
   return <EventsCalendar key={school} school={school} events={listProps.events} onEventClick={listProps.onEventClick} />;
 }

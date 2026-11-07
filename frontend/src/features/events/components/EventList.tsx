@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { EventCard } from "@/features/events/components/EventCard";
@@ -38,6 +38,8 @@ interface EventListProps {
    * as the complete list will, so nothing moves when the rest arrives.
    */
   totalCount?: number;
+  /** Laid over the list's loading placeholders once the events they wait for have failed to load. */
+  loadFailureNotice?: ReactNode;
 }
 
 interface EventCardsGridProps {
@@ -92,6 +94,7 @@ export function EventList({
   groupByDateSections = true,
   resetKey,
   totalCount,
+  loadFailureNotice,
 }: EventListProps) {
   const { getSchoolTimezone } = useSchoolDirectory();
   const { t, i18n } = useTranslation();
@@ -143,7 +146,10 @@ export function EventList({
   // Early returns AFTER all hooks
   if (isLoading) {
     return (
-      <div className="space-y-5" aria-busy="true">
+      // Once the load has failed nothing is busy, and the notice must be announced.
+      <div className="relative space-y-5" aria-busy={loadFailureNotice ? undefined : true}>
+        {/* First, so the section stays the last child and keeps its spacing. */}
+        {loadFailureNotice}
         <section className="space-y-2.5">
           {groupByDateSections ? (
             <h2 data-skeleton-key="date-heading" className={DATE_SECTION_HEADING_CLASS}>
@@ -223,12 +229,13 @@ export function EventList({
         <div
           ref={loadMoreRef}
           data-testid="event-list-sentinel"
-          className={CARD_GRID_CLASS}
+          className={`relative ${CARD_GRID_CLASS}`}
           role="status"
           aria-live="polite"
           aria-label={t("common.loading")}
         >
           {Array.from({ length: 4 }, (_, index) => <EventCardSkeleton key={index} />)}
+          {loadFailureNotice}
         </div>
       ) : null}
     </div>

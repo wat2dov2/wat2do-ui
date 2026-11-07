@@ -394,6 +394,48 @@ test("a first screen of the feed lays out like the start of the complete list", 
   expect(render({ events: [], totalCount: listed.length })).not.toContain("events.noEventsScheduled");
 });
 
+test("a failed load's notice lies over the list's waiting placeholders without changing them", () => {
+  const { EventList } = loadComponent("features/events/components/EventList", {
+    "@/features/events/components/EventCard": { EventCard: ({ event: card }: { event: Event }) => createElement("article", { "data-card": card.id }) },
+  }) as typeof import("../src/features/events/components/EventList");
+  const startMs = Date.now() + 2 * 3_600_000;
+  const firstScreen = Array.from({ length: controlBox.eventDiscovery.initialRenderCount }, (_, index) => ({
+    ...event, id: index + 1, school: "uwaterloo",
+    occurrences: [{ dtstart_utc: new Date(startMs + index * 60_000).toISOString(), dtend_utc: null }],
+  }) as Event);
+  const notice = createElement("div", { "data-slot": "load-failure-notice" }, "failed");
+  const noticeHtml = renderToStaticMarkup(notice);
+  const render = (props: Partial<ComponentProps<typeof EventList>>) =>
+    renderToStaticMarkup(createElement(EventList, { events: firstScreen, eventStats: null, totalCount: 120, ...props }));
+
+  // Below the first screen, over the row still waiting for the rest of the list.
+  const failedRow = render({ loadFailureNotice: notice });
+  expect(failedRow.split(noticeHtml)).toHaveLength(2);
+  expect(failedRow.replace(noticeHtml, "")).toBe(render({}));
+  expect(failedRow.indexOf(noticeHtml)).toBeGreaterThan(failedRow.indexOf('data-testid="event-list-sentinel"'));
+  // Over the loading grid of a search or filter that waits for the feed, which is
+  // no longer busy once the load has failed (so the notice is announced).
+  const waitingGrid = render({ isLoading: true });
+  const failedGrid = render({ isLoading: true, loadFailureNotice: notice });
+  expect(waitingGrid).toMatch(/^<div class="relative space-y-5" aria-busy="true">/);
+  expect(failedGrid).toMatch(/^<div class="relative space-y-5">/);
+  expect(failedGrid.replace(noticeHtml, "")).toBe(waitingGrid.replace(' aria-busy="true"', ""));
+  // Placeholders keep their positioned boxes, so the notice can lie over them.
+  expect(failedRow).toMatch(/data-testid="event-list-sentinel" class="relative /);
+});
+
+test("the load failure notice offers to try again and shows a retry under way", () => {
+  const { LoadFailureNotice } = loadComponent("shared/feedback/load-failure-notice") as typeof import("../src/shared/feedback/load-failure-notice");
+  const render = (retrying: boolean) => renderToStaticMarkup(createElement(LoadFailureNotice, { message: "events.loadFailed", onRetry() {}, retrying }));
+  const idle = render(false);
+  expect(idle).toContain('data-slot="load-failure-notice"');
+  expect(idle).toContain('role="alert"');
+  expect(idle).toContain("events.loadFailed");
+  expect(idle).toMatch(/<button[^>]*>common.tryAgain<\/button>/);
+  expect(idle).not.toMatch(/<button[^>]*\sdisabled=""/);
+  expect(render(true)).toMatch(/<button[^>]*\sdisabled=""[^>]*>.*common.tryAgain<\/button>/);
+});
+
 test("an unavailable integer filter disables its actual popover trigger", () => {
   const { IntegerFilter } = loadComponent("shared/ui/integer-filter") as typeof import("../src/shared/ui/integer-filter");
   const html = renderToStaticMarkup(createElement(IntegerFilter, {

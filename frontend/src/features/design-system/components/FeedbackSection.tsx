@@ -1,5 +1,5 @@
 import { Section, Stack } from "@/shared/layout";
-import { EmptyState } from "@/shared/feedback";
+import { EmptyState, LoadFailureNotice } from "@/shared/feedback";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { Button } from "@/shared/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
@@ -33,6 +33,14 @@ export function FeedbackSection() {
               <AlertTitle>Action needed</AlertTitle>
               <AlertDescription>Review this item before continuing.</AlertDescription>
             </Alert>
+          </div>
+        </ShowcaseBlock>
+
+        <ShowcaseBlock label="LoadFailureNotice">
+          {/* Positioned like the loading placeholder it lies over. */}
+          <div className="relative">
+            <LoadingPage variant="cards" />
+            <LoadFailureNotice message="Failed to load events. Please try again." onRetry={() => {}} retrying={false} />
           </div>
         </ShowcaseBlock>
 

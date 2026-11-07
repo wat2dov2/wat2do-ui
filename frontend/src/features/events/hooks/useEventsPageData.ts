@@ -12,6 +12,7 @@ import {
   useCurrentTime,
   useGoingEvents,
 } from "@/features/events/hooks/useGoingEvents";
+import { controlBox } from "@/shared/config/controlBox";
 import { resolveSchool } from "@/shared/constants/schools";
 import type { Event } from "@/shared/types";
 import { getUniqueEvents } from "@/shared/utils/event";
@@ -55,13 +56,20 @@ export function useEventsPageData({
 }: UseEventsPageDataOptions) {
   const schoolFilter = resolveSchool(initialSchool);
   // The complete feed comes from the edge right after the page paints. Until it
-  // arrives, the server's first screen stands in for the start of the default list.
-  const query = useQuery(eventFeedQueryOptions(schoolFilter));
+  // arrives, the server's first screen stands in for the start of the default list,
+  // so a failed read is retried quietly (React Query's backoff) before the page says so.
+  const query = useQuery({
+    ...eventFeedQueryOptions(schoolFilter),
+    retry: controlBox.clientCache.eventFeedRetries,
+  });
   const feed = query.data;
   const firstScreen = feed ? null : serverFirstScreen;
   const events = feed?.items ?? firstScreen?.events ?? NO_EVENTS;
   const isLoading = query.isLoading && firstScreen === null;
-  const error = query.isLoadingError ? i18n.t("events.loadFailed") : null;
+  // With nothing to show, a failed read is the page's error. Behind the first screen
+  // it only stops what waits for the rest, which then offers to try again.
+  const error = query.isLoadingError && firstScreen === null ? i18n.t("events.loadFailed") : null;
+  const restLoadFailed = query.isLoadingError && firstScreen !== null;
   const { data: goingSelections = [], isSuccess: goingEventsReady } = useGoingEvents();
   const currentTimeMs = useCurrentTime();
   const goingEventIds = useMemo(
@@ -138,6 +146,10 @@ export function useEventsPageData({
     currentTimeMs,
     isLoading,
     error,
+    /** The rest of the feed failed to load behind the first screen, which stays usable. */
+    restLoadFailed,
+    /** The feed is being read again (Try again). */
+    isRefreshing: query.isFetching,
     refreshEvents,
     eventStats,
     goingEventsReady,

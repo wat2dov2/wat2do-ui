@@ -230,6 +230,10 @@ class ClientCacheControl(_ControlModel):
     live_event_data_stale_seconds: int = Field(ge=0)
     profile_stale_seconds: int = Field(ge=0)
     admin_stale_seconds: int = Field(ge=0)
+    # How many more times the events page asks for the school's complete feed after
+    # a failed read, with React Query's backoff (about 1, 2 and 4 seconds), before
+    # it offers Try again. Its first screen is already showing meanwhile.
+    event_feed_retries: int = Field(ge=0, le=5)
 
     @model_validator(mode="after")
     def validate_default_cache(self) -> "ClientCacheControl":

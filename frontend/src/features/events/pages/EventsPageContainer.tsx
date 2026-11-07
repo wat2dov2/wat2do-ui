@@ -7,7 +7,7 @@ import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
 import type { Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
-import { EmptyState } from "@/shared/feedback";
+import { EmptyState, LoadFailureNotice } from "@/shared/feedback";
 import { Stack } from "@/shared/layout";
 import type { EventFeedFirstScreen } from "@/features/events/lib/eventFeedFirstScreen";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
@@ -32,6 +32,8 @@ export function EventsPageContainer({
     appliedQueryKey,
     isLoading,
     error,
+    restLoadFailed,
+    isRefreshing,
     refreshEvents,
     listing,
     eventStats,
@@ -110,6 +112,9 @@ export function EventsPageContainer({
               hasActiveFilters={filters.filterCount > 0 || filters.searchQuery.trim().length > 0}
               eventStats={eventStats}
               isLoading={listing === null}
+              loadFailureNotice={restLoadFailed ? (
+                <LoadFailureNotice message={t("events.loadFailed")} onRetry={refreshEvents} retrying={isRefreshing} />
+              ) : undefined}
               resetKey={appliedQueryKey}
               groupByDateSections={
                 filters.sortBy === "date" && filters.sortOrder === "asc"
