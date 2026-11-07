@@ -164,3 +164,18 @@ def test_a_crawl_under_way_is_always_due(monkeypatch, tmp_path):
     (tmp_path / "utm.json").write_text("{}")
 
     assert module.crawl_due("utm", datetime.now(timezone.utc) + timedelta(days=1))
+
+
+def test_a_crawl_slice_stops_for_a_waiting_song_and_keeps_its_place(world):
+    reader = _Reader(
+        {
+            "wat2do.utm": _rows(("utmmsa", "UTM MSA", True)),
+            "utmmsa": _rows(("utmaclub", "UTMAC", False)),
+        }
+    )
+    world(reader)
+
+    result = module.crawl_slice(object(), "utm", deadline=float("inf"), stop=lambda: True)
+
+    assert result == module.CRAWL_RUNNING
+    assert module.json.loads(module._state_path("utm").read_text())["queue"] == ["utmmsa"]
