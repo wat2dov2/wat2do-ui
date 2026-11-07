@@ -549,7 +549,8 @@
       "tabs": {
         "label": "Vues des irritants",
         "complaints": "Plaintes",
-        "reports": "Rapports quotidiens"
+        "reports": "Rapports quotidiens",
+        "features": "Liste des fonctionnalités"
       },
       "reports": {
         "meta": "Plaintes : {{count}} · {{model}}",
@@ -564,6 +565,44 @@
         },
         "emptyTitle": "Aucun rapport pour l'instant",
         "emptyDescription": "Un rapport est rédigé après chaque recherche quotidienne qui trouve de nouvelles plaintes."
+      },
+      "features": {
+        "title": "Fonctionnalités",
+        "feature": "Fonctionnalité",
+        "score": "Score",
+        "complaints": "Plaintes",
+        "lastSeen": "Vu le",
+        "sortBy": "Trier par",
+        "details": "Détails",
+        "dimensionsHelp": "Chaque fonctionnalité est notée de 1 à 5 : demande, le nombre de personnes qui la réclament ; douleur, à quel point le problème fait mal ; adéquation, à quel point elle convient à wat2do ; avantage, à quel point elle distingue wat2do ; facilité, le peu de travail qu'elle demande. Le score est leur somme, sur 25.",
+        "emptyTitle": "Aucune fonctionnalité",
+        "emptyDescription": "La liste se remplit à mesure que les rapports quotidiens trouvent des fonctionnalités utiles.",
+        "statuses": {
+          "open": "Ouverte",
+          "built": "Faite"
+        },
+        "audiences": {
+          "organizer": "Organisateurs",
+          "attendee": "Participants",
+          "both": "Les deux"
+        },
+        "dimensions": {
+          "demand": "Demande",
+          "pain": "Douleur",
+          "fit": "Adéquation",
+          "edge": "Avantage",
+          "ease": "Facilité"
+        },
+        "sorts": {
+          "score": "Meilleur score",
+          "demand": "Demande",
+          "pain": "Douleur",
+          "fit": "Adéquation",
+          "edge": "Avantage",
+          "ease": "Facilité",
+          "complaints": "Plus de plaintes",
+          "newest": "Plus récentes"
+        }
       }
     },
     "outreach": {

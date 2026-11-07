@@ -549,7 +549,8 @@
       "tabs": {
         "label": "Viste dei problemi",
         "complaints": "Lamentele",
-        "reports": "Report giornalieri"
+        "reports": "Report giornalieri",
+        "features": "Elenco funzionalità"
       },
       "reports": {
         "meta": "Lamentele: {{count}} · {{model}}",
@@ -564,6 +565,44 @@
         },
         "emptyTitle": "Ancora nessun report",
         "emptyDescription": "Dopo ogni ricerca giornaliera che trova nuove lamentele viene scritto un report."
+      },
+      "features": {
+        "title": "Funzionalità",
+        "feature": "Funzionalità",
+        "score": "Punteggio",
+        "complaints": "Lamentele",
+        "lastSeen": "Visto l'ultima volta",
+        "sortBy": "Ordina per",
+        "details": "Dettagli",
+        "dimensionsHelp": "Ogni funzionalità ha un voto da 1 a 5: domanda è quante persone la chiedono, dolore quanto pesa il problema, adattamento quanto si addice a wat2do, vantaggio quanto distingue wat2do e facilità quanto poco lavoro richiede. Il punteggio è la loro somma, su 25.",
+        "emptyTitle": "Ancora nessuna funzionalità",
+        "emptyDescription": "L'elenco si riempie man mano che i report giornalieri trovano funzionalità da costruire.",
+        "statuses": {
+          "open": "Aperta",
+          "built": "Fatta"
+        },
+        "audiences": {
+          "organizer": "Organizzatori",
+          "attendee": "Partecipanti",
+          "both": "Entrambi"
+        },
+        "dimensions": {
+          "demand": "Domanda",
+          "pain": "Dolore",
+          "fit": "Adattamento",
+          "edge": "Vantaggio",
+          "ease": "Facilità"
+        },
+        "sorts": {
+          "score": "Migliori",
+          "demand": "Domanda",
+          "pain": "Dolore",
+          "fit": "Adattamento",
+          "edge": "Vantaggio",
+          "ease": "Facilità",
+          "complaints": "Più lamentele",
+          "newest": "Più recenti"
+        }
       }
     },
     "outreach": {

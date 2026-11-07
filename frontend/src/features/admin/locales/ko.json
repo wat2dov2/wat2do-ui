@@ -549,7 +549,8 @@
       "tabs": {
         "label": "불만 사항 보기",
         "complaints": "불만",
-        "reports": "일일 보고서"
+        "reports": "일일 보고서",
+        "features": "기능 백로그"
       },
       "reports": {
         "meta": "불만: {{count}} · {{model}}",
@@ -564,6 +565,44 @@
         },
         "emptyTitle": "아직 보고서가 없습니다",
         "emptyDescription": "새 불만을 찾은 매일의 검색이 끝나면 보고서가 작성됩니다."
+      },
+      "features": {
+        "title": "기능",
+        "feature": "기능",
+        "score": "점수",
+        "complaints": "불만",
+        "lastSeen": "마지막 확인",
+        "sortBy": "정렬",
+        "details": "자세히",
+        "dimensionsHelp": "각 기능은 1~5점으로 평가합니다: 수요는 원하는 사람의 수, 고통은 문제가 얼마나 불편한지, 적합성은 wat2do에 얼마나 맞는지, 차별성은 wat2do를 얼마나 돋보이게 하는지, 용이성은 작업이 얼마나 적은지입니다. 점수는 그 합계로 25점 만점입니다.",
+        "emptyTitle": "아직 기능이 없습니다",
+        "emptyDescription": "일일 보고서가 만들 만한 기능을 찾으면 백로그가 채워집니다.",
+        "statuses": {
+          "open": "진행 전",
+          "built": "완료"
+        },
+        "audiences": {
+          "organizer": "주최자",
+          "attendee": "참석자",
+          "both": "둘 다"
+        },
+        "dimensions": {
+          "demand": "수요",
+          "pain": "고통",
+          "fit": "적합성",
+          "edge": "차별성",
+          "ease": "용이성"
+        },
+        "sorts": {
+          "score": "종합 최고",
+          "demand": "수요",
+          "pain": "고통",
+          "fit": "적합성",
+          "edge": "차별성",
+          "ease": "용이성",
+          "complaints": "불만 많은 순",
+          "newest": "최신순"
+        }
       }
     },
     "outreach": {

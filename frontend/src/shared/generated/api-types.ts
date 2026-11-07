@@ -2031,6 +2031,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/competitor-pain-points/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Features */
+        get: operations["list_features_competitor_pain_points_features_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/competitor-pain-points/{pain_point_id}": {
         parameters: {
             query?: never;
@@ -3990,6 +4007,46 @@ export interface components {
             page_size: number;
             /** Format: int64 */
             total_pages: number;
+        };
+        /**
+         * @description A feature in the backlog the daily reports keep, with every complaint that
+         *     has asked for it. Each score runs from 1 to 5; `score` is their sum.
+         */
+        PainPointFeatureResponse: {
+            /** Format: uuid */
+            id: string;
+            key: string;
+            title: string;
+            problem: string;
+            change: string;
+            where: string[];
+            /** @enum {string} */
+            audience: "organizer" | "attendee" | "both";
+            /** @enum {string} */
+            status: "open" | "built";
+            /** Format: int32 */
+            demand: number;
+            /** Format: int32 */
+            pain: number;
+            /** Format: int32 */
+            fit: number;
+            /** Format: int32 */
+            edge: number;
+            /** Format: int32 */
+            ease: number;
+            /** Format: int32 */
+            score: number;
+            rationale: string;
+            competitors: string[];
+            complaint_urls: string[];
+            /** Format: int64 */
+            report_count: number;
+            /** Format: date */
+            first_seen: string;
+            /** Format: date */
+            last_seen: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         /** @description `PayoutCsvExportResponse`. */
         PayoutCsvExportResponse: {
@@ -9248,6 +9305,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedResponse_DailyReportResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_features_competitor_pain_points_features_get: {
+        parameters: {
+            query?: {
+                feature_status?: ("open" | "built") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PainPointFeatureResponse"][];
                 };
             };
             /** @description Validation Error */

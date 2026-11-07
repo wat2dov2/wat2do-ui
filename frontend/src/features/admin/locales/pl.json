@@ -549,7 +549,8 @@
       "tabs": {
         "label": "Widoki problemów",
         "complaints": "Skargi",
-        "reports": "Raporty dzienne"
+        "reports": "Raporty dzienne",
+        "features": "Lista funkcji"
       },
       "reports": {
         "meta": "Skargi: {{count}} · {{model}}",
@@ -564,6 +565,44 @@
         },
         "emptyTitle": "Brak raportów",
         "emptyDescription": "Raport powstaje po każdym codziennym przeszukaniu, które znajdzie nowe skargi."
+      },
+      "features": {
+        "title": "Funkcje",
+        "feature": "Funkcja",
+        "score": "Wynik",
+        "complaints": "Skargi",
+        "lastSeen": "Ostatnio widziane",
+        "sortBy": "Sortuj według",
+        "details": "Szczegóły",
+        "dimensionsHelp": "Każda funkcja dostaje ocenę od 1 do 5: popyt to ilu ludzi o nią prosi, ból jak bardzo problem doskwiera, dopasowanie jak bardzo pasuje do wat2do, przewaga jak bardzo wyróżnia wat2do, a łatwość jak mało pracy wymaga. Wynik to ich suma, na 25.",
+        "emptyTitle": "Brak funkcji",
+        "emptyDescription": "Lista zapełnia się, gdy codzienne raporty znajdują funkcje warte zbudowania.",
+        "statuses": {
+          "open": "Otwarta",
+          "built": "Zrobiona"
+        },
+        "audiences": {
+          "organizer": "Organizatorzy",
+          "attendee": "Uczestnicy",
+          "both": "Oboje"
+        },
+        "dimensions": {
+          "demand": "Popyt",
+          "pain": "Ból",
+          "fit": "Dopasowanie",
+          "edge": "Przewaga",
+          "ease": "Łatwość"
+        },
+        "sorts": {
+          "score": "Najlepsze",
+          "demand": "Popyt",
+          "pain": "Ból",
+          "fit": "Dopasowanie",
+          "edge": "Przewaga",
+          "ease": "Łatwość",
+          "complaints": "Najwięcej skarg",
+          "newest": "Najnowsze"
+        }
       }
     },
     "outreach": {

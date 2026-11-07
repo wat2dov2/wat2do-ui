@@ -469,3 +469,12 @@ export function getCompetitorPainPointReports(page: number) {
   const params = new URLSearchParams({ page: String(page), page_size: "7" });
   return api.get<components["schemas"]["PaginatedResponse_DailyReportResponse_"]>("/competitor-pain-points/reports?" + params);
 }
+
+export type PainPointFeature = components["schemas"]["PainPointFeatureResponse"];
+
+/** The feature backlog, best score first; an empty status lists every feature. */
+export function getPainPointFeatures(status: PainPointFeature["status"] | "") {
+  const params = new URLSearchParams();
+  if (status) params.set("feature_status", status);
+  return api.get<PainPointFeature[]>("/competitor-pain-points/features?" + params);
+}

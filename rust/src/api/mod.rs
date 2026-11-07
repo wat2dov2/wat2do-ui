@@ -316,6 +316,7 @@ fn rust_routes() -> OpenApiRouter<AppState> {
         // routers/competitor_pain_points.py
         .routes(routes!(routes::competitor_pain_points::list_pain_points))
         .routes(routes!(routes::competitor_pain_points::list_reports))
+        .routes(routes!(routes::competitor_pain_points::list_features))
         .routes(routes!(routes::competitor_pain_points::review_pain_point))
         // routers/outreach.py
         .routes(routes!(routes::outreach::list_leads))

@@ -549,7 +549,8 @@
       "tabs": {
         "label": "Mga view ng problema",
         "complaints": "Mga reklamo",
-        "reports": "Mga pang-araw-araw na ulat"
+        "reports": "Mga pang-araw-araw na ulat",
+        "features": "Backlog ng feature"
       },
       "reports": {
         "meta": "Mga reklamo: {{count}} · {{model}}",
@@ -564,6 +565,44 @@
         },
         "emptyTitle": "Wala pang ulat",
         "emptyDescription": "May isinusulat na ulat pagkatapos ng bawat araw-araw na paghahanap na may bagong reklamo."
+      },
+      "features": {
+        "title": "Mga feature",
+        "feature": "Feature",
+        "score": "Iskor",
+        "complaints": "Mga reklamo",
+        "lastSeen": "Huling nakita",
+        "sortBy": "Ayusin ayon sa",
+        "details": "Detalye",
+        "dimensionsHelp": "Bawat feature ay may iskor na 1 hanggang 5: demand ay kung ilang tao ang humihingi nito, sakit ay kung gaano kasakit ang problema, akma ay kung gaano ito bagay sa wat2do, lamang ay kung gaano nito pinapaangat ang wat2do, at dali ay kung gaano kaunti ang trabaho. Ang iskor ay ang kabuuan nila, mula sa 25.",
+        "emptyTitle": "Wala pang feature",
+        "emptyDescription": "Napupuno ang backlog habang nakakahanap ang mga daily report ng mga feature na sulit gawin.",
+        "statuses": {
+          "open": "Bukas",
+          "built": "Tapos na"
+        },
+        "audiences": {
+          "organizer": "Mga organizer",
+          "attendee": "Mga dadalo",
+          "both": "Pareho"
+        },
+        "dimensions": {
+          "demand": "Demand",
+          "pain": "Sakit",
+          "fit": "Akma",
+          "edge": "Lamang",
+          "ease": "Dali"
+        },
+        "sorts": {
+          "score": "Pinakamahusay",
+          "demand": "Demand",
+          "pain": "Sakit",
+          "fit": "Akma",
+          "edge": "Lamang",
+          "ease": "Dali",
+          "complaints": "Pinakamaraming reklamo",
+          "newest": "Pinakabago"
+        }
       }
     },
     "outreach": {

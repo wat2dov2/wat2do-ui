@@ -53,7 +53,7 @@ export const PAGE_SHELLS: Readonly<Record<string, PageShell>> = {
   [ROUTES.ADMIN_SOCIAL]: { icon: BarChart3, titleKey: "admin.socialAccounts.title", descriptionKey: "admin.socialAccounts.description", back: "admin", container: "lg", body: "dashboard" },
   [ROUTES.ADMIN_DIAGNOSTICS]: { icon: Settings, titleKey: "admin.diagnostics.title", descriptionKey: "admin.diagnostics.description", back: "admin", container: "lg", tabs: 5, body: "list" },
   [ROUTES.ADMIN_SPONSORS]: { icon: Building2, titleKey: "admin.sponsors.title", descriptionKey: "admin.sponsors.description", back: "admin", container: "lg", body: "list" },
-  [ROUTES.ADMIN_PAIN_POINTS]: { icon: MessageCircle, titleKey: "admin.painPoints.title", descriptionKey: "admin.painPoints.description", back: "admin", tabs: 2, container: "lg", body: "list" },
+  [ROUTES.ADMIN_PAIN_POINTS]: { icon: MessageCircle, titleKey: "admin.painPoints.title", descriptionKey: "admin.painPoints.description", back: "admin", tabs: 3, container: "lg", body: "list" },
   [ROUTES.ADMIN_OUTREACH]: { icon: Mail, titleKey: "admin.outreach.title", descriptionKey: "admin.outreach.description", back: "admin", container: "lg", body: "list" },
   [ROUTES.CLUB_PANEL]: { icon: Building2, titleKey: "clubPanel.title", descriptionKey: "clubPanel.description", cards: 3, container: "lg", body: "dashboard" },
   [ROUTES.CLUB_PANEL_EVENTS]: { icon: Calendar, titleKey: "navigation.events", descriptionKey: "clubPanel.eventsDesc", back: "clubPanel", container: "lg", body: "list" },

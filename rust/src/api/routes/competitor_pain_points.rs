@@ -1,6 +1,6 @@
 //! `/competitor-pain-points`: public complaints about competitors that the
-//! daily sweep (`jobs/find_competitor_pain_points.py`) stores, and its daily
-//! reports, served to the admin page.
+//! daily sweep (`jobs/find_competitor_pain_points.py`) stores, its daily
+//! reports and the feature backlog those reports keep, served to the admin page.
 
 use std::sync::LazyLock;
 
@@ -27,6 +27,7 @@ use crate::text::{python_strip, sanitize_postgrest_value};
 
 const AUDIENCES: &[&str] = &["organizer", "attendee", "other"];
 const STATUSES: &[&str] = &["new", "seen", "dismissed"];
+const FEATURE_STATUSES: &[&str] = &["open", "built"];
 const SLUG_PATTERN: &str = "^[a-z0-9_]+$";
 static SLUG: LazyLock<Regex> = LazyLock::new(|| Regex::new(SLUG_PATTERN).expect("pattern"));
 const MAX_SLUG_LENGTH: usize = 64;
@@ -56,6 +57,23 @@ enum SuggestionPriority {
     High,
     Medium,
     Low,
+}
+
+#[derive(ToSchema)]
+#[serde(rename_all = "lowercase")]
+#[allow(dead_code)]
+enum FeatureAudience {
+    Organizer,
+    Attendee,
+    Both,
+}
+
+#[derive(ToSchema)]
+#[serde(rename_all = "lowercase")]
+#[allow(dead_code)]
+enum FeatureStatus {
+    Open,
+    Built,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -344,6 +362,127 @@ pub async fn list_reports(
         .map(DailyReportResponse::from_row)
         .collect::<Result<_, _>>()?;
     Ok(Json(Paginated::new(items, total, pagination)))
+}
+
+/// A feature in the backlog the daily reports keep, with every complaint that
+/// has asked for it. Each score runs from 1 to 5; `score` is their sum.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PainPointFeatureResponse {
+    #[schema(value_type = uuid::Uuid)]
+    pub id: String,
+    #[schema(max_length = 80, pattern = "^[a-z0-9]+(-[a-z0-9]+)*$")]
+    pub key: String,
+    #[schema(min_length = 1, max_length = 300)]
+    pub title: String,
+    #[schema(min_length = 1, max_length = 2000)]
+    pub problem: String,
+    #[schema(min_length = 1, max_length = 4000)]
+    pub change: String,
+    #[schema(max_items = 20)]
+    pub r#where: Vec<String>,
+    #[schema(value_type = FeatureAudience, inline)]
+    pub audience: String,
+    #[schema(value_type = FeatureStatus, inline)]
+    pub status: String,
+    #[schema(minimum = 1, maximum = 5)]
+    pub demand: i16,
+    #[schema(minimum = 1, maximum = 5)]
+    pub pain: i16,
+    #[schema(minimum = 1, maximum = 5)]
+    pub fit: i16,
+    #[schema(minimum = 1, maximum = 5)]
+    pub edge: i16,
+    #[schema(minimum = 1, maximum = 5)]
+    pub ease: i16,
+    #[schema(minimum = 5, maximum = 25)]
+    pub score: i16,
+    #[schema(max_length = 2000)]
+    pub rationale: String,
+    #[schema(max_items = 30)]
+    pub competitors: Vec<String>,
+    #[schema(max_items = 200)]
+    pub complaint_urls: Vec<String>,
+    #[schema(minimum = 1)]
+    pub report_count: i64,
+    #[schema(value_type = String, format = Date)]
+    pub first_seen: NaiveDate,
+    #[schema(value_type = String, format = Date)]
+    pub last_seen: NaiveDate,
+    #[schema(value_type = String, format = DateTime)]
+    #[serde(serialize_with = "json::datetime")]
+    pub updated_at: DateTime<Utc>,
+}
+
+impl PainPointFeatureResponse {
+    fn from_row(row: &PgRow) -> Result<Self, ApiError> {
+        let id: String = row.try_get("id")?;
+        let list = |column: &str| -> Result<Vec<String>, ApiError> {
+            serde_json::from_value(row.try_get::<serde_json::Value, _>(column)?).map_err(|error| {
+                ApiError::Internal(anyhow::anyhow!(
+                    "feature {id} has an invalid {column}: {error}"
+                ))
+            })
+        };
+        Ok(Self {
+            key: row.try_get("key")?,
+            title: row.try_get("title")?,
+            problem: row.try_get("problem")?,
+            change: row.try_get("change")?,
+            r#where: list("where")?,
+            audience: row.try_get("audience")?,
+            status: row.try_get("status")?,
+            demand: row.try_get("demand")?,
+            pain: row.try_get("pain")?,
+            fit: row.try_get("fit")?,
+            edge: row.try_get("edge")?,
+            ease: row.try_get("ease")?,
+            score: row.try_get("score")?,
+            rationale: row.try_get("rationale")?,
+            competitors: list("competitors")?,
+            complaint_urls: list("complaint_urls")?,
+            report_count: row.try_get::<i32, _>("report_count")?.into(),
+            first_seen: row.try_get("first_seen")?,
+            last_seen: row.try_get("last_seen")?,
+            updated_at: row.try_get("updated_at")?,
+            id: id.clone(),
+        })
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/competitor-pain-points/features",
+    tag = "competitor-pain-points",
+    operation_id = "list_features_competitor_pain_points_features_get",
+    summary = "List Features",
+    params(("feature_status" = inline(Option<FeatureStatus>), Query, nullable)),
+    responses(
+        (status = 200, description = "Successful Response", body = Vec<PainPointFeatureResponse>),
+        (status = 422, description = "Validation Error", body = crate::api::routes::HttpValidationError),
+    )
+)]
+pub async fn list_features(
+    State(state): State<AppState>,
+    AdminUser(_): AdminUser,
+    query: QueryParams,
+) -> Result<Json<Vec<PainPointFeatureResponse>>, ApiError> {
+    let mut check = Validator::default();
+    let status = check
+        .query(&query, "feature_status")
+        .optional_choice(FEATURE_STATUSES);
+    check.finish()?;
+    let sql = "SELECT id::text AS id, key, title, problem, change, \"where\", audience, status, \
+             demand, pain, fit, edge, ease, score, rationale, competitors, complaint_urls, \
+             report_count, first_seen, last_seen, updated_at \
+         FROM public.competitor_pain_point_features \
+         WHERE ($1::text IS NULL OR status = $1) \
+         ORDER BY score DESC, demand DESC, last_seen DESC, key ASC";
+    let rows = read_with_retry(|| sqlx::query(sql).bind(&status).fetch_all(&state.db)).await?;
+    let features = rows
+        .iter()
+        .map(PainPointFeatureResponse::from_row)
+        .collect::<Result<_, _>>()?;
+    Ok(Json(features))
 }
 
 #[allow(dead_code)]

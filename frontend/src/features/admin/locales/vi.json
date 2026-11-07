@@ -549,7 +549,8 @@
       "tabs": {
         "label": "Các chế độ xem vấn đề",
         "complaints": "Phàn nàn",
-        "reports": "Báo cáo hằng ngày"
+        "reports": "Báo cáo hằng ngày",
+        "features": "Danh sách tính năng"
       },
       "reports": {
         "meta": "Phàn nàn: {{count}} · {{model}}",
@@ -564,6 +565,44 @@
         },
         "emptyTitle": "Chưa có báo cáo",
         "emptyDescription": "Một báo cáo được viết sau mỗi lần quét hằng ngày tìm thấy phàn nàn mới."
+      },
+      "features": {
+        "title": "Tính năng",
+        "feature": "Tính năng",
+        "score": "Điểm",
+        "complaints": "Phàn nàn",
+        "lastSeen": "Thấy lần cuối",
+        "sortBy": "Sắp xếp theo",
+        "details": "Chi tiết",
+        "dimensionsHelp": "Mỗi tính năng được chấm từ 1 đến 5: nhu cầu là bao nhiêu người muốn có, nỗi đau là vấn đề gây khó chịu đến đâu, phù hợp là hợp với wat2do đến đâu, khác biệt là giúp wat2do nổi bật đến đâu, và dễ làm là tốn ít công sức đến đâu. Điểm là tổng của chúng, trên 25.",
+        "emptyTitle": "Chưa có tính năng nào",
+        "emptyDescription": "Danh sách sẽ đầy dần khi báo cáo hằng ngày tìm ra tính năng đáng làm.",
+        "statuses": {
+          "open": "Đang mở",
+          "built": "Đã làm"
+        },
+        "audiences": {
+          "organizer": "Người tổ chức",
+          "attendee": "Người tham dự",
+          "both": "Cả hai"
+        },
+        "dimensions": {
+          "demand": "Nhu cầu",
+          "pain": "Nỗi đau",
+          "fit": "Phù hợp",
+          "edge": "Khác biệt",
+          "ease": "Dễ làm"
+        },
+        "sorts": {
+          "score": "Tốt nhất",
+          "demand": "Nhu cầu",
+          "pain": "Nỗi đau",
+          "fit": "Phù hợp",
+          "edge": "Khác biệt",
+          "ease": "Dễ làm",
+          "complaints": "Nhiều phàn nàn nhất",
+          "newest": "Mới nhất"
+        }
       }
     },
     "outreach": {

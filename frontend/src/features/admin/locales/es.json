@@ -549,7 +549,8 @@
       "tabs": {
         "label": "Vistas de problemas",
         "complaints": "Quejas",
-        "reports": "Informes diarios"
+        "reports": "Informes diarios",
+        "features": "Lista de funciones"
       },
       "reports": {
         "meta": "Quejas: {{count}} · {{model}}",
@@ -564,6 +565,44 @@
         },
         "emptyTitle": "Aún no hay informes",
         "emptyDescription": "Se escribe un informe tras cada búsqueda diaria que encuentra quejas nuevas."
+      },
+      "features": {
+        "title": "Funciones",
+        "feature": "Función",
+        "score": "Puntuación",
+        "complaints": "Quejas",
+        "lastSeen": "Visto por última vez",
+        "sortBy": "Ordenar por",
+        "details": "Detalles",
+        "dimensionsHelp": "Cada función se puntúa de 1 a 5: demanda es cuántas personas la piden, dolor cuánto duele el problema, encaje qué tan bien encaja con wat2do, ventaja cuánto distingue a wat2do y facilidad qué poco trabajo supone. La puntuación es su suma, sobre 25.",
+        "emptyTitle": "Aún no hay funciones",
+        "emptyDescription": "La lista se llena a medida que los informes diarios encuentran funciones que vale la pena crear.",
+        "statuses": {
+          "open": "Abierta",
+          "built": "Hecha"
+        },
+        "audiences": {
+          "organizer": "Organizadores",
+          "attendee": "Asistentes",
+          "both": "Ambos"
+        },
+        "dimensions": {
+          "demand": "Demanda",
+          "pain": "Dolor",
+          "fit": "Encaje",
+          "edge": "Ventaja",
+          "ease": "Facilidad"
+        },
+        "sorts": {
+          "score": "Mejor puntuación",
+          "demand": "Demanda",
+          "pain": "Dolor",
+          "fit": "Encaje",
+          "edge": "Ventaja",
+          "ease": "Facilidad",
+          "complaints": "Más quejas",
+          "newest": "Más recientes"
+        }
       }
     },
     "outreach": {

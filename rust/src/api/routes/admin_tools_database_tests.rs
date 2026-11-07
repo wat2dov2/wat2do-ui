@@ -292,6 +292,63 @@ async fn admins_review_competitor_pain_points_and_read_reports() {
 }
 
 #[tokio::test]
+async fn pain_point_features_are_listed_best_first() {
+    let Some(db) = database() else { return };
+    let token = admin(&db).await;
+    let tag = Uuid::new_v4().simple().to_string();
+    for (suffix, demand, status) in [
+        ("low", 1, "open"),
+        ("high", 5, "open"),
+        ("built", 5, "built"),
+    ] {
+        sqlx::query(
+            "INSERT INTO public.competitor_pain_point_features \
+                 (key, title, problem, change, audience, status, demand, pain, fit, edge, ease, \
+                  complaint_urls, first_seen, last_seen) \
+             VALUES ($1, 'Free tickets', 'Fees', 'Add a line', 'organizer', $3, $2, 3, 3, 3, 3, \
+                 '[\"https://x.com/a/status/1\"]', DATE '2026-10-01', DATE '2026-10-02')",
+        )
+        .bind(format!("db-test-{tag}-{suffix}"))
+        .bind(demand)
+        .bind(status)
+        .execute(&db)
+        .await
+        .unwrap();
+    }
+    let (status, features) = call(
+        &db,
+        &token,
+        Method::GET,
+        "/competitor-pain-points/features?feature_status=open",
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{features}");
+    let ours: Vec<&Value> = features
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|feature| feature["key"].as_str().unwrap().contains(&tag))
+        .collect();
+    let keys: Vec<&str> = ours.iter().map(|f| f["key"].as_str().unwrap()).collect();
+    assert_eq!(
+        keys,
+        [format!("db-test-{tag}-high"), format!("db-test-{tag}-low")]
+    );
+    assert_eq!(ours[0]["score"], 17);
+    assert_eq!(ours[0]["where"], json!([]));
+    assert_eq!(
+        ours[0]["complaint_urls"],
+        json!(["https://x.com/a/status/1"])
+    );
+    sqlx::query("DELETE FROM public.competitor_pain_point_features WHERE key LIKE $1")
+        .bind(format!("db-test-{tag}-%"))
+        .execute(&db)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn automate_logs_are_stored_and_listed_newest_first() {
     let Some(db) = database() else { return };
     let token = admin(&db).await;

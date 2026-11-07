@@ -549,7 +549,8 @@
       "tabs": {
         "label": "Ansichten zu Problemen",
         "complaints": "Beschwerden",
-        "reports": "Tagesberichte"
+        "reports": "Tagesberichte",
+        "features": "Feature-Backlog"
       },
       "reports": {
         "meta": "Beschwerden: {{count}} · {{model}}",
@@ -564,6 +565,44 @@
         },
         "emptyTitle": "Noch keine Berichte",
         "emptyDescription": "Nach jedem täglichen Durchlauf mit neuen Beschwerden wird ein Bericht erstellt."
+      },
+      "features": {
+        "title": "Features",
+        "feature": "Feature",
+        "score": "Punkte",
+        "complaints": "Beschwerden",
+        "lastSeen": "Zuletzt gesehen",
+        "sortBy": "Sortieren nach",
+        "details": "Details",
+        "dimensionsHelp": "Jedes Feature wird von 1 bis 5 bewertet: Nachfrage ist, wie viele danach fragen, Schmerz, wie sehr das Problem schmerzt, Passung, wie gut es zu wat2do passt, Vorsprung, wie sehr es wat2do abhebt, und Aufwand, wie wenig Arbeit es ist. Die Punkte sind ihre Summe, von 25.",
+        "emptyTitle": "Noch keine Features",
+        "emptyDescription": "Der Backlog füllt sich, sobald die Tagesberichte lohnende Features finden.",
+        "statuses": {
+          "open": "Offen",
+          "built": "Umgesetzt"
+        },
+        "audiences": {
+          "organizer": "Veranstalter",
+          "attendee": "Teilnehmer",
+          "both": "Beide"
+        },
+        "dimensions": {
+          "demand": "Nachfrage",
+          "pain": "Schmerz",
+          "fit": "Passung",
+          "edge": "Vorsprung",
+          "ease": "Aufwand"
+        },
+        "sorts": {
+          "score": "Beste insgesamt",
+          "demand": "Nachfrage",
+          "pain": "Schmerz",
+          "fit": "Passung",
+          "edge": "Vorsprung",
+          "ease": "Aufwand",
+          "complaints": "Meiste Beschwerden",
+          "newest": "Neueste"
+        }
       }
     },
     "outreach": {

@@ -696,6 +696,27 @@ VALUES
      'The app keeps logging me out.', 'Unreliable login', 'other', NULL, 'dismissed')
 ON CONFLICT (id) DO NOTHING;
 
+-- Local examples for the admin feature backlog: one open feature and one built.
+INSERT INTO public.competitor_pain_point_features
+    (key, title, problem, change, audience, status, demand, pain, fit, edge, ease,
+     rationale, competitors, complaint_urls, report_count, first_seen, last_seen)
+VALUES
+    ('free-for-clubs', 'Say clearly that wat2do is free for clubs',
+     'Clubs pay ticketing fees even on free events.',
+     'Add a free-forever line to the club sign-up and ticketing pages.',
+     'organizer', 'open', 4, 4, 5, 3, 5,
+     'Fees come up for Eventbrite every week, and the change is one line of copy.',
+     '["Eventbrite"]', '["https://www.reddit.com/r/example/comments/seed1/"]',
+     2, current_date - 6, current_date - 1),
+    ('campus-only-events', 'Show only events on or near campus',
+     'Students see paid events far from campus.',
+     'Default every list to the student''s own school.',
+     'attendee', 'built', 3, 3, 5, 4, 2,
+     'wat2do already scopes every list to one school.',
+     '["Meetup"]', '["https://apps.apple.com/ca/app/meetup/id375990038?see-all=reviews#seed2"]',
+     1, current_date - 2, current_date - 2)
+ON CONFLICT (key) DO NOTHING;
+
 -- Local example for the admin Outreach page: one unclaimed club with its email.
 INSERT INTO public.outreach_leads
     (id, club_id, email, email_source_url, email_found_by, found_at, status)

@@ -101,8 +101,8 @@ function DailyReportCard({ report }: { report: CompetitorPainPointReport }) {
   );
 }
 
-/** Numbered links to the complaints a theme or suggestion rests on. */
-function Evidence({ urls }: { urls: string[] }) {
+/** Numbered links to the complaints a theme, suggestion or feature rests on. */
+export function Evidence({ urls }: { urls: string[] }) {
   const { t } = useTranslation();
   if (urls.length === 0) return null;
   return (

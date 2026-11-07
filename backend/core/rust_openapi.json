@@ -7515,6 +7515,61 @@
         }
       }
     },
+    "/competitor-pain-points/features": {
+      "get": {
+        "tags": [
+          "competitor-pain-points"
+        ],
+        "summary": "List Features",
+        "operationId": "list_features_competitor_pain_points_features_get",
+        "parameters": [
+          {
+            "name": "feature_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "built"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PainPointFeatureResponse"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/competitor-pain-points/{pain_point_id}": {
       "patch": {
         "tags": [
@@ -13413,6 +13468,152 @@
           "total_pages": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "PainPointFeatureResponse": {
+        "type": "object",
+        "description": "A feature in the backlog the daily reports keep, with every complaint that\nhas asked for it. Each score runs from 1 to 5; `score` is their sum.",
+        "required": [
+          "id",
+          "key",
+          "title",
+          "problem",
+          "change",
+          "where",
+          "audience",
+          "status",
+          "demand",
+          "pain",
+          "fit",
+          "edge",
+          "ease",
+          "score",
+          "rationale",
+          "competitors",
+          "complaint_urls",
+          "report_count",
+          "first_seen",
+          "last_seen",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1
+          },
+          "problem": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "change": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1
+          },
+          "where": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "organizer",
+              "attendee",
+              "both"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "built"
+            ]
+          },
+          "demand": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 5,
+            "minimum": 1
+          },
+          "pain": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 5,
+            "minimum": 1
+          },
+          "fit": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 5,
+            "minimum": 1
+          },
+          "edge": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 5,
+            "minimum": 1
+          },
+          "ease": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 5,
+            "minimum": 1
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 25,
+            "minimum": 5
+          },
+          "rationale": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "competitors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 30
+          },
+          "complaint_urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200
+          },
+          "report_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "first_seen": {
+            "type": "string",
+            "format": "date"
+          },
+          "last_seen": {
+            "type": "string",
+            "format": "date"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

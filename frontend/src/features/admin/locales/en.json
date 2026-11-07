@@ -549,7 +549,8 @@
       "tabs": {
         "label": "Pain point views",
         "complaints": "Complaints",
-        "reports": "Daily reports"
+        "reports": "Daily reports",
+        "features": "Feature backlog"
       },
       "reports": {
         "meta": "Complaints: {{count}} · {{model}}",
@@ -564,6 +565,44 @@
         },
         "emptyTitle": "No reports yet",
         "emptyDescription": "A report is written after each daily sweep that finds new complaints."
+      },
+      "features": {
+        "title": "Features",
+        "feature": "Feature",
+        "score": "Score",
+        "complaints": "Complaints",
+        "lastSeen": "Last seen",
+        "sortBy": "Sort by",
+        "details": "Details",
+        "dimensionsHelp": "Each feature is scored 1 to 5: demand is how many people ask for it, pain how much the problem hurts, fit how well it suits wat2do, edge how much it sets wat2do apart, and ease how little work it is. Score is their sum, out of 25.",
+        "emptyTitle": "No features yet",
+        "emptyDescription": "The backlog fills in as the daily reports find features worth building.",
+        "statuses": {
+          "open": "Open",
+          "built": "Built"
+        },
+        "audiences": {
+          "organizer": "Organizers",
+          "attendee": "Attendees",
+          "both": "Both"
+        },
+        "dimensions": {
+          "demand": "Demand",
+          "pain": "Pain",
+          "fit": "Fit",
+          "edge": "Edge",
+          "ease": "Ease"
+        },
+        "sorts": {
+          "score": "Best overall",
+          "demand": "Demand",
+          "pain": "Pain",
+          "fit": "Fit",
+          "edge": "Edge",
+          "ease": "Ease",
+          "complaints": "Most complaints",
+          "newest": "Newest"
+        }
       }
     },
     "outreach": {

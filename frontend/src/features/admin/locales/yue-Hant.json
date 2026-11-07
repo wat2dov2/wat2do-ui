@@ -549,7 +549,8 @@
       "tabs": {
         "label": "痛點檢視",
         "complaints": "投訴",
-        "reports": "每日報告"
+        "reports": "每日報告",
+        "features": "功能清單"
       },
       "reports": {
         "meta": "投訴：{{count}} · {{model}}",
@@ -564,6 +565,44 @@
         },
         "emptyTitle": "暫時未有報告",
         "emptyDescription": "每次每日搜尋搵到新投訴之後都會寫一份報告。"
+      },
+      "features": {
+        "title": "功能",
+        "feature": "功能",
+        "score": "總分",
+        "complaints": "投訴",
+        "lastSeen": "最近出現",
+        "sortBy": "排序方式",
+        "details": "詳情",
+        "dimensionsHelp": "每個功能按 1 到 5 評分：需求係有幾多人想要，痛點係問題有幾困擾，契合係有幾適合 wat2do，優勢係可以令 wat2do 有幾與眾不同，難易係工作量有幾少。總分係佢哋嘅總和，滿分 25。",
+        "emptyTitle": "仲未有功能",
+        "emptyDescription": "每日報告搵到值得做嘅功能之後，清單就會填滿。",
+        "statuses": {
+          "open": "待做",
+          "built": "已完成"
+        },
+        "audiences": {
+          "organizer": "搞手",
+          "attendee": "參加者",
+          "both": "兩者"
+        },
+        "dimensions": {
+          "demand": "需求",
+          "pain": "痛點",
+          "fit": "契合",
+          "edge": "優勢",
+          "ease": "難易"
+        },
+        "sorts": {
+          "score": "綜合最佳",
+          "demand": "需求",
+          "pain": "痛點",
+          "fit": "契合",
+          "edge": "優勢",
+          "ease": "難易",
+          "complaints": "投訴最多",
+          "newest": "最新"
+        }
       }
     },
     "outreach": {

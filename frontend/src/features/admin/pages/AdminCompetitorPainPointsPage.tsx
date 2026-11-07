@@ -13,6 +13,7 @@ import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { AdminTableFilters } from "@/features/admin/components/shared/AdminTableFilters";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { PainPointDailyReports } from "@/features/admin/components/painPoints/PainPointDailyReports";
+import { PainPointFeatures } from "@/features/admin/components/painPoints/PainPointFeatures";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -27,7 +28,7 @@ import painPoints from "../../../../../backend/controlbox/competitor_pain_points
 const AUDIENCES = ["organizer", "attendee", "other"] as const;
 const STATUSES = ["new", "seen", "dismissed"] as const;
 
-/** Complaints the Mac's Haiku sweep found about competitors, and Opus's daily reports on them; admins only read and triage. */
+/** The feature backlog Opus keeps from competitor complaints, the complaints the Mac's Haiku sweep found, and Opus's daily reports on them; admins only read and triage. */
 export function AdminCompetitorPainPointsPage() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -55,12 +56,14 @@ export function AdminCompetitorPainPointsPage() {
   return (
     <Stack gap={5}>
       <PageShellHeader route={ROUTES.ADMIN_PAIN_POINTS} />
-      <Tabs defaultValue="complaints">
+      <Tabs defaultValue="features">
         <Stack gap={5}>
           <TabsList aria-label={t("admin.painPoints.tabs.label")}>
+            <TabsTrigger value="features">{t("admin.painPoints.tabs.features")}</TabsTrigger>
             <TabsTrigger value="complaints">{t("admin.painPoints.tabs.complaints")}</TabsTrigger>
             <TabsTrigger value="reports">{t("admin.painPoints.tabs.reports")}</TabsTrigger>
           </TabsList>
+          <TabsContent value="features"><PainPointFeatures /></TabsContent>
           <TabsContent value="reports"><PainPointDailyReports /></TabsContent>
           <TabsContent value="complaints">
             <Stack gap={5}>

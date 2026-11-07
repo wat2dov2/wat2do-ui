@@ -549,7 +549,8 @@
       "tabs": {
         "label": "Visões de problemas",
         "complaints": "Reclamações",
-        "reports": "Relatórios diários"
+        "reports": "Relatórios diários",
+        "features": "Lista de funcionalidades"
       },
       "reports": {
         "meta": "Reclamações: {{count}} · {{model}}",
@@ -564,6 +565,44 @@
         },
         "emptyTitle": "Ainda não há relatórios",
         "emptyDescription": "Um relatório é escrito após cada busca diária que encontra novas reclamações."
+      },
+      "features": {
+        "title": "Funcionalidades",
+        "feature": "Funcionalidade",
+        "score": "Pontuação",
+        "complaints": "Reclamações",
+        "lastSeen": "Visto por último",
+        "sortBy": "Ordenar por",
+        "details": "Detalhes",
+        "dimensionsHelp": "Cada funcionalidade recebe nota de 1 a 5: demanda é quantas pessoas pedem, dor o quanto o problema incomoda, encaixe o quanto combina com a wat2do, vantagem o quanto diferencia a wat2do e facilidade o pouco trabalho que dá. A pontuação é a soma, de 25.",
+        "emptyTitle": "Nenhuma funcionalidade ainda",
+        "emptyDescription": "A lista se preenche conforme os relatórios diários encontram funcionalidades que valem a pena.",
+        "statuses": {
+          "open": "Aberta",
+          "built": "Feita"
+        },
+        "audiences": {
+          "organizer": "Organizadores",
+          "attendee": "Participantes",
+          "both": "Ambos"
+        },
+        "dimensions": {
+          "demand": "Demanda",
+          "pain": "Dor",
+          "fit": "Encaixe",
+          "edge": "Vantagem",
+          "ease": "Facilidade"
+        },
+        "sorts": {
+          "score": "Melhor pontuação",
+          "demand": "Demanda",
+          "pain": "Dor",
+          "fit": "Encaixe",
+          "edge": "Vantagem",
+          "ease": "Facilidade",
+          "complaints": "Mais reclamações",
+          "newest": "Mais recentes"
+        }
       }
     },
     "outreach": {

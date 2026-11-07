@@ -416,6 +416,7 @@ async fn admin_tools_and_webhooks_refuse_anonymous_callers() {
         (Method::PATCH, lead, Some(json!({"status": "contacted"}))),
         (Method::GET, "/competitor-pain-points/", None),
         (Method::GET, "/competitor-pain-points/reports", None),
+        (Method::GET, "/competitor-pain-points/features", None),
         (Method::PATCH, pain_point, Some(json!({"status": "seen"}))),
         (Method::GET, "/webhooks/automate/logs", None),
         (

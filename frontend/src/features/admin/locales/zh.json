@@ -549,7 +549,8 @@
       "tabs": {
         "label": "痛点视图",
         "complaints": "投诉",
-        "reports": "每日报告"
+        "reports": "每日报告",
+        "features": "功能清单"
       },
       "reports": {
         "meta": "投诉：{{count}} · {{model}}",
@@ -564,6 +565,44 @@
         },
         "emptyTitle": "暂无报告",
         "emptyDescription": "每次每日搜索发现新投诉后都会撰写一份报告。"
+      },
+      "features": {
+        "title": "功能",
+        "feature": "功能",
+        "score": "总分",
+        "complaints": "投诉",
+        "lastSeen": "最近出现",
+        "sortBy": "排序方式",
+        "details": "详情",
+        "dimensionsHelp": "每个功能按 1 到 5 打分：需求是有多少人想要，痛点是问题有多困扰人，契合是有多适合 wat2do，优势是能让 wat2do 多与众不同，难易是工作量有多小。总分是它们的和，满分 25。",
+        "emptyTitle": "还没有功能",
+        "emptyDescription": "每日报告找到值得做的功能后，清单就会填满。",
+        "statuses": {
+          "open": "待做",
+          "built": "已完成"
+        },
+        "audiences": {
+          "organizer": "组织者",
+          "attendee": "参与者",
+          "both": "两者"
+        },
+        "dimensions": {
+          "demand": "需求",
+          "pain": "痛点",
+          "fit": "契合",
+          "edge": "优势",
+          "ease": "难易"
+        },
+        "sorts": {
+          "score": "综合最佳",
+          "demand": "需求",
+          "pain": "痛点",
+          "fit": "契合",
+          "edge": "优势",
+          "ease": "难易",
+          "complaints": "投诉最多",
+          "newest": "最新"
+        }
       }
     },
     "outreach": {
