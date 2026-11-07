@@ -3,24 +3,23 @@
 The daily GitHub workflow (``jobs/snapshot_instagram_accounts.py``) is the one
 place outside the API that holds the token key, so it writes a follower
 snapshot per account per day and replaces each account's newest posts. The
-admin's social dashboard then reads every account at once from these tables.
+admin's social dashboard then reads every account at once from these tables
+(``rust/src/api/routes/instagram_publishing/accounts.rs``).
 """
 
 from __future__ import annotations
 
 import logging
-from collections import Counter, defaultdict
-from datetime import datetime, timedelta, timezone
+from collections import Counter
+from datetime import datetime, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from core.controlbox import controlbox
 from core.database import get_sb
-from core.pagination import fetch_all_pages
 from core.tables import (
     INSTAGRAM_ACCOUNT_MEDIA,
     INSTAGRAM_ACCOUNT_SNAPSHOTS,
-    INSTAGRAM_PUBLISH_BATCHES,
     INSTAGRAM_PUBLISHING_ACCOUNTS,
 )
 from services.instagram_publishing.credentials import load_account_credentials
@@ -107,96 +106,4 @@ def _media_row(account_key: str, item: dict[str, Any], now: datetime) -> dict[st
     }
 
 
-def list_account_stats(now_utc: datetime | None = None) -> list[dict[str, Any]]:
-    """Every connected account with its latest snapshot, follower history and newest posts."""
-    now = (now_utc or datetime.now(timezone.utc)).astimezone(timezone.utc)
-    history_start = now.astimezone(ZoneInfo(_CONTROL.generation_timezone)).date() - timedelta(
-        days=_CONTROL.stats_history_days - 1
-    )
-    accounts = (
-        get_sb()
-        .table(INSTAGRAM_PUBLISHING_ACCOUNTS)
-        .select("account_key,instagram_username,requires_reauthorization,expires_at")
-        .order("account_key")
-        .execute()
-    ).data or []
-    snapshots = _all_rows(
-        INSTAGRAM_ACCOUNT_SNAPSHOTS,
-        "*",
-        lambda query: query.gte("captured_on", history_start.isoformat()).order("captured_on"),
-    )
-    media = _all_rows(
-        INSTAGRAM_ACCOUNT_MEDIA,
-        "*",
-        lambda query: query.order("posted_at", desc=True).order("media_id"),
-    )
-    songs = _songs_by_media_id(media)
-
-    history: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for snapshot in snapshots:
-        history[snapshot["account_key"]].append(snapshot)
-    posts: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for item in media:
-        posts[item["account_key"]].append({**item, **songs.get(item["media_id"], {})})
-
-    result = []
-    for account in accounts:
-        key = account["account_key"]
-        days = history.get(key, [])
-        latest = days[-1] if days else {}
-        result.append(
-            {
-                "account_key": key,
-                "username": latest.get("username") or account["instagram_username"],
-                "name": latest.get("name"),
-                "profile_picture_url": latest.get("profile_picture_url"),
-                "followers_count": latest.get("followers_count"),
-                "follows_count": latest.get("follows_count"),
-                "media_count": latest.get("media_count"),
-                "captured_at": latest.get("captured_at"),
-                "requires_reauthorization": account["requires_reauthorization"],
-                "token_expires_at": account["expires_at"],
-                "followers_history": [
-                    {"captured_on": day["captured_on"], "followers_count": day["followers_count"]}
-                    for day in days
-                ],
-                "posts": posts.get(key, []),
-            }
-        )
-    return result
-
-
-def _songs_by_media_id(media: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
-    """The emulator's song outcome for each post wat2do published as a carousel."""
-    if not media:
-        return {}
-    oldest = min(item["posted_at"] for item in media)
-    batches = _all_rows(
-        INSTAGRAM_PUBLISH_BATCHES,
-        "meta_media_id,music_status,music_track",
-        lambda query: (
-            query.not_.is_("meta_media_id", "null").gte("published_at", oldest).order("id")
-        ),
-    )
-    return {
-        str(batch["meta_media_id"]): {
-            "music_status": batch.get("music_status"),
-            "music_track": batch.get("music_track"),
-        }
-        for batch in batches
-    }
-
-
-def _all_rows(table: str, columns: str, refine) -> list[dict[str, Any]]:
-    return fetch_all_pages(
-        lambda offset, limit: (
-            refine(get_sb().table(table).select(columns))
-            .range(offset, offset + limit - 1)
-            .execute()
-            .data
-            or []
-        )
-    )
-
-
-__all__ = ("list_account_stats", "snapshot_account", "snapshot_accounts")
+__all__ = ("snapshot_account", "snapshot_accounts")

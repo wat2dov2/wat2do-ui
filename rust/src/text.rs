@@ -33,6 +33,55 @@ pub fn python_strip(value: &str) -> &str {
     value.trim_matches(python_space)
 }
 
+/// `base64.urlsafe_b64decode`: `binascii.a2b_base64` without strict mode,
+/// as Python runs it. Characters outside the alphabet are skipped and
+/// decoding stops at complete padding; missing padding is an error.
+pub fn python_b64decode(text: &str) -> Option<Vec<u8>> {
+    let value = |byte: u8| match byte {
+        b'A'..=b'Z' => Some(byte - b'A'),
+        b'a'..=b'z' => Some(byte - b'a' + 26),
+        b'0'..=b'9' => Some(byte - b'0' + 52),
+        b'+' | b'-' => Some(62),
+        b'/' | b'_' => Some(63),
+        _ => None,
+    };
+    let (mut out, mut quad, mut pads, mut left) = (Vec::new(), 0, 0, 0u32);
+    for byte in text.bytes() {
+        if byte == b'=' {
+            if quad >= 2 {
+                pads += 1;
+                if quad + pads >= 4 {
+                    return Some(out);
+                }
+            }
+            continue;
+        }
+        let Some(bits) = value(byte) else { continue };
+        let bits = u32::from(bits);
+        pads = 0;
+        match quad {
+            0 => left = bits,
+            1 => {
+                out.push(((left << 2) | (bits >> 4)) as u8);
+                left = bits & 0x0f;
+            }
+            2 => {
+                out.push(((left << 4) | (bits >> 2)) as u8);
+                left = bits & 0x03;
+            }
+            _ => out.push(((left << 6) | bits) as u8),
+        }
+        quad = (quad + 1) % 4;
+    }
+    (quad == 0).then_some(out)
+}
+
+/// `urlsafe_b64decode(value + "=" * (-len(value) % 4))`: our unpadded tokens.
+pub fn python_b64decode_repadded(value: &str) -> Option<Vec<u8>> {
+    let padding = (4 - value.chars().count() % 4) % 4;
+    python_b64decode(&format!("{value}{}", "=".repeat(padding)))
+}
+
 /// Python's `str.casefold()` (full Unicode case folding).
 pub fn casefold(value: &str) -> String {
     caseless::default_case_fold_str(value)

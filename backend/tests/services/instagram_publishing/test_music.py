@@ -1,13 +1,9 @@
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import Mock
-from uuid import uuid4
 
 import pytest
-from pydantic import ValidationError as PydanticValidationError
 
-from core.exceptions import ConflictError, NotFoundError
-from schemas.instagram_publishing import InstagramSongCreate
 from services.instagram_emulator.audio import AddedTrack, SongNotFound
 from services.instagram_publishing import music
 
@@ -155,30 +151,6 @@ def test_the_track_picker_sees_the_song_and_the_tracks(monkeypatch):
     assert seen["tracks"] == '["After Hours by The Weeknd,6:01"]'
 
 
-def test_songs_are_added_once_regardless_of_case(database):
-    with pytest.raises(ConflictError):
-        music.add_song("  The Weeknd   AFTER hours ")
-    database.tables["instagram_songs"] = [{"id": str(uuid4()), "query": "sza snooze"}]
-    music.add_song("sza  saturn")
-    assert (
-        "insert",
-        ({"query": "sza saturn", "asian_campuses_only": False},),
-        {},
-    ) in database.calls
-
-
-def test_deleting_a_missing_song_is_not_found(database):
-    database.tables["instagram_songs"] = []
-    with pytest.raises(NotFoundError):
-        music.delete_song(uuid4())
-
-
-@pytest.mark.parametrize("query", ["", "   ", "x" * 201])
-def test_blank_or_long_songs_are_rejected(query):
-    with pytest.raises(PydanticValidationError):
-        InstagramSongCreate(query=query)
-
-
 def _tried_songs(monkeypatch, database, school):
     database.tables["instagram_songs"] = [
         {"query": "the weeknd after hours", "asian_campuses_only": False},
@@ -212,13 +184,6 @@ def test_a_campus_with_no_playable_song_is_left_pending(monkeypatch, database):
     monkeypatch.setattr(music, "finish_post", Mock(side_effect=AssertionError("no song to try")))
     assert music.finish_due(DEVICE, "uwaterloo", NOW) == {}
     assert _updates(database.calls) == []
-
-
-def test_a_song_is_stored_with_its_asian_campus_flag(database):
-    database.tables["instagram_songs"] = [{"query": "bts spring day", "asian_campuses_only": True}]
-    music.add_song("twice  doughnut", asian_campuses_only=True)
-    inserted = [args[0] for name, args, _ in database.calls if name == "insert"]
-    assert inserted == [{"query": "twice doughnut", "asian_campuses_only": True}]
 
 
 def test_only_the_first_try_comments_a_gif(monkeypatch, database):

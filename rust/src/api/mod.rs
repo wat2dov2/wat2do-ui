@@ -217,6 +217,40 @@ fn rust_routes() -> OpenApiRouter<AppState> {
         ))
         .routes(routes!(routes::ingestion_latency::get_ingestion_latency))
         .routes(routes!(routes::meta::get_constants))
+        // routers/instagram_publishing.py
+        .routes(routes!(
+            routes::instagram_publishing::list_instagram_publish_batches
+        ))
+        .routes(routes!(
+            routes::instagram_publishing::get_instagram_publish_batch,
+            routes::instagram_publishing::update_instagram_publish_batch
+        ))
+        .routes(routes!(
+            routes::instagram_publishing::publish_instagram_batch
+        ))
+        .routes(routes!(
+            routes::instagram_publishing::list_instagram_songs,
+            routes::instagram_publishing::add_instagram_song
+        ))
+        .routes(routes!(routes::instagram_publishing::delete_instagram_song))
+        .routes(routes!(
+            routes::instagram_publishing::list_instagram_account_stats
+        ))
+        .routes(routes!(
+            routes::instagram_publishing::list_follow_candidates
+        ))
+        .routes(routes!(
+            routes::instagram_publishing::submit_follow_decisions
+        ))
+        // routers/notification_preferences.py
+        .routes(routes!(
+            routes::notification_preferences::get_my_preferences,
+            routes::notification_preferences::update_my_preferences
+        ))
+        .routes(routes!(
+            routes::notification_preferences::confirm_unsubscribe,
+            routes::notification_preferences::apply_unsubscribe
+        ))
         // routers/payouts.py
         .routes(routes!(routes::payouts::list_own_payouts))
         .routes(routes!(routes::payouts::list_admin_payouts))
@@ -352,6 +386,8 @@ pub fn openapi_json() -> anyhow::Result<String> {
         "paths": document["paths"],
         "components": {
             "schemas": document["components"]["schemas"].as_object().cloned().unwrap_or_default(),
+            // FastAPI's `HTTPBearer`, which the contracts' `security` entries name.
+            "securitySchemes": {"HTTPBearer": {"type": "http", "scheme": "bearer"}},
         },
     });
     contract::apply(&mut fragment);

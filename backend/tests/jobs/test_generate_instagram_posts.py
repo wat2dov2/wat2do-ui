@@ -48,6 +48,16 @@ def test_curate_command_reports_outcomes(monkeypatch, capsys, outcomes, code):
     assert json.loads(capsys.readouterr().out) == outcomes
 
 
+def test_publish_batch_command_posts_the_claimed_batch(monkeypatch, capsys):
+    # The API's Publish button starts this after it claims the batch.
+    monkeypatch.setattr(sys, "argv", ["job", "publish-batch", "batch-1"])
+    publish = Mock(return_value="failed")
+    monkeypatch.setattr(job, "publish_batch", publish)
+    assert job.main() == 0
+    publish.assert_called_once_with("batch-1")
+    assert json.loads(capsys.readouterr().out) == {"status": "failed"}
+
+
 def test_launch_agent_runs_curate_daily_without_logs():
     payload = job.launch_agent_payload()
     assert payload["ProgramArguments"][-1] == "curate"

@@ -1,6 +1,7 @@
 """Songs for published carousels, added on the Mac from the Instagram app.
 
-Admins keep a list of songs, typed loosely. Some minutes after a carousel
+Admins keep a list of songs, typed loosely, through the API
+(``rust/src/api/routes/instagram_publishing/songs.rs``). Some minutes after a carousel
 publishes, the emulator worker visits its school's account and ``finish_due`` opens
 the live post, likes and reposts it, and tries the songs in random order: Instagram's
 music search finds candidates and Claude Haiku picks the track the admin meant, or none
@@ -22,7 +23,6 @@ from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
-from uuid import UUID
 
 from core.constants import (
     INSTAGRAM_BATCH_PUBLISHED,
@@ -32,11 +32,6 @@ from core.constants import (
 )
 from core.controlbox import controlbox
 from core.database import get_sb
-from core.errors import (
-    INSTAGRAM_SONG_EXISTS,
-    INSTAGRAM_SONG_NOT_FOUND,
-)
-from core.exceptions import ConflictError, NotFoundError
 from core.tables import INSTAGRAM_PUBLISH_BATCHES, INSTAGRAM_PUBLISH_ITEMS, INSTAGRAM_SONGS
 from services import school_service
 from services.claude_code import ClaudeCodeError, run_agent
@@ -71,25 +66,6 @@ ANSWER_SCHEMA: dict[str, Any] = {
 def list_songs() -> list[dict[str, Any]]:
     response = get_sb().table(INSTAGRAM_SONGS).select("*").order("created_at", desc=True).execute()
     return response.data or []
-
-
-def add_song(query: str, *, asian_campuses_only: bool = False) -> dict[str, Any]:
-    query = " ".join(query.split())
-    if any(song["query"].casefold() == query.casefold() for song in list_songs()):
-        raise ConflictError(INSTAGRAM_SONG_EXISTS)
-    response = (
-        get_sb()
-        .table(INSTAGRAM_SONGS)
-        .insert({"query": query, "asian_campuses_only": asian_campuses_only})
-        .execute()
-    )
-    return response.data[0]
-
-
-def delete_song(song_id: UUID) -> None:
-    response = get_sb().table(INSTAGRAM_SONGS).delete().eq("id", str(song_id)).execute()
-    if not response.data:
-        raise NotFoundError(INSTAGRAM_SONG_NOT_FOUND)
 
 
 def schools_due(now: datetime | None = None) -> list[str]:

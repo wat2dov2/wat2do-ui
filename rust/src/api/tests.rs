@@ -502,3 +502,119 @@ async fn calendar_paths_without_the_ics_suffix_go_to_python() {
     let reply = send(state(None), get("/calendar/feed/a%2Fb.ics"), "testclient").await;
     assert!(!reply.rust);
 }
+
+#[tokio::test]
+async fn instagram_publishing_and_preference_routes_need_a_signed_in_user() {
+    // tests/routers/test_follow_candidates.py, test_instagram_account_stats.py,
+    // test_notification_preferences.py: anonymous callers get 401.
+    let batch = "/instagram-publishing/batches/00000000-0000-0000-0000-000000000001";
+    for (method, path, body) in [
+        (Method::GET, "/instagram-publishing/batches/", None),
+        (Method::GET, batch, None),
+        (
+            Method::PATCH,
+            batch,
+            Some(json!({"version": 1, "event_ids": [1]})),
+        ),
+        (
+            Method::POST,
+            "/instagram-publishing/batches/00000000-0000-0000-0000-000000000001/publish",
+            Some(json!({"version": 1})),
+        ),
+        (Method::GET, "/instagram-publishing/songs/", None),
+        (
+            Method::POST,
+            "/instagram-publishing/songs/",
+            Some(json!({"query": "sza saturn"})),
+        ),
+        (
+            Method::DELETE,
+            "/instagram-publishing/songs/00000000-0000-0000-0000-000000000001",
+            None,
+        ),
+        (Method::GET, "/instagram-publishing/accounts/", None),
+        (
+            Method::GET,
+            "/instagram-publishing/follow-candidates/",
+            None,
+        ),
+        (
+            Method::POST,
+            "/instagram-publishing/follow-candidates/decisions",
+            Some(json!({"decisions": []})),
+        ),
+        (Method::GET, "/notification-preferences", None),
+        (
+            Method::PATCH,
+            "/notification-preferences",
+            Some(json!({"preferences": []})),
+        ),
+    ] {
+        let reply = send(
+            state(None),
+            request(method.clone(), path, body),
+            "testclient",
+        )
+        .await;
+        assert_eq!(reply.status, StatusCode::UNAUTHORIZED, "{method} {path}");
+        assert!(reply.rust, "{method} {path}");
+    }
+    // FastAPI reads a JSON body before it checks who is asking.
+    let mut malformed = request(Method::POST, "/instagram-publishing/songs/", None);
+    malformed
+        .headers_mut()
+        .insert(header::CONTENT_TYPE, "application/json".parse().unwrap());
+    *malformed.body_mut() = Body::from("{");
+    let reply = send(state(None), malformed, "testclient").await;
+    assert_eq!(reply.status, StatusCode::UNPROCESSABLE_ENTITY);
+    // `/songs/` registered GET before POST, and Starlette names the first route's methods.
+    let reply = send(
+        state(None),
+        request(Method::PUT, "/instagram-publishing/songs/", None),
+        "testclient",
+    )
+    .await;
+    assert_eq!(reply.headers[header::ALLOW], "GET");
+}
+
+#[tokio::test]
+async fn unsubscribe_pages_need_no_sign_in() {
+    // test_unsubscribe_confirmation_posts_token_in_query, for a token we did not sign.
+    let reply = send(
+        state(None),
+        get("/notification-preferences/unsubscribe?token=signed-token"),
+        "testclient",
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK);
+    assert_eq!(
+        reply.headers[header::CONTENT_TYPE],
+        "text/html; charset=utf-8"
+    );
+    let page = String::from_utf8(reply.body).unwrap();
+    assert!(page.contains("This unsubscribe link is invalid."));
+    let reply = send(
+        state(None),
+        request(
+            Method::POST,
+            "/notification-preferences/unsubscribe?token=signed-token",
+            None,
+        ),
+        "testclient",
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK);
+    let page = String::from_utf8(reply.body).unwrap();
+    assert!(page.contains("If the link was valid"));
+    let reply = send(
+        state(None),
+        get("/notification-preferences/unsubscribe"),
+        "testclient",
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(
+        serde_json::from_slice::<Value>(&reply.body).unwrap()["detail"][0]["loc"],
+        json!(["query", "token"])
+    );
+}

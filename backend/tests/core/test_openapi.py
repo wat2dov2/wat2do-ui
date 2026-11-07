@@ -78,6 +78,10 @@ def test_schema_includes_rust_routes(client):
     assert banner["operationId"] == "get_site_banner_endpoint_site_banner_get"
     assert "SiteBannerResponse" in schema["components"]["schemas"]
     assert "/events/" in schema["paths"]
+    # Every route is Rust now, and their `security` entries still resolve.
+    assert schema["components"]["securitySchemes"] == {
+        "HTTPBearer": {"type": "http", "scheme": "bearer"}
+    }
 
 
 def _schema(paths, schemas=None):

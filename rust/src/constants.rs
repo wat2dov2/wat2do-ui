@@ -82,6 +82,12 @@ pub const MAX_IMAGE_SIZE_BYTES: usize = 5 * 1024 * 1024;
 pub const NOTIFICATION_TYPE_MORNING_EMAIL: &str = "morning_email";
 pub const NOTIFICATION_TYPE_EVENT_REMINDER: &str = "event_reminder";
 pub const NOTIFICATION_TYPE_EVENT_CHANGE: &str = "event_change";
+/// `NOTIFICATION_TYPES`, in order: one settings toggle each.
+pub const NOTIFICATION_TYPES: [&str; 3] = [
+    NOTIFICATION_TYPE_MORNING_EMAIL,
+    NOTIFICATION_TYPE_EVENT_REMINDER,
+    NOTIFICATION_TYPE_EVENT_CHANGE,
+];
 pub const NOTIFICATION_STATUS_SENT: &str = "sent";
 pub const NOTIFICATION_STATUS_FAILED: &str = "failed";
 

@@ -41,7 +41,7 @@ def _captured(python_path: str, rust_path: str) -> bool:
 
 
 def merge_rust_routes(schema: dict[str, Any], rust: dict[str, Any]) -> dict[str, Any]:
-    """Return *schema* with the Rust routes' paths and component schemas added."""
+    """Return *schema* with the Rust routes' paths, component schemas and security schemes added."""
     paths = dict(schema.get("paths", {}))
     for rust_path in rust["paths"]:
         captured = [path for path in paths if _captured(path, rust_path)]
@@ -52,13 +52,16 @@ def merge_rust_routes(schema: dict[str, Any], rust: dict[str, Any]) -> dict[str,
             )
     paths.update(rust["paths"])
     components = dict(schema.get("components", {}))
-    schemas = dict(components.get("schemas", {}))
-    for name, definition in rust.get("components", {}).get("schemas", {}).items():
-        if name in schemas and schemas[name] != definition:
-            raise RuntimeError(f"Schema {name} is defined differently by FastAPI and Rust")
-        schemas[name] = definition
-    if schemas:
-        components["schemas"] = schemas
+    # The Rust routes' `security` entries name HTTPBearer, which FastAPI only
+    # describes while one of its own routes needs a signed-in user.
+    for section in ("schemas", "securitySchemes"):
+        merged = dict(components.get(section, {}))
+        for name, definition in rust.get("components", {}).get(section, {}).items():
+            if name in merged and merged[name] != definition:
+                raise RuntimeError(f"Schema {name} is defined differently by FastAPI and Rust")
+            merged[name] = definition
+        if merged:
+            components[section] = merged
     return {**schema, "paths": paths, "components": components}
 
 

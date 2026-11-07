@@ -34,6 +34,7 @@ use crate::api::validation::{Length, QueryParams, Validator};
 use crate::constants::MAX_URL_LENGTH;
 use crate::controlbox::{AUTHENTICATION, RATE_LIMITS};
 use crate::settings::Settings;
+use crate::text::python_b64decode;
 use crate::urls::{Split, unquote_fully, urlencode, urlparse};
 use session::{SignedIn, TokenResponse};
 
@@ -238,49 +239,6 @@ fn encode_state(state: &OAuthState) -> String {
         ascii_json(&state.callback_url),
     );
     URL_SAFE.encode(raw)
-}
-
-/// `binascii.a2b_base64` without strict mode, as `urlsafe_b64decode` uses
-/// it: characters outside the alphabet are skipped and decoding stops at
-/// complete padding.
-fn python_b64decode(text: &str) -> Option<Vec<u8>> {
-    let value = |byte: u8| match byte {
-        b'A'..=b'Z' => Some(byte - b'A'),
-        b'a'..=b'z' => Some(byte - b'a' + 26),
-        b'0'..=b'9' => Some(byte - b'0' + 52),
-        b'+' | b'-' => Some(62),
-        b'/' | b'_' => Some(63),
-        _ => None,
-    };
-    let (mut out, mut quad, mut pads, mut left) = (Vec::new(), 0, 0, 0u32);
-    for byte in text.bytes() {
-        if byte == b'=' {
-            if quad >= 2 {
-                pads += 1;
-                if quad + pads >= 4 {
-                    return Some(out);
-                }
-            }
-            continue;
-        }
-        let Some(bits) = value(byte) else { continue };
-        let bits = u32::from(bits);
-        pads = 0;
-        match quad {
-            0 => left = bits,
-            1 => {
-                out.push(((left << 2) | (bits >> 4)) as u8);
-                left = bits & 0x0f;
-            }
-            2 => {
-                out.push(((left << 4) | (bits >> 2)) as u8);
-                left = bits & 0x03;
-            }
-            _ => out.push(((left << 6) | bits) as u8),
-        }
-        quad = (quad + 1) % 4;
-    }
-    (quad == 0).then_some(out)
 }
 
 /// The return path a state cookie carries, checked again before it reaches

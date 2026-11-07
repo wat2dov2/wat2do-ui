@@ -35,6 +35,8 @@ pub struct Settings {
     pub email_delivery_enabled: bool,
     pub email_from: String,
     pub email_unsubscribe_secret: String,
+    /// Decrypts the stored Instagram publishing tokens (a Fernet key).
+    pub instagram_token_encryption_key: String,
     /// Exact origins the API answers cross-origin requests from.
     pub cors_origins: Vec<String>,
     /// Trusted dynamic origins (school subdomains), matched in full.
@@ -134,6 +136,7 @@ impl Settings {
             email_from: or_default("EMAIL_FROM", "wat2do <notifications@wat2do.io>"),
             // Untrimmed, like Python: the signing key must match the API's byte for byte.
             email_unsubscribe_secret: lookup("EMAIL_UNSUBSCRIBE_SECRET").unwrap_or_default(),
+            instagram_token_encryption_key: optional("INSTAGRAM_TOKEN_ENCRYPTION_KEY"),
             cors_origins: list("CORS_ORIGINS", DEFAULT_CORS_ORIGINS)?,
             cors_origin_regex,
             cookie_domain: optional("COOKIE_DOMAIN"),

@@ -14,32 +14,6 @@ pub const REFUND_NOTE_MAX_LENGTH: usize = 500;
 /// The most tickets any one request names, before the controlbox's own limit.
 const QUANTITY_LIMIT: i64 = 20;
 
-fn required_int(body: &mut Body, name: &'static str, limits: Limits) -> Option<i64> {
-    if body.has_field(name) {
-        body.int_or(name, 0, limits)
-    } else {
-        body.missing(name);
-        None
-    }
-}
-
-/// A required, non-null boolean.
-fn required_bool(body: &mut Body, name: &'static str) -> Option<bool> {
-    match body.bool(name) {
-        Input::Given(flag) => Some(flag),
-        Input::Null => {
-            body.type_error(name, "bool_type", "Input should be a valid boolean");
-            None
-        }
-        Input::Missing => {
-            if !body.has_field(name) {
-                body.missing(name);
-            }
-            None
-        }
-    }
-}
-
 /// An `int | None` field: null or missing reads as `None`.
 fn optional_int(body: &mut Body, name: &'static str, limits: Limits) -> Option<i64> {
     match body.raw_copy(name) {
@@ -54,9 +28,9 @@ fn optional_int(body: &mut Body, name: &'static str, limits: Limits) -> Option<i
 /// `EventTicketingUpdate`.
 pub fn ticketing(mut body: Body) -> Result<TicketingInput, ApiError> {
     let limit = i64::from(i32::MAX);
-    let price_cents = required_int(&mut body, "price_cents", Limits::default().ge(0).le(limit));
+    let price_cents = body.required_int("price_cents", Limits::default().ge(0).le(limit));
     let capacity = optional_int(&mut body, "capacity", Limits::default().gt(0).le(limit));
-    let paused = required_bool(&mut body, "paused");
+    let paused = body.required_bool("paused");
     body.finish().map(|()| TicketingInput {
         price_cents: price_cents.unwrap_or_default() as i32,
         capacity: capacity.map(|capacity| capacity as i32),
@@ -73,11 +47,7 @@ pub fn free_ticket(mut body: Body) -> Result<Uuid, ApiError> {
 /// `TicketCheckoutCreate`: the date and how many tickets.
 pub fn checkout(mut body: Body) -> Result<(Uuid, i32), ApiError> {
     let date = body.required_uuid("event_date_id");
-    let quantity = required_int(
-        &mut body,
-        "quantity",
-        Limits::default().ge(1).le(QUANTITY_LIMIT),
-    );
+    let quantity = body.required_int("quantity", Limits::default().ge(1).le(QUANTITY_LIMIT));
     body.finish().map(|()| {
         (
             date.unwrap_or_default(),
@@ -88,7 +58,7 @@ pub fn checkout(mut body: Body) -> Result<(Uuid, i32), ApiError> {
 
 /// `TicketCheckInUpdate`: admit, or undo an admission.
 pub fn check_in(mut body: Body) -> Result<bool, ApiError> {
-    let checked_in = required_bool(&mut body, "checked_in");
+    let checked_in = body.required_bool("checked_in");
     body.finish().map(|()| checked_in.unwrap_or_default())
 }
 

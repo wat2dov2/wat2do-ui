@@ -813,7 +813,7 @@ Do not deploy a nullable compatibility period or dual Going API.
 - `backend/schemas/notification_preference.py`
 - `backend/routers/events.py`, since ported to Rust (`rust/src/api`)
 - `backend/routers/going_events.py`, since ported to Rust (`rust/src/api`)
-- `backend/routers/notification_preferences.py`
+- `backend/routers/notification_preferences.py`, since ported to Rust (`rust/src/api`)
 - `backend/services/event_date_service.py`
 - `backend/services/event_service.py`
 - `backend/services/going_event_service.py`, deleted
