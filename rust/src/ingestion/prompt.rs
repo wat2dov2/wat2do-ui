@@ -7,7 +7,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::constants::EVENT_CATEGORIES;
-use crate::schools::{School, building_code_prompt, campus_season_prompt};
+use crate::schools::{School, building_code_prompt, campus_season_prompt, lists_university_events};
 
 const PROMPT: &str = include_str!("../../../backend/services/ingestion/prompt.md");
 
@@ -152,6 +152,10 @@ pub fn render(source: &Source) -> String {
         ("ingestion_source", ingestion_source.to_owned()),
         ("school", source.school.slug.clone()),
         ("school_name", source.school.name.clone()),
+        (
+            "lists_university_events",
+            lists_university_events(&source.school.slug).to_owned(),
+        ),
         ("school_id", source.school.id.to_string()),
         ("timezone", timezone.name().to_owned()),
         ("today", now.format("%A %Y-%m-%d").to_string()),

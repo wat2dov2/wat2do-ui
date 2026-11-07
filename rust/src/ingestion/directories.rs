@@ -202,6 +202,10 @@ pub async fn prepare(pool: &PgPool, source: &Source, now: DateTime<Utc>) -> Resu
     let prompt = render_prompt(&[
         ("name", source.name.clone()),
         ("school", source.school.clone()),
+        (
+            "lists_university_events",
+            schools::lists_university_events(&source.school).to_owned(),
+        ),
         ("listing_url", source.url.clone()),
         ("listing_file", listing_file.clone()),
         ("today", local_now.format("%A %Y-%m-%d").to_string()),
@@ -791,6 +795,7 @@ mod tests {
         let prompt = render_prompt(&[
             ("name", "Penn Clubs".into()),
             ("school", "upenn".into()),
+            ("lists_university_events", "no".into()),
             ("listing_url", LISTING_URL.into()),
             ("listing_file", "listing.html".into()),
             ("today", "Monday 2026-11-02".into()),

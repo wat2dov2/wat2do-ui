@@ -58,6 +58,7 @@ A handle is read again only after `club_logo_retry_days`, and a refused read pau
 Haiku directory agents, not code-based parsers, read the official school directories and queue finished event details; the same binary runs them (`wat2do-ingest scrape-directories`, LaunchAgent `io.wat2do.ingestion.directories`, installed with the processor by `wat2do-ingest install-schedule`).
 wat2do lists only student-led clubs, events and positions (clubs, societies, student unions and governments, student media and groups) plus varsity teams and their games.
 Anything the university itself runs (departments, faculties, offices, services, centres, libraries, alumni, admissions, the university's own accounts) is never listed or followed: the directory prompt, the ingestion prompt and the follow scoring prompt each leave it out.
+The one exception is the schools in `controlbox/ingestion.json` `university_event_schools` (OCAD University, whose clubs post too few events): there the university's own events students can attend are listed and its accounts followed too, through each prompt's `{{lists_university_events}}`.
 The earlier fixed pipeline (`services/scraper/pipeline.py`, `reconciler.py`, candidate matching in `dedup.py`, and the event and position writers) is vestigial and kept on purpose; do not delete it.
 
 When Instagram collapses a notification into "account posted and N others", the

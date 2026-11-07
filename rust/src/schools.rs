@@ -9,7 +9,7 @@ use chrono_tz::Tz;
 use sqlx::PgPool;
 use url::Url;
 
-use crate::controlbox::EVENT_DISCOVERY;
+use crate::controlbox::{EVENT_DISCOVERY, INGESTION};
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct School {
@@ -154,6 +154,20 @@ impl School {
         let (start, end) = (self.semester_start?, self.semester_end?);
         let today = now.with_timezone(&self.tz()).date_naive();
         (start <= today && today <= end).then(|| format!("{}T235959Z", end.format("%Y%m%d")))
+    }
+}
+
+/// `lists_university_events`: "yes" when the school's listings also carry the events the
+/// university itself runs (`ingestion.json` `university_event_schools`), otherwise "no".
+pub fn lists_university_events(slug: &str) -> &'static str {
+    if INGESTION
+        .university_event_schools
+        .iter()
+        .any(|school| school == slug)
+    {
+        "yes"
+    } else {
+        "no"
     }
 }
 

@@ -60,6 +60,9 @@ Read the text and every image, then decide which of these it is (it can be sever
 6. Not student-led: wat2do lists only events and positions run by students (clubs, societies, student unions and governments, student media and other student groups) and varsity games.
    An event or position run by the university itself (a department, faculty, office, service, library, centre, institute, residence administration, alumni, admissions or the university's own account) is not listed, whoever posted it, unless it is a varsity game.
    Then change nothing for it.
+   Whether {{school_name}} also lists the university's own events: {{lists_university_events}}.
+   When that is yes, the university's events are listed too: exhibitions and openings, artist and guest talks, lectures, workshops, screenings, open studios, performances, festivals and info sessions, whenever current students can attend.
+   Even then, leave out events only for staff, faculty, prospective students, applicants, alumni or donors, governance and administration, deadlines, and ongoing services such as office hours, tutoring, advising or counselling.
 
 ## Step 2: Look at what is already listed
 
@@ -163,7 +166,7 @@ Columns:
   - A named club, society or group registered at this school (find it with `clubs.club_name ILIKE` or its Instagram handle): use that club's `club_id`, name and `ig`.
   - A student-union or general campus-life event with no more specific registered club: use the publishing club shown above.
   - A varsity game: attribute it to the team's or athletics' registered club, otherwise to the university itself, with `club_id` NULL, `ig_handle` NULL, and `club` set to '{{school_name}}'.
-  - Anything run by the university itself is not student-led and is never listed (see Step 1). Never put a department or office name in `club`, and never create a club for it.
+  - Anything run by the university itself is not student-led and is never listed (see Step 1), unless this school also lists the university's own events: then attribute it to the university itself, with `club_id` NULL, `ig_handle` NULL, and `club` set to '{{school_name}}'. Never put a department or office name in `club`, and never create a club for it.
 - `cohost_club_ids`: `clubs.id` values of other registered co-hosting clubs at this school (default `'{}'`).
 - `school_id`: {{school_id}}, unless a co-hosting club belongs to another school (see below).
 - `source_url`: always exactly `{{source_url}}` for rows you create.
