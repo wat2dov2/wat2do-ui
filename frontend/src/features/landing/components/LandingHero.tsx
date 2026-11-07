@@ -65,7 +65,6 @@ export function LandingHero({ schoolName, events, isLoading }: LandingHeroProps)
         size="display"
         face={
           <EventPixelMosaic
-            variant="logo"
             logoRegion={logoRegion}
             title={{ lead, phrases, region: titleRegion, onLayout: setTitleHeight }}
           />

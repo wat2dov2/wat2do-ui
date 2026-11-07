@@ -603,49 +603,6 @@
         "positionsLabel_other": "모집 중인 동아리 자리"
       }
     },
-    "different": {
-      "title": "그럼 다른 이벤트 사이트와 무엇이 다른 걸까요?",
-      "description": "다른 사이트는 조직이 이벤트를 등록해 주길 기다려요. 나머지는 봇을 차단하는 Instagram 안에 갇혀 있어요. 그래도 Wat2Do는 꺼내 와요.",
-      "points": {
-        "relay": {
-          "cost": "수백 시간"
-        },
-        "alwaysOn": {
-          "title": "잠들지 않는 Mac mini",
-          "description": "저희가 구입한 M4 Mac mini가 표시된 게시물을 하나하나 익명으로 열어 데이터로 바꿔요. 24시간 내내요.",
-          "cost": "$899"
-        },
-        "claude": {
-          "title": "Claude가 모든 포스터를 읽어요",
-          "description": "Claude Haiku가 안전장치를 갖추고 포스터를 이벤트로 바꿔요. 지어내는 건 없고, 중복은 확인하고, 데이터베이스 계정은 이벤트 테이블에만 묶여 있어요.",
-          "cost": "$200 / 월"
-        },
-        "cloud": {
-          "title": "모든 학교를 위해 온라인",
-          "description": "AWS가 백업과 함께 피드를 호스팅해서, 버그 하나로 실제 학생들이 불편을 겪는 일은 없어요.",
-          "cost": "$100 / 월"
-        }
-      },
-      "costNote": "이 비용은 University of Waterloo의 학생 임팩트 어워드와 장학금으로 충당해요. 학생 생활을 더 좋게 만들기 위한 지원금이라, Wat2Do는 모든 학생에게 계속 무료예요.",
-      "diagramLabel": "조직의 Instagram 게시물이 Wat2Do 이벤트가 되는 과정: 조직 계정이 가려진 단계에 알림을 보내고, 항상 켜진 Mac mini의 브라우저 워커와 게시물 수집기가 게시물을 읽고, 안전장치를 갖춘 Claude 에이전트가 이를 이벤트로 만들고, 검문 단계를 통과하면 내 피드 뒤의 접근이 제한된 이벤트 데이터베이스에 들어갑니다. 문제가 생기면 Mac mini가 개인 휴대폰을 호출하고, 저희가 노트북으로 고칩니다.",
-      "diagram": {
-        "zoneInstagram": "Instagram",
-        "zoneMac": "Mac mini · 항상 켜짐",
-        "zoneWat2do": "Wat2Do",
-        "accounts": "조직 계정",
-        "browser": "브라우저 워커",
-        "fetcher": "익명 수집기",
-        "agents": "Claude 에이전트",
-        "database": "이벤트 데이터베이스",
-        "feed": "내 피드",
-        "guardrails": "안전장치",
-        "zoneOnCall": "당직",
-        "laptop": "저희 개인 노트북",
-        "laptopNote": "(Mac mini 원격 제어)",
-        "pager": "개인 휴대폰"
-      },
-      "redacted": "가려짐"
-    },
     "useCases": {
       "title": "캠퍼스 생활, 내 방식대로",
       "description": "{{school}} 학생들이 Wat2Do를 활용하는 여섯 가지 방법.",
@@ -687,10 +644,6 @@
         "title": "한 번 탭하면 무료 음식",
         "description": "무료 음식, 캠퍼스 채용 행사, 대회를 빠르게 필터링하세요. 날짜, 가격, 조직, 위치로 더 좁힐 수도 있어요."
       },
-      "reminders": {
-        "title": "가기로 한 걸 잊을 일 없게",
-        "description": "'참여 예정'을 누르면 Wat2Do가 시작 약 1시간 전에 이메일을 보내 드려요. 이벤트를 Google Calendar나 iCal에 저장하거나, 그날의 이벤트를 담은 오전 9시 이메일을 켤 수도 있어요."
-      },
       "clubs": {
         "title": "몰랐던 조직을 찾아보세요",
         "description": "{{school}}의 모든 조직을 둘러보고, 마음에 드는 곳을 팔로우하고, 참여하고 싶을 땐 모집 중인 자리도 찾아보세요."
@@ -724,7 +677,6 @@
     },
     "closing": {
       "title": "이제 다음 날 알게 되는 일은 그만.",
-      "description": "{{school}}에서 열리는 모든 걸 한곳에서 확인하세요.",
       "action": "지금 뭐 하는지 보기"
     }
   },

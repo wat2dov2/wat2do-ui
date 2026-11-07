@@ -603,49 +603,6 @@
         "positionsLabel_other": "社团正在招募的职位"
       }
     },
-    "different": {
-      "title": "那么它和其他活动网站有什么不同？",
-      "description": "其他网站都在等组织提交活动。其余的活动被锁在会封禁机器人的 Instagram 里。Wat2Do 照样能把它们找出来。",
-      "points": {
-        "relay": {
-          "cost": "数百小时"
-        },
-        "alwaysOn": {
-          "title": "一台从不休眠的 Mac mini",
-          "description": "我们购买的一台 M4 Mac mini 全天候以匿名方式打开每条被标记的帖子，并把它变成数据。",
-          "cost": "$899"
-        },
-        "claude": {
-          "title": "Claude 读懂每张海报",
-          "description": "Claude Haiku 在防护下把海报变成活动：不编造、查重复，数据库账号只能访问活动数据表。",
-          "cost": "$200 / 月"
-        },
-        "cloud": {
-          "title": "每所学校都在线",
-          "description": "AWS 托管信息流并有备份，任何 bug 都不会坏了真实学生的体验。",
-          "cost": "$100 / 月"
-        }
-      },
-      "costNote": "这些费用由 University of Waterloo 的学生影响力奖和助学金支付，这些资金本就用于改善学生生活，所以 Wat2Do 对每位学生始终免费。",
-      "diagramLabel": "组织的 Instagram 帖子如何变成 Wat2Do 上的活动：组织账号通知一个已隐去的步骤，一台常开的 Mac mini 上的浏览器工作进程和帖子抓取器读取帖子，带防护规则的 Claude 智能体把它变成活动，再经过一道检查点进入你的信息流背后受限访问的活动数据库。如果出了问题，Mac mini 会呼叫一部私人手机，我们用笔记本电脑修复。",
-      "diagram": {
-        "zoneInstagram": "Instagram",
-        "zoneMac": "Mac mini · 始终在线",
-        "zoneWat2do": "Wat2Do",
-        "accounts": "组织账号",
-        "browser": "浏览器工作进程",
-        "fetcher": "匿名抓取器",
-        "agents": "Claude 智能体",
-        "database": "活动数据库",
-        "feed": "你的信息流",
-        "guardrails": "防护规则",
-        "zoneOnCall": "值班",
-        "laptop": "我们的个人笔记本",
-        "laptopNote": "（远程控制 Mac mini）",
-        "pager": "私人手机"
-      },
-      "redacted": "已隐去"
-    },
     "useCases": {
       "title": "校园生活，随你怎么过",
       "description": "{{school}} 的同学们使用 Wat2Do 的六种方式。",
@@ -687,10 +644,6 @@
         "title": "点一下就找到免费餐饮",
         "description": "一键筛选免费餐饮、雇主进校园和竞赛。也可以按日期、价格、组织和地点进一步缩小范围。"
       },
-      "reminders": {
-        "title": "再也不会忘了要去",
-        "description": "点一下“参加中”，Wat2Do 会在活动开始前大约一小时给你发邮件。你可以把活动保存到 Google Calendar 或 iCal，也可以开启每天早上 9 点的当日活动邮件。"
-      },
       "clubs": {
         "title": "发现你从没听说过的组织",
         "description": "浏览 {{school}} 的所有组织，关注你喜欢的，想参与的时候还能找到正在招人的职位。"
@@ -724,7 +677,6 @@
     },
     "closing": {
       "title": "别再第二天才知道了。",
-      "description": "{{school}} 的所有活动，尽在一处。",
       "action": "看看有什么活动"
     }
   },

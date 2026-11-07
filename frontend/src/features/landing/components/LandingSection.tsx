@@ -1,30 +1,19 @@
 import type { ReactNode } from "react";
 import { Stack } from "@/shared/layout";
-import { cn } from "@/shared/lib/utils";
 
 interface LandingHeadingProps {
   title: ReactNode;
   description?: ReactNode;
-  /** Bands read down a left edge; the hero and the closing sit on the centre line. */
-  align?: "start" | "center";
 }
 
 /**
  * The landing page's one type scale. Display sizes run large and medium-weight
  * with tight tracking, so the headlines carry the page without boxes or labels.
  */
-export function LandingHeading({
-  title,
-  description,
-  align = "start",
-}: LandingHeadingProps) {
+export function LandingHeading({ title, description }: LandingHeadingProps) {
   return (
-    <Stack
-      gap={6}
-      align={align}
-      className={cn(align === "center" && "mx-auto max-w-4xl text-center")}
-    >
-      {/* The hero's h1 is spelled in its mosaic; every band here is an h2. */}
+    // Bands read down a left edge; the hero's and the closing's lines are spelled in their mosaics.
+    <Stack gap={6} align="start">
       <h2 className="max-w-4xl text-[clamp(2.25rem,4.6vw,3.75rem)] leading-[1.02] font-medium tracking-[-0.035em] text-balance text-foreground">
         {title}
       </h2>
@@ -37,7 +26,7 @@ export function LandingHeading({
   );
 }
 
-interface LandingSectionProps extends Omit<LandingHeadingProps, "as"> {
+interface LandingSectionProps extends LandingHeadingProps {
   /** In-page anchor target, offset so the sticky navigation does not cover it. */
   id?: string;
   children?: ReactNode;

@@ -5,12 +5,13 @@ import ts from "typescript";
 import manifest from "../src/assets/event-mosaic-uwaterloo.json" with { type: "json" };
 
 type Draw = { source: unknown; sx: number; sy: number; pixels: number; x: number; y: number; size: number; alpha: number };
-type Controller = { stop: () => void; setPhrase: (index: number) => void };
+type Controller = { stop: () => void };
 type Title = {
   titleColumns: (lead: string, phrases: readonly string[]) => number;
   rasterizeTitle: (line: string, columns: number) => Uint8Array;
   LINE_ROWS: number;
   TITLE_ROWS: number;
+  splitInTwo: (text: string) => [string, string];
 };
 type Box = { left: number; top: number; columns: number; rows: number };
 type Engine = {
@@ -81,8 +82,8 @@ function loadMosaic(width = 240, height = 120) {
     canvas,
     image,
     engine: exports,
-    start: (animate: boolean, tone = "muted", logoRegion?: () => { left: number; top: number; width: number; height: number }) =>
-      exports.startEventPixelMosaic(canvas, atlas, { tileSize: 24, gutter: 1, swapsPerSecond: 0.1, tone }, animate, {
+    start: (animate: boolean, logoRegion?: () => { left: number; top: number; width: number; height: number }) =>
+      exports.startEventPixelMosaic(canvas, atlas, { tileSize: 24, gutter: 1, swapsPerSecond: 0.1 }, animate, {
         posters: manifest.posters,
         logoMask: manifest.logoMask,
         logoColours: manifest.logoColours,
@@ -141,7 +142,7 @@ test("reduced motion draws one still mosaic at the screen's pixel ratio, smoothe
 
 test("logo cells are untouched posters whose own colour matches the logo, the rest are muted", () => {
   const mosaic = loadMosaic(480, 240);
-  mosaic.start(false, "logo", () => ({ left: 0, top: 0, width: 480, height: 240 }));
+  mosaic.start(false, () => ({ left: 0, top: 0, width: 480, height: 240 }));
   // Square draws only, not the one that copies the whole atlas into its greyscale twin.
   const logoDraws = mosaic.draws.filter((draw) => draw.source === mosaic.image && draw.pixels === manifest.tilePixels);
   const mutedDraws = mosaic.draws.filter((draw) => draw.source !== mosaic.image);
@@ -208,3 +209,9 @@ test("a headline is spelled in a 5x7 pixel font, one cell per stroke, in capital
 
 /** A muted cell's full strength (MUTED_ALPHA in the engine); a fade passes below it. */
 const MUTED_FULL = 0.22;
+
+test("a closing line splits into two balanced lines, at a word break where there is one", () => {
+  const title = loadTitle();
+  expect(title.splitInTwo("Stop finding out the day after.")).toEqual(["Stop finding out", "the day after."]);
+  expect(title.splitInTwo("别再事后才知道")).toEqual(["别再事后", "才知道"]);
+});

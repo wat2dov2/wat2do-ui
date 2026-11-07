@@ -6,28 +6,20 @@ import { startEventPixelMosaic, type MosaicController, type MosaicLook } from "@
 import { cn } from "@/shared/lib/utils";
 
 /**
- * - `logo`: cells that spell the Wat2Do logo and a headline, in posters that
- *   wear their colours, out of a muted grid.
- * - `ambient`: larger muted cells behind a closing line.
- * Both keep changing a few squares at a time. The atlas holds 32 px posters,
- * twice the largest cell, so cells stay crisp on a 2x screen.
+ * Small squares with half-pixel gutters, a few changing at a time. The atlas
+ * holds 32 px posters, over twice the square, so squares stay crisp on 2x and 3x screens.
  */
-export type EventPixelMosaicVariant = "logo" | "ambient";
-
-const LOOKS: Record<EventPixelMosaicVariant, MosaicLook> = {
-  logo: { tileSize: 10, gutter: 0.5, swapsPerSecond: 0.04, tone: "logo" },
-  ambient: { tileSize: 16, gutter: 0.5, swapsPerSecond: 0.03, tone: "muted" },
-};
+const LOOK: MosaicLook = { tileSize: 10, gutter: 0.5, swapsPerSecond: 0.04 };
 
 interface EventPixelMosaicProps {
-  variant: EventPixelMosaicVariant;
-  /** For `logo`: the element the logo is drawn behind, in the same card. */
+  /** The element the Wat2Do logo is drawn behind, in the same card; none draws no logo. */
   logoRegion?: RefObject<HTMLElement | null>;
   /**
-   * For `logo`: a headline to spell in the grid's cells below the logo, at the
-   * top of `region`, in `region`'s font family. Its phrases
-   * take turns every PHRASE_MS. `onLayout` gives its height so the page can
-   * size the region; on narrow screens the cells shrink and the lines wrap.
+   * A headline to spell in the grid's cells, below the logo if there is one,
+   * at the top of `region`, in the pixel font: the lead on one line and a
+   * phrase on the next, the phrases taking turns every PHRASE_MS. `onLayout`
+   * gives its height so the page can size the region; on narrow screens the
+   * squares shrink until the widest line fits.
    */
   title?: {
     lead: string;
@@ -42,11 +34,11 @@ const PHRASE_MS = 3000;
 
 /**
  * A grid of real scraped event posters. Fills its positioned parent and is
- * decorative. Nothing downloads until it nears the viewport; a 16 px copy
+ * decorative. Nothing downloads until it nears the viewport; an 8 px copy
  * paints first and the sharp atlas follows. Under reduced motion it is a still
  * mosaic.
  */
-export function EventPixelMosaic({ variant, logoRegion, title }: EventPixelMosaicProps) {
+export function EventPixelMosaic({ logoRegion, title }: EventPixelMosaicProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
   const titleRef = useRef(title);
@@ -75,7 +67,7 @@ export function EventPixelMosaic({ variant, logoRegion, title }: EventPixelMosai
       const [manifest, preview] = await Promise.all([loadMosaicManifest(), loadPreviewAtlas()]);
       if (cancelled) return;
       controller?.stop();
-      controller = startEventPixelMosaic(canvas, preview, LOOKS[variant], !motion.matches, {
+      controller = startEventPixelMosaic(canvas, preview, LOOK, !motion.matches, {
         posters: manifest.posters,
         logoMask: manifest.logoMask,
         logoColours: manifest.logoColours,
@@ -109,7 +101,7 @@ export function EventPixelMosaic({ variant, logoRegion, title }: EventPixelMosai
       controller?.stop();
     };
     // titleWords stands in for the headline itself, which is read through titleRef.
-  }, [variant, logoRegion, titleWords]);
+  }, [logoRegion, titleWords]);
 
   return (
     // Until the first atlas paints, the face shows the skeleton tone the rest of the app loads with.
@@ -120,15 +112,5 @@ export function EventPixelMosaic({ variant, logoRegion, title }: EventPixelMosai
         className={cn("block motion-safe:transition-opacity motion-safe:duration-500", ready ? "opacity-100" : "opacity-0")}
       />
     </div>
-  );
-}
-
-/** A soft wash of the card's face behind a block of text on a mosaic, so the text reads at AA whatever the posters are. */
-export function LandingMosaicScrim() {
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute -inset-x-6 -inset-y-10 bg-[radial-gradient(closest-side,var(--surface-elevated)_72%,transparent)] sm:-inset-x-24 sm:-inset-y-16"
-    />
   );
 }

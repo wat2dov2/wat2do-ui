@@ -603,49 +603,6 @@
         "positionsLabel_other": "vị trí câu lạc bộ đang tuyển"
       }
     },
-    "different": {
-      "title": "Vậy điều gì làm nó khác biệt so với các trang sự kiện khác?",
-      "description": "Các trang khác chờ các tổ chức tự gửi sự kiện lên. Phần còn lại bị khóa trong Instagram, nơi chặn bot. Dù vậy Wat2Do vẫn lấy chúng ra.",
-      "points": {
-        "relay": {
-          "cost": "Hàng trăm giờ"
-        },
-        "alwaysOn": {
-          "title": "Một chiếc Mac mini không bao giờ ngủ",
-          "description": "Một chiếc M4 Mac mini chúng tôi mua về mở từng bài đăng được gắn cờ một cách ẩn danh rồi biến nó thành dữ liệu, 24/7.",
-          "cost": "$899"
-        },
-        "claude": {
-          "title": "Claude đọc mọi poster",
-          "description": "Claude Haiku biến tờ rơi thành sự kiện với các rào chắn: không bịa đặt, kiểm tra trùng lặp, và tài khoản cơ sở dữ liệu chỉ được vào các bảng sự kiện.",
-          "cost": "$200 / tháng"
-        },
-        "cloud": {
-          "title": "Trực tuyến cho mọi trường",
-          "description": "AWS lưu trữ bảng tin cùng bản sao lưu, để không lỗi nào làm hỏng trải nghiệm của sinh viên thật.",
-          "cost": "$100 / tháng"
-        }
-      },
-      "costNote": "Chúng tôi trang trải các chi phí này bằng giải thưởng tác động sinh viên và học bổng tại University of Waterloo, nguồn quỹ dành để cải thiện đời sống sinh viên, để Wat2Do luôn miễn phí cho mọi sinh viên.",
-      "diagramLabel": "Cách một bài đăng Instagram của tổ chức trở thành sự kiện trên Wat2Do: tài khoản tổ chức gửi thông báo đến một bước đã bị ẩn, browser worker và bộ lấy bài đăng trên một Mac mini luôn bật đọc bài đăng, các agent Claude có rào chắn biến nó thành sự kiện, rồi một điểm kiểm tra cho nó vào cơ sở dữ liệu sự kiện được hạn chế truy cập phía sau bảng tin của bạn. Nếu có gì hỏng, Mac mini sẽ báo động đến một điện thoại cá nhân và chúng tôi sửa từ một chiếc laptop.",
-      "diagram": {
-        "zoneInstagram": "Instagram",
-        "zoneMac": "Mac mini · luôn bật",
-        "zoneWat2do": "Wat2Do",
-        "accounts": "Tài khoản tổ chức",
-        "browser": "Browser worker",
-        "fetcher": "Bộ lấy ẩn danh",
-        "agents": "Agent Claude",
-        "database": "Cơ sở dữ liệu sự kiện",
-        "feed": "Bảng tin của bạn",
-        "guardrails": "Rào chắn",
-        "zoneOnCall": "Trực sự cố",
-        "laptop": "Laptop cá nhân của chúng tôi",
-        "laptopNote": "(điều khiển từ xa Mac mini)",
-        "pager": "Điện thoại cá nhân"
-      },
-      "redacted": "Đã ẩn"
-    },
     "useCases": {
       "title": "Đời sinh viên theo cách của bạn",
       "description": "Sáu cách sinh viên tại {{school}} dùng Wat2Do.",
@@ -687,10 +644,6 @@
         "title": "Đồ ăn miễn phí chỉ với một lần chạm",
         "description": "Lọc nhanh đồ ăn miễn phí, nhà tuyển dụng tại trường và cuộc thi. Hoặc thu hẹp theo ngày, giá, tổ chức và địa điểm."
       },
-      "reminders": {
-        "title": "Không bao giờ quên chỗ mình định đi",
-        "description": "Bấm \"Sẽ tham gia\" và Wat2Do sẽ gửi email cho bạn khoảng một tiếng trước khi bắt đầu. Lưu sự kiện vào Google Calendar hoặc iCal, hoặc bật email lúc 9 giờ sáng với các sự kiện trong ngày."
-      },
       "clubs": {
         "title": "Khám phá những tổ chức bạn chưa từng biết",
         "description": "Xem mọi tổ chức tại {{school}}, theo dõi những nơi bạn thích, và tìm vị trí đang tuyển khi bạn muốn tham gia."
@@ -724,7 +677,6 @@
     },
     "closing": {
       "title": "Đừng để hôm sau mới biết nữa.",
-      "description": "Xem mọi thứ đang diễn ra tại {{school}}, tất cả ở một nơi.",
       "action": "Xem có gì hay"
     }
   },

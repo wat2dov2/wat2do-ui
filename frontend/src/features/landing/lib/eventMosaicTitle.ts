@@ -140,3 +140,24 @@ function rasterizeFallback(line: string, columns: number, ink: Uint8Array): Uint
   }
   return ink;
 }
+
+/**
+ * Splits a headline into two lines at the word break that balances them best
+ * by length, for a headline spelled as a lead and one phrase; text with no
+ * spaces (Chinese, for one) splits at its middle character.
+ */
+export function splitInTwo(text: string): [string, string] {
+  const words = text.trim().split(/\s+/);
+  if (words.length < 2) {
+    const characters = [...text.trim()];
+    const middle = Math.ceil(characters.length / 2);
+    return [characters.slice(0, middle).join(""), characters.slice(middle).join("")];
+  }
+  const longest = (lines: readonly string[]) => Math.max(...lines.map((line) => line.length));
+  let best: [string, string] = [words[0], words.slice(1).join(" ")];
+  for (let split = 2; split < words.length; split += 1) {
+    const candidate: [string, string] = [words.slice(0, split).join(" "), words.slice(split).join(" ")];
+    if (longest(candidate) < longest(best)) best = candidate;
+  }
+  return best;
+}

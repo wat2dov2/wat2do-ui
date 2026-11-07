@@ -1,11 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { LandingSnapshot } from "@/features/landing/api/landing.server";
-import { LandingCard, LandingNotchLabel, LandingStage, type LandingNotchTone } from "@/features/landing/components/LandingCard";
-import { ClubsPreview, FreeFoodPreview, RemindersPreview } from "@/features/landing/components/LandingPreviews";
+import { LandingCard, LandingNotchLabel, type LandingNotchTone } from "@/features/landing/components/LandingCard";
+import { ClubsPreview, FreeFoodPreview } from "@/features/landing/components/LandingPreviews";
 import { LandingSection } from "@/features/landing/components/LandingSection";
+import { LANDING_ANCHORS } from "@/features/landing/lib/landingAnchors";
 import { useCountUp } from "@/features/landing/hooks/useCountUp";
 import { formatLandingCount } from "@/features/landing/lib/landingStats";
 import { Stack } from "@/shared/layout";
@@ -64,15 +64,6 @@ function FeatureCopy({ featureKey, schoolName, size }: { featureKey: string; sch
   );
 }
 
-function SupportingFeature({ featureKey, schoolName, children }: { featureKey: string; schoolName: string; children: ReactNode }) {
-  return (
-    <Stack gap={5}>
-      <LandingStage>{children}</LandingStage>
-      <FeatureCopy featureKey={featureKey} schoolName={schoolName} size="supporting" />
-    </Stack>
-  );
-}
-
 /** How Wat2Do fixes discovery: six of this school's live numbers, then the app itself doing it with real data. */
 export function LandingSolution({ schoolName, snapshot }: { schoolName: string; snapshot: LandingSnapshot | null }) {
   const { t } = useTranslation();
@@ -92,6 +83,7 @@ export function LandingSolution({ schoolName, snapshot }: { schoolName: string; 
 
   return (
     <LandingSection
+      id={LANDING_ANCHORS.HOW_IT_WORKS}
       title={t("landing.solution.title")}
       description={t("landing.solution.description")}
     >
@@ -105,20 +97,18 @@ export function LandingSolution({ schoolName, snapshot }: { schoolName: string; 
       ) : null}
 
       <Stack gap={12} className="pt-8 sm:gap-16 sm:pt-16">
-        {/* The main feature gets the room. */}
-        <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-16">
+        {/* The main feature gets the room: its copy, then a full row of real free-food events. */}
+        <Stack gap={8}>
           <FeatureCopy featureKey="filters" schoolName={schoolName} size="main" />
-          <LandingStage>
+          <LandingCard>
             <FreeFoodPreview events={events} isLoading={isLoading} />
-          </LandingStage>
-        </div>
-        <div className="grid gap-x-4 gap-y-10 lg:grid-cols-2">
-          <SupportingFeature featureKey="reminders" schoolName={schoolName}>
-            <RemindersPreview events={events} isLoading={isLoading} />
-          </SupportingFeature>
-          <SupportingFeature featureKey="clubs" schoolName={schoolName}>
+          </LandingCard>
+        </Stack>
+        <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-16">
+          <FeatureCopy featureKey="clubs" schoolName={schoolName} size="supporting" />
+          <LandingCard>
             <ClubsPreview clubs={snapshot?.previewClubs ?? []} isLoading={isLoading} />
-          </SupportingFeature>
+          </LandingCard>
         </div>
       </Stack>
     </LandingSection>

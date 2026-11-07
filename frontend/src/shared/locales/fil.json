@@ -612,49 +612,6 @@
         "positionsLabel_other": "mga bukas na posisyon sa club"
       }
     },
-    "different": {
-      "title": "So bakit ito naiiba sa ibang site ng mga kaganapan?",
-      "description": "Naghihintay ang ibang site na i-submit ng mga organisasyon ang kanilang mga kaganapan. Ang iba ay nakakulong sa loob ng Instagram, na bina-ban ang mga bot. Pero nailalabas pa rin ng Wat2Do ang mga ito.",
-      "points": {
-        "relay": {
-          "cost": "Daan-daang oras"
-        },
-        "alwaysOn": {
-          "title": "Isang Mac mini na hindi natutulog",
-          "description": "Binubuksan ng isang M4 Mac mini na binili namin nang anonymous ang bawat na-flag na post at ginagawa itong data, 24/7.",
-          "cost": "$899"
-        },
-        "claude": {
-          "title": "Binabasa ni Claude ang bawat flyer",
-          "description": "Ginagawang mga kaganapan ng Claude Haiku ang mga flyer nang may guardrails: walang inimbento, sinusuri ang mga duplicate, at naka-lock sa mga event table ang database login.",
-          "cost": "$200 / buwan"
-        },
-        "cloud": {
-          "title": "Online para sa bawat paaralan",
-          "description": "Naka-host sa AWS ang feed na may mga backup, kaya hindi kailanman masisira ng bug ang karanasan ng mga tunay na estudyante.",
-          "cost": "$100 / buwan"
-        }
-      },
-      "costNote": "Sinasagot namin ang mga gastusing ito gamit ang mga student impact award at bursary sa University of Waterloo, pondong para mapabuti ang buhay-estudyante, kaya nananatiling libre ang Wat2Do para sa bawat estudyante.",
-      "diagramLabel": "Paano nagiging listing sa Wat2Do ang Instagram post ng isang organisasyon: inaabisuhan ng mga account ng organisasyon ang isang naka-redact na hakbang, binabasa ng browser worker at post fetcher ng laging-bukas na Mac mini ang post, ginagawa itong kaganapan ng mga Claude agent na may guardrails, at isang checkpoint ang nagpapapasok dito sa mahigpit na naka-lock na database ng kaganapan sa likod ng feed mo. Kapag may nasira, inaalerto ng Mac mini ang isang personal na phone at inaayos namin ito mula sa isang laptop.",
-      "diagram": {
-        "zoneInstagram": "Instagram",
-        "zoneMac": "Mac mini · laging bukas",
-        "zoneWat2do": "Wat2Do",
-        "accounts": "Mga account ng organisasyon",
-        "browser": "Browser worker",
-        "fetcher": "Anonymous fetcher",
-        "agents": "Mga Claude agent",
-        "database": "Database ng kaganapan",
-        "feed": "Ang feed mo",
-        "guardrails": "Mga guardrail",
-        "zoneOnCall": "On call",
-        "laptop": "Ang personal na laptop namin",
-        "laptopNote": "(remote control sa Mac mini)",
-        "pager": "Personal na phone"
-      },
-      "redacted": "Naka-redact"
-    },
     "useCases": {
       "title": "Campus life, sa paraan mo",
       "description": "Anim na paraan ng paggamit ng mga estudyante sa {{school}} ng Wat2Do.",
@@ -696,10 +653,6 @@
         "title": "Libreng pagkain sa isang tap",
         "description": "Mabilis na filter para sa libreng pagkain, mga employer sa campus at mga kompetisyon. O paliitin pa ayon sa araw, presyo, organisasyon at lokasyon."
       },
-      "reminders": {
-        "title": "Hindi mo na makakalimutang pupunta ka",
-        "description": "I-tap ang Pupunta at ie-email ka ng Wat2Do mga isang oras bago ito magsimula. I-save ang mga kaganapan sa Google Calendar o iCal, o i-on ang 9 AM na email ng mga kaganapan sa araw na iyon."
-      },
       "clubs": {
         "title": "Hanapin ang mga organisasyong hindi mo alam na meron pala",
         "description": "I-browse ang bawat organisasyon sa {{school}}, i-follow ang mga gusto mo, at maghanap ng mga bakanteng posisyon kapag gusto mong sumali."
@@ -734,7 +687,6 @@
     },
     "closing": {
       "title": "Tama na ang pag-alam kinabukasan.",
-      "description": "Tingnan ang lahat ng nangyayari sa {{school}}, sa iisang lugar.",
       "action": "Tingnan kung ano'ng meron"
     }
   },

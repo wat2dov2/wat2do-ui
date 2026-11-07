@@ -31,12 +31,6 @@ export interface MosaicAtlas {
   count: number;
 }
 
-/**
- * - `muted`: every cell greyed and faded into the surface behind it.
- * - `logo`: cells on the Wat2Do logo and the headline in full colour, the rest muted, so the shapes read out of the grid.
- */
-export type MosaicTone = "muted" | "logo";
-
 export interface MosaicLook {
   /** CSS pixels per cell side; a headline that needs finer cells to be legible gets them. */
   tileSize: number;
@@ -44,7 +38,6 @@ export interface MosaicLook {
   gutter: number;
   /** Share of the grid's cells that swap each second. */
   swapsPerSecond: number;
-  tone: MosaicTone;
 }
 
 export interface MosaicRect {
@@ -264,7 +257,8 @@ export function startEventPixelMosaic(
   let lastSwap = 0;
   let visible = true;
 
-  const isColour = (index: number) => look.tone === "logo" && (logo[index] !== 0 || ink[index] === 1);
+  /** Squares on the logo or a headline letter are drawn in full colour; every other square is muted. */
+  const isColour = (index: number) => logo[index] !== 0 || ink[index] === 1;
 
   /**
    * A poster for a square, from the posters that keep its shape legible, and
@@ -310,7 +304,7 @@ export function startEventPixelMosaic(
     leadInk = new Uint8Array(0);
     phraseInk = [];
     tile = look.tileSize;
-    const title = look.tone === "logo" ? content.title : undefined;
+    const { title } = content;
     const region = title?.region();
     if (!title || !region) return null;
     const needed = titleColumns(title.lead, title.phrases);
@@ -395,7 +389,7 @@ export function startEventPixelMosaic(
     // Resizing the backing store resets the context, smoothing included.
     context!.imageSmoothingEnabled = true;
     context!.imageSmoothingQuality = "high";
-    const region = look.tone === "logo" ? content.logoRegion?.() : null;
+    const region = content.logoRegion?.();
     logo = region
       ? logoCells(content.logoMask, columns, rows, {
         left: Math.round(region.left / tile),

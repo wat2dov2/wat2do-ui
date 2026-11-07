@@ -3,7 +3,6 @@
 import { useRequestSchool } from "@/app/client-providers";
 import type { LandingSnapshot } from "@/features/landing/api/landing.server";
 import { LandingClosing } from "@/features/landing/components/LandingClosing";
-import { LandingDifferent } from "@/features/landing/components/LandingDifferent";
 import { LandingFaq } from "@/features/landing/components/LandingFaq";
 import { LandingHero } from "@/features/landing/components/LandingHero";
 import { LandingProblem } from "@/features/landing/components/LandingProblem";
@@ -28,7 +27,6 @@ export function LandingPage({ snapshot }: LandingPageProps) {
         <LandingHero schoolName={schoolName} events={snapshot?.events ?? []} isLoading={!snapshot} />
         <LandingProblem schoolName={schoolName} />
         <LandingSolution schoolName={schoolName} snapshot={snapshot} />
-        <LandingDifferent />
         <LandingUseCases schoolName={schoolName} />
         <LandingFaq />
         <LandingClosing schoolName={schoolName} />

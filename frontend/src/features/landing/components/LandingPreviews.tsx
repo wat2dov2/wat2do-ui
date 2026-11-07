@@ -8,7 +8,6 @@
 
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Calendar } from "lucide-react";
 import { ClubCard } from "@/features/clubs/components/ClubCard";
 import { ClubCardSkeleton } from "@/features/clubs/components/ClubCardSkeleton";
 import { EventCard, EventCardSkeleton } from "@/features/events";
@@ -34,46 +33,34 @@ function Inert({ children }: { children: ReactNode }) {
   );
 }
 
-/** The feed's search bar and quick filters with Free food on, above a real event that has free food. */
+/** How many free-food events the preview shows: a row on desktop, two rows of two on phones. */
+const FREE_FOOD_CARDS = 4;
+
+/** The feed's search bar and quick filters with Free food on, above a row of real events that have free food. */
 export function FreeFoodPreview({ events, isLoading }: { events: readonly Event[]; isLoading: boolean }) {
   const { t } = useTranslation();
-  const freeFood = events.find((event) => event.food.length > 0 && !event.price && event.source_image_url);
+  const freeFood = events.filter((event) => event.food.length > 0 && !event.price && event.source_image_url).slice(0, FREE_FOOD_CARDS);
 
   return (
     <Inert>
-      <Stack gap={3}>
-        <SearchBar searchQuery="" onSearchChange={() => {}} onSearchClear={() => {}} />
-        {/* The events page's quick filter chips, as it renders them. */}
-        <Stack direction="horizontal" gap={2} wrap>
+      <Stack gap={4}>
+        {/* The search bar keeps the width it has on the events page rather than stretching across the card. */}
+        <Stack direction="horizontal" gap={2} wrap align="center">
+          <div className="w-full max-w-sm">
+            <SearchBar searchQuery="" onSearchChange={() => {}} onSearchClear={() => {}} />
+          </div>
+          {/* The events page's quick filter chips, as it renders them. */}
           {PREVIEW_QUICK_FILTERS.map(({ labelKey, active }) => (
             <Button key={labelKey} variant={active ? "primary" : "outline"} size="sm" aria-pressed={active}>
               {t(labelKey)}
             </Button>
           ))}
         </Stack>
-        {/* An event card's natural width in the feed grid. */}
-        <div className="mx-auto w-60">
-          {freeFood ? <EventCard event={freeFood} interactive={false} /> : isLoading ? <EventCardSkeleton /> : null}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {isLoading
+            ? Array.from({ length: FREE_FOOD_CARDS }, (_, index) => <EventCardSkeleton key={index} />)
+            : freeFood.map((event) => <EventCard key={event.id} event={event} interactive={false} />)}
         </div>
-      </Stack>
-    </Inert>
-  );
-}
-
-/** A real upcoming event's card with the Add to calendar control its page shows once you are going. */
-export function RemindersPreview({ events, isLoading }: { events: readonly Event[]; isLoading: boolean }) {
-  const { t } = useTranslation();
-  const event = events.find((candidate) => candidate.source_image_url);
-
-  return (
-    <Inert>
-      <Stack gap={3} align="center">
-        <div className="w-60">{event ? <EventCard event={event} interactive={false} /> : isLoading ? <EventCardSkeleton /> : null}</div>
-        {/* The event page's calendar control (EventActions), as it renders. */}
-        <Button type="button" variant="outline" size="sm">
-          <Calendar className="size-4" />
-          {t("common.addToCalendar")}
-        </Button>
       </Stack>
     </Inert>
   );
@@ -83,7 +70,7 @@ export function RemindersPreview({ events, isLoading }: { events: readonly Event
 export function ClubsPreview({ clubs, isLoading }: { clubs: readonly Club[]; isLoading: boolean }) {
   return (
     <Inert>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+      <div className="grid gap-3 sm:grid-cols-2">
         {isLoading
           ? [0, 1].map((index) => <ClubCardSkeleton key={index} />)
           : clubs.map((club) => <ClubCard key={club.id} club={club} />)}

@@ -603,49 +603,6 @@
         "positionsLabel_other": "open club positions"
       }
     },
-    "different": {
-      "title": "So how is this different from other event sites?",
-      "description": "Other sites wait for clubs to submit events. The rest stay locked inside Instagram, which bans bots. Wat2Do gets them out anyway.",
-      "points": {
-        "relay": {
-          "cost": "100s of hours"
-        },
-        "alwaysOn": {
-          "title": "A Mac mini that never sleeps",
-          "description": "An M4 Mac mini we bought opens each flagged post anonymously and turns it into data, 24/7.",
-          "cost": "$899"
-        },
-        "claude": {
-          "title": "Claude reads every flyer",
-          "description": "Claude Haiku turns flyers into events with guardrails: nothing invented, duplicates checked, and a database login locked to event tables.",
-          "cost": "$200 / month"
-        },
-        "cloud": {
-          "title": "Online for every school",
-          "description": "AWS hosts the feed with backups, so a bug never breaks things for real students.",
-          "cost": "$100 / month"
-        }
-      },
-      "costNote": "We cover these costs with student impact awards and bursaries at the University of Waterloo, funding meant to improve student life, so Wat2Do stays free for every student.",
-      "diagramLabel": "How a club's Instagram post becomes a Wat2Do listing: club accounts notify a redacted step, an always-on Mac mini's browser worker and anonymous fetcher read the post, Claude agents with guardrails turn it into an event, and a checkpoint lets it into a locked-down event database behind your feed. If anything breaks, the Mac mini pages a personal phone and we fix it from a laptop.",
-      "diagram": {
-        "zoneInstagram": "Instagram",
-        "zoneMac": "Mac mini · always on",
-        "zoneWat2do": "Wat2Do",
-        "accounts": "Club accounts",
-        "browser": "Browser worker",
-        "fetcher": "Anonymous fetcher",
-        "agents": "Claude agents",
-        "database": "Event database",
-        "feed": "Your feed",
-        "guardrails": "Guardrails",
-        "zoneOnCall": "On call",
-        "laptop": "Our personal laptop",
-        "laptopNote": "(remote control to the Mac mini)",
-        "pager": "Personal phone"
-      },
-      "redacted": "Redacted"
-    },
     "useCases": {
       "title": "However you do campus",
       "description": "Six ways students at {{school}} use Wat2Do.",
@@ -687,10 +644,6 @@
         "title": "Free food in one tap",
         "description": "Quick filters for free food, employers on campus and competitions. Or narrow it down by day, price, club and location."
       },
-      "reminders": {
-        "title": "Never forget you were going",
-        "description": "Tap Going and Wat2Do emails you about an hour before it starts. Save events to Google Calendar or iCal, or turn on a 9 AM email with the day's events."
-      },
       "clubs": {
         "title": "Find the clubs you didn't know existed",
         "description": "Browse every club at {{school}}, follow the ones you like, and find open positions when you want to get involved."
@@ -724,7 +677,6 @@
     },
     "closing": {
       "title": "Stop finding out the day after.",
-      "description": "See everything happening at {{school}}, all in one place.",
       "action": "See what's on"
     }
   },

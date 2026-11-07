@@ -621,49 +621,6 @@
         "positionsLabel_other": "ruoli aperti nei club"
       }
     },
-    "different": {
-      "title": "Quindi in cosa è diverso dagli altri siti di eventi?",
-      "description": "Gli altri siti aspettano che i club inviino i loro eventi. Il resto rimane chiuso dentro Instagram, che banna i bot. Wat2Do li tira fuori comunque.",
-      "points": {
-        "relay": {
-          "cost": "Centinaia di ore"
-        },
-        "alwaysOn": {
-          "title": "Un Mac mini che non dorme mai",
-          "description": "Un M4 Mac mini che abbiamo comprato apre ogni post segnalato in forma anonima e lo trasforma in dati, 24 ore su 24.",
-          "cost": "$899"
-        },
-        "claude": {
-          "title": "Claude legge ogni locandina",
-          "description": "Claude Haiku trasforma i volantini in eventi con dei paletti: niente di inventato, duplicati controllati e un accesso al database limitato alle tabelle degli eventi.",
-          "cost": "$200 / mese"
-        },
-        "cloud": {
-          "title": "Online per ogni università",
-          "description": "AWS ospita il feed con i backup, così un bug non rovina mai nulla agli studenti veri.",
-          "cost": "$100 / mese"
-        }
-      },
-      "costNote": "Copriamo questi costi con premi di impatto studentesco e borse di studio della University of Waterloo, fondi pensati per migliorare la vita degli studenti, così Wat2Do resta gratuito per ogni studente.",
-      "diagramLabel": "Come il post Instagram di un club diventa una scheda Wat2Do: gli account dei club avvisano un passaggio oscurato, il worker del browser e il raccoglitore di post di un Mac mini sempre acceso leggono il post, agenti Claude con salvaguardie lo trasformano in un evento e un punto di controllo lo fa entrare in un database eventi ad accesso limitato dietro il tuo feed. Se qualcosa si rompe, il Mac mini avvisa un telefono personale e lo sistemiamo da un laptop.",
-      "diagram": {
-        "zoneInstagram": "Instagram",
-        "zoneMac": "Mac mini · sempre acceso",
-        "zoneWat2do": "Wat2Do",
-        "accounts": "Account dei club",
-        "browser": "Worker del browser",
-        "fetcher": "Raccoglitore anonimo",
-        "agents": "Agenti Claude",
-        "database": "Database eventi",
-        "feed": "Il tuo feed",
-        "guardrails": "Salvaguardie",
-        "zoneOnCall": "Reperibilità",
-        "laptop": "Il nostro laptop personale",
-        "laptopNote": "(controllo remoto del Mac mini)",
-        "pager": "Telefono personale"
-      },
-      "redacted": "Oscurato"
-    },
     "useCases": {
       "title": "Vivi il campus a modo tuo",
       "description": "Sei modi in cui gli studenti di {{school}} usano Wat2Do.",
@@ -705,10 +662,6 @@
         "title": "Cibo gratis in un tocco",
         "description": "Filtri rapidi per cibo gratis, datori di lavoro nel campus e competizioni. Oppure restringi per giorno, prezzo, club e luogo."
       },
-      "reminders": {
-        "title": "Non dimenticare mai che ci andavi",
-        "description": "Tocca Partecipo e Wat2Do ti manda un'email circa un'ora prima dell'inizio. Salva gli eventi su Google Calendar o iCal, oppure attiva un'email alle 9 con gli eventi del giorno."
-      },
       "clubs": {
         "title": "Scopri club che non sapevi esistessero",
         "description": "Sfoglia tutte le organizzazioni di {{school}}, segui quelle che ti piacciono e trova posizioni aperte quando vuoi metterti in gioco."
@@ -744,7 +697,6 @@
     },
     "closing": {
       "title": "Basta scoprirlo il giorno dopo.",
-      "description": "Guarda tutto quello che succede a {{school}}, in un unico posto.",
       "action": "Scopri cosa c'è"
     }
   },
