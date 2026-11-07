@@ -1,0 +1,396 @@
+{
+  "paths": {
+    "/uploads/event-image": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Event Image Unsigned",
+        "operationId": "upload_event_image_unsigned_uploads_event_image_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_event_image_unsigned_uploads_event_image_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads/event-image/{event_id}": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Event Image",
+        "operationId": "upload_event_image_uploads_event_image__event_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_event_image_uploads_event_image__event_id__post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads/avatar": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Avatar",
+        "operationId": "upload_avatar_uploads_avatar_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_avatar_uploads_avatar_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/uploads/club-logo/{club_id}": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Club Logo",
+        "operationId": "upload_club_logo_uploads_club_logo__club_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_club_logo_uploads_club_logo__club_id__post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads/qr-asset": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Qr Asset",
+        "operationId": "upload_qr_asset_uploads_qr_asset_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_qr_asset_uploads_qr_asset_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/uploads/claim-proof": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Claim Proof",
+        "operationId": "upload_claim_proof_uploads_claim_proof_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_claim_proof_uploads_claim_proof_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    }
+  },
+  "schemas": {
+    "Body_upload_avatar_uploads_avatar_post": {
+      "properties": {
+        "file": {
+          "type": "string",
+          "contentMediaType": "application/octet-stream",
+          "title": "File"
+        }
+      },
+      "type": "object",
+      "required": [
+        "file"
+      ],
+      "title": "Body_upload_avatar_uploads_avatar_post"
+    },
+    "Body_upload_claim_proof_uploads_claim_proof_post": {
+      "properties": {
+        "file": {
+          "type": "string",
+          "contentMediaType": "application/octet-stream",
+          "title": "File"
+        }
+      },
+      "type": "object",
+      "required": [
+        "file"
+      ],
+      "title": "Body_upload_claim_proof_uploads_claim_proof_post"
+    },
+    "Body_upload_club_logo_uploads_club_logo__club_id__post": {
+      "properties": {
+        "file": {
+          "type": "string",
+          "contentMediaType": "application/octet-stream",
+          "title": "File"
+        }
+      },
+      "type": "object",
+      "required": [
+        "file"
+      ],
+      "title": "Body_upload_club_logo_uploads_club_logo__club_id__post"
+    },
+    "Body_upload_event_image_unsigned_uploads_event_image_post": {
+      "properties": {
+        "file": {
+          "type": "string",
+          "contentMediaType": "application/octet-stream",
+          "title": "File"
+        }
+      },
+      "type": "object",
+      "required": [
+        "file"
+      ],
+      "title": "Body_upload_event_image_unsigned_uploads_event_image_post"
+    },
+    "Body_upload_event_image_uploads_event_image__event_id__post": {
+      "properties": {
+        "file": {
+          "type": "string",
+          "contentMediaType": "application/octet-stream",
+          "title": "File"
+        }
+      },
+      "type": "object",
+      "required": [
+        "file"
+      ],
+      "title": "Body_upload_event_image_uploads_event_image__event_id__post"
+    },
+    "Body_upload_qr_asset_uploads_qr_asset_post": {
+      "properties": {
+        "file": {
+          "type": "string",
+          "contentMediaType": "application/octet-stream",
+          "title": "File"
+        }
+      },
+      "type": "object",
+      "required": [
+        "file"
+      ],
+      "title": "Body_upload_qr_asset_uploads_qr_asset_post"
+    },
+    "UploadResponse": {
+      "properties": {
+        "url": {
+          "type": "string",
+          "title": "Url"
+        }
+      },
+      "type": "object",
+      "required": [
+        "url"
+      ],
+      "title": "UploadResponse"
+    }
+  }
+}

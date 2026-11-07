@@ -5,9 +5,12 @@ import re
 from pathlib import Path
 
 from core.constants import (
+    BUCKET_AVATARS,
+    BUCKET_CLAIM_PROOFS,
     BUCKET_CLUB_LOGOS,
     BUCKET_EVENT_IMAGES,
     BUCKET_EVENT_VIDEOS,
+    BUCKET_QR_ASSETS,
     CLUB_CATEGORIES,
     CLUB_TYPE_INDEPENDENT,
     DEFAULT_LIST_LIMIT,
@@ -21,6 +24,7 @@ from core.constants import (
     MAX_CLUB_NAME_LENGTH,
     MAX_CLUB_TYPE_LENGTH,
     MAX_EVENT_CATEGORY_LENGTH,
+    MAX_EVENT_DATA_BYTES,
     MAX_EVENT_DESCRIPTION_LENGTH,
     MAX_EVENT_FOOD_COUNT,
     MAX_EVENT_FOOD_ITEM_LENGTH,
@@ -30,6 +34,7 @@ from core.constants import (
     MAX_EVENT_TITLE_LENGTH,
     MAX_FACULTY_LENGTH,
     MAX_FULL_NAME_LENGTH,
+    MAX_IMAGE_SIZE_BYTES,
     MAX_INTEREST_LENGTH,
     MAX_INTERESTS_COUNT,
     MAX_LIST_LIMIT,
@@ -47,7 +52,13 @@ from core.constants import (
     NOTIFICATION_TYPE_MORNING_EMAIL,
     REPORT_STATUSES,
 )
-from core.constants.positions import MAX_POSITION_DESCRIPTION_LENGTH
+from core.constants.positions import (
+    MAX_POSITION_DESCRIPTION_LENGTH,
+    MAX_POSITION_DETAIL_LENGTH,
+    MAX_POSITION_REQUIREMENT_COUNT,
+    MAX_POSITION_REQUIREMENT_LENGTH,
+    MAX_POSITION_TITLE_LENGTH,
+)
 
 RUST_CONSTANTS = Path(__file__).resolve().parents[2] / "rust/src/constants.rs"
 
@@ -98,11 +109,28 @@ def test_limits_and_buckets_match():
     assert int(_rust_value("MAX_EVENT_DESCRIPTION_LENGTH")) == MAX_EVENT_DESCRIPTION_LENGTH
     assert int(_rust_value("MAX_POSITION_DESCRIPTION_LENGTH")) == MAX_POSITION_DESCRIPTION_LENGTH
     assert int(_rust_value("MAX_CLUB_NAME_LENGTH")) == MAX_CLUB_NAME_LENGTH
-    avatar = math.prod(int(factor) for factor in _rust_value("MAX_AVATAR_SIZE_BYTES").split("*"))
-    assert avatar == MAX_AVATAR_SIZE_BYTES
-    assert _rust_value("BUCKET_EVENT_IMAGES") == f'"{BUCKET_EVENT_IMAGES}"'
-    assert _rust_value("BUCKET_EVENT_VIDEOS") == f'"{BUCKET_EVENT_VIDEOS}"'
-    assert _rust_value("BUCKET_CLUB_LOGOS") == f'"{BUCKET_CLUB_LOGOS}"'
+    for name, value in (
+        ("MAX_POSITION_TITLE_LENGTH", MAX_POSITION_TITLE_LENGTH),
+        ("MAX_POSITION_DETAIL_LENGTH", MAX_POSITION_DETAIL_LENGTH),
+        ("MAX_POSITION_REQUIREMENT_COUNT", MAX_POSITION_REQUIREMENT_COUNT),
+        ("MAX_POSITION_REQUIREMENT_LENGTH", MAX_POSITION_REQUIREMENT_LENGTH),
+        ("MAX_EVENT_DATA_BYTES", MAX_EVENT_DATA_BYTES),
+    ):
+        assert int(_rust_value(name).replace("_", "")) == value, name
+    for name, value in (
+        ("MAX_AVATAR_SIZE_BYTES", MAX_AVATAR_SIZE_BYTES),
+        ("MAX_IMAGE_SIZE_BYTES", MAX_IMAGE_SIZE_BYTES),
+    ):
+        assert math.prod(int(factor) for factor in _rust_value(name).split("*")) == value, name
+    for name, value in (
+        ("BUCKET_EVENT_IMAGES", BUCKET_EVENT_IMAGES),
+        ("BUCKET_EVENT_VIDEOS", BUCKET_EVENT_VIDEOS),
+        ("BUCKET_CLUB_LOGOS", BUCKET_CLUB_LOGOS),
+        ("BUCKET_AVATARS", BUCKET_AVATARS),
+        ("BUCKET_QR_ASSETS", BUCKET_QR_ASSETS),
+        ("BUCKET_CLAIM_PROOFS", BUCKET_CLAIM_PROOFS),
+    ):
+        assert _rust_value(name) == f'"{value}"', name
     assert int(_rust_value("DEFAULT_PAGE_SIZE")) == DEFAULT_PAGE_SIZE
     assert int(_rust_value("MAX_PAGE_SIZE")) == MAX_PAGE_SIZE
     assert int(_rust_value("MAX_PAGE_NUMBER")) == MAX_PAGE_NUMBER

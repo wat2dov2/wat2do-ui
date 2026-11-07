@@ -1,5 +1,6 @@
 //! Routes ported from `backend/routers`, one module per FastAPI router.
 
+pub mod ai;
 pub mod auth;
 pub mod calendar;
 pub mod clubs;
@@ -21,7 +22,9 @@ pub mod schools;
 pub mod site_banner;
 pub mod sponsor_submissions;
 pub mod stripe_webhook;
+pub mod submissions;
 pub mod tickets;
+pub mod uploads;
 pub mod users;
 pub mod v1_saved_events;
 
@@ -59,10 +62,9 @@ pub struct HttpValidationError {
 }
 
 /// Schemas the Rust routes use but FastAPI's routes still define.
-pub const FASTAPI_SCHEMAS: [&str; 5] = [
+pub const FASTAPI_SCHEMAS: [&str; 4] = [
     "HTTPValidationError",
     "ValidationError",
     "ClubCohostResponse",
     "LatestAddedItem",
-    "SubmissionUpdate",
 ];

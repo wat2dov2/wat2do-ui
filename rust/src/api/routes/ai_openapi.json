@@ -1,0 +1,358 @@
+{
+  "paths": {
+    "/ai/parse-event-image": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Parse Event Image",
+        "operationId": "parse_event_image_ai_parse_event_image_post",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "title": "School"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_parse_event_image_ai_parse_event_image_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFormDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/parse-position-image": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Parse Position Image",
+        "operationId": "parse_position_image_ai_parse_position_image_post",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "title": "School"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_parse_position_image_ai_parse_position_image_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionImageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "schemas": {
+    "Body_parse_event_image_ai_parse_event_image_post": {
+      "properties": {
+        "file": {
+          "type": "string",
+          "contentMediaType": "application/octet-stream",
+          "title": "File"
+        }
+      },
+      "type": "object",
+      "required": [
+        "file"
+      ],
+      "title": "Body_parse_event_image_ai_parse_event_image_post"
+    },
+    "Body_parse_position_image_ai_parse_position_image_post": {
+      "properties": {
+        "file": {
+          "type": "string",
+          "contentMediaType": "application/octet-stream",
+          "title": "File"
+        }
+      },
+      "type": "object",
+      "required": [
+        "file"
+      ],
+      "title": "Body_parse_position_image_ai_parse_position_image_post"
+    },
+    "EventFormDataResponse": {
+      "properties": {
+        "title": {
+          "type": "string",
+          "title": "Title",
+          "default": ""
+        },
+        "description": {
+          "type": "string",
+          "title": "Description",
+          "default": ""
+        },
+        "occurrences": {
+          "items": {
+            "$ref": "#/components/schemas/EventFormOccurrenceResponse"
+          },
+          "type": "array",
+          "title": "Occurrences"
+        },
+        "location": {
+          "type": "string",
+          "title": "Location",
+          "default": ""
+        },
+        "category": {
+          "type": "string",
+          "title": "Category",
+          "default": ""
+        },
+        "price": {
+          "type": "number",
+          "title": "Price",
+          "default": 0
+        },
+        "food": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "title": "Food"
+        },
+        "registration": {
+          "type": "boolean",
+          "title": "Registration",
+          "default": false
+        },
+        "source_image_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Image Url"
+        }
+      },
+      "type": "object",
+      "title": "EventFormDataResponse"
+    },
+    "EventFormOccurrenceResponse": {
+      "properties": {
+        "dtstart_local": {
+          "type": "string",
+          "title": "Dtstart Local",
+          "default": ""
+        },
+        "dtend_local": {
+          "type": "string",
+          "title": "Dtend Local",
+          "default": ""
+        }
+      },
+      "type": "object",
+      "title": "EventFormOccurrenceResponse"
+    },
+    "PositionImageResponse": {
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Description"
+        },
+        "position_type": {
+          "type": "string",
+          "enum": [
+            "executive",
+            "committee",
+            "volunteer",
+            "staff",
+            "internship",
+            "general"
+          ],
+          "title": "Position Type"
+        },
+        "requirements": {
+          "items": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1
+          },
+          "type": "array",
+          "maxItems": 12,
+          "title": "Requirements"
+        },
+        "commitment": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Commitment"
+        },
+        "compensation": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Compensation"
+        },
+        "is_paid": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Is Paid"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Location"
+        },
+        "contact_email": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 320
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Contact Email"
+        },
+        "deadline_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Deadline Date"
+        },
+        "deadline_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Deadline At"
+        },
+        "source_image_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Image Url"
+        }
+      },
+      "type": "object",
+      "required": [
+        "title",
+        "description",
+        "position_type"
+      ],
+      "title": "PositionImageResponse"
+    }
+  }
+}

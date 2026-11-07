@@ -6,11 +6,9 @@ from itertools import batched
 from uuid import UUID
 
 from core.database import get_sb
-from core.exceptions import ValidationError
 from core.tables import USERS
-from schemas.user import UserResponse, UserUpdate
+from schemas.user import UserResponse
 from services import school_service
-from services.school_context import canonical_school_key
 
 _USER_SELECT = f"*,{school_service.SCHOOL_SLUG_EMBED}"
 
@@ -75,30 +73,3 @@ def get_users_by_ids(user_ids: list[str]) -> dict[str, UserResponse]:
             result[str(user.id)] = user
 
     return result
-
-
-def update_user(user_id: UUID, data: UserUpdate) -> UserResponse | None:
-    existing = get_user(user_id)
-    if existing is None:
-        return None
-    payload = data.model_dump(exclude_unset=True)
-    if not payload:
-        return existing
-    school_changed = "school" in payload
-    school = None
-    if "school" in payload:
-        school = school_service.get_school(canonical_school_key(payload.pop("school")))
-        if school is None:
-            raise ValidationError("School is not registered")
-        payload["school_id"] = school.id
-    if payload.get("faculty"):
-        school = school or school_service.get_school(canonical_school_key(existing.school))
-        if school is None or payload["faculty"] not in school.faculties:
-            raise ValidationError("Faculty is not offered by the selected school")
-    elif school_changed and "faculty" not in payload and school is not None:
-        if existing.faculty not in school.faculties:
-            payload["faculty"] = None
-    r = get_sb().table(USERS).update(payload).eq("id", str(user_id)).execute()
-    if not r.data:
-        return None
-    return _user_response({**r.data[0], "school": data.school or existing.school})

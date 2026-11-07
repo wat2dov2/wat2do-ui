@@ -24,6 +24,10 @@ pub struct Settings {
     pub storage_secret_access_key: String,
     pub storage_bucket_name: String,
     pub storage_public_base_url: String,
+    /// `OPENAI_API_KEY`: the image extraction routes' vision model; empty disables them.
+    pub openai_api_key: String,
+    /// `OPENAI_EXTRACTION_MODEL`, the model those routes ask.
+    pub openai_extraction_model: String,
     pub event_feed_revalidation_url: String,
     pub event_feed_revalidation_secret: String,
     pub event_feed_revalidation_timeout_seconds: f64,
@@ -111,6 +115,8 @@ impl Settings {
             storage_public_base_url: optional("STORAGE_PUBLIC_BASE_URL")
                 .trim_end_matches('/')
                 .to_owned(),
+            openai_api_key: optional("OPENAI_API_KEY"),
+            openai_extraction_model: or_default("OPENAI_EXTRACTION_MODEL", "gpt-6-luna"),
             event_feed_revalidation_url: optional("EVENT_FEED_REVALIDATION_URL"),
             event_feed_revalidation_secret: optional("EVENT_FEED_REVALIDATION_SECRET"),
             event_feed_revalidation_timeout_seconds: optional("EVENT_FEED_REVALIDATION_TIMEOUT")

@@ -5,31 +5,17 @@ live in ``event_dates`` (via ``event_date_service``) and are returned on
 response models as the ``occurrences`` list.
 """
 
-import logging
 from datetime import datetime, timezone
 
-from postgrest.exceptions import APIError
-
 from core.database import get_sb
-from core.errors import CLUB_NOT_FOUND, EVENT_ALREADY_PAST
-from core.exceptions import NotFoundError, ValidationError
 from core.tables import EVENTS
-from schemas.event import (
-    EventCreate,
-    EventResponse,
-    EventSummaryResponse,
-    EventUpdate,
-)
+from schemas.event import EventResponse, EventSummaryResponse
 from schemas.event_date import OccurrenceResponse, OccurrenceUpdate
 from services import (
     event_date_service,
     event_query,
     school_service,
 )
-from services.event_feed_revalidation import event_feed_revalidation_service
-
-log = logging.getLogger(__name__)
-
 
 # Event fields whose changes constitute a "material" update - the ones
 # worth notifying saved-by users about. Description/title/handle edits
@@ -57,46 +43,17 @@ def _to_utc(dt: datetime | None) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
-def _resolve_club_fields(club_id: int) -> dict[str, str | int | None]:
-    """Derive the event's denormalized fields from its owning club.
+def normalize_campus_season_ids(value: object, school: str | None) -> list[str] | None:
+    """Keep school-owned IDs, preserving unknown versus reviewed-empty metadata.
 
-    The club is the single source of truth for an event's display name
-    and school - callers never set these directly, so both the
-    direct-create path and the submission-approval path stay in agreement.
+    Extraction drops invalid model output without dropping an otherwise valid
+    event or claiming that it was reviewed negative. (API edits, in Rust,
+    reject invalid IDs instead.)
     """
-    from services import club_service  # local import avoids an import cycle
-
-    club = club_service.get_club(club_id)
-    if club is None:
-        raise NotFoundError(CLUB_NOT_FOUND)
-    school_id = club.school_id or school_service.get_school_id(club.school)
-    if school_id is None:
-        raise ValidationError("Club school is not registered")
-    return {
-        "club": club.club_name,
-        "school_id": school_id,
-        "school": club.school,
-    }
-
-
-def normalize_campus_season_ids(
-    value: object, school: str | None, *, strict: bool = False
-) -> list[str] | None:
-    """Validate school-owned IDs, preserving unknown versus reviewed-empty metadata.
-
-    API edits reject invalid IDs. Extraction drops invalid model output without
-    dropping an otherwise valid event or claiming that it was reviewed negative.
-    """
-    if value is None:
-        return None
-    if not isinstance(value, list):
-        if strict:
-            raise ValidationError("Campus season IDs must be an array")
+    if value is None or not isinstance(value, list):
         return None
     allowed = school_service.campus_season_ids(school or "")
     valid = sorted({item for item in value if isinstance(item, str) and item in allowed})
-    if strict and any(not isinstance(item, str) or item not in allowed for item in value):
-        raise ValidationError("Campus season IDs must be configured for the event's school")
     return valid if valid or not value else None
 
 
@@ -119,38 +76,6 @@ def get_event(event_id: int) -> EventResponse | None:
     return event_query.hydrate_event(r.data[0], occurrences, EventResponse)
 
 
-def create_event(data: EventCreate, *, created_by: str) -> EventResponse:
-    payload = data.model_dump(mode="json")
-    payload.pop("occurrences", None)
-    club_fields = _resolve_club_fields(data.club_id)
-    school = club_fields.pop("school")
-    payload.update(club_fields)
-    payload["campus_season_ids"] = normalize_campus_season_ids(
-        data.campus_season_ids, str(school) if school else None, strict=True
-    )
-    payload["created_by"] = created_by
-    r = get_sb().table(EVENTS).insert(payload).execute()
-    new_row = r.data[0]
-    new_id = new_row["id"]
-
-    try:
-        event_date_service.create_occurrences(new_id, data.occurrences)
-    except Exception:
-        # Roll back the orphan event row if occurrence insert failed -
-        # PostgREST has no transaction surface, so we clean up manually.
-        get_sb().table(EVENTS).delete().eq("id", new_id).execute()
-        raise
-
-    created = get_event(new_id)
-    if created is None:
-        raise APIError("Failed to read created event")
-    event_feed_revalidation_service.revalidate_school(
-        created.school,
-        resources=("events", "clubs"),
-    )
-    return created
-
-
 def has_ended(event: EventResponse | EventSummaryResponse, *, now: datetime | None = None) -> bool:
     """Return True if every occurrence on the event is strictly in the past.
 
@@ -165,58 +90,6 @@ def has_ended(event: EventResponse | EventSummaryResponse, *, now: datetime | No
     current = now or datetime.now(timezone.utc)
     latest_end = max(_to_utc(o.dtend_utc or o.dtstart_utc) for o in event.occurrences)
     return latest_end < current
-
-
-def update_event(event_id: int, data: EventUpdate) -> EventResponse | None:
-    """Update an event, refusing edits to already-past events.
-
-    Past-event freezing (audit I12) - once every occurrence has passed,
-    mutations are rejected. This prevents owners from silently rewriting
-    title / dtstart / club on an event users already saved.
-    """
-    existing = get_event(event_id)
-    if existing is None:
-        return None
-    if has_ended(existing):
-        log.warning(
-            "Rejected update to past event id=%s (last occurrence ended)",
-            event_id,
-        )
-        raise ValidationError(EVENT_ALREADY_PAST)
-
-    payload = data.model_dump(mode="json", exclude_unset=True)
-    new_occurrences = payload.pop("occurrences", None)
-
-    # Reassigning the club re-derives the denormalized display fields so the
-    # event row never drifts from its owning club.
-    school = existing.school
-    if payload.get("club_id") is not None:
-        club_fields = _resolve_club_fields(payload["club_id"])
-        resolved_school = club_fields.pop("school")
-        school = str(resolved_school) if resolved_school else None
-        payload.update(club_fields)
-        if school != existing.school:
-            payload["cohost_club_ids"] = []
-        if school != existing.school and "campus_season_ids" not in payload:
-            payload["campus_season_ids"] = None
-    if "campus_season_ids" in payload:
-        payload["campus_season_ids"] = normalize_campus_season_ids(
-            payload["campus_season_ids"], school, strict=True
-        )
-
-    update_event_and_occurrences(
-        event_id,
-        payload,
-        data.occurrences if new_occurrences is not None else None,
-    )
-
-    updated = get_event(event_id)
-    if updated is not None:
-        event_feed_revalidation_service.revalidate_schools(
-            [existing.school, updated.school],
-            resources=("events", "clubs"),
-        )
-    return updated
 
 
 def update_event_and_occurrences(
@@ -244,17 +117,6 @@ def update_event_and_occurrences(
         )
         .execute()
     )
-
-
-def delete_event(event_id: int) -> bool:
-    existing = get_event(event_id)
-    r = get_sb().table(EVENTS).delete().eq("id", event_id).execute()
-    if r.data:
-        event_feed_revalidation_service.revalidate_school(
-            existing.school if existing is not None else None,
-            resources=("events", "clubs"),
-        )
-    return bool(r.data)
 
 
 def compute_event_diff(

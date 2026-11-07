@@ -1,0 +1,1019 @@
+{
+  "paths": {
+    "/position-submissions/": {
+      "post": {
+        "tags": [
+          "position-submissions"
+        ],
+        "summary": "Create Submission",
+        "operationId": "create_submission_position_submissions__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PositionSubmissionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionSubmissionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "position-submissions"
+        ],
+        "summary": "List Submissions",
+        "operationId": "list_submissions_position_submissions__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Submission Status"
+            }
+          },
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_PositionSubmissionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/position-submissions/{submission_id}": {
+      "patch": {
+        "tags": [
+          "position-submissions"
+        ],
+        "summary": "Review Submission",
+        "operationId": "review_submission_position_submissions__submission_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Submission Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmissionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionSubmissionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/submissions/": {
+      "post": {
+        "tags": [
+          "submissions"
+        ],
+        "summary": "Create Submission",
+        "operationId": "create_submission_submissions__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmissionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "submissions"
+        ],
+        "summary": "List Submissions",
+        "operationId": "list_submissions_submissions__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Submission Status"
+            }
+          },
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_SubmissionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/submissions/{submission_id}": {
+      "get": {
+        "tags": [
+          "submissions"
+        ],
+        "summary": "Get Submission",
+        "operationId": "get_submission_submissions__submission_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Submission Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "submissions"
+        ],
+        "summary": "Update Submission",
+        "operationId": "update_submission_submissions__submission_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Submission Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmissionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "submissions"
+        ],
+        "summary": "Delete Submission",
+        "operationId": "delete_submission_submissions__submission_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Submission Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "schemas": {
+    "PaginatedResponse_PositionSubmissionResponse_": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/components/schemas/PositionSubmissionResponse"
+          },
+          "type": "array",
+          "title": "Items"
+        },
+        "total": {
+          "type": "integer",
+          "title": "Total"
+        },
+        "page": {
+          "type": "integer",
+          "title": "Page"
+        },
+        "page_size": {
+          "type": "integer",
+          "title": "Page Size"
+        },
+        "total_pages": {
+          "type": "integer",
+          "title": "Total Pages"
+        }
+      },
+      "type": "object",
+      "required": [
+        "items",
+        "total",
+        "page",
+        "page_size",
+        "total_pages"
+      ],
+      "title": "PaginatedResponse[PositionSubmissionResponse]"
+    },
+    "PaginatedResponse_SubmissionResponse_": {
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/components/schemas/SubmissionResponse"
+          },
+          "type": "array",
+          "title": "Items"
+        },
+        "total": {
+          "type": "integer",
+          "title": "Total"
+        },
+        "page": {
+          "type": "integer",
+          "title": "Page"
+        },
+        "page_size": {
+          "type": "integer",
+          "title": "Page Size"
+        },
+        "total_pages": {
+          "type": "integer",
+          "title": "Total Pages"
+        }
+      },
+      "type": "object",
+      "required": [
+        "items",
+        "total",
+        "page",
+        "page_size",
+        "total_pages"
+      ],
+      "title": "PaginatedResponse[SubmissionResponse]"
+    },
+    "PositionCreate": {
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Description"
+        },
+        "position_type": {
+          "type": "string",
+          "enum": [
+            "executive",
+            "committee",
+            "volunteer",
+            "staff",
+            "internship",
+            "general"
+          ],
+          "title": "Position Type"
+        },
+        "requirements": {
+          "items": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1
+          },
+          "type": "array",
+          "maxItems": 12,
+          "title": "Requirements"
+        },
+        "commitment": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Commitment"
+        },
+        "compensation": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Compensation"
+        },
+        "is_paid": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Is Paid"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 1000
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Location"
+        },
+        "contact_email": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 320
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Contact Email"
+        },
+        "deadline_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Deadline Date"
+        },
+        "deadline_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Deadline At"
+        },
+        "club_id": {
+          "type": "integer",
+          "minimum": 1.0,
+          "title": "Club Id"
+        },
+        "source_url": {
+          "type": "string",
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Source Url"
+        },
+        "source_image_url": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 2048
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Image Url"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "title",
+        "description",
+        "position_type",
+        "club_id",
+        "source_url"
+      ],
+      "title": "PositionCreate"
+    },
+    "PositionSubmissionCreate": {
+      "properties": {
+        "submitted_by_email": {
+          "type": "string",
+          "format": "email",
+          "title": "Submitted By Email"
+        },
+        "position_data": {
+          "$ref": "#/components/schemas/PositionCreate"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "submitted_by_email",
+        "position_data"
+      ],
+      "title": "PositionSubmissionCreate"
+    },
+    "PositionSubmissionResponse": {
+      "properties": {
+        "school": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "School"
+        },
+        "id": {
+          "type": "string",
+          "title": "Id"
+        },
+        "user_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "User Id"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "approved",
+            "rejected"
+          ],
+          "title": "Status"
+        },
+        "rejection_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rejection Reason"
+        },
+        "submitted_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Submitted At"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reviewed At"
+        },
+        "submitted_by_email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Submitted By Email"
+        },
+        "position_data": {
+          "$ref": "#/components/schemas/PositionCreate"
+        }
+      },
+      "type": "object",
+      "required": [
+        "id",
+        "user_id",
+        "status",
+        "submitted_at",
+        "position_data"
+      ],
+      "title": "PositionSubmissionResponse"
+    },
+    "SubmissionCreate": {
+      "properties": {
+        "submitted_by_email": {
+          "type": "string",
+          "format": "email",
+          "title": "Submitted By Email"
+        },
+        "event_data": {
+          "$ref": "#/components/schemas/EventCreate"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "submitted_by_email",
+        "event_data"
+      ],
+      "title": "SubmissionCreate",
+      "description": "Normal-user event submission for admin review.\n\n``event_data`` uses the same schema as direct event creation so\nmoderation receives a payload that can be published without a second\nshape translation step."
+    },
+    "SubmissionResponse": {
+      "properties": {
+        "school": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "School"
+        },
+        "id": {
+          "type": "string",
+          "title": "Id"
+        },
+        "user_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "User Id"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "approved",
+            "rejected"
+          ],
+          "title": "Status"
+        },
+        "rejection_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rejection Reason"
+        },
+        "submitted_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Submitted At"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reviewed At"
+        },
+        "submitted_by_email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Submitted By Email"
+        },
+        "event_data": {
+          "additionalProperties": true,
+          "type": "object",
+          "title": "Event Data"
+        },
+        "club_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Club Name"
+        }
+      },
+      "type": "object",
+      "required": [
+        "id",
+        "user_id",
+        "status",
+        "submitted_at",
+        "event_data"
+      ],
+      "title": "SubmissionResponse"
+    },
+    "SubmissionUpdate": {
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "approved",
+            "rejected"
+          ],
+          "title": "Status"
+        },
+        "rejection_reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 2000
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rejection Reason"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "title": "SubmissionUpdate"
+    }
+  }
+}

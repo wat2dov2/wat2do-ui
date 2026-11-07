@@ -5,114 +5,6 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/ai/parse-event-image": {
-      "post": {
-        "tags": [
-          "ai"
-        ],
-        "summary": "Parse Event Image",
-        "operationId": "parse_event_image_ai_parse_event_image_post",
-        "parameters": [
-          {
-            "name": "school",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 255,
-              "title": "School"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_parse_event_image_ai_parse_event_image_post"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EventFormDataResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/ai/parse-position-image": {
-      "post": {
-        "tags": [
-          "ai"
-        ],
-        "summary": "Parse Position Image",
-        "operationId": "parse_position_image_ai_parse_position_image_post",
-        "parameters": [
-          {
-            "name": "school",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 255,
-              "title": "School"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_parse_position_image_ai_parse_position_image_post"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PositionImageResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/competitor-pain-points/": {
       "get": {
         "tags": [
@@ -1299,823 +1191,6 @@
         }
       }
     },
-    "/position-submissions/": {
-      "post": {
-        "tags": [
-          "position-submissions"
-        ],
-        "summary": "Create Submission",
-        "operationId": "create_submission_position_submissions__post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PositionSubmissionCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PositionSubmissionResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "position-submissions"
-        ],
-        "summary": "List Submissions",
-        "operationId": "list_submissions_position_submissions__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "submission_status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "pending",
-                    "approved",
-                    "rejected"
-                  ],
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Submission Status"
-            }
-          },
-          {
-            "name": "school",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 255
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "School"
-            }
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 200
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Search"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 1000,
-              "minimum": 1,
-              "description": "Page number (1-indexed)",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "Page number (1-indexed)"
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "Items per page (max 100)",
-              "default": 50,
-              "title": "Page Size"
-            },
-            "description": "Items per page (max 100)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_PositionSubmissionResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/position-submissions/{submission_id}": {
-      "patch": {
-        "tags": [
-          "position-submissions"
-        ],
-        "summary": "Review Submission",
-        "operationId": "review_submission_position_submissions__submission_id__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "submission_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Submission Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubmissionUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PositionSubmissionResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/submissions/": {
-      "post": {
-        "tags": [
-          "submissions"
-        ],
-        "summary": "Create Submission",
-        "operationId": "create_submission_submissions__post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubmissionCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SubmissionResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "submissions"
-        ],
-        "summary": "List Submissions",
-        "operationId": "list_submissions_submissions__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "submission_status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 30
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Submission Status"
-            }
-          },
-          {
-            "name": "school",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 255
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "School"
-            }
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 200
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Search"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 1000,
-              "minimum": 1,
-              "description": "Page number (1-indexed)",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "Page number (1-indexed)"
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "Items per page (max 100)",
-              "default": 50,
-              "title": "Page Size"
-            },
-            "description": "Items per page (max 100)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedResponse_SubmissionResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/submissions/{submission_id}": {
-      "get": {
-        "tags": [
-          "submissions"
-        ],
-        "summary": "Get Submission",
-        "operationId": "get_submission_submissions__submission_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "submission_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Submission Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SubmissionResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "submissions"
-        ],
-        "summary": "Update Submission",
-        "operationId": "update_submission_submissions__submission_id__patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "submission_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Submission Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubmissionUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SubmissionResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "submissions"
-        ],
-        "summary": "Delete Submission",
-        "operationId": "delete_submission_submissions__submission_id__delete",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "submission_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Submission Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/uploads/event-image": {
-      "post": {
-        "tags": [
-          "uploads"
-        ],
-        "summary": "Upload Event Image Unsigned",
-        "operationId": "upload_event_image_unsigned_uploads_event_image_post",
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_upload_event_image_unsigned_uploads_event_image_post"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UploadResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/uploads/event-image/{event_id}": {
-      "post": {
-        "tags": [
-          "uploads"
-        ],
-        "summary": "Upload Event Image",
-        "operationId": "upload_event_image_uploads_event_image__event_id__post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "event_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Event Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_upload_event_image_uploads_event_image__event_id__post"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UploadResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/uploads/avatar": {
-      "post": {
-        "tags": [
-          "uploads"
-        ],
-        "summary": "Upload Avatar",
-        "operationId": "upload_avatar_uploads_avatar_post",
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_upload_avatar_uploads_avatar_post"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UploadResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/uploads/club-logo/{club_id}": {
-      "post": {
-        "tags": [
-          "uploads"
-        ],
-        "summary": "Upload Club Logo",
-        "operationId": "upload_club_logo_uploads_club_logo__club_id__post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "club_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Club Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_upload_club_logo_uploads_club_logo__club_id__post"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UploadResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/uploads/qr-asset": {
-      "post": {
-        "tags": [
-          "uploads"
-        ],
-        "summary": "Upload Qr Asset",
-        "operationId": "upload_qr_asset_uploads_qr_asset_post",
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_upload_qr_asset_uploads_qr_asset_post"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UploadResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/uploads/claim-proof": {
-      "post": {
-        "tags": [
-          "uploads"
-        ],
-        "summary": "Upload Claim Proof",
-        "operationId": "upload_claim_proof_uploads_claim_proof_post",
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_upload_claim_proof_uploads_claim_proof_post"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UploadResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
     "/webhooks/automate": {
       "post": {
         "tags": [
@@ -2257,6 +1332,114 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/parse-event-image": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Parse Event Image",
+        "operationId": "parse_event_image_ai_parse_event_image_post",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "title": "School"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_parse_event_image_ai_parse_event_image_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFormDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/parse-position-image": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Parse Position Image",
+        "operationId": "parse_position_image_ai_parse_position_image_post",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "title": "School"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_parse_position_image_ai_parse_position_image_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionImageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -4616,6 +3799,600 @@
         }
       }
     },
+    "/submissions/": {
+      "post": {
+        "tags": [
+          "submissions"
+        ],
+        "summary": "Create Submission",
+        "operationId": "create_submission_submissions__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmissionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "submissions"
+        ],
+        "summary": "List Submissions",
+        "operationId": "list_submissions_submissions__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Submission Status"
+            }
+          },
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_SubmissionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/submissions/{submission_id}": {
+      "get": {
+        "tags": [
+          "submissions"
+        ],
+        "summary": "Get Submission",
+        "operationId": "get_submission_submissions__submission_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Submission Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "submissions"
+        ],
+        "summary": "Update Submission",
+        "operationId": "update_submission_submissions__submission_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Submission Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmissionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "submissions"
+        ],
+        "summary": "Delete Submission",
+        "operationId": "delete_submission_submissions__submission_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Submission Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads/event-image": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Event Image Unsigned",
+        "operationId": "upload_event_image_unsigned_uploads_event_image_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_event_image_unsigned_uploads_event_image_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads/event-image/{event_id}": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Event Image",
+        "operationId": "upload_event_image_uploads_event_image__event_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_event_image_uploads_event_image__event_id__post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads/avatar": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Avatar",
+        "operationId": "upload_avatar_uploads_avatar_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_avatar_uploads_avatar_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/uploads/club-logo/{club_id}": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Club Logo",
+        "operationId": "upload_club_logo_uploads_club_logo__club_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "club_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Club Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_club_logo_uploads_club_logo__club_id__post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads/qr-asset": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Qr Asset",
+        "operationId": "upload_qr_asset_uploads_qr_asset_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_qr_asset_uploads_qr_asset_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/uploads/claim-proof": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Upload Claim Proof",
+        "operationId": "upload_claim_proof_uploads_claim_proof_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_claim_proof_uploads_claim_proof_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/clubs/": {
       "get": {
         "tags": [
@@ -6556,6 +6333,229 @@
         }
       }
     },
+    "/position-submissions/": {
+      "post": {
+        "tags": [
+          "position-submissions"
+        ],
+        "summary": "Create Submission",
+        "operationId": "create_submission_position_submissions__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PositionSubmissionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionSubmissionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "position-submissions"
+        ],
+        "summary": "List Submissions",
+        "operationId": "list_submissions_position_submissions__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Submission Status"
+            }
+          },
+          {
+            "name": "school",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Page number (1-indexed)",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Page number (1-indexed)"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100)",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "Items per page (max 100)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse_PositionSubmissionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/position-submissions/{submission_id}": {
+      "patch": {
+        "tags": [
+          "position-submissions"
+        ],
+        "summary": "Review Submission",
+        "operationId": "review_submission_position_submissions__submission_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "submission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Submission Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmissionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionSubmissionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/qr/": {
       "get": {
         "tags": [
@@ -8012,118 +8012,6 @@
         ],
         "title": "AutomateLogPayload"
       },
-      "Body_parse_event_image_ai_parse_event_image_post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_parse_event_image_ai_parse_event_image_post"
-      },
-      "Body_parse_position_image_ai_parse_position_image_post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_parse_position_image_ai_parse_position_image_post"
-      },
-      "Body_upload_avatar_uploads_avatar_post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_upload_avatar_uploads_avatar_post"
-      },
-      "Body_upload_claim_proof_uploads_claim_proof_post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_upload_claim_proof_uploads_claim_proof_post"
-      },
-      "Body_upload_club_logo_uploads_club_logo__club_id__post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_upload_club_logo_uploads_club_logo__club_id__post"
-      },
-      "Body_upload_event_image_unsigned_uploads_event_image_post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_upload_event_image_unsigned_uploads_event_image_post"
-      },
-      "Body_upload_event_image_uploads_event_image__event_id__post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_upload_event_image_uploads_event_image__event_id__post"
-      },
-      "Body_upload_qr_asset_uploads_qr_asset_post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file"
-        ],
-        "title": "Body_upload_qr_asset_uploads_qr_asset_post"
-      },
       "ClubCohostResponse": {
         "properties": {
           "id": {
@@ -8368,285 +8256,6 @@
           "created_at"
         ],
         "title": "DailyReportResponse"
-      },
-      "EventCreate": {
-        "properties": {
-          "competition": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Competition",
-            "description": "An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed."
-          },
-          "employers_on_campus": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Employers On Campus",
-            "description": "Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as \"Ramp x Blueprint\" or \"Figma x Sanrio\", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain."
-          },
-          "sports_game": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sports Game",
-            "description": "An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed."
-          },
-          "campus_season_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Campus Season Ids",
-            "description": "School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership."
-          },
-          "title": {
-            "type": "string",
-            "maxLength": 300,
-            "minLength": 1,
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 5000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "location": {
-            "type": "string",
-            "maxLength": 500,
-            "minLength": 1,
-            "title": "Location"
-          },
-          "map_location": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 500,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Map Location"
-          },
-          "occurrences": {
-            "items": {
-              "$ref": "#/components/schemas/OccurrenceCreate"
-            },
-            "type": "array",
-            "minItems": 1,
-            "title": "Occurrences"
-          },
-          "price": {
-            "anyOf": [
-              {
-                "type": "number",
-                "maximum": 100000.0,
-                "minimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Price"
-          },
-          "food": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "maxLength": 100,
-                  "minLength": 1
-                },
-                "type": "array",
-                "maxItems": 20
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Food"
-          },
-          "registration": {
-            "type": "boolean",
-            "title": "Registration",
-            "default": false
-          },
-          "source_image_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2048
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Image Url"
-          },
-          "source_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2048
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Url"
-          },
-          "category": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 100
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category"
-          },
-          "club_id": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Club Id"
-          },
-          "ig_handle": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ig Handle"
-          },
-          "cancelled": {
-            "type": "boolean",
-            "title": "Cancelled",
-            "default": false
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "title",
-          "location",
-          "occurrences",
-          "club_id"
-        ],
-        "title": "EventCreate"
-      },
-      "EventFormDataResponse": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "title": "Title",
-            "default": ""
-          },
-          "description": {
-            "type": "string",
-            "title": "Description",
-            "default": ""
-          },
-          "occurrences": {
-            "items": {
-              "$ref": "#/components/schemas/EventFormOccurrenceResponse"
-            },
-            "type": "array",
-            "title": "Occurrences"
-          },
-          "location": {
-            "type": "string",
-            "title": "Location",
-            "default": ""
-          },
-          "category": {
-            "type": "string",
-            "title": "Category",
-            "default": ""
-          },
-          "price": {
-            "type": "number",
-            "title": "Price",
-            "default": 0
-          },
-          "food": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Food"
-          },
-          "registration": {
-            "type": "boolean",
-            "title": "Registration",
-            "default": false
-          },
-          "source_image_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Image Url"
-          }
-        },
-        "type": "object",
-        "title": "EventFormDataResponse"
-      },
-      "EventFormOccurrenceResponse": {
-        "properties": {
-          "dtstart_local": {
-            "type": "string",
-            "title": "Dtstart Local",
-            "default": ""
-          },
-          "dtend_local": {
-            "type": "string",
-            "title": "Dtend Local",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "title": "EventFormOccurrenceResponse"
       },
       "EventSummaryResponse": {
         "properties": {
@@ -10231,58 +9840,6 @@
         "title": "NotificationPreferencesListResponse",
         "description": "Every notification type's resolved enabled state for the user.\n\nIncludes types for which the user has no row; the\n``enabled`` value is the resolved default in that case. Clients\nrender one toggle per entry."
       },
-      "OccurrenceCreate": {
-        "properties": {
-          "dtstart_utc": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Dtstart Utc"
-          },
-          "dtend_utc": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dtend Utc"
-          },
-          "duration": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Duration"
-          },
-          "tz": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 64
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tz"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "dtstart_utc"
-        ],
-        "title": "OccurrenceCreate",
-        "description": "One occurrence: start time plus optional end / duration / timezone."
-      },
       "OccurrenceSummaryResponse": {
         "properties": {
           "id": {
@@ -10670,480 +10227,6 @@
         ],
         "title": "PaginatedResponse[OutreachLeadResponse]"
       },
-      "PaginatedResponse_PositionSubmissionResponse_": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/PositionSubmissionResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "page_size": {
-            "type": "integer",
-            "title": "Page Size"
-          },
-          "total_pages": {
-            "type": "integer",
-            "title": "Total Pages"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total",
-          "page",
-          "page_size",
-          "total_pages"
-        ],
-        "title": "PaginatedResponse[PositionSubmissionResponse]"
-      },
-      "PaginatedResponse_SubmissionResponse_": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/SubmissionResponse"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "page_size": {
-            "type": "integer",
-            "title": "Page Size"
-          },
-          "total_pages": {
-            "type": "integer",
-            "title": "Total Pages"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total",
-          "page",
-          "page_size",
-          "total_pages"
-        ],
-        "title": "PaginatedResponse[SubmissionResponse]"
-      },
-      "PositionCreate": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 4000,
-            "minLength": 1,
-            "title": "Description"
-          },
-          "position_type": {
-            "type": "string",
-            "enum": [
-              "executive",
-              "committee",
-              "volunteer",
-              "staff",
-              "internship",
-              "general"
-            ],
-            "title": "Position Type"
-          },
-          "requirements": {
-            "items": {
-              "type": "string",
-              "maxLength": 300,
-              "minLength": 1
-            },
-            "type": "array",
-            "maxItems": 12,
-            "title": "Requirements"
-          },
-          "commitment": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 1000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Commitment"
-          },
-          "compensation": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 1000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Compensation"
-          },
-          "is_paid": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Paid"
-          },
-          "location": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 1000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Location"
-          },
-          "contact_email": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 320
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Contact Email"
-          },
-          "deadline_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Deadline Date"
-          },
-          "deadline_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Deadline At"
-          },
-          "club_id": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Club Id"
-          },
-          "source_url": {
-            "type": "string",
-            "maxLength": 2048,
-            "minLength": 1,
-            "title": "Source Url"
-          },
-          "source_image_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2048
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Image Url"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "title",
-          "description",
-          "position_type",
-          "club_id",
-          "source_url"
-        ],
-        "title": "PositionCreate"
-      },
-      "PositionImageResponse": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 4000,
-            "minLength": 1,
-            "title": "Description"
-          },
-          "position_type": {
-            "type": "string",
-            "enum": [
-              "executive",
-              "committee",
-              "volunteer",
-              "staff",
-              "internship",
-              "general"
-            ],
-            "title": "Position Type"
-          },
-          "requirements": {
-            "items": {
-              "type": "string",
-              "maxLength": 300,
-              "minLength": 1
-            },
-            "type": "array",
-            "maxItems": 12,
-            "title": "Requirements"
-          },
-          "commitment": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 1000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Commitment"
-          },
-          "compensation": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 1000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Compensation"
-          },
-          "is_paid": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Is Paid"
-          },
-          "location": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 1000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Location"
-          },
-          "contact_email": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 320
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Contact Email"
-          },
-          "deadline_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Deadline Date"
-          },
-          "deadline_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Deadline At"
-          },
-          "source_image_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Source Image Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "title",
-          "description",
-          "position_type"
-        ],
-        "title": "PositionImageResponse"
-      },
-      "PositionSubmissionCreate": {
-        "properties": {
-          "submitted_by_email": {
-            "type": "string",
-            "format": "email",
-            "title": "Submitted By Email"
-          },
-          "position_data": {
-            "$ref": "#/components/schemas/PositionCreate"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "submitted_by_email",
-          "position_data"
-        ],
-        "title": "PositionSubmissionCreate"
-      },
-      "PositionSubmissionResponse": {
-        "properties": {
-          "school": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "School"
-          },
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "User Id"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "approved",
-              "rejected"
-            ],
-            "title": "Status"
-          },
-          "rejection_reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rejection Reason"
-          },
-          "submitted_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Submitted At"
-          },
-          "reviewed_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reviewed At"
-          },
-          "submitted_by_email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Submitted By Email"
-          },
-          "position_data": {
-            "$ref": "#/components/schemas/PositionCreate"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "user_id",
-          "status",
-          "submitted_at",
-          "position_data"
-        ],
-        "title": "PositionSubmissionResponse"
-      },
       "ReportSuggestion": {
         "properties": {
           "title": {
@@ -11238,173 +10321,6 @@
         ],
         "title": "ReportTheme",
         "description": "A complaint that keeps coming up in one day's findings."
-      },
-      "SubmissionCreate": {
-        "properties": {
-          "submitted_by_email": {
-            "type": "string",
-            "format": "email",
-            "title": "Submitted By Email"
-          },
-          "event_data": {
-            "$ref": "#/components/schemas/EventCreate"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "submitted_by_email",
-          "event_data"
-        ],
-        "title": "SubmissionCreate",
-        "description": "Normal-user event submission for admin review.\n\n``event_data`` uses the same schema as direct event creation so\nmoderation receives a payload that can be published without a second\nshape translation step."
-      },
-      "SubmissionResponse": {
-        "properties": {
-          "school": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "School"
-          },
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "user_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "User Id"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "approved",
-              "rejected"
-            ],
-            "title": "Status"
-          },
-          "rejection_reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rejection Reason"
-          },
-          "submitted_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Submitted At"
-          },
-          "reviewed_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reviewed At"
-          },
-          "submitted_by_email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Submitted By Email"
-          },
-          "event_data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Event Data"
-          },
-          "club_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Club Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "user_id",
-          "status",
-          "submitted_at",
-          "event_data"
-        ],
-        "title": "SubmissionResponse"
-      },
-      "SubmissionUpdate": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "approved",
-              "rejected"
-            ],
-            "title": "Status"
-          },
-          "rejection_reason": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rejection Reason"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "status"
-        ],
-        "title": "SubmissionUpdate"
-      },
-      "UploadResponse": {
-        "properties": {
-          "url": {
-            "type": "string",
-            "title": "Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "url"
-        ],
-        "title": "UploadResponse"
       },
       "ValidationError": {
         "properties": {
@@ -11537,6 +10453,118 @@
             }
           }
         }
+      },
+      "Body_parse_event_image_ai_parse_event_image_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_event_image_ai_parse_event_image_post"
+      },
+      "Body_parse_position_image_ai_parse_position_image_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_position_image_ai_parse_position_image_post"
+      },
+      "Body_upload_avatar_uploads_avatar_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_avatar_uploads_avatar_post"
+      },
+      "Body_upload_claim_proof_uploads_claim_proof_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_claim_proof_uploads_claim_proof_post"
+      },
+      "Body_upload_club_logo_uploads_club_logo__club_id__post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_club_logo_uploads_club_logo__club_id__post"
+      },
+      "Body_upload_event_image_unsigned_uploads_event_image_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_event_image_unsigned_uploads_event_image_post"
+      },
+      "Body_upload_event_image_uploads_event_image__event_id__post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_event_image_uploads_event_image__event_id__post"
+      },
+      "Body_upload_qr_asset_uploads_qr_asset_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_qr_asset_uploads_qr_asset_post"
       },
       "CalendarTokenResponse": {
         "properties": {
@@ -12400,6 +11428,208 @@
         "title": "EventAttendeesResponse",
         "description": "Public who's-going summary without user IDs or full names."
       },
+      "EventCreate": {
+        "properties": {
+          "competition": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competition",
+            "description": "An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed."
+          },
+          "employers_on_campus": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employers On Campus",
+            "description": "Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as \"Ramp x Blueprint\" or \"Figma x Sanrio\", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain."
+          },
+          "sports_game": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sports Game",
+            "description": "An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed."
+          },
+          "campus_season_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Campus Season Ids",
+            "description": "School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership."
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Location"
+          },
+          "map_location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Location"
+          },
+          "occurrences": {
+            "items": {
+              "$ref": "#/components/schemas/OccurrenceCreate"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Occurrences"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "food": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 100,
+                  "minLength": 1
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Food"
+          },
+          "registration": {
+            "type": "boolean",
+            "title": "Registration",
+            "default": false
+          },
+          "source_image_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Image Url"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "club_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Club Id"
+          },
+          "ig_handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ig Handle"
+          },
+          "cancelled": {
+            "type": "boolean",
+            "title": "Cancelled",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "location",
+          "occurrences",
+          "club_id"
+        ],
+        "title": "EventCreate"
+      },
       "EventFeedResponse": {
         "properties": {
           "items": {
@@ -12447,6 +11677,83 @@
         ],
         "title": "EventFeedResponse",
         "description": "Public school feed response with catalog-freshness metadata."
+      },
+      "EventFormDataResponse": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "occurrences": {
+            "items": {
+              "$ref": "#/components/schemas/EventFormOccurrenceResponse"
+            },
+            "type": "array",
+            "title": "Occurrences"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location",
+            "default": ""
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "default": ""
+          },
+          "price": {
+            "type": "number",
+            "title": "Price",
+            "default": 0
+          },
+          "food": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Food"
+          },
+          "registration": {
+            "type": "boolean",
+            "title": "Registration",
+            "default": false
+          },
+          "source_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Image Url"
+          }
+        },
+        "type": "object",
+        "title": "EventFormDataResponse"
+      },
+      "EventFormOccurrenceResponse": {
+        "properties": {
+          "dtstart_local": {
+            "type": "string",
+            "title": "Dtstart Local",
+            "default": ""
+          },
+          "dtend_local": {
+            "type": "string",
+            "title": "Dtend Local",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "EventFormOccurrenceResponse"
       },
       "EventPublicResponse": {
         "properties": {
@@ -13799,6 +13106,58 @@
           }
         }
       },
+      "OccurrenceCreate": {
+        "properties": {
+          "dtstart_utc": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dtstart Utc"
+          },
+          "dtend_utc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtend Utc"
+          },
+          "duration": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration"
+          },
+          "tz": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tz"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "dtstart_utc"
+        ],
+        "title": "OccurrenceCreate",
+        "description": "One occurrence: start time plus optional end / duration / timezone."
+      },
       "OccurrenceResponse": {
         "properties": {
           "id": {
@@ -14094,6 +13453,42 @@
         ],
         "title": "PaginatedResponse[EventSummaryResponse]"
       },
+      "PaginatedResponse_PositionSubmissionResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PositionSubmissionResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[PositionSubmissionResponse]"
+      },
       "PaginatedResponse_PosterPayoutResponse_": {
         "type": "object",
         "required": [
@@ -14265,6 +13660,42 @@
             "format": "int64"
           }
         }
+      },
+      "PaginatedResponse_SubmissionResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SubmissionResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedResponse[SubmissionResponse]"
       },
       "PaginatedResponse_UserPosterPayoutResponse_": {
         "type": "object",
@@ -14438,6 +13869,160 @@
           }
         }
       },
+      "PositionCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "position_type": {
+            "type": "string",
+            "enum": [
+              "executive",
+              "committee",
+              "volunteer",
+              "staff",
+              "internship",
+              "general"
+            ],
+            "title": "Position Type"
+          },
+          "requirements": {
+            "items": {
+              "type": "string",
+              "maxLength": 300,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Requirements"
+          },
+          "commitment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commitment"
+          },
+          "compensation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compensation"
+          },
+          "is_paid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Paid"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 320
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "deadline_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline Date"
+          },
+          "deadline_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline At"
+          },
+          "club_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Club Id"
+          },
+          "source_url": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Source Url"
+          },
+          "source_image_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Image Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "position_type",
+          "club_id",
+          "source_url"
+        ],
+        "title": "PositionCreate"
+      },
       "PositionDirectoryResponse": {
         "type": "object",
         "required": [
@@ -14482,6 +14067,145 @@
             ]
           }
         }
+      },
+      "PositionImageResponse": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "position_type": {
+            "type": "string",
+            "enum": [
+              "executive",
+              "committee",
+              "volunteer",
+              "staff",
+              "internship",
+              "general"
+            ],
+            "title": "Position Type"
+          },
+          "requirements": {
+            "items": {
+              "type": "string",
+              "maxLength": 300,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Requirements"
+          },
+          "commitment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commitment"
+          },
+          "compensation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compensation"
+          },
+          "is_paid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Paid"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 320
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email"
+          },
+          "deadline_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline Date"
+          },
+          "deadline_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline At"
+          },
+          "source_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Image Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "position_type"
+        ],
+        "title": "PositionImageResponse"
       },
       "PositionResponse": {
         "type": "object",
@@ -14657,6 +14381,115 @@
             "minimum": 0
           }
         }
+      },
+      "PositionSubmissionCreate": {
+        "properties": {
+          "submitted_by_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Submitted By Email"
+          },
+          "position_data": {
+            "$ref": "#/components/schemas/PositionCreate"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "submitted_by_email",
+          "position_data"
+        ],
+        "title": "PositionSubmissionCreate"
+      },
+      "PositionSubmissionResponse": {
+        "properties": {
+          "school": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Status"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Submitted At"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "submitted_by_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted By Email"
+          },
+          "position_data": {
+            "$ref": "#/components/schemas/PositionCreate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "status",
+          "submitted_at",
+          "position_data"
+        ],
+        "title": "PositionSubmissionResponse"
       },
       "PosterEarningsItem": {
         "type": "object",
@@ -16026,6 +15859,160 @@
           }
         }
       },
+      "SubmissionCreate": {
+        "properties": {
+          "submitted_by_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Submitted By Email"
+          },
+          "event_data": {
+            "$ref": "#/components/schemas/EventCreate"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "submitted_by_email",
+          "event_data"
+        ],
+        "title": "SubmissionCreate",
+        "description": "Normal-user event submission for admin review.\n\n``event_data`` uses the same schema as direct event creation so\nmoderation receives a payload that can be published without a second\nshape translation step."
+      },
+      "SubmissionResponse": {
+        "properties": {
+          "school": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Status"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Submitted At"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "submitted_by_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted By Email"
+          },
+          "event_data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Event Data"
+          },
+          "club_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "status",
+          "submitted_at",
+          "event_data"
+        ],
+        "title": "SubmissionResponse"
+      },
+      "SubmissionUpdate": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "title": "Status"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "SubmissionUpdate"
+      },
       "TicketAttendee": {
         "type": "object",
         "description": "One ticket on a club's door list.",
@@ -16501,6 +16488,19 @@
             "default": false
           }
         }
+      },
+      "UploadResponse": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "UploadResponse"
       },
       "UserPosterPayoutResponse": {
         "type": "object",

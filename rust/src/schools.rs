@@ -23,7 +23,8 @@ pub struct School {
     pub recipient_id: Option<String>,
 }
 
-const COLUMNS: &str = "id, slug, name, timezone, semester_start, semester_end, recipient_id";
+/// The `schools` columns a `School` reads.
+pub const COLUMNS: &str = "id, slug, name, timezone, semester_start, semester_end, recipient_id";
 
 /// `school_service.get_school`: a school by slug.
 pub async fn by_slug(pool: &PgPool, slug: &str) -> Result<Option<School>> {
@@ -174,7 +175,8 @@ pub fn campus_season_prompt(slug: &str) -> String {
          Display windows control filter visibility only; they are not classification rules. \
          Classify announced future events even when a display window is not currently open. \
          Do not copy season classifications from another school. \
-         Employer recruiting belongs in employers_on_campus, not a campus-season ID."
+         Networking opportunities (employers, career panels, hackathons, conferences) \
+         belong in employers_on_campus, not a campus-season ID."
             .to_owned(),
     ];
     for season in &configured.seasons {

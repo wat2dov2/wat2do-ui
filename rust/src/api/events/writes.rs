@@ -53,7 +53,8 @@ pub struct Club {
     pub is_member: bool,
 }
 
-async fn club(db: &PgPool, club_id: i64, user: &User) -> Result<Option<Club>, ApiError> {
+/// The club, with whether `user` is on its management team.
+pub async fn club(db: &PgPool, club_id: i64, user: &User) -> Result<Option<Club>, ApiError> {
     Ok(read_with_retry(|| {
         sqlx::query_as::<_, Club>(
             "SELECT c.id::int8 AS id, c.club_name, c.status, c.school_id::int8 AS school_id, \
@@ -184,14 +185,37 @@ fn occurrence_rows(occurrences: &[OccurrenceInput], event_id: i64) -> Value {
     )
 }
 
-/// `create_event`: insert the event with fields derived from its club, then
-/// its occurrences (removing the event if they fail), then read it back.
+/// `create_event`: insert the event with fields derived from its club and
+/// its occurrences in one transaction, then read it back.
 pub async fn create(
     db: &PgPool,
     input: EventInput,
     club: &Club,
     created_by: &str,
 ) -> Result<Event, ApiError> {
+    // One transaction: dropping the request (a client disconnect, the drain
+    // deadline) or failing the occurrence insert rolls the event back too, so
+    // an event never exists without its occurrences. Python deleted the
+    // orphan by hand; the error returned is the same.
+    let mut transaction = db.begin().await?;
+    let new_id = insert(&mut transaction, input, club, created_by).await?;
+    transaction.commit().await?;
+    created(db, new_id).await
+}
+
+/// A new event's occurrences, from `occurrence_rows`.
+pub const OCCURRENCES_INSERT: &str = "INSERT INTO public.event_dates (dtstart_utc, dtend_utc, duration, tz, event_id) \
+     SELECT dtstart_utc, dtend_utc, duration, tz, event_id \
+     FROM jsonb_populate_recordset(NULL::public.event_dates, $1)";
+
+/// The writes of `create`, inside the caller's transaction: the event row
+/// (its club name and school from `club`) and its occurrences. Returns its id.
+pub async fn insert(
+    transaction: &mut sqlx::PgConnection,
+    input: EventInput,
+    club: &Club,
+    created_by: &str,
+) -> Result<i64, ApiError> {
     let (club_name, school_id, school) = club_fields(club)?;
     let mut payload = input.fields;
     payload.insert("club".into(), club_name);
@@ -207,11 +231,6 @@ pub async fn create(
     payload.insert("created_by".into(), json!(created_by));
     let columns: Vec<String> = payload.keys().map(|key| format!("\"{key}\"")).collect();
     let columns = columns.join(", ");
-    // One transaction: dropping the request (a client disconnect, the drain
-    // deadline) or failing the occurrence insert rolls the event back too, so
-    // an event never exists without its occurrences. Python deleted the
-    // orphan by hand; the error returned is the same.
-    let mut transaction = db.begin().await?;
     let new_id: i64 = sqlx::query_scalar(&format!(
         "INSERT INTO public.events ({columns}) SELECT {columns} \
          FROM jsonb_populate_record(NULL::public.events, $1) RETURNING id::int8"
@@ -221,16 +240,16 @@ pub async fn create(
     .await?;
     let occurrences = input.occurrences.unwrap_or_default();
     if !occurrences.is_empty() {
-        sqlx::query(
-            "INSERT INTO public.event_dates (dtstart_utc, dtend_utc, duration, tz, event_id) \
-             SELECT dtstart_utc, dtend_utc, duration, tz, event_id \
-             FROM jsonb_populate_recordset(NULL::public.event_dates, $1)",
-        )
-        .bind(occurrence_rows(&occurrences, new_id))
-        .execute(&mut *transaction)
-        .await?;
+        sqlx::query(OCCURRENCES_INSERT)
+            .bind(occurrence_rows(&occurrences, new_id))
+            .execute(&mut *transaction)
+            .await?;
     }
-    transaction.commit().await?;
+    Ok(new_id)
+}
+
+/// After a created event commits: read it back and refresh its school's feed.
+pub async fn created(db: &PgPool, new_id: i64) -> Result<Event, ApiError> {
     let created = store::event_by_id(db, new_id)
         .await?
         .ok_or_else(|| ApiError::Internal(anyhow::anyhow!("Failed to read created event")))?;

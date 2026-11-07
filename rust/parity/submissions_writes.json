@@ -1,0 +1,75 @@
+[
+  {
+    "name": "event submission insert",
+    "method": "POST",
+    "path": "/submissions/",
+    "json": {
+      "submitted_by_email": "a@uwaterloo.ca",
+      "event_data": {
+        "title": "Parity Night",
+        "location": "SLC",
+        "club_id": "owned-club-id",
+        "occurrences": [
+          {
+            "dtstart_utc": "2026-12-01T18:00:00Z"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "position submission insert",
+    "method": "POST",
+    "path": "/position-submissions/",
+    "json": {
+      "submitted_by_email": "a@uwaterloo.ca",
+      "position_data": {
+        "club_id": "owned-club-id",
+        "title": "Lead",
+        "description": "Lead our team",
+        "position_type": "committee",
+        "source_url": "https://example.com/role"
+      }
+    }
+  },
+  {
+    "name": "position submission insert by an admin",
+    "method": "POST",
+    "path": "/position-submissions/",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "submitted_by_email": "a@uwaterloo.ca",
+      "position_data": {
+        "club_id": "owned-club-id",
+        "title": "Lead",
+        "description": "Lead our team",
+        "position_type": "committee",
+        "source_url": "https://example.com/role"
+      }
+    }
+  },
+  {
+    "name": "event submission delete",
+    "method": "DELETE",
+    "path": "/submissions/approved-submission-id",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "event submission same decision (no write)",
+    "method": "PATCH",
+    "path": "/submissions/approved-submission-id",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "json": {
+      "status": "approved"
+    }
+  }
+]

@@ -4,40 +4,6 @@
  */
 
 export interface paths {
-    "/ai/parse-event-image": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Parse Event Image */
-        post: operations["parse_event_image_ai_parse_event_image_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ai/parse-position-image": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Parse Position Image */
-        post: operations["parse_position_image_ai_parse_position_image_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/competitor-pain-points/": {
         parameters: {
             query?: never;
@@ -304,180 +270,6 @@ export interface paths {
         patch: operations["update_lead_outreach_leads__lead_id__patch"];
         trace?: never;
     };
-    "/position-submissions/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Submissions */
-        get: operations["list_submissions_position_submissions__get"];
-        put?: never;
-        /** Create Submission */
-        post: operations["create_submission_position_submissions__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/position-submissions/{submission_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Review Submission */
-        patch: operations["review_submission_position_submissions__submission_id__patch"];
-        trace?: never;
-    };
-    "/submissions/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Submissions */
-        get: operations["list_submissions_submissions__get"];
-        put?: never;
-        /** Create Submission */
-        post: operations["create_submission_submissions__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/submissions/{submission_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Submission */
-        get: operations["get_submission_submissions__submission_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Submission */
-        delete: operations["delete_submission_submissions__submission_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Submission */
-        patch: operations["update_submission_submissions__submission_id__patch"];
-        trace?: never;
-    };
-    "/uploads/event-image": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Event Image Unsigned */
-        post: operations["upload_event_image_unsigned_uploads_event_image_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/event-image/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Event Image */
-        post: operations["upload_event_image_uploads_event_image__event_id__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/avatar": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Avatar */
-        post: operations["upload_avatar_uploads_avatar_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/club-logo/{club_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Club Logo */
-        post: operations["upload_club_logo_uploads_club_logo__club_id__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/qr-asset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Qr Asset */
-        post: operations["upload_qr_asset_uploads_qr_asset_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/uploads/claim-proof": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload Claim Proof */
-        post: operations["upload_claim_proof_uploads_claim_proof_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/webhooks/automate": {
         parameters: {
             query?: never;
@@ -543,6 +335,40 @@ export interface paths {
         get: operations["health_health_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/parse-event-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Parse Event Image */
+        post: operations["parse_event_image_ai_parse_event_image_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/parse-position-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Parse Position Image */
+        post: operations["parse_position_image_ai_parse_position_image_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1261,6 +1087,145 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/submissions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Submissions */
+        get: operations["list_submissions_submissions__get"];
+        put?: never;
+        /** Create Submission */
+        post: operations["create_submission_submissions__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Submission */
+        get: operations["get_submission_submissions__submission_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Submission */
+        delete: operations["delete_submission_submissions__submission_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Submission */
+        patch: operations["update_submission_submissions__submission_id__patch"];
+        trace?: never;
+    };
+    "/uploads/event-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Event Image Unsigned */
+        post: operations["upload_event_image_unsigned_uploads_event_image_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/event-image/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Event Image */
+        post: operations["upload_event_image_uploads_event_image__event_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Avatar */
+        post: operations["upload_avatar_uploads_avatar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/club-logo/{club_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Club Logo */
+        post: operations["upload_club_logo_uploads_club_logo__club_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/qr-asset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Qr Asset */
+        post: operations["upload_qr_asset_uploads_qr_asset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/claim-proof": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Claim Proof */
+        post: operations["upload_claim_proof_uploads_claim_proof_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/clubs/": {
         parameters: {
             query?: never;
@@ -1759,6 +1724,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/position-submissions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Submissions */
+        get: operations["list_submissions_position_submissions__get"];
+        put?: never;
+        /** Create Submission */
+        post: operations["create_submission_position_submissions__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/position-submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Review Submission */
+        patch: operations["review_submission_position_submissions__submission_id__patch"];
+        trace?: never;
+    };
     "/qr/": {
         parameters: {
             query?: never;
@@ -2157,46 +2157,6 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        /** Body_parse_event_image_ai_parse_event_image_post */
-        Body_parse_event_image_ai_parse_event_image_post: {
-            /** File */
-            file: string;
-        };
-        /** Body_parse_position_image_ai_parse_position_image_post */
-        Body_parse_position_image_ai_parse_position_image_post: {
-            /** File */
-            file: string;
-        };
-        /** Body_upload_avatar_uploads_avatar_post */
-        Body_upload_avatar_uploads_avatar_post: {
-            /** File */
-            file: string;
-        };
-        /** Body_upload_claim_proof_uploads_claim_proof_post */
-        Body_upload_claim_proof_uploads_claim_proof_post: {
-            /** File */
-            file: string;
-        };
-        /** Body_upload_club_logo_uploads_club_logo__club_id__post */
-        Body_upload_club_logo_uploads_club_logo__club_id__post: {
-            /** File */
-            file: string;
-        };
-        /** Body_upload_event_image_unsigned_uploads_event_image_post */
-        Body_upload_event_image_unsigned_uploads_event_image_post: {
-            /** File */
-            file: string;
-        };
-        /** Body_upload_event_image_uploads_event_image__event_id__post */
-        Body_upload_event_image_uploads_event_image__event_id__post: {
-            /** File */
-            file: string;
-        };
-        /** Body_upload_qr_asset_uploads_qr_asset_post */
-        Body_upload_qr_asset_uploads_qr_asset_post: {
-            /** File */
-            file: string;
-        };
         /**
          * ClubCohostResponse
          * @description An additional existing club sharing an event or position.
@@ -2293,115 +2253,6 @@ export interface components {
              */
             created_at: string;
         };
-        /** EventCreate */
-        EventCreate: {
-            /**
-             * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
-             */
-            competition?: boolean | null;
-            /**
-             * Employers On Campus
-             * @description Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as \"Ramp x Blueprint\" or \"Figma x Sanrio\", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.
-             */
-            employers_on_campus?: boolean | null;
-            /**
-             * Sports Game
-             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
-             */
-            sports_game?: boolean | null;
-            /**
-             * Campus Season Ids
-             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
-             */
-            campus_season_ids?: string[] | null;
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Location */
-            location: string;
-            /** Map Location */
-            map_location?: string | null;
-            /** Occurrences */
-            occurrences: components["schemas"]["OccurrenceCreate"][];
-            /** Price */
-            price?: number | null;
-            /** Food */
-            food?: string[] | null;
-            /**
-             * Registration
-             * @default false
-             */
-            registration: boolean;
-            /** Source Image Url */
-            source_image_url?: string | null;
-            /** Source Url */
-            source_url?: string | null;
-            /** Category */
-            category?: string | null;
-            /** Club Id */
-            club_id: number;
-            /** Ig Handle */
-            ig_handle?: string | null;
-            /**
-             * Cancelled
-             * @default false
-             */
-            cancelled: boolean;
-        };
-        /** EventFormDataResponse */
-        EventFormDataResponse: {
-            /**
-             * Title
-             * @default
-             */
-            title: string;
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /** Occurrences */
-            occurrences?: components["schemas"]["EventFormOccurrenceResponse"][];
-            /**
-             * Location
-             * @default
-             */
-            location: string;
-            /**
-             * Category
-             * @default
-             */
-            category: string;
-            /**
-             * Price
-             * @default 0
-             */
-            price: number;
-            /** Food */
-            food?: string[];
-            /**
-             * Registration
-             * @default false
-             */
-            registration: boolean;
-            /** Source Image Url */
-            source_image_url?: string | null;
-        };
-        /** EventFormOccurrenceResponse */
-        EventFormOccurrenceResponse: {
-            /**
-             * Dtstart Local
-             * @default
-             */
-            dtstart_local: string;
-            /**
-             * Dtend Local
-             * @default
-             */
-            dtend_local: string;
-        };
         /**
          * EventSummaryResponse
          * @description Payload for list/card views.
@@ -2428,7 +2279,7 @@ export interface components {
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as \"Ramp x Blueprint\" or \"Figma x Sanrio\", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.
+             * @description Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as "Ramp x Blueprint" or "Figma x Sanrio", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -2985,23 +2836,6 @@ export interface components {
             preferences: components["schemas"]["NotificationPreferenceResponse"][];
         };
         /**
-         * OccurrenceCreate
-         * @description One occurrence: start time plus optional end / duration / timezone.
-         */
-        OccurrenceCreate: {
-            /**
-             * Dtstart Utc
-             * Format: date-time
-             */
-            dtstart_utc: string;
-            /** Dtend Utc */
-            dtend_utc?: string | null;
-            /** Duration */
-            duration?: string | null;
-            /** Tz */
-            tz?: string | null;
-        };
-        /**
          * OccurrenceSummaryResponse
          * @description Browse dates retain selection identity without repeated parent/import fields.
          */
@@ -3145,131 +2979,6 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
-        /** PaginatedResponse[PositionSubmissionResponse] */
-        PaginatedResponse_PositionSubmissionResponse_: {
-            /** Items */
-            items: components["schemas"]["PositionSubmissionResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[SubmissionResponse] */
-        PaginatedResponse_SubmissionResponse_: {
-            /** Items */
-            items: components["schemas"]["SubmissionResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PositionCreate */
-        PositionCreate: {
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /**
-             * Position Type
-             * @enum {string}
-             */
-            position_type: "executive" | "committee" | "volunteer" | "staff" | "internship" | "general";
-            /** Requirements */
-            requirements?: string[];
-            /** Commitment */
-            commitment?: string | null;
-            /** Compensation */
-            compensation?: string | null;
-            /** Is Paid */
-            is_paid?: boolean | null;
-            /** Location */
-            location?: string | null;
-            /** Contact Email */
-            contact_email?: string | null;
-            /** Deadline Date */
-            deadline_date?: string | null;
-            /** Deadline At */
-            deadline_at?: string | null;
-            /** Club Id */
-            club_id: number;
-            /** Source Url */
-            source_url: string;
-            /** Source Image Url */
-            source_image_url?: string | null;
-        };
-        /** PositionImageResponse */
-        PositionImageResponse: {
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /**
-             * Position Type
-             * @enum {string}
-             */
-            position_type: "executive" | "committee" | "volunteer" | "staff" | "internship" | "general";
-            /** Requirements */
-            requirements?: string[];
-            /** Commitment */
-            commitment?: string | null;
-            /** Compensation */
-            compensation?: string | null;
-            /** Is Paid */
-            is_paid?: boolean | null;
-            /** Location */
-            location?: string | null;
-            /** Contact Email */
-            contact_email?: string | null;
-            /** Deadline Date */
-            deadline_date?: string | null;
-            /** Deadline At */
-            deadline_at?: string | null;
-            /** Source Image Url */
-            source_image_url?: string | null;
-        };
-        /** PositionSubmissionCreate */
-        PositionSubmissionCreate: {
-            /**
-             * Submitted By Email
-             * Format: email
-             */
-            submitted_by_email: string;
-            position_data: components["schemas"]["PositionCreate"];
-        };
-        /** PositionSubmissionResponse */
-        PositionSubmissionResponse: {
-            /** School */
-            school?: string | null;
-            /** Id */
-            id: string;
-            /** User Id */
-            user_id: string | null;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected";
-            /** Rejection Reason */
-            rejection_reason?: string | null;
-            /**
-             * Submitted At
-             * Format: date-time
-             */
-            submitted_at: string;
-            /** Reviewed At */
-            reviewed_at?: string | null;
-            /** Submitted By Email */
-            submitted_by_email?: string | null;
-            position_data: components["schemas"]["PositionCreate"];
-        };
         /**
          * ReportSuggestion
          * @description One change to wat2do.io the report suggests, and the complaints behind it.
@@ -3304,68 +3013,6 @@ export interface components {
             competitors?: string[];
             /** Complaint Urls */
             complaint_urls?: string[];
-        };
-        /**
-         * SubmissionCreate
-         * @description Normal-user event submission for admin review.
-         *
-         *     ``event_data`` uses the same schema as direct event creation so
-         *     moderation receives a payload that can be published without a second
-         *     shape translation step.
-         */
-        SubmissionCreate: {
-            /**
-             * Submitted By Email
-             * Format: email
-             */
-            submitted_by_email: string;
-            event_data: components["schemas"]["EventCreate"];
-        };
-        /** SubmissionResponse */
-        SubmissionResponse: {
-            /** School */
-            school?: string | null;
-            /** Id */
-            id: string;
-            /** User Id */
-            user_id: string | null;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected";
-            /** Rejection Reason */
-            rejection_reason?: string | null;
-            /**
-             * Submitted At
-             * Format: date-time
-             */
-            submitted_at: string;
-            /** Reviewed At */
-            reviewed_at?: string | null;
-            /** Submitted By Email */
-            submitted_by_email?: string | null;
-            /** Event Data */
-            event_data: {
-                [key: string]: unknown;
-            };
-            /** Club Name */
-            club_name?: string | null;
-        };
-        /** SubmissionUpdate */
-        SubmissionUpdate: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected";
-            /** Rejection Reason */
-            rejection_reason?: string | null;
-        };
-        /** UploadResponse */
-        UploadResponse: {
-            /** Url */
-            url: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -3405,6 +3052,46 @@ export interface components {
                 [key: string]: string[];
             };
             report_statuses: string[];
+        };
+        /** Body_parse_event_image_ai_parse_event_image_post */
+        Body_parse_event_image_ai_parse_event_image_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_parse_position_image_ai_parse_position_image_post */
+        Body_parse_position_image_ai_parse_position_image_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_avatar_uploads_avatar_post */
+        Body_upload_avatar_uploads_avatar_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_claim_proof_uploads_claim_proof_post */
+        Body_upload_claim_proof_uploads_claim_proof_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_club_logo_uploads_club_logo__club_id__post */
+        Body_upload_club_logo_uploads_club_logo__club_id__post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_event_image_unsigned_uploads_event_image_post */
+        Body_upload_event_image_unsigned_uploads_event_image_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_event_image_uploads_event_image__event_id__post */
+        Body_upload_event_image_uploads_event_image__event_id__post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_qr_asset_uploads_qr_asset_post */
+        Body_upload_qr_asset_uploads_qr_asset_post: {
+            /** File */
+            file: string;
         };
         /**
          * CalendarTokenResponse
@@ -3656,6 +3343,63 @@ export interface components {
             /** Attendees */
             attendees: components["schemas"]["EventAttendeeResponse"][];
         };
+        /** EventCreate */
+        EventCreate: {
+            /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
+             * Employers On Campus
+             * @description Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as "Ramp x Blueprint" or "Figma x Sanrio", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location: string;
+            /** Map Location */
+            map_location?: string | null;
+            /** Occurrences */
+            occurrences: components["schemas"]["OccurrenceCreate"][];
+            /** Price */
+            price?: number | null;
+            /** Food */
+            food?: string[] | null;
+            /**
+             * Registration
+             * @default false
+             */
+            registration: boolean;
+            /** Source Image Url */
+            source_image_url?: string | null;
+            /** Source Url */
+            source_url?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Club Id */
+            club_id: number;
+            /** Ig Handle */
+            ig_handle?: string | null;
+            /**
+             * Cancelled
+             * @default false
+             */
+            cancelled: boolean;
+        };
         /**
          * EventFeedResponse
          * @description Public school feed response with catalog-freshness metadata.
@@ -3674,6 +3418,58 @@ export interface components {
             /** @description School freshness metadata on the first page only. */
             latest_added_event?: components["schemas"]["LatestAddedItem"] | null;
         };
+        /** EventFormDataResponse */
+        EventFormDataResponse: {
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Occurrences */
+            occurrences?: components["schemas"]["EventFormOccurrenceResponse"][];
+            /**
+             * Location
+             * @default
+             */
+            location: string;
+            /**
+             * Category
+             * @default
+             */
+            category: string;
+            /**
+             * Price
+             * @default 0
+             */
+            price: number;
+            /** Food */
+            food?: string[];
+            /**
+             * Registration
+             * @default false
+             */
+            registration: boolean;
+            /** Source Image Url */
+            source_image_url?: string | null;
+        };
+        /** EventFormOccurrenceResponse */
+        EventFormOccurrenceResponse: {
+            /**
+             * Dtstart Local
+             * @default
+             */
+            dtstart_local: string;
+            /**
+             * Dtend Local
+             * @default
+             */
+            dtend_local: string;
+        };
         /**
          * EventPublicResponse
          * @description Like EventResponse but without ``created_by``, so public detail
@@ -3687,7 +3483,7 @@ export interface components {
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as \"Ramp x Blueprint\" or \"Figma x Sanrio\", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.
+             * @description Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as "Ramp x Blueprint" or "Figma x Sanrio", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -3792,7 +3588,7 @@ export interface components {
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as \"Ramp x Blueprint\" or \"Figma x Sanrio\", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.
+             * @description Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as "Ramp x Blueprint" or "Figma x Sanrio", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -3958,7 +3754,7 @@ export interface components {
             competition?: boolean | null;
             /**
              * Employers On Campus
-             * @description Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as \"Ramp x Blueprint\" or \"Figma x Sanrio\", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.
+             * @description Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as "Ramp x Blueprint" or "Figma x Sanrio", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.
              */
             employers_on_campus?: boolean | null;
             /**
@@ -4114,6 +3910,23 @@ export interface components {
         MessageResponse: {
             message: string;
         };
+        /**
+         * OccurrenceCreate
+         * @description One occurrence: start time plus optional end / duration / timezone.
+         */
+        OccurrenceCreate: {
+            /**
+             * Dtstart Utc
+             * Format: date-time
+             */
+            dtstart_utc: string;
+            /** Dtend Utc */
+            dtend_utc?: string | null;
+            /** Duration */
+            duration?: string | null;
+            /** Tz */
+            tz?: string | null;
+        };
         /** OccurrenceResponse */
         OccurrenceResponse: {
             /**
@@ -4213,6 +4026,19 @@ export interface components {
             /** Total Pages */
             total_pages: number;
         };
+        /** PaginatedResponse[PositionSubmissionResponse] */
+        PaginatedResponse_PositionSubmissionResponse_: {
+            /** Items */
+            items: components["schemas"]["PositionSubmissionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         PaginatedResponse_PosterPayoutResponse_: {
             items: components["schemas"]["PosterPayoutResponse"][];
             /** Format: int64 */
@@ -4270,6 +4096,19 @@ export interface components {
             /** Format: int64 */
             total_pages: number;
         };
+        /** PaginatedResponse[SubmissionResponse] */
+        PaginatedResponse_SubmissionResponse_: {
+            /** Items */
+            items: components["schemas"]["SubmissionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
         PaginatedResponse_UserPosterPayoutResponse_: {
             items: components["schemas"]["UserPosterPayoutResponse"][];
             /** Format: int64 */
@@ -4320,6 +4159,40 @@ export interface components {
             status: "pending" | "held" | "paid" | "voided";
             notes?: string | null;
         };
+        /** PositionCreate */
+        PositionCreate: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /**
+             * Position Type
+             * @enum {string}
+             */
+            position_type: "executive" | "committee" | "volunteer" | "staff" | "internship" | "general";
+            /** Requirements */
+            requirements?: string[];
+            /** Commitment */
+            commitment?: string | null;
+            /** Compensation */
+            compensation?: string | null;
+            /** Is Paid */
+            is_paid?: boolean | null;
+            /** Location */
+            location?: string | null;
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Deadline Date */
+            deadline_date?: string | null;
+            /** Deadline At */
+            deadline_at?: string | null;
+            /** Club Id */
+            club_id: number;
+            /** Source Url */
+            source_url: string;
+            /** Source Image Url */
+            source_image_url?: string | null;
+        };
         PositionDirectoryResponse: {
             items: components["schemas"]["PositionResponse"][];
             /** Format: int64 */
@@ -4331,6 +4204,36 @@ export interface components {
             /** Format: int64 */
             total_pages: number;
             latest_added_position?: components["schemas"]["LatestAddedItem"] | null;
+        };
+        /** PositionImageResponse */
+        PositionImageResponse: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /**
+             * Position Type
+             * @enum {string}
+             */
+            position_type: "executive" | "committee" | "volunteer" | "staff" | "internship" | "general";
+            /** Requirements */
+            requirements?: string[];
+            /** Commitment */
+            commitment?: string | null;
+            /** Compensation */
+            compensation?: string | null;
+            /** Is Paid */
+            is_paid?: boolean | null;
+            /** Location */
+            location?: string | null;
+            /** Contact Email */
+            contact_email?: string | null;
+            /** Deadline Date */
+            deadline_date?: string | null;
+            /** Deadline At */
+            deadline_at?: string | null;
+            /** Source Image Url */
+            source_image_url?: string | null;
         };
         /** @description A position as cards and detail pages show it, with its club and school. */
         PositionResponse: {
@@ -4372,6 +4275,41 @@ export interface components {
         PositionStatsResponse: {
             /** Format: int64 */
             click_count: number;
+        };
+        /** PositionSubmissionCreate */
+        PositionSubmissionCreate: {
+            /**
+             * Submitted By Email
+             * Format: email
+             */
+            submitted_by_email: string;
+            position_data: components["schemas"]["PositionCreate"];
+        };
+        /** PositionSubmissionResponse */
+        PositionSubmissionResponse: {
+            /** School */
+            school?: string | null;
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Reviewed At */
+            reviewed_at?: string | null;
+            /** Submitted By Email */
+            submitted_by_email?: string | null;
+            position_data: components["schemas"]["PositionCreate"];
         };
         /** @description `PosterEarningsItem`: one active poster's earnings this month. */
         PosterEarningsItem: {
@@ -4753,6 +4691,63 @@ export interface components {
         StripeRedirectResponse: {
             url: string;
         };
+        /**
+         * SubmissionCreate
+         * @description Normal-user event submission for admin review.
+         *
+         *     ``event_data`` uses the same schema as direct event creation so
+         *     moderation receives a payload that can be published without a second
+         *     shape translation step.
+         */
+        SubmissionCreate: {
+            /**
+             * Submitted By Email
+             * Format: email
+             */
+            submitted_by_email: string;
+            event_data: components["schemas"]["EventCreate"];
+        };
+        /** SubmissionResponse */
+        SubmissionResponse: {
+            /** School */
+            school?: string | null;
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Reviewed At */
+            reviewed_at?: string | null;
+            /** Submitted By Email */
+            submitted_by_email?: string | null;
+            /** Event Data */
+            event_data: {
+                [key: string]: unknown;
+            };
+            /** Club Name */
+            club_name?: string | null;
+        };
+        /** SubmissionUpdate */
+        SubmissionUpdate: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected";
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+        };
         /** @description One ticket on a club's door list. */
         TicketAttendee: {
             /** Format: uuid */
@@ -4908,6 +4903,11 @@ export interface components {
             /** @default false */
             onboarding_required: boolean;
         };
+        /** UploadResponse */
+        UploadResponse: {
+            /** Url */
+            url: string;
+        };
         /**
          * @description `UserPosterPayoutResponse`: what a promoter sees of their own payout
          *     (no notes, reviewer or fraud status).
@@ -5000,76 +5000,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    parse_event_image_ai_parse_event_image_post: {
-        parameters: {
-            query: {
-                school: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_parse_event_image_ai_parse_event_image_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventFormDataResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    parse_position_image_ai_parse_position_image_post: {
-        parameters: {
-            query: {
-                school: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_parse_position_image_ai_parse_position_image_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PositionImageResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_pain_points_competitor_pain_points__get: {
         parameters: {
             query?: {
@@ -5672,478 +5602,6 @@ export interface operations {
             };
         };
     };
-    list_submissions_position_submissions__get: {
-        parameters: {
-            query?: {
-                submission_status?: ("pending" | "approved" | "rejected") | null;
-                school?: string | null;
-                search?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_PositionSubmissionResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_submission_position_submissions__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PositionSubmissionCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PositionSubmissionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    review_submission_position_submissions__submission_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                submission_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubmissionUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PositionSubmissionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_submissions_submissions__get: {
-        parameters: {
-            query?: {
-                submission_status?: string | null;
-                school?: string | null;
-                search?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_SubmissionResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_submission_submissions__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubmissionCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmissionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_submission_submissions__submission_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                submission_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmissionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_submission_submissions__submission_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                submission_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_submission_submissions__submission_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                submission_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SubmissionUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubmissionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_event_image_unsigned_uploads_event_image_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_event_image_unsigned_uploads_event_image_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_event_image_uploads_event_image__event_id__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_event_image_uploads_event_image__event_id__post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_avatar_uploads_avatar_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_avatar_uploads_avatar_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_club_logo_uploads_club_logo__club_id__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                club_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_club_logo_uploads_club_logo__club_id__post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_qr_asset_uploads_qr_asset_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_qr_asset_uploads_qr_asset_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_claim_proof_uploads_claim_proof_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_claim_proof_uploads_claim_proof_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     receive_automate_log_webhooks_automate_post: {
         parameters: {
             query?: never;
@@ -6245,6 +5703,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    parse_event_image_ai_parse_event_image_post: {
+        parameters: {
+            query: {
+                school: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_parse_event_image_ai_parse_event_image_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventFormDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parse_position_image_ai_parse_position_image_post: {
+        parameters: {
+            query: {
+                school: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_parse_position_image_ai_parse_position_image_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionImageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -7597,6 +7125,373 @@ export interface operations {
             };
         };
     };
+    list_submissions_submissions__get: {
+        parameters: {
+            query?: {
+                submission_status?: string | null;
+                school?: string | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_SubmissionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_submission_submissions__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_submission_submissions__submission_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_submission_submissions__submission_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_submission_submissions__submission_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_event_image_unsigned_uploads_event_image_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_event_image_unsigned_uploads_event_image_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_event_image_uploads_event_image__event_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_event_image_uploads_event_image__event_id__post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_avatar_uploads_avatar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_avatar_uploads_avatar_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_club_logo_uploads_club_logo__club_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_club_logo_uploads_club_logo__club_id__post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_qr_asset_uploads_qr_asset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_qr_asset_uploads_qr_asset_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_claim_proof_uploads_claim_proof_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_claim_proof_uploads_claim_proof_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_clubs_clubs__get: {
         parameters: {
             query?: {
@@ -8670,6 +8565,111 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PositionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_submissions_position_submissions__get: {
+        parameters: {
+            query?: {
+                submission_status?: ("pending" | "approved" | "rejected") | null;
+                school?: string | null;
+                search?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_PositionSubmissionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_submission_position_submissions__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PositionSubmissionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionSubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_submission_position_submissions__submission_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionSubmissionResponse"];
                 };
             };
             /** @description Validation Error */

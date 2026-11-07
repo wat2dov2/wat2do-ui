@@ -75,4 +75,6 @@ sha2 = "0.10"
 lto = "thin"
 
 [dev-dependencies]
+aws-smithy-runtime-api = "1"
+aws-smithy-types = "1"
 flate2 = "1"

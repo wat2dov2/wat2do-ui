@@ -942,7 +942,7 @@ pub async fn create_club(
 }
 
 /// `SubmissionUpdate`: a review decision and an optional reason.
-fn parse_review(
+pub fn parse_review(
     body: Result<Body, ApiError>,
     check: Validator,
 ) -> Result<(String, Option<String>), ApiError> {
@@ -1054,6 +1054,19 @@ pub async fn update_club(
     let existing = managed_club(&state.db, id, &user).await?;
     let updated = apply_update(&state.db, id, &existing, fields).await?;
     Ok(Json(updated))
+}
+
+/// `update_club(club_id, ClubUpdate(logo_url=url))`: a new logo for `existing`.
+pub async fn set_logo(
+    db: &sqlx::PgPool,
+    existing: &ClubResponse,
+    url: String,
+) -> Result<ClubResponse, ApiError> {
+    let fields = ClubFields {
+        logo_url: Input::Given(url),
+        ..ClubFields::default()
+    };
+    apply_update(db, i64::from(existing.id), existing, fields).await
 }
 
 fn merge_err(check: Validator, error: ApiError) -> ApiError {

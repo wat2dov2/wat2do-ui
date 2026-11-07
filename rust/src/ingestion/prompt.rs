@@ -11,24 +11,30 @@ use crate::schools::{School, building_code_prompt, campus_season_prompt};
 
 const PROMPT: &str = include_str!("../../../backend/services/ingestion/prompt.md");
 
+/// `backend/schemas/event_discovery_fields.json`, which the event schema,
+/// the extraction prompt and this agent's prompt all read.
 #[derive(Deserialize)]
-struct DiscoveryFields {
-    heading: Vec<String>,
-    fields: indexmap::IndexMap<String, String>,
+pub struct DiscoveryFields {
+    pub heading: Vec<String>,
+    /// Each discovery field, in the event schema's order, with its description.
+    pub fields: indexmap::IndexMap<String, String>,
 }
 
-/// `EVENT_DISCOVERY_RULES`, rendered from the file the event schema reads.
-static DISCOVERY_RULES: LazyLock<String> = LazyLock::new(|| {
-    let discovery: DiscoveryFields = serde_json::from_str(include_str!(
+pub static DISCOVERY: LazyLock<DiscoveryFields> = LazyLock::new(|| {
+    serde_json::from_str(include_str!(
         "../../../backend/schemas/event_discovery_fields.json"
     ))
-    .expect("backend/schemas/event_discovery_fields.json");
-    discovery
+    .expect("backend/schemas/event_discovery_fields.json")
+});
+
+/// `EVENT_DISCOVERY_RULES`: the heading, then one line per field.
+pub static DISCOVERY_RULES: LazyLock<String> = LazyLock::new(|| {
+    DISCOVERY
         .heading
         .iter()
         .cloned()
         .chain(
-            discovery
+            DISCOVERY
                 .fields
                 .iter()
                 .map(|(name, description)| format!("- {name}: {description}")),

@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 bearer = HTTPBearer()
-bearer_optional = HTTPBearer(auto_error=False)
 
 
 class AuthUser(TypedDict):
@@ -93,26 +92,6 @@ def get_current_user(
     return _resolve_user(token)
 
 
-def get_optional_user(
-    token: HTTPAuthorizationCredentials | None = Depends(bearer_optional),
-) -> AuthUser | None:
-    """Accept an optional Bearer token. Returns the auth user or None.
-
-    Distinguishes "no header" (truly anonymous, silent) from "bad
-    header" (malformed / expired token).  Malformed tokens are logged at
-    ``warning`` so operators can spot auth regressions and clients can
-    detect misconfigured sessions via log correlation rather than blind
-    anonymity.
-    """
-    if token is None:
-        return None
-    try:
-        return _resolve_user(token)
-    except AuthenticationError as e:
-        log.warning("Optional auth failed with invalid token, continuing as anonymous: %s", e)
-        return None
-
-
 def resolve_db_user(auth_user: AuthUser, *, user_lookup=None) -> "UserResponse":
     """Look up the internal DB user from an auth user dict.
 
@@ -157,16 +136,6 @@ def get_admin_user(
     if db_user.role != ROLE_ADMIN:
         raise AuthorizationError(ADMIN_ACCESS_REQUIRED)
     return db_user
-
-
-def is_admin(db_user: "UserResponse") -> bool:
-    """Return True if *db_user* has the admin role.
-
-    Trivial role check - no DB lookup. Callers must pass the DB user
-    from ``get_db_user`` (or ``get_admin_user``), which already bypasses
-    the user cache at resolve time.
-    """
-    return db_user.role == ROLE_ADMIN
 
 
 def require_owner_or_admin(db_user: "UserResponse", resource_owner_id: str | None) -> None:

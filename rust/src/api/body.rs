@@ -916,6 +916,16 @@ impl Body {
     /// An `AwareDatetime` (`| None`), normalized to UTC; a JSON number is a
     /// Unix timestamp.
     pub fn aware_datetime(&mut self, name: &'static str) -> Input<chrono::DateTime<chrono::Utc>> {
+        self.aware_datetime_with_offset(name)
+            .map(|at| at.with_timezone(&chrono::Utc))
+    }
+
+    /// An `AwareDatetime` (`| None`) with the offset it was sent with, which
+    /// pydantic keeps (and writes back) as given.
+    pub fn aware_datetime_with_offset(
+        &mut self,
+        name: &'static str,
+    ) -> Input<chrono::DateTime<chrono::FixedOffset>> {
         use super::validation::ParsedDatetime;
         let value = match self.take(name) {
             Input::Given(value) => value,
@@ -946,7 +956,7 @@ impl Body {
             }
         };
         match super::validation::parse_datetime(&text) {
-            Ok(ParsedDatetime::Aware(at)) => Input::Given(at.with_timezone(&chrono::Utc)),
+            Ok(ParsedDatetime::Aware(at)) => Input::Given(at),
             Ok(ParsedDatetime::Naive(_)) => {
                 self.issue(
                     "timezone_aware",
@@ -964,6 +974,56 @@ impl Body {
                     format!("{prefix}, {error}"),
                     value,
                     Some(json!({"error": error})),
+                );
+                Input::Missing
+            }
+        }
+    }
+
+    /// A `date | None`: `YYYY-MM-DD`, or a datetime or Unix timestamp at
+    /// exactly midnight.
+    pub fn date(&mut self, name: &'static str) -> Input<chrono::NaiveDate> {
+        use super::validation::{DateError, parse_date};
+        let value = match self.take(name) {
+            Input::Given(value) => value,
+            Input::Null => return Input::Null,
+            Input::Missing => return Input::Missing,
+        };
+        let loc = self.loc(name);
+        let text = match &value {
+            Value::String(text) => text.clone(),
+            Value::Number(number) => number.to_string(),
+            _ => {
+                self.issue(
+                    "date_type",
+                    loc,
+                    "Input should be a valid date".into(),
+                    value,
+                    None,
+                );
+                return Input::Missing;
+            }
+        };
+        match parse_date(&text) {
+            Ok(date) => Input::Given(date),
+            Err(DateError::Inexact) => {
+                self.issue(
+                    "date_from_datetime_inexact",
+                    loc,
+                    "Datetimes provided to dates should have zero time - e.g. be exact dates"
+                        .into(),
+                    value,
+                    None,
+                );
+                Input::Missing
+            }
+            Err(DateError::Invalid(error)) => {
+                self.issue(
+                    "date_from_datetime_parsing",
+                    loc,
+                    format!("Input should be a valid date or datetime, {error}"),
+                    value,
+                    Some(json!({ "error": error })),
                 );
                 Input::Missing
             }
@@ -1251,7 +1311,6 @@ impl Body {
     /// pydantic's `HttpUrl` (at most 2083 characters, http or https), as the
     /// normalized URL text pydantic would store.
     pub fn required_http_url(&mut self, name: &'static str, strip: bool) -> Option<String> {
-        const MAX_URL_LENGTH: usize = 2083;
         let raw = match self.take(name) {
             Input::Given(Value::String(text)) => text,
             Input::Missing => {
@@ -1284,39 +1343,57 @@ impl Body {
         } else {
             raw.as_str()
         };
+        self.check_http_url(self.loc(name), text, json!(raw))
+    }
+
+    /// `HttpUrl(text)` as a field validator calls it: the URL pydantic would
+    /// store, or its problem reported at `loc` with `input`.
+    pub fn check_http_url(&mut self, loc: Vec<Value>, text: &str, input: Value) -> Option<String> {
+        const MAX_URL_LENGTH: usize = 2083;
         if text.chars().count() > MAX_URL_LENGTH {
             self.issue(
                 "url_too_long",
-                self.loc(name),
+                loc,
                 format!("URL should have at most {MAX_URL_LENGTH} characters"),
-                json!(raw),
+                input,
                 Some(json!({"max_length": MAX_URL_LENGTH})),
             );
             return None;
         }
-        match url::Url::parse(text) {
+        let parsed = if text.is_empty() {
+            Err("input is empty".to_owned())
+        } else {
+            url::Url::parse(text).map_err(|error| error.to_string())
+        };
+        match parsed {
             Err(error) => {
                 self.issue(
                     "url_parsing",
-                    self.loc(name),
+                    loc,
                     format!("Input should be a valid URL, {error}"),
-                    json!(raw),
-                    Some(json!({"error": error.to_string()})),
+                    input,
+                    Some(json!({ "error": error })),
                 );
                 None
             }
             Ok(url) if !matches!(url.scheme(), "http" | "https") => {
                 self.issue(
                     "url_scheme",
-                    self.loc(name),
+                    loc,
                     "URL scheme should be 'http' or 'https'".into(),
-                    json!(raw),
+                    input,
                     Some(json!({"expected_schemes": "'http' or 'https'"})),
                 );
                 None
             }
             Ok(url) => Some(url.to_string()),
         }
+    }
+
+    /// Problems found by a nested model read on its own (with its own
+    /// location prefix), reported here in turn.
+    pub fn push_issues(&mut self, issues: Vec<ValidationIssue>) {
+        self.issues.extend(issues);
     }
 
     /// Report the unknown keys of an `extra="forbid"` model (once). pydantic

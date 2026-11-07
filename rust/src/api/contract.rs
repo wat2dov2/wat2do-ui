@@ -13,7 +13,12 @@ use std::sync::LazyLock;
 
 use serde_json::{Map, Value};
 
-const CONTRACTS: [&str; 1] = [include_str!("routes/events_openapi.json")];
+const CONTRACTS: [&str; 4] = [
+    include_str!("routes/events_openapi.json"),
+    include_str!("routes/submissions_openapi.json"),
+    include_str!("routes/uploads_openapi.json"),
+    include_str!("routes/ai_openapi.json"),
+];
 
 static PARSED: LazyLock<Vec<Value>> = LazyLock::new(|| {
     CONTRACTS

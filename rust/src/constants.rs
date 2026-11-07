@@ -58,14 +58,25 @@ pub const MAX_LIST_LIMIT: i64 = 100_000;
 
 pub const MAX_EVENT_DESCRIPTION_LENGTH: i32 = 5000;
 pub const MAX_POSITION_DESCRIPTION_LENGTH: i32 = 4000;
+
+/// `core.constants.positions`: the other position field limits.
+pub const MAX_POSITION_TITLE_LENGTH: usize = 200;
+pub const MAX_POSITION_DETAIL_LENGTH: usize = 1000;
+pub const MAX_POSITION_REQUIREMENT_COUNT: usize = 12;
+pub const MAX_POSITION_REQUIREMENT_LENGTH: usize = 300;
 pub const MAX_CLUB_NAME_LENGTH: usize = 200;
 
 pub const BUCKET_EVENT_IMAGES: &str = "event-images";
 pub const BUCKET_EVENT_VIDEOS: &str = "event-videos";
 pub const BUCKET_CLUB_LOGOS: &str = "organization-logos";
+pub const BUCKET_AVATARS: &str = "avatars";
+pub const BUCKET_QR_ASSETS: &str = "qr-assets";
+pub const BUCKET_CLAIM_PROOFS: &str = "claim-proofs";
 
-/// `MAX_AVATAR_SIZE_BYTES`, the club logo bucket's limit.
+/// `MAX_AVATAR_SIZE_BYTES`, the avatar and club logo buckets' limit.
 pub const MAX_AVATAR_SIZE_BYTES: usize = 2 * 1024 * 1024;
+/// `MAX_IMAGE_SIZE_BYTES`, the QR asset and claim proof buckets' limit.
+pub const MAX_IMAGE_SIZE_BYTES: usize = 5 * 1024 * 1024;
 
 /// `core.constants.notifications`: notification types and delivery statuses.
 pub const NOTIFICATION_TYPE_MORNING_EMAIL: &str = "morning_email";
@@ -88,3 +99,5 @@ pub const MAX_EVENT_FOOD_ITEM_LENGTH: usize = 100;
 pub const MAX_EVENT_FOOD_COUNT: usize = 20;
 pub const MAX_EVENT_PRICE: f64 = 100_000.0;
 pub const MAX_STATUS_FILTER_LENGTH: usize = 30;
+/// `MAX_EVENT_DATA_BYTES`: a submitted event's size as compact JSON.
+pub const MAX_EVENT_DATA_BYTES: usize = 32_000;
