@@ -26,10 +26,6 @@ import {
 import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { EventFormStep } from "@/features/events/components/EventFormStep";
 import { EventSuccessScreen } from "@/features/events/components/EventForm/EventForm/EventSuccessScreen";
-import {
-  EventFormProvider,
-  type EventFormContextValue,
-} from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { DrawerBody, Section } from "@/shared/layout";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import type { Event, EventFormData } from "@/shared/types";
@@ -116,6 +112,15 @@ export function SubmitEventFlow({
     createdEventId: number | null;
   } | null>(null);
   const [hasInitiated, setHasInitiated] = useState(isEditMode);
+  // The success screen shows the event as the form last built it.
+  const [submittedPreview, setSubmittedPreview] = useState<Event | null>(null);
+  const handlePreviewEventChange = useCallback(
+    (event: Event) => {
+      setSubmittedPreview(event);
+      onPreviewEventChange?.(event);
+    },
+    [onPreviewEventChange],
+  );
   const openForm = useCallback(() => setHasInitiated(true), []);
   const flyerParseCopy = useMemo(
     () => ({
@@ -210,21 +215,16 @@ export function SubmitEventFlow({
       ? "image-parse"
       : "form";
 
-  const successContext = {
-    formData: eventForm.formData,
-    selectedClubName: "",
-  } as unknown as EventFormContextValue;
-
   if (currentStep === "submit-success") {
     return (
-      <EventFormProvider value={successContext}>
-        <EventSuccessScreen
-          onClose={onClose ?? NOOP}
-          isEditMode={isEditMode}
-          isSubmissionOnly={submitResult?.createdEventId == null}
-          createdEventId={submitResult?.createdEventId ?? null}
-        />
-      </EventFormProvider>
+      <EventSuccessScreen
+        onClose={onClose ?? NOOP}
+        isEditMode={isEditMode}
+        isSubmissionOnly={submitResult?.createdEventId == null}
+        createdEventId={submitResult?.createdEventId ?? null}
+        formData={eventForm.formData}
+        event={submittedPreview}
+      />
     );
   }
 
@@ -257,7 +257,7 @@ export function SubmitEventFlow({
         showHeading={showHeading}
         showPreview={showPreview}
         previewBase={previewBase}
-        onPreviewEventChange={onPreviewEventChange}
+        onPreviewEventChange={handlePreviewEventChange}
         showSubmit={showSubmit}
       />
     </Section>

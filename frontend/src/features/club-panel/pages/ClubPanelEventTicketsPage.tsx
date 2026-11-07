@@ -23,6 +23,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { LoadingPage } from "@/shared/ui/loading-page";
 import { formatOccurrence, getPrimaryOccurrence } from "@/shared/utils/date";
 import { AlertTriangle, QrCode, Ticket } from "lucide-react";
 
@@ -54,7 +55,17 @@ export function ClubPanelEventTicketsPage() {
     (event.data?.club_id != null && payouts.isPending) ||
     (ticketing.data != null && desk.isPending);
   if (eventId > 0 && loading) {
-    return <Skeleton className="h-96 w-full rounded-xl" />;
+    return (
+      <Stack gap={6} aria-busy="true">
+        <PageHeader
+          back={{ href: ROUTES.CLUB_PANEL_EVENTS, label: t("navigation.events") }}
+          icon={Ticket}
+          title={<Skeleton className="h-7 w-72" />}
+          description={<Skeleton className="mt-1 h-4 w-44" />}
+        />
+        <LoadingPage variant="panel" className="py-0" />
+      </Stack>
+    );
   }
   if (!event.data) {
     return <EmptyState icon={<Ticket />} title={t("tickets.desk.notFound")} />;

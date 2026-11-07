@@ -24,7 +24,7 @@ export interface LoadingPageProps {
   className?: string;
   /** Override the accessible label (default: "Loading...") */
   label?: string;
-  variant?: "content" | "cards" | "table" | "form" | "detail" | "dashboard" | "list" | "sections" | "rows" | "upload";
+  variant?: "content" | "cards" | "table" | "form" | "detail" | "dashboard" | "list" | "sections" | "rows" | "upload" | "panel";
   /** How many cards the dashboard variant shows. */
   cards?: number;
 }
@@ -125,6 +125,18 @@ export function LoadingPage({
               </Stack>
             </SurfaceSkeleton>
           </Stack>
+        ) : variant === "panel" ? (
+          <SurfaceSkeleton className="p-6">
+            <Stack gap={6}>
+              <Stack gap={2}>
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-3/4" />
+              </Stack>
+              <FieldSkeleton />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-9 w-36 rounded-xl" />
+            </Stack>
+          </SurfaceSkeleton>
         ) : variant === "upload" ? (
           <SurfaceSkeleton className="p-6">
             <Stack align="center" gap={4}>
@@ -211,5 +223,5 @@ export function PageShellLoading({ route }: { route: string }) {
       <LoadingPage variant={shell.body} cards={shell.cards} className="py-0" />
     </Stack>
   );
-  return shell.container ? <Container size={shell.container}>{page}</Container> : page;
+  return <Container size={shell.container}>{page}</Container>;
 }

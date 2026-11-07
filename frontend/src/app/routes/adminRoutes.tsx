@@ -9,9 +9,11 @@
 
 import { lazy, Suspense, useCallback } from "react";
 import type { ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { ADMIN_ROUTE_MAP, type AdminRouteKey } from "@/shared/constants/routes";
 import { RouteLoading } from "@/app/routes/RouteLoading";
+import { Container, type ContainerSize } from "@/shared/layout/container";
+import { PAGE_SHELLS } from "@/shared/constants/pageShells";
 
 const AdminPanel = lazy(() =>
   import("@/features/admin/pages/AdminPanel").then((m) => ({ default: m.AdminPanel }))
@@ -65,11 +67,18 @@ function useAdminNavigation() {
   );
 }
 
-function AdminSuspense({ children }: { children: ReactNode }) {
+/**
+ * Every page here sits in its shell's width (see PAGE_SHELLS), so no page
+ * stretches across a wide screen. Routes without a shell pass their own size.
+ */
+function AdminSuspense({ children, size }: { children: ReactNode; size?: ContainerSize }) {
+  const pathname = usePathname();
   return (
-    <Suspense fallback={<RouteLoading />}>
+    <Container size={size ?? PAGE_SHELLS[pathname]?.container ?? "lg"}>
+      <Suspense fallback={<RouteLoading />}>
       {children}
-    </Suspense>
+      </Suspense>
+    </Container>
   );
 }
 

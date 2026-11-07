@@ -6,7 +6,7 @@ import { InstagramSongsPanel } from "@/features/admin/components/instagram/Insta
 import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { ROUTES } from "@/shared/constants/routes";
 import { useInstagramPublishing } from "@/features/admin/hooks/useInstagramPublishing";
-import { Container, DrawerBody, Section, Stack } from "@/shared/layout";
+import { DrawerBody, Section, Stack } from "@/shared/layout";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { Button } from "@/shared/ui/button";
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/shared/ui/drawer";
@@ -40,7 +40,7 @@ export function AdminInstagramPage() {
   const selectedBatch = batches.find(batch => batch.id === openBatchId);
 
   return (
-    <Container size="lg">
+    <>
       <Stack gap={6}>
         <PageShellHeader route={ROUTES.ADMIN_INSTAGRAM} />
 
@@ -150,6 +150,6 @@ export function AdminInstagramPage() {
           }}
         />
       ) : null}
-    </Container>
+    </>
   );
 }

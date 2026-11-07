@@ -4,10 +4,10 @@ import { useTranslation } from "react-i18next";
 import { clubPanelEventTicketsPath } from "@/shared/constants/routes";
 import { Button } from "@/shared/ui/button";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
-import { useEventFormContext } from "@/features/events/components/EventForm/EventForm/EventFormContext";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
 import { toast } from "@/shared/hooks/use-toast";
 import { Section } from "@/shared/layout";
+import type { Event, EventFormData } from "@/shared/types";
 
 interface EventSuccessScreenProps {
   onClose: () => void;
@@ -15,6 +15,9 @@ interface EventSuccessScreenProps {
   isSubmissionOnly: boolean;
   /** The published event, so its club can turn tickets on for it straight away. */
   createdEventId: number | null;
+  formData: EventFormData;
+  /** The event as the form last built it; its date and time show on the card. */
+  event: Event | null;
 }
 
 export function EventSuccessScreen({
@@ -22,9 +25,10 @@ export function EventSuccessScreen({
   isEditMode,
   isSubmissionOnly,
   createdEventId,
+  formData,
+  event,
 }: EventSuccessScreenProps) {
   const { t, i18n } = useTranslation();
-  const { formData, selectedClubName, previewEvent } = useEventFormContext();
 
   const handleDone = () => {
     onClose();
@@ -75,16 +79,18 @@ export function EventSuccessScreen({
 
           <div className="w-full rounded-lg p-4 text-left bg-secondary space-y-1">
             <p className="font-medium text-foreground">{formData.title}</p>
-            <p className="text-sm text-muted-foreground">
-              {selectedClubName}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {formatCardDate(previewEvent, formData.timeZone, i18n.language)}
-              {" "}
-              {t("common.at")}
-              {" "}
-              {formatCardTime(previewEvent, formData.timeZone, i18n.language)}
-            </p>
+            {event ? (
+              <>
+                <p className="text-sm text-muted-foreground">{event.club}</p>
+                <p className="text-sm text-muted-foreground">
+                  {formatCardDate(event, formData.timeZone, i18n.language)}
+                  {" "}
+                  {t("common.at")}
+                  {" "}
+                  {formatCardTime(event, formData.timeZone, i18n.language)}
+                </p>
+              </>
+            ) : null}
           </div>
 
           <div className="flex gap-2 w-full">

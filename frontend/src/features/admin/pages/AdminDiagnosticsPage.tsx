@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { ROUTES } from "@/shared/constants/routes";
-import { Container, Stack } from "@/shared/layout";
+import { Stack } from "@/shared/layout";
 import {
   Tabs,
   TabsContent,
@@ -17,45 +17,43 @@ export function AdminDiagnosticsPage() {
   const { t } = useTranslation();
 
   return (
-    <Container size="lg">
-      <Stack gap={6}>
-        <PageShellHeader route={ROUTES.ADMIN_DIAGNOSTICS} />
+    <Stack gap={6}>
+      <PageShellHeader route={ROUTES.ADMIN_DIAGNOSTICS} />
 
-        <Tabs defaultValue="scraping">
-          <Stack gap={5}>
-            <TabsList aria-label={t("admin.diagnostics.tabs.label")}>
-              <TabsTrigger value="queries">
-                {t("admin.diagnostics.queries.title")}
-              </TabsTrigger>
-              <TabsTrigger value="endpoints">
-                {t("admin.diagnostics.tabs.endpoints")}
-              </TabsTrigger>
-              <TabsTrigger value="browser">
-                {t("admin.diagnostics.tabs.browser")}
-              </TabsTrigger>
-              <TabsTrigger value="scraping">
-                {t("admin.diagnostics.tabs.scraping")}
-              </TabsTrigger>
-              <TabsTrigger value="latency">
-                {t("admin.diagnostics.tabs.latency")}
-              </TabsTrigger>
-            </TabsList>
+      <Tabs defaultValue="scraping">
+        <Stack gap={5}>
+          <TabsList aria-label={t("admin.diagnostics.tabs.label")}>
+            <TabsTrigger value="queries">
+              {t("admin.diagnostics.queries.title")}
+            </TabsTrigger>
+            <TabsTrigger value="endpoints">
+              {t("admin.diagnostics.tabs.endpoints")}
+            </TabsTrigger>
+            <TabsTrigger value="browser">
+              {t("admin.diagnostics.tabs.browser")}
+            </TabsTrigger>
+            <TabsTrigger value="scraping">
+              {t("admin.diagnostics.tabs.scraping")}
+            </TabsTrigger>
+            <TabsTrigger value="latency">
+              {t("admin.diagnostics.tabs.latency")}
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="queries"><DiscoveryQueries /></TabsContent>
-            <TabsContent value="endpoints" />
+          <TabsContent value="queries"><DiscoveryQueries /></TabsContent>
+          <TabsContent value="endpoints" />
 
-            <TabsContent value="scraping">
-              <DiagnosticsLogs />
-            </TabsContent>
-            <TabsContent value="browser">
-              <DiagnosticsLogs browserWorker />
-            </TabsContent>
-            <TabsContent value="latency">
-              <IngestionLatency />
-            </TabsContent>
-          </Stack>
-        </Tabs>
-      </Stack>
-    </Container>
+          <TabsContent value="scraping">
+            <DiagnosticsLogs />
+          </TabsContent>
+          <TabsContent value="browser">
+            <DiagnosticsLogs browserWorker />
+          </TabsContent>
+          <TabsContent value="latency">
+            <IngestionLatency />
+          </TabsContent>
+        </Stack>
+      </Tabs>
+    </Stack>
   );
 }

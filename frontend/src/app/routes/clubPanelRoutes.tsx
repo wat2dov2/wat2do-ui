@@ -9,9 +9,11 @@
 
 import { lazy, Suspense, useCallback } from "react";
 import type { ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { CLUB_PANEL_ROUTE_MAP, type ClubPanelRouteKey } from "@/shared/constants/routes";
 import { RouteLoading } from "@/app/routes/RouteLoading";
+import { Container, type ContainerSize } from "@/shared/layout/container";
+import { PAGE_SHELLS } from "@/shared/constants/pageShells";
 
 const ClubPanel = lazy(() =>
   import("@/features/club-panel").then((m) => ({ default: m.ClubPanel }))
@@ -46,11 +48,18 @@ function useClubPanelNavigation() {
   );
 }
 
-function ClubPanelSuspense({ children }: { children: ReactNode }) {
+/**
+ * Every page here sits in its shell's width (see PAGE_SHELLS), so no page
+ * stretches across a wide screen. Routes without a shell pass their own size.
+ */
+function ClubPanelSuspense({ children, size }: { children: ReactNode; size?: ContainerSize }) {
+  const pathname = usePathname();
   return (
-    <Suspense fallback={<RouteLoading />}>
+    <Container size={size ?? PAGE_SHELLS[pathname]?.container ?? "lg"}>
+      <Suspense fallback={<RouteLoading />}>
       {children}
-    </Suspense>
+      </Suspense>
+    </Container>
   );
 }
 
@@ -90,7 +99,7 @@ export function ClubPanelMembersRoute() {
 
 export function ClubPanelEventTicketsRoute() {
   return (
-    <ClubPanelSuspense>
+    <ClubPanelSuspense size="md">
       <ClubPanelEventTicketsPage />
     </ClubPanelSuspense>
   );
@@ -98,7 +107,7 @@ export function ClubPanelEventTicketsRoute() {
 
 export function ClubPanelDoorScannerRoute() {
   return (
-    <ClubPanelSuspense>
+    <ClubPanelSuspense size="md">
       <ClubPanelDoorScannerPage />
     </ClubPanelSuspense>
   );
