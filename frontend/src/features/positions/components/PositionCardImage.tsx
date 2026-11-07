@@ -59,8 +59,7 @@ export function PositionCardImage({
         imageAlt={position.title}
         imageLoading={variant === "detail" || priority ? "eager" : "lazy"}
         cutouts={cutouts}
-        width={box.width}
-        height={box.height}
+        box={box}
         className="absolute inset-0"
       />
 

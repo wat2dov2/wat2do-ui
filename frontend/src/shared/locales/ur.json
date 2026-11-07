@@ -553,14 +553,15 @@
   "landing": {
     "hero": {
       "note": "سب کے لیے مفت · طلبہ امپیکٹ ایوارڈز کی مالی معاونت سے",
+      "badges": {
+        "free": "مفت، بغیر اکاؤنٹ",
+        "source": "انسٹاگرام سے لیا گیا"
+      },
       "titleLead": "کیمپس کا ہر ایونٹ،",
       "titleHighlight": "ختم ہونے سے پہلے۔",
       "description": "کلب ایونٹس سینکڑوں Instagram اکاؤنٹس میں دب جاتے ہیں۔ Wat2Do ان سب کو ایک فیڈ میں لے آتا ہے۔",
       "primaryAction": "دیکھیں کیا چل رہا ہے",
-      "secondaryAction": "یہ کیسے کام کرتا ہے",
-      "mapTitle": "{{school}} میں {{total}} آنے والا ایونٹ",
-      "mapTitle_one": "{{school}} میں {{total}} آنے والا ایونٹ",
-      "mapTitle_other": "{{school}} میں {{total}} آنے والے ایونٹس"
+      "secondaryAction": "یہ کیسے کام کرتا ہے"
     },
     "problem": {
       "title": "کیمپس بورنگ نہیں ہے۔ بس اس کے ایونٹس چھپے ہوئے ہیں۔",

@@ -19,6 +19,13 @@
   --app-radius-xl: 12px;
   --app-radius-full: 9999px;
 
+  /* Corner badge notches (shared/ui/badge-mask.tsx, shared/ui/event-image-cutout.tsx):
+     the space around a corner badge, the concave curve where the notch leaves
+     the card edge, and the convex corner the notch turns around the badge. */
+  --notch-gap: 4px;
+  --notch-fillet: 8px;
+  --notch-radius: 12px;
+
   /* Shadow tokens */
   --app-shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.06);
   --app-shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.08);
@@ -147,4 +154,15 @@
 
   --scrollbar-thumb: oklch(0.399 0 0);
   --scrollbar-track: oklch(0.216 0 0);
+}
+
+/* Display-size notches for a surface that carries large badges (the landing
+   hero and closing). Phones keep the event card's notch so small screens stay
+   compact. */
+@media (min-width: 640px) {
+  [data-notch-size="display"] {
+    --notch-gap: 6px;
+    --notch-fillet: 12px;
+    --notch-radius: 16px;
+  }
 }

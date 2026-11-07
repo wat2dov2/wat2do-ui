@@ -19,15 +19,39 @@ import { posterThumbnailUrl } from "@/shared/utils/media";
 const useSafeLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-/** Size of the corner fillet glyph, matching the `size-2` used by BadgeMask. */
-const FILLET = 8;
-/** Inner-corner radius of the notch, matching BadgeMask's `rounded-*-xl`. */
-const INNER_RADIUS = 12;
-
 interface MeasuredCutout {
   corner: BadgeMaskVariant;
   width: number;
   height: number;
+}
+
+/** The measured card face and the notch geometry it is cut with. */
+export interface CutoutBox {
+  width: number;
+  height: number;
+  /** `--notch-fillet`: the concave curve where a notch leaves the card edge. */
+  fillet: number;
+  /** `--notch-radius`: the convex corner a notch turns around its badge. */
+  radius: number;
+}
+
+/**
+ * The notch geometry comes from the same tokens BadgeMask draws with, read
+ * where the face is, so a surface that scales its notches (or a breakpoint
+ * that does) cuts exactly the shape its badges sit in.
+ */
+function readCutoutBox(surface: HTMLElement): CutoutBox {
+  // getBoundingClientRect, not offsetWidth: the latter rounds to whole
+  // pixels, so a 241.6px face reported 242 and the notches were cut from a
+  // space fractionally wider than the one they were drawn into.
+  const { width, height } = surface.getBoundingClientRect();
+  const style = getComputedStyle(surface);
+  return {
+    width,
+    height,
+    fillet: parseFloat(style.getPropertyValue("--notch-fillet")),
+    radius: parseFloat(style.getPropertyValue("--notch-radius")),
+  };
 }
 
 /**
@@ -44,7 +68,7 @@ export function useEventImageCutouts() {
     new Map<BadgeMaskVariant, (node: HTMLElement | null) => void>(),
   );
   const resizeObserver = useRef<ResizeObserver | null>(null);
-  const [box, setBox] = useState({ width: 0, height: 0 });
+  const [box, setBox] = useState<CutoutBox>({ width: 0, height: 0, fillet: 0, radius: 0 });
   const [cutouts, setCutouts] = useState<MeasuredCutout[]>([]);
 
   /*
@@ -56,13 +80,14 @@ export function useEventImageCutouts() {
     const surface = surfaceRef.current;
     if (!surface) return;
 
-    // getBoundingClientRect, not offsetWidth: the latter rounds to whole
-    // pixels, so a 241.6px face reported 242 and the notches were cut from a
-    // space fractionally wider than the one they were drawn into.
-    const surfaceRect = surface.getBoundingClientRect();
-    const next = { width: surfaceRect.width, height: surfaceRect.height };
+    const next = readCutoutBox(surface);
     setBox((prev) =>
-      prev.width === next.width && prev.height === next.height ? prev : next,
+      prev.width === next.width &&
+      prev.height === next.height &&
+      prev.fillet === next.fillet &&
+      prev.radius === next.radius
+        ? prev
+        : next,
     );
 
     const measured = [...nodes.current.entries()].map(([corner, node]) => {
@@ -135,8 +160,8 @@ interface EventImageCutoutProps {
   imageContent?: ReactNode;
   /** Measured badge sizes from `useEventImageCutouts`. */
   cutouts: MeasuredCutout[];
-  width: number;
-  height: number;
+  /** Measured face and notch geometry from `useEventImageCutouts`. */
+  box: CutoutBox;
   /** HTML overlaid above the clipped face - text, buttons, links stay real DOM. */
   children?: ReactNode;
   className?: string;
@@ -147,7 +172,7 @@ interface EventImageCutoutProps {
  * A direct CSS path clips the photo, video and loading state together without
  * SVG fragment references, image decoding or alpha-mask compositing.
  */
-function createClipPath(cutouts: MeasuredCutout[], width: number, height: number) {
+function createClipPath(cutouts: MeasuredCutout[], { width, height, fillet, radius: innerRadius }: CutoutBox) {
   if (width <= 0 || height <= 0) return undefined;
 
   const corners: BadgeMaskVariant[] = ["top-left", "top-right", "bottom-right", "bottom-left"];
@@ -167,14 +192,14 @@ function createClipPath(cutouts: MeasuredCutout[], width: number, height: number
     }
     const horizontal = index % 2 === 0 ? cutout.width : cutout.height;
     const vertical = index % 2 === 0 ? cutout.height : cutout.width;
-    const radius = Math.min(INNER_RADIUS, horizontal, vertical);
+    const radius = Math.min(innerRadius, horizontal, vertical);
     return [
-      `${start}${point(0, vertical + FILLET)}`,
-      `A${FILLET} ${FILLET} 0 0 1 ${point(FILLET, vertical)}`,
+      `${start}${point(0, vertical + fillet)}`,
+      `A${fillet} ${fillet} 0 0 1 ${point(fillet, vertical)}`,
       `L${point(horizontal - radius, vertical)}`,
       `A${radius} ${radius} 0 0 0 ${point(horizontal, vertical - radius)}`,
-      `L${point(horizontal, FILLET)}`,
-      `A${FILLET} ${FILLET} 0 0 1 ${point(horizontal + FILLET, 0)}`,
+      `L${point(horizontal, fillet)}`,
+      `A${fillet} ${fillet} 0 0 1 ${point(horizontal + fillet, 0)}`,
     ].join(" ");
   });
   return `path("${segments.join(" ")} Z")`;
@@ -190,15 +215,11 @@ export function EventImageCutout({
   imageFallback,
   imageContent,
   cutouts,
-  width,
-  height,
+  box,
   children,
   className,
 }: EventImageCutoutProps) {
-  const clipPath = useMemo(
-    () => createClipPath(cutouts, width, height),
-    [cutouts, width, height],
-  );
+  const clipPath = useMemo(() => createClipPath(cutouts, box), [cutouts, box]);
 
   const compactProfile = imageVariant === "profile" && Boolean(imageSrc) && !videoSrc;
 

@@ -550,13 +550,15 @@
   "landing": {
     "hero": {
       "note": "Miễn phí cho mọi người · Được tài trợ bởi các giải thưởng tác động sinh viên",
+      "badges": {
+        "free": "Miễn phí, không cần tài khoản",
+        "source": "Lấy từ Instagram"
+      },
       "titleLead": "Mọi sự kiện trong trường,",
       "titleHighlight": "trước khi kịp kết thúc.",
       "description": "Sự kiện của các tổ chức bị chìm nghỉm giữa hàng trăm tài khoản Instagram. Wat2Do gom tất cả vào một bảng tin.",
       "primaryAction": "Xem có gì hay",
-      "secondaryAction": "Cách hoạt động",
-      "mapTitle": "{{total}} sự kiện sắp diễn ra tại {{school}}",
-      "mapTitle_other": "{{total}} sự kiện sắp diễn ra tại {{school}}"
+      "secondaryAction": "Cách hoạt động"
     },
     "problem": {
       "title": "Trường KHÔNG HỀ nhàm chán. Chỉ là sự kiện bị giấu kín.",

@@ -31,7 +31,7 @@ export function LandingHeading({
         className={cn(
           "font-medium text-balance text-foreground",
           Heading === "h1"
-            ? "text-[clamp(2.375rem,7.4vw,5.75rem)] leading-[0.98] tracking-[-0.04em]"
+            ? "text-[clamp(2rem,7.4vw,5.75rem)] leading-[0.98] tracking-[-0.04em]"
             : "max-w-4xl text-[clamp(2.25rem,4.6vw,3.75rem)] leading-[1.02] tracking-[-0.035em]",
         )}
       >
@@ -58,45 +58,6 @@ export function LandingSection({ id, children, ...heading }: LandingSectionProps
     <Stack as="section" id={id} gap={12} className="scroll-mt-24 sm:gap-16">
       <LandingHeading {...heading} />
       {children}
-    </Stack>
-  );
-}
-
-/** Framed stage that holds one product illustration beside its feature copy. */
-export function LandingStage({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex min-h-80 items-center justify-center overflow-hidden rounded-3xl bg-surface-elevated p-5 sm:p-12">
-      {children}
-    </div>
-  );
-}
-
-/**
- * Items set as type on a hairline grid rather than in cards: each entry hangs
- * from a rule, so the grid reads as one list and not as a row of boxes.
- */
-export function LandingRuledGrid({ columns, children }: { columns: 2 | 3; children: ReactNode }) {
-  return (
-    <div className={cn("grid gap-x-12 gap-y-10 sm:grid-cols-2", columns === 3 && "lg:grid-cols-3")}>
-      {children}
-    </div>
-  );
-}
-
-interface LandingRuledItemProps {
-  title: ReactNode;
-  description: ReactNode;
-  /** Optional link below the description. */
-  action?: ReactNode;
-}
-
-/** One entry of a ruled grid: a title and its explanation under a hairline. */
-export function LandingRuledItem({ title, description, action }: LandingRuledItemProps) {
-  return (
-    <Stack gap={3} align="start" className="border-t border-border pt-6">
-      <h3 className="text-xl font-medium tracking-[-0.01em] text-balance text-foreground">{title}</h3>
-      <p className="max-w-prose leading-relaxed text-pretty text-muted-foreground">{description}</p>
-      {action}
     </Stack>
   );
 }

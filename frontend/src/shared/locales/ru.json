@@ -559,16 +559,15 @@
   "landing": {
     "hero": {
       "note": "Бесплатно для всех · Финансируется студенческими премиями за вклад",
+      "badges": {
+        "free": "Бесплатно, без аккаунта",
+        "source": "Прямо из Instagram"
+      },
       "titleLead": "Все события кампуса,",
       "titleHighlight": "пока они не прошли.",
       "description": "События организаций теряются в сотнях аккаунтов Instagram. Wat2Do собирает их все в одну ленту.",
       "primaryAction": "Смотреть события",
-      "secondaryAction": "Как это работает",
-      "mapTitle": "{{total}} предстоящее событие в {{school}}",
-      "mapTitle_one": "{{total}} предстоящее событие в {{school}}",
-      "mapTitle_few": "{{total}} предстоящих события в {{school}}",
-      "mapTitle_many": "{{total}} предстоящих событий в {{school}}",
-      "mapTitle_other": "{{total}} предстоящего события в {{school}}"
+      "secondaryAction": "Как это работает"
     },
     "problem": {
       "title": "В кампусе НЕ скучно. Просто события спрятаны.",

@@ -17,6 +17,7 @@ const ICON_SIZE: Record<BadgeSize, number> = {
   md: 14,
   lg: 16,
   xl: 18,
+  display: 16,
 };
 
 interface ClubCategoryBadgeProps {

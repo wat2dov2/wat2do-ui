@@ -5185,9 +5185,10 @@ test.describe("Navigation", () => {
 
     await expect(page.getByRole("heading", { level: 1 })).toContainText("before it's over.");
     await expect(page.getByRole("heading", { name: "Campus is NOT boring. Its events are just hidden." })).toBeVisible();
-    // The hero is the school's live event map, and the stats are counted from its feeds.
+    // The hero is the school's live event map, and its corner and the stats are counted from its feeds.
     await expect(page.getByLabel("Map", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("upcoming events right now")).toBeVisible();
+    await expect(page.getByText("upcoming events right now")).toHaveCount(2);
+    await expect(page.getByText("upcoming events right now").last()).toBeVisible();
 
     await page.getByRole("link", { name: "How it works" }).click();
     await expect(page).toHaveURL(/#how-it-works$/);

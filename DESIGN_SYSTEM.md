@@ -152,6 +152,12 @@ Token scale:
 Current UI leans on `rounded-xl` (`12px`) for buttons, cards, nav items, event
 cards, dialogs, and floating controls.
 
+Corner badges sit in notches cut into the card face (`shared/ui/badge-mask.tsx`
+with `shared/ui/event-image-cutout.tsx`).
+Their shape comes from `--notch-gap` (4px), `--notch-fillet` (8px) and
+`--notch-radius` (12px); a surface marked `data-notch-size="display"` scales them
+to 6px, 12px and 16px from the `sm` breakpoint up.
+
 Guidance:
 
 - Use `12px` for primary app surfaces.

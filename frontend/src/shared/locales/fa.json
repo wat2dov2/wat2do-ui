@@ -553,14 +553,15 @@
   "landing": {
     "hero": {
       "note": "رایگان برای همه · با حمایت جوایز تأثیر دانشجویی",
+      "badges": {
+        "free": "رایگان، بدون حساب",
+        "source": "برگرفته از اینستاگرام"
+      },
       "titleLead": "همه رویدادهای دانشگاه،",
       "titleHighlight": "قبل از اینکه تمام شوند.",
       "description": "رویدادهای باشگاه‌ها لابه‌لای صدها حساب Instagram گم می‌شوند. Wat2Do همه را در یک فید جمع می‌کند.",
       "primaryAction": "ببینید چه خبر است",
-      "secondaryAction": "چطور کار می‌کند",
-      "mapTitle": "{{total}} رویداد پیش رو در {{school}}",
-      "mapTitle_one": "{{total}} رویداد پیش رو در {{school}}",
-      "mapTitle_other": "{{total}} رویداد پیش رو در {{school}}"
+      "secondaryAction": "چطور کار می‌کند"
     },
     "problem": {
       "title": "دانشگاه خسته‌کننده نیست. فقط رویدادهایش پنهان هستند.",

@@ -550,13 +550,15 @@
   "landing": {
     "hero": {
       "note": "Free for everyone · Funded by student impact awards",
+      "badges": {
+        "free": "Free, no account",
+        "source": "Pulled from Instagram"
+      },
       "titleLead": "Every campus event,",
       "titleHighlight": "before it's over.",
       "description": "Club events get buried across hundreds of Instagram accounts. Wat2Do puts them all in one feed.",
       "primaryAction": "See what's on",
-      "secondaryAction": "How it works",
-      "mapTitle": "{{total}} upcoming event at {{school}}",
-      "mapTitle_other": "{{total}} upcoming events at {{school}}"
+      "secondaryAction": "How it works"
     },
     "problem": {
       "title": "Campus is NOT boring. Its events are just hidden.",

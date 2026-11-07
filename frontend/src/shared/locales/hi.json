@@ -553,14 +553,15 @@
   "landing": {
     "hero": {
       "note": "सभी के लिए मुफ़्त · स्टूडेंट इम्पैक्ट पुरस्कारों से वित्तपोषित",
+      "badges": {
+        "free": "मुफ़्त, बिना अकाउंट",
+        "source": "Instagram से लिया गया"
+      },
       "titleLead": "कैंपस का हर इवेंट,",
       "titleHighlight": "खत्म होने से पहले।",
       "description": "क्लब इवेंट सैकड़ों Instagram अकाउंट्स में दब जाते हैं। Wat2Do उन सबको एक फ़ीड में ले आता है।",
       "primaryAction": "देखें क्या चल रहा है",
-      "secondaryAction": "यह कैसे काम करता है",
-      "mapTitle": "{{school}} में {{total}} आने वाला इवेंट",
-      "mapTitle_one": "{{school}} में {{total}} आने वाला इवेंट",
-      "mapTitle_other": "{{school}} में {{total}} आने वाले इवेंट"
+      "secondaryAction": "यह कैसे काम करता है"
     },
     "problem": {
       "title": "कैंपस बोरिंग नहीं है। बस उसके इवेंट छिपे हुए हैं।",

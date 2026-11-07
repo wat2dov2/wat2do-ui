@@ -550,13 +550,15 @@
   "landing": {
     "hero": {
       "note": "全部免費 · 由學生影響力獎項資助",
+      "badges": {
+        "free": "免費，唔使帳戶",
+        "source": "直接由 Instagram 嚟"
+      },
       "titleLead": "校園每一個活動，",
       "titleHighlight": "趁未完就睇到。",
       "description": "組織嘅活動散落喺幾百個 Instagram 帳戶，好易就沉咗落去。Wat2Do 將佢哋全部放埋喺同一個 feed。",
       "primaryAction": "睇吓有咩搞",
-      "secondaryAction": "點樣運作",
-      "mapTitle": "{{school}} 有 {{total}} 個就嚟舉行嘅活動",
-      "mapTitle_other": "{{school}} 有 {{total}} 個就嚟舉行嘅活動"
+      "secondaryAction": "點樣運作"
     },
     "problem": {
       "title": "校園唔悶，只係啲活動收埋咗。",

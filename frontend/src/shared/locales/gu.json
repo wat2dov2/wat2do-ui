@@ -553,14 +553,15 @@
   "landing": {
     "hero": {
       "note": "બધા માટે મફત · વિદ્યાર્થી ઇમ્પેક્ટ પુરસ્કારો દ્વારા ભંડોળ",
+      "badges": {
+        "free": "મફત, એકાઉન્ટ વિના",
+        "source": "Instagram પરથી લીધેલું"
+      },
       "titleLead": "કેમ્પસની દરેક ઇવેન્ટ,",
       "titleHighlight": "પૂરી થાય એ પહેલાં.",
       "description": "ક્લબ ઇવેન્ટ્સ સેંકડો Instagram એકાઉન્ટ્સમાં દબાઈ જાય છે. Wat2Do તે બધાને એક જ ફીડમાં લાવે છે.",
       "primaryAction": "જુઓ શું ચાલી રહ્યું છે",
-      "secondaryAction": "આ કેવી રીતે કામ કરે છે",
-      "mapTitle": "{{school}} માં {{total}} આવનારી ઇવેન્ટ",
-      "mapTitle_one": "{{school}} માં {{total}} આવનારી ઇવેન્ટ",
-      "mapTitle_other": "{{school}} માં {{total}} આવનારી ઇવેન્ટ્સ"
+      "secondaryAction": "આ કેવી રીતે કામ કરે છે"
     },
     "problem": {
       "title": "કેમ્પસ કંટાળાજનક નથી. બસ તેની ઇવેન્ટ્સ છુપાયેલી છે.",

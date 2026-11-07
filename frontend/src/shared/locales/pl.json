@@ -559,16 +559,15 @@
   "landing": {
     "hero": {
       "note": "Za darmo dla wszystkich · Finansowane z nagród za studencki wpływ",
+      "badges": {
+        "free": "Za darmo, bez konta",
+        "source": "Prosto z Instagrama"
+      },
       "titleLead": "Każde wydarzenie na kampusie,",
       "titleHighlight": "zanim się skończy.",
       "description": "Wydarzenia organizacji giną wśród setek kont na Instagramie. Wat2Do zbiera je wszystkie w jednym feedzie.",
       "primaryAction": "Zobacz, co się dzieje",
-      "secondaryAction": "Jak to działa",
-      "mapTitle": "{{total}} nadchodzące wydarzenie na {{school}}",
-      "mapTitle_one": "{{total}} nadchodzące wydarzenie na {{school}}",
-      "mapTitle_few": "{{total}} nadchodzące wydarzenia na {{school}}",
-      "mapTitle_many": "{{total}} nadchodzących wydarzeń na {{school}}",
-      "mapTitle_other": "{{total}} nadchodzącego wydarzenia na {{school}}"
+      "secondaryAction": "Jak to działa"
     },
     "problem": {
       "title": "Na kampusie NIE jest nudno. Wydarzenia są po prostu ukryte.",

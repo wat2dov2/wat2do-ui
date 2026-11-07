@@ -565,18 +565,15 @@
   "landing": {
     "hero": {
       "note": "مجاني للجميع · بتمويل من جوائز الأثر الطلابي",
+      "badges": {
+        "free": "مجاني، بلا حساب",
+        "source": "مأخوذ من إنستغرام"
+      },
       "titleLead": "كل فعاليات الحرم الجامعي،",
       "titleHighlight": "قبل أن تفوتك.",
       "description": "تضيع فعاليات النوادي بين مئات حسابات Instagram. يجمعها Wat2Do كلها في صفحة واحدة.",
       "primaryAction": "شاهد ما يحدث",
-      "secondaryAction": "كيف يعمل",
-      "mapTitle": "{{total}} فعالية قادمة في {{school}}",
-      "mapTitle_zero": "{{total}} فعالية قادمة في {{school}}",
-      "mapTitle_one": "{{total}} فعالية قادمة في {{school}}",
-      "mapTitle_two": "{{total}} فعاليتان قادمتان في {{school}}",
-      "mapTitle_few": "{{total}} فعاليات قادمة في {{school}}",
-      "mapTitle_many": "{{total}} فعالية قادمة في {{school}}",
-      "mapTitle_other": "{{total}} فعالية قادمة في {{school}}"
+      "secondaryAction": "كيف يعمل"
     },
     "problem": {
       "title": "الحرم الجامعي ليس مملًا. فعالياته مخفية فقط.",

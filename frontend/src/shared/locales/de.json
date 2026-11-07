@@ -553,14 +553,15 @@
   "landing": {
     "hero": {
       "note": "Kostenlos für alle · Finanziert durch Auszeichnungen für studentisches Engagement",
+      "badges": {
+        "free": "Kostenlos, ohne Konto",
+        "source": "Direkt von Instagram"
+      },
       "titleLead": "Jede Campus-Veranstaltung,",
       "titleHighlight": "bevor sie vorbei ist.",
       "description": "Club-Events gehen auf Hunderten Instagram-Accounts unter. Wat2Do bündelt sie alle in einem Feed.",
       "primaryAction": "Was ist los?",
-      "secondaryAction": "So funktioniert's",
-      "mapTitle": "{{total}} anstehende Veranstaltung bei {{school}}",
-      "mapTitle_one": "{{total}} anstehende Veranstaltung bei {{school}}",
-      "mapTitle_other": "{{total}} anstehende Veranstaltungen bei {{school}}"
+      "secondaryAction": "So funktioniert's"
     },
     "problem": {
       "title": "Der Campus ist NICHT langweilig. Seine Veranstaltungen sind nur versteckt.",

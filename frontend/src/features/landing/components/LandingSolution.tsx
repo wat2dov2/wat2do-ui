@@ -2,36 +2,43 @@
 
 import type { ComponentType, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { BellRing, ScanText, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
 import type { LandingSnapshot } from "@/features/landing/api/landing.server";
+import { LandingCard, LandingStage } from "@/features/landing/components/LandingCard";
 import {
   CaptureMockup,
   ClubsMockup,
   FiltersMockup,
   RemindersMockup,
 } from "@/features/landing/components/LandingMockups";
-import { LandingSection, LandingStage } from "@/features/landing/components/LandingSection";
+import { LandingSection } from "@/features/landing/components/LandingSection";
 import { formatLandingCount } from "@/features/landing/lib/landingStats";
 import { Stack } from "@/shared/layout";
+import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
 
-const SPLIT_FEATURES: readonly { key: string; Mockup: ComponentType }[] = [
-  { key: "filters", Mockup: FiltersMockup },
-  { key: "reminders", Mockup: RemindersMockup },
-  { key: "clubs", Mockup: ClubsMockup },
+// In the order a student meets them: the event arrives, gets found, gets remembered, leads to its club.
+const FEATURES: readonly { key: string; icon: LucideIcon; Mockup: ComponentType }[] = [
+  { key: "capture", icon: ScanText, Mockup: CaptureMockup },
+  { key: "filters", icon: SlidersHorizontal, Mockup: FiltersMockup },
+  { key: "reminders", icon: BellRing, Mockup: RemindersMockup },
+  { key: "clubs", icon: Users, Mockup: ClubsMockup },
 ];
 
-/** A number counted live from the school's feeds, hung from a hairline; skeleton while they load. */
-function LandingStat({ value, label }: { value: string | null; label: string }) {
+/** A number counted live from the school's feeds; skeleton while they load. */
+function LandingStat({ value, label, badge }: { value: string | null; label: string; badge?: ReactNode }) {
   return (
-    <Stack gap={2} className="border-t border-border pt-6">
-      {value === null ? (
-        <Skeleton className="h-14 w-28" />
-      ) : (
-        <p className="text-6xl font-normal tracking-[-0.04em] tabular-nums text-foreground">{value}</p>
-      )}
-      <p className="text-muted-foreground">{label}</p>
-    </Stack>
+    <LandingCard corners={badge ? { "top-right": badge } : undefined}>
+      <Stack gap={2}>
+        {value === null ? (
+          <Skeleton className="h-14 w-28" />
+        ) : (
+          <p className="text-6xl font-normal tracking-[-0.04em] tabular-nums text-foreground">{value}</p>
+        )}
+        <p className="text-muted-foreground">{label}</p>
+      </Stack>
+    </LandingCard>
   );
 }
 
@@ -52,9 +59,9 @@ function FeatureCopy({ featureKey, schoolName }: { featureKey: string; schoolNam
 /** One feature: its pitch on one side and the product doing it on the other. */
 function LandingFeatureRow({ mirrored, copy, children }: { mirrored: boolean; copy: ReactNode; children: ReactNode }) {
   return (
-    <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-24">
+    <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-24">
       <div className={cn(mirrored && "lg:order-2")}>{copy}</div>
-      <LandingStage>{children}</LandingStage>
+      {children}
     </div>
   );
 }
@@ -70,7 +77,8 @@ export function LandingSolution({ schoolName, snapshot }: { schoolName: string; 
       title={t("landing.solution.title")}
       description={t("landing.solution.description")}
     >
-      <div className="grid gap-x-12 gap-y-8 sm:grid-cols-3">
+      {/* The counts wear the badges an event card would: Live for what's coming up, New for what just arrived. */}
+      <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
         {/* A school whose club directory is unavailable shows the two event counts. */}
         {snapshot?.clubCount !== null ? (
           <LandingStat
@@ -81,20 +89,21 @@ export function LandingSolution({ schoolName, snapshot }: { schoolName: string; 
         <LandingStat
           value={count(snapshot?.events.length)}
           label={t("landing.solution.stats.upcomingLabel", { count: snapshot?.events.length ?? 0 })}
+          badge={<Badge variant="live" size="lg">{t("common.live")}</Badge>}
         />
         <LandingStat
           value={count(snapshot?.newThisWeekCount)}
           label={t("landing.solution.stats.newLabel", { count: snapshot?.newThisWeekCount ?? 0 })}
+          badge={<Badge variant="new" size="lg">{t("events.new")}</Badge>}
         />
       </div>
 
       <Stack gap={12} className="pt-8 sm:gap-32 sm:pt-16">
-        <LandingFeatureRow mirrored={false} copy={<FeatureCopy featureKey="capture" schoolName={schoolName} />}>
-          <CaptureMockup />
-        </LandingFeatureRow>
-        {SPLIT_FEATURES.map(({ key, Mockup }, index) => (
-          <LandingFeatureRow key={key} mirrored={index % 2 === 0} copy={<FeatureCopy featureKey={key} schoolName={schoolName} />}>
-            <Mockup />
+        {FEATURES.map(({ key, icon, Mockup }, index) => (
+          <LandingFeatureRow key={key} mirrored={index % 2 === 1} copy={<FeatureCopy featureKey={key} schoolName={schoolName} />}>
+            <LandingStage icon={icon}>
+              <Mockup />
+            </LandingStage>
           </LandingFeatureRow>
         ))}
       </Stack>

@@ -550,13 +550,15 @@
   "landing": {
     "hero": {
       "note": "所有人免费 · 由学生影响力奖项资助",
+      "badges": {
+        "free": "免费，无需账号",
+        "source": "直接来自 Instagram"
+      },
       "titleLead": "校园里的每一场活动，",
       "titleHighlight": "赶在结束之前。",
       "description": "组织的活动淹没在上百个 Instagram 账号里。Wat2Do 把它们全部汇总到一个信息流。",
       "primaryAction": "看看有什么活动",
-      "secondaryAction": "如何运作",
-      "mapTitle": "{{school}} 有 {{total}} 场即将举行的活动",
-      "mapTitle_other": "{{school}} 有 {{total}} 场即将举行的活动"
+      "secondaryAction": "如何运作"
     },
     "problem": {
       "title": "校园并不无聊，只是活动都藏起来了。",

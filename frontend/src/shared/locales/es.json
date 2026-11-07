@@ -556,15 +556,15 @@
   "landing": {
     "hero": {
       "note": "Gratis para todos · Financiado con premios de impacto estudiantil",
+      "badges": {
+        "free": "Gratis, sin cuenta",
+        "source": "Sacado de Instagram"
+      },
       "titleLead": "Todos los eventos del campus,",
       "titleHighlight": "antes de que terminen.",
       "description": "Los eventos de los clubes quedan enterrados entre cientos de cuentas de Instagram. Wat2Do los reúne todos en un solo feed.",
       "primaryAction": "Ver qué hay",
-      "secondaryAction": "Cómo funciona",
-      "mapTitle": "{{total}} evento próximo en {{school}}",
-      "mapTitle_one": "{{total}} evento próximo en {{school}}",
-      "mapTitle_many": "{{total}} eventos próximos en {{school}}",
-      "mapTitle_other": "{{total}} eventos próximos en {{school}}"
+      "secondaryAction": "Cómo funciona"
     },
     "problem": {
       "title": "El campus NO es aburrido. Sus eventos están escondidos.",

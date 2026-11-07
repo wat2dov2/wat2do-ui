@@ -22,8 +22,7 @@ export function CardImageSkeleton() {
         backgroundColor="var(--muted)"
         imageFallback={<Skeleton className="size-full rounded-none" />}
         cutouts={cutouts}
-        width={box.width}
-        height={box.height}
+        box={box}
         className="absolute inset-0"
       />
       <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>

@@ -553,14 +553,15 @@
   "landing": {
     "hero": {
       "note": "ਸਾਰਿਆਂ ਲਈ ਮੁਫ਼ਤ · ਵਿਦਿਆਰਥੀ ਪ੍ਰਭਾਵ ਪੁਰਸਕਾਰਾਂ ਰਾਹੀਂ ਫੰਡ ਕੀਤਾ",
+      "badges": {
+        "free": "ਮੁਫ਼ਤ, ਬਿਨਾਂ ਖਾਤੇ",
+        "source": "Instagram ਤੋਂ ਲਿਆ ਗਿਆ"
+      },
       "titleLead": "ਕੈਂਪਸ ਦਾ ਹਰ ਸਮਾਗਮ,",
       "titleHighlight": "ਖਤਮ ਹੋਣ ਤੋਂ ਪਹਿਲਾਂ।",
       "description": "ਸੰਸਥਾਵਾਂ ਦੇ ਸਮਾਗਮ ਸੈਂਕੜੇ Instagram ਖਾਤਿਆਂ ਵਿੱਚ ਦੱਬ ਜਾਂਦੇ ਹਨ। Wat2Do ਉਨ੍ਹਾਂ ਸਾਰਿਆਂ ਨੂੰ ਇੱਕ ਫੀਡ ਵਿੱਚ ਲੈ ਆਉਂਦਾ ਹੈ।",
       "primaryAction": "ਦੇਖੋ ਕੀ ਹੋ ਰਿਹਾ ਹੈ",
-      "secondaryAction": "ਇਹ ਕਿਵੇਂ ਕੰਮ ਕਰਦਾ ਹੈ",
-      "mapTitle": "{{school}} ਵਿੱਚ {{total}} ਆਉਣ ਵਾਲਾ ਸਮਾਗਮ",
-      "mapTitle_one": "{{school}} ਵਿੱਚ {{total}} ਆਉਣ ਵਾਲਾ ਸਮਾਗਮ",
-      "mapTitle_other": "{{school}} ਵਿੱਚ {{total}} ਆਉਣ ਵਾਲੇ ਸਮਾਗਮ"
+      "secondaryAction": "ਇਹ ਕਿਵੇਂ ਕੰਮ ਕਰਦਾ ਹੈ"
     },
     "problem": {
       "title": "ਕੈਂਪਸ ਬੋਰਿੰਗ ਨਹੀਂ ਹੈ। ਬੱਸ ਇਸਦੇ ਸਮਾਗਮ ਲੁਕੇ ਹੋਏ ਹਨ।",

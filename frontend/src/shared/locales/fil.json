@@ -553,14 +553,15 @@
   "landing": {
     "hero": {
       "note": "Libre para sa lahat · Pinopondohan ng mga student impact award",
+      "badges": {
+        "free": "Libre, walang account",
+        "source": "Kinuha mula sa Instagram"
+      },
       "titleLead": "Bawat kaganapan sa campus,",
       "titleHighlight": "bago pa ito matapos.",
       "description": "Natatabunan ang mga kaganapan ng mga organisasyon sa daan-daang Instagram account. Inilalagay ng Wat2Do ang lahat ng ito sa iisang feed.",
       "primaryAction": "Tingnan kung ano'ng meron",
-      "secondaryAction": "Paano ito gumagana",
-      "mapTitle": "{{total}} paparating na kaganapan sa {{school}}",
-      "mapTitle_one": "{{total}} paparating na kaganapan sa {{school}}",
-      "mapTitle_other": "{{total}} paparating na kaganapan sa {{school}}"
+      "secondaryAction": "Paano ito gumagana"
     },
     "problem": {
       "title": "HINDI boring ang campus. Nakatago lang ang mga kaganapan.",
