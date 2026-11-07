@@ -3533,8 +3533,9 @@ test.describe("Events Page", () => {
     await expect(laterCard.locator('[data-slot="event-card-date"]')).toHaveText(laterDate);
 
     await expect(todayCard.getByText("$12", { exact: true })).toBeVisible();
-    for (const badgeText of ["Pizza", "Registration"]) {
-      await expect(todayCard.getByText(badgeText, { exact: true })).toBeVisible();
+    // Food and registration are icon-only badges; their text is the accessible name.
+    for (const badgeLabel of ["Pizza", "Registration"]) {
+      await expect(todayCard.getByRole("img", { name: badgeLabel, exact: true })).toBeVisible();
     }
   });
 
