@@ -198,14 +198,20 @@ class ImageDeliveryControl(_ControlModel):
 class DiscoveryCacheControl(_ControlModel):
     """Discovery snapshots in Next's data cache (`discoveryCache.server.ts`)."""
 
+    # How long a CDN copy of /api/discovery or of a public page counts as fresh.
     cdn_ttl_seconds: int = Field(gt=0, le=300)
     schema_version: int = Field(ge=1)
     # A snapshot older than this is rebuilt on its next read, which still gets
     # the old copy; backend revalidation notices mark it stale sooner.
     refresh_interval_seconds: int = Field(gt=0)
-    # The stale-while-revalidate window of CDN-cached /api/discovery responses
-    # and of the public pages that show them (frontend/next.config.ts).
+    # The stale-while-revalidate window of CDN-cached /api/discovery responses.
     snapshot_check_seconds: int = Field(gt=0)
+    # How long after cdn_ttl_seconds Vercel's CDN still answers a public page
+    # with its last copy while it renders a fresh one (frontend/next.config.ts).
+    # Revalidation notices do not purge these copies, so an edit shows once the
+    # first view past cdn_ttl_seconds has refreshed the page; no visitor gets a
+    # copy older than the two summed.
+    public_page_stale_while_revalidate_seconds: int = Field(gt=0, le=3600)
     request_timeout_seconds: int = Field(gt=0)
     page_concurrency: int = Field(ge=1, le=8)
     maximum_page_count: int = Field(gt=0)

@@ -94,9 +94,13 @@ const apiCollectionPaths = Object.keys(openApi.paths)
 
 // Public pages render the same HTML for every visitor of a school's site (the
 // server reads only the host, never cookies or auth), so Vercel's CDN, which
-// keys each copy by host and deployment, may keep one as long as
-// /api/discovery keeps the data it shows. Browsers still ask every visit.
-const publicPageCdnCache = `max-age=${discoveryCache.cdn_ttl_seconds}, stale-while-revalidate=${discoveryCache.snapshot_check_seconds}`;
+// keys each copy by host and deployment, keeps one for cdn_ttl_seconds, then
+// answers with it for public_page_stale_while_revalidate_seconds more while it
+// renders a fresh one, so a visitor rarely waits for a render. Revalidation
+// notices do not purge these copies (only the data snapshots behind them): an
+// edit shows once the first view past cdn_ttl_seconds has refreshed the page.
+// Browsers still ask every visit.
+const publicPageCdnCache = `max-age=${discoveryCache.cdn_ttl_seconds}, stale-while-revalidate=${discoveryCache.public_page_stale_while_revalidate_seconds}`;
 const cdnCachedPages = [
   "/events",
   "/events/:id(\\d+)",

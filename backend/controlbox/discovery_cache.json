@@ -2,6 +2,7 @@
   "schema_version": 2,
   "refresh_interval_seconds": 3600,
   "snapshot_check_seconds": 15,
+  "public_page_stale_while_revalidate_seconds": 600,
   "request_timeout_seconds": 20,
   "page_concurrency": 2,
   "maximum_page_count": 200,
