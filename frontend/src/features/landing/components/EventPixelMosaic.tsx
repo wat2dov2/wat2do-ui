@@ -9,14 +9,14 @@ import { cn } from "@/shared/lib/utils";
  * - `logo`: cells that spell the Wat2Do logo and a headline, in posters that
  *   wear their colours, out of a muted grid.
  * - `ambient`: larger muted cells behind a closing line.
- * Both keep changing a few squares at a time. The atlas holds 80 px posters,
+ * Both keep changing a few squares at a time. The atlas holds 32 px posters,
  * at least twice either cell size, so cells stay crisp on a 2x screen.
  */
 export type EventPixelMosaicVariant = "logo" | "ambient";
 
 const LOOKS: Record<EventPixelMosaicVariant, MosaicLook> = {
   logo: { tileSize: 12, gutter: 1, swapsPerSecond: 0.04, tone: "logo" },
-  ambient: { tileSize: 28, gutter: 2, swapsPerSecond: 0.03, tone: "muted" },
+  ambient: { tileSize: 16, gutter: 1, swapsPerSecond: 0.03, tone: "muted" },
 };
 
 interface EventPixelMosaicProps {
@@ -25,18 +25,20 @@ interface EventPixelMosaicProps {
   logoRegion?: RefObject<HTMLElement | null>;
   /**
    * For `logo`: a headline to spell in the grid's cells below the logo, at the
-   * top of `region`. `onLayout` says whether it fits legibly and how tall it is,
-   * so the page can size the region or show the headline as text instead.
+   * top of `region`, in `region`'s font family. Its phrases
+   * take turns every PHRASE_MS. `onLayout` gives its height so the page can
+   * size the region; on narrow screens the cells shrink and the lines wrap.
    */
   title?: {
     lead: string;
     phrases: readonly string[];
     region: RefObject<HTMLElement | null>;
-    onLayout: (layout: { fits: boolean; height: number }) => void;
+    onLayout: (height: number) => void;
   };
-  /** Hands over the running mosaic, for a page that changes its headline's phrase. */
-  onReady?: (controller: MosaicController) => void;
 }
+
+/** How long each headline phrase stays. */
+const PHRASE_MS = 3000;
 
 /**
  * A grid of real scraped event posters. Fills its positioned parent and is
@@ -44,15 +46,13 @@ interface EventPixelMosaicProps {
  * paints first and the sharp atlas follows. Under reduced motion it is a still
  * mosaic.
  */
-export function EventPixelMosaic({ variant, logoRegion, title, onReady }: EventPixelMosaicProps) {
+export function EventPixelMosaic({ variant, logoRegion, title }: EventPixelMosaicProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
-  const onReadyRef = useRef(onReady);
   const titleRef = useRef(title);
   useEffect(() => {
-    onReadyRef.current = onReady;
     titleRef.current = title;
-  }, [onReady, title]);
+  }, [title]);
   // The mosaic restarts only when the headline's words change, not on every render.
   const titleWords = title ? [title.lead, ...title.phrases].join("\n") : "";
 
@@ -83,12 +83,13 @@ export function EventPixelMosaic({ variant, logoRegion, title, onReady }: EventP
         title: headline && {
           lead: headline.lead,
           phrases: headline.phrases,
+          phraseMs: PHRASE_MS,
           region: () => regionOf(headline.region.current),
-          onLayout: (layout) => titleRef.current?.onLayout(layout),
+          font: () => getComputedStyle(headline.region.current ?? canvas).fontFamily,
+          onLayout: (height) => titleRef.current?.onLayout(height),
         },
       });
       setReady(true);
-      onReadyRef.current?.(controller);
       // Letters are measured in the page's typeface, so lay out again once it has loaded.
       void document.fonts.ready.then(() => { if (!cancelled) controller?.relayout(); });
       const full = await loadFullAtlas();

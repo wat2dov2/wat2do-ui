@@ -1,8 +1,9 @@
 /**
- * Builds the landing page's event mosaic from a school's scraped events: the
- * newest posters packed into one WebP atlas at thumbnail resolution, a tiny
- * copy of the same atlas for first paint, and a manifest with each poster's
- * public event details and average colour, plus the Wat2Do logo as a colour mask. The page
+ * Builds the landing page's event mosaic from a school's scraped events: over
+ * a thousand posters, chosen so the logo's colours and the dark headline letters
+ * have deep pools, packed into one small-tile WebP atlas, a tiny copy of it for
+ * first paint, and a manifest with each poster's dominant colour, plus the
+ * Wat2Do logo as a colour mask. The page
  * draws from these files only, so it never downloads posters one by one.
  *
  * Reads the public events API (every event, past ones included) and each
@@ -19,32 +20,29 @@ import sharp from "sharp";
 import imageDelivery from "../../backend/controlbox/image_delivery.json" with { type: "json" };
 import uploads from "../../backend/controlbox/uploads.json" with { type: "json" };
 
-/** Pixels per poster side: at least twice the largest cell the page draws (36 CSS px), so every cell is crisp on a 2x screen. */
-const TILE_PIXELS = 80;
+/** Pixels per poster side: at least twice the largest cell the page draws (16 CSS px), so every cell is crisp on a 2x screen. */
+const TILE_PIXELS = 32;
 /** Pixels per poster side in the first-paint atlas, drawn smoothed until the full one arrives. */
-const PREVIEW_TILE_PIXELS = 16;
+const PREVIEW_TILE_PIXELS = 8;
 /** Posters per atlas row. */
-const ATLAS_COLUMNS = 20;
+const ATLAS_COLUMNS = 40;
+/** Posters in the atlas: enough that the grid rarely shows one twice. */
+const TOTAL_POSTERS = 1200;
 /**
- * The newest posters kept per topic the hero's headline names, so the grid
- * shows networking, social and club position posters as well as the rest. A
- * few hundred in all, a few hundred KB. Every open club position with a poster is kept.
+ * Posters chosen first for each logo colour, by how closely and how much of
+ * each poster wears it, so the logo and the black headline have deep pools of
+ * untouched posters: blue for the lettering, black for the goose and every
+ * headline letter, brown for the goose's body.
  */
-const TOPIC_QUOTAS = { networking: 70, social: 70, position: 80, other: 80 };
-/**
- * How many of the newest untopical posters are read to choose the "other"
- * quota from: the ones whose dominant colour is nearest each logo colour go in
- * first, so the logo can be built from untouched posters.
- */
-const OTHER_CANDIDATES = 1200;
-/** Of the "other" quota, how many are chosen per logo colour before the newest fill the rest: most for the blue lettering, the bulk of the logo. */
-const LOGO_PICKS = { b: 44, k: 12, n: 12 };
+const LOGO_PICKS = { b: 260, k: 340, n: 140 };
+/** Then the newest of each headline topic, so the grid shows them too. */
+const TOPIC_PICKS = { networking: 120, social: 120 };
 /** How near (RGB distance) a dominant colour must be to count as matching a logo colour, for the build's report. */
 const LOGO_MATCH_DISTANCE = 90;
 /** The logo mask's width in samples; its height follows the logo's shape. */
 const LOGO_MASK_WIDTH = 80;
 const PAGE_SIZE = 100;
-const DOWNLOAD_CONCURRENCY = 8;
+const DOWNLOAD_CONCURRENCY = 16;
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const frontendDirectory = path.resolve(scriptDirectory, "..");
@@ -158,7 +156,7 @@ async function shrinkAll(events, quota) {
   async function worker() {
     while (next < events.length) {
       const index = next++;
-      if (results.slice(0, index).filter(Boolean).length >= quota) return;
+      if (quota !== Infinity && results.slice(0, index).filter(Boolean).length >= quota) return;
       results[index] = await shrinkPoster(events[index].image);
     }
   }
@@ -250,9 +248,9 @@ const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
  */
 function dominantColour(tile) {
   const pixels = [];
-  // Every fourth pixel in both directions is plenty for a colour census.
-  for (let y = 0; y < TILE_PIXELS; y += 4) {
-    for (let x = 0; x < TILE_PIXELS; x += 4) {
+  // Every second pixel in both directions is plenty for a colour census.
+  for (let y = 0; y < TILE_PIXELS; y += 2) {
+    for (let x = 0; x < TILE_PIXELS; x += 2) {
       const offset = (y * TILE_PIXELS + x) * 3;
       pixels.push([tile[offset], tile[offset + 1], tile[offset + 2]]);
     }
@@ -277,19 +275,25 @@ function dominantColour(tile) {
 
 const LOGO_RGB = Object.fromEntries(Object.entries(LOGO_COLOURS).map(([letter, value]) => [letter, [1, 3, 5].map((start) => Number.parseInt(value.slice(start, start + 2), 16))]));
 
-/** The newest untopical posters, with those nearest each logo colour moved in first. */
-function chooseOthers(read) {
-  const withColour = read.map((entry) => ({ ...entry, dominant: dominantColour(entry.tile) }));
-  const chosen = new Set();
+/**
+ * Every open position, then the posters that best wear each logo colour, then
+ * the newest of each headline topic, then the newest of the rest, up to
+ * TOTAL_POSTERS, each once.
+ */
+function choosePosters(events, positions) {
+  const chosen = new Set(positions);
   for (const [letter, target] of Object.entries(LOGO_RGB)) {
-    withColour
+    events
       .filter((entry) => !chosen.has(entry))
       .sort((a, b) => distance(a.dominant.rgb, target) / a.dominant.share - distance(b.dominant.rgb, target) / b.dominant.share)
       .slice(0, LOGO_PICKS[letter])
       .forEach((entry) => chosen.add(entry));
   }
-  for (const entry of withColour) {
-    if (chosen.size >= TOPIC_QUOTAS.other) break;
+  for (const [topic, picks] of Object.entries(TOPIC_PICKS)) {
+    events.filter((entry) => entry.event.topic === topic && !chosen.has(entry)).slice(0, picks).forEach((entry) => chosen.add(entry));
+  }
+  for (const entry of events) {
+    if (chosen.size >= TOTAL_POSTERS) break;
     chosen.add(entry);
   }
   return [...chosen];
@@ -298,13 +302,12 @@ function chooseOthers(read) {
 const { total, events } = await collectPosterEvents();
 const positions = await collectPositions();
 console.log(`${total} ${options.school} events, ${events.length} distinct posters with a date, ${positions.length} open positions with a poster`);
-const packed = [];
-for (const [topic, quota] of Object.entries(TOPIC_QUOTAS)) {
-  const candidates = topic === "position" ? positions : events.filter((event) => event.topic === topic);
-  const read = topic === "other" ? chooseOthers(await shrinkAll(candidates, OTHER_CANDIDATES)) : await shrinkAll(candidates, quota);
-  console.log(`${topic}: ${read.length} posters`);
-  packed.push(...read);
-}
+// Every poster is read, so the logo colours are chosen from the whole collection.
+const withColour = (read) => read.map((entry) => ({ ...entry, dominant: dominantColour(entry.tile) }));
+const readEvents = withColour(await shrinkAll(events, Infinity));
+const readPositions = withColour(await shrinkAll(positions, Infinity));
+console.log(`read ${readEvents.length} event posters and ${readPositions.length} position posters`);
+const packed = choosePosters(readEvents, readPositions);
 if (packed.length === 0) throw new Error("No posters could be read");
 const tiles = packed.map(({ tile }) => tile);
 
@@ -320,15 +323,12 @@ await writeFile(
     eventCount: total,
     logoColours: LOGO_COLOURS,
     logoMask: await logoMask(),
-    // The topic only chose the mix; the page shows every poster together.
-    posters: packed.map(({ event: { topic: _topic, ...event }, tile }) => {
-      const { colour, share } = dominantColour(tile);
-      return { ...event, colour, colourShare: share };
-    }),
+    // Each poster's dominant colour and the share of the poster it covers: all the page needs to place it.
+    posters: packed.map(({ dominant }) => ({ colour: dominant.colour, share: dominant.share })),
   })}\n`,
 );
 console.log(`Packed ${packed.length} posters`);
 for (const [letter, target] of Object.entries(LOGO_RGB)) {
-  const near = packed.filter(({ tile }) => distance(dominantColour(tile).rgb, target) < LOGO_MATCH_DISTANCE).length;
+  const near = packed.filter(({ dominant }) => distance(dominant.rgb, target) < LOGO_MATCH_DISTANCE).length;
   console.log(`posters whose dominant colour is near logo "${letter}": ${near}`);
 }

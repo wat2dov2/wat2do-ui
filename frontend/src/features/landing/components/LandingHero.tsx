@@ -1,18 +1,16 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
 import { EventPixelMosaic } from "@/features/landing/components/EventPixelMosaic";
 import { LandingCard, LandingNotchLabel } from "@/features/landing/components/LandingCard";
 import { LandingEventViews, type LandingEventView } from "@/features/landing/components/LandingEventViews";
-import { LandingRotatingWord } from "@/features/landing/components/LandingRotatingWord";
-import { LandingHeading } from "@/features/landing/components/LandingSection";
 import { LANDING_ANCHORS } from "@/features/landing/lib/landingAnchors";
-import type { MosaicController } from "@/features/landing/lib/eventPixelMosaic";
 import { formatLandingCount } from "@/features/landing/lib/landingStats";
 import { ROUTES } from "@/shared/constants/routes";
 import { Stack } from "@/shared/layout";
+import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { ArrowRight, Check, Instagram, MapPin, Radio } from "lucide-react";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -56,21 +54,10 @@ export function LandingHero({ schoolName, events, isLoading }: LandingHeroProps)
   const [view, setView] = useState<LandingEventView>("map");
   const logoRegion = useRef<HTMLDivElement>(null);
   const titleRegion = useRef<HTMLDivElement>(null);
-  const mosaic = useRef<MosaicController | null>(null);
   const lead = t("landing.hero.titleLeadBefore");
   const phrases = TITLE_WORDS.map((key) => t(`landing.hero.titleWords.${key}`));
-  /** Whether the mosaic spells the headline's first lines, and how much room they take; until it says so they are text. */
-  const [spelled, setSpelled] = useState<{ fits: boolean; height: number }>({ fits: false, height: 0 });
-
-  const onMosaicReady = useCallback((controller: MosaicController) => {
-    mosaic.current = controller;
-  }, []);
-  const onPhraseChange = useCallback((index: number) => {
-    mosaic.current?.setPhrase(index);
-  }, []);
-  const onTitleLayout = useCallback((layout: { fits: boolean; height: number }) => {
-    setSpelled((current) => (current.fits === layout.fits && current.height === layout.height ? current : layout));
-  }, []);
+  /** How tall the mosaic's spelled headline is; null until it has laid it out. */
+  const [titleHeight, setTitleHeight] = useState<number | null>(null);
 
   return (
     <Stack as="section" gap={4} className="pt-2 sm:gap-6 sm:pt-8">
@@ -80,8 +67,7 @@ export function LandingHero({ schoolName, events, isLoading }: LandingHeroProps)
           <EventPixelMosaic
             variant="logo"
             logoRegion={logoRegion}
-            title={{ lead, phrases, region: titleRegion, onLayout: onTitleLayout }}
-            onReady={onMosaicReady}
+            title={{ lead, phrases, region: titleRegion, onLayout: setTitleHeight }}
           />
         }
         corners={{
@@ -95,44 +81,30 @@ export function LandingHero({ schoolName, events, isLoading }: LandingHeroProps)
         {/* Where the mosaic draws the logo, clear of the text below it. */}
         <div ref={logoRegion} className="h-48 sm:h-80" />
         {/*
-          Where the mosaic spells "Every campus" and the rotating phrase in posters. Its height
-          is the mosaic's layout (it grows for a phrase that wraps), and it is empty where the
-          letters would be too small to read, which shows them as text below instead.
+          Where the mosaic spells the headline in posters, in the page's heading typeface. Its
+          height is the mosaic's layout, which grows when a phrase wraps; until then it holds
+          about that much room.
         */}
-        <div ref={titleRegion} style={{ height: spelled.height }} />
-        <Stack gap={8} align="center" className="relative">
-          <div className="relative w-full">
-            <LandingHeading
-              as="h1"
-              align="center"
-              title={
-                <>
-                  {/* One stable sentence for assistive tech; the visual lines below are hidden from it. */}
-                  <span className="sr-only">{[lead, phrases[0]].join(" ")}</span>
-                  {/* Spelled in the mosaic, the lines leave the text; the rotation still keeps time for it. */}
-                  <span aria-hidden="true" className={spelled.fits ? "hidden" : "block"}>{lead}</span>
-                  <span className={spelled.fits ? "hidden" : "contents"}>
-                    <LandingRotatingWord phrases={phrases} onChange={onPhraseChange} />
-                  </span>
-                </>
-              }
-            />
-          </div>
-          <Stack gap={5} align="center" className="relative">
-            <Stack direction="horizontal" gap={3} wrap justify="center">
-              <Button size="lg" asChild>
-                <NextLink href={ROUTES.EVENTS}>
-                  {t("landing.hero.primaryAction")}
-                  <ArrowRight aria-hidden="true" />
-                </NextLink>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <a href={`#${LANDING_ANCHORS.HOW_IT_WORKS}`}>
-                  {t("landing.hero.secondaryAction")}
-                </a>
-              </Button>
-            </Stack>
-          </Stack>
+        <div
+          ref={titleRegion}
+          aria-hidden="true"
+          className={cn(titleHeight === null && "h-64 sm:h-[36rem]")}
+          style={titleHeight === null ? undefined : { height: titleHeight }}
+        />
+        {/* The headline exists only as mosaic squares; screen readers get it as one sentence. */}
+        <h1 className="sr-only">{[lead, phrases[0]].join(" ")}</h1>
+        <Stack direction="horizontal" gap={3} wrap justify="center" className="relative pt-8">
+          <Button size="lg" asChild>
+            <NextLink href={ROUTES.EVENTS}>
+              {t("landing.hero.primaryAction")}
+              <ArrowRight aria-hidden="true" />
+            </NextLink>
+          </Button>
+          <Button size="lg" variant="outline" asChild>
+            <a href={`#${LANDING_ANCHORS.HOW_IT_WORKS}`}>
+              {t("landing.hero.secondaryAction")}
+            </a>
+          </Button>
         </Stack>
       </LandingCard>
 

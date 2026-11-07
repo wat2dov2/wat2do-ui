@@ -5,8 +5,6 @@ import { cn } from "@/shared/lib/utils";
 interface LandingHeadingProps {
   title: ReactNode;
   description?: ReactNode;
-  /** The hero owns the page's only h1; every other band is an h2. */
-  as?: "h1" | "h2";
   /** Bands read down a left edge; the hero and the closing sit on the centre line. */
   align?: "start" | "center";
 }
@@ -18,7 +16,6 @@ interface LandingHeadingProps {
 export function LandingHeading({
   title,
   description,
-  as: Heading = "h2",
   align = "start",
 }: LandingHeadingProps) {
   return (
@@ -27,17 +24,10 @@ export function LandingHeading({
       align={align}
       className={cn(align === "center" && "mx-auto max-w-4xl text-center")}
     >
-      <Heading
-        className={cn(
-          "font-medium text-balance text-foreground",
-          Heading === "h1"
-            // Full width, so a line of its own (the rotating phrase) can centre and fit across the whole column.
-            ? "w-full text-[clamp(1.75rem,6.6vw,5.25rem)] leading-[1.02] tracking-[-0.04em]"
-            : "max-w-4xl text-[clamp(2.25rem,4.6vw,3.75rem)] leading-[1.02] tracking-[-0.035em]",
-        )}
-      >
+      {/* The hero's h1 is spelled in its mosaic; every band here is an h2. */}
+      <h2 className="max-w-4xl text-[clamp(2.25rem,4.6vw,3.75rem)] leading-[1.02] font-medium tracking-[-0.035em] text-balance text-foreground">
         {title}
-      </Heading>
+      </h2>
       {description ? (
         <p className="max-w-xl text-lg leading-relaxed text-pretty text-muted-foreground sm:text-xl">
           {description}

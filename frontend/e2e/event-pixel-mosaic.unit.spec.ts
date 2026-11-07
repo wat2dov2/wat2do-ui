@@ -7,9 +7,11 @@ import manifest from "../src/assets/event-mosaic-uwaterloo.json" with { type: "j
 type Draw = { source: unknown; sx: number; sy: number; pixels: number; x: number; y: number; size: number; alpha: number };
 type Controller = { stop: () => void; setPhrase: (index: number) => void };
 type Title = {
-  wrapTitle: (text: string, columns: number, measure: (text: string) => number) => string[] | null;
-  layoutMosaicTitle: (lead: string, phrases: readonly string[], columns: number, measure: (text: string) => number) => { lead: string[]; phrases: string[][]; rows: number } | null;
-  TITLE_LINE_ROWS: number;
+  wrapTitle: (text: string, columns: number, em: number, measure: (text: string) => number, breakWords?: boolean) => string[] | null;
+  layoutMosaicTitle: (
+    lead: string, phrases: readonly string[], columns: number, measure: (text: string) => number, breakWords?: boolean,
+  ) => { em: number; lineRows: number; lead: string[]; phrases: string[][]; rows: number } | null;
+  MIN_EM_CELLS: number;
 };
 type Box = { left: number; top: number; columns: number; rows: number };
 type Engine = {
@@ -90,21 +92,21 @@ function loadMosaic(width = 240, height = 120) {
   };
 }
 
-test("the atlas packs a few hundred real posters, each with the public event or position it came from", () => {
-  expect(manifest.posters.length).toBeGreaterThanOrEqual(250);
-  // Twice the largest cell the page draws (36 CSS px), so cells are crisp on a 2x screen.
-  expect(manifest.tilePixels).toBeGreaterThanOrEqual(72);
-  // Open club positions are part of the mix, as the headline promises.
-  expect(manifest.posters.filter((poster) => poster.kind === "position").length).toBeGreaterThanOrEqual(40);
+test("the atlas packs over a thousand real posters, each with the dominant colour that places it", () => {
+  expect(manifest.posters.length).toBeGreaterThanOrEqual(1000);
+  // Twice the largest cell the page draws (16 CSS px), so cells are crisp on a 2x screen.
+  expect(manifest.tilePixels).toBeGreaterThanOrEqual(32);
   expect(manifest.eventCount).toBeGreaterThanOrEqual(manifest.posters.length);
   for (const poster of manifest.posters) {
-    expect(poster.id).toBeGreaterThan(0);
-    expect(poster.title.length).toBeGreaterThan(0);
-    if (poster.kind === "event") expect(Number.isNaN(Date.parse(poster.start!))).toBe(false);
-    expect(poster.image).toMatch(/^https:\/\//);
     expect(poster.colour).toMatch(/^#[0-9a-f]{6}$/);
-    expect(poster.colourShare).toBeGreaterThan(0);
+    expect(poster.share).toBeGreaterThan(0);
   }
+  // Deep pools for the shapes: plenty of dark posters for the headline's letters.
+  const lightness = (hex: string) => {
+    const [r, g, b] = [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16));
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  };
+  expect(manifest.posters.filter((poster) => lightness(poster.colour) <= 0.2 && poster.share >= 0.35).length).toBeGreaterThanOrEqual(200);
 });
 
 test("the logo lights up a recognisable share of its box in its own colours, and keeps inside its box", () => {
@@ -141,7 +143,8 @@ test("reduced motion draws one still mosaic at the screen's pixel ratio, smoothe
 test("logo cells are untouched posters whose own colour matches the logo, the rest are muted", () => {
   const mosaic = loadMosaic(480, 240);
   mosaic.start(false, "logo", () => ({ left: 0, top: 0, width: 480, height: 240 }));
-  const logoDraws = mosaic.draws.filter((draw) => draw.source === mosaic.image);
+  // Square draws only, not the one that copies the whole atlas into its greyscale twin.
+  const logoDraws = mosaic.draws.filter((draw) => draw.source === mosaic.image && draw.pixels === manifest.tilePixels);
   const mutedDraws = mosaic.draws.filter((draw) => draw.source !== mosaic.image);
   expect(logoDraws.length).toBeGreaterThan(10);
   // Drawn as they are: full strength, never washed with a colour.
@@ -191,21 +194,29 @@ test("the mosaic keeps changing a few scattered squares at a time, each with a q
   expect(mosaic.frames).toHaveLength(1);
 });
 
-test("a headline wraps by word into the cells it has, and gives up rather than shrink a word past legibility", () => {
+test("a headline wraps by word at the largest legible size that fits, and splits words only as a last resort", () => {
   const title = loadTitle();
-  // A measure of one cell per character keeps the arithmetic plain.
+  // A measure of one em per character keeps the arithmetic plain.
   const measure = (text: string) => text.length;
-  expect(title.wrapTitle("networking opportunity", 14, measure)).toEqual(["networking", "opportunity"]);
-  expect(title.wrapTitle("social event", 14, measure)).toEqual(["social event"]);
-  expect(title.wrapTitle("networking", 6, measure)).toBeNull();
-  const layout = title.layoutMosaicTitle("Every campus", ["event", "networking opportunity"], 16, measure)!;
+  expect(title.wrapTitle("networking opportunity", 14, 1, measure)).toEqual(["networking", "opportunity"]);
+  expect(title.wrapTitle("social event", 14, 1, measure)).toEqual(["social event"]);
+  expect(title.wrapTitle("networking", 6, 1, measure)).toBeNull();
+  expect(title.wrapTitle("networking", 6, 1, measure, true)).toEqual(["networ", "king"]);
+
+  // 198 cells across: the lead fits on one line at 16 cells an em, the long phrase on two.
+  const layout = title.layoutMosaicTitle("Every campus", ["event", "networking opportunity"], 200, measure)!;
+  expect(layout.em).toBe(16);
   expect(layout.lead).toEqual(["Every campus"]);
+  expect(layout.phrases[1]).toEqual(["networking", "opportunity"]);
   // The lead plus the longest phrase, so every phrase fits the same box.
-  expect(layout.rows).toBe(3 * title.TITLE_LINE_ROWS);
-  // A narrow lead wraps to two lines; narrower still, a word cannot fit and the page shows text.
-  expect(title.layoutMosaicTitle("Every campus", ["event"], 9, measure)!.lead).toEqual(["Every", "campus"]);
-  expect(title.layoutMosaicTitle("Every campus", ["event"], 6, measure)).toBeNull();
+  expect(layout.rows).toBe(3 * layout.lineRows);
+
+  // Too narrow for "opportunity" at the smallest legible size: no layout, unless words may split.
+  expect(title.layoutMosaicTitle("Every campus", ["networking opportunity"], 100, measure)).toBeNull();
+  const split = title.layoutMosaicTitle("Every campus", ["networking opportunity"], 100, measure, true)!;
+  expect(split.em).toBe(title.MIN_EM_CELLS);
+  expect([...split.lead, ...split.phrases[0]].every((line) => line.length * split.em <= 98)).toBe(true);
 });
 
 /** A muted cell's full strength (MUTED_ALPHA in the engine); a fade passes below it. */
-const MUTED_FULL = 0.3;
+const MUTED_FULL = 0.22;
