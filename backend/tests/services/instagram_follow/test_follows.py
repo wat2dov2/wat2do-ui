@@ -69,6 +69,10 @@ def world(monkeypatch, tmp_path):
         ),
     )
 
+    monkeypatch.setattr(
+        module.candidates, "reject_gone", lambda candidate_id: marks.append(("gone", candidate_id))
+    )
+
     def use(results=None):
         reader = _Reader(results or {})
         monkeypatch.setattr(module, "FollowingReader", lambda *args, **kwargs: reader)
@@ -99,7 +103,8 @@ def test_a_failed_follow_stays_approved_for_the_next_try(world):
 
     # A failure takes no follow slot, so the visit moves on to the next accounts.
     assert module.follow_due(object(), "utsg", 5) == FollowVisit(2, 0, False)
-    assert marks == [("failed", "0"), ("failed", "1"), ("followed", "2"), ("followed", "3")]
+    # A profile that is gone is rejected for good; any other failure is tried again.
+    assert marks == [("failed", "0"), ("gone", "1"), ("followed", "2"), ("followed", "3")]
 
 
 def test_follows_that_stop_sticking_pause_the_account_like_a_block(world):
