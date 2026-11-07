@@ -21,6 +21,18 @@ test("combines cached search, OR categories, minimum count and membership withou
   expect(clubs.map(club => club.id)).toEqual([1, 2, 3]);
 });
 
+test("search also finds a club by its Instagram handle, with or without the @", () => {
+  const withHandle = [
+    normalizeClub({ id: 7, club_name: "University of Alberta Palaeontological Society", ig: "uofaps", categories: [], event_count: 6, club_type: "independent", school: "ualberta" } as ApiClubResponse),
+    ...clubs,
+  ];
+  const ids = (search: string) => filterClubs(withHandle, { search, categories: [], minEvents: 0 }).map(club => club.id);
+  expect(ids("uofaps")).toEqual([7]);
+  expect(ids("@UofAPS")).toEqual([7]);
+  expect(ids("palaeo")).toEqual([7]);
+  expect(ids("@")).toEqual([]);
+});
+
 test("switching managed clubs hides old rows immediately and ignores late roster responses", async () => {
   let clubId = 1;
   const state: unknown[] = [];
