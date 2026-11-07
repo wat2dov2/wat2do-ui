@@ -32,8 +32,6 @@ CREATE TABLE IF NOT EXISTS public.competitor_pain_point_features (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 ALTER TABLE public.competitor_pain_point_features ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.competitor_pain_point_features FROM PUBLIC, anon, authenticated;
-GRANT ALL ON public.competitor_pain_point_features TO service_role;
 
 NOTIFY pgrst, 'reload schema';
 
