@@ -173,6 +173,15 @@ def test_a_model_failure_is_ignored_rather_than_answered(monkeypatch) -> None:
     )
 
 
+def test_claudes_usage_limit_is_not_an_answer(monkeypatch) -> None:
+    def limited(*_args, **_kwargs):
+        raise module.ClaudeLimited("hit Claude's usage limit")
+
+    monkeypatch.setattr(module, "run_agent", limited)
+    with pytest.raises(module.ClaudeLimited):
+        module.decide(THREAD, account="wat2do.ubc", school="ubc", school_name="UBC")
+
+
 def test_the_thread_reaches_the_model_only_as_a_file(monkeypatch) -> None:
     seen = {}
 

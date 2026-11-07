@@ -22,6 +22,14 @@ class ClaudeCodeError(RuntimeError):
     """Claude Code did not run, or finished without a structured answer."""
 
 
+class ClaudeLimited(ClaudeCodeError):
+    """Claude turned the run away (HTTP 429) because the account's usage limit is reached.
+
+    Every run fails this way until the limit resets, whatever it was given, so callers
+    keep the work for a later try instead of reading the failure as an answer.
+    """
+
+
 def run_agent(
     prompt: str,
     *,
@@ -74,12 +82,18 @@ def run_agent(
         raise ClaudeCodeError(f"failed ({type(exc).__name__})") from None
     finally:
         remove_run_folder(workdir)
+    # Claude Code prints its result as JSON even when the run failed.
+    try:
+        printed = json.loads(result.stdout)
+    except ValueError:
+        printed = None
+    if not isinstance(printed, dict):
+        printed = {}
+    if printed.get("api_error_status") == 429:
+        raise ClaudeLimited(f"hit Claude's usage limit ({printed.get('result') or ''})")
     if result.returncode:
         raise ClaudeCodeError(f"failed (exit {result.returncode})")
-    try:
-        answer = json.loads(result.stdout).get("structured_output")
-    except (ValueError, AttributeError):
-        answer = None
+    answer = printed.get("structured_output")
     if not isinstance(answer, dict):
         raise ClaudeCodeError("gave no answer")
     return answer

@@ -323,6 +323,7 @@ async fn run(prompt: &str, workdir: &std::path::Path) -> Result<String> {
         prompt,
         workdir,
         Agent {
+            name: "Ingestion agent",
             model: &INGESTION.model,
             tools: &["Read", "Bash"],
             allowed_tools: &["Read(./**)", "Bash(psql:*)"],
@@ -331,8 +332,7 @@ async fn run(prompt: &str, workdir: &std::path::Path) -> Result<String> {
             env: agent_environment()?,
         },
     )
-    .await
-    .map_err(|error| anyhow::anyhow!("Ingestion agent {error}"))?;
+    .await?;
     match answer.get("outcome").and_then(Value::as_str) {
         Some(outcome @ ("added" | "updated" | "nothing")) => Ok(outcome.to_owned()),
         _ => bail!("Ingestion agent gave no outcome"),

@@ -15,6 +15,8 @@
   "directory_scrape_interval_seconds": 43200,
   "claim_lease_seconds": 900,
   "max_attempts": 3,
+  "agent_failure_streak": 12,
+  "agent_pause_seconds": 600,
   "model_timeout_seconds": 420,
   "max_images_per_item": 6,
   "fetch_timeout_seconds": 30,

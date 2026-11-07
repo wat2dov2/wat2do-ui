@@ -23,6 +23,7 @@ from typing import Any
 from core.controlbox import controlbox
 from core.launch_agents import atomic_write
 from services import school_service
+from services.claude_code import ClaudeLimited
 from services.instagram_accounts import (
     BrowserEngagementUncertain,
     BrowserSessionError,
@@ -88,6 +89,11 @@ def answer(device: EmulatorDevice, school: str) -> list[str]:
         state.setdefault("limited", {})[school] = datetime.now().astimezone().isoformat()
         _save(state)
         log.warning("DM sweep %s: Instagram has limited this account's messages", school)
+        return statuses
+    except ClaudeLimited as exc:
+        # Nothing can be decided until Claude's usage limit resets, so the threads stay
+        # unhandled for the next check.
+        log.warning("DM sweep %s stopped: %s", school, exc)
         return statuses
     except BrowserEngagementUncertain as exc:
         # It may already have reached Instagram, so a person checks before anything else.

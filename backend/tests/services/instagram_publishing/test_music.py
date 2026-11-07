@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from services.claude_code import ClaudeLimited
 from services.instagram_emulator.audio import AddedTrack, SongNotFound
 from services.instagram_publishing import music
 
@@ -98,6 +99,22 @@ def test_an_emulator_error_is_retried_until_the_attempts_run_out(monkeypatch, da
     assert music.finish_due(DEVICE, "uwaterloo", NOW) == {"failed": 1}
 
 
+def test_claudes_usage_limit_never_gives_a_carousel_up(monkeypatch, database):
+    limited = ClaudeLimited("hit Claude's usage limit")
+    monkeypatch.setattr(music, "finish_post", Mock(side_effect=limited))
+    last_try = music._CONTROL.music_attempts - 1
+    database.tables["instagram_publish_batches"] = [{**BATCH, "music_attempts": last_try}]
+    assert music.finish_due(DEVICE, "uwaterloo", NOW) == {"pending": 1}
+    assert _updates(database.calls) == [
+        {
+            "music_status": "pending",
+            "music_track": None,
+            "music_error": "hit Claude's usage limit",
+            "music_attempts": last_try + 1,
+        }
+    ]
+
+
 def test_a_failed_try_waits_before_the_next(monkeypatch, database):
     finish_post = Mock(return_value=AddedTrack("dua lipa houdini", "Houdini by Dua Lipa,3:05"))
     monkeypatch.setattr(music, "finish_post", finish_post)
@@ -149,6 +166,15 @@ def test_the_track_picker_sees_the_song_and_the_tracks(monkeypatch):
     music.choose_track("the weeknd after hours", ["After Hours by The Weeknd,6:01"])
     assert '"the weeknd after hours"' in seen["prompt"]
     assert seen["tracks"] == '["After Hours by The Weeknd,6:01"]'
+
+
+def test_the_track_picker_passes_claudes_usage_limit_on(monkeypatch):
+    def limited(prompt, **_):
+        raise ClaudeLimited("hit Claude's usage limit")
+
+    monkeypatch.setattr(music, "run_agent", limited)
+    with pytest.raises(ClaudeLimited):
+        music.choose_track("after hours", ["A by B,1:00"])
 
 
 def _tried_songs(monkeypatch, database, school):

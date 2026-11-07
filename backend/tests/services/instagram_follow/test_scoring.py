@@ -1,6 +1,6 @@
 import pytest
 
-from services.claude_code import ClaudeCodeError
+from services.claude_code import ClaudeCodeError, ClaudeLimited
 from services.ingestion.instagram_fetch import FetchBlocked
 from services.instagram_follow import scoring as module
 
@@ -83,6 +83,16 @@ def test_throttling_stops_the_run(world, monkeypatch):
 
     monkeypatch.setattr(module, "fetch_profile", fetch_profile)
     monkeypatch.setattr(module, "run_agent", pytest.fail)
+
+    assert module.score_pending() == {"scored": 0, "stopped": 1}
+    assert world == []
+
+
+def test_claudes_usage_limit_stops_the_run_and_leaves_accounts_unscored(world, monkeypatch):
+    def run_agent(prompt, **kwargs):
+        raise ClaudeLimited("hit Claude's usage limit")
+
+    monkeypatch.setattr(module, "run_agent", run_agent)
 
     assert module.score_pending() == {"scored": 0, "stopped": 1}
     assert world == []

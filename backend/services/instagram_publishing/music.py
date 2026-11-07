@@ -34,7 +34,7 @@ from core.controlbox import controlbox
 from core.database import get_sb
 from core.tables import INSTAGRAM_PUBLISH_BATCHES, INSTAGRAM_PUBLISH_ITEMS, INSTAGRAM_SONGS
 from services import school_service
-from services.claude_code import ClaudeCodeError, run_agent
+from services.claude_code import ClaudeCodeError, ClaudeLimited, run_agent
 from services.instagram_emulator.audio import GifComment, SongNotFound, finish_post
 from services.instagram_emulator.device import EmulatorDevice
 
@@ -131,6 +131,12 @@ def _add_music(device: EmulatorDevice, batch: dict[str, Any], songs: Sequence[st
     except SongNotFound as exc:
         _record(batch["id"], INSTAGRAM_MUSIC_FAILED, attempts, error=str(exc))
         return INSTAGRAM_MUSIC_FAILED
+    except ClaudeLimited as exc:
+        # No song can be picked until Claude's usage limit resets. The try still counts,
+        # so the GIF is never commented twice, but it never gives the carousel up.
+        log.warning("Adding music to Instagram batch %s waits: %s", batch["id"], exc)
+        _record(batch["id"], INSTAGRAM_MUSIC_PENDING, attempts, error=str(exc)[:500])
+        return INSTAGRAM_MUSIC_PENDING
     except Exception as exc:
         log.exception("Adding music to Instagram batch %s failed", batch["id"])
         final = attempts >= _CONTROL.music_attempts
@@ -240,6 +246,9 @@ def choose_track(query: str, tracks: Sequence[str]) -> int | None:
             schema=ANSWER_SCHEMA,
             timeout=_CONTROL.music_agent_timeout_seconds,
         )
+    except ClaudeLimited:
+        # Not an answer about this song: every song would fail the same way.
+        raise
     except ClaudeCodeError:
         log.warning("The track picker did not answer for one song")
         return None

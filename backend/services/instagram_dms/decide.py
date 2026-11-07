@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from core.controlbox import controlbox
-from services.claude_code import ClaudeCodeError, run_agent
+from services.claude_code import ClaudeCodeError, ClaudeLimited, run_agent
 
 CONTROL = controlbox.instagram_dms
 WORKDIR_PREFIX = "wat2do-dm-"
@@ -73,6 +73,9 @@ def decide(
             schema=ANSWER_SCHEMA,
             timeout=CONTROL.agent_timeout_seconds,
         )
+    except ClaudeLimited:
+        # Nothing is decided until the limit resets; the thread waits for a later check.
+        raise
     except ClaudeCodeError:
         return IGNORE
     finally:

@@ -191,8 +191,9 @@ A database trigger adds each post to `public.ingestion_items` with status `fetch
 A trigger on the queue sends a Postgres notification for every new or changed row, and the Mac's processor listens for them (`LISTEN ingestion_items`); it catches up on everything waiting whenever it starts or reconnects.
 Its fetch lanes (`fetch_lanes` in `backend/controlbox/ingestion.json`) read each post's public page logged out with a browser-like TLS fingerprint and no cookies, then write the caption, owner, post time, coauthors, tagged users and media links onto the row and mark it `ready`.
 A page with no post is read once more and then marked `gone`, which is how deleted posts are ignored.
-A login wall, HTTP 429 or server error pauses every fetch lane for `fetch_block_pause_seconds` without consuming the row's attempts.
+A login wall, HTTP 429 or server error pauses every fetch lane for `fetch_block_pause_seconds`; the row waits as long, and the try counts toward its attempts, since a login wall can also be one post's own.
 Ready rows go to the Haiku agents; each row ends `done` or `not_event` and stays, so a post is never processed twice.
+When Claude's usage limit turns an agent away (HTTP 429), or `agent_failure_streak` agent runs fail in a row, the row goes back without spending an attempt and every agent waits until the reset Claude names, or for `agent_pause_seconds`.
 
 Queue a post by hand:
 

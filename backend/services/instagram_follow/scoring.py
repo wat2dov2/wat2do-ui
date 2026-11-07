@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any
 
 from core.controlbox import controlbox
-from services.claude_code import ClaudeCodeError, run_agent
+from services.claude_code import ClaudeCodeError, ClaudeLimited, run_agent
 from services.ingestion.instagram_fetch import FetchBlocked, fetch_profile
 from services.instagram_follow import candidates
 from services.instagram_follow.crawl import search_terms
@@ -78,7 +78,8 @@ def score_pending(limit: int = 500) -> dict[str, int]:
                     batch = []
             if batch:
                 scored += _score(school, batch)
-    except FetchBlocked as exc:
+    except (FetchBlocked, ClaudeLimited) as exc:
+        # The accounts left stay unscored for the next run.
         log.warning("Follow scoring stopped: %s", exc)
         return {"scored": scored, "stopped": 1}
     return {"scored": scored}
@@ -141,6 +142,8 @@ def _ask(school: str, batch: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
             schema=ANSWER_SCHEMA,
             timeout=CONTROL.agent_timeout_seconds,
         )
+    except ClaudeLimited:
+        raise
     except ClaudeCodeError:
         log.warning("The follow scorer did not answer for %s", school)
         return {}

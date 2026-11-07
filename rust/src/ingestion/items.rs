@@ -3,7 +3,8 @@
 //! Instagram rows start at `fetch` and become `ready` once the logged-out
 //! fetcher fills in the post. Directory and `dm` rows arrive `ready`. A ready
 //! row ends `done` or `not_event` and is kept, so a URL is never queued twice;
-//! deleted posts end `gone`, rows that keep failing `failed`.
+//! deleted posts end `gone`, rows that keep failing `failed`. A row that failed
+//! because Claude was unavailable is put back without spending an attempt.
 //! `enqueue` and `status` (`services/ingestion/items.py`) add posts by hand and
 //! count the rows.
 
@@ -99,6 +100,20 @@ pub async fn release(
     .bind(&item.source_url)
     .bind(stage.as_str())
     .bind(delay)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// Put a row back to wait without spending the attempt its claim took, because
+/// it failed for a reason that was not its own.
+pub async fn put_back(pool: &PgPool, item: &Item, stage: Stage) -> Result<()> {
+    sqlx::query(
+        "UPDATE public.ingestion_items SET status = $2, attempts = greatest(attempts - 1, 0), \
+         claimed_until = NULL, updated_at = now() WHERE source_url = $1",
+    )
+    .bind(&item.source_url)
+    .bind(stage.as_str())
     .execute(pool)
     .await?;
     Ok(())

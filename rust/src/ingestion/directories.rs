@@ -12,6 +12,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::path::Path;
 use std::sync::LazyLock;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -24,7 +25,7 @@ use sqlx::PgPool;
 
 use super::page_image::{download, fetch_event_poster};
 use super::state_directory;
-use crate::claude::{self, Agent, claude_environment, remove_leftovers};
+use crate::claude::{self, Agent, Limited, claude_environment, remove_leftovers};
 use crate::controlbox::INGESTION;
 use crate::pyjson::dumps;
 use crate::schools;
@@ -87,7 +88,8 @@ pub async fn list_sources(pool: &PgPool) -> Result<Vec<Source>> {
     .await?)
 }
 
-/// Run one agent per directory source, a few at a time.
+/// Run one agent per directory source, a few at a time, until Claude's usage
+/// limit turns one away; the sources left wait for the next run.
 pub async fn scrape_directories(pool: &PgPool) -> Result<Counts> {
     let directory = state_directory();
     std::fs::create_dir_all(&directory)?;
@@ -100,8 +102,9 @@ pub async fn scrape_directories(pool: &PgPool) -> Result<Counts> {
     }
     remove_leftovers(WORKDIR_PREFIX);
     let sources = list_sources(pool).await?;
+    let limited = AtomicBool::new(false);
     let mut results = stream::iter(sources)
-        .map(|source| scrape_safely(pool, source))
+        .map(|source| scrape_safely(pool, source, &limited))
         .buffer_unordered(INGESTION.directory_agents);
     let mut totals = Counts::new();
     while let Some(counts) = results.next().await {
@@ -116,11 +119,15 @@ fn add(totals: &mut Counts, counts: Counts) {
     }
 }
 
-async fn scrape_safely(pool: &PgPool, source: Source) -> Counts {
+async fn scrape_safely(pool: &PgPool, source: Source, limited: &AtomicBool) -> Counts {
+    if limited.load(Ordering::Relaxed) {
+        return Counts::from([("skipped_sources".to_owned(), 1)]);
+    }
     match scrape_source(pool, &source).await {
         Ok(counts) => counts,
         Err(error) => {
-            // One unreachable directory never stops the others.
+            // One unreachable directory never stops the others; the usage limit stops them all.
+            limited.fetch_or(error.is::<Limited>(), Ordering::Relaxed);
             tracing::warn!("Directory source {} failed ({error})", source.id);
             Counts::from([("failed_sources".to_owned(), 1)])
         }
@@ -371,6 +378,7 @@ async fn run(prompt: &str, workdir: &Path) -> Result<Vec<Map<String, Value>>> {
         prompt,
         workdir,
         Agent {
+            name: "Directory agent",
             model: &INGESTION.model,
             tools: &["Read", "Grep", "WebFetch"],
             allowed_tools: &["Read(./**)", "Grep(./**)", "WebFetch"],
@@ -379,8 +387,7 @@ async fn run(prompt: &str, workdir: &Path) -> Result<Vec<Map<String, Value>>> {
             env: claude_environment(),
         },
     )
-    .await
-    .map_err(|error| anyhow!("Directory agent {error}"))?;
+    .await?;
     report_items(&answer)
 }
 

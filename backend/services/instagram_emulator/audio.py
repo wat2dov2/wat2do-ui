@@ -123,8 +123,9 @@ def finish_post(
     device.tap(audio)
     try:
         added = _pick_track(device, queries, choose)
-    except EmulatorError:
-        # Leave without saving, so the post keeps no half-made edit.
+    except Exception:
+        # Whatever went wrong (the screen, or the track picker), leave without saving,
+        # so the post keeps no half-made edit.
         _discard(device)
         raise
     device.tap_when(_DONE)
