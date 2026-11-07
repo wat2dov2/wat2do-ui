@@ -12,6 +12,8 @@ interface LandingRotatingWordProps {
   phrases: readonly string[];
   /** Runs as each phrase starts rolling in, with its index. */
   onChange?: (index: number) => void;
+  /** Extra classes for each phrase, such as the hero's poster-filled letters. */
+  phraseClassName?: string;
 }
 
 /**
@@ -21,7 +23,7 @@ interface LandingRotatingWordProps {
  * fit rather than cut. Assistive tech skips it (the heading carries one stable
  * sentence), and under reduced motion it shows the first phrase only.
  */
-export function LandingRotatingWord({ phrases, onChange }: LandingRotatingWordProps) {
+export function LandingRotatingWord({ phrases, onChange, phraseClassName }: LandingRotatingWordProps) {
   const unique = [...new Set(phrases)];
   const count = unique.length;
   const [turn, setTurn] = useState<{ index: number; previous: number | null }>({ index: 0, previous: null });
@@ -84,6 +86,7 @@ export function LandingRotatingWord({ phrases, onChange }: LandingRotatingWordPr
             "absolute top-[0.1em] left-1/2 whitespace-nowrap transition-[translate,opacity] duration-500 ease-out",
             phraseIndex === index ? "translate-y-0 opacity-100" : phraseIndex === previous ? "-translate-y-full opacity-0" : "translate-y-full opacity-0",
             !rotating && phraseIndex !== 0 && "hidden",
+            phraseClassName,
           )}
           // Centred on the line, and shrunk only when the phrase is wider than it.
           style={{ transform: `translateX(-50%) scale(${fits[phraseIndex] ?? 1})` }}

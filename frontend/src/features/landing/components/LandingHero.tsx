@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type CSSProperties } from "react";
 import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
 import { EventPixelMosaic } from "@/features/landing/components/EventPixelMosaic";
+import mosaicAtlasImage from "@/assets/event-mosaic-uwaterloo.webp";
 import { LandingCard, LandingNotchLabel } from "@/features/landing/components/LandingCard";
 import { LandingEventViews, type LandingEventView } from "@/features/landing/components/LandingEventViews";
 import { LandingRotatingWord } from "@/features/landing/components/LandingRotatingWord";
@@ -102,8 +103,11 @@ export function LandingHero({ schoolName, events, clubCount, isLoading }: Landin
                   <span className="sr-only">
                     {[t("landing.hero.titleLeadBefore"), phrases[0], t("landing.hero.titleHighlight")].join(" ")}
                   </span>
-                  <span aria-hidden="true" className="block">{t("landing.hero.titleLeadBefore")}</span>
-                  <LandingRotatingWord phrases={phrases} onChange={onPhraseChange} />
+                  {/* The two lines are cut out of the same scraped posters as the mosaic behind them. */}
+                  <span className="block" style={{ "--landing-mosaic-atlas": `url(${mosaicAtlasImage.src})` } as CSSProperties}>
+                    <span aria-hidden="true" className="landing-mosaic-text block">{t("landing.hero.titleLeadBefore")}</span>
+                    <LandingRotatingWord phrases={phrases} onChange={onPhraseChange} phraseClassName="landing-mosaic-text" />
+                  </span>
                   <span aria-hidden="true" className="block">
                     <Highlighter color="var(--school-marker)">
                       <span className="text-school-marker-foreground">{t("landing.hero.titleHighlight")}</span>
