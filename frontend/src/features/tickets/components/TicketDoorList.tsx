@@ -110,7 +110,7 @@ export function TicketDoorList({ eventId, school, currency, attendees, dates }: 
                     {attendee.holder_email} · {formatTicketCode(attendee.code).slice(0, 9)}
                   </span>
                   {refundRequestState(attendee) === "waiting" && attendee.refund_request_note ? (
-                    <span className="text-sm italic text-foreground">
+                    <span className="font-italic-satoshi text-sm text-foreground">
                       {`“${attendee.refund_request_note}”`}
                     </span>
                   ) : null}

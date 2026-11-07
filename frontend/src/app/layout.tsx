@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { GoogleAnalytics } from "@next/third-parties/google";
+import Script from "next/script";
 import googleAnalytics from "../../../backend/controlbox/google_analytics.json";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
@@ -16,20 +16,22 @@ import "@/styles/motion.css";
 // every weight the UI asks for. Self-hosted rather than fetched: the licence
 // requires it, and it removes a third-party request from the critical path.
 const satoshi = localFont({
-  src: [
-    {
-      path: "../../public/fonts/WEB/fonts/Satoshi-Variable.woff2",
-      weight: "300 900",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/WEB/fonts/Satoshi-VariableItalic.woff2",
-      weight: "300 900",
-      style: "italic",
-    },
-  ],
+  src: "../../public/fonts/WEB/fonts/Satoshi-Variable.woff2",
+  weight: "300 900",
+  style: "normal",
   variable: "--font-satoshi",
   display: "swap",
+});
+
+// Italic text appears in one place (the door list), so its 43 KB face is not
+// preloaded on every page; `.font-italic-satoshi` downloads it where it is used.
+const satoshiItalic = localFont({
+  src: "../../public/fonts/WEB/fonts/Satoshi-VariableItalic.woff2",
+  weight: "300 900",
+  style: "italic",
+  variable: "--font-satoshi-italic",
+  display: "swap",
+  preload: false,
 });
 
 const APP_DESCRIPTION =
@@ -125,7 +127,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html
       lang={school?.language ?? "en"}
-      className={`no-transitions ${satoshi.variable}`}
+      className={`no-transitions ${satoshi.variable} ${satoshiItalic.variable}`}
       style={getSchoolThemeStyle(school)}
       suppressHydrationWarning
     >
@@ -145,8 +147,30 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <SiteBanner schoolName={school?.name} />
           <AppShell>{children}</AppShell>
         </ClientProviders>
-        {process.env.NODE_ENV === "production" && googleAnalytics.measurement_id ? <GoogleAnalytics gaId={googleAnalytics.measurement_id} /> : null}
+        {process.env.NODE_ENV === "production" && googleAnalytics.measurement_id ? (
+          <GoogleAnalyticsAfterLoad measurementId={googleAnalytics.measurement_id} />
+        ) : null}
       </body>
     </html>
+  );
+}
+
+/**
+ * Google Analytics (177 KB) loads in idle time after the page's load event, so it
+ * never competes with the site's own code for a phone's bandwidth or CPU. Single
+ * page navigations are still counted by GA4's history-change page views.
+ */
+function GoogleAnalyticsAfterLoad({ measurementId }: { measurementId: string }) {
+  return (
+    <>
+      <Script
+        id="ga-loader"
+        src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`}
+        strategy="lazyOnload"
+      />
+      <Script id="ga-init" strategy="lazyOnload">
+        {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config',${JSON.stringify(measurementId)});`}
+      </Script>
+    </>
   );
 }

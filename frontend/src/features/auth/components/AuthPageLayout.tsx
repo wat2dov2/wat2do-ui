@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
-import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
+import imgLogo from "@/assets/wat2do-logo-auth.webp";
 import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { Card, CardContent } from "@/shared/ui/card";
 import { PageHeader, type PageHeaderBack } from "@/shared/layout";

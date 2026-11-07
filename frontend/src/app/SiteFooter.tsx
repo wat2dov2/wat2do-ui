@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { useRequestSchool } from "@/app/client-providers";
-import imgLogo from "@/assets/38e8096a28295e8dcc0e5020d0a5f3dd85d5f019.png";
+import imgLogo from "@/assets/wat2do-logo-nav.webp";
 import { EXTERNAL_LINKS, schoolInstagramHandle } from "@/shared/constants/links";
 import { ROUTES } from "@/shared/constants/routes";
 import { Container, Stack } from "@/shared/layout";
