@@ -83,6 +83,7 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     assert controlbox.event_discovery.event_without_end_visibility_minutes == 60
     assert controlbox.club_management.initial_render_count == 24
     assert controlbox.discovery_cache.cdn_ttl_seconds == 60
+    assert controlbox.discovery_cache.public_page_stale_while_revalidate_seconds == 600
     assert controlbox.event_discovery.initial_render_count == 16
     assert controlbox.event_discovery.preview_event_count == 4
     assert set(controlbox.event_discovery.campus_seasons.definitions) == {
@@ -379,6 +380,8 @@ def test_discovery_controls_load_checked_in_feature_sources():
             {"snapshot_check_seconds": controlbox.discovery_cache.cdn_ttl_seconds + 1},
         ),
         ("discovery_cache", {"refresh_interval_seconds": 0}),
+        ("discovery_cache", {"public_page_stale_while_revalidate_seconds": 0}),
+        ("discovery_cache", {"public_page_stale_while_revalidate_seconds": 3601}),
         ("uploads", {"event_video_max_size_bytes": 0}),
         ("uploads", {"event_video_download_timeout_seconds": 0}),
         ("image_delivery", {"first_row_image_count": 0}),
