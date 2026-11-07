@@ -80,6 +80,8 @@
   "reclaim_packages": ["com.google.android.gms"],
   "reclaim_interval_hours": 24,
   "restart_timeout_seconds": 900,
+  "switch_rest_seconds": 900,
+  "switch_failures_before_restart": 2,
   "action_start_hour": 9,
   "action_end_hour": 23,
   "follow_start_hour": 0,

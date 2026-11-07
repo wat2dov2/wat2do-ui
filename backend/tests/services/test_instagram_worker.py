@@ -12,8 +12,10 @@ NIGHT = datetime(2026, 10, 28, 3, 0).astimezone()
 
 
 class _Device:
-    def __init__(self):
+    def __init__(self, unreachable=()):
         self.accounts = []
+        self.unreachable = set(unreachable)
+        self.restarts = 0
 
     def adb(self, *args):
         return "0\n"
@@ -28,7 +30,12 @@ class _Device:
         pass
 
     def use_account(self, user, account):
+        if account in self.unreachable:
+            raise worker.EmulatorError("Instagram did not switch to the account")
         self.accounts.append(account)
+
+    def restart(self):
+        self.restarts += 1
 
 
 def _follow_hours(monkeypatch, start: int, end: int) -> None:
@@ -52,6 +59,8 @@ def due(monkeypatch):
     monkeypatch.setattr(worker, "exclusive", nullcontext)
     monkeypatch.setattr(worker, "_crawl_rested_until", {})
     monkeypatch.setattr(worker, "_follows_rested_until", {})
+    monkeypatch.setattr(worker, "_switch_rested_until", {})
+    monkeypatch.setattr(worker, "_switch_failures", 0)
     monkeypatch.setattr(worker, "_score_in_background", lambda: state.done.append("score"))
     monkeypatch.setattr(worker.music, "schools_due", lambda now: list(state.music))
     monkeypatch.setattr(
@@ -100,6 +109,41 @@ def test_an_account_with_a_carousel_waiting_is_visited_first_and_gets_everything
     assert device.accounts == ["wat2do.uwo"]
     # A crawl waits while other accounts have work; this visit was for the song.
     assert due.done == [("music", "uwo"), ("dms", "uwo"), ("follows", "uwo")]
+
+
+def test_an_account_the_app_cannot_switch_to_rests_while_the_others_get_their_songs(
+    due, monkeypatch
+):
+    monkeypatch.setattr(worker, "_visit_order", lambda current_user: ["utm", "uwo"])
+    due.music = ["utm", "uwo"]
+    device = _Device(unreachable={"wat2do.utm"})
+    # The failed switch neither stops the worker nor gets the song.
+    assert worker.visit_next(device, DAY)
+    assert due.done == []
+    assert worker.visit_next(device, DAY)
+    assert due.done == [("music", "uwo")]
+    # It is tried again once its rest is over.
+    later = DAY + timedelta(seconds=worker.CONTROL.switch_rest_seconds)
+    device.unreachable.clear()
+    worker.visit_next(device, later)
+    assert due.done[-1] == ("music", "utm")
+
+
+def test_switches_failing_in_a_row_restart_the_emulator(due, monkeypatch):
+    in_a_row = worker.CONTROL.switch_failures_before_restart
+    *stuck, reachable = sorted(worker.CONTROL.android_user_by_school)[: in_a_row + 1]
+    monkeypatch.setattr(worker, "_visit_order", lambda current_user: [*stuck, reachable])
+    due.music = [*stuck, reachable]
+    device = _Device(unreachable={f"wat2do.{school}" for school in stuck})
+    for _ in range(in_a_row - 1):
+        worker.visit_next(device, DAY)
+    assert device.restarts == 0
+    worker.visit_next(device, DAY)
+    assert device.restarts == 1
+    # A switch that works starts the count over.
+    worker.visit_next(device, DAY)
+    assert device.accounts == [f"wat2do.{reachable}"]
+    assert worker._switch_failures == 0
 
 
 def test_crawls_take_every_other_visit_while_inboxes_and_follows_wait(due):
