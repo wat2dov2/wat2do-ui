@@ -62,6 +62,8 @@ export function ClubList({
             isSaved={savedSet.has(club.id)}
             onClubClick={onClubClick}
             onCategoryClick={onCategoryClick}
+            // The first batch is the server-rendered first screen.
+            logoPriority={index < controlBox.clubManagement.initialRenderCount}
           />
         </CardEntrance>
       ))}

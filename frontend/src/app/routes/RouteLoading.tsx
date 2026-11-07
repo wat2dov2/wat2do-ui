@@ -2,7 +2,9 @@
 
 import { lazy, Suspense } from "react";
 import { usePathname } from "next/navigation";
+import { ClubPanelEventTicketsLoading } from "@/features/club-panel/components/ClubPanelEventHeader";
 import { ROUTES } from "@/shared/constants/routes";
+import { Container } from "@/shared/layout/container";
 import { LoadingPage, PageShellLoading } from "@/shared/ui/loading-page";
 import { PAGE_SHELLS } from "@/shared/constants/pageShells";
 
@@ -38,6 +40,8 @@ const LoginLoading = lazy(async () => {
  * to be replaced.
  */
 const OWN_LOADING_ROUTE = /^\/(?:events|clubs|positions|events\/\d+|clubs\/\d+)\/?$/;
+/** One event's ticket page in the club panel, whose header is known before its data. */
+const CLUB_PANEL_EVENT_ROUTE = /^\/club-panel\/events\/(\d+)\/?$/;
 
 export function RouteLoading() {
   const pathname = usePathname();
@@ -46,5 +50,14 @@ export function RouteLoading() {
   if (pathname === ROUTES.LOGIN) return <Suspense><LoginLoading /></Suspense>;
   if (OWN_LOADING_ROUTE.test(pathname)) return null;
   if (pathname in PAGE_SHELLS) return <PageShellLoading route={pathname} />;
-  return <LoadingPage />;
+  const clubPanelEvent = CLUB_PANEL_EVENT_ROUTE.exec(pathname);
+  if (clubPanelEvent) {
+    return (
+      <Container size="md">
+        <ClubPanelEventTicketsLoading eventId={Number(clubPanelEvent[1])} />
+      </Container>
+    );
+  }
+  // A page's width belongs to its container, so a loading page never runs edge to edge.
+  return <Container><LoadingPage /></Container>;
 }

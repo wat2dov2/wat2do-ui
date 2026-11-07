@@ -1,10 +1,12 @@
-import NextLink from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import {
+  ClubPanelEventHeader,
+  ClubPanelEventTicketsLoading,
+} from "@/features/club-panel/components/ClubPanelEventHeader";
 import { useClubPayouts } from "@/features/club-panel/hooks/useClubPayouts";
-import { fetchEventById } from "@/features/events/api/events.api";
-import { eventPagePath } from "@/features/events/lib/eventUrls";
+import { cachedEvent, fetchEventById } from "@/features/events/api/events.api";
 import {
   TicketDeskStats,
   TicketDoorList,
@@ -13,19 +15,16 @@ import {
   useTicketDesk,
   useTicketRefunds,
 } from "@/features/tickets";
-import { ROUTES, clubPanelDoorScannerPath } from "@/shared/constants/routes";
 import { EmptyState } from "@/shared/feedback";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { toast } from "@/shared/hooks/use-toast";
 import { queryKeys } from "@/shared/lib/queryKeys";
-import { PageHeader, Section, Stack } from "@/shared/layout";
+import { Section, Stack } from "@/shared/layout";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/alert";
-import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
-import { Skeleton } from "@/shared/ui/skeleton";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { formatOccurrence, getPrimaryOccurrence } from "@/shared/utils/date";
-import { AlertTriangle, QrCode, Ticket } from "lucide-react";
+import { AlertTriangle, Ticket } from "lucide-react";
 
 function useEventIdParam(): number {
   const params = useParams<{ eventId?: string | string[] }>();
@@ -42,67 +41,55 @@ export function ClubPanelEventTicketsPage() {
     queryKey: queryKeys.events.detail(eventId),
     queryFn: () => fetchEventById(eventId),
     enabled: eventId > 0,
+    // Opened from the club's events, the event is already known.
+    placeholderData: () => cachedEvent(eventId),
   });
   const ticketing = useEventTicketing(eventId);
   const desk = useTicketDesk(eventId, Boolean(ticketing.data));
   const payouts = useClubPayouts(event.data?.club_id);
   const { refundRemaining } = useTicketRefunds(eventId);
 
-  // Payouts load once the event names its club; until then paid tickets can't be offered.
-  const loading =
-    event.isPending ||
-    ticketing.isPending ||
-    (event.data?.club_id != null && payouts.isPending) ||
-    (ticketing.data != null && desk.isPending);
-  if (eventId > 0 && loading) {
-    return (
-      <Stack gap={6} aria-busy="true">
-        <PageHeader
-          back={{ href: ROUTES.CLUB_PANEL_EVENTS, label: t("navigation.events") }}
-          icon={Ticket}
-          title={<Skeleton className="h-7 w-72" />}
-          description={<Skeleton className="mt-1 h-4 w-44" />}
-        />
-        <LoadingPage variant="panel" className="py-0" />
-      </Stack>
-    );
+  if (eventId > 0 && event.isPending) {
+    return <ClubPanelEventTicketsLoading eventId={eventId} />;
   }
   if (!event.data) {
     return <EmptyState icon={<Ticket />} title={t("tickets.desk.notFound")} />;
   }
 
   const occurrence = getPrimaryOccurrence(event.data);
+  const header = (
+    <ClubPanelEventHeader
+      eventId={eventId}
+      heading={{
+        title: event.data.title,
+        description: occurrence
+          ? formatOccurrence(occurrence, getSchoolTimezone(event.data.school), i18n.language)
+          : undefined,
+      }}
+      scanner={Boolean(ticketing.data)}
+    />
+  );
+  // Payouts load once the event names its club; until then paid tickets can't be offered.
+  const ticketsLoading =
+    ticketing.isPending ||
+    (event.data.club_id != null && payouts.isPending) ||
+    (ticketing.data != null && desk.isPending);
+  if (ticketsLoading) {
+    return (
+      <Stack gap={6} aria-busy="true">
+        {header}
+        <LoadingPage variant="panel" className="py-0" />
+      </Stack>
+    );
+  }
+
   const deskData = desk.data;
   const issuedEver = (deskData?.issued ?? 0) + (deskData?.refunded ?? 0);
   const paidStillValid = deskData?.ticketing.currency ? deskData.issued : 0;
 
   return (
     <Stack gap={6}>
-      <PageHeader
-        back={{ href: ROUTES.CLUB_PANEL_EVENTS, label: t("navigation.events") }}
-        icon={Ticket}
-        title={event.data.title}
-        description={
-          occurrence
-            ? formatOccurrence(occurrence, getSchoolTimezone(event.data.school), i18n.language)
-            : undefined
-        }
-        actions={
-          <Stack direction="horizontal" gap={2} wrap>
-            {ticketing.data ? (
-              <Button asChild>
-                <NextLink href={clubPanelDoorScannerPath(eventId)}>
-                  <QrCode className="size-4" />
-                  {t("tickets.desk.openScanner")}
-                </NextLink>
-              </Button>
-            ) : null}
-            <Button variant="outline" asChild>
-              <NextLink href={eventPagePath(eventId)}>{t("tickets.pass.viewEvent")}</NextLink>
-            </Button>
-          </Stack>
-        }
-      />
+      {header}
 
       {event.data.cancelled && paidStillValid > 0 ? (
         <Alert variant="destructive">

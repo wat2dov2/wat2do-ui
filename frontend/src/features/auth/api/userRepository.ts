@@ -15,6 +15,8 @@ export const AUTH_STATE_REFRESH_EVENT = "auth-state-refresh";
 export interface UserClubSummary {
   id: number;
   club_name: string;
+  /** The school whose site the club's pages live on. */
+  school: string | null;
 }
 
 function notifyAuthStateChanged(): void {

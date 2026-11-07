@@ -126,7 +126,8 @@ function PageHeader({
       className={cn(variant === "listing" && "sticky top-0 z-20 isolate m-0 shrink-0 bg-background pt-5 pb-2 before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:bg-background before:content-[''] in-data-[page-layout=viewport]:-mb-15 in-data-[page-layout=viewport]:bg-transparent in-data-[page-layout=viewport]:before:hidden", className)}
       {...props}
     >
-      <Stack gap={variant === "listing" ? 3 : 4}>
+      {/* A page header's controls (back, actions) sit well clear of its title. */}
+      <Stack gap={variant === "listing" ? 3 : 6}>
         {back ? (
           <Stack
             direction="horizontal"

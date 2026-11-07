@@ -21,3 +21,6 @@ export {
 // Hooks
 export { useOpenClubPanel } from "./hooks/useOpenClubPanel";
 export { useActiveClub, useOwnClub } from "./hooks/useActiveClub";
+
+// The club panel's school site
+export { CLUB_PANEL_CLUB_PARAM, clubPanelUrlElsewhere, makeActiveClub } from "./lib/clubPanelSite";

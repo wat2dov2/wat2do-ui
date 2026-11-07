@@ -27,7 +27,8 @@ export function CardImageSkeleton() {
         className="absolute inset-0"
       />
       <BadgeMask variant="top-left" cutout containerRef={registerCorner("top-left")}>
-        <Skeleton className="my-1 rounded-xl">
+        {/* A flex box, so the placeholder is exactly the badge's box and sits in the card's corner like the real one. */}
+        <Skeleton className="flex rounded-xl">
           <Badge size="md" className="invisible">{t("events.new")}</Badge>
         </Skeleton>
       </BadgeMask>

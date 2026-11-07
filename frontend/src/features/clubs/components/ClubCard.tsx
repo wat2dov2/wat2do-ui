@@ -44,6 +44,8 @@ interface ClubCardProps {
   isSaved?: boolean;
   onClubClick?: (club: Club) => void;
   onCategoryClick?: (category: string) => void;
+  /** The card is on the first screen, so its logo loads with the page. */
+  logoPriority?: boolean;
 }
 
 function ClubCardComponent({
@@ -51,6 +53,7 @@ function ClubCardComponent({
   isSaved = false,
   onClubClick,
   onCategoryClick,
+  logoPriority = false,
 }: ClubCardProps) {
   const { t } = useTranslation();
   const { clubs } = useAuthState();
@@ -118,7 +121,11 @@ function ClubCardComponent({
     >
 
       <div className={CLUB_CARD_CLASSES.top} data-skeleton-key="card-top">
-        <AvatarStack size="lg" avatars={[{ src: club.logo_url ?? "", name: club.club_name }]} />
+        <AvatarStack
+          size="lg"
+          loading={logoPriority ? "eager" : "lazy"}
+          avatars={[{ src: club.logo_url ?? "", name: club.club_name }]}
+        />
         <div data-club-card-action {...stopCardActivation}>
           {managesClub ? (
             // Members always follow their club, so they see their role instead of a follow toggle.
