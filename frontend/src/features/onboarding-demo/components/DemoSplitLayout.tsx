@@ -17,7 +17,8 @@ export function DemoSplitLayout({ left, right, dark = false, className }: DemoSp
         className
       )}
     >
-      <div className="flex flex-col justify-center w-full lg:w-1/2 lg:pr-8 xl:pr-12 min-h-0">
+      {/* Pinned while a taller preview scrolls, so the question stays in view. */}
+      <div className="flex flex-col justify-center w-full lg:w-1/2 lg:pr-8 xl:pr-12 min-h-0 lg:sticky lg:top-0 lg:self-start">
         {left}
       </div>
       {right && (

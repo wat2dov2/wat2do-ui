@@ -71,7 +71,9 @@ export function OnboardingDemoPage() {
 
   return (
     <LazyMotion features={domAnimation} strict>
-      <main className="min-h-screen bg-background flex flex-col">
+      {/* The viewport is the frame: header and footer stay put and only the step
+          scrolls, so a tall step never slides under the footer. */}
+      <main className="h-dvh bg-background flex flex-col">
       <header className="sticky top-0 z-10 w-full px-4 sm:px-6 pt-4 pb-3 bg-background border-b border-border">
         <div className="flex items-center justify-between gap-4 max-w-6xl mx-auto">
           <OnboardingDemoProgress currentStep={flow.currentStep} />
@@ -84,7 +86,7 @@ export function OnboardingDemoPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col px-4 sm:px-6 py-6 sm:py-8 overflow-y-auto">
+      <div className="flex-1 min-h-0 flex flex-col px-4 sm:px-6 py-6 sm:py-8 overflow-y-auto">
         <div className="relative w-full max-w-6xl mx-auto flex-1 flex flex-col justify-center min-h-0">
           <AnimatePresence mode="popLayout">
             <m.div

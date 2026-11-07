@@ -1,11 +1,15 @@
 "use client";
 
 import { useLayoutEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
 import { prefetchPublicPage } from "@/app/hooks/useAppNavigation";
+import { ROUTES } from "@/shared/constants/routes";
 import { Link } from "@/shared/ui/link";
+
+/** The strip shows on the browse pages only, never over a detail page, a form or a chromeless flow. */
+const BANNER_ROUTES = new Set<string>([ROUTES.EVENTS, ROUTES.CLUBS, ROUTES.POSITIONS]);
 
 interface SiteBannerStripProps {
   messageTranslationKey: string;
@@ -23,9 +27,13 @@ export function SiteBannerStrip({
 }: SiteBannerStripProps) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const pathname = usePathname();
   const strip = useRef<HTMLDivElement>(null);
   // A stale banner snapshot must not expose untranslated internal keys.
-  const isVisible = i18n.exists(messageTranslationKey) && i18n.exists(ctaLabelTranslationKey);
+  const isVisible =
+    BANNER_ROUTES.has(pathname.replace(/\/$/, "") || "/") &&
+    i18n.exists(messageTranslationKey) &&
+    i18n.exists(ctaLabelTranslationKey);
 
   useLayoutEffect(() => {
     if (!isVisible || !strip.current) return;
