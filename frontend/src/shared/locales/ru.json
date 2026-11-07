@@ -363,7 +363,6 @@
     "selectSchool": "Выбрать школу",
     "searchPlaceholder": "Поиск школ...",
     "noSchoolFound": "Школа не найдена.",
-    "unknownSubdomainEyebrow": "Школа не найдена",
     "unknownSubdomainDocumentTitle": "Школа не найдена | Wat2Do",
     "unknownSubdomainTitle": "У нас пока нет этого кампуса.",
     "unknownSubdomainDescription": "Нет Wat2Do школы, соответствующей \"{{school}}\". Проверьте URL или вернитесь на главный сайт.",
@@ -780,7 +779,6 @@
     "social": "Соцсети"
   },
   "notFound": {
-    "eyebrow": "Страница не найдена",
     "title": "Такой страницы не существует.",
     "description": "Возможно, ссылка неверна или страница была перемещена. Вернитесь и найдите, чем заняться.",
     "browseEvents": "Смотреть события",

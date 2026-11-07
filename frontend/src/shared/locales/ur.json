@@ -357,7 +357,6 @@
     "selectSchool": "اسکول منتخب کریں",
     "searchPlaceholder": "اسکولز تلاش کریں...",
     "noSchoolFound": "کوئی اسکول نہیں ملا۔",
-    "unknownSubdomainEyebrow": "اسکول نہیں ملا",
     "unknownSubdomainDocumentTitle": "اسکول نہیں ملا | Wat2Do",
     "unknownSubdomainTitle": "ہمارے پاس ابھی وہ کیمپس نہیں ہے۔",
     "unknownSubdomainDescription": "\"{{school}}\" سے کوئی Wat2Do اسکول منسلک نہیں ہے۔ URL چیک کریں یا مرکزی سائٹ پر واپس جائیں۔",
@@ -762,7 +761,6 @@
     "social": "سوشل"
   },
   "notFound": {
-    "eyebrow": "صفحہ نہیں ملا",
     "title": "یہ صفحہ موجود نہیں ہے۔",
     "description": "ہو سکتا ہے لنک خراب ہو یا صفحہ منتقل ہو گیا ہو۔ واپس جائیں اور کرنے کو کچھ تلاش کریں۔",
     "browseEvents": "ایونٹس دیکھیں",
