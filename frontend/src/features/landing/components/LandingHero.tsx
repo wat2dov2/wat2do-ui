@@ -79,7 +79,7 @@ export function LandingHero({ schoolName, events, isLoading }: LandingHeroProps)
         }}
       >
         {/* Where the mosaic draws the logo, clear of the text below it. */}
-        <div ref={logoRegion} className="h-48 sm:h-80" />
+        <div ref={logoRegion} className="h-32 sm:h-56" />
         {/*
           Where the mosaic spells the headline in posters, in the page's heading typeface. Its
           height is the mosaic's layout, which grows when a phrase wraps; until then it holds
@@ -88,7 +88,7 @@ export function LandingHero({ schoolName, events, isLoading }: LandingHeroProps)
         <div
           ref={titleRegion}
           aria-hidden="true"
-          className={cn(titleHeight === null && "h-64 sm:h-[36rem]")}
+          className={cn(titleHeight === null && "h-[30rem] sm:h-[48rem]")}
           style={titleHeight === null ? undefined : { height: titleHeight }}
         />
         {/* The headline exists only as mosaic squares; screen readers get it as one sentence. */}

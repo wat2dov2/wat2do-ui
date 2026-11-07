@@ -104,8 +104,8 @@ const LOGO_MIN_CANDIDATES = 24;
 /** Headline posters are dark: a dominant colour no lighter than this (0 black, 1 white) covering at least this share of the poster. */
 const TITLE_MAX_LIGHTNESS = 0.2;
 const TITLE_MIN_SHARE = 0.35;
-/** The smallest cell a headline may ask for, in CSS pixels. */
-const MIN_TILE_SIZE = 4;
+/** The smallest cell a headline may ask for, in CSS pixels: squares stay big enough to read as posters. */
+const MIN_TILE_SIZE = 10;
 /** Tries at a random unused poster before searching the pool for the least shown one. */
 const PICK_TRIES = 8;
 

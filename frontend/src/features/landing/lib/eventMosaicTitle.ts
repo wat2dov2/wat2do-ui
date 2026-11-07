@@ -8,18 +8,18 @@
  */
 
 /** The largest and smallest type size in cells (one em). Below the smallest, even heavy strokes are under two cells and stop reading. */
-const MAX_EM_CELLS = 24;
-export const MIN_EM_CELLS = 13;
+const MAX_EM_CELLS = 20;
+export const MIN_EM_CELLS = 10;
 /** Rows per line, as a multiple of the type size: room for ascenders and descenders. */
 const LINE_HEIGHT = 1.18;
 /** No part of the headline wraps onto more than this many mosaic lines; legibility comes before fitting on one line. */
-const MAX_LINES_PER_PART = 3;
-/** The weight the letters are drawn at: heavy, so strokes stay solid at a few cells. */
-const TITLE_WEIGHT = 800;
+const MAX_LINES_PER_PART = 4;
+/** The weight the letters are drawn at: the heaviest, so strokes stay solid at a few large cells. */
+const TITLE_WEIGHT = 900;
 /** Pixels drawn per cell side when rasterizing, so each cell's coverage is measured, not guessed. */
 const SUPERSAMPLE = 6;
 /** A cell is a letter cell when at least this much of it is covered. */
-const INK_COVERAGE = 0.5;
+const INK_COVERAGE = 0.42;
 /** Cells kept clear on each side of a line. */
 const SIDE_MARGIN = 1;
 
@@ -29,7 +29,7 @@ export type MeasureEms = (text: string) => number;
 /**
  * Greedy word wrap into lines no wider than `columns` cells at `em` cells per
  * em, or null when one word alone is too wide. With `breakWords`, a word too
- * wide for a line is split across lines instead, as a last resort on the
+ * wide for a line is hyphenated across lines instead, as a last resort on the
  * narrowest screens.
  */
 export function wrapTitle(text: string, columns: number, em: number, measure: MeasureEms, breakWords = false): string[] | null {
@@ -42,8 +42,9 @@ export function wrapTitle(text: string, columns: number, em: number, measure: Me
     else {
       let piece = "";
       for (const character of word) {
-        if (piece && !fits(piece + character)) {
-          pieces.push(piece);
+        // Every piece but the last carries a hyphen, which must fit too.
+        if (piece.length > 1 && !fits(`${piece}${character}-`)) {
+          pieces.push(`${piece}-`);
           piece = "";
         }
         piece += character;

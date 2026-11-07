@@ -94,8 +94,8 @@ function loadMosaic(width = 240, height = 120) {
 
 test("the atlas packs over a thousand real posters, each with the dominant colour that places it", () => {
   expect(manifest.posters.length).toBeGreaterThanOrEqual(1000);
-  // Twice the largest cell the page draws (16 CSS px), so cells are crisp on a 2x screen.
-  expect(manifest.tilePixels).toBeGreaterThanOrEqual(32);
+  // Near twice the largest cell the page draws (22 CSS px), so cells are crisp on a 2x screen.
+  expect(manifest.tilePixels).toBeGreaterThanOrEqual(40);
   expect(manifest.eventCount).toBeGreaterThanOrEqual(manifest.posters.length);
   for (const poster of manifest.posters) {
     expect(poster.colour).toMatch(/^#[0-9a-f]{6}$/);
@@ -201,7 +201,7 @@ test("a headline wraps by word at the largest legible size that fits, and splits
   expect(title.wrapTitle("networking opportunity", 14, 1, measure)).toEqual(["networking", "opportunity"]);
   expect(title.wrapTitle("social event", 14, 1, measure)).toEqual(["social event"]);
   expect(title.wrapTitle("networking", 6, 1, measure)).toBeNull();
-  expect(title.wrapTitle("networking", 6, 1, measure, true)).toEqual(["networ", "king"]);
+  expect(title.wrapTitle("networking", 6, 1, measure, true)).toEqual(["netwo-", "rking"]);
 
   // 198 cells across: the lead fits on one line at 16 cells an em, the long phrase on two.
   const layout = title.layoutMosaicTitle("Every campus", ["event", "networking opportunity"], 200, measure)!;

@@ -20,12 +20,12 @@ import sharp from "sharp";
 import imageDelivery from "../../backend/controlbox/image_delivery.json" with { type: "json" };
 import uploads from "../../backend/controlbox/uploads.json" with { type: "json" };
 
-/** Pixels per poster side: at least twice the largest cell the page draws (16 CSS px), so every cell is crisp on a 2x screen. */
-const TILE_PIXELS = 32;
+/** Pixels per poster side: near twice the largest cell the page draws (22 CSS px), sharp on a 2x screen at a size that loads quickly. */
+const TILE_PIXELS = 40;
 /** Pixels per poster side in the first-paint atlas, drawn smoothed until the full one arrives. */
 const PREVIEW_TILE_PIXELS = 8;
 /** Posters per atlas row. */
-const ATLAS_COLUMNS = 40;
+const ATLAS_COLUMNS = 30;
 /** Posters in the atlas: enough that the grid rarely shows one twice. */
 const TOTAL_POSTERS = 1200;
 /**
@@ -311,7 +311,7 @@ const packed = choosePosters(readEvents, readPositions);
 if (packed.length === 0) throw new Error("No posters could be read");
 const tiles = packed.map(({ tile }) => tile);
 
-await writeAtlas(tiles, TILE_PIXELS, `event-mosaic-${options.school}.webp`, 74);
+await writeAtlas(tiles, TILE_PIXELS, `event-mosaic-${options.school}.webp`, 70);
 await writeAtlas(tiles, PREVIEW_TILE_PIXELS, `event-mosaic-${options.school}-preview.webp`, 70);
 await writeFile(
   path.join(assetsDirectory, `event-mosaic-${options.school}.json`),
