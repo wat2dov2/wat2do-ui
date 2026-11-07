@@ -6,6 +6,7 @@ import {
   type MutableRefObject,
 } from "react";
 import { useAuthState } from "@/features/auth";
+import { useOwnClub } from "@/features/clubs";
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
@@ -18,7 +19,6 @@ import { useImageParse } from "@/shared/hooks/useImageParse";
 import { parseEventImage } from "@/shared/services/uploadService";
 import { getCurrentSchool } from "@/shared/constants/schools";
 import { useEventForm } from "@/features/events/hooks/useEventForm";
-import { mapEventInputToFormData } from "@/features/events/hooks/useEventForm.utils";
 import {
   useSubmitEvent,
   type SubmitEventResult,
@@ -131,30 +131,21 @@ export function SubmitEventFlow({
     [t],
   );
 
+  // A club owner adds events only for their own club; an edit keeps the event's club.
+  const ownClub = useOwnClub();
   const eventForm = useEventForm({
     initialData,
     isEditMode,
     isOpen: true,
+    fixedClub: isEditMode ? null : ownClub,
   });
 
+  const { applyParsedEvent } = eventForm;
   const parseFlyer = useCallback(
     async (file: File) => {
-      const parsedData = await parseEventImage(file, getCurrentSchool());
-      eventForm.setFormData((previous) =>
-        mapEventInputToFormData(
-          parsedData as unknown as Record<string, unknown>,
-          {
-            timeZone: previous.timeZone,
-            occurrences: previous.occurrences,
-            source_image_url: previous.source_image_url,
-          },
-        ),
-      );
-      if (parsedData.source_image_url) {
-        eventForm.resetImage(parsedData.source_image_url);
-      }
+      applyParsedEvent(await parseEventImage(file, getCurrentSchool()));
     },
-    [eventForm],
+    [applyParsedEvent],
   );
 
   const imageParse = useImageParse({

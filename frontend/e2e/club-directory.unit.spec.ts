@@ -67,7 +67,7 @@ test("switching managed clubs hides old rows immediately and ignores late roster
       if (id === "@/features/auth") return { useAuthState: () => ({ clubId }) };
       if (id === "next/navigation") return { useRouter: () => ({ push: () => undefined }) };
       if (id === "@/shared/constants/routes") return { ROUTES: { CLUB_PANEL_MEMBERS: "/club-panel/members" } };
-      if (id === "@/features/club-panel/hooks/useActiveClub") return { useActiveClub: () => ({ clubId, club: { school: "uwaterloo" } }) };
+      if (id === "@/features/clubs") return { useActiveClub: () => ({ clubId, club: { school: "uwaterloo" } }) };
       if (id === "@/shared/hooks/useSchoolDirectory") return { useSchoolDirectory: () => ({ getSchoolTimezone: () => "America/Toronto" }) };
       if (id === "../api/members.api") return {
         fetchClubMembers: (requestedClubId: number) => new Promise((resolve) => pending.set(requestedClubId, resolve)),
@@ -178,6 +178,13 @@ test("organization field submits canonical IDs while displaying the typed handle
   expect(render().value).toBe("");
   value = 1;
   expect(render().value).toBe("@uw.tech");
+
+  // A club owner's own club is shown and cannot be changed or reported as unknown.
+  const locked = (club: typeof directory[number]) => component.exports.ClubInput({
+    value: club.id, clubs: [club], locked: true, onChange: () => undefined, touched: true,
+  }) as unknown as { value: string; disabled: boolean; error?: string };
+  draft = { handle: "typed", resolvedId: null };
+  expect(locked(directory[1])).toMatchObject({ value: "@board_games", disabled: true, error: undefined });
 });
 
 

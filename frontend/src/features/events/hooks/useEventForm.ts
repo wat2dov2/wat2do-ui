@@ -1,40 +1,52 @@
 import { useMemo, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import type { EventFormData, EventFormOccurrence } from "@/shared/types";
+import type { Club, EventFormData, EventFormOccurrence } from "@/shared/types";
 import {
   validateEventForm,
   isEventFormValid,
-  isMapLocationRequired,
   markAllFieldsTouched as markAllFieldsTouchedFn,
   type EventFormRules,
 } from "@/shared/services/validationService";
 import { useForm } from "@/shared/hooks/useForm";
 import { useTagInput } from "@/shared/hooks/useTagInput";
 import { useImageFile } from "@/shared/hooks/useImageFile";
-import { getEventFormDefaults } from "@/features/events/hooks/useEventForm.utils";
+import {
+  getEventFormDefaults,
+  mapEventInputToFormData,
+  withLocation,
+} from "@/features/events/hooks/useEventForm.utils";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { getCurrentSchool } from "@/shared/constants/schools";
+
+/** The club a new event is fixed to: its id, and its record once loaded. */
+export interface FixedClub {
+  clubId: number;
+  club?: Club;
+}
 
 interface UseEventFormOptions {
   initialData?: EventFormData;
   isEditMode?: boolean;
   isOpen: boolean;
+  /** A club owner's own club, which every event they add belongs to. */
+  fixedClub?: FixedClub | null;
 }
 
 export function useEventForm(options: UseEventFormOptions) {
   const { getSchoolTimezone } = useSchoolDirectory();
-  const getDefaults = useCallback(() => getEventFormDefaults(getSchoolTimezone(getCurrentSchool())), [getSchoolTimezone]);
-  const { initialData, isEditMode = false, isOpen } = options;
+  const { initialData, isEditMode = false, isOpen, fixedClub } = options;
+  const fixedClubId = fixedClub?.clubId ?? null;
+  const fixedClubSchool = fixedClub?.club?.school;
+  const getDefaults = useCallback(
+    () => ({ ...getEventFormDefaults(getSchoolTimezone(getCurrentSchool())), club_id: fixedClubId }),
+    [getSchoolTimezone, fixedClubId],
+  );
   const { t } = useTranslation();
 
   // Existing unlinked events remain editable; new events require a club.
   const rules = useMemo<EventFormRules>(
-    () => ({
-      requireClub: !isEditMode || initialData?.club_id != null,
-      initialLocation: isEditMode ? initialData?.location ?? "" : "",
-      initialMapLocation: isEditMode ? initialData?.map_location ?? "" : "",
-    }),
-    [isEditMode, initialData?.club_id, initialData?.location, initialData?.map_location],
+    () => ({ requireClub: !isEditMode || initialData?.club_id != null }),
+    [isEditMode, initialData?.club_id],
   );
   const validate = useCallback(
     (data: EventFormData, touched: Record<string, boolean>) =>
@@ -46,7 +58,6 @@ export function useEventForm(options: UseEventFormOptions) {
           clubRequired: t("forms.clubRequired"),
           occurrenceRequired: t("forms.occurrenceRequired"),
           locationRequired: t("forms.locationRequired"),
-          mapLocationRequired: t("forms.mapLocationRequired"),
         },
         rules,
       ) as Record<string, string>,
@@ -107,6 +118,26 @@ export function useEventForm(options: UseEventFormOptions) {
     [form],
   );
 
+  // The map follows the venue as typed; a saved event keeps its saved map location for its saved venue.
+  const updateLocation = useCallback(
+    (location: string) => {
+      form.setFormData((prev) => withLocation(prev, location, isEditMode ? initialData : undefined));
+    },
+    [form, isEditMode, initialData],
+  );
+
+  // A club owner's event is their club's, in their club's campus time, from the moment both are known.
+  const { setFormData } = form;
+  useEffect(() => {
+    if (fixedClubId == null) return;
+    const timeZone = fixedClubSchool ? getSchoolTimezone(fixedClubSchool) : undefined;
+    setFormData((prev) =>
+      prev.club_id === fixedClubId && (!timeZone || prev.timeZone === timeZone)
+        ? prev
+        : { ...prev, club_id: fixedClubId, timeZone: timeZone ?? prev.timeZone },
+    );
+  }, [fixedClubId, fixedClubSchool, getSchoolTimezone, setFormData]);
+
   // Preserve the current poster until a replacement is uploaded.
   const { imagePreview, imageFile, onImageUpload, onRemoveImage, resetImage } =
     useImageFile(initialData?.source_image_url ?? "");
@@ -152,6 +183,25 @@ export function useEventForm(options: UseEventFormOptions) {
     [form.formData, errors, imagePreview, isEditMode, rules],
   );
 
+  /** Fills the form from a read flyer. A club owner's own club stays, whichever club the flyer names. */
+  const applyParsedEvent = useCallback(
+    (parsed: EventFormData) => {
+      setFormData((previous) => {
+        const next = mapEventInputToFormData(
+          parsed as unknown as Record<string, unknown>,
+          {
+            timeZone: previous.timeZone,
+            occurrences: previous.occurrences,
+            source_image_url: previous.source_image_url,
+          },
+        );
+        return fixedClubId == null ? next : { ...next, club_id: previous.club_id };
+      });
+      if (parsed.source_image_url) resetImage(parsed.source_image_url);
+    },
+    [setFormData, fixedClubId, resetImage],
+  );
+
   const markAllFieldsTouched = useCallback(() => {
     // useForm does not expose setTouched; touch each required field via handleBlur.
     const allTouched = markAllFieldsTouchedFn();
@@ -160,7 +210,6 @@ export function useEventForm(options: UseEventFormOptions) {
 
   return {
     formData: form.formData,
-    setFormData: form.setFormData,
     updateField: form.updateField,
 
     updateOccurrence,
@@ -172,17 +221,19 @@ export function useEventForm(options: UseEventFormOptions) {
     addFood: foodTag.handleAdd,
     removeFood,
 
+    updateLocation,
+    applyParsedEvent,
+    fixedClub: fixedClub ?? null,
+
     errors,
     touched: form.touched,
     handleBlur: form.handleBlur,
     isValid,
-    isMapLocationRequired: isMapLocationRequired(form.formData, rules),
 
     imagePreview,
     imageFile,
     onImageUpload,
     onRemoveImage,
-    resetImage,
 
     markAllFieldsTouched,
   };

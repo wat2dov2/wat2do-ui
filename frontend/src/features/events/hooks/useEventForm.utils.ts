@@ -1,6 +1,32 @@
 import type { EventFormData, EventFormOccurrence } from "@/shared/types";
 
 import { toLocalDateTimeInput } from "@/shared/utils/date";
+import { isVirtualLocation } from "@/shared/utils/event";
+
+/** A venue still to be announced has nothing to put on a map. */
+const UNANNOUNCED_VENUE = /\b(?:tba|tbd)\b|to be (?:announced|determined|confirmed)|after registration/i;
+
+/**
+ * Where the map looks for a location typed into the form: the place as typed,
+ * or nothing for an online event or a venue still to be announced.
+ */
+export function mapLocationFor(location: string): string {
+  const place = location.trim();
+  return place && !isVirtualLocation(place) && !UNANNOUNCED_VENUE.test(place) ? place : "";
+}
+
+/**
+ * The form with a new location typed in. The map follows the new place,
+ * except back at the saved venue, whose saved map location is kept.
+ */
+export function withLocation(
+  formData: EventFormData,
+  location: string,
+  saved?: Pick<EventFormData, "location" | "map_location">,
+): EventFormData {
+  const savedVenue = saved !== undefined && location.trim() === saved.location.trim();
+  return { ...formData, location, map_location: savedVenue ? saved.map_location : mapLocationFor(location) };
+}
 
 function normalizeOccurrences(
   raw: unknown,
@@ -45,7 +71,8 @@ export function mapEventInputToFormData(
     description: (parsed.description as string) || "",
     occurrences: normalizeOccurrences(parsed.occurrences, fallbackDefaults.occurrences),
     location: (parsed.location as string) || "",
-    map_location: (parsed.map_location as string) || "",
+    // The poster reader names the venue only; the map searches for it as written.
+    map_location: mapLocationFor((parsed.location as string) || ""),
     category: (parsed.category as string) || "",
     price: typeof parsed.price === "number" ? parsed.price : 0,
     food: Array.isArray(parsed.food) ? parsed.food : [],

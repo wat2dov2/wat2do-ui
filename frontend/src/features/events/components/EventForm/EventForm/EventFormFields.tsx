@@ -43,7 +43,8 @@ export function EventFormFields() {
     removeFood,
     imagePreview,
     isImageRequired,
-    isMapLocationRequired,
+    isClubFixed,
+    updateLocation,
     onImageUpload,
     onRemoveImage,
   } = useEventFormContext();
@@ -67,6 +68,7 @@ export function EventFormFields() {
           <ClubInput
             value={formData.club_id}
             clubs={clubs}
+            locked={isClubFixed}
             onChange={(clubId) => {
               updateField("club_id", clubId);
               const club = clubs.find((item) => item.id === clubId);
@@ -130,25 +132,12 @@ export function EventFormFields() {
             label={t("filters.location")}
             required
             value={formData.location}
-            onChange={(value) => updateField("location", value as string)}
+            onChange={(value) => updateLocation(value as string)}
             onBlur={() => handleBlur("location")}
             placeholder={t("forms.locationPlaceholder")}
             labelIcon={<MapPin className="size-4" />}
             error={errors.location}
             touched={touched.location}
-          />
-
-          <FormInput
-            name="map_location"
-            label={t("forms.mapLocationLabel")}
-            required={isMapLocationRequired}
-            value={formData.map_location}
-            onChange={(value) => updateField("map_location", value as string)}
-            onBlur={() => handleBlur("map_location")}
-            placeholder={t("forms.mapLocationPlaceholder")}
-            labelIcon={<MapPin className="size-4" />}
-            error={errors.map_location}
-            touched={touched.map_location}
           />
         </FieldGroup>
       </FieldSet>

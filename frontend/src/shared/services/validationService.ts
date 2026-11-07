@@ -1,7 +1,6 @@
 import type { EventFormData, ValidationErrors } from "@/shared/types";
 import i18n from "@/shared/lib/i18n";
 import { buildEventOccurrence } from "@/shared/api/eventPayload";
-import { isVirtualLocation } from "@/shared/utils/event";
 
 function validOccurrences(formData: EventFormData): boolean {
   try {
@@ -20,7 +19,6 @@ const VALIDATION_MESSAGE_KEYS = {
   clubRequired: "forms.clubRequired",
   occurrenceRequired: "forms.occurrenceRequired",
   locationRequired: "forms.locationRequired",
-  mapLocationRequired: "forms.mapLocationRequired",
 } as const;
 
 type ValidationMessageOverrides = Partial<Record<keyof typeof VALIDATION_MESSAGE_KEYS, string>>;
@@ -36,33 +34,9 @@ export interface EventFormRules {
    * event always requires it.
    */
   requireClub: boolean;
-  /** The saved location and map location being edited; empty for a new event. */
-  initialLocation: string;
-  initialMapLocation: string;
 }
 
-const DEFAULT_RULES: EventFormRules = { requireClub: true, initialLocation: "", initialMapLocation: "" };
-
-/**
- * A physical venue needs a map location, except an unchanged venue that never
- * had one (an event saved with "TBD" stays editable).
- */
-export function isMapLocationRequired(formData: EventFormData, rules: EventFormRules): boolean {
-  const location = formData.location.trim();
-  if (!location || isVirtualLocation(location)) return false;
-  return location !== rules.initialLocation.trim() || rules.initialMapLocation.trim() !== "";
-}
-
-/**
- * A changed venue needs a new map location: the map location is never left
- * describing the previous venue.
- */
-function mapLocationMissing(formData: EventFormData, rules: EventFormRules): boolean {
-  if (!isMapLocationRequired(formData, rules)) return false;
-  const mapLocation = formData.map_location.trim();
-  if (formData.location.trim() === rules.initialLocation.trim()) return !mapLocation;
-  return !mapLocation || mapLocation === rules.initialMapLocation.trim();
-}
+const DEFAULT_RULES: EventFormRules = { requireClub: true };
 
 function getValidationMessages(): Record<keyof typeof VALIDATION_MESSAGE_KEYS, string> {
   return Object.fromEntries(
@@ -101,10 +75,6 @@ export function validateEventForm(
     errors.location = m.locationRequired;
   }
 
-  if (touched.map_location && mapLocationMissing(formData, rules)) {
-    errors.map_location = m.mapLocationRequired;
-  }
-
   return errors;
 }
 
@@ -121,7 +91,6 @@ export function isEventFormValid(
     (!rules.requireClub || formData.club_id != null) &&
     validOccurrences(formData) &&
     formData.location !== "" &&
-    !mapLocationMissing(formData, rules) &&
     Object.keys(errors).length === 0
   );
 }
@@ -135,6 +104,5 @@ export function markAllFieldsTouched(): Record<string, boolean> {
     club_id: true,
     occurrences: true,
     location: true,
-    map_location: true,
   };
 }

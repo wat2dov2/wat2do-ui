@@ -21,7 +21,7 @@ import {
   type ClubMember,
   type ClubInvitation,
 } from "../api/members.api";
-import { useActiveClub } from "@/features/club-panel/hooks/useActiveClub";
+import { useActiveClub } from "@/features/clubs";
 import { NoActiveClub } from "@/features/club-panel/pages/NoActiveClub";
 
 interface RosterTableHeaderProps {

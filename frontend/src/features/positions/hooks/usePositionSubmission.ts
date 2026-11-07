@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useReducer, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useReducer, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuthState } from "@/features/auth";
-import { clubDirectoryQueryOptions } from "@/features/clubs";
+import { clubDirectoryQueryOptions, useOwnClub } from "@/features/clubs";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { parsePositionImage, submitPosition } from "@/features/positions/api/positions.api";
 import { getCurrentSchool, resolveSchool } from "@/shared/constants/schools";
@@ -35,16 +35,29 @@ export function usePositionSubmission() {
   const schoolFilter = useEventsStore(state => state.schoolFilter);
   const school = resolveSchool(schoolFilter ?? getCurrentSchool());
   const queryClient = useQueryClient();
+  // A club owner adds positions only for their own club, so theirs is the one club on offer.
+  const ownClub = useOwnClub();
+  const ownClubId = ownClub?.clubId ?? null;
   const [state, dispatch] = useReducer(reducer, {
-    data: { club_id: 0, title: "", description: "", position_type: "general", requirements: [], source_url: "", is_paid: null },
+    data: { club_id: ownClubId ?? 0, title: "", description: "", position_type: "general", requirements: [], source_url: "", is_paid: null },
     submittedByEmail: userEmail ?? "",
     busy: false, error: null, submitted: false, published: false, formOpen: false,
   });
-  const clubs = useQuery({
+  const schoolClubs = useQuery({
     ...clubDirectoryQueryOptions(school),
     select: (directory) => directory.items,
+    enabled: ownClubId == null,
   });
+  const ownClubRecord = ownClub?.club;
+  const clubs = useMemo(
+    () => (ownClubId == null ? schoolClubs.data ?? [] : ownClubRecord ? [ownClubRecord] : []),
+    [ownClubId, ownClubRecord, schoolClubs.data],
+  );
   const edit = useCallback((data: Partial<ApiPositionCreate>) => dispatch({ type: "edit", data }), []);
+  // The signed-in profile can arrive after the form first draws.
+  useEffect(() => {
+    if (ownClubId != null) edit({ club_id: ownClubId });
+  }, [ownClubId, edit]);
   const openForm = useCallback(() => dispatch({ type: "state", value: { formOpen: true } }), []);
   const image = useImageFile();
   const { resetImage } = image;
@@ -61,7 +74,8 @@ export function usePositionSubmission() {
   const imageParse = useImageParse({ active: !state.submitted, copy: parseCopy, parse, onSettled: openForm });
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (state.busy || !clubs.data?.some(club => club.id === state.data.club_id)) return;
+    // An unknown handle is already marked on its field, which the form brings into view.
+    if (state.busy || !clubs.some(club => club.id === state.data.club_id)) return;
     dispatch({ type: "state", value: { busy: true, error: null } });
     try {
       const sourceImageUrl = image.imageFile ? await uploadEventImageUnsigned(image.imageFile) : image.imagePreview || null;
@@ -75,7 +89,7 @@ export function usePositionSubmission() {
       dispatch({ type: "state", value: { busy: false } });
     }
   };
-  return { ...state, school, clubs, edit, image, imageParse, openForm, submit,
+  return { ...state, school, clubs, isClubFixed: ownClubId != null, clubsFailed: schoolClubs.isError, retryClubs: schoolClubs.refetch, edit, image, imageParse, openForm, submit,
     setEmail: (submittedByEmail: string) => dispatch({ type: "state", value: { submittedByEmail } }),
   };
 }

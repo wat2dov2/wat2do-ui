@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { isEventFormValid, markAllFieldsTouched, validateEventForm, type EventFormRules } from "../src/shared/services/validationService";
+import { isEventFormValid, markAllFieldsTouched, validateEventForm } from "../src/shared/services/validationService";
 import { buildEventPayload } from "../src/shared/api/eventPayload";
+import { mapEventInputToFormData, mapLocationFor, withLocation } from "../src/features/events/hooks/useEventForm.utils";
 import type { EventFormData } from "../src/shared/types";
 
 const form = (location: string, map_location: string): EventFormData => ({
@@ -8,32 +9,35 @@ const form = (location: string, map_location: string): EventFormData => ({
   occurrences: [{ dtstart_local: "2026-10-21T19:00", dtend_local: "" }],
   location, map_location, category: "", price: 0, food: [], registration: false,
 });
-const newEvent: EventFormRules = { requireClub: true, initialLocation: "", initialMapLocation: "" };
-const saved: EventFormRules = { requireClub: true, initialLocation: "AL 113", initialMapLocation: "Arts Lecture Hall, Waterloo, ON" };
-const messages = { mapLocationRequired: "map location required" };
-const mapError = (data: EventFormData, rules: EventFormRules) =>
-  validateEventForm(data, markAllFieldsTouched(), messages, rules).map_location;
+const saved = { location: "AL 113", map_location: "Arts Lecture Hall, Waterloo, ON" };
 
-test("a physical venue needs a map location, and an online event does not", () => {
-  expect(mapError(form("AL 113", ""), newEvent)).toBe("map location required");
-  expect(isEventFormValid(form("AL 113", ""), {}, newEvent)).toBe(false);
-  expect(mapError(form("AL 113", "Arts Lecture Hall, Waterloo, ON"), newEvent)).toBeUndefined();
-  expect(mapError(form("Online (Zoom)", ""), newEvent)).toBeUndefined();
-  expect(isEventFormValid(form("Online (Zoom)", ""), {}, newEvent)).toBe(true);
+test("the map looks for the venue as typed, and for nothing online or still to be announced", () => {
+  expect(mapLocationFor(" SLC Great Hall ")).toBe("SLC Great Hall");
+  expect(mapLocationFor("Online (Zoom)")).toBe("");
+  expect(mapLocationFor("TBA")).toBe("");
+  expect(mapLocationFor("Location shared after registration")).toBe("");
+  expect(mapLocationFor("")).toBe("");
+  expect(withLocation(form("", ""), "MC 4040")).toMatchObject({ location: "MC 4040", map_location: "MC 4040" });
 });
 
-test("changing the location requires a new map location", () => {
-  expect(mapError(form("AL 113", "Arts Lecture Hall, Waterloo, ON"), saved)).toBeUndefined();
-  expect(mapError(form("MC 4040", "Arts Lecture Hall, Waterloo, ON"), saved)).toBe("map location required");
-  expect(mapError(form("MC 4040", ""), saved)).toBe("map location required");
-  expect(mapError(form("MC 4040", "Mathematics 3, Waterloo, ON"), saved)).toBeUndefined();
-  // A saved map location cannot be cleared while the venue stays physical.
-  expect(mapError(form("AL 113", ""), saved)).toBe("map location required");
+test("a saved event keeps its saved map location only at its saved venue", () => {
+  const event = form(saved.location, saved.map_location);
+  expect(withLocation(event, "MC 4040", saved).map_location).toBe("MC 4040");
+  expect(withLocation(event, "Online", saved).map_location).toBe("");
+  expect(withLocation(withLocation(event, "MC 4040", saved), " AL 113 ", saved).map_location).toBe(saved.map_location);
 });
 
-test("an event saved without a map location can be edited without adding one", () => {
-  const unplaced: EventFormRules = { requireClub: true, initialLocation: "TBA", initialMapLocation: "" };
-  expect(mapError(form("TBA", ""), unplaced)).toBeUndefined();
+test("a read flyer's venue is searched as written", () => {
+  const fallbacks = { timeZone: "America/Toronto", occurrences: [], source_image_url: null };
+  expect(mapEventInputToFormData({ location: "Sir Isaac Brock Statue" }, fallbacks).map_location).toBe("Sir Isaac Brock Statue");
+  expect(mapEventInputToFormData({ location: "Online" }, fallbacks).map_location).toBe("");
+});
+
+test("one location is all a valid event needs", () => {
+  expect(validateEventForm(form("AL 113", "AL 113"), markAllFieldsTouched())).toEqual({});
+  expect(isEventFormValid(form("Online (Zoom)", ""), {})).toBe(true);
+  expect(validateEventForm(form("", ""), markAllFieldsTouched()).location).toBeTruthy();
+  expect(isEventFormValid(form("", ""), {})).toBe(false);
 });
 
 test("the payload sends both locations and an empty map location as null", () => {

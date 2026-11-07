@@ -1,6 +1,6 @@
 import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { ClubPayoutsCard } from "@/features/club-panel/components/ClubPayoutsCard";
-import { useActiveClub } from "@/features/club-panel/hooks/useActiveClub";
+import { useActiveClub } from "@/features/clubs";
 import { useClubPayouts } from "@/features/club-panel/hooks/useClubPayouts";
 import { NoActiveClub } from "@/features/club-panel/pages/NoActiveClub";
 import { ROUTES } from "@/shared/constants/routes";

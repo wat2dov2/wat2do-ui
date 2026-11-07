@@ -47,8 +47,8 @@ interface EventFormStepProps {
     | "imageFile"
     | "onImageUpload"
     | "onRemoveImage"
-    | "isValid"
-    | "isMapLocationRequired"
+    | "updateLocation"
+    | "fixedClub"
   >;
   isDarkMode: boolean;
   /** Absent when the form is an always-present panel with nothing to dismiss. */
@@ -84,10 +84,18 @@ export function EventFormStep({
   const schoolFilter = useEventsStore((s) => s.schoolFilter);
   const clubSchool = previewBase?.school ?? schoolFilter;
 
-  const { data: clubs = NO_CLUBS } = useQuery({
+  // A club owner's event can only be their own club's, so theirs is the one club on offer.
+  const isClubFixed = eventForm.fixedClub != null;
+  const fixedClubRecord = eventForm.fixedClub?.club;
+  const { data: directoryClubs = NO_CLUBS } = useQuery({
     ...clubDirectoryQueryOptions(clubSchool),
     select: (directory) => directory.items,
+    enabled: !isClubFixed,
   });
+  const clubs = useMemo(
+    () => (isClubFixed ? (fixedClubRecord ? [fixedClubRecord] : NO_CLUBS) : directoryClubs),
+    [isClubFixed, fixedClubRecord, directoryClubs],
+  );
 
   const selectedClubName = useMemo(() => {
     const id = eventForm.formData.club_id;
@@ -142,13 +150,15 @@ export function EventFormStep({
       imagePreview: eventForm.imagePreview,
       imageFile: eventForm.imageFile,
       isImageRequired: !isEditMode,
-      isMapLocationRequired: eventForm.isMapLocationRequired,
+      isClubFixed,
+      updateLocation: eventForm.updateLocation,
       onImageUpload: eventForm.onImageUpload,
       onRemoveImage: eventForm.onRemoveImage,
       isDarkMode,
     }),
     [
       eventForm,
+      isClubFixed,
       isDarkMode,
       isEditMode,
       clubs,
@@ -188,7 +198,7 @@ export function EventFormStep({
             </div>
           ) : null}
 
-          <FormLayout onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
+          <FormLayout noValidate onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
             <FieldGroup>
               {!isEditMode && !canCreateEvents ? (
                 <FormInput
@@ -206,7 +216,6 @@ export function EventFormStep({
                 <FormActions align="start">
                   <LoadingButton
                     type="submit"
-                    disabled={!eventForm.isValid}
                     isLoading={isSubmitting}
                     loadingText={t("common.pleaseWait")}
                   >

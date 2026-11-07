@@ -109,9 +109,9 @@ export function FormInput({
       placeholder={placeholder}
       step={step}
       min={min}
+      aria-invalid={hasError ? true : undefined}
       className={cn(
         "w-full",
-        hasError && "ring-2 ring-destructive/50 bg-destructive/10",
         prefix && "pl-7",
         inputClassName
       )}
@@ -182,10 +182,8 @@ export function FormSelect({
       >
         <SelectTrigger
           id={id}
-          className={cn(
-            "w-full",
-            hasError && "ring-2 ring-destructive/50 bg-destructive/10"
-          )}
+          aria-invalid={hasError ? true : undefined}
+          className="w-full"
         >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
@@ -238,7 +236,7 @@ export function FormDateTimePicker({
         onChange={onChange}
         onBlur={onBlur}
         placeholder={placeholder}
-        hasError={Boolean(hasError)}
+        aria-invalid={hasError ? true : undefined}
       />
       {hasError && (
         <FieldError className="text-xs">{error}</FieldError>
@@ -282,10 +280,8 @@ export function FormTextarea({
         onBlur={onBlur}
         placeholder={placeholder}
         rows={rows}
-        className={cn(
-          "w-full",
-          hasError && "ring-2 ring-destructive/50 bg-destructive/10"
-        )}
+        aria-invalid={hasError ? true : undefined}
+        className="w-full"
       />
       {hasError && (
         <FieldError className="text-xs">{error}</FieldError>
