@@ -157,6 +157,30 @@ def test_no_matching_song_discards_the_edit(screens) -> None:
     assert "Done" not in device.taps
 
 
+def test_a_track_picker_that_fails_discards_the_edit(screens) -> None:
+    device = screens(
+        HOME,
+        LIKED_PAGE,
+        LIKED_PAGE,
+        MENU,
+        EDIT_INFO_AUDIO,
+        SUGGESTIONS,
+        NO_MATCH,
+        NO_MATCH,
+        DISCARD,
+        POST_PAGE,
+    )
+    device.reposted = [True]
+
+    def choose(_query, _tracks):
+        raise RuntimeError("The track picker is unavailable")
+
+    with pytest.raises(RuntimeError, match="track picker"):
+        module.finish_post(device, "uwaterloo", POST, ["halo"], choose)
+    assert device.taps[-2:] == ["back", "Discard"]
+    assert "Done" not in device.taps
+
+
 @pytest.mark.parametrize(
     "url", ["https://www.instagram.com/reel/ABC/", "https://evil.example/p/ABC/", POST + "x"]
 )

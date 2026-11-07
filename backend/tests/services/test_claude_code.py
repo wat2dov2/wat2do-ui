@@ -47,6 +47,13 @@ def test_agent_gets_only_its_tools_and_no_secrets(monkeypatch, tmp_path):
     [
         (SimpleNamespace(returncode=2, stdout=""), "exit 2"),
         (SimpleNamespace(returncode=0, stdout="oops"), "no answer"),
+        (
+            SimpleNamespace(
+                returncode=1,
+                stdout=json.dumps({"is_error": True, "api_error_status": 500, "result": "x"}),
+            ),
+            "exit 1",
+        ),
         (subprocess.TimeoutExpired("claude", 1), "TimeoutExpired"),
     ],
 )
@@ -62,6 +69,36 @@ def test_a_failed_or_empty_run_raises_and_still_cleans_up(monkeypatch, tmp_path,
 
     monkeypatch.setattr(claude_code.subprocess, "run", run)
     with pytest.raises(claude_code.ClaudeCodeError, match=message):
+        claude_code.run_agent(
+            "prompt",
+            workdir=str(tmp_path),
+            model="m",
+            tools=("Read",),
+            allowed_tools=("Read(./**)",),
+            schema={},
+            timeout=1,
+        )
+    assert removed == [str(tmp_path)]
+
+
+def test_a_run_turned_away_by_the_usage_limit_is_claude_limited(monkeypatch, tmp_path):
+    removed = []
+    monkeypatch.setattr(claude_code.shutil, "which", lambda _name: "/usr/local/bin/claude")
+    monkeypatch.setattr(claude_code, "remove_run_folder", removed.append)
+    # What Claude Code printed when the 5-hour limit was hit on 2026-11-07.
+    printed = {
+        "type": "result",
+        "subtype": "success",
+        "is_error": True,
+        "api_error_status": 429,
+        "result": "You've hit your 5-hour limit \u00b7 resets 5:10am (America/Toronto)",
+    }
+    monkeypatch.setattr(
+        claude_code.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(returncode=1, stdout=json.dumps(printed)),
+    )
+    with pytest.raises(claude_code.ClaudeLimited, match="resets 5:10am"):
         claude_code.run_agent(
             "prompt",
             workdir=str(tmp_path),

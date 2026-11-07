@@ -298,6 +298,7 @@ async fn run(prompt: &str, workdir: &Path) -> Result<Map<String, Value>> {
         prompt,
         workdir,
         Agent {
+            name: "Instagram curation agent",
             model: &control.curation_model,
             tools: &["Read"],
             allowed_tools: &["Read(./**)"],
@@ -307,7 +308,6 @@ async fn run(prompt: &str, workdir: &Path) -> Result<Map<String, Value>> {
         },
     )
     .await
-    .map_err(|error| anyhow!("Instagram curation agent {error}"))
 }
 
 #[cfg(test)]

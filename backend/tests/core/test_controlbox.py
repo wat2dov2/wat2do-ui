@@ -130,6 +130,8 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     assert controlbox.ingestion.fetch_lanes == 8
     assert controlbox.ingestion.directory_agents == 4
     assert controlbox.ingestion.university_event_schools == ["ocadu"]
+    assert controlbox.ingestion.agent_failure_streak == 12
+    assert controlbox.ingestion.agent_pause_seconds == 600
     assert controlbox.instagram_digest.operation_name == "SubscriptionDigestFeedQuery"
     assert controlbox.instagram_digest.client_doc_id == "20099285643937437306465362209"
     assert controlbox.instagram_digest.maximum_pages == 25

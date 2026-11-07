@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from services.claude_code import ClaudeLimited
 from services.instagram_accounts import BrowserEngagementUncertain
 from services.instagram_dms import sweep as module
 from services.instagram_emulator.inbox import InboxRow, MessagingLimited
@@ -96,6 +97,22 @@ def test_a_limited_account_is_skipped_and_its_threads_wait(emulator, monkeypatch
     state = module._load()
     assert "ubc" in state["limited"] and state["handled"]["ubc"] == {}
     assert module.paused() is None and module.due("sfu")
+
+
+def test_claudes_usage_limit_stops_the_check_and_its_threads_wait(emulator, monkeypatch) -> None:
+    class _ClaudeLimited:
+        def __init__(self, device):
+            pass
+
+        def handle(self, row, **kwargs):
+            raise ClaudeLimited("hit Claude's usage limit")
+
+    monkeypatch.setattr(module, "EmulatorDirectExecutor", _ClaudeLimited)
+    assert module.answer(DEVICE, "ubc") == []
+    state = module._load()
+    assert state["handled"]["ubc"] == {} and "ubc" not in state.get("limited", {})
+    # Nothing waits on a person; the account is checked again at its next random time.
+    assert module.paused() is None and not module.due("ubc") and module.due("sfu")
 
 
 def test_a_read_thread_is_opened_once_and_again_only_when_unread() -> None:

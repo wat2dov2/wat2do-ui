@@ -874,6 +874,10 @@ class IngestionControl(_ControlModel):
     directory_scrape_interval_seconds: int = Field(ge=3600, le=86400)
     claim_lease_seconds: int = Field(gt=0, le=86400)
     max_attempts: int = Field(ge=1, le=10)
+    # Claude counts as unavailable after this many failed agent runs in a row; then, or when
+    # its usage limit names no reset time, agents pause this long without spending attempts.
+    agent_failure_streak: int = Field(ge=2, le=1000)
+    agent_pause_seconds: int = Field(ge=60, le=86400)
     model_timeout_seconds: int = Field(gt=0, le=1800)
     max_images_per_item: int = Field(ge=0, le=20)
     fetch_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)

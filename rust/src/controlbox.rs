@@ -149,6 +149,8 @@ pub struct Ingestion {
     pub directory_scrape_interval_seconds: u64,
     pub claim_lease_seconds: i32,
     pub max_attempts: i32,
+    pub agent_failure_streak: u64,
+    pub agent_pause_seconds: u64,
     pub model_timeout_seconds: u64,
     pub max_images_per_item: usize,
     pub fetch_timeout_seconds: f64,
