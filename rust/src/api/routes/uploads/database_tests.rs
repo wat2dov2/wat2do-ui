@@ -273,12 +273,19 @@ async fn a_replaced_club_logo_is_deleted_with_its_thumbnail() {
         let (status, body) = upload(&state, &format!("/uploads/club-logo/{club_id}"), &token).await;
         assert_eq!(status, StatusCode::OK, "{body}");
     }
-    let deleted: Vec<String> = requests(&recorder)
-        .into_iter()
+    let sent = requests(&recorder);
+    // Each new logo and its thumbnail are stored before the old logo goes,
+    // with its thumbnail; an SVG logo had none.
+    let methods: Vec<&str> = sent.iter().map(|(method, _)| method.as_str()).collect();
+    assert_eq!(
+        methods,
+        ["PUT", "PUT", "DELETE", "DELETE", "PUT", "PUT", "DELETE"]
+    );
+    let deleted: Vec<&str> = sent
+        .iter()
         .filter(|(method, _)| method == "DELETE")
-        .map(|(_, key)| key)
+        .map(|(_, key)| key.as_str())
         .collect();
-    // The new logo is stored before the old one goes; an SVG logo had no thumbnail.
     assert_eq!(
         deleted,
         [
@@ -287,5 +294,4 @@ async fn a_replaced_club_logo_is_deleted_with_its_thumbnail() {
             "organization-logos/old-logo.svg",
         ]
     );
-    assert_eq!(requests(&recorder).len(), 4 + 3);
 }
