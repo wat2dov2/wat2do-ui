@@ -78,6 +78,7 @@ function EventCardBody({
         location={event.location}
         badges={badges}
         statsLabel={buildEventStatsLabel(t, stats)}
+        reserveStatsLine
         textClassName="text-foreground"
         secondaryTextClassName="text-muted-foreground"
         badgeClassName="border-border text-muted-foreground"
@@ -162,7 +163,7 @@ function EventCardComponent({
         "flex w-full flex-col rounded-xl",
         // Grid cards fill their cell so a row shares one height; a preview card
         // stands alone and sits at its natural height.
-        interactive && "h-full group cursor-pointer transition-all duration-300",
+        interactive && "h-full group cursor-pointer transition-shadow duration-300",
         interactive && "hover:shadow-lg",
         className,
       )}

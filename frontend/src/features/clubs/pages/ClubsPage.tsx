@@ -5,32 +5,18 @@ import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { Bookmark, Building2, Search } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { NewlyAddedFilterButton } from "@/shared/ui/newly-added-filter-button";
-import { IntegerFilter } from "@/shared/ui/integer-filter";
 import {
   ClubList,
   ClubListEmptyState,
 } from "@/features/clubs/components/ClubList";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 import { useClubsPage } from "@/features/clubs/hooks/useClubsPage";
-import { translateCategory } from "@/shared/utils/event";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
-import { FilterBar } from "@/shared/layout/filter-bar";
-import { PageCountHeading } from "@/shared/ui/page-count-heading";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
-import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
 import { clubPagePath } from "@/shared/constants/routes";
 import type { PaginatedClubsResponse } from "@/features/clubs/api/clubs.api";
-import { PageHeader, Stack } from "@/shared/layout";
+import { Stack } from "@/shared/layout";
+import { ClubsPageHeader } from "@/features/clubs/components/ClubsPageHeader";
 import { EmptyState } from "@/shared/feedback";
-
-type ClubScope = "all" | "followed" | "claimed";
 
 interface ClubsPageProps {
   initialDirectory: PaginatedClubsResponse | null;
@@ -45,40 +31,12 @@ export function ClubsPage({
   const router = useRouter();
   const { isAuthenticated: authed } = useAuthState();
 
-  const {
-    appliedQueryKey,
-    addedSince,
-    setAddedSince,
-    clearNew,
-    searchQuery,
-    minEvents,
-    setMinEvents,
-    setSearchQuery,
-    submitSearchQuery,
-    clearSearchQuery,
-    selectedCategories,
-    toggleCategory,
-    allCategories,
-    clubs,
-    isLoading,
-    isError,
-    refresh,
-    totalItems,
-    activeTab,
-    setActiveTab,
-  } = useClubsPage({ initialDirectory, initialSchool });
+  const clubsPage = useClubsPage({ initialDirectory, initialSchool });
+  const { toggleCategory, clubs, isLoading, isError, refresh, totalItems, activeTab } = clubsPage;
 
   const savedClubIds = useSavedClubsStore(
     useShallow((state) => state.savedClubIds),
   );
-  const tabOptions = [
-    { value: "all" as const, label: t("clubs.allClubs") },
-    { value: "followed" as const, label: t("clubs.followedClubs") },
-    { value: "claimed" as const, label: t("clubs.claimedClubs") },
-  ] satisfies Array<{ value: ClubScope; label: string }>;
-  const activeTabOption =
-    tabOptions.find((option) => option.value === activeTab) ?? tabOptions[0]!;
-
 
   const showSignInPrompt =
     (activeTab === "followed" || activeTab === "claimed") && !authed;
@@ -89,76 +47,11 @@ export function ClubsPage({
 
   return (
     <Stack gap={2}>
-      <PageHeader variant="listing">
-        <PageCountHeading
-          count={isLoading ? null : totalItems}
-          label={
-            totalItems === 1
-              ? t("clubs.clubLabel")
-              : t("clubs.clubLabel_other")
-          }
-        />
-
-        <SubmittedSearchInput
-          size="lg"
-          value={searchQuery}
-          onChange={setSearchQuery}
-          onSubmit={submitSearchQuery}
-          onClear={clearSearchQuery}
-          placeholder={t("clubs.searchPlaceholder")}
-          submitLabel={t("common.search")}
-          clearLabel={t("clubs.clearSearch")}
-        />
-
-        <FilterBar appliedQueryKey={appliedQueryKey} disabled={isLoading || isError} refreshKey={allCategories.length} data-testid="club-category-filter-scroll" trailing={<>
-            <Select
-              value={activeTab}
-              onValueChange={(value) =>
-                setActiveTab(value as ClubScope)
-              }
-            >
-              <SelectTrigger size="sm" aria-label={activeTabOption.label}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end">
-                {tabOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </>}>
-              <NewlyAddedFilterButton
-                value={addedSince}
-                onValueChange={setAddedSince}
-                onClear={clearNew}
-              />
-              <IntegerFilter
-                value={minEvents}
-                active={minEvents > 0}
-                onChange={(value) => setMinEvents(Number(value))}
-                label={`>${t("clubs.eventCount", { count: minEvents })}`}
-                inputLabel={t("clubs.minimumEvents")}
-              />
-              {allCategories.map((category) => (
-                <Button
-                  activation="click"
-                  key={category}
-                  variant={
-                    selectedCategories.includes(category)
-                      ? "primary"
-                      : "outline"
-                  }
-                  size="sm"
-                  onClick={() => toggleCategory(category)}
-                  aria-pressed={selectedCategories.includes(category)}
-                >
-                  {translateCategory(category, t)}
-                </Button>
-              ))}
-              </FilterBar>
-      </PageHeader>
+      <ClubsPageHeader
+        state={clubsPage}
+        count={isLoading ? null : totalItems}
+        disabled={isLoading || isError}
+      />
 
       {showSignInPrompt ? (
         <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl bg-surface">

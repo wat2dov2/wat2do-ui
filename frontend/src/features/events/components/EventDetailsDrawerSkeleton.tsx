@@ -1,16 +1,24 @@
-import { DrawerBody, FormGrid, Stack } from "@/shared/layout";
-import { Skeleton } from "@/shared/ui/skeleton";
-import { Separator } from "@/shared/ui/separator";
+import { useTranslation } from "react-i18next";
+import { ClubBadgeSkeleton } from "@/features/clubs/components/ClubBadgeLink";
+import {
+  EVENT_DETAILS_LAYOUT,
+  EventActionsPlaceholder,
+  EventRegistrationPrompt,
+} from "@/features/events/components/EventDetailsSections";
+import { DrawerBody, FormGrid, Section, Stack } from "@/shared/layout";
+import { Card } from "@/shared/ui/card";
 import { DrawerHeader } from "@/shared/ui/drawer";
+import { Separator } from "@/shared/ui/separator";
+import { Skeleton, SkeletonLine } from "@/shared/ui/skeleton";
+
+const ignore = () => {};
 
 export function EventDetailsDrawerSkeleton() {
   return (
     <>
       <DrawerHeader className="text-left" navigation={{}}>
-        <Stack direction="horizontal" justify="end" align="center" gap={2} wrap aria-hidden="true">
-          <Skeleton className="h-8 w-36 rounded-xl" />
-          <Skeleton className="h-8 w-20 rounded-xl" />
-          <Skeleton className="h-8 w-20 rounded-xl" />
+        <Stack direction="horizontal" justify="end" align="center" gap={3} wrap>
+          <EventActionsPlaceholder />
         </Stack>
       </DrawerHeader>
 
@@ -23,62 +31,69 @@ export function EventDetailsDrawerSkeleton() {
   );
 }
 
-/** The event details layout (poster, title, facts, description) before the event loads. */
-export function EventDetailsBodySkeleton() {
+/** A fact row: its tile, and the one or two lines of text beside it. */
+function FactSkeleton({ lines }: { lines: 1 | 2 }) {
   return (
-    <div data-slot="event-details-loading" className="grid grid-cols-1 gap-6 md:grid-cols-[320px_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:items-start md:gap-x-8">
-      <Skeleton data-skeleton-key="event-poster" className="mx-auto aspect-square w-full max-w-sm rounded-xl md:col-start-1 md:mx-0" />
+    <Stack direction="horizontal" gap={3} align="center">
+      <Card className="size-10 shrink-0 py-0" />
+      <div className="min-w-0 flex-1 text-sm">
+        <SkeletonLine className="w-4/5" />
+        {lines === 2 ? <SkeletonLine className="w-1/2" /> : null}
+      </div>
+    </Stack>
+  );
+}
 
-      <div className="contents md:col-start-2 md:row-span-2 md:row-start-1 md:flex md:flex-col md:gap-6">
+/**
+ * The event details layout before the event loads, box for box: poster, a
+ * title of usual length, the date, place, food and price facts, the Going
+ * card, the description and the host. Section headings and the Going card
+ * are the real ones, since they do not depend on the event.
+ */
+export function EventDetailsBodySkeleton() {
+  const { t } = useTranslation();
+  return (
+    <div data-slot="event-details-loading" aria-busy="true" className={EVENT_DETAILS_LAYOUT.grid}>
+      <div className={EVENT_DETAILS_LAYOUT.poster}>
+        <Skeleton data-skeleton-key="event-poster" className="aspect-square w-full rounded-xl" />
+      </div>
+
+      <div className={EVENT_DETAILS_LAYOUT.details}>
         <Stack gap={2} className="order-1" data-skeleton-key="event-title">
-          <Skeleton className="h-7 w-4/5 rounded-lg sm:h-9" />
-          <Skeleton className="h-4 w-48 rounded-lg" />
+          {/* Titles usually take two lines on a phone and one beside the poster. */}
+          <div className={EVENT_DETAILS_LAYOUT.title}>
+            <SkeletonLine className="w-4/5" />
+            <div className="md:hidden"><SkeletonLine className="w-1/2" /></div>
+          </div>
+          <div className="text-sm"><SkeletonLine className="w-64 max-w-full" /></div>
         </Stack>
 
         <Stack gap={6} className="order-3" data-skeleton-key="event-facts">
           <FormGrid columns={2} collapse={false}>
-            {Array.from({ length: 4 }, (_, index) => (
-              <Stack key={index} direction="horizontal" align="center" gap={3}>
-                <Skeleton className="size-10 shrink-0 rounded-xl" />
-                <Stack gap={2} grow>
-                  <Skeleton className="h-4 w-4/5 rounded-lg" />
-                  <Skeleton className="h-4 w-full rounded-lg" />
-                </Stack>
-              </Stack>
-            ))}
+            <FactSkeleton lines={2} />
+            <FactSkeleton lines={1} />
+            <FactSkeleton lines={1} />
+            <FactSkeleton lines={1} />
           </FormGrid>
-          <Skeleton className="h-32 w-full rounded-xl" />
+          <div inert>
+            <EventRegistrationPrompt school={null} unavailable isPending={false} onRegister={ignore} />
+          </div>
         </Stack>
 
-        <Stack gap={3} className="order-4" data-skeleton-key="event-about">
-          <Stack gap={2}>
-            <Skeleton className="h-4 w-24 rounded-lg" />
-            <Separator />
-          </Stack>
-          <Stack gap={2}>
-            <Skeleton className="h-4 w-full rounded-lg" />
-            <Skeleton className="h-4 w-11/12 rounded-lg" />
-          </Stack>
+        <Stack gap={6} className="order-4" data-skeleton-key="event-about">
+          <Section variant="divided" title={t("events.aboutEvent")}>
+            <div className="text-sm">
+              <SkeletonLine />
+              <SkeletonLine className="w-11/12" />
+            </div>
+          </Section>
         </Stack>
       </div>
 
-      <Stack gap={6} className="order-2 md:col-start-1" data-skeleton-key="event-host">
-        <Stack gap={3}>
-          <Stack gap={2}>
-            <Skeleton className="h-4 w-24 rounded-lg" />
-            <Separator />
-          </Stack>
-          <Skeleton className="h-7 w-40 rounded-xl" />
-        </Stack>
-        <Stack gap={3}>
-          <Stack gap={2}>
-            <Skeleton className="h-4 w-24 rounded-lg" />
-            <Separator />
-          </Stack>
-          <Stack direction="horizontal" gap={1}>
-            {Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="size-8 rounded-full" />)}
-          </Stack>
-        </Stack>
+      <Stack gap={6} className={EVENT_DETAILS_LAYOUT.sidebar} data-skeleton-key="event-host">
+        <Section variant="divided" title={t("events.hostedBy")}>
+          <ClubBadgeSkeleton />
+        </Section>
       </Stack>
     </div>
   );

@@ -98,6 +98,56 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+  frontend-layout:
+    name: Loading states keep their layout
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Build with browser-test API fixtures
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_TEST: '1'
+          NEXT_PUBLIC_API_URL: /api
+        run: npm run build
+
+      - name: Compare loading states with the content that replaces them
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_TEST: '1'
+        run: |
+          npx next start -p 3000 -H 127.0.0.1 > next.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            curl -sf -o /dev/null http://127.0.0.1:3000/healthz && break
+            sleep 1
+          done
+          npx playwright test e2e/skeleton-layout.spec.ts --project=chromium --workers=1 || { tail -50 next.log; exit 1; }
+
+      - name: Keep the measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skeleton-layout
+          path: frontend/test-results
+          if-no-files-found: ignore
+
   rust:
     name: Rust checks
     runs-on: ubuntu-latest
@@ -247,6 +297,7 @@ jobs:
     needs:
       - backend
       - frontend
+      - frontend-layout
       - rust
       - rust-database
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

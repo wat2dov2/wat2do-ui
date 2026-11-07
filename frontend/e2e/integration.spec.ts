@@ -580,15 +580,15 @@ test.describe("Loading shells", () => {
           expect(Math.abs(countHeights.skeleton - countHeights.digit)).toBeLessThanOrEqual(2);
           if (listing.resource !== "clubs") {
             const latestHeights = await shell.locator('[data-slot="latest-added-item"]').evaluate(element => ({
-              skeleton: element.querySelector('[data-slot="skeleton"]')!.getBoundingClientRect().height,
+              line: element.querySelector('[data-slot="skeleton-line"]')!.getBoundingClientRect().height,
               button: element.querySelector('[data-slot="button"]')!.getBoundingClientRect().height,
             }));
-            expect(latestHeights.skeleton).toBe(latestHeights.button);
+            expect(latestHeights.line).toBe(latestHeights.button);
           }
         }
         await expect(shell.locator("fieldset")).toBeDisabled();
         if (listing.resource !== "clubs") {
-          await expect(shell.locator('[data-slot="latest-added-item"] [data-slot="skeleton"]')).toHaveCount(1);
+          await expect(shell.locator('[data-slot="latest-added-item"] [data-slot="skeleton-line"]')).toHaveCount(1);
         }
         await expect(shell.getByPlaceholder(listing.search, { exact: true })).toBeVisible();
         await expect(shell.locator('[aria-hidden="true"] [data-slot="skeleton"]').first()).toBeVisible();

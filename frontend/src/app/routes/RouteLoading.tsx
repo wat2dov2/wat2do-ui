@@ -2,9 +2,6 @@
 
 import { lazy, Suspense } from "react";
 import { usePathname } from "next/navigation";
-import { useTranslation } from "react-i18next";
-import { EventDetailsBodySkeleton } from "@/features/events/components/EventDetailsDrawerSkeleton";
-import { Container, PageHeader, Stack } from "@/shared/layout";
 import { ROUTES } from "@/shared/constants/routes";
 import { LoadingPage, PageShellLoading } from "@/shared/ui/loading-page";
 import { PAGE_SHELLS } from "@/shared/constants/pageShells";
@@ -35,6 +32,11 @@ const LoginLoading = lazy(async () => {
 const DiscoveryLoading = lazy(() =>
   import("@/app/routes/DiscoveryLoading").then((module) => ({ default: module.DiscoveryLoading })),
 );
+const EventDetailsPageSkeleton = lazy(() =>
+  import("@/features/events/pages/EventDetailsPageContainer").then((module) => ({
+    default: module.EventDetailsPageSkeleton,
+  })),
+);
 const ClubDetailsSkeleton = lazy(() =>
   import("@/features/clubs/components/ClubDetailsSkeleton").then((module) => ({
     default: module.ClubDetailsSkeleton,
@@ -44,7 +46,6 @@ const ClubDetailsSkeleton = lazy(() =>
 /** Shared by native route streaming, lazy route chunks, and auth gates. */
 export function RouteLoading() {
   const pathname = usePathname();
-  const { t } = useTranslation();
   if (pathname === ROUTES.LANDING_PREVIEW) return <Suspense><LandingPage snapshot={null} /></Suspense>;
   if (pathname === ROUTES.ABOUT) return <Suspense><AboutPage isLoading /></Suspense>;
   if (pathname === ROUTES.LOGIN) return <Suspense><LoginLoading /></Suspense>;
@@ -52,12 +53,7 @@ export function RouteLoading() {
   if (pathname === ROUTES.CLUBS) return <Suspense><DiscoveryLoading resource="clubs" /></Suspense>;
   if (pathname === ROUTES.POSITIONS) return <Suspense><DiscoveryLoading resource="positions" /></Suspense>;
   if (/^\/clubs\/\d+\/?$/.test(pathname)) return <Suspense><ClubDetailsSkeleton /></Suspense>;
-  if (/^\/events\/\d+\/?$/.test(pathname)) {
-    return <Container size="lg"><Stack gap={6}>
-      <PageHeader back={{ href: ROUTES.EVENTS, label: t("events.allEvents") }} />
-      <EventDetailsBodySkeleton />
-    </Stack></Container>;
-  }
+  if (/^\/events\/\d+\/?$/.test(pathname)) return <Suspense><EventDetailsPageSkeleton /></Suspense>;
   if (pathname in PAGE_SHELLS) return <PageShellLoading route={pathname} />;
   return <LoadingPage />;
 }

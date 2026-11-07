@@ -44,7 +44,7 @@ function PositionCardComponent({
           onPositionClick(position);
         }
       }}
-      className="group isolate flex h-full w-full cursor-pointer flex-col rounded-xl transition-all duration-300 hover:shadow-lg"
+      className="group isolate flex h-full w-full cursor-pointer flex-col rounded-xl transition-shadow duration-300 hover:shadow-lg"
     >
       <PositionCardImage position={position} variant="card" priority={imagePriority} />
       <EventCardContentFrame>
@@ -52,6 +52,7 @@ function PositionCardComponent({
           title={position.title}
           description={position.description}
           statsLabel={clickCount > 0 ? t("events.clickCount", { count: clickCount }) : undefined}
+          reserveStatsLine
         />
       </EventCardContentFrame>
     </article>

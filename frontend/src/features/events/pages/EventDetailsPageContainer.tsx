@@ -7,8 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import { EventDetailsBodySkeleton } from "@/features/events/components/EventDetailsDrawerSkeleton";
 import {
   EventActions,
+  EventActionsPlaceholder,
   EventDetailsBody,
   EventDetailsSimilarEvents,
+  EventDetailsSimilarEventsSkeleton,
 } from "@/features/events/components/EventDetailsSections";
 import {
   fetchEventById,
@@ -30,6 +32,33 @@ interface EventDetailsPageContainerProps {
   initialEvent: Event;
 }
 
+/** The page's header, shared by the page and its loading state. */
+function EventDetailsPageHeader({ event }: { event: Event | undefined }) {
+  const { t } = useTranslation();
+  return (
+    <PageHeader
+      back={{
+        href: ROUTES.EVENTS,
+        label: t("events.allEvents"),
+      }}
+      actions={event ? <EventActions event={event} /> : <EventActionsPlaceholder />}
+    />
+  );
+}
+
+/** The event page before its event loads, laid out like the page itself. */
+export function EventDetailsPageSkeleton() {
+  return (
+    <Container size="lg">
+      <Stack gap={6}>
+        <EventDetailsPageHeader event={undefined} />
+        <EventDetailsBodySkeleton />
+        <EventDetailsSimilarEventsSkeleton />
+      </Stack>
+    </Container>
+  );
+}
+
 /** Dedicated /events/[id] page: poster + hosts on the left, details on the right. */
 export function EventDetailsPageContainer({
   eventId,
@@ -45,7 +74,7 @@ export function EventDetailsPageContainer({
     staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });
   const { ref: moreEventsRef, hasIntersected: moreEventsNear } =
-    useIntersectionObserver<HTMLSpanElement>({ rootMargin: MORE_EVENTS_PRELOAD_MARGIN });
+    useIntersectionObserver<HTMLElement>({ rootMargin: MORE_EVENTS_PRELOAD_MARGIN });
   // The school's whole feed only fills "More events" at the bottom, so it loads
   // as that comes near, unless an earlier page already has it.
   const { data: schoolFeed } = useQuery({
@@ -62,13 +91,7 @@ export function EventDetailsPageContainer({
   return (
     <Container size="lg">
       <Stack gap={6}>
-        <PageHeader
-          back={{
-            href: ROUTES.EVENTS,
-            label: t("events.allEvents"),
-          }}
-          actions={event ? <EventActions event={event} /> : undefined}
-        />
+        <EventDetailsPageHeader event={event} />
         {event ? (
           <>
             <EventDetailsBody event={event} school={event.school} />
@@ -79,7 +102,7 @@ export function EventDetailsPageContainer({
                 onEventClick={handleSimilarEventClick}
               />
             ) : (
-              <span ref={moreEventsRef} aria-hidden="true" />
+              <EventDetailsSimilarEventsSkeleton ref={moreEventsRef} />
             )}
           </>
         ) : isPending ? (

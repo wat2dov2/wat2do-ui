@@ -70,7 +70,9 @@ export function useEventsPageData({
     goingEventIds,
     goingCounts: eventStats,
     school: schoolFilter,
-    currentTimeMs,
+    // Until the browser clock starts, the snapshot's own time decides which
+    // calendar chips show, so the server's filter row already has them.
+    currentTimeMs: currentTimeMs ?? query.data?.generated_at ?? null,
   });
 
   const orderedEvents = useMemo(

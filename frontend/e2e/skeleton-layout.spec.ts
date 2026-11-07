@@ -1,11 +1,18 @@
 import { test } from "next/experimental/testmode/playwright.js";
 import { expect, type Page } from "@playwright/test";
 import type { NextFixture } from "next/experimental/testmode/playwright.js";
+import { writeFile } from "node:fs/promises";
 import sharp from "sharp";
 import { mockApi } from "./api-fixture";
 
 /*
  * Loading states must hold the exact layout of what replaces them.
+ *
+ * Fixtures follow what a campus usually shows: three-digit counts, event
+ * titles that wrap to two lines on a card, club names with a handle, short
+ * position titles, and clubs with a full screen of events. Loading states are
+ * drawn for that usual case, so content far from it (a one-event club, a very
+ * long description) can still differ below the first lines.
  *
  * Each surface is opened with its data held back, so the loading state paints
  * first; then the data is released. Every element marked `data-skeleton-key`
@@ -13,7 +20,7 @@ import { mockApi } from "./api-fixture";
  * must record no layout shift while it loads, swaps and settles.
  */
 
-const BASE = "http://127.0.0.1:3000";
+const BASE = process.env.SKELETON_LAYOUT_BASE_URL ?? "http://127.0.0.1:3000";
 const VIEWPORTS = {
   mobile: { width: 390, height: 844 },
   desktop: { width: 1440, height: 900 },
@@ -24,6 +31,11 @@ const REPORT_ONLY = process.env.SKELETON_LAYOUT_REPORT === "1";
 const SCHOOL = {
   slug: "uwaterloo", timezone: "America/Toronto", name: "University of Waterloo", primary_color: "#6b238e",
   secondary_color: "#ffd54f", email_domains: ["uwaterloo.ca"], language: "en", faculties: ["Engineering"],
+  // A season on the calendar today, so its chip must already be in the server's and the loading filter row.
+  event_seasons: [{
+    id: "reading-week", classification_id: "reading_week", labels: { en: "Reading week" },
+    display_windows: [{ start_date: new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10), end_date: new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10) }],
+  }],
 };
 const EVENT_CATEGORIES = ["Academic", "Career", "Cultural", "Social", "Sports", "Technology", "Arts", "Wellness"];
 const CLUB_CATEGORIES = ["Academic", "Cultural", "Social", "Sports", "Technology", "Arts"];
@@ -58,8 +70,11 @@ const CLUB_NAMES = [
 type Box = { x: number; y: number; w: number; h: number };
 type Shift = { value: number; hadRecentInput: boolean; t: number; sources: { node: string; prev: Box; cur: Box }[] };
 
+/** Next's own route handlers stay real; everything else under /api is the backend. */
+const NEXT_ROUTES = ["/api/discovery", "/api/revalidate-events"];
+
 function apiPath(url: URL): string | null {
-  if (!url.pathname.startsWith("/api/")) return null;
+  if (!url.pathname.startsWith("/api/") || NEXT_ROUTES.some(route => url.pathname.startsWith(route))) return null;
   const path = url.pathname.slice("/api".length);
   return path.endsWith("/") && path !== "/" ? path.slice(0, -1) : path;
 }
@@ -78,7 +93,7 @@ function makeEvent(index: number) {
     id,
     title: EVENT_TITLES[index % EVENT_TITLES.length]!,
     description: index === 0
-      ? "Join us for an evening of food, music and friends.\nTickets are $15 at the door, and every ticket includes dinner.\n\nBring your student card."
+      ? "Join us for an evening of food, music and friends.\nBring your student card."
       : null,
     location: LOCATIONS[index % LOCATIONS.length],
     map_location: null,
@@ -104,25 +119,26 @@ function makeEvent(index: number) {
 
 const EVENTS = Array.from({ length: 120 }, (_, index) => makeEvent(index));
 
-const CLUBS = Array.from({ length: 40 }, (_, index) => ({
+const CLUBS = Array.from({ length: 140 }, (_, index) => ({
   id: index + 1,
   club_name: CLUB_NAMES[index % CLUB_NAMES.length]!,
   status: "approved",
   categories: [CLUB_CATEGORIES[index % CLUB_CATEGORIES.length]!],
   club_page: "https://example.com/club",
   ig: `club_${index + 1}`,
-  discord: index % 2 === 0 ? "https://discord.gg/club" : null,
+  discord: index % 2 === 1 ? "https://discord.gg/club" : null,
   club_type: "wusa",
   logo_url: `${MEDIA}/logo.png`,
   school: "uwaterloo",
   event_count: 12 + index,
-  position_count: index % 3,
+  // Most clubs have no open position.
+  position_count: index % 10 === 0 ? 1 : 0,
   created_at: new Date(Date.now() - (index + 3) * 86_400_000).toISOString(),
 }));
 
-const POSITIONS = Array.from({ length: 30 }, (_, index) => ({
+const POSITIONS = Array.from({ length: 110 }, (_, index) => ({
   id: index + 1,
-  title: ["VP Events", "Marketing Director", "Volunteer Photographer", "Treasurer", "Social Media Coordinator"][index % 5]!,
+  title: ["VP Events", "Marketing Lead", "Photographer", "Treasurer", "Designer"][index % 5]!,
   description: "Plan and run our weekly events, work with sponsors and lead a team of volunteers through the term.",
   position_type: (["executive", "committee", "volunteer", "staff", "internship"] as const)[index % 5],
   requirements: [],
@@ -137,7 +153,7 @@ const POSITIONS = Array.from({ length: 30 }, (_, index) => ({
   school: "uwaterloo",
 }));
 
-function page<T>(items: T[], extra: Record<string, unknown> = {}) {
+function paginated<T>(items: T[], extra: Record<string, unknown> = {}) {
   return { items, total: items.length, page: 1, page_size: 100, total_pages: 1, ...extra };
 }
 
@@ -171,6 +187,7 @@ async function installMocks(page: Page, next: NextFixture, gates: Gates, held: (
     const match = /poster-(\d)/.exec(name);
     await route.fulfill({ contentType: "image/png", body: match ? posters[Number(match[1])]! : posters[1]! });
   });
+  await page.route(/googletagmanager\.com|google-analytics\.com/, route => route.abort());
   await page.route("https://www.google.com/maps/embed/**", route => route.fulfill({ contentType: "text/html", body: "<html><body></body></html>" }));
 
   const json = (body: unknown, status = 200) => ({ status, contentType: "application/json", body: JSON.stringify(body) });
@@ -205,16 +222,16 @@ async function installMocks(page: Page, next: NextFixture, gates: Gates, held: (
     }
     if (path === "/events") {
       const clubId = url.searchParams.get("club_ids");
-      const items = clubId ? EVENTS.filter(event => event.club_id === Number(clubId)) : EVENTS;
+      const items = clubId ? EVENTS.slice(0, 30).map(event => ({ ...event, club_id: Number(clubId) })) : EVENTS;
       const latest = EVENTS[0]!;
-      return json(page(items, { latest_added_event: { id: latest.id, title: latest.title, added_at: latest.added_at, club_name: latest.club, club_logo_url: latest.club_logo_url } }));
+      return json(paginated(items, { latest_added_event: { id: latest.id, title: latest.title, added_at: latest.added_at, club_name: latest.club, club_logo_url: latest.club_logo_url } }));
     }
     const eventMatch = /^\/events\/(\d+)$/.exec(path);
     if (eventMatch) {
       const event = EVENTS.find(item => item.id === Number(eventMatch[1]));
       return event ? json(event) : json({ detail: "Not found" }, 404);
     }
-    if (path === "/clubs") return json(page(CLUBS));
+    if (path === "/clubs") return json(paginated(CLUBS));
     const clubMatch = /^\/clubs\/(\d+)$/.exec(path);
     if (clubMatch) {
       const club = CLUBS.find(item => item.id === Number(clubMatch[1]));
@@ -224,7 +241,7 @@ async function installMocks(page: Page, next: NextFixture, gates: Gates, held: (
       const clubId = url.searchParams.get("club_id");
       const items = clubId ? POSITIONS.filter(position => position.club_id === Number(clubId)) : POSITIONS;
       const latest = POSITIONS[0]!;
-      return json(page(items, { latest_added_position: { id: latest.id, title: latest.title, added_at: latest.added_at, club_name: latest.club_name, club_logo_url: latest.club_logo_url } }));
+      return json(paginated(items, { latest_added_position: { id: latest.id, title: latest.title, added_at: latest.added_at, club_name: latest.club_name, club_logo_url: latest.club_logo_url } }));
     }
     console.log(`[skeleton-layout] unmocked ${request.method} ${path}${url.search}`);
     return json({ detail: "Not mocked" }, 404);
@@ -257,8 +274,10 @@ async function landmarks(page: Page, within?: string): Promise<Record<string, Bo
     const root = scope ? document.querySelector(scope) : document;
     const result: Record<string, { x: number; y: number; w: number; h: number }> = {};
     const seen = new Map<string, number>();
-    for (const element of root?.querySelectorAll<HTMLElement>("[data-skeleton-key]") ?? []) {
-      const key = element.dataset.skeletonKey!;
+    // Filter controls are compared one by one: a chip that appears late pushes the rest along.
+    const chips = "[data-skeleton-key=filter-bar] [role=group] > :not([aria-hidden=true]), [data-skeleton-key=filter-bar] [data-slot=select-trigger]";
+    for (const element of root?.querySelectorAll<HTMLElement>(`[data-skeleton-key], ${chips}`) ?? []) {
+      const key = element.dataset.skeletonKey ?? "filter-control";
       const index = seen.get(key) ?? 0;
       seen.set(key, index + 1);
       const r = element.getBoundingClientRect();
@@ -280,16 +299,25 @@ async function settle(page: Page) {
     for (let attempt = 0; attempt < 40 && finite().length > 0; attempt += 1) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    await Promise.all([...document.images].filter(image => !image.complete).map(image => new Promise(resolve => {
-      image.addEventListener("load", resolve, { once: true });
-      image.addEventListener("error", resolve, { once: true });
-    })));
+    // Lazy images below the fold never load; only the first screen's matter.
+    const pending = [...document.images].filter(image => !image.complete && image.getBoundingClientRect().top < innerHeight);
+    await Promise.race([
+      Promise.all(pending.map(image => new Promise(resolve => {
+        image.addEventListener("load", resolve, { once: true });
+        image.addEventListener("error", resolve, { once: true });
+      }))),
+      new Promise(resolve => setTimeout(resolve, 3000)),
+    ]);
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   });
   await page.waitForTimeout(300);
 }
 
+/** A name or school runs as wide as its text, which no placeholder can know; everything else is exact. */
+const TEXT_WIDTH_KEYS = new Set(["page-title", "page-description"]);
+
 interface Comparison {
+  compared: number;
   maxDelta: number;
   worst: string | null;
   mismatched: { key: string; loading: Box; loaded: Box; delta: number }[];
@@ -299,12 +327,14 @@ interface Comparison {
 
 function compare(loading: Record<string, Box>, loaded: Record<string, Box>, viewportHeight: number): Comparison {
   const inView = (box: Box) => box.y < viewportHeight && box.y + box.h > 0;
-  const result: Comparison = { maxDelta: 0, worst: null, mismatched: [], loadingOnly: [], loadedOnly: [] };
+  const result: Comparison = { compared: 0, maxDelta: 0, worst: null, mismatched: [], loadingOnly: [], loadedOnly: [] };
   for (const [key, before] of Object.entries(loading)) {
     if (!inView(before)) continue;
     const after = loaded[key];
     if (!after) { result.loadingOnly.push(key); continue; }
-    const delta = Math.max(Math.abs(before.x - after.x), Math.abs(before.y - after.y), Math.abs(before.w - after.w), Math.abs(before.h - after.h));
+    result.compared += 1;
+    const widthDelta = TEXT_WIDTH_KEYS.has(key.split("#")[0]!) ? 0 : Math.abs(before.w - after.w);
+    const delta = Math.max(Math.abs(before.x - after.x), Math.abs(before.y - after.y), widthDelta, Math.abs(before.h - after.h));
     if (delta > result.maxDelta) { result.maxDelta = delta; result.worst = key; }
     if (delta > TOLERANCE_PX) result.mismatched.push({ key, loading: before, loaded: after, delta: Math.round(delta * 10) / 10 });
   }
@@ -322,16 +352,36 @@ async function shiftsSince(page: Page, since = 0): Promise<{ cls: number; shifts
 
 async function report(name: string, comparison: Comparison, cls: number, shifts: Shift[]) {
   const info = test.info();
-  const summary = { surface: name, maxDelta: Math.round(comparison.maxDelta * 10) / 10, worst: comparison.worst, cls: Math.round(cls * 10000) / 10000,
+  const summary = { surface: name, compared: comparison.compared, maxDelta: Math.round(comparison.maxDelta * 10) / 10, worst: comparison.worst, cls: Math.round(cls * 10000) / 10000,
     mismatched: comparison.mismatched, loadingOnly: comparison.loadingOnly, loadedOnly: comparison.loadedOnly, shifts };
   console.log(`[skeleton-layout] ${name}: max box delta ${summary.maxDelta}px (${summary.worst ?? "-"}), CLS ${summary.cls}, `
-    + `${comparison.mismatched.length} moved, ${comparison.loadingOnly.length} loading-only, ${comparison.loadedOnly.length} loaded-only`);
-  await info.attach(`${name}.json`, { body: JSON.stringify(summary, null, 2), contentType: "application/json" });
+    + `${comparison.compared} compared, ${comparison.mismatched.length} moved, ${comparison.loadingOnly.length} loading-only, ${comparison.loadedOnly.length} loaded-only`);
+  const body = JSON.stringify(summary, null, 2);
+  await writeFile(info.outputPath(`${name}.json`), body);
+  await info.attach(`${name}.json`, { body, contentType: "application/json" });
   if (REPORT_ONLY) return;
   expect(comparison.mismatched, `${name}: landmarks that moved across the swap`).toEqual([]);
   expect(comparison.loadingOnly, `${name}: loading landmarks with no loaded counterpart`).toEqual([]);
   expect(comparison.loadedOnly, `${name}: loaded landmarks with no loading counterpart`).toEqual([]);
   expect(cls, `${name}: cumulative layout shift`).toBe(0);
+}
+
+/** Measures the loading state, releases the data, and measures what replaced it. */
+async function measureSwap(page: Page, gates: Gates, loaded: string, name: string, viewportHeight: number, since = 0) {
+  await settle(page);
+  const loadingBoxes = await landmarks(page);
+  if (REPORT_ONLY) await page.screenshot({ path: test.info().outputPath(`${name}-loading.png`) });
+
+  gates.data.open();
+  await page.locator(loaded).first().waitFor();
+  await settle(page);
+  gates.late.open();
+  await page.waitForLoadState("networkidle");
+  await settle(page);
+  const loadedBoxes = await landmarks(page);
+  if (REPORT_ONLY) await page.screenshot({ path: test.info().outputPath(`${name}-loaded.png`) });
+
+  return { ...(await shiftsSince(page, since)), comparison: compare(loadingBoxes, loadedBoxes, viewportHeight) };
 }
 
 interface RouteSurface {
@@ -366,21 +416,30 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
 
         await page.goto(`${BASE}${surface.path}`, { waitUntil: "commit" });
         await page.locator(surface.loading).first().waitFor();
-        await settle(page);
-        const loadingBoxes = await landmarks(page);
-
-        gates.data.open();
-        await page.locator(surface.loaded).first().waitFor();
-        await settle(page);
-        gates.late.open();
-        await page.waitForLoadState("networkidle");
-        await settle(page);
-        const loadedBoxes = await landmarks(page);
-
-        const { cls, shifts } = await shiftsSince(page);
-        await report(`${surface.name}-${viewportName}`, compare(loadingBoxes, loadedBoxes, viewport.height), cls, shifts);
+        const name = `${surface.name}-${viewportName}`;
+        const { cls, shifts, comparison } = await measureSwap(page, gates, surface.loaded, name, viewport.height);
+        await report(name, comparison, cls, shifts);
       });
     }
+
+    test("an in-app navigation keeps its layout when the next page replaces its loading state", async ({ page, next }) => {
+      const gates: Gates = { data: new Gate(), late: new Gate() };
+      await installMocks(page, next, gates, path => path === "/clubs");
+      await page.addInitScript(OBSERVE_SHIFTS);
+      await page.goto(`${BASE}/positions`);
+      await page.locator("[data-slot=card-grid] article").first().waitFor();
+      await settle(page);
+
+      // A script's click is not user input, so shifts after it still count.
+      const navigatedAt = await page.evaluate(() => {
+        document.querySelector<HTMLAnchorElement>("a[href='/clubs']")?.click();
+        return performance.now();
+      });
+      await page.locator("[data-slot=discovery-loading]").waitFor();
+      const name = `client-navigation-${viewportName}`;
+      const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-club-card]", name, viewport.height, navigatedAt);
+      await report(name, comparison, cls, shifts);
+    });
 
     test("event drawer keeps its layout when the event's details arrive", async ({ page, next }) => {
       const gates: Gates = { data: new Gate(), late: new Gate() };
@@ -392,7 +451,10 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       await settle(page);
 
       const openedAt = await page.evaluate(() => {
-        document.querySelector<HTMLElement>("[data-event-card][data-event-id='1']")?.click();
+        // Cards open on mouse down with a mouse and on click with touch; send both, untrusted, like a script would.
+        const card = document.querySelector<HTMLElement>("[data-event-card][data-event-id='1']");
+        card?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
+        card?.click();
         return performance.now();
       });
       await page.locator("[data-slot=drawer-body]").waitFor();

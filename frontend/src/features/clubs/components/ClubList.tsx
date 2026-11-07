@@ -28,7 +28,7 @@ export function ClubList({
   if (isLoading) {
     return (
       <div className={CARD_GRID_CLASS} aria-busy="true">
-        {Array.from({ length: 12 }).map((_, index) => (
+        {Array.from({ length: controlBox.clubManagement.initialRenderCount }, (_, index) => (
           <ClubCardSkeleton key={index} />
         ))}
       </div>

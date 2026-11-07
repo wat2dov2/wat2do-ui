@@ -6,6 +6,7 @@
 import { Badge } from "@/shared/ui/badge";
 import { Calendar, Clock, Instagram, MapPin, type LucideIcon } from "lucide-react";
 import { Link } from "@/shared/ui/link";
+import { SkeletonLine } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
 import type { ComponentProps } from "react";
 
@@ -16,6 +17,19 @@ export interface CardBadge {
 }
 
 const EMPTY_BADGES: readonly CardBadge[] = [];
+
+/*
+ * Typography and spacing shared by the card text and its loading placeholder,
+ * so a placeholder line is always exactly the line box it stands in for.
+ */
+const CONTENT_CLASS = "relative flex flex-1 flex-col pb-2.5 pt-2 sm:pb-3 sm:pt-2.5";
+const CONTENT_STACK_CLASS = "flex h-full flex-1 flex-col gap-2";
+const TITLE_CLASS = "line-clamp-2 text-[15px] font-semibold leading-[1.1]";
+const STATS_CLASS = "mt-0.5 block text-[11px] font-medium leading-none";
+const DESCRIPTION_CLASS = "mt-2 line-clamp-2 text-xs leading-relaxed";
+const METADATA_CLASS = "mt-auto flex min-w-0 items-end justify-between gap-1";
+const METADATA_LINES_CLASS = "min-w-0 flex-1 space-y-0.5";
+const METADATA_LINE_CLASS = "flex min-w-0 items-center gap-1 text-[13px]";
 
 interface EventCardMetadataLineProps {
   icon: LucideIcon;
@@ -33,10 +47,7 @@ function EventCardMetadataLine({
   return (
     <span
       data-slot={`event-card-${slot}`}
-      className={cn(
-        "flex min-w-0 items-center gap-1 text-[13px]",
-        textClassName,
-      )}
+      className={cn(METADATA_LINE_CLASS, textClassName)}
     >
       <Icon aria-hidden="true" className="size-3 shrink-0" />
       <span className="truncate">{text}</span>
@@ -78,6 +89,11 @@ interface EventCardContentProps {
   badges?: readonly CardBadge[];
   /** Popularity line, e.g. "12 clicks · 3 going". */
   statsLabel?: string;
+  /**
+   * Keep the popularity line's height while its stats load or when there are
+   * none, so cards in a live grid never grow when the stats arrive.
+   */
+  reserveStatsLine?: boolean;
   className?: string;
   textClassName?: string;
   secondaryTextClassName?: string;
@@ -95,6 +111,7 @@ export function EventCardContent({
   instagram,
   badges = EMPTY_BADGES,
   statsLabel,
+  reserveStatsLine = false,
   className,
   textClassName = "text-foreground",
   secondaryTextClassName = "text-muted-foreground",
@@ -105,19 +122,14 @@ export function EventCardContent({
     <div
       data-slot="event-card-content"
       className={cn(
-        "relative flex flex-1 flex-col pb-2.5 pt-2 sm:pb-3 sm:pt-2.5",
+        CONTENT_CLASS,
         horizontalPadding === "inset" && "px-2.5 sm:px-3",
         className,
       )}
     >
-      <div className="flex h-full flex-1 flex-col gap-2">
+      <div className={CONTENT_STACK_CLASS}>
         <div className="min-w-0" data-skeleton-key="card-title">
-          <h3
-            className={cn(
-              "line-clamp-2 text-[15px] font-semibold leading-[1.1]",
-              textClassName,
-            )}
-          >
+          <h3 className={cn(TITLE_CLASS, textClassName)}>
             {titleHref ? (
               <Link variant="navigation" href={titleHref} prefetch={false}>
                 {title}
@@ -126,17 +138,16 @@ export function EventCardContent({
               title
             )}
           </h3>
-          {statsLabel ? (
+          {statsLabel || reserveStatsLine ? (
             <span
-              className={`mt-0.5 block text-[11px] font-medium leading-none ${badgeClassName}`}
+              aria-hidden={statsLabel ? undefined : true}
+              className={cn(STATS_CLASS, badgeClassName)}
             >
-              {statsLabel}
+              {statsLabel || "\u00a0"}
             </span>
           ) : null}
           {description ? (
-            <p
-              className={`mt-2 line-clamp-2 text-xs leading-relaxed ${secondaryTextClassName}`}
-            >
+            <p className={cn(DESCRIPTION_CLASS, secondaryTextClassName)}>
               {description}
             </p>
           ) : null}
@@ -146,9 +157,9 @@ export function EventCardContent({
           <div
             data-slot="event-card-metadata"
             data-skeleton-key="card-meta"
-            className="flex min-w-0 items-end justify-between gap-1"
+            className={METADATA_CLASS}
           >
-            <div className="space-y-0.5 min-w-0 flex-1">
+            <div className={METADATA_LINES_CLASS}>
               {date ? (
                 <EventCardMetadataLine
                   icon={Calendar}
@@ -213,6 +224,51 @@ export function EventCardContent({
                 })}
               </div>
             )}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+const TITLE_WIDTHS = ["w-full", "w-2/3"];
+const DESCRIPTION_WIDTHS = ["w-full", "w-4/5"];
+const METADATA_WIDTHS = ["w-1/2", "w-2/5", "w-3/5"];
+
+interface EventCardContentSkeletonProps {
+  titleLines?: 1 | 2;
+  descriptionLines?: 0 | 2;
+  /** Date, time and location lines; position cards have none. */
+  metadataLines?: 0 | 3;
+}
+
+/** The card text's loading face: the same boxes as EventCardContent, line for line. */
+export function EventCardContentSkeleton({
+  titleLines = 2,
+  descriptionLines = 0,
+  metadataLines = 3,
+}: EventCardContentSkeletonProps) {
+  return (
+    <div data-slot="event-card-content" aria-hidden="true" className={CONTENT_CLASS}>
+      <div className={CONTENT_STACK_CLASS}>
+        <div className="min-w-0" data-skeleton-key="card-title">
+          <div className={TITLE_CLASS}>
+            {TITLE_WIDTHS.slice(0, titleLines).map((width) => <SkeletonLine key={width} className={width} />)}
+          </div>
+          <span className={STATS_CLASS}><SkeletonLine className="w-1/3" /></span>
+          {descriptionLines > 0 ? (
+            <div className={DESCRIPTION_CLASS}>
+              {DESCRIPTION_WIDTHS.map((width) => <SkeletonLine key={width} className={width} />)}
+            </div>
+          ) : null}
+        </div>
+        {metadataLines > 0 ? (
+          <div data-skeleton-key="card-meta" className={METADATA_CLASS}>
+            <div className={METADATA_LINES_CLASS}>
+              {METADATA_WIDTHS.map((width) => (
+                <span key={width} className={METADATA_LINE_CLASS}><SkeletonLine className={width} /></span>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>
