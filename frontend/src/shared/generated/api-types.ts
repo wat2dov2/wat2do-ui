@@ -1238,9 +1238,9 @@ export interface paths {
          * Get Constants
          * @description Return shared domain constants for frontend consumption.
          *
-         *     Public and cacheable. ``Cache-Control: public, max-age=60`` so repeat
-         *     scrapes hit CDN/browser cache; 60 s keeps category/interest deploys
-         *     visible within a minute.
+         *     Public and cacheable: the same for every visitor and changed only by a
+         *     deploy, so browsers and the CDN keep them as ``controlbox/api_cache.json``
+         *     says.
          */
         get: operations["get_constants_meta_constants_get"];
         put?: never;

@@ -10,6 +10,7 @@
 pub mod allowed_emails;
 pub mod auth;
 pub mod body;
+pub mod cache_control;
 pub mod client_ip;
 pub mod contract;
 pub mod cookies;

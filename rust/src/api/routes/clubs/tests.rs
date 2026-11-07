@@ -234,8 +234,9 @@ async fn constants_are_public_and_cacheable() {
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(
         response.headers()[header::CACHE_CONTROL],
-        "public, max-age=60"
+        "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400"
     );
+    assert!(response.headers().get(header::SET_COOKIE).is_none());
 }
 
 fn club_body(value: Value, create: bool) -> Result<ClubFields, ApiError> {

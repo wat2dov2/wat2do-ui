@@ -966,36 +966,47 @@ async fn counts(
     Ok(rows.into_iter().collect())
 }
 
-/// `get_event_stats_for_school`'s counts: each upcoming event's clicks and
-/// distinct Going users, in feed order. Like Python, a failed click count
+/// A school's event counts (`event_stats`).
+pub struct EventStats {
+    /// Each upcoming event's id, clicks and distinct Going users, in feed order.
+    pub counts: Vec<(i64, i64, i64)>,
+    /// Whether both counts were read; a failed one reads as all zeros.
+    pub complete: bool,
+}
+
+/// `get_event_stats_for_school`'s counts. Like Python, a failed click count
 /// reads as no clicks and a failed Going count as no Goings.
 pub async fn event_stats(
     db: &PgPool,
     since: DateTime<Utc>,
     school_id: i64,
     cap: i64,
-) -> Result<Vec<(i64, i64, i64)>, ApiError> {
+) -> Result<EventStats, ApiError> {
     let ids = upcoming_ids(db, since, school_id, cap).await?;
+    let mut complete = true;
     let clicks = counts(db, "get_event_click_counts", &ids)
         .await
         .unwrap_or_else(|error| {
             tracing::warn!("Failed to fetch event click counts: {error}");
+            complete = false;
             HashMap::new()
         });
     let going = counts(db, "get_event_going_counts", &ids)
         .await
         .unwrap_or_else(|error| {
             tracing::warn!("Failed to fetch event going counts: {error}");
+            complete = false;
             HashMap::new()
         });
-    Ok(ids
+    let counts = ids
         .into_iter()
         .map(|id| {
             let click_count = clicks.get(&id).copied().unwrap_or(0);
             let going_count = going.get(&id).copied().unwrap_or(0);
             (id, click_count, going_count)
         })
-        .collect())
+        .collect();
+    Ok(EventStats { counts, complete })
 }
 
 /// `admin_query.load_page_ids`'s filters on `admin_list_entries`, as SQL

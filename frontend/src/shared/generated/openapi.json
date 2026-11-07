@@ -4310,7 +4310,7 @@
           "meta"
         ],
         "summary": "Get Constants",
-        "description": "Return shared domain constants for frontend consumption.\n\nPublic and cacheable. ``Cache-Control: public, max-age=60`` so repeat\nscrapes hit CDN/browser cache; 60 s keeps category/interest deploys\nvisible within a minute.",
+        "description": "Return shared domain constants for frontend consumption.\n\nPublic and cacheable: the same for every visitor and changed only by a\ndeploy, so browsers and the CDN keep them as ``controlbox/api_cache.json``\nsays.",
         "operationId": "get_constants_meta_constants_get",
         "responses": {
           "200": {

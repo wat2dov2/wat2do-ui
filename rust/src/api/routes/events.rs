@@ -12,6 +12,7 @@ use serde::Serialize;
 use crate::api::AppState;
 use crate::api::auth::{AdminUser, DbUser};
 use crate::api::body::{Body, Extra, json_first, merge_issues};
+use crate::api::cache_control;
 use crate::api::errors::ApiError;
 use crate::api::events::store::{self, DateWindow, LatestAdded, ScanFilters};
 use crate::api::events::{feed, requests, writes};
@@ -21,6 +22,7 @@ use crate::api::tickets::refunds;
 use crate::api::validation::{FloatLimits, Length, PathParams, PyInt, QueryParams, Validator};
 
 use crate::constants::{MAX_EVENT_PRICE, MAX_LIST_LIMIT, MAX_SEARCH_QUERY_LENGTH};
+use crate::controlbox::API_CACHE;
 
 /// The `school` filter's length bound (`MAX_EVENT_SCHOOL_LENGTH`).
 const MAX_EVENT_SCHOOL_LENGTH: usize = 255;
@@ -102,14 +104,15 @@ pub async fn get_event_stats(
         .string(Length::default().min(1).max(MAX_EVENT_SCHOOL_LENGTH));
     check.finish()?;
     let mut stats: IndexMap<String, StatsResponse> = IndexMap::new();
+    let mut complete = true;
     let since = store::today_start_utc(
         &store::school_timezone(&state.db, Some(&school)).await?,
         Utc::now(),
     )?;
     if let Some(school_id) = store::school_id(&state.db, &school).await? {
-        for (id, click_count, going_count) in
-            store::event_stats(&state.db, since, school_id, MAX_LIST_LIMIT).await?
-        {
+        let read = store::event_stats(&state.db, since, school_id, MAX_LIST_LIMIT).await?;
+        complete = read.complete;
+        for (id, click_count, going_count) in read.counts {
             if click_count > 0 || going_count > 0 {
                 stats.insert(
                     id.to_string(),
@@ -121,7 +124,17 @@ pub async fn get_event_stats(
             }
         }
     }
-    Ok(Json(stats).into_response())
+    Ok(stats_response(stats, complete))
+}
+
+/// A school's counts are the same for every visitor, signed in or not, so any
+/// cache may keep them; never when a count could not be read and shows as zero.
+fn stats_response(stats: IndexMap<String, StatsResponse>, complete: bool) -> Response {
+    if complete {
+        cache_control::shared(Json(stats), &API_CACHE.event_stats)
+    } else {
+        Json(stats).into_response()
+    }
 }
 
 /// The feed's query parameters, in `list_events`' order.
@@ -470,4 +483,87 @@ pub fn no_content() -> Response {
         axum::http::HeaderValue::from_static("application/json"),
     );
     response
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::http::header::CACHE_CONTROL;
+
+    use super::*;
+
+    #[test]
+    fn only_counts_read_in_full_may_be_kept_by_caches() {
+        let counted = || {
+            IndexMap::from([(
+                "7".to_owned(),
+                StatsResponse {
+                    click_count: 3,
+                    going_count: 1,
+                },
+            )])
+        };
+        assert_eq!(
+            stats_response(counted(), true).headers()[CACHE_CONTROL],
+            "public, max-age=0, s-maxage=30, stale-while-revalidate=120"
+        );
+        // A count that failed reads as zero: fine to show once, never to keep.
+        assert!(
+            stats_response(counted(), false)
+                .headers()
+                .get(CACHE_CONTROL)
+                .is_none()
+        );
+    }
+}
+
+/// The stats route against a real Postgres loaded with our schema; it runs
+/// only when `WAT2DO_TEST_DATABASE_URL` is set (CI's "Rust database tests" job).
+#[cfg(test)]
+mod database_tests {
+    use axum::body::Body as HttpBody;
+    use axum::http::{Request, header};
+    use tower::ServiceExt;
+
+    use super::*;
+    use crate::api::auth::test_tokens::access_token;
+    use crate::api::client_ip::Peer;
+    use crate::api::router;
+    use crate::api::test_database::{database, peer};
+    use crate::settings::{Settings, test_settings};
+
+    #[tokio::test]
+    async fn a_schools_stats_may_be_kept_by_any_cache_signed_in_or_not() {
+        let Some(db) = database() else { return };
+        let settings: &'static Settings = Box::leak(Box::new(test_settings(&[])));
+        let state = AppState::new(settings, db, None).unwrap();
+        let bearer = format!("Bearer {}", access_token("stats-reader"));
+        for authorization in [None, Some(bearer.as_str())] {
+            let mut builder = Request::builder()
+                .uri("/events/stats?school=uwaterloo")
+                .header(header::HOST, "testserver");
+            if let Some(value) = authorization {
+                builder = builder.header(header::AUTHORIZATION, value);
+            }
+            let mut request = builder.body(HttpBody::empty()).unwrap();
+            request.extensions_mut().insert(Peer(peer()));
+            let response = crate::api::app(router(state.clone()))
+                .oneshot(request)
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            let headers = response.headers();
+            assert_eq!(
+                headers[header::CACHE_CONTROL],
+                "public, max-age=0, s-maxage=30, stale-while-revalidate=120"
+            );
+            assert!(headers.get(header::SET_COOKIE).is_none());
+            for vary in headers.get_all(header::VARY) {
+                let vary = vary.to_str().unwrap().to_ascii_lowercase();
+                assert!(
+                    !vary.contains("cookie") && !vary.contains("authorization"),
+                    "{vary}"
+                );
+            }
+        }
+    }
 }

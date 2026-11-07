@@ -38,6 +38,27 @@ pub struct ApiServer {
     pub database_statement_timeout_milliseconds: u64,
 }
 
+/// How long browsers and shared caches keep one response that is the same for
+/// every visitor (`api::cache_control`).
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SharedCache {
+    /// Browsers (`max-age`).
+    pub max_age_seconds: u32,
+    /// Shared caches such as Vercel's CDN, which proxies `/api` (`s-maxage`).
+    pub shared_max_age_seconds: u32,
+    /// How much longer a shared cache still answers with it while it fetches the next.
+    pub stale_while_revalidate_seconds: u32,
+}
+
+/// `controlbox/api_cache.json`, every field.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ApiCache {
+    pub event_stats: SharedCache,
+    pub constants: SharedCache,
+}
+
 /// `controlbox/authentication.json`, every field.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -539,6 +560,12 @@ pub static API_SERVER: LazyLock<ApiServer> = LazyLock::new(|| {
         include_str!("../../backend/controlbox/api_server.json"),
     )
 });
+pub static API_CACHE: LazyLock<ApiCache> = LazyLock::new(|| {
+    parse(
+        "api_cache",
+        include_str!("../../backend/controlbox/api_cache.json"),
+    )
+});
 pub static AUTHENTICATION: LazyLock<Authentication> = LazyLock::new(|| {
     parse(
         "authentication",
@@ -779,6 +806,10 @@ mod tests {
     #[test]
     fn every_control_file_parses() {
         assert!(API_SERVER.database_connections > 0);
+        assert!(
+            API_CACHE.constants.shared_max_age_seconds
+                > API_CACHE.event_stats.shared_max_age_seconds
+        );
         assert!(AUTHENTICATION.access_token_minutes > 0);
         assert!(!CONTACT.recipient_emails.is_empty());
         assert!(CONTACT.business_support.business_name > 0);

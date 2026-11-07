@@ -2,15 +2,16 @@
 //! (`routers/meta.py`).
 
 use axum::Json;
-use axum::http::{HeaderValue, header};
-use axum::response::{IntoResponse, Response};
+use axum::response::Response;
 use indexmap::IndexMap;
 use serde::Serialize;
 use utoipa::ToSchema;
 
+use crate::api::cache_control;
 use crate::constants::{
     CLUB_CATEGORIES, EVENT_CATEGORIES, INTEREST_TO_CATEGORIES, REPORT_STATUSES,
 };
+use crate::controlbox::API_CACHE;
 
 /// Shared domain constants that the frontend must stay in sync with.
 ///
@@ -52,17 +53,11 @@ fn constants() -> AppConstantsResponse {
     tag = "meta",
     operation_id = "get_constants_meta_constants_get",
     summary = "Get Constants",
-    description = "Return shared domain constants for frontend consumption.\n\nPublic and cacheable. ``Cache-Control: public, max-age=60`` so repeat\nscrapes hit CDN/browser cache; 60 s keeps category/interest deploys\nvisible within a minute.",
+    description = "Return shared domain constants for frontend consumption.\n\nPublic and cacheable: the same for every visitor and changed only by a\ndeploy, so browsers and the CDN keep them as ``controlbox/api_cache.json``\nsays.",
     responses((status = 200, description = "Successful Response", body = AppConstantsResponse))
 )]
 pub async fn get_constants() -> Response {
-    let mut response = Json(constants()).into_response();
-    // Repeat scrapes hit CDN and browser caches; a minute keeps deploys visible.
-    response.headers_mut().insert(
-        header::CACHE_CONTROL,
-        HeaderValue::from_static("public, max-age=60"),
-    );
-    response
+    cache_control::shared(Json(constants()), &API_CACHE.constants)
 }
 
 #[cfg(test)]
