@@ -1012,6 +1012,10 @@ class InstagramEmulatorControl(_ControlModel):
     reclaim_interval_hours: float = Field(gt=0, le=168, allow_inf_nan=False)
     # The daily reclaim restarts the emulator and waits this long for it to boot again.
     restart_timeout_seconds: int = Field(ge=60, le=3600)
+    # An account the app cannot switch to rests this long while the worker visits the
+    # others; this many failed switches in a row restart the emulator.
+    switch_rest_seconds: int = Field(ge=60, le=86_400)
+    switch_failures_before_restart: int = Field(ge=1, le=20)
     # The one worker that drives the emulator visits one account at a time. Replies
     # and post edits happen only between the action hours, follows only between the
     # follow hours (local time); otherwise it only reads, crawling Following lists in

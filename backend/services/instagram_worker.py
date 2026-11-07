@@ -10,7 +10,9 @@ A new carousel gets its song as soon as possible, at any hour: while any account
 carousel waits, visits do nothing but songs, and a crawl slice stops early for one.
 Replies happen only during the control box's action hours, follows only during its
 follow hours. The emulator's lock is held for one visit at a time, and one failing
-step never stops the others.
+step never stops the others. An account the app cannot switch to rests while the
+others go on, and switches failing in a row restart the emulator, whose Android
+stalls after long uptimes.
 """
 
 from __future__ import annotations
@@ -26,7 +28,7 @@ from itertools import groupby
 from core.controlbox import controlbox
 from services.instagram_accounts import school_account_username
 from services.instagram_dms import sweep
-from services.instagram_emulator.device import CONTROL, EmulatorDevice, exclusive
+from services.instagram_emulator.device import CONTROL, EmulatorDevice, EmulatorError, exclusive
 from services.instagram_follow import candidates, crawl, follows, scoring
 from services.instagram_publishing import music
 
@@ -54,7 +56,11 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
     moment = (now or datetime.now(timezone.utc)).astimezone()
     acting = acting_hours(moment)
     following = following_hours(moment)
-    order = _visit_order(_current_user(device))
+    order = [
+        school
+        for school in _visit_order(_current_user(device))
+        if _switch_rested_until.get(school, moment) <= moment
+    ]
     due_music = set(music.schools_due(moment))
     tiers: list[tuple[list[str], bool]] = [
         ([school for school in order if school in due_music], False)
@@ -109,13 +115,12 @@ def visit(
     """Switch to the school's account once and do everything it needs."""
     global _last_visit_crawled
     _last_visit_crawled = crawl_slice
-    user = CONTROL.android_user_by_school[school]
     crawled = False
     with exclusive():
         device.wake()
         device.reclaim_data()
-        device.use_android_user(user)
-        device.use_account(user, school_account_username(school))
+        if not _switched(device, school, now):
+            return
         due_music = music.schools_due(now)
         if school in due_music:
             _step(f"music {school}", lambda: music.finish_due(device, school, now))
@@ -209,6 +214,31 @@ _scoring = threading.Lock()
 # it there again, so one stuck account never keeps the worker to itself.
 _crawl_rested_until: dict[str, datetime] = {}
 _follows_rested_until: dict[str, datetime] = {}
+_switch_rested_until: dict[str, datetime] = {}
+_switch_failures = 0
+
+
+def _switched(device: EmulatorDevice, school: str, now: datetime) -> bool:
+    """Switch the app to the school's account, or rest the account when that fails.
+
+    Failed switches in a row restart the emulator: by then Android itself has
+    usually stalled ("Process system isn't responding") and no account can be reached.
+    """
+    global _switch_failures
+    user = CONTROL.android_user_by_school[school]
+    try:
+        device.use_android_user(user)
+        device.use_account(user, school_account_username(school))
+    except EmulatorError:
+        log.exception("Could not switch the emulator to %s", school)
+        _switch_rested_until[school] = now + timedelta(seconds=CONTROL.switch_rest_seconds)
+        _switch_failures += 1
+        if _switch_failures >= CONTROL.switch_failures_before_restart:
+            _switch_failures = 0
+            _step("emulator restart", device.restart)
+        return False
+    _switch_failures = 0
+    return True
 
 
 def _score_in_background() -> None:
