@@ -17,12 +17,12 @@ use std::collections::HashMap;
 
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use chrono_tz::Tz;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::schools::{self, School};
 use crate::settings::settings;
+use crate::time_zones::Tz;
 
 /// Counts for one dispatch, logged and used for the job's exit status.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -228,7 +228,7 @@ mod tests {
             &HashMap::from([(1, school)]),
         );
         let zones: Vec<Tz> = recipients.iter().map(Recipient::tz).collect();
-        assert_eq!(zones, [chrono_tz::America::Toronto, Tz::UTC, Tz::UTC]);
+        assert_eq!(zones, [Tz::AMERICA_TORONTO, Tz::UTC, Tz::UTC]);
         assert_eq!(recipients[0].slug(), Some("uwaterloo"));
     }
 }

@@ -4,7 +4,6 @@
 
 use std::sync::Arc;
 
-use chrono_tz::Tz;
 use sqlx::PgPool;
 
 use super::codes;
@@ -15,6 +14,7 @@ use crate::email::{EmailMessage, InlineImage, send_in_background};
 use crate::notifications::email_images::event_hero_image;
 use crate::notifications::rendering::{detail_row, occurrence_times};
 use crate::settings::Settings;
+use crate::time_zones::Tz;
 
 /// What a paid order cost, for its receipt.
 #[derive(Debug, Clone, Copy)]
@@ -44,8 +44,8 @@ fn site(settings: &Settings, event: &Event) -> String {
 
 async fn zone(db: &PgPool, event: &Event) -> Tz {
     match school_timezone(db, event.school.as_deref()).await {
-        Ok(zone) => zone.parse().unwrap_or(Tz::America__Toronto),
-        Err(_) => Tz::America__Toronto,
+        Ok(zone) => zone.parse().unwrap_or(Tz::AMERICA_TORONTO),
+        Err(_) => Tz::AMERICA_TORONTO,
     }
 }
 
@@ -415,7 +415,7 @@ mod tests {
             &settings,
             &event,
             &occurrence,
-            Tz::America__Toronto,
+            Tz::AMERICA_TORONTO,
             "a@b.c",
             &["CODE2222222222222222222A".to_owned()],
             None,
@@ -447,7 +447,7 @@ mod tests {
             &settings,
             &event,
             &occurrence,
-            Tz::America__Toronto,
+            Tz::AMERICA_TORONTO,
             "a@b.c",
             &["A".repeat(24), "B".repeat(24)],
             Some(Payment {

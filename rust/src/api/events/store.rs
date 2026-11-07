@@ -15,7 +15,6 @@ use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
 use chrono::{DateTime, LocalResult, NaiveTime, TimeZone, Utc};
-use chrono_tz::Tz;
 use serde::Deserialize;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -25,6 +24,7 @@ use super::model::{ClubCohost, Event, EventRow, Occurrence, hydrate, needs_direc
 use crate::api::errors::ApiError;
 use crate::db::read_with_retry;
 use crate::text::{casefold, python_strip};
+use crate::time_zones::Tz;
 
 /// PostgREST's `db-max-rows` in production.
 pub const POSTGREST_MAX_ROWS: i64 = 1000;

@@ -9,7 +9,6 @@
 //! answer with no usable structure is a failed extraction.
 
 use chrono::{DateTime, Duration, NaiveDate, Timelike, Utc};
-use chrono_tz::Tz;
 use serde_json::{Map, Value};
 
 use crate::api::body::{Body, Extra, Input, Str};
@@ -22,6 +21,7 @@ use crate::controlbox::EVENT_DISCOVERY;
 use crate::ingestion::prompt::{DISCOVERY, DISCOVERY_RULES};
 use crate::schools::{School, campus_season_prompt, normalize_slug};
 use crate::text::{normalize_scraped_text, python_strip};
+use crate::time_zones::Tz;
 
 pub const SYSTEM_MESSAGE: &str = "You triage social media posts and extract campus event and hiring information. Always return valid JSON with the exact structure requested.";
 

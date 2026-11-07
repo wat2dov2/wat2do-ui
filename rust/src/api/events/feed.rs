@@ -6,9 +6,9 @@
 use std::collections::{HashMap, HashSet};
 
 use chrono::{DateTime, Datelike, Utc, Weekday};
-use chrono_tz::Tz;
 
 use crate::text::{casefold, python_strip, python_word};
+use crate::time_zones::Tz;
 
 /// The event fields the in-memory filters and sorts read.
 #[derive(Debug, Clone, Default, PartialEq, serde::Deserialize)]

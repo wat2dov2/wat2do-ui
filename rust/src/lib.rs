@@ -30,6 +30,7 @@ pub mod settings;
 pub mod storage;
 pub mod svg_sanitize;
 pub mod text;
+pub mod time_zones;
 pub mod urls;
 
 /// Choose rustls' crypto provider once per process. Two are compiled in (ring

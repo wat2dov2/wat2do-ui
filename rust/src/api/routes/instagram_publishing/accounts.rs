@@ -6,7 +6,6 @@
 use std::collections::HashMap;
 
 use chrono::{DateTime, Duration, NaiveDate, Utc};
-use chrono_tz::Tz;
 use serde::Serialize;
 use sqlx::PgPool;
 
@@ -14,6 +13,7 @@ use crate::api::errors::ApiError;
 use crate::api::json;
 use crate::controlbox::INSTAGRAM_PUBLISHING;
 use crate::db::read_with_retry;
+use crate::time_zones::Tz;
 
 /// `InstagramFollowerCountResponse`.
 #[derive(Debug, Serialize, PartialEq)]

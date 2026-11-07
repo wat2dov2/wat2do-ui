@@ -5,11 +5,11 @@ use std::collections::HashMap;
 
 use anyhow::{Result, bail};
 use chrono::{DateTime, NaiveDate, Utc};
-use chrono_tz::Tz;
 use sqlx::PgPool;
 use url::Url;
 
 use crate::controlbox::{EVENT_DISCOVERY, INGESTION};
+use crate::time_zones::Tz;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct School {

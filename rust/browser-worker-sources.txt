@@ -20,6 +20,7 @@ rust/src/controlbox.rs
 rust/src/db.rs
 rust/src/settings.rs
 rust/src/schools.rs
+rust/src/time_zones.rs
 rust/src/ingestion/items.rs
 backend/controlbox/instagram_browser.json
 backend/controlbox/instagram_digest.json

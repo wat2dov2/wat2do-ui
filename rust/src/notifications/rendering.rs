@@ -3,11 +3,11 @@
 //! give the same bytes Python rendered.
 
 use chrono::{DateTime, NaiveDate, Utc};
-use chrono_tz::Tz;
 
 use crate::email::layout::{
     self, BORDER, FONT, FOREGROUND, MUTED_FOREGROUND, SURFACE_ELEVATED, escape,
 };
+use crate::time_zones::Tz;
 
 /// One event as an email shows it.
 #[derive(Debug, Clone, Default)]
@@ -462,7 +462,7 @@ mod tests {
 
     use super::*;
 
-    const TORONTO: Tz = chrono_tz::America::Toronto;
+    const TORONTO: Tz = Tz::AMERICA_TORONTO;
     const LINKS: Links = Links {
         frontend_url: "https://uwaterloo.wat2do.io",
         preferences_url: "https://uwaterloo.wat2do.io/settings",
@@ -668,7 +668,7 @@ mod tests {
             format_event_date_time(after, TORONTO),
             ("Mon, Nov 2".into(), "8 AM".into())
         );
-        let st_johns = chrono_tz::America::St_Johns;
+        let st_johns: Tz = "America/St_Johns".parse().unwrap();
         assert_eq!(
             format_event_date_time(after, st_johns),
             ("Mon, Nov 2".into(), "9:30 AM".into())
@@ -680,5 +680,19 @@ mod tests {
         );
         let noon = Some(Utc.with_ymd_and_hms(2026, 11, 2, 17, 0, 0).unwrap());
         assert_eq!(format_event_date_time(noon, TORONTO).1, "12 PM");
+    }
+
+    #[test]
+    fn british_columbia_no_longer_falls_back() {
+        // UBC Symphony Orchestra, Nov 6 2026, 7:30-9:30 PM: BC stays on UTC-07.
+        let vancouver: Tz = "America/Vancouver".parse().unwrap();
+        assert_eq!(
+            occurrence_times(
+                Some(Utc.with_ymd_and_hms(2026, 11, 7, 2, 30, 0).unwrap()),
+                Some(Utc.with_ymd_and_hms(2026, 11, 7, 4, 30, 0).unwrap()),
+                vancouver,
+            ),
+            ("Fri, Nov 6".into(), "7:30 PM - 9:30 PM".into())
+        );
     }
 }

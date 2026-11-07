@@ -12,7 +12,6 @@ use std::collections::{HashMap, HashSet};
 use std::process::Stdio;
 
 use chrono::{DateTime, Duration, NaiveDate, Utc};
-use chrono_tz::Tz;
 use indexmap::IndexMap;
 use serde::{Serialize, Serializer};
 use serde_json::Value;
@@ -34,6 +33,7 @@ use crate::constants::EVENT_CATEGORIES;
 use crate::controlbox::INSTAGRAM_PUBLISHING;
 use crate::db::read_with_retry;
 use crate::text::python_strip;
+use crate::time_zones::Tz;
 
 pub const STATUS_GENERATING: &str = "generating";
 pub const STATUS_READY_FOR_REVIEW: &str = "ready_for_review";
