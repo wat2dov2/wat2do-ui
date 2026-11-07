@@ -6,8 +6,8 @@
 //! instructions live in `prompt.md`; this module prepares the source and applies
 //! the side effects of what the agent changed.
 
-use std::collections::HashMap;
-use std::sync::LazyLock;
+use std::collections::{HashMap, HashSet};
+use std::sync::{LazyLock, Mutex};
 use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
@@ -34,6 +34,33 @@ pub const WORKDIR_PREFIX: &str = "wat2do-ingestion-";
 static SHORTCODE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"/(?:p|reel|reels|tv)/([A-Za-z0-9_-]+)").expect("valid regex"));
 
+/// The poster tokens of the agent runs going in this process, the only one
+/// that writes placeholders: any other placeholder belongs to a run that
+/// stopped before it stored its posters.
+static RUNNING: LazyLock<Mutex<HashSet<String>>> = LazyLock::new(Default::default);
+
+/// One agent run's poster token, counted as running until the run is over.
+struct Running(String);
+
+impl Running {
+    fn start(token: &str) -> Self {
+        running().insert(token.to_owned());
+        Self(token.to_owned())
+    }
+}
+
+impl Drop for Running {
+    fn drop(&mut self) {
+        running().remove(&self.0);
+    }
+}
+
+fn running() -> std::sync::MutexGuard<'static, HashSet<String>> {
+    RUNNING
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
 /// One source image saved for the agent to view, kept until a row claims it.
 struct Image {
     file: String,
@@ -52,6 +79,9 @@ pub async fn ingest(
     carousel_requested: bool,
 ) -> Result<bool> {
     let source_url = post["url"].as_str().context("the source has no url")?;
+    // A run cut short (the processor stopped mid-run) leaves the rows it wrote
+    // pointing at placeholders, and its retry finds the source already listed.
+    store_leftover_posters(pool, post, source_url).await?;
     if already_imported(pool, source_url).await? {
         return Ok(true);
     }
@@ -65,6 +95,7 @@ pub async fn ingest(
             .unwrap_or(""),
     );
     let token = uuid::Uuid::new_v4().simple().to_string()[..12].to_owned();
+    let _running = Running::start(&token);
     let workdir = tempfile::Builder::new().prefix(WORKDIR_PREFIX).tempdir()?;
     let images = download_images(post, workdir.path(), is_instagram(source_url)).await?;
     let handles = candidate_handles(post);
@@ -446,6 +477,43 @@ async fn store_chosen_posters(pool: &PgPool, token: &str, images: &[Image]) -> R
     Ok(())
 }
 
+/// Store the posters a run cut short left as placeholders on this source's
+/// rows: the same images, downloaded again from the source.
+async fn store_leftover_posters(pool: &PgPool, post: &Value, source_url: &str) -> Result<()> {
+    let tokens = leftover_poster_tokens(pool, source_url).await?;
+    if tokens.is_empty() {
+        return Ok(());
+    }
+    let workdir = tempfile::Builder::new().prefix(WORKDIR_PREFIX).tempdir()?;
+    let images = download_images(post, workdir.path(), is_instagram(source_url)).await?;
+    for token in &tokens {
+        store_chosen_posters(pool, token, &images).await?;
+    }
+    changes::drain(pool, false).await
+}
+
+/// The poster tokens on this source's rows that no run here still owns.
+async fn leftover_poster_tokens(pool: &PgPool, source_url: &str) -> Result<Vec<String>> {
+    let tokens: Vec<String> = sqlx::query_scalar(
+        "SELECT DISTINCT substring(source_image_url FROM '^pending:([^/]+)/') FROM ( \
+             SELECT source_image_url FROM public.events WHERE source_url = $1 \
+             UNION ALL SELECT source_image_url FROM public.positions WHERE source_url = $1 \
+         ) AS listed WHERE source_image_url ~ '^pending:[^/]+/'",
+    )
+    .bind(source_url)
+    .fetch_all(pool)
+    .await?;
+    Ok(not_running(tokens))
+}
+
+fn not_running(tokens: Vec<String>) -> Vec<String> {
+    let running = running();
+    tokens
+        .into_iter()
+        .filter(|token| !running.contains(token))
+        .collect()
+}
+
 /// Give events the agent created without a poster the source's cover image,
 /// so posts with no flyer do not show a placeholder card.
 async fn cover_posterless_events(
@@ -482,6 +550,18 @@ async fn cover_posterless_events(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_placeholder_is_left_over_only_once_its_run_is_over() {
+        let (going, stopped) = ("0f1e2d3c4b5a".to_owned(), "a5b4c3d2e1f0".to_owned());
+        let run = Running::start(&going);
+        assert_eq!(
+            not_running(vec![going.clone(), stopped.clone()]),
+            vec![stopped]
+        );
+        drop(run);
+        assert_eq!(not_running(vec![going.clone()]), vec![going]);
+    }
 
     #[test]
     fn handles_and_images_follow_the_python_rules() {
