@@ -102,6 +102,22 @@ def test_a_failed_follow_stays_approved_for_the_next_try(world):
     assert marks == [("failed", "0"), ("failed", "1"), ("followed", "2"), ("followed", "3")]
 
 
+def test_follows_that_stop_sticking_pause_the_account_like_a_block(world):
+    stuck = module.FollowNotConfirmed("Instagram never confirmed the follow")
+    reader, marks = world({"club0": stuck, "club1": stuck, "club2": stuck})
+
+    assert module.follow_due(object(), "utsg", 5) == FollowVisit(0, 0, True)
+    assert reader.followed == ["club0", "club1", "club2"]
+    assert module.follows_due("utsg") is False
+
+
+def test_one_follow_that_does_not_stick_is_not_a_block(world):
+    stuck = module.FollowNotConfirmed("Instagram never confirmed the follow")
+    reader, _ = world({"club0": stuck, "club1": stuck})
+
+    assert module.follow_due(object(), "utsg", 5) == FollowVisit(2, 0, False)
+
+
 def test_try_again_later_pauses_the_account_for_a_day(world):
     reader, _ = world({"club0": ActionBlocked("Instagram asked this account to try again later")})
 

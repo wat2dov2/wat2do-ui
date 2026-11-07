@@ -6,7 +6,8 @@ follow this visit. Across the day a school account follows at most
 ``follows_per_account_per_day``. Each follow turns the account's post notifications to
 All so ingestion hears about its posts; an account the school already follows is only
 marked followed, after its bell is checked. Instagram's "Try again later" pauses the
-account's follows for a day; a follow that fails otherwise stays approved for later.
+account's follows for a day, and so do three Follow taps in a row that never stick
+(Instagram's silent limit); a follow that fails otherwise stays approved for later.
 
 Accounts waiting in ``unfollow`` (rejected, but still followed) are unfollowed the
 same way, from the same daily allowance, before any new follow.
@@ -33,6 +34,7 @@ from services.instagram_emulator.following import (
     ActionBlocked,
     FollowedWithoutBell,
     FollowingReader,
+    FollowNotConfirmed,
 )
 from services.instagram_follow import candidates
 
@@ -45,6 +47,9 @@ BLOCK_HOURS = 24
 # A visit opens at most this many profiles per follow it may make, so confirming
 # accounts already followed never holds the emulator for long.
 PROFILES_PER_FOLLOW = 4
+# Instagram sometimes limits an account without saying so: Follow taps just stop
+# sticking. This many in a row pause the account's follows like "Try again later".
+SILENT_BLOCK_AFTER = 3
 
 
 @dataclass(frozen=True)
@@ -117,7 +122,7 @@ def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
     reader = _reader(device, school)
     # Only a real follow counts toward the visit's limit and today's allowance.
     allowed = min(limit, _allowance(school_id))
-    followed = confirmed = 0
+    followed = confirmed = unconfirmed = 0
     for row in candidates.approved(school_id, allowed * PROFILES_PER_FOLLOW):
         if followed >= allowed:
             break
@@ -135,6 +140,14 @@ def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
             candidates.mark_follow_failed(row["id"], str(exc))
             _block(school)
             return FollowVisit(followed, confirmed, True)
+        except FollowNotConfirmed as exc:
+            candidates.mark_follow_failed(row["id"], str(exc))
+            unconfirmed += 1
+            if unconfirmed >= SILENT_BLOCK_AFTER:
+                log.warning("Follows from %s stopped sticking; pausing them", school)
+                _block(school)
+                return FollowVisit(followed, confirmed, True)
+            continue
         except EmulatorError as exc:
             candidates.mark_follow_failed(row["id"], str(exc))
             continue
@@ -142,6 +155,7 @@ def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
             candidates.mark_follow_failed(row["id"], "Profile is gone or hidden")
             continue
         candidates.mark_followed(row["id"], tapped=outcome.tapped)
+        unconfirmed = 0
         if outcome.tapped:
             followed += 1
         else:

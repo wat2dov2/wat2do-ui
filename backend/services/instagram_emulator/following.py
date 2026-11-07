@@ -48,6 +48,10 @@ class ActionBlocked(EmulatorError):
     """Instagram refused an action from this account for now ("Try again later")."""
 
 
+class FollowNotConfirmed(EmulatorError):
+    """The Follow tap never turned into Following; several in a row is Instagram's silent limit."""
+
+
 class FollowedWithoutBell(EmulatorError):
     """This call followed the account, but its post notifications could not be set to All."""
 
@@ -121,7 +125,12 @@ class FollowingReader:
         tapped = button.text in _UNFOLLOWED_LABELS
         if tapped:
             self._device.tap(button)
-            button = self._wait_for_button(_FOLLOWED_LABELS)
+            try:
+                button = self._wait_for_button(_FOLLOWED_LABELS)
+            except ActionBlocked:
+                raise
+            except EmulatorError as exc:
+                raise FollowNotConfirmed(str(exc)) from exc
         if button.text == "Following":
             try:
                 self._show_bell(username)
