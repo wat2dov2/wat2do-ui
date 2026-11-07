@@ -85,7 +85,9 @@ const CONTENT_STACK_CLASS = "flex h-full flex-1 flex-col gap-2";
 const TITLE_CLASS = "line-clamp-2 text-[15px] font-semibold leading-[1.1]";
 const STATS_CLASS = "mt-0.5 block text-[11px] font-medium leading-none";
 const DESCRIPTION_CLASS = "mt-2 line-clamp-2 text-xs leading-relaxed";
-const METADATA_CLASS = "mt-auto flex min-w-0 items-end justify-between gap-1";
+// The date, time and location follow the title at the stack's gap; a card stretched
+// to its row's tallest neighbour keeps the spare height below them, not above.
+const METADATA_CLASS = "flex min-w-0 items-end justify-between gap-1";
 const METADATA_LINES_CLASS = "min-w-0 flex-1 space-y-0.5";
 const METADATA_LINE_CLASS = "flex min-w-0 items-center gap-1 text-[13px]";
 
