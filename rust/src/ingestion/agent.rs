@@ -92,9 +92,11 @@ pub async fn ingest(
     // Allow for clock skew between this Mac and the database's added_at.
     let started = Utc::now() - TimeDelta::minutes(5);
     let outcome = run(&rendered, workdir.path()).await;
+    let refreshed = listed_events_given_this_poster(pool, &token, started).await?;
     store_chosen_posters(pool, &token, &images).await?;
     cover_posterless_events(pool, source_url, &images, started).await?;
     changes::stamp_new_rows(pool, source_url, &caption, posted_at, started).await?;
+    changes::refresh_sources(pool, &refreshed, source_url, &caption, posted_at).await?;
     changes::drain(pool, false).await?;
     Ok(outcome? != "nothing")
 }
@@ -390,6 +392,23 @@ async fn store_poster(image: Option<&Image>) -> (Option<String>, Option<String>)
         _ => None,
     };
     (poster, video)
+}
+
+/// Events listed before this run that the agent pointed at one of this source's posters:
+/// the source is about them, so they also take its link, caption and post time.
+async fn listed_events_given_this_poster(
+    pool: &PgPool,
+    token: &str,
+    started: DateTime<Utc>,
+) -> Result<Vec<i64>> {
+    let prefix = poster_reference(token, 0).trim_end_matches('0').to_owned();
+    Ok(sqlx::query_scalar(
+        "SELECT id::bigint FROM public.events WHERE source_image_url LIKE $1 || '%' AND added_at < $2",
+    )
+    .bind(&prefix)
+    .bind(started)
+    .fetch_all(pool)
+    .await?)
 }
 
 /// Store only the images the agent chose as posters and point their rows at them.
