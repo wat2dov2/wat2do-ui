@@ -173,6 +173,7 @@ Columns:
   The system stores that image (and its video, for a video slide) and replaces the reference.
   On a listed event this source is about, set it to this source's image of the event too, since the newest post usually shows its current poster or details.
   Keep the listed image only when none of this source's images is clearly of this event (a recap photo, a meme, an unrelated slide, another event's poster).
+  When you give a listed event this source's poster, the system also points its `source_url`, `description` and post time at this source; never write those yourself.
   Never write any other image URL, and never set `source_video_url`.
 - `price`: registration cost only, preferring the general admission or non-member price; 0 for free, NULL when not mentioned.
 - `food`: what this event gives attendees to eat or drink at no extra charge, free or included in its entry price, as the caption or poster states it: a JSON array such as `'["Pizza", "Drinks"]'`, or `'["Food"]'` for a generic "food provided".

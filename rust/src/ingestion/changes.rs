@@ -76,6 +76,37 @@ pub async fn drain(pool: &PgPool, include_pending_posters: bool) -> Result<()> {
     Ok(())
 }
 
+/// Point listed events at the newer source the agent took their poster from: its link,
+/// caption and post time replace the old post's, so the page links and reads like the
+/// poster it shows.
+pub async fn refresh_sources(
+    pool: &PgPool,
+    event_ids: &[i64],
+    source_url: &str,
+    caption: &str,
+    posted_at: Option<DateTime<Utc>>,
+) -> Result<()> {
+    if event_ids.is_empty() {
+        return Ok(());
+    }
+    let caption = (!caption.is_empty()).then_some(caption);
+    sqlx::query(
+        "UPDATE public.events SET \
+           source_url = $2, \
+           description = coalesce(left($3, $4), description), \
+           source_posted_at = coalesce($5, source_posted_at) \
+         WHERE id = ANY($1)",
+    )
+    .bind(event_ids)
+    .bind(source_url)
+    .bind(caption)
+    .bind(MAX_EVENT_DESCRIPTION_LENGTH)
+    .bind(posted_at)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
 /// Give rows the agent created from `source_url` the source's text and post time.
 pub async fn stamp_new_rows(
     pool: &PgPool,
