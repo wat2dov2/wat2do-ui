@@ -5,7 +5,12 @@ import ts from "typescript";
 import manifest from "../src/assets/event-mosaic-uwaterloo.json" with { type: "json" };
 
 type Draw = { source: unknown; sx: number; sy: number; pixels: number; x: number; y: number; size: number; alpha: number };
-type Controller = { stop: () => void; wave: (topic: string | null) => void };
+type Controller = { stop: () => void; setPhrase: (index: number) => void };
+type Title = {
+  wrapTitle: (text: string, columns: number, measure: (text: string) => number) => string[] | null;
+  layoutMosaicTitle: (lead: string, phrases: readonly string[], columns: number, measure: (text: string) => number) => { lead: string[]; phrases: string[][]; rows: number } | null;
+  TITLE_LINE_ROWS: number;
+};
 type Box = { left: number; top: number; columns: number; rows: number };
 type Engine = {
   startEventPixelMosaic: (...args: unknown[]) => Controller;
@@ -13,6 +18,18 @@ type Engine = {
 };
 
 const clock = { now: 0 };
+
+function transpile(path: string) {
+  const source = readFileSync(new URL(path, import.meta.url), "utf8");
+  return ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.CommonJS } }).outputText;
+}
+
+/** The headline layout module, loaded on its own (its canvas helpers are not called in these tests). */
+function loadTitle(): Title {
+  const exports = {} as Title;
+  runInNewContext(transpile("../src/features/landing/lib/eventMosaicTitle.ts"), { exports, Math });
+  return exports;
+}
 
 /** Runs the mosaic engine against a recording canvas, a fake clock and controllable observers. */
 function loadMosaic(width = 240, height = 120) {
@@ -34,13 +51,11 @@ function loadMosaic(width = 240, height = 120) {
   };
   const element = () => ({ width: 0, height: 0, style: {} as Record<string, string>, getContext: context });
   const document = { visibilityState: "visible", createElement: element, addEventListener: () => {}, removeEventListener: () => {} };
-  const source = readFileSync(new URL("../src/features/landing/lib/eventPixelMosaic.ts", import.meta.url), "utf8");
-  const { outputText } = ts.transpileModule(source, {
-    compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.CommonJS },
-  });
   const exports = {} as Engine;
-  runInNewContext(outputText, {
+  const title = loadTitle();
+  runInNewContext(transpile("../src/features/landing/lib/eventPixelMosaic.ts"), {
     exports,
+    require: (id: string) => (id === "@/features/landing/lib/eventMosaicTitle" ? title : {}),
     document,
     window: { devicePixelRatio: 2, setTimeout: () => 0, clearTimeout: () => {} },
     performance: { now: () => clock.now },
@@ -66,7 +81,7 @@ function loadMosaic(width = 240, height = 120) {
     image,
     engine: exports,
     start: (animate: boolean, tone = "muted", logoRegion?: () => { left: number; top: number; width: number; height: number }) =>
-      exports.startEventPixelMosaic(canvas, atlas, { tileSize: 24, gutter: 1, waveMs: 900, tone }, animate, {
+      exports.startEventPixelMosaic(canvas, atlas, { tileSize: 24, gutter: 1, swapsPerSecond: 0.1, tone }, animate, {
         posters: manifest.posters,
         logoMask: manifest.logoMask,
         logoColours: manifest.logoColours,
@@ -79,10 +94,8 @@ test("the atlas packs a few hundred real posters, each with the public event or 
   expect(manifest.posters.length).toBeGreaterThanOrEqual(250);
   // Twice the largest cell the page draws (36 CSS px), so cells are crisp on a 2x screen.
   expect(manifest.tilePixels).toBeGreaterThanOrEqual(72);
-  // Each headline topic has enough posters of its own for a wave.
-  for (const topic of ["networking", "social", "position"]) {
-    expect(manifest.posters.filter((poster) => poster.topic === topic).length).toBeGreaterThanOrEqual(40);
-  }
+  // Open club positions are part of the mix, as the headline promises.
+  expect(manifest.posters.filter((poster) => poster.kind === "position").length).toBeGreaterThanOrEqual(40);
   expect(manifest.eventCount).toBeGreaterThanOrEqual(manifest.posters.length);
   for (const poster of manifest.posters) {
     expect(poster.id).toBeGreaterThan(0);
@@ -148,32 +161,50 @@ test("logo cells are untouched posters whose own colour matches the logo, the re
   }
 });
 
-test("the grid is still until a wave is asked for; a wave crossfades cells to one topic, then stops", () => {
+test("the mosaic keeps changing a few scattered squares at a time, each with a quick crossfade, and pauses off screen", () => {
   const mosaic = loadMosaic();
-  mosaic.start(true);
-  expect(mosaic.frames).toHaveLength(0);
-
-  mosaic.draws.length = 0;
   clock.now = 0;
-  const controller = mosaic.start(true);
+  mosaic.start(true);
+  // It starts changing straight away.
+  expect(mosaic.frames).toHaveLength(1);
   mosaic.draws.length = 0;
-  controller.wave("position");
-  for (let step = 0; step < 80 && mosaic.frames.length; step += 1) {
+  for (let step = 0; step < 40; step += 1) {
     clock.now += 50;
     mosaic.frames.shift()!(clock.now);
   }
-  // The wave ran its course and nothing is left scheduled.
-  expect(mosaic.frames).toHaveLength(0);
-  // A fade draws both posters at partial strength; nothing is ever drawn from a coarse copy.
-  expect(mosaic.draws.some((draw) => draw.alpha > 0 && draw.alpha < MUTED_FULL)).toBe(true);
+  const fades = mosaic.draws.filter((draw) => draw.alpha > 0 && draw.alpha < MUTED_FULL);
+  expect(fades.length).toBeGreaterThan(0);
+  // Over two seconds a few squares change, never the whole grid at once.
+  const changed = new Set(mosaic.draws.map((draw) => `${draw.x},${draw.y}`));
+  expect(changed.size).toBeGreaterThan(1);
+  expect(changed.size).toBeLessThan(50);
   expect(mosaic.draws.filter((draw) => draw.size === 46).every((draw) => draw.pixels === manifest.tilePixels)).toBe(true);
+  // It keeps going: a frame is always waiting while it is on screen.
+  expect(mosaic.frames).toHaveLength(1);
 
-  // A wave that starts off screen waits for the mosaic to come back into view.
+  // Off screen it stops, and comes back when it scrolls into view.
   mosaic.observers.intersect!([{ isIntersecting: false }]);
-  controller.wave(null);
+  mosaic.frames.length = 0;
+  mosaic.observers.intersect!([{ isIntersecting: false }]);
   expect(mosaic.frames).toHaveLength(0);
   mosaic.observers.intersect!([{ isIntersecting: true }]);
   expect(mosaic.frames).toHaveLength(1);
+});
+
+test("a headline wraps by word into the cells it has, and gives up rather than shrink a word past legibility", () => {
+  const title = loadTitle();
+  // A measure of one cell per character keeps the arithmetic plain.
+  const measure = (text: string) => text.length;
+  expect(title.wrapTitle("networking opportunity", 14, measure)).toEqual(["networking", "opportunity"]);
+  expect(title.wrapTitle("social event", 14, measure)).toEqual(["social event"]);
+  expect(title.wrapTitle("networking", 6, measure)).toBeNull();
+  const layout = title.layoutMosaicTitle("Every campus", ["event", "networking opportunity"], 16, measure)!;
+  expect(layout.lead).toEqual(["Every campus"]);
+  // The lead plus the longest phrase, so every phrase fits the same box.
+  expect(layout.rows).toBe(3 * title.TITLE_LINE_ROWS);
+  // A narrow lead wraps to two lines; narrower still, a word cannot fit and the page shows text.
+  expect(title.layoutMosaicTitle("Every campus", ["event"], 9, measure)!.lead).toEqual(["Every", "campus"]);
+  expect(title.layoutMosaicTitle("Every campus", ["event"], 6, measure)).toBeNull();
 });
 
 /** A muted cell's full strength (MUTED_ALPHA in the engine); a fade passes below it. */

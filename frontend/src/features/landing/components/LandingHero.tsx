@@ -15,29 +15,18 @@ import { ROUTES } from "@/shared/constants/routes";
 import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
 import { ArrowRight, Check, Instagram, MapPin, Radio } from "lucide-react";
-import { Highlighter } from "@/shared/ui/highlighter";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import type { Event } from "@/shared/types";
 
 const VIEWS: readonly LandingEventView[] = ["map", "grid", "calendar"];
 
-/**
- * The headline's rotating phrases, each with the posters its mosaic wave brings
- * in (the topics `npm run build-event-mosaic` sorts posters into; null mixes them all).
- */
-const TITLE_WORDS = [
-  { key: "event", topic: null },
-  { key: "networking", topic: "networking" },
-  { key: "social", topic: "social" },
-  { key: "position", topic: "position" },
-] as const;
+/** The headline's rotating phrases, which the mosaic respells square by square as they turn. */
+const TITLE_WORDS = ["event", "networking", "social", "position"] as const;
 
 interface LandingHeroProps {
   schoolName: string;
   events: Event[];
-  /** Clubs in the school's directory; null when it is unavailable, undefined while it loads. */
-  clubCount: number | null | undefined;
   isLoading: boolean;
 }
 
@@ -57,30 +46,44 @@ function HeroLiveCount({ events, isLoading }: { events: Event[]; isLoading: bool
 
 /**
  * The pitch on a card cut like an event card, its whole face a mosaic of
- * scraped posters with the Wat2Do logo drawn in them above the headline. Each
- * time the headline's phrase changes, a wave refills the mosaic with that
- * phrase's posters. The corners carry the school, the live count, what it costs
+ * scraped posters that never stops changing, with the Wat2Do logo and the
+ * headline's first lines spelled in its squares; each time the rotating phrase
+ * turns, its letters respell square by square. The corners carry the school, the live count, what it costs
  * and where the events come from; the school's real feed follows in all three views.
  */
-export function LandingHero({ schoolName, events, clubCount, isLoading }: LandingHeroProps) {
-  const { t, i18n } = useTranslation();
+export function LandingHero({ schoolName, events, isLoading }: LandingHeroProps) {
+  const { t } = useTranslation();
   const [view, setView] = useState<LandingEventView>("map");
   const logoRegion = useRef<HTMLDivElement>(null);
+  const titleRegion = useRef<HTMLDivElement>(null);
   const mosaic = useRef<MosaicController | null>(null);
-  const phrases = TITLE_WORDS.map(({ key }) => t(`landing.hero.titleWords.${key}`));
+  const lead = t("landing.hero.titleLeadBefore");
+  const phrases = TITLE_WORDS.map((key) => t(`landing.hero.titleWords.${key}`));
+  /** Whether the mosaic spells the headline's first lines, and how much room they take; until it says so they are text. */
+  const [spelled, setSpelled] = useState<{ fits: boolean; height: number }>({ fits: false, height: 0 });
 
   const onMosaicReady = useCallback((controller: MosaicController) => {
     mosaic.current = controller;
   }, []);
   const onPhraseChange = useCallback((index: number) => {
-    mosaic.current?.wave(TITLE_WORDS[index]?.topic ?? null);
+    mosaic.current?.setPhrase(index);
+  }, []);
+  const onTitleLayout = useCallback((layout: { fits: boolean; height: number }) => {
+    setSpelled((current) => (current.fits === layout.fits && current.height === layout.height ? current : layout));
   }, []);
 
   return (
     <Stack as="section" gap={4} className="pt-2 sm:gap-6 sm:pt-8">
       <LandingCard
         size="display"
-        face={<EventPixelMosaic variant="logo" logoRegion={logoRegion} onReady={onMosaicReady} />}
+        face={
+          <EventPixelMosaic
+            variant="logo"
+            logoRegion={logoRegion}
+            title={{ lead, phrases, region: titleRegion, onLayout: onTitleLayout }}
+            onReady={onMosaicReady}
+          />
+        }
         corners={{
           "top-left": <LandingNotchLabel size="display" tone="school" icon={MapPin}>{schoolName}</LandingNotchLabel>,
           // An empty feed leaves the corner whole rather than notching it for a zero.
@@ -91,6 +94,12 @@ export function LandingHero({ schoolName, events, clubCount, isLoading }: Landin
       >
         {/* Where the mosaic draws the logo, clear of the text below it. */}
         <div ref={logoRegion} className="h-48 sm:h-80" />
+        {/*
+          Where the mosaic spells "Every campus" and the rotating phrase in posters. Its height
+          is the mosaic's layout (it grows for a phrase that wraps), and it is empty where the
+          letters would be too small to read, which shows them as text below instead.
+        */}
+        <div ref={titleRegion} style={{ height: spelled.height }} />
         <Stack gap={8} align="center" className="relative">
           <div className="relative w-full">
             <LandingHeading
@@ -98,16 +107,12 @@ export function LandingHero({ schoolName, events, clubCount, isLoading }: Landin
               align="center"
               title={
                 <>
-                  {/* One stable sentence for assistive tech; the three visual lines below are hidden from it. */}
-                  <span className="sr-only">
-                    {[t("landing.hero.titleLeadBefore"), phrases[0], t("landing.hero.titleHighlight")].join(" ")}
-                  </span>
-                  <span aria-hidden="true" className="block">{t("landing.hero.titleLeadBefore")}</span>
-                  <LandingRotatingWord phrases={phrases} onChange={onPhraseChange} />
-                  <span aria-hidden="true" className="block">
-                    <Highlighter color="var(--school-marker)">
-                      <span className="text-school-marker-foreground">{t("landing.hero.titleHighlight")}</span>
-                    </Highlighter>
+                  {/* One stable sentence for assistive tech; the visual lines below are hidden from it. */}
+                  <span className="sr-only">{[lead, phrases[0]].join(" ")}</span>
+                  {/* Spelled in the mosaic, the lines leave the text; the rotation still keeps time for it. */}
+                  <span aria-hidden="true" className={spelled.fits ? "hidden" : "block"}>{lead}</span>
+                  <span className={spelled.fits ? "hidden" : "contents"}>
+                    <LandingRotatingWord phrases={phrases} onChange={onPhraseChange} />
                   </span>
                 </>
               }
@@ -127,14 +132,6 @@ export function LandingHero({ schoolName, events, clubCount, isLoading }: Landin
                 </a>
               </Button>
             </Stack>
-            {/* The concrete number behind "every": how many clubs this school's feed reads. */}
-            {clubCount === undefined ? (
-              <Skeleton className="h-5 w-56" />
-            ) : clubCount !== null ? (
-              <p className="text-center text-sm text-muted-foreground tabular-nums">
-                {formatLandingCount(clubCount, i18n.language)} {t("landing.solution.stats.clubsLabel", { count: clubCount, school: schoolName })}
-              </p>
-            ) : null}
           </Stack>
         </Stack>
       </LandingCard>

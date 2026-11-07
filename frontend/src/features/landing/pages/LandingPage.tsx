@@ -25,7 +25,7 @@ export function LandingPage({ snapshot }: LandingPageProps) {
   return (
     <Container size="lg">
       <Stack gap={12} className="pb-12 sm:gap-40 sm:pb-24">
-        <LandingHero schoolName={schoolName} events={snapshot?.events ?? []} clubCount={snapshot ? snapshot.clubCount : undefined} isLoading={!snapshot} />
+        <LandingHero schoolName={schoolName} events={snapshot?.events ?? []} isLoading={!snapshot} />
         <LandingProblem schoolName={schoolName} />
         <LandingSolution schoolName={schoolName} snapshot={snapshot} />
         <LandingDifferent />

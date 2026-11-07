@@ -1,18 +1,23 @@
 /**
- * Draws a grid of real event posters onto one canvas. The grid is still until
- * a wave is asked for: then a front sweeps across it and each cell it passes
- * crossfades to its next poster. A wave can refill the grid with one topic's
- * posters, so the hero's mosaic changes with its headline.
+ * Draws a grid of real event posters onto one canvas that never stops
+ * changing: a few squares at a time, scattered all over the grid, each swap
+ * to another poster with a quick crossfade of that one square.
  *
  * Posters are drawn as they are, smoothed from an atlas at least twice the
  * cell size, onto a canvas backed at the screen's pixel ratio. The Wat2Do
  * logo reads out of the grid only because the cells on it are given posters
  * whose own dominant colour matches that part of the logo; nothing is tinted.
+ * A headline is spelled the same way, in posters that are black like the logo's goose, and
+ * its cells only ever swap among those, so the shapes always stay legible.
+ * When the headline's phrase changes, the squares that differ respell one by
+ * one at scattered moments, never as a sweep.
  *
  * All posters come from one atlas (`npm run build-event-mosaic`), so the page
  * loads a single image however many cells it shows. A small copy of the atlas
  * paints first; the full one replaces it when it arrives.
  */
+
+import { TITLE_LINE_ROWS, canvasMeasure, layoutMosaicTitle, rasterizeTitle } from "@/features/landing/lib/eventMosaicTitle";
 
 export interface MosaicAtlas {
   image: CanvasImageSource;
@@ -25,7 +30,7 @@ export interface MosaicAtlas {
 
 /**
  * - `muted`: every cell greyed and faded into the surface behind it.
- * - `logo`: cells on the Wat2Do logo in full colour, the rest muted, so the logo reads out of the grid.
+ * - `logo`: cells on the Wat2Do logo and the headline in full colour, the rest muted, so the shapes read out of the grid.
  */
 export type MosaicTone = "muted" | "logo";
 
@@ -34,41 +39,63 @@ export interface MosaicLook {
   tileSize: number;
   /** CSS pixels of surface left between cells, so the grid reads as cells. */
   gutter: number;
-  /** How long a wave takes to cross the grid. */
-  waveMs: number;
-  /** A wave of the whole collection runs on its own this often; none when left out. */
-  idleWaveMs?: number;
+  /** Share of the grid's cells that swap each second. */
+  swapsPerSecond: number;
   tone: MosaicTone;
 }
 
-/** What the mosaic needs to know about each poster and about the logo it can draw. */
+export interface MosaicRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+/** What the mosaic needs to know about each poster and about the shapes it can draw. */
 export interface MosaicContent {
-  /** Each poster's dominant colour (#rrggbb), the share of the poster it covers, and its topic, in atlas order. */
-  posters: readonly { colour: string; colourShare: number; topic: string | null }[];
+  /** Each poster's dominant colour (#rrggbb) and the share of the poster it covers, in atlas order. */
+  posters: readonly { colour: string; colourShare: number }[];
   /** The logo as rows of colour letters, "." for paper. */
   logoMask: readonly string[];
   /** Each logo colour letter's brand colour. */
   logoColours: Readonly<Record<string, string>>;
   /** Where the logo goes, in CSS pixels relative to the canvas; none draws no logo. */
-  logoRegion?: () => { left: number; top: number; width: number; height: number } | null;
+  logoRegion?: () => MosaicRect | null;
+  /** A headline to spell in cells: a fixed lead and phrases that take turns below it. */
+  title?: {
+    lead: string;
+    phrases: readonly string[];
+    /** Where the headline goes: its top and width; its height is the layout's. */
+    region: () => MosaicRect | null;
+    /** Told on every layout whether the headline fits legibly, and how tall it is in CSS pixels. */
+    onLayout: (layout: { fits: boolean; height: number }) => void;
+  };
 }
 
 export interface MosaicController {
   stop: () => void;
   /** Replaces the atlas (the full one after the first-paint copy) and redraws every cell. */
   setAtlas: (atlas: MosaicAtlas) => void;
-  /** Sweeps a wave across the grid that refills it with one topic's posters, or every poster for null. */
-  wave: (topic: string | null) => void;
+  /** Respells the headline with phrase `index`, square by square. */
+  setPhrase: (index: number) => void;
+  /** Lays the grid out again, as when the page's typeface finishes loading. */
+  relayout: () => void;
 }
 
-/** How long one cell takes to crossfade to its next poster. */
-const FADE_MS = 420;
+/** How long one square takes to crossfade to its next poster. */
+const FADE_MS = 360;
+/** Squares are swapped this often, a few at a time. */
+const TICK_MS = 90;
+/** A phrase change respells its squares at scattered moments across this long. */
+const RESPELL_MS = 900;
 /** How strongly muted cells show through the surface behind them. */
 const MUTED_ALPHA = 0.3;
-/** A poster counts as wearing a logo colour when its dominant colour is this near (RGB distance). */
-const LOGO_MATCH_DISTANCE = 110;
-/** Logo cells choose among this many matching posters; a topic with fewer borrows from the whole collection. */
+/** Logo cells choose among this many posters closest in colour to their part of the logo. */
 const LOGO_CANDIDATES = 12;
+/** Headline cells are black: posters whose dominant colour is within this distance of the logo's black, or failing that the closest. */
+const TITLE_BLACK_DISTANCE = 90;
+/** The fewest posters headline cells choose among, so letters never repeat one poster. */
+const TITLE_MIN_CANDIDATES = 12;
 
 function canvasOf(width: number, height: number) {
   const canvas = document.createElement("canvas");
@@ -146,7 +173,7 @@ export function logoCells(
 
 /**
  * Starts the mosaic on `canvas`, sized to its parent. With `animate` false it
- * draws one still mosaic of every poster and never runs a wave.
+ * draws one still mosaic and never swaps a square.
  */
 export function startEventPixelMosaic(
   canvas: HTMLCanvasElement,
@@ -157,42 +184,47 @@ export function startEventPixelMosaic(
 ): MosaicController {
   const context = canvas.getContext("2d");
   const parent = canvas.parentElement;
-  if (!context || !parent) return { stop: () => {}, setAtlas: () => {}, wave: () => {} };
+  if (!context || !parent) return { stop: () => {}, setAtlas: () => {}, setPhrase: () => {}, relayout: () => {} };
 
   let atlas = firstAtlas;
   let grey = greyscale(firstAtlas);
   const count = Math.min(firstAtlas.count, content.posters.length);
-  /** Poster indices per topic, null for all of them. */
-  const topics = new Map<string | null, number[]>([[null, Array.from({ length: count }, (_, index) => index)]]);
-  content.posters.slice(0, count).forEach(({ topic }, index) => {
-    if (topic) topics.set(topic, [...(topics.get(topic) ?? []), index]);
-  });
+  const everyPoster = Array.from({ length: count }, (_, index) => index);
 
   /**
-   * Per topic and logo letter, the posters whose dominant colour best matches
-   * that letter's brand colour, weighted by how much of the poster it covers.
-   * When the topic has too few close matches, the closest from the whole
-   * collection fill in, so the logo stays legible without touching a poster.
+   * Per logo letter, the posters whose dominant colour best matches that
+   * letter's brand colour, weighted by how much of the poster it covers.
    */
+  const distanceTo = (letter: string) => {
+    const [r, g, b] = rgb(content.logoColours[letter] ?? "#000000");
+    return (poster: number) => {
+      const [pr, pg, pb] = rgb(content.posters[poster].colour);
+      return Math.hypot(pr - r, pg - g, pb - b);
+    };
+  };
+  /** Every poster, closest first to a logo letter's colour, weighted by how much of the poster wears it. */
+  const rankFor = (letter: string) => {
+    const distance = distanceTo(letter);
+    const score = (poster: number) => distance(poster) / Math.max(0.2, content.posters[poster].colourShare);
+    return [...everyPoster].sort((a, c) => score(a) - score(c));
+  };
   const logoChoices = new Map<string, number[]>();
-  const logoChoicesFor = (topic: string | null, letter: string) => {
-    const key = `${topic}:${letter}`;
-    let choices = logoChoices.get(key);
+  const logoChoicesFor = (letter: string) => {
+    let choices = logoChoices.get(letter);
     if (!choices) {
-      const [r, g, b] = rgb(content.logoColours[letter] ?? "#000000");
-      const distance = (poster: number) => {
-        const [pr, pg, pb] = rgb(content.posters[poster].colour);
-        return Math.hypot(pr - r, pg - g, pb - b);
-      };
-      const score = (poster: number) => distance(poster) / Math.max(0.2, content.posters[poster].colourShare);
-      const rank = (pool: readonly number[]) => [...pool].sort((a, c) => score(a) - score(c));
-      const own = rank(topics.get(topic) ?? []).filter((poster) => distance(poster) <= LOGO_MATCH_DISTANCE);
-      const borrowed = rank(topics.get(null)!).filter((poster) => !own.includes(poster));
-      choices = [...own, ...borrowed].slice(0, LOGO_CANDIDATES);
-      logoChoices.set(key, choices);
+      choices = rankFor(letter).slice(0, LOGO_CANDIDATES);
+      logoChoices.set(letter, choices);
     }
     return choices;
   };
+
+  /** The headline's posters: black ones, matched the way the logo's black cells are. */
+  const titleChoices = (() => {
+    const ranked = rankFor("k");
+    const distance = distanceTo("k");
+    const black = ranked.filter((poster) => distance(poster) <= TITLE_BLACK_DISTANCE);
+    return black.length >= TITLE_MIN_CANDIDATES ? black : ranked.slice(0, TITLE_MIN_CANDIDATES);
+  })();
 
   let columns = 0;
   let rows = 0;
@@ -200,27 +232,71 @@ export function startEventPixelMosaic(
   let posters = new Uint16Array(0);
   /** Each cell's logo letter as a char code, or 0 off the logo. */
   let logo: Uint8Array = new Uint8Array(0);
-  /** Each cell's place along the wave's diagonal, with jitter so the front frays like a real wave. */
-  let wavePlace = new Float32Array(0);
-  let waveSpan = 1;
-  /** The posters the running wave is bringing in, and when it started. */
-  let incoming: Uint16Array | null = null;
-  let waveStart = 0;
-  /** Cells mid-fade, by index, to the poster they are leaving and when they started. */
-  const fading = new Map<number, { from: number; start: number }>();
+  /** Which cells spell the lead, and each phrase, on the full grid. */
+  let leadInk: Uint8Array = new Uint8Array(0);
+  let phraseInk: Uint8Array[] = [];
+  let phrase = 0;
+  /** Each cell's headline flag as shown now; it changes square by square as a phrase respells. */
+  let ink: Uint8Array = new Uint8Array(0);
+  /** Squares waiting to respell, by index, to the moment they are due. */
+  const respelling = new Map<number, number>();
+  /** The headline flags the respelling squares are heading for. */
+  let respellTarget: Uint8Array = new Uint8Array(0);
+  /** Squares mid-swap, by index, to the poster they are leaving, whether it was in colour, and when they started. */
+  const fading = new Map<number, { from: number; fromColour: boolean; start: number }>();
   let frame = 0;
+  let lastSwap = 0;
   let visible = true;
-  let idleTimer: number | undefined;
 
-  const pick = (index: number, topic: string | null) => {
+  const isColour = (index: number) => look.tone === "logo" && (logo[index] !== 0 || ink[index] === 1);
+  /** A poster for a square, from the posters that keep its shape legible. */
+  const pick = (index: number) => {
     const letter = logo[index];
-    const pool = letter ? logoChoicesFor(topic, String.fromCharCode(letter)) : topics.get(topic) ?? topics.get(null)!;
+    const pool = letter ? logoChoicesFor(String.fromCharCode(letter)) : ink[index] ? titleChoices : everyPoster;
     return pool[Math.floor(Math.random() * pool.length)];
   };
-  const fill = (topic: string | null) => Uint16Array.from({ length: columns * rows }, (_, index) => pick(index, topic));
 
-  function drawPoster(index: number, poster: number, alpha: number) {
-    const colour = logo[index] !== 0;
+  /** The cells that spell the lead and one phrase, on the full grid. */
+  function inkFor(phraseIndex: number): Uint8Array {
+    const cells = new Uint8Array(columns * rows);
+    for (const source of [leadInk, phraseInk[phraseIndex]]) {
+      source?.forEach((value, index) => { if (value) cells[index] = 1; });
+    }
+    return cells;
+  }
+
+  /** Lays the headline out in its region, or reports that it does not fit so the page shows it as text. */
+  function layoutTitle() {
+    leadInk = new Uint8Array(0);
+    phraseInk = [];
+    const title = look.tone === "logo" ? content.title : undefined;
+    const region = title?.region();
+    if (!title || !region) return;
+    const family = getComputedStyle(canvas).fontFamily;
+    const regionColumns = Math.floor(region.width / look.tileSize);
+    const left = Math.round(region.left / look.tileSize);
+    const top = Math.round(region.top / look.tileSize);
+    const layout = layoutMosaicTitle(title.lead, title.phrases, regionColumns, canvasMeasure(family));
+    title.onLayout(layout ? { fits: true, height: layout.rows * look.tileSize } : { fits: false, height: 0 });
+    if (!layout) return;
+    /** A box of ink placed on the grid, `rowOffset` rows below the region's top. */
+    const place = (lines: readonly string[], rowOffset: number) => {
+      const boxRows = lines.length * TITLE_LINE_ROWS;
+      const box = rasterizeTitle(lines, regionColumns, boxRows, family);
+      const cells = new Uint8Array(columns * rows);
+      box.forEach((value, index) => {
+        const row = top + rowOffset + Math.floor(index / regionColumns);
+        const column = left + (index % regionColumns);
+        if (value && row < rows && column < columns) cells[row * columns + column] = 1;
+      });
+      return cells;
+    };
+    const leadRows = layout.lead.length * TITLE_LINE_ROWS;
+    leadInk = place(layout.lead, 0);
+    phraseInk = layout.phrases.map((lines) => place(lines, leadRows));
+  }
+
+  function drawPoster(index: number, poster: number, alpha: number, colour: boolean) {
     const x = (index % columns) * look.tileSize * scale;
     const y = Math.floor(index / columns) * look.tileSize * scale;
     const size = (look.tileSize - look.gutter) * scale;
@@ -233,19 +309,28 @@ export function startEventPixelMosaic(
     );
   }
 
-  /** Draws one cell, crossfading from the poster it is leaving while `progress` runs from 0 to 1. */
-  function drawCell(index: number, fade?: { from: number; progress: number }) {
+  /** Draws one square, crossfading from the poster it is leaving while `progress` runs from 0 to 1. */
+  function drawCell(index: number, fade?: { from: number; fromColour: boolean; progress: number }) {
     const x = (index % columns) * look.tileSize * scale;
     const y = Math.floor(index / columns) * look.tileSize * scale;
     context!.clearRect(x, y, look.tileSize * scale, look.tileSize * scale);
-    if (fade) drawPoster(index, fade.from, 1 - fade.progress);
-    drawPoster(index, posters[index], fade ? fade.progress : 1);
+    if (fade) drawPoster(index, fade.from, 1 - fade.progress, fade.fromColour);
+    drawPoster(index, posters[index], fade ? fade.progress : 1, isColour(index));
     context!.globalAlpha = 1;
   }
 
   function drawAll() {
     context!.clearRect(0, 0, canvas.width, canvas.height);
     for (let index = 0; index < posters.length; index += 1) drawCell(index);
+  }
+
+  /** Swaps one square to a new poster for its shape, starting its crossfade. */
+  function swap(index: number, now: number) {
+    if (fading.has(index)) return;
+    const from = posters[index];
+    const fromColour = isColour(index);
+    posters[index] = pick(index);
+    fading.set(index, { from, fromColour, start: now });
   }
 
   function resize() {
@@ -270,62 +355,55 @@ export function startEventPixelMosaic(
         rows: Math.floor(region.height / look.tileSize),
       })
       : new Uint8Array(columns * rows);
-    posters = fill(null);
-    wavePlace = Float32Array.from({ length: columns * rows }, (_, index) =>
-      (index % columns) + Math.floor(index / columns) * 0.6 + Math.random() * 3);
-    waveSpan = columns + rows * 0.6 + 3;
-    incoming = null;
+    layoutTitle();
+    ink = inkFor(phrase);
+    posters = Uint16Array.from({ length: columns * rows }, (_, index) => pick(index));
+    respelling.clear();
     fading.clear();
     drawAll();
   }
 
   function tick(now: number) {
     frame = 0;
-    if (incoming) {
-      const front = ((now - waveStart) / look.waveMs) * waveSpan;
-      for (let index = 0; index < posters.length; index += 1) {
-        if (wavePlace[index] <= front && posters[index] !== incoming[index] && !fading.has(index)) {
-          fading.set(index, { from: posters[index], start: now });
-          posters[index] = incoming[index];
-        }
+    // A few scattered squares at a time, at the look's rate, whichever they are.
+    if (now - lastSwap >= TICK_MS) {
+      const due = posters.length * look.swapsPerSecond * ((lastSwap ? now - lastSwap : TICK_MS) / 1000);
+      lastSwap = now;
+      for (let swaps = Math.floor(due + Math.random()); swaps > 0; swaps -= 1) {
+        swap(Math.floor(Math.random() * posters.length), now);
       }
-      if (front > waveSpan) incoming = null;
     }
-    for (const [index, { from, start }] of fading) {
+    // Squares whose letter changed with the phrase, each at its own moment.
+    for (const [index, at] of respelling) {
+      if (at > now || fading.has(index)) continue;
+      const from = posters[index];
+      const fromColour = isColour(index);
+      ink[index] = respellTarget[index];
+      posters[index] = pick(index);
+      fading.set(index, { from, fromColour, start: now });
+      respelling.delete(index);
+    }
+    for (const [index, { from, fromColour, start }] of fading) {
       const progress = Math.min(1, (now - start) / FADE_MS);
-      drawCell(index, progress < 1 ? { from, progress } : undefined);
+      drawCell(index, progress < 1 ? { from, fromColour, progress } : undefined);
       if (progress >= 1) fading.delete(index);
     }
-    // Between waves nothing is scheduled at all.
-    if (incoming || fading.size) schedule();
-  }
-
-  function schedule() {
-    if (!frame && visible && document.visibilityState === "visible") frame = requestAnimationFrame(tick);
-  }
-
-  function scheduleIdleWave() {
-    window.clearTimeout(idleTimer);
-    if (!animate || !look.idleWaveMs) return;
-    idleTimer = window.setTimeout(() => {
-      wave(null);
-      scheduleIdleWave();
-    }, look.idleWaveMs);
-  }
-
-  function wave(topic: string | null) {
-    if (!animate) return;
-    incoming = fill(topic);
-    waveStart = performance.now();
     schedule();
   }
 
+  function schedule() {
+    if (animate && !frame && visible && document.visibilityState === "visible") frame = requestAnimationFrame(tick);
+  }
+
+  function pause() {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    lastSwap = 0;
+  }
+
   function onVisibility() {
-    if (frame && (!visible || document.visibilityState !== "visible")) {
-      cancelAnimationFrame(frame);
-      frame = 0;
-    }
-    if (incoming || fading.size) schedule();
+    if (visible && document.visibilityState === "visible") schedule();
+    else pause();
   }
 
   const resizeObserver = new ResizeObserver(resize);
@@ -339,12 +417,11 @@ export function startEventPixelMosaic(
   });
   intersectionObserver.observe(canvas);
   document.addEventListener("visibilitychange", onVisibility);
-  scheduleIdleWave();
+  schedule();
 
   return {
     stop: () => {
-      cancelAnimationFrame(frame);
-      window.clearTimeout(idleTimer);
+      pause();
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
@@ -354,6 +431,16 @@ export function startEventPixelMosaic(
       grey = greyscale(next);
       drawAll();
     },
-    wave,
+    setPhrase: (index) => {
+      if (!animate || !phraseInk[index] || index === phrase) return;
+      phrase = index;
+      const target = inkFor(index);
+      respellTarget = target;
+      const now = performance.now();
+      target.forEach((value, cell) => {
+        if (value !== ink[cell]) respelling.set(cell, now + Math.random() * RESPELL_MS);
+      });
+    },
+    relayout: resize,
   };
 }

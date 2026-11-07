@@ -26,9 +26,9 @@ const PREVIEW_TILE_PIXELS = 16;
 /** Posters per atlas row. */
 const ATLAS_COLUMNS = 20;
 /**
- * The newest posters kept per topic the hero's headline names, so each of its
- * waves can refill the grid with that topic alone. About 400 in all, a few
- * hundred KB. Every open club position with a poster is kept.
+ * The newest posters kept per topic the hero's headline names, so the grid
+ * shows networking, social and club position posters as well as the rest. A
+ * few hundred in all, a few hundred KB. Every open club position with a poster is kept.
  */
 const TOPIC_QUOTAS = { networking: 70, social: 70, position: 80, other: 80 };
 /**
@@ -320,10 +320,10 @@ await writeFile(
     eventCount: total,
     logoColours: LOGO_COLOURS,
     logoMask: await logoMask(),
-    // "other" only ever shows in the mixed grid, so it is stored as no topic.
-    posters: packed.map(({ event, tile }) => {
+    // The topic only chose the mix; the page shows every poster together.
+    posters: packed.map(({ event: { topic: _topic, ...event }, tile }) => {
       const { colour, share } = dominantColour(tile);
-      return { ...event, topic: event.topic === "other" ? null : event.topic, colour, colourShare: share };
+      return { ...event, colour, colourShare: share };
     }),
   })}\n`,
 );
