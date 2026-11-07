@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { ProfileTab } from "@/features/settings/components/ProfileTab";
@@ -12,7 +14,7 @@ import { usePromoterState } from "@/features/posters";
 import { QP } from "@/shared/constants/queryParams";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 import { SETTINGS_TABS } from "@/shared/constants/routes";
-import { Container, PageHeader, Stack } from "@/shared/layout";
+import { Container, Stack } from "@/shared/layout";
 
 export function SettingsPage() {
   const userEmail = useUserEmail();
@@ -45,10 +47,7 @@ export function SettingsPage() {
   return (
     <Container size="md">
       <Stack gap={8}>
-        <PageHeader
-          title={t("navigation.settings")}
-          description={t("settings.description")}
-        />
+        <PageShellHeader route={ROUTES.SETTINGS} />
         <Tabs value={tabParam} onValueChange={handleTabChange}>
           <Stack gap={8}>
             <TabsList>

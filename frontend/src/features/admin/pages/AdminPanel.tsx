@@ -1,10 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { BarChart3, Building2, Users, Calendar, Instagram, Mail, Megaphone, MessageCircle, Settings, Shield } from "lucide-react";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
+import { BarChart3, Building2, Users, Calendar, Instagram, Mail, Megaphone, MessageCircle, Settings } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { AdminCard } from "@/shared/ui/AdminCard";
 import { Stack } from "@/shared/layout/stack";
 import { FormGrid } from "@/shared/layout/form-grid";
-import { PageHeader } from "@/shared/layout/page-header";
 import { useAdminPanel } from "@/features/admin/hooks/useAdminPanel";
 import { type AdminRouteKey } from "@/shared/constants/routes";
 
@@ -18,7 +19,7 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
 
   return (
     <Stack gap={5}>
-      <PageHeader icon={Shield} title={t("navigation.adminPanel")} description={t("admin.panelDescription")} />
+      <PageShellHeader route={ROUTES.ADMIN} />
       {loadFailed ? (
         <Stack align="start" gap={2} role="alert">
           <p>{t("admin.pendingCountsError")}</p>

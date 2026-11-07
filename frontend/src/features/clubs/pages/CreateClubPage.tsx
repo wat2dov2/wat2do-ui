@@ -1,4 +1,5 @@
 import { useRouter } from "next/navigation";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuthState } from "@/features/auth";
@@ -15,7 +16,7 @@ import {
   resolveWritableSchool,
 } from "@/shared/constants/schools";
 import { loadUserProfile } from "@/features/auth/api/userRepository";
-import { Container, PageHeader, Section, Stack } from "@/shared/layout";
+import { Container, Section, Stack } from "@/shared/layout";
 import { toast } from "@/shared/hooks/use-toast";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
@@ -60,12 +61,8 @@ export function CreateClubPage() {
   return (
     <Container size="md">
       <Stack gap={6}>
-        <PageHeader
-          back={{
-            href: ROUTES.CLUBS,
-            label: t("clubs.allClubs"),
-          }}
-          title={t("clubs.submitClub")}
+        <PageShellHeader
+          route={ROUTES.CLUB_CREATE}
           description={t("clubs.addClubDescription", {
             school: getSchoolName(school),
           })}

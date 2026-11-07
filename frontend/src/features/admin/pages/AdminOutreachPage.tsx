@@ -13,7 +13,8 @@ import { FormalityBadge } from "@/features/admin/components/outreach/FormalityBa
 import { gmailComposeUrl } from "@/features/admin/components/outreach/gmailCompose";
 import { LeadDetailsDialog } from "@/features/admin/components/outreach/LeadDetailsDialog";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { AdminTableFilters } from "@/features/admin/components/shared/AdminTableFilters";
 import { Stack } from "@/shared/layout";
@@ -28,7 +29,7 @@ const LEAD_STATUSES = ["new", "contacted", "replied", "claimed", "not_interested
 const LEAD_SORTS: OutreachLeadSort[] = ["newest", "formality"];
 
 /** Unclaimed clubs the daily sweep found an email for, each with the email inviting it to claim its page. */
-export function AdminOutreachPage({ onBack }: { onBack: () => void }) {
+export function AdminOutreachPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -47,7 +48,7 @@ export function AdminOutreachPage({ onBack }: { onBack: () => void }) {
 
   return (
     <Stack gap={5}>
-      <AdminPageHeader icon={Mail} title={t("admin.outreach.title")} description={t("admin.outreach.description")} onBack={onBack} />
+      <PageShellHeader route={ROUTES.ADMIN_OUTREACH} />
       <AdminTableFilters search={filters.search} onSearchChange={filter("search")} school={filters.school} onSchoolChange={filter("school")}>
         <Select value={filters.sort} onValueChange={filter("sort")}>
           <SelectTrigger aria-label={t("admin.outreach.sortLabel")}><SelectValue /></SelectTrigger>

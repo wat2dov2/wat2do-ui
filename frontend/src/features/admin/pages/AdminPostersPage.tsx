@@ -1,10 +1,10 @@
-import { lazy, useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { lazy, useState } from "react";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { useTranslation } from "react-i18next";
 import { useUserEmail } from "@/features/auth";
 import { AdminPayoutsPanel } from "@/features/admin/components/posters/AdminPayoutsPanel";
 import { ROUTES } from "@/shared/constants/routes";
-import { PageHeader, Stack } from "@/shared/layout";
+import { Stack } from "@/shared/layout";
 import {
   PostersPageContent,
   QRCodeDetailsModal,
@@ -16,7 +16,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/shared/ui/tabs";
-import { Coins, Megaphone } from "lucide-react";
+import { Coins } from "lucide-react";
 
 const QRScanMap = lazy(() =>
   import("@/features/posters").then((module) => ({ default: module.QRScanMap })),
@@ -25,26 +25,16 @@ const QRScanMap = lazy(() =>
 export function AdminPostersPage() {
   const { t } = useTranslation();
   const userEmail = useUserEmail();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"posters" | "payouts">("posters");
-  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
   const showingPosters = activeTab === "posters";
 
   return (
     <Stack gap={5}>
-      <PageHeader
-        back={{ label: t("admin.backToDashboard"), onClick: onBack }}
-        icon={showingPosters ? Megaphone : Coins}
-        title={
-          showingPosters
-            ? t("admin.qrAssets.title")
-            : t("admin.posterPayouts.title")
-        }
-        description={
-          showingPosters
-            ? t("admin.qrAssets.description")
-            : t("admin.posterPayouts.description")
-        }
+      <PageShellHeader
+        route={ROUTES.ADMIN_POSTERS}
+        icon={showingPosters ? undefined : Coins}
+        title={showingPosters ? undefined : t("admin.posterPayouts.title")}
+        description={showingPosters ? undefined : t("admin.posterPayouts.description")}
       />
       <Tabs
         value={activeTab}

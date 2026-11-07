@@ -8,13 +8,16 @@ import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import { LandingPage } from "@/features/landing/pages/LandingPage";
 import { ClubCardSkeleton } from "@/features/clubs/components/ClubCardSkeleton";
+import { ClubDetailsSkeleton } from "@/features/clubs/components/ClubDetailsSkeleton";
+import { EventDetailsBodySkeleton } from "@/features/events/components/EventDetailsDrawerSkeleton";
 import { POSITION_TYPES } from "@/features/positions/api/positions.api";
 import { Container, PageHeader, Stack } from "@/shared/layout";
 import { FilterBar } from "@/shared/layout/filter-bar";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { getEventQuickFilters, getEventFilterCategories } from "@/shared/constants/eventFilters";
 import { ROUTES } from "@/shared/constants/routes";
-import { LoadingPage } from "@/shared/ui/loading-page";
+import { LoadingPage, PageShellLoading } from "@/shared/ui/loading-page";
+import { PAGE_SHELLS } from "@/shared/constants/pageShells";
 import { PageCountHeading } from "@/shared/ui/page-count-heading";
 import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
 import { Button } from "@/shared/ui/button";
@@ -71,40 +74,13 @@ export function RouteLoading() {
   if (pathname === ROUTES.EVENTS) return <DiscoveryLoading resource="events" />;
   if (pathname === ROUTES.CLUBS) return <DiscoveryLoading resource="clubs" />;
   if (pathname === ROUTES.POSITIONS) return <DiscoveryLoading resource="positions" />;
-  if (/^\/(events|clubs)\/\d+\/?$/.test(pathname)) {
-    const isEvent = pathname.startsWith("/events/");
+  if (/^\/clubs\/\d+\/?$/.test(pathname)) return <ClubDetailsSkeleton />;
+  if (/^\/events\/\d+\/?$/.test(pathname)) {
     return <Container size="lg"><Stack gap={6}>
-      <PageHeader back={{ href: isEvent ? ROUTES.EVENTS : ROUTES.CLUBS, label: t(isEvent ? "events.allEvents" : "clubs.allClubs") }} />
-      <LoadingPage variant="detail" />
+      <PageHeader back={{ href: ROUTES.EVENTS, label: t("events.allEvents") }} />
+      <EventDetailsBodySkeleton />
     </Stack></Container>;
   }
-
-  const titleKey = {
-    [ROUTES.SETTINGS]: "navigation.settings",
-    [ROUTES.EVENT_SUBMIT]: "events.submitEvent",
-    [ROUTES.POSITION_SUBMIT]: "positions.addPosition",
-    [ROUTES.CLUB_CREATE]: "clubs.addClub",
-    [ROUTES.ADMIN]: "navigation.admin",
-    [ROUTES.ADMIN_EVENTS]: "navigation.events",
-    [ROUTES.ADMIN_CLUBS]: "navigation.clubs",
-    [ROUTES.ADMIN_POSITIONS]: "navigation.positions",
-    [ROUTES.ADMIN_POSTERS]: "admin.qrAssets.title",
-    [ROUTES.ADMIN_INSTAGRAM]: "admin.instagramPublishing.title",
-    [ROUTES.ADMIN_DIAGNOSTICS]: "admin.diagnostics.title",
-    [ROUTES.CLUB_PANEL]: "clubPanel.title",
-    [ROUTES.CLUB_PANEL_EVENTS]: "navigation.events",
-    [ROUTES.CLUB_PANEL_POSITIONS]: "navigation.positions",
-    [ROUTES.CLUB_PANEL_MEMBERS]: "clubPanel.members",
-    [ROUTES.POSTERS]: "posters.dashboard.title",
-  }[pathname];
-  const formRoutes: readonly string[] = [ROUTES.SETTINGS, ROUTES.EVENT_SUBMIT, ROUTES.POSITION_SUBMIT, ROUTES.CLUB_CREATE];
-  const back = pathname.startsWith(`${ROUTES.ADMIN}/`)
-    ? { href: ROUTES.ADMIN, label: t("admin.backToDashboard") }
-    : pathname.startsWith(`${ROUTES.CLUB_PANEL}/`)
-      ? { href: ROUTES.CLUB_PANEL, label: t("clubPanel.backToPanel") }
-      : undefined;
-  return <Stack gap={6}>
-    {titleKey ? <PageHeader title={t(titleKey)} back={back} /> : null}
-    <LoadingPage variant={formRoutes.includes(pathname) ? "form" : pathname.startsWith(ROUTES.ADMIN) ? "table" : "content"} />
-  </Stack>;
+  if (pathname in PAGE_SHELLS) return <PageShellLoading route={pathname} />;
+  return <LoadingPage />;
 }

@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { getPositionsPage } from "@/features/positions/api/positions.api";
 import { formatPositionDeadline } from "@/features/positions/lib/positionDates";
 import { PositionDetailsDrawer } from "@/features/positions/components/PositionDetailsDrawer";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
 import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBar";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { PositionSubmissionReview } from "@/features/admin/components/PositionSubmissionReview";
@@ -14,13 +15,12 @@ import { ADMIN_ITEMS_PER_PAGE } from "@/features/admin/constants";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { Stack } from "@/shared/layout";
-import { Users } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { TableCell, TableRow } from "@/shared/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import type { Position } from "@/shared/types";
 
-export function AdminPositionsPage({ onBack }: { onBack: () => void }) {
+export function AdminPositionsPage() {
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
   const [search, setSearch] = useState("");
@@ -40,7 +40,7 @@ export function AdminPositionsPage({ onBack }: { onBack: () => void }) {
   return (
     <Tabs defaultValue="positions">
       <Stack gap={5}>
-        <AdminPageHeader icon={Users} title={t("navigation.positions")} description={t("positions.searchPlaceholder")} onBack={onBack} />
+        <PageShellHeader route={ROUTES.ADMIN_POSITIONS} />
         <TabsList>
           <TabsTrigger value="positions">{t("navigation.positions")}</TabsTrigger>
           <TabsTrigger value="submissions" count={pendingSubmissions.data?.total}>{t("positions.submissions")}</TabsTrigger>

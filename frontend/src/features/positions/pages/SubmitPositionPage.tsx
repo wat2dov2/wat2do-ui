@@ -1,10 +1,11 @@
 "use client";
 
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { useAuthState } from "@/features/auth";
 import { usePositionSubmission } from "@/features/positions/hooks/usePositionSubmission";
-import { Container, FormActions, FormGrid, PageHeader, Stack } from "@/shared/layout";
+import { Container, FormActions, FormGrid, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { FormInput, FormSelect, FormTextarea } from "@/shared/ui/form-field";
@@ -28,7 +29,7 @@ export function SubmitPositionPage() {
   return (
     <Container size="sm">
       <Stack gap={6}>
-        <PageHeader title={t("positions.addPosition")} back={{ href: ROUTES.POSITIONS, label: t("navigation.positions") }} />
+        <PageShellHeader route={ROUTES.POSITION_SUBMIT} />
         {form.submitted ? (
           <Stack gap={3}><p role="status">{t(form.published ? "positions.published" : "positions.submitted")}</p><Button asChild><Link href={ROUTES.POSITIONS}>{t("navigation.positions")}</Link></Button></Stack>
         ) : !form.formOpen ? (

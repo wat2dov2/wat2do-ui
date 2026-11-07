@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { useTranslation } from "react-i18next";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { useRouter } from "next/navigation";
 import { Users, UserMinus, UserPlus, Search, MailOpen } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { TableSkeletonRows } from "@/shared/ui/table";
 import { Spinner } from "@/shared/ui/spinner";
 import { ROUTES } from "@/shared/constants/routes";
-import { PageHeader, Stack } from "@/shared/layout";
+import { Stack } from "@/shared/layout";
 import { useAuthState } from "@/features/auth";
 import { toast } from "@/shared/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -49,7 +49,6 @@ function RosterTableHeader({ columns }: RosterTableHeaderProps) {
 
 export function ClubPanelMembersPage() {
   const { t, i18n } = useTranslation();
-  const router = useRouter();
   const { clubId, userId } = useAuthState();
   const { getSchoolTimezone } = useSchoolDirectory();
   const { club } = useActiveClub();
@@ -244,15 +243,7 @@ export function ClubPanelMembersPage() {
 
   return (
     <Stack gap={5}>
-      <PageHeader
-        back={{
-          label: t("clubPanel.backToPanel"),
-          onClick: () => router.push(ROUTES.CLUB_PANEL),
-        }}
-        icon={Users}
-        title={t("clubPanel.members")}
-        description={t("clubPanel.membersDesc")}
-      />
+      <PageShellHeader route={ROUTES.CLUB_PANEL_MEMBERS} />
 
       <Stack gap={6}>
           <Card className="bg-surface border border-border shadow-sm">

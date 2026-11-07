@@ -10,7 +10,8 @@ import {
   type PostSort,
 } from "@/features/admin/lib/socialAccounts";
 import { useSocialAccounts } from "@/features/admin/hooks/useSocialAccounts";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { SocialAccountRow } from "@/features/admin/components/social/SocialAccountRow";
 import { SocialPostTile } from "@/features/admin/components/social/SocialPostTile";
@@ -25,7 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 
 /** Every wat2do Instagram account at once: followers, engagement, each post and its song, read daily. */
-export function AdminSocialAccountsPage({ onBack }: { onBack: () => void }) {
+export function AdminSocialAccountsPage() {
   const { t, i18n } = useTranslation();
   const { query, readAt, accounts, posts, songs, summary, trends, music, capturedAt } = useSocialAccounts();
   const [accountSort, setAccountSort] = useState<AccountSort>("followers");
@@ -34,15 +35,10 @@ export function AdminSocialAccountsPage({ onBack }: { onBack: () => void }) {
   const number = (value: number | null) => (value === null ? "-" : value.toLocaleString(i18n.language, { maximumFractionDigits: 1 }));
 
   const header = (
-    <AdminPageHeader
-      icon={BarChart3}
-      title={t("admin.socialAccounts.title")}
-      description={capturedAt ? [
+    <PageShellHeader route={ROUTES.ADMIN_SOCIAL} description={capturedAt ? [
         t("admin.socialAccounts.updated", { time: formatRelativeTime(capturedAt, t) }),
         summary.needingAttention ? t("admin.socialAccounts.summary.needingAttention", { value: number(summary.needingAttention) }) : null,
-      ].filter(Boolean).join(" · ") : t("admin.socialAccounts.description")}
-      onBack={onBack}
-    />
+      ].filter(Boolean).join(" · ") : undefined} />
   );
   if (query.isError) {
     return <Stack gap={5}>{header}<Button variant="outline" onClick={() => void query.refetch()}>{t("common.tryAgain")}</Button></Stack>;

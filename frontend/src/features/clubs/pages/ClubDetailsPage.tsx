@@ -10,7 +10,7 @@ import { cn } from "@/shared/lib/utils";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { DiscordIcon } from "@/shared/ui/platform-icons";
 import { Button } from "@/shared/ui/button";
-import { LoadingPage } from "@/shared/ui/loading-page";
+import { ClubDetailsSkeleton } from "@/features/clubs/components/ClubDetailsSkeleton";
 import { Link } from "@/shared/ui/link";
 import { Separator } from "@/shared/ui/separator";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
@@ -246,17 +246,14 @@ export function ClubDetailsPage({
   });
 
   if (!club) {
+    if (isPending) return <ClubDetailsSkeleton />;
     return (
       <Container size="lg">
         <Stack gap={6}>
           <PageHeader
             back={{ href: ROUTES.CLUBS, label: t("clubs.allClubs") }}
           />
-          {isPending ? (
-            <LoadingPage variant="detail" />
-          ) : (
-            <p role="alert">{t("clubs.loadFailed")}</p>
-          )}
+          <p role="alert">{t("clubs.loadFailed")}</p>
         </Stack>
       </Container>
     );

@@ -30,7 +30,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useAdminList, useAdminPendingCounts } from "@/features/admin/hooks/useAdminList";
 import { getClubClaims, getClubSubmissions, resolveClaim, resolveClubReview } from "@/features/admin/api/admin.api";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
 import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBar";
 import { AdminTableFilters } from "@/features/admin/components/shared/AdminTableFilters";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
@@ -51,13 +52,8 @@ import { QP } from "@/shared/constants/queryParams";
 
 const ALL_CLUB_TYPES_VALUE = "__all_club_types__";
 
-interface AdminClubsPageProps {
-  onBack: () => void;
-}
 
-export function AdminClubsPage({
-  onBack,
-}: AdminClubsPageProps) {
+export function AdminClubsPage() {
   const { t, i18n } = useTranslation();
   const { getSchoolName, getSchoolTimezone } = useSchoolDirectory();
   const {
@@ -220,20 +216,7 @@ export function AdminClubsPage({
       }
       className="space-y-5"
     >
-      <AdminPageHeader
-        icon={Building2}
-        title={t("admin.manageClubs")}
-        description={t("admin.manageClubsDesc")}
-        onBack={onBack}
-        action={
-          activeTab === "clubs"
-            ? {
-                label: t("clubs.addClub"),
-                onClick: openAddModal,
-              }
-            : undefined
-        }
-      />
+      <PageShellHeader route={ROUTES.ADMIN_CLUBS} actions={activeTab === "clubs" ? <Button size="sm" onClick={openAddModal}>{t("clubs.addClub")}</Button> : undefined} />
 
       <div className="space-y-5 pb-2">
         <TabsList>

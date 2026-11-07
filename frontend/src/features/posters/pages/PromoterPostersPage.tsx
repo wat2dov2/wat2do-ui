@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
 import { useTranslation } from "react-i18next";
 
 import { PromoterEnrollmentCard } from "@/features/posters/components/PromoterEnrollmentCard";
@@ -19,7 +21,6 @@ import { promoterProgram } from "@/shared/config/promoterProgram";
 import {
   Container,
   FormGrid,
-  PageHeader,
   Section,
   Stack,
 } from "@/shared/layout";
@@ -53,10 +54,7 @@ export function PromoterPostersPage() {
     return (
       <Container size="sm" data-testid="promoter-dashboard">
         <Stack gap={6}>
-          <PageHeader
-            title={t("posters.dashboard.title")}
-            description={t("posters.dashboard.enrollmentRequired")}
-          />
+          <PageShellHeader route={ROUTES.POSTERS} description={t("posters.dashboard.enrollmentRequired")} />
           <PromoterEnrollmentCard mode="recruitment" />
         </Stack>
       </Container>
@@ -115,8 +113,8 @@ export function PromoterPostersPage() {
   return (
     <Container data-testid="promoter-dashboard">
       <Stack gap={8}>
-        <PageHeader
-          title={t("posters.dashboard.title")}
+        <PageShellHeader
+          route={ROUTES.POSTERS}
           description={
             <>
               {t("posters.dashboard.description")}{" "}

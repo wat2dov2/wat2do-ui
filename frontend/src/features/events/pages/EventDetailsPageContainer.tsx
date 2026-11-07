@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { LoadingPage } from "@/shared/ui/loading-page";
+import { EventDetailsBodySkeleton } from "@/features/events/components/EventDetailsDrawerSkeleton";
 import {
   EventActions,
   EventDetailsBody,
@@ -71,7 +71,7 @@ export function EventDetailsPageContainer({
             />
           </>
         ) : isPending ? (
-          <LoadingPage variant="detail" />
+          <EventDetailsBodySkeleton />
         ) : (
           <p role="alert">{t("common.error")}</p>
         )}

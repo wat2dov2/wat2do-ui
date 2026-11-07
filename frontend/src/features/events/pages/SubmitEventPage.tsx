@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useAuthState } from "@/features/auth";
@@ -12,7 +13,7 @@ import {
   resolveWritableSchool,
 } from "@/shared/constants/schools";
 import { loadUserProfile } from "@/features/auth/api/userRepository";
-import { Container, PageHeader, Stack } from "@/shared/layout";
+import { Container, Stack } from "@/shared/layout";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import type { EventFormData } from "@/shared/types";
 
@@ -51,9 +52,8 @@ export function SubmitEventPage() {
   return (
     <Container size="lg">
       <Stack gap={6}>
-        <PageHeader
-          back={{ href: ROUTES.EVENTS, label: t("events.allEvents") }}
-          title={t("events.createEvent")}
+        <PageShellHeader
+          route={ROUTES.EVENT_SUBMIT}
           description={t("events.submitEventSchoolDescription", {
             school: getSchoolName(school),
           })}

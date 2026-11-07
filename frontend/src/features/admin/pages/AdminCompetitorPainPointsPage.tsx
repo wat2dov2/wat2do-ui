@@ -7,7 +7,8 @@ import {
   type CompetitorPainPoint,
   type CompetitorPainPointFilters,
 } from "@/features/admin/api/admin.api";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { AdminTableFilters } from "@/features/admin/components/shared/AdminTableFilters";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
@@ -27,7 +28,7 @@ const AUDIENCES = ["organizer", "attendee", "other"] as const;
 const STATUSES = ["new", "seen", "dismissed"] as const;
 
 /** Complaints the Mac's Haiku sweep found about competitors, and Opus's daily reports on them; admins only read and triage. */
-export function AdminCompetitorPainPointsPage({ onBack }: { onBack: () => void }) {
+export function AdminCompetitorPainPointsPage() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -53,7 +54,7 @@ export function AdminCompetitorPainPointsPage({ onBack }: { onBack: () => void }
 
   return (
     <Stack gap={5}>
-      <AdminPageHeader icon={MessageCircle} title={t("admin.painPoints.title")} description={t("admin.painPoints.description")} onBack={onBack} />
+      <PageShellHeader route={ROUTES.ADMIN_PAIN_POINTS} />
       <Tabs defaultValue="complaints">
         <Stack gap={5}>
           <TabsList aria-label={t("admin.painPoints.tabs.label")}>

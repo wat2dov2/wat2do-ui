@@ -54,6 +54,7 @@ test("switching managed clubs hides old rows immediately and ignores late roster
       if (id === "react-i18next") return { useTranslation: () => ({ t, i18n: { language: "en" } }) };
       if (id === "@/features/auth") return { useAuthState: () => ({ clubId }) };
       if (id === "next/navigation") return { useRouter: () => ({ push: () => undefined }) };
+      if (id === "@/shared/constants/routes") return { ROUTES: { CLUB_PANEL_MEMBERS: "/club-panel/members" } };
       if (id === "@/features/club-panel/hooks/useActiveClub") return { useActiveClub: () => ({ clubId, club: { school: "uwaterloo" } }) };
       if (id === "@/shared/hooks/useSchoolDirectory") return { useSchoolDirectory: () => ({ getSchoolTimezone: () => "America/Toronto" }) };
       if (id === "../api/members.api") return {

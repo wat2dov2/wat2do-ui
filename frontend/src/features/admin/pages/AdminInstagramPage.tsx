@@ -3,24 +3,21 @@ import { useTranslation } from "react-i18next";
 import { InstagramCarouselDrawer } from "@/features/admin/components/instagram/InstagramCarouselDrawer";
 import { InstagramRunsTable } from "@/features/admin/components/instagram/InstagramRunsTable";
 import { InstagramSongsPanel } from "@/features/admin/components/instagram/InstagramSongsPanel";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
 import { useInstagramPublishing } from "@/features/admin/hooks/useInstagramPublishing";
 import { Container, DrawerBody, Section, Stack } from "@/shared/layout";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
 import { Button } from "@/shared/ui/button";
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/shared/ui/drawer";
-import { Instagram } from "lucide-react";
 import { LoadingPage } from "@/shared/ui/loading-page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { toast } from "@/shared/hooks/use-toast";
 
-interface AdminInstagramPageProps {
-  onBack: () => void;
-}
 
 const BATCHES_PER_PAGE = 25;
 
-export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
+export function AdminInstagramPage() {
   const { t } = useTranslation();
   const [pageNumber, setPageNumber] = useState(1);
   const [openBatchId, setOpenBatchId] = useState<string | null>(null);
@@ -45,12 +42,7 @@ export function AdminInstagramPage({ onBack }: AdminInstagramPageProps) {
   return (
     <Container size="lg">
       <Stack gap={6}>
-        <AdminPageHeader
-          icon={Instagram}
-          title={t("admin.instagramPublishing.title")}
-          description={t("admin.instagramPublishing.description")}
-          onBack={onBack}
-        />
+        <PageShellHeader route={ROUTES.ADMIN_INSTAGRAM} />
 
         <Tabs defaultValue="carousels">
           <Stack gap={6}>

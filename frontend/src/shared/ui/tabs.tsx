@@ -6,6 +6,7 @@ import { LayoutGroup, motion, useReducedMotion } from "framer-motion"
 
 import { useMobileClickActivation } from "@/shared/hooks/useMouseDownPress"
 import { cn } from "@/shared/lib/utils"
+import { Skeleton } from "@/shared/ui/skeleton"
 
 /**
  * The active tab's pill is one element that slides between triggers (a shared
@@ -125,4 +126,15 @@ function TabsContent({
   )
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent }
+/** A TabsList's frame with placeholder triggers, for tabs whose labels are not known yet. */
+function TabsListSkeleton({ count }: { count: number }) {
+  return (
+    <div data-slot="tabs-list-skeleton" data-elevation="control" aria-hidden="true" className="inline-flex min-h-9 w-fit gap-1 rounded-xl bg-surface p-1">
+      {Array.from({ length: count }, (_, index) => (
+        <Skeleton key={index} className={cn("h-7 rounded-xl", index === 0 ? "w-20" : "w-24")} />
+      ))}
+    </div>
+  )
+}
+
+export { Tabs, TabsList, TabsTrigger, TabsContent, TabsListSkeleton }

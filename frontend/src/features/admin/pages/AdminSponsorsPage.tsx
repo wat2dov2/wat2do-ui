@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getSponsorSubmissions, type SponsorSubmission } from "@/features/admin/api/admin.api";
 import { SponsorSubmissionDrawer } from "@/features/admin/components/SponsorSubmissionDrawer";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
 import { AdminTable } from "@/features/admin/components/shared/AdminTable";
 import { AdminTableFilters } from "@/features/admin/components/shared/AdminTableFilters";
 import { AdminStatusBadge } from "@/features/admin/components/shared/AdminStatusBadge";
@@ -16,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TableCell, TableRow } from "@/shared/ui/table";
 import { Stack } from "@/shared/layout";
 
-export function AdminSponsorsPage({ onBack }: { onBack: () => void }) {
+export function AdminSponsorsPage() {
   const { t } = useTranslation();
   const { getSchoolName } = useSchoolDirectory();
   const [page, setPage] = useState(1);
@@ -30,7 +31,7 @@ export function AdminSponsorsPage({ onBack }: { onBack: () => void }) {
   });
   return (
     <Stack gap={5}>
-      <AdminPageHeader icon={Building2} title={t("admin.sponsors.title")} description={t("admin.sponsors.description")} onBack={onBack} />
+      <PageShellHeader route={ROUTES.ADMIN_SPONSORS} />
       <AdminTableFilters search={search} school={school}
         onSearchChange={value => { setSearch(value); setPage(1); }}
         onSchoolChange={value => { setSchool(value); setPage(1); }}>

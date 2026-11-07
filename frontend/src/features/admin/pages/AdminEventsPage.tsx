@@ -22,7 +22,8 @@ import { useAdminPendingCounts } from "@/features/admin/hooks/useAdminList";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { useAdminEventsPage } from "@/features/admin/hooks/useAdminEventsPage";
 import type { Event, SubmissionStatus } from "@/shared/types";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
 import { AdminSearchBar } from "@/features/admin/components/shared/AdminSearchBar";
 import { AdminEmptyState } from "@/features/admin/components/shared/AdminEmptyState";
 import { AdminDeleteDialog } from "@/features/admin/components/shared/AdminDeleteDialog";
@@ -50,13 +51,8 @@ import { toast } from "@/shared/hooks/use-toast";
 import { useMutableSearchParams } from "@/shared/hooks/useMutableSearchParams";
 
 
-interface AdminEventsPageProps {
-  onBack: () => void;
-}
 
-export function AdminEventsPage({
-  onBack,
-}: AdminEventsPageProps) {
+export function AdminEventsPage() {
   const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useMutableSearchParams();
 
@@ -140,12 +136,7 @@ export function AdminEventsPage({
       onValueChange={(value) => setActiveTab(value as "events" | "submissions" | "reports")}
     >
       <Stack gap={5}>
-        <AdminPageHeader
-          icon={Calendar}
-          title={t("admin.manageEvents")}
-          description={t("admin.manageEventsDesc")}
-          onBack={onBack}
-        />
+        <PageShellHeader route={ROUTES.ADMIN_EVENTS} />
 
         <TabsList>
           <TabsTrigger value="events">

@@ -10,7 +10,7 @@
 import { lazy, Suspense, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { ROUTES, ADMIN_ROUTE_MAP, type AdminRouteKey } from "@/shared/constants/routes";
+import { ADMIN_ROUTE_MAP, type AdminRouteKey } from "@/shared/constants/routes";
 import { RouteLoading } from "@/app/routes/RouteLoading";
 
 const AdminPanel = lazy(() =>
@@ -84,35 +84,23 @@ export function AdminPanelRoute() {
 }
 
 export function AdminEventsRoute() {
-  const router = useRouter();
-  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
-
   return (
     <AdminSuspense>
-      <AdminEventsPage
-        onBack={onBack}
-      />
+      <AdminEventsPage />
     </AdminSuspense>
   );
 }
 
 export function AdminClubsRoute() {
-  const router = useRouter();
-  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
-
   return (
     <AdminSuspense>
-      <AdminClubsPage
-        onBack={onBack}
-      />
+      <AdminClubsPage />
     </AdminSuspense>
   );
 }
 
 export function AdminPositionsRoute() {
-  const router = useRouter();
-  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
-  return <AdminSuspense><AdminPositionsPage onBack={onBack} /></AdminSuspense>;
+  return <AdminSuspense><AdminPositionsPage /></AdminSuspense>;
 }
 
 export function AdminPostersRoute() {
@@ -124,47 +112,33 @@ export function AdminPostersRoute() {
 }
 
 export function AdminInstagramRoute() {
-  const router = useRouter();
-  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
-
   return (
     <AdminSuspense>
-      <AdminInstagramPage onBack={onBack} />
+      <AdminInstagramPage />
     </AdminSuspense>
   );
 }
 
 export function AdminDiagnosticsRoute() {
-  const router = useRouter();
-  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
-
   return (
     <AdminSuspense>
-      <AdminDiagnosticsPage onBack={onBack} />
+      <AdminDiagnosticsPage />
     </AdminSuspense>
   );
 }
 
 export function AdminCompetitorPainPointsRoute() {
-  const router = useRouter();
-  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
-  return <AdminSuspense><AdminCompetitorPainPointsPage onBack={onBack} /></AdminSuspense>;
+  return <AdminSuspense><AdminCompetitorPainPointsPage /></AdminSuspense>;
 }
 
 export function AdminOutreachRoute() {
-  const router = useRouter();
-  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
-  return <AdminSuspense><AdminOutreachPage onBack={onBack} /></AdminSuspense>;
+  return <AdminSuspense><AdminOutreachPage /></AdminSuspense>;
 }
 
 export function AdminSponsorsRoute() {
-  const router = useRouter();
-  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
-  return <AdminSuspense><AdminSponsorsPage onBack={onBack} /></AdminSuspense>;
+  return <AdminSuspense><AdminSponsorsPage /></AdminSuspense>;
 }
 
 export function AdminSocialAccountsRoute() {
-  const router = useRouter();
-  const onBack = useCallback(() => router.push(ROUTES.ADMIN), [router]);
-  return <AdminSuspense><AdminSocialAccountsPage onBack={onBack} /></AdminSuspense>;
+  return <AdminSuspense><AdminSocialAccountsPage /></AdminSuspense>;
 }

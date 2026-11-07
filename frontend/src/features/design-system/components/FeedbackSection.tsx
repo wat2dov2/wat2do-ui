@@ -45,7 +45,7 @@ export function FeedbackSection() {
           />
         </ShowcaseBlock>
 
-        {(["content", "cards", "table", "form", "detail"] as const).map((variant) => (
+        {(["content", "cards", "table", "form", "detail", "dashboard", "list", "sections", "rows", "upload"] as const).map((variant) => (
           <ShowcaseBlock key={variant} label={`Loading skeleton: ${variant}`}>
             <LoadingPage variant={variant} />
           </ShowcaseBlock>

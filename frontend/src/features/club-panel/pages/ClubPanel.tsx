@@ -1,8 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { Briefcase, Building2, Calendar, Coins, Users } from "lucide-react";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
+import { Briefcase, Calendar, Coins, Users } from "lucide-react";
 import { useActiveClub } from "@/features/club-panel/hooks/useActiveClub";
 import { useClubPayouts } from "@/features/club-panel/hooks/useClubPayouts";
-import { FormGrid, PageHeader, Stack } from "@/shared/layout";
+import { FormGrid, Stack } from "@/shared/layout";
 import { AdminCard } from "@/shared/ui/AdminCard";
 import type { ClubPanelRouteKey } from "@/shared/constants/routes";
 
@@ -18,11 +20,7 @@ export function ClubPanel({ onNavigate }: ClubPanelProps) {
 
   return (
     <Stack gap={5}>
-      <PageHeader
-        icon={Building2}
-        title={club?.club_name ?? t("clubPanel.title")}
-        description={t("clubPanel.description")}
-      />
+      <PageShellHeader route={ROUTES.CLUB_PANEL} title={club?.club_name} />
       <FormGrid columns={3}>
         <AdminCard
           icon={Calendar}

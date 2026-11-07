@@ -1,5 +1,6 @@
 "use client";
 
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
 import { useCurrentTime } from "@/features/events/hooks/useGoingEvents";
@@ -9,10 +10,10 @@ import { ROUTES, ticketPath } from "@/shared/constants/routes";
 import { EmptyState } from "@/shared/feedback";
 import type { ApiTicketResponse } from "@/shared/generated";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { Container, PageHeader, Section, Stack } from "@/shared/layout";
+import { Container, Section, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/shared/ui/item";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { LoadingPage } from "@/shared/ui/loading-page";
 import { formatOccurrence } from "@/shared/utils/date";
 import { Ticket } from "lucide-react";
 
@@ -51,12 +52,9 @@ export function MyTicketsPage() {
   return (
     <Container size="md">
       <Stack gap={6}>
-        <PageHeader icon={Ticket} title={t("tickets.title")} description={t("tickets.description")} />
+        <PageShellHeader route={ROUTES.TICKETS} />
         {isPending ? (
-          <Stack gap={2}>
-            <Skeleton className="h-20 w-full rounded-xl" />
-            <Skeleton className="h-20 w-full rounded-xl" />
-          </Stack>
+          <LoadingPage variant="rows" className="py-0" />
         ) : !tickets?.length ? (
           <EmptyState
             icon={<Ticket />}

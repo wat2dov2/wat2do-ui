@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
+import { PageShellHeader } from "@/shared/layout/page-shell-header";
+import { ROUTES } from "@/shared/constants/routes";
 import { Container, Stack } from "@/shared/layout";
-import { Settings } from "lucide-react";
 import {
   Tabs,
   TabsContent,
@@ -12,22 +12,14 @@ import { DiscoveryQueries } from "@/features/admin/components/DiscoveryQueries";
 import { DiagnosticsLogs } from "@/features/admin/components/DiagnosticsLogs";
 import { IngestionLatency } from "@/features/admin/components/IngestionLatency";
 
-interface AdminDiagnosticsPageProps {
-  onBack: () => void;
-}
 
-export function AdminDiagnosticsPage({ onBack }: AdminDiagnosticsPageProps) {
+export function AdminDiagnosticsPage() {
   const { t } = useTranslation();
 
   return (
     <Container size="lg">
       <Stack gap={6}>
-        <AdminPageHeader
-          icon={Settings}
-          title={t("admin.diagnostics.title")}
-          description={t("admin.diagnostics.description")}
-          onBack={onBack}
-        />
+        <PageShellHeader route={ROUTES.ADMIN_DIAGNOSTICS} />
 
         <Tabs defaultValue="scraping">
           <Stack gap={5}>
