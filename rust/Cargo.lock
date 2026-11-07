@@ -4259,6 +4259,8 @@ dependencies = [
  "aws-lc-rs",
  "aws-sdk-s3",
  "aws-sdk-sesv2",
+ "aws-smithy-runtime-api",
+ "aws-smithy-types",
  "axum",
  "base64 0.22.1",
  "bytes",

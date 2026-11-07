@@ -11,14 +11,12 @@ from uuid import UUID
 
 from postgrest.exceptions import APIError
 
-from core.auth import is_admin
 from core.constants import (
     DEFAULT_LIST_LIMIT,
     MAX_PAGE_SIZE,
 )
 from core.controlbox import controlbox
 from core.database import get_sb
-from core.errors import CLUB_EVENT_CREATION_REQUIRED, CLUB_PENDING_REVIEW
 from core.exceptions import ConflictError, NotFoundError, ValidationError
 from core.pagination import apply_stable_order
 from core.sanitize import sanitize_postgrest_value
@@ -35,7 +33,6 @@ from schemas.club import (
     ClubResponse,
     ClubUpdate,
 )
-from schemas.user import UserResponse
 from services import position_service, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
 
@@ -156,46 +153,6 @@ def _fetch_owner_email(user_id: str | None) -> str | None:
                     return email
     except Exception as e:
         log.warning("Failed to fetch owner email for %s: %s", user_id, e)
-    return None
-
-
-def list_clubs_by_owner(owner_id: str) -> list[ClubResponse]:
-    """Return all clubs where the user is a member/manager."""
-    clubs_dict = {}
-
-    try:
-        r_members = (
-            get_sb()
-            .table(CLUB_MEMBERS)
-            .select(f"clubs(*,{school_service.SCHOOL_SLUG_EMBED})")
-            .eq("user_id", owner_id)
-            .execute()
-        )
-        for row in r_members.data or []:
-            if row.get("clubs"):
-                club_data = row["clubs"]
-                email = _fetch_owner_email(club_data.get("created_by"))
-                club = _club_response(club_data, owner_email=email)
-                clubs_dict[club.id] = club
-    except Exception as e:
-        log.warning("Failed to query club_members for owner_id %s: %s", owner_id, e)
-
-    return list(clubs_dict.values())
-
-
-def publish_refusal(club: ClubResponse, db_user: UserResponse) -> str | None:
-    """Why *db_user* may not publish under *club* without review, or None when they may.
-
-    Admins may. Otherwise management-team membership alone is not enough: the
-    club itself must have cleared admin review, so submitting a club is never a
-    route to publishing events or positions without moderation.
-    """
-    if is_admin(db_user):
-        return None
-    if club.status != CLUB_STATUS_APPROVED:
-        return CLUB_PENDING_REVIEW
-    if not any(c.id == club.id for c in list_clubs_by_owner(str(db_user.id))):
-        return CLUB_EVENT_CREATION_REQUIRED
     return None
 
 

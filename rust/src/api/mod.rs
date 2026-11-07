@@ -19,6 +19,7 @@ pub mod errors;
 pub mod events;
 pub mod json;
 pub mod messages;
+pub mod multipart;
 pub mod pagination;
 pub mod proxy;
 pub mod rate_limit;
@@ -28,6 +29,8 @@ pub mod routing;
 pub mod secrets;
 pub mod security_headers;
 pub mod supervisor;
+#[cfg(test)]
+pub mod test_database;
 pub mod tickets;
 pub mod validation;
 
@@ -55,6 +58,8 @@ pub struct AppState {
     pub trust: Arc<ProxyTrust>,
     /// The Python app; `None` when Rust runs alone (the parity replay).
     pub upstream: Option<Arc<Upstream>>,
+    /// Where uploads are stored (S3 behind CloudFront).
+    pub storage: Arc<crate::storage::Storage>,
 }
 
 impl AppState {
@@ -84,6 +89,7 @@ impl AppState {
             auth: Arc::new(auth),
             trust: Arc::new(ProxyTrust::new(settings)),
             upstream,
+            storage: Arc::new(crate::storage::Storage::new(settings)),
         })
     }
 }
@@ -93,6 +99,9 @@ impl AppState {
 fn rust_routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(routes::health::health))
+        // routers/ai.py
+        .routes(routes!(routes::ai::parse_event_image))
+        .routes(routes!(routes::ai::parse_position_image))
         // routers/auth.py
         .routes(routes!(routes::auth::start_google_oauth))
         .routes(routes!(routes::auth::complete_google_oauth))
@@ -155,6 +164,23 @@ fn rust_routes() -> OpenApiRouter<AppState> {
         ))
         .routes(routes!(routes::reports::update_report))
         .routes(routes!(routes::site_banner::get_site_banner))
+        // routers/submissions.py
+        .routes(routes!(
+            routes::submissions::create_submission,
+            routes::submissions::list_submissions
+        ))
+        .routes(routes!(
+            routes::submissions::get_submission_route,
+            routes::submissions::update_submission,
+            routes::submissions::delete_submission
+        ))
+        // routers/uploads.py
+        .routes(routes!(routes::uploads::upload_event_image_unsigned))
+        .routes(routes!(routes::uploads::upload_event_image))
+        .routes(routes!(routes::uploads::upload_avatar))
+        .routes(routes!(routes::uploads::upload_club_logo))
+        .routes(routes!(routes::uploads::upload_qr_asset))
+        .routes(routes!(routes::uploads::upload_claim_proof))
         // routers/clubs.py
         .routes(routes!(
             routes::clubs::list_clubs,
@@ -202,6 +228,12 @@ fn rust_routes() -> OpenApiRouter<AppState> {
         .routes(routes!(routes::positions::list_positions))
         .routes(routes!(routes::positions::get_position_stats))
         .routes(routes!(routes::positions::get_position))
+        // routers/position_submissions.py
+        .routes(routes!(
+            routes::submissions::positions::create_submission,
+            routes::submissions::positions::list_submissions
+        ))
+        .routes(routes!(routes::submissions::positions::review_submission))
         // routers/qr.py
         .routes(routes!(
             routes::qr::list_qr_codes_route,

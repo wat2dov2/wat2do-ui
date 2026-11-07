@@ -287,6 +287,19 @@ async fn school_by_slug(
     .await?)
 }
 
+/// `update_user(user_id, UserUpdate(avatar_url=url))`: a new profile photo.
+pub async fn set_avatar(
+    db: &sqlx::PgPool,
+    user_id: Uuid,
+    url: String,
+) -> Result<Option<UserResponse>, ApiError> {
+    let update = UserUpdate {
+        avatar_url: Some(Input::Given(url)),
+        ..UserUpdate::default()
+    };
+    update_user(db, user_id, update).await
+}
+
 /// `update_user`: change only the fields sent; a school must be registered
 /// and a faculty offered by the (new or current) school.
 async fn update_user(

@@ -126,7 +126,11 @@ def run_python(cases: list[dict[str, Any]], backend: Path, iterations: int) -> l
                 case["path"],
                 headers=case.get("headers") or {},
                 json=case.get("json"),
-                content=case.get("body"),
+                content=(
+                    base64.b64decode(case["body_base64"])
+                    if "body_base64" in case
+                    else case.get("body")
+                ),
                 follow_redirects=False,
             )
             samples.append((time.perf_counter() - started) * 1000)

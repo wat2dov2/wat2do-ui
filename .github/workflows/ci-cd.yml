@@ -129,8 +129,10 @@ jobs:
 
   rust-database:
     name: Rust database tests
-    # The Rust API's session statements (sign-in, refresh rotation, the code
-    # lockout and single use) against a real Postgres holding our schema.
+    # The Rust API's statements on its login and write paths (sign-in,
+    # refresh rotation, the code lockout and single use; submissions, their
+    # review and uploads) against a real Postgres holding our schema: every
+    # test module named database_tests.
     runs-on: ubuntu-latest
     services:
       postgres:

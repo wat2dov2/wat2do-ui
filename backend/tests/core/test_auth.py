@@ -77,7 +77,3 @@ def test_expired_or_misaddressed_tokens_are_rejected(overrides):
 
     with pytest.raises(AuthenticationError):
         auth.get_current_user(_bearer(token))
-
-
-def test_optional_auth_treats_a_bad_token_as_anonymous():
-    assert auth.get_optional_user(_bearer("not-a-jwt")) is None

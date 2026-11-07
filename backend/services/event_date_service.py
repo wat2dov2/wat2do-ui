@@ -19,8 +19,7 @@ def create_occurrences(
     """Bulk-insert occurrences for ``event_id``.
 
     Empty input is a no-op (returns ``[]``). Caller is responsible for
-    enforcing "at least one occurrence per event" at the schema layer
-    (``EventCreate.occurrences`` is min_length=1).
+    enforcing "at least one occurrence per event".
     """
     if not occurrences:
         return []

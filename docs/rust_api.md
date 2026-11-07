@@ -69,6 +69,8 @@ Port one whole router (every path under its prefix) per change, so no path is se
    | `get_client_ip` | `ProxyTrust::client_ip` (repeats uvicorn's proxy rewrite first) |
    | `sanitize_postgrest_value`, `parse_iso_datetime` | `text::sanitize_postgrest_value`, `text::parse_iso_datetime` |
    | `sanitize_svg`, `looks_like_svg` | `svg_sanitize` |
+   | `file: UploadFile = File(...)` | `multipart::read_field` before any extractor (FastAPI reads the form before its dependencies, and a malformed one is a 400), then `multipart::required_file` with the other parameters' 422 issues |
+   | `storage.validate_and_prepare`, `storage.upload_file`, `delete_file`, `path_from_url` | `storage::validate_and_prepare` (off the async threads: `routes::ai::prepare_upload`), `state.storage` |
    | `get_school_for_email` | `allowed_emails::AllowedEmailDomains` |
    | PostgREST table reads through `get_sb()` | SQL on `state.db`; wrap reads in `db::read_with_retry` |
 
@@ -101,7 +103,7 @@ Each side then verifies the token itself, so authentication is compared too.
 Use the `auth_id` of a real user so `DbUser` resolves the same row on both sides.
 A case can also send its own `authorization` header, such as a token we did not sign.
 Keep real ids and emails out of committed case files: commit placeholders (as in `rust/parity/clubs.json`) and substitute real identities in a local copy when you run it.
-`json` sends a JSON body and `body` a raw one.
+`json` sends a JSON body, `body` a raw text one and `body_base64` raw bytes (a multipart upload).
 Only GET, HEAD and OPTIONS cases run unless a case is marked `"safe": true` or `--allow-writes` is given, and `--allow-writes` only runs when `DATABASE_URL` and `DATA_API_URL` are local.
 The Rust side uses at most 2 connections, and each runs `SET default_transaction_read_only = on`, `statement_timeout = '10s'` and `idle_in_transaction_session_timeout = '15s'`, and checks the first with `SHOW` before any query.
 The FastAPI side cannot be made read-only through PostgREST, so never mark a case safe if its Python handler could write.

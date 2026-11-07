@@ -33,6 +33,17 @@ pub fn format_datetime(value: &DateTime<Utc>) -> String {
     text
 }
 
+/// pydantic's datetime for one that keeps the offset it was given
+/// (`AwareDatetime`): `Z` for UTC, else `+05:00`.
+pub fn format_offset_datetime(value: &DateTime<chrono::FixedOffset>) -> String {
+    let mut text = format_datetime(&value.naive_local().and_utc());
+    if value.offset().local_minus_utc() != 0 {
+        text.pop();
+        text.push_str(&value.format("%:z").to_string());
+    }
+    text
+}
+
 pub fn datetime<S: Serializer>(value: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error> {
     serializer.serialize_str(&format_datetime(value))
 }

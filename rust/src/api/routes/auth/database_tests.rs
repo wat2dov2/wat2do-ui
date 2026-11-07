@@ -2,13 +2,9 @@
 //! (`backend/database/baseline.sql` and the migrations after it), so every
 //! session statement runs as it does in production.
 //!
-//! They run only when `WAT2DO_TEST_DATABASE_URL` names that database (CI's
-//! "Rust database tests" job); without it each test returns at once, so a
-//! plain `cargo test` needs no database. Every test works on its own fresh
-//! addresses and its own client IPs, so the tests can run in parallel.
-
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::time::Duration;
+//! They run only when `WAT2DO_TEST_DATABASE_URL` names that database
+//! (`api::test_database`). Every test works on its own fresh addresses and
+//! its own client IPs, so the tests can run in parallel.
 
 use axum::body::{Body as HttpBody, Bytes};
 use axum::extract::Request;
@@ -21,35 +17,13 @@ use uuid::Uuid;
 
 use super::session;
 use crate::api::client_ip::Peer;
+use crate::api::test_database::{database, peer};
 use crate::api::{AppState, router};
 use crate::controlbox::AUTHENTICATION;
 use crate::settings::{Settings, test_settings};
 
 const ORIGIN: &str = "http://localhost:3000";
 const SCHOOL_ORIGIN: &str = "http://uwaterloo.wat2do.localhost:3000";
-
-/// The test database, or `None` when this run has none.
-fn database() -> Option<PgPool> {
-    let Some(url) = std::env::var("WAT2DO_TEST_DATABASE_URL")
-        .ok()
-        .filter(|url| !url.is_empty())
-    else {
-        // CI's database job sets both, so a missing URL there is a failure.
-        assert!(
-            std::env::var_os("WAT2DO_DATABASE_TESTS_REQUIRED").is_none(),
-            "WAT2DO_DATABASE_TESTS_REQUIRED is set but WAT2DO_TEST_DATABASE_URL is not"
-        );
-        return None;
-    };
-    Some(crate::db::connect_lazy(
-        url.parse()
-            .expect("WAT2DO_TEST_DATABASE_URL is a Postgres URL"),
-        10,
-        Duration::from_secs(30),
-        Duration::from_secs(30),
-        false,
-    ))
-}
 
 fn state(db: PgPool) -> AppState {
     let settings: &'static Settings = Box::leak(Box::new(test_settings(&[(
@@ -62,12 +36,6 @@ fn state(db: PgPool) -> AppState {
 /// A fresh address for one test.
 fn address(label: &str) -> String {
     format!("{label}-{}@example.com", Uuid::new_v4().simple())
-}
-
-/// A client IP nobody else uses, so the per-IP limiters never meet.
-fn peer() -> String {
-    static NEXT: AtomicUsize = AtomicUsize::new(0);
-    format!("database-test-{}", NEXT.fetch_add(1, Ordering::SeqCst))
 }
 
 struct Reply {

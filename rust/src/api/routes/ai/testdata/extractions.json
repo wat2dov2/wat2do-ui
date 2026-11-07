@@ -1,0 +1,1183 @@
+{
+ "now": "2026-11-03T15:37:12+00:00",
+ "system": "You triage social media posts and extract campus event and hiring information. Always return valid JSON with the exact structure requested.",
+ "prompt": "\nAnalyze the following Instagram caption, or official school event-directory page text, and images. First classify the post, then extract every campus event and every open hiring position it clearly advertises.\n\nCampus context: uwaterloo. Use this to disambiguate an explicitly named campus venue and timezone, never to supply a missing venue.\nExplicit school, club, location, and timezone information in the caption or image takes precedence over campus context.\nPreserve the school and club names printed in the source, including in descriptions. Never rename a host to match campus context or substitute a similarly named club from another school.\nCurrent context: Today is Tuesday, 2026-11-03\nPost was created on: Tuesday, 2026-11-03 at 10:37\nCurrent semester end date: 20261222T235959Z\n\nCaption: \n\nImages are attached below with 0-indexed markers (1 images).\nNo caption is available. Extract description from the relevant image text; do not invent details.\n\nCLASSIFICATION POLICY:\n- Set \"content_type\" to \"event\" for event-only posts, \"hiring\" for hiring-only posts, \"event_and_hiring\" when both are clearly advertised, and \"other\" when neither applies.\n- A hiring post explicitly recruits people for one or more qualifying open roles, including executives, committee members, ongoing volunteers, paid staff, or internships.\n- A qualifying role gives the selected person defined work, service, leadership, or club responsibilities. An application or sign-up for participation, membership, a program, a team, or an event is not a position.\n- General club promotion, member introductions, election activity, event registration, program applications, and participant sign-ups are not hiring. Only roles that pass both eligibility tests below qualify.\n- Return an empty array for a content category that is not present. Never force an event into a position or a position into an event.\n\nPOSITION ELIGIBILITY GATE (CRITICAL):\n- Before extracting each position, independently pass BOTH tests below. If either test fails, omit that position even when another role in the same post qualifies.\n- ROLE TEST: The selected person will perform defined work or service, own ongoing responsibilities, hold club authority, or fill an explicit paid job or internship for the club.\n- OPENING TEST: This post explicitly says that applications or recruitment are currently open for that specific non-elected role. Evidence includes \"we're hiring\", \"applications are open\", \"apply for [role]\", or \"join our [executive/committee/staff] team\".\n- A call to action such as \"apply\", \"applications open\", \"sign up\", \"register\", \"join\", \"try out\", \"audition\", \"volunteer\", or a form/deadline is never sufficient by itself. First establish that the thing being applied for passes the ROLE TEST.\n- The recruiting evidence must be on this post and must connect to the advertised role. A deadline, a role title, a list of roles, a description of responsibilities, a department name, a person holding a role, or an announcement that an election exists is not enough by itself.\n- Election voting posts are not hiring. Candidate lists or slates, campaign information, voting instructions, election dates, ballots, and results must return an empty positions array even when they name roles.\n- Executive elections, nominations, self-nominations, and invitations to run for elected office are not hiring. A separate, explicitly recruited non-elected job in the same post may qualify.\n- Member or executive introductions, current-board rosters, team spotlights, role-and-name graphics, posts naming \"this year's\" role holders, and \"meet the team\" posts are not hiring.\n- Do not extract generic club membership, general members, active-member tiers, supporters, unnamed departments, or duties-only slides as positions. A named functional team role with real duties may qualify; \"general member\" or \"general team member\" without a defined club responsibility never does.\n- Mentors and mentees joining a peer-mentorship program are program participants, not positions, even when they apply, guide someone, volunteer, or commit for a semester. A Director or Coordinator responsible for operating the mentorship program may qualify.\n- Applicants to a course, workshop, cohort, accelerator, competition, scholarship, student-development program, or other learning program are participants, not positions. Do not relabel a program as an internship merely because applications are open, participants complete projects, professionals are involved, or the program is paid.\n- Players, athletes, dancers, singers, models, performers, chorus members, and competitive-team members joining through auditions, casting, or tryouts are participants, not positions. A separately advertised coach, choreographer, director, designer, or other work/leadership vacancy may qualify.\n- One-off event helpers, event-day volunteers, orientation or Welcome Week volunteers, race or relay participants, and sign-ups for posted volunteer shifts are not positions. An ongoing volunteer role may qualify only when the post recruits for specific continuing responsibilities on behalf of the club, separate from attending or helping at one event.\n- Evaluate mixed lists role by role. Omit ineligible entries such as \"General Members\" while retaining qualifying entries such as \"Outreach Ambassador\" or \"Events Team Member\" when the post connects them to defined duties and a current application.\n- A role description does not become an opening unless the same post explicitly asks people to apply or otherwise respond to current recruitment for that non-elected role.\n- If there is no explicit current recruiting evidence, do not extract any position and do not set \"content_type\" to \"hiring\" solely because role names appear.\n- Example: \"Executive elections start today. Read the candidate speeches and vote for Treasurer\" is \"other\" with \"positions\": [].\n- Example: \"Nominations are open. Apply or run for Treasurer by Friday\" is \"other\" with \"positions\": [].\n- Example: \"Meet this year's Merch Coordinator\" is \"other\" with \"positions\": [].\n- Example: \"Apply to be a mentor or mentee in our peer mentorship program\" is \"other\" with \"positions\": [].\n- Example: \"Applications are open for our eight-week equity research training program\" is \"other\" with \"positions\": [].\n- Example: \"Volunteers needed for our Welcome Week events; sign up below\" is \"other\" with \"positions\": [].\n- Example: \"Try out for our varsity esports team\" is \"other\" with \"positions\": [].\n- Mixed example: \"Applications open for Outreach Ambassadors, Events Team Members, and General Members\" may include the two defined team roles but must omit General Members.\n\nEVENT POLICY:\n- ONLY extract an attendee-facing activity if the post is clearly announcing or describing a real-world event. The activity itself must be named and something a person can attend, participate in, or watch.\n- A ticketed, paid, RSVP-only, or registration-required activity is still an event when the actual activity is clearly named. Do not reject an event merely because it has tickets or registration.\n- Closure notices, holiday hours, cancellations, and \"no meeting today\" announcements are not events. A closure or reopening date does not describe a gathering. Only extract an independently advertised gathering, such as a holiday BBQ, not the closure itself.\n- Ideally, the post should have BOTH a specific date AND a specific start time. An explicitly advertised recurring schedule with a resolvable start date also qualifies under EXPLICIT RECURRING SCHEDULES below.\n- EXCEPTION: For major events (e.g., full-day, multi-day, overnight), you MAY extract the event even if a specific start time is not explicitly stated, provided there is a specific DATE or date range.\n- For these major events ONLY, if no time is given, you may default the start time to 00:00 (midnight) or a logical start time implied by the context.\n- DO NOT extract an event if:\n    * The post is a meme, personal photo dump, or generic post with no time/place.\n    * The post is inappropriate (nudity, explicit sexual content, or graphic violence).\n    * There is NO mention of a date, relative date, or resolvable recurring schedule at all.\n    * The post only introduces people or some topic, UNLESS there is a clear call to attend or participate in an actual event (such as a meeting, workshop, performance, or competition).\n    * It only announces ticket or registration release, a presale, a giveaway, merchandise, a waitlist, an application, a submission period, a placement test, or another administrative deadline rather than the activity itself.\n    * It only promotes a trailer, teaser, behind-the-scenes content, a campaign, a vote, election results, a call for artists or volunteers, or a program reveal.\n    * It lists event names in a recruitment, volunteer, planning, or administrative schedule without inviting attendees to those activities.\n\nReturn exactly one JSON object with this structure:\n{\n  \"content_type\": \"event\" | \"hiring\" | \"event_and_hiring\" | \"other\",\n  \"events\": [\n    {\n      \"title\": string,\n      \"description\": string,\n      \"location\": string,\n      \"club\": string,\n      \"price\": number or null,\n      \"food\": string[],\n      \"registration\": boolean,\n      \"competition\": boolean or null,\n\"employers_on_campus\": boolean or null,\n\"sports_game\": boolean or null,\n\"campus_season_ids\": string[] or null,\n      \"image_index\": integer,\n      \"occurrences\": [\n        {\n          \"dtstart_utc\": string,\n          \"dtend_utc\": string,\n          \"duration\": string,\n          \"tz\": string\n        }\n      ],\n      \"category\": string or null\n    }\n  ],\n  \"positions\": [\n    {\n      \"title\": string,\n      \"description\": string,\n      \"club\": string,\n      \"position_type\": \"executive\" | \"committee\" | \"volunteer\" | \"staff\" | \"internship\" | \"general\",\n      \"requirements\": string[],\n      \"commitment\": string or null,\n      \"compensation\": string or null,\n      \"is_paid\": true | false | null,\n      \"location\": string or null,\n      \"contact_email\": string or null,\n      \"deadline_date\": string or null,\n      \"deadline_at\": string or null,\n      \"image_index\": integer\n    }\n  ]\n}\n\nIMAGE MAPPING RULES:\n- You are provided with a list of images.\n- For each extracted event or position, identify which specific image contains its relevant details.\n- Set \"image_index\" to that image's 0-based index.\n- Otherwise, set \"image_index\": 0.\n\nOCCURRENCE RULES (CRITICAL):\n- Every event MUST include at least one occurrence with a concrete UTC start time.\n- Return each advertised event date/time as a separate entry in the occurrences array, including dates expanded from an explicit recurring schedule below.\n- DO NOT include registration, signup, RSVP, or application deadlines as occurrences.\n- Do not invent recurrence from a club's usual habits, an event title, or \"first meeting\" alone. Do not compress multiple occurrences into one long date range or a recurrence-rule string.\n- Always convert each occurrence's local time to UTC using the timezone offset on THAT date, including daylight-saving changes. A weekly 6 PM meeting stays at 6 PM local time even when its UTC hour changes. The JSON must use ISO 8601 format with a trailing \"Z\" (e.g., \"2025-11-05T22:00:00Z\").\n- If an end time is not provided, leave \"dtend_utc\" as an empty string.\n- If duration is not explicitly available, leave \"duration\" as an empty string.\n- Use the timezone context from the caption/image (default to \"America/Toronto\" for uwaterloo) for the \"tz\" field.\n\nEXPLICIT RECURRING SCHEDULES:\n- Read the caption AND every image for schedule details, including small-print panels such as \"Weekly Meetings\". A caption advertising the first meeting does not cancel an image's explicit weekly schedule. Resolve actual contradictions in favor of an explicit update; silence about recurrence is not a contradiction.\n- Wording such as \"weekly\", \"every Tuesday\", \"Tuesdays\", \"every other week\", or \"the first Monday of each month\" explicitly advertises recurrence. Expand a sufficiently specified schedule into ALL concrete occurrences within its supported bounds, not just the first or next date.\n- Anchor the series to its advertised first date. If no first date is given, use the first matching weekday on or after the POST CREATION DATE (2026-11-03); do not shift the series to today's date. An interval such as every other week needs a clear starting date, and ambiguous wording such as \"biweekly\" must not be guessed.\n- Use the source's explicit end date, date range, or session count when provided. Include the last matching date within those bounds. Respect stated skipped dates, cancellations, breaks, and different hours for particular sessions. Do not invent holiday exceptions that the source does not announce.\n- If a campus series has no explicit end date or count, expand it through the supplied Current semester end date only when the series belongs to that same semester. Never carry a past-term or future-term series into a different current semester, and never extend beyond the applicable semester as a fallback.\n- If neither an explicit bound nor an applicable semester end is available, keep the individually stated dates only; do not invent a cutoff or an unlimited series. Do not fabricate a weekday, interval, start time, or missing anchor.\n- For a first meeting followed by weekly meetings of the same activity, return ONE logical event with the first meeting and every later session in its occurrences array. Deduplicate the first date if it also matches the weekly rule. Give genuinely separate activities separate event objects.\n- Example: \"First meeting Tuesday September 29, 2026, 6-7 PM in MC 4045. Weekly meetings Tuesdays 6-7 PM in MC 4045\" with a semester end of December 22, 2026 means 13 occurrences: September 29; October 6, 13, 20, 27; November 3, 10, 17, 24; December 1, 8, 15, 22. In America/Toronto, the starts are 22:00Z before the November daylight-saving change and 23:00Z afterwards.\n- Counterexample: \"First meeting September 29, 2026, 6-7 PM\" with no recurring schedule means exactly one occurrence, even if a semester end is supplied.\n\nPOSITION RULES:\n- Extract one position object per distinct advertised role. If a post recruits several roles, do not collapse them into one generic position.\n- If the same advertised role appears in the caption and multiple images, return it once, using the image with the strongest recruiting evidence.\n- Use \"general\" only for a genuinely open-ended team application that does not map to a more specific type.\n- Use \"staff\" for paid non-intern employment. Compensation details belong in \"compensation\", not in the type.\n- Requirements must contain only explicit qualifications or expectations. Use [] when none are stated.\n- Preserve commitment, compensation, location, and contact email as written. Use null when absent.\n- Set is_paid to true only for explicitly paid roles, false for explicitly unpaid or volunteer roles, and null when payment is unspecified. Never infer payment from position type alone.\n- \"deadline_date\" is \"YYYY-MM-DD\". Infer a missing year as the next occurrence relative to the post date (2026-11-03), but never invent a missing month or day.\n- \"deadline_at\" is a UTC ISO 8601 timestamp ending in \"Z\" only when an application time is explicitly stated. Otherwise use null.\n- An application deadline is position metadata and must never be emitted as an event occurrence.\n\nLOCATION RULES:\n- Read the caption AND every relevant carousel image, including small print, venue labels, map pins, room numbers, and the last slide. A short caption does not make a location printed on the poster unavailable.\n- Extract the most specific attendee destination actually stated: venue or building plus room/floor, and street address and city/province when supplied. Preserve meaningful campus abbreviations and room numbers, including leading zeroes (e.g., \"STC 0020\", \"SLC 3223\", \"DC Library\"). Do not discard a room, venue name, or supplied address.\n- Use a location belonging to this event, not a sponsor's address, the host's office, another event in a roundup, or a registration website. School context alone, a club's usual meeting place, or an Instagram handle is not venue evidence.\n- An explicit moved/corrected venue overrides the older venue. Otherwise combine compatible details; do not discard a poster's precise room because the caption names only the building. Preserve date/session qualifiers when advertised occurrences use different venues.\n- For explicitly virtual events, use \"Online\" and include the platform when stated (e.g., \"Online (Zoom)\"). For hybrid events, retain the verified physical venue and online format. A registration link alone never means the event is online.\n- Preserve an explicit \"TBA\", \"TBD\", or \"location shared after registration\" notice. If no location or online format is evidenced, return an empty location string; never invent a venue or substitute the school name or \"On campus\".\n\nADDITIONAL EVENT RULES:\n- Prioritize caption text; use image text if missing details.\n- Extract one object per logical event, even when the caption and several images repeat it. Combine all explicitly advertised occurrences, including expanded recurring dates, for that same activity into that object's occurrences array. Do not create event objects for its ticket, registration, check-in, application, campaign, or other administrative milestones.\n- Title-case event titles.\n- For \"club\": this is the club / society / faculty hosting the event. Prefer the most specific named entity from the caption or image (e.g., \"UW Tea Club\"); if none is named, use the Instagram handle as a fallback.\n- If year not found, infer the NEXT occurrence of that date relative to the post creation date (2026-11-03). If end time < start time (e.g., 7pm-12am), set end to the next day.\n- When no explicit date is found but there are relative terms like \"tonight\", \"tomorrow\", interpret these relative to the POST CREATION DATE (2026-11-03).\n- For price: REGISTRATION COST ONLY. Prefer non-member / general admission price if multiple are listed. Free events are 0.0. Use null if price is not mentioned.\n- For food: Return an array. Use specific items when named (e.g., [\"Pizza\", \"Bubble tea\"]). Use [\"Food\"] for a generic food mention. Never return \"Yes\" or \"Yes!\" as a food label. Use [] when no food is mentioned.\n- For registration: only true if there is a clear instruction to register, RSVP, or sign up.\n- If information is not available, use empty string for strings, null for price and discovery metadata, and false for registration.\n- Event category must be one of the canonical categories or null: - Arts & Culture\n- Academics & Science\n- Business\n- Community Service\n- Environment\n- Games & Recreation\n- Health\n- Media & Web\n- Politics & Advocacy\n- Religion & Spirituality\nEVENT DISCOVERY METADATA:\nThese independent facts may overlap and do not replace the event category.\nFor boolean flags, use true only when the source establishes the fact, false when it explicitly rules it out, and null when evidence is missing or uncertain. Never guess from the category, host, or the word 'free' alone.\n- competition: An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.\n- employers_on_campus: Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as \"Ramp x Blueprint\" or \"Figma x Sanrio\", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.\n- sports_game: An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.\n- campus_season_ids: School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.\nCAMPUS SEASONS FOR uwaterloo:\nUniversity of Waterloo. Use this school's America/Toronto local dates. Fall 2026 anchors below describe general undergraduate dates unless noted; professional programs can differ. Display windows are editorial only. Never infer a seasonal event tag from its date alone.\nSet campus_season_ids to all matching IDs below, or [] when none match. Use explicit event content and school context, never a date alone. Display windows control filter visibility only; they are not classification rules. Classify announced future events even when a display window is not currently open. Do not copy season classifications from another school. Networking opportunities (employers, career panels, hackathons, conferences) belong in employers_on_campus, not a campus-season ID.\n- homecoming (HOCO): Official school homecoming, HOCO, alumni reunion or explicitly associated campus spirit celebrations. Include a varsity game only when the source explicitly associates it with homecoming. A regular game or unrelated party does not qualify. Waterloo Homecoming: 2026-09-18 to 2026-09-19. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit homecoming, school reunion celebration, or named official homecoming program; generic football games and unrelated alumni talks do not qualify.\n- holidays (Holidays): Campus or student-community events explicitly themed around a named holiday, such as Halloween, Thanksgiving, Friendsgiving or winter holidays. A break in classes or a date near a holiday alone does not qualify. Follow the school-specific country and cultural context. This school is in Canada; local Thanksgiving is 2026-10-12. Windows are editorial discovery periods, not school closure dates. Tag explicit holiday celebrations, meals, parties or seasonal cultural gatherings only; do not tag generic autumn or December events. Halloween is October 31; its October 17-31 display window is editorial and does not assert a campus event or closure.\n- orientation (O-Week): New-student orientation, frosh, O-Week or explicitly designated beginning-of-term orientation/welcome programming. An ordinary club meeting, recruitment drive or generic party does not qualify without orientation or welcome-week context. International Orientation September 3-4 and First Year Orientation September 6-12: 2026-09-03 to 2026-09-12. The filter begins 14 days earlier as an editorial discovery window. Tag only an explicit new-student welcome, orientation, frosh or campus transition activity; generic early-term events do not qualify.\n- exam_destress (Exam de-stress): Wellness, therapy animals, snack breaks, crafts or relaxation explicitly intended to ease midterm/final exam stress. Ordinary free food or wellness events do not qualify without an exam connection. Editorial visibility during this school's verified-term preparation periods. Tag only explicit exam or midterm stress relief, not generic wellness.\n- finals_prep (Finals prep): Review sessions, study groups, tutoring, practice exams or exam-skills workshops explicitly preparing for final exams. General academic talks, midterm preparation and ordinary classes do not qualify. Fall 2026 general finals or formal assessments run 2026-12-10 to 2026-12-23. The editorial filter begins 14 days earlier. Tag only explicit final-exam or end-of-term assessment preparation.\n- Return ONLY the JSON object, with no extra commentary.\n",
+ "urls": [
+  "data:image/png;base64,aW1n"
+ ],
+ "cases": [
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "```json\n{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}\n```",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "```{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}```",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}\nNote: the date was inferred.",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "Here you go: {\"content_type\": \"event\", \"events\": [{\"title\": \"Inner\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []} thanks",
+   "event": {
+    "title": "Inner",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "not json at all",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "   ",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "[{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}]",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"party\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": 5, \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"other\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": {\"a\": 1}}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": null}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\"}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": null, \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": null, \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}, {\"title\": \"Second\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Second",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [\"text\", 5, {\"title\": \"Third\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Third",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\"}, {\"dtstart_utc\": \"2026-11-19T23:00:00\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00\"}, {\"dtstart_utc\": \"2026-11-19T23:00:00\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-19T18:00",
+      "dtend_local": ""
+     },
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": ""
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"tz\": \"America/Vancouver\"}, {\"dtstart_utc\": \"2026-11-21T02:00:00+00:00\", \"tz\": \"Mars/Base\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T15:00",
+      "dtend_local": ""
+     },
+     {
+      "dtstart_local": "2026-11-21T02:00",
+      "dtend_local": ""
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"\", \"tz\": \"\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": ""
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": 1795302000, \"dtend_utc\": \"  \"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-21T18:00",
+      "dtend_local": ""
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-19T19:00",
+      "dtend_local": ""
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtend_utc\": \"2026-11-20T23:00:00Z\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-03T16:00",
+      "dtend_local": ""
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": null, \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [\"x\"], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00.123456789+05:30\", \"duration\": 5}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Parties\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"  Business \", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Business",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": -3, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": null, \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "",
+    "price": 0.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": \"12.5\", \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": \"yes\", \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 12.5,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": true
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": null, \"food\": null, \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": [1], \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", 5], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": null, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": \"maybe\", \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": null, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": \"2\", \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 1.5, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": [\"nope\", \"x\"]}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": \"nope\"}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": \"yes\", \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": true, \"employers_on_campus\": null, \"sports_game\": false, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"   \", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Caf\\\\u00e9 Night\\\\nTwo\", \"description\": \"Line\\\\r\\\\nTwo\", \"location\": \"A\\\\u00e9 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "title": "Café Night\nTwo",
+    "description": "Line\nTwo",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "Aé",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": null, \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": 5, \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{\"title\": \"Bare\"}], \"positions\": []}",
+   "event": {
+    "title": "Bare",
+    "description": "",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-03T16:00",
+      "dtend_local": ""
+     }
+    ],
+    "location": "",
+    "category": "",
+    "price": 0.0,
+    "food": [],
+    "registration": false
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event\", \"events\": [{}], \"positions\": []}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "title": "Design Lead",
+    "description": "Make posters",
+    "position_type": "committee",
+    "requirements": [
+     "Figma"
+    ],
+    "commitment": "5h/week",
+    "compensation": null,
+    "is_paid": false,
+    "location": null,
+    "contact_email": "a@b.c",
+    "deadline_date": "2026-11-30",
+    "deadline_at": "2026-11-30T23:59:00-05:00"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": null, \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30T00:00:00Z\", \"deadline_at\": \"\", \"image_index\": 0}]}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "title": "Design Lead",
+    "description": "Make posters",
+    "position_type": "committee",
+    "requirements": [
+     "Figma"
+    ],
+    "commitment": "5h/week",
+    "compensation": null,
+    "is_paid": false,
+    "location": null,
+    "contact_email": "a@b.c",
+    "deadline_date": "2026-11-30",
+    "deadline_at": null
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30T12:00:00Z\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": 1795219200, \"deadline_at\": 1795302000, \"image_index\": 0}]}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "title": "Design Lead",
+    "description": "Make posters",
+    "position_type": "committee",
+    "requirements": [
+     "Figma"
+    ],
+    "commitment": "5h/week",
+    "compensation": null,
+    "is_paid": false,
+    "location": null,
+    "contact_email": "a@b.c",
+    "deadline_date": "2026-11-21",
+    "deadline_at": "2026-11-21T23:00:00Z"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"x\", \"x\", \"x\", \"x\", \"x\", \"x\", \"x\", \"x\", \"x\", \"x\", \"x\", \"x\", \"x\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}, {\"title\": \"Second Role\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "title": "Second Role",
+    "description": "Make posters",
+    "position_type": "committee",
+    "requirements": [
+     "Figma"
+    ],
+    "commitment": "5h/week",
+    "compensation": null,
+    "is_paid": false,
+    "location": null,
+    "contact_email": "a@b.c",
+    "deadline_date": "2026-11-30",
+    "deadline_at": "2026-11-30T23:59:00-05:00"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": null, \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"\", \"ok\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"  \", \"compensation\": \"\", \"is_paid\": \"false\", \"location\": null, \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "title": "Design Lead",
+    "description": "Make posters",
+    "position_type": "committee",
+    "requirements": [
+     "Figma"
+    ],
+    "commitment": null,
+    "compensation": null,
+    "is_paid": false,
+    "location": null,
+    "contact_email": "a@b.c",
+    "deadline_date": "2026-11-30",
+    "deadline_at": "2026-11-30T23:59:00-05:00"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"  \", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "title": "  ",
+    "description": "Make posters",
+    "position_type": "committee",
+    "requirements": [
+     "Figma"
+    ],
+    "commitment": "5h/week",
+    "compensation": null,
+    "is_paid": false,
+    "location": null,
+    "contact_email": "a@b.c",
+    "deadline_date": "2026-11-30",
+    "deadline_at": "2026-11-30T23:59:00-05:00"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"boss\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \" committee \", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": -1}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Line\\\\nTwo \\\\u00e9\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": null, \"location\": \"\", \"contact_email\": \" \", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00.5+00:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "title": "Design Lead",
+    "description": "Make posters",
+    "position_type": "committee",
+    "requirements": [
+     "Figma"
+    ],
+    "commitment": "5h/week",
+    "compensation": null,
+    "is_paid": null,
+    "location": null,
+    "contact_email": null,
+    "deadline_date": "2026-11-30",
+    "deadline_at": "2026-11-30T23:59:00.500000Z"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Only\", \"description\": \"d\", \"position_type\": \"general\"}]}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "title": "Only",
+    "description": "d",
+    "position_type": "general",
+    "requirements": [],
+    "commitment": null,
+    "compensation": null,
+    "is_paid": null,
+    "location": null,
+    "contact_email": null,
+    "deadline_date": null,
+    "deadline_at": null
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": [{\"title\": \"Only\", \"description\": \"d\"}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [], \"positions\": {\"a\": 1}}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"hiring\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": []}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event_and_hiring\", \"events\": [{\"title\": \"Games Night\", \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": [{\"title\": \"Design Lead\", \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "title": "Games Night",
+    "description": "Board games",
+    "occurrences": [
+     {
+      "dtstart_local": "2026-11-20T18:00",
+      "dtend_local": "2026-11-20T20:00"
+     }
+    ],
+    "location": "SLC 3223",
+    "category": "Games & Recreation",
+    "price": 5.0,
+    "food": [
+     "Pizza",
+     "Pop"
+    ],
+    "registration": false
+   },
+   "position": {
+    "title": "Design Lead",
+    "description": "Make posters",
+    "position_type": "committee",
+    "requirements": [
+     "Figma"
+    ],
+    "commitment": "5h/week",
+    "compensation": null,
+    "is_paid": false,
+    "location": null,
+    "contact_email": "a@b.c",
+    "deadline_date": "2026-11-30",
+    "deadline_at": "2026-11-30T23:59:00-05:00"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event_and_hiring\", \"events\": [{\"title\": null, \"description\": \"Board games\", \"location\": \" SLC 3223 \", \"club\": \"UW Games\", \"price\": 5, \"food\": [\"Pizza\", \" Pizza \", \"\", \"Pop\"], \"registration\": false, \"image_index\": 0, \"occurrences\": [{\"dtstart_utc\": \"2026-11-20T23:00:00Z\", \"dtend_utc\": \"2026-11-21T01:00:00Z\", \"duration\": \"\", \"tz\": \"America/Toronto\"}], \"category\": \"Games & Recreation\", \"competition\": null, \"employers_on_campus\": null, \"sports_game\": null, \"campus_season_ids\": null}], \"positions\": [{\"title\": null, \"description\": \"Make posters\", \"club\": \"UW Games\", \"position_type\": \"committee\", \"requirements\": [\"Figma\"], \"commitment\": \"5h/week\", \"compensation\": null, \"is_paid\": false, \"location\": \"\", \"contact_email\": \"a@b.c\", \"deadline_date\": \"2026-11-30\", \"deadline_at\": \"2026-11-30T23:59:00-05:00\", \"image_index\": 0}]}",
+   "event": {
+    "error": "failed"
+   },
+   "position": {
+    "error": "failed"
+   }
+  },
+  {
+   "answer": "{\"content_type\": \"event_and_hiring\", \"events\": [], \"positions\": []}",
+   "event": {
+    "error": "No event could be read from this image. Try a clearer poster or enter the details manually."
+   },
+   "position": {
+    "error": "No open position was found in this image"
+   }
+  }
+ ]
+}

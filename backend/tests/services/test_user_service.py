@@ -1,13 +1,10 @@
-from datetime import datetime, timezone
 from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
 
 from core.constants import MAX_AVATAR_URL_LENGTH
-from core.exceptions import ValidationError
 from core.tables import USERS
-from schemas.user import UserResponse, UserUpdate
 from services import user_service
 from services.user_service import get_user
 
@@ -26,52 +23,6 @@ def test_default_avatar_is_stable_distinct_and_preserves_uploaded_photo():
 def test_generated_avatars_fit_the_profile_url_contract():
     for seed in range(1000):
         assert len(user_service.avatar_url_for_user(str(seed))) <= MAX_AVATAR_URL_LENGTH
-
-
-def test_profile_rejects_faculty_from_another_school(monkeypatch):
-    user = UserResponse(
-        id=uuid4(),
-        email="person@example.com",
-        school="uwaterloo",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-    )
-    monkeypatch.setattr(user_service, "get_user", lambda _id: user)
-    monkeypatch.setattr(
-        user_service.school_service,
-        "get_school",
-        lambda _slug: SimpleNamespace(
-            faculties=["Arts", "Engineering"],
-        ),
-    )
-    with pytest.raises(ValidationError, match="Faculty is not offered"):
-        user_service.update_user(user.id, UserUpdate(faculty="DeGroote School of Business"))
-
-
-def test_profile_school_change_clears_inapplicable_faculty(fake_sb, patch_sb, monkeypatch):
-    patch_sb("services.user_service")
-    user = UserResponse(
-        id=uuid4(),
-        email="person@example.com",
-        school="uwaterloo",
-        faculty="Mathematics",
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-    )
-    monkeypatch.setattr(user_service, "get_user", lambda _id: user)
-    monkeypatch.setattr(
-        user_service.school_service,
-        "get_school",
-        lambda _slug: SimpleNamespace(
-            id=2,
-            faculties=["Humanities", "Science"],
-        ),
-    )
-    fake_sb.set_response(data=[])
-
-    user_service.update_user(user.id, UserUpdate(school="mcmaster"))
-
-    fake_sb.update.assert_called_once_with({"school_id": 2, "faculty": None})
 
 
 def test_get_user_returns_none_when_no_row(fake_sb, patch_sb):

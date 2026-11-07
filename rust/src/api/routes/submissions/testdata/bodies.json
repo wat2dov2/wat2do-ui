@@ -1,0 +1,1471 @@
+[
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"event_data\":{\"title\":\"Games Night\",\"location\":\"SLC\",\"occurrences\":[{\"dtstart_utc\":\"2026-12-01T18:00:00Z\",\"dtend_utc\":\"2026-12-01T20:00:00Z\",\"tz\":\"America/Toronto\"}],\"registration\":false,\"club_id\":7,\"cancelled\":false}},\"size\":449}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": " Student@UWaterloo.CA ",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"Student@uwaterloo.ca\",\"event_data\":{\"title\":\"Games Night\",\"location\":\"SLC\",\"occurrences\":[{\"dtstart_utc\":\"2026-12-01T18:00:00Z\",\"dtend_utc\":\"2026-12-01T20:00:00Z\",\"tz\":\"America/Toronto\"}],\"registration\":false,\"club_id\":7,\"cancelled\":false}},\"size\":449}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "Student@Example.COM",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ],
+    "price": 5,
+    "food": [
+     "Pizza"
+    ],
+    "description": "é😀"
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"Student@example.com\",\"event_data\":{\"title\":\"Games Night\",\"description\":\"é😀\",\"location\":\"SLC\",\"occurrences\":[{\"dtstart_utc\":\"2026-12-01T18:00:00Z\",\"dtend_utc\":\"2026-12-01T20:00:00Z\",\"tz\":\"America/Toronto\"}],\"price\":5.0,\"food\":[\"Pizza\"],\"registration\":false,\"club_id\":7,\"cancelled\":false}},\"size\":453}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"submitted_by_email\"],\"msg\":\"Field required\",\"input\":{\"event_data\":{\"title\":\"Games Night\",\"location\":\"SLC\",\"club_id\":7,\"occurrences\":[{\"dtstart_utc\":\"2026-12-01T18:00:00Z\",\"dtend_utc\":\"2026-12-01T20:00:00+00:00\",\"tz\":\"America/Toronto\"}]}}}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca"
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"event_data\"],\"msg\":\"Field required\",\"input\":{\"submitted_by_email\":\"student@uwaterloo.ca\"}}]}"
+ },
+ {
+  "path": "/event",
+  "json": {},
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"submitted_by_email\"],\"msg\":\"Field required\",\"input\":{}},{\"type\":\"missing\",\"loc\":[\"body\",\"event_data\"],\"msg\":\"Field required\",\"input\":{}}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": null,
+   "event_data": null
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_type\",\"loc\":[\"body\",\"submitted_by_email\"],\"msg\":\"Input should be a valid string\",\"input\":null},{\"type\":\"model_attributes_type\",\"loc\":[\"body\",\"event_data\"],\"msg\":\"Input should be a valid dictionary or object to extract fields from\",\"input\":null}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": 5,
+   "event_data": 5
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_type\",\"loc\":[\"body\",\"submitted_by_email\"],\"msg\":\"Input should be a valid string\",\"input\":5},{\"type\":\"model_attributes_type\",\"loc\":[\"body\",\"event_data\"],\"msg\":\"Input should be a valid dictionary or object to extract fields from\",\"input\":5}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "not-an-email",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"submitted_by_email\"],\"msg\":\"value is not a valid email address: An email address must have an @-sign.\",\"input\":\"not-an-email\",\"ctx\":{\"reason\":\"An email address must have an @-sign.\"}}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"submitted_by_email\"],\"msg\":\"value is not a valid email address: An email address must have an @-sign.\",\"input\":\"\",\"ctx\":{\"reason\":\"An email address must have an @-sign.\"}}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "person@example.com\r\nInjected: header",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"submitted_by_email\"],\"msg\":\"value is not a valid email address: Carriage return and line feed characters are not allowed\",\"input\":\"person@example.com\\r\\nInjected: header\",\"ctx\":{\"reason\":\"Carriage return and line feed characters are not allowed\"}}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": "x"
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"model_attributes_type\",\"loc\":[\"body\",\"event_data\"],\"msg\":\"Input should be a valid dictionary or object to extract fields from\",\"input\":\"x\"}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": []
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"model_attributes_type\",\"loc\":[\"body\",\"event_data\"],\"msg\":\"Input should be a valid dictionary or object to extract fields from\",\"input\":[]}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {}
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"event_data\",\"title\"],\"msg\":\"Field required\",\"input\":{}},{\"type\":\"missing\",\"loc\":[\"body\",\"event_data\",\"location\"],\"msg\":\"Field required\",\"input\":{}},{\"type\":\"missing\",\"loc\":[\"body\",\"event_data\",\"occurrences\"],\"msg\":\"Field required\",\"input\":{}},{\"type\":\"missing\",\"loc\":[\"body\",\"event_data\",\"club_id\"],\"msg\":\"Field required\",\"input\":{}}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ],
+    "school": "uwaterloo"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"extra_forbidden\",\"loc\":[\"body\",\"event_data\",\"school\"],\"msg\":\"Extra inputs are not permitted\",\"input\":\"uwaterloo\"}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   },
+   "extra": 1
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"extra_forbidden\",\"loc\":[\"body\",\"extra\"],\"msg\":\"Extra inputs are not permitted\",\"input\":1}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "bad",
+   "event_data": {
+    "title": ""
+   },
+   "extra": 1
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"submitted_by_email\"],\"msg\":\"value is not a valid email address: An email address must have an @-sign.\",\"input\":\"bad\",\"ctx\":{\"reason\":\"An email address must have an @-sign.\"}},{\"type\":\"string_too_short\",\"loc\":[\"body\",\"event_data\",\"title\"],\"msg\":\"String should have at least 1 character\",\"input\":\"\",\"ctx\":{\"min_length\":1}},{\"type\":\"missing\",\"loc\":[\"body\",\"event_data\",\"location\"],\"msg\":\"Field required\",\"input\":{\"title\":\"\"}},{\"type\":\"missing\",\"loc\":[\"body\",\"event_data\",\"occurrences\"],\"msg\":\"Field required\",\"input\":{\"title\":\"\"}},{\"type\":\"missing\",\"loc\":[\"body\",\"event_data\",\"club_id\"],\"msg\":\"Field required\",\"input\":{\"title\":\"\"}},{\"type\":\"extra_forbidden\",\"loc\":[\"body\",\"extra\"],\"msg\":\"Extra inputs are not permitted\",\"input\":1}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "expand": {
+   "event_data.description": [
+    "x",
+    5000
+   ]
+  },
+  "status": 200,
+  "response": "{\"size\":5447,\"dump_elided\":true}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "expand": {
+   "event_data.description": [
+    "x",
+    4900
+   ],
+   "event_data.title": [
+    "y",
+    300
+   ],
+   "event_data.location": [
+    "z",
+    500
+   ],
+   "event_data.map_location": [
+    "m",
+    500
+   ],
+   "event_data.ig_handle": [
+    "h",
+    255
+   ],
+   "event_data.food": [
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    20
+   ]
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"list_type\",\"loc\":[\"body\",\"event_data\",\"food\"],\"msg\":\"Input should be a valid list\",\"input\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\"}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "expand": {
+   "event_data.description": [
+    "é",
+    4999
+   ],
+   "event_data.title": [
+    "😀",
+    300
+   ],
+   "event_data.occurrences": [
+    {
+     "dtstart_utc": "2026-12-01T18:00:00Z",
+     "dtend_utc": "2026-12-01T20:00:00+00:00",
+     "tz": "America/Toronto"
+    },
+    120
+   ]
+  },
+  "status": 200,
+  "response": "{\"size\":19182,\"dump_elided\":true}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": []
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"too_short\",\"loc\":[\"body\",\"event_data\",\"occurrences\"],\"msg\":\"List should have at least 1 item after validation, not 0\",\"input\":[],\"ctx\":{\"field_type\":\"List\",\"min_length\":1,\"actual_length\":0}}]}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "expand": {
+   "event_data.occurrences": [
+    {
+     "dtstart_utc": "2026-12-01T18:00:00Z",
+     "dtend_utc": "2026-12-01T20:00:00+00:00",
+     "tz": "America/Toronto"
+    },
+    290
+   ]
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"event_data\"],\"msg\":\"Value error, event_data exceeds maximum size (33106 bytes, limit 32000)\",\"input\":null,\"ctx\":{\"error\":{}}}],\"inputs_elided\":true}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "expand": {
+   "event_data.occurrences": [
+    {
+     "dtstart_utc": "2026-12-01T18:00:00Z",
+     "dtend_utc": "2026-12-01T20:00:00+00:00",
+     "tz": "America/Toronto"
+    },
+    291
+   ]
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"event_data\"],\"msg\":\"Value error, event_data exceeds maximum size (33219 bytes, limit 32000)\",\"input\":null,\"ctx\":{\"error\":{}}}],\"inputs_elided\":true}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "expand": {
+   "event_data.description": [
+    "é",
+    5000
+   ],
+   "event_data.occurrences": [
+    {
+     "dtstart_utc": "2026-12-01T18:00:00Z",
+     "dtend_utc": "2026-12-01T20:00:00+00:00",
+     "tz": "America/Toronto"
+    },
+    245
+   ]
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"event_data\"],\"msg\":\"Value error, event_data exceeds maximum size (33019 bytes, limit 32000)\",\"input\":null,\"ctx\":{\"error\":{}}}],\"inputs_elided\":true}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "expand": {
+   "event_data.description": [
+    "é",
+    5000
+   ],
+   "event_data.occurrences": [
+    {
+     "dtstart_utc": "2026-12-01T18:00:00Z",
+     "dtend_utc": "2026-12-01T20:00:00+00:00",
+     "tz": "America/Toronto"
+    },
+    246
+   ]
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"event_data\"],\"msg\":\"Value error, event_data exceeds maximum size (33132 bytes, limit 32000)\",\"input\":null,\"ctx\":{\"error\":{}}}],\"inputs_elided\":true}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ],
+    "description": "\u0000\n\t\"\\é",
+    "price": 99999.5
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"event_data\":{\"title\":\"Games Night\",\"description\":\"\\u0000\\n\\t\\\"\\\\é\",\"location\":\"SLC\",\"occurrences\":[{\"dtstart_utc\":\"2026-12-01T18:00:00Z\",\"dtend_utc\":\"2026-12-01T20:00:00Z\",\"tz\":\"America/Toronto\"}],\"price\":99999.5,\"registration\":false,\"club_id\":7,\"cancelled\":false}},\"size\":465}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "bad",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ]
+   }
+  },
+  "expand": {
+   "event_data.occurrences": [
+    {
+     "dtstart_utc": "2026-12-01T18:00:00Z",
+     "dtend_utc": "2026-12-01T20:00:00+00:00",
+     "tz": "America/Toronto"
+    },
+    400
+   ]
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"submitted_by_email\"],\"msg\":\"value is not a valid email address: An email address must have an @-sign.\",\"input\":null,\"ctx\":{\"reason\":\"An email address must have an @-sign.\"}},{\"type\":\"value_error\",\"loc\":[\"body\",\"event_data\"],\"msg\":\"Value error, event_data exceeds maximum size (45536 bytes, limit 32000)\",\"input\":null,\"ctx\":{\"error\":{}}}],\"inputs_elided\":true}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ],
+    "price": 1.5e-07,
+    "campus_season_ids": [
+     "b",
+     "a",
+     "a"
+    ],
+    "competition": true
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"event_data\":{\"competition\":true,\"campus_season_ids\":[\"a\",\"b\"],\"title\":\"Games Night\",\"location\":\"SLC\",\"occurrences\":[{\"dtstart_utc\":\"2026-12-01T18:00:00Z\",\"dtend_utc\":\"2026-12-01T20:00:00Z\",\"tz\":\"America/Toronto\"}],\"price\":1.5e-07,\"registration\":false,\"club_id\":7,\"cancelled\":false}},\"size\":456}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00Z",
+      "dtend_utc": "2026-12-01T20:00:00+00:00",
+      "tz": "America/Toronto"
+     }
+    ],
+    "category": "Business",
+    "registration": "yes",
+    "cancelled": 0
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"event_data\":{\"title\":\"Games Night\",\"location\":\"SLC\",\"occurrences\":[{\"dtstart_utc\":\"2026-12-01T18:00:00Z\",\"dtend_utc\":\"2026-12-01T20:00:00Z\",\"tz\":\"America/Toronto\"}],\"registration\":true,\"category\":\"Business\",\"club_id\":7,\"cancelled\":false}},\"size\":454}"
+ },
+ {
+  "path": "/event",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "event_data": {
+    "title": "Games Night",
+    "location": "SLC",
+    "club_id": 7,
+    "occurrences": [
+     {
+      "dtstart_utc": "2026-12-01T18:00:00",
+      "tz": null
+     }
+    ]
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"timezone_aware\",\"loc\":[\"body\",\"event_data\",\"occurrences\",0,\"dtstart_utc\"],\"msg\":\"Input should have timezone info\",\"input\":\"2026-12-01T18:00:00\"}]}"
+ },
+ {
+  "path": "/event",
+  "body": "{bad json",
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\",1],\"msg\":\"JSON decode error\",\"input\":{},\"ctx\":{\"error\":\"Expecting property name enclosed in double quotes\"}}]}"
+ },
+ {
+  "path": "/event",
+  "body": "",
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\"],\"msg\":\"Field required\",\"input\":null}]}"
+ },
+ {
+  "path": "/event",
+  "body": "[]",
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"model_attributes_type\",\"loc\":[\"body\"],\"msg\":\"Input should be a valid dictionary or object to extract fields from\",\"input\":[]}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design"
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"position_data\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\"}},\"response\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"commitment\":null,\"compensation\":null,\"is_paid\":null,\"location\":null,\"contact_email\":null,\"deadline_date\":null,\"deadline_at\":null,\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\",\"source_image_url\":null}}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "is_paid": null
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"position_data\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\"}},\"response\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"commitment\":null,\"compensation\":null,\"is_paid\":null,\"location\":null,\"contact_email\":null,\"deadline_date\":null,\"deadline_at\":null,\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\",\"source_image_url\":null}}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "  Lead  ",
+    "description": " d ",
+    "position_type": " committee ",
+    "source_url": "https://example.com/jobs/design",
+    "requirements": [
+     " a ",
+     "b"
+    ],
+    "commitment": " 5h "
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"literal_error\",\"loc\":[\"body\",\"position_data\",\"position_type\"],\"msg\":\"Input should be 'executive', 'committee', 'volunteer', 'staff', 'internship' or 'general'\",\"input\":\" committee \",\"ctx\":{\"expected\":\"'executive', 'committee', 'volunteer', 'staff', 'internship' or 'general'\"}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "requirements": [
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x"
+    ]
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"too_long\",\"loc\":[\"body\",\"position_data\",\"requirements\"],\"msg\":\"List should have at most 12 items after validation, not 13\",\"input\":[\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\",\"x\"],\"ctx\":{\"field_type\":\"List\",\"max_length\":12,\"actual_length\":13}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "requirements": [
+     ""
+    ]
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_too_short\",\"loc\":[\"body\",\"position_data\",\"requirements\",0],\"msg\":\"String should have at least 1 character\",\"input\":\"\",\"ctx\":{\"min_length\":1}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "requirements": [
+     "  "
+    ]
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_too_short\",\"loc\":[\"body\",\"position_data\",\"requirements\",0],\"msg\":\"String should have at least 1 character\",\"input\":\"  \",\"ctx\":{\"min_length\":1}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "requirements": null
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"list_type\",\"loc\":[\"body\",\"position_data\",\"requirements\"],\"msg\":\"Input should be a valid list\",\"input\":null}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "requirements": "abc"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"list_type\",\"loc\":[\"body\",\"position_data\",\"requirements\"],\"msg\":\"Input should be a valid list\",\"input\":\"abc\"}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "javascript:alert(1)"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"url_scheme\",\"loc\":[\"body\",\"position_data\",\"source_url\"],\"msg\":\"URL scheme should be 'http' or 'https'\",\"input\":\"javascript:alert(1)\",\"ctx\":{\"expected_schemes\":\"'http' or 'https'\"}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "source_image_url": "file:///secret"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"url_scheme\",\"loc\":[\"body\",\"position_data\",\"source_image_url\"],\"msg\":\"URL scheme should be 'http' or 'https'\",\"input\":\"file:///secret\",\"ctx\":{\"expected_schemes\":\"'http' or 'https'\"}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "not a url"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"url_parsing\",\"loc\":[\"body\",\"position_data\",\"source_url\"],\"msg\":\"Input should be a valid URL, relative URL without a base\",\"input\":\"not a url\",\"ctx\":{\"error\":\"relative URL without a base\"}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "  https://example.com/a  "
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"position_data\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"club_id\":7,\"source_url\":\"https://example.com/a\"}},\"response\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"commitment\":null,\"compensation\":null,\"is_paid\":null,\"location\":null,\"contact_email\":null,\"deadline_date\":null,\"deadline_at\":null,\"club_id\":7,\"source_url\":\"https://example.com/a\",\"source_image_url\":null}}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "HTTPS://Example.COM:443/a b?x=1#f"
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"position_data\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"club_id\":7,\"source_url\":\"HTTPS://Example.COM:443/a b?x=1#f\"}},\"response\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"commitment\":null,\"compensation\":null,\"is_paid\":null,\"location\":null,\"contact_email\":null,\"deadline_date\":null,\"deadline_at\":null,\"club_id\":7,\"source_url\":\"HTTPS://Example.COM:443/a b?x=1#f\",\"source_image_url\":null}}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_too_long\",\"loc\":[\"body\",\"position_data\",\"source_url\"],\"msg\":\"String should have at most 2048 characters\",\"input\":\"https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ctx\":{\"max_length\":2048}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_too_long\",\"loc\":[\"body\",\"position_data\",\"source_url\"],\"msg\":\"String should have at most 2048 characters\",\"input\":\"https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"ctx\":{\"max_length\":2048}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": ""
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_too_short\",\"loc\":[\"body\",\"position_data\",\"source_url\"],\"msg\":\"String should have at least 1 character\",\"input\":\"\",\"ctx\":{\"min_length\":1}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": null
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_type\",\"loc\":[\"body\",\"position_data\",\"source_url\"],\"msg\":\"Input should be a valid string\",\"input\":null}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "source_image_url": "https://cdn.example.com/a.png"
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"position_data\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\",\"source_image_url\":\"https://cdn.example.com/a.png\"}},\"response\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"commitment\":null,\"compensation\":null,\"is_paid\":null,\"location\":null,\"contact_email\":null,\"deadline_date\":null,\"deadline_at\":null,\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\",\"source_image_url\":\"https://cdn.example.com/a.png\"}}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "source_image_url": ""
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"url_parsing\",\"loc\":[\"body\",\"position_data\",\"source_image_url\"],\"msg\":\"Input should be a valid URL, input is empty\",\"input\":\"\",\"ctx\":{\"error\":\"input is empty\"}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "  ",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_too_short\",\"loc\":[\"body\",\"position_data\",\"title\"],\"msg\":\"String should have at least 1 character\",\"input\":\"  \",\"ctx\":{\"min_length\":1}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_too_long\",\"loc\":[\"body\",\"position_data\",\"title\"],\"msg\":\"String should have at most 200 characters\",\"input\":\"ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt\",\"ctx\":{\"max_length\":200}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 0,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"greater_than_equal\",\"loc\":[\"body\",\"position_data\",\"club_id\"],\"msg\":\"Input should be greater than or equal to 1\",\"input\":0,\"ctx\":{\"ge\":1}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": "7",
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design"
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"position_data\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\"}},\"response\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"commitment\":null,\"compensation\":null,\"is_paid\":null,\"location\":null,\"contact_email\":null,\"deadline_date\":null,\"deadline_at\":null,\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\",\"source_image_url\":null}}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 99999999999999999999,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design"
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"position_data\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"club_id\":99999999999999999999,\"source_url\":\"https://example.com/jobs/design\"}},\"response\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"commitment\":null,\"compensation\":null,\"is_paid\":null,\"location\":null,\"contact_email\":null,\"deadline_date\":null,\"deadline_at\":null,\"club_id\":99999999999999999999,\"source_url\":\"https://example.com/jobs/design\",\"source_image_url\":null}}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "school": "wrong-school"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"extra_forbidden\",\"loc\":[\"body\",\"position_data\",\"school\"],\"msg\":\"Extra inputs are not permitted\",\"input\":\"wrong-school\"}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "deadline_at": "2026-09-09T12:00:00Z"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"value_error\",\"loc\":[\"body\",\"position_data\"],\"msg\":\"Value error, deadline_at requires deadline_date\",\"input\":{\"club_id\":7,\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"source_url\":\"https://example.com/jobs/design\",\"deadline_at\":\"2026-09-09T12:00:00Z\"},\"ctx\":{\"error\":{}}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "deadline_date": "2026-09-09",
+    "deadline_at": "2026-09-09T12:00:00+05:00"
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"position_data\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"deadline_date\":\"2026-09-09\",\"deadline_at\":\"2026-09-09T12:00:00+05:00\",\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\"}},\"response\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"commitment\":null,\"compensation\":null,\"is_paid\":null,\"location\":null,\"contact_email\":null,\"deadline_date\":\"2026-09-09\",\"deadline_at\":\"2026-09-09T12:00:00+05:00\",\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\",\"source_image_url\":null}}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "deadline_date": "2026-09-09",
+    "deadline_at": "2026-09-09T12:00:00"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"timezone_aware\",\"loc\":[\"body\",\"position_data\",\"deadline_at\"],\"msg\":\"Input should have timezone info\",\"input\":\"2026-09-09T12:00:00\"}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "deadline_date": "2026-09-09T00:00:00Z"
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"position_data\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"deadline_date\":\"2026-09-09\",\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\"}},\"response\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"commitment\":null,\"compensation\":null,\"is_paid\":null,\"location\":null,\"contact_email\":null,\"deadline_date\":\"2026-09-09\",\"deadline_at\":null,\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\",\"source_image_url\":null}}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "deadline_date": "09/09/2026"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"date_from_datetime_parsing\",\"loc\":[\"body\",\"position_data\",\"deadline_date\"],\"msg\":\"Input should be a valid date or datetime, invalid character in year\",\"input\":\"09/09/2026\",\"ctx\":{\"error\":\"invalid character in year\"}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "boss",
+    "source_url": "https://example.com/jobs/design"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"literal_error\",\"loc\":[\"body\",\"position_data\",\"position_type\"],\"msg\":\"Input should be 'executive', 'committee', 'volunteer', 'staff', 'internship' or 'general'\",\"input\":\"boss\",\"ctx\":{\"expected\":\"'executive', 'committee', 'volunteer', 'staff', 'internship' or 'general'\"}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "is_paid": "yes",
+    "contact_email": " a@b.c ",
+    "location": "",
+    "compensation": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_too_long\",\"loc\":[\"body\",\"position_data\",\"compensation\"],\"msg\":\"String should have at most 1000 characters\",\"input\":\"ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"ctx\":{\"max_length\":1000}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "is_paid": "yes",
+    "contact_email": " a@b.c ",
+    "location": "",
+    "compensation": "  pay  ",
+    "commitment": null
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"position_data\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"compensation\":\"pay\",\"is_paid\":true,\"location\":\"\",\"contact_email\":\"a@b.c\",\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\"}},\"response\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"commitment\":null,\"compensation\":\"pay\",\"is_paid\":true,\"location\":\"\",\"contact_email\":\"a@b.c\",\"deadline_date\":null,\"deadline_at\":null,\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\",\"source_image_url\":null}}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "http://",
+    "source_image_url": "https:example.com"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"url_parsing\",\"loc\":[\"body\",\"position_data\",\"source_url\"],\"msg\":\"Input should be a valid URL, empty host\",\"input\":\"http://\",\"ctx\":{\"error\":\"empty host\"}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://exa mple.com",
+    "source_image_url": "ftp://x.com"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"url_parsing\",\"loc\":[\"body\",\"position_data\",\"source_url\"],\"msg\":\"Input should be a valid URL, invalid international domain name\",\"input\":\"https://exa mple.com\",\"ctx\":{\"error\":\"invalid international domain name\"}},{\"type\":\"url_scheme\",\"loc\":[\"body\",\"position_data\",\"source_image_url\"],\"msg\":\"URL scheme should be 'http' or 'https'\",\"input\":\"ftp://x.com\",\"ctx\":{\"expected_schemes\":\"'http' or 'https'\"}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": 5,
+    "source_image_url": 5
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_type\",\"loc\":[\"body\",\"position_data\",\"source_url\"],\"msg\":\"Input should be a valid string\",\"input\":5},{\"type\":\"string_type\",\"loc\":[\"body\",\"position_data\",\"source_image_url\"],\"msg\":\"Input should be a valid string\",\"input\":5}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "deadline_date": "2026-09-09",
+    "deadline_at": "2026-09-09T12:00:00.123456789Z"
+   }
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"submitted_by_email\":\"student@uwaterloo.ca\",\"position_data\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"deadline_date\":\"2026-09-09\",\"deadline_at\":\"2026-09-09T12:00:00.123456Z\",\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\"}},\"response\":{\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"requirements\":[],\"commitment\":null,\"compensation\":null,\"is_paid\":null,\"location\":null,\"contact_email\":null,\"deadline_date\":\"2026-09-09\",\"deadline_at\":\"2026-09-09T12:00:00.123456Z\",\"club_id\":7,\"source_url\":\"https://example.com/jobs/design\",\"source_image_url\":null}}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "deadline_date": 1789000000,
+    "deadline_at": 1789000000
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"date_from_datetime_inexact\",\"loc\":[\"body\",\"position_data\",\"deadline_date\"],\"msg\":\"Datetimes provided to dates should have zero time - e.g. be exact dates\",\"input\":1789000000}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_too_long\",\"loc\":[\"body\",\"position_data\",\"description\"],\"msg\":\"String should have at most 4000 characters\",\"input\":null,\"ctx\":{\"max_length\":4000}}],\"inputs_elided\":true}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "requirements": [
+     " r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r "
+    ]
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_too_long\",\"loc\":[\"body\",\"position_data\",\"requirements\",0],\"msg\":\"String should have at most 300 characters\",\"input\":\" r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r  r \",\"ctx\":{\"max_length\":300}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design",
+    "contact_email": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_too_long\",\"loc\":[\"body\",\"position_data\",\"contact_email\"],\"msg\":\"String should have at most 320 characters\",\"input\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"ctx\":{\"max_length\":320}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {}
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"position_data\",\"title\"],\"msg\":\"Field required\",\"input\":{}},{\"type\":\"missing\",\"loc\":[\"body\",\"position_data\",\"description\"],\"msg\":\"Field required\",\"input\":{}},{\"type\":\"missing\",\"loc\":[\"body\",\"position_data\",\"position_type\"],\"msg\":\"Field required\",\"input\":{}},{\"type\":\"missing\",\"loc\":[\"body\",\"position_data\",\"club_id\"],\"msg\":\"Field required\",\"input\":{}},{\"type\":\"missing\",\"loc\":[\"body\",\"position_data\",\"source_url\"],\"msg\":\"Field required\",\"input\":{}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": null
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"model_attributes_type\",\"loc\":[\"body\",\"position_data\"],\"msg\":\"Input should be a valid dictionary or object to extract fields from\",\"input\":null}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca"
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"position_data\"],\"msg\":\"Field required\",\"input\":{\"submitted_by_email\":\"student@uwaterloo.ca\"}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"submitted_by_email\"],\"msg\":\"Field required\",\"input\":{\"position_data\":{\"club_id\":7,\"title\":\"Design Lead\",\"description\":\"Lead the design team.\",\"position_type\":\"committee\",\"source_url\":\"https://example.com/jobs/design\"}}}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": "Design Lead",
+    "description": "Lead the design team.",
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design"
+   },
+   "extra": true
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"extra_forbidden\",\"loc\":[\"body\",\"extra\"],\"msg\":\"Extra inputs are not permitted\",\"input\":true}]}"
+ },
+ {
+  "path": "/position",
+  "json": {
+   "submitted_by_email": "student@uwaterloo.ca",
+   "position_data": {
+    "club_id": 7,
+    "title": null,
+    "description": 5,
+    "position_type": "committee",
+    "source_url": "https://example.com/jobs/design"
+   }
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_type\",\"loc\":[\"body\",\"position_data\",\"title\"],\"msg\":\"Input should be a valid string\",\"input\":null},{\"type\":\"string_type\",\"loc\":[\"body\",\"position_data\",\"description\"],\"msg\":\"Input should be a valid string\",\"input\":5}]}"
+ },
+ {
+  "path": "/review",
+  "json": {
+   "status": "approved"
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"status\":\"approved\",\"rejection_reason\":null}}"
+ },
+ {
+  "path": "/review",
+  "json": {
+   "status": "rejected",
+   "rejection_reason": "Not a campus event"
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"status\":\"rejected\",\"rejection_reason\":\"Not a campus event\"}}"
+ },
+ {
+  "path": "/review",
+  "json": {
+   "status": "pending",
+   "rejection_reason": null
+  },
+  "status": 200,
+  "response": "{\"dump\":{\"status\":\"pending\",\"rejection_reason\":null}}"
+ },
+ {
+  "path": "/review",
+  "json": {
+   "status": "done"
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"literal_error\",\"loc\":[\"body\",\"status\"],\"msg\":\"Input should be 'pending', 'approved' or 'rejected'\",\"input\":\"done\",\"ctx\":{\"expected\":\"'pending', 'approved' or 'rejected'\"}}]}"
+ },
+ {
+  "path": "/review",
+  "json": {
+   "status": null
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"literal_error\",\"loc\":[\"body\",\"status\"],\"msg\":\"Input should be 'pending', 'approved' or 'rejected'\",\"input\":null,\"ctx\":{\"expected\":\"'pending', 'approved' or 'rejected'\"}}]}"
+ },
+ {
+  "path": "/review",
+  "json": {},
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"status\"],\"msg\":\"Field required\",\"input\":{}}]}"
+ },
+ {
+  "path": "/review",
+  "json": {
+   "status": "approved",
+   "rejection_reason": "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"string_too_long\",\"loc\":[\"body\",\"rejection_reason\"],\"msg\":\"String should have at most 2000 characters\",\"input\":\"rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\",\"ctx\":{\"max_length\":2000}}]}"
+ },
+ {
+  "path": "/review",
+  "json": {
+   "status": "approved",
+   "other": 1
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"extra_forbidden\",\"loc\":[\"body\",\"other\"],\"msg\":\"Extra inputs are not permitted\",\"input\":1}]}"
+ },
+ {
+  "path": "/review",
+  "json": {
+   "status": 1,
+   "rejection_reason": 5
+  },
+  "status": 422,
+  "response": "{\"detail\":[{\"type\":\"literal_error\",\"loc\":[\"body\",\"status\"],\"msg\":\"Input should be 'pending', 'approved' or 'rejected'\",\"input\":1,\"ctx\":{\"expected\":\"'pending', 'approved' or 'rejected'\"}},{\"type\":\"string_type\",\"loc\":[\"body\",\"rejection_reason\"],\"msg\":\"Input should be a valid string\",\"input\":5}]}"
+ }
+]

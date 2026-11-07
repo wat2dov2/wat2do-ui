@@ -38,6 +38,9 @@ pub struct Case {
     /// A raw text body.
     #[serde(default)]
     pub body: Option<String>,
+    /// Raw bytes, base64 encoded (a multipart upload).
+    #[serde(default)]
+    pub body_base64: Option<String>,
 }
 
 fn default_method() -> String {
@@ -102,13 +105,21 @@ fn build_request(case: &Case) -> Result<Request<Body>> {
         .uri(&case.path)
         .header("host", TEST_HOST)
         .header("user-agent", "testclient");
-    let body = match (&case.json, &case.body) {
-        (Some(json), _) => {
+    let body = match (&case.json, &case.body, &case.body_base64) {
+        (Some(json), _, _) => {
             builder = builder.header("content-type", "application/json");
             Body::from(serde_json::to_vec(json)?)
         }
-        (None, Some(text)) => Body::from(text.clone()),
-        (None, None) => Body::empty(),
+        (None, Some(text), _) => Body::from(text.clone()),
+        (None, None, Some(encoded)) => {
+            use base64::Engine;
+            Body::from(
+                base64::engine::general_purpose::STANDARD
+                    .decode(encoded)
+                    .with_context(|| format!("{}: body_base64 is not base64", case.name))?,
+            )
+        }
+        (None, None, None) => Body::empty(),
     };
     for (name, value) in &case.headers {
         builder = builder.header(name.as_str(), value.as_str());

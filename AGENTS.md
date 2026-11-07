@@ -200,6 +200,7 @@ The public API is served by `wat2do-api` (`rust/src/api`), which listens on port
 Porting a router means writing its handlers with the shared extractors, errors and validation in `rust/src/api`, registering them in `rust_routes()`, regenerating `backend/core/rust_openapi.json`, proving parity with `backend/scripts/api_parity.py` against production read-only, and deleting the Python router, service, schemas and tests in the same change.
 `docs/rust_api.md` is the step-by-step guide.
 Each `wat2do-api` server also runs the map location worker (`rust/src/map_locations.rs`), which looks up waiting `map_locations` with Nominatim; `claim_map_location` keeps every server to one lookup at a time between them.
+Uploads (`/uploads` and the `/ai` poster readers) are checked and stored in Cloudflare R2 (with each poster's thumbnail) by `rust/src/storage.rs`, and posters are read by OpenAI with `backend/services/scraper/extraction_prompt.txt`, the template the vestigial Python extractor renders too; Python's `storage_service` remains only for that pipeline, Instagram publishing and scripts.
 Read-only production checks must `SET default_transaction_read_only = on`, a 10 second `statement_timeout` and a 15 second `idle_in_transaction_session_timeout` on every connection (at most 2), confirm read-only with `SHOW`, run one at a time and never retry a failed run.
 
 ### Club tickets and money

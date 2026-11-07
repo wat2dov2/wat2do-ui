@@ -12,7 +12,7 @@
 # X-Wat2Do-Origin-Verify secret. Only a request carrying that secret keeps its
 # X-Wat2Do-Viewer-Ip; any other request gets Cloudflare's CF-Connecting-IP
 # instead, whatever it sent. The API trusts the header from loopback
-# (core/client_ip.py, rust/src/api/client_ip.rs).
+# (rust/src/api/client_ip.rs).
 http://api.wat2do.io:8080 {
 	bind 127.0.0.1
 

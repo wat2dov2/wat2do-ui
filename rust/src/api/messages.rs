@@ -120,3 +120,10 @@ pub const CLUB_SELLS_TICKETS: &str = "Clubs that sell tickets cannot be deleted"
 pub const PAYMENT_PROVIDER_UNAVAILABLE: &str =
     "Payments are unavailable right now. Please try again in a minute.";
 pub const STRIPE_SIGNATURE_INVALID: &str = "Invalid Stripe signature";
+
+// The submissions, uploads and AI routes.
+pub const SUBMISSION_NOT_FOUND: &str = "Submission not found";
+pub const POSITION_ALREADY_EXISTS: &str = "This position already exists";
+pub const POSITION_IMAGE_NO_POSITION: &str = "No open position was found in this image";
+pub const EVENT_IMAGE_NO_EVENT: &str =
+    "No event could be read from this image. Try a clearer poster or enter the details manually.";

@@ -1,0 +1,948 @@
+[
+  {
+    "name": "submissions list anonymous",
+    "method": "GET",
+    "path": "/submissions/"
+  },
+  {
+    "name": "submissions list user",
+    "method": "GET",
+    "path": "/submissions/",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "submissions list admin",
+    "method": "GET",
+    "path": "/submissions/",
+    "headers": {
+      "origin": "https://wat2do.io"
+    },
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submissions list page 2 of 3",
+    "method": "GET",
+    "path": "/submissions/?page=2&page_size=3",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submissions list approved",
+    "method": "GET",
+    "path": "/submissions/?submission_status=approved",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submissions list rejected at uwaterloo",
+    "method": "GET",
+    "path": "/submissions/?submission_status=rejected&school=uwaterloo",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submissions list search",
+    "method": "GET",
+    "path": "/submissions/?search=a",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submissions list search wildcard",
+    "method": "GET",
+    "path": "/submissions/?search=*&page_size=2",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submissions list unknown school",
+    "method": "GET",
+    "path": "/submissions/?school=nope",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submissions list empty filters",
+    "method": "GET",
+    "path": "/submissions/?submission_status=&school=&search=",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submissions list page 0",
+    "method": "GET",
+    "path": "/submissions/?page=0&page_size=101",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submissions list beyond the end",
+    "method": "GET",
+    "path": "/submissions/?page=50",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submissions list long status",
+    "method": "GET",
+    "path": "/submissions/?submission_status=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submission approved",
+    "method": "GET",
+    "path": "/submissions/approved-submission-id",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submission rejected",
+    "method": "GET",
+    "path": "/submissions/rejected-submission-id",
+    "headers": {
+      "origin": "https://wat2do.io"
+    },
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submission missing",
+    "method": "GET",
+    "path": "/submissions/00000000-0000-4000-9000-000000000000",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submission not a uuid",
+    "method": "GET",
+    "path": "/submissions/not-a-uuid",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submission as user",
+    "method": "GET",
+    "path": "/submissions/approved-submission-id",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "submission ghost token",
+    "method": "GET",
+    "path": "/submissions/approved-submission-id",
+    "identity": {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "email": "x@y.z"
+    }
+  },
+  {
+    "name": "submissions without slash",
+    "method": "GET",
+    "path": "/submissions",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "submissions HEAD",
+    "method": "HEAD",
+    "path": "/submissions/"
+  },
+  {
+    "name": "submissions preflight",
+    "method": "OPTIONS",
+    "path": "/submissions/",
+    "headers": {
+      "origin": "https://uwaterloo.wat2do.io",
+      "access-control-request-method": "PATCH",
+      "access-control-request-headers": "authorization,content-type"
+    }
+  },
+  {
+    "name": "submissions PUT",
+    "method": "PUT",
+    "path": "/submissions/x",
+    "safe": true
+  },
+  {
+    "name": "position submissions list admin",
+    "method": "GET",
+    "path": "/position-submissions/",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "position submissions list filtered",
+    "method": "GET",
+    "path": "/position-submissions/?school=uwaterloo&search=Design&page=2",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "position submissions list by name",
+    "method": "GET",
+    "path": "/position-submissions/?school=University%20of%20Waterloo",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "position submissions list unknown school",
+    "method": "GET",
+    "path": "/position-submissions/?school=unknown-school",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "position submissions list bad status",
+    "method": "GET",
+    "path": "/position-submissions/?submission_status=done",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    }
+  },
+  {
+    "name": "position submissions list user",
+    "method": "GET",
+    "path": "/position-submissions/",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    }
+  },
+  {
+    "name": "position submissions list anonymous",
+    "method": "GET",
+    "path": "/position-submissions/"
+  },
+  {
+    "name": "uploads GET",
+    "method": "GET",
+    "path": "/uploads/avatar"
+  },
+  {
+    "name": "ai GET",
+    "method": "GET",
+    "path": "/ai/parse-event-image"
+  },
+  {
+    "name": "submission create bad email",
+    "method": "POST",
+    "path": "/submissions/",
+    "json": {
+      "submitted_by_email": "nope",
+      "event_data": {
+        "title": "Parity Night",
+        "location": "SLC",
+        "club_id": 999999999,
+        "occurrences": [
+          {
+            "dtstart_utc": "2026-12-01T18:00:00Z"
+          }
+        ]
+      }
+    },
+    "safe": true
+  },
+  {
+    "name": "submission create malformed",
+    "method": "POST",
+    "path": "/submissions/",
+    "body": "{bad",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "safe": true
+  },
+  {
+    "name": "submission create unknown club",
+    "method": "POST",
+    "path": "/submissions/",
+    "json": {
+      "submitted_by_email": "a@uwaterloo.ca",
+      "event_data": {
+        "title": "Parity Night",
+        "location": "SLC",
+        "club_id": 999999999,
+        "occurrences": [
+          {
+            "dtstart_utc": "2026-12-01T18:00:00Z"
+          }
+        ]
+      }
+    },
+    "headers": {
+      "origin": "https://wat2do.io"
+    },
+    "safe": true
+  },
+  {
+    "name": "submission create club id too big",
+    "method": "POST",
+    "path": "/submissions/",
+    "json": {
+      "submitted_by_email": "a@uwaterloo.ca",
+      "event_data": {
+        "title": "Parity Night",
+        "location": "SLC",
+        "club_id": 99999999999,
+        "occurrences": [
+          {
+            "dtstart_utc": "2026-12-01T18:00:00Z"
+          }
+        ]
+      }
+    },
+    "safe": true
+  },
+  {
+    "name": "submission create ghost sender",
+    "method": "POST",
+    "path": "/submissions/",
+    "json": {
+      "submitted_by_email": "a@uwaterloo.ca",
+      "event_data": {
+        "title": "Parity Night",
+        "location": "SLC",
+        "club_id": 999999999,
+        "occurrences": [
+          {
+            "dtstart_utc": "2026-12-01T18:00:00Z"
+          }
+        ]
+      }
+    },
+    "identity": {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "email": "x@y.z"
+    },
+    "safe": true
+  },
+  {
+    "name": "submission create rate limited",
+    "method": "POST",
+    "path": "/submissions/",
+    "json": {},
+    "safe": true
+  },
+  {
+    "name": "position create invalid",
+    "method": "POST",
+    "path": "/position-submissions/",
+    "json": {
+      "submitted_by_email": "a@uwaterloo.ca",
+      "position_data": {
+        "club_id": 999999999,
+        "title": "Lead",
+        "description": "Lead our team",
+        "position_type": "committee",
+        "source_url": "javascript:alert(1)"
+      }
+    },
+    "safe": true
+  },
+  {
+    "name": "position create unknown club",
+    "method": "POST",
+    "path": "/position-submissions/",
+    "json": {
+      "submitted_by_email": "a@uwaterloo.ca",
+      "position_data": {
+        "club_id": 999999999,
+        "title": "Lead",
+        "description": "Lead our team",
+        "position_type": "committee",
+        "source_url": "https://example.com/role"
+      }
+    },
+    "safe": true
+  },
+  {
+    "name": "position create unknown club signed in",
+    "method": "POST",
+    "path": "/position-submissions/",
+    "json": {
+      "submitted_by_email": "a@uwaterloo.ca",
+      "position_data": {
+        "club_id": 999999999,
+        "title": "Lead",
+        "description": "Lead our team",
+        "position_type": "committee",
+        "source_url": "https://example.com/role"
+      }
+    },
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "review approved again",
+    "method": "PATCH",
+    "path": "/submissions/approved-submission-id",
+    "json": {
+      "status": "approved"
+    },
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "review approved to pending",
+    "method": "PATCH",
+    "path": "/submissions/approved-submission-id",
+    "json": {
+      "status": "pending"
+    },
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "review rejected to approved",
+    "method": "PATCH",
+    "path": "/submissions/rejected-submission-id",
+    "json": {
+      "status": "approved",
+      "rejection_reason": "x"
+    },
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "review missing",
+    "method": "PATCH",
+    "path": "/submissions/00000000-0000-4000-9000-000000000000",
+    "json": {
+      "status": "rejected"
+    },
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "review not a uuid",
+    "method": "PATCH",
+    "path": "/submissions/not-a-uuid",
+    "json": {
+      "status": "rejected"
+    },
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "review bad status",
+    "method": "PATCH",
+    "path": "/submissions/approved-submission-id",
+    "json": {
+      "status": "done"
+    },
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "review as user",
+    "method": "PATCH",
+    "path": "/submissions/approved-submission-id",
+    "json": {
+      "status": "rejected"
+    },
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "review malformed anonymous",
+    "method": "PATCH",
+    "path": "/submissions/approved-submission-id",
+    "body": "{bad",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "safe": true
+  },
+  {
+    "name": "position review missing",
+    "method": "PATCH",
+    "path": "/position-submissions/00000000-0000-4000-9000-000000000000",
+    "json": {
+      "status": "approved"
+    },
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "position review not a uuid",
+    "method": "PATCH",
+    "path": "/position-submissions/not-a-uuid",
+    "json": {
+      "status": "approved"
+    },
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "position review as user",
+    "method": "PATCH",
+    "path": "/position-submissions/00000000-0000-4000-9000-000000000000",
+    "json": {
+      "status": "approved"
+    },
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "delete as user",
+    "method": "DELETE",
+    "path": "/submissions/approved-submission-id",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "delete anonymous",
+    "method": "DELETE",
+    "path": "/submissions/approved-submission-id",
+    "safe": true
+  },
+  {
+    "name": "qr asset anonymous",
+    "method": "POST",
+    "path": "/uploads/qr-asset",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "safe": true
+  },
+  {
+    "name": "qr asset text",
+    "method": "POST",
+    "path": "/uploads/qr-asset",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0iYS50eHQiDQpDb250ZW50LVR5cGU6IHRleHQvcGxhaW4NCg0KaGVsbG8NCi0tYi0tDQo=",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "qr asset no content type",
+    "method": "POST",
+    "path": "/uploads/qr-asset",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCg0KiVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFElEQVR4nGM8ISfHgA0wYRUdtBIA0MoBFD5jqJkAAAAASUVORK5CYIINCi0tYi0tDQo=",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "qr asset svg sanitized then storage",
+    "method": "POST",
+    "path": "/uploads/qr-asset",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48c2NyaXB0Png8L3NjcmlwdD48L3N2Zz4NCi0tYi0tDQo=",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "qr asset valid then storage",
+    "method": "POST",
+    "path": "/uploads/qr-asset",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "claim proof garbage",
+    "method": "POST",
+    "path": "/uploads/claim-proof",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body": "garbage",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "claim proof no boundary",
+    "method": "POST",
+    "path": "/uploads/claim-proof",
+    "headers": {
+      "content-type": "multipart/form-data"
+    },
+    "body": "x",
+    "safe": true
+  },
+  {
+    "name": "claim proof json",
+    "method": "POST",
+    "path": "/uploads/claim-proof",
+    "json": {
+      "file": "x"
+    },
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "poster svg refused",
+    "method": "POST",
+    "path": "/uploads/event-image",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIi8+DQotLWItLQ0K",
+    "safe": true
+  },
+  {
+    "name": "poster valid then storage",
+    "method": "POST",
+    "path": "/uploads/event-image",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "safe": true
+  },
+  {
+    "name": "poster heic refused",
+    "method": "POST",
+    "path": "/uploads/event-image",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvaGVpYw0KDQqJUE5HDQoaCgAAAA1JSERSAAAACAAAAAgIAgAAAEttKdwAAAAUSURBVHicYzwhJ8eADTBhFR20EgDQygEUPmOomQAAAABJRU5ErkJggg0KLS1iLS0NCg==",
+    "safe": true
+  },
+  {
+    "name": "event image not the owner",
+    "method": "POST",
+    "path": "/uploads/event-image/owned-event-id",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "event image admin text",
+    "method": "POST",
+    "path": "/uploads/event-image/owned-event-id",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogdGV4dC9wbGFpbg0KDQp4DQotLWItLQ0K",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "event image admin valid then storage",
+    "method": "POST",
+    "path": "/uploads/event-image/owned-event-id",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "event image missing",
+    "method": "POST",
+    "path": "/uploads/event-image/999999999",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "event image id not int",
+    "method": "POST",
+    "path": "/uploads/event-image/abc",
+    "json": {},
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "event image id too big",
+    "method": "POST",
+    "path": "/uploads/event-image/99999999999",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "event image ghost",
+    "method": "POST",
+    "path": "/uploads/event-image/owned-event-id",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "identity": {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "email": "x@y.z"
+    },
+    "safe": true
+  },
+  {
+    "name": "club logo not the owner",
+    "method": "POST",
+    "path": "/uploads/club-logo/owned-club-id",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "identity": {
+      "id": "user-auth-id",
+      "email": "user@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "club logo admin text",
+    "method": "POST",
+    "path": "/uploads/club-logo/owned-club-id",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogdGV4dC9wbGFpbg0KDQp4DQotLWItLQ0K",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "club logo missing",
+    "method": "POST",
+    "path": "/uploads/club-logo/999999999",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "avatar text",
+    "method": "POST",
+    "path": "/uploads/avatar",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogdGV4dC9wbGFpbg0KDQp4DQotLWItLQ0K",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "avatar valid then storage",
+    "method": "POST",
+    "path": "/uploads/avatar",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "identity": {
+      "id": "admin-auth-id",
+      "email": "admin@example.com"
+    },
+    "safe": true
+  },
+  {
+    "name": "ai no school no file",
+    "method": "POST",
+    "path": "/ai/parse-event-image",
+    "json": {},
+    "safe": true
+  },
+  {
+    "name": "ai unknown school",
+    "method": "POST",
+    "path": "/ai/parse-event-image?school=unknown",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "safe": true
+  },
+  {
+    "name": "ai blank school",
+    "method": "POST",
+    "path": "/ai/parse-event-image?school=%20%20",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "safe": true
+  },
+  {
+    "name": "ai text file",
+    "method": "POST",
+    "path": "/ai/parse-event-image?school=uwaterloo",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogdGV4dC9wbGFpbg0KDQp4DQotLWItLQ0K",
+    "safe": true
+  },
+  {
+    "name": "ai event no model",
+    "method": "POST",
+    "path": "/ai/parse-event-image?school=uwaterloo",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2UvcG5nDQoNColQTkcNChoKAAAADUlIRFIAAAAIAAAACAgCAAAAS20p3AAAABRJREFUeJxjPCEnx4ANMGEVHbQSANDKARQ+Y6iZAAAAAElFTkSuQmCCDQotLWItLQ0K",
+    "safe": true
+  },
+  {
+    "name": "ai position no model",
+    "method": "POST",
+    "path": "/ai/parse-position-image?school=UWaterloo",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCg0KiVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFElEQVR4nGM8ISfHgA0wYRUdtBIA0MoBFD5jqJkAAAAASUVORK5CYIINCi0tYi0tDQo=",
+    "safe": true
+  },
+  {
+    "name": "ai position svg",
+    "method": "POST",
+    "path": "/ai/parse-position-image?school=uwaterloo",
+    "headers": {
+      "content-type": "multipart/form-data; boundary=b"
+    },
+    "body_base64": "LS1iDQpDb250ZW50LURpc3Bvc2l0aW9uOiBmb3JtLWRhdGE7IG5hbWU9ImZpbGUiOyBmaWxlbmFtZT0icG9zdGVyLnBuZyINCkNvbnRlbnQtVHlwZTogaW1hZ2Uvc3ZnK3htbA0KDQo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIvPg0KLS1iLS0NCg==",
+    "safe": true
+  }
+]

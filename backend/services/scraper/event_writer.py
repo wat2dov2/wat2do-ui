@@ -110,8 +110,8 @@ def write_event(
         )
         return "skipped"
 
-    # Truncations mirror the API's ``EventCreate`` schema caps so a row written
-    # by the scraper round-trips through the Pydantic boundary.
+    # Truncations mirror the API's event field caps (``core.constants``) so a
+    # row written by the scraper stays within what the API accepts.
     event_row = {
         **EventDiscoveryFields.model_validate(
             {

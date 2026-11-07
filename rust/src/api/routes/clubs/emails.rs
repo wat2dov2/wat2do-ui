@@ -1,6 +1,6 @@
-//! The emails club routes send: review decisions for a club or a claim
-//! (`services/notifications/submission_review.py`, which the submissions
-//! routes still use in Python) and management-team invitations.
+//! The emails club routes send: review decisions for a club, a claim or a
+//! submitted event or position (`services/notifications/submission_review.py`,
+//! also sent by the submissions routes) and management-team invitations.
 
 use std::sync::Arc;
 
@@ -16,6 +16,8 @@ const CLOSING: &str = "Questions? Reply to this email and our team will get back
 pub enum Reviewed {
     Club,
     Claim,
+    Event,
+    Position,
 }
 
 /// `build_review_decision_email`.
@@ -30,6 +32,8 @@ pub fn review_decision(
     let noun = match kind {
         Reviewed::Club => "club",
         Reviewed::Claim => "claim",
+        Reviewed::Event => "event",
+        Reviewed::Position => "position",
     };
     let (subject, heading, intro, details_html, details_text) = if approved {
         let (subject, heading, intro, action) = match kind {
@@ -41,7 +45,7 @@ pub fn review_decision(
                 ),
                 "Open the club panel".to_owned(),
             ),
-            Reviewed::Club => (
+            Reviewed::Club | Reviewed::Event | Reviewed::Position => (
                 format!("Your {noun} {title} is live on wat2do"),
                 format!("{title} is approved"),
                 format!(
@@ -62,7 +66,7 @@ pub fn review_decision(
                     "We reviewed your request to manage {title} and could not verify your role this time."
                 ),
             ),
-            Reviewed::Club => (
+            Reviewed::Club | Reviewed::Event | Reviewed::Position => (
                 format!("We could not approve your {noun} {title}"),
                 format!("{title} was not approved"),
                 format!(
@@ -247,6 +251,48 @@ mod tests {
             bare.body_text,
             "Thanks for submitting your club. We reviewed it and could not approve it this time.\n\nQuestions? Reply to this email and our team will get back to you."
         );
+    }
+
+    #[test]
+    fn submitted_events_and_positions_use_the_same_copy() {
+        // test_rejection_quotes_the_escaped_reason_without_a_link (kind="event")
+        let event = review_decision(
+            Reviewed::Event,
+            "Tea Club",
+            false,
+            "lead@uwo.ca",
+            "https://uwo.wat2do.io/events",
+            Some("Not <b>a campus</b> event\nSorry"),
+        );
+        assert_eq!(event.subject, "We could not approve your event Tea Club");
+        assert!(
+            event
+                .body_html
+                .contains("Not &lt;b&gt;a campus&lt;/b&gt; event<br>Sorry")
+        );
+        assert!(
+            event
+                .body_text
+                .contains("Reason: Not <b>a campus</b> event\nSorry")
+        );
+        let position = review_decision(
+            Reviewed::Position,
+            "Design Lead",
+            true,
+            "lead@uwo.ca",
+            "https://uwo.wat2do.io/positions",
+            None,
+        );
+        assert_eq!(
+            position.subject,
+            "Your position Design Lead is live on wat2do"
+        );
+        assert!(
+            position
+                .body_text
+                .contains("View your position: https://uwo.wat2do.io/positions")
+        );
+        assert_eq!(position.sender.as_deref(), Some("wat2do <team@wat2do.io>"));
     }
 
     #[test]

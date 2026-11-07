@@ -61,7 +61,7 @@ The R2 bucket, `media.wat2do.io`, tiered cache, the CAA record and the certifica
 
 ### Visitor addresses
 
-Per-visitor limits (sign-in codes, reports, interaction caps, QR scan hashes) need the visitor's address, and the API trusts `X-Wat2Do-Viewer-Ip` only from loopback (`backend/core/client_ip.py`, `rust/src/api/client_ip.rs`), where Caddy is its only caller.
+Per-visitor limits (sign-in codes, reports, interaction caps, QR scan hashes) need the visitor's address, and the API trusts `X-Wat2Do-Viewer-Ip` only from loopback (`rust/src/api/client_ip.rs`), where Caddy is its only caller.
 CloudFront's viewer-request functions set `X-Wat2Do-Viewer-Ip` from the connection, replacing whatever the visitor sent, and the API origin adds `X-Wat2Do-Origin-Verify` (`origin_verify_secret`).
 On `api.wat2do.io`, Caddy keeps `X-Wat2Do-Viewer-Ip` only when `X-Wat2Do-Origin-Verify` matches its `ORIGIN_VERIFY_SECRET` (`~/wat2do-data/config/caddy.env`), and strips the secret before the API; any other request gets `CF-Connecting-IP`, whatever it sent.
 Server rendering never calls the API on a visitor's behalf (its reads are public snapshots and details), so its requests carry no visitor address.

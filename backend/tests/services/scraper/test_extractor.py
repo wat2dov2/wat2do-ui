@@ -671,3 +671,23 @@ def test_clean_position_decodes_serialized_text_fields():
 
     assert cleaned["description"] == "Create posters ✨"
     assert cleaned["requirements"] == ["Portfolio\nrequired"]
+
+
+def test_prompt_renders_like_the_rust_image_routes():
+    """The Rust `/ai` routes render the same template and check the same fixture."""
+    import json
+    from pathlib import Path
+
+    from core.constants import EVENT_CATEGORIES
+
+    fixtures = json.loads(
+        (
+            Path(__file__).resolve().parents[4] / "rust/src/api/routes/ai/testdata/prompts.json"
+        ).read_text(encoding="utf-8")
+    )
+    categories = "\n".join(f"- {category}" for category in EVENT_CATEGORIES)
+    for fixture in fixtures:
+        assert (
+            extractor._build_prompt(**fixture["inputs"], categories_str=categories)
+            == fixture["prompt"]
+        )
