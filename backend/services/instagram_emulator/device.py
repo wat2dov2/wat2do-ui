@@ -79,7 +79,8 @@ def labels(*names: str) -> re.Pattern[str]:
 
 
 INBOX_URL = "instagram://direct-inbox"
-_INBOX_TITLE = re.compile(r"^igds_action_bar_title$")
+# Instagram is moving accounts to a new inbox header with a large auto-sized title.
+_INBOX_TITLE = re.compile(r"^(igds_action_bar_title|action_bar_large_title_auto_size)$")
 _INBOX_ATTEMPTS = 2
 _SWITCH_ATTEMPTS = 2
 _PROFILE_TAB = re.compile(r"^Profile$")
