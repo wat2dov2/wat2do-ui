@@ -3,8 +3,10 @@
 //! tokens (`api::auth::AccessTokens`) and `auth_sessions`.
 //!
 //! The long-lived refresh token only ever travels in an `HttpOnly` cookie
-//! scoped to the refresh endpoint; every cookie, redirect and error body is
-//! written exactly as the FastAPI router wrote it.
+//! scoped to the refresh endpoint. A readable signed-in cookie beside it
+//! tells the website whether there is a session to refresh: `1` with a
+//! refresh cookie, `0` once the API has found none. Every other cookie,
+//! redirect and error body is written exactly as the FastAPI router wrote it.
 
 mod google;
 mod session;
@@ -49,6 +51,10 @@ static REFRESH_LIMITER: LazyLock<RateLimiter> =
     LazyLock::new(|| RateLimiter::new(RATE_LIMITS.token_refresh));
 
 const REFRESH_COOKIE: &str = "refresh_token";
+/// The signed-in cookie's values: the browser holds a session, or the API
+/// found that it holds none.
+const SIGNED_IN: &str = "1";
+const SIGNED_OUT: &str = "0";
 const GOOGLE_OAUTH_STATE_COOKIE: &str = "google_oauth_state";
 const GOOGLE_OAUTH_STATE_MAX_AGE: i64 = 10 * 60;
 const GOOGLE_OAUTH_CALLBACK_PATH: &str = "/api/auth/google/callback";
@@ -116,8 +122,8 @@ fn secure_cookies(settings: &Settings) -> bool {
     settings.cookie_secure || settings.is_production()
 }
 
-/// `_set_refresh_cookie`.
-fn set_refresh_cookie(
+/// The refresh cookie, with the signed-in cookie beside it saying `1`.
+fn set_session_cookies(
     response: &mut Response,
     settings: &Settings,
     headers: &HeaderMap,
@@ -136,15 +142,43 @@ fn set_refresh_cookie(
             ..Cookie::new(REFRESH_COOKIE, token)
         },
     );
+    set_signed_in_cookie(response, settings, headers, SIGNED_IN);
 }
 
-/// `_clear_refresh_cookie`: must name the same path and domain it was set with.
-fn clear_refresh_cookie(response: &mut Response, settings: &Settings, headers: &HeaderMap) {
+/// Logout: the refresh cookie cleared on the path and domain it was set
+/// with, and the signed-in cookie saying `0`.
+fn clear_session_cookies(response: &mut Response, settings: &Settings, headers: &HeaderMap) {
     cookies::delete(
         response.headers_mut(),
         REFRESH_COOKIE,
         &settings.refresh_cookie_path,
         cookie_domain(settings, headers),
+    );
+    set_signed_in_cookie(response, settings, headers, SIGNED_OUT);
+}
+
+/// The readable signed-in cookie (`authentication.json` `signed_in_cookie`):
+/// `1` beside a refresh cookie, `0` once the API has found that the browser
+/// holds no session. The refresh cookie is httpOnly and sent only to the
+/// refresh path, so this one, with the same domain (every campus), lifetime
+/// and Secure flag but on every path, is how each campus's pages know whether
+/// to ask for a session. Nothing on the server trusts it.
+fn set_signed_in_cookie(
+    response: &mut Response,
+    settings: &Settings,
+    headers: &HeaderMap,
+    value: &str,
+) {
+    let max_age = AUTHENTICATION.session_cookie_days * 24 * 3600;
+    cookies::set(
+        response.headers_mut(),
+        &Cookie {
+            max_age: Some(max_age),
+            expires_in: Some(max_age),
+            domain: cookie_domain(settings, headers),
+            secure: secure_cookies(settings),
+            ..Cookie::new(&AUTHENTICATION.signed_in_cookie, value)
+        },
     );
 }
 
@@ -161,8 +195,18 @@ fn clear_google_state_cookie(response: &mut Response, settings: &Settings, heade
 fn signed_in_response(signed_in: SignedIn, settings: &Settings, headers: &HeaderMap) -> Response {
     let mut response = Json(signed_in.body).into_response();
     if !signed_in.refresh_token.is_empty() {
-        set_refresh_cookie(&mut response, settings, headers, &signed_in.refresh_token);
+        set_session_cookies(&mut response, settings, headers, &signed_in.refresh_token);
     }
+    response
+}
+
+/// `error`'s answer to a refresh that found no session to continue: the
+/// signed-in cookie says `0`, so the website stops asking. The refresh cookie
+/// is left as it was: a sign-in in another tab may have replaced it while this
+/// request was on its way, and deleting it would end that session.
+fn signed_out_response(error: ApiError, settings: &Settings, headers: &HeaderMap) -> Response {
+    let mut response = error.into_response();
+    set_signed_in_cookie(&mut response, settings, headers, SIGNED_OUT);
     response
 }
 
@@ -476,7 +520,7 @@ pub async fn complete_google_oauth(
     let location = frontend_page(&callback_url, "/auth/callback", &params)?;
     let mut response = redirect(StatusCode::SEE_OTHER, &location);
     if !signed_in.refresh_token.is_empty() {
-        set_refresh_cookie(&mut response, settings, &headers, &signed_in.refresh_token);
+        set_session_cookies(&mut response, settings, &headers, &signed_in.refresh_token);
     }
     clear_google_state_cookie(&mut response, settings, &headers);
     Ok(response)
@@ -640,17 +684,27 @@ pub async fn refresh(
             "Cross-origin refresh blocked",
         ));
     }
-    let refresh_token = cookies::read(&headers)
+    let Some(refresh_token) = cookies::read(&headers)
         .remove(REFRESH_COOKIE)
         .filter(|token| !token.is_empty())
-        .ok_or_else(|| ApiError::http(StatusCode::UNAUTHORIZED, NO_REFRESH_TOKEN))?;
+    else {
+        let missing = ApiError::http(StatusCode::UNAUTHORIZED, NO_REFRESH_TOKEN);
+        return Ok(signed_out_response(missing, settings, &headers));
+    };
     REFRESH_LIMITER.check(&client_ip)?;
-    let signed_in = session::refresh(&state.db, &state.auth, &refresh_token).await?;
-    Ok(signed_in_response(signed_in, settings, &headers))
+    match session::refresh(&state.db, &state.auth, &refresh_token).await {
+        Ok(signed_in) => Ok(signed_in_response(signed_in, settings, &headers)),
+        // The session is over: expired, revoked, replaced or its account deleted.
+        // Anything else (a limit, the database) leaves the cookies for a retry.
+        Err(ended @ ApiError::Authentication(_)) => {
+            Ok(signed_out_response(ended, settings, &headers))
+        }
+        Err(error) => Err(error),
+    }
 }
 
 /// `_error_response_with_cleared_cookie`: an error body that still clears the
-/// refresh cookie.
+/// session cookies.
 fn error_with_cleared_cookie(
     status: StatusCode,
     detail: &str,
@@ -658,7 +712,7 @@ fn error_with_cleared_cookie(
     headers: &HeaderMap,
 ) -> Response {
     let mut response = (status, Json(json!({ "detail": detail }))).into_response();
-    clear_refresh_cookie(&mut response, settings, headers);
+    clear_session_cookies(&mut response, settings, headers);
     response
 }
 
@@ -700,7 +754,7 @@ pub async fn logout(
         }
     }
     let mut response = MessageResponse::json("Logged out successfully").into_response();
-    clear_refresh_cookie(&mut response, settings, &headers);
+    clear_session_cookies(&mut response, settings, &headers);
     Ok(response)
 }
 

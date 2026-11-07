@@ -43,6 +43,9 @@ pub struct ApiServer {
 #[serde(deny_unknown_fields)]
 pub struct Authentication {
     pub session_cookie_days: i64,
+    /// The readable cookie beside the refresh cookie: `1` while the browser
+    /// holds a session, `0` once the API has found that it holds none.
+    pub signed_in_cookie: String,
     pub verification_token_minutes: i64,
     pub access_token_minutes: i64,
     /// Wrong six-digit codes an address may try per window.

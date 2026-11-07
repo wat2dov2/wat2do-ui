@@ -1,5 +1,6 @@
 {
   "session_cookie_days": 30,
+  "signed_in_cookie": "wat2do_signed_in",
   "verification_token_minutes": 15,
   "access_token_minutes": 15,
   "code_guess_limit": 5,

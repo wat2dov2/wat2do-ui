@@ -5,6 +5,7 @@ import type { NextFixture } from "next/experimental/testmode/playwright.js";
 import { mockApi } from "./api-fixture";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 import { MAX_IMAGE_UPLOAD_SIZE_BYTES } from "../src/shared/constants/uploads";
+import authentication from "../../backend/controlbox/authentication.json" with { type: "json" };
 import eventDiscovery from "../../backend/controlbox/event_discovery.json" with { type: "json" };
 import type { components } from "../src/shared/generated/api-types";
 import arTranslations from "../src/shared/locales/ar.json" with { type: "json" };
@@ -359,7 +360,8 @@ test.describe("SEO discovery routes", () => {
   });
 });
 
-async function seedAuthenticatedSession(page: Page, next: NextFixture) {
+/** The API's side of a signed-in admin: refresh, profile, clubs and saved items. */
+async function mockSignedInApi(page: Page, next: NextFixture) {
   // Mock auth refresh
   await mockApi(page, next, url => apiPath(url) === "/auth/refresh", async () => {
     return ({
@@ -418,6 +420,11 @@ async function seedAuthenticatedSession(page: Page, next: NextFixture) {
       body: JSON.stringify([]),
     });
   });
+}
+
+/** A signed-in admin whose session this campus has cached. */
+async function seedAuthenticatedSession(page: Page, next: NextFixture) {
+  await mockSignedInApi(page, next);
 
   const profile = {
     id: "mock-user-id",
@@ -818,18 +825,38 @@ test.describe("Navigation progress", () => {
 // ── Workflow 1: Auth Page ─────────────────────────────────────────────
 
 test.describe("Auth Page", () => {
-  test("restores a shared session without a campus-local profile cache", async ({ page, next }) => {
-    await seedAuthenticatedSession(page, next);
-    await page.goto(BASE);
-    await expect(page.getByRole("button", { name: "Open navigation menu" })).toBeVisible();
+  /** The readable cookie the API keeps beside its refresh cookie, on every campus. */
+  const setSignedInCookie = (page: Page, value: "1" | "0") =>
+    page.context().addCookies([{ name: authentication.signed_in_cookie, value, url: BASE }]);
 
-    await page.evaluate(() => window.localStorage.clear());
-    await page.reload();
+  test("restores a shared session without a campus-local profile cache", async ({ page, next }) => {
+    // Signed in on another campus: only the API's signed-in cookie is here.
+    await mockSignedInApi(page, next);
+    await setSignedInCookie(page, "1");
+    await page.goto(BASE);
 
     await expect(page.getByRole("button", { name: "Open navigation menu" })).toBeVisible();
     await expect.poll(() => page.evaluate(
       (key) => window.localStorage.getItem(key), STORAGE_KEYS.USER_EMAIL,
     )).toBe(JSON.stringify(TEST_EMAIL));
+  });
+
+  test("a visitor the API found signed out never asks to refresh a session", async ({ page }) => {
+    await setSignedInCookie(page, "0");
+    let refreshRequests = 0;
+    await page.route(url => apiPath(url) === "/auth/refresh", async (route) => {
+      refreshRequests += 1;
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "No refresh token" }),
+      });
+    });
+
+    await page.goto(BASE);
+    await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    expect(refreshRequests).toBe(0);
   });
 
   test("keeps the session when a new backend worker cannot fetch signing keys", async ({ page, next }) => {
