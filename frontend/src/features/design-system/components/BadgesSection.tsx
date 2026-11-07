@@ -56,6 +56,7 @@ export function BadgesSection() {
             <Badge size="sm">Small</Badge>
             <Badge size="md">Medium</Badge>
             <Badge size="lg">Large</Badge>
+            <Badge size="stacked">Stacked</Badge>
           </Stack>
         </ShowcaseBlock>
 
