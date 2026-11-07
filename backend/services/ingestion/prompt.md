@@ -70,7 +70,7 @@ Before writing anything, look up this club's events from the last few months and
 When the publishing club has an id, start with:
 
 ```
-psql -c "SELECT e.id, e.title, e.location, e.map_location, e.cancelled, e.source_url, string_agg(to_char(d.dtstart_utc AT TIME ZONE '{{timezone}}', 'Dy YYYY-MM-DD HH24:MI') || ' [' || d.id || ']', ', ' ORDER BY d.dtstart_utc) AS dates FROM events e JOIN event_dates d ON d.event_id = e.id WHERE e.club_id = <club id> GROUP BY e.id HAVING max(d.dtstart_utc) > now() - interval '120 days' ORDER BY max(d.dtstart_utc) DESC LIMIT 40"
+psql -c "SELECT e.id, e.title, e.location, e.map_location, e.cancelled, e.source_url, string_agg(to_char(utc_to_local(d.dtstart_utc, '{{timezone}}'), 'Dy YYYY-MM-DD HH24:MI') || ' [' || d.id || ']', ', ' ORDER BY d.dtstart_utc) AS dates FROM events e JOIN event_dates d ON d.event_id = e.id WHERE e.club_id = <club id> GROUP BY e.id HAVING max(d.dtstart_utc) > now() - interval '120 days' ORDER BY max(d.dtstart_utc) DESC LIMIT 40"
 ```
 
 When the club has no id, run the same query with `e.ig_handle IN ('<handle>', '@<handle>')` instead of the `club_id` match.
@@ -140,16 +140,18 @@ WITH e AS (
   RETURNING id
 )
 INSERT INTO event_dates (event_id, dtstart_utc, dtend_utc, tz)
-SELECT e.id, v.s::timestamptz, v.f::timestamptz, '{{timezone}}'
+SELECT e.id, local_to_utc(v.s::timestamp, '{{timezone}}'), local_to_utc(v.f::timestamp, '{{timezone}}'), '{{timezone}}'
 FROM e, (VALUES
-  ('2026-10-21 19:00 {{timezone}}', '2026-10-21 21:00 {{timezone}}'),
-  ('2026-10-28 19:00 {{timezone}}', '2026-10-28 21:00 {{timezone}}')
+  ('2026-10-21 19:00', '2026-10-21 21:00'),
+  ('2026-10-28 19:00', '2026-10-28 21:00')
 ) AS v(s, f);
 COMMIT;
 SQL
 ```
 
-Write each date as local wall-clock time followed by the timezone name, as above; Postgres converts it to UTC and handles daylight saving.
+Write each date as local wall-clock time and convert it with `local_to_utc('YYYY-MM-DD HH24:MI'::timestamp, '{{timezone}}')` as above, also when you move a date; it applies the school's current daylight-saving law.
+Read listed times back with `utc_to_local(<column>, '{{timezone}}')`.
+Never write a time zone name or UTC offset into a time yourself, and never use `AT TIME ZONE`: the server's own time zone rules can be out of date.
 Use NULL for `dtend_utc` when no end time is given.
 
 Columns:
@@ -199,7 +201,7 @@ When a co-host club belongs to a different school, also create the event at that
 
 ## Writing positions
 
-Columns: `club_id` (required; a registered club at the school), `school_id`, `title` (at most 200 characters), `description` (one short sentence; replaced with the caption for new rows), `position_type` (`executive`, `committee`, `volunteer`, `staff`, `internship` or `general`), `requirements` (JSON array of explicit qualifications, `'[]'` when none), `commitment`, `compensation`, `location`, `contact_email`, `is_paid` (true only when explicitly paid, false when explicitly unpaid or volunteer, otherwise NULL), `deadline_date` (`YYYY-MM-DD`), `deadline_at` (only with an explicit time, as local time plus timezone), `source_url` = `'{{source_url}}'`, `source_image_url` (a poster reference, as for events, including replacing a listed position's image with this source's image of the role), `ingestion_source` = `'{{ingestion_source}}'`, `is_active` = true.
+Columns: `club_id` (required; a registered club at the school), `school_id`, `title` (at most 200 characters), `description` (one short sentence; replaced with the caption for new rows), `position_type` (`executive`, `committee`, `volunteer`, `staff`, `internship` or `general`), `requirements` (JSON array of explicit qualifications, `'[]'` when none), `commitment`, `compensation`, `location`, `contact_email`, `is_paid` (true only when explicitly paid, false when explicitly unpaid or volunteer, otherwise NULL), `deadline_date` (`YYYY-MM-DD`), `deadline_at` (only with an explicit time, as `local_to_utc('YYYY-MM-DD HH24:MI'::timestamp, '{{timezone}}')`), `source_url` = `'{{source_url}}'`, `source_image_url` (a poster reference, as for events, including replacing a listed position's image with this source's image of the role), `ingestion_source` = `'{{ingestion_source}}'`, `is_active` = true.
 When no registered club hosts a position, skip that position.
 
 ## What counts as an event
