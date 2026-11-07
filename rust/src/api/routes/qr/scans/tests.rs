@@ -165,11 +165,11 @@ fn signed_payloads_must_name_version_one_and_a_scan() {
 
 #[test]
 fn token_decoding_is_as_lenient_as_python() {
-    assert_eq!(decode_token("YWJj"), Some(b"abc".to_vec()));
-    assert_eq!(decode_token("YWI"), Some(b"ab".to_vec()));
-    assert_eq!(decode_token("Y!W!J!j"), Some(b"abc".to_vec()));
-    assert_eq!(decode_token("Y"), None);
-    assert_eq!(decode_token("_-8"), Some(vec![0xff, 0xef]));
+    assert_eq!(python_b64decode_repadded("YWJj"), Some(b"abc".to_vec()));
+    assert_eq!(python_b64decode_repadded("YWI"), Some(b"ab".to_vec()));
+    assert_eq!(python_b64decode_repadded("Y!W!J!j"), Some(b"abc".to_vec()));
+    assert_eq!(python_b64decode_repadded("Y"), None);
+    assert_eq!(python_b64decode_repadded("_-8"), Some(vec![0xff, 0xef]));
 }
 
 #[test]

@@ -1,14 +1,12 @@
-"""User notification preference schemas.
+"""Notification preference types.
 
 Row-per-type model (see migration comments): each (user, type) pair can
 have an explicit ``enabled`` value, and missing rows resolve to the
-code default in ``core.constants.NOTIFICATION_DEFAULT_ENABLED``.
+code default in ``core.constants.NOTIFICATION_DEFAULT_ENABLED``. The API
+(``rust/src/api/routes/notification_preferences.rs``) reads and writes them.
 """
 
-from datetime import datetime
 from typing import Literal
-
-from pydantic import BaseModel, ConfigDict, Field
 
 from core.constants import (
     NOTIFICATION_TYPE_EVENT_CHANGE,
@@ -17,52 +15,11 @@ from core.constants import (
 )
 
 # Literal alias - canonical set of valid notification_type values.
-# Add a new member here AND in core/constants.NOTIFICATION_TYPES in the
-# same change. Pydantic enforces this at the API boundary; the DB
-# column stays plain text so adding a type is a code change only.
+# Add a new member here AND in core/constants.NOTIFICATION_TYPES (and
+# rust/src/constants.rs) in the same change. The DB column stays plain text,
+# so adding a type is a code change only.
 NotificationType = Literal[
     NOTIFICATION_TYPE_MORNING_EMAIL,
     NOTIFICATION_TYPE_EVENT_REMINDER,
     NOTIFICATION_TYPE_EVENT_CHANGE,
 ]
-
-
-class NotificationPreferenceResponse(BaseModel):
-    notification_type: NotificationType
-    enabled: bool
-    updated_at: datetime | None = None
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class NotificationPreferenceUpdate(BaseModel):
-    """One preference-flip in a bulk update payload."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    notification_type: NotificationType
-    enabled: bool
-
-
-class NotificationPreferencesBulkUpdate(BaseModel):
-    """Settings-page payload: flip multiple toggles in one call.
-
-    The settings UI typically shows every type as a toggle; letting the
-    client send them in one request avoids N round-trips and lines up
-    cleanly with an UPSERT on the (user_id, notification_type) key.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    preferences: list[NotificationPreferenceUpdate] = Field(..., min_length=1, max_length=32)
-
-
-class NotificationPreferencesListResponse(BaseModel):
-    """Every notification type's resolved enabled state for the user.
-
-    Includes types for which the user has no row; the
-    ``enabled`` value is the resolved default in that case. Clients
-    render one toggle per entry.
-    """
-
-    preferences: list[NotificationPreferenceResponse]

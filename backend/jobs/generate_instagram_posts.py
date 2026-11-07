@@ -2,8 +2,9 @@
 """Read Instagram candidates or save curated drafts for admin review.
 
 ``curate`` has Claude draft every school's carousel; ``publish`` posts every
-ready draft for today; ``install-schedule`` runs both daily through macOS
-LaunchAgents that keep no logs.
+ready draft for today; ``publish-batch`` posts one batch the API already
+claimed (the admin's Publish button starts it); ``install-schedule`` runs
+curate and publish daily through macOS LaunchAgents that keep no logs.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from core.controlbox import controlbox  # noqa: E402
 from core.launch_agents import CLAUDE_CODE_PATH, install_launch_agent  # noqa: E402
 from services.instagram_publishing import (  # noqa: E402
     list_draft_candidates,
+    publish_batch,
     publish_ready_drafts,
     save_review_draft,
 )
@@ -87,6 +89,10 @@ def main() -> int:
     save.add_argument("selection_file", type=Path)
     commands.add_parser("curate", help="Have Claude draft every school's carousel for today")
     commands.add_parser("publish", help="Publish every school's ready draft for today")
+    publish_one = commands.add_parser(
+        "publish-batch", help="Publish one batch the API claimed for publishing"
+    )
+    publish_one.add_argument("batch_id")
     commands.add_parser(
         "install-schedule", help="Run curate and publish daily through LaunchAgents"
     )
@@ -113,6 +119,10 @@ def main() -> int:
             result = publish_ready_drafts()
         print(json.dumps(result, sort_keys=True))
         return 1 if result.get("failed") or result.get("skipped") else 0
+    if args.command == "publish-batch":
+        # A failed publish is recorded on the batch; a nonzero exit means a crash.
+        print(json.dumps({"status": publish_batch(args.batch_id)}))
+        return 0
     if args.command == "candidates":
         result = list_draft_candidates()
     else:

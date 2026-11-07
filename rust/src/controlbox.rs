@@ -207,6 +207,55 @@ pub struct InstagramBrowser {
     pub worker_log_backup_count: usize,
 }
 
+/// `controlbox/instagram_publishing.json`, every field. The API's carousel
+/// routes read the slide and sticker limits and the stats window; the
+/// daily drafts, publishing and music stay in Python.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InstagramPublishing {
+    pub graph_api_version: String,
+    pub generation_timezone: String,
+    pub fallback_window_hours: i64,
+    pub new_event_window_hours: i64,
+    pub minimum_lead_hours: i64,
+    pub maximum_lead_days: i64,
+    pub maximum_event_slides: usize,
+    pub minimum_event_slides: usize,
+    pub fill_candidate_count: usize,
+    pub status_poll_interval_seconds: f64,
+    pub meta_poll_attempts: u32,
+    pub meta_poll_interval_seconds: f64,
+    pub meta_request_timeout_seconds: f64,
+    pub token_lifetime_days: i64,
+    pub token_refresh_lead_days: i64,
+    pub cover_body_character_limit: usize,
+    pub maximum_stickers_per_event: usize,
+    pub sticker_line_character_limit: usize,
+    pub sticker_maximum_lines: usize,
+    pub sticker_shape_count: usize,
+    pub curation_model: String,
+    pub curation_parallel_agents: usize,
+    pub curation_attempts: u32,
+    pub curation_timeout_seconds: f64,
+    pub curation_poster_pixels: u32,
+    pub curation_hours: Vec<u32>,
+    pub curation_minute: u32,
+    pub auto_publish_hour: u32,
+    pub auto_publish_minute: u32,
+    pub poster_timeout_seconds: f64,
+    pub launch_agent_timeout_seconds: f64,
+    pub music_model: String,
+    pub music_agent_timeout_seconds: f64,
+    pub music_delay_minutes: i64,
+    pub music_max_age_hours: i64,
+    pub music_attempts: u32,
+    pub gif_comments: bool,
+    pub music_retry_minutes: i64,
+    pub stats_media_limit: usize,
+    pub stats_history_days: i64,
+    pub asian_song_schools: Vec<String>,
+}
+
 /// `controlbox/instagram_digest.json`, every field.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -452,6 +501,8 @@ pub struct EventReminder {
 pub struct EmailDelivery {
     pub provider_timeout_seconds: f64,
     pub team_sender: String,
+    /// The notice version recorded with each preference choice.
+    pub notification_consent_version: String,
     pub image_timeout_seconds: f64,
     pub image_max_bytes: usize,
     pub image_quality: u8,
@@ -531,6 +582,12 @@ pub static INSTAGRAM_BROWSER: LazyLock<InstagramBrowser> = LazyLock::new(|| {
     parse(
         "instagram_browser",
         include_str!("../../backend/controlbox/instagram_browser.json"),
+    )
+});
+pub static INSTAGRAM_PUBLISHING: LazyLock<InstagramPublishing> = LazyLock::new(|| {
+    parse(
+        "instagram_publishing",
+        include_str!("../../backend/controlbox/instagram_publishing.json"),
     )
 });
 pub static INSTAGRAM_DIGEST: LazyLock<InstagramDigest> = LazyLock::new(|| {
@@ -731,6 +788,10 @@ mod tests {
         assert!(MORNING_EMAIL.local_send_hour <= MORNING_EMAIL.last_local_send_hour);
         assert!(EVENT_REMINDER.lead_minutes > 0);
         assert!(!EMAIL_DELIVERY.team_sender.is_empty());
+        assert!(!EMAIL_DELIVERY.notification_consent_version.is_empty());
+        assert!(
+            INSTAGRAM_PUBLISHING.minimum_event_slides <= INSTAGRAM_PUBLISHING.maximum_event_slides
+        );
         assert!(CLUB_MANAGEMENT.invite_expiration_days > 0);
         assert!(DISCOVERY_QUERIES.maximum_filters_bytes > 0);
         assert!(!PROMOTER_PROGRAM.tos_version.is_empty());

@@ -50,7 +50,6 @@ from schemas.event import EventSummaryResponse
 from schemas.instagram_publishing import (
     InstagramPublishBatchKind,
     InstagramPublishBatchPublish,
-    InstagramPublishBatchUpdate,
 )
 from services import event_query, school_service
 from services.event_feed_revalidation import event_feed_revalidation_service
@@ -146,34 +145,6 @@ def list_draft_candidates(now_utc: datetime | None = None) -> list[dict[str, Any
     return packets
 
 
-def list_batches(
-    *,
-    batch_status: str | None,
-    local_date: date | None,
-    offset: int,
-    limit: int,
-) -> tuple[list[dict[str, Any]], int]:
-    query = (
-        get_sb()
-        .table(INSTAGRAM_PUBLISH_BATCHES)
-        .select(_BATCH_SELECT, count="exact")
-        .eq("batch_kind", "events")
-    )
-    if batch_status:
-        query = query.eq("status", batch_status)
-    if local_date:
-        query = query.eq("local_date", local_date.isoformat())
-    response = (
-        query.order("local_date", desc=True)
-        .order("created_at", desc=True)
-        .range(offset, offset + limit - 1)
-        .execute()
-    )
-    batches = [_with_batch_school(row) for row in response.data or []]
-    _attach_item_counts(batches)
-    return batches, response.count or len(batches)
-
-
 def get_batch(batch_id: UUID | str) -> dict[str, Any]:
     response = (
         get_sb()
@@ -217,64 +188,6 @@ def update_batch_stickers(
     if result.get("sticker_selections") != selections:
         raise ConflictError(INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT)
     return result
-
-
-def update_batch(
-    batch_id: UUID | str,
-    data: InstagramPublishBatchUpdate,
-) -> dict[str, Any]:
-    """Save the carousel the editor is holding: its events, in order, plus copy."""
-    batch = get_batch(batch_id)
-    _assert_version(batch, data.version)
-    _assert_editable(batch)
-
-    event_ids = list(data.event_ids)
-    if len(event_ids) != len(set(event_ids)):
-        raise ValidationError("Every carousel slide must be a different event")
-
-    slide_events = _load_slide_events(event_ids)
-    if any(event_id not in slide_events for event_id in event_ids):
-        raise ValidationError("Every carousel slide must be a dated, existing event")
-    if batch["batch_kind"] == "employers_on_campus" and any(
-        slide_events[event_id].employers_on_campus is not True for event_id in event_ids
-    ):
-        raise ValidationError("Employer carousels only accept employers-on-campus events")
-    now = datetime.now(timezone.utc)
-    invalid_ids = [
-        event_id for event_id in event_ids if not _is_publishable_event(slide_events[event_id], now)
-    ]
-    if invalid_ids:
-        raise ValidationError(
-            f"Cannot add or save event IDs: {', '.join(map(str, invalid_ids))}. "
-            "Each event needs a valid category, a poster image, and an upcoming or ongoing occurrence."
-        )
-
-    try:
-        response = (
-            get_sb()
-            .rpc(
-                "update_instagram_publish_batch_draft",
-                {
-                    "p_batch_id": str(batch_id),
-                    "p_expected_version": data.version,
-                    "p_caption": build_caption(
-                        [_slide_payload(slide_events[event_id]) for event_id in event_ids],
-                        batch["school"],
-                        data.caption_intro,
-                    ),
-                    "p_caption_intro": data.caption_intro,
-                    "p_cover_body": data.cover_body,
-                    "p_event_ids": event_ids,
-                },
-            )
-            .execute()
-        )
-    except Exception as exc:
-        _raise_draft_update_error(exc)
-        raise
-    if not response.data:
-        raise ConflictError(INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT)
-    return get_batch(batch_id)
 
 
 def claim_batch_for_publishing(
@@ -366,6 +279,20 @@ def publish_claimed_batch(batch: dict[str, Any]) -> None:
             .eq("id", str(batch_id))
             .execute()
         )
+
+
+def publish_batch(batch_id: UUID | str) -> str:
+    """Publish a batch the admin's Publish button claimed, and return its outcome.
+
+    The API claims the batch (and drops the slides it will not post) before it
+    starts this, so the batch is already locked as ``publishing``.
+    """
+    batch = get_batch(batch_id)
+    if batch["status"] != INSTAGRAM_BATCH_PUBLISHING:
+        log.warning("Instagram batch %s is %s, not publishing", batch_id, batch["status"])
+        return str(batch["status"])
+    publish_claimed_batch(batch)
+    return str(get_batch(batch_id)["status"])
 
 
 def publish_ready_drafts(now: datetime | None = None) -> dict[str, int]:
@@ -1020,34 +947,6 @@ def _hydrate_batch(batch: dict[str, Any]) -> None:
         )
 
 
-def _attach_item_counts(batches: list[dict[str, Any]]) -> None:
-    """Attach the only item data needed by the paginated batch list."""
-    if not batches:
-        return
-    items = _load_batch_items(
-        [str(batch["id"]) for batch in batches], "batch_id,event_id,published_asset_url"
-    )
-
-    batch_kinds = {str(batch["id"]): batch["batch_kind"] for batch in batches}
-    counts: dict[str, int] = defaultdict(int)
-    eligible_counts: dict[str, int] = defaultdict(int)
-    events = _load_slide_events(
-        list({int(item["event_id"]) for item in items if item["event_id"] is not None})
-    )
-    now = datetime.now(timezone.utc)
-    for item in items:
-        if item["event_id"] is not None or item.get("published_asset_url"):
-            counts[str(item["batch_id"])] += 1
-        event = events.get(item["event_id"])
-        if event is not None and _is_publishable_event(
-            event, now, batch_kinds[str(item["batch_id"])]
-        ):
-            eligible_counts[str(item["batch_id"])] += 1
-    for batch in batches:
-        batch["item_count"] = counts[str(batch["id"])]
-        batch["eligible_count"] = eligible_counts[str(batch["id"])]
-
-
 def _ordered_items(batch: dict[str, Any]) -> list[dict[str, Any]]:
     return sorted(batch["items"], key=lambda item: int(item["position"]))
 
@@ -1115,17 +1014,6 @@ def _assert_version(batch: dict[str, Any], expected: int) -> None:
 def _assert_editable(batch: dict[str, Any]) -> None:
     if batch["status"] not in {INSTAGRAM_BATCH_READY_FOR_REVIEW, INSTAGRAM_BATCH_FAILED}:
         raise ValidationError(INSTAGRAM_PUBLISH_BATCH_NOT_EDITABLE)
-
-
-def _raise_draft_update_error(exc: Exception) -> None:
-    message = str(exc).lower()
-    if "version conflict" in message:
-        raise ConflictError(INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT) from exc
-    if "not found" in message:
-        raise NotFoundError(INSTAGRAM_PUBLISH_BATCH_NOT_FOUND) from exc
-    if "not editable" in message:
-        raise ValidationError(INSTAGRAM_PUBLISH_BATCH_NOT_EDITABLE) from exc
-    raise exc
 
 
 def _aware_utc(value: datetime) -> datetime:

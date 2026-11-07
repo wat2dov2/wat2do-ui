@@ -33,6 +33,7 @@ use crate::api::validation::{FloatLimits, PathParams, QueryParams, Validator};
 use crate::controlbox::{PROMOTER_PROGRAM, RATE_LIMITS};
 use crate::db::read_with_retry;
 use crate::settings::Settings;
+use crate::text::python_b64decode_repadded;
 
 /// The anonymous visitor cookie.
 pub const POSTER_VISITOR_COOKIE: &str = "wat2do_poster_visitor";
@@ -68,30 +69,6 @@ pub fn hash_visitor_token(token: &str, settings: &Settings) -> Result<String, Ap
 
 fn encode_token(value: &[u8]) -> String {
     base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(value)
-}
-
-/// `base64.urlsafe_b64decode` after re-padding: characters outside the
-/// alphabet are ignored, as Python's non-strict decoder ignores them.
-fn decode_token(value: &str) -> Option<Vec<u8>> {
-    let cleaned: String = value
-        .chars()
-        .map(|character| match character {
-            '-' => '+',
-            '_' => '/',
-            other => other,
-        })
-        .filter(|character| character.is_ascii_alphanumeric() || matches!(character, '+' | '/'))
-        .collect();
-    if cleaned.len() % 4 == 1 {
-        return None;
-    }
-    let engine = base64::engine::GeneralPurpose::new(
-        &base64::alphabet::STANDARD,
-        base64::engine::GeneralPurposeConfig::new()
-            .with_decode_padding_mode(base64::engine::DecodePaddingMode::RequireNone)
-            .with_decode_allow_trailing_bits(true),
-    );
-    engine.decode(cleaned).ok()
 }
 
 fn confirmation_secret(settings: &Settings, purpose: &str) -> Result<Vec<u8>, ApiError> {
@@ -165,8 +142,8 @@ pub fn verify_confirmation_token(
         return Ok(None);
     };
     let (Some(payload), Some(signature)) = (
-        decode_token(encoded_payload),
-        decode_token(encoded_signature),
+        python_b64decode_repadded(encoded_payload),
+        python_b64decode_repadded(encoded_signature),
     ) else {
         return Ok(None);
     };

@@ -50,6 +50,7 @@ from core.constants import (
     NOTIFICATION_TYPE_EVENT_CHANGE,
     NOTIFICATION_TYPE_EVENT_REMINDER,
     NOTIFICATION_TYPE_MORNING_EMAIL,
+    NOTIFICATION_TYPES,
     REPORT_STATUSES,
 )
 from core.constants.positions import (
@@ -145,6 +146,8 @@ def test_notification_types_and_statuses_match():
         ("NOTIFICATION_STATUS_FAILED", NOTIFICATION_STATUS_FAILED),
     ):
         assert _rust_value(name) == f'"{value}"'
+    types = re.findall(r"NOTIFICATION_TYPE_[A-Z_]+", _rust_value("NOTIFICATION_TYPES"))
+    assert [_rust_value(name).strip('"') for name in types] == list(NOTIFICATION_TYPES)
 
 
 def test_event_and_filter_limits_match():

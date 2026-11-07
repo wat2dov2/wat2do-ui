@@ -565,11 +565,50 @@ impl Body {
             Input::Missing => return Input::Missing,
         };
         let loc = self.loc(name);
+        match self.int_item(loc, value) {
+            Some(int) => Input::Given(int),
+            None => Input::Missing,
+        }
+    }
+
+    /// A required `int` (not `Optional`), checked against `limits`.
+    pub fn required_int(
+        &mut self,
+        name: &'static str,
+        limits: super::validation::Limits,
+    ) -> Option<i64> {
+        if self.has_field(name) {
+            self.int_or(name, 0, limits)
+        } else {
+            self.missing(name);
+            None
+        }
+    }
+
+    /// A required, non-null boolean.
+    pub fn required_bool(&mut self, name: &'static str) -> Option<bool> {
+        match self.bool(name) {
+            Input::Given(flag) => Some(flag),
+            Input::Null => {
+                self.type_error(name, "bool_type", "Input should be a valid boolean");
+                None
+            }
+            Input::Missing => {
+                if !self.has_field(name) {
+                    self.missing(name);
+                }
+                None
+            }
+        }
+    }
+
+    /// One `int` list item, read as `int` reads a field.
+    pub fn int_item(&mut self, loc: Vec<Value>, value: Value) -> Option<i64> {
         let (kind, msg) = match &value {
-            Value::Bool(flag) => return Input::Given(i64::from(*flag)),
+            Value::Bool(flag) => return Some(i64::from(*flag)),
             Value::Number(number) => {
                 if let Some(int) = number.as_i64() {
-                    return Input::Given(int);
+                    return Some(int);
                 }
                 let float = number.as_f64().unwrap_or(f64::INFINITY);
                 if number.is_f64() && float.fract() != 0.0 {
@@ -578,7 +617,7 @@ impl Body {
                         "Input should be a valid integer, got a number with a fractional part",
                     )
                 } else if number.is_f64() && float.abs() < 9_223_372_036_854_775_808.0 {
-                    return Input::Given(float as i64);
+                    return Some(float as i64);
                 } else {
                     (
                         "int_parsing_size",
@@ -587,7 +626,7 @@ impl Body {
                 }
             }
             Value::String(text) => match super::validation::parse_python_int(text) {
-                Some(int) => return Input::Given(int),
+                Some(int) => return Some(int),
                 None if text
                     .trim()
                     .bytes()
@@ -607,7 +646,7 @@ impl Body {
             _ => ("int_type", "Input should be a valid integer"),
         };
         self.issue(kind, loc, msg.into(), value, None);
-        Input::Missing
+        None
     }
 
     /// A `bool` field with a default (not `Optional`): missing reads as

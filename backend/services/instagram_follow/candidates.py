@@ -25,8 +25,6 @@ from core.constants import (
 )
 from core.controlbox import controlbox
 from core.database import get_sb
-from core.errors import FOLLOW_CANDIDATE_SCHOOL_NOT_FOUND
-from core.exceptions import NotFoundError
 from core.pagination import fetch_all_pages
 from core.tables import CLUBS, INSTAGRAM_FOLLOW_CANDIDATES
 
@@ -146,32 +144,12 @@ def sync_club_targets() -> int:
     return added
 
 
-def list_candidates(
-    *, school: str | None, status: str, offset: int, limit: int
-) -> tuple[list[dict[str, Any]], int]:
-    query = (
-        get_sb()
-        .table(INSTAGRAM_FOLLOW_CANDIDATES)
-        .select(_SELECT, count="exact")
-        .eq("status", status)
-    )
-    if school:
-        school_id = school_service.get_school_id(school)
-        if school_id is None:
-            raise NotFoundError(FOLLOW_CANDIDATE_SCHOOL_NOT_FOUND)
-        query = query.eq("school_id", school_id)
-    response = (
-        query.order("score", desc=True, nullsfirst=False)
-        .order("handle")
-        .range(offset, offset + limit - 1)
-        .execute()
-    )
-    rows = [school_service.with_school_slug(row) for row in response.data or []]
-    return rows, response.count or len(rows)
-
-
 def decide(decisions: list[tuple[UUID, str]], *, decided_by: str | None) -> dict[str, int]:
-    """Apply an admin's batch of approvals and rejections to accounts still pending.
+    """Apply approvals and rejections to accounts still pending.
+
+    The scorer decides here; an admin's decisions go through the API
+    (``rust/src/api/routes/instagram_publishing/follow_candidates.rs``), which
+    applies them the same way.
 
     Approving creates the school's club for the handle unless one exists, so the
     account is listed and its events have a home before it is even followed.

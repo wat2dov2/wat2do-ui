@@ -9,7 +9,6 @@ from schemas.event import EventSummaryResponse
 from schemas.event_date import OccurrenceResponse
 from schemas.instagram_publishing import (
     InstagramPublishBatchPublish,
-    InstagramPublishBatchUpdate,
 )
 from services.instagram_publishing import service
 
@@ -87,56 +86,6 @@ class _FakeQuery:
             start, end = self._range
             data = data[start : end + 1]
         return SimpleNamespace(data=data, count=self._count)
-
-
-def test_list_batches_attaches_item_counts_without_hydrating_details(monkeypatch):
-    batch_calls: list[tuple] = []
-    item_calls: list[tuple] = []
-    batches = [
-        {"id": "batch-1", "batch_kind": "events", "school_record": {"slug": "uwaterloo"}},
-        {"id": "batch-2", "batch_kind": "events", "school_record": {"slug": "wlu"}},
-    ]
-    items = [
-        {"batch_id": "batch-1", "event_id": 1},
-        {"batch_id": "batch-1", "event_id": 2},
-        {"batch_id": "batch-2", "event_id": 3},
-    ]
-
-    def table(name: str):
-        if name == service.INSTAGRAM_PUBLISH_BATCHES:
-            return _FakeQuery(batches, batch_calls, count=12)
-        if name == service.INSTAGRAM_PUBLISH_ITEMS:
-            return _FakeQuery(items, item_calls)
-        raise AssertionError(f"Unexpected table {name}")
-
-    monkeypatch.setattr(service, "get_sb", lambda: SimpleNamespace(table=table))
-    monkeypatch.setattr(
-        service,
-        "_load_slide_events",
-        lambda ids: {
-            1: _event(1),
-            2: _event(2).model_copy(update={"source_image_url": None}),
-        },
-    )
-    monkeypatch.setattr(
-        service,
-        "_hydrate_batch",
-        Mock(side_effect=AssertionError("list should not hydrate batch details")),
-    )
-
-    result, total = service.list_batches(
-        batch_status=None,
-        local_date=None,
-        offset=0,
-        limit=25,
-    )
-
-    assert total == 12
-    assert [batch["item_count"] for batch in result] == [2, 1]
-    assert [batch["eligible_count"] for batch in result] == [1, 0]
-    assert ("select", ("batch_id,event_id,published_asset_url",), {}) in item_calls
-    assert ("range", (0, 24), {}) in batch_calls
-    assert ("eq", ("batch_kind", "events"), {}) in batch_calls
 
 
 @pytest.mark.parametrize("category", ["Business", None, "", "Events"])
@@ -264,25 +213,6 @@ def test_load_candidates_pages_occurrences_and_published_items(monkeypatch):
     assert [event["id"] for event in result] == [1002]
     for table_calls in calls.values():
         assert ("range", (1000, 1999), {}) in table_calls
-
-
-def test_batch_item_counts_include_every_page(monkeypatch):
-    calls = []
-    rows = [{"batch_id": "batch-1", "event_id": index} for index in range(1001)]
-    monkeypatch.setattr(service, "_load_slide_events", lambda ids: {})
-    monkeypatch.setattr(
-        service,
-        "get_sb",
-        lambda: SimpleNamespace(
-            table=lambda _name: _FakeQuery(rows, calls),
-        ),
-    )
-    batches = [{"id": "batch-1", "batch_kind": "events"}]
-
-    service._attach_item_counts(batches)
-
-    assert batches[0]["item_count"] == 1001
-    assert ("range", (1000, 1999), {}) in calls
 
 
 def _event(event_id: int, title: str = "Event") -> EventSummaryResponse:
@@ -438,29 +368,6 @@ def test_deleted_event_does_not_block_batch_and_preserves_published_image(monkey
         assert batch["items"] == []
 
 
-def test_batch_counts_keep_published_images_but_ignore_deleted_draft_events(monkeypatch):
-    batches = [{"id": "draft", "batch_kind": "events"}, {"id": "published", "batch_kind": "events"}]
-    monkeypatch.setattr(
-        service,
-        "_load_batch_items",
-        lambda *_: [
-            {"batch_id": "draft", "event_id": None, "published_asset_url": None},
-            {
-                "batch_id": "published",
-                "event_id": None,
-                "published_asset_url": "https://example.com/slide.png",
-            },
-        ],
-    )
-    monkeypatch.setattr(service, "_load_slide_events", lambda _: {})
-
-    service._attach_item_counts(batches)
-
-    assert batches[0]["item_count"] == 0
-    assert batches[1]["item_count"] == 1
-    assert all(batch["eligible_count"] == 0 for batch in batches)
-
-
 @pytest.mark.parametrize("status", ["ready_for_review", "failed", "publishing", "published"])
 def test_hydration_refreshes_only_editable_captions(monkeypatch, status):
     batch = _batch([1], status=status)
@@ -487,114 +394,6 @@ def test_hydration_refreshes_only_editable_captions(monkeypatch, status):
     else:
         assert batch["caption"] == "Caption"
         caption.assert_not_called()
-
-
-@pytest.fixture
-def draft_editor(monkeypatch):
-    """Stub every I/O edge of ``update_batch`` and record what it did."""
-    calls = {"renders": [], "rpc": [], "table": []}
-
-    class _Rpc:
-        def __init__(self, name, params):
-            calls["rpc"].append((name, params))
-
-        def execute(self):
-            return Mock(data=[{"id": "batch-1"}])
-
-    monkeypatch.setattr(
-        service,
-        "get_sb",
-        lambda: SimpleNamespace(
-            rpc=_Rpc,
-            table=lambda name: _FakeQuery([{}], calls["table"]),
-        ),
-    )
-    monkeypatch.setattr(
-        service,
-        "render_event_asset",
-        lambda event: calls["renders"].append(int(event["id"])) or "https://a/e.png",
-    )
-    monkeypatch.setattr(
-        service,
-        "render_cover_asset",
-        lambda events, school, body: calls["renders"].append("cover") or "https://a/cover.png",
-    )
-    return calls
-
-
-def test_update_batch_saves_the_carousel_order_without_rendering(
-    monkeypatch, draft_editor, feed_revalidation
-):
-    monkeypatch.setattr(
-        "services.instagram_publishing.captions.resolve_school_timezone",
-        lambda _school: "America/Toronto",
-    )
-    monkeypatch.setattr("services.instagram_publishing.captions.get_school", lambda _school: None)
-    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([1, 2]))
-    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {1: _event(1), 2: _event(2)})
-
-    service.update_batch(
-        "batch-1",
-        InstagramPublishBatchUpdate(
-            version=3, cover_body="Body", caption_intro="Our picks", event_ids=[2, 1]
-        ),
-    )
-
-    feed_revalidation.revalidate_schools.assert_not_called()
-    # Images belong to publishing, not to saving a draft.
-    assert draft_editor["renders"] == []
-    _, params = draft_editor["rpc"][0]
-    assert params["p_event_ids"] == [2, 1]
-    assert params["p_cover_body"] == "Body"
-    assert params["p_caption_intro"] == "Our picks"
-    assert params["p_caption"] == service.build_caption(
-        [service._slide_payload(_event(2)), service._slide_payload(_event(1))],
-        "uwaterloo",
-        "Our picks",
-    )
-
-
-@pytest.mark.parametrize("reason", ["missing_image", "ended"])
-def test_update_batch_rejects_ineligible_addition_without_saving(monkeypatch, draft_editor, reason):
-    event = _event(2)
-    if reason == "missing_image":
-        event = event.model_copy(update={"source_image_url": None})
-    else:
-        occurrence = event.occurrences[0].model_copy(
-            update={
-                "dtstart_utc": datetime(2000, 1, 1, tzinfo=timezone.utc),
-                "dtend_utc": datetime(2000, 1, 2, tzinfo=timezone.utc),
-            }
-        )
-        event = event.model_copy(update={"occurrences": [occurrence]})
-    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([1]))
-    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {1: _event(1), 2: event})
-
-    with pytest.raises(Exception, match="Cannot add or save event IDs: 2"):
-        service.update_batch("batch-1", InstagramPublishBatchUpdate(version=3, event_ids=[1, 2]))
-    assert draft_editor["rpc"] == []
-
-
-def test_update_batch_rejects_events_without_a_date(monkeypatch, draft_editor):
-    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([]))
-    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {})
-
-    with pytest.raises(Exception, match="dated, existing event"):
-        service.update_batch(
-            "batch-1",
-            InstagramPublishBatchUpdate(version=3, event_ids=[9]),
-        )
-
-
-def test_update_batch_rejects_a_repeated_event(monkeypatch, draft_editor):
-    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([1]))
-    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {1: _event(1)})
-
-    with pytest.raises(Exception, match="different event"):
-        service.update_batch(
-            "batch-1",
-            InstagramPublishBatchUpdate(version=3, event_ids=[1, 1]),
-        )
 
 
 @pytest.mark.parametrize(("recent", "expected"), [(8, 8), (2, 3)])
@@ -830,28 +629,19 @@ def test_background_publish_records_failure(monkeypatch):
     assert updates[0]["error_message"] == "Invalidated session"
 
 
-def test_publish_route_queues_work_without_rendering(monkeypatch):
-    from fastapi import BackgroundTasks
-
-    from routers.instagram_publishing import publish_instagram_batch
-    from services import instagram_publishing
-
-    batch = _batch([7], status="publishing", version=4)
-    claim = Mock(return_value=batch)
+def test_publish_batch_posts_only_a_batch_the_api_claimed(monkeypatch):
+    claimed = _batch([7], status="publishing")
+    reads = iter([claimed, {**claimed, "status": "published"}])
+    monkeypatch.setattr(service, "get_batch", lambda _id: next(reads))
     publish = Mock()
-    monkeypatch.setattr(instagram_publishing, "claim_batch_for_publishing", claim)
-    monkeypatch.setattr(instagram_publishing, "publish_claimed_batch", publish)
-    tasks = BackgroundTasks()
-    assert publish_instagram_batch(uuid4(), InstagramPublishBatchPublish(version=3), tasks) is batch
+    monkeypatch.setattr(service, "publish_claimed_batch", publish)
+    assert service.publish_batch("batch-1") == "published"
+    publish.assert_called_once_with(claimed)
+
+    publish.reset_mock()
+    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([7], status="ready_for_review"))
+    assert service.publish_batch("batch-1") == "ready_for_review"
     publish.assert_not_called()
-    assert len(tasks.tasks) == 1
-    assert tasks.tasks[0].func is publish
-    assert tasks.tasks[0].args == (batch,)
-
-
-def test_draft_allows_more_than_nine_events():
-    draft = InstagramPublishBatchUpdate(version=3, event_ids=list(range(1, 15)))
-    assert len(draft.event_ids) == 14
 
 
 def test_slide_payload_flattens_the_first_occurrence_for_the_renderer():
@@ -1068,16 +858,6 @@ def test_candidates_split_employers_from_general_events(monkeypatch, batch_kind,
     assert [event["id"] for event in result] == expected_ids
 
 
-def test_employer_draft_rejects_an_unclassified_event(monkeypatch, draft_editor):
-    monkeypatch.setattr(
-        service, "get_batch", lambda _: _batch([1], batch_kind="employers_on_campus")
-    )
-    monkeypatch.setattr(service, "_load_slide_events", lambda _: {1: _event(1)})
-    with pytest.raises(service.ValidationError, match="only accept employers-on-campus"):
-        service.update_batch("batch-1", InstagramPublishBatchUpdate(version=3, event_ids=[1]))
-    assert draft_editor["rpc"] == []
-
-
 @pytest.mark.parametrize("status", ["ready_for_review", "published"])
 def test_employer_hydration_filters_reclassified_events_only_before_publication(
     monkeypatch, status
@@ -1122,28 +902,6 @@ def test_batch_cutoffs_and_daily_existence_are_scoped_to_kind(monkeypatch):
     )
     assert service._last_successful_cutoff("uwaterloo", "employers_on_campus") is None
     assert calls.count(("eq", ("batch_kind", "employers_on_campus"), {})) == 2
-
-
-def test_draft_selection_edits_do_not_change_featured(monkeypatch, draft_editor, feed_revalidation):
-    batch = _batch([1])
-    batch["items"][0]["event"] = _event(1).model_copy(update={"school": "wlu"})
-    monkeypatch.setattr(service, "get_batch", lambda _id: batch)
-    monkeypatch.setattr(
-        service,
-        "_load_slide_events",
-        lambda _ids: {2: _event(2).model_copy(update={"school": "cornell"})},
-    )
-    monkeypatch.setattr(service, "build_caption", lambda *_args: "New picks")
-    service.update_batch("batch-1", InstagramPublishBatchUpdate(version=3, event_ids=[2]))
-    feed_revalidation.revalidate_schools.assert_not_called()
-
-
-def test_rejected_selection_does_not_invalidate_feed(monkeypatch, draft_editor, feed_revalidation):
-    monkeypatch.setattr(service, "get_batch", lambda _id: _batch([1]))
-    monkeypatch.setattr(service, "_load_slide_events", lambda _ids: {})
-    with pytest.raises(service.ValidationError):
-        service.update_batch("batch-1", InstagramPublishBatchUpdate(version=3, event_ids=[2]))
-    feed_revalidation.revalidate_schools.assert_not_called()
 
 
 @pytest.fixture

@@ -131,3 +131,13 @@ pub const POSITION_ALREADY_EXISTS: &str = "This position already exists";
 pub const POSITION_IMAGE_NO_POSITION: &str = "No open position was found in this image";
 pub const EVENT_IMAGE_NO_EVENT: &str =
     "No event could be read from this image. Try a clearer poster or enter the details manually.";
+
+// The instagram publishing routes.
+pub const INSTAGRAM_PUBLISH_BATCH_NOT_FOUND: &str = "Instagram publishing batch not found";
+pub const INSTAGRAM_PUBLISH_BATCH_VERSION_CONFLICT: &str = "Instagram publishing batch was changed";
+pub const INSTAGRAM_PUBLISH_BATCH_NOT_EDITABLE: &str = "Instagram publishing batch is not editable";
+pub const INSTAGRAM_PUBLISHING_NOT_CONFIGURED: &str = "Instagram publishing is not configured";
+pub const INSTAGRAM_REAUTHORIZATION_REQUIRED: &str = "Instagram account requires reauthorization";
+pub const INSTAGRAM_SONG_EXISTS: &str = "This song is already on the list";
+pub const INSTAGRAM_SONG_NOT_FOUND: &str = "Song not found";
+pub const FOLLOW_CANDIDATE_SCHOOL_NOT_FOUND: &str = "Follow candidate school is not registered";

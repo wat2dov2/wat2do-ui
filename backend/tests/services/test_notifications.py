@@ -10,17 +10,14 @@ from botocore.exceptions import ClientError, ReadTimeoutError  # type: ignore[im
 from core.config import settings
 from core.constants import (
     NOTIFICATION_TYPE_EVENT_CHANGE,
-    NOTIFICATION_TYPE_EVENT_REMINDER,
     NOTIFICATION_TYPE_MORNING_EMAIL,
 )
 from schemas.event import EventResponse
-from schemas.notification_preference import NotificationPreferenceUpdate
 from services.notifications import (
     delivery_log,
     event_change,
     preferences,
     rendering,
-    unsubscribe,
 )
 
 USER_ID = "11111111-1111-1111-1111-111111111111"
@@ -38,72 +35,12 @@ def _event(**overrides) -> dict:
     return defaults
 
 
-def test_preferences_resolve_only_active_defaults(fake_sb, patch_sb):
-    patch_sb("services.notifications.preferences")
-    fake_sb.set_response(
-        data=[
-            {
-                "notification_type": NOTIFICATION_TYPE_EVENT_CHANGE,
-                "enabled": False,
-                "updated_at": None,
-            }
-        ]
-    )
-
-    result = preferences.get_preferences(USER_ID)
-
-    assert [item.notification_type for item in result] == [
-        NOTIFICATION_TYPE_MORNING_EMAIL,
-        NOTIFICATION_TYPE_EVENT_REMINDER,
-        NOTIFICATION_TYPE_EVENT_CHANGE,
-    ]
-    assert result[0].enabled is True
-    assert result[1].enabled is True
-    assert result[2].enabled is False
-
-
-def test_set_preferences_atomically_records_choice_and_source(fake_sb, patch_sb):
-    patch_sb("services.notifications.preferences")
-    preferences.set_preferences(
-        USER_ID,
-        [
-            NotificationPreferenceUpdate(
-                notification_type=NOTIFICATION_TYPE_MORNING_EMAIL,
-                enabled=False,
-            )
-        ],
-        source="settings",
-    )
-    name, payload = fake_sb.rpc.call_args.args
-    assert name == "set_notification_preferences"
-    assert payload["p_user_id"] == USER_ID
-    assert payload["p_source"] == "settings"
-    assert payload["p_notice_version"]
-    assert payload["p_updates"] == [{"notification_type": "morning_email", "enabled": False}]
-    fake_sb.upsert.assert_not_called()
-
-
 def test_morning_email_reaches_everyone_who_has_not_turned_it_off(fake_sb, patch_sb):
     patch_sb("services.notifications.preferences")
     fake_sb.set_response(data=[])
-    assert preferences.is_enabled(USER_ID, NOTIFICATION_TYPE_MORNING_EMAIL) is True
     assert preferences.get_enabled_user_ids([USER_ID], NOTIFICATION_TYPE_MORNING_EMAIL) == {USER_ID}
     fake_sb.set_response(data=[{"user_id": USER_ID, "enabled": False}])
     assert preferences.get_enabled_user_ids([USER_ID], NOTIFICATION_TYPE_MORNING_EMAIL) == set()
-
-
-def test_unsubscribe_records_withdrawal_for_signed_user(monkeypatch):
-    monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
-    setter = MagicMock()
-    monkeypatch.setattr(unsubscribe, "set_preferences", setter)
-    token = unsubscribe.create_unsubscribe_token(USER_ID, NOTIFICATION_TYPE_MORNING_EMAIL)
-    assert unsubscribe.unsubscribe(token) is True
-    assert setter.call_args.args[0] == USER_ID
-    assert setter.call_args.args[1][0].enabled is False
-    assert setter.call_args.kwargs == {"source": "unsubscribe"}
-    setter.reset_mock()
-    assert unsubscribe.unsubscribe(token + "tampered") is False
-    setter.assert_not_called()
 
 
 def test_claim_delivery_returns_only_claimed_rows(fake_sb, patch_sb):
@@ -260,29 +197,6 @@ def test_refund_links_open_one_ticket_or_all_of_them(fake_sb, patch_sb, monkeypa
         "one": "https://uwaterloo.wat2do.io/tickets/AAAA?refund=1",
         "two": "https://uwaterloo.wat2do.io/tickets",
     }
-
-
-def test_unsubscribe_token_round_trip_and_tamper(monkeypatch):
-    monkeypatch.setattr(settings, "email_unsubscribe_secret", "test-secret")
-    token = unsubscribe.create_unsubscribe_token(
-        USER_ID,
-        NOTIFICATION_TYPE_EVENT_REMINDER,
-    )
-
-    assert unsubscribe.verify_unsubscribe_token(token) == unsubscribe.UnsubscribeTarget(
-        user_id=USER_ID,
-        notification_type=NOTIFICATION_TYPE_EVENT_REMINDER,
-    )
-    assert unsubscribe.verify_unsubscribe_token(f"{token}x") is None
-
-
-def test_unsubscribe_all_binary_signatures_round_trip(monkeypatch):
-    for index in range(128):
-        monkeypatch.setattr(settings, "email_unsubscribe_secret", f"test-secret-{index}")
-        token = unsubscribe.create_unsubscribe_token(USER_ID, NOTIFICATION_TYPE_MORNING_EMAIL)
-        assert unsubscribe.verify_unsubscribe_token(token) == unsubscribe.UnsubscribeTarget(
-            USER_ID, NOTIFICATION_TYPE_MORNING_EMAIL
-        )
 
 
 def test_claimed_delivery_retries_timeouts_and_throttling_then_marks_sent(monkeypatch):

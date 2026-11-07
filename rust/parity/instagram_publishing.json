@@ -1,0 +1,118 @@
+[
+  {"name": "batches anonymous", "path": "/instagram-publishing/batches/"},
+  {
+    "name": "batches plain user",
+    "path": "/instagram-publishing/batches/",
+    "identity": {"id": "user-auth-id", "email": "user@example.com"}
+  },
+  {
+    "name": "batches admin",
+    "path": "/instagram-publishing/batches/?page_size=5",
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"}
+  },
+  {
+    "name": "batches admin ready drafts",
+    "path": "/instagram-publishing/batches/?status=ready_for_review&page_size=3",
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"}
+  },
+  {
+    "name": "batches admin bad filters",
+    "path": "/instagram-publishing/batches/?status=nope&local_date=2026-13-01&page=0",
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"}
+  },
+  {
+    "name": "batch admin",
+    "path": "/instagram-publishing/batches/batch-id",
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"}
+  },
+  {
+    "name": "batch admin missing",
+    "path": "/instagram-publishing/batches/00000000-0000-0000-0000-000000000000",
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"}
+  },
+  {
+    "name": "batch admin bad id",
+    "path": "/instagram-publishing/batches/not-a-uuid",
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"}
+  },
+  {
+    "name": "songs admin",
+    "path": "/instagram-publishing/songs/",
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"}
+  },
+  {
+    "name": "accounts admin",
+    "path": "/instagram-publishing/accounts/",
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"}
+  },
+  {
+    "name": "follow candidates admin",
+    "path": "/instagram-publishing/follow-candidates/?page_size=5",
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"}
+  },
+  {
+    "name": "follow candidates admin school",
+    "path": "/instagram-publishing/follow-candidates/?school=uwaterloo&status=approved&page_size=5",
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"}
+  },
+  {
+    "name": "follow candidates admin unknown school",
+    "path": "/instagram-publishing/follow-candidates/?school=no-such-school",
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"}
+  },
+  {
+    "name": "draft save refused body",
+    "method": "PATCH",
+    "path": "/instagram-publishing/batches/00000000-0000-0000-0000-000000000000",
+    "json": {"version": 0, "event_ids": [], "extra": 1},
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"},
+    "safe": true
+  },
+  {
+    "name": "publish missing batch",
+    "method": "POST",
+    "path": "/instagram-publishing/batches/00000000-0000-0000-0000-000000000000/publish",
+    "json": {"version": 1},
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"},
+    "safe": true
+  },
+  {
+    "name": "song refused body",
+    "method": "POST",
+    "path": "/instagram-publishing/songs/",
+    "json": {"query": "   "},
+    "identity": {"id": "admin-auth-id", "email": "admin@example.com"},
+    "safe": true
+  },
+  {
+    "name": "preferences anonymous",
+    "path": "/notification-preferences"
+  },
+  {
+    "name": "preferences user",
+    "path": "/notification-preferences",
+    "identity": {"id": "user-auth-id", "email": "user@example.com"}
+  },
+  {
+    "name": "preferences refused body",
+    "method": "PATCH",
+    "path": "/notification-preferences",
+    "json": {"preferences": [{"notification_type": "daily_new_events", "enabled": true}], "user_id": "x"},
+    "identity": {"id": "user-auth-id", "email": "user@example.com"},
+    "safe": true
+  },
+  {
+    "name": "unsubscribe page invalid token",
+    "path": "/notification-preferences/unsubscribe?token=signed-token"
+  },
+  {
+    "name": "unsubscribe page missing token",
+    "path": "/notification-preferences/unsubscribe"
+  },
+  {
+    "name": "unsubscribe apply invalid token",
+    "method": "POST",
+    "path": "/notification-preferences/unsubscribe?token=signed-token",
+    "safe": true
+  }
+]

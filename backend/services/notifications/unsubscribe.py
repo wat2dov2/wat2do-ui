@@ -1,25 +1,18 @@
-"""Stateless signed unsubscribe links for user-configurable email types."""
+"""Stateless signed unsubscribe links for user-configurable email types.
+
+The API verifies them (``rust/src/notifications/unsubscribe.rs``), so the format
+never changes."""
 
 import base64
 import hashlib
 import hmac
-from dataclasses import dataclass
-from typing import cast
 from uuid import UUID
 
 from core.config import settings
-from core.constants import NOTIFICATION_TYPES
-from schemas.notification_preference import NotificationPreferenceUpdate, NotificationType
-from services.notifications.preferences import set_preferences
+from schemas.notification_preference import NotificationType
 from services.school_context import school_frontend_url
 
 _TOKEN_VERSION = "1"
-
-
-@dataclass(frozen=True)
-class UnsubscribeTarget:
-    user_id: str
-    notification_type: NotificationType
 
 
 def create_unsubscribe_token(user_id: str, notification_type: NotificationType) -> str:
@@ -30,52 +23,6 @@ def create_unsubscribe_token(user_id: str, notification_type: NotificationType) 
         hashlib.sha256,
     ).digest()
     return _encode(payload.encode() + b"." + signature)
-
-
-def verify_unsubscribe_token(token: str) -> UnsubscribeTarget | None:
-    try:
-        decoded = _decode(token)
-        signature_size = hashlib.sha256().digest_size
-        if len(decoded) <= signature_size + 1 or decoded[-signature_size - 1] != ord("."):
-            return None
-        payload_bytes = decoded[: -signature_size - 1]
-        supplied_signature = decoded[-signature_size:]
-        expected_signature = hmac.new(
-            _secret(),
-            payload_bytes,
-            hashlib.sha256,
-        ).digest()
-        if not hmac.compare_digest(supplied_signature, expected_signature):
-            return None
-        version, raw_user_id, notification_type = payload_bytes.decode().split(
-            ":",
-            2,
-        )
-        if version != _TOKEN_VERSION or notification_type not in NOTIFICATION_TYPES:
-            return None
-        return UnsubscribeTarget(
-            user_id=str(UUID(raw_user_id)),
-            notification_type=cast(NotificationType, notification_type),
-        )
-    except (ValueError, UnicodeDecodeError):
-        return None
-
-
-def unsubscribe(token: str) -> bool:
-    target = verify_unsubscribe_token(token)
-    if target is None:
-        return False
-    set_preferences(
-        target.user_id,
-        [
-            NotificationPreferenceUpdate(
-                notification_type=target.notification_type,
-                enabled=False,
-            )
-        ],
-        source="unsubscribe",
-    )
-    return True
 
 
 def unsubscribe_url(
@@ -99,8 +46,3 @@ def _secret() -> bytes:
 
 def _encode(value: bytes) -> str:
     return base64.urlsafe_b64encode(value).rstrip(b"=").decode()
-
-
-def _decode(value: str) -> bytes:
-    padding = "=" * (-len(value) % 4)
-    return base64.urlsafe_b64decode(value + padding)

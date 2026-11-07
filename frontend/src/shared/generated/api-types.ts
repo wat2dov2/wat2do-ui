@@ -4,187 +4,6 @@
  */
 
 export interface paths {
-    "/instagram-publishing/batches/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Instagram Publish Batches */
-        get: operations["list_instagram_publish_batches_instagram_publishing_batches__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/batches/{batch_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Instagram Publish Batch */
-        get: operations["get_instagram_publish_batch_instagram_publishing_batches__batch_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Instagram Publish Batch */
-        patch: operations["update_instagram_publish_batch_instagram_publishing_batches__batch_id__patch"];
-        trace?: never;
-    };
-    "/instagram-publishing/batches/{batch_id}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Publish Instagram Batch */
-        post: operations["publish_instagram_batch_instagram_publishing_batches__batch_id__publish_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/songs/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Instagram Songs */
-        get: operations["list_instagram_songs_instagram_publishing_songs__get"];
-        put?: never;
-        /** Add Instagram Song */
-        post: operations["add_instagram_song_instagram_publishing_songs__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/songs/{song_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Instagram Song */
-        delete: operations["delete_instagram_song_instagram_publishing_songs__song_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/accounts/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Instagram Account Stats */
-        get: operations["list_instagram_account_stats_instagram_publishing_accounts__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/follow-candidates/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Follow Candidates */
-        get: operations["list_follow_candidates_instagram_publishing_follow_candidates__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instagram-publishing/follow-candidates/decisions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Submit Follow Decisions */
-        post: operations["submit_follow_decisions_instagram_publishing_follow_candidates_decisions_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/notification-preferences": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get My Preferences
-         * @description Return resolved preferences for the authenticated user.
-         *
-         *     Always one entry per supported type - untouched types come back with
-         *     their default and ``updated_at=None`` so the client can distinguish
-         *     a default from an explicit choice.
-         */
-        get: operations["get_my_preferences_notification_preferences_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update My Preferences */
-        patch: operations["update_my_preferences_notification_preferences_patch"];
-        trace?: never;
-    };
-    "/notification-preferences/unsubscribe": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Confirm Unsubscribe */
-        get: operations["confirm_unsubscribe_notification_preferences_unsubscribe_get"];
-        put?: never;
-        /** Apply Unsubscribe */
-        post: operations["apply_unsubscribe_notification_preferences_unsubscribe_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/health": {
         parameters: {
             query?: never;
@@ -1432,6 +1251,187 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instagram-publishing/batches/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Instagram Publish Batches */
+        get: operations["list_instagram_publish_batches_instagram_publishing_batches__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/batches/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Instagram Publish Batch */
+        get: operations["get_instagram_publish_batch_instagram_publishing_batches__batch_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Instagram Publish Batch */
+        patch: operations["update_instagram_publish_batch_instagram_publishing_batches__batch_id__patch"];
+        trace?: never;
+    };
+    "/instagram-publishing/batches/{batch_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish Instagram Batch */
+        post: operations["publish_instagram_batch_instagram_publishing_batches__batch_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/songs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Instagram Songs */
+        get: operations["list_instagram_songs_instagram_publishing_songs__get"];
+        put?: never;
+        /** Add Instagram Song */
+        post: operations["add_instagram_song_instagram_publishing_songs__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/songs/{song_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Instagram Song */
+        delete: operations["delete_instagram_song_instagram_publishing_songs__song_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/accounts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Instagram Account Stats */
+        get: operations["list_instagram_account_stats_instagram_publishing_accounts__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/follow-candidates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Follow Candidates */
+        get: operations["list_follow_candidates_instagram_publishing_follow_candidates__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instagram-publishing/follow-candidates/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Follow Decisions */
+        post: operations["submit_follow_decisions_instagram_publishing_follow_candidates_decisions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Preferences
+         * @description Return resolved preferences for the authenticated user.
+         *
+         *     Always one entry per supported type - untouched types come back with
+         *     their default and ``updated_at=None`` so the client can distinguish
+         *     a default from an explicit choice.
+         */
+        get: operations["get_my_preferences_notification_preferences_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update My Preferences */
+        patch: operations["update_my_preferences_notification_preferences_patch"];
+        trace?: never;
+    };
+    "/notification-preferences/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Confirm Unsubscribe */
+        get: operations["confirm_unsubscribe_notification_preferences_unsubscribe_get"];
+        put?: never;
+        /** Apply Unsubscribe */
+        post: operations["apply_unsubscribe_notification_preferences_unsubscribe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/payouts/": {
         parameters: {
             query?: never;
@@ -2140,665 +2140,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /**
-         * ClubCohostResponse
-         * @description An additional existing club sharing an event or position.
-         */
-        ClubCohostResponse: {
-            /** Id */
-            id: number;
-            /** Club Name */
-            club_name: string;
-            /** Logo Url */
-            logo_url?: string | null;
-            /** Club Type */
-            club_type?: string | null;
-            /** Club Page */
-            club_page?: string | null;
-            /** Ig */
-            ig?: string | null;
-            /** Discord */
-            discord?: string | null;
-        };
-        /**
-         * EventSummaryResponse
-         * @description Payload for list/card views.
-         *
-         *     Description is included because the feed search matches event copy as well
-         *     as titles, hosts, locations, and food.
-         *
-         *     The owning club's display/link/social fields (``club_logo_url``,
-         *     ``club_type``, ``club_page``, ``club_ig``,
-         *     ``club_discord``) are
-         *     embedded read-time from the ``clubs`` row via the
-         *     ``events.club_id`` FK so the event card can render without a second
-         *     fetch.
-         *
-         *     ``created_by`` is intentionally omitted - this response is returned on
-         *     public GET /events/ and would otherwise leak the creator's user ID
-         *     to anonymous callers.
-         */
-        EventSummaryResponse: {
-            /**
-             * Competition
-             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
-             */
-            competition?: boolean | null;
-            /**
-             * Employers On Campus
-             * @description Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as "Ramp x Blueprint" or "Figma x Sanrio", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.
-             */
-            employers_on_campus?: boolean | null;
-            /**
-             * Sports Game
-             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
-             */
-            sports_game?: boolean | null;
-            /**
-             * Campus Season Ids
-             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
-             */
-            campus_season_ids?: string[] | null;
-            /** Id */
-            id: number;
-            /** Club Id */
-            club_id?: number | null;
-            /** Title */
-            title: string;
-            /** Description */
-            description?: string | null;
-            /** Location */
-            location?: string | null;
-            /** Map Location */
-            map_location?: string | null;
-            /** Map Coordinates */
-            map_coordinates?: [
-                number,
-                number
-            ] | null;
-            /** Occurrences */
-            occurrences?: components["schemas"]["OccurrenceSummaryResponse"][];
-            /** Price */
-            price?: number | null;
-            /** Food */
-            food?: string[] | null;
-            /**
-             * Registration
-             * @default false
-             */
-            registration: boolean;
-            /** Source Image Url */
-            source_image_url?: string | null;
-            /** Source Video Url */
-            source_video_url?: string | null;
-            /** Source Url */
-            source_url?: string | null;
-            /** Category */
-            category?: string | null;
-            /** Club */
-            club?: string | null;
-            /** Club Logo Url */
-            club_logo_url?: string | null;
-            /** Cohosts */
-            cohosts?: components["schemas"]["ClubCohostResponse"][];
-            /**
-             * Featured
-             * @description Published to Instagram
-             * @default false
-             */
-            featured: boolean;
-            /**
-             * Is Directory Event
-             * @default false
-             */
-            is_directory_event: boolean;
-            /** Club Type */
-            club_type?: string | null;
-            /** Club Page */
-            club_page?: string | null;
-            /** Club Ig */
-            club_ig?: string | null;
-            /** Club Discord */
-            club_discord?: string | null;
-            /** Ig Handle */
-            ig_handle?: string | null;
-            /** School */
-            school?: string | null;
-            /**
-             * Cancelled
-             * @default false
-             */
-            cancelled: boolean;
-            /**
-             * Added At
-             * Format: date-time
-             */
-            added_at: string;
-            /** Last Source Changed At */
-            last_source_changed_at?: string | null;
-        };
-        /** FollowCandidateDecision */
-        FollowCandidateDecision: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "approved" | "rejected";
-        };
-        /** FollowCandidateDecisionsResponse */
-        FollowCandidateDecisionsResponse: {
-            /** Approved */
-            approved: number;
-            /** Rejected */
-            rejected: number;
-        };
-        /**
-         * FollowCandidateDecisionsSubmit
-         * @description Every decision an admin staged on the page, sent together.
-         */
-        FollowCandidateDecisionsSubmit: {
-            /** Decisions */
-            decisions: components["schemas"]["FollowCandidateDecision"][];
-        };
-        /**
-         * FollowCandidateResponse
-         * @description An account a school account might follow, with what its newest posts showed.
-         */
-        FollowCandidateResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** School */
-            school: string;
-            /** Handle */
-            handle: string;
-            /** Name */
-            name?: string | null;
-            /**
-             * Source
-             * @enum {string}
-             */
-            source: "crawl" | "club" | "import";
-            /** Found Via */
-            found_via: string[];
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "approved" | "rejected" | "followed" | "unfollow";
-            /** Read Status */
-            read_status?: ("ok" | "no_posts" | "failed") | null;
-            /** Followers Count */
-            followers_count?: number | null;
-            /** Is Private */
-            is_private?: boolean | null;
-            /** Last Posted At */
-            last_posted_at?: string | null;
-            /** Score */
-            score?: number | null;
-            /** Verdict */
-            verdict?: ("approve" | "review" | "reject") | null;
-            /** Reason */
-            reason?: string | null;
-            /** Follow Error */
-            follow_error?: string | null;
-        };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
-        /** InstagramAccountPostResponse */
-        InstagramAccountPostResponse: {
-            /** Media Id */
-            media_id: string;
-            /** Media Type */
-            media_type: string;
-            /** Media Product Type */
-            media_product_type?: string | null;
-            /** Caption */
-            caption?: string | null;
-            /** Image Url */
-            image_url?: string | null;
-            /** Permalink */
-            permalink: string;
-            /**
-             * Posted At
-             * Format: date-time
-             */
-            posted_at: string;
-            /** Like Count */
-            like_count?: number | null;
-            /** Comments Count */
-            comments_count?: number | null;
-            /** Music Status */
-            music_status?: ("pending" | "added" | "failed") | null;
-            /** Music Track */
-            music_track?: string | null;
-        };
-        /** InstagramAccountStatsResponse */
-        InstagramAccountStatsResponse: {
-            /** Account Key */
-            account_key: string;
-            /** Username */
-            username: string;
-            /** Name */
-            name?: string | null;
-            /** Profile Picture Url */
-            profile_picture_url?: string | null;
-            /** Followers Count */
-            followers_count?: number | null;
-            /** Follows Count */
-            follows_count?: number | null;
-            /** Media Count */
-            media_count?: number | null;
-            /** Captured At */
-            captured_at?: string | null;
-            /** Requires Reauthorization */
-            requires_reauthorization: boolean;
-            /**
-             * Token Expires At
-             * Format: date-time
-             */
-            token_expires_at: string;
-            /** Followers History */
-            followers_history: components["schemas"]["InstagramFollowerCountResponse"][];
-            /** Posts */
-            posts: components["schemas"]["InstagramAccountPostResponse"][];
-        };
-        /** InstagramFollowerCountResponse */
-        InstagramFollowerCountResponse: {
-            /**
-             * Captured On
-             * Format: date
-             */
-            captured_on: string;
-            /** Followers Count */
-            followers_count: number;
-        };
-        /** InstagramPublishBatchPublish */
-        InstagramPublishBatchPublish: {
-            /** Version */
-            version: number;
-        };
-        /** InstagramPublishBatchResponse */
-        InstagramPublishBatchResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Account Key */
-            account_key: string;
-            /** Instagram User Id */
-            instagram_user_id?: string | null;
-            /**
-             * Batch Kind
-             * @default events
-             * @enum {string}
-             */
-            batch_kind: "events" | "employers_on_campus";
-            /** School */
-            school: string;
-            /**
-             * Local Date
-             * Format: date
-             */
-            local_date: string;
-            /**
-             * Window Start
-             * Format: date-time
-             */
-            window_start: string;
-            /**
-             * Window End
-             * Format: date-time
-             */
-            window_end: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "generating" | "ready_for_review" | "publishing" | "published" | "empty" | "failed";
-            /** Caption */
-            caption: string;
-            /**
-             * Caption Intro
-             * @default
-             */
-            caption_intro: string;
-            /**
-             * Cover Body
-             * @default
-             */
-            cover_body: string;
-            /** Version */
-            version: number;
-            /** Error Message */
-            error_message?: string | null;
-            /** Meta Media Id */
-            meta_media_id?: string | null;
-            /** Permalink */
-            permalink?: string | null;
-            /** Music Status */
-            music_status?: ("pending" | "added" | "failed") | null;
-            /** Music Track */
-            music_track?: string | null;
-            /** Music Error */
-            music_error?: string | null;
-            /** Published Cover Url */
-            published_cover_url?: string | null;
-            /** Published Outro Url */
-            published_outro_url?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            /** Published At */
-            published_at?: string | null;
-            /** Sticker Selections */
-            sticker_selections?: {
-                [key: string]: string[];
-            };
-            /**
-             * New Event Count
-             * @default 0
-             */
-            new_event_count: number;
-            /** Other Events */
-            other_events?: components["schemas"]["EventSummaryResponse"][];
-            /** Items */
-            items: components["schemas"]["InstagramPublishItemResponse"][];
-        };
-        /** InstagramPublishBatchSummaryResponse */
-        InstagramPublishBatchSummaryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Account Key */
-            account_key: string;
-            /** Instagram User Id */
-            instagram_user_id?: string | null;
-            /**
-             * Batch Kind
-             * @default events
-             * @enum {string}
-             */
-            batch_kind: "events" | "employers_on_campus";
-            /** School */
-            school: string;
-            /**
-             * Local Date
-             * Format: date
-             */
-            local_date: string;
-            /**
-             * Window Start
-             * Format: date-time
-             */
-            window_start: string;
-            /**
-             * Window End
-             * Format: date-time
-             */
-            window_end: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "generating" | "ready_for_review" | "publishing" | "published" | "empty" | "failed";
-            /** Caption */
-            caption: string;
-            /**
-             * Caption Intro
-             * @default
-             */
-            caption_intro: string;
-            /**
-             * Cover Body
-             * @default
-             */
-            cover_body: string;
-            /** Version */
-            version: number;
-            /** Error Message */
-            error_message?: string | null;
-            /** Meta Media Id */
-            meta_media_id?: string | null;
-            /** Permalink */
-            permalink?: string | null;
-            /** Music Status */
-            music_status?: ("pending" | "added" | "failed") | null;
-            /** Music Track */
-            music_track?: string | null;
-            /** Music Error */
-            music_error?: string | null;
-            /** Published Cover Url */
-            published_cover_url?: string | null;
-            /** Published Outro Url */
-            published_outro_url?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            /** Published At */
-            published_at?: string | null;
-            /**
-             * Item Count
-             * @default 0
-             */
-            item_count: number;
-            /**
-             * Eligible Count
-             * @default 0
-             */
-            eligible_count: number;
-        };
-        /** InstagramPublishBatchUpdate */
-        InstagramPublishBatchUpdate: {
-            /** Version */
-            version: number;
-            /**
-             * Caption Intro
-             * @default
-             */
-            caption_intro: string;
-            /**
-             * Cover Body
-             * @default
-             */
-            cover_body: string;
-            /** Event Ids */
-            event_ids: number[];
-        };
-        /** InstagramPublishItemResponse */
-        InstagramPublishItemResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Batch Id
-             * Format: uuid
-             */
-            batch_id: string;
-            /** Account Key */
-            account_key: string;
-            /** Event Id */
-            event_id: number | null;
-            /** Position */
-            position: number;
-            event: components["schemas"]["EventSummaryResponse"] | null;
-            /** Published Asset Url */
-            published_asset_url?: string | null;
-            /** Published At */
-            published_at?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /** InstagramSongCreate */
-        InstagramSongCreate: {
-            /** Query */
-            query: string;
-            /**
-             * Asian Campuses Only
-             * @default false
-             */
-            asian_campuses_only: boolean;
-        };
-        /** InstagramSongResponse */
-        InstagramSongResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Query */
-            query: string;
-            /** Asian Campuses Only */
-            asian_campuses_only: boolean;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /** NotificationPreferenceResponse */
-        NotificationPreferenceResponse: {
-            /**
-             * Notification Type
-             * @enum {string}
-             */
-            notification_type: "morning_email" | "event_reminder" | "event_change";
-            /** Enabled */
-            enabled: boolean;
-            /** Updated At */
-            updated_at?: string | null;
-        };
-        /**
-         * NotificationPreferenceUpdate
-         * @description One preference-flip in a bulk update payload.
-         */
-        NotificationPreferenceUpdate: {
-            /**
-             * Notification Type
-             * @enum {string}
-             */
-            notification_type: "morning_email" | "event_reminder" | "event_change";
-            /** Enabled */
-            enabled: boolean;
-        };
-        /**
-         * NotificationPreferencesBulkUpdate
-         * @description Settings-page payload: flip multiple toggles in one call.
-         *
-         *     The settings UI typically shows every type as a toggle; letting the
-         *     client send them in one request avoids N round-trips and lines up
-         *     cleanly with an UPSERT on the (user_id, notification_type) key.
-         */
-        NotificationPreferencesBulkUpdate: {
-            /** Preferences */
-            preferences: components["schemas"]["NotificationPreferenceUpdate"][];
-        };
-        /**
-         * NotificationPreferencesListResponse
-         * @description Every notification type's resolved enabled state for the user.
-         *
-         *     Includes types for which the user has no row; the
-         *     ``enabled`` value is the resolved default in that case. Clients
-         *     render one toggle per entry.
-         */
-        NotificationPreferencesListResponse: {
-            /** Preferences */
-            preferences: components["schemas"]["NotificationPreferenceResponse"][];
-        };
-        /**
-         * OccurrenceSummaryResponse
-         * @description Browse dates retain selection identity without repeated parent/import fields.
-         */
-        OccurrenceSummaryResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Dtstart Utc
-             * Format: date-time
-             */
-            dtstart_utc: string;
-            /** Dtend Utc */
-            dtend_utc?: string | null;
-        };
-        /** PaginatedResponse[FollowCandidateResponse] */
-        PaginatedResponse_FollowCandidateResponse_: {
-            /** Items */
-            items: components["schemas"]["FollowCandidateResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** PaginatedResponse[InstagramPublishBatchSummaryResponse] */
-        PaginatedResponse_InstagramPublishBatchSummaryResponse_: {
-            /** Items */
-            items: components["schemas"]["InstagramPublishBatchSummaryResponse"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Page Size */
-            page_size: number;
-            /** Total Pages */
-            total_pages: number;
-        };
-        /** ValidationError */
-        ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
-        };
         /** @description `AdminPayoutDetail`. */
         AdminPayoutDetail: {
             payout: components["schemas"]["PosterPayoutResponse"];
@@ -2943,6 +2284,26 @@ export interface components {
         ClubClaimUpdate: {
             status: string;
             rejection_reason?: string | null;
+        };
+        /**
+         * ClubCohostResponse
+         * @description An additional existing club sharing an event or position.
+         */
+        ClubCohostResponse: {
+            /** Id */
+            id: number;
+            /** Club Name */
+            club_name: string;
+            /** Logo Url */
+            logo_url?: string | null;
+            /** Club Type */
+            club_type?: string | null;
+            /** Club Page */
+            club_page?: string | null;
+            /** Ig */
+            ig?: string | null;
+            /** Discord */
+            discord?: string | null;
         };
         /** @description The OpenAPI request bodies. */
         ClubCreate: {
@@ -3510,6 +2871,123 @@ export interface components {
              */
             going_count: number;
         };
+        /**
+         * EventSummaryResponse
+         * @description Payload for list/card views.
+         *
+         *     Description is included because the feed search matches event copy as well
+         *     as titles, hosts, locations, and food.
+         *
+         *     The owning club's display/link/social fields (``club_logo_url``,
+         *     ``club_type``, ``club_page``, ``club_ig``,
+         *     ``club_discord``) are
+         *     embedded read-time from the ``clubs`` row via the
+         *     ``events.club_id`` FK so the event card can render without a second
+         *     fetch.
+         *
+         *     ``created_by`` is intentionally omitted - this response is returned on
+         *     public GET /events/ and would otherwise leak the creator's user ID
+         *     to anonymous callers.
+         */
+        EventSummaryResponse: {
+            /**
+             * Competition
+             * @description An event where participants compete for rankings, judging, prizes or a winner, including hackathons, case competitions, contests and tournaments. Classify this individual event, not other events mentioned in a shared caption. Practice sessions, ordinary workshops, application announcements, raffles, ticket giveaways, watch parties and award ceremonies without competitive presentations do not qualify. Use null when competition is unconfirmed.
+             */
+            competition?: boolean | null;
+            /**
+             * Employers On Campus
+             * @description Networking opportunities: true when meeting people who can help students' careers is part of this event. That covers employers, companies, firms or industry organizations recruiting, presenting, hosting, co-hosting or sponsoring it (a company named as host or co-host, such as "Ramp x Blueprint" or "Figma x Sanrio", qualifies even for a social); career fairs, employer information sessions and co-op or internship sessions; professionals or alumni sharing their careers or networking with students; career-path panels and advice sessions on breaking into an industry, including ones led by upper-year students; hackathons, designathons, datathons, case competitions and pitch competitions; and professional, industry or academic conferences, symposiums and summits. Online events and events off campus qualify. Ordinary club socials, meetings and workshops with no company, professional or career element, language and gift exchanges, study-abroad, exchange-program and grad school information, wellness, cultural, religious and community-service events, food distributions and performances do not qualify. Require event-specific evidence in the caption or poster; a post with no event details, such as a link-in-bio or weekly roundup post, establishes nothing. Classify this individual event, not other events in a shared caption. Use false when the event clearly has no networking element and null when that is uncertain.
+             */
+            employers_on_campus?: boolean | null;
+            /**
+             * Sports Game
+             * @description An actual scheduled athletic game, match, meet, or tournament involving an official school varsity team. Intramural, club-team, and recreational competitions, practices, tryouts, fitness classes, sports-club meetings, video games, and watch parties do not qualify. School affiliation or posting from an athletics account alone does not establish varsity participation. Use null when official varsity participation is unconfirmed.
+             */
+            sports_game?: boolean | null;
+            /**
+             * Campus Season Ids
+             * @description School-configured campus season IDs established by the event's theme or purpose. Null means unreviewed or uncertain; an empty array means reviewed with no matching season. Display windows control filter visibility, not classification. Event dates alone do not prove thematic membership.
+             */
+            campus_season_ids?: string[] | null;
+            /** Id */
+            id: number;
+            /** Club Id */
+            club_id?: number | null;
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Map Location */
+            map_location?: string | null;
+            /** Map Coordinates */
+            map_coordinates?: [
+                number,
+                number
+            ] | null;
+            /** Occurrences */
+            occurrences?: components["schemas"]["OccurrenceSummaryResponse"][];
+            /** Price */
+            price?: number | null;
+            /** Food */
+            food?: string[] | null;
+            /**
+             * Registration
+             * @default false
+             */
+            registration: boolean;
+            /** Source Image Url */
+            source_image_url?: string | null;
+            /** Source Video Url */
+            source_video_url?: string | null;
+            /** Source Url */
+            source_url?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Club */
+            club?: string | null;
+            /** Club Logo Url */
+            club_logo_url?: string | null;
+            /** Cohosts */
+            cohosts?: components["schemas"]["ClubCohostResponse"][];
+            /**
+             * Featured
+             * @description Published to Instagram
+             * @default false
+             */
+            featured: boolean;
+            /**
+             * Is Directory Event
+             * @default false
+             */
+            is_directory_event: boolean;
+            /** Club Type */
+            club_type?: string | null;
+            /** Club Page */
+            club_page?: string | null;
+            /** Club Ig */
+            club_ig?: string | null;
+            /** Club Discord */
+            club_discord?: string | null;
+            /** Ig Handle */
+            ig_handle?: string | null;
+            /** School */
+            school?: string | null;
+            /**
+             * Cancelled
+             * @default false
+             */
+            cancelled: boolean;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Last Source Changed At */
+            last_source_changed_at?: string | null;
+        };
         /** @description Everything a club needs at its desk and at the door for one event. */
         EventTicketDeskResponse: {
             ticketing: components["schemas"]["EventTicketingResponse"];
@@ -3615,6 +3093,79 @@ export interface components {
             /** Cancelled */
             cancelled?: boolean | null;
         };
+        /** FollowCandidateDecision */
+        FollowCandidateDecision: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "approved" | "rejected";
+        };
+        /** FollowCandidateDecisionsResponse */
+        FollowCandidateDecisionsResponse: {
+            /** Approved */
+            approved: number;
+            /** Rejected */
+            rejected: number;
+        };
+        /**
+         * FollowCandidateDecisionsSubmit
+         * @description Every decision an admin staged on the page, sent together.
+         */
+        FollowCandidateDecisionsSubmit: {
+            /** Decisions */
+            decisions: components["schemas"]["FollowCandidateDecision"][];
+        };
+        /**
+         * FollowCandidateResponse
+         * @description An account a school account might follow, with what its newest posts showed.
+         */
+        FollowCandidateResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** School */
+            school: string;
+            /** Handle */
+            handle: string;
+            /** Name */
+            name?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "crawl" | "club" | "import";
+            /** Found Via */
+            found_via: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "approved" | "rejected" | "followed" | "unfollow";
+            /** Read Status */
+            read_status?: ("ok" | "no_posts" | "failed") | null;
+            /** Followers Count */
+            followers_count?: number | null;
+            /** Is Private */
+            is_private?: boolean | null;
+            /** Last Posted At */
+            last_posted_at?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Verdict */
+            verdict?: ("approve" | "review" | "reject") | null;
+            /** Reason */
+            reason?: string | null;
+            /** Follow Error */
+            follow_error?: string | null;
+        };
         FreeTicketCreate: {
             /** Format: uuid */
             event_date_id: string;
@@ -3648,6 +3199,11 @@ export interface components {
             /** Going Count */
             going_count: number;
         };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
         HourlyIngestionLatency: {
             /** Format: date-time */
             hour: string;
@@ -3664,6 +3220,344 @@ export interface components {
             overall: components["schemas"]["LatencyStats"];
             schools: components["schemas"]["SchoolIngestionLatency"][];
             hourly: components["schemas"]["HourlyIngestionLatency"][];
+        };
+        /** InstagramAccountPostResponse */
+        InstagramAccountPostResponse: {
+            /** Media Id */
+            media_id: string;
+            /** Media Type */
+            media_type: string;
+            /** Media Product Type */
+            media_product_type?: string | null;
+            /** Caption */
+            caption?: string | null;
+            /** Image Url */
+            image_url?: string | null;
+            /** Permalink */
+            permalink: string;
+            /**
+             * Posted At
+             * Format: date-time
+             */
+            posted_at: string;
+            /** Like Count */
+            like_count?: number | null;
+            /** Comments Count */
+            comments_count?: number | null;
+            /** Music Status */
+            music_status?: ("pending" | "added" | "failed") | null;
+            /** Music Track */
+            music_track?: string | null;
+        };
+        /** InstagramAccountStatsResponse */
+        InstagramAccountStatsResponse: {
+            /** Account Key */
+            account_key: string;
+            /** Username */
+            username: string;
+            /** Name */
+            name?: string | null;
+            /** Profile Picture Url */
+            profile_picture_url?: string | null;
+            /** Followers Count */
+            followers_count?: number | null;
+            /** Follows Count */
+            follows_count?: number | null;
+            /** Media Count */
+            media_count?: number | null;
+            /** Captured At */
+            captured_at?: string | null;
+            /** Requires Reauthorization */
+            requires_reauthorization: boolean;
+            /**
+             * Token Expires At
+             * Format: date-time
+             */
+            token_expires_at: string;
+            /** Followers History */
+            followers_history: components["schemas"]["InstagramFollowerCountResponse"][];
+            /** Posts */
+            posts: components["schemas"]["InstagramAccountPostResponse"][];
+        };
+        /** InstagramFollowerCountResponse */
+        InstagramFollowerCountResponse: {
+            /**
+             * Captured On
+             * Format: date
+             */
+            captured_on: string;
+            /** Followers Count */
+            followers_count: number;
+        };
+        /** InstagramPublishBatchPublish */
+        InstagramPublishBatchPublish: {
+            /** Version */
+            version: number;
+        };
+        /** InstagramPublishBatchResponse */
+        InstagramPublishBatchResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Account Key */
+            account_key: string;
+            /** Instagram User Id */
+            instagram_user_id?: string | null;
+            /**
+             * Batch Kind
+             * @default events
+             * @enum {string}
+             */
+            batch_kind: "events" | "employers_on_campus";
+            /** School */
+            school: string;
+            /**
+             * Local Date
+             * Format: date
+             */
+            local_date: string;
+            /**
+             * Window Start
+             * Format: date-time
+             */
+            window_start: string;
+            /**
+             * Window End
+             * Format: date-time
+             */
+            window_end: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "generating" | "ready_for_review" | "publishing" | "published" | "empty" | "failed";
+            /** Caption */
+            caption: string;
+            /**
+             * Caption Intro
+             * @default
+             */
+            caption_intro: string;
+            /**
+             * Cover Body
+             * @default
+             */
+            cover_body: string;
+            /** Version */
+            version: number;
+            /** Error Message */
+            error_message?: string | null;
+            /** Meta Media Id */
+            meta_media_id?: string | null;
+            /** Permalink */
+            permalink?: string | null;
+            /** Music Status */
+            music_status?: ("pending" | "added" | "failed") | null;
+            /** Music Track */
+            music_track?: string | null;
+            /** Music Error */
+            music_error?: string | null;
+            /** Published Cover Url */
+            published_cover_url?: string | null;
+            /** Published Outro Url */
+            published_outro_url?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Published At */
+            published_at?: string | null;
+            /** Sticker Selections */
+            sticker_selections?: {
+                [key: string]: string[];
+            };
+            /**
+             * New Event Count
+             * @default 0
+             */
+            new_event_count: number;
+            /** Other Events */
+            other_events?: components["schemas"]["EventSummaryResponse"][];
+            /** Items */
+            items: components["schemas"]["InstagramPublishItemResponse"][];
+        };
+        /** InstagramPublishBatchSummaryResponse */
+        InstagramPublishBatchSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Account Key */
+            account_key: string;
+            /** Instagram User Id */
+            instagram_user_id?: string | null;
+            /**
+             * Batch Kind
+             * @default events
+             * @enum {string}
+             */
+            batch_kind: "events" | "employers_on_campus";
+            /** School */
+            school: string;
+            /**
+             * Local Date
+             * Format: date
+             */
+            local_date: string;
+            /**
+             * Window Start
+             * Format: date-time
+             */
+            window_start: string;
+            /**
+             * Window End
+             * Format: date-time
+             */
+            window_end: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "generating" | "ready_for_review" | "publishing" | "published" | "empty" | "failed";
+            /** Caption */
+            caption: string;
+            /**
+             * Caption Intro
+             * @default
+             */
+            caption_intro: string;
+            /**
+             * Cover Body
+             * @default
+             */
+            cover_body: string;
+            /** Version */
+            version: number;
+            /** Error Message */
+            error_message?: string | null;
+            /** Meta Media Id */
+            meta_media_id?: string | null;
+            /** Permalink */
+            permalink?: string | null;
+            /** Music Status */
+            music_status?: ("pending" | "added" | "failed") | null;
+            /** Music Track */
+            music_track?: string | null;
+            /** Music Error */
+            music_error?: string | null;
+            /** Published Cover Url */
+            published_cover_url?: string | null;
+            /** Published Outro Url */
+            published_outro_url?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Published At */
+            published_at?: string | null;
+            /**
+             * Item Count
+             * @default 0
+             */
+            item_count: number;
+            /**
+             * Eligible Count
+             * @default 0
+             */
+            eligible_count: number;
+        };
+        /** InstagramPublishBatchUpdate */
+        InstagramPublishBatchUpdate: {
+            /** Version */
+            version: number;
+            /**
+             * Caption Intro
+             * @default
+             */
+            caption_intro: string;
+            /**
+             * Cover Body
+             * @default
+             */
+            cover_body: string;
+            /** Event Ids */
+            event_ids: number[];
+        };
+        /** InstagramPublishItemResponse */
+        InstagramPublishItemResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Batch Id
+             * Format: uuid
+             */
+            batch_id: string;
+            /** Account Key */
+            account_key: string;
+            /** Event Id */
+            event_id: number | null;
+            /** Position */
+            position: number;
+            event: components["schemas"]["EventSummaryResponse"] | null;
+            /** Published Asset Url */
+            published_asset_url?: string | null;
+            /** Published At */
+            published_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** InstagramSongCreate */
+        InstagramSongCreate: {
+            /** Query */
+            query: string;
+            /**
+             * Asian Campuses Only
+             * @default false
+             */
+            asian_campuses_only: boolean;
+        };
+        /** InstagramSongResponse */
+        InstagramSongResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Query */
+            query: string;
+            /** Asian Campuses Only */
+            asian_campuses_only: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * InteractionBatch
@@ -3729,6 +3623,55 @@ export interface components {
         MessageResponse: {
             message: string;
         };
+        /** NotificationPreferenceResponse */
+        NotificationPreferenceResponse: {
+            /**
+             * Notification Type
+             * @enum {string}
+             */
+            notification_type: "morning_email" | "event_reminder" | "event_change";
+            /** Enabled */
+            enabled: boolean;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
+         * NotificationPreferenceUpdate
+         * @description One preference-flip in a bulk update payload.
+         */
+        NotificationPreferenceUpdate: {
+            /**
+             * Notification Type
+             * @enum {string}
+             */
+            notification_type: "morning_email" | "event_reminder" | "event_change";
+            /** Enabled */
+            enabled: boolean;
+        };
+        /**
+         * NotificationPreferencesBulkUpdate
+         * @description Settings-page payload: flip multiple toggles in one call.
+         *
+         *     The settings UI typically shows every type as a toggle; letting the
+         *     client send them in one request avoids N round-trips and lines up
+         *     cleanly with an UPSERT on the (user_id, notification_type) key.
+         */
+        NotificationPreferencesBulkUpdate: {
+            /** Preferences */
+            preferences: components["schemas"]["NotificationPreferenceUpdate"][];
+        };
+        /**
+         * NotificationPreferencesListResponse
+         * @description Every notification type's resolved enabled state for the user.
+         *
+         *     Includes types for which the user has no row; the
+         *     ``enabled`` value is the resolved default in that case. Clients
+         *     render one toggle per entry.
+         */
+        NotificationPreferencesListResponse: {
+            /** Preferences */
+            preferences: components["schemas"]["NotificationPreferenceResponse"][];
+        };
         /**
          * OccurrenceCreate
          * @description One occurrence: start time plus optional end / duration / timezone.
@@ -3766,6 +3709,24 @@ export interface components {
             duration?: string | null;
             /** Tz */
             tz?: string | null;
+        };
+        /**
+         * OccurrenceSummaryResponse
+         * @description Browse dates retain selection identity without repeated parent/import fields.
+         */
+        OccurrenceSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Dtstart Utc
+             * Format: date-time
+             */
+            dtstart_utc: string;
+            /** Dtend Utc */
+            dtend_utc?: string | null;
         };
         /**
          * OccurrenceUpdate
@@ -3890,6 +3851,32 @@ export interface components {
         PaginatedResponse_EventSummaryResponse_: {
             /** Items */
             items: components["schemas"]["EventSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[FollowCandidateResponse] */
+        PaginatedResponse_FollowCandidateResponse_: {
+            /** Items */
+            items: components["schemas"]["FollowCandidateResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Pages */
+            total_pages: number;
+        };
+        /** PaginatedResponse[InstagramPublishBatchSummaryResponse] */
+        PaginatedResponse_InstagramPublishBatchSummaryResponse_: {
+            /** Items */
+            items: components["schemas"]["InstagramPublishBatchSummaryResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -4887,6 +4874,19 @@ export interface components {
              */
             status: "saved" | "unsaved";
         };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
         VerifyOtpRequest: {
             /** Format: email */
             email: string;
@@ -4901,427 +4901,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_instagram_publish_batches_instagram_publishing_batches__get: {
-        parameters: {
-            query?: {
-                status?: ("generating" | "ready_for_review" | "publishing" | "published" | "empty" | "failed") | null;
-                local_date?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_InstagramPublishBatchSummaryResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_instagram_publish_batch_instagram_publishing_batches__batch_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                batch_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InstagramPublishBatchResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_instagram_publish_batch_instagram_publishing_batches__batch_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                batch_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InstagramPublishBatchUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InstagramPublishBatchResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    publish_instagram_batch_instagram_publishing_batches__batch_id__publish_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                batch_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InstagramPublishBatchPublish"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InstagramPublishBatchResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_instagram_songs_instagram_publishing_songs__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InstagramSongResponse"][];
-                };
-            };
-        };
-    };
-    add_instagram_song_instagram_publishing_songs__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InstagramSongCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InstagramSongResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_instagram_song_instagram_publishing_songs__song_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                song_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_instagram_account_stats_instagram_publishing_accounts__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InstagramAccountStatsResponse"][];
-                };
-            };
-        };
-    };
-    list_follow_candidates_instagram_publishing_follow_candidates__get: {
-        parameters: {
-            query?: {
-                status?: "pending" | "approved" | "rejected" | "followed" | "unfollow";
-                school?: string | null;
-                /** @description Page number (1-indexed) */
-                page?: number;
-                /** @description Items per page (max 100) */
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaginatedResponse_FollowCandidateResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    submit_follow_decisions_instagram_publishing_follow_candidates_decisions_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FollowCandidateDecisionsSubmit"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FollowCandidateDecisionsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_my_preferences_notification_preferences_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotificationPreferencesListResponse"];
-                };
-            };
-        };
-    };
-    update_my_preferences_notification_preferences_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NotificationPreferencesBulkUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    confirm_unsubscribe_notification_preferences_unsubscribe_get: {
-        parameters: {
-            query: {
-                token: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/html": string;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    apply_unsubscribe_notification_preferences_unsubscribe_post: {
-        parameters: {
-            query: {
-                token: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/html": string;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     health_health_get: {
         parameters: {
             query?: never;
@@ -7893,6 +7472,427 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AppConstantsResponse"];
+                };
+            };
+        };
+    };
+    list_instagram_publish_batches_instagram_publishing_batches__get: {
+        parameters: {
+            query?: {
+                status?: ("generating" | "ready_for_review" | "publishing" | "published" | "empty" | "failed") | null;
+                local_date?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_InstagramPublishBatchSummaryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_instagram_publish_batch_instagram_publishing_batches__batch_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramPublishBatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_instagram_publish_batch_instagram_publishing_batches__batch_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstagramPublishBatchUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramPublishBatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_instagram_batch_instagram_publishing_batches__batch_id__publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstagramPublishBatchPublish"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramPublishBatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_instagram_songs_instagram_publishing_songs__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramSongResponse"][];
+                };
+            };
+        };
+    };
+    add_instagram_song_instagram_publishing_songs__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstagramSongCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramSongResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_instagram_song_instagram_publishing_songs__song_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                song_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_instagram_account_stats_instagram_publishing_accounts__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramAccountStatsResponse"][];
+                };
+            };
+        };
+    };
+    list_follow_candidates_instagram_publishing_follow_candidates__get: {
+        parameters: {
+            query?: {
+                status?: "pending" | "approved" | "rejected" | "followed" | "unfollow";
+                school?: string | null;
+                /** @description Page number (1-indexed) */
+                page?: number;
+                /** @description Items per page (max 100) */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse_FollowCandidateResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_follow_decisions_instagram_publishing_follow_candidates_decisions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FollowCandidateDecisionsSubmit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowCandidateDecisionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_preferences_notification_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPreferencesListResponse"];
+                };
+            };
+        };
+    };
+    update_my_preferences_notification_preferences_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPreferencesBulkUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_unsubscribe_notification_preferences_unsubscribe_get: {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_unsubscribe_notification_preferences_unsubscribe_post: {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

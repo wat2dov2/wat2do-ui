@@ -62,6 +62,7 @@ Port one whole router (every path under its prefix) per change, so no path is se
    | `RedirectResponse(url, status_code)` | `routing::redirect` |
    | `background_tasks.add_task(email_service.send_safely, message)` | `email::send_in_background` |
    | `secrets.token_urlsafe(n)` | `secrets::token_urlsafe` |
+   | `base64.urlsafe_b64decode` (with or without re-padding) | `text::python_b64decode`, `text::python_b64decode_repadded` |
    | `urlparse`, `urlsplit`, `urlencode`, `quote_plus`, repeated `unquote` | `crate::urls` |
    | signing our access tokens, refresh token rotation (`services/auth_service.py`) | `auth::AccessTokens::issue`, `next_refresh_token`, `auth::new_refresh_token`, `auth::sha256_hex`, `auth::revoke_sessions` |
    | `PaginationParams`, `paginated_response`, `fetch_all_pages` | `pagination::Pagination`, `Paginated`, `fetch_all_pages` |
