@@ -111,7 +111,6 @@ export function LandingHero({ schoolName, events, clubCount, isLoading }: Landin
                   </span>
                 </>
               }
-              description={t("landing.hero.description")}
             />
           </div>
           <Stack gap={5} align="center" className="relative">
