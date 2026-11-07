@@ -202,6 +202,10 @@ class EmulatorDevice:
             return []
         nodes = []
         for element in root.iter("node"):
+            # uiautomator2 also lists views hidden behind others, such as the song
+            # search's For you tab under its results; the screen is what shows.
+            if element.get("visible-to-user") == "false":
+                continue
             match = _BOUNDS.fullmatch(element.get("bounds", ""))
             if not match:
                 continue
