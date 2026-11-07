@@ -72,6 +72,18 @@ test("the site with no school moves a club's panel to its school", () => {
     .toBe("https://utsc.wat2do.io/club-panel/events/38592?club=21500");
 });
 
+test("a host that serves every school (a preview, 127.0.0.1, localhost) keeps the panel where it is", () => {
+  for (const origin of ["https://wat2do-git-branch.vercel.app", "http://127.0.0.1:3000", "http://localhost:3000"]) {
+    openSite(origin);
+    expect(clubPanelUrlElsewhere(UTSC_CLUB, "/club-panel"), origin).toBeNull();
+  }
+});
+
+test("a local school site moves a club's panel to the club's local school site", () => {
+  openSite("http://uwaterloo.wat2do.localhost:3000");
+  expect(clubPanelUrlElsewhere(UTSC_CLUB, "/club-panel")).toBe("http://utsc.wat2do.localhost:3000/club-panel?club=21500");
+});
+
 test("the signed-in profile knows each of the user's clubs' schools", async () => {
   openSite("https://uwaterloo.wat2do.io");
   expect(await initializeAuth()).toBe(true);

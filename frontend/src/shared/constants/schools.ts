@@ -109,6 +109,16 @@ export function getSchoolFromRequestHost(host: string | null | undefined): strin
 }
 
 /**
+ * Whether `hostname` is one of wat2do's own sites (wat2do.io or the local
+ * wat2do.localhost), where each school has its own subdomain. Other hosts, such
+ * as a deployment preview or 127.0.0.1, serve every school from one address.
+ */
+export function isSchoolSiteHostname(hostname: string): boolean {
+  const [domain, top] = hostname.toLowerCase().split(".").slice(-2);
+  return domain === "wat2do" && (top === "io" || top === "localhost");
+}
+
+/**
  * Absolute origin serving a school, derived from the current location so it
  * works across production subdomains and `*.wat2do.localhost` dev hosts alike.
  */

@@ -190,7 +190,20 @@ async function images() {
   return posterImages;
 }
 
-async function installMocks(page: Page, next: NextFixture, gates: Gates, held: (path: string, url: URL) => boolean) {
+interface MockOptions {
+  /** A club executive's session: the API restores it and lists their club. */
+  signedIn?: boolean;
+  /** Fields that event 1 carries in this test only. */
+  firstEvent?: Partial<(typeof EVENTS)[number]>;
+}
+
+async function installMocks(
+  page: Page,
+  next: NextFixture,
+  gates: Gates,
+  held: (path: string, url: URL) => boolean,
+  { signedIn = false, firstEvent }: MockOptions = {},
+) {
   const posters = await images();
   await page.route(`${MEDIA}/**`, async (route) => {
     const name = new URL(route.request().url()).pathname;
@@ -216,7 +229,25 @@ async function installMocks(page: Page, next: NextFixture, gates: Gates, held: (
     if (path === "/schools/uwaterloo") return json(SCHOOL);
     if (path === "/site-banner") return json(null);
     if (path === "/discovery-queries" || path === "/interactions/batch" || path.endsWith("/view")) return { status: 204 };
-    if (path === "/auth/refresh" || path === "/users/me") return json({ detail: "Not authenticated" }, 401);
+    if (path === "/auth/refresh") {
+      return signedIn
+        ? json({ access_token: "token", token_type: "bearer", expires_in: 900, user_id: "auth-1" })
+        : json({ detail: "Not authenticated" }, 401);
+    }
+    if (path === "/users/me") {
+      return signedIn
+        ? json({ id: "user-1", email: "exec@uwaterloo.ca", school: "uwaterloo", role: "user", interests: [] })
+        : json({ detail: "Not authenticated" }, 401);
+    }
+    if (path === "/clubs/mine") return json(signedIn ? [CLUBS[0]] : []);
+    // An event whose tickets are off, at a club that has not connected payouts.
+    if (/^\/events\/\d+\/ticketing$/.test(path)) return json(null);
+    if (/^\/clubs\/\d+\/payouts$/.test(path)) {
+      return json({
+        paid_tickets_enabled: false, connected: false, charges_enabled: false, payouts_enabled: false,
+        details_submitted: false, requirements_due: [], country: "CA", currency: "cad",
+      });
+    }
     if (path === "/going-events" || path === "/saved-clubs") return json([]);
     if (path === "/events/stats") {
       await gates.late.opened;
@@ -239,7 +270,8 @@ async function installMocks(page: Page, next: NextFixture, gates: Gates, held: (
     const eventMatch = /^\/events\/(\d+)$/.exec(path);
     if (eventMatch) {
       const event = EVENTS.find(item => item.id === Number(eventMatch[1]));
-      return event ? json(event) : json({ detail: "Not found" }, 404);
+      if (!event) return json({ detail: "Not found" }, 404);
+      return json(event.id === 1 ? { ...event, ...firstEvent } : event);
     }
     if (path === "/clubs") return json(paginated(CLUBS));
     const clubMatch = /^\/clubs\/(\d+)$/.exec(path);
@@ -641,6 +673,27 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
 
       const { cls, shifts } = await shiftsSince(page, openedAt);
       await report(`event-drawer-${viewportName}`, compare(loadingBoxes, loadedBoxes, viewport.height), cls, shifts);
+    });
+
+    test("club panel event page keeps its header from the server's HTML until its tickets load", async ({ page, next }) => {
+      const gates: Gates = { data: new Gate(), late: new Gate() };
+      gates.late.open();
+      // Signed in as the club's executive. The event, its tickets and the club's payouts wait.
+      // Its title is one line wide: a title's wrapping is the one thing no placeholder can know.
+      await installMocks(
+        page, next, gates,
+        path => path === "/events/1" || path === "/events/1/ticketing" || path === "/clubs/1/payouts",
+        { signedIn: true, firstEvent: { title: "Open Mic Night" } },
+      );
+      await throttleCpu(page);
+      await page.addInitScript(OBSERVE_SHIFTS);
+
+      await page.goto(`${BASE}/club-panel/events/1`, { waitUntil: "commit" });
+      // The server's HTML already draws the page's header, before the session is restored.
+      await page.locator("[data-slot=page-header-title] [data-slot=skeleton-line]").first().waitFor();
+      const name = `club-panel-event-${viewportName}`;
+      const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=ticket-settings-card]", name, viewport.height);
+      await report(name, comparison, cls, shifts);
     });
 
     test("the top bar never paints half-parsed when the page's HTML pauses inside it", async ({ page, next, _nextWorker }) => {

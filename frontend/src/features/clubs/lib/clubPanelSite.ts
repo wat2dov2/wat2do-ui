@@ -1,5 +1,5 @@
 import { getUserProfile, updateUserProfile } from "@/features/auth/api/auth.api";
-import { getSchoolOrigin } from "@/shared/constants/schools";
+import { getSchoolOrigin, isSchoolSiteHostname } from "@/shared/constants/schools";
 
 /**
  * A club's panel is served only from its school's site: every school has its
@@ -23,11 +23,12 @@ export function makeActiveClub(club: PanelClub): void {
 
 /**
  * Where the club panel page `path` for `club` lives when this page is on
- * another school's site, or null when it is already on the club's own (or the
- * club names no school).
+ * another school's site, or null when it is already on the club's own, the
+ * club names no school, or this host is not one of the school sites.
  */
 export function clubPanelUrlElsewhere(club: PanelClub, path: string): string | null {
   if (!club.school || typeof window === "undefined") return null;
+  if (!isSchoolSiteHostname(window.location.hostname)) return null;
   const origin = getSchoolOrigin(club.school);
   if (origin === window.location.origin) return null;
   const url = new URL(path, origin);
