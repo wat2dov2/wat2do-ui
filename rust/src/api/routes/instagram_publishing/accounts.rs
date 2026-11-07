@@ -1,7 +1,7 @@
 //! `list_account_stats` (`services/instagram_publishing/stats.py`): every
 //! connected account with its latest snapshot, follower history and newest
 //! posts, for the admin's social dashboard. The daily snapshot job
-//! (`jobs/snapshot_instagram_accounts.py`) writes these tables.
+//! (`wat2do-instagram stats`, `crate::instagram_publishing::stats`) writes these tables.
 
 use std::collections::HashMap;
 

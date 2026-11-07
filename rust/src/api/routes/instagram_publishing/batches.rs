@@ -5,8 +5,8 @@
 //! A batch stores which events are on the carousel, in order, plus the copy
 //! an admin writes; everything a slide shows is read live from the events,
 //! so a draft never shows stale event data. The daily drafts and the
-//! scheduled publish stay in Python (`jobs/generate_instagram_posts.py`),
-//! which reads batches the same way.
+//! scheduled publish (`crate::instagram_publishing`, binary
+//! `wat2do-instagram`) read and claim batches through these same functions.
 
 use std::collections::{HashMap, HashSet};
 use std::process::Stdio;
@@ -20,7 +20,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::captions::{CaptionEvent, CaptionSchool, build_caption};
-use super::credentials::usable_account_user_id;
+use super::credentials::load_account_credentials;
 use crate::api::errors::ApiError;
 use crate::api::events::model::Event;
 use crate::api::events::store;
@@ -35,33 +35,36 @@ use crate::controlbox::INSTAGRAM_PUBLISHING;
 use crate::db::read_with_retry;
 use crate::text::python_strip;
 
+pub const STATUS_GENERATING: &str = "generating";
 pub const STATUS_READY_FOR_REVIEW: &str = "ready_for_review";
 pub const STATUS_PUBLISHING: &str = "publishing";
 pub const STATUS_PUBLISHED: &str = "published";
+pub const STATUS_EMPTY: &str = "empty";
 pub const STATUS_FAILED: &str = "failed";
 /// `InstagramPublishBatchStatus`.
 pub const STATUSES: &[&str] = &[
-    "generating",
+    STATUS_GENERATING,
     STATUS_READY_FOR_REVIEW,
     STATUS_PUBLISHING,
     STATUS_PUBLISHED,
-    "empty",
+    STATUS_EMPTY,
     STATUS_FAILED,
 ];
+/// The daily drafts' kind; employer carousels are only ever read.
+pub const KIND_EVENTS: &str = "events";
 const KIND_EMPLOYERS: &str = "employers_on_campus";
 /// The outro is listed without an editor, so it leaves out whole categories
 /// the carousel never posts.
 const OUTRO_HIDDEN_CATEGORIES: [&str; 2] = ["Politics & Advocacy", "Religion & Spirituality"];
 
-/// The Python job that publishes a claimed batch: it renders the slides,
-/// uploads them and posts the carousel through Meta's Graph API, the same
-/// code the scheduled publish runs. Started from the API's working
-/// directory (`backend/`), with the API's environment.
-const PUBLISH_COMMAND: [&str; 3] = [
-    "python",
-    "jobs/generate_instagram_posts.py",
-    "publish-batch",
-];
+/// The binary that publishes a claimed batch (`wat2do-instagram
+/// publish-batch <id>`): it renders the slides, uploads them and posts the
+/// carousel through Meta's Graph API, the same code the scheduled publish
+/// runs. It sits beside `wat2do-api` (the release's `bin/`, or cargo's
+/// target folder) and starts from the API's working directory (`backend/`),
+/// with the API's environment.
+const PUBLISH_BINARY: &str = "wat2do-instagram";
+const PUBLISH_COMMAND: &str = "publish-batch";
 
 /// `InstagramPublishBatchBaseResponse`, in its field order, plus what the
 /// reads need (`school_id`, the stored sticker choices).
@@ -282,7 +285,10 @@ fn club_handle(handle: Option<&str>) -> String {
 }
 
 /// The school facts `build_caption` reads.
-async fn caption_school(db: &PgPool, school: &str) -> Result<(String, Tz, bool), ApiError> {
+pub(crate) async fn caption_school(
+    db: &PgPool,
+    school: &str,
+) -> Result<(String, Tz, bool), ApiError> {
     let slug = crate::schools::normalize_slug(school);
     let zone = store::school_timezone(db, Some(&slug)).await?;
     let timezone: Tz = zone
@@ -350,7 +356,7 @@ async fn load_items(db: &PgPool, batch_ids: &[Uuid]) -> Result<Vec<ItemRow>, Api
 }
 
 /// `_excluded_club_handles`: clubs that asked to stay out of carousels.
-async fn excluded_club_handles(db: &PgPool) -> Result<HashSet<String>, ApiError> {
+pub(crate) async fn excluded_club_handles(db: &PgPool) -> Result<HashSet<String>, ApiError> {
     let handles: Vec<String> = read_with_retry(|| {
         sqlx::query_scalar("SELECT ig_handle FROM public.instagram_excluded_clubs").fetch_all(db)
     })
@@ -672,7 +678,7 @@ pub async fn update_batch(
     let now = Utc::now();
     let invalid: Vec<String> = slides
         .iter()
-        .filter(|event| !is_publishable(event, now, "events"))
+        .filter(|event| !is_publishable(event, now, KIND_EVENTS))
         .map(|event| event.id.to_string())
         .collect();
     if !invalid.is_empty() {
@@ -717,7 +723,7 @@ async fn account_enabled(db: &PgPool, account_key: &str) -> Result<bool, ApiErro
 /// `claim_batch_for_publishing`: check the draft can be posted, then lock it
 /// against edits as `publishing` (one claim wins under the version lock).
 /// The slides that will not be posted leave the batch in the same
-/// transaction, so it holds exactly what Python then publishes.
+/// transaction, so it holds exactly what is then published.
 pub async fn claim_batch(
     db: &PgPool,
     encryption_key: &str,
@@ -733,7 +739,9 @@ pub async fn claim_batch(
             "Connect and enable an Instagram account for this school before publishing",
         ));
     }
-    let instagram_user_id = usable_account_user_id(db, encryption_key, account_key).await?;
+    let instagram_user_id = load_account_credentials(db, encryption_key, account_key, Utc::now())
+        .await?
+        .instagram_user_id;
     if batch
         .row
         .instagram_user_id
@@ -807,19 +815,25 @@ pub async fn claim_batch(
     })
 }
 
-/// Publish a claimed batch from a detached Python process, as the
-/// scheduled publish does; the request does not wait for Instagram.
-/// Python records a failed publish on the batch itself; a process that
+/// Where the publishing binary is: beside this process's own executable.
+fn publish_binary() -> std::io::Result<std::path::PathBuf> {
+    Ok(std::env::current_exe()?.with_file_name(PUBLISH_BINARY))
+}
+
+/// Publish a claimed batch from a detached `wat2do-instagram` process, as
+/// the scheduled publish does; the request does not wait for Instagram.
+/// The job records a failed publish on the batch itself; a process that
 /// cannot start, or dies before it could, fails the batch here.
 pub fn publish_in_background(db: PgPool, batch_id: Uuid) {
-    let [program, script, command] = PUBLISH_COMMAND;
-    let spawned = tokio::process::Command::new(program)
-        .args([script, command, &batch_id.to_string()])
-        .stdin(Stdio::null())
-        // Its own process group, so restarting the API never cuts a post short.
-        .process_group(0)
-        .kill_on_drop(false)
-        .spawn();
+    let spawned = publish_binary().and_then(|binary| {
+        tokio::process::Command::new(binary)
+            .args([PUBLISH_COMMAND, &batch_id.to_string()])
+            .stdin(Stdio::null())
+            // Its own process group, so restarting the API never cuts a post short.
+            .process_group(0)
+            .kill_on_drop(false)
+            .spawn()
+    });
     tokio::spawn(async move {
         let failure = match spawned {
             Err(error) => Some(format!("Could not start publishing: {error}")),

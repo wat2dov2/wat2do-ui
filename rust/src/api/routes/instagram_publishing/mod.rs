@@ -2,8 +2,8 @@
 //! dashboard and follow review (`routers/instagram_publishing.py`).
 //!
 //! Every route is admin-only. Publishing claims the batch here and hands the
-//! rendering and posting to Python (`batches::publish_in_background`), which
-//! the scheduled publish also runs.
+//! rendering and posting to `wat2do-instagram publish-batch`
+//! (`batches::publish_in_background`), the code the scheduled publish runs.
 
 pub mod accounts;
 pub mod batches;

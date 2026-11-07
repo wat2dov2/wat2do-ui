@@ -282,6 +282,14 @@ pub fn python_dumps_compact(value: &Value) -> String {
     out
 }
 
+/// The body httpx sends for `json=value`: `json.dumps(value,
+/// ensure_ascii=False, separators=(",", ":"))`.
+pub fn httpx_json(value: &Value) -> String {
+    let mut out = String::new();
+    dump(value, &mut out, Dumps::COMPACT_UNICODE);
+    out
+}
+
 #[derive(Clone, Copy)]
 struct Dumps {
     item_separator: &'static str,
@@ -293,6 +301,11 @@ impl Dumps {
     const DEFAULT: Self = Self {
         item_separator: ", ",
         key_separator: ": ",
+        ascii: false,
+    };
+    const COMPACT_UNICODE: Self = Self {
+        item_separator: ",",
+        key_separator: ":",
         ascii: false,
     };
     const COMPACT_ASCII: Self = Self {

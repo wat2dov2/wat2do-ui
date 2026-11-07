@@ -232,8 +232,8 @@ At minimum, inspect the following current sources because their structure may ha
 - `assets/school-logos/colors.json`.
 - `backend/controlbox/instagram_publishing.json`.
 - `backend/core/controlbox.py` and its tests.
-- `backend/scripts/import_instagram_tokens.py`.
-- `backend/services/instagram_publishing/credentials.py`.
+- `rust/src/instagram_publishing/tokens.rs` (`wat2do-instagram import-tokens`).
+- `rust/src/api/routes/instagram_publishing/credentials.rs`.
 - `backend/scripts/automate_bell_notifications.py`.
 - `backend/services/scraper/single_user.py`.
 - `.github/workflows/process-single-user.yml`.
@@ -1029,7 +1029,7 @@ Do not trust a human-entered label or a user ID copied from the Meta dashboard w
 
 ### 17.5 Import the token securely
 
-Use `backend/scripts/import_instagram_tokens.py` rather than writing to the database manually.
+Use `wat2do-instagram import-tokens` rather than writing to the database manually.
 
 The importer validates the token through Instagram, matches the returned username to the configured account, encrypts the token, stores the scoped user ID, and sets expiry and validation metadata.
 
@@ -1044,7 +1044,7 @@ read -s "instagram_token?Paste Instagram token: "
 printf '%s=%s\n' '<schoolslug>' "$instagram_token" > "$instagram_token_file"
 unset instagram_token
 cd backend
-python scripts/import_instagram_tokens.py "$instagram_token_file"
+cargo run --release --manifest-path ../rust/Cargo.toml --bin wat2do-instagram -- import-tokens "$instagram_token_file"
 rm "$instagram_token_file"
 unset instagram_token_file
 ```
@@ -1080,9 +1080,9 @@ Never select or display `encrypted_access_token` during routine verification.
 
 ## 18. Phase N: Verify publishing readiness
 
-The daily Claude job (`backend/jobs/generate_instagram_posts.py curate`) reads eligible events and saves reviewed editorial choices for every school.
+The daily Claude job (`wat2do-instagram curate`) reads eligible events and saves reviewed editorial choices for every school.
 
-The daily `Instagram account stats` GitHub workflow (`backend/jobs/snapshot_instagram_accounts.py`) refreshes expiring tokens with the production encryption key, then reads every account's followers and recent posts.
+The Mac's daily `io.wat2do.instagram-account-stats` timer (`wat2do-instagram stats`) refreshes expiring tokens with the production encryption key, then reads every account's followers and recent posts.
 
 The token lifetime and refresh lead are controlled by `backend/controlbox/instagram_publishing.json`.
 
@@ -1280,7 +1280,7 @@ The final handoff must contain no secrets and must include:
 - [ ] No Facebook Page flow used.
 - [ ] Instagram tester invite accepted.
 - [ ] Token identity returned the exact chapter username.
-- [ ] Token imported with `import_instagram_tokens.py`.
+- [ ] Token imported with `wat2do-instagram import-tokens`.
 - [ ] Temporary token file removed.
 - [ ] Encrypted credential row references the correct school.
 - [ ] Token health and refresh path verified.

@@ -13,20 +13,9 @@ SUBMISSION_APPROVED: Final = "approved"
 SUBMISSION_REJECTED: Final = "rejected"
 
 
-INSTAGRAM_BATCH_GENERATING: Final = "generating"
-INSTAGRAM_BATCH_READY_FOR_REVIEW: Final = "ready_for_review"
-INSTAGRAM_BATCH_PUBLISHING: Final = "publishing"
+# The carousel batch status the emulator's song step reads; the drafts and
+# publishing that write the others are Rust (rust/src/instagram_publishing).
 INSTAGRAM_BATCH_PUBLISHED: Final = "published"
-INSTAGRAM_BATCH_EMPTY: Final = "empty"
-INSTAGRAM_BATCH_FAILED: Final = "failed"
-INSTAGRAM_BATCH_STATUSES = (
-    INSTAGRAM_BATCH_GENERATING,
-    INSTAGRAM_BATCH_READY_FOR_REVIEW,
-    INSTAGRAM_BATCH_PUBLISHING,
-    INSTAGRAM_BATCH_PUBLISHED,
-    INSTAGRAM_BATCH_EMPTY,
-    INSTAGRAM_BATCH_FAILED,
-)
 
 # A published carousel waits for the emulator to add a song, then records how it went.
 INSTAGRAM_MUSIC_PENDING: Final = "pending"

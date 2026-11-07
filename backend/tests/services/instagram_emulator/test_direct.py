@@ -556,3 +556,30 @@ def test_a_group_chat_has_no_one_sender() -> None:
     device = _ProfileDevice(group=True)
     assert THREAD_READER(device, lambda: None)._profile_username() is None
     assert device.backs == 1
+
+
+def test_a_club_that_opts_out_is_left_out_once_by_its_plain_handle(monkeypatch) -> None:
+    calls: list[tuple] = []
+
+    class _Query:
+        def upsert(self, row, **options):
+            calls.append((row, options))
+            return self
+
+        def execute(self):
+            return None
+
+    tables: list[str] = []
+    monkeypatch.setattr(
+        module,
+        "get_sb",
+        lambda: type("Db", (), {"table": lambda _self, name: tables.append(name) or _Query()})(),
+    )
+    module.exclude_club("@UWViVA", reason="Asked in wat2do.uwaterloo's DMs")
+    assert tables == ["instagram_excluded_clubs"]
+    assert calls == [
+        (
+            {"ig_handle": "uwviva", "reason": "Asked in wat2do.uwaterloo's DMs"},
+            {"on_conflict": "ig_handle", "ignore_duplicates": True},
+        )
+    ]

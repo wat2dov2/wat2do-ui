@@ -16,6 +16,8 @@ from collections.abc import Callable
 from typing import Any
 
 from core.controlbox import controlbox
+from core.database import get_sb
+from core.tables import INSTAGRAM_EXCLUDED_CLUBS
 from services.ingestion import items
 from services.instagram_accounts import BrowserEngagementUncertain, BrowserSessionError
 from services.instagram_dms.decide import DmDecision, decide, sender, their_latest_words
@@ -34,7 +36,6 @@ from services.instagram_emulator.inbox import (
     raise_if_messaging_limited,
 )
 from services.instagram_emulator.story import share_to_story
-from services.instagram_publishing.service import exclude_club
 
 CONTROL = controlbox.instagram_dms
 # Found by its view ID: its placeholder text rotates between hints like "Message…".
@@ -492,3 +493,12 @@ def _newest_is_ours(nodes: list[Node], text: str) -> bool:
 
 def _as_typed(text: str) -> str:
     return " ".join(text.casefold().split())
+
+
+def exclude_club(ig_handle: str, *, reason: str) -> None:
+    """Leave a club out of every carousel from now on; asking again changes nothing."""
+    get_sb().table(INSTAGRAM_EXCLUDED_CLUBS).upsert(
+        {"ig_handle": (ig_handle or "").strip().lstrip("@").lower(), "reason": reason},
+        on_conflict="ig_handle",
+        ignore_duplicates=True,
+    ).execute()
