@@ -16,6 +16,8 @@
     "backToTop": "اوپر واپس جائیں",
     "cancelled": "منسوخ شدہ",
     "registration": "رجسٹریشن",
+    "registrationRequired": "رجسٹریشن ضروری ہے",
+    "price": "قیمت: {{price}}",
     "active": "فعال",
     "inactive": "غیر فعال",
     "yes": "ہاں",

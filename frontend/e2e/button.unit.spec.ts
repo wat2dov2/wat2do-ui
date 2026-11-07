@@ -9,18 +9,20 @@ import { createAdaptivePressHandlers, isNestedInteractiveTarget } from "../src/s
 
 // Inspect the real primitives using their JSX event props without a browser.
 const require = createRequire(import.meta.url);
-function loadUI(name: string, disclosure?: { open: boolean; setOpen: (open: boolean) => void }) {
+/** `react` stands in for React's hooks; `globals` adds browser globals the primitive reads. */
+function loadUI(name: string, { react, globals }: { react?: object; globals?: object } = {}) {
   const source = readFileSync(new URL(`../src/shared/ui/${name}.tsx`, import.meta.url), "utf8");
   const { outputText } = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
   });
   const componentModule = { exports: {} as Record<string, unknown> };
   runInNewContext(outputText, {
+    ...globals,
     require: (id: string) => {
-      if (id === "react" && disclosure) return { ...require("react"), useContext: () => disclosure };
+      if (id === "react" && react) return react;
       if (id === "@/shared/hooks/useMouseDownPress") return { createAdaptivePressHandlers, isNestedInteractiveTarget };
       if (["@/shared/layout/stack", "@/shared/ui/Pagination", "@/shared/ui/skeleton"].includes(id)) return {};
-      if (id === "lucide-react") return { Check: () => null };
+      if (id === "lucide-react") return { Check: () => null, CheckIcon: () => null };
       if (id === "@/shared/ui/button") return { OUTLINE_CONTROL_STYLES: "" };
       if (id === "@/shared/ui/tooltip") return { Tooltip: "Tooltip", TooltipContent: "TooltipContent", TooltipTrigger: "TooltipTrigger" };
       if (id === "@/shared/ui/drawer" || id === "@/shared/hooks/useExclusiveDisclosure") return {};
@@ -204,7 +206,7 @@ test("Radix toggles receive one native activation on press and still support the
 test("popover filters retain native click while ordinary disclosures toggle on press only once", () => {
   let opens = 0;
   const disclosure = { open: false, setOpen: () => { opens++; } };
-  const { PopoverTrigger } = loadUI("popover", disclosure) as unknown as typeof import("../src/shared/ui/popover");
+  const { PopoverTrigger } = loadUI("popover", { react: { ...require("react"), useContext: () => disclosure } }) as unknown as typeof import("../src/shared/ui/popover");
   type Render = (props: ComponentProps<typeof PopoverTrigger>) => { props: ComponentProps<"button"> };
   const render = PopoverTrigger as unknown as Render;
   const ordinary = render({}).props;
@@ -256,4 +258,79 @@ test("interactive table rows ignore nested action controls", () => {
     if (previous) Object.defineProperty(globalThis, "Element", previous);
     else Reflect.deleteProperty(globalThis, "Element");
   }
+});
+
+test("a tapped tooltip shows for a moment and keeps the press from the card around it", () => {
+  class FakeNode { contains(node: unknown) { return node === this; } }
+  const timers = new Map<number, { run: () => void; ms: number }>();
+  let lastTimer = 0;
+  const microtasks: Array<() => void> = [];
+  let open = false;
+  const { TapTooltip } = loadUI("tooltip", {
+    react: {
+      ...require("react"),
+      useState: () => [open, (next: boolean) => { open = next; }],
+      useRef: (current: unknown) => ({ current }),
+      useEffect: () => {},
+    },
+    globals: {
+      Node: FakeNode,
+      queueMicrotask: (run: () => void) => microtasks.push(run),
+      window: {
+        setTimeout: (run: () => void, ms: number) => { timers.set(++lastTimer, { run, ms }); return lastTimer; },
+        clearTimeout: (id: number) => timers.delete(id),
+      },
+    },
+  }) as typeof import("../src/shared/ui/tooltip");
+  type Handler = (event?: unknown) => void;
+  const tree = TapTooltip({ content: "Registration required", children: require("react").createElement("button") }) as unknown as {
+    props: { onOpenChange: (open: boolean) => void; children: [{ ref: { current: unknown }; props: Record<string, Handler> }, { props: Record<string, Handler> & { children: string } }] };
+  };
+  const [trigger, content] = tree.props.children;
+  const press = () => ({
+    key: "", target: null as unknown, defaultPrevented: false, propagationStopped: false,
+    preventDefault() { this.defaultPrevented = true; },
+    stopPropagation() { this.propagationStopped = true; },
+  });
+  expect(content.props.children).toBe("Registration required");
+
+  // A tap shows it and never follows a link around it; the click still reaches an open menu, which closes.
+  const click = press();
+  trigger.props.onClick?.(click);
+  expect(open).toBe(true);
+  expect(click.defaultPrevented).toBe(true);
+  expect(click.propagationStopped).toBe(false);
+  // Then it hides on its own.
+  expect([...timers.values()].map(timer => timer.ms)).toEqual([2000]);
+  [...timers.values()][0]!.run();
+  expect(open).toBe(false);
+
+  // Pressing it while it shows keeps it up rather than flickering; any later close still closes it.
+  open = true;
+  trigger.props.onPointerDown?.();
+  tree.props.onOpenChange(false);
+  expect(open).toBe(true);
+  microtasks.splice(0).forEach(run => run());
+  tree.props.onOpenChange(false);
+  expect(open).toBe(false);
+
+  // The card around it never sees the mouse press, or Enter and Space.
+  const mouseDown = press();
+  trigger.props.onMouseDown?.(mouseDown);
+  expect(mouseDown.propagationStopped).toBe(true);
+  for (const key of ["Enter", " ", "Escape"]) {
+    const keyDown = Object.assign(press(), { key });
+    trigger.props.onKeyDown?.(keyDown);
+    expect(keyDown.propagationStopped).toBe(key !== "Escape");
+  }
+
+  // A press on the trigger is not a press outside the tooltip; a press anywhere else is.
+  const element = new FakeNode();
+  trigger.ref.current = element;
+  const onTrigger = Object.assign(press(), { target: element });
+  content.props.onPointerDownOutside?.(onTrigger);
+  expect(onTrigger.defaultPrevented).toBe(true);
+  const elsewhere = Object.assign(press(), { target: new FakeNode() });
+  content.props.onPointerDownOutside?.(elsewhere);
+  expect(elsewhere.defaultPrevented).toBe(false);
 });

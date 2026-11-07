@@ -16,6 +16,8 @@
     "backToTop": "Вернуться к началу",
     "cancelled": "Отменено",
     "registration": "Регистрация",
+    "registrationRequired": "Требуется регистрация",
+    "price": "Цена: {{price}}",
     "active": "Активно",
     "inactive": "Неактивно",
     "yes": "Да",

@@ -16,6 +16,8 @@
     "backToTop": "ઉપર જઈએ",
     "cancelled": "રદ કરાયું",
     "registration": "નોંધણી",
+    "registrationRequired": "રજિસ્ટ્રેશન જરૂરી છે",
+    "price": "કિંમત: {{price}}",
     "active": "સક્રિય",
     "inactive": "નૈસર્કિક",
     "yes": "હાં",

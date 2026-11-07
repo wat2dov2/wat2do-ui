@@ -16,6 +16,8 @@
     "backToTop": "返上頁",
     "cancelled": "已取消",
     "registration": "登記",
+    "registrationRequired": "需要登記",
+    "price": "價格：{{price}}",
     "active": "啟動",
     "inactive": "未啟動",
     "yes": "係",

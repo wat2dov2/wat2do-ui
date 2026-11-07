@@ -4,7 +4,7 @@ import { getRecencyBadge, toLocalDateTimeInput } from "@/shared/utils/date";
 import type { TFunction } from "i18next";
 import type { CardBadge } from "@/shared/ui/event-card-content";
 import { Ticket, Utensils, X } from "lucide-react";
-import { translateFood } from "@/shared/utils/foodTranslation";
+import { translateFood, translateFoods } from "@/shared/utils/foodTranslation";
 
 /** On event artwork attendance wins over new, and new wins over recently updated. */
 export function getEventImageStatus(
@@ -21,10 +21,14 @@ export function computeEventBadges(
 ): CardBadge[] {
   const badges: CardBadge[] = [];
   if (event.cancelled) badges.push({ text: t("common.cancelled"), size: "sm", icon: X });
-  if (event.price != null && event.price > 0) badges.push({ text: `$${event.price}`, size: "md" });
-  // Food and registration show as icons on cards; the text stays their label (and the slides' text).
-  if (event.food?.length) badges.push({ text: translateFood(event.food[0], t), size: "md", icon: Utensils, iconOnly: true });
-  if (event.registration) badges.push({ text: t("common.registration"), size: "md", icon: Ticket, iconOnly: true, mark: "!" });
+  if (event.price != null && event.price > 0) {
+    const price = `$${event.price}`;
+    badges.push({ text: price, tooltip: t("common.price", { price }), size: "lg" });
+  }
+  // Food and registration show as icons on cards; the text stays their label (and the slides' text),
+  // and a tap on the card's badge says what it means: the event's food, as its page lists it.
+  if (event.food?.length) badges.push({ text: translateFood(event.food[0], t), tooltip: translateFoods(event.food, t), size: "lg", icon: Utensils, iconOnly: true });
+  if (event.registration) badges.push({ text: t("common.registration"), tooltip: t("common.registrationRequired"), size: "lg", icon: Ticket, iconOnly: true, mark: "!" });
   return badges;
 }
 

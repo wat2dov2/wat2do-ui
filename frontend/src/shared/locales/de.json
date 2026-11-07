@@ -16,6 +16,8 @@
     "backToTop": "Zurück nach oben",
     "cancelled": "Abgesagt",
     "registration": "Registrierung",
+    "registrationRequired": "Registrierung erforderlich",
+    "price": "Preis: {{price}}",
     "active": "Aktiv",
     "inactive": "Inaktiv",
     "yes": "Ja",
