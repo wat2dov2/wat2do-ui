@@ -1,6 +1,11 @@
 import { headers } from "next/headers";
 import { readDiscoverySnapshot } from "@/shared/services/discoveryCache.server";
-import { getSchoolFromRequestHost, resolveSchool } from "@/shared/constants/schools";
+import {
+  getHostnameSchoolStatus,
+  getSchoolFromRequestHost,
+  resolveSchool,
+  type HostnameSchoolStatus,
+} from "@/shared/constants/schools";
 import {
   fetchServerSnapshot,
   getServerApiBaseUrl,
@@ -17,6 +22,17 @@ export async function getRequestSchool(): Promise<string> {
   return getSchoolFromRequestHost(
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
   );
+}
+
+/**
+ * The request host's school and the subdomain it was read from, so the server and
+ * the browser make the same unknown-school decision (the browser's own hostname is
+ * not available while rendering on the server).
+ */
+export async function getRequestHostnameSchoolStatus(): Promise<HostnameSchoolStatus> {
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "";
+  return getHostnameSchoolStatus(host.split(":")[0]);
 }
 
 export async function buildSchoolSnapshot(
