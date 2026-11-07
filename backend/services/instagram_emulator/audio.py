@@ -26,6 +26,8 @@ from services.instagram_emulator.device import (
 
 _POST_URL = re.compile(r"^https://www\.instagram\.com/p/[A-Za-z0-9_-]+/$")
 _POST_OPTIONS = labels("More actions for this post")
+# Right after an account switch a post link can land on the feed instead.
+_POST_OPEN_ATTEMPTS = 2
 _EDIT = re.compile(r"^Edit$")
 _EDIT_INFO = re.compile(r"^Edit info$")
 _ADD_AUDIO = re.compile(r"^Add audio$")
@@ -126,7 +128,7 @@ def finish_post(
     if not _POST_URL.fullmatch(permalink):
         raise EmulatorError("Only an exact Instagram post can get audio")
     user = CONTROL.android_user_by_school[school]
-    device.open_instagram(user, permalink)
+    _open_post(device, user, permalink)
     _like_and_repost(device)
     if gif is not None:
         try:
@@ -135,7 +137,7 @@ def finish_post(
             # The GIF is a nice extra; it never holds up the song.
             log.warning("Could not comment a GIF on %s", permalink, exc_info=True)
     # Liking may have scrolled a tall post; open it again so its menu is in view.
-    device.open_instagram(user, permalink)
+    _open_post(device, user, permalink)
     device.tap_when(_POST_OPTIONS)
     device.tap_when(_EDIT)
     device.wait_for(_EDIT_INFO)
@@ -162,6 +164,18 @@ def finish_post(
     else:
         _discard(device)
     return added
+
+
+def _open_post(device: EmulatorDevice, user: int, permalink: str) -> None:
+    """Open the live post; a link that lands before the app is ready is opened again."""
+    for _ in range(_POST_OPEN_ATTEMPTS):
+        device.open_instagram(user, permalink)
+        try:
+            device.wait_for(_POST_OPTIONS)
+            return
+        except EmulatorError:
+            device.back()
+    raise EmulatorError("Instagram did not open the post")
 
 
 def _tagged(device: EmulatorDevice, place: PlaceTag, permalink: str) -> bool:

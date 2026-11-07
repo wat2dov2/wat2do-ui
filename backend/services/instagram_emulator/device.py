@@ -447,14 +447,22 @@ class EmulatorDevice:
         self.adb("shell", "wm", "dismiss-keyguard")
 
     def use_android_user(self, user: int) -> None:
-        """Bring the Android user that holds the account to the foreground."""
+        """Bring the Android user that holds the account to the foreground, waiting only
+        until it is in front and unlocked, at most ``user_switch_wait_seconds``."""
         if self.adb("shell", "am", "get-current-user").strip() == str(user):
             return
         self.adb("shell", "am", "switch-user", str(user))
-        self._sleep(CONTROL.user_switch_wait_seconds)
+        deadline = self._monotonic() + CONTROL.user_switch_wait_seconds
+        while not self._user_ready(user):
+            if self._monotonic() >= deadline:
+                raise EmulatorError("Emulator did not switch Android users")
+            self._sleep(1)
         self.wake()
-        if self.adb("shell", "am", "get-current-user").strip() != str(user):
-            raise EmulatorError("Emulator did not switch Android users")
+
+    def _user_ready(self, user: int) -> bool:
+        return self.adb("shell", "am", "get-current-user").strip() == str(
+            user
+        ) and "RUNNING_UNLOCKED" in self.adb("shell", "am", "get-started-user-state", str(user))
 
     def use_account(self, user: int, account_username: str) -> None:
         """Switch the app to the account, confirmed by the DM inbox's title.
@@ -469,8 +477,9 @@ class EmulatorDevice:
             # A tap while the account sheet is still sliding up can miss, leaving the
             # sheet open; the next attempt notices and switches again.
             self.tap(self._account_in_switcher(account_username))
-            # The switch lands on the home feed; give it time before leaving for the inbox.
-            self._sleep(CONTROL.screen_wait_seconds)
+            # The switch lands on the home feed; let it settle before leaving for the
+            # inbox, which opens again if its link still lands too early.
+            self._sleep(CONTROL.account_switch_settle_seconds)
         if self.open_inbox(user) != account_username:
             raise EmulatorError("Instagram did not switch to the account")
 

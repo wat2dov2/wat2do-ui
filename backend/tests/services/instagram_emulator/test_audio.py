@@ -227,6 +227,20 @@ def test_only_exact_post_urls_get_audio(screens, url) -> None:
     assert device.taps == []
 
 
+def test_a_post_link_that_lands_on_the_feed_is_opened_again(screens) -> None:
+    # Right after an account switch the link can land on the home feed instead.
+    device = screens(HOME, HOME, HOME, POST_PAGE)
+    module._open_post(device, 0, POST)
+    assert device.taps == ["back"]
+
+
+def test_a_post_that_never_opens_is_an_error(screens) -> None:
+    device = screens(HOME)
+    with pytest.raises(EmulatorError, match="did not open the post"):
+        module._open_post(device, 0, POST)
+    assert device.taps == ["back"] * module._POST_OPEN_ATTEMPTS
+
+
 def test_an_accounts_first_repost_closes_instagrams_note(screens) -> None:
     device = screens(LIKED_PAGE, FIRST_REPOST, LIKED_PAGE, reposted=(False, True))
     module._like_and_repost(device)
