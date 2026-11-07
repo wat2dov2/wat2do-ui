@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useMemo, useState, type Ref } from "react";
 import { useEventView } from "@/features/events/hooks/useEventStats";
 import publicAttendance from "../../../../../backend/controlbox/public_attendance.json";
 import NextLink from "next/link";
@@ -35,6 +35,7 @@ import { FormGrid, Section, Stack } from "@/shared/layout";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { EventCalendarDownloadMenu } from "@/features/events/components/EventCalendarDownloadMenu";
 import { EventCard } from "@/features/events/components/EventCard";
+import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import { EventCardImage } from "@/features/events/components/EventCardImage";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
 import { ClubBadgeLink } from "@/features/clubs";
@@ -78,6 +79,15 @@ const AdminDeleteDialog = lazy(() =>
  * Sections shared between the event details drawer and the dedicated
  * /events/[id] page so both surfaces render event data one way.
  */
+
+/** The details layout, shared with its loading skeleton so both take the same boxes. */
+export const EVENT_DETAILS_LAYOUT = {
+  grid: "grid grid-cols-1 gap-6 md:grid-cols-[320px_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:items-start md:gap-x-8",
+  poster: "mx-auto w-full max-w-sm select-none md:col-start-1 md:mx-0",
+  details: "contents md:col-start-2 md:row-span-2 md:row-start-1 md:flex md:flex-col md:gap-6",
+  title: "text-2xl font-bold leading-tight sm:text-3xl",
+  sidebar: "order-2 md:col-start-1",
+};
 
 function EventDateTile({
   dtstartUtc,
@@ -246,14 +256,13 @@ function EventRegistrationCard({
   school: string | null | undefined;
 }) {
   const { t } = useTranslation();
-  const { profileCompleted, userEmail, userFullName, userAvatarUrl } = useAuthState();
+  const { profileCompleted, userAvatarUrl } = useAuthState();
   const going = useGoingEventSelection(event, school);
   const { getSchoolTimezone } = useSchoolDirectory();
   const now = going.currentTimeMs;
   const [pickerOpen, setPickerOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const isGoingActive = profileCompleted && going.isActive;
-  const displayName = userFullName || userEmail?.split("@")[0] || "";
   const disabledReason = going.isTimeUnavailable
     ? t("events.goingEvents.timeUnavailable")
     : undefined;
@@ -341,10 +350,10 @@ function EventRegistrationCard({
     );
   }
 
-  return (
-    <Card>
-      <CardContent>
-        {pickerOpen ? (
+  if (pickerOpen) {
+    return (
+      <Card>
+        <CardContent>
           <GoingOccurrencePickerContent
             timeZone={getSchoolTimezone(event.school)}
             key={`${event.id}:${going.selectedSelectableIds.join(",")}`}
@@ -357,44 +366,80 @@ function EventRegistrationCard({
               setPickerOpen(false);
             }}
           />
-        ) : (
-          <Stack gap={3}>
-            {profileCompleted ? (
-              <Stack direction="horizontal" gap={2} align="center">
-                {userAvatarUrl ? (
-                  <LazyImage src={userAvatarUrl} alt="" width={24} height={24} className="size-6" fallback={null} />
-                ) : null}
-                <Stack gap={1}>
-                  <CardTitle>{displayName}</CardTitle>
-                  <CardDescription>{userEmail}</CardDescription>
-                </Stack>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <EventRegistrationPrompt
+      school={event.school ?? school}
+      unavailable={going.selectableOccurrences.length === 0}
+      unavailableReason={disabledReason}
+      isPending={going.isPending}
+      onRegister={startRegistration}
+    />
+  );
+}
+
+/**
+ * The Going card before anyone registers: the visitor's account with a Going
+ * button, or the email sign-in that leads to it. The event's loading state
+ * shows this same card, so it keeps its size when the event arrives.
+ */
+export function EventRegistrationPrompt({
+  school,
+  unavailable,
+  unavailableReason,
+  isPending,
+  onRegister,
+}: {
+  school: string | null | undefined;
+  unavailable: boolean;
+  unavailableReason?: string;
+  isPending: boolean;
+  onRegister: () => void | Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const { profileCompleted, userEmail, userFullName, userAvatarUrl } = useAuthState();
+  const displayName = userFullName || userEmail?.split("@")[0] || "";
+  return (
+    <Card>
+      <CardContent>
+        <Stack gap={3}>
+          {profileCompleted ? (
+            <Stack direction="horizontal" gap={2} align="center">
+              {userAvatarUrl ? (
+                <LazyImage src={userAvatarUrl} alt="" width={24} height={24} className="size-6" fallback={null} />
+              ) : null}
+              <Stack gap={1}>
+                <CardTitle>{displayName}</CardTitle>
+                <CardDescription>{userEmail}</CardDescription>
               </Stack>
-            ) : (
-              <EmailOtpForm
-                data-testid="event-registration-auth"
-                school={event.school ?? school}
-                requestCodeLabel={t("events.going")}
-                actionLabel={t("events.going")}
-                focusOnMount={false}
-                isSubmitDisabled={
-                  going.selectableOccurrences.length === 0
-                }
-                submitDisabledReason={disabledReason}
-                onAuthenticated={startRegistration}
-              />
-            )}
-          </Stack>
-        )}
+            </Stack>
+          ) : (
+            <EmailOtpForm
+              data-testid="event-registration-auth"
+              school={school}
+              requestCodeLabel={t("events.going")}
+              actionLabel={t("events.going")}
+              focusOnMount={false}
+              isSubmitDisabled={unavailable}
+              submitDisabledReason={unavailableReason}
+              onAuthenticated={onRegister}
+            />
+          )}
+        </Stack>
       </CardContent>
-      {!pickerOpen && profileCompleted ? (
+      {profileCompleted ? (
         <CardFooter className="w-full">
           <Button
             type="button"
             variant="primary"
             className="w-full"
-            disabled={going.isPending || going.selectableOccurrences.length === 0}
-            disabledReason={disabledReason}
-            onClick={() => void startRegistration()}
+            disabled={isPending || unavailable}
+            disabledReason={unavailableReason}
+            onClick={() => void onRegister()}
             aria-label={t("events.going")}
           >
             {t("events.going")}
@@ -472,6 +517,30 @@ function EventAttendeesSection({ eventId }: { eventId: number }) {
         overflowLabel={t("events.andOthersCount", { count: overflowCount })}
       />
     </Section>
+  );
+}
+
+/**
+ * The actions everyone sees, inert, while the event loads. Members who manage
+ * the event see more once it arrives.
+ */
+export function EventActionsPlaceholder() {
+  const { t } = useTranslation();
+  return (
+    <Stack direction="horizontal" gap={2} wrap data-slot="event-actions" aria-hidden="true">
+      <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
+        <Calendar className="size-4" />
+        {t("common.addToCalendar")}
+      </Button>
+      <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
+        <Share2 className="size-4" />
+        {t("common.share")}
+      </Button>
+      <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
+        <Flag className="size-4" />
+        {t("common.report")}
+      </Button>
+    </Stack>
   );
 }
 
@@ -624,9 +693,9 @@ export function EventDetailsBody({
   const { t } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-[320px_minmax(0,1fr)] md:grid-rows-[auto_1fr] md:items-start md:gap-x-8">
+    <div className={EVENT_DETAILS_LAYOUT.grid}>
       <div
-        className="mx-auto w-full max-w-sm select-none md:col-start-1 md:mx-0"
+        className={EVENT_DETAILS_LAYOUT.poster}
         onDragStart={(dragEvent) => dragEvent.preventDefault()}
       >
         <EventCardImage
@@ -636,17 +705,17 @@ export function EventDetailsBody({
         />
       </div>
 
-      <div className="contents md:col-start-2 md:row-span-2 md:row-start-1 md:flex md:flex-col md:gap-6">
-        <Stack gap={2} className="order-1">
+      <div className={EVENT_DETAILS_LAYOUT.details}>
+        <Stack gap={2} className="order-1" data-skeleton-key="event-title">
           {renderTitle ? (
             renderTitle(event.title)
           ) : (
-            <h1 className="text-2xl font-bold leading-tight sm:text-3xl">{event.title}</h1>
+            <h1 className={EVENT_DETAILS_LAYOUT.title}>{event.title}</h1>
           )}
           <AddedAt value={event.added_at} timeZone={getSchoolTimezone(event.school)} />
         </Stack>
 
-        <Stack gap={6} className="order-3">
+        <Stack gap={6} className="order-3" data-skeleton-key="event-facts">
           <FormGrid columns={2} collapse={false}>
             <EventDateCell event={event} />
             <EventLocationCell event={event} />
@@ -657,14 +726,14 @@ export function EventDetailsBody({
           <EventAdmissionCard event={event} school={school} />
         </Stack>
 
-        <Stack gap={6} className="order-4">
+        <Stack gap={6} className="order-4" data-skeleton-key="event-about">
           <EventAboutSection event={event} isFetchingDetails={isFetchingDetails} />
 
           <EventMapSection event={event} school={school} />
         </Stack>
       </div>
 
-      <Stack gap={6} className="order-2 md:col-start-1">
+      <Stack gap={6} className={EVENT_DETAILS_LAYOUT.sidebar} data-skeleton-key="event-host">
         <Section variant="divided" title={t("events.hostedBy")} data-slot="event-host">
             <ClubBadgeLink
               clubId={event.club_id}
@@ -680,6 +749,27 @@ export function EventDetailsBody({
         <EventAttendeesSection eventId={event.id} />
       </Stack>
     </div>
+  );
+}
+
+/** Number of other events "More events" suggests. */
+const SIMILAR_EVENT_COUNT = 4;
+
+/**
+ * "More events" while the school's feed loads. It holds the section's place,
+ * so the cards fill it in rather than appearing below a page that then grows.
+ */
+export function EventDetailsSimilarEventsSkeleton({ ref }: { ref?: Ref<HTMLElement> }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Separator />
+      <Section ref={ref} title={t("events.moreEvents")} aria-busy="true">
+        <div className={CARD_GRID_CLASS}>
+          {Array.from({ length: SIMILAR_EVENT_COUNT }, (_, index) => <EventCardSkeleton key={index} />)}
+        </div>
+      </Section>
+    </>
   );
 }
 
@@ -712,7 +802,7 @@ export function EventDetailsSimilarEvents({
         const hashB = ((seed * b.id) % 1000) / 1000;
         return hashA - hashB;
       })
-      .slice(0, 4);
+      .slice(0, SIMILAR_EVENT_COUNT);
   }, [currentTimeMs, event.id, events]);
 
   if (similarEvents.length === 0) {

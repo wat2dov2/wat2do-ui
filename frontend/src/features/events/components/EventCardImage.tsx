@@ -78,6 +78,7 @@ export function EventCardImage({
       <div
         ref={surfaceRef}
         data-slot="event-card-image"
+        data-skeleton-key={variant === "card" ? "card-image" : "event-poster"}
         data-variant={variant}
         className={cn(
           "relative shrink-0 overflow-hidden",

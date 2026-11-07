@@ -84,7 +84,7 @@ function ClubDetailsContent({
 
   return (
     <>
-      <Container size="lg">
+      <Container size="lg" data-slot="club-details">
         <Stack gap={6}>
           <PageHeader
             back={{
@@ -143,7 +143,7 @@ function ClubDetailsContent({
             }
           />
 
-          <Stack gap={3}>
+          <Stack gap={3} data-skeleton-key="club-meta">
             <ClubCategoryBadges
               categories={club.categories}
               badgeClassName="text-xs px-2.5"
@@ -202,7 +202,7 @@ function ClubDetailsContent({
           <Separator />
 
           <Tabs defaultValue="events">
-            <TabsList aria-label={t("clubs.activityTabsLabel")}>
+            <TabsList data-skeleton-key="club-tabs" aria-label={t("clubs.activityTabsLabel")}>
               <TabsTrigger value="events">{t("navigation.events")}</TabsTrigger>
               <TabsTrigger value="positions">
                 {t("navigation.positions")}

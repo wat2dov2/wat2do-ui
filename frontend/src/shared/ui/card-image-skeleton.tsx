@@ -13,6 +13,7 @@ export function CardImageSkeleton() {
     <div
       ref={surfaceRef}
       data-slot="card-image-skeleton"
+      data-skeleton-key="card-image"
       aria-hidden="true"
       className="relative shrink-0 overflow-hidden rounded-t-xl rounded-br-xl"
       style={{ height: EVENT_CARD_IMAGE_HEIGHT }}

@@ -4,9 +4,15 @@ import { Stack } from "@/shared/layout/stack";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { Skeleton, SkeletonLine } from "@/shared/ui/skeleton";
 import { formatRelativeTime } from "@/shared/utils/relativeTime";
 import type { ApiLatestAddedItem } from "@/shared/generated";
+
+/**
+ * Stands in for the count while it loads. Three digits is the common size of a
+ * campus feed or directory, so the label beside it usually stays put.
+ */
+const PLACEHOLDER_COUNT = 100;
 
 interface PageCountHeadingProps {
   count: number | null;
@@ -22,13 +28,19 @@ export function PageCountHeading({ count, label, latest, currentTimeMs, level = 
   const Heading = level === 1 ? "h1" : "h2";
   return (
     <Stack gap={1} className="sm:gap-2">
-    <Heading aria-busy={count === null} aria-label={count === null ? label : `${count.toLocaleString(i18n.language)} ${label}`} className="inline-flex items-baseline gap-2 text-left text-2xl font-bold text-foreground sm:text-3xl">
-      {/* Cap height follows the visible digits; the font em includes empty vertical space. */}
-      {count === null ? <Skeleton className="h-[1cap] w-[2ch] shrink-0" aria-hidden="true" /> : <NumberFlow value={count} respectMotionPreference />}
-      <span>{label}</span>
+    <Heading data-skeleton-key="count-heading" aria-busy={count === null} aria-label={count === null ? label : `${count.toLocaleString(i18n.language)} ${label}`} className="inline-flex items-baseline gap-2 text-left text-2xl font-bold text-foreground sm:text-3xl">
+      {/* Tabular digits keep the label still as the count changes. The placeholder is an invisible
+          count, so it takes the real count's box; the bar covers the digits' cap height. */}
+      {count === null ? (
+        <span aria-hidden="true" className="relative inline-flex shrink-0 items-center">
+          <NumberFlow value={PLACEHOLDER_COUNT} className="invisible tabular-nums" />
+          <Skeleton className="absolute inset-x-0 h-[1cap]" />
+        </span>
+      ) : <NumberFlow value={count} className="tabular-nums" respectMotionPreference />}
+      <span data-skeleton-key="count-label">{label}</span>
     </Heading>
     {latest !== undefined && (count === null || latest) ? (
-      <Stack direction="horizontal" align="center" gap={2} data-slot="latest-added-item">
+      <Stack direction="horizontal" align="center" gap={2} data-slot="latest-added-item" data-skeleton-key="latest-added">
         {latest ? <>
           <Badge variant="new" size="sm" className="shrink-0">{t("events.new")}</Badge>
           {/* The club's picture sits closer to its own title than the badge does. min-w-0 lets the title shrink. */}
@@ -45,11 +57,17 @@ export function PageCountHeading({ count, label, latest, currentTimeMs, level = 
             </Button>
           </Stack>
         </> : (
-          <Skeleton className="my-3 flex w-64 max-w-full" aria-hidden="true">
-            <Button asChild variant="link" size="inline" className="invisible leading-tight sm:leading-normal">
-              <span>{t("events.new")}</span>
-            </Button>
-          </Skeleton>
+          <>
+            <Skeleton className="flex shrink-0 rounded-full" aria-hidden="true">
+              <Badge variant="new" size="sm" className="invisible">{t("events.new")}</Badge>
+            </Skeleton>
+            <Stack direction="horizontal" align="center" gap={1} className="min-w-0" aria-hidden="true">
+              <Skeleton className="size-5 shrink-0 rounded-full" />
+              <Button asChild variant="link" size="inline" className="w-64 min-w-0 max-w-full shrink leading-tight sm:leading-normal">
+                <span><SkeletonLine /></span>
+              </Button>
+            </Stack>
+          </>
         )}
       </Stack>
     ) : null}

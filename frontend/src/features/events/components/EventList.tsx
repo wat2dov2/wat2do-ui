@@ -10,7 +10,7 @@ import {
   getEventDateSection,
   type EventDateSection,
 } from "@/shared/utils/date";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { SkeletonLine } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import type { EventStats } from "@/features/events/api/events.api";
 import { EmptyState } from "@/shared/feedback";
@@ -21,6 +21,8 @@ import { useProgressiveList } from "@/shared/hooks/useProgressiveList";
 import { controlBox } from "@/shared/config/controlBox";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import imageDelivery from "../../../../../backend/controlbox/image_delivery.json" with { type: "json" };
+
+const DATE_SECTION_HEADING_CLASS = "text-base font-normal tracking-normal text-foreground";
 
 interface EventListProps {
   events: Event[];
@@ -168,9 +170,13 @@ export function EventList({
     return (
       <div className="space-y-5" aria-busy="true">
         <section className="space-y-2.5">
-          <Skeleton className="h-5 w-28 rounded-lg" />
+          {groupByDateSections ? (
+            <h2 data-skeleton-key="date-heading" className={DATE_SECTION_HEADING_CLASS}>
+              <SkeletonLine className="w-28" />
+            </h2>
+          ) : null}
           <div className={CARD_GRID_CLASS}>
-            {Array.from({ length: 12 }).map((_, i) => (
+            {Array.from({ length: controlBox.eventDiscovery.initialRenderCount }, (_, i) => (
               <EventCardSkeleton key={i} />
             ))}
           </div>
@@ -215,7 +221,7 @@ export function EventList({
           const label = sectionLabel(group.section);
           return (
             <section key={group.key} className="space-y-2.5" aria-label={label}>
-              <h2 className="text-base font-normal tracking-normal text-foreground">
+              <h2 data-skeleton-key="date-heading" className={DATE_SECTION_HEADING_CLASS}>
                 {label}
               </h2>
               <EventCardsGrid

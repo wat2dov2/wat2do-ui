@@ -6,6 +6,11 @@ Use Node 22, matching CI.
 - `npm run test:browser` runs the browser journeys against an already-running app at `http://127.0.0.1:3000`.
 - `npm run test:browser -- --list` checks browser test collection without launching anything.
 
+- `skeleton-layout.spec.ts` holds each page's data back, measures its loading state, releases the data and checks that every `data-skeleton-key` landmark keeps its box (within 1px) and that no layout shift is recorded, at 390x844 and 1440x900.
+  CI runs it in its own job against a `PLAYWRIGHT_TEST=1` build.
+  `SKELETON_LAYOUT_REPORT=1` records the numbers and before/after screenshots without failing, `SKELETON_LAYOUT_CPU_THROTTLE=4` runs it at phone speed (CI does), and `SKELETON_LAYOUT_BASE_URL` points it at an app on another port.
+  When a loading state or the page it stands in for changes, mark the matching boxes on both sides with the same `data-skeleton-key`.
+
 The browser suite uses Next's experimental test mode for server-side API fixtures.
 Run it against an app started with `PLAYWRIGHT_TEST=1`, with the local backend available for the API proxy boundary checks.
 Agents must follow the browser/server restrictions in `AGENTS.md`.

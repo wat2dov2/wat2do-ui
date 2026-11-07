@@ -18,9 +18,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           the page instead of staying pinned to the viewport. */}
       <PageFrame
         className="main-content-grid relative mt-12 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+        footer={<SiteFooter />}
       >
         {children}
-        <SiteFooter />
       </PageFrame>
 
       <div className="pointer-events-none fixed right-2 bottom-4 z-50 sm:right-4">

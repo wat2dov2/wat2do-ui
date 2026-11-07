@@ -1,13 +1,14 @@
 import { usePositionStats } from "@/features/positions/hooks/usePositionStats";
 import { useTranslation } from "react-i18next";
 import { CardEntrance } from "@/shared/ui/card-entrance";
-import { Skeleton } from "@/shared/ui/skeleton";
 import { CardImageSkeleton } from "@/shared/ui/card-image-skeleton";
+import { EventCardContentFrame, EventCardContentSkeleton } from "@/shared/ui/event-card-content";
 import { Users } from "lucide-react";
 import { EmptyState } from "@/shared/feedback/empty-state";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { PositionCard } from "@/features/positions/components/PositionCard";
 import type { Position } from "@/shared/types";
+import { controlBox } from "@/shared/config/controlBox";
 import imageDelivery from "../../../../../backend/controlbox/image_delivery.json" with { type: "json" };
 
 interface PositionListProps {
@@ -18,22 +19,14 @@ interface PositionListProps {
   emptyDescription?: string;
 }
 
-/** Mirrors EventCardSkeleton: two title lines, then the description beneath. */
+/** The position card before it loads: artwork, a one-line title, its stats line and description. */
 function PositionCardSkeleton() {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl">
+    <div className="flex h-full w-full flex-col rounded-xl" data-skeleton-key="card">
       <CardImageSkeleton />
-      <div className="flex flex-1 flex-col gap-2.5 pb-2.5 pt-3 sm:gap-3 sm:pb-3 sm:pt-4">
-        <div className="space-y-1.5">
-          <Skeleton className="h-4 w-3/4 rounded-lg" />
-          <Skeleton className="h-4 w-1/2 rounded-lg" />
-        </div>
-        <div className="space-y-1.5">
-          <Skeleton className="h-3 w-full rounded-lg" />
-          <Skeleton className="h-3 w-5/6 rounded-lg" />
-          <Skeleton className="h-3 w-2/5 rounded-lg" />
-        </div>
-      </div>
+      <EventCardContentFrame>
+        <EventCardContentSkeleton titleLines={1} descriptionLines={2} metadataLines={0} />
+      </EventCardContentFrame>
     </div>
   );
 }
@@ -42,7 +35,7 @@ function PositionCardSkeleton() {
 export function PositionListSkeleton() {
   return (
     <div className={CARD_GRID_CLASS} aria-busy="true">
-      {Array.from({ length: 8 }).map((_, index) => (
+      {Array.from({ length: controlBox.eventDiscovery.initialRenderCount }, (_, index) => (
         <PositionCardSkeleton key={index} />
       ))}
     </div>

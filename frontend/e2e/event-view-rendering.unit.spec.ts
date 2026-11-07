@@ -294,7 +294,9 @@ test("discovery headings show one latest-item placeholder without exposing place
   }));
   const loading = render(null, null);
   expect(loading).toContain('data-slot="latest-added-item"');
-  expect(loading.match(/data-slot="skeleton"/g)).toHaveLength(2);
+  // The count, then the latest item's badge, club logo and one title line.
+  expect(loading.match(/data-slot="skeleton"/g)).toHaveLength(4);
+  expect(loading.match(/data-slot="skeleton-line"/g)).toHaveLength(1);
   expect(loading).toContain("invisible");
   expect(render(null)).not.toContain('data-slot="latest-added-item"');
   expect(render(0, null)).not.toContain('data-slot="latest-added-item"');
@@ -357,7 +359,7 @@ test("event and position loading cards include the same measured New badge place
   const eventHtml = renderToStaticMarkup(createElement(EventCardSkeleton));
   const positionsHtml = renderToStaticMarkup(createElement(PositionList, { positions: [], isLoading: true, onPositionClick: () => {} }));
   expect(eventHtml.match(/data-slot="card-image-skeleton"/g)).toHaveLength(1);
-  expect(positionsHtml.match(/data-slot="card-image-skeleton"/g)).toHaveLength(8);
+  expect(positionsHtml.match(/data-slot="card-image-skeleton"/g)).toHaveLength(controlBox.eventDiscovery.initialRenderCount);
   for (const html of [eventHtml, positionsHtml]) {
     expect(html).toContain("absolute top-0 left-0");
     expect(html).toContain("invisible");

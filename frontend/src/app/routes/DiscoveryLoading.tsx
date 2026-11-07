@@ -1,55 +1,111 @@
 "use client";
 
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
-import { ClubCardSkeleton } from "@/features/clubs/components/ClubCardSkeleton";
-import { POSITION_TYPES } from "@/features/positions/api/positions.api";
-import { PageHeader, Stack } from "@/shared/layout";
-import { FilterBar } from "@/shared/layout/filter-bar";
-import { CARD_GRID_CLASS } from "@/shared/constants/ui";
-import { getEventQuickFilters, getEventFilterCategories } from "@/shared/constants/eventFilters";
-import { PageCountHeading } from "@/shared/ui/page-count-heading";
-import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
-import { Button } from "@/shared/ui/button";
+import { useRequestSchool } from "@/app/client-providers";
+import { eventFeedQueryOptions } from "@/features/events/api/events.api";
+import { EventList } from "@/features/events/components/EventList";
+import { EventsPageHeader } from "@/features/events/components/EventsPageHeader";
+import { useCurrentTime } from "@/features/events/hooks/useGoingEvents";
+import { ClubList } from "@/features/clubs/components/ClubList";
+import { ClubsPageHeader, type ClubsHeaderState } from "@/features/clubs/components/ClubsPageHeader";
+import { PositionListSkeleton } from "@/features/positions/components/PositionList";
+import { PositionsPageHeader, type PositionsHeaderState } from "@/features/positions/components/PositionsPageHeader";
+import { useSearch } from "@/features/search";
+import { resolveCampusSeasonFilters } from "@/features/search/api/filterService";
+import { Stack } from "@/shared/layout";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
-import { translateCategory } from "@/shared/utils/event";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import type { Event } from "@/shared/types";
 
-const ignoreInput = () => {};
+const ignore = () => {};
+const NO_EVENTS: Event[] = [];
+const NO_IDS: number[] = [];
 
-/** Route fallbacks show known controls without starting another feed request. */
+/*
+ * Route fallbacks render each list page's own header and its own loading grid,
+ * so the page that replaces them keeps every box in place. Controls start at
+ * the values the page itself starts with, and no feed request is made here.
+ */
+
+function EventsLoading() {
+  const { t, i18n } = useTranslation();
+  const school = useRequestSchool();
+  const { schoolBySlug } = useSchoolDirectory();
+  // Season chips are decided by the day, so the server's clock gives the same row the browser's will.
+  const [renderedAtMs] = useState(() => Date.now());
+  const currentTimeMs = useCurrentTime() ?? renderedAtMs;
+  // A feed this visit already holds decides the same chips the page will show; nothing is fetched here.
+  const { data: feed } = useQuery({ ...eventFeedQueryOptions(school), enabled: false });
+  const search = useSearch({
+    events: feed?.items ?? NO_EVENTS,
+    eventsReady: feed !== undefined,
+    goingEventIds: NO_IDS,
+    goingCounts: null,
+    school,
+    currentTimeMs,
+  });
+  // Without a feed, the calendar still decides most season chips; chips that need the feed's events
+  // (varsity games, exam de-stress) can only follow it.
+  const campusSeasonOptions = feed ? search.campusSeasonOptions : resolveCampusSeasonFilters(
+    schoolBySlug.get(school), currentTimeMs, i18n.resolvedLanguage ?? i18n.language, [], NO_EVENTS,
+  ).options;
+  return (
+    <>
+      <EventsPageHeader
+        filters={{ ...search, campusSeasonOptions }}
+        school={school}
+        view="grid"
+        onViewChange={ignore}
+        count={null}
+        latest={null}
+        disabled
+        eventStatsReady={false}
+        goingEventsReady={false}
+      />
+      <Stack as="main" className="relative z-10 w-full" role="main" aria-label={t("search.ariaLabel")}>
+        <EventList events={NO_EVENTS} eventStats={null} isLoading />
+      </Stack>
+    </>
+  );
+}
+
+function ClubsLoading() {
+  const { club_categories: allCategories } = useAppConstants();
+  const state: ClubsHeaderState = {
+    appliedQueryKey: "", addedSince: null, setAddedSince: ignore, clearNew: ignore,
+    searchQuery: "", setSearchQuery: ignore, submitSearchQuery: ignore, clearSearchQuery: ignore,
+    minEvents: 0, setMinEvents: ignore, selectedCategories: [], toggleCategory: ignore,
+    allCategories, activeTab: "all", setActiveTab: ignore,
+  };
+  return (
+    <>
+      <ClubsPageHeader state={state} count={null} disabled />
+      <ClubList clubs={[]} savedClubIds={NO_IDS} isLoading />
+    </>
+  );
+}
+
+const POSITIONS_STATE: PositionsHeaderState = {
+  appliedQueryKey: "", searchQuery: "", setSearchQuery: ignore, submitSearch: ignore, clearSearch: ignore,
+  positionType: "all", setPositionType: ignore, addedSince: null, setAddedSince: ignore, clearNew: ignore,
+};
+
+function PositionsLoading() {
+  return (
+    <>
+      <PositionsPageHeader state={POSITIONS_STATE} count={null} latest={null} disabled />
+      <PositionListSkeleton />
+    </>
+  );
+}
+
+/** The events, clubs or positions page before its data arrives. */
 export function DiscoveryLoading({ resource }: { resource: "events" | "clubs" | "positions" }) {
-  const { t } = useTranslation();
-  const constants = useAppConstants();
-  const isEvents = resource === "events";
-  const isClubs = resource === "clubs";
-  const label = isEvents ? t("events.upcomingEventCount", { count: 2 })
-    : isClubs ? t("clubs.clubLabel", { count: 2 }) : t("positions.position", { count: 2 });
-  const categories = isClubs ? constants.club_categories : getEventFilterCategories(constants.event_categories);
-
   return (
     <Stack gap={2} data-slot="discovery-loading" aria-busy="true">
-      <PageHeader variant="listing">
-        <PageCountHeading count={null} label={label} latest={isClubs ? undefined : null} />
-        <SubmittedSearchInput
-          size="lg" value="" onChange={ignoreInput} onSubmit={ignoreInput} onClear={ignoreInput} disabled
-          placeholder={isEvents ? t("search.placeholder") : t(`${resource}.searchPlaceholder`)}
-          submitLabel={t("common.search")} clearLabel={t("search.clear")}
-        />
-        <FilterBar disabled>
-          {isEvents ? getEventQuickFilters().map(config => (
-            "labelKey" in config ? <Button key={config.id} variant="outline" size="sm" disabled>{config.id === "minGoing" ? `>${t(config.labelKey, { count: 0 })}` : t(config.labelKey)}</Button> : null
-          )) : !isClubs ? <Button variant="outline" size="sm" disabled>{t("common.newlyAddedFilter.last24Hours")}</Button> : null}
-          {resource === "positions" ? POSITION_TYPES.map(type => (
-            <Button key={type} variant="outline" size="sm" disabled>{t(`positions.types.${type}`)}</Button>
-          )) : categories.map(category => (
-            <Button key={category} variant="outline" size="sm" disabled>{translateCategory(category, t)}</Button>
-          ))}
-        </FilterBar>
-      </PageHeader>
-      <div className={CARD_GRID_CLASS} aria-hidden="true">
-        {Array.from({ length: 12 }, (_, index) => isClubs
-          ? <ClubCardSkeleton key={index} /> : <EventCardSkeleton key={index} />)}
-      </div>
+      {resource === "events" ? <EventsLoading /> : resource === "clubs" ? <ClubsLoading /> : <PositionsLoading />}
     </Stack>
   );
 }

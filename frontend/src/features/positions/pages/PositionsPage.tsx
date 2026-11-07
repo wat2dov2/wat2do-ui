@@ -5,13 +5,9 @@ import { useTranslation } from "react-i18next";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
 import { PositionList } from "@/features/positions/components/PositionList";
 import { usePositionsPage } from "@/features/positions/hooks/usePositionsPage";
-import { PageHeader, Stack } from "@/shared/layout";
-import { FilterBar } from "@/shared/layout/filter-bar";
-import { PageCountHeading } from "@/shared/ui/page-count-heading";
-import { SubmittedSearchInput } from "@/shared/ui/submitted-search-input";
+import { PositionsPageHeader } from "@/features/positions/components/PositionsPageHeader";
+import { Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
-import { NewlyAddedFilterButton } from "@/shared/ui/newly-added-filter-button";
-import { POSITION_TYPES } from "@/features/positions/api/positions.api";
 import { EmptyState } from "@/shared/feedback/empty-state";
 import { PositionDetailsDrawer } from "@/features/positions/components/PositionDetailsDrawer";
 
@@ -30,43 +26,12 @@ export function PositionsPage({
 
   return (
     <Stack gap={2}>
-      <PageHeader variant="listing">
-        <PageCountHeading
-          count={positionsPage.isLoading ? null : positionsPage.total}
-          label={t("positions.position", { count: positionsPage.total })}
-          latest={positionsPage.latestAddedPosition ? { item: positionsPage.latestAddedPosition, onSelect: positionsPage.searchLatest } : null}
-        />
-        <SubmittedSearchInput
-          size="lg"
-          value={positionsPage.searchQuery}
-          onChange={positionsPage.setSearchQuery}
-          onSubmit={positionsPage.submitSearch}
-          onClear={positionsPage.clearSearch}
-          placeholder={t("positions.searchPlaceholder")}
-          submitLabel={t("common.search")}
-          clearLabel={t("positions.clearSearch")}
-        />
-        <FilterBar appliedQueryKey={positionsPage.appliedQueryKey} disabled={positionsPage.isLoading || positionsPage.isError} data-testid="position-filter-scroll" aria-label={t("positions.filterByType")}>
-          <NewlyAddedFilterButton
-            value={positionsPage.addedSince}
-
-            onValueChange={positionsPage.setAddedSince}
-            onClear={positionsPage.clearNew}
-          />
-          {POSITION_TYPES.map((positionType) => (
-            <Button
-              activation="click"
-              key={positionType}
-              size="sm"
-              variant={positionsPage.positionType === positionType ? "primary" : "outline"}
-              aria-pressed={positionsPage.positionType === positionType}
-              onClick={() => positionsPage.setPositionType(positionsPage.positionType === positionType ? "all" : positionType)}
-            >
-              {t(`positions.types.${positionType}`)}
-            </Button>
-          ))}
-        </FilterBar>
-      </PageHeader>
+      <PositionsPageHeader
+        state={positionsPage}
+        count={positionsPage.isLoading ? null : positionsPage.total}
+        latest={positionsPage.latestAddedPosition ? { item: positionsPage.latestAddedPosition, onSelect: positionsPage.searchLatest } : null}
+        disabled={positionsPage.isLoading || positionsPage.isError}
+      />
 
       {positionsPage.isError ? (
         <EmptyState

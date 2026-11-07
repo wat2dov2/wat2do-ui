@@ -5,10 +5,23 @@ import { Badge } from "@/shared/ui/badge";
 import { Link } from "@/shared/ui/link";
 import { TruncatedText } from "@/shared/ui/truncated-text";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
+import { Skeleton, SkeletonLine } from "@/shared/ui/skeleton";
 import type { ApiEventSummaryResponse } from "@/shared/generated";
 
 const CLUB_NAME_CLASS = "max-w-56 flex-1 font-bold";
 const CLUB_BADGE_CLASS = "tracking-normal flex min-w-0 max-w-full items-center gap-1";
+
+/** The host badge before its event loads: the logo and a name-length line. */
+export function ClubBadgeSkeleton() {
+  return (
+    <Badge asChild variant="plain" size="inline" className={CLUB_BADGE_CLASS} aria-hidden="true">
+      <span data-slot="club-badge">
+        <Skeleton className="size-5 shrink-0 rounded-full" />
+        <SkeletonLine className="w-32" />
+      </span>
+    </Badge>
+  );
+}
 
 interface ClubBadgeLinkProps {
   clubName: string;

@@ -24,6 +24,19 @@ import type { Club } from "@/shared/types";
 import { toast } from "@/shared/hooks/use-toast";
 import { clubPagePath, ROUTES } from "@/shared/constants/routes";
 
+/** The card's layout, shared with its loading skeleton so both take the same boxes. */
+export const CLUB_CARD_CLASSES = {
+  card: "group relative flex h-full flex-col gap-4 rounded-2xl border border-border bg-surface p-4 text-foreground",
+  top: "flex items-start justify-between gap-3",
+  // Room for a two-line name and its handle (2 x 22px + 4px + 20px), so short names keep the card's height.
+  name: "flex min-h-[4.25rem] min-w-0 flex-col gap-1",
+  title: "line-clamp-2 text-base leading-snug font-medium tracking-[-0.01em] text-balance",
+  handle: "truncate text-sm text-muted-foreground",
+  // One line on every card: the category shortens before the counts, so a row never grows when
+  // one club's counts run long and the loading grid can hold every card's exact height.
+  meta: "mt-auto flex min-w-0 items-center gap-x-3 overflow-hidden text-sm text-muted-foreground",
+};
+
 /** Controls inside the card act on their own and never open the club. */
 const CARD_ACTION_SELECTOR = "[data-club-card-action]";
 
@@ -97,6 +110,7 @@ function ClubCardComponent({
   return (
     <article
       data-club-card
+      data-skeleton-key="card"
       data-club-id={club.id}
       role="button"
       tabIndex={0}
@@ -110,10 +124,10 @@ function ClubCardComponent({
           handleCardActivate();
         }
       }}
-      className="group relative flex h-full cursor-pointer flex-col gap-4 rounded-2xl border border-border bg-surface p-4 text-foreground transition-[border-color,box-shadow] duration-200 hover:border-border-hover hover:shadow-[0_10px_30px_-18px_rgb(0_0_0/0.35)]"
+      className={cn(CLUB_CARD_CLASSES.card, "cursor-pointer transition-[border-color,box-shadow] duration-200 hover:border-border-hover hover:shadow-[0_10px_30px_-18px_rgb(0_0_0/0.35)]")}
     >
 
-      <div className="flex items-start justify-between gap-3">
+      <div className={CLUB_CARD_CLASSES.top} data-skeleton-key="card-top">
         <AvatarStack size="lg" avatars={[{ src: club.logo_url ?? "", name: club.club_name }]} />
         <div data-club-card-action {...stopCardActivation}>
           {managesClub ? (
@@ -138,20 +152,20 @@ function ClubCardComponent({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-1">
-        <h3 className="line-clamp-2 text-base leading-snug font-medium tracking-[-0.01em] text-balance">
+      <div className={CLUB_CARD_CLASSES.name}>
+        <h3 className={CLUB_CARD_CLASSES.title}>
           <NextLink href={clubPagePath(club.id)} className="outline-none">
             {club.club_name}
           </NextLink>
         </h3>
         {showHandle ? (
-          <p data-slot="club-card-handle" className="truncate text-sm text-muted-foreground">
+          <p data-slot="club-card-handle" className={CLUB_CARD_CLASSES.handle}>
             {socialHandle}
           </p>
         ) : null}
       </div>
 
-      <div className="mt-auto flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+      <div data-skeleton-key="card-meta" className={CLUB_CARD_CLASSES.meta}>
         {category ? (
           <button
             type="button"
@@ -161,10 +175,10 @@ function ClubCardComponent({
               event.stopPropagation();
               onCategoryClick?.(category);
             }}
-            className="flex min-w-0 shrink-0 cursor-pointer items-center gap-1.5 transition-colors hover:text-foreground"
+            className="flex min-w-0 cursor-pointer items-center gap-1.5 transition-colors hover:text-foreground"
           >
             <span aria-hidden="true" className="size-2 shrink-0 rounded-full" style={{ backgroundColor: categoryColor }} />
-            {translateCategory(category, t)}
+            <span className="truncate">{translateCategory(category, t)}</span>
           </button>
         ) : null}
         {counts.map((count) => (
