@@ -22,8 +22,9 @@ export function computeEventBadges(
   const badges: CardBadge[] = [];
   if (event.cancelled) badges.push({ text: t("common.cancelled"), size: "sm", icon: X });
   if (event.price != null && event.price > 0) badges.push({ text: `$${event.price}`, size: "md" });
-  if (event.food?.length) badges.push({ text: translateFood(event.food[0], t), size: "md", icon: Utensils });
-  if (event.registration) badges.push({ text: t("common.registration"), size: "md", icon: Ticket });
+  // Food and registration show as icons on cards; the text stays their label (and the slides' text).
+  if (event.food?.length) badges.push({ text: translateFood(event.food[0], t), size: "md", icon: Utensils, iconOnly: true });
+  if (event.registration) badges.push({ text: t("common.registration"), size: "md", icon: Ticket, iconOnly: true, mark: "!" });
   return badges;
 }
 

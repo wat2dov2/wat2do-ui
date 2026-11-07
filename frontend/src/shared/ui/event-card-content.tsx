@@ -11,9 +11,14 @@ import { cn } from "@/shared/lib/utils";
 import type { ComponentProps } from "react";
 
 export interface CardBadge {
+  /** Always set: the badge's meaning, shown as text or, for an icon-only badge, as its label. */
   text: string;
   size?: "sm" | "md";
   icon?: LucideIcon;
+  /** Cards show only the icon (and `mark`); the text becomes the tooltip and accessible name. */
+  iconOnly?: boolean;
+  /** A short sign drawn before the icon of an icon-only badge, such as "!" for required. */
+  mark?: string;
 }
 
 const EMPTY_BADGES: readonly CardBadge[] = [];
@@ -208,6 +213,24 @@ export function EventCardContent({
               >
                 {badges.map((badge) => {
                   const Icon = badge.icon;
+                  if (badge.iconOnly && Icon) {
+                    return (
+                      <Badge
+                        key={badge.text}
+                        variant="outline"
+                        size={badge.size ?? "sm"}
+                        role="img"
+                        aria-label={badge.text}
+                        title={badge.text}
+                        className={cn("max-w-full gap-0.5", badgeClassName)}
+                      >
+                        {badge.mark ? (
+                          <span aria-hidden="true" className="font-bold leading-none">{badge.mark}</span>
+                        ) : null}
+                        <Icon aria-hidden="true" className="size-3 shrink-0" />
+                      </Badge>
+                    );
+                  }
                   return (
                     <Badge
                       key={badge.text}
