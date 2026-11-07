@@ -204,7 +204,7 @@ The admin's carousel routes are Rust (`rust/src/api/routes/instagram_publishing`
 The Publish button claims the batch in Rust, then starts `wat2do-instagram publish-batch <id>`, the binary beside `wat2do-api`, as a detached process from the API's working directory, and a process that cannot start or crashes marks the batch failed.
 Liking, reposting and adding music to a published carousel stay in the Python emulator worker (`services/instagram_publishing/music.py`).
 Each `wat2do-api` server also runs the map location worker (`rust/src/map_locations.rs`), which looks up waiting `map_locations` with Nominatim; `claim_map_location` keeps every server to one lookup at a time between them.
-Uploads (`/uploads` and the `/ai` poster readers) are checked and stored in Cloudflare R2 (with each poster's thumbnail) by `rust/src/storage.rs`, and posters are read by OpenAI with `backend/services/scraper/extraction_prompt.txt`, the template the vestigial Python extractor renders too; Python's `storage_service` remains only for that pipeline and scripts.
+Uploads (`/uploads` and the `/ai` poster readers) are checked and stored in Cloudflare R2 (with the thumbnail of each poster and raster club logo) by `rust/src/storage.rs`, and posters are read by OpenAI with `backend/services/scraper/extraction_prompt.txt`, the template the vestigial Python extractor renders too; Python's `storage_service` remains only for that pipeline and scripts.
 Read-only production checks must `SET default_transaction_read_only = on`, a 10 second `statement_timeout` and a 15 second `idle_in_transaction_session_timeout` on every connection (at most 2), confirm read-only with `SHOW`, run one at a time and never retry a failed run.
 
 ### Club tickets and money

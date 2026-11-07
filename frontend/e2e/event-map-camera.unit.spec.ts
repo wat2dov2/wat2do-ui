@@ -12,8 +12,8 @@ test("map opens on campus, flies back to campus, and keeps its camera through fe
     module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
   } }).outputText;
   const require = createRequire(filename);
-  const listing = { id: 1, title: "Cooking", club: "Cooking club", location: "Student Life Centre", occurrences: [] } as unknown as Event;
-  const secondListing = { ...listing, id: 2, title: "Dinner" };
+  const listing = { id: 1, title: "Cooking", club: "Cooking club", club_logo_url: "cooking.png", location: "Student Life Centre", occurrences: [] } as unknown as Event;
+  const secondListing = { ...listing, id: 2, title: "Dinner", source_image_url: "dinner.jpg" };
   let markerEvents = [listing, secondListing];
   const states: unknown[] = [];
   const refs: { current: unknown }[] = [];
@@ -44,6 +44,7 @@ test("map opens on campus, flies back to campus, and keeps its camera through fe
     if (id === "react-i18next") return { useTranslation: () => ({ t: (key: string, args?: { count: number; location: string }) => args && key.includes("cluster") ? `${args.count} events ${key.endsWith("At") ? "at" : "near"} ${args.location}` : key, i18n: { language: "en" } }) };
     if (id.endsWith("controlBox")) return { controlBox: { eventDiscovery: { views: { map_initial_zoom: 14, map_style: "https://tiles.openfreemap.org/styles/liberty", map_marker_preview_count: 3 } } } };
     if (id.endsWith("utils/event")) return { getEventImageStatus: () => "default" };
+    if (id.endsWith("utils/media")) return { posterThumbnailUrl: (src: string) => `${src}#poster-thumbnail`, logoThumbnailUrl: (src: string) => `${src}#logo-thumbnail` };
     if (id.endsWith("utils/date")) return { formatCardDate: () => "Today", formatCardTime: () => "6 PM", isEventHappeningNow: () => false };
     return primitive;
   } });
@@ -104,6 +105,13 @@ test("map opens on campus, flies back to campus, and keeps its camera through fe
   const marker = find(tree, node => node.props.className === "event-map-marker")!;
   expect(marker.props.activation).toBe("click");
   expect(find(marker, node => node.type === "LazyImage")?.props.width).toBe(64);
+  // 64 px markers show the stored thumbnail of the poster, or else of the club's logo.
+  const markerImages = (find(marker, node => node.props.className === "event-map-poster-stack")!.props.children as Node[])
+    .map(poster => find(poster, node => node.type === "LazyImage")!.props);
+  expect(markerImages.map(image => [image.src, image.fallbackSrc])).toEqual([
+    ["cooking.png#logo-thumbnail", "cooking.png"],
+    ["dinner.jpg#poster-thumbnail", "dinner.jpg"],
+  ]);
   let stopped = false;
   (marker.props.onClick as (event: object) => void)({ stopPropagation() { stopped = true; } });
   expect(stopped).toBe(true);

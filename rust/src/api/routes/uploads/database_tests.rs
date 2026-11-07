@@ -226,6 +226,7 @@ async fn a_club_logo_and_an_avatar_point_at_their_new_images() {
         .unwrap();
     assert_eq!(logo, body["url"].as_str().unwrap());
     assert!(logo.starts_with(&format!("{BASE}/organization-logos/")));
+    let logo_key = logo.strip_prefix(&format!("{BASE}/")).unwrap().to_owned();
 
     let (status, body) = upload(&state, "/uploads/avatar", &token).await;
     assert_eq!(status, StatusCode::OK, "{body}");
@@ -236,11 +237,61 @@ async fn a_club_logo_and_an_avatar_point_at_their_new_images() {
         .unwrap();
     assert_eq!(avatar, body["url"].as_str().unwrap());
     let methods: Vec<(String, String)> = requests(&recorder);
-    assert_eq!(methods.len(), 3, "{methods:?}");
-    assert_eq!(methods[0].0, "PUT");
-    assert_eq!(methods[1].0, "PUT");
+    assert_eq!(methods.len(), 4, "{methods:?}");
+    // The logo goes with its thumbnail, stored first; a profile photo has none.
     assert_eq!(
-        methods[2],
+        methods[0],
+        ("PUT".to_owned(), crate::storage::thumbnail_key(&logo_key))
+    );
+    assert_eq!(methods[1], ("PUT".to_owned(), logo_key));
+    assert_eq!(methods[2].0, "PUT");
+    assert_eq!(
+        methods[3],
         ("DELETE".to_owned(), "avatars/old-face.png".to_owned())
+    );
+}
+
+#[tokio::test]
+async fn a_replaced_club_logo_is_deleted_with_its_thumbnail() {
+    let Some(db) = database() else { return };
+    let (state, recorder) = state(db.clone());
+    let (owner, token) = user(&db, "user", None).await;
+    let raster = club(
+        &db,
+        owner,
+        &format!("{BASE}/organization-logos/old-logo.png"),
+    )
+    .await;
+    let vector = club(
+        &db,
+        owner,
+        &format!("{BASE}/organization-logos/old-logo.svg"),
+    )
+    .await;
+
+    for club_id in [raster, vector] {
+        let (status, body) = upload(&state, &format!("/uploads/club-logo/{club_id}"), &token).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+    }
+    let sent = requests(&recorder);
+    // Each new logo and its thumbnail are stored before the old logo goes,
+    // with its thumbnail; an SVG logo had none.
+    let methods: Vec<&str> = sent.iter().map(|(method, _)| method.as_str()).collect();
+    assert_eq!(
+        methods,
+        ["PUT", "PUT", "DELETE", "DELETE", "PUT", "PUT", "DELETE"]
+    );
+    let deleted: Vec<&str> = sent
+        .iter()
+        .filter(|(method, _)| method == "DELETE")
+        .map(|(_, key)| key.as_str())
+        .collect();
+    assert_eq!(
+        deleted,
+        [
+            "organization-logos/old-logo.png",
+            "organization-logos/old-logo.thumb.webp",
+            "organization-logos/old-logo.svg",
+        ]
     );
 }

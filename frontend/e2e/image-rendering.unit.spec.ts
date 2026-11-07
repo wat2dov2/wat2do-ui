@@ -92,7 +92,7 @@ const { AvatarStack } = loadComponent("shared/ui/avatar-stack");
 const { SchoolPhotoCarousel } = loadComponent("features/contact/components/SchoolPhotoCarousel");
 const { EventCardImage } = loadComponent("features/events/components/EventCardImage");
 const posterUrl = `${imageDelivery.media_origin}/event-images/poster.jpg`;
-const posterThumbnailUrl = `${imageDelivery.media_origin}/event-images/poster${uploads.event_image_thumbnail_suffix}`;
+const posterThumbnailUrl = `${imageDelivery.media_origin}/event-images/poster${uploads.thumbnail_suffix}`;
 function render(component: React.ComponentType<Record<string, unknown>>, props: Record<string, unknown>) {
   return renderToStaticMarkup(createElement(ImageConfigContext.Provider, { value: imageConfig }, createElement(component, props)));
 }
@@ -172,6 +172,92 @@ test("attendee avatars are discoverable before hydration and load the stored fil
   expect(html).toContain(`src="${avatar}"`);
   expect(html).not.toContain("/_next/image");
   expect(html).toContain('aria-label="2 more attendees"');
+});
+
+test("small club logos load their stored thumbnail and keep the original as its fallback", () => {
+  const logos = `${imageDelivery.media_origin}/organization-logos`;
+  const html = render(AvatarStack, {
+    size: "lg",
+    avatars: [
+      { src: `${logos}/chess.png`, name: "Chess Club" },
+      { src: `${logos}/vector.svg`, name: "Vector Club" },
+      { src: "https://elsewhere.example/organization-logos/club.png", name: "Elsewhere Club" },
+      { src: `${imageDelivery.media_origin}/avatars/student.jpg`, name: "Taylor Q." },
+    ],
+  });
+  expect(html).toContain(`src="${logos}/chess${uploads.thumbnail_suffix}"`);
+  expect(html).not.toContain(`src="${logos}/chess.png"`);
+  // SVG logos are small already, and anything that is not one of our logos loads as given.
+  expect(html).toContain(`src="${logos}/vector.svg"`);
+  expect(html).toContain('src="https://elsewhere.example/organization-logos/club.png"');
+  expect(html).toContain(`src="${imageDelivery.media_origin}/avatars/student.jpg"`);
+
+  const media = require("../src/shared/utils/media") as typeof import("../src/shared/utils/media");
+  for (const src of [
+    `${logos}/chess${uploads.thumbnail_suffix}`,
+    `${logos}/nested/chess.png`,
+    `${logos}/LOUD.SVG`,
+    `${imageDelivery.media_origin}/event-images/poster.jpg`,
+    "",
+  ]) {
+    expect(media.logoThumbnailUrl(src)).toBe(src);
+  }
+  expect(media.logoThumbnailUrl(`${logos}/photo.webp`)).toBe(`${logos}/photo${uploads.thumbnail_suffix}`);
+  // Poster frames never shrink a logo: they draw it larger than its thumbnail.
+  expect(media.posterThumbnailUrl(`${logos}/chess.png`)).toBe(`${logos}/chess.png`);
+});
+
+test("an image whose stored thumbnail is missing loads its original, then shows its placeholder", () => {
+  interface Node { type: unknown; props: { children?: Node | Node[]; [key: string]: unknown } }
+  const filename = new URL("../src/shared/ui/lazy-image.tsx", import.meta.url);
+  const { outputText } = ts.transpileModule(readFileSync(filename, "utf8"), {
+    compilerOptions: { target: ts.ScriptTarget.ES2023, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
+  });
+  const states: unknown[] = [];
+  let stateIndex = 0;
+  const lazyImage = {} as { LazyImage: (props: object) => Node };
+  runInNewContext(outputText, {
+    exports: lazyImage,
+    require: (id: string) => {
+      if (id === "react") return {
+        useState: (initial: unknown) => {
+          const index = stateIndex++;
+          if (!(index in states)) states[index] = initial;
+          return [states[index], (value: unknown) => { states[index] = value; }];
+        },
+      };
+      if (id === "react/jsx-runtime") return require(id);
+      if (id === "next/image") return { __esModule: true, default: "Image" };
+      if (id === "@/shared/lib/utils") return { cn: (...names: unknown[]) => names.filter(Boolean).join(" ") };
+      return new Proxy({}, { get: (_, key) => String(key) });
+    },
+  });
+  const find = (node: Node, predicate: (node: Node) => boolean): Node | undefined => {
+    if (!node?.props) return undefined;
+    if (predicate(node)) return node;
+    if (typeof node.type === "function") return find(node.type(node.props), predicate);
+    return [node.props.children].flat(2).flatMap(child => child ? [find(child, predicate)] : []).find(Boolean);
+  };
+  const logo = `${imageDelivery.media_origin}/organization-logos/chess.png`;
+  const thumbnail = `${imageDelivery.media_origin}/organization-logos/chess${uploads.thumbnail_suffix}`;
+  const render = (props: object) => {
+    stateIndex = 0;
+    return lazyImage.LazyImage({ alt: "Chess Club", width: 48, height: 48, ...props });
+  };
+  const image = (props: object) => find(render(props), node => node.type === "Image");
+
+  const withFallback = { src: thumbnail, fallbackSrc: logo };
+  expect(image(withFallback)?.props.src).toBe(thumbnail);
+  (image(withFallback)!.props.onError as () => void)();
+  expect(image(withFallback)?.props.src).toBe(logo);
+  (image(withFallback)!.props.onError as () => void)();
+  expect(image(withFallback)).toBeUndefined();
+  expect(find(render(withFallback), node => node.props.role === "img")?.props["aria-label"]).toBe("Chess Club");
+
+  // An image without another source shows its placeholder on the first failure.
+  states.length = 0;
+  (image({ src: logo, fallbackSrc: logo })!.props.onError as () => void)();
+  expect(image({ src: logo, fallbackSrc: logo })).toBeUndefined();
 });
 
 test("images outside poster frames load exactly the source they were given", () => {

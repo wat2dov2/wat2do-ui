@@ -18,7 +18,7 @@ The aim is a site that is fast and costs close to nothing: nothing runs all the 
 | Static files | `wat2do-web-291667884807/_assets` (`/_next/*` and every top-level entry of `frontend/public`) |
 | Feed snapshots | Next's data cache: entries in `wat2do-web-291667884807/_cache`, tag revalidation times in DynamoDB `wat2do-web-next-tags` |
 | Media | Cloudflare R2 bucket `wat2do-media` (`infra/terraform/web/r2.tf`), keys `<bucket>/<file>`, served at `https://media.wat2do.io/<bucket>/<file>` through Cloudflare's cache (free bandwidth); the API and ingestion write it through `STORAGE_ENDPOINT_URL`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` and `STORAGE_BUCKET_NAME`; old `wat2do.io/media/...` links redirect there |
-| Images | Served as stored (`images.unoptimized`), never resized per view: every poster gets a WebP thumbnail at upload (`event-images/<stem>.thumb.webp`, `uploads.json`), which poster frames show (`frontend/src/shared/utils/media.ts`) |
+| Images | Served as stored (`images.unoptimized`), never resized per view: every poster and raster club logo gets a WebP thumbnail at upload (`<bucket>/<stem>.thumb.webp`, `uploads.json`), which poster frames and small logos show (`frontend/src/shared/utils/media.ts`), below |
 | `/api/*` | CloudFront sends it straight to `api.wat2do.io` without the `/api` prefix, except Next's own `/api/discovery`, `/api/revalidate-events` and `/api/render-instagram-slide` |
 | Visitor address | CloudFront sets `X-Wat2Do-Viewer-Ip` and the shared `X-Wat2Do-Origin-Verify` secret on every `/api` request |
 | Edge to the Mac | `cloudflared` tunnel `wat2do-mac` to `http://127.0.0.1:8080` |
@@ -71,6 +71,19 @@ Server rendering never calls the API on a visitor's behalf (its reads are public
 Each school's events, positions, clubs and branding, plus the school directory and the banner, is one `unstable_cache` entry in Next's data cache, shared by every function instance and deployment.
 The backend's notices (`EVENT_FEED_REVALIDATION_URL`, `POST /api/revalidate-events`) mark a snapshot stale; the next read still gets the old copy and rebuilds it through the API in the background, and so does a read of a snapshot older than `refresh_interval_seconds` (`backend/controlbox/discovery_cache.json`).
 CloudFront caches `/api/discovery` for `cdn_ttl_seconds` per school and resource.
+
+## Image thumbnails
+
+Every poster and raster club logo is stored with a WebP thumbnail beside it (`<bucket>/<stem>.thumb.webp`), made once by the upload or ingestion that stores it (`rust/src/storage.rs` `Thumbnail`, mirrored by `backend/services/image_thumbnails.py`) at the sizes in `backend/controlbox/uploads.json`.
+Poster frames show a poster's thumbnail, and every logo drawn at 64 CSS px or less (avatar stacks, map markers) shows its logo's, falling back to the original when the thumbnail is missing.
+SVG logos are small already and have none.
+Logos stored before 2026-11-07 get theirs from `backend/scripts/make_club_logo_thumbnails.py`, run on the Mac from the deployed release; `--dry-run` only lists and counts, and a rerun makes only what is still missing:
+
+```sh
+(set -a; . ~/wat2do-data/config/backend.env; set +a
+ cd ~/wat2do-data/releases/current/backend
+ ~/wat2do-data/venv/bin/python scripts/make_club_logo_thumbnails.py --dry-run)
+```
 
 ## Lambda concurrency
 

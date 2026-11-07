@@ -21,12 +21,16 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/shared/ui/dr
 import { DrawerBody } from "@/shared/layout/drawer-body";
 import { useMobileClickActivation } from "@/shared/hooks/useMouseDownPress";
 import { getEventImageStatus } from "@/shared/utils/event";
+import { logoThumbnailUrl, posterThumbnailUrl } from "@/shared/utils/media";
 import type { Event } from "@/shared/types";
 
 function EventMapPoster({ event, isGoing }: { event: Event; isGoing: boolean }) {
   const live = isEventHappeningNow(event);
+  const poster = event.source_image_url;
+  const logo = event.club_logo_url;
   return <span className={live ? "event-map-poster animate-pulse-live" : "event-map-poster"} data-status={getEventImageStatus(event, isGoing)} data-featured={event.featured || undefined} data-live={live || undefined}>
-    <LazyImage src={event.source_image_url ?? event.club_logo_url} alt="" width={64} height={64} loading="eager" />
+    {/* Markers are 64 px, so a poster or club logo shows its stored thumbnail. */}
+    <LazyImage src={poster ? posterThumbnailUrl(poster) : logo && logoThumbnailUrl(logo)} fallbackSrc={poster ?? logo} alt="" width={64} height={64} loading="eager" />
   </span>;
 }
 
