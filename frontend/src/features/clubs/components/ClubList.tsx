@@ -13,6 +13,8 @@ interface ClubListProps {
   isLoading?: boolean;
   onClubClick?: (club: Club) => void;
   onCategoryClick?: (category: string) => void;
+  /** The reader's query; only a change here returns the list to its first batch. */
+  resetKey?: string;
 }
 
 export function ClubList({
@@ -21,9 +23,10 @@ export function ClubList({
   isLoading = false,
   onClubClick,
   onCategoryClick,
+  resetKey,
 }: ClubListProps) {
   const savedSet = useMemo(() => new Set(savedClubIds), [savedClubIds]);
-  const { visibleItems, hasMore, loadMoreRef } = useProgressiveList(clubs, controlBox.clubManagement.initialRenderCount);
+  const { visibleItems, hasMore, loadMoreRef } = useProgressiveList(clubs, controlBox.clubManagement.initialRenderCount, resetKey);
 
   if (isLoading) {
     return (
@@ -49,6 +52,7 @@ export function ClubList({
       {visibleItems.map((club, index) => (
         <CardEntrance
           key={club.id}
+          entryKey={`club-${club.id}`}
           index={index}
           role="listitem"
           className="h-full min-w-0"

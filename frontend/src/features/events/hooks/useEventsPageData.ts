@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { discoverySnapshotSeed } from "@/shared/api/discovery.api";
 import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
@@ -50,14 +50,19 @@ export function useEventsPageData({
   const { data: eventStatsData, isSuccess: eventStatsReady } = useEventStats(schoolFilter);
   const eventStats = eventStatsReady ? (eventStatsData ?? {}) : null;
 
+  const queryRevision = useSearchStore((state) => state.queryRevision);
+  // Which events are still on (and which calendar chips apply) is decided at this
+  // time, not every minute: an event ending while the reader scrolls would pull the
+  // whole grid up under them. It moves on with the reader's next query or visit.
+  const listTimeMs = useListTime(currentTimeMs, queryRevision);
   const visibleEvents = useMemo(
     () =>
-      currentTimeMs === null
+      listTimeMs === null
         ? events
         : events.filter((event) =>
-            hasActiveEventOccurrence(event, currentTimeMs),
+            hasActiveEventOccurrence(event, listTimeMs),
           ),
-    [currentTimeMs, events],
+    [listTimeMs, events],
   );
   const latestAddedEvent = useMemo(
     () => latestVisibleAddedEvent(query.data?.latest_added_event ?? null, events, visibleEvents),
@@ -72,7 +77,7 @@ export function useEventsPageData({
     school: schoolFilter,
     // Until the browser clock starts, the snapshot's own time decides which
     // calendar chips show, so the server's filter row already has them.
-    currentTimeMs: currentTimeMs ?? query.data?.generated_at ?? null,
+    currentTimeMs: listTimeMs ?? query.data?.generated_at ?? null,
   });
 
   const orderedEvents = useMemo(
@@ -81,7 +86,6 @@ export function useEventsPageData({
   );
 
   const totalEvents = filters.filteredEvents.length;
-  const queryRevision = useSearchStore((state) => state.queryRevision);
   const { searchQuery, ...appliedFilters } = storeStatesToFilterState(filters);
   useDiscoveryQueryTracking({
     school: schoolFilter,
@@ -108,4 +112,26 @@ export function useEventsPageData({
     orderedEvents,
     allEvents: visibleEvents,
   };
+}
+
+/**
+ * The time the list is drawn at: the browser clock's first reading, then a fresh
+ * reading whenever the reader changes their query (`revision`) or comes back to the
+ * tab. Between those it holds still, so the list never reshapes on its own.
+ */
+function useListTime(nowMs: number | null, revision: number): number | null {
+  const [list, setList] = useState<{ revision: number; timeMs: number | null }>({ revision, timeMs: nowMs });
+  if (nowMs !== null && (list.timeMs === null || list.revision !== revision)) {
+    setList({ revision, timeMs: nowMs });
+  }
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === "visible") {
+        setList((current) => ({ ...current, timeMs: Date.now() }));
+      }
+    };
+    document.addEventListener("visibilitychange", refresh);
+    return () => document.removeEventListener("visibilitychange", refresh);
+  }, []);
+  return list.timeMs;
 }

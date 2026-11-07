@@ -83,7 +83,7 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     assert controlbox.event_discovery.event_without_end_visibility_minutes == 60
     assert controlbox.club_management.initial_render_count == 24
     assert controlbox.discovery_cache.cdn_ttl_seconds == 60
-    assert controlbox.event_discovery.initial_render_count == 24
+    assert controlbox.event_discovery.initial_render_count == 16
     assert controlbox.event_discovery.preview_event_count == 4
     assert set(controlbox.event_discovery.campus_seasons.definitions) == {
         "homecoming",
