@@ -118,10 +118,11 @@ function PageHeader({
       data-slot="page-header"
       data-variant={variant}
       // Paint beyond the page gutters without widening or moving the header controls. A listing
-      // header sits flush with the top of the scroller, pulled over PageFrame's top padding.
+      // header sits flush with the top of the scroller: PageFrame drops its top padding for it
+      // (a negative margin cannot do this, since a sticky box never rises above the scroller's padding).
       // A viewport layout never scrolls beneath the header, so it drops that backdrop
       // and pulls its content up beneath the last header row (the filter bar).
-      className={cn(variant === "listing" && "sticky top-0 z-20 isolate mx-0 mb-0 -mt-8 sm:-mt-12 shrink-0 bg-background pt-4 pb-2 before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:bg-background before:content-[''] in-data-[page-layout=viewport]:mt-0 in-data-[page-layout=viewport]:-mb-15 in-data-[page-layout=viewport]:bg-transparent in-data-[page-layout=viewport]:before:hidden", className)}
+      className={cn(variant === "listing" && "sticky top-0 z-20 isolate m-0 shrink-0 bg-background pt-4 pb-2 before:pointer-events-none before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:bg-background before:content-[''] in-data-[page-layout=viewport]:-mb-15 in-data-[page-layout=viewport]:bg-transparent in-data-[page-layout=viewport]:before:hidden", className)}
       {...props}
     >
       <Stack gap={variant === "listing" ? 3 : 4}>
