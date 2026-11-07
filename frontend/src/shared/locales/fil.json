@@ -602,7 +602,16 @@
         "upcomingLabel_other": "mga paparating na kaganapan ngayon",
         "newLabel": "bagong kaganapan sa nakaraang 7 araw",
         "newLabel_one": "bagong kaganapan sa nakaraang 7 araw",
-        "newLabel_other": "mga bagong kaganapan sa nakaraang 7 araw"
+        "newLabel_other": "mga bagong kaganapan sa nakaraang 7 araw",
+        "thisWeekLabel": "kaganapan ngayong linggo",
+        "thisWeekLabel_one": "kaganapan ngayong linggo",
+        "thisWeekLabel_other": "mga kaganapan ngayong linggo",
+        "freeFoodLabel": "paparating na kaganapan na may libreng pagkain",
+        "freeFoodLabel_one": "paparating na kaganapan na may libreng pagkain",
+        "freeFoodLabel_other": "mga paparating na kaganapan na may libreng pagkain",
+        "positionsLabel": "bukas na posisyon sa club",
+        "positionsLabel_one": "bukas na posisyon sa club",
+        "positionsLabel_other": "mga bukas na posisyon sa club"
       }
     },
     "different": {
@@ -685,33 +694,17 @@
       }
     },
     "features": {
-      "capture": {
-        "title": "Mula Instagram flyer hanggang kaganapan, awtomatiko",
-        "description": "Tuloy lang ang mga organisasyon sa pag-post gaya ng dati. Binabasa ng Wat2Do ang bawat flyer at kinukuha ang petsa, oras, lugar at presyo, kaya napupunta ang kaganapan sa feed nang walang kailangang mag-fill out ng form."
-      },
       "filters": {
         "title": "Libreng pagkain sa dalawang tap",
-        "description": "Mabilis na filter para sa libreng pagkain, mga employer sa campus at mga kompetisyon. O paliitin pa ayon sa araw, presyo, organisasyon at lokasyon.",
-        "mockQuery": "pizza"
+        "description": "Mabilis na filter para sa libreng pagkain, mga employer sa campus at mga kompetisyon. O paliitin pa ayon sa araw, presyo, organisasyon at lokasyon."
       },
       "reminders": {
         "title": "Hindi mo na makakalimutang pupunta ka",
-        "description": "I-tap ang Pupunta at ie-email ka ng Wat2Do mga isang oras bago ito magsimula. I-save ang mga kaganapan sa Google Calendar o iCal, o i-on ang 9 AM na email ng mga kaganapan sa araw na iyon.",
-        "mockSubject": "Magsisimula sa loob ng 1 oras: Italian cooking class",
-        "mockBody": "Kusina ng student centre, 6:00 PM. Kita-kits!",
-        "mockMorning": "Araw-araw na email tuwing 9 AM"
+        "description": "I-tap ang Pupunta at ie-email ka ng Wat2Do mga isang oras bago ito magsimula. I-save ang mga kaganapan sa Google Calendar o iCal, o i-on ang 9 AM na email ng mga kaganapan sa araw na iyon."
       },
       "clubs": {
         "title": "Hanapin ang mga organisasyong hindi mo alam na meron pala",
-        "description": "I-browse ang bawat organisasyon sa {{school}}, i-follow ang mga gusto mo, at maghanap ng mga bakanteng posisyon kapag gusto mong sumali.",
-        "mockClubOne": "Repair Club",
-        "mockClubTwo": "Salsa Society",
-        "mockClubThree": "Climbing Club",
-        "mockUpcoming": "{{count}} paparating na kaganapan",
-        "mockUpcoming_one": "{{count}} paparating na kaganapan",
-        "mockUpcoming_other": "{{count}} paparating na mga kaganapan",
-        "mockFollow": "I-follow",
-        "mockFollowing": "Naka-follow"
+        "description": "I-browse ang bawat organisasyon sa {{school}}, i-follow ang mga gusto mo, at maghanap ng mga bakanteng posisyon kapag gusto mong sumali."
       }
     },
     "faq": {

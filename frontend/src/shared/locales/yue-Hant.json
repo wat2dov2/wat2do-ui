@@ -596,7 +596,13 @@
         "upcomingLabel": "就嚟舉行嘅活動",
         "upcomingLabel_other": "就嚟舉行嘅活動",
         "newLabel": "過去 7 日新增嘅活動",
-        "newLabel_other": "過去 7 日新增嘅活動"
+        "newLabel_other": "過去 7 日新增嘅活動",
+        "thisWeekLabel": "今個星期嘅活動",
+        "thisWeekLabel_other": "今個星期嘅活動",
+        "freeFoodLabel": "有免費嘢食嘅活動",
+        "freeFoodLabel_other": "有免費嘢食嘅活動",
+        "positionsLabel": "學會招緊嘅職位",
+        "positionsLabel_other": "學會招緊嘅職位"
       }
     },
     "different": {
@@ -679,32 +685,17 @@
       }
     },
     "features": {
-      "capture": {
-        "title": "Instagram 海報自動變活動",
-        "description": "組織照舊 post 就得。Wat2Do 會讀每張海報，抽出日期、時間、地點同價錢，活動自動出現喺 feed，唔使任何人填表。"
-      },
       "filters": {
         "title": "撳兩下就搵到免費餐飲",
-        "description": "一撳就篩選免費餐飲、僱主到校同比賽。或者按日子、價錢、組織同地點再收窄範圍。",
-        "mockQuery": "薄餅"
+        "description": "一撳就篩選免費餐飲、僱主到校同比賽。或者按日子、價錢、組織同地點再收窄範圍。"
       },
       "reminders": {
         "title": "唔會再唔記得自己話要去",
-        "description": "撳「會參加」，Wat2Do 會喺活動開始前大約一個鐘 email 你。你可以將活動儲存到 Google Calendar 或 iCal，或者開啟每朝 9 點嘅當日活動 email。",
-        "mockSubject": "1 個鐘後開始：意大利煮食班",
-        "mockBody": "下午 6:00 喺學生中心廚房。到時見！",
-        "mockMorning": "每朝 9 點 email"
+        "description": "撳「會參加」，Wat2Do 會喺活動開始前大約一個鐘 email 你。你可以將活動儲存到 Google Calendar 或 iCal，或者開啟每朝 9 點嘅當日活動 email。"
       },
       "clubs": {
         "title": "發掘你從來唔知有嘅組織",
-        "description": "瀏覽 {{school}} 所有組織，follow 你鍾意嘅，想參與嘅時候仲可以搵到開放緊嘅職位。",
-        "mockClubOne": "維修會",
-        "mockClubTwo": "騷莎舞學會",
-        "mockClubThree": "攀石會",
-        "mockUpcoming": "{{count}} 個即將舉行嘅活動",
-        "mockUpcoming_other": "{{count}} 個即將舉行嘅活動",
-        "mockFollow": "追蹤",
-        "mockFollowing": "已追蹤"
+        "description": "瀏覽 {{school}} 所有組織，follow 你鍾意嘅，想參與嘅時候仲可以搵到開放緊嘅職位。"
       }
     },
     "faq": {

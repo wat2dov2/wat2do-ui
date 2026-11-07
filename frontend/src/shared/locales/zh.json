@@ -596,7 +596,13 @@
         "upcomingLabel": "即将举行的活动",
         "upcomingLabel_other": "即将举行的活动",
         "newLabel": "过去 7 天新增的活动",
-        "newLabel_other": "过去 7 天新增的活动"
+        "newLabel_other": "过去 7 天新增的活动",
+        "thisWeekLabel": "本周的活动",
+        "thisWeekLabel_other": "本周的活动",
+        "freeFoodLabel": "有免费食物的即将举行活动",
+        "freeFoodLabel_other": "有免费食物的即将举行活动",
+        "positionsLabel": "社团正在招募的职位",
+        "positionsLabel_other": "社团正在招募的职位"
       }
     },
     "different": {
@@ -679,32 +685,17 @@
       }
     },
     "features": {
-      "capture": {
-        "title": "Instagram 海报自动变成活动",
-        "description": "组织照常发帖就行。Wat2Do 会读取每张海报，提取日期、时间、地点和价格，活动直接出现在信息流里，没人需要填表。"
-      },
       "filters": {
         "title": "点两下就找到免费餐饮",
-        "description": "一键筛选免费餐饮、雇主进校园和竞赛。也可以按日期、价格、组织和地点进一步缩小范围。",
-        "mockQuery": "披萨"
+        "description": "一键筛选免费餐饮、雇主进校园和竞赛。也可以按日期、价格、组织和地点进一步缩小范围。"
       },
       "reminders": {
         "title": "再也不会忘了要去",
-        "description": "点一下“参加中”，Wat2Do 会在活动开始前大约一小时给你发邮件。你可以把活动保存到 Google Calendar 或 iCal，也可以开启每天早上 9 点的当日活动邮件。",
-        "mockSubject": "1 小时后开始：意大利烹饪课",
-        "mockBody": "下午 6:00，学生中心厨房。到时见！",
-        "mockMorning": "每天早上 9 点的邮件"
+        "description": "点一下“参加中”，Wat2Do 会在活动开始前大约一小时给你发邮件。你可以把活动保存到 Google Calendar 或 iCal，也可以开启每天早上 9 点的当日活动邮件。"
       },
       "clubs": {
         "title": "发现你从没听说过的组织",
-        "description": "浏览 {{school}} 的所有组织，关注你喜欢的，想参与的时候还能找到正在招人的职位。",
-        "mockClubOne": "维修俱乐部",
-        "mockClubTwo": "萨尔萨舞协会",
-        "mockClubThree": "攀岩俱乐部",
-        "mockUpcoming": "{{count}} 个即将到来的活动",
-        "mockUpcoming_other": "{{count}} 个即将到来的活动",
-        "mockFollow": "关注",
-        "mockFollowing": "已关注"
+        "description": "浏览 {{school}} 的所有组织，关注你喜欢的，想参与的时候还能找到正在招人的职位。"
       }
     },
     "faq": {

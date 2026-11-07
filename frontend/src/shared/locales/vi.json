@@ -596,7 +596,13 @@
         "upcomingLabel": "sự kiện sắp diễn ra",
         "upcomingLabel_other": "sự kiện sắp diễn ra",
         "newLabel": "sự kiện mới trong 7 ngày qua",
-        "newLabel_other": "sự kiện mới trong 7 ngày qua"
+        "newLabel_other": "sự kiện mới trong 7 ngày qua",
+        "thisWeekLabel": "sự kiện trong tuần này",
+        "thisWeekLabel_other": "sự kiện trong tuần này",
+        "freeFoodLabel": "sự kiện sắp tới có đồ ăn miễn phí",
+        "freeFoodLabel_other": "sự kiện sắp tới có đồ ăn miễn phí",
+        "positionsLabel": "vị trí câu lạc bộ đang tuyển",
+        "positionsLabel_other": "vị trí câu lạc bộ đang tuyển"
       }
     },
     "different": {
@@ -679,32 +685,17 @@
       }
     },
     "features": {
-      "capture": {
-        "title": "Từ poster Instagram thành sự kiện, hoàn toàn tự động",
-        "description": "Các tổ chức cứ đăng bài như mọi khi. Wat2Do đọc từng poster và lấy ra ngày, giờ, địa điểm và giá, để sự kiện tự lên bảng tin mà không ai phải điền form."
-      },
       "filters": {
         "title": "Đồ ăn miễn phí chỉ sau hai lần chạm",
-        "description": "Lọc nhanh đồ ăn miễn phí, nhà tuyển dụng tại trường và cuộc thi. Hoặc thu hẹp theo ngày, giá, tổ chức và địa điểm.",
-        "mockQuery": "pizza"
+        "description": "Lọc nhanh đồ ăn miễn phí, nhà tuyển dụng tại trường và cuộc thi. Hoặc thu hẹp theo ngày, giá, tổ chức và địa điểm."
       },
       "reminders": {
         "title": "Không bao giờ quên chỗ mình định đi",
-        "description": "Bấm \"Sẽ tham gia\" và Wat2Do sẽ gửi email cho bạn khoảng một tiếng trước khi bắt đầu. Lưu sự kiện vào Google Calendar hoặc iCal, hoặc bật email lúc 9 giờ sáng với các sự kiện trong ngày.",
-        "mockSubject": "Bắt đầu sau 1 tiếng: Lớp nấu món Ý",
-        "mockBody": "Bếp trung tâm sinh viên lúc 18:00. Hẹn gặp bạn ở đó!",
-        "mockMorning": "Email 9 giờ sáng mỗi ngày"
+        "description": "Bấm \"Sẽ tham gia\" và Wat2Do sẽ gửi email cho bạn khoảng một tiếng trước khi bắt đầu. Lưu sự kiện vào Google Calendar hoặc iCal, hoặc bật email lúc 9 giờ sáng với các sự kiện trong ngày."
       },
       "clubs": {
         "title": "Khám phá những tổ chức bạn chưa từng biết",
-        "description": "Xem mọi tổ chức tại {{school}}, theo dõi những nơi bạn thích, và tìm vị trí đang tuyển khi bạn muốn tham gia.",
-        "mockClubOne": "CLB Sửa chữa",
-        "mockClubTwo": "Hội Salsa",
-        "mockClubThree": "CLB Leo núi",
-        "mockUpcoming": "{{count}} sự kiện sắp tới",
-        "mockUpcoming_other": "{{count}} sự kiện sắp tới",
-        "mockFollow": "Theo dõi",
-        "mockFollowing": "Đang theo dõi"
+        "description": "Xem mọi tổ chức tại {{school}}, theo dõi những nơi bạn thích, và tìm vị trí đang tuyển khi bạn muốn tham gia."
       }
     },
     "faq": {

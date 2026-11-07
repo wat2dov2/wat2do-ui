@@ -608,7 +608,19 @@
         "newLabel": "evento nuevo en los últimos 7 días",
         "newLabel_one": "evento nuevo en los últimos 7 días",
         "newLabel_many": "eventos nuevos en los últimos 7 días",
-        "newLabel_other": "eventos nuevos en los últimos 7 días"
+        "newLabel_other": "eventos nuevos en los últimos 7 días",
+        "thisWeekLabel": "evento esta semana",
+        "thisWeekLabel_many": "eventos esta semana",
+        "thisWeekLabel_one": "evento esta semana",
+        "thisWeekLabel_other": "eventos esta semana",
+        "freeFoodLabel": "próximo evento con comida gratis",
+        "freeFoodLabel_many": "próximos eventos con comida gratis",
+        "freeFoodLabel_one": "próximo evento con comida gratis",
+        "freeFoodLabel_other": "próximos eventos con comida gratis",
+        "positionsLabel": "puesto abierto en un club",
+        "positionsLabel_many": "puestos abiertos en clubes",
+        "positionsLabel_one": "puesto abierto en un club",
+        "positionsLabel_other": "puestos abiertos en clubes"
       }
     },
     "different": {
@@ -691,34 +703,17 @@
       }
     },
     "features": {
-      "capture": {
-        "title": "Del cartel de Instagram al evento, automáticamente",
-        "description": "Los clubes siguen publicando como siempre. Wat2Do lee cada cartel y saca la fecha, la hora, el lugar y el precio, para que el evento llegue al feed sin que nadie rellene un formulario."
-      },
       "filters": {
         "title": "Comida gratis en dos toques",
-        "description": "Filtros rápidos para comida gratis, empleadores en el campus y competiciones. O afina por día, precio, club y ubicación.",
-        "mockQuery": "pizza"
+        "description": "Filtros rápidos para comida gratis, empleadores en el campus y competiciones. O afina por día, precio, club y ubicación."
       },
       "reminders": {
         "title": "Nunca olvides que ibas a ir",
-        "description": "Toca Asistiré y Wat2Do te envía un correo una hora antes de que empiece. Guarda eventos en Google Calendar o iCal, o activa un correo a las 9 AM con los eventos del día.",
-        "mockSubject": "Empieza en 1 hora: Clase de cocina italiana",
-        "mockBody": "Cocina del centro estudiantil a las 18:00. ¡Nos vemos allí!",
-        "mockMorning": "Correo diario a las 9 AM"
+        "description": "Toca Asistiré y Wat2Do te envía un correo una hora antes de que empiece. Guarda eventos en Google Calendar o iCal, o activa un correo a las 9 AM con los eventos del día."
       },
       "clubs": {
         "title": "Descubre clubes que no sabías que existían",
-        "description": "Explora todas las organizaciones de {{school}}, sigue las que te gusten y encuentra puestos abiertos cuando quieras involucrarte.",
-        "mockClubOne": "Club de Reparación",
-        "mockClubTwo": "Sociedad de Salsa",
-        "mockClubThree": "Club de Escalada",
-        "mockUpcoming": "{{count}} evento próximo",
-        "mockUpcoming_one": "{{count}} evento próximo",
-        "mockUpcoming_many": "{{count}} eventos próximos",
-        "mockUpcoming_other": "{{count}} eventos próximos",
-        "mockFollow": "Seguir",
-        "mockFollowing": "Siguiendo"
+        "description": "Explora todas las organizaciones de {{school}}, sigue las que te gusten y encuentra puestos abiertos cuando quieras involucrarte."
       }
     },
     "faq": {

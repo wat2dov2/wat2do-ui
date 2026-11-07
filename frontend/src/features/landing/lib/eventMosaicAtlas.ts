@@ -29,7 +29,7 @@ export function loadMosaicManifest(): Promise<MosaicManifest> {
   return manifest;
 }
 
-/** The 8 px copy for first paint. */
+/** The 16 px copy for first paint. */
 export function loadPreviewAtlas(): Promise<MosaicAtlas> {
   preview ??= Promise.all([loadMosaicManifest(), loadImage(previewAtlasImage.src)]).then(([{ previewTilePixels, columns, posters }, image]) => ({
     image, tilePixels: previewTilePixels, columns, count: posters.length,

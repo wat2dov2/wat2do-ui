@@ -626,7 +626,28 @@
         "newLabel_two": "فعاليتان جديدتان خلال آخر 7 أيام",
         "newLabel_few": "فعاليات جديدة خلال آخر 7 أيام",
         "newLabel_many": "فعالية جديدة خلال آخر 7 أيام",
-        "newLabel_other": "فعالية جديدة خلال آخر 7 أيام"
+        "newLabel_other": "فعالية جديدة خلال آخر 7 أيام",
+        "thisWeekLabel": "فعالية هذا الأسبوع",
+        "thisWeekLabel_few": "فعاليات هذا الأسبوع",
+        "thisWeekLabel_many": "فعالية هذا الأسبوع",
+        "thisWeekLabel_one": "فعالية هذا الأسبوع",
+        "thisWeekLabel_other": "فعالية هذا الأسبوع",
+        "thisWeekLabel_two": "فعاليتان هذا الأسبوع",
+        "thisWeekLabel_zero": "فعالية هذا الأسبوع",
+        "freeFoodLabel": "فعالية قادمة بطعام مجاني",
+        "freeFoodLabel_few": "فعاليات قادمة بطعام مجاني",
+        "freeFoodLabel_many": "فعالية قادمة بطعام مجاني",
+        "freeFoodLabel_one": "فعالية قادمة بطعام مجاني",
+        "freeFoodLabel_other": "فعالية قادمة بطعام مجاني",
+        "freeFoodLabel_two": "فعاليتان قادمتان بطعام مجاني",
+        "freeFoodLabel_zero": "فعالية قادمة بطعام مجاني",
+        "positionsLabel": "منصب مفتوح في نادٍ",
+        "positionsLabel_few": "مناصب مفتوحة في الأندية",
+        "positionsLabel_many": "منصبًا مفتوحًا في الأندية",
+        "positionsLabel_one": "منصب مفتوح في نادٍ",
+        "positionsLabel_other": "منصب مفتوح في الأندية",
+        "positionsLabel_two": "منصبان مفتوحان في الأندية",
+        "positionsLabel_zero": "منصب مفتوح في الأندية"
       }
     },
     "different": {
@@ -709,37 +730,17 @@
       }
     },
     "features": {
-      "capture": {
-        "title": "من منشور Instagram إلى فعالية، تلقائيًا",
-        "description": "تواصل النوادي النشر كما اعتادت. يقرأ Wat2Do كل منشور ويستخرج التاريخ والوقت والمكان والسعر، فتظهر الفعالية في الصفحة دون أن يملأ أحد أي نموذج."
-      },
       "filters": {
         "title": "طعام مجاني بنقرتين",
-        "description": "فلاتر سريعة للطعام المجاني وأصحاب العمل في الحرم الجامعي والمسابقات. أو حدّد بحثك حسب اليوم والسعر والنادي والموقع.",
-        "mockQuery": "بيتزا"
+        "description": "فلاتر سريعة للطعام المجاني وأصحاب العمل في الحرم الجامعي والمسابقات. أو حدّد بحثك حسب اليوم والسعر والنادي والموقع."
       },
       "reminders": {
         "title": "لن تنسى أنك قلت سأحضر",
-        "description": "اضغط سأحضر وسيرسل لك Wat2Do بريدًا قبل البداية بساعة تقريبًا. احفظ الفعاليات في Google Calendar أو iCal، أو فعّل بريدًا يوميًا الساعة 9 صباحًا بفعاليات اليوم.",
-        "mockSubject": "تبدأ بعد ساعة: درس طبخ إيطالي",
-        "mockBody": "مطبخ مركز الطلاب الساعة 6:00 مساءً. نراك هناك.",
-        "mockMorning": "بريد يومي الساعة 9 صباحًا"
+        "description": "اضغط سأحضر وسيرسل لك Wat2Do بريدًا قبل البداية بساعة تقريبًا. احفظ الفعاليات في Google Calendar أو iCal، أو فعّل بريدًا يوميًا الساعة 9 صباحًا بفعاليات اليوم."
       },
       "clubs": {
         "title": "اكتشف نوادي لم تكن تعرف بوجودها",
-        "description": "تصفّح كل النوادي في {{school}}، وتابع ما يعجبك منها، واعثر على المناصب المتاحة عندما تريد المشاركة.",
-        "mockClubOne": "نادي التصليح",
-        "mockClubTwo": "جمعية السالسا",
-        "mockClubThree": "نادي التسلق",
-        "mockUpcoming": "{{count}} فعالية قادمة",
-        "mockUpcoming_zero": "{{count}} فعالية قادمة",
-        "mockUpcoming_one": "{{count}} فعالية قادمة",
-        "mockUpcoming_two": "{{count}} فعاليتان قادمتان",
-        "mockUpcoming_few": "{{count}} فعاليات قادمة",
-        "mockUpcoming_many": "{{count}} فعالية قادمة",
-        "mockUpcoming_other": "{{count}} فعالية قادمة",
-        "mockFollow": "متابعة",
-        "mockFollowing": "تتابعه"
+        "description": "تصفّح كل النوادي في {{school}}، وتابع ما يعجبك منها، واعثر على المناصب المتاحة عندما تريد المشاركة."
       }
     },
     "faq": {

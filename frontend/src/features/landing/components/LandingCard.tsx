@@ -145,9 +145,9 @@ export function LandingCardGrid({ columns, children }: { columns: 2 | 3; childre
 }
 
 /** A card that holds one product surface beside its feature copy. */
-export function LandingStage({ face, children }: { face?: ReactNode; children: ReactNode }) {
+export function LandingStage({ children }: { children: ReactNode }) {
   return (
-    <LandingCard face={face}>
+    <LandingCard>
       <div className="flex min-h-64 items-center justify-center sm:p-4">{children}</div>
     </LandingCard>
   );

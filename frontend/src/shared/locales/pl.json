@@ -614,7 +614,22 @@
         "newLabel_one": "nowe wydarzenie w ostatnich 7 dniach",
         "newLabel_few": "nowe wydarzenia w ostatnich 7 dniach",
         "newLabel_many": "nowych wydarzeń w ostatnich 7 dniach",
-        "newLabel_other": "nowego wydarzenia w ostatnich 7 dniach"
+        "newLabel_other": "nowego wydarzenia w ostatnich 7 dniach",
+        "thisWeekLabel": "wydarzenie w tym tygodniu",
+        "thisWeekLabel_few": "wydarzenia w tym tygodniu",
+        "thisWeekLabel_many": "wydarzeń w tym tygodniu",
+        "thisWeekLabel_one": "wydarzenie w tym tygodniu",
+        "thisWeekLabel_other": "wydarzenia w tym tygodniu",
+        "freeFoodLabel": "nadchodzące wydarzenie z darmowym jedzeniem",
+        "freeFoodLabel_few": "nadchodzące wydarzenia z darmowym jedzeniem",
+        "freeFoodLabel_many": "nadchodzących wydarzeń z darmowym jedzeniem",
+        "freeFoodLabel_one": "nadchodzące wydarzenie z darmowym jedzeniem",
+        "freeFoodLabel_other": "nadchodzącego wydarzenia z darmowym jedzeniem",
+        "positionsLabel": "otwarte stanowisko w klubie",
+        "positionsLabel_few": "otwarte stanowiska w klubach",
+        "positionsLabel_many": "otwartych stanowisk w klubach",
+        "positionsLabel_one": "otwarte stanowisko w klubie",
+        "positionsLabel_other": "otwartego stanowiska w klubach"
       }
     },
     "different": {
@@ -697,35 +712,17 @@
       }
     },
     "features": {
-      "capture": {
-        "title": "Z plakatu na Instagramie w wydarzenie, automatycznie",
-        "description": "Organizacje publikują tak jak zawsze. Wat2Do czyta każdy plakat i wyciąga datę, godzinę, miejsce i cenę, więc wydarzenie trafia do feedu bez wypełniania żadnego formularza."
-      },
       "filters": {
         "title": "Darmowe jedzenie w dwa kliknięcia",
-        "description": "Szybkie filtry: darmowe jedzenie, pracodawcy na kampusie i konkursy. Albo zawęź wyniki według dnia, ceny, organizacji i miejsca.",
-        "mockQuery": "pizza"
+        "description": "Szybkie filtry: darmowe jedzenie, pracodawcy na kampusie i konkursy. Albo zawęź wyniki według dnia, ceny, organizacji i miejsca."
       },
       "reminders": {
         "title": "Już nigdy nie przegapisz swoich planów",
-        "description": "Kliknij „Wezmę udział”, a Wat2Do wyśle Ci maila mniej więcej godzinę przed startem. Zapisuj wydarzenia w Google Calendar lub iCal albo włącz maila o 9:00 z wydarzeniami na dany dzień.",
-        "mockSubject": "Start za 1 godzinę: warsztaty kuchni włoskiej",
-        "mockBody": "Kuchnia w centrum studenckim, 18:00. Do zobaczenia!",
-        "mockMorning": "Codzienny mail o 9:00"
+        "description": "Kliknij „Wezmę udział”, a Wat2Do wyśle Ci maila mniej więcej godzinę przed startem. Zapisuj wydarzenia w Google Calendar lub iCal albo włącz maila o 9:00 z wydarzeniami na dany dzień."
       },
       "clubs": {
         "title": "Odkryj organizacje, o których istnieniu nie wiesz",
-        "description": "Przeglądaj wszystkie organizacje na {{school}}, obserwuj te, które Ci się podobają, i znajdź wolne stanowiska, gdy zechcesz się zaangażować.",
-        "mockClubOne": "Klub Napraw",
-        "mockClubTwo": "Koło Salsy",
-        "mockClubThree": "Klub Wspinaczkowy",
-        "mockUpcoming": "{{count}} nadchodzące wydarzenie",
-        "mockUpcoming_one": "{{count}} nadchodzące wydarzenie",
-        "mockUpcoming_few": "{{count}} nadchodzące wydarzenia",
-        "mockUpcoming_many": "{{count}} nadchodzących wydarzeń",
-        "mockUpcoming_other": "{{count}} nadchodzącego wydarzenia",
-        "mockFollow": "Obserwuj",
-        "mockFollowing": "Obserwujesz"
+        "description": "Przeglądaj wszystkie organizacje na {{school}}, obserwuj te, które Ci się podobają, i znajdź wolne stanowiska, gdy zechcesz się zaangażować."
       }
     },
     "faq": {

@@ -6,17 +6,16 @@ import { startEventPixelMosaic, type MosaicController, type MosaicLook } from "@
 import { cn } from "@/shared/lib/utils";
 
 /**
- * - `logo`: small cells that spell the Wat2Do logo in its colours out of a muted
- *   grid; still until its page asks for a wave.
- * - `band`: large cells in full colour, for a strip people can explore.
- * - `ambient`: muted cells behind a product surface or a closing line.
- * The band and ambient mosaics run one slow wave of the whole collection now and then.
+ * - `logo`: small cells that spell the Wat2Do logo, in posters that wear its
+ *   colours, out of a muted grid; still until its page asks for a wave.
+ * - `ambient`: larger muted cells behind a closing line, with one slow wave of
+ *   the whole collection now and then.
+ * The atlas holds 80 px posters, at least twice either cell size, so cells stay crisp on a 2x screen.
  */
-export type EventPixelMosaicVariant = "logo" | "band" | "ambient";
+export type EventPixelMosaicVariant = "logo" | "ambient";
 
 const LOOKS: Record<EventPixelMosaicVariant, MosaicLook> = {
-  logo: { tileSize: 10, gutter: 1, waveMs: 900, tone: "logo" },
-  band: { tileSize: 40, gutter: 2, waveMs: 1600, idleWaveMs: 9000, tone: "full" },
+  logo: { tileSize: 12, gutter: 1, waveMs: 900, tone: "logo" },
   ambient: { tileSize: 28, gutter: 2, waveMs: 1800, idleWaveMs: 11000, tone: "muted" },
 };
 
@@ -24,13 +23,13 @@ interface EventPixelMosaicProps {
   variant: EventPixelMosaicVariant;
   /** For `logo`: the element the logo is drawn behind, in the same card. */
   logoRegion?: RefObject<HTMLElement | null>;
-  /** Hands over the running mosaic, for a page that drives its waves or lets people explore its cells. */
-  onReady?: (controller: MosaicController, canvas: HTMLCanvasElement) => void;
+  /** Hands over the running mosaic, for a page that drives its waves. */
+  onReady?: (controller: MosaicController) => void;
 }
 
 /**
  * A grid of real scraped event posters. Fills its positioned parent and is
- * decorative. Nothing downloads until it nears the viewport; an 8 px copy
+ * decorative. Nothing downloads until it nears the viewport; a 16 px copy
  * paints first and the sharp atlas follows. Under reduced motion it is a still
  * mosaic of every poster.
  */
@@ -68,7 +67,7 @@ export function EventPixelMosaic({ variant, logoRegion, onReady }: EventPixelMos
         logoRegion: region,
       });
       setReady(true);
-      onReadyRef.current?.(controller, canvas);
+      onReadyRef.current?.(controller);
       const full = await loadFullAtlas();
       if (!cancelled) controller.setAtlas(full);
     };

@@ -596,7 +596,13 @@
         "upcomingLabel": "지금 예정된 이벤트",
         "upcomingLabel_other": "지금 예정된 이벤트",
         "newLabel": "최근 7일간 새로 올라온 이벤트",
-        "newLabel_other": "최근 7일간 새로 올라온 이벤트"
+        "newLabel_other": "최근 7일간 새로 올라온 이벤트",
+        "thisWeekLabel": "이번 주 이벤트",
+        "thisWeekLabel_other": "이번 주 이벤트",
+        "freeFoodLabel": "무료 음식이 있는 예정 이벤트",
+        "freeFoodLabel_other": "무료 음식이 있는 예정 이벤트",
+        "positionsLabel": "모집 중인 동아리 자리",
+        "positionsLabel_other": "모집 중인 동아리 자리"
       }
     },
     "different": {
@@ -679,32 +685,17 @@
       }
     },
     "features": {
-      "capture": {
-        "title": "Instagram 포스터가 자동으로 이벤트로",
-        "description": "조직은 늘 하던 대로 글을 올리면 돼요. Wat2Do가 포스터를 읽고 날짜, 시간, 장소, 가격을 뽑아내서, 아무도 양식을 채우지 않아도 이벤트가 피드에 올라가요."
-      },
       "filters": {
         "title": "두 번 탭하면 무료 음식",
-        "description": "무료 음식, 캠퍼스 채용 행사, 대회를 빠르게 필터링하세요. 날짜, 가격, 조직, 위치로 더 좁힐 수도 있어요.",
-        "mockQuery": "피자"
+        "description": "무료 음식, 캠퍼스 채용 행사, 대회를 빠르게 필터링하세요. 날짜, 가격, 조직, 위치로 더 좁힐 수도 있어요."
       },
       "reminders": {
         "title": "가기로 한 걸 잊을 일 없게",
-        "description": "'참여 예정'을 누르면 Wat2Do가 시작 약 1시간 전에 이메일을 보내 드려요. 이벤트를 Google Calendar나 iCal에 저장하거나, 그날의 이벤트를 담은 오전 9시 이메일을 켤 수도 있어요.",
-        "mockSubject": "1시간 후 시작: 이탈리안 요리 수업",
-        "mockBody": "오후 6:00, 학생회관 주방. 거기서 만나요!",
-        "mockMorning": "매일 오전 9시 이메일"
+        "description": "'참여 예정'을 누르면 Wat2Do가 시작 약 1시간 전에 이메일을 보내 드려요. 이벤트를 Google Calendar나 iCal에 저장하거나, 그날의 이벤트를 담은 오전 9시 이메일을 켤 수도 있어요."
       },
       "clubs": {
         "title": "몰랐던 조직을 찾아보세요",
-        "description": "{{school}}의 모든 조직을 둘러보고, 마음에 드는 곳을 팔로우하고, 참여하고 싶을 땐 모집 중인 자리도 찾아보세요.",
-        "mockClubOne": "수리 동아리",
-        "mockClubTwo": "살사 동호회",
-        "mockClubThree": "클라이밍 동아리",
-        "mockUpcoming": "다가오는 이벤트 {{count}}개",
-        "mockUpcoming_other": "다가오는 이벤트 {{count}}개",
-        "mockFollow": "팔로우",
-        "mockFollowing": "팔로잉"
+        "description": "{{school}}의 모든 조직을 둘러보고, 마음에 드는 곳을 팔로우하고, 참여하고 싶을 땐 모집 중인 자리도 찾아보세요."
       }
     },
     "faq": {

@@ -1,38 +1,46 @@
 "use client";
 
-import { useMemo, type ComponentType } from "react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { EventCard, EventCardSkeleton } from "@/features/events";
-import { eventPagePath } from "@/features/events/lib/eventUrls";
 import type { LandingSnapshot } from "@/features/landing/api/landing.server";
-import { EventPixelMosaic } from "@/features/landing/components/EventPixelMosaic";
-import { LandingCard, LandingStage } from "@/features/landing/components/LandingCard";
-import { ClubsMockup, FiltersMockup, RemindersMockup } from "@/features/landing/components/LandingMockups";
+import { LandingCard, LandingNotchLabel, LandingStage, type LandingNotchTone } from "@/features/landing/components/LandingCard";
+import { ClubsPreview, FreeFoodPreview, RemindersPreview } from "@/features/landing/components/LandingPreviews";
 import { LandingSection } from "@/features/landing/components/LandingSection";
+import { useCountUp } from "@/features/landing/hooks/useCountUp";
 import { formatLandingCount } from "@/features/landing/lib/landingStats";
 import { Stack } from "@/shared/layout";
 import { Skeleton } from "@/shared/ui/skeleton";
-import type { Event } from "@/shared/types";
 
-// The supporting features, in the order a student meets them: found, remembered, then its club.
-const SUPPORTING_FEATURES: readonly { key: string; Mockup: ComponentType }[] = [
-  { key: "filters", Mockup: FiltersMockup },
-  { key: "reminders", Mockup: RemindersMockup },
-  { key: "clubs", Mockup: ClubsMockup },
-];
+interface StatProps {
+  value: number;
+  label: string;
+  /** A notched word in the badge legend's colour, for a stat that has one. */
+  badge?: { tone: LandingNotchTone; text: string };
+}
 
-/** A number counted live from the school's feeds; skeleton while they load. */
-function LandingStat({ value, label }: { value: string | null; label: string }) {
+/** A number counted from the school's feeds, counting up the first time it scrolls into view. */
+function LandingStat({ value, label, badge }: StatProps) {
+  const { i18n } = useTranslation();
+  const { ref, value: shown } = useCountUp<HTMLParagraphElement>(value);
+  return (
+    <LandingCard corners={badge ? { "top-right": <LandingNotchLabel tone={badge.tone}>{badge.text}</LandingNotchLabel> } : undefined}>
+      <Stack gap={2}>
+        {/* Large figures carry side bearing; the nudge lines the digit's edge up with the label below. */}
+        <p ref={ref} className="-ml-[0.05em] text-4xl font-normal tracking-[-0.04em] tabular-nums text-foreground sm:text-6xl">
+          {formatLandingCount(shown, i18n.language)}
+        </p>
+        <p className="text-sm text-muted-foreground sm:text-base">{label}</p>
+      </Stack>
+    </LandingCard>
+  );
+}
+
+function LandingStatSkeleton() {
   return (
     <LandingCard>
       <Stack gap={2}>
-        {value === null ? (
-          <Skeleton className="h-14 w-28" />
-        ) : (
-          // Large figures carry side bearing; the nudge lines the digit's edge up with the label below.
-          <p className="-ml-[0.05em] text-6xl font-normal tracking-[-0.04em] tabular-nums text-foreground">{value}</p>
-        )}
-        <p className="text-muted-foreground">{label}</p>
+        <Skeleton className="h-10 w-20 sm:h-14 sm:w-28" />
+        <Skeleton className="h-5 w-full max-w-40" />
       </Stack>
     </LandingCard>
   );
@@ -55,65 +63,61 @@ function FeatureCopy({ featureKey, schoolName, size }: { featureKey: string; sch
   );
 }
 
-/** The newest event in the feed that has a poster: proof that a club's post just became a listing. */
-function newestPosterEvent(events: readonly Event[]): Event | null {
-  return events.reduce<Event | null>((newest, event) => {
-    if (!event.source_image_url || !event.added_at) return newest;
-    return !newest || (newest.added_at ?? "") < event.added_at ? event : newest;
-  }, null);
+function SupportingFeature({ featureKey, schoolName, children }: { featureKey: string; schoolName: string; children: ReactNode }) {
+  return (
+    <Stack gap={5}>
+      <LandingStage>{children}</LandingStage>
+      <FeatureCopy featureKey={featureKey} schoolName={schoolName} size="supporting" />
+    </Stack>
+  );
 }
 
-/** How Wat2Do fixes discovery: this school's live numbers, the main feature shown with a real event, then the rest. */
+/** How Wat2Do fixes discovery: six of this school's live numbers, then the app itself doing it with real data. */
 export function LandingSolution({ schoolName, snapshot }: { schoolName: string; snapshot: LandingSnapshot | null }) {
-  const { t, i18n } = useTranslation();
-  const count = (value: number | null | undefined) =>
-    value === null || value === undefined ? null : formatLandingCount(value, i18n.language);
-  const latest = useMemo(() => newestPosterEvent(snapshot?.events ?? []), [snapshot]);
+  const { t } = useTranslation();
+  const isLoading = !snapshot;
+  const events = snapshot?.events ?? [];
+
+  // Strongest first. A number its feed could not load is left out, never shown as zero.
+  const stats: { key: string; count: number | null | undefined; label: (count: number) => string; badge?: StatProps["badge"] }[] = [
+    { key: "upcoming", count: snapshot?.events?.length, label: (count) => t("landing.solution.stats.upcomingLabel", { count }), badge: { tone: "live", text: t("common.live") } },
+    { key: "thisWeek", count: snapshot?.thisWeekCount, label: (count) => t("landing.solution.stats.thisWeekLabel", { count }) },
+    { key: "new", count: snapshot?.newThisWeekCount, label: (count) => t("landing.solution.stats.newLabel", { count }), badge: { tone: "new", text: t("events.new") } },
+    { key: "freeFood", count: snapshot?.freeFoodCount, label: (count) => t("landing.solution.stats.freeFoodLabel", { count }), badge: { tone: "free", text: t("common.free") } },
+    { key: "clubs", count: snapshot?.clubCount, label: (count) => t("landing.solution.stats.clubsLabel", { count, school: schoolName }) },
+    { key: "positions", count: snapshot?.positionCount, label: (count) => t("landing.solution.stats.positionsLabel", { count }) },
+  ];
+  const shown = stats.flatMap(({ count, ...stat }) => (typeof count === "number" ? [{ ...stat, count }] : []));
 
   return (
     <LandingSection
       title={t("landing.solution.title")}
       description={t("landing.solution.description")}
     >
-      <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
-        {/* A school whose club directory is unavailable shows the two event counts. */}
-        {snapshot?.clubCount !== null ? (
-          <LandingStat
-            value={count(snapshot?.clubCount)}
-            label={t("landing.solution.stats.clubsLabel", { count: snapshot?.clubCount ?? 0, school: schoolName })}
-          />
-        ) : null}
-        <LandingStat
-          value={count(snapshot?.events.length)}
-          label={t("landing.solution.stats.upcomingLabel", { count: snapshot?.events.length ?? 0 })}
-        />
-        <LandingStat
-          value={count(snapshot?.newThisWeekCount)}
-          label={t("landing.solution.stats.newLabel", { count: snapshot?.newThisWeekCount ?? 0 })}
-        />
-      </div>
+      {isLoading || shown.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+          {isLoading
+            ? stats.map(({ key }) => <LandingStatSkeleton key={key} />)
+            // Keyed by count too, so a number that changes counts afresh.
+            : shown.map(({ key, count, label, badge }) => <LandingStat key={`${key}:${count}`} value={count} label={label(count)} badge={badge} />)}
+        </div>
+      ) : null}
 
       <Stack gap={12} className="pt-8 sm:gap-16 sm:pt-16">
-        {/* The main feature gets the room: the real card of the newest event a club posted, over the posters already read. */}
+        {/* The main feature gets the room. */}
         <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:gap-16">
-          <FeatureCopy featureKey="capture" schoolName={schoolName} size="main" />
-          <LandingStage face={<EventPixelMosaic variant="ambient" />}>
-            {/* An event card's natural width in the feed grid. */}
-            <div className="w-64 py-6">
-              {latest ? <EventCard event={latest} titleHref={eventPagePath(latest.id)} imagePriority={false} /> : <EventCardSkeleton />}
-            </div>
+          <FeatureCopy featureKey="filters" schoolName={schoolName} size="main" />
+          <LandingStage>
+            <FreeFoodPreview events={events} isLoading={isLoading} />
           </LandingStage>
         </div>
-
-        <div className="grid gap-x-4 gap-y-10 lg:grid-cols-3">
-          {SUPPORTING_FEATURES.map(({ key, Mockup }) => (
-            <Stack key={key} gap={5}>
-              <LandingStage>
-                <Mockup />
-              </LandingStage>
-              <FeatureCopy featureKey={key} schoolName={schoolName} size="supporting" />
-            </Stack>
-          ))}
+        <div className="grid gap-x-4 gap-y-10 lg:grid-cols-2">
+          <SupportingFeature featureKey="reminders" schoolName={schoolName}>
+            <RemindersPreview events={events} isLoading={isLoading} />
+          </SupportingFeature>
+          <SupportingFeature featureKey="clubs" schoolName={schoolName}>
+            <ClubsPreview clubs={snapshot?.previewClubs ?? []} isLoading={isLoading} />
+          </SupportingFeature>
         </div>
       </Stack>
     </LandingSection>

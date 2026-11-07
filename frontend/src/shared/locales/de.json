@@ -602,7 +602,16 @@
         "upcomingLabel_other": "anstehende Veranstaltungen aktuell",
         "newLabel": "neue Veranstaltung in den letzten 7 Tagen",
         "newLabel_one": "neue Veranstaltung in den letzten 7 Tagen",
-        "newLabel_other": "neue Veranstaltungen in den letzten 7 Tagen"
+        "newLabel_other": "neue Veranstaltungen in den letzten 7 Tagen",
+        "thisWeekLabel": "Veranstaltung diese Woche",
+        "thisWeekLabel_one": "Veranstaltung diese Woche",
+        "thisWeekLabel_other": "Veranstaltungen diese Woche",
+        "freeFoodLabel": "kommende Veranstaltung mit kostenlosem Essen",
+        "freeFoodLabel_one": "kommende Veranstaltung mit kostenlosem Essen",
+        "freeFoodLabel_other": "kommende Veranstaltungen mit kostenlosem Essen",
+        "positionsLabel": "offene Clubposition",
+        "positionsLabel_one": "offene Clubposition",
+        "positionsLabel_other": "offene Clubpositionen"
       }
     },
     "different": {
@@ -685,33 +694,17 @@
       }
     },
     "features": {
-      "capture": {
-        "title": "Vom Instagram-Flyer zur Veranstaltung, ganz automatisch",
-        "description": "Clubs posten weiter wie immer. Wat2Do liest jeden Flyer und zieht Datum, Uhrzeit, Ort und Preis heraus, sodass die Veranstaltung im Feed landet, ohne dass jemand ein Formular ausfüllt."
-      },
       "filters": {
         "title": "Kostenloses Essen mit zwei Taps",
-        "description": "Schnellfilter für kostenloses Essen, Arbeitgeber auf dem Campus und Wettbewerbe. Oder grenz es nach Tag, Preis, Club und Ort ein.",
-        "mockQuery": "Pizza"
+        "description": "Schnellfilter für kostenloses Essen, Arbeitgeber auf dem Campus und Wettbewerbe. Oder grenz es nach Tag, Preis, Club und Ort ein."
       },
       "reminders": {
         "title": "Vergiss nie wieder, dass du hinwolltest",
-        "description": "Tippe auf Ich nehme teil und Wat2Do schickt dir etwa eine Stunde vor Beginn eine E-Mail. Speichere Veranstaltungen in Google Calendar oder iCal, oder aktiviere eine E-Mail um 9 Uhr mit den Veranstaltungen des Tages.",
-        "mockSubject": "Beginnt in 1 Stunde: Italienischer Kochkurs",
-        "mockBody": "Küche im Studierendenzentrum um 18:00 Uhr. Bis gleich!",
-        "mockMorning": "Tägliche E-Mail um 9 Uhr"
+        "description": "Tippe auf Ich nehme teil und Wat2Do schickt dir etwa eine Stunde vor Beginn eine E-Mail. Speichere Veranstaltungen in Google Calendar oder iCal, oder aktiviere eine E-Mail um 9 Uhr mit den Veranstaltungen des Tages."
       },
       "clubs": {
         "title": "Entdecke Clubs, von denen du nichts wusstest",
-        "description": "Stöbere durch alle Organisationen bei {{school}}, folge denen, die dir gefallen, und finde offene Positionen, wenn du mitmachen willst.",
-        "mockClubOne": "Reparatur-Club",
-        "mockClubTwo": "Salsa-Verein",
-        "mockClubThree": "Kletter-Club",
-        "mockUpcoming": "{{count}} bevorstehende Veranstaltung",
-        "mockUpcoming_one": "{{count}} bevorstehende Veranstaltung",
-        "mockUpcoming_other": "{{count}} bevorstehende Veranstaltungen",
-        "mockFollow": "Folgen",
-        "mockFollowing": "Gefolgt"
+        "description": "Stöbere durch alle Organisationen bei {{school}}, folge denen, die dir gefallen, und finde offene Positionen, wenn du mitmachen willst."
       }
     },
     "faq": {

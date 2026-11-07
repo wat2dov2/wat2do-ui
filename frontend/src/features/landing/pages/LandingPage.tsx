@@ -6,7 +6,6 @@ import { LandingClosing } from "@/features/landing/components/LandingClosing";
 import { LandingDifferent } from "@/features/landing/components/LandingDifferent";
 import { LandingFaq } from "@/features/landing/components/LandingFaq";
 import { LandingHero } from "@/features/landing/components/LandingHero";
-import { LandingMosaicBand } from "@/features/landing/components/LandingMosaicBand";
 import { LandingProblem } from "@/features/landing/components/LandingProblem";
 import { LandingSolution } from "@/features/landing/components/LandingSolution";
 import { LandingUseCases } from "@/features/landing/components/LandingUseCases";
@@ -28,7 +27,6 @@ export function LandingPage({ snapshot }: LandingPageProps) {
       <Stack gap={12} className="pb-12 sm:gap-40 sm:pb-24">
         <LandingHero schoolName={schoolName} events={snapshot?.events ?? []} clubCount={snapshot ? snapshot.clubCount : undefined} isLoading={!snapshot} />
         <LandingProblem schoolName={schoolName} />
-        <LandingMosaicBand newThisWeekCount={snapshot?.newThisWeekCount ?? null} />
         <LandingSolution schoolName={schoolName} snapshot={snapshot} />
         <LandingDifferent />
         <LandingUseCases schoolName={schoolName} />

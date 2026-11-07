@@ -596,7 +596,13 @@
         "upcomingLabel": "upcoming event right now",
         "upcomingLabel_other": "upcoming events right now",
         "newLabel": "new event in the last 7 days",
-        "newLabel_other": "new events in the last 7 days"
+        "newLabel_other": "new events in the last 7 days",
+        "thisWeekLabel": "event this week",
+        "thisWeekLabel_other": "events this week",
+        "freeFoodLabel": "upcoming event with free food",
+        "freeFoodLabel_other": "upcoming events with free food",
+        "positionsLabel": "open club position",
+        "positionsLabel_other": "open club positions"
       }
     },
     "different": {
@@ -679,32 +685,17 @@
       }
     },
     "features": {
-      "capture": {
-        "title": "From Instagram flyer to event, automatically",
-        "description": "Clubs keep posting the way they always have. Wat2Do reads each flyer and pulls out the date, time, place and price, so the event lands in the feed without anyone filling out a form."
-      },
       "filters": {
         "title": "Free food in two taps",
-        "description": "Quick filters for free food, employers on campus and competitions. Or narrow it down by day, price, club and location.",
-        "mockQuery": "pizza"
+        "description": "Quick filters for free food, employers on campus and competitions. Or narrow it down by day, price, club and location."
       },
       "reminders": {
         "title": "Never forget you were going",
-        "description": "Tap Going and Wat2Do emails you about an hour before it starts. Save events to Google Calendar or iCal, or turn on a 9 AM email with the day's events.",
-        "mockSubject": "Starts in 1 hour: Italian cooking class",
-        "mockBody": "Student centre kitchen at 6:00 PM. See you there.",
-        "mockMorning": "9 AM daily email"
+        "description": "Tap Going and Wat2Do emails you about an hour before it starts. Save events to Google Calendar or iCal, or turn on a 9 AM email with the day's events."
       },
       "clubs": {
         "title": "Find the clubs you didn't know existed",
-        "description": "Browse every club at {{school}}, follow the ones you like, and find open positions when you want to get involved.",
-        "mockClubOne": "Repair Club",
-        "mockClubTwo": "Salsa Society",
-        "mockClubThree": "Climbing Club",
-        "mockUpcoming": "{{count}} upcoming event",
-        "mockUpcoming_other": "{{count}} upcoming events",
-        "mockFollow": "Follow",
-        "mockFollowing": "Following"
+        "description": "Browse every club at {{school}}, follow the ones you like, and find open positions when you want to get involved."
       }
     },
     "faq": {

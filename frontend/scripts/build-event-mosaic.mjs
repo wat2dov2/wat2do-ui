@@ -19,10 +19,10 @@ import sharp from "sharp";
 import imageDelivery from "../../backend/controlbox/image_delivery.json" with { type: "json" };
 import uploads from "../../backend/controlbox/uploads.json" with { type: "json" };
 
-/** Pixels per poster side: sharp at the largest cell the page draws (40 CSS px) on a 2x screen, near enough. */
-const TILE_PIXELS = 64;
-/** Pixels per poster side in the first-paint atlas. */
-const PREVIEW_TILE_PIXELS = 8;
+/** Pixels per poster side: at least twice the largest cell the page draws (36 CSS px), so every cell is crisp on a 2x screen. */
+const TILE_PIXELS = 80;
+/** Pixels per poster side in the first-paint atlas, drawn smoothed until the full one arrives. */
+const PREVIEW_TILE_PIXELS = 16;
 /** Posters per atlas row. */
 const ATLAS_COLUMNS = 20;
 /**
@@ -30,7 +30,17 @@ const ATLAS_COLUMNS = 20;
  * waves can refill the grid with that topic alone. About 400 in all, a few
  * hundred KB. Every open club position with a poster is kept.
  */
-const TOPIC_QUOTAS = { networking: 100, social: 100, position: 80, other: 120 };
+const TOPIC_QUOTAS = { networking: 70, social: 70, position: 80, other: 80 };
+/**
+ * How many of the newest untopical posters are read to choose the "other"
+ * quota from: the ones whose dominant colour is nearest each logo colour go in
+ * first, so the logo can be built from untouched posters.
+ */
+const OTHER_CANDIDATES = 1200;
+/** Of the "other" quota, how many are chosen per logo colour before the newest fill the rest: most for the blue lettering, the bulk of the logo. */
+const LOGO_PICKS = { b: 44, k: 12, n: 12 };
+/** How near (RGB distance) a dominant colour must be to count as matching a logo colour, for the build's report. */
+const LOGO_MATCH_DISTANCE = 90;
 /** The logo mask's width in samples; its height follows the logo's shape. */
 const LOGO_MASK_WIDTH = 80;
 const PAGE_SIZE = 100;
@@ -230,12 +240,59 @@ async function logoMask() {
   }).join(""));
 }
 
-/** A tile's average colour, so the logo can be built from posters that already wear its colours. */
-function averageColour(tile) {
-  const sums = [0, 0, 0];
-  for (let offset = 0; offset < tile.length; offset += 3) for (let channel = 0; channel < 3; channel += 1) sums[channel] += tile[offset + channel];
-  const pixels = tile.length / 3;
-  return `#${sums.map((sum) => Math.round(sum / pixels).toString(16).padStart(2, "0")).join("")}`;
+const hex = (rgb) => `#${rgb.map((value) => Math.round(value).toString(16).padStart(2, "0")).join("")}`;
+const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+
+/**
+ * A poster's dominant colour: k-means over its pixels, the centre of the
+ * largest cluster, with the share of the poster it covers. An average would
+ * call a blue-and-orange poster grey; this calls it blue or orange.
+ */
+function dominantColour(tile) {
+  const pixels = [];
+  // Every fourth pixel in both directions is plenty for a colour census.
+  for (let y = 0; y < TILE_PIXELS; y += 4) {
+    for (let x = 0; x < TILE_PIXELS; x += 4) {
+      const offset = (y * TILE_PIXELS + x) * 3;
+      pixels.push([tile[offset], tile[offset + 1], tile[offset + 2]]);
+    }
+  }
+  const byLight = [...pixels].sort((a, b) => a[0] + a[1] + a[2] - (b[0] + b[1] + b[2]));
+  let centres = [0.1, 0.4, 0.6, 0.9].map((share) => [...byLight[Math.floor(share * (byLight.length - 1))]]);
+  let members = [];
+  for (let round = 0; round < 10; round += 1) {
+    members = centres.map(() => []);
+    for (const pixel of pixels) {
+      let best = 0;
+      for (let index = 1; index < centres.length; index += 1) if (distance(pixel, centres[index]) < distance(pixel, centres[best])) best = index;
+      members[best].push(pixel);
+    }
+    centres = centres.map((centre, index) => members[index].length
+      ? [0, 1, 2].map((channel) => members[index].reduce((sum, pixel) => sum + pixel[channel], 0) / members[index].length)
+      : centre);
+  }
+  const largest = members.reduce((best, cluster, index) => (cluster.length > members[best].length ? index : best), 0);
+  return { colour: hex(centres[largest]), share: Math.round((members[largest].length / pixels.length) * 100) / 100, rgb: centres[largest] };
+}
+
+const LOGO_RGB = Object.fromEntries(Object.entries(LOGO_COLOURS).map(([letter, value]) => [letter, [1, 3, 5].map((start) => Number.parseInt(value.slice(start, start + 2), 16))]));
+
+/** The newest untopical posters, with those nearest each logo colour moved in first. */
+function chooseOthers(read) {
+  const withColour = read.map((entry) => ({ ...entry, dominant: dominantColour(entry.tile) }));
+  const chosen = new Set();
+  for (const [letter, target] of Object.entries(LOGO_RGB)) {
+    withColour
+      .filter((entry) => !chosen.has(entry))
+      .sort((a, b) => distance(a.dominant.rgb, target) / a.dominant.share - distance(b.dominant.rgb, target) / b.dominant.share)
+      .slice(0, LOGO_PICKS[letter])
+      .forEach((entry) => chosen.add(entry));
+  }
+  for (const entry of withColour) {
+    if (chosen.size >= TOPIC_QUOTAS.other) break;
+    chosen.add(entry);
+  }
+  return [...chosen];
 }
 
 const { total, events } = await collectPosterEvents();
@@ -244,14 +301,14 @@ console.log(`${total} ${options.school} events, ${events.length} distinct poster
 const packed = [];
 for (const [topic, quota] of Object.entries(TOPIC_QUOTAS)) {
   const candidates = topic === "position" ? positions : events.filter((event) => event.topic === topic);
-  const read = await shrinkAll(candidates, quota);
+  const read = topic === "other" ? chooseOthers(await shrinkAll(candidates, OTHER_CANDIDATES)) : await shrinkAll(candidates, quota);
   console.log(`${topic}: ${read.length} posters`);
   packed.push(...read);
 }
 if (packed.length === 0) throw new Error("No posters could be read");
 const tiles = packed.map(({ tile }) => tile);
 
-await writeAtlas(tiles, TILE_PIXELS, `event-mosaic-${options.school}.webp`, 72);
+await writeAtlas(tiles, TILE_PIXELS, `event-mosaic-${options.school}.webp`, 74);
 await writeAtlas(tiles, PREVIEW_TILE_PIXELS, `event-mosaic-${options.school}-preview.webp`, 70);
 await writeFile(
   path.join(assetsDirectory, `event-mosaic-${options.school}.json`),
@@ -264,7 +321,14 @@ await writeFile(
     logoColours: LOGO_COLOURS,
     logoMask: await logoMask(),
     // "other" only ever shows in the mixed grid, so it is stored as no topic.
-    posters: packed.map(({ event, tile }) => ({ ...event, topic: event.topic === "other" ? null : event.topic, colour: averageColour(tile) })),
+    posters: packed.map(({ event, tile }) => {
+      const { colour, share } = dominantColour(tile);
+      return { ...event, topic: event.topic === "other" ? null : event.topic, colour, colourShare: share };
+    }),
   })}\n`,
 );
 console.log(`Packed ${packed.length} posters`);
+for (const [letter, target] of Object.entries(LOGO_RGB)) {
+  const near = packed.filter(({ tile }) => distance(dominantColour(tile).rgb, target) < LOGO_MATCH_DISTANCE).length;
+  console.log(`posters whose dominant colour is near logo "${letter}": ${near}`);
+}
