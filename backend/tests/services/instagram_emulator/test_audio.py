@@ -252,8 +252,8 @@ WATERLOO = module.PlaceTag(
 )
 
 
-def _song_then_place(*after_song):
-    """Like, repost and pick a song on the first try, then show ``after_song``."""
+def _edit_with_place(*after_place):
+    """Like and repost, open Edit and tag the place, then show ``after_place``."""
     return (
         HOME,
         POST_PAGE,
@@ -261,57 +261,48 @@ def _song_then_place(*after_song):
         LIKED_PAGE,
         LIKED_PAGE,
         MENU,
-        EDIT_INFO_AUDIO,
-        SUGGESTIONS,
-        SUGGESTIONS,
-        RESULTS,
-        CLIP,
-        EDITED,
-        *after_song,
+        _edit_rows("Add audio", "Add location"),
+        LOCATION_SEARCH,
+        LOCATION_SEARCH,
+        PLACES,
+        *after_place,
     )
 
 
-def test_the_school_place_is_tagged_in_the_same_edit_as_the_song(screens) -> None:
+# Picking After Hours from Add audio, back to the edit screen with the song.
+SONG = (SUGGESTIONS, SUGGESTIONS, RESULTS, CLIP, EDITED)
+
+
+def test_the_school_place_is_tagged_before_the_song_in_the_same_edit(screens) -> None:
     device = screens(
-        *_song_then_place(
-            _edit_rows("After Hours", "Add location"),
-            LOCATION_SEARCH,
-            LOCATION_SEARCH,
-            PLACES,
-            _edit_rows("After Hours", "University of Waterloo"),
-            POST_PAGE,
-        )
+        *_edit_with_place(_edit_rows("Add audio", "University of Waterloo"), *SONG, POST_PAGE)
     )
     added = module.finish_post(
         device, "uwaterloo", POST, ["the weeknd after hours"], lambda *_: 1, place=WATERLOO
     )
     assert added.track == "After Hours by The Weeknd,6:01"
-    assert device.typed == ["the weeknd after hours", "University of Waterloo"]
-    assert device.taps[-5:] == [
-        "action_bar_button_action",
+    assert device.typed == ["University of Waterloo", "the weeknd after hours"]
+    assert device.taps[-8:] == [
         "Add location",
         "row_search_edit_text",
         "University of Waterloo",
+        "Add audio",
+        "Search...",
+        "Select track After Hours by The Weeknd,6:01",
+        "action_bar_button_action",
         "Done",
     ]
 
 
-def test_no_place_for_the_school_still_saves_the_song(screens) -> None:
-    device = screens(
-        *_song_then_place(
-            _edit_rows("After Hours", "Add location"),
-            LOCATION_SEARCH,
-            LOCATION_SEARCH,
-            PLACES,
-            _edit_rows("After Hours", "Add location"),
-            POST_PAGE,
-        )
-    )
+def test_no_place_for_the_school_still_adds_and_saves_the_song(screens) -> None:
+    device = screens(*_edit_with_place(_edit_rows("Add audio", "Add location"), *SONG, POST_PAGE))
     nowhere = module.PlaceTag("University of Waterloo", lambda name, places: None)
-    module.finish_post(
+    added = module.finish_post(
         device, "uwaterloo", POST, ["the weeknd after hours"], lambda *_: 1, place=nowhere
     )
-    assert device.taps[-2:] == ["back", "Done"]
+    assert added.track == "After Hours by The Weeknd,6:01"
+    assert device.taps[-6:-4] == ["back", "Add audio"]
+    assert device.taps[-1] == "Done"
 
 
 def test_a_post_with_its_song_and_place_is_left_as_it_is(screens) -> None:
