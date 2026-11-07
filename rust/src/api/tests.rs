@@ -374,6 +374,8 @@ async fn event_routes_validate_parameters_like_fastapi() {
     // test_get_event_stats_requires_school
     let reply = send(state(None), get("/events/stats"), "testclient").await;
     assert_eq!(reply.status, StatusCode::UNPROCESSABLE_ENTITY);
+    // Only a school's stats may be kept by a cache, never an error.
+    assert!(reply.headers.get(header::CACHE_CONTROL).is_none());
     assert_eq!(
         serde_json::from_slice::<Value>(&reply.body).unwrap(),
         json!({"detail": [{"type": "missing", "loc": ["query", "school"], "msg": "Field required", "input": null}]})

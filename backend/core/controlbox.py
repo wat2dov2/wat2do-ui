@@ -350,6 +350,26 @@ class ApiServerControl(_ControlModel):
         return self
 
 
+class SharedCacheControl(_ControlModel):
+    """How long caches keep one API response that is the same for every visitor."""
+
+    # Browsers (Cache-Control max-age).
+    max_age_seconds: int = Field(ge=0, le=86400)
+    # Shared caches such as Vercel's CDN, which proxies /api (s-maxage).
+    shared_max_age_seconds: int = Field(gt=0, le=86400)
+    # How much longer a shared cache still answers with it while it fetches the next.
+    stale_while_revalidate_seconds: int = Field(ge=0, le=86400)
+
+
+class ApiCacheControl(_ControlModel):
+    """The API's responses that browsers and the CDN may keep (`rust/src/api/cache_control.rs`)."""
+
+    # Each school's click and going counts: short, as they change all day.
+    event_stats: SharedCacheControl
+    # Categories, interests and report statuses, which change only with a deploy.
+    constants: SharedCacheControl
+
+
 class RateLimitControl(_ControlModel):
     maximum_requests: int = Field(gt=0)
     window_seconds: int = Field(gt=0)
@@ -1228,6 +1248,7 @@ class TicketingControl(_ControlModel):
 
 class ControlBox(_ControlModel):
     api_server: ApiServerControl
+    api_cache: ApiCacheControl
     positions: PositionsControl
     database: DatabaseControl
     image_delivery: ImageDeliveryControl

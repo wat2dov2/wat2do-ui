@@ -1,0 +1,12 @@
+{
+  "event_stats": {
+    "max_age_seconds": 0,
+    "shared_max_age_seconds": 30,
+    "stale_while_revalidate_seconds": 120
+  },
+  "constants": {
+    "max_age_seconds": 3600,
+    "shared_max_age_seconds": 3600,
+    "stale_while_revalidate_seconds": 86400
+  }
+}

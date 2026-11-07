@@ -915,6 +915,35 @@ def test_api_server_rejects_unsafe_settings(tmp_path: Path, patch, message) -> N
         load_controlbox(path)
 
 
+def test_api_cache_keeps_stats_briefly_and_constants_for_an_hour() -> None:
+    stats = controlbox.api_cache.event_stats
+    assert (stats.max_age_seconds, stats.shared_max_age_seconds) == (0, 30)
+    assert stats.stale_while_revalidate_seconds == 120
+    constants = controlbox.api_cache.constants
+    assert (constants.max_age_seconds, constants.shared_max_age_seconds) == (3600, 3600)
+    assert constants.stale_while_revalidate_seconds == 86400
+
+
+@pytest.mark.parametrize(
+    "patch",
+    [
+        {"max_age_seconds": -1},
+        {"max_age_seconds": 86401},
+        {"shared_max_age_seconds": 0},
+        {"stale_while_revalidate_seconds": -1},
+        {"stale_while_revalidate_seconds": 86401},
+        {"private": True},
+    ],
+)
+def test_api_cache_rejects_unsafe_lifetimes(tmp_path: Path, patch) -> None:
+    path = _write_control(
+        tmp_path, "api_cache", lambda payload: payload["event_stats"].update(patch)
+    )
+
+    with pytest.raises(ValidationError):
+        load_controlbox(path)
+
+
 def test_ticketing_ships_with_paid_tickets_off() -> None:
     control = controlbox.ticketing
     assert control.paid_tickets_enabled is False

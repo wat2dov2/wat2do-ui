@@ -27,6 +27,10 @@ Rust routes behave exactly like FastAPI routes:
 
 Proxied responses get none of these from Rust: Python still adds its own.
 
+The website reaches the API through Vercel, whose CDN keeps any proxied response that says it may, by URL and host, and answers later requests from that copy, signed in or not.
+So only a response that is the same for every visitor (no user, cookie or rate limit changes it) may say so: `cache_control::shared(body, &API_CACHE.<response>)` marks it with its policy in `controlbox/api_cache.json` (today the event stats and the constants).
+Send no `Cache-Control` on any other response: Vercel keeps none of those.
+
 ## Porting a router
 
 Port one whole router (every path under its prefix) per change, so no path is served by both apps.
