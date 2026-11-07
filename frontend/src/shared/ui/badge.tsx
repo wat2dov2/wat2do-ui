@@ -52,7 +52,7 @@ const badgeVariants = cva(
         lg: "px-2.5 py-1 text-xs font-bold rounded-xl",
         xl: "px-3 py-1.5 text-sm font-bold rounded-xl",
         // Large on display surfaces such as the landing hero, compact on phones.
-        display: "px-2.5 py-1 text-xs font-bold rounded-xl sm:px-3.5 sm:py-1.5 sm:text-base",
+        display: "px-2.5 py-1 text-xs font-bold rounded-xl sm:px-3 sm:py-1 sm:text-sm",
       },
     },
     defaultVariants: {

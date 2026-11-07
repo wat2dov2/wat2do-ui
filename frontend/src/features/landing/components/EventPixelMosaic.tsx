@@ -9,14 +9,14 @@ import { cn } from "@/shared/lib/utils";
  * - `logo`: cells that spell the Wat2Do logo and a headline, in posters that
  *   wear their colours, out of a muted grid.
  * - `ambient`: larger muted cells behind a closing line.
- * Both keep changing a few squares at a time. The atlas holds 40 px posters,
- * near twice the largest cell, so cells stay sharp on a 2x screen.
+ * Both keep changing a few squares at a time. The atlas holds 32 px posters,
+ * twice the largest cell, so cells stay crisp on a 2x screen.
  */
 export type EventPixelMosaicVariant = "logo" | "ambient";
 
 const LOOKS: Record<EventPixelMosaicVariant, MosaicLook> = {
-  logo: { tileSize: 22, gutter: 2, swapsPerSecond: 0.04, tone: "logo" },
-  ambient: { tileSize: 16, gutter: 1, swapsPerSecond: 0.03, tone: "muted" },
+  logo: { tileSize: 10, gutter: 0.5, swapsPerSecond: 0.04, tone: "logo" },
+  ambient: { tileSize: 16, gutter: 0.5, swapsPerSecond: 0.03, tone: "muted" },
 };
 
 interface EventPixelMosaicProps {
@@ -85,13 +85,10 @@ export function EventPixelMosaic({ variant, logoRegion, title }: EventPixelMosai
           phrases: headline.phrases,
           phraseMs: PHRASE_MS,
           region: () => regionOf(headline.region.current),
-          font: () => getComputedStyle(headline.region.current ?? canvas).fontFamily,
           onLayout: (height) => titleRef.current?.onLayout(height),
         },
       });
       setReady(true);
-      // Letters are measured in the page's typeface, so lay out again once it has loaded.
-      void document.fonts.ready.then(() => { if (!cancelled) controller?.relayout(); });
       const full = await loadFullAtlas();
       if (!cancelled) controller.setAtlas(full);
     };

@@ -1,144 +1,133 @@
 /**
- * Spells a headline in mosaic cells with the page's own heading typeface: each
- * line is drawn in the heading's family, at a heavy weight so every stroke is
- * at least two cells thick, onto a small canvas where
- * a few pixels stand for one cell, and a cell is part of a letter when at
- * least half of it is ink. Real type, not a bitmap font, so it reads like the
- * heading itself built out of squares, in every language's script.
+ * Spells a headline in mosaic cells with a rudimentary 5×7 pixel font: every
+ * stroke is one cell wide, like a dot-matrix sign, in capitals. The lead takes
+ * one line and each phrase the line below, so the headline is always two
+ * lines. A line with a character the font lacks (another script) is drawn in
+ * the system's sans-serif instead, at the same height.
  */
 
-/** The largest and smallest type size in cells (one em). Below the smallest, even heavy strokes are under two cells and stop reading. */
-const MAX_EM_CELLS = 20;
-export const MIN_EM_CELLS = 10;
-/** Rows per line, as a multiple of the type size: room for ascenders and descenders. */
-const LINE_HEIGHT = 1.18;
-/** No part of the headline wraps onto more than this many mosaic lines; legibility comes before fitting on one line. */
-const MAX_LINES_PER_PART = 4;
-/** The weight the letters are drawn at: the heaviest, so strokes stay solid at a few large cells. */
-const TITLE_WEIGHT = 900;
-/** Pixels drawn per cell side when rasterizing, so each cell's coverage is measured, not guessed. */
-const SUPERSAMPLE = 6;
-/** A cell is a letter cell when at least this much of it is covered. */
-const INK_COVERAGE = 0.42;
+/** Each glyph, row by row, "#" for a lit cell; all are seven rows tall. */
+const GLYPHS: Record<string, readonly string[]> = {
+  A: [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
+  B: ["####.", "#...#", "#...#", "####.", "#...#", "#...#", "####."],
+  C: [".###.", "#...#", "#....", "#....", "#....", "#...#", ".###."],
+  D: ["####.", "#...#", "#...#", "#...#", "#...#", "#...#", "####."],
+  E: ["#####", "#....", "#....", "####.", "#....", "#....", "#####"],
+  F: ["#####", "#....", "#....", "####.", "#....", "#....", "#...."],
+  G: [".###.", "#...#", "#....", "#.###", "#...#", "#...#", ".####"],
+  H: ["#...#", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
+  I: [".###.", "..#..", "..#..", "..#..", "..#..", "..#..", ".###."],
+  J: ["..###", "...#.", "...#.", "...#.", "...#.", "#..#.", ".##.."],
+  K: ["#...#", "#..#.", "#.#..", "##...", "#.#..", "#..#.", "#...#"],
+  L: ["#....", "#....", "#....", "#....", "#....", "#....", "#####"],
+  M: ["#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"],
+  N: ["#...#", "#...#", "##..#", "#.#.#", "#..##", "#...#", "#...#"],
+  O: [".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+  P: ["####.", "#...#", "#...#", "####.", "#....", "#....", "#...."],
+  Q: [".###.", "#...#", "#...#", "#...#", "#.#.#", "#..#.", ".##.#"],
+  R: ["####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#"],
+  S: [".####", "#....", "#....", ".###.", "....#", "....#", "####."],
+  T: ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."],
+  U: ["#...#", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+  V: ["#...#", "#...#", "#...#", "#...#", "#...#", ".#.#.", "..#.."],
+  W: ["#...#", "#...#", "#...#", "#.#.#", "#.#.#", "#.#.#", ".#.#."],
+  X: ["#...#", "#...#", ".#.#.", "..#..", ".#.#.", "#...#", "#...#"],
+  Y: ["#...#", "#...#", ".#.#.", "..#..", "..#..", "..#..", "..#.."],
+  Z: ["#####", "....#", "...#.", "..#..", ".#...", "#....", "#####"],
+  "0": [".###.", "#...#", "#..##", "#.#.#", "##..#", "#...#", ".###."],
+  "1": ["..#..", ".##..", "..#..", "..#..", "..#..", "..#..", ".###."],
+  "2": [".###.", "#...#", "....#", "...#.", "..#..", ".#...", "#####"],
+  "3": ["#####", "...#.", "..#..", "...#.", "....#", "#...#", ".###."],
+  "4": ["...#.", "..##.", ".#.#.", "#..#.", "#####", "...#.", "...#."],
+  "5": ["#####", "#....", "####.", "....#", "....#", "#...#", ".###."],
+  "6": ["..##.", ".#...", "#....", "####.", "#...#", "#...#", ".###."],
+  "7": ["#####", "....#", "...#.", "..#..", ".#...", ".#...", ".#..."],
+  "8": [".###.", "#...#", "#...#", ".###.", "#...#", "#...#", ".###."],
+  "9": [".###.", "#...#", "#...#", ".####", "....#", "...#.", ".##.."],
+  " ": ["...", "...", "...", "...", "...", "...", "..."],
+  "-": ["...", "...", "...", "###", "...", "...", "..."],
+  ".": [".", ".", ".", ".", ".", ".", "#"],
+  ",": ["..", "..", "..", "..", "..", ".#", "#."],
+  "!": ["#", "#", "#", "#", "#", ".", "#"],
+  "?": [".###.", "#...#", "....#", "...#.", "..#..", ".....", "..#.."],
+  "'": ["#", "#", ".", ".", ".", ".", "."],
+  ":": [".", "#", ".", ".", ".", "#", "."],
+  "/": ["....#", "...#.", "...#.", "..#..", ".#...", ".#...", "#...."],
+  "&": [".##..", "#..#.", "#.#..", ".#...", "#.#.#", "#..#.", ".##.#"],
+};
+const GLYPH_ROWS = 7;
+/** Empty cells between the logo and the headline, between its lines, and below it, so the stack is evenly spaced. */
+export const TITLE_GAP_ROWS = 4;
+/** Rows per line: a glyph's seven and the gap below it. */
+export const LINE_ROWS = GLYPH_ROWS + TITLE_GAP_ROWS;
+/** Rows the headline needs: the lead's line and a phrase's. */
+export const TITLE_ROWS = 2 * LINE_ROWS;
 /** Cells kept clear on each side of a line. */
 const SIDE_MARGIN = 1;
+/** Another script's type size in cells (one em), about the pixel font's height. */
+const FALLBACK_EM = 8;
+const FALLBACK_FONT = "700 {size}px system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif";
+/** Pixels drawn per cell side when rasterizing another script, so each cell's coverage is measured. */
+const SUPERSAMPLE = 6;
+/** Another script's cell is ink when at least this much of it is covered. */
+const INK_COVERAGE = 0.42;
 
-/** Measures a line's width in ems of the heading's type. */
-export type MeasureEms = (text: string) => number;
-
-/**
- * Greedy word wrap into lines no wider than `columns` cells at `em` cells per
- * em, or null when one word alone is too wide. With `breakWords`, a word too
- * wide for a line is hyphenated across lines instead, as a last resort on the
- * narrowest screens.
- */
-export function wrapTitle(text: string, columns: number, em: number, measure: MeasureEms, breakWords = false): string[] | null {
-  const fits = (line: string) => measure(line) * em <= columns;
-  const lines: string[] = [];
-  for (const word of text.split(/\s+/).filter(Boolean)) {
-    const pieces: string[] = [];
-    if (fits(word)) pieces.push(word);
-    else if (!breakWords) return null;
-    else {
-      let piece = "";
-      for (const character of word) {
-        // Every piece but the last carries a hyphen, which must fit too.
-        if (piece.length > 1 && !fits(`${piece}${character}-`)) {
-          pieces.push(`${piece}-`);
-          piece = "";
-        }
-        piece += character;
-      }
-      pieces.push(piece);
-    }
-    for (const piece of pieces) {
-      const last = lines[lines.length - 1];
-      if (last !== undefined && pieces.length === 1 && fits(`${last} ${piece}`)) lines[lines.length - 1] = `${last} ${piece}`;
-      else lines.push(piece);
-    }
-  }
-  return lines;
+/** The line's glyphs, accents dropped (É is drawn as E), or null when the pixel font lacks one of its characters. */
+function glyphsOf(line: string): (readonly string[])[] | null {
+  const plain = line.toLocaleUpperCase().normalize("NFD").replace(/\p{M}/gu, "");
+  const glyphs = [...plain].map((character) => GLYPHS[character]);
+  return glyphs.every(Boolean) ? glyphs : null;
 }
 
-export interface MosaicTitleLayout {
-  /** The type size in cells. */
-  em: number;
-  /** Rows per line. */
-  lineRows: number;
-  /** The lead's lines, the same for every phrase. */
-  lead: string[];
-  /** Each phrase's lines. */
-  phrases: string[][];
-  /** Rows the title needs: the lead plus the longest phrase. */
-  rows: number;
+function fallbackFont(pixels: number) {
+  return FALLBACK_FONT.replace("{size}", String(pixels));
 }
 
-/**
- * Lays the lead and every phrase out in `columns` cells: in as few lines as
- * any legible size allows (no part on more than MAX_LINES_PER_PART), at the
- * largest size that keeps that many lines; null when even the smallest legible
- * size does not fit. With `breakWords`, the smallest size always fits by splitting words.
- */
-export function layoutMosaicTitle(
-  lead: string,
-  phrases: readonly string[],
-  columns: number,
-  measure: MeasureEms,
-  breakWords = false,
-): MosaicTitleLayout | null {
-  const width = columns - SIDE_MARGIN * 2;
-  let best: (MosaicTitleLayout & { lines: number }) | null = null;
-  for (let em = breakWords ? MIN_EM_CELLS : MAX_EM_CELLS; em >= MIN_EM_CELLS; em -= 1) {
-    const leadLines = wrapTitle(lead, width, em, measure, breakWords);
-    const phraseLines = phrases.map((phrase) => wrapTitle(phrase, width, em, measure, breakWords));
-    const parts = [leadLines, ...phraseLines];
-    if (parts.some((lines) => !lines || (!breakWords && lines.length > MAX_LINES_PER_PART))) continue;
-    const lineRows = Math.ceil(em * LINE_HEIGHT);
-    const longest = Math.max(...phraseLines.map((lines) => lines!.length));
-    const lines = leadLines!.length + longest;
-    // Sizes run largest first, so a later size wins only by needing fewer lines.
-    if (!best || lines < best.lines) {
-      best = { em, lineRows, lead: leadLines!, phrases: phraseLines as string[][], rows: lines * lineRows, lines };
-    }
-  }
-  if (!best) return null;
-  return { em: best.em, lineRows: best.lineRows, lead: best.lead, phrases: best.phrases, rows: best.rows };
-}
-
-/** The heading's family, heavy, at a pixel size. */
-function fontAt(family: string, pixels: number) {
-  return `${TITLE_WEIGHT} ${pixels}px ${family}`;
-}
-
-/** A measure in ems for the heading's family, from a scratch canvas. */
-export function canvasMeasure(family: string): MeasureEms {
+/** How many cells wide a line is drawn, with a cell's gap between glyphs. */
+function lineColumns(line: string): number {
+  const glyphs = glyphsOf(line);
+  if (glyphs) return glyphs.reduce((width, glyph) => width + glyph[0].length + 1, -1);
   const context = document.createElement("canvas").getContext("2d")!;
-  context.font = fontAt(family, 100);
-  return (text) => context.measureText(text).width / 100;
+  context.font = fallbackFont(FALLBACK_EM * SUPERSAMPLE);
+  return Math.ceil(context.measureText(line).width / SUPERSAMPLE);
 }
 
-/**
- * Which cells of a `columns`-wide box are ink for these lines, centred, one
- * line every `layout.lineRows` rows from the top.
- */
-export function rasterizeTitle(lines: readonly string[], columns: number, layout: Pick<MosaicTitleLayout, "em" | "lineRows">, family: string): Uint8Array {
-  const rows = lines.length * layout.lineRows;
+/** The cells across the headline needs: its widest line and a margin each side. */
+export function titleColumns(lead: string, phrases: readonly string[]): number {
+  return Math.max(...[lead, ...phrases].map(lineColumns)) + SIDE_MARGIN * 2;
+}
+
+/** Which cells of a `columns`-wide box, LINE_ROWS tall, are ink for this line, centred. */
+export function rasterizeTitle(line: string, columns: number): Uint8Array {
+  const ink = new Uint8Array(columns * LINE_ROWS);
+  const glyphs = glyphsOf(line);
+  if (!glyphs) return rasterizeFallback(line, columns, ink);
+  let column = Math.floor((columns - lineColumns(line)) / 2);
+  for (const glyph of glyphs) {
+    glyph.forEach((cells, row) => {
+      [...cells].forEach((cell, offset) => {
+        const x = column + offset;
+        if (cell === "#" && x >= 0 && x < columns) ink[row * columns + x] = 1;
+      });
+    });
+    column += glyph[0].length + 1;
+  }
+  return ink;
+}
+
+/** A line the pixel font cannot draw, in the system's sans-serif at about its height. */
+function rasterizeFallback(line: string, columns: number, ink: Uint8Array): Uint8Array {
   const canvas = document.createElement("canvas");
   canvas.width = columns * SUPERSAMPLE;
-  canvas.height = rows * SUPERSAMPLE;
+  canvas.height = LINE_ROWS * SUPERSAMPLE;
   const context = canvas.getContext("2d", { willReadFrequently: true })!;
-  context.font = fontAt(family, layout.em * SUPERSAMPLE);
+  context.font = fallbackFont(FALLBACK_EM * SUPERSAMPLE);
   context.textAlign = "center";
   context.textBaseline = "alphabetic";
   context.fillStyle = "#000";
-  lines.forEach((line, index) => {
-    // The baseline sits where descenders still land inside the line.
-    const baseline = (index * layout.lineRows + layout.em * 0.92) * SUPERSAMPLE;
-    context.fillText(line, canvas.width / 2, baseline);
-  });
+  context.fillText(line, canvas.width / 2, GLYPH_ROWS * SUPERSAMPLE);
   const alpha = context.getImageData(0, 0, canvas.width, canvas.height).data;
-  const ink = new Uint8Array(columns * rows);
-  for (let row = 0; row < rows; row += 1) {
+  for (let row = 0; row < LINE_ROWS; row += 1) {
     for (let column = 0; column < columns; column += 1) {
       let covered = 0;
       for (let y = 0; y < SUPERSAMPLE; y += 1) {

@@ -20,7 +20,7 @@
  * paints first; the full one replaces it when it arrives.
  */
 
-import { canvasMeasure, layoutMosaicTitle, rasterizeTitle } from "@/features/landing/lib/eventMosaicTitle";
+import { LINE_ROWS, TITLE_GAP_ROWS, TITLE_ROWS, rasterizeTitle, titleColumns } from "@/features/landing/lib/eventMosaicTitle";
 
 export interface MosaicAtlas {
   image: CanvasImageSource;
@@ -72,8 +72,6 @@ export interface MosaicContent {
     phraseMs: number;
     /** Where the headline goes: its top and width; its height is the layout's. */
     region: () => MosaicRect | null;
-    /** The heading's font family, which the spelled letters are drawn in. */
-    font: () => string;
     /** Told on every layout how tall the headline is in CSS pixels. */
     onLayout: (height: number) => void;
   };
@@ -83,8 +81,6 @@ export interface MosaicController {
   stop: () => void;
   /** Replaces the atlas (the full one after the first-paint copy) and redraws every cell. */
   setAtlas: (atlas: MosaicAtlas) => void;
-  /** Lays the grid out again, as when the page's typeface finishes loading. */
-  relayout: () => void;
 }
 
 /** How long one square takes to crossfade to its next poster. */
@@ -104,8 +100,8 @@ const LOGO_MIN_CANDIDATES = 24;
 /** Headline posters are dark: a dominant colour no lighter than this (0 black, 1 white) covering at least this share of the poster. */
 const TITLE_MAX_LIGHTNESS = 0.2;
 const TITLE_MIN_SHARE = 0.35;
-/** The smallest cell a headline may ask for, in CSS pixels: squares stay big enough to read as posters. */
-const MIN_TILE_SIZE = 10;
+/** The smallest cell a headline may ask for, in CSS pixels, so its widest line still fits on one line on the narrowest phones. */
+const MIN_TILE_SIZE = 2;
 /** Tries at a random unused poster before searching the pool for the least shown one. */
 const PICK_TRIES = 8;
 
@@ -196,7 +192,7 @@ export function startEventPixelMosaic(
 ): MosaicController {
   const context = canvas.getContext("2d");
   const parent = canvas.parentElement;
-  if (!context || !parent) return { stop: () => {}, setAtlas: () => {}, relayout: () => {} };
+  if (!context || !parent) return { stop: () => {}, setAtlas: () => {} };
 
   let atlas = firstAtlas;
   let grey = greyscale(firstAtlas);
@@ -307,9 +303,8 @@ export function startEventPixelMosaic(
   }
 
   /**
-   * Chooses the cell size and lays the headline out: the largest cell (up to
-   * the look's) at which the headline fits with letters still legible, wrapped
-   * as needed, else the smallest cell with words split as a last resort.
+   * Chooses the cell size for the headline: the largest (up to the look's) at
+   * which its widest line fits the region, one pixel of its font to a cell.
    */
   function layoutTitle() {
     leadInk = new Uint8Array(0);
@@ -318,29 +313,25 @@ export function startEventPixelMosaic(
     const title = look.tone === "logo" ? content.title : undefined;
     const region = title?.region();
     if (!title || !region) return null;
-    const font = title.font();
-    const measure = canvasMeasure(font);
-    for (let candidate = look.tileSize; candidate >= MIN_TILE_SIZE; candidate -= 1) {
-      const layout = layoutMosaicTitle(title.lead, title.phrases, Math.floor(region.width / candidate), measure);
-      if (layout) {
-        tile = candidate;
-        return { title, region, font, layout };
-      }
-    }
-    tile = MIN_TILE_SIZE;
-    const layout = layoutMosaicTitle(title.lead, title.phrases, Math.floor(region.width / tile), measure, true)!;
-    return { title, region, font, layout };
+    const needed = titleColumns(title.lead, title.phrases);
+    tile = Math.max(MIN_TILE_SIZE, Math.min(look.tileSize, Math.floor(region.width / needed)));
+    return { title, region };
   }
 
   /** Spells a laid-out headline onto the grid's cells. */
-  function spellTitle({ title, region, font, layout }: NonNullable<ReturnType<typeof layoutTitle>>) {
-    title.onLayout(layout.rows * tile);
+  function spellTitle({ title, region }: NonNullable<ReturnType<typeof layoutTitle>>) {
     const regionColumns = Math.floor(region.width / tile);
     const left = Math.round(region.left / tile);
-    const top = Math.round(region.top / tile);
-    /** A block of lines' ink placed on the grid, `rowOffset` rows below the region's top. */
-    const spell = (lines: readonly string[], rowOffset: number) => {
-      const box = rasterizeTitle(lines, regionColumns, layout, font);
+    // The headline starts a gap of empty rows below the logo's lowest cell, at every cell size.
+    let logoBottom = -1;
+    logo.forEach((letter, index) => { if (letter) logoBottom = Math.max(logoBottom, Math.floor(index / columns)); });
+    const regionTop = Math.round(region.top / tile);
+    // Exactly the gap, even where the logo's box leaves empty rows below it; the region's height follows.
+    const top = logoBottom >= 0 ? logoBottom + 1 + TITLE_GAP_ROWS : regionTop;
+    title.onLayout(Math.max(0, top - regionTop + TITLE_ROWS) * tile);
+    /** A line's ink placed on the grid, `rowOffset` rows below the region's top. */
+    const spell = (line: string, rowOffset: number) => {
+      const box = rasterizeTitle(line, regionColumns);
       const cells = new Uint8Array(columns * rows);
       box.forEach((value, index) => {
         const row = top + rowOffset + Math.floor(index / regionColumns);
@@ -349,8 +340,8 @@ export function startEventPixelMosaic(
       });
       return cells;
     };
-    leadInk = spell(layout.lead, 0);
-    phraseInk = layout.phrases.map((lines) => spell(lines, layout.lead.length * layout.lineRows));
+    leadInk = spell(title.lead, 0);
+    phraseInk = title.phrases.map((phrase) => spell(phrase, LINE_ROWS));
   }
 
   function drawPoster(index: number, poster: number, alpha: number, colour: boolean) {
@@ -512,6 +503,5 @@ export function startEventPixelMosaic(
       grey = greyscale(next);
       drawAll();
     },
-    relayout: resize,
   };
 }

@@ -7,11 +7,10 @@ import manifest from "../src/assets/event-mosaic-uwaterloo.json" with { type: "j
 type Draw = { source: unknown; sx: number; sy: number; pixels: number; x: number; y: number; size: number; alpha: number };
 type Controller = { stop: () => void; setPhrase: (index: number) => void };
 type Title = {
-  wrapTitle: (text: string, columns: number, em: number, measure: (text: string) => number, breakWords?: boolean) => string[] | null;
-  layoutMosaicTitle: (
-    lead: string, phrases: readonly string[], columns: number, measure: (text: string) => number, breakWords?: boolean,
-  ) => { em: number; lineRows: number; lead: string[]; phrases: string[][]; rows: number } | null;
-  MIN_EM_CELLS: number;
+  titleColumns: (lead: string, phrases: readonly string[]) => number;
+  rasterizeTitle: (line: string, columns: number) => Uint8Array;
+  LINE_ROWS: number;
+  TITLE_ROWS: number;
 };
 type Box = { left: number; top: number; columns: number; rows: number };
 type Engine = {
@@ -94,8 +93,8 @@ function loadMosaic(width = 240, height = 120) {
 
 test("the atlas packs over a thousand real posters, each with the dominant colour that places it", () => {
   expect(manifest.posters.length).toBeGreaterThanOrEqual(1000);
-  // Near twice the largest cell the page draws (22 CSS px), so cells are crisp on a 2x screen.
-  expect(manifest.tilePixels).toBeGreaterThanOrEqual(40);
+  // Twice the largest cell the page draws (16 CSS px), so cells are crisp on a 2x screen.
+  expect(manifest.tilePixels).toBeGreaterThanOrEqual(32);
   expect(manifest.eventCount).toBeGreaterThanOrEqual(manifest.posters.length);
   for (const poster of manifest.posters) {
     expect(poster.colour).toMatch(/^#[0-9a-f]{6}$/);
@@ -194,28 +193,17 @@ test("the mosaic keeps changing a few scattered squares at a time, each with a q
   expect(mosaic.frames).toHaveLength(1);
 });
 
-test("a headline wraps by word at the largest legible size that fits, and splits words only as a last resort", () => {
+test("a headline is spelled in a 5x7 pixel font, one cell per stroke, in capitals", () => {
   const title = loadTitle();
-  // A measure of one em per character keeps the arithmetic plain.
-  const measure = (text: string) => text.length;
-  expect(title.wrapTitle("networking opportunity", 14, 1, measure)).toEqual(["networking", "opportunity"]);
-  expect(title.wrapTitle("social event", 14, 1, measure)).toEqual(["social event"]);
-  expect(title.wrapTitle("networking", 6, 1, measure)).toBeNull();
-  expect(title.wrapTitle("networking", 6, 1, measure, true)).toEqual(["netwo-", "rking"]);
+  // "NETWORKING EVENT": 15 letters five cells wide, a three-cell space, a cell between glyphs, a margin each side.
+  expect(title.titleColumns("Every campus", ["event", "networking event"])).toBe(15 * 5 + 3 + 15 + 2);
+  expect(title.TITLE_ROWS).toBe(2 * title.LINE_ROWS);
 
-  // 198 cells across: the lead fits on one line at 16 cells an em, the long phrase on two.
-  const layout = title.layoutMosaicTitle("Every campus", ["event", "networking opportunity"], 200, measure)!;
-  expect(layout.em).toBe(16);
-  expect(layout.lead).toEqual(["Every campus"]);
-  expect(layout.phrases[1]).toEqual(["networking", "opportunity"]);
-  // The lead plus the longest phrase, so every phrase fits the same box.
-  expect(layout.rows).toBe(3 * layout.lineRows);
-
-  // Too narrow for "opportunity" at the smallest legible size: no layout, unless words may split.
-  expect(title.layoutMosaicTitle("Every campus", ["networking opportunity"], 100, measure)).toBeNull();
-  const split = title.layoutMosaicTitle("Every campus", ["networking opportunity"], 100, measure, true)!;
-  expect(split.em).toBe(title.MIN_EM_CELLS);
-  expect([...split.lead, ...split.phrases[0]].every((line) => line.length * split.em <= 98)).toBe(true);
+  // A lowercase "e" draws the capital, centred in its box.
+  const ink = title.rasterizeTitle("e", 7);
+  const rows = Array.from({ length: 7 }, (_, row) => [...ink.slice(row * 7, row * 7 + 7)].map((cell) => (cell ? "#" : ".")).join(""));
+  expect(rows).toEqual([".#####.", ".#.....", ".#.....", ".####..", ".#.....", ".#.....", ".#####."]);
+  expect([...ink.slice(7 * 7)].every((cell) => cell === 0)).toBe(true);
 });
 
 /** A muted cell's full strength (MUTED_ALPHA in the engine); a fade passes below it. */

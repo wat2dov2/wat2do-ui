@@ -20,8 +20,8 @@ import sharp from "sharp";
 import imageDelivery from "../../backend/controlbox/image_delivery.json" with { type: "json" };
 import uploads from "../../backend/controlbox/uploads.json" with { type: "json" };
 
-/** Pixels per poster side: near twice the largest cell the page draws (22 CSS px), sharp on a 2x screen at a size that loads quickly. */
-const TILE_PIXELS = 40;
+/** Pixels per poster side: twice the largest cell the page draws (16 CSS px, the closing card), so every cell is crisp on a 2x screen. */
+const TILE_PIXELS = 32;
 /** Pixels per poster side in the first-paint atlas, drawn smoothed until the full one arrives. */
 const PREVIEW_TILE_PIXELS = 8;
 /** Posters per atlas row. */
