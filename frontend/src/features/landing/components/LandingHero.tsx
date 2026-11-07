@@ -3,6 +3,7 @@
 import { useState } from "react";
 import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
+import { EventPixelMosaic } from "@/features/landing/components/EventPixelMosaic";
 import { LandingCard, LandingNotchLabel } from "@/features/landing/components/LandingCard";
 import { LandingEventViews, type LandingEventView } from "@/features/landing/components/LandingEventViews";
 import { LandingBurst } from "@/features/landing/components/LandingMarks";
@@ -45,8 +46,9 @@ function HeroLiveCount({ events, isLoading }: { events: Event[]; isLoading: bool
 }
 
 /**
- * The pitch on a card cut like an event card, its corners carrying the school,
- * the live count and what it costs, then the school's real feed in all three views.
+ * The pitch on a card cut like an event card, its face alive with scraped
+ * posters and its corners carrying the school, the live count and what it
+ * costs, then the school's real feed in all three views.
  */
 export function LandingHero({ schoolName, events, isLoading }: LandingHeroProps) {
   const { t } = useTranslation();
@@ -56,6 +58,7 @@ export function LandingHero({ schoolName, events, isLoading }: LandingHeroProps)
     <Stack as="section" gap={4} className="pt-2 sm:gap-6 sm:pt-8">
       <LandingCard
         size="display"
+        face={<EventPixelMosaic variant="spotlight" />}
         corners={{
           "top-left": <LandingNotchLabel size="display" icon={MapPin}>{schoolName}</LandingNotchLabel>,
           // An empty feed leaves the corner whole rather than notching it for a zero.

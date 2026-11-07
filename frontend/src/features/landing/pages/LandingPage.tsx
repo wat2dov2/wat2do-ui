@@ -2,6 +2,7 @@
 
 import { useRequestSchool } from "@/app/client-providers";
 import type { LandingSnapshot } from "@/features/landing/api/landing.server";
+import { LandingMosaicBand } from "@/features/landing/components/LandingCard";
 import { LandingClosing } from "@/features/landing/components/LandingClosing";
 import { LandingDifferent } from "@/features/landing/components/LandingDifferent";
 import { LandingFaq } from "@/features/landing/components/LandingFaq";
@@ -27,6 +28,7 @@ export function LandingPage({ snapshot }: LandingPageProps) {
       <Stack gap={12} className="pb-12 sm:gap-40 sm:pb-24">
         <LandingHero schoolName={schoolName} events={snapshot?.events ?? []} isLoading={!snapshot} />
         <LandingProblem schoolName={schoolName} />
+        <LandingMosaicBand />
         <LandingSolution schoolName={schoolName} snapshot={snapshot} />
         <LandingDifferent />
         <LandingUseCases schoolName={schoolName} />

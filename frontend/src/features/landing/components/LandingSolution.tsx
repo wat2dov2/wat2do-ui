@@ -4,6 +4,7 @@ import type { ComponentType, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BellRing, ScanText, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
 import type { LandingSnapshot } from "@/features/landing/api/landing.server";
+import { EventPixelMosaic } from "@/features/landing/components/EventPixelMosaic";
 import { LandingCard, LandingStage } from "@/features/landing/components/LandingCard";
 import {
   CaptureMockup,
@@ -101,7 +102,8 @@ export function LandingSolution({ schoolName, snapshot }: { schoolName: string; 
       <Stack gap={12} className="pt-8 sm:gap-32 sm:pt-16">
         {FEATURES.map(({ key, icon, Mockup }, index) => (
           <LandingFeatureRow key={key} mirrored={index % 2 === 1} copy={<FeatureCopy featureKey={key} schoolName={schoolName} />}>
-            <LandingStage icon={icon}>
+            {/* Flyers turning into events play out over the posters Wat2Do has already read. */}
+            <LandingStage icon={icon} face={key === "capture" ? <EventPixelMosaic variant="ambient" /> : undefined}>
               <Mockup />
             </LandingStage>
           </LandingFeatureRow>

@@ -2,6 +2,7 @@
 
 import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
+import { EventPixelMosaic } from "@/features/landing/components/EventPixelMosaic";
 import { LandingCard, LandingNotchLabel } from "@/features/landing/components/LandingCard";
 import { LandingHeading } from "@/features/landing/components/LandingSection";
 import { ROUTES } from "@/shared/constants/routes";
@@ -16,6 +17,7 @@ export function LandingClosing({ schoolName }: { schoolName: string }) {
     <section>
       <LandingCard
         size="display"
+        face={<EventPixelMosaic variant="spotlight" />}
         corners={{
           "top-left": <LandingNotchLabel size="display" icon={MapPin}>{schoolName}</LandingNotchLabel>,
           "bottom-right": (

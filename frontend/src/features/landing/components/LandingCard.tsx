@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import { ScanText, type LucideIcon } from "lucide-react";
+import { EventPixelMosaic } from "@/features/landing/components/EventPixelMosaic";
 import { Stack } from "@/shared/layout";
 import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
@@ -24,6 +25,8 @@ interface LandingCardProps {
   /** Badges notched into the card's corners, cut the way an event card's poster badges are. */
   corners?: LandingCardCorners;
   size?: LandingCardSize;
+  /** What the face shows under the content, clipped by the notches like an event card's poster; plain when left out. */
+  face?: ReactNode;
   children: ReactNode;
 }
 
@@ -34,7 +37,7 @@ interface LandingCardProps {
  * the card's flow, so content always starts below the tallest one, however
  * a translation wraps it.
  */
-export function LandingCard({ corners = {}, size = "section", children }: LandingCardProps) {
+export function LandingCard({ corners = {}, size = "section", face, children }: LandingCardProps) {
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
 
   const corner = (variant: BadgeMaskVariant) =>
@@ -66,6 +69,7 @@ export function LandingCard({ corners = {}, size = "section", children }: Landin
       <EventImageCutout
         backgroundColor="var(--surface-elevated)"
         imageFallback={null}
+        imageContent={face}
         cutouts={cutouts}
         box={box}
         className="absolute inset-0"
@@ -113,10 +117,19 @@ export function LandingCardGrid({ columns, children }: { columns: 2 | 3; childre
 }
 
 /** A card that holds one product illustration beside its feature copy, marked with what it shows. */
-export function LandingStage({ icon, children }: { icon: LucideIcon; children: ReactNode }) {
+export function LandingStage({ icon, face, children }: { icon: LucideIcon; face?: ReactNode; children: ReactNode }) {
   return (
-    <LandingCard corners={{ "top-left": <LandingNotchIcon icon={icon} /> }}>
+    <LandingCard face={face} corners={{ "top-left": <LandingNotchIcon icon={icon} /> }}>
       <div className="flex min-h-72 items-center justify-center sm:px-6 sm:pb-6">{children}</div>
+    </LandingCard>
+  );
+}
+
+/** A strip of the posters Wat2Do has read, at nearly full colour, between the problem and its fix. */
+export function LandingMosaicBand() {
+  return (
+    <LandingCard face={<EventPixelMosaic variant="band" />} corners={{ "top-left": <LandingNotchIcon icon={ScanText} /> }}>
+      <div className="h-16 sm:h-28" />
     </LandingCard>
   );
 }
