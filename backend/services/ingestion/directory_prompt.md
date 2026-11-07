@@ -60,8 +60,9 @@ Leave it out (`not_event`) when the university runs it, or when it is a service,
 When unsure whether students run it, leave it out.
 
 Whether this school also lists the university's own events: {{lists_university_events}}.
-When that is yes, list every event current students can attend, whoever runs it: the university's exhibitions and openings, artist and guest talks, lectures, workshops, screenings, open studios, performances, festivals and info sessions too.
-Even then, leave out events only for staff, faculty, prospective students, applicants, alumni or donors, governance and administration, deadlines, and ongoing services such as office hours, tutoring, advising or counselling.
+When that is yes, list every event current students can attend, whoever runs it: the university's exhibitions and openings, artist and guest talks, lectures, workshops, screenings, open studios, performances, festivals and info sessions too, and drop-in activities with food, games, crafts or conversation, weekly ones included.
+That overrides the leave-out list above for such events.
+Even then, leave out events only for staff, faculty, prospective students, applicants, alumni or donors, governance and administration, deadlines, and one-on-one services by appointment such as office hours, tutoring, advising or counselling.
 
 ## Verdicts
 
