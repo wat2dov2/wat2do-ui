@@ -130,7 +130,10 @@ def _ask(school: str, batch: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
             json.dumps([_packet(row) for row in batch], ensure_ascii=False)
         )
         answer = run_agent(
-            PROMPT.replace("{{school}}", school),
+            PROMPT.replace("{{school}}", school).replace(
+                "{{lists_university_events}}",
+                "yes" if school in controlbox.ingestion.university_event_schools else "no",
+            ),
             workdir=workdir,
             model=CONTROL.model,
             tools=("Read",),

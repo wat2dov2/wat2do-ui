@@ -840,6 +840,12 @@ class IngestionControl(_ControlModel):
     club_logo_read_delay_seconds: float = Field(ge=0, le=3600, allow_inf_nan=False)
     club_logo_retry_days: int = Field(gt=0, le=365)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # Schools whose student clubs post too few events, so their listings also carry the
+    # events the university itself runs and their university accounts are followed. The
+    # ingestion, directory and follow-scoring prompts read it as {{lists_university_events}}.
+    university_event_schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(
+        max_length=100
+    )
 
     @model_validator(mode="after")
     def validate_budgets(self) -> "IngestionControl":
