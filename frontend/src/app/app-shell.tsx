@@ -17,7 +17,12 @@ import {
   type HostnameSchoolStatus,
 } from "@/shared/constants/schools";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
-import { Toaster } from "@/shared/ui/sonner";
+import { useToasterRequested } from "@/shared/ui/toaster-demand";
+
+/** Mounted with the first toast, so the toast library stays out of page loads. */
+const Toaster = lazy(() =>
+  import("@/shared/ui/sonner").then((module) => ({ default: module.Toaster })),
+);
 
 /** Only a mistyped school subdomain shows it, so it loads on demand. */
 const UnknownSchoolPage = lazy(() =>
@@ -89,6 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   } = useSchoolDirectory();
   const isAuthFlow = AUTH_FLOW_ROUTES.has(pathname);
   const skipSchoolCheck = routeMatches(pathname, "/qr");
+  const toasterRequested = useToasterRequested();
 
   const hostnameSchoolStatus = useMemo<HostnameSchoolStatus>(() => {
     if (typeof window === "undefined" || skipSchoolCheck) {
@@ -134,7 +140,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
       <CommandPaletteHotkeys />
       <ModalContainer />
-      <Toaster />
+      {toasterRequested ? (
+        <Suspense fallback={null}>
+          <Toaster />
+        </Suspense>
+      ) : null}
     </>
   );
 }

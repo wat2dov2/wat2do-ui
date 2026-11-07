@@ -283,3 +283,10 @@ body:has([data-slot="site-banner"]) .main-content-grid {
     --site-banner-height: 3.5rem;
   }
 }
+
+/* Satoshi's italic face is declared without a preload (app/layout.tsx), so only
+   text that asks for it here downloads it. */
+.font-italic-satoshi {
+  font-family: var(--font-satoshi-italic), var(--font-family-sans);
+  font-style: italic;
+}

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { toast as sonnerToast } from "sonner"
+import { whenToasterReady } from "@/shared/ui/toaster-demand"
 
 type ToastVariant = "default" | "destructive" | "success"
 
@@ -13,26 +13,25 @@ interface ToastOptions {
   }
 }
 
-function toast({ title, description, variant = "default", action }: ToastOptions) {
+function toast({ title, description, variant = "default", action }: ToastOptions): void {
   const message = title ?? description ?? ""
   const options = {
     description: title ? description : undefined,
     action,
   }
 
-  if (variant === "destructive") {
-    return sonnerToast.error(message, options)
-  }
-
-  if (variant === "success") {
-    return sonnerToast.success(message, options)
-  }
-
-  if (title) {
-    return sonnerToast(message, options)
-  }
-
-  return sonnerToast.message(message, { action })
+  // The library loads with the Toaster on the first toast (see toaster-demand).
+  whenToasterReady((sonnerToast) => {
+    if (variant === "destructive") {
+      sonnerToast.error(message, options)
+    } else if (variant === "success") {
+      sonnerToast.success(message, options)
+    } else if (title) {
+      sonnerToast(message, options)
+    } else {
+      sonnerToast.message(message, { action })
+    }
+  })
 }
 
 export { toast }

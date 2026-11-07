@@ -1,11 +1,18 @@
 "use client"
 
-import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { useEffect } from "react"
+import { Toaster as Sonner, toast, type ToasterProps } from "sonner"
 
 import { useDarkMode } from "@/shared/hooks/useDarkMode"
+import { toasterMounted } from "@/shared/ui/toaster-demand"
 
 export function Toaster({ ...props }: ToasterProps) {
   const { isDarkMode } = useDarkMode()
+  // Runs after Sonner's own subscription (child effects run first), so the
+  // toasts queued before the library loaded are shown, not dropped.
+  useEffect(() => {
+    toasterMounted(toast)
+  }, [])
 
   return (
     <Sonner
