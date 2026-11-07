@@ -138,6 +138,7 @@ the school's story, and only then does the thread get the reply.
 The emulator finds every control by its accessibility label, taps at a random point
 inside it after a random pause, types one character at a time, and never types a
 password.
+It reads the screen through uiautomator2's resident server on the emulator (about a tenth of a second a read), which holds Android's one UI automation connection, so nothing else may run `uiautomator dump` there.
 Each reply is confirmed by seeing it appear in the thread.
 The emulator also likes, reposts and adds music to our own carousels after the API
 publishes them, since the API can do none of these: on the school's next visit the
