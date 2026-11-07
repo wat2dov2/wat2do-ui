@@ -357,7 +357,6 @@
     "selectSchool": "Piliin ang paaralan",
     "searchPlaceholder": "Maghanap ng mga paaralan...",
     "noSchoolFound": "Walang nahanap na paaralan.",
-    "unknownSubdomainEyebrow": "Hindi nahanap ang paaralan",
     "unknownSubdomainDocumentTitle": "Hindi Nahanap ang Paaralan | Wat2Do",
     "unknownSubdomainTitle": "Wala pa kaming campus na iyon.",
     "unknownSubdomainDescription": "Walang Wat2Do na paaralan na nakamapa sa \"{{school}}\". Suriin ang URL o bumalik sa pangunahing site.",
@@ -762,7 +761,6 @@
     "social": "Social"
   },
   "notFound": {
-    "eyebrow": "Hindi nahanap ang page",
     "title": "Hindi umiiral ang page na ito.",
     "description": "Maaaring sira ang link o nailipat na ang page. Bumalik at maghanap ng puwedeng gawin.",
     "browseEvents": "Tingnan ang mga event",

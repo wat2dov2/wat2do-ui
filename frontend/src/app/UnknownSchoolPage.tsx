@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
+import { EmptyState } from "@/shared/feedback";
 import { Container, PageFrame, PageHeader, Stack } from "@/shared/layout";
 
 interface UnknownSchoolPageProps {
@@ -25,26 +26,19 @@ export function UnknownSchoolPage({ requestedSchool }: UnknownSchoolPageProps) {
   return (
     <main className="min-h-dvh bg-background text-foreground">
       <PageFrame>
-        <Container size="lg">
-          <Stack gap={12}>
+        <Container size="sm">
+          <Stack gap={6}>
             <PageHeader
               back={{
                 label: t("schools.unknownSubdomainAction"),
                 onClick: () => window.location.assign(getHomeUrl()),
               }}
             />
-            <Stack as="section" align="center" gap={5} className="text-center">
-              <Search className="w-44 h-44 sm:w-56 sm:h-56 text-primary" aria-hidden="true" />
-              <p className="text-sm font-semibold tracking-[0.2em] text-muted-foreground">
-                {t("schools.unknownSubdomainEyebrow")}
-              </p>
-              <h1 className="text-4xl sm:text-6xl font-semibold tracking-normal leading-tight">
-                {t("schools.unknownSubdomainTitle")}
-              </h1>
-              <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl">
-                {t("schools.unknownSubdomainDescription", { school: requestedSchool })}
-              </p>
-            </Stack>
+            <EmptyState
+              icon={<Search />}
+              title={t("schools.unknownSubdomainTitle")}
+              description={t("schools.unknownSubdomainDescription", { school: requestedSchool })}
+            />
           </Stack>
         </Container>
       </PageFrame>

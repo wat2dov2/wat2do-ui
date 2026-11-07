@@ -357,7 +357,6 @@
     "selectSchool": "انتخاب مدرسه",
     "searchPlaceholder": "جستجوی مدارس...",
     "noSchoolFound": "هیچ مدرسه‌ای پیدا نشد.",
-    "unknownSubdomainEyebrow": "مدرسه پیدا نشد",
     "unknownSubdomainDocumentTitle": "مدرسه پیدا نشد | Wat2Do",
     "unknownSubdomainTitle": "ما هنوز آن پردیس را نداریم.",
     "unknownSubdomainDescription": "هیچ مدرسه Wat2Do به \"{{school}}\" نگاشته نشده است. URL را بررسی کنید یا به سایت اصلی بازگردید.",
@@ -762,7 +761,6 @@
     "social": "شبکه‌های اجتماعی"
   },
   "notFound": {
-    "eyebrow": "صفحه پیدا نشد",
     "title": "این صفحه وجود ندارد.",
     "description": "ممکن است پیوند خراب باشد یا صفحه جابه‌جا شده باشد. برگردید و کاری برای انجام دادن پیدا کنید.",
     "browseEvents": "مرور رویدادها",

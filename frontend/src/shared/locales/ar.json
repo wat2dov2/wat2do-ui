@@ -369,7 +369,6 @@
     "selectSchool": "اختر المدرسة",
     "searchPlaceholder": "ابحث في المدارس...",
     "noSchoolFound": "لم يتم العثور على مدرسة.",
-    "unknownSubdomainEyebrow": "لم يتم العثور على المدرسة",
     "unknownSubdomainDocumentTitle": "المدرسة غير موجودة | Wat2Do",
     "unknownSubdomainTitle": "ليس لدينا هذا الحرم الجامعي بعد.",
     "unknownSubdomainDescription": "لا توجد مدرسة Wat2Do مرتبطة بـ \"{{school}}\". تحقق من URL أو عد إلى الموقع الرئيسي.",
@@ -798,7 +797,6 @@
     "social": "تواصل اجتماعي"
   },
   "notFound": {
-    "eyebrow": "الصفحة غير موجودة",
     "title": "هذه الصفحة غير موجودة.",
     "description": "قد يكون الرابط معطلاً أو ربما نُقلت الصفحة. ارجع وابحث عن شيء تفعله.",
     "browseEvents": "تصفح الفعاليات",
