@@ -36,10 +36,11 @@ export function filterClubs(clubs: Club[], filters: {
   addedSince?: string | null;
 }): Club[] {
   const search = filters.search.trim().toLowerCase();
+  const handle = search.replace(/^@+/, "");
   const addedSince = filters.addedSince ? Date.parse(filters.addedSince) : null;
   const ids = filters.ids === undefined ? undefined : new Set(filters.ids);
   return clubs.filter((club) =>
-    (!search || club.club_name.toLowerCase().includes(search)) &&
+    (!search || club.club_name.toLowerCase().includes(search) || (!!handle && (club.ig ?? "").toLowerCase().includes(handle))) &&
     (!filters.categories.length || filters.categories.some(category => club.categories.includes(category))) &&
     club.event_count >= filters.minEvents &&
     (!ids || ids.has(club.id)) &&

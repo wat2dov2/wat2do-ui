@@ -344,7 +344,8 @@ pub async fn list_clubs(
         club_type,
         school: school.filter(|school| !school.is_empty()),
         term: search
-            .map(|search| sanitize_postgrest_value(&search))
+            // A handle typed with its @ still finds the club's Instagram handle.
+            .map(|search| sanitize_postgrest_value(search.trim().trim_start_matches('@')))
             .filter(|term| !term.is_empty())
             .map(|term| format!("%{term}%")),
         categories: (!categories.is_empty())
@@ -375,7 +376,7 @@ async fn directory(
              WHERE c.status = 'approved' {school_filter} \
                AND ($3::bigint[] IS NULL OR c.id = ANY($3)) \
                AND ($4::text IS NULL OR c.club_type = $4) \
-               AND ($6::text IS NULL OR c.club_name ILIKE $6) \
+               AND ($6::text IS NULL OR c.club_name ILIKE $6 OR c.ig ILIKE $6) \
                AND ($7::text[] IS NULL OR EXISTS (SELECT 1 FROM unnest($7::text[]) AS category \
                     WHERE c.categories @> jsonb_build_array(category))) \
                AND ($8 = 0 OR public.event_count(c) >= $8)), \
