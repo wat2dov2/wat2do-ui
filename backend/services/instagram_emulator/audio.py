@@ -33,10 +33,11 @@ _ADD_AUDIO = re.compile(r"^Add audio$")
 _AUDIO_ROW = re.compile(r"^(?:Add audio|m2_audio_primary_text)$")
 _SEARCH = re.compile(r"^Search\.\.\.$")
 _CLEAR_SEARCH = re.compile(r"^Clear text$")
-# Suggestions show before a search; result filters replace them once it runs: a
-# Lyrics tab, or on some accounts a single Filter button.
+# Suggestions (a For you tab) show until a search runs; the results replace them,
+# under a Lyrics tab, a Filter button or no filter at all, depending on the account.
 _SUGGESTIONS = re.compile(r"^For you$")
-_RESULT_FILTERS = re.compile(r"^(?:Lyrics|Filter)$")
+# Results load a moment after the suggestions go.
+_RESULT_CHECKS = 3
 _TRACK = re.compile(r"^Select track (?P<label>.+)$")
 _CLIP = re.compile(r"^\d+ second clip$")
 _DONE = re.compile(r"^Done$")
@@ -282,7 +283,8 @@ def _pick_track(device: EmulatorDevice, queries: Sequence[str], choose: ChooseTr
     for number, query in enumerate(queries):
         if number:
             device.tap_when(_CLEAR_SEARCH)
-            device.wait_for(_SUGGESTIONS)
+            # An empty field shows its placeholder again, whatever the account shows below.
+            device.wait_for(_SEARCH)
         device.type_text(_typeable(query))
         tracks = _results(device)
         index = choose(query, [label for label, _ in tracks]) if tracks else None
@@ -298,14 +300,17 @@ def _pick_track(device: EmulatorDevice, queries: Sequence[str], choose: ChooseTr
 
 
 def _results(device: EmulatorDevice) -> list[tuple[str, Node]]:
-    device.wait_for(_RESULT_FILTERS)
+    """The tracks the search found, in order; none when it found nothing."""
     device.wait_until_gone(_SUGGESTIONS, seconds=CONTROL.screen_wait_seconds)
-    device.pause()
-    tracks = []
-    for node in device.screen():
-        match = _TRACK.match(node.description) or _TRACK.match(node.text)
-        if match and match["label"] not in (label for label, _ in tracks):
-            tracks.append((match["label"], node))
+    tracks: list[tuple[str, Node]] = []
+    for _ in range(_RESULT_CHECKS):
+        device.pause()
+        for node in device.screen():
+            match = _TRACK.match(node.description) or _TRACK.match(node.text)
+            if match and match["label"] not in (label for label, _ in tracks):
+                tracks.append((match["label"], node))
+        if tracks:
+            break
     return tracks
 
 
