@@ -15,7 +15,7 @@ import { cn } from "@/shared/lib/utils";
 export type EventPixelMosaicVariant = "logo" | "ambient";
 
 const LOOKS: Record<EventPixelMosaicVariant, MosaicLook> = {
-  logo: { tileSize: 12, gutter: 1, waveMs: 900, tone: "logo" },
+  logo: { tileSize: 18, gutter: 2, waveMs: 900, tone: "logo" },
   ambient: { tileSize: 28, gutter: 2, waveMs: 1800, idleWaveMs: 11000, tone: "muted" },
 };
 

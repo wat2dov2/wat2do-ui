@@ -90,7 +90,7 @@ export function LandingHero({ schoolName, events, clubCount, isLoading }: Landin
         }}
       >
         {/* Where the mosaic draws the logo, clear of the text below it. */}
-        <div ref={logoRegion} className="h-40 sm:h-64" />
+        <div ref={logoRegion} className="h-48 sm:h-80" />
         <Stack gap={8} align="center" className="relative">
           <LandingMosaicScrim />
           <div className="relative w-full">
