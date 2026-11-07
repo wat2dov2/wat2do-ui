@@ -2064,6 +2064,26 @@ test.describe("Events Page", () => {
     });
   }
 
+  test("a mouse selects event drawer text instead of dragging the drawer", async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 844 });
+    await page.goto(BASE);
+    await page.getByRole("button", { name: "Event: Tech Career Fair", exact: true }).click();
+    const drawer = page.getByRole("dialog", { name: "Tech Career Fair", exact: true });
+    const title = drawer.getByRole("heading", { name: "Tech Career Fair", exact: true });
+    await expect(title).toBeVisible();
+    // vaul ignores drags while a drawer slides in, so let it settle first.
+    await drawer.evaluate(element => Promise.all(element.getAnimations().map(animation => animation.finished)));
+    const box = (await title.boundingBox())!;
+    await page.mouse.move(box.x + 1, box.y + box.height / 2);
+    await page.mouse.down();
+    // Across and down: the direction that used to drag the drawer closed.
+    await page.mouse.move(box.x + box.width - 1, box.y + box.height / 2 + 30, { steps: 10 });
+    await expect(drawer).not.toHaveClass(/\bvaul-dragging\b/);
+    await page.mouse.up();
+    expect(await page.evaluate(() => window.getSelection()?.toString() ?? "")).toContain("Tech Career Fair");
+    await expect(drawer).toBeVisible();
+  });
+
   test("finds an active Hip Hop event through compact club searches and ages the latest label", async ({ page, next }) => {
     const now = Date.parse("2026-10-01T23:30:00Z");
     await page.clock.install({ time: now });
