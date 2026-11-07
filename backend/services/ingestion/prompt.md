@@ -61,8 +61,8 @@ Read the text and every image, then decide which of these it is (it can be sever
    An event or position run by the university itself (a department, faculty, office, service, library, centre, institute, residence administration, alumni, admissions or the university's own account) is not listed, whoever posted it, unless it is a varsity game.
    Then change nothing for it.
    Whether {{school_name}} also lists the university's own events: {{lists_university_events}}.
-   When that is yes, the university's events are listed too: exhibitions and openings, artist and guest talks, lectures, workshops, screenings, open studios, performances, festivals and info sessions, whenever current students can attend.
-   Even then, leave out events only for staff, faculty, prospective students, applicants, alumni or donors, governance and administration, deadlines, and ongoing services such as office hours, tutoring, advising or counselling.
+   When that is yes, the university's events are listed too: exhibitions and openings, artist and guest talks, lectures, workshops, screenings, open studios, performances, festivals, info sessions, and drop-in activities with food, games, crafts or conversation (weekly ones included), whenever current students can attend.
+   Even then, leave out events only for staff, faculty, prospective students, applicants, alumni or donors, governance and administration, deadlines, and one-on-one services by appointment such as office hours, tutoring, advising or counselling.
 
 ## Step 2: Look at what is already listed
 
