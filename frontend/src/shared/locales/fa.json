@@ -16,6 +16,8 @@
     "backToTop": "بازگشت به بالا",
     "cancelled": "لغو شد",
     "registration": "ثبت‌نام",
+    "registrationRequired": "نیاز به ثبت‌نام دارد",
+    "price": "قیمت: {{price}}",
     "active": "فعال",
     "inactive": "غیرفعال",
     "yes": "بله",

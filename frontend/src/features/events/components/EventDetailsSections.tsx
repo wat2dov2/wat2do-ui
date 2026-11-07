@@ -50,7 +50,7 @@ import { EmailOtpForm } from "@/features/auth/components/EmailOtpForm";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { useUIStore } from "@/shared/store/ui.store";
 import { controlBox } from "@/shared/config/controlBox";
-import { translateFood } from "@/shared/utils/foodTranslation";
+import { translateFoods } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { ROUTES, clubPanelEventTicketsPath } from "@/shared/constants/routes";
 import { EventTicketCard, useEventTicketing } from "@/features/tickets";
@@ -191,7 +191,7 @@ function EventFoodCell({ event }: { event: Event }) {
     <Stack direction="horizontal" gap={3} align="center">
       <EventInfoTile icon={Utensils} />
       <p className="min-w-0 text-sm font-semibold text-foreground">
-        {event.food.map((food) => translateFood(food, t)).join(", ")}
+        {translateFoods(event.food, t)}
       </p>
     </Stack>
   );

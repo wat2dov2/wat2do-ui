@@ -16,6 +16,8 @@
     "backToTop": "Bumalik sa itaas",
     "cancelled": "Nakansela",
     "registration": "Pagpaparehistro",
+    "registrationRequired": "Kinakailangan ang pagpaparehistro",
+    "price": "Presyo: {{price}}",
     "active": "Aktibo",
     "inactive": "Hindi aktibo",
     "yes": "Oo",

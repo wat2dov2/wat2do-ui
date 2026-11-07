@@ -22,7 +22,7 @@ interface EventCardProps {
   stats?: EventStats;
   onEventClick?: (event: Event) => void;
   /**
-   * Renders the card inert: no navigation or badge menu.
+   * Renders the card inert: no navigation, badge menu or badge tooltips.
    * Preview surfaces - the submit form's live preview, the Instagram carousel
    * editor - show the card an event will appear as, and nothing more.
    */
@@ -57,6 +57,7 @@ interface EventCardBodyProps {
   stats?: EventStats;
   t: TFunction;
   titleHref?: string;
+  interactive: boolean;
 }
 
 /** Text half of the grid card. */
@@ -68,6 +69,7 @@ function EventCardBody({
   stats,
   t,
   titleHref,
+  interactive,
 }: EventCardBodyProps) {
   return (
     <EventCardContentFrame>
@@ -78,6 +80,7 @@ function EventCardBody({
         time={time}
         location={event.location}
         badges={badges}
+        interactive={interactive}
         statsLabel={buildEventStatsLabel(t, stats)}
         reserveStatsLine
         textClassName="text-foreground"
@@ -186,6 +189,7 @@ function EventCardComponent({
         stats={stats}
         t={t}
         titleHref={titleHref}
+        interactive={interactive}
       />
     </article>
   );

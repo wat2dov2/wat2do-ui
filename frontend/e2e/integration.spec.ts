@@ -2190,7 +2190,7 @@ test.describe("Events Page", () => {
     const scrollRoot = page.locator(".main-content-grid:visible");
     await expect(scrollRoot).toHaveCSS("padding-top", "0px");
     await expect(header).toHaveCSS("margin-top", "0px");
-    await expect(header).toHaveCSS("padding-top", "16px");
+    await expect(header).toHaveCSS("padding-top", "20px");
     expect(Math.abs((await header.boundingBox())!.y - (await scrollRoot.boundingBox())!.y)).toBeLessThan(2);
     await scrollRoot.evaluate(element => { element.scrollTop = 400; });
     await expect.poll(() => scrollRoot.evaluate(element => element.scrollTop)).toBeGreaterThan(300);
@@ -3562,8 +3562,24 @@ test.describe("Events Page", () => {
     await expect(todayCard.getByText("$12", { exact: true })).toBeVisible();
     // Food and registration are icon-only badges; their text is the accessible name.
     for (const badgeLabel of ["Pizza", "Registration"]) {
-      await expect(todayCard.getByRole("img", { name: badgeLabel, exact: true })).toBeVisible();
+      await expect(todayCard.getByRole("button", { name: badgeLabel, exact: true })).toBeVisible();
     }
+
+    // Clicking a badge says what it means for a moment, and the event stays closed.
+    for (const [badgeLabel, meaning] of [["$12", "Price: $12"], ["Pizza", "Pizza"], ["Registration", "Registration required"]]) {
+      await todayCard.getByRole("button", { name: badgeLabel, exact: true }).click();
+      await expect(page.getByRole("tooltip", { name: meaning, exact: true })).toBeAttached();
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+    }
+    await expect(page.getByRole("tooltip")).toHaveCount(0, { timeout: 5_000 });
+    // On a phone, where a card opens on tap, a tap on a badge still only explains it.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await todayCard.getByRole("button", { name: "Registration", exact: true }).click();
+    await expect(page.getByRole("tooltip", { name: "Registration required", exact: true })).toBeAttached();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    // A tap anywhere else on the card opens the event.
+    await todayCard.locator('[data-slot="event-card-date"]').click();
+    await expect(page.getByRole("dialog")).toBeVisible();
   });
 
   test("counts event views from cards, arrows, and direct visits", async ({ page, next }) => {
@@ -4488,7 +4504,7 @@ test.describe("Clubs Page", () => {
     const header = page.locator('[data-slot="page-header"]');
     await expect(scrollRoot).toHaveCSS("padding-top", "0px");
     await expect(header).toHaveCSS("margin-top", "0px");
-    await expect(header).toHaveCSS("padding-top", "16px");
+    await expect(header).toHaveCSS("padding-top", "20px");
     expect(await header.evaluate(element => getComputedStyle(element).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
     expect(Math.abs((await header.boundingBox())!.y - (await scrollRoot.boundingBox())!.y)).toBeLessThan(2);
     await expect(scrollRoot).toHaveCSS("overflow-y", "auto");

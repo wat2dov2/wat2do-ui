@@ -16,6 +16,8 @@
     "backToTop": "返回顶部",
     "cancelled": "已取消",
     "registration": "报名",
+    "registrationRequired": "需要报名",
+    "price": "价格：{{price}}",
     "active": "活跃",
     "inactive": "未活跃",
     "yes": "是",

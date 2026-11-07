@@ -16,6 +16,8 @@
     "backToTop": "ਸਿਖਰ 'ਤੇ ਵਾਪਸ ਜਾਓ",
     "cancelled": "ਰੱਦ ਕਰ ਦਿੱਤਾ",
     "registration": "ਰਜਿਸਟ੍ਰੇਸ਼ਨ",
+    "registrationRequired": "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਦੀ ਲੋੜ ਹੈ",
+    "price": "ਕੀਮਤ: {{price}}",
     "active": "ਕਿਰਿਆਸ਼ੀਲ",
     "inactive": "ਅਕਿਰਿਆਸ਼ੀਲ",
     "yes": "ਹਾਂ",

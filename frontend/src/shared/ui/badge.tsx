@@ -4,8 +4,9 @@ import { Slot } from "@radix-ui/react-slot"
 
 import { cn } from "@/shared/lib/utils"
 
+// A badge that is a link or button shows focus the way Button does: for the keyboard, never after a tap or click.
 const badgeVariants = cva(
-  "inline-flex w-fit max-w-full items-center border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex w-fit max-w-full items-center border outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
   {
     variants: {
       variant: {

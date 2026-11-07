@@ -7,21 +7,71 @@ import { Badge } from "@/shared/ui/badge";
 import { Calendar, Clock, Instagram, MapPin, type LucideIcon } from "lucide-react";
 import { Link } from "@/shared/ui/link";
 import { SkeletonLine } from "@/shared/ui/skeleton";
+import { TapTooltip } from "@/shared/ui/tooltip";
 import { cn } from "@/shared/lib/utils";
 import type { ComponentProps } from "react";
 
 export interface CardBadge {
-  /** Always set: the badge's meaning, shown as text or, for an icon-only badge, as its label. */
+  /** Always set: the badge's text or, for an icon-only badge, its accessible name. */
   text: string;
-  size?: "sm" | "md";
+  /** What the badge means, shown when it is tapped, clicked, hovered or focused. */
+  tooltip?: string;
+  size?: "sm" | "lg";
   icon?: LucideIcon;
-  /** Cards show only the icon (and `mark`); the text becomes the tooltip and accessible name. */
+  /** Cards show only the icon (and `mark`). */
   iconOnly?: boolean;
   /** A short sign drawn before the icon of an icon-only badge, such as "!" for required. */
   mark?: string;
 }
 
 const EMPTY_BADGES: readonly CardBadge[] = [];
+
+/** A badge's icon steps up with the badge. */
+const BADGE_ICON_SIZE_CLASS = { sm: "size-2.5", lg: "size-3.5" } as const;
+
+interface EventCardBadgeProps {
+  badge: CardBadge;
+  interactive: boolean;
+  className: string;
+}
+
+/** One card badge. On a live card, a badge with a tooltip is a button: a tap explains it without opening the card. */
+function EventCardBadge({ badge, interactive, className }: EventCardBadgeProps) {
+  const Icon = badge.icon;
+  const size = badge.size ?? "sm";
+  const iconOnly = Boolean(badge.iconOnly && Icon);
+  const badgeClassName = cn("max-w-full", iconOnly ? "gap-0.5" : "gap-1", className);
+  const face = (
+    <>
+      {iconOnly && badge.mark ? (
+        <span aria-hidden="true" className="font-bold leading-none">{badge.mark}</span>
+      ) : null}
+      {Icon ? <Icon aria-hidden="true" className={cn(BADGE_ICON_SIZE_CLASS[size], "shrink-0")} /> : null}
+      {iconOnly ? null : <span className="min-w-0 truncate">{badge.text}</span>}
+    </>
+  );
+
+  if (!interactive || !badge.tooltip) {
+    return (
+      <Badge
+        variant="outline"
+        size={size}
+        role={iconOnly ? "img" : undefined}
+        aria-label={iconOnly ? badge.text : undefined}
+        className={badgeClassName}
+      >
+        {face}
+      </Badge>
+    );
+  }
+  return (
+    <TapTooltip content={badge.tooltip}>
+      <Badge asChild variant="outline" size={size} className={badgeClassName}>
+        <button type="button" aria-label={iconOnly ? badge.text : undefined}>{face}</button>
+      </Badge>
+    </TapTooltip>
+  );
+}
 
 /*
  * Typography and spacing shared by the card text and its loading placeholder,
@@ -92,6 +142,11 @@ interface EventCardContentProps {
   location?: string;
   instagram?: string;
   badges?: readonly CardBadge[];
+  /**
+   * Badges say what they mean when tapped, hovered or focused. A preview card
+   * stays inert: it shows the card an event will appear as, and nothing more.
+   */
+  interactive?: boolean;
   /** Popularity line, e.g. "12 clicks · 3 going". */
   statsLabel?: string;
   /**
@@ -115,6 +170,7 @@ export function EventCardContent({
   location,
   instagram,
   badges = EMPTY_BADGES,
+  interactive = true,
   statsLabel,
   reserveStatsLine = false,
   className,
@@ -206,45 +262,17 @@ export function EventCardContent({
                * tea") ate the row and squeezed the date, time and location
                * beside it down to a few characters each. Two-fifths of the row is the
                * most this column may claim; past that the label ellipsises.
+               * The badges sit in a wrapping row rather than a stack, so they stay
+               * within the metadata lines beside them: a card is as tall with three
+               * badges as with none, and its loading skeleton matches either way.
                */
               <div
                 data-slot="event-card-badges"
-                className="flex min-w-0 max-w-[40%] shrink flex-col items-end gap-0.5"
+                className="flex min-w-0 max-w-[40%] shrink flex-row flex-wrap content-start items-start justify-end gap-0.5"
               >
-                {badges.map((badge) => {
-                  const Icon = badge.icon;
-                  if (badge.iconOnly && Icon) {
-                    return (
-                      <Badge
-                        key={badge.text}
-                        variant="outline"
-                        size={badge.size ?? "sm"}
-                        role="img"
-                        aria-label={badge.text}
-                        title={badge.text}
-                        className={cn("max-w-full gap-0.5", badgeClassName)}
-                      >
-                        {badge.mark ? (
-                          <span aria-hidden="true" className="font-bold leading-none">{badge.mark}</span>
-                        ) : null}
-                        <Icon aria-hidden="true" className="size-3 shrink-0" />
-                      </Badge>
-                    );
-                  }
-                  return (
-                    <Badge
-                      key={badge.text}
-                      variant="outline"
-                      size={badge.size ?? "sm"}
-                      className={cn("max-w-full gap-1", badgeClassName)}
-                    >
-                      {Icon ? (
-                        <Icon aria-hidden="true" className="size-2.5 shrink-0" />
-                      ) : null}
-                      <span className="min-w-0 truncate">{badge.text}</span>
-                    </Badge>
-                  );
-                })}
+                {badges.map((badge) => (
+                  <EventCardBadge key={badge.text} badge={badge} interactive={interactive} className={badgeClassName} />
+                ))}
               </div>
             )}
           </div>

@@ -28,4 +28,75 @@ const TooltipContent = React.forwardRef<
 ))
 TooltipContent.displayName = TooltipPrimitive.Content.displayName
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+/** How long a tooltip shown by a tap or click stays up before it hides on its own. */
+const TAP_TOOLTIP_MS = 2000
+
+interface TapTooltipProps {
+  /** What the trigger means. */
+  content: React.ReactNode
+  /** The trigger: one button, which a tap, click, Enter or Space presses. */
+  children: React.ReactElement
+}
+
+/**
+ * A tooltip that a tap shows too, since a touch screen cannot hover.
+ *
+ * Hover and keyboard focus show it like any tooltip. A tap or click shows it for
+ * a moment, then it hides on its own. Pressing the trigger never also presses
+ * what holds it, such as an event card: the mouse press and Enter or Space stop
+ * at the trigger, and its click is prevented. The click itself still bubbles, so
+ * an open tooltip or menu elsewhere sees it and closes; cards already leave clicks
+ * on their own buttons alone.
+ */
+function TapTooltip({ content, children }: TapTooltipProps) {
+  const [open, setOpen] = React.useState(false)
+  const trigger = React.useRef<HTMLButtonElement>(null)
+  const hideTimer = React.useRef<number | undefined>(undefined)
+  // Radix closes a tooltip as its trigger is pressed; this press shows it instead, so the
+  // close Radix asks for during the press is ignored rather than flickering the tooltip.
+  const pressing = React.useRef(false)
+
+  React.useEffect(() => () => window.clearTimeout(hideTimer.current), [])
+
+  const changeOpen = (next: boolean) => {
+    if (!next && pressing.current) return
+    window.clearTimeout(hideTimer.current)
+    setOpen(next)
+  }
+
+  return (
+    <Tooltip open={open} onOpenChange={changeOpen}>
+      <TooltipTrigger
+        asChild
+        ref={trigger}
+        onPointerDown={() => {
+          pressing.current = true
+          queueMicrotask(() => { pressing.current = false })
+        }}
+        onMouseDown={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") event.stopPropagation()
+        }}
+        onClick={(event) => {
+          // Prevented, so Radix does not close it again and an enclosing link does not follow.
+          event.preventDefault()
+          window.clearTimeout(hideTimer.current)
+          setOpen(true)
+          hideTimer.current = window.setTimeout(() => setOpen(false), TAP_TOOLTIP_MS)
+        }}
+      >
+        {children}
+      </TooltipTrigger>
+      <TooltipContent
+        onPointerDownOutside={(event) => {
+          // Pressing the trigger again shows the tooltip again; it is not a press outside.
+          if (event.target instanceof Node && trigger.current?.contains(event.target)) event.preventDefault()
+        }}
+      >
+        {content}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, TapTooltip }

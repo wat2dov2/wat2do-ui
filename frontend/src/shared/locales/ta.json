@@ -16,6 +16,8 @@
     "backToTop": "மேலுக்கு மறு செல்ல",
     "cancelled": "ரத்து செய்யப்பட்டது",
     "registration": "பதிவு",
+    "registrationRequired": "பதிவு தேவை",
+    "price": "விலை: {{price}}",
     "active": "செயலில்",
     "inactive": "செயலில் இல்லை",
     "yes": "ஆம்",

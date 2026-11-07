@@ -16,6 +16,8 @@
     "backToTop": "맨 위로",
     "cancelled": "취소됨",
     "registration": "등록",
+    "registrationRequired": "등록 필요",
+    "price": "가격: {{price}}",
     "active": "활성",
     "inactive": "비활성",
     "yes": "예",

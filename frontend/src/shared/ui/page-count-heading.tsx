@@ -41,7 +41,9 @@ export function PageCountHeading({ count, label, latest, currentTimeMs, level = 
       <span data-skeleton-key="count-label">{label}</span>
     </Heading>
     {latest !== undefined && (count === null || latest) ? (
-      <Stack direction="horizontal" align="center" gap={2} data-slot="latest-added-item" data-skeleton-key="latest-added">
+      // The newest line keeps a little room above and below it, so the count above and the
+      // search box below never crowd it.
+      <Stack direction="horizontal" align="center" gap={2} data-slot="latest-added-item" data-skeleton-key="latest-added" className="py-1">
         {latest ? <>
           <Badge variant="new" size="sm" className="shrink-0">{t("events.new")}</Badge>
           {/* The club's picture sits closer to its own title than the badge does. min-w-0 lets the title shrink. */}

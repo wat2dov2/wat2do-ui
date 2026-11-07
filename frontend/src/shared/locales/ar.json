@@ -16,6 +16,8 @@
     "backToTop": "العودة إلى الأعلى",
     "cancelled": "ملغى",
     "registration": "تسجيل",
+    "registrationRequired": "يتطلب التسجيل",
+    "price": "السعر: {{price}}",
     "active": "نشط",
     "inactive": "غير نشط",
     "yes": "نعم",

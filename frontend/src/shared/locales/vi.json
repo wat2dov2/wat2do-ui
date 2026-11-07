@@ -16,6 +16,8 @@
     "backToTop": "Quay về đầu trang",
     "cancelled": "Đã hủy",
     "registration": "Đăng ký",
+    "registrationRequired": "Yêu cầu đăng ký",
+    "price": "Giá: {{price}}",
     "active": "Đang hoạt động",
     "inactive": "Không hoạt động",
     "yes": "Có",

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DialogBody, Section, Stack } from "@/shared/layout";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
@@ -19,6 +20,7 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 import {
+  TapTooltip,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -76,6 +78,14 @@ export function OverlaysSection() {
                 <p>Campus events update daily</p>
               </TooltipContent>
             </Tooltip>
+          </ShowcaseBlock>
+
+          <ShowcaseBlock label="TapTooltip">
+            <TapTooltip content="Registration required">
+              <Badge asChild variant="outline" size="lg">
+                <button type="button">Tap, click or hover</button>
+              </Badge>
+            </TapTooltip>
           </ShowcaseBlock>
 
           <ShowcaseBlock label="DropdownMenu">

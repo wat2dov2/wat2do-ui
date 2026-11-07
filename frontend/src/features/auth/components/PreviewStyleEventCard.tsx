@@ -123,6 +123,7 @@ export function PreviewStyleEventCard({
           time={event.time}
           location={event.location}
           badges={event.badges}
+          interactive={false}
           textClassName="text-muted-foreground"
           secondaryTextClassName="text-muted-foreground"
           badgeClassName={cn("border-current", "text-muted-foreground")}

@@ -16,6 +16,8 @@
     "backToTop": "Torna su",
     "cancelled": "Annullato",
     "registration": "Registrazione",
+    "registrationRequired": "Registrazione obbligatoria",
+    "price": "Prezzo: {{price}}",
     "active": "Attivo",
     "inactive": "Inattivo",
     "yes": "Sì",

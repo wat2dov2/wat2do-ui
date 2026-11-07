@@ -16,6 +16,8 @@
     "backToTop": "ऊपर जाएँ",
     "cancelled": "रद्द कर दिया गया",
     "registration": "पंजीकरण",
+    "registrationRequired": "पंजीकरण आवश्यक है",
+    "price": "कीमत: {{price}}",
     "active": "सक्रिय",
     "inactive": "निष्क्रिय",
     "yes": "हाँ",
