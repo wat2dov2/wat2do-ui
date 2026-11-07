@@ -13,33 +13,20 @@ SCREEN = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy r
 <node text="" content-desc="Send post. Button. Double tap to choose who to send this post to." bounds="[398,1544][461,1665]" />
 <node text="Your story" content-desc="" bounds="[121,2098][379,2161]" />
 <node text="" content-desc="Flat" bounds="[5,5][5,9]" />
-</hierarchy>"""
+</hierarchy>UI hierchary dumped to: /dev/tty"""
 
 
-def _device(outputs, commands, screens=()):
-    """A device whose adb calls answer ``outputs`` and whose screen reads answer
-    ``screens`` in turn: a hierarchy, or an error the read raises."""
-
+def _device(outputs, commands):
     def run(command, **_kwargs):
         commands.append(command)
         returncode, stdout = outputs.pop(0)
         return subprocess.CompletedProcess(command, returncode, stdout=stdout, stderr="")
 
-    reads = list(screens)
-
-    def read_hierarchy():
-        answer = reads.pop(0)
-        if isinstance(answer, Exception):
-            raise answer
-        return answer
-
-    return module.EmulatorDevice(
-        run=run, sleep=lambda _seconds: None, rng=random.Random(4), read_hierarchy=read_hierarchy
-    )
+    return module.EmulatorDevice(run=run, sleep=lambda _seconds: None, rng=random.Random(4))
 
 
 def test_screen_reads_labelled_controls_and_skips_empty_bounds() -> None:
-    nodes = _device([], [], [SCREEN]).screen()
+    nodes = _device([(0, SCREEN)], []).screen()
     assert [node.text or node.description for node in nodes] == [
         "Send post. Button. Double tap to choose who to send this post to.",
         "Your story",
@@ -47,21 +34,22 @@ def test_screen_reads_labelled_controls_and_skips_empty_bounds() -> None:
 
 
 def test_screen_retries_while_the_app_is_animating() -> None:
-    unreadable = module.EmulatorError("Emulator screen could not be read")
-    nodes = _device([], [], [unreadable, unreadable, SCREEN]).screen()
-    assert len(nodes) == 2
+    commands = []
+    nodes = _device([(1, ""), (1, ""), (0, SCREEN)], commands).screen()
+    assert len(nodes) == 2 and len(commands) == 3
 
 
-def test_screen_retries_when_the_read_returns_an_error_instead() -> None:
+def test_screen_retries_when_the_dump_prints_an_error_instead() -> None:
+    commands = []
     error = "ERROR: null root node returned by UiTestAutomationBridge."
-    nodes = _device([], [], [error, SCREEN]).screen()
-    assert len(nodes) == 2
+    nodes = _device([(0, error), (0, SCREEN)], commands).screen()
+    assert len(nodes) == 2 and len(commands) == 2
 
 
 def test_a_screen_that_never_settles_raises() -> None:
-    attempts = [module.EmulatorError("unreadable")] * module._SCREEN_READ_ATTEMPTS
+    attempts = [(1, "")] * module._SCREEN_READ_ATTEMPTS
     with pytest.raises(module.EmulatorError):
-        _device([], [], attempts).screen()
+        _device(attempts, []).screen()
 
 
 def test_labels_match_a_control_name_but_not_a_longer_word() -> None:
@@ -120,7 +108,7 @@ def test_unlabelled_controls_are_found_by_their_resource_id() -> None:
         "</hierarchy>",
         '<node text="" content-desc="" resource-id="com.instagram.android:id/action_bar_button_action" bounds="[912,128][1059,275]" />\n</hierarchy>',
     )
-    nodes = _device([], [], [screen]).screen()
+    nodes = _device([(0, screen)], []).screen()
     check = module.Node("", "", (912, 128, 1059, 275), "action_bar_button_action")
     assert check in nodes
     assert check.labelled(re.compile(r"^action_bar_button_action$"))
@@ -159,15 +147,15 @@ def test_holding_the_emulator_is_reentrant_but_exclusive(tmp_path, monkeypatch) 
 PROMPT = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
 <node text="Introducing instants" content-desc="" bounds="[126,1720][780,1790]" />
 <node text="Not now" content-desc="" bounds="[466,2080][612,2140]" />
-</hierarchy>"""
+</hierarchy>UI hierchary dumped to: /dev/tty"""
 
 
 def test_waiting_declines_an_announcement_covering_the_app() -> None:
     commands = []
     tap = (0, "")
-    node = _device([tap], commands, [PROMPT, SCREEN]).wait_for(re.compile("^Your story$"))
+    node = _device([(0, PROMPT), tap, (0, SCREEN)], commands).wait_for(re.compile("^Your story$"))
     assert node.text == "Your story"
-    assert commands[0][-3:-2] == ["tap"]
+    assert commands[1][-3:-2] == ["tap"]
 
 
 def test_an_account_below_the_switcher_fold_is_scrolled_into_view(monkeypatch) -> None:
@@ -185,30 +173,34 @@ def test_an_account_below_the_switcher_fold_is_scrolled_into_view(monkeypatch) -
 LOW_STORAGE = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
 <node text="Low device storage" content-desc="" bounds="[370,1000][710,1060]" />
 <node text="Close" content-desc="" bounds="[490,1440][590,1500]" />
-</hierarchy>"""
+</hierarchy>UI hierchary dumped to: /dev/tty"""
 
 
 def test_waiting_closes_the_low_storage_warning() -> None:
     commands = []
     tap = (0, "")
-    node = _device([tap], commands, [LOW_STORAGE, SCREEN]).wait_for(re.compile("^Your story$"))
+    node = _device([(0, LOW_STORAGE), tap, (0, SCREEN)], commands).wait_for(
+        re.compile("^Your story$")
+    )
     assert node.text == "Your story"
-    assert commands[0][-3:-2] == ["tap"]
+    assert commands[1][-3:-2] == ["tap"]
 
 
 NOT_RESPONDING = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
 <node text="Instagram isn't responding" content-desc="" bounds="[90,1300][990,1380]" />
 <node text="Close app" content-desc="" bounds="[90,1420][990,1520]" />
 <node text="Wait" content-desc="" bounds="[90,1560][990,1660]" />
-</hierarchy>"""
+</hierarchy>UI hierchary dumped to: /dev/tty"""
 
 
 def test_waiting_closes_a_frozen_instagram() -> None:
     commands = []
     tap = (0, "")
-    node = _device([tap], commands, [NOT_RESPONDING, SCREEN]).wait_for(re.compile("^Your story$"))
+    node = _device([(0, NOT_RESPONDING), tap, (0, SCREEN)], commands).wait_for(
+        re.compile("^Your story$")
+    )
     assert node.text == "Your story"
-    x, y = int(commands[0][-2]), int(commands[0][-1])
+    x, y = int(commands[1][-2]), int(commands[1][-1])
     assert 90 <= x <= 990 and 1420 <= y <= 1520
 
 
@@ -216,8 +208,8 @@ def test_waiting_waits_for_a_frozen_android_process() -> None:
     commands = []
     tap = (0, "")
     dialog = NOT_RESPONDING.replace("Instagram isn't", "System UI isn't")
-    _device([tap], commands, [dialog, SCREEN]).wait_for(re.compile("^Your story$"))
-    assert 1560 <= int(commands[0][-1]) <= 1660
+    _device([(0, dialog), tap, (0, SCREEN)], commands).wait_for(re.compile("^Your story$"))
+    assert 1560 <= int(commands[1][-1]) <= 1660
 
 
 def test_free_space_is_read_from_the_data_partition() -> None:
@@ -344,13 +336,13 @@ SAVE_LOGIN = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarc
 <node text="Save your login info?" content-desc="" bounds="[90,1300][990,1380]" />
 <node text="Save" content-desc="" bounds="[90,1420][990,1520]" />
 <node text="Not now" content-desc="" bounds="[90,1560][990,1660]" />
-</hierarchy>"""
+</hierarchy>UI hierchary dumped to: /dev/tty"""
 
 
 def test_waiting_saves_login_info_when_offered() -> None:
     commands = []
-    _device([(0, "")], commands, [SAVE_LOGIN, SCREEN]).wait_for(re.compile("^Your story$"))
-    assert 1420 <= int(commands[0][-1]) <= 1520
+    _device([(0, SAVE_LOGIN), (0, ""), (0, SCREEN)], commands).wait_for(re.compile("^Your story$"))
+    assert 1420 <= int(commands[1][-1]) <= 1520
 
 
 def _screenshot(checked):
@@ -413,32 +405,3 @@ def test_restart_gives_up_when_the_emulator_never_comes_back() -> None:
 def test_the_new_inbox_header_title_is_recognized():
     node = module.Node("wat2do.brocku", "", (60, 150, 500, 250), "action_bar_large_title_auto_size")
     assert node.labelled(module._INBOX_TITLE)
-
-
-class _Server:
-    """A uiautomator2 server that fails its first read, as one does when the emulator restarts."""
-
-    def __init__(self, reads):
-        self.reads = reads
-
-    def dump_hierarchy(self):
-        answer = self.reads.pop(0)
-        if isinstance(answer, Exception):
-            raise answer
-        return answer
-
-
-def test_the_resident_reader_reconnects_after_a_failed_read(monkeypatch) -> None:
-    servers = [_Server([ConnectionError("server gone")]), _Server([SCREEN])]
-    connects = []
-
-    def connect(serial):
-        connects.append(serial)
-        return servers.pop(0)
-
-    monkeypatch.setattr(module.uiautomator2, "connect", connect)
-    reader = module._ResidentReader()
-    with pytest.raises(module.EmulatorError, match="could not be read"):
-        reader()
-    assert reader() == SCREEN
-    assert connects == [module.CONTROL.serial, module.CONTROL.serial]

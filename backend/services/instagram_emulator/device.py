@@ -23,13 +23,13 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
-import uiautomator2
 from PIL import Image
 
 from core.controlbox import controlbox
 
 CONTROL = controlbox.instagram_emulator
 _BOUNDS = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
+_DUMP_SUFFIX = "UI hierchary dumped to"
 _LAUNCHER_ACTIVITY = "com.instagram.mainactivity.LauncherActivity"
 _SCREEN_READ_ATTEMPTS = 5
 # Every job that drives the emulator holds this lock, so two never tap at once.
@@ -124,31 +124,6 @@ def emulator_command() -> list[str]:
     ]
 
 
-class _ResidentReader:
-    """The screen's view hierarchy from uiautomator2's resident server on the emulator.
-
-    The server stays up between reads and answers in about a tenth of a second, where
-    each `uiautomator dump` started from the shell took 3 to 6 seconds. It holds
-    Android's one UI automation connection, so nothing else may read the screen with
-    `uiautomator dump`. When the server or the emulator goes away, the next read
-    connects again and starts it.
-    """
-
-    def __init__(self) -> None:
-        self._server: uiautomator2.Device | None = None
-
-    def __call__(self) -> str:
-        try:
-            if self._server is None:
-                self._server = uiautomator2.connect(CONTROL.serial)
-            return str(self._server.dump_hierarchy())
-        except Exception as exc:
-            # uiautomator2 and its adb client raise their own errors when the server
-            # or the emulator restarts; the next read reconnects.
-            self._server = None
-            raise EmulatorError("Emulator screen could not be read") from exc
-
-
 class EmulatorDevice:
     def __init__(
         self,
@@ -157,14 +132,12 @@ class EmulatorDevice:
         sleep: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
         rng: random.Random | None = None,
-        read_hierarchy: Callable[[], str] | None = None,
     ) -> None:
         self._run = run
         self._sleep = sleep
         self._monotonic = monotonic
         self._rng = rng or random.SystemRandom()
         self._adb = _adb_path()
-        self._read_hierarchy = read_hierarchy or _ResidentReader()
 
     def is_online(self) -> bool:
         try:
@@ -218,7 +191,8 @@ class EmulatorDevice:
         return nodes
 
     def _read_screen(self) -> ElementTree.Element | None:
-        dump = self._read_hierarchy().strip()
+        dump = self.adb("exec-out", "uiautomator", "dump", "/dev/tty")
+        dump = dump.split(_DUMP_SUFFIX, 1)[0].strip()
         if not dump:
             return None
         try:
