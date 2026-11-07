@@ -152,7 +152,7 @@ def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
             candidates.mark_follow_failed(row["id"], str(exc))
             continue
         if outcome is None:
-            candidates.mark_follow_failed(row["id"], "Profile is gone or hidden")
+            candidates.reject_gone(row["id"])
             continue
         candidates.mark_followed(row["id"], tapped=outcome.tapped)
         unconfirmed = 0

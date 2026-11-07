@@ -170,7 +170,7 @@ def list_candidates(
     return rows, response.count or len(rows)
 
 
-def decide(decisions: list[tuple[UUID, str]], *, decided_by: str) -> dict[str, int]:
+def decide(decisions: list[tuple[UUID, str]], *, decided_by: str | None) -> dict[str, int]:
     """Apply an admin's batch of approvals and rejections to accounts still pending.
 
     Approving creates the school's club for the handle unless one exists, so the
@@ -194,6 +194,57 @@ def decide(decisions: list[tuple[UUID, str]], *, decided_by: str) -> dict[str, i
         get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(update).eq("id", row["id"]).execute()
         outcomes[status] += 1
     return outcomes
+
+
+def auto_decide(candidate_id: str, status: str) -> None:
+    """Apply the scorer's own decision to a pending account (no admin involved)."""
+    decide([(candidate_id, status)], decided_by=None)
+
+
+def requeue_for_recheck(limit: int) -> int:
+    """Send rejected accounts that posted within the last year back to scoring.
+
+    Only automated rejections that were scored over ``recheck_days`` ago, so a quiet
+    club that starts posting again is picked up; an admin's rejection stays.
+    """
+    now = datetime.now(timezone.utc)
+    rows = (
+        get_sb()
+        .table(INSTAGRAM_FOLLOW_CANDIDATES)
+        .select("id")
+        .eq("status", FOLLOW_CANDIDATE_REJECTED)
+        .is_("decided_by", "null")
+        .eq("read_status", "ok")
+        .gte("last_posted_at", (now - timedelta(days=365)).isoformat())
+        .lt("scored_at", (now - timedelta(days=CONTROL.recheck_days)).isoformat())
+        .order("scored_at")
+        .limit(limit)
+        .execute()
+    ).data or []
+    ids = [row["id"] for row in rows]
+    if ids:
+        get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(
+            {
+                "status": FOLLOW_CANDIDATE_PENDING,
+                "scored_at": None,
+                "decided_at": None,
+                "updated_at": now.isoformat(),
+            }
+        ).in_("id", ids).eq("status", FOLLOW_CANDIDATE_REJECTED).execute()
+    return len(ids)
+
+
+def reject_gone(candidate_id: str) -> None:
+    """The approved account's profile is gone or hidden: stop trying to follow it."""
+    now = datetime.now(timezone.utc).isoformat()
+    get_sb().table(INSTAGRAM_FOLLOW_CANDIDATES).update(
+        {
+            "status": FOLLOW_CANDIDATE_REJECTED,
+            "follow_error": "Profile is gone or hidden",
+            "reason": "Profile is gone or hidden",
+            "updated_at": now,
+        }
+    ).eq("id", candidate_id).eq("status", FOLLOW_CANDIDATE_APPROVED).execute()
 
 
 def _pending_rows(ids: list[UUID]) -> dict[str, dict]:
