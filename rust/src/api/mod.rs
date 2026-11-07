@@ -278,6 +278,17 @@ fn rust_routes() -> OpenApiRouter<AppState> {
             routes::v1_saved_events::save_event,
             routes::v1_saved_events::unsave_event
         ))
+        // routers/competitor_pain_points.py
+        .routes(routes!(routes::competitor_pain_points::list_pain_points))
+        .routes(routes!(routes::competitor_pain_points::list_reports))
+        .routes(routes!(routes::competitor_pain_points::review_pain_point))
+        // routers/outreach.py
+        .routes(routes!(routes::outreach::list_leads))
+        .routes(routes!(routes::outreach::update_lead))
+        // routers/webhooks.py
+        .routes(routes!(routes::webhooks::receive_automate_log))
+        .routes(routes!(routes::webhooks::send_event_change_alerts))
+        .routes(routes!(routes::webhooks::get_automate_logs))
 }
 
 /// The OpenAPI paths and schemas of the Rust routes, merged into FastAPI's

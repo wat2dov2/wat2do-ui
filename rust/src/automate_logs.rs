@@ -1,5 +1,5 @@
 //! Rows in `public.automate_logs`, the admin Diagnostics log
-//! (`services/automate_log_service.py` in Python, which the webhooks still use).
+//! (written by `/webhooks/automate` and the browser worker, read by `/webhooks/automate/logs`).
 
 use serde_json::Value;
 use sqlx::PgPool;

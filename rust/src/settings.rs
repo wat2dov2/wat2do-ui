@@ -52,6 +52,10 @@ pub struct Settings {
     /// secret, for paid club tickets (`api/tickets`). Only Rust reads them.
     pub stripe_secret_key: String,
     pub stripe_webhook_secret: String,
+    /// Bearer keys of `/webhooks/automate` and `/webhooks/event-change-alerts`
+    /// (the Mac's `io.wat2do.event-change-alerts` timer). Empty refuses every call.
+    pub automate_webhook_key: String,
+    pub event_change_alerts_key: String,
     /// `TRUSTED_PROXIES`: peers whose client-IP headers `client_ip` believes.
     pub trusted_proxies: Vec<String>,
     /// uvicorn's `FORWARDED_ALLOW_IPS`: peers whose `X-Forwarded-For` and
@@ -142,6 +146,9 @@ impl Settings {
             frontend_url: or_default("FRONTEND_URL", "http://localhost:3000"),
             stripe_secret_key: optional("STRIPE_SECRET_KEY"),
             stripe_webhook_secret: optional("STRIPE_WEBHOOK_SECRET"),
+            // Untrimmed, like Python: compared byte for byte with the caller's token.
+            automate_webhook_key: lookup("AUTOMATE_WEBHOOK_KEY").unwrap_or_default(),
+            event_change_alerts_key: lookup("EVENT_CHANGE_ALERTS_KEY").unwrap_or_default(),
             trusted_proxies: list("TRUSTED_PROXIES", DEFAULT_TRUSTED_PROXIES)?,
             forwarded_allow_ips: or_default("FORWARDED_ALLOW_IPS", DEFAULT_FORWARDED_ALLOW_IPS)
                 .split(',')

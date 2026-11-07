@@ -367,6 +367,15 @@ pub struct PromoterTemplate {
     pub available_for_creation: bool,
 }
 
+/// What the admin outreach page writes into each claim email (`controlbox/outreach.json`).
+#[derive(Debug, Deserialize)]
+pub struct Outreach {
+    /// Signs the claim email and its follow-up.
+    pub sender_name: String,
+    /// A club's page, with `{school}` and `{club_id}` filled in.
+    pub club_url_template: String,
+}
+
 /// `controlbox/positions.json`, every field.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -567,6 +576,12 @@ pub static TICKETING: LazyLock<Ticketing> = LazyLock::new(|| {
         include_str!("../../backend/controlbox/ticketing.json"),
     )
 });
+pub static OUTREACH: LazyLock<Outreach> = LazyLock::new(|| {
+    parse(
+        "outreach",
+        include_str!("../../backend/controlbox/outreach.json"),
+    )
+});
 pub static POSITIONS: LazyLock<Positions> = LazyLock::new(|| {
     parse(
         "positions",
@@ -721,6 +736,7 @@ mod tests {
         assert!(!PROMOTER_PROGRAM.tos_version.is_empty());
         assert!(TICKETING.maximum_tickets_per_order > 0);
         assert!(POSITIONS.undated_visibility_months > 0);
+        assert!(OUTREACH.club_url_template.contains("{club_id}"));
         assert!(!NOTIFICATION_DEFAULTS.enabled("unknown_type"));
 
         assert!(INSTAGRAM_BROWSER.parallel_tabs >= 2);

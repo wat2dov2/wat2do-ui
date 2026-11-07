@@ -78,6 +78,10 @@ pub const REGISTRATION_FAILED: &str = "Unable to complete registration. Please t
 pub const SPONSOR_SUBMISSION_NOT_FOUND: &str = "Sponsor submission not found";
 pub const SUBMISSION_SCHOOL_REQUIRED: &str = "Submission club school is not registered";
 
+// The admin outreach and competitor pain point routes.
+pub const OUTREACH_LEAD_NOT_FOUND: &str = "Outreach lead not found";
+pub const COMPETITOR_PAIN_POINT_NOT_FOUND: &str = "Competitor pain point not found";
+
 // Club tickets and payouts (`api/tickets` and its routes).
 pub const PAID_TICKETS_DISABLED: &str = "Paid tickets aren't available yet";
 pub const TICKETS_REQUIRE_CLUB: &str = "Only an event hosted by a club can have tickets";

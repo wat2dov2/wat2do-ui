@@ -45,7 +45,9 @@ def test_report_reads_complaints_and_code_and_drops_invented_links(monkeypatch):
         seen["locales"] = sorted(
             path.name for path in (workdir / "wat2do/frontend/src").rglob("locales/*.json")
         )
-        seen["routers"] = (workdir / "wat2do/backend/routers/competitor_pain_points.py").exists()
+        seen["routers"] = (
+            workdir / "wat2do/rust/src/api/routes/competitor_pain_points.rs"
+        ).exists()
         seen["prompt"], seen["kwargs"] = prompt, kwargs
         return {
             "summary": "Organizers are tired of fees.",

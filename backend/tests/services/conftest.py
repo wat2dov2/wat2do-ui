@@ -173,12 +173,10 @@ def clear_scraper_caches():
         get_school,
         get_school_by_id,
         get_school_by_name,
-        get_school_by_recipient_id,
     )
 
     get_school.cache_clear()
     get_school_by_id.cache_clear()
-    get_school_by_recipient_id.cache_clear()
     get_school_by_name.cache_clear()
 
     # club_service caches

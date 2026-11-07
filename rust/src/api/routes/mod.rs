@@ -1,9 +1,12 @@
 //! Routes ported from `backend/routers`, one module per FastAPI router.
 
+#[cfg(test)]
+mod admin_tools_database_tests;
 pub mod ai;
 pub mod auth;
 pub mod calendar;
 pub mod clubs;
+pub mod competitor_pain_points;
 pub mod contact;
 pub mod discovery_queries;
 pub mod event_ticketing;
@@ -13,6 +16,7 @@ pub mod health;
 pub mod ingestion_latency;
 pub mod interactions;
 pub mod meta;
+pub mod outreach;
 pub mod payouts;
 pub mod positions;
 pub mod qr;
@@ -27,6 +31,7 @@ pub mod tickets;
 pub mod uploads;
 pub mod users;
 pub mod v1_saved_events;
+pub mod webhooks;
 
 use axum::Router;
 use axum::routing::{get, patch};

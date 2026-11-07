@@ -404,6 +404,50 @@ async fn event_routes_validate_parameters_like_fastapi() {
 }
 
 #[tokio::test]
+async fn admin_tools_and_webhooks_refuse_anonymous_callers() {
+    // test_outreach_is_admin_only, test_pain_points_are_admin_only,
+    // test_event_change_alerts_rejects_other_callers (no database needed).
+    let lead = "/outreach/leads/99999999-9999-4999-8999-999999999992";
+    let pain_point = "/competitor-pain-points/88888888-8888-4888-8888-888888888881";
+    for (method, path, body) in [
+        (Method::GET, "/outreach/leads/", None),
+        (Method::PATCH, lead, Some(json!({"status": "contacted"}))),
+        (Method::GET, "/competitor-pain-points/", None),
+        (Method::GET, "/competitor-pain-points/reports", None),
+        (Method::PATCH, pain_point, Some(json!({"status": "seen"}))),
+        (Method::GET, "/webhooks/automate/logs", None),
+        (
+            Method::POST,
+            "/webhooks/automate",
+            Some(json!({"event": "x"})),
+        ),
+        (Method::POST, "/webhooks/event-change-alerts", None),
+    ] {
+        let reply = send(
+            state(None),
+            request(method.clone(), path, body),
+            "testclient",
+        )
+        .await;
+        assert_eq!(reply.status, StatusCode::UNAUTHORIZED, "{method} {path}");
+        assert_eq!(
+            serde_json::from_slice::<Value>(&reply.body).unwrap(),
+            json!({"detail": "Not authenticated"}),
+            "{method} {path}"
+        );
+        assert!(reply.rust, "{method} {path}");
+    }
+    // FastAPI decodes a JSON body before it checks the caller.
+    let mut malformed = request(Method::PATCH, lead, None);
+    *malformed.body_mut() = Body::from("{");
+    malformed
+        .headers_mut()
+        .insert(header::CONTENT_TYPE, "application/json".parse().unwrap());
+    let reply = send(state(None), malformed, "testclient").await;
+    assert_eq!(reply.status, StatusCode::UNPROCESSABLE_ENTITY);
+}
+
+#[tokio::test]
 async fn responses_are_compressed_for_clients_that_accept_it() {
     let mut request = get("/events/?page_size=0&sort_order=up");
     request
