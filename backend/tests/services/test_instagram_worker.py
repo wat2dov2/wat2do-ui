@@ -71,7 +71,7 @@ def due(monkeypatch):
     monkeypatch.setattr(worker.crawl, "crawl_due", lambda school, now: school in state.crawls)
     monkeypatch.setattr(worker.crawl, "crawl_running", lambda school: school in state.running)
 
-    def crawl_slice(device, school, deadline):
+    def crawl_slice(device, school, deadline, stop=None):
         state.done.append(("crawl", school))
         return worker.crawl.CRAWL_FINISHED
 
@@ -105,7 +105,7 @@ def test_inboxes_come_before_follows_and_follows_before_crawls(due):
     assert due.done[-2:] == [("crawl", "utm"), "score"]
 
 
-def test_at_night_the_worker_only_crawls(due, monkeypatch):
+def test_at_night_the_worker_only_adds_songs_and_crawls(due, monkeypatch):
     _follow_hours(monkeypatch, 9, 23)
     due.music = ["uwo"]
     due.dms = {"uwo"}
@@ -113,7 +113,31 @@ def test_at_night_the_worker_only_crawls(due, monkeypatch):
     due.crawls = {"utm"}
     device = _Device()
     assert worker.visit_next(device, NIGHT)
-    assert due.done == [("crawl", "utm"), "score"]
+    assert due.done == [("music", "uwo")]
+    due.music = []
+    assert worker.visit_next(device, NIGHT)
+    assert due.done[1:] == [("crawl", "utm"), "score"]
+
+
+def test_songs_waiting_elsewhere_come_before_this_accounts_dms_and_follows(due):
+    due.music = ["uwo", "ubc"]
+    due.dms = {"uwo"}
+    due.follows = {"uwo"}
+    worker.visit(_Device(), "uwo", acting=True, following=True, crawl_slice=False, now=DAY)
+    assert due.done == [("music", "uwo")]
+
+
+def test_a_crawl_stopped_for_a_song_does_not_rest(due, monkeypatch):
+    due.crawls = {"utm"}
+
+    def crawl_slice(device, school, deadline, stop=None):
+        due.music = ["ubc"]
+        assert stop()
+        return worker.crawl.CRAWL_RUNNING
+
+    monkeypatch.setattr(worker.crawl, "crawl_slice", crawl_slice)
+    worker.visit(_Device(), "utm", acting=True, following=True, crawl_slice=True, now=DAY)
+    assert "utm" not in worker._crawl_rested_until
 
 
 def test_nothing_due_leaves_the_emulator_alone(due):
@@ -154,19 +178,14 @@ def test_follows_that_get_nowhere_rest_instead_of_looping(due, monkeypatch):
     assert not worker.visit_next(device, DAY)
 
 
-def test_follows_stay_short_while_another_carousel_waits_for_its_song(due, monkeypatch):
-    limits = []
-    monkeypatch.setattr(
-        worker.follows,
-        "follow_due",
-        lambda device, school, limit: limits.append(limit) or FollowVisit(1, 0, False),
-    )
+def test_follows_wait_while_another_carousel_waits_for_its_song(due):
     due.music = ["ubc"]
     due.follows = {"uwo"}
     worker.visit(_Device(), "uwo", acting=True, following=True, crawl_slice=False, now=DAY)
+    assert due.done == []
     due.music = []
     worker.visit(_Device(), "uwo", acting=True, following=True, crawl_slice=False, now=DAY)
-    assert limits == [worker.CONTROL.follows_per_busy_visit, worker.CONTROL.follows_per_visit]
+    assert due.done == [("follows", "uwo")]
 
 
 def test_one_failing_step_does_not_stop_the_rest_of_the_visit(due, monkeypatch):

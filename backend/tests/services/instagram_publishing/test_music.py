@@ -81,7 +81,7 @@ def test_pending_carousels_get_a_song_in_random_order(monkeypatch, database):
         }
     ]
     # Only published carousels that have settled, and not ones too old to touch.
-    assert ("lte", ("published_at", "2026-10-21T17:55:00+00:00"), {}) in database.calls
+    assert ("lte", ("published_at", "2026-10-21T17:59:00+00:00"), {}) in database.calls
     oldest = (NOW - timedelta(hours=music._CONTROL.music_max_age_hours)).isoformat()
     assert ("gte", ("published_at", oldest), {}) in database.calls
 

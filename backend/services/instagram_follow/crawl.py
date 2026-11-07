@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -71,8 +72,14 @@ def crawl_due(school: str, now: datetime | None = None) -> bool:
     return now - started >= timedelta(days=CONTROL.crawl_interval_days)
 
 
-def crawl_slice(device: EmulatorDevice, school: str, deadline: float) -> str:
-    """Advance the school's crawl until ``deadline`` (``time.monotonic``) or its end.
+def crawl_slice(
+    device: EmulatorDevice,
+    school: str,
+    deadline: float,
+    *,
+    stop: Callable[[], bool] | None = None,
+) -> str:
+    """Advance the school's crawl until ``deadline`` (``time.monotonic``), ``stop()``, or its end.
 
     The caller has switched the emulator to the school's account and holds its lock.
     Returns ``running`` when the deadline came first, ``finished`` when the crawl ended.
@@ -92,7 +99,7 @@ def crawl_slice(device: EmulatorDevice, school: str, deadline: float) -> str:
         _save(school, state)
     failed_in_a_row = 0
     while state["queue"] and state["streak"] < CONTROL.crawl_miss_streak:
-        if time.monotonic() >= deadline:
+        if time.monotonic() >= deadline or (stop is not None and stop()):
             return CRAWL_RUNNING
         seed = state["queue"].pop(0)
         try:

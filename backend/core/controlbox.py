@@ -957,7 +957,6 @@ class InstagramEmulatorControl(_ControlModel):
     follow_end_hour: int = Field(ge=1, le=24)
     crawl_slice_minutes: int = Field(ge=1, le=120)
     follows_per_visit: int = Field(ge=1, le=50)
-    follows_per_busy_visit: int = Field(ge=1, le=50)
     idle_seconds: int = Field(ge=10, le=3600)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
 
