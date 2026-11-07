@@ -604,7 +604,7 @@ test("school carousel loads the cached static photo directly with accessible nav
 test("school carousel prioritizes matching campus photos without a data request", () => {
   for (const [school, photo] of Object.entries({
     utsg: "utsg-university-college", yorku: "york-stadium-selfie", ocadu: "ocad-sharp-centre",
-    tmu: "tmu-bouldering", utsc: "utsc-welcome-sign", uwaterloo: "utsg-university-college",
+    tmu: "tmu-reflection", utsc: "utsc-welcome-sign", uwaterloo: "utsg-university-college",
   })) {
     requestSchool = school;
     try {
