@@ -216,6 +216,115 @@ def test_a_post_that_already_has_a_song_is_left_as_it_is(screens) -> None:
     assert "Done" not in device.taps and "Add audio" not in device.taps
 
 
+def _edit_rows(song: str, location: str) -> list[Node]:
+    """The edit screen scrolled to its rows: the song (or Add audio) and the location."""
+    return [
+        *_screen("Edit info", "Done"),
+        Node(song, "", (0, 0, 100, 100), "m2_audio_primary_text"),
+        Node(location, "", (0, 0, 100, 100), "m2_location_primary_text"),
+    ]
+
+
+LOCATION_SEARCH = _screen("#row_search_edit_text", "Cancel", "Select a location")
+PLACES = [
+    *_screen("#row_search_edit_text", "Select a location"),
+    Node("University of Waterloo Bookstore", "", (0, 0, 100, 100), "row_venue_title"),
+    Node("University of Waterloo", "", (0, 0, 100, 100), "row_venue_title"),
+]
+WATERLOO = module.PlaceTag(
+    "University of Waterloo", lambda name, places: places.index(name) if name in places else None
+)
+
+
+def _song_then_place(*after_song):
+    """Like, repost and pick a song on the first try, then show ``after_song``."""
+    return (
+        HOME,
+        POST_PAGE,
+        LIKED_PAGE,
+        LIKED_PAGE,
+        LIKED_PAGE,
+        MENU,
+        EDIT_INFO_AUDIO,
+        SUGGESTIONS,
+        SUGGESTIONS,
+        RESULTS,
+        CLIP,
+        EDITED,
+        *after_song,
+    )
+
+
+def test_the_school_place_is_tagged_in_the_same_edit_as_the_song(screens) -> None:
+    device = screens(
+        *_song_then_place(
+            _edit_rows("After Hours", "Add location"),
+            LOCATION_SEARCH,
+            LOCATION_SEARCH,
+            PLACES,
+            _edit_rows("After Hours", "University of Waterloo"),
+            POST_PAGE,
+        )
+    )
+    added = module.finish_post(
+        device, "uwaterloo", POST, ["the weeknd after hours"], lambda *_: 1, place=WATERLOO
+    )
+    assert added.track == "After Hours by The Weeknd,6:01"
+    assert device.typed == ["the weeknd after hours", "University of Waterloo"]
+    assert device.taps[-5:] == [
+        "action_bar_button_action",
+        "Add location",
+        "row_search_edit_text",
+        "University of Waterloo",
+        "Done",
+    ]
+
+
+def test_no_place_for_the_school_still_saves_the_song(screens) -> None:
+    device = screens(
+        *_song_then_place(
+            _edit_rows("After Hours", "Add location"),
+            LOCATION_SEARCH,
+            LOCATION_SEARCH,
+            PLACES,
+            _edit_rows("After Hours", "Add location"),
+            POST_PAGE,
+        )
+    )
+    nowhere = module.PlaceTag("University of Waterloo", lambda name, places: None)
+    module.finish_post(
+        device, "uwaterloo", POST, ["the weeknd after hours"], lambda *_: 1, place=nowhere
+    )
+    assert device.taps[-2:] == ["back", "Done"]
+
+
+def test_a_post_with_its_song_and_place_is_left_as_it_is(screens) -> None:
+    done = _edit_rows("These Nights", "University of Waterloo")
+    device = screens(HOME, LIKED_PAGE, LIKED_PAGE, MENU, done, LIKED_PAGE)
+    device.reposted = [True]
+    module.finish_post(device, "uwaterloo", POST, ["halo"], lambda *_: 0, place=WATERLOO)
+    assert "Done" not in device.taps and "Add location" not in device.taps
+
+
+def test_a_post_with_its_song_gets_its_missing_place_and_is_saved(screens) -> None:
+    device = screens(
+        HOME,
+        LIKED_PAGE,
+        LIKED_PAGE,
+        MENU,
+        _edit_rows("These Nights", "Add location"),
+        LOCATION_SEARCH,
+        LOCATION_SEARCH,
+        PLACES,
+        _edit_rows("These Nights", "University of Waterloo"),
+        LIKED_PAGE,
+    )
+    device.reposted = [True]
+    added = module.finish_post(device, "uwaterloo", POST, ["halo"], lambda *_: 0, place=WATERLOO)
+    assert added == module.AddedTrack("", "These Nights")
+    assert device.taps[-2:] == ["University of Waterloo", "Done"]
+
+
 def test_buttons_below_a_tall_first_slide_are_scrolled_into_view(screens) -> None:
     tall = _screen("More actions for this post")
     device = screens(tall, POST_PAGE, LIKED_PAGE, LIKED_PAGE, reposted=(False, True))

@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from services.claude_code import ClaudeLimited
-from services.instagram_emulator.audio import AddedTrack, SongNotFound
+from services.instagram_emulator.audio import AddedTrack, PlaceTag, SongNotFound
 from services.instagram_publishing import music
 
 NOW = datetime(2026, 10, 21, 18, tzinfo=timezone.utc)
@@ -50,6 +50,11 @@ def database(monkeypatch):
         "get_sb",
         lambda: SimpleNamespace(table=lambda name: _Table(tables[name], calls)),
     )
+    monkeypatch.setattr(
+        music.school_service,
+        "get_school",
+        lambda slug: SimpleNamespace(name="University of Waterloo"),
+    )
     return SimpleNamespace(tables=tables, calls=calls)
 
 
@@ -65,10 +70,11 @@ def test_pending_carousels_get_a_song_in_random_order(monkeypatch, database):
     finish_post = Mock(return_value=AddedTrack("dua lipa houdini", "Houdini by Dua Lipa,3:05"))
     monkeypatch.setattr(music, "finish_post", finish_post)
     assert music.finish_due(DEVICE, "uwaterloo", NOW) == {"added": 1}
-    device, school, permalink, songs, choose, _gif = finish_post.call_args.args
+    device, school, permalink, songs, choose, _gif, place = finish_post.call_args.args
     assert (device, school, permalink) == (DEVICE, "uwaterloo", POST)
     assert sorted(songs) == ["dua lipa houdini", "the weeknd after hours"]
     assert choose is music.choose_track
+    assert place == PlaceTag("University of Waterloo", music.choose_place)
     assert _updates(database.calls) == [
         {
             "music_status": "added",
@@ -177,6 +183,44 @@ def test_the_track_picker_passes_claudes_usage_limit_on(monkeypatch):
         music.choose_track("after hours", ["A by B,1:00"])
 
 
+def test_the_place_listed_under_the_schools_exact_name_is_picked_without_claude(monkeypatch):
+    monkeypatch.setattr(music, "run_agent", Mock(side_effect=AssertionError("no question")))
+    places = ["Queens University Bookstore", "QUEEN’S UNIVERSITY", "Queen's University"]
+    assert music.choose_place("Queen's University", places) == 1
+    assert music.choose_place("Université Laval", ["Universite Laval"]) == 0
+
+
+def test_claude_picks_the_school_listed_under_another_name(monkeypatch):
+    seen = {}
+
+    def run_agent(prompt, *, workdir, **_):
+        seen["prompt"] = prompt
+        seen["places"] = open(f"{workdir}/places.json").read()
+        return {"index": 1, "reason": "students call it Western"}
+
+    monkeypatch.setattr(music, "run_agent", run_agent)
+    places = ["Western University Bookstore", "Western University"]
+    assert music.choose_place("University of Western Ontario", places) == 1
+    assert "University of Western Ontario" in seen["prompt"]
+    assert seen["places"] == '["Western University Bookstore", "Western University"]'
+
+
+def test_without_claude_the_post_stays_untagged(monkeypatch):
+    def limited(prompt, **_):
+        raise ClaudeLimited("hit Claude's usage limit")
+
+    monkeypatch.setattr(music, "run_agent", limited)
+    assert music.choose_place("University of Western Ontario", ["Western University"]) is None
+
+
+def test_a_school_that_cannot_be_read_gets_no_place(monkeypatch):
+    def broken(slug):
+        raise RuntimeError("data API down")
+
+    monkeypatch.setattr(music.school_service, "get_school", broken)
+    assert music._place_tag("uwaterloo") is None
+
+
 def _tried_songs(monkeypatch, database, school):
     database.tables["instagram_songs"] = [
         {"query": "the weeknd after hours", "asian_campuses_only": False},
@@ -187,7 +231,7 @@ def _tried_songs(monkeypatch, database, school):
     monkeypatch.setattr(
         music,
         "finish_post",
-        lambda _school, _user, _post, songs, _choose, _gif=None: (
+        lambda _school, _user, _post, songs, _choose, _gif=None, _place=None: (
             tried.append(sorted(songs)) or AddedTrack(songs[0], "After Hours by The Weeknd")
         ),
     )

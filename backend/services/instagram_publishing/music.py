@@ -8,7 +8,10 @@ music search finds candidates and Claude Haiku picks the track the admin meant, 
 so the next song is tried. A song marked Asian or K-pop is tried only at the control
 box's ``asian_song_schools``. On the first try it also comments a GIF: Haiku names a
 movie or show scene that fits the carousel's first event (or none), and picks a real
-movie or show clip from GIPHY's results (or none, so nothing is commented).
+movie or show clip from GIPHY's results (or none, so nothing is commented). The same
+edit tags the post with the school's own place: the first one Instagram's location
+search lists under the school's exact name, else the one Haiku recognizes as the
+school itself, or none.
 """
 
 from __future__ import annotations
@@ -17,8 +20,10 @@ import io
 import json
 import logging
 import random
+import re
 import shutil
 import tempfile
+import unicodedata
 from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -35,7 +40,7 @@ from core.database import get_sb
 from core.tables import INSTAGRAM_PUBLISH_BATCHES, INSTAGRAM_PUBLISH_ITEMS, INSTAGRAM_SONGS
 from services import school_service
 from services.claude_code import ClaudeCodeError, ClaudeLimited, run_agent
-from services.instagram_emulator.audio import GifComment, SongNotFound, finish_post
+from services.instagram_emulator.audio import GifComment, PlaceTag, SongNotFound, finish_post
 from services.instagram_emulator.device import EmulatorDevice
 
 log = logging.getLogger(__name__)
@@ -45,6 +50,7 @@ WORKDIR_PREFIX = "wat2do-music-"
 PROMPT = (Path(__file__).parent / "music_prompt.md").read_text()
 GIF_QUERY_PROMPT = (Path(__file__).parent / "gif_query_prompt.md").read_text()
 GIF_PICK_PROMPT = (Path(__file__).parent / "gif_pick_prompt.md").read_text()
+PLACE_PROMPT = (Path(__file__).parent / "place_prompt.md").read_text()
 GIF_QUERY_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {"query": {"type": ["string", "null"]}, "reason": {"type": "string"}},
@@ -126,8 +132,11 @@ def _add_music(device: EmulatorDevice, batch: dict[str, Any], songs: Sequence[st
     attempts = int(batch["music_attempts"]) + 1
     # Only the first try comments, so a retry never posts a second GIF.
     gif = gif_comment(batch["id"]) if attempts == 1 and _CONTROL.gif_comments else None
+    place = _place_tag(batch["school"])
     try:
-        added = finish_post(device, batch["school"], batch["permalink"], songs, choose_track, gif)
+        added = finish_post(
+            device, batch["school"], batch["permalink"], songs, choose_track, gif, place
+        )
     except SongNotFound as exc:
         _record(batch["id"], INSTAGRAM_MUSIC_FAILED, attempts, error=str(exc))
         return INSTAGRAM_MUSIC_FAILED
@@ -234,11 +243,56 @@ def _first_event(batch_id: str) -> dict[str, Any] | None:
 
 def choose_track(query: str, tracks: Sequence[str]) -> int | None:
     """The index of the track the admin meant by ``query``, or None when none is it."""
+    try:
+        return _ask_index(PROMPT.replace("{{query}}", query), "tracks.json", tracks)
+    except ClaudeLimited:
+        # Not an answer about this song: every song would fail the same way.
+        raise
+    except ClaudeCodeError:
+        log.warning("The track picker did not answer for one song")
+        return None
+
+
+def _place_tag(school: str | None) -> PlaceTag | None:
+    """The school's own place to tag its carousel with, found by its full name."""
+    try:
+        record = school_service.get_school(school)
+    except Exception:
+        # The place is a nice extra; it never holds up the song.
+        log.warning("Could not read %s's name to tag its place", school, exc_info=True)
+        return None
+    return PlaceTag(record.name, choose_place) if record is not None else None
+
+
+def choose_place(name: str, places: Sequence[str]) -> int | None:
+    """The index of the place that is the school: the first Instagram lists under its
+    exact name, else the one Claude Haiku recognizes as the school itself, or None."""
+    wanted = _comparable(name)
+    exact = next((i for i, place in enumerate(places) if _comparable(place) == wanted), None)
+    if exact is not None:
+        return exact
+    try:
+        return _ask_index(PLACE_PROMPT.replace("{{school}}", name), "places.json", places)
+    except ClaudeCodeError:
+        # The place is a nice extra; without an answer the post stays untagged.
+        log.warning("The place picker did not answer")
+        return None
+
+
+def _comparable(name: str) -> str:
+    """A place name without accents, case or punctuation, so "Queen’s" and "Queen's" match."""
+    folded = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().casefold()
+    # A curly apostrophe has no ASCII form and drops out, so a straight one goes too.
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", folded.replace("'", "")).split())
+
+
+def _ask_index(prompt: str, file_name: str, choices: Sequence[str]) -> int | None:
+    """Claude Haiku's pick among ``choices``, written to ``file_name`` for it to read."""
     workdir = tempfile.mkdtemp(prefix=WORKDIR_PREFIX)
     try:
-        (Path(workdir) / "tracks.json").write_text(json.dumps(list(tracks), ensure_ascii=False))
+        (Path(workdir) / file_name).write_text(json.dumps(list(choices), ensure_ascii=False))
         answer = run_agent(
-            PROMPT.replace("{{query}}", query),
+            prompt,
             workdir=workdir,
             model=_CONTROL.music_model,
             tools=("Read",),
@@ -246,16 +300,10 @@ def choose_track(query: str, tracks: Sequence[str]) -> int | None:
             schema=ANSWER_SCHEMA,
             timeout=_CONTROL.music_agent_timeout_seconds,
         )
-    except ClaudeLimited:
-        # Not an answer about this song: every song would fail the same way.
-        raise
-    except ClaudeCodeError:
-        log.warning("The track picker did not answer for one song")
-        return None
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
     index = answer.get("index")
-    return index if isinstance(index, int) and 0 <= index < len(tracks) else None
+    return index if isinstance(index, int) and 0 <= index < len(choices) else None
 
 
 def _record(

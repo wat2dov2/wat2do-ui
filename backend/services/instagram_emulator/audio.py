@@ -3,8 +3,9 @@
 Instagram's API publishes a carousel without music and cannot like or repost, so the
 app on the emulator opens the live post the way a person would: it likes and reposts
 it, comments a GIF from a movie or show scene that fits the carousel's first event
-when one is given, then edits it: More actions, Edit, Add audio, search for a song,
-pick a track, keep the suggested clip, then Done.
+when one is given, then edits it: More actions, Edit, Add location with the school's
+own place when one is given, Add audio, search for a song, pick a track, keep the
+suggested clip, then Done.
 """
 
 from __future__ import annotations
@@ -58,6 +59,13 @@ _GIF_CELL = "gif_image"
 # GIPHY results load a moment after typing; a cell shorter than this is cut off by the keyboard.
 _GIF_RESULT_CHECKS = 8
 _MIN_GIF_HEIGHT = 150
+# The edit screen's location row reads Add location until the post has a place.
+_LOCATION_ROW = re.compile(r"^m2_location_primary_text$")
+_ADD_LOCATION = re.compile(r"^Add location$")
+_LOCATION_SEARCH = re.compile(r"^row_search_edit_text$")
+_PLACE_TITLE = "row_venue_title"
+# Places load a moment after typing, like GIPHY's results.
+_PLACE_RESULT_CHECKS = 8
 
 log = logging.getLogger(__name__)
 
@@ -86,6 +94,18 @@ class GifComment:
     pick: PickGif
 
 
+# Given the school's name and the places Instagram found for it, the index of the school.
+ChoosePlace = Callable[[str, Sequence[str]], int | None]
+
+
+@dataclass(frozen=True)
+class PlaceTag:
+    """The school whose own place tags the post, and who decides which result it is."""
+
+    name: str
+    choose: ChoosePlace
+
+
 def finish_post(
     device: EmulatorDevice,
     school: str,
@@ -93,9 +113,11 @@ def finish_post(
     queries: Sequence[str],
     choose: ChooseTrack,
     gif: GifComment | None = None,
+    place: PlaceTag | None = None,
 ) -> AddedTrack:
-    """Like and repost the post, then add the first song in ``queries`` that Instagram
-    has, and return the track used. A retry only does what is still missing.
+    """Like and repost the post, add the first song in ``queries`` that Instagram has and
+    tag the post with the school's place, then return the track used. A retry only does
+    what is still missing.
 
     The worker has already switched the app to the school's account and holds the lock.
     """
@@ -116,21 +138,80 @@ def finish_post(
     device.tap_when(_EDIT)
     device.wait_for(_EDIT_INFO)
     audio = _scroll_to(device, _AUDIO_ROW)
-    if not audio.labelled(_ADD_AUDIO):
+    adding_song = audio.labelled(_ADD_AUDIO)
+    if adding_song:
+        device.tap(audio)
+        try:
+            added = _pick_track(device, queries, choose)
+        except Exception:
+            # Whatever went wrong (the screen, or the track picker), leave without saving,
+            # so the post keeps no half-made edit.
+            _discard(device)
+            raise
+    else:
         # An earlier try saved a song but failed before it was recorded.
+        added = AddedTrack("", audio.text)
+    tagged = place is not None and _tagged(device, place, permalink)
+    if adding_song or tagged:
+        device.tap_when(_DONE)
+        device.wait_until_gone(_EDIT_INFO, seconds=CONTROL.audio_save_wait_seconds)
+    else:
         _discard(device)
-        return AddedTrack("", audio.text)
-    device.tap(audio)
-    try:
-        added = _pick_track(device, queries, choose)
-    except Exception:
-        # Whatever went wrong (the screen, or the track picker), leave without saving,
-        # so the post keeps no half-made edit.
-        _discard(device)
-        raise
-    device.tap_when(_DONE)
-    device.wait_until_gone(_EDIT_INFO, seconds=CONTROL.audio_save_wait_seconds)
     return added
+
+
+def _tagged(device: EmulatorDevice, place: PlaceTag, permalink: str) -> bool:
+    """Tag the post with the school's place; True when this edit added one.
+
+    The place is a nice extra like the GIF: when tagging fails, the edit goes on without it.
+    """
+    try:
+        return _tag_location(device, place)
+    except EmulatorError:
+        log.warning("Could not tag the school's place on %s", permalink, exc_info=True)
+        _back_to_edit(device)
+        return False
+
+
+def _tag_location(device: EmulatorDevice, place: PlaceTag) -> bool:
+    row = _scroll_to(device, _LOCATION_ROW)
+    if not row.labelled(_ADD_LOCATION):
+        # The post already has a place, such as from an earlier try.
+        return False
+    device.tap(row)
+    device.tap(device.wait_for(_LOCATION_SEARCH))
+    device.type_text(_typeable(place.name))
+    places = _places(device)
+    index = place.choose(place.name, [title for title, _ in places]) if places else None
+    if index is None or not 0 <= index < len(places):
+        _back_to_edit(device)
+        return False
+    device.tap(places[index][1])
+    device.wait_for(_EDIT_INFO)
+    return True
+
+
+def _places(device: EmulatorDevice) -> list[tuple[str, Node]]:
+    """The places Instagram's location search lists for the typed name, best match first."""
+    for _ in range(_PLACE_RESULT_CHECKS):
+        device.pause()
+        places = [
+            (node.text, node)
+            for node in device.screen()
+            if node.resource_id == _PLACE_TITLE and node.text
+        ]
+        if places:
+            return places
+    return []
+
+
+def _back_to_edit(device: EmulatorDevice) -> None:
+    """Leave the location search, its keyboard first, for the edit screen."""
+    for _ in range(3):
+        if device.find(_EDIT_INFO) is not None:
+            return
+        device.back()
+    device.wait_for(_EDIT_INFO)
 
 
 def _comment_gif(device: EmulatorDevice, gif: GifComment) -> bool:
