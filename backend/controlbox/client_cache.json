@@ -4,5 +4,6 @@
   "live_event_data_stale_seconds": 60,
   "profile_stale_seconds": 60,
   "admin_stale_seconds": 60,
-  "discovery_prefetch_idle_timeout_ms": 1500
+  "discovery_prefetch_idle_timeout_ms": 1500,
+  "event_feed_retries": 3
 }

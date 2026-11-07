@@ -43,6 +43,10 @@ Anonymous auth client behavior remains separately owned.
 ## Response and navigation changes
 
 Browser discovery queries now use `/api/discovery`, including Clubs' canonical complete-directory query shape.
+Since 2026-11-07 the events page's HTML carries only its first screen of the feed, not the feed itself (`getEventFeedFirstScreen`, `features/events/lib/eventFeedFirstScreen.ts`).
+The server cuts it at render time through the same steps the page takes for the default list: the first `initial_render_count` cards, the count, the newest-added line, and when the varsity and campus season chips stop having events (`FeedFilterAvailability`).
+The browser loads the complete feed from `/api/discovery` once the page is up and lists from it; until it arrives, a search, filter, sort or other view shows its loading state rather than a partial answer.
+A failed read is retried `client_cache.json` `event_feed_retries` times with React Query's backoff (about 1, 2 and 4 seconds); if it still fails, the first screen stays usable and every placeholder waiting for the rest shows a Try again notice laid over it, so nothing moves.
 Hydration preserves the server generation time rather than resetting freshness at mount.
 A delayed response cannot overwrite a newer generation or a locally confirmed event edit/deletion.
 An existing fresh browser query adopts a new server snapshot through its normal query refresh lifecycle.

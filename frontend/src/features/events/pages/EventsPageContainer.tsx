@@ -7,19 +7,21 @@ import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
 import type { Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
-import { EmptyState } from "@/shared/feedback";
+import { EmptyState, LoadFailureNotice } from "@/shared/feedback";
 import { Stack } from "@/shared/layout";
-import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
+import type { EventFeedFirstScreen } from "@/features/events/lib/eventFeedFirstScreen";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 
+const NO_EVENTS: Event[] = [];
+
 interface EventsPageContainerProps {
-  /** The server's browse snapshot, or null when that fetch failed. */
-  initialSnapshot: PaginatedEventsResponse | null;
+  /** The server's first screen of the feed, or null when it could not read the feed. */
+  firstScreen: EventFeedFirstScreen | null;
   initialSchool: string;
 }
 
 export function EventsPageContainer({
-  initialSnapshot,
+  firstScreen,
   initialSchool,
 }: EventsPageContainerProps) {
   usePosterLandingConfirmation();
@@ -30,18 +32,19 @@ export function EventsPageContainer({
     appliedQueryKey,
     isLoading,
     error,
+    restLoadFailed,
+    isRefreshing,
     refreshEvents,
-    totalEvents,
+    listing,
     eventStats,
     goingEventsReady,
     latestAddedEvent,
     currentTimeMs,
 
     filters,
-    orderedEvents,
     allEvents,
   } = useEventsPageData({
-    initialSnapshot,
+    firstScreen,
     initialSchool,
   });
   const [view, setView] = useState<EventBrowseView>("grid");
@@ -78,7 +81,7 @@ export function EventsPageContainer({
           school={initialSchool}
           view={view}
           onViewChange={setView}
-          count={isLoading ? null : totalEvents}
+          count={listing?.total ?? null}
           latest={latestAddedEvent ? { item: latestAddedEvent, onSelect: handleLatestAddedEventSearch } : null}
           currentTimeMs={currentTimeMs}
           disabled={isLoading || Boolean(error)}
@@ -102,12 +105,16 @@ export function EventsPageContainer({
             <EventsBrowseViews
               view={view}
               school={initialSchool}
-              events={orderedEvents}
+              events={listing?.events ?? NO_EVENTS}
+              totalCount={listing?.complete === false ? listing.total : undefined}
               onEventClick={handleEventClick}
               onClearFilters={filters.clearAllFilters}
               hasActiveFilters={filters.filterCount > 0 || filters.searchQuery.trim().length > 0}
               eventStats={eventStats}
-              isLoading={isLoading}
+              isLoading={listing === null}
+              loadFailureNotice={restLoadFailed ? (
+                <LoadFailureNotice message={t("events.loadFailed")} onRetry={refreshEvents} retrying={isRefreshing} />
+              ) : undefined}
               resetKey={appliedQueryKey}
               groupByDateSections={
                 filters.sortBy === "date" && filters.sortOrder === "asc"
@@ -121,7 +128,7 @@ export function EventsPageContainer({
           eventId={selectedEventId}
           event={selectedEvent}
           onClose={handleCloseEventDetails}
-          allEvents={orderedEvents}
+          allEvents={listing?.complete ? listing.events : null}
           />
       ) : null}
     </>

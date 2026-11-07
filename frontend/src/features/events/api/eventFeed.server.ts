@@ -3,8 +3,13 @@ import { collectPaginatedPages } from "@/shared/lib/pagination";
 import type { Event } from "@/shared/types";
 import type { PaginatedEventsResponse } from "@/features/events/api/events.api";
 import { orderClubEvents } from "@/features/events/lib/clubEventOrder";
+import {
+  buildEventFeedFirstScreen,
+  type EventFeedFirstScreen,
+} from "@/features/events/lib/eventFeedFirstScreen";
+import { getSchoolDirectory } from "@/shared/api/schools.server";
 import { controlBox } from "@/shared/config/controlBox";
-import { resolveSchool } from "@/shared/constants/schools";
+import { lookupSchoolTimezone, resolveSchool } from "@/shared/constants/schools";
 import { fetchServerSnapshot, getServerApiBaseUrl } from "@/shared/services/serverApi";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
 
@@ -72,6 +77,24 @@ export async function buildSchoolBrowseSnapshot(school: string): Promise<Paginat
 export async function getSchoolBrowseSnapshot(school: string) {
   const slug = resolveSchool(school);
   return readDiscoverySnapshot(slug, "events", () => buildSchoolBrowseSnapshot(slug));
+}
+
+/**
+ * What the events page's HTML carries of a school's feed: its first screen as of
+ * now. The browser fetches the complete feed from /api/discovery after the page
+ * paints, so the page never ships every event just to show its first screen.
+ */
+export async function getEventFeedFirstScreen(
+  feed: PaginatedEventsResponse,
+  school: string,
+): Promise<EventFeedFirstScreen> {
+  const schoolBySlug = new Map((await getSchoolDirectory()).map((record) => [record.slug, record]));
+  return buildEventFeedFirstScreen(
+    feed,
+    resolveSchool(school),
+    (eventSchool) => lookupSchoolTimezone(schoolBySlug, eventSchool),
+    Date.now(),
+  );
 }
 
 /** Login uses the same published feed and refresh lifecycle as Events. */

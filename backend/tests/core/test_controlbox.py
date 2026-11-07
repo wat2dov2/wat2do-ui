@@ -374,6 +374,8 @@ def test_discovery_controls_load_checked_in_feature_sources():
         ("database", {"read_backoff_jitter_seconds": -1}),
         ("database", {"read_backoff_max_seconds": float("inf")}),
         ("database", {"read_backoff_max_seconds": 0.01}),
+        ("client_cache", {"event_feed_retries": -1}),
+        ("client_cache", {"event_feed_retries": 6}),
         ("discovery_cache", {"schema_version": 0}),
         ("discovery_cache", {"page_concurrency": 0}),
         ("discovery_cache", {"page_concurrency": 9}),

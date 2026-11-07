@@ -5,10 +5,11 @@ import { expect, test } from "@playwright/test";
 import type { Event } from "../src/shared/types";
 import type { SchoolSummary } from "../src/shared/api/schools.api";
 import { filterEvents } from "../src/features/search/api/searchService";
-import { clearNarrowingFilterState, EMPTY_FILTER_STATE, freeFoodFilterPatch, normalizeFilterState, resolveCampusSeasonFilters, resolveVarsityGamesFilter, storeStatesToFilterState } from "../src/features/search/api/filterService";
+import { clearNarrowingFilterState, EMPTY_FILTER_STATE, feedFilterAvailability, freeFoodFilterPatch, normalizeFilterState, resolveCampusSeasonFilters, resolveVarsityGamesFilter, storeStatesToFilterState } from "../src/features/search/api/filterService";
 import { useSearchStore } from "../src/features/search/store/search.store";
 import { useEventsStore } from "../src/features/events/store/events.store";
 import { getFilterCounts } from "../src/shared/utils/filter";
+import { hasActiveEventOccurrence } from "../src/shared/utils/date";
 import { getEventFilterCategories, getEventQuickFilters } from "../src/shared/constants/eventFilters";
 
 const events = [
@@ -202,12 +203,12 @@ test("Varsity games availability requires an active or upcoming classified game 
     { ...upcomingVarsityGame, sports_game: null },
     { ...upcomingVarsityGame, occurrences: [{ dtstart_utc: "2026-09-27T16:00:00Z", dtend_utc: "2026-09-27T18:00:00Z" }] },
   ] as Event[];
-  expect(resolveVarsityGamesFilter(unrelated, "uwaterloo", Date.now(), true))
+  expect(resolveVarsityGamesFilter(feedFilterAvailability(unrelated, "uwaterloo"), Date.now(), true))
     .toEqual({ ready: true, available: false, selected: false });
-  expect(resolveVarsityGamesFilter([upcomingVarsityGame], "uwaterloo", Date.now(), true))
+  expect(resolveVarsityGamesFilter(feedFilterAvailability([upcomingVarsityGame], "uwaterloo"), Date.now(), true))
     .toEqual({ ready: true, available: true, selected: true });
-  expect(resolveVarsityGamesFilter([upcomingVarsityGame], "uwaterloo", Date.parse("2026-09-29T17:00:00Z"), false).available).toBe(true);
-  expect(resolveVarsityGamesFilter([upcomingVarsityGame], "uwaterloo", Date.parse("2026-09-29T18:00:01Z"), true).available).toBe(false);
+  expect(resolveVarsityGamesFilter(feedFilterAvailability([upcomingVarsityGame], "uwaterloo"), Date.parse("2026-09-29T17:00:00Z"), false).available).toBe(true);
+  expect(resolveVarsityGamesFilter(feedFilterAvailability([upcomingVarsityGame], "uwaterloo"), Date.parse("2026-09-29T18:00:01Z"), true).available).toBe(false);
 });
 
 test("Varsity availability uses all cached events and stays visible when another filter excludes games", () => {
@@ -217,7 +218,7 @@ test("Varsity availability uses all cached events and stays visible when another
     ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: [],
   }, () => "America/Toronto");
   expect(filtered).not.toContain(upcomingVarsityGame);
-  const availability = resolveVarsityGamesFilter(cachedEvents, "uwaterloo", Date.now(), false);
+  const availability = resolveVarsityGamesFilter(feedFilterAvailability(cachedEvents, "uwaterloo"), Date.now(), false);
   expect(availability.available).toBe(true);
   expect(getEventQuickFilters({ sportsGameAvailable: availability.available }).map(filter => filter.id)).toContain("sportsGame");
 });
@@ -225,19 +226,19 @@ test("Varsity availability uses all cached events and stays visible when another
 test("pending feeds and hydration clocks hide Varsity without clearing staged selections", () => {
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, sportsGame: true });
   const selected = useSearchStore.getState().sportsGame;
-  expect(resolveVarsityGamesFilter(null, "uwaterloo", Date.now(), selected))
+  expect(resolveVarsityGamesFilter(null, Date.now(), selected))
     .toEqual({ ready: false, available: false, selected: false });
-  expect(resolveVarsityGamesFilter([upcomingVarsityGame], "uwaterloo", null, selected))
+  expect(resolveVarsityGamesFilter(feedFilterAvailability([upcomingVarsityGame], "uwaterloo"), null, selected))
     .toEqual({ ready: false, available: false, selected: false });
   expect(useSearchStore.getState().sportsGame).toBe(true);
   expect(getEventQuickFilters().map(filter => filter.id)).not.toContain("sportsGame");
-  expect(resolveVarsityGamesFilter([upcomingVarsityGame], "uwaterloo", Date.now(), selected).selected).toBe(true);
+  expect(resolveVarsityGamesFilter(feedFilterAvailability([upcomingVarsityGame], "uwaterloo"), Date.now(), selected).selected).toBe(true);
 });
 
 test("a school without Varsity games clears stale narrowing and telemetry without a new user query", () => {
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, sportsGame: true });
   const state = useSearchStore.getState();
-  const varsity = resolveVarsityGamesFilter(events, "uwaterloo", Date.now(), state.sportsGame);
+  const varsity = resolveVarsityGamesFilter(feedFilterAvailability(events, "uwaterloo"), Date.now(), state.sportsGame);
   expect(varsity.ready).toBe(true);
   const effective = { ...state, sportsGame: varsity.selected };
   expect(filterEvents(events, { ...effective, goingEventIds: [], campusSeasonOptions: [] }, () => "America/Toronto")).toHaveLength(events.length);
@@ -266,21 +267,55 @@ const campusSchool: SchoolSummary = {
   ],
 };
 
+/** A feed with no events, where only the calendar decides season chips. */
+const NO_FEED_EVENTS = feedFilterAvailability([], campusSchool.slug);
+
+test("feed availability holds until the last qualifying event ends, at any time, as the events themselves would", () => {
+  const school = { ...campusSchool, event_seasons: [{
+    id: "exam_destress", classification_id: "exam_destress", labels: { en: "Exam de-stress" },
+    display_windows: [{ start_date: "2026-09-01", end_date: "2026-11-01" }],
+  }] } as SchoolSummary;
+  const at = (iso: string) => Date.parse(iso);
+  const feed = [
+    { ...upcomingVarsityGame, id: 50 },
+    { ...upcomingVarsityGame, id: 51, occurrences: [
+      { dtstart_utc: "2026-09-29T20:00:00Z", dtend_utc: "2026-09-29T22:00:00Z" },
+      // No end time: still on for the feed's visibility window after it starts.
+      { dtstart_utc: "2026-10-02T20:00:00Z", dtend_utc: null },
+    ] },
+    { ...upcomingVarsityGame, id: 52, school: "mit", occurrences: [{ dtstart_utc: "2026-12-01T20:00:00Z", dtend_utc: null }] },
+    { ...events[0], id: 53, campus_season_ids: ["exam_destress"], occurrences: [{ dtstart_utc: "2026-10-01T18:00:00Z", dtend_utc: "2026-10-01T19:00:00Z" }] },
+    { ...events[0], id: 54, cancelled: true, campus_season_ids: ["exam_destress"], occurrences: [{ dtstart_utc: "2026-10-20T18:00:00Z", dtend_utc: "2026-10-20T19:00:00Z" }] },
+  ] as Event[];
+  const availability = feedFilterAvailability(feed, "uwaterloo");
+  // Plain data, so the server can hand it to the page with the first screen.
+  expect(JSON.parse(JSON.stringify(availability))).toEqual(availability);
+  for (const time of ["2026-09-28T12:00:00Z", "2026-10-01T19:00:00Z", "2026-10-01T19:00:01Z", "2026-10-02T21:00:00Z", "2026-10-02T21:00:01Z", "2026-12-01T20:30:00Z"]) {
+    const nowMs = at(time);
+    const varsityOn = feed.some(event => event.school === "uwaterloo" && event.sports_game === true && hasActiveEventOccurrence(event, nowMs));
+    expect(resolveVarsityGamesFilter(availability, nowMs, true), time).toEqual({ ready: true, available: varsityOn, selected: varsityOn });
+    const examOn = feed.some(event => !event.cancelled && event.campus_season_ids?.includes("exam_destress") && hasActiveEventOccurrence(event, nowMs));
+    expect(resolveCampusSeasonFilters(school, nowMs, "en", ["exam_destress"], availability).selectedIds, time).toEqual(examOn ? ["exam_destress"] : []);
+  }
+  expect(resolveVarsityGamesFilter(availability, at("2026-10-02T21:00:00Z"), false).available).toBe(true);
+  expect(resolveVarsityGamesFilter(availability, at("2026-10-02T21:00:01Z"), false).available).toBe(false);
+});
+
 test("campus season visibility follows inclusive school-local dates and supports separate windows", () => {
-  const visible = (now: string) => resolveCampusSeasonFilters(campusSchool, Date.parse(now), "en", [], []).options.map(option => option.id);
+  const visible = (now: string) => resolveCampusSeasonFilters(campusSchool, Date.parse(now), "en", [], NO_FEED_EVENTS).options.map(option => option.id);
   expect(visible("2026-09-28T03:59:59Z")).toEqual([]);
   expect(visible("2026-09-28T04:00:00Z")).toEqual(["homecoming", "thanksgiving"]);
   expect(visible("2026-09-30T03:59:59Z")).toEqual(["homecoming", "thanksgiving"]);
   expect(visible("2026-09-30T04:00:00Z")).toEqual([]);
   expect(visible("2026-12-01T04:59:59Z")).toEqual([]);
   expect(visible("2026-12-01T05:00:00Z")).toEqual(["winter_holidays"]);
-  expect(resolveCampusSeasonFilters({ ...campusSchool, slug: "ualberta", timezone: "America/Edmonton" }, Date.parse("2026-09-28T04:00:00Z"), "en", [], []).options).toEqual([]);
+  expect(resolveCampusSeasonFilters({ ...campusSchool, slug: "ualberta", timezone: "America/Edmonton" }, Date.parse("2026-09-28T04:00:00Z"), "en", [], NO_FEED_EVENTS).options).toEqual([]);
 });
 
 test("campus season labels use the current language, its base language, then English", () => {
   const now = Date.parse("2026-09-28T12:00:00Z");
-  expect(resolveCampusSeasonFilters(campusSchool, now, "fr-CA", [], []).options.map(option => option.label)).toEqual(["Retrouvailles", "Thanksgiving"]);
-  expect(resolveCampusSeasonFilters(campusSchool, now, "de", [], []).options.map(option => option.label)).toEqual(["HOCO", "Thanksgiving"]);
+  expect(resolveCampusSeasonFilters(campusSchool, now, "fr-CA", [], NO_FEED_EVENTS).options.map(option => option.label)).toEqual(["Retrouvailles", "Thanksgiving"]);
+  expect(resolveCampusSeasonFilters(campusSchool, now, "de", [], NO_FEED_EVENTS).options.map(option => option.label)).toEqual(["HOCO", "Thanksgiving"]);
 });
 
 test("season selections normalize once and survive filter handoff and Clear all", () => {
@@ -304,7 +339,7 @@ test("season filters OR their metadata IDs and intersect existing discovery filt
     { id: 4, employers_on_campus: true },
     { id: 5, campus_season_ids: [], employers_on_campus: true },
   ].map(item => ({ ...events[0], ...item, occurrences: [{ dtstart_utc: "2026-09-28T16:00:00Z", dtend_utc: null }] }) as Event);
-  const results = () => filterEvents(seasonalEvents, { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", [], []).options }, () => campusSchool.timezone).map(item => item.id);
+  const results = () => filterEvents(seasonalEvents, { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", [], NO_FEED_EVENTS).options }, () => campusSchool.timezone).map(item => item.id);
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, campusSeasonIds: ["homecoming", "thanksgiving"] });
   expect(results()).toEqual([1, 2]);
   expect(getFilterCounts(useSearchStore.getState())).toBe(2);
@@ -316,7 +351,7 @@ test("expired and other-school selections stop narrowing results, counts, and te
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, campusSeasonIds: ["homecoming", "other-school-hoco"] });
   const submitted = useSearchStore.getState();
   const beforeExpiry = `${submitted.queryRevision}:${JSON.stringify(storeStatesToFilterState(submitted))}`;
-  const expired = resolveCampusSeasonFilters(campusSchool, Date.parse("2026-10-01T12:00:00Z"), "en", useSearchStore.getState().campusSeasonIds, []);
+  const expired = resolveCampusSeasonFilters(campusSchool, Date.parse("2026-10-01T12:00:00Z"), "en", useSearchStore.getState().campusSeasonIds, NO_FEED_EVENTS);
   expect(expired.ready).toBe(true);
   expect(expired.selectedIds).toEqual([]);
   const effective = { ...useSearchStore.getState(), campusSeasonIds: expired.selectedIds };
@@ -329,7 +364,7 @@ test("expired and other-school selections stop narrowing results, counts, and te
   const cleaned = useSearchStore.getState();
   expect(cleaned.campusSeasonIds).toEqual([]);
   expect(`${cleaned.queryRevision}:${JSON.stringify(storeStatesToFilterState(cleaned))}`).toBe(expiredQuery);
-  expect(resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", useSearchStore.getState().campusSeasonIds, []).selectedIds).toEqual([]);
+  expect(resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", useSearchStore.getState().campusSeasonIds, NO_FEED_EVENTS).selectedIds).toEqual([]);
   // An intentional repeated user query still gets its own revision.
   cleaned.setFilterState(storeStatesToFilterState(cleaned));
   expect(useSearchStore.getState().queryRevision).toBe(cleaned.queryRevision + 1);
@@ -337,8 +372,8 @@ test("expired and other-school selections stop narrowing results, counts, and te
 
 test("unavailable school configuration or the initial hydration clock never authorizes clearing stored selections", () => {
   const selected = ["homecoming"];
-  expect(resolveCampusSeasonFilters(campusSchool, null, "en", selected, [])).toEqual({ ready: false, options: [], selectedIds: [] });
-  expect(resolveCampusSeasonFilters(undefined, Date.now(), "en", selected, [])).toEqual({ ready: false, options: [], selectedIds: [] });
+  expect(resolveCampusSeasonFilters(campusSchool, null, "en", selected, NO_FEED_EVENTS)).toEqual({ ready: false, options: [], selectedIds: [] });
+  expect(resolveCampusSeasonFilters(undefined, Date.now(), "en", selected, NO_FEED_EVENTS)).toEqual({ ready: false, options: [], selectedIds: [] });
   expect(selected).toEqual(["homecoming"]);
 });
 
@@ -347,8 +382,8 @@ test("older school snapshots without season configuration preserve staged select
   delete oldSnapshot.event_seasons;
   const selected = ["homecoming"];
   const now = Date.parse("2026-09-28T12:00:00Z");
-  expect(resolveCampusSeasonFilters(oldSnapshot, now, "en", selected, [])).toEqual({ ready: false, options: [], selectedIds: [] });
-  expect(resolveCampusSeasonFilters({ ...campusSchool, event_seasons: [] }, now, "en", selected, [])).toEqual({ ready: true, options: [], selectedIds: [] });
+  expect(resolveCampusSeasonFilters(oldSnapshot, now, "en", selected, NO_FEED_EVENTS)).toEqual({ ready: false, options: [], selectedIds: [] });
+  expect(resolveCampusSeasonFilters({ ...campusSchool, event_seasons: [] }, now, "en", selected, NO_FEED_EVENTS)).toEqual({ ready: true, options: [], selectedIds: [] });
   expect(selected).toEqual(["homecoming"]);
 });
 
@@ -361,7 +396,7 @@ test("school transitions clear seasonal selections even when the next school off
   expect(useSearchStore.getState().campusSeasonIds).toEqual([]);
   expect(useSearchStore.getState().employersOnCampus).toBe(true);
   const nextSchool = { ...campusSchool, slug: "uwo" };
-  const next = resolveCampusSeasonFilters(nextSchool, Date.parse("2026-09-28T12:00:00Z"), "en", useSearchStore.getState().campusSeasonIds, []);
+  const next = resolveCampusSeasonFilters(nextSchool, Date.parse("2026-09-28T12:00:00Z"), "en", useSearchStore.getState().campusSeasonIds, NO_FEED_EVENTS);
   expect(next.options.map(option => option.id)).toContain("homecoming");
   expect(next.selectedIds).toEqual([]);
   // A QR handoff is applied after the navigation owner selects its school.
@@ -382,7 +417,7 @@ test("named holiday filters require classified occurrences within that school's 
   ].map(item => ({ ...events[0], id: item.id, campus_season_ids: ["holidays"], occurrences: [{ dtstart_utc: item.start, dtend_utc: item.end }] }) as Event);
   seasonalEvents.push({ ...seasonalEvents[1], id: 7, campus_season_ids: [] });
   const results = (now: string, selection: string) => {
-    const seasons = resolveCampusSeasonFilters(campusSchool, Date.parse(now), "en", [selection], []);
+    const seasons = resolveCampusSeasonFilters(campusSchool, Date.parse(now), "en", [selection], NO_FEED_EVENTS);
     return filterEvents(seasonalEvents, {
       ...useSearchStore.getState(), goingEventIds: [], campusSeasonIds: seasons.selectedIds, campusSeasonOptions: seasons.options,
     }, () => campusSchool.timezone).map(event => event.id);
@@ -393,7 +428,7 @@ test("named holiday filters require classified occurrences within that school's 
 
 
 test("named seasonal filters carry only matching sessions into cards and date sections", () => {
-  const seasons = resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", ["thanksgiving"], []);
+  const seasons = resolveCampusSeasonFilters(campusSchool, Date.parse("2026-09-28T12:00:00Z"), "en", ["thanksgiving"], NO_FEED_EVENTS);
   const recurring = {
     ...events[0], campus_season_ids: ["holidays"], occurrences: [
       { dtstart_utc: "2026-09-27T16:00:00Z", dtend_utc: null },
@@ -435,12 +470,12 @@ test("empty seasonal filters wait for the complete feed and hide options with no
   }] } as SchoolSummary;
   const now = Date.parse("2026-09-30T12:00:00Z");
   expect(resolveCampusSeasonFilters(school, now, "en", ["exam_destress"], null).ready).toBe(false);
-  const empty = resolveCampusSeasonFilters(school, now, "en", ["exam_destress"], []);
+  const empty = resolveCampusSeasonFilters(school, now, "en", ["exam_destress"], NO_FEED_EVENTS);
   expect(empty.options).toEqual([]);
   expect(empty.selectedIds).toEqual([]);
   const matching = { ...events[0], school: school.slug, campus_season_ids: ["exam_destress"], occurrences: [{ dtstart_utc: "2026-10-01T18:00:00Z" }] } as Event;
-  expect(resolveCampusSeasonFilters(school, now, "en", [], [matching]).options).toHaveLength(1);
-  expect(resolveCampusSeasonFilters(school, now, "en", [], [{ ...matching, cancelled: true }]).options).toEqual([]);
+  expect(resolveCampusSeasonFilters(school, now, "en", [], feedFilterAvailability([matching], school.slug)).options).toHaveLength(1);
+  expect(resolveCampusSeasonFilters(school, now, "en", [], feedFilterAvailability([{ ...matching, cancelled: true }], school.slug)).options).toEqual([]);
 });
 
 

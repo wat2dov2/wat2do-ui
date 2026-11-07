@@ -10,6 +10,8 @@ Use Node 22, matching CI.
   CI runs it in its own job against a `PLAYWRIGHT_TEST=1` build.
   `SKELETON_LAYOUT_REPORT=1` records the numbers and before/after screenshots without failing, `SKELETON_LAYOUT_CPU_THROTTLE=4` runs it at phone speed (CI does), and `SKELETON_LAYOUT_BASE_URL` points it at an app on another port.
   When a loading state or the page it stands in for changes, mark the matching boxes on both sides with the same `data-skeleton-key`.
+  The events page's HTML carries only its first screen, so the spec also holds the browser's request for the complete feed (`/api/discovery`) and checks that nothing moves when it replaces that first screen, and that a search made before it arrives waits for it.
+  It also fails that request: after its retries the first screen must stay, nothing may move when the Try again notice appears, and Try again must recover.
 
 The browser suite uses Next's experimental test mode for server-side API fixtures.
 Run it against an app started with `PLAYWRIGHT_TEST=1`, with the local backend available for the API proxy boundary checks.

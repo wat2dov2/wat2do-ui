@@ -85,6 +85,18 @@ export function getCurrentSchool(): string {
   return getHostnameSchoolStatus(window.location.hostname).school;
 }
 
+/** A school's campus clock, from the school directory keyed by slug. */
+export function lookupSchoolTimezone(
+  schoolBySlug: ReadonlyMap<string, { timezone: string }>,
+  school: string | null | undefined,
+): string {
+  // Records without a school have no campus clock; label them explicitly in UTC.
+  if (!school) return "UTC";
+  const timezone = schoolBySlug.get(school)?.timezone;
+  if (!timezone) throw new Error(`Missing timezone for school: ${school}`);
+  return timezone;
+}
+
 /**
  * Resolve the school a request is scoped to from its Host header.
  *

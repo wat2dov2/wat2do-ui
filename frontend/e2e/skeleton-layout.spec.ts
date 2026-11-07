@@ -17,7 +17,9 @@ import { mockApi } from "./api-fixture";
  * Each surface is opened with its data held back, so the loading state paints
  * first; then the data is released. Every element marked `data-skeleton-key`
  * on both sides must keep its box (within 1px) across the swap, and the page
- * must record no layout shift while it loads, swaps and settles.
+ * must record no layout shift while it loads, swaps and settles. The events
+ * list paints its server-rendered first screen before the complete feed
+ * arrives, so that first screen is held to the same standard.
  */
 
 const BASE = process.env.SKELETON_LAYOUT_BASE_URL ?? "http://127.0.0.1:3000";
@@ -390,6 +392,39 @@ async function measureSwap(page: Page, gates: Gates, loaded: string, name: strin
   return { ...(await shiftsSince(page, since)), comparison: compare(loadingBoxes, loadedBoxes, viewportHeight) };
 }
 
+/**
+ * The events page's HTML carries only its first screen; the browser then asks
+ * /api/discovery for the complete feed. This holds that request until `gate`
+ * opens, so the first screen can be measured on its own. `requested` settles
+ * once the hydrated page has asked.
+ */
+async function holdCompleteEventFeed(page: Page, gate: Gate) {
+  let markRequested!: () => void;
+  const requested = new Promise<void>((resolve) => { markRequested = resolve; });
+  await page.route(url => url.pathname === "/api/discovery" && url.searchParams.get("resource") === "events", async (route) => {
+    markRequested();
+    await gate.opened;
+    // Next's test proxy, routed on the context, still adds its headers.
+    await route.fallback();
+  });
+  return { requested };
+}
+
+/**
+ * Answers every browser request for the complete event feed with an error, as an
+ * outage would, until `recover` is called; counts the requests.
+ */
+async function failCompleteEventFeed(page: Page) {
+  let attempts = 0;
+  let failing = true;
+  await page.route(url => url.pathname === "/api/discovery" && url.searchParams.get("resource") === "events", async (route) => {
+    if (!failing) return route.fallback();
+    attempts += 1;
+    await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Discovery is temporarily unavailable" }) });
+  });
+  return { attempts: () => attempts, recover: () => { failing = false; } };
+}
+
 /** `SKELETON_LAYOUT_CPU_THROTTLE=4` runs the page like a mid-range phone. */
 async function throttleCpu(page: Page) {
   const rate = Number(process.env.SKELETON_LAYOUT_CPU_THROTTLE ?? 1);
@@ -437,6 +472,93 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       });
     }
 
+    test("events list keeps its layout when the complete feed replaces the server's first screen", async ({ page, next }) => {
+      const gates: Gates = { data: new Gate(), late: new Gate() };
+      // The server reads the feed at once; only the browser's request for all of it waits.
+      await installMocks(page, next, gates, () => false);
+      const completeFeed = await holdCompleteEventFeed(page, gates.data);
+      await throttleCpu(page);
+      await page.addInitScript(OBSERVE_SHIFTS);
+
+      await page.goto(`${BASE}/events`, { waitUntil: "commit" });
+      await page.locator("[data-event-card]").first().waitFor();
+      await completeFeed.requested;
+      const name = `events-first-screen-${viewportName}`;
+      const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-event-card]", name, viewport.height);
+      await report(name, comparison, cls, shifts);
+    });
+
+    test("a search made before the complete feed arrives waits for it, then searches every event", async ({ page, next }) => {
+      const gates: Gates = { data: new Gate(), late: new Gate() };
+      gates.late.open();
+      await installMocks(page, next, gates, () => false);
+      const completeFeed = await holdCompleteEventFeed(page, gates.data);
+      await page.addInitScript(OBSERVE_SHIFTS);
+      await page.goto(`${BASE}/events`);
+      await completeFeed.requested;
+      await page.locator("[data-event-card]").first().waitFor();
+      await settle(page);
+      const header = await landmarks(page, "[data-slot=page-header]");
+
+      // Seven events are Varsity games, and only one of them is on the first screen.
+      const search = page.locator("[data-search-input]");
+      await search.fill("Varsity");
+      await search.press("Enter");
+      // The first screen cannot answer a search, so the results wait for the feed and say so.
+      await expect(page.locator("[data-skeleton-key=count-heading]")).toHaveAttribute("aria-busy", "true");
+      await expect(page.locator("main [aria-busy=true]").first()).toBeVisible();
+      await expect(page.locator("[data-event-card]")).toHaveCount(0);
+      await settle(page);
+      const waiting = compare(header, await landmarks(page, "[data-slot=page-header]"), viewport.height);
+      expect(waiting.mismatched, "the header holds still while the search waits").toEqual([]);
+      expect([...waiting.loadingOnly, ...waiting.loadedOnly]).toEqual([]);
+      expect((await shiftsSince(page)).cls, "waiting for the feed moves nothing").toBe(0);
+
+      gates.data.open();
+      await expect(page.locator("[data-event-card]")).toHaveCount(7);
+      await expect(page.locator("[data-skeleton-key=count-heading]")).toHaveAttribute("aria-label", /^7 /);
+    });
+
+    test("events list keeps its first screen in place when the complete feed fails, and offers to try again", async ({ page, next }) => {
+      const gates: Gates = { data: new Gate(), late: new Gate() };
+      gates.late.open();
+      await installMocks(page, next, gates, () => false);
+      const completeFeed = await failCompleteEventFeed(page);
+      await page.addInitScript(OBSERVE_SHIFTS);
+      await page.goto(`${BASE}/events`);
+      await page.locator("[data-event-card]").first().waitFor();
+      // The row still waiting for the rest of the list is where the notice will appear.
+      await page.locator("[data-testid=event-list-sentinel]").scrollIntoViewIfNeeded();
+      await settle(page);
+      const waiting = await landmarks(page);
+
+      // The first read and each retry (about 1, 2 and 4 seconds apart) fail before the page says so.
+      const notice = page.locator("[data-slot=load-failure-notice]");
+      await expect(notice).toBeVisible({ timeout: 20_000 });
+      expect(completeFeed.attempts()).toBe(4);
+      await expect(page.locator("[data-slot=empty-state]")).toHaveCount(0);
+      await expect(page.locator("[data-event-card]")).toHaveCount(16);
+      await settle(page);
+      const name = `events-feed-failed-${viewportName}`;
+      const { cls, shifts } = await shiftsSince(page);
+      await report(name, compare(waiting, await landmarks(page), viewport.height), cls, shifts);
+
+      // The header still works: a search waits in its loading state, under the same notice.
+      const search = page.locator("[data-search-input]");
+      await search.fill("Varsity");
+      await search.press("Enter");
+      await expect(page.locator("[data-event-card]")).toHaveCount(0);
+      await expect(page.locator("main [data-event-card-skeleton]").first()).toBeVisible();
+      await expect(notice).toBeVisible();
+
+      // Try again reads the feed again, and the search runs on all of it.
+      completeFeed.recover();
+      await notice.getByRole("button").click();
+      await expect(page.locator("[data-event-card]")).toHaveCount(7);
+      await expect(notice).toHaveCount(0);
+      await expect(page.locator("[data-skeleton-key=count-heading]")).toHaveAttribute("aria-label", /^7 /);
+    });
+
     test("an in-app navigation keeps its layout when the next page replaces its loading state", async ({ page, next }) => {
       const gates: Gates = { data: new Gate(), late: new Gate() };
       await installMocks(page, next, gates, path => path === "/clubs");
@@ -461,8 +583,11 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       await installMocks(page, next, gates, (path) => path === "/events/1");
       await page.addInitScript(OBSERVE_SHIFTS);
       gates.late.open();
+      // More events draws from the complete feed, which the page loads after its first screen.
+      const completeFeed = page.waitForResponse(response => new URL(response.url()).pathname === "/api/discovery");
       await page.goto(`${BASE}/events`);
       await page.locator("[data-event-card]").first().waitFor();
+      await completeFeed;
       await settle(page);
 
       const openedAt = await page.evaluate(() => {
