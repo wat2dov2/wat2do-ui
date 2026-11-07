@@ -17,18 +17,12 @@ import photo3 from "@/assets/utsc-welcome-sign.webp";
 import photo4 from "@/assets/ocad-sculpture-campus.webp";
 import photo5 from "@/assets/ocad-sculpture-portrait.webp";
 import photo6 from "@/assets/ocad-sharp-centre-selfie.webp";
-import photo7 from "@/assets/tmu-bouldering.webp";
-import photo8 from "@/assets/tmu-boulders-selfie.webp";
-import photo9 from "@/assets/tmu-reflection.webp";
-import photo10 from "@/assets/utsc-campus-walkway.webp";
-import photo11 from "@/assets/utsc-indoor-portrait.webp";
-import photo12 from "@/assets/utsg-campus-portrait.webp";
-import photo13 from "@/assets/utsg-mural-portrait.webp";
-import photo14 from "@/assets/utsc-campus-selfie.webp";
-import photo15 from "@/assets/york-campus-signpost.webp";
-import photo16 from "@/assets/york-lions-portrait.webp";
-import photo17 from "@/assets/york-sculpture-campus.webp";
-import photo18 from "@/assets/york-sculpture-detail.webp";
+import photo7 from "@/assets/tmu-reflection.webp";
+import photo8 from "@/assets/utsg-campus-portrait.webp";
+import photo9 from "@/assets/utsg-mural-portrait.webp";
+import photo10 from "@/assets/york-campus-signpost.webp";
+import photo11 from "@/assets/york-lions-portrait.webp";
+import photo12 from "@/assets/york-sculpture-campus.webp";
 
 // Image placeholder mode, not user-facing input placeholder text.
 const imagePlaceholder = "blur" as const;
@@ -42,17 +36,11 @@ const schoolPhotos = [
   { image: photo5, school: "OCAD University", schoolSlug: "ocadu" },
   { image: photo6, school: "OCAD University", schoolSlug: "ocadu" },
   { image: photo7, school: "Toronto Metropolitan University", schoolSlug: "tmu" },
-  { image: photo8, school: "Toronto Metropolitan University", schoolSlug: "tmu" },
-  { image: photo9, school: "Toronto Metropolitan University", schoolSlug: "tmu" },
-  { image: photo10, school: "University of Toronto Scarborough", schoolSlug: "utsc" },
-  { image: photo11, school: "University of Toronto Scarborough", schoolSlug: "utsc" },
-  { image: photo12, school: "University of Toronto St. George", schoolSlug: "utsg" },
-  { image: photo13, school: "University of Toronto St. George", schoolSlug: "utsg" },
-  { image: photo14, school: "University of Toronto Scarborough", schoolSlug: "utsc" },
-  { image: photo15, school: "York University", schoolSlug: "yorku" },
-  { image: photo16, school: "York University", schoolSlug: "yorku" },
-  { image: photo17, school: "York University", schoolSlug: "yorku" },
-  { image: photo18, school: "York University", schoolSlug: "yorku" },
+  { image: photo8, school: "University of Toronto St. George", schoolSlug: "utsg" },
+  { image: photo9, school: "University of Toronto St. George", schoolSlug: "utsg" },
+  { image: photo10, school: "York University", schoolSlug: "yorku" },
+  { image: photo11, school: "York University", schoolSlug: "yorku" },
+  { image: photo12, school: "York University", schoolSlug: "yorku" },
 ];
 
 /** Manual navigation keeps photos still for reading and avoids autoplay downloads. */
