@@ -262,10 +262,13 @@ export function EventCardContent({
                * tea") ate the row and squeezed the date, time and location
                * beside it down to a few characters each. Two-fifths of the row is the
                * most this column may claim; past that the label ellipsises.
+               * The badges sit in a wrapping row rather than a stack, so they stay
+               * within the metadata lines beside them: a card is as tall with three
+               * badges as with none, and its loading skeleton matches either way.
                */
               <div
                 data-slot="event-card-badges"
-                className="flex min-w-0 max-w-[40%] shrink flex-col items-end gap-0.5"
+                className="flex min-w-0 max-w-[40%] shrink flex-row flex-wrap content-start items-start justify-end gap-0.5"
               >
                 {badges.map((badge) => (
                   <EventCardBadge key={badge.text} badge={badge} interactive={interactive} className={badgeClassName} />
