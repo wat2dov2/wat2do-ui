@@ -7,7 +7,7 @@ import { resolveSchool } from "@/shared/constants/schools";
 import { filterPositions } from "@/features/positions/api/positionService";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import type { Position, PositionType } from "@/shared/types";
-import { preserveDiscoveryGeneration } from "@/shared/api/discovery.api";
+import { discoverySnapshotSeed, preserveDiscoveryGeneration } from "@/shared/api/discovery.api";
 
 type PositionTypeFilter = PositionType | "all";
 
@@ -30,8 +30,7 @@ export function usePositionsPage({
     queryKey: queryKeys.positions.allForSchool(school),
     retry: false,
     queryFn: () => getPositionDirectory(school),
-    initialData: initialDirectory ?? undefined,
-    initialDataUpdatedAt: initialDirectory?.generated_at,
+    ...discoverySnapshotSeed(initialDirectory),
     structuralSharing: preserveDiscoveryGeneration,
   });
   const positions = useMemo(

@@ -16,10 +16,14 @@ import {
 } from "@/features/events/api/events.api";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
 import { controlBox } from "@/shared/config/controlBox";
+import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 import { ROUTES } from "@/shared/constants/routes";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { Container, PageHeader, Stack } from "@/shared/layout";
 import type { Event } from "@/shared/types";
+
+/** How far below the screen "More events" starts loading its feed. */
+const MORE_EVENTS_PRELOAD_MARGIN = "600px";
 
 interface EventDetailsPageContainerProps {
   eventId: number;
@@ -40,9 +44,13 @@ export function EventDetailsPageContainer({
     initialData: initialEvent,
     staleTime: controlBox.clientCache.liveEventDataStaleMs,
   });
+  const { ref: moreEventsRef, hasIntersected: moreEventsNear } =
+    useIntersectionObserver<HTMLSpanElement>({ rootMargin: MORE_EVENTS_PRELOAD_MARGIN });
+  // The school's whole feed only fills "More events" at the bottom, so it loads
+  // as that comes near, unless an earlier page already has it.
   const { data: schoolFeed } = useQuery({
     ...eventFeedQueryOptions(event?.school ?? ""),
-    enabled: Boolean(event?.school),
+    enabled: Boolean(event?.school) && moreEventsNear,
   });
   const handleSimilarEventClick = useCallback(
     (similarEvent: Event) => {
@@ -64,11 +72,15 @@ export function EventDetailsPageContainer({
         {event ? (
           <>
             <EventDetailsBody event={event} school={event.school} />
-            <EventDetailsSimilarEvents
-              event={event}
-              events={schoolFeed?.items ?? []}
-              onEventClick={handleSimilarEventClick}
-            />
+            {schoolFeed ? (
+              <EventDetailsSimilarEvents
+                event={event}
+                events={schoolFeed.items}
+                onEventClick={handleSimilarEventClick}
+              />
+            ) : (
+              <span ref={moreEventsRef} aria-hidden="true" />
+            )}
           </>
         ) : isPending ? (
           <EventDetailsBodySkeleton />

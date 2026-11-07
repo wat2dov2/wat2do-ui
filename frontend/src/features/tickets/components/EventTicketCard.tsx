@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
 import { EmailOtpForm } from "@/features/auth/components/EmailOtpForm";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
-import { TicketQr } from "@/features/tickets/components/TicketQr";
 import { TicketReturnControl } from "@/features/tickets/components/TicketReturnControl";
 import {
   useMyTickets,
@@ -30,8 +29,14 @@ import {
 import { FormSelect } from "@/shared/ui/form-field";
 import { LoadingButton } from "@/shared/ui/loading-button";
 import { RadioOptionGroup } from "@/shared/ui/radio-option-group";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { formatCents } from "@/shared/utils/currency";
 import { formatOccurrence } from "@/shared/utils/date";
+
+// Only a held ticket shows its QR code, so the encoder loads with the first one.
+const TicketQr = lazy(() =>
+  import("@/features/tickets/components/TicketQr").then((module) => ({ default: module.TicketQr })),
+);
 
 type Unavailable = "cancelled" | "paused" | "soldOut" | "closed" | "notYet";
 type TicketDate = ApiEventTicketingResponse["dates"][number];
@@ -186,7 +191,9 @@ function HeldTicket({ ticket, event }: { ticket: ApiTicketResponse; event: Event
   const { getSchoolTimezone } = useSchoolDirectory();
   return (
     <Stack gap={3} align="center">
-      <TicketQr value={ticketUrl(ticket)} label={t("tickets.pass.qrLabel")} />
+      <Suspense fallback={<Skeleton className="size-56" />}>
+        <TicketQr value={ticketUrl(ticket)} label={t("tickets.pass.qrLabel")} />
+      </Suspense>
       <CardDescription>
         {formatOccurrence(ticket, getSchoolTimezone(event.school), i18n.language)}
       </CardDescription>

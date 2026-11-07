@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { clubDirectoryQueryOptions } from "@/features/clubs/api/clubs.api";
 import { filterClubs } from "@/features/clubs/api/clubService";
 import type { PaginatedClubsResponse } from "@/features/clubs/api/clubs.api";
+import { discoverySnapshotSeed } from "@/shared/api/discovery.api";
 
 interface UseClubsPageOptions {
   initialDirectory: PaginatedClubsResponse | null;
@@ -37,9 +38,7 @@ export function useClubsPage({
 
   const query = useQuery({
     ...clubDirectoryQueryOptions(resolvedSchoolFilter),
-    initialData: initialDirectory ?? undefined,
-    initialDataUpdatedAt: initialDirectory?.generated_at,
-    refetchOnMount: initialDirectory ? false : true,
+    ...discoverySnapshotSeed(initialDirectory),
   });
   const clubs = useMemo(() => filterClubs(query.data?.items ?? [], {
     search: submittedSearch.query,

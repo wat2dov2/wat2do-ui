@@ -3,6 +3,18 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "sideEffects": [
+    "*.css",
+    "./src/app/english-locale.ts",
+    "./src/shared/lib/i18n.ts",
+    "./src/app/client-providers.tsx",
+    "./src/shared/store/ui.store.ts",
+    "./src/features/auth/api/userRepository.ts",
+    "./src/features/auth/hooks/useAuthState.ts",
+    "./src/features/clubs/store/savedClubs.store.ts",
+    "./src/features/events/store/events.store.ts",
+    "./src/features/search/store/search.store.ts"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",

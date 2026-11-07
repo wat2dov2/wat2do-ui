@@ -1,5 +1,6 @@
 import { useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { discoverySnapshotSeed } from "@/shared/api/discovery.api";
 import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
 import { storeStatesToFilterState, useSearchStore, useSearch } from "@/features/search";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
@@ -35,8 +36,7 @@ export function useEventsPageData({
   const schoolFilter = resolveSchool(initialSchool);
   const query = useQuery({
     ...eventFeedQueryOptions(schoolFilter),
-    initialData: initialSnapshot ?? undefined,
-    initialDataUpdatedAt: initialSnapshot?.generated_at,
+    ...discoverySnapshotSeed(initialSnapshot),
   });
   const events = useMemo(() => query.data?.items ?? [], [query.data]);
   const isLoading = query.isLoading;
