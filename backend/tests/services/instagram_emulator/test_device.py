@@ -380,3 +380,8 @@ def test_restart_waits_for_the_old_emulator_to_exit_before_trusting_a_boot() -> 
 def test_restart_gives_up_when_the_emulator_never_comes_back() -> None:
     with pytest.raises(module.EmulatorError, match="did not come back"):
         _restarting_device([(0, "")], [], [0.0]).restart()
+
+
+def test_the_new_inbox_header_title_is_recognized():
+    node = module.Node("wat2do.brocku", "", (60, 150, 500, 250), "action_bar_large_title_auto_size")
+    assert node.labelled(module._INBOX_TITLE)
