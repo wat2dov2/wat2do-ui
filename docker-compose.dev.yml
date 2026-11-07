@@ -76,7 +76,6 @@ services:
       STORAGE_BUCKET_NAME: media
       STORAGE_PUBLIC_BASE_URL: http://localhost:55434/media
       EVENT_FEED_REVALIDATION_URL: ""
-      WATCHFILES_FORCE_POLLING: "true"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -114,7 +113,8 @@ services:
         CMD ["sh", "-c", "npm ci && npm run dev -- --hostname 0.0.0.0"]
     environment:
       - API_URL=http://backend:8000
-      - CHOKIDAR_USEPOLLING=true # Helps with hot-reload inside Docker on some OS
+    # Next dev's spikes would otherwise take every core Docker has.
+    cpus: 3
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
