@@ -64,7 +64,7 @@ export async function getLandingSnapshot(school: string): Promise<LandingSnapsho
     events,
     newThisWeekCount: countEvents((event) => Boolean(event.added_at) && now - Date.parse(event.added_at!) <= WEEK_MS),
     thisWeekCount: countEvents((event) => startsWithin(event, now, now + WEEK_MS)),
-    freeFoodCount: countEvents((event) => event.food.length > 0 && !event.price),
+    freeFoodCount: countEvents((event) => (event.food?.length ?? 0) > 0 && !event.price),
     clubCount: clubs?.length ?? null,
     previewClubs: (clubs ?? []).filter((club) => club.logo_url).slice(0, PREVIEW_CLUBS),
     positionCount: positions?.length ?? null,
