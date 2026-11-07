@@ -305,19 +305,6 @@ body:has([data-slot="site-banner"]) .main-content-grid {
    behind the text, swept in once with a stylesheet animation. Nothing is inserted
    or redrawn at runtime. */
 @layer components {
-  /* Letters filled with the scraped event posters of the landing mosaic; the dark ground also fills where the atlas has no poster. */
-  .landing-mosaic-text {
-    background-image: var(--landing-mosaic-atlas);
-    /* Multiplied over a dark ground, so even pale posters keep the letters dark against the muted mosaic. */
-    background-color: #3a3a3a;
-    background-blend-mode: multiply;
-    background-size: 16rem auto;
-    font-weight: 700;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
   .highlighter {
     position: relative;
     isolation: isolate;
