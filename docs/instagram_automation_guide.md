@@ -367,6 +367,7 @@ A daily Claude job owns event selection, carousel order, sticker choices, captio
 Each agent gets only Read access to a private folder holding the school's candidate packet and downscaled posters, and no application secrets.
 Its structured answer is validated through the same `DraftSelection` contract and saved with `save_review_draft`; a rejected answer is retried once with the reason.
 Schools with no eligible events get an empty draft without an agent.
+A packet holds the events added since the account's last carousel (`new: true`) and, when those are fewer than `fill_candidate_count`, upcoming events the account has never posted, soonest first (`new: false`), so the agent can always fill all `maximum_event_slides` slides; networking events are candidates like any other. A carousel with fewer than `minimum_event_slides` event slides is never published: the 9:35 run leaves it in review and the Publish button refuses it.
 The `candidates` and `save <selection.json>` commands remain for manual review.
 Every registered school receives a candidate packet and may save a review draft, even before an Instagram publishing account is connected.
 The school directory is the generation roster; connected account `enabled` controls publication only.
