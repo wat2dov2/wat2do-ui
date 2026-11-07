@@ -72,13 +72,13 @@ def test_event_change_empty_diff_is_noop():
     assert event_change.enqueue_event_change(None, {}, []) == 0
 
 
-def _change_email(diff, image_src=None, refund_url=None, **event_fields):
+def _change_email(diff, image_src=None, refund_url=None, tz=None, **event_fields):
     args = {
         "subject": "Changed: Tea Tasting",
         "event": _event(**event_fields),
         "diff": diff,
         "image_src": image_src,
-        "tz": ZoneInfo("America/Toronto"),
+        "tz": tz or ZoneInfo("America/Toronto"),
         "frontend_url": "https://uwaterloo.wat2do.io",
         "preferences_url": "https://uwaterloo.wat2do.io/settings",
         "unsubscribe_url": "https://uwaterloo.wat2do.io/unsubscribe",
@@ -125,6 +125,21 @@ def test_event_change_email_reads_each_change_in_local_time():
     assert html.count('href="https://uwaterloo.wat2do.io/events/42"') == 3
     assert 'text-decoration:line-through;">RCH 208</span> &rarr; <strong>DC 1301</strong>' in html
     assert "Location: " not in html
+
+
+def test_change_emails_read_bc_times_at_its_permanent_offset():
+    # UBC Symphony Orchestra moved from the hour-late 8:30 PM to its real 7:30 PM.
+    _, text = _change_email(
+        {
+            "occurrences": {
+                "old": [_date("2026-11-07T03:30:00+00:00", "2026-11-07T05:30:00+00:00")],
+                "new": [_date("2026-11-07T02:30:00+00:00", "2026-11-07T04:30:00+00:00")],
+            },
+        },
+        tz=ZoneInfo("America/Vancouver"),
+    )
+
+    assert "- Fri, Nov 6: 8:30 PM - 10:30 PM -> 7:30 PM - 9:30 PM" in text
 
 
 def test_event_change_email_leads_with_cancellation_and_escapes_values():
