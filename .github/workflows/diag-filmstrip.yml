@@ -1,0 +1,40 @@
+name: Diagnostic filmstrip
+
+# Films production pages loading, frame by frame, in GitHub's runner so no
+# browser runs on the Mac. Diagnostic branch only; never merged.
+on:
+  push:
+    branches: [diag-filmstrip]
+
+permissions:
+  contents: read
+
+jobs:
+  film:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright and sharp
+        working-directory: .github/diag
+        run: |
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund playwright@1.58.2 sharp@0.34.4
+          npx playwright install --with-deps chromium
+
+      - name: Film
+        working-directory: .github/diag
+        env:
+          OUT: film
+        run: node film.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: film
+          path: .github/diag/film
