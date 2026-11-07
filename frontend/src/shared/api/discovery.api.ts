@@ -30,6 +30,20 @@ export async function fetchDiscoverySnapshot<T>(
   return body as T;
 }
 
+/**
+ * Query options that seed a discovery query with the snapshot the server
+ * rendered into the page. /api/discovery serves that same snapshot, so it
+ * counts as fresh from the moment the page arrives: dating it by
+ * `generated_at` (often an hour old) made each page load download the same
+ * snapshot again while the page was still settling.
+ */
+export function discoverySnapshotSeed<T>(snapshot: T | null) {
+  return {
+    initialData: snapshot ?? undefined,
+    initialDataUpdatedAt: () => Date.now(),
+  };
+}
+
 /** A delayed refresh cannot undo a newer generation or a confirmed local write. */
 export function preserveDiscoveryGeneration(
   current: unknown,

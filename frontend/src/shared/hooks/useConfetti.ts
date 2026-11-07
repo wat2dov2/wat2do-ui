@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import confetti from "canvas-confetti";
 
 interface ConfettiConfig {
   particleCount?: number;
@@ -35,15 +34,18 @@ const defaultConfig: Omit<Required<ConfettiConfig>, "colors"> = {
   angle: 90,
 };
 
+/** The confetti drawer loads with the first celebration, never with the page. */
 export function useConfetti() {
   const trigger = useCallback((config?: ConfettiConfig) => {
     const colors = config?.colors ?? getThemeConfettiColors();
-    confetti({
-      ...defaultConfig,
-      ...config,
-      colors,
-      origin: { ...defaultConfig.origin, ...config?.origin },
-    });
+    void import("canvas-confetti").then(({ default: confetti }) =>
+      confetti({
+        ...defaultConfig,
+        ...config,
+        colors,
+        origin: { ...defaultConfig.origin, ...config?.origin },
+      }),
+    );
   }, []);
 
   return { trigger };

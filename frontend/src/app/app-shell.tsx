@@ -1,11 +1,10 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AppLayout } from "@/app/AppLayout";
 import { CommandPaletteHotkeys } from "@/app/CommandPaletteHotkeys";
 import { ModalContainer } from "@/app/ModalContainer";
-import { UnknownSchoolPage } from "@/app/UnknownSchoolPage";
 import { useAppNavigation } from "@/app/hooks/useAppNavigation";
 import { useAuthReady } from "@/app/client-providers";
 import { useUserEmail } from "@/features/auth/hooks/useAuthState";
@@ -19,6 +18,11 @@ import {
 } from "@/shared/constants/schools";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { Toaster } from "@/shared/ui/sonner";
+
+/** Only a mistyped school subdomain shows it, so it loads on demand. */
+const UnknownSchoolPage = lazy(() =>
+  import("@/app/UnknownSchoolPage").then((module) => ({ default: module.UnknownSchoolPage })),
+);
 
 const CHROMELESS_ROUTES = new Set<string>([
   ROUTES.LOGIN,
@@ -111,7 +115,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     !isSchoolDirectoryError &&
     !schoolBySlug.has(hostnameSchoolStatus.school)
   ) {
-    return <UnknownSchoolPage requestedSchool={hostnameSchoolStatus.candidate} />;
+    return (
+      <Suspense>
+        <UnknownSchoolPage requestedSchool={hostnameSchoolStatus.candidate} />
+      </Suspense>
+    );
   }
 
   return (

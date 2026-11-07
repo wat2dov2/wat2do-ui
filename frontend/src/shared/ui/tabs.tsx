@@ -2,19 +2,44 @@
 
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
-import { LayoutGroup, motion, useReducedMotion } from "framer-motion"
 
 import { useMobileClickActivation } from "@/shared/hooks/useMouseDownPress"
 import { cn } from "@/shared/lib/utils"
 import { Skeleton } from "@/shared/ui/skeleton"
 
 /**
- * The active tab's pill is one element that slides between triggers (a shared
- * layoutId), so each tab set tracks its current value to know where it sits.
+ * The active tab's pill renders inside the active trigger, so the server's
+ * HTML already shows it. When the selection moves, the new pill starts where
+ * the old trigger sat and slides into place: each tab set remembers its last
+ * active trigger to know where that was.
  */
-const ActiveTabContext = React.createContext<string | undefined>(undefined)
+interface ActiveTab {
+  value: string | undefined
+  /** Called by the newly active trigger once its pill is in place. */
+  moveIndicator: (indicator: HTMLElement, trigger: HTMLElement) => void
+}
 
-const INDICATOR_TRANSITION = { duration: 0.25, ease: [0.65, 0, 0.35, 1] } as const
+const ActiveTabContext = React.createContext<ActiveTab | null>(null)
+
+const INDICATOR_SLIDE = { duration: 250, easing: "cubic-bezier(0.65, 0, 0.35, 1)" } as const
+
+/** Slides `indicator` from where `from` sat to its own place (FLIP), correcting its corners while scaled. */
+function slideIndicator(indicator: HTMLElement, from: HTMLElement, to: HTMLElement) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+  const scaleX = from.offsetWidth / to.offsetWidth
+  const scaleY = from.offsetHeight / to.offsetHeight
+  const radius = parseFloat(getComputedStyle(indicator).borderTopLeftRadius) || 0
+  indicator.animate(
+    [
+      {
+        transform: `translate(${from.offsetLeft - to.offsetLeft}px, ${from.offsetTop - to.offsetTop}px) scale(${scaleX}, ${scaleY})`,
+        borderRadius: `${radius / scaleX}px / ${radius / scaleY}px`,
+      },
+      { transform: "none", borderRadius: `${radius}px` },
+    ],
+    INDICATOR_SLIDE,
+  )
+}
 
 function Tabs({
   className,
@@ -25,22 +50,31 @@ function Tabs({
 }: React.ComponentProps<typeof TabsPrimitive.Root>) {
   const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue)
   const activeValue = value ?? uncontrolledValue
-  const groupId = React.useId()
+  const lastTrigger = React.useRef<HTMLElement | null>(null)
+  const moveIndicator = React.useCallback((indicator: HTMLElement, trigger: HTMLElement) => {
+    const previous = lastTrigger.current
+    lastTrigger.current = trigger
+    if (previous && previous !== trigger && previous.isConnected) {
+      slideIndicator(indicator, previous, trigger)
+    }
+  }, [])
+  const activeTab = React.useMemo(
+    () => ({ value: activeValue, moveIndicator }),
+    [activeValue, moveIndicator],
+  )
 
   return (
-    <ActiveTabContext.Provider value={activeValue}>
-      <LayoutGroup id={groupId}>
-        <TabsPrimitive.Root
-          data-slot="tabs"
-          className={cn(className)}
-          value={activeValue}
-          onValueChange={(next) => {
-            setUncontrolledValue(next)
-            onValueChange?.(next)
-          }}
-          {...props}
-        />
-      </LayoutGroup>
+    <ActiveTabContext.Provider value={activeTab}>
+      <TabsPrimitive.Root
+        data-slot="tabs"
+        className={cn(className)}
+        value={activeValue}
+        onValueChange={(next) => {
+          setUncontrolledValue(next)
+          onValueChange?.(next)
+        }}
+        {...props}
+      />
     </ActiveTabContext.Provider>
   )
 }
@@ -67,8 +101,18 @@ const TabsTrigger = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & { count?: number }
 >(({ className, children, count, value, onMouseDown, onClick, ...props }, ref) => {
   const preferClick = useMobileClickActivation()
-  const isActive = React.useContext(ActiveTabContext) === value
-  const prefersReducedMotion = useReducedMotion()
+  const activeTab = React.useContext(ActiveTabContext)
+  const isActive = activeTab?.value === value
+  const indicatorRef = React.useRef<HTMLSpanElement>(null)
+
+  const moveIndicator = activeTab?.moveIndicator
+
+  React.useLayoutEffect(() => {
+    const indicator = indicatorRef.current
+    const trigger = indicator?.parentElement
+    if (isActive && moveIndicator && indicator && trigger) moveIndicator(indicator, trigger)
+  }, [isActive, moveIndicator])
+
   return (
   <TabsPrimitive.Trigger
     ref={ref}
@@ -92,11 +136,10 @@ const TabsTrigger = React.forwardRef<
     {...props}
   >
     {isActive ? (
-      <motion.span
-        layoutId="tabs-active-indicator"
+      <span
+        ref={indicatorRef}
         data-elevation="control"
-        className="absolute inset-0 -z-10 rounded-xl bg-surface-elevated"
-        transition={prefersReducedMotion ? { duration: 0 } : INDICATOR_TRANSITION}
+        className="absolute inset-0 -z-10 origin-top-left rounded-xl bg-surface-elevated"
       />
     ) : null}
     {children}

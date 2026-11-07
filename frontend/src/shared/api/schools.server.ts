@@ -76,3 +76,21 @@ export async function getSchoolDirectory(): Promise<SchoolSummary[]> {
     buildSchoolDirectorySnapshot,
   );
 }
+
+/**
+ * The directory a page hands the browser on `requestSchool`'s site. A school's
+ * campus seasons (about 7 KB each, labelled in every language) only matter on
+ * that school's own site, so every other school goes without them; shipping
+ * all of them added about 140 KB to every page's HTML.
+ */
+export async function getSchoolDirectoryForPage(
+  requestSchool: string,
+): Promise<SchoolSummary[]> {
+  const schools = await getSchoolDirectory();
+  return schools.map((school) => {
+    if (school.slug === requestSchool) return school;
+    const summary = { ...school };
+    delete summary.event_seasons;
+    return summary;
+  });
+}

@@ -4,23 +4,28 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 
 // Exercise the actual hook's mount/reset behavior without launching a browser.
-test("large cached directories mount in batches, grow on scroll and reset before filter rendering", () => {
+test("large cached directories mount in batches, grow on scroll within the page scroller and reset before filter rendering", () => {
   const state: unknown[] = [];
   let index = 0;
   let effect: (() => void | (() => void)) | undefined;
   let onIntersect: ((entries: { isIntersecting: boolean }[]) => void) | undefined;
-  const ref = { current: {} };
+  let observerRoot: unknown;
+  const scrollRoot = { scroller: true };
+  const ref = { current: { closest: (selector: string) => (selector === ".main-content-grid" ? scrollRoot : null) } };
   const source = readFileSync(new URL("../src/shared/hooks/useProgressiveList.ts", import.meta.url), "utf8");
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } });
   const hookModule = { exports: {} as typeof import("../src/shared/hooks/useProgressiveList") };
   runInNewContext(outputText, {
     exports: hookModule.exports,
     IntersectionObserver: class {
-      constructor(callback: typeof onIntersect) { onIntersect = callback; }
+      constructor(callback: typeof onIntersect, options: { root?: unknown }) {
+        onIntersect = callback;
+        observerRoot = options.root;
+      }
       observe() {}
       disconnect() {}
     },
-    require: () => ({
+    require: (specifier: string) => specifier === "@/shared/constants/ui" ? { MAIN_CONTENT_SCROLL_ROOT_SELECTOR: ".main-content-grid" } : ({
       useMemo: (fn: () => unknown) => fn(),
       useCallback: (fn: unknown) => fn,
       useRef: () => ref,
@@ -44,6 +49,8 @@ test("large cached directories mount in batches, grow on scroll and reset before
   };
   expect(render().visibleItems).toHaveLength(24);
   effect?.();
+  // The page scrolls inside the main scroll root, so its margin is measured there.
+  expect(observerRoot).toBe(scrollRoot);
   onIntersect?.([{ isIntersecting: true }]);
   expect(render().visibleItems).toHaveLength(48);
   expect(render(clubs.slice(800)).visibleItems).toHaveLength(24);

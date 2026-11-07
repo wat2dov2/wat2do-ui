@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MAIN_CONTENT_SCROLL_ROOT_SELECTOR } from "@/shared/constants/ui";
 
 /** Keep all results available for local filtering, but mount only nearby cards. */
 export function useProgressiveList<T extends { id: number }>(items: T[], batchSize: number) {
@@ -18,12 +19,15 @@ export function useProgressiveList<T extends { id: number }>(items: T[], batchSi
   useEffect(() => {
     const sentinel = loadMoreRef.current;
     if (!hasMore || !sentinel || typeof IntersectionObserver === "undefined") return;
+    // Measured against the main scroll root, so the next cards mount before the
+    // reader reaches the end (the window's margin cannot see past that root).
+    // Observing again after each batch re-checks a sentinel still in range.
     const observer = new IntersectionObserver(([entry]) => {
       if (entry?.isIntersecting) loadMore();
-    }, { rootMargin: "400px", threshold: 0.1 });
+    }, { root: sentinel.closest(MAIN_CONTENT_SCROLL_ROOT_SELECTOR), rootMargin: "400px", threshold: 0.1 });
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loadMore]);
+  }, [hasMore, loadMore, visibleCount]);
   const visibleItems = useMemo(() => items.slice(0, visibleCount), [items, visibleCount]);
   return { visibleItems, visibleCount, hasMore, loadMoreRef };
 }

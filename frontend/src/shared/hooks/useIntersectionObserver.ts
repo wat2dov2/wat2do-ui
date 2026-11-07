@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MAIN_CONTENT_SCROLL_ROOT_SELECTOR } from "@/shared/constants/ui";
 
 interface UseIntersectionObserverOptions {
   threshold?: number;
@@ -18,13 +19,15 @@ export function useIntersectionObserver<T extends HTMLElement = HTMLDivElement>(
     const element = elementRef.current;
     if (!element || !enabled) return;
 
+    // Pages scroll inside the app's main scroll root, which clips its content:
+    // measured against the window, `rootMargin` could never reach below it.
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setHasIntersected(true);
         }
       },
-      { threshold, rootMargin }
+      { root: element.closest(MAIN_CONTENT_SCROLL_ROOT_SELECTOR), threshold, rootMargin }
     );
 
     observer.observe(element);

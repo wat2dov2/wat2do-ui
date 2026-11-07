@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { AppShell } from "@/app/app-shell";
 import { ClientProviders } from "@/app/client-providers";
 import { SiteBanner } from "@/app/SiteBanner";
-import { getRequestSchool, getSchoolDirectory } from "@/shared/api/schools.server";
+import { getRequestSchool, getSchoolDirectoryForPage } from "@/shared/api/schools.server";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { getSchoolThemeStyle } from "@/shared/lib/schoolBranding";
 import "../index.css";
@@ -113,13 +113,13 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const [initialSchool, initialSchools] = await Promise.all([
-    getRequestSchool(),
-    getSchoolDirectory().catch((error: unknown) => {
+  const initialSchool = await getRequestSchool();
+  const initialSchools = await getSchoolDirectoryForPage(initialSchool).catch(
+    (error: unknown) => {
       console.error("Failed to preload the school directory:", error);
       return undefined;
-    }),
-  ]);
+    },
+  );
   const school = initialSchools?.find((school) => school.slug === initialSchool);
 
   return (
