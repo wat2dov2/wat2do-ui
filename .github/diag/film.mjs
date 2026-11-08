@@ -24,10 +24,12 @@ const IPHONE = {
 
 const CLUB = process.env.CLUB_PATH ?? "/clubs/11126";
 const SCENARIOS = [
-  { name: "webkit-iphone-cold", device: IPHONE, steps: [{ goto: `${CLUB}?film=${Date.now() + 2}` }, { wait: 5000 }] },
-  { name: "webkit-iphone-cold-2", device: IPHONE, steps: [{ goto: `${CLUB}?film=${Date.now() + 3}` }, { wait: 5000 }] },
-  { name: "webkit-iphone-reload", device: IPHONE, film: "after-first", steps: [{ goto: CLUB }, { wait: 5000 }, { goto: CLUB }, { wait: 5000 }] },
+  { name: "club-desktop-again", device: DESKTOP, steps: [{ goto: CLUB }, { wait: 5000 }] },
+  { name: "club-desktop-cold", device: DESKTOP, steps: [{ goto: `${CLUB}?film=${Date.now() + 1}` }, { wait: 5000 }] },
+  { name: "club-phone-reload", device: PHONE, film: "after-first", steps: [{ goto: CLUB }, { wait: 5000 }, { goto: CLUB }, { wait: 6000 }] },
   { name: "club-phone-cold", device: PHONE, steps: [{ goto: `${CLUB}?film=${Date.now()}` }, { wait: 6000 }] },
+  { name: "webkit-iphone-cold", device: IPHONE, steps: [{ goto: `${CLUB}?film=${Date.now() + 2}` }, { wait: 5000 }] },
+  { name: "webkit-iphone-reload", device: IPHONE, film: "after-first", steps: [{ goto: CLUB }, { wait: 5000 }, { goto: CLUB }, { wait: 5000 }] },
 ];
 
 const OBSERVE = () => {
