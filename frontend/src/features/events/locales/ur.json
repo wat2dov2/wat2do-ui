@@ -156,6 +156,16 @@
       "clusterNear": "{{location}} کے قریب {{count}} تقریب",
       "clusterNear_one": "{{location}} کے قریب {{count}} تقریب",
       "clusterNear_other": "{{location}} کے قریب {{count}} تقریبات"
+    },
+    "highlights": {
+      "mustKnow": "ضرور جانیں",
+      "slide": "{{total}} میں سے {{current}}",
+      "showSlide": "{{total}} میں سے ضروری ایونٹ {{current}} دکھائیں",
+      "previous": "پچھلا ایونٹ",
+      "next": "اگلا ایونٹ",
+      "openEvent": "ایونٹ دیکھیں",
+      "map": "کیمپس کے آس پاس",
+      "networking": "نیٹ ورکنگ کے مواقع"
     }
   }
 }

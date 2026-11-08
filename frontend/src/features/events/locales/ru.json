@@ -170,6 +170,16 @@
       "clusterNear_few": "{{count}} события рядом с {{location}}",
       "clusterNear_many": "{{count}} событий рядом с {{location}}",
       "clusterNear_other": "{{count}} события рядом с {{location}}"
+    },
+    "highlights": {
+      "mustKnow": "Не пропустите",
+      "slide": "{{current}} из {{total}}",
+      "showSlide": "Показать главное событие {{current}} из {{total}}",
+      "previous": "Предыдущее событие",
+      "next": "Следующее событие",
+      "openEvent": "Открыть событие",
+      "map": "По кампусу",
+      "networking": "Возможности для нетворкинга"
     }
   }
 }

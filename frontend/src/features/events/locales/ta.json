@@ -156,6 +156,16 @@
       "clusterNear": "{{location}} அருகே {{count}} நிகழ்வு",
       "clusterNear_one": "{{location}} அருகே {{count}} நிகழ்வு",
       "clusterNear_other": "{{location}} அருகே {{count}} நிகழ்வுகள்"
+    },
+    "highlights": {
+      "mustKnow": "தவறவிடக்கூடாதவை",
+      "slide": "{{total}} இல் {{current}}",
+      "showSlide": "{{total}} இல் தவறவிடக்கூடாத நிகழ்வு {{current}} ஐக் காட்டு",
+      "previous": "முந்தைய நிகழ்வு",
+      "next": "அடுத்த நிகழ்வு",
+      "openEvent": "நிகழ்வைப் பார்",
+      "map": "வளாகத்தைச் சுற்றி",
+      "networking": "நெட்வொர்க்கிங் வாய்ப்புகள்"
     }
   }
 }

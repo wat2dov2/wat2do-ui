@@ -156,6 +156,16 @@
       "clusterNear": "{{count}} Veranstaltung in der Nähe von {{location}}",
       "clusterNear_one": "{{count}} Veranstaltung in der Nähe von {{location}}",
       "clusterNear_other": "{{count}} Veranstaltungen in der Nähe von {{location}}"
+    },
+    "highlights": {
+      "mustKnow": "Nicht verpassen",
+      "slide": "{{current}} von {{total}}",
+      "showSlide": "Highlight {{current}} von {{total}} anzeigen",
+      "previous": "Vorheriges Event",
+      "next": "Nächstes Event",
+      "openEvent": "Event ansehen",
+      "map": "Rund um den Campus",
+      "networking": "Networking-Gelegenheiten"
     }
   }
 }

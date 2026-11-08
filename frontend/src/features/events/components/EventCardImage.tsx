@@ -20,8 +20,13 @@ import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
 interface EventCardImageProps {
   event: Event;
-  /** `card` is the grid card's fixed-height header; `detail` is the square poster. */
-  variant: "card" | "detail";
+  /**
+   * `card` is the grid card's fixed-height header; `detail` is the square
+   * poster, which opens full size and plays the event's video; `feature` is the
+   * same square poster standing for the event in a banner, which opens the
+   * event itself, so it neither expands nor plays.
+   */
+  variant: "card" | "detail" | "feature";
   /**
    * Renders the club badge inert. The submit form's live preview shows
    * the badge but must not let its menu filter the feed and leave the form.
