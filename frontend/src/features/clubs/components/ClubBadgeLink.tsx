@@ -32,6 +32,8 @@ interface ClubBadgeLinkProps {
   clubType?: string | null;
   school?: string | null;
   disabled?: boolean;
+  /** Eager on the first screen, so the logos arrive with the page instead of after it. */
+  logoLoading?: "eager" | "lazy";
   /** Lets an open modal or drawer close as the club page opens. */
   onNavigate?: () => void;
   onMouseDown?: React.MouseEventHandler;
@@ -46,6 +48,7 @@ export function ClubBadgeLink({
   clubType,
   school,
   disabled = false,
+  logoLoading,
   onNavigate,
   onMouseDown,
   onClick,
@@ -57,7 +60,7 @@ export function ClubBadgeLink({
     ...cohosts.map((club) => ({ name: club.club_name, src: club.logo_url ?? "" })),
   ];
   const content = <>
-    <AvatarStack size="sm" avatars={avatars} />
+    <AvatarStack size="sm" avatars={avatars} loading={logoLoading} />
     <TruncatedText text={clubName || t("events.club")} className={CLUB_NAME_CLASS} />
     {cohosts.length > 0 ? <span data-slot="club-cohost-count" className="shrink-0 font-bold">+{cohosts.length}</span> : null}
     <ClubTypeIcon school={school} clubType={clubType} />

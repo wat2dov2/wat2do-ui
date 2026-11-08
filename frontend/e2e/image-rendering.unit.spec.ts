@@ -110,7 +110,7 @@ test("poster frames load the stored thumbnail before hydration, never a resized 
   expect(html).not.toContain("srcSet=");
 });
 
-test("measured cutouts mask the HTML image face and eager posters receive priority", () => {
+test("measured cutouts mask the HTML image face, and eager posters receive priority and decode with the page", () => {
   const html = render(EventImageCutout, {
     backgroundColor: "var(--surface-elevated)", imageSrc: posterUrl, imageAlt: "Campus poster",
     imageLoading: "eager", cutouts: [{ corner: "bottom-left", width: 112, height: 32 }], width: 240, height: 208,
@@ -119,6 +119,7 @@ test("measured cutouts mask the HTML image face and eager posters receive priori
   expect(html).toContain('data-slot="event-image-face"');
   expect(html).toContain('loading="eager"');
   expect(html).toContain('fetchpriority="high"');
+  expect(html).toContain('decoding="sync"');
   expect(html).toContain(`src="${posterThumbnailUrl}"`);
 });
 
