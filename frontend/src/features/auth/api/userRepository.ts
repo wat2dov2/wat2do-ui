@@ -130,6 +130,11 @@ export function mayHoldSession(): boolean {
   return signedInCookie() !== "0" || loadUserEmail() !== null || loadUserProfile() !== null;
 }
 
+/** Whether the API's readable cookie says this browser holds a session, set by any of its pages. */
+export function hasSessionCookie(): boolean {
+  return signedInCookie() === "1";
+}
+
 function signedInCookie(): string | null {
   if (typeof document === "undefined") return null;
   const prefix = `${authentication.signed_in_cookie}=`;

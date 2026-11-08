@@ -10,6 +10,8 @@
     "googleCompleting": "جارٍ إكمال تسجيل الدخول عبر Google...",
     "googleCallbackDescription": "جارٍ إكمال تسجيل دخولك عبر Google بأمان.",
     "googleError": "تعذر إكمال تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى.",
+    "googleWindowOpen": "أكمل في نافذة Google...",
+    "googleWindowBlocked": "منع متصفحك نافذة Google. اسمح بالنوافذ المنبثقة لهذا الموقع، أو تابع باستخدام البريد الإلكتروني.",
     "orContinueWithEmail": "أو المتابعة بالبريد الإلكتروني",
     "skipToOnboarding": "المتابعة دون تسجيل الدخول",
     "verifyOtp": "تحقق من الرمز",
@@ -32,7 +34,9 @@
     "consentAnonymized": "قد نقوم بمراجعة أنماط الاستخدام المجهولة لتحسين اكتشاف الفعاليات.",
     "consentAgreeTerms": "أوافق على شروط المنصة وسياسة الاستخدام المقبول لاكتشاف فعاليات الحرم الجامعي.",
     "consentSubscribeUpdates": "اشترك للحصول على تحديثات دورية حول الميزات الجديدة وتسليط الضوء على فعاليات الحرم الجامعي.",
-    "signedInAs": "تم تسجيل الدخول باسم"
+    "signedInAs": "تم تسجيل الدخول باسم",
+    "signedInHeading": "تم تسجيل دخولك.",
+    "signedInDescription": "يمكنك إغلاق هذه النافذة والمتابعة من حيث توقفت."
   },
   "onboarding": {
     "faculties": {

@@ -10,6 +10,8 @@
     "googleCompleting": "Completamento dell’accesso con Google...",
     "googleCallbackDescription": "Stiamo completando in modo sicuro il tuo accesso con Google.",
     "googleError": "Non è stato possibile completare l’accesso con Google. Riprova.",
+    "googleWindowOpen": "Completa nella finestra di Google...",
+    "googleWindowBlocked": "Il tuo browser ha bloccato la finestra di Google. Consenti i pop-up per questo sito, oppure continua con l’email.",
     "orContinueWithEmail": "oppure continua con l’email",
     "skipToOnboarding": "Continua senza effettuare l'accesso",
     "verifyOtp": "Verifica codice",
@@ -32,7 +34,9 @@
     "consentAnonymized": "Possiamo esaminare i modelli di utilizzo anonimizzati per migliorare la scoperta degli eventi.",
     "consentAgreeTerms": "Accetto i termini della piattaforma e la politica di uso accettabile per la scoperta degli eventi del campus.",
     "consentSubscribeUpdates": "Iscriviti per ricevere aggiornamenti occasionali sulle nuove funzionalità e sui principali eventi del campus.",
-    "signedInAs": "Accesso effettuato come"
+    "signedInAs": "Accesso effettuato come",
+    "signedInHeading": "Hai effettuato l’accesso.",
+    "signedInDescription": "Puoi chiudere questa finestra e riprendere da dove eri."
   },
   "onboarding": {
     "faculties": {

@@ -55,8 +55,6 @@
     "saved": "已追蹤組織",
     "follow": "追蹤",
     "following": "追蹤緊",
-    "signInToFollow": "登入以追蹤組織。",
-    "signInToClaim": "登入以認領呢個學會。",
     "savedClubs": {
       "saveFailed": "無法追蹤此組織",
       "unsaveFailed": "無法取消追蹤此組織"

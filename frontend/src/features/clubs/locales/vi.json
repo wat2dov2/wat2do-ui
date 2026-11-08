@@ -55,8 +55,6 @@
     "saved": "Đã theo dõi tổ chức",
     "follow": "Theo dõi",
     "following": "Đang theo dõi",
-    "signInToFollow": "Đăng nhập để theo dõi các tổ chức.",
-    "signInToClaim": "Đăng nhập để nhận quản lý câu lạc bộ này.",
     "savedClubs": {
       "saveFailed": "Không thể theo dõi tổ chức này",
       "unsaveFailed": "Không thể hủy theo dõi tổ chức này"

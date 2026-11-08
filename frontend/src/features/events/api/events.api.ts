@@ -15,12 +15,14 @@ import type {
   ApiGoingEventSelection,
   ApiGoingEventSelectionUpdate,
   ApiGoingEventStatusResponse,
+  ApiSubmissionResponse,
 } from "@/shared/generated";
 import {
   buildEventPayload,
   buildEventUpdatePayload,
 } from "@/shared/api/eventPayload";
 import { api, isApiError, type PaginatedApiResponse } from "@/shared/services/apiClient";
+import { getSessionEmail } from "@/features/auth/api/auth.api";
 import { getQueryClient } from "@/shared/lib/queryClient";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { collectPaginatedPages } from "@/shared/lib/pagination";
@@ -74,6 +76,16 @@ export async function createEventAPI(eventData: EventFormData): Promise<Event> {
   await writeEventToQueries(event);
   void invalidateEventQueries();
   return event;
+}
+
+/** Sends an event for review as the signed-in account, which hears back when it is reviewed. */
+export async function submitEventForReview(
+  eventData: EventFormData,
+): Promise<ApiSubmissionResponse> {
+  return api.post<ApiSubmissionResponse>("/submissions/", {
+    event_data: buildEventPayload(eventData),
+    submitted_by_email: getSessionEmail(),
+  });
 }
 
 export async function updateEventAPI(

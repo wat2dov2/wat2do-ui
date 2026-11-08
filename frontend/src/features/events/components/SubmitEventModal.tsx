@@ -5,7 +5,6 @@ import {
   useState,
   type MutableRefObject,
 } from "react";
-import { useAuthState } from "@/features/auth";
 import { useOwnClub } from "@/features/clubs";
 import { useTranslation } from "react-i18next";
 import {
@@ -33,10 +32,7 @@ import type { Event, EventFormData } from "@/shared/types";
 interface SubmitEventSharedProps {
   /** Absent when the form is an always-present panel with nothing to dismiss. */
   onClose?: () => void;
-  onSubmit?: (
-    event: EventFormData,
-    submittedByEmail: string,
-  ) => SubmitEventResult | Promise<SubmitEventResult>;
+  onSubmit?: (event: EventFormData) => SubmitEventResult | Promise<SubmitEventResult>;
   canCreateEvents: boolean;
   onBack?: () => void;
   editEventId?: number;
@@ -106,8 +102,6 @@ export function SubmitEventFlow({
 }: SubmitEventFlowProps) {
   const { t } = useTranslation();
   const { isDarkMode } = useDarkMode();
-  const { userEmail } = useAuthState();
-  const [submittedByEmail, setSubmittedByEmail] = useState(userEmail ?? "");
   const [submitResult, setSubmitResult] = useState<{
     createdEventId: number | null;
   } | null>(null);
@@ -162,7 +156,7 @@ export function SubmitEventFlow({
   const { isSubmitting, handleSubmit: submitEvent } = useSubmitEvent({
     isEditMode,
     editEventId,
-    onSubmit: onSubmit ? (data) => onSubmit(data, submittedByEmail.trim()) : undefined,
+    onSubmit,
     onUpdate,
     onClose,
     onSubmitted: handleSubmitted,
@@ -239,8 +233,6 @@ export function SubmitEventFlow({
         isEditMode={isEditMode}
         canCreateEvents={canCreateEvents}
         isSubmitting={isSubmitting}
-        submittedByEmail={submittedByEmail}
-        onEmailChange={setSubmittedByEmail}
         onSubmit={handleSubmit}
         eventForm={eventForm}
         isDarkMode={isDarkMode}

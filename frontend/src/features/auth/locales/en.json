@@ -10,6 +10,8 @@
     "googleCompleting": "Completing Google sign-in...",
     "googleCallbackDescription": "Securely completing your Google sign-in.",
     "googleError": "Google sign-in could not be completed. Please try again.",
+    "googleWindowOpen": "Finish in the Google window...",
+    "googleWindowBlocked": "Your browser blocked the Google window. Allow pop-ups for this site, or continue with email.",
     "orContinueWithEmail": "or continue with email",
     "skipToOnboarding": "Continue without signing in",
     "verifyOtp": "Verify code",
@@ -32,7 +34,9 @@
     "consentAnonymized": "We may review anonymized usage patterns to improve event discovery.",
     "consentAgreeTerms": "I agree to the platform terms and acceptable use policy for campus event discovery.",
     "consentSubscribeUpdates": "Subscribe to occasional updates about new features and campus event highlights.",
-    "signedInAs": "Signed in as"
+    "signedInAs": "Signed in as",
+    "signedInHeading": "You're signed in.",
+    "signedInDescription": "You can close this window and carry on where you were."
   },
   "onboarding": {
     "faculties": {

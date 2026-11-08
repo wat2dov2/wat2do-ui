@@ -10,6 +10,8 @@
     "googleCompleting": "Kończenie logowania przez Google...",
     "googleCallbackDescription": "Bezpiecznie kończymy logowanie przez Google.",
     "googleError": "Nie udało się zakończyć logowania przez Google. Spróbuj ponownie.",
+    "googleWindowOpen": "Dokończ w oknie Google...",
+    "googleWindowBlocked": "Twoja przeglądarka zablokowała okno Google. Zezwól na wyskakujące okna dla tej strony albo kontynuuj przez e-mail.",
     "orContinueWithEmail": "lub kontynuuj przez e-mail",
     "skipToOnboarding": "Kontynuuj bez logowania",
     "verifyOtp": "Zweryfikuj kod",
@@ -32,7 +34,9 @@
     "consentAnonymized": "Możemy przeglądać anonimizowane wzorce użytkowania, aby poprawić odkrywanie wydarzeń.",
     "consentAgreeTerms": "Zgadzam się z warunkami korzystania z platformy i zasadami dozwolonego użytkowania przy odkrywaniu wydarzeń na uczelni.",
     "consentSubscribeUpdates": "Zapisz się na okazjonalne aktualizacje dotyczące nowych funkcji i najważniejszych wydarzeń na uczelni.",
-    "signedInAs": "Zalogowano jako"
+    "signedInAs": "Zalogowano jako",
+    "signedInHeading": "Zalogowano.",
+    "signedInDescription": "Możesz zamknąć to okno i wrócić tam, gdzie byłeś."
   },
   "onboarding": {
     "faculties": {

@@ -24,6 +24,7 @@ import { toast } from "@/shared/hooks/use-toast";
 import { MAX_IMAGE_UPLOAD_SIZE_BYTES } from "@/shared/constants/uploads";
 import type { Club } from "@/shared/types";
 import { api } from "@/shared/services/apiClient";
+import { useRequireSignIn } from "@/features/auth/hooks/useSignInGate";
 
 interface ClaimClubModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export function ClaimClubModal({ isOpen, onClose, club }: ClaimClubModalProps) {
   const [uploadError, setUploadError] = useState<string | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const requireSignIn = useRequireSignIn();
 
   // Reset form when modal state changes
   useEffect(() => {
@@ -99,6 +101,8 @@ export function ClaimClubModal({ isOpen, onClose, club }: ClaimClubModalProps) {
       });
       return;
     }
+    // Anyone can fill in a claim; it is sent by a signed-in account.
+    if (!(await requireSignIn())) return;
 
     setIsSubmitting(true);
     try {

@@ -41,6 +41,14 @@ const dialogSizeClasses = {
 
 type DialogSize = keyof typeof dialogSizeClasses
 
+const dialogVariantClasses = {
+  surface: "bg-surface-elevated border border-border gap-4 rounded-xl p-6 shadow-lg",
+  // The content is a card of its own (the sign-in card), which draws the surface.
+  card: "",
+} as const
+
+type DialogVariant = keyof typeof dialogVariantClasses
+
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -70,11 +78,13 @@ function DialogContent({
   children,
   showCloseButton = true,
   size,
+  variant = "surface",
   scrollable = false,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
   size?: DialogSize
+  variant?: DialogVariant
   scrollable?: boolean
 }) {
   const { t } = useTranslation()
@@ -100,7 +110,8 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "bg-surface-elevated text-foreground border border-border data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-modal w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl p-6 shadow-lg duration-100",
+          "text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-modal w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] duration-100",
+          dialogVariantClasses[variant],
           scrollable
             ? "flex max-h-[85dvh] flex-col overflow-hidden"
             : "grid",

@@ -55,8 +55,6 @@
     "saved": "Sinundan na ang organisasyon",
     "follow": "Sundan",
     "following": "Sinusundan",
-    "signInToFollow": "Mag-sign in upang sundan ang mga organisasyon.",
-    "signInToClaim": "Mag-sign in para i-claim ang club na ito.",
     "savedClubs": {
       "saveFailed": "Hindi masundan ang organisasyong ito",
       "unsaveFailed": "Hindi ma-unfollow ang organisasyong ito"

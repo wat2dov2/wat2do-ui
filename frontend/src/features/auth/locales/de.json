@@ -10,6 +10,8 @@
     "googleCompleting": "Google-Anmeldung wird abgeschlossen...",
     "googleCallbackDescription": "Deine Google-Anmeldung wird sicher abgeschlossen.",
     "googleError": "Die Google-Anmeldung konnte nicht abgeschlossen werden. Bitte versuche es erneut.",
+    "googleWindowOpen": "Schließe die Anmeldung im Google-Fenster ab...",
+    "googleWindowBlocked": "Dein Browser hat das Google-Fenster blockiert. Erlaube Pop-ups für diese Seite oder fahre mit deiner E-Mail fort.",
     "orContinueWithEmail": "oder mit E-Mail fortfahren",
     "skipToOnboarding": "Ohne Anmeldung fortfahren",
     "verifyOtp": "Code überprüfen",
@@ -32,7 +34,9 @@
     "consentAnonymized": "Wir können anonymisierte Nutzungsmuster überprüfen, um die Entdeckung von Veranstaltungen zu verbessern.",
     "consentAgreeTerms": "Ich stimme den Plattformbedingungen und der Richtlinie zur akzeptablen Nutzung für die Entdeckung von Campusveranstaltungen zu.",
     "consentSubscribeUpdates": "Abonnieren Sie gelegentliche Updates über neue Funktionen und Höhepunkte von Campusveranstaltungen.",
-    "signedInAs": "Angemeldet als"
+    "signedInAs": "Angemeldet als",
+    "signedInHeading": "Du bist angemeldet.",
+    "signedInDescription": "Du kannst dieses Fenster schließen und dort weitermachen, wo du warst."
   },
   "onboarding": {
     "faculties": {

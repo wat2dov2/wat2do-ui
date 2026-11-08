@@ -1,7 +1,6 @@
 import { memo, useMemo, useCallback } from "react";
 import NextLink from "next/link";
 import { useTranslation } from "react-i18next";
-import { useRouter } from "next/navigation";
 import { Check, Plus } from "lucide-react";
 import { IconSwap } from "@/shared/ui/icon-swap";
 import { cn } from "@/shared/lib/utils";
@@ -10,6 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { useOpenClubPanel } from "@/features/clubs/hooks/useOpenClubPanel";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { useSignedInAction } from "@/features/auth/hooks/useSignInGate";
 import { getClubCategoryConfig } from "@/shared/data/clubCategoryStyles";
 import { translateCategory } from "@/shared/utils/event";
 import {
@@ -21,8 +21,7 @@ import {
   getClubSocialHandle,
 } from "@/features/clubs/utils/clubCardContent";
 import type { Club } from "@/shared/types";
-import { toast } from "@/shared/hooks/use-toast";
-import { clubPagePath, ROUTES } from "@/shared/constants/routes";
+import { clubPagePath } from "@/shared/constants/routes";
 
 /** The card's layout, shared with its loading skeleton so both take the same boxes. */
 export const CLUB_CARD_CLASSES = {
@@ -54,8 +53,8 @@ function ClubCardComponent({
   onCategoryClick,
 }: ClubCardProps) {
   const { t } = useTranslation();
-  const router = useRouter();
-  const { isAuthenticated, clubs } = useAuthState();
+  const { clubs } = useAuthState();
+  const signedInAction = useSignedInAction();
   const managesClub = clubs.some((managedClub) => managedClub.id === club.id);
   const openClubPanel = useOpenClubPanel();
   const toggleSaveClub = useSavedClubsStore((state) => state.toggleSaveClub);
@@ -90,16 +89,7 @@ function ClubCardComponent({
     [runMouseDownActivate, preferClickPress],
   );
 
-  const toggleFollow = () => {
-    if (isAuthenticated) {
-      toggleSaveClub(club.id);
-      return;
-    }
-    toast({
-      description: t("clubs.signInToFollow"),
-      action: { label: t("events.signIn"), onClick: () => router.push(ROUTES.LOGIN) },
-    });
-  };
+  const toggleFollow = () => signedInAction(() => toggleSaveClub(club.id));
 
   // Card controls keep their own presses: the card opens on mouse down, so they stop it there too.
   const stopCardActivation = {

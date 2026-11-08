@@ -10,6 +10,8 @@
     "googleCompleting": "Kinukumpleto ang pag-sign in sa Google...",
     "googleCallbackDescription": "Ligtas na kinukumpleto ang iyong pag-sign in sa Google.",
     "googleError": "Hindi nakumpleto ang pag-sign in sa Google. Subukan muli.",
+    "googleWindowOpen": "Tapusin sa window ng Google...",
+    "googleWindowBlocked": "Hinarang ng browser mo ang window ng Google. Payagan ang mga pop-up para sa site na ito, o magpatuloy gamit ang email.",
     "orContinueWithEmail": "o magpatuloy gamit ang email",
     "skipToOnboarding": "Magpatuloy nang hindi nag-sign in",
     "verifyOtp": "I-verify ang code",
@@ -32,7 +34,9 @@
     "consentAnonymized": "Maaaring suriin namin ang mga hindi pinangalanang pattern ng paggamit upang mapabuti ang pagtuklas ng mga kaganapan.",
     "consentAgreeTerms": "Sumasang-ayon ako sa mga tuntunin ng plataporma at patakaran sa katanggap-tanggap na paggamit para sa pagtuklas ng mga kaganapan sa campus.",
     "consentSubscribeUpdates": "Mag-subscribe sa paminsang-paminsang mga update tungkol sa mga bagong tampok at tampok na kaganapan sa campus.",
-    "signedInAs": "Nakalog-in bilang"
+    "signedInAs": "Nakalog-in bilang",
+    "signedInHeading": "Naka-sign in ka na.",
+    "signedInDescription": "Maaari mo nang isara ang window na ito at ituloy kung saan ka huminto."
   },
   "onboarding": {
     "faculties": {

@@ -44,15 +44,6 @@ export function SubmitPositionPage() {
           <FormLayout onSubmit={form.submit}>
             <fieldset disabled={form.busy}>
               <Stack gap={5}>
-                <FormInput
-                  name="submitter-email"
-                  type="email"
-                  required
-                  label={t("contact.form.email")}
-                  placeholder={t("contact.form.emailPlaceholder")}
-                  value={form.submittedByEmail}
-                  onChange={value => form.setEmail(String(value))}
-                />
                 <ImageUploadField label={t("forms.clickToUploadImage")} imagePreview={form.image.imagePreview || undefined} onImageUpload={form.image.onImageUpload} onRemoveImage={form.image.onRemoveImage} previewVariant="poster" />
                 <Field>
                   <ClubInput value={data.club_id || null} clubs={clubs} locked={form.isClubFixed} onChange={clubId => form.edit({ club_id: clubId ?? 0 })} touched />

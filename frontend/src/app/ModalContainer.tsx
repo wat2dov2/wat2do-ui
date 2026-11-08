@@ -1,7 +1,8 @@
 /**
  * Owns global modal subscriptions and rendering so modal toggles do not
  * re-render route page content. Modal-only handlers (promote fallback,
- * submit close, onboarding open, clear filters) live here.
+ * submit close, onboarding open, clear filters) live here, and so does the
+ * sign-in dialog a form opens when it is sent signed out.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -17,6 +18,8 @@ type SubmitEventModalComponent =
   typeof import("@/features/events/components/SubmitEventModal").SubmitEventModal;
 type CommandPaletteComponent =
   typeof import("@/shared/components/CommandPalette").CommandPalette;
+type SignInDialogComponent =
+  typeof import("@/features/auth/components/SignInDialog").SignInDialog;
 
 export function ModalContainer() {
   const { getSchoolTimezone } = useSchoolDirectory();
@@ -31,6 +34,10 @@ export function ModalContainer() {
     useState<SubmitEventModalComponent | null>(null);
   const [CommandPalette, setCommandPalette] =
     useState<CommandPaletteComponent | null>(null);
+  const signInPrompt = useUIStore((s) => s.signInPrompt);
+  const settleSignInPrompt = useUIStore((s) => s.settleSignInPrompt);
+  const [SignInDialog, setSignInDialog] =
+    useState<SignInDialogComponent | null>(null);
 
   const { clearAllFilters } = useFilterActions();
 
@@ -55,6 +62,17 @@ export function ModalContainer() {
       cancelled = true;
     };
   }, [CommandPalette, showCommandPalette]);
+
+  useEffect(() => {
+    if (!signInPrompt || SignInDialog) return;
+    let cancelled = false;
+    void import("@/features/auth/components/SignInDialog").then((module) => {
+      if (!cancelled) setSignInDialog(() => module.SignInDialog);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [SignInDialog, signInPrompt]);
 
   const handleSubmitEventClose = useCallback(() => {
     clearEditingEvent();
@@ -85,6 +103,10 @@ export function ModalContainer() {
             handleSubmitEventClose();
           }}
         />
+      ) : null}
+
+      {signInPrompt && SignInDialog ? (
+        <SignInDialog onSettled={settleSignInPrompt} />
       ) : null}
 
       {showCommandPalette && CommandPalette ? (

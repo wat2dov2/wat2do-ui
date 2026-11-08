@@ -15,6 +15,7 @@ export {
   useAuthState,
   useUserEmail,
 } from "./hooks/useAuthState";
+export { useRequireSignIn, useSignedInAction } from "./hooks/useSignInGate";
 
 // API (public interface)
 export {

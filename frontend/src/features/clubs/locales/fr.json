@@ -55,8 +55,6 @@
     "saved": "Organisation suivie",
     "follow": "Suivre",
     "following": "Suivi",
-    "signInToFollow": "Connectez-vous pour suivre des organisations.",
-    "signInToClaim": "Connectez-vous pour revendiquer ce club.",
     "savedClubs": {
       "saveFailed": "Impossible de suivre cette organisation",
       "unsaveFailed": "Impossible de ne plus suivre cette organisation"

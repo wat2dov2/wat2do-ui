@@ -2,7 +2,6 @@ import { useRouter } from "next/navigation";
 import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useAuthState } from "@/features/auth";
 import { fetchProfileAPI } from "@/features/auth/api/auth.api";
 import { ClubForm } from "@/features/clubs/components/AddClubModal";
 import { createClubAPI } from "@/features/clubs/api/clubs.api";
@@ -24,7 +23,6 @@ import type { Club } from "@/shared/types";
 
 export function CreateClubPage() {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuthState();
   const { getSchoolName } = useSchoolDirectory();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -34,12 +32,8 @@ export function CreateClubPage() {
     getCurrentSchool(),
     loadUserProfile()?.school,
   );
-  const saveClub = async (
-    club: Club,
-    submittedByEmail: string | null,
-  ): Promise<Club> => {
+  const saveClub = async (club: Club): Promise<Club> => {
     const created = await createClubAPI({
-      submitted_by_email: submittedByEmail,
       club_name: club.club_name,
       categories: club.categories,
       club_page: club.club_page,
@@ -50,7 +44,8 @@ export function CreateClubPage() {
       school,
     });
     await Promise.all([
-      ...(isAuthenticated ? [fetchProfileAPI()] : []),
+      // A club the account submits may already be one it manages.
+      fetchProfileAPI(),
       queryClient.invalidateQueries({
         queryKey: queryKeys.clubs.all,
       }),

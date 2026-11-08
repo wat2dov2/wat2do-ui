@@ -10,6 +10,8 @@
     "googleCompleting": "Đang hoàn tất đăng nhập bằng Google...",
     "googleCallbackDescription": "Đang hoàn tất đăng nhập Google của bạn một cách an toàn.",
     "googleError": "Không thể hoàn tất đăng nhập bằng Google. Vui lòng thử lại.",
+    "googleWindowOpen": "Hoàn tất trong cửa sổ Google...",
+    "googleWindowBlocked": "Trình duyệt của bạn đã chặn cửa sổ Google. Hãy cho phép cửa sổ bật lên trên trang này, hoặc tiếp tục bằng email.",
     "orContinueWithEmail": "hoặc tiếp tục bằng email",
     "skipToOnboarding": "Tiếp tục mà không đăng nhập",
     "verifyOtp": "Xác minh mã",
@@ -32,7 +34,9 @@
     "consentAnonymized": "Chúng tôi có thể xem xét các mô hình sử dụng ẩn danh để cải thiện việc khám phá sự kiện.",
     "consentAgreeTerms": "Tôi đồng ý với các điều khoản của nền tảng và chính sách sử dụng chấp nhận được cho việc khám phá sự kiện trong khuôn viên trường.",
     "consentSubscribeUpdates": "Đăng ký nhận cập nhật định kỳ về các tính năng mới và các sự kiện nổi bật trong khuôn viên trường.",
-    "signedInAs": "Đã đăng nhập với tư cách"
+    "signedInAs": "Đã đăng nhập với tư cách",
+    "signedInHeading": "Bạn đã đăng nhập.",
+    "signedInDescription": "Bạn có thể đóng cửa sổ này và tiếp tục từ chỗ bạn đang làm."
   },
   "onboarding": {
     "faculties": {
