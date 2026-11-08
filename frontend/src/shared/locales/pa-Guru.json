@@ -153,6 +153,9 @@
   "filters": {
     "filtersHeader": "ਫਿਲਟਰ",
     "date": "ਮਿਤੀ",
+    "startsFrom": "ਤੋਂ ਸ਼ੁਰੂ",
+    "startDate": "ਸ਼ੁਰੂਆਤੀ ਮਿਤੀ",
+    "startTime": "ਸ਼ੁਰੂਆਤੀ ਸਮਾਂ",
     "title": "ਸਿਰਲੇਖ",
     "location": "ਟਿਕਾਣਾ",
     "price": "ਕੀਮਤ",

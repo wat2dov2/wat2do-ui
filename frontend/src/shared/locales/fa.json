@@ -153,6 +153,9 @@
   "filters": {
     "filtersHeader": "فیلترها",
     "date": "تاریخ",
+    "startsFrom": "از",
+    "startDate": "تاریخ شروع",
+    "startTime": "ساعت شروع",
     "title": "عنوان",
     "location": "مکان",
     "price": "قیمت",

@@ -43,12 +43,16 @@
     "noUpcomingEvents": "કોઈ આવનારા ઇવન્ટ નથી",
     "upcomingEventCount": "આવનારી ઇવેન્ટ",
     "upcomingEventCount_other": "આવનારી ઇવેન્ટ્સ",
+    "eventCount": "ઇવેન્ટ",
+    "eventCount_other": "ઇવેન્ટ્સ",
+    "eventCount_one": "ઇવેન્ટ",
     "thisWeek": "આ સપ્તાહ",
     "discoverEvents": "ઇવેન્ટ્સ શોધો",
     "clickCount": "{{count}} ક્લિક",
     "clickCount_other": "{{count}} ક્લિક",
     "noEventsFound": "કોઈ ઇવેન્ટ મળ્યા નથી",
     "noEventsFoundDesc": "તમારા વર્તમાન ફિલ્ટર્સ સાથે મેળ ખાતી કોઈ ઇવેન્ટ નથી મળી. તમારી સર્ચને જરૂરી પ્રમાણે ઍડજસ્ટ કરો અથવા કેટલાક ફિલ્ટર્સ સાફ કરો.",
+    "past": "ભૂતકાળ",
     "noEventsScheduled": "કોઈ ઇવેન્ટ શેડ્યૂલ નથી",
     "noEventsScheduledDesc": "હાલમાં કોઈ ઇવેન્ટ શેડ્યૂલ કરેલ નથી. પછીથી ફરી તપાસો!",
     "dateFilter": {
@@ -62,10 +66,12 @@
       "custom": "પસંદગીની તારીખ"
     },
     "clearAllFilters": "બધા ફિલ્ટર્સ સાફ કરો",
+    "seePastEvents": "ભૂતકાળની ઇવેન્ટ્સ જુઓ",
     "dateSections": {
       "today": "આજ",
       "tomorrow": "કાલ",
-      "range": "{{start}} થી {{end}}"
+      "range": "{{start}} થી {{end}}",
+      "past": "ભૂતકાળની ઇવેન્ટ્સ"
     },
     "reportDialog": {
       "title": "ઈવેન્ટની અહેવાલ આપો",

@@ -153,6 +153,9 @@
   "filters": {
     "filtersHeader": "ફિલ્ટર્સ",
     "date": "તારીખ",
+    "startsFrom": "થી શરૂ",
+    "startDate": "શરૂઆતની તારીખ",
+    "startTime": "શરૂઆતનો સમય",
     "title": "શીર્ષક",
     "location": "સ્થળ",
     "price": "કિંમત",

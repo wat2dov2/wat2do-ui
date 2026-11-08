@@ -153,6 +153,9 @@
   "filters": {
     "filtersHeader": "فلٹرز",
     "date": "تاریخ",
+    "startsFrom": "سے شروع",
+    "startDate": "شروع کی تاریخ",
+    "startTime": "شروع کا وقت",
     "title": "عنوان",
     "location": "مقام",
     "price": "قیمت",

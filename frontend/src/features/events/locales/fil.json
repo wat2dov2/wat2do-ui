@@ -43,12 +43,16 @@
     "noUpcomingEvents": "Walang paparating na mga kaganapan",
     "upcomingEventCount": "paparating na kaganapan",
     "upcomingEventCount_other": "paparating na mga kaganapan",
+    "eventCount": "kaganapan",
+    "eventCount_other": "mga kaganapan",
+    "eventCount_one": "kaganapan",
     "thisWeek": "Ngayong Linggo",
     "discoverEvents": "Tuklasin ang Mga Kaganapan",
     "clickCount": "{{count}} pag-click",
     "clickCount_other": "{{count}} pag-click",
     "noEventsFound": "Walang nahanap na mga kaganapan",
     "noEventsFoundDesc": "Hindi makahanap ng anumang mga kaganapan na tumutugma sa iyong kasalukuyang mga filter. Subukang baguhin ang iyong paghahanap o linisin ang ilang mga filter.",
+    "past": "Nakaraan",
     "noEventsScheduled": "Walang naka-iskedyul na mga kaganapan",
     "noEventsScheduledDesc": "Walang kasalukuyang naka-iskedyul na mga kaganapan. Balik-balikan mamaya!",
     "dateFilter": {
@@ -62,10 +66,12 @@
       "custom": "Pumili ng petsa"
     },
     "clearAllFilters": "Linisin ang lahat ng mga filter",
+    "seePastEvents": "Tingnan ang mga nakaraang kaganapan",
     "dateSections": {
       "today": "Ngayon",
       "tomorrow": "Bukas",
-      "range": "{{start}} hanggang {{end}}"
+      "range": "{{start}} hanggang {{end}}",
+      "past": "Mga nakaraang kaganapan"
     },
     "reportDialog": {
       "title": "Iulat ang kaganapan",

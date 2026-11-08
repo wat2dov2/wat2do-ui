@@ -88,6 +88,8 @@ export function useSearch({
       addedSince: filterState.addedSince,
       dateFilter: filterState.dateFilter,
       customDate: filterState.customDate,
+      startFrom: filterState.startFrom,
+      startNowMs: currentTimeMs,
     }, getSchoolTimezone, goingCounts ?? {});
     return sortEvents(filtered, { sortBy: filterState.sortBy, sortOrder: filterState.sortOrder });
   }, [
@@ -119,6 +121,8 @@ export function useSearch({
     filterState.addedSince,
     filterState.dateFilter,
     filterState.customDate,
+    filterState.startFrom,
+    currentTimeMs,
   ]);
 
   const filterCount = getFilterCounts({ ...filterState, sportsGame: varsityGames.selected, campusSeasonIds: campusSeasons.selectedIds });
@@ -155,5 +159,6 @@ export function useSearch({
     dayOptions,
     filteredEvents,
     filterCount,
+    startNowMs: currentTimeMs,
   };
 }

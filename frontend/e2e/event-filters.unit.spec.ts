@@ -10,7 +10,7 @@ import { useSearchStore } from "../src/features/search/store/search.store";
 import { useEventsStore } from "../src/features/events/store/events.store";
 import { getFilterCounts } from "../src/shared/utils/filter";
 import { hasActiveEventOccurrence } from "../src/shared/utils/date";
-import { getEventFilterCategories, getEventQuickFilters } from "../src/shared/constants/eventFilters";
+import { getEventFilterCategories, getEventQuickFilters, START_FROM_NOW } from "../src/shared/constants/eventFilters";
 
 const events = [
   { id: 1, location: "Student Centre", price: 0, food: ["Pizza"] },
@@ -177,9 +177,48 @@ const recurringEvents = [
   ] },
 ].map(event => ({ ...event, location: "Student Centre", school: "uwaterloo" }) as unknown as Event);
 
+test("the start filter hides ended events by default, counts only once moved, and clears back to now", () => {
+  const hourMs = 3_600_000;
+  const now = Date.parse("2026-09-28T04:00:00Z");
+  const dated = [[41, -50], [42, -20], [43, 3]].map(([id, hoursFromNow]) => ({
+    ...events[0], id, occurrences: [{
+      dtstart_utc: new Date(now + hoursFromNow * hourMs).toISOString(),
+      dtend_utc: new Date(now + (hoursFromNow + 1) * hourMs).toISOString(),
+    }],
+  }) as Event);
+  const listed = () => filterEvents(dated, {
+    ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: [], startNowMs: now,
+  }, () => "America/Toronto").map(event => event.id);
+
+  // By default the start is the clock: ended events stay out and nothing reads as filtered.
+  expect(EMPTY_FILTER_STATE.startFrom).toBe(START_FROM_NOW);
+  expect(listed()).toEqual([43]);
+  expect(getFilterCounts(useSearchStore.getState())).toBe(0);
+
+  // No start lists past events for the same search, and counts as a filter.
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, searchQuery: "workshop", startFrom: "" });
+  expect(listed()).toEqual([41, 42, 43]);
+  expect(getFilterCounts(useSearchStore.getState())).toBe(1);
+
+  // A picked school-local start (midnight Sep 27 in Toronto) keeps what is still on from then.
+  useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, startFrom: "2026-09-27T00:00" });
+  expect(listed()).toEqual([42, 43]);
+
+  // Clear filters puts the start back on the clock.
+  useSearchStore.getState().setFilterState(clearNarrowingFilterState(storeStatesToFilterState(useSearchStore.getState())));
+  expect(useSearchStore.getState().startFrom).toBe(START_FROM_NOW);
+
+  expect(normalizeFilterState({}).startFrom).toBe(START_FROM_NOW);
+  expect(normalizeFilterState({ startFrom: "yesterday" }).startFrom).toBe(START_FROM_NOW);
+  expect(normalizeFilterState({ startFrom: "2026-02-30T10:00" }).startFrom).toBe(START_FROM_NOW);
+  expect(normalizeFilterState({ startFrom: "" }).startFrom).toBe("");
+  expect(normalizeFilterState({ startFrom: "2026-09-27T18:30" }).startFrom).toBe("2026-09-27T18:30");
+});
+
 test("Recurring keeps only events whose occurrences span at least three weeks", () => {
   const recurringResults = () =>
-    filterEvents(recurringEvents, { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: [] }, () => "America/Toronto")
+    // Drawn before the first session, so the default start lists every series.
+    filterEvents(recurringEvents, { ...useSearchStore.getState(), goingEventIds: [], campusSeasonOptions: [], startNowMs: Date.parse("2026-09-01T00:00:00Z") }, () => "America/Toronto")
       .map(event => event.id);
 
   useSearchStore.getState().setFilterState({ ...EMPTY_FILTER_STATE, recurring: true });

@@ -165,6 +165,9 @@
   "filters": {
     "filtersHeader": "مرشحات",
     "date": "التاريخ",
+    "startsFrom": "يبدأ من",
+    "startDate": "تاريخ البدء",
+    "startTime": "وقت البدء",
     "title": "العنوان",
     "location": "الموقع",
     "price": "السعر",

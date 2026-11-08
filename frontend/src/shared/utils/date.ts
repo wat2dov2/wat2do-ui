@@ -24,12 +24,14 @@ export function localDateTimeToUtc(value: string, timeZone: string, originalUtc?
  * Where an event sits in the feed's date sections: the two named near-term
  * sections, or a Monday-to-Sunday week range. Everything beyond tomorrow is a
  * range, so the feed reads "Today, Tomorrow, <rest of this week>, then one
- * section per following week".
+ * section per following week". A list that includes past events ends with
+ * one Past section for the events that already ended.
  */
 export type EventDateSection =
   | { kind: "today" }
   | { kind: "tomorrow" }
-  | { kind: "range"; startMs: number; endMs: number };
+  | { kind: "range"; startMs: number; endMs: number }
+  | { kind: "past" };
 
 export interface Occurrence {
   dtstart_utc: string;
@@ -86,6 +88,15 @@ export function hasActiveEventOccurrence(
 ): boolean {
   const visibleUntilMs = eventVisibleUntilMs(event);
   return visibleUntilMs !== null && visibleUntilMs >= currentTimeMs;
+}
+
+/** Whether every occurrence is over; an event with no usable date has not ended, it is undated. */
+export function hasEventEnded(
+  event: { occurrences?: Occurrence[] },
+  currentTimeMs: number = Date.now(),
+): boolean {
+  const visibleUntilMs = eventVisibleUntilMs(event);
+  return visibleUntilMs !== null && visibleUntilMs < currentTimeMs;
 }
 
 const sameDay = (firstDate: Date, secondDate: Date): boolean =>
@@ -352,10 +363,11 @@ export function eventDateSectionKey(section: EventDateSection): string {
   return section.kind === "range" ? `range:${section.startMs}` : section.kind;
 }
 
-/** Today and Tomorrow always lead; week ranges follow in chronological order. */
+/** Today and Tomorrow always lead; week ranges follow in chronological order, and Past closes the list. */
 export function eventDateSectionOrder(section: EventDateSection): number {
   if (section.kind === "today") return -2;
   if (section.kind === "tomorrow") return -1;
+  if (section.kind === "past") return Number.POSITIVE_INFINITY;
   return section.startMs;
 }
 

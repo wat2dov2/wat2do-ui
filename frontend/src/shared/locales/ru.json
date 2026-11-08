@@ -159,6 +159,9 @@
   "filters": {
     "filtersHeader": "Фильтры",
     "date": "Дата",
+    "startsFrom": "Начиная с",
+    "startDate": "Дата начала",
+    "startTime": "Время начала",
     "title": "Название",
     "location": "Местоположение",
     "price": "Цена",

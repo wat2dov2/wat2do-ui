@@ -43,12 +43,15 @@
     "noUpcomingEvents": "沒有即將舉行的活動",
     "upcomingEventCount": "即將舉行的活動",
     "upcomingEventCount_other": "即將舉行的活動",
+    "eventCount": "個活動",
+    "eventCount_other": "個活動",
     "thisWeek": "本週",
     "discoverEvents": "發現活動",
     "clickCount": "{{count}} 次點擊",
     "clickCount_other": "{{count}} 次點擊",
     "noEventsFound": "未找到事件",
     "noEventsFoundDesc": "找不到符合您目前篩選條件的活動。試試調整搜尋或清除部分篩選條件。",
+    "past": "已完結",
     "noEventsScheduled": "沒有排定的活動",
     "noEventsScheduledDesc": "目前沒有安排任何活動。請稍後再查看！",
     "dateFilter": {
@@ -62,10 +65,12 @@
       "custom": "自訂日期"
     },
     "clearAllFilters": "清除所有篩選條件",
+    "seePastEvents": "睇過去的活動",
     "dateSections": {
       "today": "今日",
       "tomorrow": "明日",
-      "range": "{{start}} 至 {{end}}"
+      "range": "{{start}} 至 {{end}}",
+      "past": "過去的活動"
     },
     "reportDialog": {
       "title": "舉報活動",

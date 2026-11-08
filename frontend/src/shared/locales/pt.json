@@ -156,6 +156,9 @@
   "filters": {
     "filtersHeader": "Filtros",
     "date": "Data",
+    "startsFrom": "A partir de",
+    "startDate": "Data de início",
+    "startTime": "Hora de início",
     "title": "Título",
     "location": "Localização",
     "price": "Preço",

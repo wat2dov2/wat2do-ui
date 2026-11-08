@@ -1,3 +1,4 @@
+import { START_FROM_NOW } from "@/shared/constants/eventFilters";
 import type { EventDateFilter } from "@/shared/types/filter.types";
 
 /** Count narrowing filters, excluding the separate search field and sort order. */
@@ -21,6 +22,7 @@ export function getFilterCounts(filters: {
   goingFilter: boolean;
   addedSince?: string;
   dateFilter?: EventDateFilter;
+  startFrom: string;
 }): number {
   return (
     filters.selectedCategories.length +
@@ -41,6 +43,8 @@ export function getFilterCounts(filters: {
     filters.campusSeasonIds.length +
     (filters.goingFilter ? 1 : 0) +
     (filters.addedSince ? 1 : 0) +
-    (filters.dateFilter && filters.dateFilter !== "any" ? 1 : 0)
+    (filters.dateFilter && filters.dateFilter !== "any" ? 1 : 0) +
+    // The start counts once the reader moves it off the clock; by default it is silent.
+    (filters.startFrom !== START_FROM_NOW ? 1 : 0)
   );
 }

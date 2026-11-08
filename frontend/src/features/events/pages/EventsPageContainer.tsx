@@ -9,6 +9,7 @@ import type { Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { EmptyState, LoadFailureNotice } from "@/shared/feedback";
 import { Stack } from "@/shared/layout";
+import { START_FROM_NOW } from "@/shared/constants/eventFilters";
 import type { EventFeedFirstScreen } from "@/features/events/lib/eventFeedFirstScreen";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 
@@ -73,6 +74,10 @@ export function EventsPageContainer({
     filters.setSearchQuery(latestAddedEvent.title);
   }, [filters, latestAddedEvent]);
 
+  const { setStartFrom } = filters;
+  // Lifts the start filter alone; the search and every other filter stay.
+  const showPastEvents = useCallback(() => setStartFrom(""), [setStartFrom]);
+
   return (
     <>
       <Stack gap={2} data-page-layout={view === "map" ? "viewport" : undefined}>
@@ -110,6 +115,8 @@ export function EventsPageContainer({
               onEventClick={handleEventClick}
               onClearFilters={filters.clearAllFilters}
               hasActiveFilters={filters.filterCount > 0 || filters.searchQuery.trim().length > 0}
+              includePast={filters.startFrom !== START_FROM_NOW}
+              onShowPastEvents={filters.startFrom ? showPastEvents : undefined}
               eventStats={eventStats}
               isLoading={listing === null}
               loadFailureNotice={restLoadFailed ? (

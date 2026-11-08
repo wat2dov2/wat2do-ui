@@ -150,6 +150,9 @@
   "filters": {
     "filtersHeader": "Filters",
     "date": "Date",
+    "startsFrom": "Starts from",
+    "startDate": "Start date",
+    "startTime": "Start time",
     "title": "Title",
     "location": "Location",
     "price": "Price",

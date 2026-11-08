@@ -5,6 +5,8 @@ import { MultiSelect } from "@/shared/ui/multi-select";
 import { Switch } from "@/shared/ui/switch";
 import { Input } from "@/shared/ui/input";
 import { PriceRangeFields } from "@/features/search/components/PriceFilter";
+import { StartFromFields, type StartFromControls } from "@/features/search/components/StartFromFields";
+import { START_FROM_NOW } from "@/shared/constants/eventFilters";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 interface SingleValueFilterInputProps {
@@ -27,7 +29,7 @@ function SingleValueFilterInput({ value, onChange, placeholder }: SingleValueFil
   );
 }
 
-export interface VisualFilterControls {
+export interface VisualFilterControls extends StartFromControls {
   selectedLocations: string[];
   setSelectedLocations: (locations: string[]) => void;
   selectedFoods: string[];
@@ -53,7 +55,7 @@ interface VisualFiltersProps {
 
 export function VisualFilters({ school, filters }: VisualFiltersProps) {
   const { t } = useTranslation();
-  const { schoolBySlug } = useSchoolDirectory();
+  const { schoolBySlug, getSchoolTimezone } = useSchoolDirectory();
   const locationPlaceholder = schoolBySlug.get(school)?.location_examples?.join(", ") || t("filters.location");
 
   const dayValues = useMemo(
@@ -70,6 +72,20 @@ export function VisualFilters({ school, filters }: VisualFiltersProps) {
 
   return (
     <div className="-space-y-px">
+      {/* Start date and time: applied at "now" by default, and only marked once the reader moves it. */}
+      <FilterSection
+        title={t("filters.startsFrom")}
+        indicator={filters.startFrom !== START_FROM_NOW ? "1" : undefined}
+        onClear={() => filters.setStartFrom(START_FROM_NOW)}
+      >
+        <StartFromFields
+          startFrom={filters.startFrom}
+          setStartFrom={filters.setStartFrom}
+          startNowMs={filters.startNowMs}
+          timeZone={getSchoolTimezone(school)}
+        />
+      </FilterSection>
+
       {/* Location Filter (free-text: filter events by location substring) */}
       <FilterSection
         title={t("filters.location")}

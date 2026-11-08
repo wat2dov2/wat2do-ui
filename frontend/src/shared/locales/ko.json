@@ -150,6 +150,9 @@
   "filters": {
     "filtersHeader": "필터",
     "date": "날짜",
+    "startsFrom": "시작 기준",
+    "startDate": "시작 날짜",
+    "startTime": "시작 시간",
     "title": "제목",
     "location": "위치",
     "price": "가격",

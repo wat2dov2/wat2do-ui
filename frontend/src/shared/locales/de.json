@@ -153,6 +153,9 @@
   "filters": {
     "filtersHeader": "Filter",
     "date": "Datum",
+    "startsFrom": "Ab",
+    "startDate": "Startdatum",
+    "startTime": "Startzeit",
     "title": "Titel",
     "location": "Ort",
     "price": "Preis",

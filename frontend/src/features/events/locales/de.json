@@ -43,12 +43,16 @@
     "noUpcomingEvents": "Keine bevorstehenden Veranstaltungen",
     "upcomingEventCount": "bevorstehende Veranstaltung",
     "upcomingEventCount_other": "bevorstehende Veranstaltungen",
+    "eventCount": "Veranstaltung",
+    "eventCount_other": "Veranstaltungen",
+    "eventCount_one": "Veranstaltung",
     "thisWeek": "Diese Woche",
     "discoverEvents": "Entdecke Veranstaltungen",
     "clickCount": "{{count}} Klick",
     "clickCount_other": "{{count}} Klicks",
     "noEventsFound": "Keine Ereignisse gefunden",
     "noEventsFoundDesc": "Es konnten keine Veranstaltungen gefunden werden, die Ihren aktuellen Filtern entsprechen. Versuchen Sie, Ihre Suche anzupassen oder einige Filter zu löschen.",
+    "past": "Vergangen",
     "noEventsScheduled": "Keine geplanten Veranstaltungen",
     "noEventsScheduledDesc": "Derzeit sind keine Veranstaltungen geplant. Schauen Sie später wieder vorbei!",
     "dateFilter": {
@@ -62,10 +66,12 @@
       "custom": "Benutzerdefiniert"
     },
     "clearAllFilters": "Alle Filter löschen",
+    "seePastEvents": "Vergangene Veranstaltungen ansehen",
     "dateSections": {
       "today": "Heute",
       "tomorrow": "Morgen",
-      "range": "{{start}} bis {{end}}"
+      "range": "{{start}} bis {{end}}",
+      "past": "Vergangene Veranstaltungen"
     },
     "reportDialog": {
       "title": "Veranstaltung melden",

@@ -153,6 +153,9 @@
   "filters": {
     "filtersHeader": "வடிகட்டிகள்",
     "date": "தேதி",
+    "startsFrom": "தொடக்கம்",
+    "startDate": "தொடக்க தேதி",
+    "startTime": "தொடக்க நேரம்",
     "title": "தலைப்பு",
     "location": "இடம்",
     "price": "விலை",

@@ -43,12 +43,16 @@
     "noUpcomingEvents": "எந்த வரவிருக்கும் நிகழ்வுகளும் இல்லை",
     "upcomingEventCount": "வரவிருக்கும் நிகழ்வு",
     "upcomingEventCount_other": "வரவிருக்கும் நிகழ்வுகள்",
+    "eventCount": "நிகழ்வு",
+    "eventCount_other": "நிகழ்வுகள்",
+    "eventCount_one": "நிகழ்வு",
     "thisWeek": "இந்த வாரம்",
     "discoverEvents": "நிகழ்வுகளைக் கண்டறியுங்கள்",
     "clickCount": "{{count}} கிளிக்",
     "clickCount_other": "{{count}} கிளிக்",
     "noEventsFound": "நிகழ்வுகள் எற்றில்லை",
     "noEventsFoundDesc": "உங்கள் தற்போதைய வடிகட்டிகளுடன் பொருத்தமான எந்த நிகழ்வுகளையும் காண முடியவில்லை. உங்கள் தேடலை சரீர்மாற்றம் செய்யவோ அல்லது சில வடிகட்டிகளை நீக்கவோ முயற்சி செய்யுங்கள்.",
+    "past": "கடந்தது",
     "noEventsScheduled": "நிகழ்வுகள் திட்டமிடப்படவில்லை",
     "noEventsScheduledDesc": "தற்போது எந்த நிகழ்வுகளும் திட்டமிடப்படவில்லை. பின்னர் மீண்டும் சரிபார்க்கவும்!",
     "dateFilter": {
@@ -62,10 +66,12 @@
       "custom": "விருப்பத் தேதி"
     },
     "clearAllFilters": "அனைத்து வடிகட்டிகளையும் நீக்கவும்",
+    "seePastEvents": "கடந்த நிகழ்வுகளைப் பார்",
     "dateSections": {
       "today": "இன்று",
       "tomorrow": "நாளை",
-      "range": "{{start}} முதல் {{end}} வரை"
+      "range": "{{start}} முதல் {{end}} வரை",
+      "past": "கடந்த நிகழ்வுகள்"
     },
     "reportDialog": {
       "title": "நிகழ்வை புகாரளிக்கவும்",

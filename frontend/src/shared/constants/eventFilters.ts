@@ -13,6 +13,9 @@ export function getEventFilterCategories(categories: readonly string[]): string[
   return categories.filter(category => category !== "Media & Web");
 }
 
+/** The default start filter: the clock, so the list begins with what is still on. */
+export const START_FROM_NOW = "now";
+
 /** Shared by the live filter controls and their initial loading shell. */
 const eventQuickFilters = [
   { id: "going", labelKey: "filters.going", value: "goingFilter", action: "setGoingFilter", requiresProfile: true },

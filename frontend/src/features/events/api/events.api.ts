@@ -43,19 +43,45 @@ export async function fetchEventById(id: number): Promise<Event> {
   return api.get<ApiEventPublicResponse>(`/events/${id}`);
 }
 
-/** Every event a host has ever run, past included. */
-export async function fetchClubEvents(clubId: number, school: string): Promise<Event[]> {
+/** Every page of one feed read straight from the API; the browse snapshot holds only what is still on. */
+async function fetchFeedEvents(query: Record<string, string>): Promise<Event[]> {
   const directory = await collectPaginatedPages((page) => {
     const params = new URLSearchParams({
-      school,
+      ...query,
       page: String(page),
       page_size: String(controlBox.eventDiscovery.serverFeedPageSize),
-      club_ids: String(clubId),
-      include_past: "true",
     });
     return api.get<PaginatedEventsResponse>(`/events/?${params.toString()}`);
   });
   return directory.items;
+}
+
+/** Every event a host has ever run, past included. */
+export async function fetchClubEvents(clubId: number, school: string): Promise<Event[]> {
+  return fetchFeedEvents({ school, club_ids: String(clubId), include_past: "true" });
+}
+
+/**
+ * A school's events that started before now (from `startUtc`, or ever when it
+ * is null) and match `search`, newest first: what the browse snapshot leaves
+ * out once the reader moves the start filter back. The API narrows the history
+ * by the search before it limits the read, so the reader's own filters then run
+ * over these exactly as over the snapshot.
+ */
+export function pastEventsQueryOptions(school: string, search: string, startUtc: string | null) {
+  const resolvedSchool = resolveSchool(school);
+  const searchText = search.trim();
+  return queryOptions({
+    queryKey: queryKeys.events.past(resolvedSchool, searchText, startUtc),
+    queryFn: () => fetchFeedEvents({
+      school: resolvedSchool,
+      // An explicit start replaces the API's default lower bound; without one, `include_past` lifts it.
+      ...(startUtc ? { start_utc: startUtc } : { include_past: "true" }),
+      end_utc: new Date().toISOString(),
+      sort_order: "desc",
+      ...(searchText ? { search: searchText } : {}),
+    }),
+  });
 }
 
 /** The complete school feed is shared by browsing and related-event surfaces. */

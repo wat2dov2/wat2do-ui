@@ -153,6 +153,9 @@
   "filters": {
     "filtersHeader": "Mga Filter",
     "date": "Petsa",
+    "startsFrom": "Simula sa",
+    "startDate": "Petsa ng simula",
+    "startTime": "Oras ng simula",
     "title": "Pamagat",
     "location": "Lokasyon",
     "price": "Presyo",

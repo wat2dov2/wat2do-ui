@@ -153,6 +153,9 @@
   "filters": {
     "filtersHeader": "फ़िल्टर",
     "date": "तारीख",
+    "startsFrom": "से शुरू",
+    "startDate": "शुरू होने की तारीख",
+    "startTime": "शुरू होने का समय",
     "title": "शीर्षक",
     "location": "जगह",
     "price": "कीमत",

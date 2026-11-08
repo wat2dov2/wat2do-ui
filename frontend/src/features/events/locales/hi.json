@@ -43,12 +43,16 @@
     "noUpcomingEvents": "कोई आगामी ईवेंट नहीं",
     "upcomingEventCount": "आगामी इवेंट",
     "upcomingEventCount_other": "आगामी इवेंट",
+    "eventCount": "इवेंट",
+    "eventCount_other": "इवेंट",
+    "eventCount_one": "इवेंट",
     "thisWeek": "इस सप्ताह",
     "discoverEvents": "घटनाक्रम खोजें",
     "clickCount": "{{count}} क्लिक",
     "clickCount_other": "{{count}} क्लिक",
     "noEventsFound": "कोई इवेंट नहीं मिला",
     "noEventsFoundDesc": "आपके वर्तमान फ़िल्टर से मेल खाने वाला कोई भी ईवेंट नहीं मिल सका। अपनी खोज को समायोजित करने या कुछ फ़िल्टर साफ़ करने का प्रयास करें।",
+    "past": "पिछला",
     "noEventsScheduled": "कोई कार्यक्रम निर्धारित नहीं है",
     "noEventsScheduledDesc": "इस समय किसी आयोजन की योजना नहीं है। बाद में पुनः जाँचें!",
     "dateFilter": {
@@ -62,10 +66,12 @@
       "custom": "मनपसंद तारीख"
     },
     "clearAllFilters": "सभी फ़िल्टर साफ़ करें",
+    "seePastEvents": "पिछले इवेंट देखें",
     "dateSections": {
       "today": "आज",
       "tomorrow": "कल",
-      "range": "{{start}} से {{end}}"
+      "range": "{{start}} से {{end}}",
+      "past": "पिछले इवेंट"
     },
     "reportDialog": {
       "title": "घटना की रिपोर्ट करें",

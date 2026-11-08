@@ -150,6 +150,9 @@
   "filters": {
     "filtersHeader": "Bộ lọc",
     "date": "Ngày",
+    "startsFrom": "Bắt đầu từ",
+    "startDate": "Ngày bắt đầu",
+    "startTime": "Giờ bắt đầu",
     "title": "Tiêu đề",
     "location": "Địa điểm",
     "price": "Giá",

@@ -43,12 +43,15 @@
     "noUpcomingEvents": "No upcoming events",
     "upcomingEventCount": "upcoming event",
     "upcomingEventCount_other": "upcoming events",
+    "eventCount": "event",
+    "eventCount_other": "events",
     "thisWeek": "This Week",
     "discoverEvents": "Discover Events",
     "clickCount": "{{count}} click",
     "clickCount_other": "{{count}} clicks",
     "noEventsFound": "No events found",
     "noEventsFoundDesc": "Couldn't find any events matching your current filters. Try adjusting your search or clearing some filters.",
+    "past": "Past",
     "noEventsScheduled": "No events scheduled",
     "noEventsScheduledDesc": "No events are currently scheduled. Check back later!",
     "dateFilter": {
@@ -62,10 +65,12 @@
       "custom": "Custom"
     },
     "clearAllFilters": "Clear all filters",
+    "seePastEvents": "See past events",
     "dateSections": {
       "today": "Today",
       "tomorrow": "Tomorrow",
-      "range": "{{start}} to {{end}}"
+      "range": "{{start}} to {{end}}",
+      "past": "Past events"
     },
     "reportDialog": {
       "title": "Report event",
