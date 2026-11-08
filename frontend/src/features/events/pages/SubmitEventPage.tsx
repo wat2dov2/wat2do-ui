@@ -2,12 +2,11 @@ import { useCallback } from "react";
 import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useAuthState } from "@/features/auth";
+import { getUserProfile, useAuthState } from "@/features/auth";
 import { useOwnClub } from "@/features/clubs";
 import { SubmitEventFlow } from "@/features/events/components/SubmitEventModal";
 import { useEventsStore } from "@/features/events/store/events.store";
-import { createEventAPI } from "@/features/events/api/events.api";
-import { submitEventForReview } from "@/shared/api/submissions.api";
+import { createEventAPI, submitEventForReview } from "@/features/events/api/events.api";
 import { ROUTES } from "@/shared/constants/routes";
 import {
   getCurrentSchool,
@@ -38,18 +37,23 @@ export function SubmitEventPage() {
   }, [router]);
 
   const submit = useCallback(
-    async (eventData: EventFormData, submittedByEmail: string) => {
+    async (eventData: EventFormData) => {
       if (eventData.club_id == null) {
         throw new Error(t("events.clubRequired"));
       }
-      if (canCreateEvents) {
+      // Read when it is sent: a visitor may have signed in only to send it.
+      const profile = getUserProfile();
+      const managesClub =
+        profile?.role === "admin" ||
+        Boolean(profile?.clubs.some((club) => club.id === eventData.club_id));
+      if (managesClub) {
         const event = await createEventAPI(eventData);
         return { type: "event" as const, eventId: event.id };
       }
-      await submitEventForReview(eventData, submittedByEmail);
+      await submitEventForReview(eventData);
       return { type: "submission" as const };
     },
-    [canCreateEvents, t],
+    [t],
   );
 
   return (

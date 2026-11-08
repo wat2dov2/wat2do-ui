@@ -6,7 +6,6 @@ import { clubDirectoryQueryOptions } from "@/features/clubs";
 import { useQuery } from "@tanstack/react-query";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { ArrowLeft } from "lucide-react";
-import { FormInput } from "@/shared/ui/form-field";
 import { Button } from "@/shared/ui/button";
 import { FormActions, FormLayout } from "@/shared/layout";
 import { LoadingButton } from "@/shared/ui/loading-button";
@@ -26,8 +25,6 @@ interface EventFormStepProps {
   isEditMode: boolean;
   canCreateEvents: boolean;
   isSubmitting: boolean;
-  submittedByEmail: string;
-  onEmailChange: (email: string) => void;
   onSubmit: () => void;
   eventForm: Pick<
     EventFormHookReturn,
@@ -68,8 +65,6 @@ export function EventFormStep({
   isEditMode,
   canCreateEvents,
   isSubmitting,
-  submittedByEmail,
-  onEmailChange,
   onSubmit,
   eventForm,
   isDarkMode,
@@ -200,17 +195,6 @@ export function EventFormStep({
 
           <FormLayout noValidate onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
             <FieldGroup>
-              {!isEditMode && !canCreateEvents ? (
-                <FormInput
-                  name="submitter-email"
-                  type="email"
-                  required
-                  label={t("contact.form.email")}
-                  placeholder={t("contact.form.emailPlaceholder")}
-                  value={submittedByEmail}
-                  onChange={value => onEmailChange(String(value))}
-                />
-              ) : null}
               <EventFormFields />
               {showSubmit ? (
                 <FormActions align="start">

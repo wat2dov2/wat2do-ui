@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "@/shared/hooks/use-toast";
 import { useConfetti } from "@/shared/hooks/useConfetti";
 import { getApiErrorMessage } from "@/shared/services/apiClient";
+import { useRequireSignIn } from "@/features/auth";
 import type { EventFormData } from "@/shared/types";
 
 export type SubmitEventResult =
@@ -34,6 +35,7 @@ export function useSubmitEvent({
   const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { trigger: triggerConfetti } = useConfetti();
+  const requireSignIn = useRequireSignIn();
 
   const handleSubmit = useCallback(
     async (
@@ -44,6 +46,8 @@ export function useSubmitEvent({
     ): Promise<boolean> => {
       markAllFieldsTouched();
       if (!isValid) return false;
+      // Anyone can fill in an event; it is sent by a signed-in account.
+      if (!(await requireSignIn())) return false;
       setIsSubmitting(true);
       try {
         let finalImageUrl = formData.source_image_url;
@@ -90,7 +94,7 @@ export function useSubmitEvent({
         setIsSubmitting(false);
       }
     },
-    [isEditMode, editEventId, onUpdate, onSubmit, onClose, t, triggerConfetti, onSubmitted]
+    [isEditMode, editEventId, onUpdate, onSubmit, onClose, t, triggerConfetti, onSubmitted, requireSignIn]
   );
 
   return {

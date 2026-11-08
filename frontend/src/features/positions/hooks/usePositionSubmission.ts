@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useAuthState } from "@/features/auth";
+import { useRequireSignIn } from "@/features/auth";
 import { clubDirectoryQueryOptions, useOwnClub } from "@/features/clubs";
 import { useEventsStore } from "@/features/events/store/events.store";
 import { parsePositionImage, submitPosition } from "@/features/positions/api/positions.api";
@@ -15,7 +15,6 @@ import type { ApiPositionCreate } from "@/shared/generated";
 
 interface SubmissionState {
   data: ApiPositionCreate;
-  submittedByEmail: string;
   busy: boolean;
   error: string | null;
   submitted: boolean;
@@ -31,7 +30,7 @@ function reducer(state: SubmissionState, action: Action): SubmissionState {
 
 export function usePositionSubmission() {
   const { t } = useTranslation();
-  const { userEmail } = useAuthState();
+  const requireSignIn = useRequireSignIn();
   const schoolFilter = useEventsStore(state => state.schoolFilter);
   const school = resolveSchool(schoolFilter ?? getCurrentSchool());
   const queryClient = useQueryClient();
@@ -40,7 +39,6 @@ export function usePositionSubmission() {
   const ownClubId = ownClub?.clubId ?? null;
   const [state, dispatch] = useReducer(reducer, {
     data: { club_id: ownClubId ?? 0, title: "", description: "", position_type: "general", requirements: [], source_url: "", is_paid: null },
-    submittedByEmail: userEmail ?? "",
     busy: false, error: null, submitted: false, published: false, formOpen: false,
   });
   const schoolClubs = useQuery({
@@ -76,10 +74,12 @@ export function usePositionSubmission() {
     event.preventDefault();
     // An unknown handle is already marked on its field, which the form brings into view.
     if (state.busy || !clubs.some(club => club.id === state.data.club_id)) return;
+    // Anyone can fill in a position; it is sent by a signed-in account.
+    if (!(await requireSignIn())) return;
     dispatch({ type: "state", value: { busy: true, error: null } });
     try {
       const sourceImageUrl = image.imageFile ? await uploadEventImageUnsigned(image.imageFile) : image.imagePreview || null;
-      const submission = await submitPosition({ ...state.data, source_image_url: sourceImageUrl, requirements: state.data.requirements?.map(value => value.trim()).filter(Boolean) }, state.submittedByEmail.trim());
+      const submission = await submitPosition({ ...state.data, source_image_url: sourceImageUrl, requirements: state.data.requirements?.map(value => value.trim()).filter(Boolean) });
       const published = submission.status === "approved";
       await queryClient.invalidateQueries({ queryKey: published ? queryKeys.positions.all : queryKeys.positionSubmissions.all });
       dispatch({ type: "state", value: { submitted: true, published } });
@@ -89,7 +89,5 @@ export function usePositionSubmission() {
       dispatch({ type: "state", value: { busy: false } });
     }
   };
-  return { ...state, school, clubs, isClubFixed: ownClubId != null, clubsFailed: schoolClubs.isError, retryClubs: schoolClubs.refetch, edit, image, imageParse, openForm, submit,
-    setEmail: (submittedByEmail: string) => dispatch({ type: "state", value: { submittedByEmail } }),
-  };
+  return { ...state, school, clubs, isClubFixed: ownClubId != null, clubsFailed: schoolClubs.isError, retryClubs: schoolClubs.refetch, edit, image, imageParse, openForm, submit };
 }
