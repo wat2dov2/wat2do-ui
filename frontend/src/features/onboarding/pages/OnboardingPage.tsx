@@ -5,14 +5,14 @@ import { ROUTES } from "@/shared/constants/routes";
 import { QP } from "@/shared/constants/queryParams";
 import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
 import { useOnboardingFlow } from "../hooks/useOnboardingFlow";
+import { useOnboardingSchool } from "../hooks/useOnboardingSchool";
 import { useUpdateProfile } from "../hooks/useUpdateProfile";
 import { getUserProfile } from "@/features/auth";
 import { OnboardingEventGrid } from "../components/OnboardingEventGrid";
 import { OnboardingFacultyStep } from "../components/OnboardingFacultyStep";
 import { GooseDialogue } from "../components/GooseDialogue";
-import { OnboardingProgressDots } from "../components/OnboardingProgressDots";
+import { OnboardingFrame } from "../components/OnboardingFrame";
 import { OnboardingYearStep } from "../components/OnboardingYearStep";
-import { LanguageSelector } from "@/shared/ui/language-selector";
 import { MultiSelect } from "@/shared/ui/multi-select";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { getSafeReturnTo } from "@/features/auth/utils/returnTo";
@@ -41,11 +41,7 @@ export function OnboardingPage() {
   const { persistProfile } = useUpdateProfile();
   const { getSchoolName } = useSchoolDirectory();
 
-  // Signup flow hands the school over via the URL so a refresh preserves the
-  // institution-specific onboarding greeting.
-  const initialSchool = useMemo(() => {
-    return searchParams.get(QP.SCHOOL) ?? "";
-  }, [searchParams]);
+  const initialSchool = useOnboardingSchool();
   const returnTo = useMemo(
     () => getSafeReturnTo(searchParams.get(QP.RETURN_TO)),
     [searchParams],
@@ -100,7 +96,7 @@ export function OnboardingPage() {
 
   const flow = useOnboardingFlow({ onComplete: handleComplete, initialSchool });
 
-  const isDoneStep = flow.currentStep === 4;
+  const isDoneStep = flow.currentStep === flow.totalSteps - 1;
 
   const stepContent: Record<number, JSX.Element> = {
     0: <div className="w-full min-h-[120px]" aria-hidden />,
@@ -146,39 +142,10 @@ export function OnboardingPage() {
 
   return (
     <LazyMotion features={domAnimation} strict>
-      <main className="h-dvh bg-background flex flex-col overflow-hidden">
-      <div className="fixed top-0 left-0 right-0 z-30 w-full px-6 pt-4 pb-4 bg-background flex items-center justify-between">
-        <OnboardingProgressDots
-          currentStep={flow.currentStep}
-          totalSteps={flow.totalSteps}
-        />
-        <div className="flex items-center gap-2">
-          <LanguageSelector />
-        </div>
-      </div>
-
-      {/* Scroll container: the sticky dialogue reserves its own space, so
-          tall step content (e.g. the event grid) scrolls above it instead
-          of overlapping it. */}
-      <div className="flex-1 flex flex-col overflow-y-auto pt-20">
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
-          <div className="relative w-full max-w-3xl">
-            <AnimatePresence mode="popLayout">
-              <m.div
-                key={flow.currentStep}
-                variants={stepVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                className="w-full"
-              >
-                {stepContent[flow.currentStep]}
-              </m.div>
-            </AnimatePresence>
-          </div>
-        </div>
-
-        <div className="sticky bottom-0 z-30 px-6 pb-6 pt-4 bg-background">
+      <OnboardingFrame
+        currentStep={flow.currentStep}
+        totalSteps={flow.totalSteps}
+        dialogue={
           <GooseDialogue
             message={gooseMessage}
             onBack={flow.goBack}
@@ -186,9 +153,21 @@ export function OnboardingPage() {
             showBack={flow.currentStep > 0}
             nextLabel={isDoneStep ? t("onboarding.doneNextLabel") : undefined}
           />
-        </div>
-      </div>
-      </main>
+        }
+      >
+        <AnimatePresence mode="popLayout">
+          <m.div
+            key={flow.currentStep}
+            variants={stepVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            className="w-full"
+          >
+            {stepContent[flow.currentStep]}
+          </m.div>
+        </AnimatePresence>
+      </OnboardingFrame>
     </LazyMotion>
   );
 }

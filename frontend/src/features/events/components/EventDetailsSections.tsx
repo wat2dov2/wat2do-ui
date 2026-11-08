@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useMemo, useState, type Ref } from "react";
+import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode, type Ref } from "react";
 import { useEventView } from "@/features/events/hooks/useEventStats";
 import publicAttendance from "../../../../../backend/controlbox/public_attendance.json";
 import NextLink from "next/link";
@@ -175,27 +175,32 @@ function EventDateCell({ event }: { event: Event }) {
   );
 }
 
-function EventLocationCell({ event }: { event: Event }) {
-  if (!event.location) return null;
+/** One fact in the details grid, beside its icon tile. */
+function EventFact({ icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
     <Stack direction="horizontal" gap={3} align="center">
-      <EventInfoTile icon={MapPin} />
-      <p className="min-w-0 text-sm font-semibold text-foreground">{event.location}</p>
+      <EventInfoTile icon={icon} />
+      <p className="min-w-0 text-sm font-semibold text-foreground">{children}</p>
     </Stack>
   );
+}
+
+function EventLocationCell({ event }: { event: Event }) {
+  if (!event.location) return null;
+  return <EventFact icon={MapPin}>{event.location}</EventFact>;
 }
 
 function EventFoodCell({ event }: { event: Event }) {
   const { t } = useTranslation();
   if (!event.food || event.food.length === 0) return null;
-  return (
-    <Stack direction="horizontal" gap={3} align="center">
-      <EventInfoTile icon={Utensils} />
-      <p className="min-w-0 text-sm font-semibold text-foreground">
-        {translateFoods(event.food, t)}
-      </p>
-    </Stack>
-  );
+  return <EventFact icon={Utensils}>{translateFoods(event.food, t)}</EventFact>;
+}
+
+/** The same ticket the event's card badge shows for registration. */
+function EventRegistrationCell({ event }: { event: Event }) {
+  const { t } = useTranslation();
+  if (!event.registration) return null;
+  return <EventFact icon={Ticket}>{t("common.registrationRequired")}</EventFact>;
 }
 
 function EventCostCell({ event }: { event: Event }) {
@@ -212,12 +217,7 @@ function EventCostCell({ event }: { event: Event }) {
         ? t("common.free")
         : `$${event.price}`;
   if (cost == null) return null;
-  return (
-    <Stack direction="horizontal" gap={3} align="center">
-      <EventInfoTile icon={DollarSign} />
-      <p className="text-sm font-semibold text-foreground">{cost}</p>
-    </Stack>
-  );
+  return <EventFact icon={DollarSign}>{cost}</EventFact>;
 }
 
 /**
@@ -751,6 +751,7 @@ export function EventDetailsBody({
             <EventLocationCell event={event} />
             <EventFoodCell event={event} />
             <EventCostCell event={event} />
+            <EventRegistrationCell event={event} />
           </FormGrid>
 
           <EventAdmissionCard event={event} school={school} />

@@ -37,5 +37,4 @@ export {
 
 // Utilities (shared)
 export { eventToPreview } from "./utils/eventPreview";
-export { shuffle } from "./utils/shuffle";
 export { appendSafeReturnTo } from "./utils/returnTo";
