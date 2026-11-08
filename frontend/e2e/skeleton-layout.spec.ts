@@ -22,7 +22,8 @@ import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
  * list paints its server-rendered first screen before the complete feed
  * arrives, so that first screen is held to the same standard. The top bar is
  * also loaded with its HTML paused partway through, as a slow CPU or network
- * can leave it, and must not shift either.
+ * can leave it, and must not shift either. The back-to-top corner must keep its
+ * place however the text around it measures.
  */
 
 const BASE = process.env.SKELETON_LAYOUT_BASE_URL ?? "http://127.0.0.1:3000";
@@ -761,6 +762,24 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       await settle(page);
       const { cls, shifts } = await shiftsSince(page);
       await report(`top-bar-parse-pause-${viewportName}`, compare({}, {}, viewport.height), cls, shifts);
+    });
+
+    test("the back-to-top corner keeps its place however the text around it measures", async ({ page, next }) => {
+      const gates: Gates = { data: new Gate(), late: new Gate() };
+      gates.data.open();
+      gates.late.open();
+      await installMocks(page, next, gates, () => false);
+      await page.goto(`${BASE}/clubs`);
+      await page.locator("[data-club-card]").first().waitFor();
+      await settle(page);
+      const corner = page.getByRole("button", { name: "Back to top", exact: true });
+      const before = await corner.boundingBox();
+      // The font swapping in, or the reader's text settings, change the line height
+      // the page inherits. Exaggerate that change: the corner is pinned to the
+      // bottom of the screen and must not move with it.
+      await page.evaluate(() => { document.body.style.lineHeight = "3"; });
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      expect(await corner.boundingBox()).toEqual(before);
     });
   });
 }
