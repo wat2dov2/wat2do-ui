@@ -45,6 +45,14 @@ export function getEventCategory(event: Pick<Event, "category">): string {
   return event.category || getDefaultEventCategory();
 }
 
+/**
+ * A networking opportunity: an event employers come to (the feed's Employers
+ * on campus flag), or one in the Business category, which business clubs run.
+ */
+export function isNetworkingEvent(event: Pick<Event, "employers_on_campus" | "category">): boolean {
+  return event.employers_on_campus === true || event.category === "Business";
+}
+
 function eventOccurrencesToFormOccurrences(event: Event, timeZone: string): EventFormOccurrence[] {
   return (event.occurrences ?? []).map((occurrence) => ({
     id: occurrence.id,

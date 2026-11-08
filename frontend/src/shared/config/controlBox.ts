@@ -36,6 +36,12 @@ export const controlBox = {
     initialRenderCount: eventDiscovery.initial_render_count,
     previewEventCount: eventDiscovery.preview_event_count,
     serverFeedPageSize: eventDiscovery.server_feed_page_size,
+    homeSections: {
+      mustKnowCount: eventDiscovery.home_sections.must_know_count,
+      mustKnowWindowMs: hoursToMilliseconds(eventDiscovery.home_sections.must_know_window_days * 24),
+      mustKnowSlideMs: secondsToMilliseconds(eventDiscovery.home_sections.must_know_slide_seconds),
+      rowEventCount: eventDiscovery.home_sections.row_event_count,
+    },
     views: eventDiscovery.views,
   },
   clubManagement: {
