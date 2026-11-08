@@ -81,7 +81,10 @@
       "last24Hours": "Новое"
     },
     "addedToWat2Do": "Добавлено в Wat2Do",
-    "postedBy": "Опубликовано"
+    "postedBy": "Опубликовано",
+    "seeAll": "Смотреть все",
+    "scrollBack": "Прокрутить назад",
+    "scrollForward": "Прокрутить вперёд"
   },
   "errorBoundary": {
     "title": "Что-то пошло не так",

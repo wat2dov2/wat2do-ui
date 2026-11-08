@@ -78,7 +78,10 @@
       "last24Hours": "Nuovo"
     },
     "addedToWat2Do": "Aggiunto a Wat2Do",
-    "postedBy": "Pubblicato da"
+    "postedBy": "Pubblicato da",
+    "seeAll": "Vedi tutto",
+    "scrollBack": "Scorri indietro",
+    "scrollForward": "Scorri avanti"
   },
   "errorBoundary": {
     "title": "Qualcosa è andato storto",

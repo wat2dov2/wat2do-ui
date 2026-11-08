@@ -75,7 +75,10 @@
       "last24Hours": "Neu"
     },
     "addedToWat2Do": "Zu Wat2Do hinzugefügt",
-    "postedBy": "Veröffentlicht von"
+    "postedBy": "Veröffentlicht von",
+    "seeAll": "Alle ansehen",
+    "scrollBack": "Zurückscrollen",
+    "scrollForward": "Weiterscrollen"
   },
   "errorBoundary": {
     "title": "Etwas ist schiefgelaufen",

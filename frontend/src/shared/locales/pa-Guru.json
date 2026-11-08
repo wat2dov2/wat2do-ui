@@ -75,7 +75,10 @@
       "last24Hours": "ਨਵਾਂ"
     },
     "addedToWat2Do": "Wat2Do ਵਿੱਚ ਸ਼ਾਮਲ ਕੀਤਾ",
-    "postedBy": "ਪੋਸਟ ਕਰਨ ਵਾਲਾ"
+    "postedBy": "ਪੋਸਟ ਕਰਨ ਵਾਲਾ",
+    "seeAll": "ਸਭ ਦੇਖੋ",
+    "scrollBack": "ਪਿੱਛੇ ਸਕ੍ਰੋਲ ਕਰੋ",
+    "scrollForward": "ਅੱਗੇ ਸਕ੍ਰੋਲ ਕਰੋ"
   },
   "errorBoundary": {
     "title": "ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ",

@@ -87,7 +87,10 @@
       "last24Hours": "جديد"
     },
     "addedToWat2Do": "أُضيف إلى Wat2Do",
-    "postedBy": "نُشر بواسطة"
+    "postedBy": "نُشر بواسطة",
+    "seeAll": "عرض الكل",
+    "scrollBack": "التمرير للخلف",
+    "scrollForward": "التمرير للأمام"
   },
   "errorBoundary": {
     "title": "حدث خطأ ما",

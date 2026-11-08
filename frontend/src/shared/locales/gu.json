@@ -75,7 +75,10 @@
       "last24Hours": "નવું"
     },
     "addedToWat2Do": "Wat2Do માં ઉમેર્યું",
-    "postedBy": "પોસ્ટ કરનાર"
+    "postedBy": "પોસ્ટ કરનાર",
+    "seeAll": "બધું જુઓ",
+    "scrollBack": "પાછળ સ્ક્રોલ કરો",
+    "scrollForward": "આગળ સ્ક્રોલ કરો"
   },
   "errorBoundary": {
     "title": "કંઈક ખોટું થયું",

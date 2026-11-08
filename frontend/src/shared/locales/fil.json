@@ -75,7 +75,10 @@
       "last24Hours": "Bago"
     },
     "addedToWat2Do": "Idinagdag sa Wat2Do",
-    "postedBy": "Ipinaskil ni"
+    "postedBy": "Ipinaskil ni",
+    "seeAll": "Tingnan lahat",
+    "scrollBack": "Mag-scroll pabalik",
+    "scrollForward": "Mag-scroll pasulong"
   },
   "errorBoundary": {
     "title": "May mali",

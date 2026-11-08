@@ -81,7 +81,10 @@
       "last24Hours": "Nowe"
     },
     "addedToWat2Do": "Dodano do Wat2Do",
-    "postedBy": "Opublikowane przez"
+    "postedBy": "Opublikowane przez",
+    "seeAll": "Zobacz wszystko",
+    "scrollBack": "Przewiń wstecz",
+    "scrollForward": "Przewiń dalej"
   },
   "errorBoundary": {
     "title": "Coś poszło nie tak",
