@@ -73,7 +73,8 @@ fn read_only(job: &BrowserJob) -> bool {
 /// Pause for a person on account trouble or an action that may still go through.
 ///
 /// A read-only job whose cancellation cannot be confirmed fails and retries instead:
-/// its leftover request cannot like, repost or send anything.
+/// its leftover request cannot like, repost or send anything. Any other unconfirmed
+/// cancellation pauses until [`Worker::confirm_cancellation`] sees every tab settle.
 pub fn requires_human_recovery(error: &BrowserError, job: &BrowserJob) -> bool {
     if error.is(SessionKind::EngagementUncertain) {
         return true;
@@ -466,6 +467,61 @@ impl Worker {
         recovered
     }
 
+    /// Lift a pause for an unconfirmed cancellation once every worker tab has settled.
+    ///
+    /// A like or repost whose page request Brave could not cancel in time (a busy Mac
+    /// stalls Brave) pauses all browser work so that request cannot act later. Settling
+    /// the tabs again is the confirmation the job ran out of time for, so the worker
+    /// keeps trying it instead of failing every school's digests until a person resumes.
+    /// The failed engagement is never replayed. True once browser work may resume.
+    pub fn confirm_cancellation(&self, now: &dyn Fn() -> f64) -> BrowserResult<bool> {
+        let queue = &self.queue;
+        let paused = queue.setting_or("paused", Value::Bool(false))?;
+        if !paused
+            .as_str()
+            .is_some_and(|reason| reason.contains(CANCELLATION_UNCONFIRMED))
+        {
+            return Ok(false);
+        }
+        let next_at = pyjson::number(&queue.setting_or("cancellation_confirm_next_at", json!(0))?)
+            .unwrap_or(0.0);
+        if now() < next_at {
+            return Ok(false);
+        }
+        let Some(lock) = self.try_browser_lock()? else {
+            return Ok(false);
+        };
+        let settled = self.tab_pool().settle_registered_tabs();
+        let _ = FileExt::unlock(&lock);
+        match settled {
+            // A closed or replaced worker tab took its document's request with it.
+            Ok(_) => {}
+            Err(error) if error.is(SessionKind::TabUnavailable) => {}
+            Err(error) if error.is_storage() || error.is_interrupted() => return Err(error),
+            Err(error) => {
+                queue.set_setting(
+                    "cancellation_confirm_next_at",
+                    json!(now() + control().cancellation_confirm_retry_seconds),
+                )?;
+                // Only sanitized browser messages are logged, never a library's raw text.
+                let reason = if error.is_session() || error.is_timeout() {
+                    error.to_string()
+                } else {
+                    error.type_name()
+                };
+                tracing::warn!(
+                    "Interrupted Instagram request is still unconfirmed ({reason}); checking again shortly"
+                );
+                return Ok(false);
+            }
+        }
+        if !queue.compare_set_pause(&paused, &Value::Bool(false))? {
+            return Ok(false);
+        }
+        tracing::warn!("Interrupted Instagram request settled; browser work resumes");
+        Ok(true)
+    }
+
     /// Admit work only after restoring the configured pool without changing accounts.
     pub fn maintain_tab_pool(&self) -> BrowserResult<bool> {
         let queue = &self.queue;
@@ -596,7 +652,7 @@ impl Worker {
                     }
                     if self.bridge.monotonic() >= next_tab_check {
                         let time = || self.time();
-                        if self.recover_login(&time)? {
+                        if self.recover_login(&time)? || self.confirm_cancellation(&time)? {
                             next_tab_check = 0.0;
                         }
                         tab_pool_ready = self.maintain_tab_pool()?;

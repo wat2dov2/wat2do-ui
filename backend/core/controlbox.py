@@ -617,6 +617,7 @@ class InstagramBrowserControl(_ControlModel):
     interaction_timeout_seconds: float = Field(gt=0, le=120)
     account_transition_grace_seconds: float = Field(gt=0, le=120)
     secondary_cleanup_timeout_seconds: float = Field(gt=0, le=120)
+    cancellation_confirm_retry_seconds: float = Field(gt=0, le=3600)
     poll_interval_seconds: float = Field(gt=0, le=5)
     worker_poll_interval_seconds: float = Field(gt=0, le=10)
     job_timeout_seconds: float = Field(gt=0, le=300)
