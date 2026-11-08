@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useShallow } from "zustand/react/shallow";
 import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
 import { storeStatesToFilterState, useSearchStore, useSearch } from "@/features/search";
 import {
@@ -89,14 +90,14 @@ export function useEventsPageData({
   // whole grid up under them. It moves on with the reader's next query or visit.
   const listTimeMs = useListTime(currentTimeMs, queryRevision);
   // The start filter decides what is listed. A start before now reaches events the
-  // snapshot does not hold, so those are read from the API, narrowed by the search.
+  // snapshot does not hold, so those are read from the API, narrowed by the query.
   const { getSchoolTimezone } = useSchoolDirectory();
   const startFrom = useSearchStore((state) => state.startFrom);
-  const submittedSearch = useSearchStore((state) => state.searchQuery);
+  const storedQuery = useSearchStore(useShallow(storeStatesToFilterState));
   const startMs = resolveStartFromMs(startFrom, listTimeMs, getSchoolTimezone(schoolFilter));
   const readsPast = startFrom !== START_FROM_NOW && (startMs === null || listTimeMs === null || startMs < listTimeMs);
   const pastQuery = useQuery({
-    ...pastEventsQueryOptions(schoolFilter, submittedSearch, readsPast && startMs !== null ? new Date(startMs).toISOString() : null),
+    ...pastEventsQueryOptions(schoolFilter, storedQuery, readsPast && startMs !== null ? new Date(startMs).toISOString() : null),
     enabled: readsPast,
   });
   const pastEvents = readsPast ? pastQuery.data : undefined;

@@ -102,8 +102,8 @@ export const queryKeys = {
     feeds: () => [...queryKeys.events.all, "feed"] as const,
     bySchool: (school: string) =>
       [...queryKeys.events.feeds(), school] as const,
-    past: (school: string, search: string, startUtc: string | null) =>
-      [...queryKeys.events.all, "past", school, search, startUtc] as const,
+    past: (school: string, query: object, startUtc: string | null) =>
+      [...queryKeys.events.all, "past", school, query, startUtc] as const,
     byClub: (clubId: number, school: string) =>
       [
         ...queryKeys.events.lists(),

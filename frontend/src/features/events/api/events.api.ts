@@ -4,7 +4,8 @@
  */
 
 import { queryOptions } from "@tanstack/react-query";
-import type { Event, EventFormData } from "@/shared/types";
+import type { Event, EventFormData, FilterState } from "@/shared/types";
+import { getDefaultEventCategory } from "@/shared/data/eventCategories";
 import type {
   ApiEventAttendeesResponse,
   ApiEventFeedResponse,
@@ -43,14 +44,18 @@ export async function fetchEventById(id: number): Promise<Event> {
   return api.get<ApiEventPublicResponse>(`/events/${id}`);
 }
 
+type FeedQuery = Record<string, string | string[]>;
+
 /** Every page of one feed read straight from the API; the browse snapshot holds only what is still on. */
-async function fetchFeedEvents(query: Record<string, string>): Promise<Event[]> {
+async function fetchFeedEvents(query: FeedQuery): Promise<Event[]> {
   const directory = await collectPaginatedPages((page) => {
     const params = new URLSearchParams({
-      ...query,
       page: String(page),
       page_size: String(controlBox.eventDiscovery.serverFeedPageSize),
     });
+    for (const [name, value] of Object.entries(query)) {
+      for (const item of Array.isArray(value) ? value : [value]) params.append(name, item);
+    }
     return api.get<PaginatedEventsResponse>(`/events/?${params.toString()}`);
   });
   return directory.items;
@@ -61,25 +66,63 @@ export async function fetchClubEvents(clubId: number, school: string): Promise<E
   return fetchFeedEvents({ school, club_ids: String(clubId), include_past: "true" });
 }
 
+/** The API's search length limit (`MAX_SEARCH_QUERY_LENGTH`); a longer search is refused. */
+const API_SEARCH_MAX_LENGTH = 200;
+/** The API's price bound (`MAX_EVENT_PRICE`). */
+const API_PRICE_MAX = 100_000;
+/** Club terms the API's ILIKE match reads exactly as typed (its sanitizing leaves them unchanged). */
+const PLAIN_CLUB_TERM = /^[\p{L}\p{N}_'-]+(?: [\p{L}\p{N}_'-]+)*$/u;
+
 /**
- * A school's events that started before now (from `startUtc`, or ever when it
- * is null) and match `search`, newest first: what the browse snapshot leaves
- * out once the reader moves the start filter back. The API narrows the history
- * by the search before it limits the read, so the reader's own filters then run
- * over these exactly as over the snapshot.
+ * The reader's query as feed parameters the API can apply before it limits its
+ * read, so a filter-only history read is not just the latest occurrences.
+ * Only parameters that keep everything the site's own filters keep are sent:
+ * the site still filters the result, and it is the source of truth.
  */
-export function pastEventsQueryOptions(school: string, search: string, startUtc: string | null) {
+export function pastEventsApiQuery(query: FilterState): FeedQuery {
+  const params: FeedQuery = {};
+  // A prefix of the search keeps every event the whole search matches.
+  const search = query.searchQuery.trim().slice(0, API_SEARCH_MAX_LENGTH);
+  if (search) params.search = search;
+  // An event with no category counts as the default one on the site, which the API cannot see.
+  if (query.categories.length > 0 && !query.categories.includes(getDefaultEventCategory())) {
+    params.categories = query.categories;
+  }
+  const locations = query.locations.map(value => value.trim()).filter(Boolean);
+  if (locations.length > 0) params.locations = locations;
+  const foods = query.foods.map(value => value.trim()).filter(Boolean);
+  if (foods.length > 0) params.foods = foods;
+  if (query.days.length > 0) params.days = query.days;
+  // A missing price counts as free on the site and fails any price bound in the API, so only
+  // a minimum above zero (which the site also never meets with no price) goes along.
+  const minPrice = Number.parseFloat(query.minPrice);
+  if (minPrice > 0 && minPrice <= API_PRICE_MAX) params.min_price = String(minPrice);
+  if (query.registration) params.registration = "true";
+  const clubs = query.clubs.map(value => value.trim());
+  if (clubs.length > 0 && clubs.every(term => PLAIN_CLUB_TERM.test(term))) params.clubs = clubs;
+  if (query.hasFood) params.has_food = "true";
+  return params;
+}
+
+/**
+ * A school's events that started before now (still on at `startUtc`, or ever
+ * when it is null) and match the reader's query, newest first: what the browse
+ * snapshot leaves out once the reader moves the start filter back. The API
+ * narrows the history by the query before it limits the read, and the site's
+ * own filters then run over these exactly as over the snapshot.
+ */
+export function pastEventsQueryOptions(school: string, query: FilterState, startUtc: string | null) {
   const resolvedSchool = resolveSchool(school);
-  const searchText = search.trim();
+  const filters = pastEventsApiQuery(query);
   return queryOptions({
-    queryKey: queryKeys.events.past(resolvedSchool, searchText, startUtc),
+    queryKey: queryKeys.events.past(resolvedSchool, filters, startUtc),
     queryFn: () => fetchFeedEvents({
+      ...filters,
       school: resolvedSchool,
       // An explicit start replaces the API's default lower bound; without one, `include_past` lifts it.
       ...(startUtc ? { start_utc: startUtc } : { include_past: "true" }),
       end_utc: new Date().toISOString(),
       sort_order: "desc",
-      ...(searchText ? { search: searchText } : {}),
     }),
   });
 }

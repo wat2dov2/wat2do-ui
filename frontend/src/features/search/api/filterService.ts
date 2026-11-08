@@ -91,12 +91,21 @@ function localDateFrom(value: unknown): string {
   return typeof value === "string" && parseLocalDateValue(value) ? value : "";
 }
 
-const LOCAL_DATE_TIME = /^(\d{4}-\d{2}-\d{2})T([01]\d|2[0-3]):[0-5]\d$/;
+const LOCAL_DATE_TIME = /^(\d{4})-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d$/;
+/** Years a start can name; anything else is a date still being typed (0002, 0020, 0202...). */
+const FIRST_START_YEAR = 2000;
+const LAST_START_YEAR = 2100;
+
+/** Whether `value` is a start the reader can pick: a real school-local date and time in a plausible year. */
+export function isPickedStartFrom(value: string): boolean {
+  const match = LOCAL_DATE_TIME.exec(value);
+  const year = Number(match?.[1]);
+  return Boolean(match && parseLocalDateValue(value.slice(0, 10))) && year >= FIRST_START_YEAR && year <= LAST_START_YEAR;
+}
 
 function startFromValue(value: unknown): string {
   if (value === "") return "";
-  const match = typeof value === "string" ? LOCAL_DATE_TIME.exec(value) : null;
-  return match && parseLocalDateValue(match[1]) ? value as string : START_FROM_NOW;
+  return typeof value === "string" && isPickedStartFrom(value) ? value : START_FROM_NOW;
 }
 
 /**

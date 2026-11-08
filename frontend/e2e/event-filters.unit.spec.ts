@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 import type { Event } from "../src/shared/types";
 import type { SchoolSummary } from "../src/shared/api/schools.api";
 import { filterEvents } from "../src/features/search/api/searchService";
-import { clearNarrowingFilterState, EMPTY_FILTER_STATE, feedFilterAvailability, freeFoodFilterPatch, normalizeFilterState, resolveCampusSeasonFilters, resolveVarsityGamesFilter, storeStatesToFilterState } from "../src/features/search/api/filterService";
+import { clearNarrowingFilterState, EMPTY_FILTER_STATE, feedFilterAvailability, freeFoodFilterPatch, isPickedStartFrom, normalizeFilterState, resolveCampusSeasonFilters, resolveVarsityGamesFilter, storeStatesToFilterState } from "../src/features/search/api/filterService";
 import { useSearchStore } from "../src/features/search/store/search.store";
 import { useEventsStore } from "../src/features/events/store/events.store";
 import { getFilterCounts } from "../src/shared/utils/filter";
@@ -213,6 +213,12 @@ test("the start filter hides ended events by default, counts only once moved, an
   expect(normalizeFilterState({ startFrom: "2026-02-30T10:00" }).startFrom).toBe(START_FROM_NOW);
   expect(normalizeFilterState({ startFrom: "" }).startFrom).toBe("");
   expect(normalizeFilterState({ startFrom: "2026-09-27T18:30" }).startFrom).toBe("2026-09-27T18:30");
+  // A year still being typed (0002, 0202) or far off is never a start.
+  for (const value of ["0002-09-27T18:30", "0202-09-27T18:30", "9999-01-01T00:00"]) {
+    expect(isPickedStartFrom(value)).toBe(false);
+    expect(normalizeFilterState({ startFrom: value }).startFrom).toBe(START_FROM_NOW);
+  }
+  expect(isPickedStartFrom("2026-09-27T18:30")).toBe(true);
 });
 
 test("Recurring keeps only events whose occurrences span at least three weeks", () => {

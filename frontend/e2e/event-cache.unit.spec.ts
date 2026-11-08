@@ -12,7 +12,8 @@ import clientCache from "../../backend/controlbox/client_cache.json" with { type
 
 const require = createRequire(import.meta.url);
 const { getQueryClient }: typeof import("../src/shared/lib/queryClient") = require("../src/shared/lib/queryClient");
-const { eventFeedQueryOptions, createEventAPI, updateEventAPI, deleteEventAPI, latestVisibleAddedEvent }: typeof import("../src/features/events/api/events.api") = require("../src/features/events/api/events.api");
+const { eventFeedQueryOptions, createEventAPI, updateEventAPI, deleteEventAPI, latestVisibleAddedEvent, pastEventsApiQuery, pastEventsQueryOptions }: typeof import("../src/features/events/api/events.api") = require("../src/features/events/api/events.api");
+const { EMPTY_FILTER_STATE }: typeof import("../src/features/search/api/filterService") = require("../src/features/search/api/filterService");
 require("../src/shared/services/discoveryCache.server");
 const discoveryModule = require.cache[require.resolve("../src/shared/services/discoveryCache.server")]!;
 const discovery = discoveryModule.exports;
@@ -168,6 +169,41 @@ test("school feed reads one complete canonical snapshot with all results and fre
   globalThis.fetch = async () => Response.json({ detail: "Request failed with status 503" }, { status: 503 });
   await expect(client.fetchQuery(eventFeedQueryOptions("ubc"))).rejects.toThrow("503");
   expect(client.getQueryData(queryKeys.events.bySchool("ubc"))).toBeUndefined();
+});
+
+test("a history read sends the query the API can narrow by without dropping anything the site keeps", async () => {
+  const longSearch = `hack night ${"x".repeat(300)}`;
+  const query = {
+    ...EMPTY_FILTER_STATE, searchQuery: `  ${longSearch}  `, categories: ["Business"], locations: [" SLC ", " "],
+    foods: ["pizza"], days: ["Monday"], minPrice: "5", maxPrice: "0", registration: true,
+    clubs: ["UW Blueprint"], hasFood: true, going: true, minGoing: 3,
+  };
+  expect(pastEventsApiQuery(query)).toEqual({
+    search: longSearch.slice(0, 200), categories: ["Business"], locations: ["SLC"], foods: ["pizza"], days: ["Monday"],
+    min_price: "5", registration: "true", clubs: ["UW Blueprint"], has_food: "true",
+  });
+  // Filters the API reads differently stay with the site: the default category (events with
+  // none count as it), a price bound a missing price would fail, and club terms the API rewrites.
+  expect(pastEventsApiQuery({
+    ...EMPTY_FILTER_STATE, categories: ["Arts & Culture", "Business"], minPrice: "0", maxPrice: "10", clubs: ["U.W. Blueprint"],
+  })).toEqual({});
+
+  const urls: URL[] = [];
+  globalThis.fetch = async input => {
+    urls.push(new URL(String(input), "http://localhost"));
+    return Response.json(feed([]));
+  };
+  await getQueryClient().fetchQuery(pastEventsQueryOptions("uwaterloo", query, null));
+  const sent = urls[0].searchParams;
+  expect(sent.get("include_past")).toBe("true");
+  expect(sent.get("start_utc")).toBeNull();
+  expect(sent.get("sort_order")).toBe("desc");
+  expect(sent.get("end_utc")).not.toBeNull();
+  expect(sent.get("search")).toHaveLength(200);
+  expect(sent.getAll("days")).toEqual(["Monday"]);
+  await getQueryClient().fetchQuery(pastEventsQueryOptions("uwaterloo", EMPTY_FILTER_STATE, "2026-09-01T04:00:00.000Z"));
+  expect(urls[1].searchParams.get("start_utc")).toBe("2026-09-01T04:00:00.000Z");
+  expect(urls[1].searchParams.get("include_past")).toBeNull();
 });
 
 test("cached navigation ignores an older server snapshot and never mixes campus feeds", () => {
