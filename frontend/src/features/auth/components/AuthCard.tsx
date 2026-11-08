@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
-import imgLogo from "@/assets/wat2do-logo-auth.webp";
 import { Card, CardContent } from "@/shared/ui/card";
 import { PageHeader, type PageHeaderBack } from "@/shared/layout";
 import { ShineBorder } from "@/registry/magicui/shine-border";
@@ -28,10 +27,10 @@ export function AuthCard({ heading, description, back, children }: AuthCardProps
 
         <Image
           alt={t("common.logo")}
-          width={40}
+          width={104}
           height={28}
-          className="h-7 w-[40px] object-contain"
-          src={imgLogo}
+          className="h-7 w-[104px] object-contain"
+          src="/brand/wat2do-secondary.svg"
         />
 
         <div className="space-y-2">
