@@ -47,8 +47,9 @@ const FACT_CLASS = "flex min-w-0 items-center gap-2 text-sm text-muted-foregroun
 const CONTROLS_CLASS = "h-8";
 const SLIDE_MOTION_CLASS = "motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500";
 
+/** A div, not a p: its icon can be an avatar stack, which renders block elements. */
 function HeroFact({ icon, children }: { icon?: ReactNode; children: ReactNode }) {
-  return <p className={FACT_CLASS}>{icon}<span className="truncate">{children}</span></p>;
+  return <div className={FACT_CLASS}>{icon}<span className="truncate">{children}</span></div>;
 }
 
 function HeroEyebrow() {
