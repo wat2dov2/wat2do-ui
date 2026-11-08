@@ -79,7 +79,7 @@ pub async fn get_event_ticketing(
     tag = "ticketing",
     operation_id = "configure_event_ticketing_events__event_id__ticketing_put",
     summary = "Configure Event Ticketing",
-    description = "Turn tickets on for the club's event, or change them. A price of zero gives free tickets.",
+    description = "Turn tickets on for the club's event, or change them: one limit on every ticket, and the tiers people choose from. A tier priced at zero is free.",
     params(("event_id" = i64, Path)),
     request_body = EventTicketingUpdate,
     responses(
@@ -132,7 +132,7 @@ pub async fn stop_event_ticketing(
     tag = "ticketing",
     operation_id = "take_free_ticket_events__event_id__ticketing_tickets_post",
     summary = "Take Free Ticket",
-    description = "Take the event's free ticket to one date; taking it again returns the same ticket.",
+    description = "Take a free tier's ticket to one date; taking it again returns the same ticket.",
     params(("event_id" = i64, Path)),
     request_body = FreeTicketCreate,
     responses(
@@ -149,12 +149,14 @@ pub async fn take_free_ticket(
 ) -> Result<Json<TicketResponse>, ApiError> {
     let mut check = Validator::default();
     let id = event_id(&mut check, &path);
-    let date = merge_issues(
+    let (date, tier) = merge_issues(
         check,
         Body::parse(&bytes, &headers, Extra::Forbid).and_then(requests::free_ticket),
     )?;
     limit(&user)?;
-    Ok(Json(admission::take_free(&state, id, date, &user).await?))
+    Ok(Json(
+        admission::take_free(&state, id, date, tier, &user).await?,
+    ))
 }
 
 #[utoipa::path(
@@ -180,13 +182,13 @@ pub async fn start_ticket_checkout(
 ) -> Result<Json<TicketCheckoutResponse>, ApiError> {
     let mut check = Validator::default();
     let id = event_id(&mut check, &path);
-    let (date, quantity) = merge_issues(
+    let (date, tier, quantity) = merge_issues(
         check,
         Body::parse(&bytes, &headers, Extra::Forbid).and_then(requests::checkout),
     )?;
     limit(&user)?;
     Ok(Json(
-        admission::start_checkout(&state, id, date, quantity, &user).await?,
+        admission::start_checkout(&state, id, date, tier, quantity, &user).await?,
     ))
 }
 

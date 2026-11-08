@@ -1,7 +1,7 @@
 import NextLink from "next/link";
 import { Check, Sparkles, Ticket } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { clubPanelEventTicketsPath } from "@/shared/constants/routes";
+import { clubPanelTicketSettingsPath } from "@/shared/constants/routes";
 import { Button } from "@/shared/ui/button";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
 import { SCROLL_INTO_VIEW_DELAY_MS } from "@/shared/constants/ui";
@@ -99,7 +99,7 @@ export function EventSuccessScreen({
             </Button>
             {createdEventId != null && formData.club_id != null && !isEditMode ? (
               <Button asChild className="flex-1">
-                <NextLink href={clubPanelEventTicketsPath(createdEventId)} onClick={onClose}>
+                <NextLink href={clubPanelTicketSettingsPath(createdEventId)} onClick={onClose}>
                   <Ticket className="size-4" />
                   {t("tickets.setUp")}
                 </NextLink>

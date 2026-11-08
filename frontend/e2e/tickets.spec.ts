@@ -11,6 +11,7 @@ function ticket(overrides: Record<string, unknown> = {}) {
     code: CODE,
     status: "valid",
     paid: false,
+    tier_name: "General admission",
     checked_in_at: null,
     event_id: EVENT_ID,
     event_title: "Board Games Night",
@@ -28,6 +29,32 @@ function ticket(overrides: Record<string, unknown> = {}) {
     refund_declined_at: null,
     can_request_refund: false,
     can_return: true,
+    ...overrides,
+  };
+}
+
+const TIER_ID = "00000000-0000-0000-0000-0000000000aa";
+
+function ticketing(overrides: Record<string, unknown> = {}) {
+  return {
+    event_id: EVENT_ID,
+    currency: null,
+    capacity: 40,
+    remaining: 28,
+    paused: false,
+    available: true,
+    tiers: [
+      {
+        id: TIER_ID,
+        name: "General admission",
+        price_cents: 0,
+        capacity: null,
+        remaining: 28,
+        maximum_per_order: 1,
+        open: true,
+      },
+    ],
+    dates: [],
     ...overrides,
   };
 }
@@ -88,6 +115,7 @@ test("someone on the club's team checks a scanned ticket in from its page", asyn
             event_date_id: "00000000-0000-0000-0000-000000000001",
             holder_name: "Ben Tester",
             holder_email: "ben@uwaterloo.ca",
+            tier_name: "General admission",
             issued_at: "2030-11-01T12:00:00Z",
             checked_in_at: "2030-11-20T23:05:00Z",
             refunded_at: null,
@@ -111,20 +139,12 @@ test("the door scanner checks in a typed code and says so at a glance", async ({
   await signIn(page, next, [{ id: 7, club_name: "Board Game Club", school: "uwaterloo" }]);
   await mockApi(page, next, (url) => url.pathname === `/api/events/${EVENT_ID}/ticketing/desk`, () => ({
     json: {
-      ticketing: {
-        event_id: EVENT_ID,
-        price_cents: 0,
-        currency: null,
-        capacity: 40,
-        paused: false,
-        available: true,
-        maximum_per_order: 1,
-        dates: [],
-      },
+      ticketing: ticketing(),
       issued: 12,
       checked_in: 3,
       refunded: 0,
       revenue_cents: 0,
+      tiers: [{ tier_id: TIER_ID, issued: 12, checked_in: 3, revenue_cents: 0 }],
       dates: [],
       attendees: [],
     },
@@ -141,4 +161,80 @@ test("the door scanner checks in a typed code and says so at a glance", async ({
   await page.getByRole("textbox", { name: "Ticket code" }).fill("7kq2 mz4p abcd efgh ijkl mnop");
   await page.getByRole("button", { name: "Check in" }).click();
   await expect(page.getByText("Already checked in")).toBeVisible();
+});
+
+test("a club sets up tickets in one form: a limit, and tiers with their own prices and limits", async ({ page, next }) => {
+  await signIn(page, next, [{ id: 7, club_name: "Board Game Club", school: "uwaterloo" }]);
+  await mockApi(page, next, (url) => url.pathname === `/api/events/${EVENT_ID}`, () => ({
+    json: {
+      id: EVENT_ID,
+      title: "Board Games Night",
+      description: null,
+      location: "SLC Great Hall",
+      map_location: null,
+      occurrences: [
+        {
+          id: "00000000-0000-0000-0000-000000000001",
+          event_id: EVENT_ID,
+          dtstart_utc: "2030-11-20T23:00:00Z",
+          dtend_utc: "2030-11-21T02:00:00Z",
+        },
+      ],
+      price: null,
+      food: [],
+      registration: false,
+      source_image_url: null,
+      club_logo_url: null,
+      category: null,
+      club_id: 7,
+      club: "Board Game Club",
+      school: "uwaterloo",
+      featured: false,
+      is_directory_event: false,
+      cancelled: false,
+      added_at: "2030-11-01T12:00:00Z",
+      campus_season_ids: [],
+    },
+  }));
+  await mockApi(page, next, (url) => url.pathname === "/api/clubs/7/payouts", () => ({
+    json: {
+      paid_tickets_enabled: false,
+      connected: false,
+      charges_enabled: false,
+      payouts_enabled: false,
+      details_submitted: false,
+      requirements_due: [],
+      country: "CA",
+      currency: "cad",
+    },
+  }));
+  let saved: unknown = null;
+  await mockApi(page, next, (url) => url.pathname === `/api/events/${EVENT_ID}/ticketing`, async (request) => {
+    if (request.method === "PUT") {
+      saved = await request.json();
+      return { json: ticketing() };
+    }
+    return { json: null };
+  });
+
+  await page.goto(`/club-panel/events/${EVENT_ID}/settings`);
+  await expect(page.getByRole("heading", { name: "Set up tickets" })).toBeVisible();
+  // Until paid tickets launch, every tier is free and says so once.
+  await expect(page.getByText("Charging for tickets is coming soon.", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Add a tier" }).click();
+  const tiers = page.locator("[data-slot=ticket-tier]");
+  await tiers.nth(1).getByRole("textbox", { name: "Name" }).fill("Members");
+  await tiers.nth(1).getByRole("textbox", { name: "Limit" }).fill("20");
+  await page.getByRole("textbox", { name: "Total tickets" }).fill("100");
+  await page.getByRole("button", { name: "Publish tickets" }).click();
+
+  await expect.poll(() => saved).toEqual({
+    capacity: 100,
+    paused: false,
+    tiers: [
+      { id: null, name: "General admission", price_cents: 0, capacity: null },
+      { id: null, name: "Members", price_cents: 0, capacity: 20 },
+    ],
+  });
+  await expect(page).toHaveURL(new RegExp(`/club-panel/events/${EVENT_ID}$`));
 });

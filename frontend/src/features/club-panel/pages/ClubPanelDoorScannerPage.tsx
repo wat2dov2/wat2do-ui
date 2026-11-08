@@ -1,5 +1,5 @@
-import { useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { useEventIdParam } from "@/features/club-panel/hooks/useClubPanelEvent";
 import { DoorScanner, useTicketDesk } from "@/features/tickets";
 import { clubPanelEventTicketsPath } from "@/shared/constants/routes";
 import { PageHeader, Stack } from "@/shared/layout";
@@ -8,8 +8,7 @@ import { QrCode } from "lucide-react";
 /** A phone at the door, checking one event's tickets in. */
 export function ClubPanelDoorScannerPage() {
   const { t } = useTranslation();
-  const params = useParams<{ eventId?: string | string[] }>();
-  const eventId = Number(Array.isArray(params.eventId) ? params.eventId[0] : params.eventId) || 0;
+  const eventId = useEventIdParam();
   const { data: desk } = useTicketDesk(eventId, eventId > 0);
 
   return (

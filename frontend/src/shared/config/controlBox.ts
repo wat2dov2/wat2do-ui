@@ -80,5 +80,6 @@ export const controlBox = {
     minimumPriceCents: ticketing.minimum_price_cents,
     maximumPriceCents: ticketing.maximum_price_cents,
     maximumCapacity: ticketing.maximum_capacity,
+    maximumTiers: ticketing.maximum_tiers,
   },
 } as const;

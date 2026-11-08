@@ -8,6 +8,7 @@
   "maximum_price_cents": 50000,
   "maximum_capacity": 10000,
   "maximum_tickets_per_order": 6,
+  "maximum_tiers": 10,
   "checkout_minutes": 30,
   "reservation_grace_minutes": 15,
   "check_in_opens_hours_before": 12,

@@ -32,6 +32,7 @@ pub fn response(
         code: ticket.code.clone(),
         status: TicketStatus::from_db(&ticket.status),
         paid: ticket.order_id.is_some(),
+        tier_name: ticket.tier_name.clone(),
         checked_in_at: ticket.checked_in_at,
         event_id: event.id,
         event_title: event.title.clone(),

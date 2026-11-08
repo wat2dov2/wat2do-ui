@@ -4,8 +4,8 @@
 use serde_json::Value;
 use uuid::Uuid;
 
-use super::ticketing::TicketingInput;
-use crate::api::body::{Body, Input, Str};
+use super::ticketing::{TicketingInput, TierInput};
+use crate::api::body::{Body, Extra, Input, Str};
 use crate::api::errors::ApiError;
 use crate::api::validation::Limits;
 
@@ -13,6 +13,10 @@ use crate::api::validation::Limits;
 pub const REFUND_NOTE_MAX_LENGTH: usize = 500;
 /// The most tickets any one request names, before the controlbox's own limit.
 const QUANTITY_LIMIT: i64 = 20;
+/// The most tiers any one request names, before the controlbox's own limit.
+const TIER_LIMIT: usize = 20;
+/// The longest tier name.
+pub const TIER_NAME_MAX_LENGTH: usize = 60;
 
 /// An `int | None` field: null or missing reads as `None`.
 fn optional_int(body: &mut Body, name: &'static str, limits: Limits) -> Option<i64> {
@@ -28,29 +32,59 @@ fn optional_int(body: &mut Body, name: &'static str, limits: Limits) -> Option<i
 /// `EventTicketingUpdate`.
 pub fn ticketing(mut body: Body) -> Result<TicketingInput, ApiError> {
     let limit = i64::from(i32::MAX);
-    let price_cents = body.required_int("price_cents", Limits::default().ge(0).le(limit));
     let capacity = optional_int(&mut body, "capacity", Limits::default().gt(0).le(limit));
     let paused = body.required_bool("paused");
+    let tiers = if body.has_field("tiers") {
+        body.list("tiers", 1, TIER_LIMIT, |body, loc, value| {
+            body.nested_item(loc, value, Extra::Forbid, tier)
+        })
+        .value()
+    } else {
+        body.missing("tiers");
+        None
+    };
     body.finish().map(|()| TicketingInput {
-        price_cents: price_cents.unwrap_or_default() as i32,
         capacity: capacity.map(|capacity| capacity as i32),
         paused: paused.unwrap_or_default(),
+        tiers: tiers.unwrap_or_default(),
     })
 }
 
-/// `FreeTicketCreate`: the date to take a free ticket to.
-pub fn free_ticket(mut body: Body) -> Result<Uuid, ApiError> {
-    let date = body.required_uuid("event_date_id");
-    body.finish().map(|()| date.unwrap_or_default())
+/// `TicketTierUpdate`: one tier of the event's tickets.
+fn tier(body: &mut Body) -> Option<TierInput> {
+    let limit = i64::from(i32::MAX);
+    let id = match body.uuid("id") {
+        Input::Given(id) => Some(id),
+        _ => None,
+    };
+    let name = body.required_string("name", &Str::new().strip().min(1).max(TIER_NAME_MAX_LENGTH));
+    let price_cents = body.required_int("price_cents", Limits::default().ge(0).le(limit));
+    let capacity = optional_int(body, "capacity", Limits::default().gt(0).le(limit));
+    Some(TierInput {
+        id,
+        name: name?,
+        price_cents: price_cents? as i32,
+        capacity: capacity.map(|capacity| capacity as i32),
+    })
 }
 
-/// `TicketCheckoutCreate`: the date and how many tickets.
-pub fn checkout(mut body: Body) -> Result<(Uuid, i32), ApiError> {
+/// `FreeTicketCreate`: the date and tier to take a free ticket to.
+pub fn free_ticket(mut body: Body) -> Result<(Uuid, Uuid), ApiError> {
     let date = body.required_uuid("event_date_id");
+    let tier = body.required_uuid("tier_id");
+    body.finish()
+        .map(|()| (date.unwrap_or_default(), tier.unwrap_or_default()))
+}
+
+/// `TicketCheckoutCreate`: the date, the tier and how many tickets.
+pub fn checkout(mut body: Body) -> Result<(Uuid, Uuid, i32), ApiError> {
+    let date = body.required_uuid("event_date_id");
+    let tier = body.required_uuid("tier_id");
     let quantity = body.required_int("quantity", Limits::default().ge(1).le(QUANTITY_LIMIT));
     body.finish().map(|()| {
         (
             date.unwrap_or_default(),
+            tier.unwrap_or_default(),
             quantity.unwrap_or_default() as i32,
         )
     })
@@ -92,77 +126,105 @@ mod tests {
         }
     }
 
+    fn general(price_cents: i32) -> TierInput {
+        TierInput {
+            id: None,
+            name: "General admission".into(),
+            price_cents,
+            capacity: None,
+        }
+    }
+
     #[test]
     fn ticketing_settings_have_no_limit_unless_given_one() {
         assert_eq!(
-            ticketing(body(json!({"price_cents": 0, "paused": false}))).unwrap(),
-            TicketingInput {
-                price_cents: 0,
-                capacity: None,
-                paused: false
-            }
-        );
-        assert_eq!(
-            ticketing(body(
-                json!({"price_cents": 1500, "capacity": 80, "paused": true})
-            ))
+            ticketing(body(json!({
+                "paused": false,
+                "tiers": [{"name": "  General admission ", "price_cents": 0}],
+            })))
             .unwrap(),
             TicketingInput {
-                price_cents: 1500,
-                capacity: Some(80),
-                paused: true
+                capacity: None,
+                paused: false,
+                tiers: vec![general(0)],
             }
         );
+        let id = Uuid::from_u128(9);
         assert_eq!(
-            ticketing(body(
-                json!({"price_cents": 0, "capacity": null, "paused": false})
-            ))
-            .unwrap()
-            .capacity,
-            None
+            ticketing(body(json!({
+                "capacity": 80,
+                "paused": true,
+                "tiers": [
+                    {"id": id.to_string(), "name": "Members", "price_cents": 0, "capacity": 20},
+                    {"id": null, "name": "General admission", "price_cents": 1500, "capacity": null},
+                ],
+            })))
+            .unwrap(),
+            TicketingInput {
+                capacity: Some(80),
+                paused: true,
+                tiers: vec![
+                    TierInput {
+                        id: Some(id),
+                        name: "Members".into(),
+                        price_cents: 0,
+                        capacity: Some(20),
+                    },
+                    general(1500),
+                ],
+            }
         );
     }
 
     #[test]
     fn ticketing_settings_refuse_bad_values_together() {
-        let error = ticketing(body(
-            json!({"price_cents": -1, "capacity": 0, "paused": false, "extra": 1}),
-        ))
+        let error = ticketing(body(json!({
+            "capacity": 0,
+            "paused": false,
+            "tiers": [{"name": " ", "price_cents": -1, "capacity": 0, "extra": 1}],
+            "extra": 1,
+        })))
         .unwrap_err();
         assert_eq!(
             locs(error),
             [
-                r#"["body","price_cents"]"#,
                 r#"["body","capacity"]"#,
+                r#"["body","tiers",0,"name"]"#,
+                r#"["body","tiers",0,"price_cents"]"#,
+                r#"["body","tiers",0,"capacity"]"#,
+                r#"["body","tiers",0,"extra"]"#,
                 r#"["body","extra"]"#
             ]
         );
         let missing = ticketing(body(json!({}))).unwrap_err();
         assert_eq!(
             locs(missing),
-            [r#"["body","price_cents"]"#, r#"["body","paused"]"#]
+            [r#"["body","paused"]"#, r#"["body","tiers"]"#]
         );
+        let none = ticketing(body(json!({"paused": false, "tiers": []}))).unwrap_err();
+        assert_eq!(locs(none), [r#"["body","tiers"]"#]);
     }
 
     #[test]
-    fn a_checkout_names_a_date_and_a_sensible_quantity() {
+    fn a_checkout_names_a_date_a_tier_and_a_sensible_quantity() {
         let date = Uuid::from_u128(5);
-        assert_eq!(
-            checkout(body(
-                json!({"event_date_id": date.to_string(), "quantity": 2})
-            ))
-            .unwrap(),
-            (date, 2)
-        );
+        let tier = Uuid::from_u128(6);
+        let ids = json!({"event_date_id": date.to_string(), "tier_id": tier.to_string()});
+        let with = |quantity: i64| {
+            let mut value = ids.clone();
+            value["quantity"] = json!(quantity);
+            body(value)
+        };
+        assert_eq!(checkout(with(2)).unwrap(), (date, tier, 2));
+        assert!(checkout(with(0)).is_err());
         assert!(
             checkout(body(
-                json!({"event_date_id": date.to_string(), "quantity": 0})
+                json!({"event_date_id": "nope", "tier_id": tier.to_string(), "quantity": 1})
             ))
             .is_err()
         );
-        assert!(checkout(body(json!({"event_date_id": "nope", "quantity": 1}))).is_err());
-        assert!(free_ticket(body(json!({"event_date_id": date.to_string()}))).is_ok());
-        assert!(free_ticket(body(json!({}))).is_err());
+        assert_eq!(free_ticket(body(ids.clone())).unwrap(), (date, tier));
+        assert!(free_ticket(body(json!({"event_date_id": date.to_string()}))).is_err());
     }
 
     #[test]

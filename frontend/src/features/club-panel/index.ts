@@ -5,3 +5,4 @@ export { ClubPanelMembersPage } from "./pages/ClubPanelMembersPage";
 export { ClubPanelDoorScannerPage } from "./pages/ClubPanelDoorScannerPage";
 export { ClubPanelEventTicketsPage } from "./pages/ClubPanelEventTicketsPage";
 export { ClubPanelPayoutsPage } from "./pages/ClubPanelPayoutsPage";
+export { ClubPanelTicketSettingsPage } from "./pages/ClubPanelTicketSettingsPage";

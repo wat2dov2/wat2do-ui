@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { Switch } from "@/shared/ui/switch";
+import { SwitchField } from "@/shared/ui/switch-field";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Textarea } from "@/shared/ui/textarea";
 import { ShowcaseBlock } from "./ShowcaseBlock";
@@ -99,16 +99,13 @@ export function FormControlsSection() {
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Switch">
-          <Field orientation="horizontal">
-            <Switch
-              id="design-system-switch"
-              checked={notificationsEnabled}
-              onCheckedChange={setNotificationsEnabled}
-            />
-            <FieldLabel htmlFor="design-system-switch">
-              {notificationsEnabled ? "Notifications on" : "Notifications off"}
-            </FieldLabel>
-          </Field>
+          <SwitchField
+            id="design-system-switch"
+            label="Event reminders"
+            description="An email the morning of every event you said you are going to."
+            checked={notificationsEnabled}
+            onCheckedChange={setNotificationsEnabled}
+          />
         </ShowcaseBlock>
 
         <ShowcaseBlock label="Tabs">

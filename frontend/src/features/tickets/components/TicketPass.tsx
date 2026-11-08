@@ -36,6 +36,7 @@ export function TicketPass({ ticket, children }: TicketPassProps) {
   const details: Array<[string, string | null]> = [
     [t("tickets.pass.when"), when],
     [t("tickets.pass.where"), ticket.location ?? t("tickets.pass.locationTba")],
+    [t("tickets.pass.ticket"), ticket.tier_name],
     [t("tickets.pass.holder"), ticket.holder_name],
     [t("tickets.pass.code"), formatTicketCode(ticket.code)],
   ];

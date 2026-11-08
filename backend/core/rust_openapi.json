@@ -1397,7 +1397,7 @@
           "ticketing"
         ],
         "summary": "Configure Event Ticketing",
-        "description": "Turn tickets on for the club's event, or change them. A price of zero gives free tickets.",
+        "description": "Turn tickets on for the club's event, or change them: one limit on every ticket, and the tiers people choose from. A tier priced at zero is free.",
         "operationId": "configure_event_ticketing_events__event_id__ticketing_put",
         "parameters": [
           {
@@ -1484,7 +1484,7 @@
           "ticketing"
         ],
         "summary": "Take Free Ticket",
-        "description": "Take the event's free ticket to one date; taking it again returns the same ticket.",
+        "description": "Take a free tier's ticket to one date; taking it again returns the same ticket.",
         "operationId": "take_free_ticket_events__event_id__ticketing_tickets_post",
         "parameters": [
           {
@@ -8534,7 +8534,7 @@
         "description": "One event with tickets on a club's dashboard.",
         "required": [
           "event_id",
-          "price_cents",
+          "lowest_price_cents",
           "currency",
           "capacity",
           "paused",
@@ -8548,9 +8548,10 @@
             "type": "integer",
             "format": "int64"
           },
-          "price_cents": {
+          "lowest_price_cents": {
             "type": "integer",
-            "format": "int32"
+            "format": "int32",
+            "description": "The cheapest tier's price; zero when any tier is free."
           },
           "currency": {
             "type": [
@@ -10580,6 +10581,7 @@
           "checked_in",
           "refunded",
           "revenue_cents",
+          "tiers",
           "dates",
           "attendees"
         ],
@@ -10604,6 +10606,13 @@
             "type": "integer",
             "format": "int64"
           },
+          "tiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketTierCounts"
+            },
+            "description": "In the order of `ticketing.tiers`."
+          },
           "dates": {
             "type": "array",
             "items": {
@@ -10620,15 +10629,15 @@
       },
       "EventTicketingResponse": {
         "type": "object",
-        "description": "How people get into an event, or null when it has no tickets. A price of\nzero means free tickets, one per person and date.",
+        "description": "How people get into an event, or null when it has no tickets.",
         "required": [
           "event_id",
-          "price_cents",
           "currency",
           "capacity",
+          "remaining",
           "paused",
           "available",
-          "maximum_per_order",
+          "tiers",
           "dates"
         ],
         "properties": {
@@ -10636,35 +10645,42 @@
             "type": "integer",
             "format": "int64"
           },
-          "price_cents": {
-            "type": "integer",
-            "format": "int32"
-          },
           "currency": {
             "type": [
               "string",
               "null"
             ],
-            "description": "\"cad\" or \"usd\" for paid tickets; null for free ones."
+            "description": "\"cad\" or \"usd\" once any tier is paid; null while every tier is free."
           },
           "capacity": {
             "type": [
               "integer",
               "null"
             ],
-            "format": "int32"
+            "format": "int32",
+            "description": "The most tickets the whole event gives out, every date and tier\ntogether; null for no limit."
+          },
+          "remaining": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Tickets left under the event's limit; null when it has none."
           },
           "paused": {
             "type": "boolean"
           },
           "available": {
             "type": "boolean",
-            "description": "Some date is open and the event takes tickets right now."
+            "description": "Some date and some tier are open, and the event takes tickets right now."
           },
-          "maximum_per_order": {
-            "type": "integer",
-            "format": "int32",
-            "description": "The most tickets one person gets at a time: one when they are free."
+          "tiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketTierAvailability"
+            },
+            "description": "In the club's order."
           },
           "dates": {
             "type": "array",
@@ -10678,25 +10694,27 @@
         "type": "object",
         "description": "A club turning tickets on for its event, or changing them.",
         "required": [
-          "price_cents",
-          "paused"
+          "paused",
+          "tiers"
         ],
         "properties": {
-          "price_cents": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Zero for free tickets."
-          },
           "capacity": {
             "type": [
               "integer",
               "null"
             ],
             "format": "int32",
-            "description": "Tickets per date; null for no limit."
+            "description": "The most tickets the whole event gives out; null for no limit."
           },
           "paused": {
             "type": "boolean"
+          },
+          "tiers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketTierUpdate"
+            },
+            "description": "Every tier, in the order people see them. A tier left out is removed."
           }
         }
       },
@@ -11163,10 +11181,15 @@
       "FreeTicketCreate": {
         "type": "object",
         "required": [
-          "event_date_id"
+          "event_date_id",
+          "tier_id"
         ],
         "properties": {
           "event_date_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tier_id": {
             "type": "string",
             "format": "uuid"
           }
@@ -16004,6 +16027,7 @@
           "event_date_id",
           "holder_name",
           "holder_email",
+          "tier_name",
           "issued_at",
           "checked_in_at",
           "refunded_at",
@@ -16031,6 +16055,9 @@
             "type": "string"
           },
           "holder_email": {
+            "type": "string"
+          },
+          "tier_name": {
             "type": "string"
           },
           "issued_at": {
@@ -16116,10 +16143,15 @@
         "type": "object",
         "required": [
           "event_date_id",
+          "tier_id",
           "quantity"
         ],
         "properties": {
           "event_date_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tier_id": {
             "type": "string",
             "format": "uuid"
           },
@@ -16152,7 +16184,6 @@
           "event_date_id",
           "dtstart_utc",
           "dtend_utc",
-          "remaining",
           "open"
         ],
         "properties": {
@@ -16171,17 +16202,9 @@
             ],
             "format": "date-time"
           },
-          "remaining": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "description": "Null when the event has no capacity limit."
-          },
           "open": {
             "type": "boolean",
-            "description": "Someone could take or buy a ticket for this date right now."
+            "description": "The date still takes tickets: it has not ended."
           }
         }
       },
@@ -16191,8 +16214,7 @@
           "event_date_id",
           "dtstart_utc",
           "issued",
-          "checked_in",
-          "remaining"
+          "checked_in"
         ],
         "properties": {
           "event_date_id": {
@@ -16209,13 +16231,6 @@
           },
           "checked_in": {
             "type": "integer",
-            "format": "int64"
-          },
-          "remaining": {
-            "type": [
-              "integer",
-              "null"
-            ],
             "format": "int64"
           }
         }
@@ -16303,6 +16318,7 @@
           "code",
           "status",
           "paid",
+          "tier_name",
           "checked_in_at",
           "event_id",
           "event_title",
@@ -16331,6 +16347,9 @@
           "paid": {
             "type": "boolean",
             "description": "Bought through Stripe; false for a free ticket."
+          },
+          "tier_name": {
+            "type": "string"
           },
           "checked_in_at": {
             "type": [
@@ -16434,6 +16453,121 @@
           "valid",
           "refunded"
         ]
+      },
+      "TicketTierAvailability": {
+        "type": "object",
+        "description": "One tier of an event's tickets, as anyone viewing the event sees it.",
+        "required": [
+          "id",
+          "name",
+          "price_cents",
+          "capacity",
+          "remaining",
+          "maximum_per_order",
+          "open"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "price_cents": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Zero for a free tier: one ticket per person and date."
+          },
+          "capacity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "The tier's own limit; null when only the event's limit applies."
+          },
+          "remaining": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Tickets left in this tier, under both its own limit and the event's;\nnull when neither limits it."
+          },
+          "maximum_per_order": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The most tickets one person gets at a time: one when they are free."
+          },
+          "open": {
+            "type": "boolean",
+            "description": "Someone could take or buy a ticket of this tier right now."
+          }
+        }
+      },
+      "TicketTierCounts": {
+        "type": "object",
+        "description": "One tier's tickets at the club's desk.",
+        "required": [
+          "tier_id",
+          "issued",
+          "checked_in",
+          "revenue_cents"
+        ],
+        "properties": {
+          "tier_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "issued": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Valid tickets of this tier: taken for free, or sold and not refunded."
+          },
+          "checked_in": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "revenue_cents": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "TicketTierUpdate": {
+        "type": "object",
+        "description": "One tier in a club's ticket settings.",
+        "required": [
+          "name",
+          "price_cents"
+        ],
+        "properties": {
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "The tier being changed; null for a new one."
+          },
+          "name": {
+            "type": "string"
+          },
+          "price_cents": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Zero for a free tier."
+          },
+          "capacity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "The tier's own limit; null when only the event's limit applies."
+          }
+        }
       },
       "TokenResponse": {
         "type": "object",

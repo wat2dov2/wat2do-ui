@@ -728,7 +728,7 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       // The server's HTML already draws the page's header, before the session is restored.
       await page.locator("[data-slot=page-header-title] [data-slot=skeleton-line]").first().waitFor();
       const name = `club-panel-event-${viewportName}`;
-      const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=ticket-settings-card]", name, viewport.height);
+      const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=ticket-settings-summary]", name, viewport.height);
       await report(name, comparison, cls, shifts);
     });
 
