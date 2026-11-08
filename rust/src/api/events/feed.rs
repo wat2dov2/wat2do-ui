@@ -63,7 +63,9 @@ pub fn weekday(value: DateTime<Utc>, timezone: Option<&str>) -> &'static str {
 }
 
 /// `_dedup_candidates_keeping_earliest`: one candidate per event in first-seen
-/// order, stopping at `cap` events (later rows then add no weekdays).
+/// order with its earliest scanned start, stopping at `cap` events (later rows
+/// then add no weekdays). A newest-first scan sees an event's latest start
+/// first, so the earliest is the smallest start seen, not the first.
 pub fn dedup(
     rows: &[ScannedRow],
     events: &HashMap<i64, CandidateEvent>,
@@ -77,7 +79,9 @@ pub fn dedup(
         };
         let day = weekday(row.dtstart_utc, event.timezone.as_deref());
         if let Some(&position) = index.get(&row.event_id) {
-            ordered[position].weekdays.insert(day);
+            let candidate = &mut ordered[position];
+            candidate.weekdays.insert(day);
+            candidate.earliest_dtstart = candidate.earliest_dtstart.min(Some(row.dtstart_utc));
             continue;
         }
         index.insert(row.event_id, ordered.len());
@@ -161,6 +165,48 @@ fn matches_search(event: &CandidateEvent, search: &str) -> bool {
             folded.contains(search)
                 || (!compact_search.is_empty() && compact(&folded).contains(&compact_search))
         })
+}
+
+/// The non-ASCII characters whose case folding leaves ASCII letters or digits
+/// in the compact search text, and those letters. Every other non-ASCII
+/// character adds no ASCII to it, which `ascii_search_text` relies on.
+pub const CASEFOLDS_TO_ASCII: [(char, &str); 19] = [
+    ('ß', "ss"),
+    ('İ', "i"),
+    ('ŉ', "n"),
+    ('ſ', "s"),
+    ('ǰ', "j"),
+    ('ẖ', "h"),
+    ('ẗ', "t"),
+    ('ẘ', "w"),
+    ('ẙ', "y"),
+    ('ẚ', "a"),
+    ('ẞ', "ss"),
+    ('\u{212A}', "k"), // KELVIN SIGN
+    ('ﬀ', "ff"),
+    ('ﬁ', "fi"),
+    ('ﬂ', "fl"),
+    ('ﬃ', "ffi"),
+    ('ﬄ', "ffl"),
+    ('ﬅ', "st"),
+    ('ﬆ', "st"),
+];
+
+/// What Postgres can check before the in-memory search: the ASCII letters and
+/// digits of the compact folded search, or `None` when it has none.
+///
+/// Any event `matches_search` keeps has these characters, in this order and
+/// side by side, in the ASCII letters and digits of its folded text (a match
+/// on the folded text is also a match on its compact form, and dropping the
+/// non-ASCII characters on both sides keeps the match whole). So narrowing the
+/// scan by them never loses a match, and the scan's row limit then counts only
+/// candidates instead of every occurrence in the window.
+pub fn ascii_search_text(search: &str) -> Option<String> {
+    let text: String = compact(&casefold(search))
+        .chars()
+        .filter(char::is_ascii_alphanumeric)
+        .collect();
+    (!text.is_empty()).then_some(text)
 }
 
 /// `_filter_candidates`.
@@ -323,6 +369,142 @@ mod tests {
         assert_eq!(capped.len(), 2);
         // The loop stops at the cap, so event 2 never sees its Wednesday.
         assert_eq!(capped[0].weekdays, HashSet::from(["Monday"]));
+    }
+
+    #[test]
+    fn dedup_keeps_the_earliest_start_of_a_newest_first_scan() {
+        let at = |day| Utc.with_ymd_and_hms(2026, 9, day, 18, 0, 0).unwrap();
+        let events: HashMap<i64, CandidateEvent> = [(1, event(1)), (2, event(2))].into();
+        let rows = [(1, 18), (2, 17), (1, 15), (2, 14)].map(|(event_id, day)| ScannedRow {
+            event_id,
+            dtstart_utc: at(day),
+        });
+        let all = dedup(&rows, &events, 10);
+        assert_eq!(all.iter().map(|c| c.event.id).collect::<Vec<_>>(), [1, 2]);
+        assert_eq!(all[0].earliest_dtstart, Some(at(15)));
+        assert_eq!(all[1].earliest_dtstart, Some(at(14)));
+    }
+
+    #[test]
+    fn casefolds_to_ascii_lists_every_non_ascii_character_that_folds_to_ascii() {
+        let found: Vec<(char, String)> = ('\u{80}'..=char::MAX)
+            .filter_map(|character| {
+                let letters: String = compact(&casefold(&character.to_string()))
+                    .chars()
+                    .filter(char::is_ascii_alphanumeric)
+                    .collect();
+                (!letters.is_empty()).then_some((character, letters))
+            })
+            .collect();
+        let listed: Vec<(char, String)> = CASEFOLDS_TO_ASCII
+            .iter()
+            .map(|(character, letters)| (*character, (*letters).to_owned()))
+            .collect();
+        assert_eq!(found, listed);
+    }
+
+    #[test]
+    fn ascii_search_text_keeps_the_folded_ascii_letters_and_digits() {
+        assert_eq!(
+            ascii_search_text("Hack-a-Thon 2026").as_deref(),
+            Some("hackathon2026")
+        );
+        assert_eq!(
+            ascii_search_text("@UW_Blue.Print").as_deref(),
+            Some("uwblueprint")
+        );
+        assert_eq!(ascii_search_text("STRAẞE").as_deref(), Some("strasse"));
+        assert_eq!(ascii_search_text("Café Night").as_deref(), Some("cafnight"));
+        assert_eq!(ascii_search_text("中文"), None);
+        assert_eq!(ascii_search_text("  - '' "), None);
+    }
+
+    /// What `store::ascii_search_document` computes in Postgres.
+    fn ascii_document(event: &CandidateEvent) -> String {
+        let mut text = [
+            &event.title,
+            &event.description,
+            &event.location,
+            &event.club,
+            &event.ig_handle,
+        ]
+        .iter()
+        .filter_map(|value| value.as_deref())
+        .map(str::to_owned)
+        .chain(food_items(&event.food))
+        .collect::<Vec<_>>()
+        .join(" ");
+        for (character, letters) in CASEFOLDS_TO_ASCII {
+            text = text.replace(character, letters);
+        }
+        text.chars()
+            .map(|character| character.to_ascii_lowercase())
+            .filter(char::is_ascii_alphanumeric)
+            .collect()
+    }
+
+    #[test]
+    fn the_ascii_search_text_never_narrows_away_a_match() {
+        let events = [
+            CandidateEvent {
+                title: Some("Straße Fest: Hack-a-thon".into()),
+                description: Some("Café ﬁlm night, ŉight owls, 中文 club".into()),
+                club: Some("UW Blueprint".into()),
+                ig_handle: Some("@uw_blue.print".into()),
+                food: Some(json!(["Bubble Tea", 3])),
+                ..event(1)
+            },
+            CandidateEvent {
+                location: Some("İstanbul Hall, K-12 Room".into()),
+                ..event(2)
+            },
+        ];
+        let searches = [
+            "strasse",
+            "STRAẞE",
+            "hackathon",
+            "hack-a-thon",
+            "café film",
+            "film",
+            "nightowls",
+            "night owls",
+            "中文 club",
+            "uwblueprint",
+            "@uw_blue.print",
+            "bubble tea",
+            "3",
+            "istanbul",
+            "k12",
+            "k-12 room",
+            "fest: hack",
+        ];
+        let mut matches = 0;
+        for event in &events {
+            let document = ascii_document(event);
+            for search in searches {
+                let search = crate::text::sanitize_postgrest_value(search);
+                let kept = filter(
+                    vec![candidate(event.clone(), &[])],
+                    &Filters {
+                        search: &search,
+                        ..Filters::default()
+                    },
+                );
+                if kept.is_empty() {
+                    continue;
+                }
+                matches += 1;
+                if let Some(text) = ascii_search_text(&search) {
+                    assert!(
+                        document.contains(&text),
+                        "{search:?} matches event {} but {text:?} is not in {document:?}",
+                        event.id
+                    );
+                }
+            }
+        }
+        // Every search above matches one of the two events.
+        assert_eq!(matches, searches.len());
     }
 
     #[test]

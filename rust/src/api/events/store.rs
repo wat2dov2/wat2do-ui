@@ -813,6 +813,29 @@ pub struct ScanFilters {
     pub registration: Option<bool>,
     pub min_price: Option<f64>,
     pub max_price: Option<f64>,
+    /// `feed::ascii_search_text`: letters and digits the event's searchable
+    /// text must contain, so the row limit applies after the search narrows.
+    pub search_text: Option<String>,
+    /// Scan from the latest start back, so a feed read newest first keeps the
+    /// most recent occurrences within the row limit (a history with no lower
+    /// bound would otherwise keep only its oldest).
+    pub newest_first: bool,
+}
+
+/// The ASCII letters and digits of an event's searchable fields (those
+/// `feed::matches_search` reads), folded the way `feed::ascii_search_text`
+/// folds the search: each `CASEFOLDS_TO_ASCII` character becomes its letters,
+/// ASCII lowercases, and everything else drops out.
+fn ascii_search_document() -> String {
+    let food = "CASE jsonb_typeof(e.food) \
+         WHEN 'array' THEN (SELECT string_agg(item, ' ') FROM jsonb_array_elements_text(e.food) item) \
+         WHEN 'string' THEN e.food #>> '{}' END";
+    let mut text =
+        format!("concat_ws(' ', e.title, e.description, e.location, e.club, e.ig_handle, {food})");
+    for (character, letters) in super::feed::CASEFOLDS_TO_ASCII {
+        text = format!("replace({text}, '{character}', '{letters}')");
+    }
+    format!("regexp_replace(lower({text}), '[^a-z0-9]+', '', 'g')")
 }
 
 /// The filtered feed's scan: the first 1000 occurrence rows in feed order and
@@ -822,7 +845,28 @@ pub async fn scan(
     filters: &ScanFilters,
 ) -> Result<(Vec<super::feed::ScannedRow>, HashMap<i64, CandidateEvent>), ApiError> {
     let mut binds = Binds::default();
-    let mut conditions = window_conditions(&filters.window, &mut binds);
+    let sql = scan_sql(filters, &mut binds);
+    let result: serde_json::Value =
+        read_with_retry(|| binds.apply(sqlx::query_scalar(&sql)).fetch_one(db)).await?;
+    let (rows, events): (Vec<(i64, i64)>, Vec<CandidateEvent>) = serde_json::from_value(result)
+        .map_err(|error| ApiError::Internal(anyhow::anyhow!("scan JSON: {error}")))?;
+    let rows = rows
+        .into_iter()
+        .map(|(event_id, start)| {
+            Ok(super::feed::ScannedRow {
+                event_id,
+                dtstart_utc: from_micros(start)?,
+            })
+        })
+        .collect::<Result<Vec<_>, ApiError>>()?;
+    Ok((
+        rows,
+        events.into_iter().map(|event| (event.id, event)).collect(),
+    ))
+}
+
+fn scan_sql(filters: &ScanFilters, binds: &mut Binds) -> String {
+    let mut conditions = window_conditions(&filters.window, binds);
     if let Some(ids) = &filters.event_ids {
         conditions.push(format!(
             "d.event_id = ANY({}::int8[])",
@@ -862,10 +906,18 @@ pub async fn scan(
     if let Some(price) = filters.max_price {
         conditions.push(format!("e.price <= {}", binds.push(Bind::Float(price))));
     }
-    let sql = format!(
+    if let Some(text) = &filters.search_text {
+        conditions.push(format!(
+            "strpos({}, {}) > 0",
+            ascii_search_document(),
+            binds.push(Bind::Text(text.clone()))
+        ));
+    }
+    let direction = if filters.newest_first { " DESC" } else { "" };
+    format!(
         "WITH scanned AS MATERIALIZED (SELECT row_number() OVER () AS rn, rows.* FROM (\
          SELECT d.event_id, d.dtstart_utc FROM public.event_dates d JOIN public.events e ON e.id = d.event_id \
-         WHERE {} ORDER BY d.dtstart_utc, d.event_id, d.id LIMIT {POSTGREST_MAX_ROWS}) rows) \
+         WHERE {} ORDER BY d.dtstart_utc{direction}, d.event_id{direction}, d.id{direction} LIMIT {POSTGREST_MAX_ROWS}) rows) \
          SELECT json_build_array(\
          (SELECT COALESCE(json_agg(json_build_array(scanned.event_id, {}) ORDER BY scanned.rn), '[]') FROM scanned), \
          (SELECT COALESCE(json_agg(json_build_object('id', e.id, 'title', e.title, 'description', e.description, \
@@ -876,24 +928,7 @@ pub async fn scan(
         conditions.join(" AND "),
         micros!("scanned.dtstart_utc"),
         micros!("e.added_at"),
-    );
-    let result: serde_json::Value =
-        read_with_retry(|| binds.apply(sqlx::query_scalar(&sql)).fetch_one(db)).await?;
-    let (rows, events): (Vec<(i64, i64)>, Vec<CandidateEvent>) = serde_json::from_value(result)
-        .map_err(|error| ApiError::Internal(anyhow::anyhow!("scan JSON: {error}")))?;
-    let rows = rows
-        .into_iter()
-        .map(|(event_id, start)| {
-            Ok(super::feed::ScannedRow {
-                event_id,
-                dtstart_utc: from_micros(start)?,
-            })
-        })
-        .collect::<Result<Vec<_>, ApiError>>()?;
-    Ok((
-        rows,
-        events.into_iter().map(|event| (event.id, event)).collect(),
-    ))
+    )
 }
 
 /// Hydrate a chosen page of event ids in order, with page one's newest event.
@@ -1089,6 +1124,30 @@ pub async fn admin_page(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scan_narrows_by_the_search_text_and_reads_newest_first_on_request() {
+        let mut binds = Binds::default();
+        let plain = scan_sql(&ScanFilters::default(), &mut binds);
+        assert!(plain.contains("ORDER BY d.dtstart_utc, d.event_id, d.id LIMIT 1000"));
+        assert!(!plain.contains("strpos("));
+        assert!(binds.values.is_empty());
+
+        let mut binds = Binds::default();
+        let history = scan_sql(
+            &ScanFilters {
+                search_text: Some("hackathon".into()),
+                newest_first: true,
+                ..ScanFilters::default()
+            },
+            &mut binds,
+        );
+        assert!(
+            history.contains("ORDER BY d.dtstart_utc DESC, d.event_id DESC, d.id DESC LIMIT 1000")
+        );
+        assert!(history.contains(&format!("strpos({}, $1) > 0", ascii_search_document())));
+        assert!(matches!(binds.values.as_slice(), [Bind::Text(text)] if text == "hackathon"));
+    }
 
     #[test]
     fn url_host_matches_urlsplit() {

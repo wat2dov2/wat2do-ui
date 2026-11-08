@@ -292,8 +292,10 @@ fn empty_feed(pagination: Pagination) -> FeedResponse<'static> {
     }
 }
 
-/// `load_events_page`'s filtered path: Postgres narrows and orders the first
-/// 1000 occurrence rows; the text, food and day filters and the sort run here.
+/// `load_events_page`'s filtered path: Postgres narrows (the search only
+/// roughly, by its ASCII letters and digits) and orders the first 1000
+/// occurrence rows, newest first for a newest-first date feed; the exact
+/// text, food and day filters and the sort run here.
 async fn filtered_feed(
     db: &sqlx::PgPool,
     feed: &FeedQuery,
@@ -332,6 +334,7 @@ async fn filtered_feed(
                 .collect(),
         ),
     };
+    let search = crate::text::sanitize_postgrest_value(feed.search.as_deref().unwrap_or_default());
     let filters = ScanFilters {
         window,
         event_ids,
@@ -350,9 +353,10 @@ async fn filtered_feed(
         registration: feed.registration,
         min_price: feed.min_price,
         max_price: feed.max_price,
+        search_text: feed::ascii_search_text(&search),
+        newest_first: feed.sort_by == "date" && feed.sort_order == "desc",
     };
     let (rows, events) = store::scan(db, &filters).await?;
-    let search = crate::text::sanitize_postgrest_value(feed.search.as_deref().unwrap_or_default());
     let candidates = feed::dedup(&rows, &events, MAX_LIST_LIMIT as usize);
     let mut candidates = feed::filter(
         candidates,
