@@ -2,7 +2,8 @@
 
 Every screen is located by the labels Instagram exposes to accessibility tools, never
 by fixed coordinates, and every tap lands at a random point inside its control after
-a random pause, so the app sees a person's rhythm rather than a script's.
+a random pause, so the app sees a person's rhythm rather than a script's. The tree is
+read by a ``ScreenReader`` kept running on the device while the emulator is held.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ import shutil
 import subprocess
 import threading
 import time
+import weakref
 import xml.etree.ElementTree as ElementTree
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
@@ -27,10 +29,10 @@ from pathlib import Path
 from PIL import Image
 
 from core.controlbox import controlbox
+from services.instagram_emulator.screen_reader import ScreenReader, ScreenReaderError
 
 CONTROL = controlbox.instagram_emulator
 _BOUNDS = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
-_DUMP_SUFFIX = "UI hierchary dumped to"
 _LAUNCHER_ACTIVITY = "com.instagram.mainactivity.LauncherActivity"
 _SCREEN_READ_ATTEMPTS = 5
 # Every job that drives the emulator holds this lock, so two never tap at once.
@@ -39,6 +41,9 @@ _LOCK_PATH = Path.home() / ".local/state/wat2do/instagram-emulator.lock"
 # clearing them on every visit only keeps the disk busy.
 _RECLAIMED_PATH = Path.home() / ".local/state/wat2do/instagram-emulator-reclaimed"
 _held = threading.local()
+# Every device's screen reader; the end of each hold on the emulator stops them, so
+# Android's accessibility service is connected only while a job drives the app.
+_readers: weakref.WeakSet[ScreenReader] = weakref.WeakSet()
 _RESTART_POLL_SECONDS = 5
 _SELECT_ALL = ("113", "29")  # KEYCODE_CTRL_LEFT + KEYCODE_A
 # Share of dark pixels in an icon's middle that means a check mark is drawn there.
@@ -133,12 +138,22 @@ class EmulatorDevice:
         sleep: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
         rng: random.Random | None = None,
+        reader: ScreenReader | None = None,
     ) -> None:
         self._run = run
         self._sleep = sleep
         self._monotonic = monotonic
         self._rng = rng or random.SystemRandom()
         self._adb = _adb_path()
+        self._reader = reader or ScreenReader(
+            self._adb,
+            CONTROL.serial,
+            self.adb,
+            settle_milliseconds=CONTROL.screen_settle_milliseconds,
+            settle_wait_seconds=CONTROL.screen_settle_wait_seconds,
+            timeout_seconds=CONTROL.adb_timeout_seconds,
+        )
+        _readers.add(self._reader)
 
     def is_online(self) -> bool:
         try:
@@ -167,13 +182,11 @@ class EmulatorDevice:
                 root = self._read_screen()
                 break
             except EmulatorError:
-                # The dump fails while the app is still animating, such as a playing video,
-                # and sometimes prints an error in place of the screen.
+                # The reader can fail to start or stop answering on a busy emulator (the
+                # next read starts it again), and no window may be active for a moment.
                 if attempt == _SCREEN_READ_ATTEMPTS - 1:
                     raise
                 self._sleep(1)
-        if root is None:
-            return []
         nodes = []
         for element in root.iter("node"):
             match = _BOUNDS.fullmatch(element.get("bounds", ""))
@@ -191,14 +204,11 @@ class EmulatorDevice:
                 )
         return nodes
 
-    def _read_screen(self) -> ElementTree.Element | None:
-        dump = self.adb("exec-out", "uiautomator", "dump", "/dev/tty")
-        dump = dump.split(_DUMP_SUFFIX, 1)[0].strip()
-        if not dump:
-            return None
+    def _read_screen(self) -> ElementTree.Element:
         try:
-            return ElementTree.fromstring(dump)
-        except ElementTree.ParseError as exc:
+            # Empty when no window is active, which does not parse either.
+            return ElementTree.fromstring(self._reader.read())
+        except (ScreenReaderError, ElementTree.ParseError) as exc:
             raise EmulatorError("Emulator screen could not be read") from exc
 
     def marked(self, icon: Node) -> bool:
@@ -397,6 +407,7 @@ class EmulatorDevice:
         only gives the memory back when it exits. Its accounts live on the device's
         disk, so they stay logged in.
         """
+        self._reader.stop()
         self.adb("emu", "kill")
         deadline = self._monotonic() + CONTROL.restart_timeout_seconds
         stopped = False
@@ -519,7 +530,7 @@ def exclusive() -> Iterator[None]:
     """Hold the emulator for one job; another job waits until this one is done.
 
     A job may nest it, such as a DM job around the story repost it triggers; only
-    the outermost hold takes the lock.
+    the outermost hold takes the lock, and its end stops the screen readers.
     """
     if getattr(_held, "depth", 0):
         _held.depth += 1
@@ -536,4 +547,6 @@ def exclusive() -> Iterator[None]:
             yield
         finally:
             _held.depth = 0
+            for reader in list(_readers):
+                reader.stop()
             fcntl.flock(handle, fcntl.LOCK_UN)

@@ -59,6 +59,8 @@
   "user_switch_wait_seconds": 25,
   "account_switch_settle_seconds": 5,
   "screen_wait_seconds": 15,
+  "screen_settle_milliseconds": 1000,
+  "screen_settle_wait_seconds": 5,
   "step_delay_min_seconds": 1.5,
   "step_delay_max_seconds": 4,
   "keystroke_delay_min_seconds": 0.08,

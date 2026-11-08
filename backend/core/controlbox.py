@@ -996,6 +996,11 @@ class InstagramEmulatorControl(_ControlModel):
     user_switch_wait_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
     account_switch_settle_seconds: float = Field(ge=0, le=60, allow_inf_nan=False)
     screen_wait_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
+    # A screen read waits until the app has drawn nothing new for this long, as
+    # `uiautomator dump` does, but at most this many seconds: a screen that never
+    # settles, such as a playing video, is then read as it is.
+    screen_settle_milliseconds: int = Field(ge=0, le=5000)
+    screen_settle_wait_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
     # Every tap and keystroke waits a random human-like pause inside this window.
     step_delay_min_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
     step_delay_max_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
