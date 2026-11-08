@@ -7,7 +7,6 @@
   "maximum_lead_days": 21,
   "maximum_event_slides": 8,
   "minimum_event_slides": 3,
-  "fill_candidate_count": 30,
   "status_poll_interval_seconds": 3,
   "meta_poll_attempts": 10,
   "meta_poll_interval_seconds": 2,

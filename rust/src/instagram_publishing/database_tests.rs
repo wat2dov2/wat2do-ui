@@ -178,9 +178,8 @@ fn jpeg() -> Vec<u8> {
 }
 
 #[tokio::test]
-async fn candidates_are_new_events_then_unposted_upcoming_ones() {
-    // test_load_candidates_*, test_draft_candidates_fill_with_unposted_upcoming_events
-    // and test_unposted_upcoming_skips_posted_and_unusable_events
+async fn candidates_are_only_the_events_added_since_the_last_carousel() {
+    // test_load_candidates_*
     let Some(db) = database() else { return };
     let (school, slug) = school(&db).await;
     let hour = Duration::hours(1);
@@ -204,7 +203,7 @@ async fn candidates_are_new_events_then_unposted_upcoming_ones() {
         .await
         .unwrap();
     let earlier = event(&db, school, "Earlier", -day * 10, day * 5, Some("Health")).await;
-    let posted = event(&db, school, "Posted", -day * 10, day * 2, Some("Health")).await;
+    let posted = event(&db, school, "Posted", -hour, day * 2, Some("Health")).await;
     let posted_batch = batch(&db, school, &slug, unique_day(), "published", &[posted]).await;
     sqlx::query(
         "UPDATE public.instagram_publish_items SET published_at = now() WHERE batch_id = $1",
@@ -218,31 +217,22 @@ async fn candidates_are_new_events_then_unposted_upcoming_ones() {
     let candidates = drafts::draft_candidates(&db, &slug, now - day, now)
         .await
         .unwrap();
-    let picked: Vec<(i64, bool)> = candidates
-        .iter()
-        .map(|event| (event.id, event.new))
-        .collect();
-    assert_eq!(
-        picked,
-        [
-            (sooner, true),
-            (later, true),
-            (requested, true),
-            (earlier, false)
-        ]
-    );
-    for left_out in [uncategorized, too_soon, posted] {
-        assert!(!picked.iter().any(|(id, _)| *id == left_out));
+    let picked: Vec<i64> = candidates.iter().map(|event| event.id).collect();
+    // Soonest first. Left out: no category, starting too soon, already
+    // posted, and the earlier event, collected before this window, which
+    // never comes back to fill the carousel.
+    assert_eq!(picked, [sooner, later, requested]);
+    for left_out in [uncategorized, too_soon, posted, earlier] {
+        assert!(!picked.contains(&left_out));
     }
     let first = &candidates[0];
     assert_eq!(first.tz, "America/Toronto");
     assert_eq!(first.price, Some(json!(5)));
     assert_eq!(first.packet_summary()["title"], "Sooner");
-    // The agent reads which events are new and which only fill the carousel.
-    assert_eq!(first.packet_summary()["new"], true);
-    assert_eq!(candidates[3].packet_summary()["new"], false);
 
-    // Every registered school gets a packet; this one has no draft today.
+    // Every registered school gets a packet; this one has no draft today. Its
+    // last carousel's window ended 29 days ago, so the earlier event is new
+    // to it.
     let packets = drafts::list_draft_candidates(&db, now).await.unwrap();
     let packet = packets
         .iter()
@@ -255,7 +245,10 @@ async fn candidates_are_new_events_then_unposted_upcoming_ones() {
         open.caption_intro
             .starts_with(&format!("Fresh events at {slug}"))
     );
-    assert_eq!(open.events.len(), 4);
+    assert_eq!(
+        open.events.iter().map(|event| event.id).collect::<Vec<_>>(),
+        [sooner, later, requested, earlier]
+    );
 }
 
 fn selection(slug: &str, picks: Value) -> DraftSelection {
