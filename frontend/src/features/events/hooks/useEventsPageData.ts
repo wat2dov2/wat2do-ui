@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useShallow } from "zustand/react/shallow";
 import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
 import { storeStatesToFilterState, useSearchStore, useSearch } from "@/features/search";
+import { preferInterestsWithinDay } from "@/features/search/api/searchService";
+import { useUserInterests } from "@/features/auth";
 import {
   EMPTY_FILTER_STATE,
   feedFilterAvailability,
@@ -143,9 +145,18 @@ export function useEventsPageData({
     currentTimeMs: listTimeMs ?? (feed ? feed.generated_at : firstScreen?.listedAtMs) ?? null,
   });
 
+  // In date order with no category picked, the reader's interests lead each day.
+  // They are empty in the server's HTML and until hydration, so the first screen matches.
+  const interests = useUserInterests();
+  const { sortBy, selectedCategories } = filters;
   const orderedEvents = useMemo(
-    () => getUniqueEvents(filters.filteredEvents),
-    [filters.filteredEvents],
+    () => {
+      const unique = getUniqueEvents(filters.filteredEvents);
+      return sortBy === "date" && selectedCategories.length === 0 && listTimeMs !== null
+        ? preferInterestsWithinDay(unique, interests, getSchoolTimezone, listTimeMs)
+        : unique;
+    },
+    [filters.filteredEvents, sortBy, selectedCategories, interests, getSchoolTimezone, listTimeMs],
   );
 
   const appliedFilterState = storeStatesToFilterState(filters);

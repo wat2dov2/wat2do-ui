@@ -352,6 +352,43 @@ export function sortEvents(
   return ranked.map(({ event }) => event);
 }
 
+/**
+ * Within each school-local day, the events whose category is one of the reader's
+ * `interests` first. Nothing moves across days, and each group keeps its incoming
+ * order, so a date-sorted list stays date-sorted. Events already ended at `nowMs`
+ * stay where they are, so the Past section's latest-first order is untouched.
+ */
+export function preferInterestsWithinDay(
+  events: Event[],
+  interests: readonly string[],
+  getSchoolTimezone: (school: Event["school"]) => string,
+  nowMs: number,
+): Event[] {
+  if (interests.length === 0) return events;
+  const now = new Date(nowMs);
+  const slotsByDay = new Map<string, number[]>();
+  events.forEach((event, index) => {
+    if (hasEventEnded(event, nowMs)) return;
+    const start = getPrimaryOccurrence(event, now)?.dtstart_utc;
+    if (!start || Number.isNaN(Date.parse(start))) return;
+    const day = schoolCalendarDate(start, getSchoolTimezone(event.school)).toISOString();
+    const slots = slotsByDay.get(day);
+    if (slots) slots.push(index);
+    else slotsByDay.set(day, [index]);
+  });
+
+  const isInterest = (event: Event) => interests.includes(getEventCategory(event));
+  const ranked = [...events];
+  for (const slots of slotsByDay.values()) {
+    const dayEvents = slots.map((slot) => events[slot]);
+    const reordered = [...dayEvents.filter(isInterest), ...dayEvents.filter((event) => !isInterest(event))];
+    slots.forEach((slot, position) => {
+      ranked[slot] = reordered[position];
+    });
+  }
+  return ranked;
+}
+
 function getEventWeekdays(event: Event, timeZone: string): Set<string> {
   return new Set((event.occurrences ?? []).flatMap((occurrence) => {
     const date = new Date(occurrence.dtstart_utc);
