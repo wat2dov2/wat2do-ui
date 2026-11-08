@@ -425,14 +425,14 @@ test("old hydrated snapshots retain their actual age instead of becoming fresh o
 });
 
 test("Positions and Clubs browser consumers reuse complete public snapshots without auth requests", async () => {
-  const { getPositionDirectory }: typeof import("../src/features/positions/api/positions.api") = require("../src/features/positions/api/positions.api");
+  const { positionDirectoryQueryOptions }: typeof import("../src/features/positions/api/positions.api") = require("../src/features/positions/api/positions.api");
   const { clubDirectoryQueryOptions }: typeof import("../src/features/clubs/api/clubs.api") = require("../src/features/clubs/api/clubs.api");
   const requests: Array<{ url: string; credentials?: RequestCredentials }> = [];
   globalThis.fetch = async (input, init) => {
     requests.push({ url: String(input), credentials: init?.credentials });
     return Response.json({ items: [{ id: 1, club_name: "Western Club" }], total: 1, page: 1, page_size: 1, total_pages: 1, generated_at: 1000 });
   };
-  const positions = await getPositionDirectory(" UWO ");
+  const positions = await getQueryClient().fetchQuery(positionDirectoryQueryOptions(" UWO "));
   const client = getQueryClient();
   const directory = await client.fetchQuery(clubDirectoryQueryOptions(" UWO "));
   const form = new QueryObserver(client, {

@@ -10,7 +10,10 @@ import { normalizePosition } from "@/features/positions/api/positionService";
 import { controlBox } from "@/shared/config/controlBox";
 import { api } from "@/shared/services/apiClient";
 import { getSessionEmail } from "@/features/auth/api/auth.api";
-import { fetchDiscoverySnapshot, type DiscoverySnapshotMetadata } from "@/shared/api/discovery.api";
+import { queryOptions } from "@tanstack/react-query";
+import { fetchDiscoverySnapshot, preserveDiscoveryGeneration, type DiscoverySnapshotMetadata } from "@/shared/api/discovery.api";
+import { resolveSchool } from "@/shared/constants/schools";
+import { queryKeys } from "@/shared/lib/queryKeys";
 export { parsePositionImage } from "@/shared/services/uploadService";
 export const POSITION_TYPES: PositionType[] = ["executive", "committee", "volunteer", "staff", "internship", "general"];
 
@@ -68,8 +71,15 @@ export async function getClubPositions(
   return directory.items;
 }
 
-export function getPositionDirectory(school: string): Promise<PaginatedPositionsResponse> {
-  return fetchDiscoverySnapshot(school, "positions");
+/** A school's open positions, the same snapshot the positions page renders. */
+export function positionDirectoryQueryOptions(school: string) {
+  const resolvedSchool = resolveSchool(school);
+  return queryOptions({
+    queryKey: queryKeys.positions.allForSchool(resolvedSchool),
+    queryFn: () => fetchDiscoverySnapshot<PaginatedPositionsResponse>(resolvedSchool, "positions"),
+    structuralSharing: preserveDiscoveryGeneration,
+    retry: false,
+  });
 }
 
 
