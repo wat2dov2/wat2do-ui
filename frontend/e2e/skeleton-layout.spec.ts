@@ -191,9 +191,22 @@ async function images() {
   return posterImages;
 }
 
+/** A signed-in visitor: the API restores their session and lists the club they run. */
+interface Visitor {
+  email: string;
+  role: "user" | "admin";
+  club: (typeof CLUBS)[number] | null;
+}
+
+/** Runs club 1, which hosts event 1. */
+const EXECUTIVE: Visitor = { email: "exec@uwaterloo.ca", role: "user", club: CLUBS[0]! };
+/** Runs club 2, so event 1 is someone else's. */
+const OTHER_CLUBS_EXECUTIVE: Visitor = { email: "member@uwaterloo.ca", role: "user", club: CLUBS[1]! };
+const ADMIN: Visitor = { email: "admin@wat2do.io", role: "admin", club: null };
+
 interface MockOptions {
-  /** A club executive's session: the API restores it and lists their club. */
-  signedIn?: boolean;
+  /** Signed in as this visitor; signed out without one. */
+  visitor?: Visitor;
   /** Fields that event 1 carries in this test only. */
   firstEvent?: Partial<(typeof EVENTS)[number]>;
 }
@@ -203,7 +216,7 @@ async function installMocks(
   next: NextFixture,
   gates: Gates,
   held: (path: string, url: URL) => boolean,
-  { signedIn = false, firstEvent }: MockOptions = {},
+  { visitor, firstEvent }: MockOptions = {},
 ) {
   const posters = await images();
   await page.route(`${MEDIA}/**`, async (route) => {
@@ -231,16 +244,16 @@ async function installMocks(
     if (path === "/site-banner") return json(null);
     if (path === "/discovery-queries" || path === "/interactions/batch" || path.endsWith("/view")) return { status: 204 };
     if (path === "/auth/refresh") {
-      return signedIn
+      return visitor
         ? json({ access_token: "token", token_type: "bearer", expires_in: 900, user_id: "auth-1" })
         : json({ detail: "Not authenticated" }, 401);
     }
     if (path === "/users/me") {
-      return signedIn
-        ? json({ id: "user-1", email: EXECUTIVE.email, school: "uwaterloo", role: "user", interests: [] })
+      return visitor
+        ? json({ id: "user-1", email: visitor.email, school: "uwaterloo", role: visitor.role, interests: [] })
         : json({ detail: "Not authenticated" }, 401);
     }
-    if (path === "/clubs/mine") return json(signedIn ? [CLUBS[0]] : []);
+    if (path === "/clubs/mine") return json(visitor?.club ? [visitor.club] : []);
     // An event whose tickets are off, at a club that has not connected payouts.
     if (/^\/events\/\d+\/ticketing$/.test(path)) return json(null);
     if (/^\/clubs\/\d+\/payouts$/.test(path)) {
@@ -291,24 +304,24 @@ async function installMocks(
   });
 }
 
-/** The club executive `installMocks({ signedIn })` signs in, and the club they run. */
-const EXECUTIVE = { email: "exec@uwaterloo.ca", club: CLUBS[0]! };
-
 /**
  * A returning visitor: their sign-in is cached in this browser, as it is after
  * any earlier visit, so the page can draw them signed in from its first frame.
  */
-async function cacheSignIn(page: Page) {
-  await page.addInitScript(([emailKey, profileKey, email, club]) => {
-    localStorage.setItem(emailKey, JSON.stringify(email));
-    localStorage.setItem(profileKey, JSON.stringify({
+async function cacheSignIn(page: Page, visitor: Visitor) {
+  const clubs = visitor.club ? [{ id: visitor.club.id, club_name: visitor.club.club_name, school: visitor.club.school }] : [];
+  await page.addInitScript(([emailKey, profileKey, profile]) => {
+    localStorage.setItem(emailKey, JSON.stringify(profile.email));
+    localStorage.setItem(profileKey, JSON.stringify(profile.cached));
+  }, [STORAGE_KEYS.USER_EMAIL, STORAGE_KEYS.USER_PROFILE, {
+    email: visitor.email,
+    cached: {
       id: "user-1", fullName: null, avatarUrl: null, faculty: "", interests: [], isFirstYear: false,
-      school: "uwaterloo", role: "user", hasClub: true,
-      clubs: [{ id: club.id, club_name: club.club_name, school: club.school }],
-      clubId: club.id, clubName: club.club_name,
+      school: "uwaterloo", role: visitor.role, hasClub: clubs.length > 0, clubs,
+      clubId: clubs[0]?.id ?? null, clubName: clubs[0]?.club_name ?? null,
       payoutEmail: null, promoterTosAcceptedAt: null, promoterTosVersion: null,
-    }));
-  }, [STORAGE_KEYS.USER_EMAIL, STORAGE_KEYS.USER_PROFILE, EXECUTIVE.email, EXECUTIVE.club] as const);
+    },
+  }] as const);
 }
 
 const OBSERVE_SHIFTS = () => {
@@ -704,9 +717,9 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       await installMocks(
         page, next, gates,
         path => path === "/events/1" || path === "/events/1/ticketing" || path === "/clubs/1/payouts",
-        { signedIn: true, firstEvent: { title: "Open Mic Night" } },
+        { visitor: EXECUTIVE, firstEvent: { title: "Open Mic Night" } },
       );
-      await cacheSignIn(page);
+      await cacheSignIn(page, EXECUTIVE);
       await throttleCpu(page);
       await page.addInitScript(OBSERVE_SHIFTS);
 
@@ -718,21 +731,23 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       await report(name, comparison, cls, shifts);
     });
 
-    test("event page draws a returning visitor signed in from its first frame", async ({ page, next }) => {
-      const gates: Gates = { data: new Gate(), late: new Gate() };
-      await installMocks(page, next, gates, path => path === "/events/1", { signedIn: true });
-      await cacheSignIn(page);
-      await throttleCpu(page);
-      await page.addInitScript(OBSERVE_SHIFTS);
+    for (const [who, visitor] of [["a returning visitor", OTHER_CLUBS_EXECUTIVE], ["an admin", ADMIN]] as const) {
+      test(`event page draws ${who} signed in from its first frame`, async ({ page, next }) => {
+        const gates: Gates = { data: new Gate(), late: new Gate() };
+        await installMocks(page, next, gates, path => path === "/events/1", { visitor });
+        await cacheSignIn(page, visitor);
+        await throttleCpu(page);
+        await page.addInitScript(OBSERVE_SHIFTS);
 
-      await page.goto(`${BASE}/events/1`, { waitUntil: "commit" });
-      await page.locator("[data-slot=event-details-loading]").first().waitFor();
-      const name = `event-page-signed-in-${viewportName}`;
-      const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=event-host]", name, viewport.height);
-      await report(name, comparison, cls, shifts);
-      // The Going card is the visitor's own, not the signed-out email form.
-      await expect(page.getByTestId("event-registration-auth")).toBeHidden();
-    });
+        await page.goto(`${BASE}/events/1`, { waitUntil: "commit" });
+        await page.locator("[data-slot=event-details-loading]").first().waitFor();
+        const name = `event-page-${visitor.role === "admin" ? "admin" : "signed-in"}-${viewportName}`;
+        const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=event-host]", name, viewport.height);
+        await report(name, comparison, cls, shifts);
+        // The Going card is the visitor's own, not the signed-out email form.
+        await expect(page.getByTestId("event-registration-auth")).toBeHidden();
+      });
+    }
 
     test("the top bar never paints half-parsed when the page's HTML pauses inside it", async ({ page, next, _nextWorker }) => {
       const gates: Gates = { data: new Gate(), late: new Gate() };

@@ -538,7 +538,13 @@ function EventAttendeesSection({ eventId }: { eventId: number }) {
  * The actions everyone sees, inert, while the event loads. Members who manage
  * the event see more once it arrives.
  */
-export function EventActionsPlaceholder() {
+export function EventActionsPlaceholder({ clubId }: {
+  /**
+   * The event's club when it is already known (opened from a list), so its team's
+   * controls hold their places too; admins' always do.
+   */
+  clubId?: number | null;
+}) {
   const { t } = useTranslation();
   return (
     <Stack direction="horizontal" gap={2} wrap data-slot="event-actions" aria-hidden="true">
@@ -546,6 +552,20 @@ export function EventActionsPlaceholder() {
         <Calendar className="size-4" />
         {t("common.addToCalendar")}
       </Button>
+      <ClubManagerView clubId={clubId}>
+        <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
+          <Ticket className="size-4" />
+          {t("tickets.manage")}
+        </Button>
+        <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
+          <Edit className="size-4" />
+          {t("common.edit")}
+        </Button>
+        <Button type="button" variant="destructive" size="sm" disabled tabIndex={-1}>
+          <Trash2 className="size-4" />
+          {t("common.delete")}
+        </Button>
+      </ClubManagerView>
       <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
         <Share2 className="size-4" />
         {t("common.share")}

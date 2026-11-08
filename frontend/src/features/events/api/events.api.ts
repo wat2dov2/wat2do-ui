@@ -46,11 +46,14 @@ export async function fetchEventById(id: number): Promise<Event> {
 }
 
 /**
- * The event as a club's list or a school's feed already in this browser holds
- * it, so a page opened from that list can show it before its own read returns.
+ * The event as this browser already holds it (its own read, a club's list or a
+ * school's feed), so a page opened from a list can show it before its own read
+ * returns.
  */
 export function cachedEvent(eventId: number): Event | undefined {
   const queryClient = getQueryClient();
+  const detail = queryClient.getQueryData<Event>(queryKeys.events.detail(eventId));
+  if (detail) return detail;
   for (const [, events] of queryClient.getQueriesData<Event[]>({ queryKey: queryKeys.events.lists() })) {
     const event = events?.find((item) => item.id === eventId);
     if (event) return event;
