@@ -24,16 +24,10 @@ const IPHONE = {
 
 const CLUB = process.env.CLUB_PATH ?? "/clubs/11126";
 const SCENARIOS = [
-  { name: "webkit-iphone", device: IPHONE, steps: [{ goto: CLUB }, { wait: 5000 }] },
-  { name: "webkit-iphone-reload", device: IPHONE, film: "after-first", steps: [{ goto: CLUB }, { wait: 5000 }, { goto: CLUB }, { wait: 5000 }] },
   { name: "webkit-iphone-cold", device: IPHONE, steps: [{ goto: `${CLUB}?film=${Date.now() + 2}` }, { wait: 5000 }] },
-  { name: "club-desktop-again", device: DESKTOP, steps: [{ goto: CLUB }, { wait: 5000 }] },
-  // A returning visitor: the second load has the site's code in the browser cache.
-  { name: "club-phone-reload", device: PHONE, film: "after-first", steps: [{ goto: CLUB }, { wait: 5000 }, { goto: CLUB }, { wait: 6000 }] },
-  { name: "club-desktop-reload", device: DESKTOP, film: "after-first", steps: [{ goto: CLUB }, { wait: 5000 }, { goto: CLUB }, { wait: 5000 }] },
-  // A query string the page ignores misses the CDN, so the server renders it fresh.
+  { name: "webkit-iphone-cold-2", device: IPHONE, steps: [{ goto: `${CLUB}?film=${Date.now() + 3}` }, { wait: 5000 }] },
+  { name: "webkit-iphone-reload", device: IPHONE, film: "after-first", steps: [{ goto: CLUB }, { wait: 5000 }, { goto: CLUB }, { wait: 5000 }] },
   { name: "club-phone-cold", device: PHONE, steps: [{ goto: `${CLUB}?film=${Date.now()}` }, { wait: 6000 }] },
-  { name: "club-desktop-cold", device: DESKTOP, steps: [{ goto: `${CLUB}?film=${Date.now() + 1}` }, { wait: 5000 }] },
 ];
 
 const OBSERVE = () => {
@@ -55,6 +49,23 @@ const OBSERVE = () => {
     },
   });
   requestAnimationFrame(() => { store.firstFrame = Math.round(performance.now()); });
+  // Each frame: which poster <img> elements exist (a new element for a src seen before
+  // means the card was rebuilt), whether they are decoded, and when the notch clip lands.
+  store.imgs = []; store.clip = null; store.frames = 0;
+  const watchFrame = () => {
+    store.frames += 1;
+    const t = Math.round(performance.now());
+    for (const img of document.querySelectorAll("[data-slot=event-image-face] img, [data-slot=avatar-stack] img")) {
+      if (!img.checkVisibility?.()) continue;
+      if (!img.__film) {
+        img.__film = true;
+        store.imgs.push({ t, src: img.currentSrc.slice(-34) || img.src.slice(-34), complete: img.complete });
+      }
+    }
+    if (store.clip === null && document.querySelector("[data-slot=event-image-face][style*=clip-path]")) store.clip = t;
+    if (store.frames < 600) requestAnimationFrame(watchFrame);
+  };
+  requestAnimationFrame(watchFrame);
   const describe = (node) => {
     if (!(node instanceof Element)) return node ? node.nodeName : "null";
     const key = node.getAttribute("data-skeleton-key") ?? node.getAttribute("data-slot");
@@ -159,6 +170,9 @@ for (const scenario of SCENARIOS) {
     }
   });
   const marks = [];
+  const errors = [];
+  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text().slice(0, 300)); });
+  page.on("pageerror", (error) => errors.push(`pageerror: ${String(error).slice(0, 300)}`));
   try {
     for (const [index, step] of scenario.steps.entries()) {
       if (index === 0 && scenario.film !== "after-first") await startFilm();
@@ -187,7 +201,7 @@ for (const scenario of SCENARIOS) {
   const kept = await contactSheet(frames, `${OUT}/${scenario.name}.jpg`, narrow ? 8 : 4, narrow ? 195 : 480);
   const cls = (observed?.shifts ?? []).filter((s) => !s.input).reduce((sum, s) => sum + s.value, 0);
   const longTaskMs = (observed?.longTasks ?? []).reduce((sum, task) => sum + task.d, 0);
-  summary.push({ name: scenario.name, frames: frames.length, kept, cls: Math.round(cls * 10000) / 10000, longTaskMs, marks, documents, observed });
+  summary.push({ name: scenario.name, frames: frames.length, kept, cls: Math.round(cls * 10000) / 10000, longTaskMs, marks, errors, documents, observed });
   console.log(`${scenario.name}: ${frames.length} frames (${kept} distinct), CLS ${cls.toFixed(4)}, long tasks ${longTaskMs} ms`);
 }
 await writeFile(`${OUT}/summary.json`, JSON.stringify(summary, null, 2));
