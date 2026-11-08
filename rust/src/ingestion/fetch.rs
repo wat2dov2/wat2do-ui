@@ -4,8 +4,7 @@
 //! No account, cookie or session ID is involved: the request carries only a
 //! browser TLS fingerprint. A post's details come from the JSON Instagram
 //! embeds in its public page, projected into the post shape the agent reads.
-//! A profile comes from its embed page, rendered on the server for a request
-//! that looks like an iframe load.
+//! A profile comes from its public page rendered logged out by Lightpanda.
 
 use std::sync::LazyLock;
 use std::time::Duration;
@@ -20,7 +19,6 @@ use crate::controlbox::INGESTION;
 static JSON_SCRIPT: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?s)<script type="application/json"[^>]*>(.*?)</script>"#).expect("valid regex")
 });
-const PROFILE_CONTEXT: &str = "\"contextJSON\":";
 // Instagram's grey silhouette for accounts that never set a picture.
 const DEFAULT_PICTURE: &str = "44884218_345707102882519_2446069589734326272_n";
 
@@ -103,57 +101,84 @@ pub async fn fetch_post(shortcode: &str) -> Result<Option<Value>, FetchBlocked> 
     Ok(post_media(&page.body, shortcode).and_then(|media| project(&media, shortcode)))
 }
 
-/// A profile's display name and picture, read from its embed page.
+/// A profile's display name and picture, read from its rendered public page.
 #[derive(Debug, Default, PartialEq)]
 pub struct Profile {
     pub name: Option<String>,
     pub picture_url: Option<String>,
 }
 
-/// `fetch_profile`: an empty profile when it is private, renamed, deleted or did
-/// not render twice.
-pub async fn fetch_profile(handle: &str) -> Result<Profile, FetchBlocked> {
-    for _ in 0..2 {
-        let page = get(&format!("https://www.instagram.com/{handle}/embed/"), true).await?;
-        if page.url.contains("/accounts/login") || page.url.contains("/challenge") {
-            return Err(FetchBlocked("Instagram asked for a login".into()));
-        }
-        if page.status == 429 {
-            return Err(FetchBlocked("Instagram answered HTTP 429".into()));
-        }
-        if page.status != 200 {
-            return Ok(Profile::default());
-        }
-        if let Some(profile) = embed_profile(&page.body) {
-            return Ok(profile);
-        }
-    }
-    Ok(Profile::default())
+/// Where the logged-out profile renderer (Lightpanda) is installed.
+pub fn profile_renderer() -> std::path::PathBuf {
+    crate::launch_agents::home().join(&INGESTION.profile_renderer)
 }
 
-/// None when the page came back as the client-side shell, which renders on retry.
-fn embed_profile(html: &str) -> Option<Profile> {
-    let Some(start) = html.find(PROFILE_CONTEXT) else {
-        return Some(Profile::default());
+/// `fetch_profile`: an empty profile when it is renamed, deleted or did not render.
+///
+/// Instagram stopped serving profile embeds in November 2026 (every `/embed/` page
+/// is an error page now), and a plain request gets only the app shell, so the
+/// public profile page is rendered logged out by Lightpanda, which fills in the
+/// same `og:title` and `og:image` tags a browser sees. No cookie is involved.
+pub async fn fetch_profile(handle: &str) -> Result<Profile, FetchBlocked> {
+    let render = tokio::process::Command::new(profile_renderer())
+        .args(["fetch", "--dump", "html", "--wait-until", "networkidle"])
+        .arg(format!("https://www.instagram.com/{handle}/"))
+        .stdin(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .kill_on_drop(true)
+        .output();
+    let timeout = Duration::from_secs_f64(INGESTION.profile_render_timeout_seconds);
+    let html = match tokio::time::timeout(timeout, render).await {
+        Ok(Ok(output)) if output.status.success() => {
+            String::from_utf8_lossy(&output.stdout).into_owned()
+        }
+        _ => return Ok(Profile::default()),
     };
-    let raw = serde_json::Deserializer::from_str(&html[start + PROFILE_CONTEXT.len()..])
-        .into_iter::<Value>()
-        .next()
-        .and_then(Result::ok)?;
-    let raw = raw.as_str()?;
-    let decoded: Value = serde_json::from_str(raw).ok()?;
-    let context = decoded.get("context").cloned().unwrap_or(Value::Null);
-    let picture = context
-        .get("profile_pic_url")
-        .and_then(Value::as_str)
-        .filter(|picture| !picture.contains(DEFAULT_PICTURE))
+    rendered_profile(&html, handle)
+}
+
+static OG_TAG: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"<meta property="og:(title|image)" content="([^"]*)""#).expect("valid regex")
+});
+static TITLE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"<title>([^<]*)").expect("valid regex"));
+const TITLE_SUFFIX: &str = " • Instagram photos and videos";
+
+/// The profile in a rendered page; blocked when Instagram showed its login wall.
+fn rendered_profile(html: &str, handle: &str) -> Result<Profile, FetchBlocked> {
+    let mut title = None;
+    let mut image = None;
+    for captures in OG_TAG.captures_iter(html) {
+        let value = htmlize::unescape(&captures[2]).into_owned();
+        match &captures[1] {
+            "title" => title = title.or(Some(value)),
+            _ => image = image.or(Some(value)),
+        }
+    }
+    let Some(title) = title else {
+        let page_title = TITLE
+            .captures(html)
+            .map(|captures| captures[1].trim().to_owned())
+            .unwrap_or_default();
+        // A gone handle names itself; anything else without profile tags is a wall.
+        if page_title.starts_with("Profile isn't available") {
+            return Ok(Profile::default());
+        }
+        return Err(FetchBlocked(format!(
+            "Instagram rendered no profile ({page_title})"
+        )));
+    };
+    let name = title
+        .strip_suffix(TITLE_SUFFIX)
+        .unwrap_or(&title)
+        .trim()
+        .strip_suffix(&format!("(@{handle})"))
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
         .map(str::to_owned);
-    Some(Profile {
-        name: context
-            .get("full_name")
-            .and_then(Value::as_str)
-            .map(str::to_owned),
-        picture_url: picture,
+    Ok(Profile {
+        name,
+        picture_url: image.filter(|picture| !picture.contains(DEFAULT_PICTURE)),
     })
 }
 
@@ -348,17 +373,41 @@ mod tests {
     }
 
     #[test]
-    fn profile_embed_reads_name_and_skips_default_picture() {
-        let context = json!({"context": {"full_name": "Dance Club", "profile_pic_url": format!("https://x/{DEFAULT_PICTURE}.jpg")}});
-        let html = format!("x\"contextJSON\":{}y", json!(context.to_string()));
+    fn rendered_profile_reads_name_picture_and_gone_handles() {
+        let page = |title: &str, image: &str| {
+            format!(
+                r#"<title>x</title><meta property="og:image" content="{image}"><meta property="og:title" content="{title}">"#
+            )
+        };
         assert_eq!(
-            embed_profile(&html),
-            Some(Profile {
-                name: Some("Dance Club".into()),
-                picture_url: None
-            })
+            rendered_profile(
+                &page(
+                    "Dance &amp; Co (@uw.dance) • Instagram photos and videos",
+                    "https://x/a.jpg?a=1&amp;b=2"
+                ),
+                "uw.dance"
+            )
+            .unwrap(),
+            Profile {
+                name: Some("Dance & Co".into()),
+                picture_url: Some("https://x/a.jpg?a=1&b=2".into())
+            }
         );
-        assert_eq!(embed_profile("\"contextJSON\":null"), None);
-        assert_eq!(embed_profile("<html>"), Some(Profile::default()));
+        assert_eq!(
+            rendered_profile(
+                &page(
+                    "@uw.dance • Instagram photos and videos",
+                    &format!("https://x/{DEFAULT_PICTURE}.jpg")
+                ),
+                "uw.dance"
+            )
+            .unwrap(),
+            Profile::default()
+        );
+        assert_eq!(
+            rendered_profile("<title>Profile isn't available • Instagram</title>", "gone").unwrap(),
+            Profile::default()
+        );
+        assert!(rendered_profile("<title>Login • Instagram</title>", "club").is_err());
     }
 }

@@ -156,6 +156,8 @@ pub struct Ingestion {
     pub fetch_timeout_seconds: f64,
     pub club_logo_read_delay_seconds: f64,
     pub club_logo_retry_days: u64,
+    pub profile_renderer: String,
+    pub profile_render_timeout_seconds: f64,
     pub launch_agent_timeout_seconds: f64,
     pub university_event_schools: Vec<String>,
 }

@@ -1,5 +1,6 @@
 //! Club logos and names from the public Instagram profiles of clubs that still
-//! need them (`services/ingestion/club_logos.py`).
+//! need them (`services/ingestion/club_logos.py`), rendered logged out by Lightpanda
+//! (`controlbox/ingestion.json` `profile_renderer`).
 //!
 //! One handle is read at a time, `club_logo_read_delay_seconds` apart, to fill a
 //! missing logo and to replace a placeholder "@handle" name with the real one.
@@ -16,7 +17,7 @@ use indexmap::IndexMap;
 use regex::Regex;
 use sqlx::PgPool;
 
-use super::fetch::{FetchBlocked, fetch_profile};
+use super::fetch::{FetchBlocked, fetch_profile, profile_renderer};
 use crate::constants::{BUCKET_CLUB_LOGOS, MAX_CLUB_NAME_LENGTH};
 use crate::controlbox::INGESTION;
 use crate::images::fetch_image;
@@ -45,6 +46,7 @@ pub struct ClubLogos {
     read_at: HashMap<String, f64>,
     waiting: IndexMap<String, Vec<Club>>,
     listed_at: Option<Instant>,
+    renderer_missing_logged: bool,
 }
 
 fn epoch_seconds() -> f64 {
@@ -65,11 +67,20 @@ impl ClubLogos {
             read_at,
             waiting: IndexMap::new(),
             listed_at: None,
+            renderer_missing_logged: false,
         }
     }
 
     /// Read one handle's profile; false when none is due.
     pub async fn fill_next(&mut self, pool: &PgPool) -> Result<bool> {
+        // Without the renderer every read would come back empty and wait out its retry days.
+        if !profile_renderer().is_file() {
+            if !self.renderer_missing_logged {
+                tracing::warn!(renderer = %profile_renderer().display(), "club logo reads wait: the profile renderer is not installed");
+                self.renderer_missing_logged = true;
+            }
+            return Ok(false);
+        }
         let Some(handle) = self.next_handle(pool).await? else {
             return Ok(false);
         };
