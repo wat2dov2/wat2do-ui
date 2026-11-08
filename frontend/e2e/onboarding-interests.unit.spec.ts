@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Event } from "../src/shared/types";
 import { preferInterestsWithinDay, sortEvents } from "../src/features/search/api/searchService";
 import { groupEventsByDateSection } from "../src/features/events/lib/eventDateSections";
+import { onboardingInterests } from "../src/features/onboarding/utils/onboardingInterests";
 import { getEventCategory } from "../src/shared/utils/event";
 
 const TORONTO = () => "America/Toronto";
@@ -67,4 +68,12 @@ test("the Past section keeps its latest-first order while upcoming days lead wit
     ["today", [4, 3]],
     ["past", [2, 1]],
   ]);
+});
+
+test("onboarding saves the picked topics plus the tapped events' categories, each once", () => {
+  expect(onboardingInterests(
+    ["Business", "Health"],
+    [{ category: "Health" }, { category: "Arts & Culture" }, { category: "Arts & Culture" }],
+  )).toEqual(["Business", "Health", "Arts & Culture"]);
+  expect(onboardingInterests([], [])).toEqual([]);
 });

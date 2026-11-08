@@ -50,8 +50,7 @@ export function OnboardingPage() {
   const handleComplete = useCallback(
     (data: {
       school: string;
-      selectedTopics: string[];
-      selectedEventIds: number[];
+      interests: string[];
       faculty: string;
       isFirstYear: boolean;
     }) => {
@@ -73,7 +72,7 @@ export function OnboardingPage() {
         fullName: currentProfile?.fullName ?? null,
         avatarUrl: currentProfile?.avatarUrl ?? null,
         faculty: data.faculty,
-        interests: data.selectedTopics,
+        interests: data.interests,
         isFirstYear: data.isFirstYear,
         school: data.school,
         role: "user" as const,
@@ -118,7 +117,7 @@ export function OnboardingPage() {
     3: (
       <OnboardingEventGrid
         selectedEventIds={flow.selectedEventIds}
-        onToggleEventId={flow.toggleEventId}
+        onToggleEvent={flow.toggleEvent}
       />
     ),
     4: (

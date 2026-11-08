@@ -42,13 +42,13 @@ function startMs(event: Event): number {
 
 interface OnboardingEventGridProps {
   selectedEventIds: number[];
-  onToggleEventId: (eventId: number) => void;
+  onToggleEvent: (event: Event) => void;
   className?: string;
 }
 
 export function OnboardingEventGrid({
   selectedEventIds,
-  onToggleEventId,
+  onToggleEvent,
   className,
 }: OnboardingEventGridProps) {
   const { t, i18n } = useTranslation();
@@ -115,7 +115,7 @@ export function OnboardingEventGrid({
             key={event.id}
             event={preview}
             selected={isSelected}
-            onMouseDown={() => onToggleEventId(event.id)}
+            onMouseDown={() => onToggleEvent(event)}
             data-event-id={event.id}
           />
         );

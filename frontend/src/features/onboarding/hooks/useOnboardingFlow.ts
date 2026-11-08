@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
+import type { Event } from "@/shared/types";
+import { onboardingInterests } from "../utils/onboardingInterests";
 
 const ONBOARDING_STEPS_WITHOUT_FACULTY = 4;
 
@@ -17,8 +19,8 @@ export function useOnboardingStepCount(school: string): number {
 interface UseOnboardingFlowOptions {
   onComplete: (data: {
     school: string;
-    selectedTopics: string[];
-    selectedEventIds: number[];
+    /** The picked topics plus the categories of the events tapped in step 3. */
+    interests: string[];
     faculty: string;
     isFirstYear: boolean;
   }) => void;
@@ -35,7 +37,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
   const school = initialSchool ?? "";
   const totalSteps = useOnboardingStepCount(school);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
+  const [pickedEvents, setPickedEvents] = useState<Event[]>([]);
   const [faculty, setFaculty] = useState("");
   const [isFirstYear, setIsFirstYear] = useState<boolean | null>(null);
 
@@ -44,9 +46,13 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     [selectedTopics, eventCategories]
   );
 
-  const toggleEventId = useCallback((eventId: number) => {
-    setSelectedEventIds((prev) =>
-      prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId]
+  const selectedEventIds = useMemo(() => pickedEvents.map((event) => event.id), [pickedEvents]);
+
+  const toggleEvent = useCallback((event: Event) => {
+    setPickedEvents((prev) =>
+      prev.some((picked) => picked.id === event.id)
+        ? prev.filter((picked) => picked.id !== event.id)
+        : [...prev, event]
     );
   }, []);
 
@@ -60,8 +66,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     if (step >= totalSteps - 1) {
       onComplete({
         school,
-        selectedTopics: validTopics,
-        selectedEventIds,
+        interests: onboardingInterests(validTopics, pickedEvents),
         faculty,
         isFirstYear: isFirstYear ?? false,
       });
@@ -75,7 +80,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     faculty,
     isFirstYear,
     step,
-    selectedEventIds,
+    pickedEvents,
     onComplete,
     totalSteps,
   ]);
@@ -95,7 +100,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     setFaculty,
     setIsFirstYear,
     toggleTopic,
-    toggleEventId,
+    toggleEvent,
     goNext,
     goBack,
   };
