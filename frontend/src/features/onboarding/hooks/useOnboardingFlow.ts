@@ -1,7 +1,18 @@
 import { useCallback, useMemo, useState } from "react";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
-const ONBOARDING_TOTAL_STEPS = 5;
+const ONBOARDING_STEPS_WITHOUT_FACULTY = 4;
+
+/**
+ * How many steps onboarding has: year, topics and events, then the school's
+ * faculties when it lists any (with none on file there is nothing to pick).
+ */
+export function useOnboardingStepCount(school: string): number {
+  const { schoolBySlug } = useSchoolDirectory();
+  const faculties = schoolBySlug.get(school)?.faculties ?? [];
+  return ONBOARDING_STEPS_WITHOUT_FACULTY + (faculties.length > 0 ? 1 : 0);
+}
 
 interface UseOnboardingFlowOptions {
   onComplete: (data: {
@@ -22,6 +33,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
   const { event_categories: eventCategories } = useAppConstants();
   const [step, setStep] = useState(0);
   const school = initialSchool ?? "";
+  const totalSteps = useOnboardingStepCount(school);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
   const [faculty, setFaculty] = useState("");
@@ -45,7 +57,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
   }, []);
 
   const goNext = useCallback(() => {
-    if (step >= ONBOARDING_TOTAL_STEPS - 1) {
+    if (step >= totalSteps - 1) {
       onComplete({
         school,
         selectedTopics: validTopics,
@@ -65,6 +77,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
     step,
     selectedEventIds,
     onComplete,
+    totalSteps,
   ]);
 
   const goBack = useCallback(() => {
@@ -73,7 +86,7 @@ export function useOnboardingFlow({ onComplete, initialSchool }: UseOnboardingFl
 
   return {
     currentStep: step,
-    totalSteps: ONBOARDING_TOTAL_STEPS,
+    totalSteps,
     school,
     selectedTopics,
     selectedEventIds,

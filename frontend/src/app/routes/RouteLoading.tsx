@@ -19,6 +19,9 @@ const AboutPage = lazy(() =>
 const LandingPage = lazy(() =>
   import("@/features/landing/pages/LandingPage").then((module) => ({ default: module.LandingPage })),
 );
+const OnboardingLoading = lazy(() =>
+  import("@/features/onboarding/components/OnboardingLoading").then((module) => ({ default: module.OnboardingLoading })),
+);
 const LoginLoading = lazy(async () => {
   const [{ AuthEntryPage }, { AuthHeroPanel }] = await Promise.all([
     import("@/features/auth/pages/AuthEntryPage"),
@@ -48,6 +51,7 @@ export function RouteLoading() {
   if (pathname === ROUTES.LANDING_PREVIEW) return <Suspense><LandingPage snapshot={null} /></Suspense>;
   if (pathname === ROUTES.ABOUT) return <Suspense><AboutPage isLoading /></Suspense>;
   if (pathname === ROUTES.LOGIN) return <Suspense><LoginLoading /></Suspense>;
+  if (pathname === ROUTES.ONBOARDING) return <Suspense><OnboardingLoading /></Suspense>;
   if (OWN_LOADING_ROUTE.test(pathname)) return null;
   if (pathname in PAGE_SHELLS) return <PageShellLoading route={pathname} />;
   const clubPanelEvent = CLUB_PANEL_EVENT_ROUTE.exec(pathname);

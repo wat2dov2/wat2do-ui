@@ -2,9 +2,11 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { GOOSE_IMAGE_PATH } from "../constants";
 import { useTypewriter } from "@/shared/hooks/useTypewriter";
+import { SkeletonLine } from "@/shared/ui/skeleton";
 
 interface GooseDialogueProps {
-  message: string;
+  /** What the goose says, typed out; a placeholder line until there is one. */
+  message?: string;
   onBack?: () => void;
   onNext: () => void;
   nextLabel?: string;
@@ -19,7 +21,7 @@ export function GooseDialogue({
   showBack = true,
 }: GooseDialogueProps) {
   const { t } = useTranslation();
-  const { displayed, done, skip } = useTypewriter(message);
+  const { displayed, done, skip } = useTypewriter(message ?? "");
   const resolvedNextLabel = nextLabel ?? t("common.continue");
 
   return (
@@ -31,6 +33,11 @@ export function GooseDialogue({
           className="size-12 object-contain shrink-0"
         />
 
+        {message === undefined ? (
+          <p className="text-left text-lg leading-relaxed">
+            <SkeletonLine className="w-2/3" />
+          </p>
+        ) : (
         <p
           className="text-left text-lg text-foreground leading-relaxed cursor-pointer"
           role={!done ? "button" : undefined}
@@ -50,6 +57,7 @@ export function GooseDialogue({
           {displayed}
           {!done && <span className="inline-block w-[2px] h-[1em] bg-foreground align-text-bottom ml-px animate-pulse" />}
         </p>
+        )}
 
         <div className="flex items-center gap-2">
           {showBack && onBack && (

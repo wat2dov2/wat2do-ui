@@ -1,7 +1,8 @@
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 /**
- * Onboarding event grid: 2×4 grid of event cards from the school query cache.
- * Uses the same card style as the auth page hero section.
+ * Onboarding event grid: the school's events that are still to come, the most
+ * clicked first, two to a row, loading more as the reader scrolls until there
+ * are no more. Uses the same card style as the auth page hero section.
  * User can multi-select (optional).
  */
 
@@ -13,10 +14,31 @@ import {
   PreviewStyleEventCard,
   HERO_CARD_PLACEHOLDER_HEIGHT,
   eventToPreview,
-  shuffle,
 } from "@/features/auth";
-import { eventFeedQueryOptions, useEventsStore } from "@/features/events";
+import {
+  eventFeedQueryOptions,
+  useCurrentTime,
+  useEventStats,
+  useEventsStore,
+} from "@/features/events";
+import { useProgressiveList } from "@/shared/hooks/useProgressiveList";
+import { getPrimaryOccurrence, hasActiveEventOccurrence } from "@/shared/utils/date";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
+import type { Event } from "@/shared/types";
+
+/** Two rows of four cards a batch: a screen's worth, with the next batch loading below it. */
+const EVENTS_PER_BATCH = 8;
+const GRID_CLASS = "grid grid-cols-2 gap-4 w-full max-w-2xl mx-auto";
+
+function CardPlaceholder() {
+  return <Skeleton className="rounded-xl" style={{ height: HERO_CARD_PLACEHOLDER_HEIGHT }} />;
+}
+
+function startMs(event: Event): number {
+  const start = getPrimaryOccurrence(event)?.dtstart_utc;
+  return start ? Date.parse(start) : Number.POSITIVE_INFINITY;
+}
 
 interface OnboardingEventGridProps {
   selectedEventIds: number[];
@@ -32,40 +54,42 @@ export function OnboardingEventGrid({
   const { t, i18n } = useTranslation();
   const { getSchoolTimezone } = useSchoolDirectory();
 
-  const school = useEventsStore((state) => state.schoolFilter);
-  const { data, isLoading: loading } = useQuery(eventFeedQueryOptions(resolveSchool(school)));
+  const school = resolveSchool(useEventsStore((state) => state.schoolFilter));
+  const { data, isLoading: feedLoading } = useQuery(eventFeedQueryOptions(school));
+  // The order waits for the click counts, so cards never reshuffle under the reader.
+  const { data: stats, isPending: statsPending } = useEventStats(school);
+  const now = useCurrentTime();
+  const loading = feedLoading || statsPending || now === null;
 
   const locale = i18n.language || "en-US";
 
-  // Recompute only when events change, not on locale/translation updates.
-  const topEvents = useMemo(() => shuffle(data?.items ?? []).slice(0, 8), [data]);
+  // Events still to come (or on now), the ones students click most first, then the soonest.
+  const events = useMemo(() => {
+    if (!data || now === null) return [];
+    const clicks = (event: Event) => stats?.[String(event.id)]?.click_count ?? 0;
+    return data.items
+      .filter((event) => hasActiveEventOccurrence(event, now))
+      .sort((first, second) => clicks(second) - clicks(first) || startMs(first) - startMs(second));
+  }, [data, stats, now]);
+  // A fixed key: the clock ticking or stats refreshing never sends the reader back to the top.
+  const { visibleItems, hasMore, loadMoreRef } = useProgressiveList(events, EVENTS_PER_BATCH, "onboarding-events");
 
   const previewEvents = useMemo(
-    () => topEvents.map((e) => ({ event: e, preview: eventToPreview(e, getSchoolTimezone(e.school), locale, t) })),
-    [topEvents, locale, t, getSchoolTimezone],
+    () => visibleItems.map((e) => ({ event: e, preview: eventToPreview(e, getSchoolTimezone(e.school), locale, t) })),
+    [visibleItems, locale, t, getSchoolTimezone],
   );
 
   if (loading) {
     return (
-      <div
-        className={cn(
-          "grid grid-cols-2 gap-3 w-full max-w-2xl mx-auto min-h-[360px] place-content-start",
-          className
-        )}
-        aria-busy
-      >
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-xl overflow-hidden bg-secondary/60 animate-pulse"
-            style={{ height: HERO_CARD_PLACEHOLDER_HEIGHT }}
-          />
+      <div className={cn(GRID_CLASS, "min-h-[360px] place-content-start", className)} aria-busy>
+        {Array.from({ length: EVENTS_PER_BATCH }).map((_, i) => (
+          <CardPlaceholder key={i} />
         ))}
       </div>
     );
   }
 
-  if (!loading && previewEvents.length === 0) {
+  if (previewEvents.length === 0) {
     return (
       <div
         className={cn(
@@ -80,10 +104,7 @@ export function OnboardingEventGrid({
 
   return (
     <div
-      className={cn(
-        "grid grid-cols-2 gap-4 w-full max-w-2xl mx-auto",
-        className
-      )}
+      className={cn(GRID_CLASS, className)}
       role="list"
       aria-label={t("onboarding.events.selectAriaLabel", "Select events that catch your eye")}
     >
@@ -99,6 +120,11 @@ export function OnboardingEventGrid({
           />
         );
       })}
+      {hasMore ? (
+        <div ref={loadMoreRef} aria-hidden="true">
+          <CardPlaceholder />
+        </div>
+      ) : null}
     </div>
   );
 }
