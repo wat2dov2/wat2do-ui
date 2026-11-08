@@ -168,6 +168,8 @@
       "mustKnow": "Imperdibles",
       "slide": "{{current}} de {{total}}",
       "showSlide": "Mostrar el evento imperdible {{current}} de {{total}}",
+      "play": "Reproducir presentación",
+      "pause": "Pausar presentación",
       "previous": "Evento anterior",
       "next": "Evento siguiente",
       "openEvent": "Ver evento",

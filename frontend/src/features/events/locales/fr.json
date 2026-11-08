@@ -168,6 +168,8 @@
       "mustKnow": "À ne pas manquer",
       "slide": "{{current}} sur {{total}}",
       "showSlide": "Afficher l'événement à ne pas manquer {{current}} sur {{total}}",
+      "play": "Lancer le diaporama",
+      "pause": "Mettre le diaporama en pause",
       "previous": "Événement précédent",
       "next": "Événement suivant",
       "openEvent": "Voir l'événement",

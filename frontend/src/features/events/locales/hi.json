@@ -161,6 +161,8 @@
       "mustKnow": "ज़रूर जानें",
       "slide": "{{total}} में से {{current}}",
       "showSlide": "{{total}} में से ज़रूरी इवेंट {{current}} दिखाएँ",
+      "play": "स्लाइडशो चलाएँ",
+      "pause": "स्लाइडशो रोकें",
       "previous": "पिछला इवेंट",
       "next": "अगला इवेंट",
       "openEvent": "इवेंट देखें",

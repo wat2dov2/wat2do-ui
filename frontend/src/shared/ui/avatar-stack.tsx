@@ -8,6 +8,8 @@ interface AvatarStackProps {
   overflowLabel?: string;
   /** Eager for avatars on the first screen, so they arrive with the page instead of one by one after it. */
   loading?: "eager" | "lazy";
+  /** The names are already written beside the avatars, so the images stay silent. */
+  decorative?: boolean;
 }
 
 const AVATAR_SIZES = {
@@ -18,21 +20,21 @@ const AVATAR_SIZES = {
 } as const;
 
 /** Overlapping profile images with accessible names and an optional overflow count. */
-export function AvatarStack({ avatars, size = "default", overflowCount = 0, overflowLabel, loading = "lazy" }: AvatarStackProps) {
+export function AvatarStack({ avatars, size = "default", overflowCount = 0, overflowLabel, loading = "lazy", decorative = false }: AvatarStackProps) {
   const { box, px, fallback } = AVATAR_SIZES[size];
   return (
     <div data-slot="avatar-stack" className={size === "sm" ? "flex shrink-0 items-center -space-x-1.5" : "flex shrink-0 items-center -space-x-2"}>
       {avatars.map((avatar, index) => (
         <div
           key={index}
-          title={avatar.name}
+          title={decorative ? undefined : avatar.name}
           className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-background bg-muted ${box}`}
         >
           <LazyImage
             // Avatars are at most 48 px, so a club logo shows its stored thumbnail.
             src={logoThumbnailUrl(avatar.src)}
             fallbackSrc={avatar.src}
-            alt={avatar.name}
+            alt={decorative ? "" : avatar.name}
             width={px}
             height={px}
             loading={loading}

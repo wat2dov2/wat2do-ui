@@ -161,6 +161,8 @@
       "mustKnow": "Dapat malaman",
       "slide": "{{current}} sa {{total}}",
       "showSlide": "Ipakita ang dapat-malamang event {{current}} sa {{total}}",
+      "play": "I-play ang slideshow",
+      "pause": "I-pause ang slideshow",
       "previous": "Nakaraang event",
       "next": "Susunod na event",
       "openEvent": "Tingnan ang event",

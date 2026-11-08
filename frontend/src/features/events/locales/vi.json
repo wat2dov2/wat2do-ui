@@ -154,6 +154,8 @@
       "mustKnow": "Không thể bỏ lỡ",
       "slide": "{{current}} / {{total}}",
       "showSlide": "Hiện sự kiện không thể bỏ lỡ {{current}} / {{total}}",
+      "play": "Phát trình chiếu",
+      "pause": "Tạm dừng trình chiếu",
       "previous": "Sự kiện trước",
       "next": "Sự kiện tiếp theo",
       "openEvent": "Xem sự kiện",

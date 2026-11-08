@@ -154,6 +154,8 @@
       "mustKnow": "必睇活動",
       "slide": "第 {{current}} 個，共 {{total}} 個",
       "showSlide": "顯示第 {{current}} 個必睇活動，共 {{total}} 個",
+      "play": "播放輪播",
+      "pause": "暫停輪播",
       "previous": "上一個活動",
       "next": "下一個活動",
       "openEvent": "睇活動",
