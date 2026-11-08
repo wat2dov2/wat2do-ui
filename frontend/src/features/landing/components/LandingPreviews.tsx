@@ -39,7 +39,7 @@ const FREE_FOOD_CARDS = 4;
 /** The feed's search bar and quick filters with Free food on, above a row of real events that have free food. */
 export function FreeFoodPreview({ events, isLoading }: { events: readonly Event[]; isLoading: boolean }) {
   const { t } = useTranslation();
-  const freeFood = events.filter((event) => event.food.length > 0 && !event.price && event.source_image_url).slice(0, FREE_FOOD_CARDS);
+  const freeFood = events.filter((event) => (event.food?.length ?? 0) > 0 && !event.price && event.source_image_url).slice(0, FREE_FOOD_CARDS);
 
   return (
     <Inert>
