@@ -94,10 +94,12 @@ const LOGO_MIN_CANDIDATES = 24;
 /** Headline posters are dark: a dominant colour no lighter than this (0 black, 1 white) covering at least this share of the poster. */
 const TITLE_MAX_LIGHTNESS = 0.2;
 const TITLE_MIN_SHARE = 0.35;
+/** On a dark page the headline's posters are at least this light instead. */
+const TITLE_MIN_LIGHTNESS_ON_DARK = 0.6;
 /** The smallest cell a headline may ask for, in CSS pixels, so its widest line still fits on one line on the narrowest phones. */
 const MIN_TILE_SIZE = 2;
 /** Each grid square the logo touches splits into this many squares a side, so the logo reads at a finer grain than the grid. */
-const LOGO_SPLIT = 3;
+const LOGO_SPLIT = 2;
 /** Logo squares never split smaller than this, in CSS pixels; on a fine grid they stay whole. */
 const MIN_LOGO_SQUARE = 3;
 /** Tries at a random unused poster before searching the pool for the least shown one. */
@@ -232,9 +234,12 @@ export function startEventPixelMosaic(
       const [r, g, b] = rgb(content.posters[poster].colour);
       return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
     };
-    const dark = everyPoster.filter((poster) => lightness(poster) <= TITLE_MAX_LIGHTNESS);
-    const solid = dark.filter((poster) => content.posters[poster].share >= TITLE_MIN_SHARE);
-    return (solid.length ? solid : dark.length ? dark : rankFor("k").slice(0, 1)).sort((a, c) => lightness(a) - lightness(c));
+    // On a dark page dark letters vanish, so the headline takes the lightest posters instead.
+    const onDark = document.documentElement.classList.contains("dark");
+    const stand = everyPoster.filter((poster) => (onDark ? lightness(poster) >= TITLE_MIN_LIGHTNESS_ON_DARK : lightness(poster) <= TITLE_MAX_LIGHTNESS));
+    const solid = stand.filter((poster) => content.posters[poster].share >= TITLE_MIN_SHARE);
+    const order = onDark ? (a: number, c: number) => lightness(c) - lightness(a) : (a: number, c: number) => lightness(a) - lightness(c);
+    return (solid.length ? solid : stand.length ? stand : rankFor("k").slice(0, 1)).sort(order);
   })();
 
   let tile = look.tileSize;

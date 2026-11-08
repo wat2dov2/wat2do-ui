@@ -588,8 +588,8 @@
       }
     },
     "solution": {
-      "title": "Iisang feed. Bawat organisasyon. Walang paghahanap.",
-      "description": "Ang Wat2Do na ang magfo-follow sa mga account para hindi mo na kailangan, at ginagawang kaganapan ang bawat flyer na puwede mong i-search, i-filter at i-save.",
+      "title": "Bawat oportunidad, laging updated.",
+      "description": "Bawat kaganapan, networking night at bukas na posisyon sa mga club ng {{school}}, ina-update agad pagka-post ng mga club. Maghanap, mag-filter at i-save ang gusto mo.",
       "stats": {
         "clubsLabel": "organisasyong sinusubaybayan sa {{school}}",
         "clubsLabel_one": "organisasyong sinusubaybayan sa {{school}}",
@@ -600,9 +600,9 @@
         "newLabel": "bagong kaganapan sa nakaraang 7 araw",
         "newLabel_one": "bagong kaganapan sa nakaraang 7 araw",
         "newLabel_other": "mga bagong kaganapan sa nakaraang 7 araw",
-        "thisWeekLabel": "kaganapan ngayong linggo",
-        "thisWeekLabel_one": "kaganapan ngayong linggo",
-        "thisWeekLabel_other": "mga kaganapan ngayong linggo",
+        "networkingLabel": "paparating na networking na pagkakataon",
+        "networkingLabel_one": "paparating na networking na pagkakataon",
+        "networkingLabel_other": "mga paparating na networking na pagkakataon",
         "freeFoodLabel": "paparating na kaganapan na may libreng pagkain",
         "freeFoodLabel_one": "paparating na kaganapan na may libreng pagkain",
         "freeFoodLabel_other": "mga paparating na kaganapan na may libreng pagkain",
@@ -611,46 +611,10 @@
         "positionsLabel_other": "mga bukas na posisyon sa club"
       }
     },
-    "useCases": {
-      "title": "Campus life, sa paraan mo",
-      "description": "Anim na paraan ng paggamit ng mga estudyante sa {{school}} ng Wat2Do.",
-      "items": {
-        "freeFood": {
-          "title": "Libreng pagkain sa pagitan ng klase",
-          "description": "Pizza sa mga info session, bake sale, at socials na may meryenda. I-filter sa libreng pagkain at planuhin ang tanghalian mo.",
-          "action": "Tingnan ang libreng pagkain"
-        },
-        "employers": {
-          "title": "Makilala ang mga employer sa campus",
-          "description": "Mga info session at networking night kung saan personal na pumupunta ang mga recruiter. Madalas, nagsisimula ang magandang oportunidad sa isang usapan.",
-          "action": "Tingnan ang mga employer event"
-        },
-        "competitions": {
-          "title": "Mga kompetisyon at hackathon",
-          "description": "Case comp, hackathon at pitch night, may premyo at totoong maidadagdag sa resume mo.",
-          "action": "Tingnan ang mga kompetisyon"
-        },
-        "newToCampus": {
-          "title": "Bago sa campus?",
-          "description": "I-browse ang bawat organisasyon sa school mo at hanapin ang mga taong kapareho mo ng hilig.",
-          "action": "I-browse ang mga organisasyon"
-        },
-        "getInvolved": {
-          "title": "Sumali sa isang exec team",
-          "description": "Dito ipinopost ng mga organisasyon ang mga bakanteng posisyon, mula first-year rep hanggang president. Makilahok nang higit pa sa pagdalo.",
-          "action": "Tingnan ang mga bakanteng posisyon"
-        },
-        "bored": {
-          "title": "Walang magawa ngayong gabi?",
-          "description": "I-search ang \"random\" sa feed at pipili ang Wat2Do ng kaganapang malapit nang magsimula para sa iyo.",
-          "action": "Sorpresahin mo ako"
-        }
-      }
-    },
     "features": {
       "filters": {
         "title": "Libreng pagkain sa isang tap",
-        "description": "Mabilis na filter para sa libreng pagkain, mga employer sa campus at mga kompetisyon. O paliitin pa ayon sa araw, presyo, organisasyon at lokasyon."
+        "description": "I-on ang Libreng pagkain at libreng events na may pagkain lang ang ipapakita ng feed. Paliitin pa ayon sa araw, presyo, club at lokasyon."
       },
       "clubs": {
         "title": "Hanapin ang mga organisasyong hindi mo alam na meron pala",

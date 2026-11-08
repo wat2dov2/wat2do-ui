@@ -73,7 +73,7 @@ export function LandingSolution({ schoolName, snapshot }: { schoolName: string; 
   // Strongest first. A number its feed could not load is left out, never shown as zero.
   const stats: { key: string; count: number | null | undefined; label: (count: number) => string; badge?: StatProps["badge"] }[] = [
     { key: "upcoming", count: snapshot?.events?.length, label: (count) => t("landing.solution.stats.upcomingLabel", { count }), badge: { tone: "live", text: t("common.live") } },
-    { key: "thisWeek", count: snapshot?.thisWeekCount, label: (count) => t("landing.solution.stats.thisWeekLabel", { count }) },
+    { key: "networking", count: snapshot?.networkingCount, label: (count) => t("landing.solution.stats.networkingLabel", { count }) },
     { key: "new", count: snapshot?.newThisWeekCount, label: (count) => t("landing.solution.stats.newLabel", { count }), badge: { tone: "new", text: t("events.new") } },
     { key: "freeFood", count: snapshot?.freeFoodCount, label: (count) => t("landing.solution.stats.freeFoodLabel", { count }), badge: { tone: "free", text: t("common.free") } },
     { key: "clubs", count: snapshot?.clubCount, label: (count) => t("landing.solution.stats.clubsLabel", { count, school: schoolName }) },
@@ -85,7 +85,7 @@ export function LandingSolution({ schoolName, snapshot }: { schoolName: string; 
     <LandingSection
       id={LANDING_ANCHORS.HOW_IT_WORKS}
       title={t("landing.solution.title")}
-      description={t("landing.solution.description")}
+      description={t("landing.solution.description", { school: schoolName })}
     >
       {isLoading || shown.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">

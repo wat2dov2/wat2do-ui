@@ -1,6 +1,7 @@
 import { getClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.server";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
+import { isFreeFoodEvent, isNetworkingEvent, nicheClubs } from "@/features/landing/lib/landingEvents";
 import type { Club, Event } from "@/shared/types";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
 
@@ -18,23 +19,16 @@ export interface LandingSnapshot {
   events: Event[] | null;
   /** Upcoming events first added in the last seven days. */
   newThisWeekCount: number | null;
-  /** Upcoming events with an occurrence starting in the next seven days. */
-  thisWeekCount: number | null;
+  /** Upcoming networking opportunities: employer events and business clubs' events. */
+  networkingCount: number | null;
   /** Upcoming events with food that cost nothing, as the feed's free food filter finds them. */
   freeFoodCount: number | null;
   /** Clubs in the school's directory. */
   clubCount: number | null;
-  /** The first clubs in the directory that have a logo, for the clubs preview. */
+  /** A few niche clubs from the directory, for the clubs preview. */
   previewClubs: Club[];
   /** Open club positions at the school. */
   positionCount: number | null;
-}
-
-function startsWithin(event: Event, from: number, until: number): boolean {
-  return (event.occurrences ?? []).some((occurrence) => {
-    const start = Date.parse(occurrence.dtstart_utc);
-    return start >= from && start < until;
-  });
 }
 
 /** Reads a published feed, or null with the failure logged when it is unavailable. */
@@ -63,10 +57,10 @@ export async function getLandingSnapshot(school: string): Promise<LandingSnapsho
   return {
     events,
     newThisWeekCount: countEvents((event) => Boolean(event.added_at) && now - Date.parse(event.added_at!) <= WEEK_MS),
-    thisWeekCount: countEvents((event) => startsWithin(event, now, now + WEEK_MS)),
-    freeFoodCount: countEvents((event) => (event.food?.length ?? 0) > 0 && !event.price),
+    networkingCount: countEvents(isNetworkingEvent),
+    freeFoodCount: countEvents(isFreeFoodEvent),
     clubCount: clubs?.length ?? null,
-    previewClubs: (clubs ?? []).filter((club) => club.logo_url).slice(0, PREVIEW_CLUBS),
+    previewClubs: nicheClubs(clubs ?? [], PREVIEW_CLUBS),
     positionCount: positions?.length ?? null,
   };
 }

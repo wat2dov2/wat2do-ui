@@ -7,7 +7,6 @@ import { LandingFaq } from "@/features/landing/components/LandingFaq";
 import { LandingHero } from "@/features/landing/components/LandingHero";
 import { LandingProblem } from "@/features/landing/components/LandingProblem";
 import { LandingSolution } from "@/features/landing/components/LandingSolution";
-import { LandingUseCases } from "@/features/landing/components/LandingUseCases";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import { Container, Stack } from "@/shared/layout";
 
@@ -27,7 +26,6 @@ export function LandingPage({ snapshot }: LandingPageProps) {
         <LandingHero schoolName={schoolName} events={snapshot?.events ?? []} isLoading={!snapshot} />
         <LandingProblem schoolName={schoolName} />
         <LandingSolution schoolName={schoolName} snapshot={snapshot} />
-        <LandingUseCases schoolName={schoolName} />
         <LandingFaq />
         <LandingClosing schoolName={schoolName} />
       </Stack>

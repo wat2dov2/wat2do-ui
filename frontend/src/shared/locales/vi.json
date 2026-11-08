@@ -585,8 +585,8 @@
       }
     },
     "solution": {
-      "title": "Một bảng tin. Mọi tổ chức. Không cần tìm kiếm.",
-      "description": "Wat2Do theo dõi các tài khoản thay bạn, và biến mỗi poster thành một sự kiện bạn có thể tìm kiếm, lọc và lưu lại.",
+      "title": "Mọi cơ hội, luôn cập nhật.",
+      "description": "Mọi sự kiện, buổi networking và vị trí câu lạc bộ đang tuyển ở {{school}}, cập nhật ngay khi câu lạc bộ đăng. Tìm, lọc và lưu những gì bạn muốn.",
       "stats": {
         "clubsLabel": "tổ chức được theo dõi tại {{school}}",
         "clubsLabel_other": "tổ chức được theo dõi tại {{school}}",
@@ -594,54 +594,18 @@
         "upcomingLabel_other": "sự kiện sắp diễn ra",
         "newLabel": "sự kiện mới trong 7 ngày qua",
         "newLabel_other": "sự kiện mới trong 7 ngày qua",
-        "thisWeekLabel": "sự kiện trong tuần này",
-        "thisWeekLabel_other": "sự kiện trong tuần này",
+        "networkingLabel": "cơ hội networking sắp tới",
+        "networkingLabel_other": "cơ hội networking sắp tới",
         "freeFoodLabel": "sự kiện sắp tới có đồ ăn miễn phí",
         "freeFoodLabel_other": "sự kiện sắp tới có đồ ăn miễn phí",
         "positionsLabel": "vị trí câu lạc bộ đang tuyển",
         "positionsLabel_other": "vị trí câu lạc bộ đang tuyển"
       }
     },
-    "useCases": {
-      "title": "Đời sinh viên theo cách của bạn",
-      "description": "Sáu cách sinh viên tại {{school}} dùng Wat2Do.",
-      "items": {
-        "freeFood": {
-          "title": "Đồ ăn miễn phí giữa giờ học",
-          "description": "Pizza ở buổi giới thiệu, bake sale, buổi giao lưu có đồ ăn vặt. Lọc theo đồ ăn miễn phí và lên kế hoạch bữa trưa.",
-          "action": "Xem đồ ăn miễn phí"
-        },
-        "employers": {
-          "title": "Gặp nhà tuyển dụng ngay tại trường",
-          "description": "Các buổi giới thiệu và đêm networking có nhà tuyển dụng đến tận nơi. Cơ hội tốt thường bắt đầu từ một cuộc trò chuyện.",
-          "action": "Xem sự kiện tuyển dụng"
-        },
-        "competitions": {
-          "title": "Cuộc thi và hackathon",
-          "description": "Thi giải case, hackathon và đêm pitching, có giải thưởng và trải nghiệm thật để ghi vào CV.",
-          "action": "Xem cuộc thi"
-        },
-        "newToCampus": {
-          "title": "Mới đến trường?",
-          "description": "Xem mọi tổ chức trong trường và tìm những người có cùng sở thích với bạn.",
-          "action": "Xem các tổ chức"
-        },
-        "getInvolved": {
-          "title": "Gia nhập ban điều hành",
-          "description": "Các tổ chức đăng vị trí đang tuyển ở đây, từ đại diện năm nhất đến chủ tịch. Không chỉ đến tham gia mà còn góp sức.",
-          "action": "Xem vị trí đang tuyển"
-        },
-        "bored": {
-          "title": "Tối nay không có gì làm?",
-          "description": "Tìm \"random\" trên bảng tin và Wat2Do sẽ chọn cho bạn một sự kiện sắp diễn ra.",
-          "action": "Gợi ý bất ngờ"
-        }
-      }
-    },
     "features": {
       "filters": {
         "title": "Đồ ăn miễn phí chỉ với một lần chạm",
-        "description": "Lọc nhanh đồ ăn miễn phí, nhà tuyển dụng tại trường và cuộc thi. Hoặc thu hẹp theo ngày, giá, tổ chức và địa điểm."
+        "description": "Bật Đồ ăn miễn phí và bảng tin chỉ hiện sự kiện miễn phí có đồ ăn. Lọc thêm theo ngày, giá, câu lạc bộ và địa điểm."
       },
       "clubs": {
         "title": "Khám phá những tổ chức bạn chưa từng biết",

@@ -591,8 +591,8 @@
       }
     },
     "solution": {
-      "title": "Un solo feed. Todos los clubes. Sin buscar.",
-      "description": "Wat2Do sigue las cuentas por ti y convierte cada cartel en un evento que puedes buscar, filtrar y guardar.",
+      "title": "Cada oportunidad, siempre al día.",
+      "description": "Cada evento, noche de networking y puesto abierto en clubes de {{school}}, actualizado en cuanto los clubes lo publican. Busca, filtra y guarda lo que te interese.",
       "stats": {
         "clubsLabel": "club seguido en {{school}}",
         "clubsLabel_one": "club seguido en {{school}}",
@@ -606,10 +606,10 @@
         "newLabel_one": "evento nuevo en los últimos 7 días",
         "newLabel_many": "eventos nuevos en los últimos 7 días",
         "newLabel_other": "eventos nuevos en los últimos 7 días",
-        "thisWeekLabel": "evento esta semana",
-        "thisWeekLabel_many": "eventos esta semana",
-        "thisWeekLabel_one": "evento esta semana",
-        "thisWeekLabel_other": "eventos esta semana",
+        "networkingLabel": "próxima oportunidad de networking",
+        "networkingLabel_many": "próximas oportunidades de networking",
+        "networkingLabel_one": "próxima oportunidad de networking",
+        "networkingLabel_other": "próximas oportunidades de networking",
         "freeFoodLabel": "próximo evento con comida gratis",
         "freeFoodLabel_many": "próximos eventos con comida gratis",
         "freeFoodLabel_one": "próximo evento con comida gratis",
@@ -620,46 +620,10 @@
         "positionsLabel_other": "puestos abiertos en clubes"
       }
     },
-    "useCases": {
-      "title": "Vive el campus a tu manera",
-      "description": "Seis formas en que los estudiantes de {{school}} usan Wat2Do.",
-      "items": {
-        "freeFood": {
-          "title": "Comida gratis entre clases",
-          "description": "Pizza en sesiones informativas, ventas de repostería, reuniones con snacks. Filtra por comida gratis y planea tu almuerzo en torno a ella.",
-          "action": "Ver comida gratis"
-        },
-        "employers": {
-          "title": "Conoce empleadores en el campus",
-          "description": "Sesiones informativas y noches de networking donde los reclutadores van en persona. Las buenas oportunidades suelen empezar con una conversación.",
-          "action": "Ver eventos con empleadores"
-        },
-        "competitions": {
-          "title": "Competiciones y hackathons",
-          "description": "Competiciones de casos, hackathons y noches de pitch, con premios y algo real para tu currículum.",
-          "action": "Ver competiciones"
-        },
-        "newToCampus": {
-          "title": "¿Nuevo en el campus?",
-          "description": "Explora todos los clubes de tu universidad y encuentra gente a la que le gustan las mismas cosas que a ti.",
-          "action": "Explorar clubes"
-        },
-        "getInvolved": {
-          "title": "Únete a una directiva",
-          "description": "Los clubes publican aquí sus puestos abiertos, desde representantes de primer año hasta presidentes. Involúcrate más allá de solo asistir.",
-          "action": "Ver puestos abiertos"
-        },
-        "bored": {
-          "title": "¿Nada que hacer esta noche?",
-          "description": "Busca \"random\" en el feed y Wat2Do elige para ti algo que pase pronto.",
-          "action": "Sorpréndeme"
-        }
-      }
-    },
     "features": {
       "filters": {
         "title": "Comida gratis en un toque",
-        "description": "Filtros rápidos para comida gratis, empleadores en el campus y competiciones. O afina por día, precio, club y ubicación."
+        "description": "Activa Comida gratis y el feed muestra solo eventos gratuitos con comida. Afina más por día, precio, club y lugar."
       },
       "clubs": {
         "title": "Descubre clubes que no sabías que existían",

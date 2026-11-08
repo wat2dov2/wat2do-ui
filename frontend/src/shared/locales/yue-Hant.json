@@ -585,8 +585,8 @@
       }
     },
     "solution": {
-      "title": "一個 feed。所有組織。唔使搵。",
-      "description": "Wat2Do 幫你 follow 晒啲帳戶，將每張海報變成可以搜尋、篩選同儲存嘅活動。",
+      "title": "每個機會，時刻更新。",
+      "description": "{{school}} 每個活動、交流夜同學會招人，學會一出 post 就即刻更新。搜尋、篩選，揀你想去嘅儲低。",
       "stats": {
         "clubsLabel": "{{school}} 追蹤緊嘅組織",
         "clubsLabel_other": "{{school}} 追蹤緊嘅組織",
@@ -594,54 +594,18 @@
         "upcomingLabel_other": "就嚟舉行嘅活動",
         "newLabel": "過去 7 日新增嘅活動",
         "newLabel_other": "過去 7 日新增嘅活動",
-        "thisWeekLabel": "今個星期嘅活動",
-        "thisWeekLabel_other": "今個星期嘅活動",
+        "networkingLabel": "即將舉行嘅交流機會",
+        "networkingLabel_other": "即將舉行嘅交流機會",
         "freeFoodLabel": "有免費嘢食嘅活動",
         "freeFoodLabel_other": "有免費嘢食嘅活動",
         "positionsLabel": "學會招緊嘅職位",
         "positionsLabel_other": "學會招緊嘅職位"
       }
     },
-    "useCases": {
-      "title": "校園生活，隨你點過",
-      "description": "{{school}} 同學用 Wat2Do 嘅六個方法。",
-      "items": {
-        "freeFood": {
-          "title": "堂與堂之間搵免費嘢食",
-          "description": "講座有 pizza、義賣有蛋糕、social 有小食。篩選免費嘢食，順便計埋晏晝食咩。",
-          "action": "睇免費嘢食"
-        },
-        "employers": {
-          "title": "喺校園識僱主",
-          "description": "招聘人員親身到場嘅講座同 networking 夜。好機會通常由一次傾偈開始。",
-          "action": "睇僱主活動"
-        },
-        "competitions": {
-          "title": "比賽同 hackathon",
-          "description": "Case comp、hackathon 同 pitch night，有獎品，仲可以為你份 CV 加啲真材實料。",
-          "action": "睇比賽"
-        },
-        "newToCampus": {
-          "title": "啱啱嚟到校園？",
-          "description": "睇晒你學校所有組織，搵到同你有共同興趣嘅人。",
-          "action": "瀏覽組織"
-        },
-        "getInvolved": {
-          "title": "加入幹事會",
-          "description": "組織喺度出招募職位，由一年級代表到會長都有。唔止出席，仲可以落手參與。",
-          "action": "睇招募職位"
-        },
-        "bored": {
-          "title": "今晚冇嘢做？",
-          "description": "喺 feed 度搜尋「random」，Wat2Do 就幫你揀一個就嚟開始嘅活動。",
-          "action": "嚟個驚喜"
-        }
-      }
-    },
     "features": {
       "filters": {
         "title": "撳一下就搵到免費餐飲",
-        "description": "一撳就篩選免費餐飲、僱主到校同比賽。或者按日子、價錢、組織同地點再收窄範圍。"
+        "description": "開咗免費嘢食，動態就只會顯示有嘢食嘅免費活動。再按日子、價錢、學會同地點收窄。"
       },
       "clubs": {
         "title": "發掘你從來唔知有嘅組織",

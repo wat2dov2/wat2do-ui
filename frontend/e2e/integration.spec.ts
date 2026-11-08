@@ -5212,7 +5212,7 @@ test.describe("Navigation", () => {
 
     await page.getByRole("link", { name: "How it works" }).click();
     await expect(page).toHaveURL(/#how-it-works$/);
-    await expect(page.getByRole("heading", { name: "One feed. Every club. No searching." })).toBeInViewport();
+    await expect(page.getByRole("heading", { name: "Every opportunity, kept up to date." })).toBeInViewport();
 
     await page.getByRole("link", { name: "See what's on" }).first().click();
     await expect(page).toHaveURL(`${BASE}/events`);

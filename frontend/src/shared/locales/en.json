@@ -585,8 +585,8 @@
       }
     },
     "solution": {
-      "title": "One feed. Every club. No searching.",
-      "description": "Wat2Do follows the accounts so you don't have to, and turns every flyer into an event you can search, filter and save.",
+      "title": "Every opportunity, kept up to date.",
+      "description": "Every event, networking night and club opening at {{school}}, updated as clubs post them. Search, filter and save the ones you want.",
       "stats": {
         "clubsLabel": "club tracked at {{school}}",
         "clubsLabel_other": "clubs tracked at {{school}}",
@@ -594,54 +594,18 @@
         "upcomingLabel_other": "upcoming events right now",
         "newLabel": "new event in the last 7 days",
         "newLabel_other": "new events in the last 7 days",
-        "thisWeekLabel": "event this week",
-        "thisWeekLabel_other": "events this week",
+        "networkingLabel": "upcoming networking opportunity",
+        "networkingLabel_other": "upcoming networking opportunities",
         "freeFoodLabel": "upcoming event with free food",
         "freeFoodLabel_other": "upcoming events with free food",
         "positionsLabel": "open club position",
         "positionsLabel_other": "open club positions"
       }
     },
-    "useCases": {
-      "title": "However you do campus",
-      "description": "Six ways students at {{school}} use Wat2Do.",
-      "items": {
-        "freeFood": {
-          "title": "Free food between classes",
-          "description": "Pizza at info sessions, bake sales, socials with snacks. Filter to free food and plan lunch around it.",
-          "action": "See free food"
-        },
-        "employers": {
-          "title": "Meet employers on campus",
-          "description": "Info sessions and networking nights where recruiters show up in person. Good leads often start with one conversation.",
-          "action": "See employer events"
-        },
-        "competitions": {
-          "title": "Competitions and hackathons",
-          "description": "Case comps, hackathons and pitch nights, with prizes and something real for your resume.",
-          "action": "See competitions"
-        },
-        "newToCampus": {
-          "title": "New to campus?",
-          "description": "Browse every club at your school and find people who are into the same things you are.",
-          "action": "Browse clubs"
-        },
-        "getInvolved": {
-          "title": "Join an exec team",
-          "description": "Clubs post open roles here, from first-year reps to presidents. Get involved beyond showing up.",
-          "action": "See open positions"
-        },
-        "bored": {
-          "title": "Nothing to do tonight?",
-          "description": "Search \"random\" in the feed and Wat2Do picks something happening soon for you.",
-          "action": "Surprise me"
-        }
-      }
-    },
     "features": {
       "filters": {
         "title": "Free food in one tap",
-        "description": "Quick filters for free food, employers on campus and competitions. Or narrow it down by day, price, club and location."
+        "description": "Turn on Free food and the feed shows only free events with food. Narrow it further by day, price, club and location."
       },
       "clubs": {
         "title": "Find the clubs you didn't know existed",

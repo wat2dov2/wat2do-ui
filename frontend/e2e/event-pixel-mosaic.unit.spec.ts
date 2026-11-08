@@ -52,7 +52,7 @@ function loadMosaic(width = 240, height = 120) {
     });
   };
   const element = () => ({ width: 0, height: 0, style: {} as Record<string, string>, getContext: context });
-  const document = { visibilityState: "visible", createElement: element, addEventListener: () => {}, removeEventListener: () => {} };
+  const document = { visibilityState: "visible", documentElement: { classList: { contains: () => false } }, createElement: element, addEventListener: () => {}, removeEventListener: () => {} };
   const exports = {} as Engine;
   const title = loadTitle();
   runInNewContext(transpile("../src/features/landing/lib/eventPixelMosaic.ts"), {

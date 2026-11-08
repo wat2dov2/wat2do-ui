@@ -594,8 +594,8 @@
       }
     },
     "solution": {
-      "title": "Jeden feed. Każda organizacja. Bez szukania.",
-      "description": "Wat2Do śledzi konta za Ciebie i zamienia każdy plakat w wydarzenie, które możesz wyszukać, przefiltrować i zapisać.",
+      "title": "Każda okazja, zawsze aktualna.",
+      "description": "Każde wydarzenie, wieczór networkingowy i otwarte stanowisko w klubach na {{school}}, aktualizowane, gdy tylko kluby je opublikują. Szukaj, filtruj i zapisuj to, co cię interesuje.",
       "stats": {
         "clubsLabel": "organizacja śledzona na {{school}}",
         "clubsLabel_one": "organizacja śledzona na {{school}}",
@@ -612,11 +612,11 @@
         "newLabel_few": "nowe wydarzenia w ostatnich 7 dniach",
         "newLabel_many": "nowych wydarzeń w ostatnich 7 dniach",
         "newLabel_other": "nowego wydarzenia w ostatnich 7 dniach",
-        "thisWeekLabel": "wydarzenie w tym tygodniu",
-        "thisWeekLabel_few": "wydarzenia w tym tygodniu",
-        "thisWeekLabel_many": "wydarzeń w tym tygodniu",
-        "thisWeekLabel_one": "wydarzenie w tym tygodniu",
-        "thisWeekLabel_other": "wydarzenia w tym tygodniu",
+        "networkingLabel": "nadchodząca okazja do networkingu",
+        "networkingLabel_few": "nadchodzące okazje do networkingu",
+        "networkingLabel_many": "nadchodzących okazji do networkingu",
+        "networkingLabel_one": "nadchodząca okazja do networkingu",
+        "networkingLabel_other": "nadchodzącej okazji do networkingu",
         "freeFoodLabel": "nadchodzące wydarzenie z darmowym jedzeniem",
         "freeFoodLabel_few": "nadchodzące wydarzenia z darmowym jedzeniem",
         "freeFoodLabel_many": "nadchodzących wydarzeń z darmowym jedzeniem",
@@ -629,46 +629,10 @@
         "positionsLabel_other": "otwartego stanowiska w klubach"
       }
     },
-    "useCases": {
-      "title": "Kampus po Twojemu",
-      "description": "Sześć sposobów, w jakie studenci na {{school}} korzystają z Wat2Do.",
-      "items": {
-        "freeFood": {
-          "title": "Darmowe jedzenie między zajęciami",
-          "description": "Pizza na spotkaniach informacyjnych, kiermasze ciast, spotkania z przekąskami. Włącz filtr darmowego jedzenia i zaplanuj pod to lunch.",
-          "action": "Zobacz darmowe jedzenie"
-        },
-        "employers": {
-          "title": "Poznaj pracodawców na kampusie",
-          "description": "Spotkania informacyjne i wieczory networkingowe, na które rekruterzy przychodzą osobiście. Dobre okazje często zaczynają się od jednej rozmowy.",
-          "action": "Zobacz wydarzenia z pracodawcami"
-        },
-        "competitions": {
-          "title": "Konkursy i hackathony",
-          "description": "Konkursy case study, hackathony i wieczory pitchów, z nagrodami i czymś konkretnym do CV.",
-          "action": "Zobacz konkursy"
-        },
-        "newToCampus": {
-          "title": "Nowy na kampusie?",
-          "description": "Przeglądaj wszystkie organizacje na swojej uczelni i znajdź ludzi, którzy lubią to samo co Ty.",
-          "action": "Przeglądaj organizacje"
-        },
-        "getInvolved": {
-          "title": "Dołącz do zarządu",
-          "description": "Organizacje publikują tu wolne stanowiska, od przedstawicieli pierwszego roku po prezesów. Angażuj się, a nie tylko przychodź.",
-          "action": "Zobacz wolne stanowiska"
-        },
-        "bored": {
-          "title": "Nie masz co robić wieczorem?",
-          "description": "Wpisz „random” w wyszukiwarce feedu, a Wat2Do wybierze dla Ciebie coś, co dzieje się niedługo.",
-          "action": "Zaskocz mnie"
-        }
-      }
-    },
     "features": {
       "filters": {
         "title": "Darmowe jedzenie w jedno kliknięcie",
-        "description": "Szybkie filtry: darmowe jedzenie, pracodawcy na kampusie i konkursy. Albo zawęź wyniki według dnia, ceny, organizacji i miejsca."
+        "description": "Włącz Darmowe jedzenie, a feed pokaże tylko darmowe wydarzenia z jedzeniem. Zawęź dalej według dnia, ceny, klubu i miejsca."
       },
       "clubs": {
         "title": "Odkryj organizacje, o których istnieniu nie wiesz",

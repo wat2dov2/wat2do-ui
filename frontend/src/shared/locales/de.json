@@ -588,8 +588,8 @@
       }
     },
     "solution": {
-      "title": "Ein Feed. Jeder Club. Kein Suchen.",
-      "description": "Wat2Do folgt den Accounts, damit du es nicht musst, und macht aus jedem Flyer eine Veranstaltung, die du suchen, filtern und speichern kannst.",
+      "title": "Jede Gelegenheit, immer aktuell.",
+      "description": "Jede Veranstaltung, jeder Networking-Abend und jede offene Clubposition an der {{school}}, aktualisiert, sobald Clubs sie posten. Suchen, filtern und speichern, was dich interessiert.",
       "stats": {
         "clubsLabel": "beobachteter Club bei {{school}}",
         "clubsLabel_one": "beobachteter Club bei {{school}}",
@@ -600,9 +600,9 @@
         "newLabel": "neue Veranstaltung in den letzten 7 Tagen",
         "newLabel_one": "neue Veranstaltung in den letzten 7 Tagen",
         "newLabel_other": "neue Veranstaltungen in den letzten 7 Tagen",
-        "thisWeekLabel": "Veranstaltung diese Woche",
-        "thisWeekLabel_one": "Veranstaltung diese Woche",
-        "thisWeekLabel_other": "Veranstaltungen diese Woche",
+        "networkingLabel": "kommende Networking-Gelegenheit",
+        "networkingLabel_one": "kommende Networking-Gelegenheit",
+        "networkingLabel_other": "kommende Networking-Gelegenheiten",
         "freeFoodLabel": "kommende Veranstaltung mit kostenlosem Essen",
         "freeFoodLabel_one": "kommende Veranstaltung mit kostenlosem Essen",
         "freeFoodLabel_other": "kommende Veranstaltungen mit kostenlosem Essen",
@@ -611,46 +611,10 @@
         "positionsLabel_other": "offene Clubpositionen"
       }
     },
-    "useCases": {
-      "title": "Campus, wie du ihn lebst",
-      "description": "Sechs Arten, wie Studierende bei {{school}} Wat2Do nutzen.",
-      "items": {
-        "freeFood": {
-          "title": "Kostenloses Essen zwischen den Vorlesungen",
-          "description": "Pizza bei Infoveranstaltungen, Kuchenverkäufe, Treffen mit Snacks. Filtere nach kostenlosem Essen und plan dein Mittagessen danach.",
-          "action": "Kostenloses Essen ansehen"
-        },
-        "employers": {
-          "title": "Arbeitgeber auf dem Campus treffen",
-          "description": "Infoveranstaltungen und Networking-Abende, bei denen Recruiter persönlich vorbeikommen. Gute Kontakte beginnen oft mit einem einzigen Gespräch.",
-          "action": "Arbeitgeber-Veranstaltungen ansehen"
-        },
-        "competitions": {
-          "title": "Wettbewerbe und Hackathons",
-          "description": "Case Competitions, Hackathons und Pitch-Abende, mit Preisen und etwas Handfestem für deinen Lebenslauf.",
-          "action": "Wettbewerbe ansehen"
-        },
-        "newToCampus": {
-          "title": "Neu auf dem Campus?",
-          "description": "Stöbere durch alle Clubs an deiner Hochschule und finde Leute, die sich für dieselben Dinge begeistern wie du.",
-          "action": "Clubs durchstöbern"
-        },
-        "getInvolved": {
-          "title": "Werde Teil eines Vorstands",
-          "description": "Clubs posten hier offene Positionen, von Erstsemester-Vertretungen bis zum Vorsitz. Bring dich ein, statt nur vorbeizuschauen.",
-          "action": "Offene Positionen ansehen"
-        },
-        "bored": {
-          "title": "Heute Abend nichts vor?",
-          "description": "Such im Feed nach „random“ und Wat2Do sucht dir etwas aus, das bald stattfindet.",
-          "action": "Überrasch mich"
-        }
-      }
-    },
     "features": {
       "filters": {
         "title": "Kostenloses Essen mit einem Tap",
-        "description": "Schnellfilter für kostenloses Essen, Arbeitgeber auf dem Campus und Wettbewerbe. Oder grenz es nach Tag, Preis, Club und Ort ein."
+        "description": "Schalte „Kostenloses Essen“ ein und der Feed zeigt nur kostenlose Veranstaltungen mit Essen. Grenze weiter nach Tag, Preis, Club und Ort ein."
       },
       "clubs": {
         "title": "Entdecke Clubs, von denen du nichts wusstest",
