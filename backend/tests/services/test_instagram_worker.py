@@ -54,6 +54,7 @@ def due(monkeypatch):
         crawls=set(),
         running=set(),
         crawled={},
+        reclaim=False,
         done=[],
     )
     monkeypatch.setattr(worker, "exclusive", nullcontext)
@@ -63,6 +64,7 @@ def due(monkeypatch):
     monkeypatch.setattr(worker, "_switch_failures", 0)
     monkeypatch.setattr(worker, "_score_in_background", lambda: state.done.append("score"))
     monkeypatch.setattr(worker.music, "schools_due", lambda now: list(state.music))
+    monkeypatch.setattr(worker, "reclaim_due", lambda: state.reclaim)
     monkeypatch.setattr(
         worker.music, "finish_due", lambda device, school, now: state.done.append(("music", school))
     )
@@ -73,13 +75,13 @@ def due(monkeypatch):
     monkeypatch.setattr(worker.follows, "follows_due", lambda school: school in state.follows)
     monkeypatch.setattr(worker.follows, "unfollows_due", lambda school: school in state.unfollows)
 
-    def unfollow_due(device, school, limit):
+    def unfollow_due(device, school, limit, stop=None):
         state.done.append(("unfollows", school))
         return FollowVisit(followed=1, confirmed=0, blocked=False)
 
     monkeypatch.setattr(worker.follows, "unfollow_due", unfollow_due)
 
-    def follow_due(device, school, limit):
+    def follow_due(device, school, limit, stop=None):
         state.done.append(("follows", school))
         return FollowVisit(followed=1, confirmed=0, blocked=False)
 
@@ -219,7 +221,9 @@ def test_a_crawl_under_way_finishes_before_another_starts(due):
 def test_a_crawl_that_gives_up_early_rests_before_its_next_slice(due, monkeypatch):
     due.crawls = {"utm"}
     monkeypatch.setattr(
-        worker.crawl, "crawl_slice", lambda device, school, deadline: worker.crawl.CRAWL_RUNNING
+        worker.crawl,
+        "crawl_slice",
+        lambda device, school, deadline, stop=None: worker.crawl.CRAWL_RUNNING,
     )
     device = _Device()
     assert worker.visit_next(device, NIGHT)
@@ -233,11 +237,58 @@ def test_follows_that_get_nowhere_rest_instead_of_looping(due, monkeypatch):
     monkeypatch.setattr(
         worker.follows,
         "follow_due",
-        lambda device, school, limit: FollowVisit(followed=0, confirmed=0, blocked=False),
+        lambda device, school, limit, stop=None: FollowVisit(
+            followed=0, confirmed=0, blocked=False
+        ),
     )
     device = _Device()
     assert worker.visit_next(device, DAY)
     assert not worker.visit_next(device, DAY)
+
+
+def test_follows_stop_for_a_carousel_that_starts_waiting_mid_visit(due, monkeypatch):
+    due.follows = {"uwo"}
+    due.crawls = {"uwo"}
+
+    def follow_due(device, school, limit, stop=None):
+        # A carousel publishes while this account is following.
+        due.music = ["ubc"]
+        assert stop()
+        return FollowVisit(followed=0, confirmed=0, blocked=False)
+
+    monkeypatch.setattr(worker.follows, "follow_due", follow_due)
+    worker.visit(_Device(), "uwo", acting=True, following=True, crawl_slice=True, now=DAY)
+    # The visit ends there, and the account does not rest for having stopped.
+    assert ("crawl", "uwo") not in due.done
+    assert "uwo" not in worker._follows_rested_until
+    assert worker.visit_next(_Device(), DAY)
+    assert due.done[-1] == ("music", "ubc")
+
+
+def test_follows_stop_for_the_daily_reclaim(due, monkeypatch):
+    due.unfollows = {"uwo"}
+    due.follows = {"uwo"}
+
+    def unfollow_due(device, school, limit, stop=None):
+        due.done.append(("unfollows", school))
+        due.reclaim = True
+        assert stop()
+        return FollowVisit(followed=0, confirmed=0, blocked=False)
+
+    monkeypatch.setattr(worker.follows, "unfollow_due", unfollow_due)
+    worker.visit(_Device(), "uwo", acting=True, following=True, crawl_slice=False, now=DAY)
+    assert due.done == [("unfollows", "uwo")]
+
+
+def test_a_carousel_whose_account_cannot_be_reached_holds_up_no_other_work(due, monkeypatch):
+    monkeypatch.setattr(worker, "_visit_order", lambda current_user: ["utm", "uwo"])
+    due.music = ["utm"]
+    due.follows = {"uwo"}
+    device = _Device(unreachable={"wat2do.utm"})
+    assert worker.visit_next(device, DAY)
+    # While utm rests, uwo's follows go ahead instead of waiting on utm's song.
+    assert worker.visit_next(device, DAY)
+    assert due.done == [("follows", "uwo")]
 
 
 def test_follows_wait_while_another_carousel_waits_for_its_song(due):

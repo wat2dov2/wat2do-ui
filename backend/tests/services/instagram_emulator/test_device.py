@@ -1,8 +1,10 @@
 import fcntl
 import io
+import os
 import random
 import re
 import subprocess
+from datetime import datetime, timedelta
 
 import pytest
 from PIL import Image, ImageDraw
@@ -230,11 +232,28 @@ def reclaimed_path(monkeypatch, tmp_path):
     return path
 
 
-def test_reclaiming_waits_a_day_after_the_last_one(reclaimed_path) -> None:
+def test_reclaiming_waits_for_the_next_reclaim_hour(reclaimed_path) -> None:
     reclaimed_path.touch()
     commands = []
     assert _device([(0, _df(200_000))], commands).reclaim_data() == 195
     assert len(commands) == 1
+
+
+def test_the_reclaim_is_due_once_a_day_from_its_hour(reclaimed_path) -> None:
+    hour = module.CONTROL.reclaim_hour
+    today = datetime.now().astimezone().replace(hour=hour, minute=0, second=0, microsecond=0)
+    assert module.reclaim_due(today)
+    # Last done the morning before: due again from today's hour, not 24 hours later.
+    yesterday = (today - timedelta(days=1, minutes=-5)).timestamp()
+    reclaimed_path.touch()
+    os.utime(reclaimed_path, (yesterday, yesterday))
+    assert not module.reclaim_due(today - timedelta(minutes=1))
+    assert module.reclaim_due(today)
+    # Done late today, it is not done again before tomorrow's hour.
+    late = (today + timedelta(hours=5)).timestamp()
+    os.utime(reclaimed_path, (late, late))
+    assert not module.reclaim_due(today + timedelta(hours=23))
+    assert module.reclaim_due(today + timedelta(days=1))
 
 
 def test_reclaiming_deletes_instagram_caches_and_clears_the_listed_apps(reclaimed_path) -> None:

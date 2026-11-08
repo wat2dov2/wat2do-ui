@@ -177,9 +177,11 @@ person (`run_instagram_worker.py resume-dms` once checked) and is never retried,
 may already have reached Instagram; the worker's other steps go on.
 A story repost waits, without accepting or answering the thread, while the emulator has
 less free storage than `controlbox/instagram_emulator.json` `min_free_data_megabytes`.
-Once a day the worker deletes Instagram's caches on every Android user as root
+Once a day, from `reclaim_hour` (before the morning's carousels publish), the worker
+deletes Instagram's caches on every Android user as root
 (`instagram_cache_paths`), never its login, databases or settings, then restarts the
 emulator, whose host process leaks about 3 GB of memory a day.
+Unfollows, follows and crawl slices stop between profiles once a carousel waits for its song or that restart is due.
 `dry_run` decides and records every DM without replying, reposting or queueing anything.
 Never log DM text.
 

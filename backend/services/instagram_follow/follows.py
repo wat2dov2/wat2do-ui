@@ -2,7 +2,8 @@
 
 The emulator worker asks ``follows_due`` from the database alone, then calls
 ``follow_due`` with the emulator already on the school's account and a small number to
-follow this visit. Across the day a school account follows at most
+follow this visit; the visit stops early once the worker needs the emulator for a
+carousel waiting for its song. Across the day a school account follows at most
 ``follows_per_account_per_day``. Each follow turns the account's post notifications to
 All so ingestion hears about its posts; an account the school already follows is only
 marked followed, after its bell is checked. Instagram's "Try again later" pauses the
@@ -18,6 +19,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -76,8 +78,15 @@ def unfollows_due(school: str) -> bool:
     return _allowance(school_id) > 0 and bool(candidates.to_unfollow(school_id, 1))
 
 
-def unfollow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
-    """Unfollow up to ``limit`` of the school's rejected accounts, within today's allowance."""
+def unfollow_due(
+    device: EmulatorDevice,
+    school: str,
+    limit: int,
+    *,
+    stop: Callable[[], bool] | None = None,
+) -> FollowVisit:
+    """Unfollow up to ``limit`` of the school's rejected accounts, within today's allowance,
+    until ``stop()`` says the emulator is needed for something more urgent."""
     school_id = school_service.get_school_id(school)
     if school_id is None or _blocked(school):
         return FollowVisit(0, 0, _blocked(school))
@@ -85,7 +94,7 @@ def unfollow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit
     allowed = min(limit, _allowance(school_id))
     unfollowed = confirmed = 0
     for row in candidates.to_unfollow(school_id, allowed * PROFILES_PER_FOLLOW):
-        if unfollowed >= allowed:
+        if unfollowed >= allowed or (stop is not None and stop()):
             break
         try:
             tapped = reader.unfollow(row["handle"])
@@ -114,8 +123,19 @@ def _reader(device: EmulatorDevice, school: str) -> FollowingReader:
     )
 
 
-def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
-    """Follow up to ``limit`` of the school's approved accounts, within today's allowance."""
+def follow_due(
+    device: EmulatorDevice,
+    school: str,
+    limit: int,
+    *,
+    stop: Callable[[], bool] | None = None,
+) -> FollowVisit:
+    """Follow up to ``limit`` of the school's approved accounts, within today's allowance,
+    until ``stop()`` says the emulator is needed for something more urgent.
+
+    Confirming accounts the school already follows opens a profile each, so a visit
+    can run long; ``stop`` is asked before every profile.
+    """
     school_id = school_service.get_school_id(school)
     if school_id is None or _blocked(school):
         return FollowVisit(0, 0, _blocked(school))
@@ -124,7 +144,7 @@ def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
     allowed = min(limit, _allowance(school_id))
     followed = confirmed = unconfirmed = 0
     for row in candidates.approved(school_id, allowed * PROFILES_PER_FOLLOW):
-        if followed >= allowed:
+        if followed >= allowed or (stop is not None and stop()):
             break
         try:
             outcome = reader.follow(row["handle"])

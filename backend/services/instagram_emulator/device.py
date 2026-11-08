@@ -21,6 +21,7 @@ import xml.etree.ElementTree as ElementTree
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from PIL import Image
@@ -364,10 +365,10 @@ class EmulatorDevice:
         folders, listed in the controlbox, are deleted as root. Its login, databases and
         settings stay, so no account is logged out. Apps listed in ``reclaim_packages``
         are cleared on Android users without a Google account. The emulator is then
-        restarted, since its host process leaks memory. It runs at most once per
-        ``reclaim_interval_hours``.
+        restarted, since its host process leaks memory. It runs once a day, when
+        ``reclaim_due`` says so.
         """
-        if _reclaimed_recently():
+        if not reclaim_due():
             return self.free_data_megabytes()
         package = CONTROL.instagram_package
         for user in sorted(set(CONTROL.android_user_by_school.values())):
@@ -496,12 +497,21 @@ class EmulatorDevice:
         self.adb("shell", "am", "start", "--user", str(user), *target)
 
 
-def _reclaimed_recently() -> bool:
+def reclaim_due(now: datetime | None = None) -> bool:
+    """Whether the daily reclaim and restart has not run since the last ``reclaim_hour``.
+
+    A fixed hour keeps the restart before the morning's carousels publish, instead of
+    drifting into the hours their songs are added.
+    """
+    moment = (now or datetime.now()).astimezone()
+    since = moment.replace(hour=CONTROL.reclaim_hour, minute=0, second=0, microsecond=0)
+    if moment < since:
+        since -= timedelta(days=1)
     try:
-        age = time.time() - _RECLAIMED_PATH.stat().st_mtime
+        reclaimed = datetime.fromtimestamp(_RECLAIMED_PATH.stat().st_mtime).astimezone()
     except FileNotFoundError:
-        return False
-    return age < CONTROL.reclaim_interval_hours * 3600
+        return True
+    return reclaimed < since
 
 
 @contextmanager
