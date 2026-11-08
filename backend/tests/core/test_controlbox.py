@@ -488,6 +488,7 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
     assert controlbox.instagram_browser.viewport_warm_timeout_seconds == 3
     assert controlbox.instagram_browser.primary_minimum_viewport_width == 1024
     assert controlbox.instagram_browser.secondary_cleanup_timeout_seconds == 5
+    assert controlbox.instagram_browser.cancellation_confirm_retry_seconds == 60
     assert controlbox.instagram_browser.account_transition_grace_seconds == 2
     assert controlbox.instagram_browser.job_timeout_seconds == 120
     assert controlbox.instagram_browser.result_timeout_seconds == 300
@@ -536,6 +537,8 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"secondary_cleanup_timeout_seconds": 0},
         {"secondary_cleanup_timeout_seconds": 31},
         {"secondary_cleanup_timeout_seconds": 121},
+        {"cancellation_confirm_retry_seconds": 0},
+        {"cancellation_confirm_retry_seconds": 3601},
         {"poll_interval_seconds": 0},
         {"worker_poll_interval_seconds": 0},
         {"bridge_retry_limit": 0},

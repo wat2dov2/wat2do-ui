@@ -3704,6 +3704,136 @@ fn test_login_recovery_stops_after_the_daily_limit() {
     checks.assert_none();
 }
 
+/// The pause a like or repost leaves when Brave stalls past its cancellation deadline.
+const UNCONFIRMED_PAUSE: &str = "Instagram browser request cancellation could not be confirmed: \
+     Brave browser automation timed out";
+
+#[test]
+fn test_an_unconfirmed_cancellation_pause_lifts_once_every_tab_settles() {
+    let env = Env::new();
+    env.queue
+        .set_setting("paused", json!(UNCONFIRMED_PAUSE))
+        .unwrap();
+    let settles = Arc::new(AtomicUsize::new(0));
+    let checks = Checks::default();
+    let (counted, check, lock_path) = (settles.clone(), checks.clone(), env.lock_path());
+    let results = Mutex::new(vec![
+        Err(BrowserError::session(UNCONFIRMED_PAUSE)),
+        Err(BrowserError::Timeout(
+            "Brave browser automation timed out".to_owned(),
+        )),
+        Ok(Vec::new()),
+    ]);
+    let pool = env.pool().settle(move || {
+        check.check(lock_is_held(&lock_path), "settling holds the browser lock");
+        counted.fetch_add(1, Ordering::SeqCst);
+        results.lock().unwrap().remove(0)
+    });
+    let worker = env.real_worker(pool);
+    let now = Mutex::new(1000.0);
+    let clock = || *now.lock().unwrap();
+    let retry = control().cancellation_confirm_retry_seconds;
+    // Brave still cannot confirm it: the pause stays and the next check waits.
+    assert!(!worker.confirm_cancellation(&clock).unwrap());
+    assert_eq!(paused(&env.queue), json!(UNCONFIRMED_PAUSE));
+    assert_eq!(
+        number(setting(&env.queue, "cancellation_confirm_next_at")),
+        1000.0 + retry
+    );
+    *now.lock().unwrap() += retry - 1.0;
+    assert!(!worker.confirm_cancellation(&clock).unwrap());
+    assert_eq!(settles.load(Ordering::SeqCst), 1);
+    // A timeout keeps the pause too.
+    *now.lock().unwrap() += 1.0;
+    assert!(!worker.confirm_cancellation(&clock).unwrap());
+    assert_eq!(paused(&env.queue), json!(UNCONFIRMED_PAUSE));
+    // Every tab settles: browser work resumes.
+    *now.lock().unwrap() += retry;
+    assert!(worker.confirm_cancellation(&clock).unwrap());
+    assert_eq!(paused(&env.queue), json!(false));
+    assert_eq!(settles.load(Ordering::SeqCst), 3);
+    checks.assert_none();
+}
+
+#[test]
+fn test_a_closed_worker_tab_confirms_its_cancellation() {
+    let env = Env::new();
+    env.queue
+        .set_setting("paused", json!(UNCONFIRMED_PAUSE))
+        .unwrap();
+    let pool = env.pool().settle(|| {
+        Err(BrowserError::tab_unavailable(
+            "No worker Instagram window is open",
+        ))
+    });
+    let worker = env.real_worker(pool);
+    assert!(worker.confirm_cancellation(&|| 1000.0).unwrap());
+    assert_eq!(paused(&env.queue), json!(false));
+}
+
+#[test]
+fn test_cancellation_confirmation_leaves_every_other_pause_alone() {
+    let env = Env::new();
+    let checks = Checks::default();
+    let check = checks.clone();
+    let pool = env
+        .pool()
+        .settle(move || Err(check.fail("only an unconfirmed cancellation is confirmed")));
+    let worker = env.real_worker(pool);
+    for pause in [
+        json!(false),
+        json!(true),
+        json!(LOGGED_OUT_PAUSE),
+        json!(
+            "Instagram engagement completion is uncertain; inspect browser state before resuming"
+        ),
+        json!("Worker interrupted during engagement; inspect browser state before resuming"),
+    ] {
+        env.queue.set_setting("paused", pause.clone()).unwrap();
+        assert!(!worker.confirm_cancellation(&|| 1000.0).unwrap());
+        assert_eq!(paused(&env.queue), pause);
+    }
+    checks.assert_none();
+}
+
+#[test]
+fn test_a_pause_written_while_tabs_settle_is_kept() {
+    let env = Env::new();
+    env.queue
+        .set_setting("paused", json!(UNCONFIRMED_PAUSE))
+        .unwrap();
+    // A person pauses the worker while the tabs settle.
+    let queue = env.queue.clone();
+    let pool = env.pool().settle(move || {
+        queue.set_setting("paused", json!(true))?;
+        Ok(Vec::new())
+    });
+    let worker = env.real_worker(pool);
+    assert!(!worker.confirm_cancellation(&|| 1000.0).unwrap());
+    assert_eq!(paused(&env.queue), json!(true));
+}
+
+#[test]
+fn test_the_worker_resumes_by_itself_after_an_unconfirmed_cancellation() {
+    let env = Env::new();
+    // A like times out while the Mac is busy and pauses every school's work.
+    let engagement_id = engagement(&env.queue, "TimedOut");
+    let worker = env.worker(env.pool(), |_, _, _| {
+        Err(BrowserError::session(UNCONFIRMED_PAUSE))
+    });
+    assert!(worker.process_next_job(true).unwrap());
+    assert_eq!(paused(&env.queue), json!(UNCONFIRMED_PAUSE));
+    let digest_id = digest(&env.queue, "cache-after-the-stall");
+    // Brave answers again: the next pass confirms the tabs settled and takes the digest.
+    let worker = env.worker(env.pool(), returning(json!({"status": "succeeded"})));
+    worker.run(true, false, Arc::new(Event::default())).unwrap();
+    assert!(!is_paused(&env.queue));
+    assert_eq!(job(&env.queue, &digest_id).state, "succeeded");
+    // The engagement itself is never replayed.
+    assert_eq!(job(&env.queue, &engagement_id).state, "failed");
+    assert_eq!(job(&env.queue, &engagement_id).attempts, 1);
+}
+
 #[test]
 fn test_a_missing_account_is_logged_in_once_a_day_and_capped() {
     let env = Env::new();

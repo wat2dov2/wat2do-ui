@@ -212,6 +212,8 @@ pub struct InstagramBrowser {
     pub interaction_timeout_seconds: f64,
     pub account_transition_grace_seconds: f64,
     pub secondary_cleanup_timeout_seconds: f64,
+    /// How soon a paused worker tries again to confirm an interrupted request settled.
+    pub cancellation_confirm_retry_seconds: f64,
     pub poll_interval_seconds: f64,
     pub worker_poll_interval_seconds: f64,
     pub job_timeout_seconds: f64,
