@@ -55,8 +55,6 @@
     "saved": "已关注组织",
     "follow": "关注",
     "following": "已关注",
-    "signInToFollow": "登录后即可关注组织。",
-    "signInToClaim": "登录以认领此社团。",
     "savedClubs": {
       "saveFailed": "无法关注此组织",
       "unsaveFailed": "无法取消关注此组织"

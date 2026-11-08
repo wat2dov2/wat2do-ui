@@ -26,7 +26,7 @@ interface SavedClubsState {
   reset: () => void;
   /** Pure local toggle - no backend sync. */
   _toggleLocal: (clubId: number) => void;
-  /** Full toggle: local mutation + backend sync. */
+  /** Full toggle for a signed-in visitor: local mutation + backend sync. */
   toggleSaveClub: (clubId: number) => void;
 }
 
@@ -96,44 +96,35 @@ export const useSavedClubsStore = create<SavedClubsState>((set, get) => ({
   },
 
   toggleSaveClub: (clubId) => {
-    const prev = get().savedClubIds;
-    const wasSaved = prev.includes(clubId);
-    const shouldSave = !wasSaved;
-    const authenticated = isAuthenticated();
+    // Controls send a signed-out visitor to sign in before they get here.
+    if (!isAuthenticated()) return;
+    const shouldSave = !get().savedClubIds.includes(clubId);
 
     get()._toggleLocal(clubId);
+    _optimisticToggles.set(clubId, shouldSave);
 
-    if (authenticated) {
-      _optimisticToggles.set(clubId, shouldSave);
+    const backendCall = shouldSave
+      ? saveClubToBackend(clubId)
+      : unsaveClubToBackend(clubId);
 
-      const backendCall = shouldSave
-        ? saveClubToBackend(clubId)
-        : unsaveClubToBackend(clubId);
-
-      backendCall
-        .then(() => {
-          _optimisticToggles.delete(clubId);
-        })
-        .catch((err) => {
-          console.error(
-            shouldSave ? "Failed to save club:" : "Failed to unsave club:",
-            err,
-          );
-          _optimisticToggles.delete(clubId);
-          get()._toggleLocal(clubId);
-          toast({
-            description: shouldSave
-              ? i18n.t("clubs.savedClubs.saveFailed")
-              : i18n.t("clubs.savedClubs.unsaveFailed"),
-            variant: "destructive",
-          });
+    backendCall
+      .then(() => {
+        _optimisticToggles.delete(clubId);
+      })
+      .catch((err) => {
+        console.error(
+          shouldSave ? "Failed to save club:" : "Failed to unsave club:",
+          err,
+        );
+        _optimisticToggles.delete(clubId);
+        get()._toggleLocal(clubId);
+        toast({
+          description: shouldSave
+            ? i18n.t("clubs.savedClubs.saveFailed")
+            : i18n.t("clubs.savedClubs.unsaveFailed"),
+          variant: "destructive",
         });
-    } else {
-      get()._toggleLocal(clubId);
-      toast({
-        description: i18n.t("auth.signInToUnlockFeatures"),
       });
-    }
   },
 }));
 

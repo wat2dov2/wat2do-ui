@@ -10,6 +10,8 @@
     "googleCompleting": "正在完成 Google 登录...",
     "googleCallbackDescription": "正在安全地完成您的 Google 登录。",
     "googleError": "无法完成 Google 登录，请重试。",
+    "googleWindowOpen": "请在 Google 窗口中完成...",
+    "googleWindowBlocked": "你的浏览器拦截了 Google 窗口。请允许此网站的弹出窗口，或使用邮箱继续。",
     "orContinueWithEmail": "或使用邮箱继续",
     "skipToOnboarding": "跳过登录，先体验",
     "verifyOtp": "验证验证码",
@@ -32,7 +34,9 @@
     "consentAnonymized": "我们可能会查看匿名的使用模式以改进活动发现体验。",
     "consentAgreeTerms": "我同意平台条款 and 校园活动探索的可接受使用政策。",
     "consentSubscribeUpdates": "订阅关于新功能 and 校园活动亮点的偶尔更新。",
-    "signedInAs": "已登录为"
+    "signedInAs": "已登录为",
+    "signedInHeading": "你已登录。",
+    "signedInDescription": "你可以关闭此窗口，回到原来的页面继续。"
   },
   "onboarding": {
     "faculties": {

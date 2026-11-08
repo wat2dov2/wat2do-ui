@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
-import { useAuthState } from "@/features/auth";
-import { FormInput } from "@/shared/ui/form-field";
+import { useRequireSignIn } from "@/features/auth";
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
@@ -53,10 +52,7 @@ interface ClubFormData {
   school: string;
 }
 
-type SaveClub = (
-  club: Club,
-  submittedByEmail: string | null,
-) => Club | void | Promise<Club | void>;
+type SaveClub = (club: Club) => Club | void | Promise<Club | void>;
 
 interface ClubFormProps {
   onSave: SaveClub;
@@ -81,8 +77,7 @@ export function ClubForm({
   const { club_categories: clubCategories } = useAppConstants();
   const { t } = useTranslation();
   const isEditMode = initialData != null;
-  const { userEmail } = useAuthState();
-  const [submittedByEmail, setSubmittedByEmail] = useState(userEmail ?? "");
+  const requireSignIn = useRequireSignIn();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getDefaults = useCallback(
@@ -147,6 +142,8 @@ export function ClubForm({
   const handleSubmit = async () => {
     Object.keys(form.formData).forEach(form.handleBlur);
     if (!form.isValid) return;
+    // Anyone can fill in a club; it is sent by a signed-in account.
+    if (!(await requireSignIn())) return;
 
     const club: Club = {
       id: initialData?.id || Date.now(),
@@ -165,7 +162,7 @@ export function ClubForm({
     setIsSubmitting(true);
     try {
       const savedClub =
-        (await Promise.resolve(onSave(club, submittedByEmail.trim() || null))) || club;
+        (await Promise.resolve(onSave(club))) || club;
       toast({
         title: isEditMode
           ? t("clubs.clubUpdated")
@@ -227,14 +224,6 @@ export function ClubForm({
       ) : null}
 
       <Stack gap={5}>
-        {!isEditMode ? <FormInput
-                  name="submitter-email"
-                  type="email"
-                  label={t("contact.form.email")}
-                  placeholder={t("contact.form.emailPlaceholder")}
-                  value={submittedByEmail}
-                  onChange={value => setSubmittedByEmail(String(value))}
-                /> : null}
         <FormGrid>
           <Field>
             <FieldLabel htmlFor="club-name">

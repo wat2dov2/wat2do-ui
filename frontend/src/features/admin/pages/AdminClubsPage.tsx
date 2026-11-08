@@ -150,12 +150,12 @@ export function AdminClubsPage() {
     }
   };
 
-  const handleSave = async (club: Club, submittedByEmail: string | null) => {
+  const handleSave = async (club: Club) => {
     try {
       if (editingClub) {
         await adminUpdateClub(club);
       } else {
-        await adminCreateClub(club, submittedByEmail);
+        await adminCreateClub(club);
       }
       await refreshClubQueries();
       closeModal();

@@ -10,6 +10,8 @@
     "googleCompleting": "正在完成 Google 登入...",
     "googleCallbackDescription": "正在安全完成你嘅 Google 登入。",
     "googleError": "未能完成 Google 登入，請再試一次。",
+    "googleWindowOpen": "請喺 Google 視窗完成...",
+    "googleWindowBlocked": "你嘅瀏覽器封鎖咗 Google 視窗。請容許呢個網站嘅彈出式視窗，或者用電郵繼續。",
     "orContinueWithEmail": "或者用電郵繼續",
     "skipToOnboarding": "不登入繼續",
     "verifyOtp": "驗證碼",
@@ -32,7 +34,9 @@
     "consentAnonymized": "我哋可能會審閱匿名使用模式，以改善活動發現。",
     "consentAgreeTerms": "我同意平台條款同校園活動發現既可接受使用政策。",
     "consentSubscribeUpdates": "訂閱偶爾既更新，了解新功能同校園活動亮點。",
-    "signedInAs": "登入為"
+    "signedInAs": "登入為",
+    "signedInHeading": "你已經登入。",
+    "signedInDescription": "你可以閂咗呢個視窗，返去頭先嘅地方繼續。"
   },
   "onboarding": {
     "faculties": {

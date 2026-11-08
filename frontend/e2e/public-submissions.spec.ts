@@ -3,10 +3,8 @@ import { test } from "next/experimental/testmode/playwright.js";
 import { mockApi } from "./api-fixture";
 import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 
-for (const path of ["/events/submit", "/clubs/new", "/positions/submit"]) {
-  // Adding a club takes an optional email; event and position submissions require one.
-  const emailRequired = path !== "/clubs/new";
-  test(`signed-out visitors can open ${path} with ${emailRequired ? "a required" : "an optional"} email`, async ({ page, next }) => {
+for (const path of ["/events/submit", "/positions/submit"]) {
+  test(`signed-out visitors can open ${path} with a required email`, async ({ page, next }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(key => localStorage.setItem(key, "en"), STORAGE_KEYS.LANGUAGE);
     await mockApi(page, next, url => url.pathname === "/api/auth/refresh", async () => ({ status: 401, json: {} }));
@@ -28,8 +26,7 @@ for (const path of ["/events/submit", "/clubs/new", "/positions/submit"]) {
     }
     const email = page.getByRole("textbox", { name: "Email address" });
     await expect(email).toBeVisible();
-    if (emailRequired) await expect(email).toHaveAttribute("required", "");
-    else await expect(email).not.toHaveAttribute("required");
+    await expect(email).toHaveAttribute("required", "");
     // Check actual mobile geometry after parsing, including nested field groups.
     // Email and title used to touch because the spacing owner wrapped the form.
     const layout = await page.locator("form").filter({ has: email }).evaluate(form => {
@@ -50,7 +47,7 @@ for (const path of ["/events/submit", "/clubs/new", "/positions/submit"]) {
     // Every consecutive field must still have the shared 20px minimum rhythm.
     for (const gap of layout.gaps) expect(gap).toBeGreaterThanOrEqual(19);
 
-    expect(await email.evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(!emailRequired);
+    expect(await email.evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(false);
     await email.fill("invalid");
     expect(await email.evaluate((input: HTMLInputElement) => input.checkValidity())).toBe(false);
     await email.fill("visitor@example.com");
@@ -120,4 +117,44 @@ test("a position poster prefills the form and is submitted with the position", a
   await page.getByRole("button", { name: "Submit for Review", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Position submitted for review." })).toBeVisible();
   expect(submissions[0]).toMatchObject({ position_data: { club_id: 7, title: "Outreach Lead", source_image_url: "https://example.com/poster.png" } });
+});
+
+test("a signed-out visitor fills in a club, then signs in over the form to send it", async ({ page, next }) => {
+  await page.addInitScript(key => localStorage.setItem(key, "en"), STORAGE_KEYS.LANGUAGE);
+  await mockApi(page, next, url => url.pathname === "/api/auth/refresh", async () => ({ status: 401, json: {} }));
+  await mockApi(page, next, url => url.pathname === "/api/auth/send-otp", async () => ({ json: { message: "sent" } }));
+  await mockApi(page, next, url => url.pathname === "/api/auth/verify-otp", async () => ({ json: {
+    access_token: "visitor-token", token_type: "bearer", expires_in: 3600,
+    user_id: "visitor-user", school: "uwaterloo", onboarding_required: true,
+  } }));
+  await mockApi(page, next, url => url.pathname === "/api/users/me", async () => ({ json: {
+    id: "visitor-user", email: "visitor@uwaterloo.ca", full_name: null, avatar_url: null, faculty: null,
+    school: "uwaterloo", interests: [], is_first_year: false, role: "user",
+    payout_email: null, promoter_tos_accepted_at: null, promoter_tos_version: null,
+  } }));
+  await mockApi(page, next, url => url.pathname === "/api/clubs/mine", async () => ({ json: [] }));
+  const created: Record<string, unknown>[] = [];
+  await mockApi(page, next, url => url.pathname === "/api/clubs/", async request => {
+    expect(request.headers.get("authorization")).toBe("Bearer visitor-token");
+    const payload = await request.json();
+    created.push(payload);
+    return { status: 201, json: { id: 9, status: "pending", created_by: "visitor-user", created_at: new Date().toISOString(), position_count: 0, ...payload } };
+  });
+
+  await page.goto("/clubs/new");
+  // The form is open to everyone, with no email of its own to type.
+  await expect(page.getByRole("textbox", { name: "Email address" })).toHaveCount(0);
+  await page.getByRole("textbox", { name: "Club Name" }).fill("Visitor Club");
+  await page.getByRole("button", { name: "Arts & Culture" }).click();
+  await page.getByRole("button", { name: "Add club", exact: true }).click();
+
+  // Sending it asks for sign-in over the form, which keeps what was typed.
+  const signIn = page.getByRole("dialog");
+  await signIn.getByRole("textbox", { name: "Email address" }).fill("visitor@uwaterloo.ca");
+  await signIn.getByRole("button", { name: "Continue", exact: true }).click();
+  await signIn.getByRole("textbox", { name: "Verification code", exact: true }).fill("123456");
+
+  await expect(signIn).toHaveCount(0);
+  await expect.poll(() => created.length).toBe(1);
+  expect(created[0]).toMatchObject({ club_name: "Visitor Club", categories: ["Arts & Culture"], submitted_by_email: "visitor@uwaterloo.ca" });
 });

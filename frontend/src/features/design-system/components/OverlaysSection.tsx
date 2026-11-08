@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DialogBody, Section, Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { Card, CardDescription, CardHeader } from "@/shared/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,7 @@ import { ShowcaseBlock } from "./ShowcaseBlock";
 
 export function OverlaysSection() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [cardDialogOpen, setCardDialogOpen] = useState(false);
 
   return (
     <TooltipProvider>
@@ -65,6 +67,25 @@ export function OverlaysSection() {
                   </Button>
                   <Button onClick={() => setDialogOpen(false)}>Confirm</Button>
                 </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </ShowcaseBlock>
+
+          <ShowcaseBlock label="Dialog (card)">
+            <Button variant="outline" onClick={() => setCardDialogOpen(true)}>
+              Open card dialog
+            </Button>
+            <Dialog open={cardDialogOpen} onOpenChange={setCardDialogOpen}>
+              <DialogContent variant="card" size="md" aria-describedby={undefined}>
+                <Card>
+                  <CardHeader>
+                    <DialogTitle>A card of its own</DialogTitle>
+                    <CardDescription>
+                      The card draws the surface and the dialog only places it,
+                      the way the sign-in dialog shows the login page&apos;s card.
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
               </DialogContent>
             </Dialog>
           </ShowcaseBlock>

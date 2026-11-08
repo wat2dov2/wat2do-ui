@@ -1,18 +1,14 @@
 import type { ReactNode } from "react";
-import Image from "next/image";
-import { useTranslation } from "react-i18next";
-import imgLogo from "@/assets/wat2do-logo-auth.webp";
+import { AuthCard } from "@/features/auth/components/AuthCard";
 import { AuthHeroPanel } from "@/features/auth/components/AuthHeroPanel";
-import { Card, CardContent } from "@/shared/ui/card";
-import { PageHeader, type PageHeaderBack } from "@/shared/layout";
-import { ShineBorder } from "@/registry/magicui/shine-border";
+import type { PageHeaderBack } from "@/shared/layout";
 
 interface AuthPageLayoutProps {
   heading: string;
   description: string;
   preview?: ReactNode;
   back?: PageHeaderBack;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 export function AuthPageLayout({
@@ -22,37 +18,13 @@ export function AuthPageLayout({
   back,
   children,
 }: AuthPageLayoutProps) {
-  const { t } = useTranslation();
-
   return (
     <main className="min-h-screen">
       <div className="min-h-screen flex">
         <section className="w-full lg:w-[52%] px-6 py-10 flex justify-center items-center">
-          <Card className="relative w-full max-w-[440px] overflow-hidden gap-0">
-            <ShineBorder shineColor="var(--primary)" />
-            <CardContent className="space-y-6 p-8">
-              {back ? <PageHeader back={back} /> : null}
-
-              <Image
-                alt={t("common.logo")}
-                width={40}
-                height={28}
-                className="h-7 w-[40px] object-contain"
-                src={imgLogo}
-              />
-
-              <div className="space-y-2">
-                <h1 className="font-sans font-semibold text-[28px] text-foreground leading-tight text-balance">
-                  {heading}
-                </h1>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {description}
-                </p>
-              </div>
-
-              {children}
-            </CardContent>
-          </Card>
+          <AuthCard heading={heading} description={description} back={back}>
+            {children}
+          </AuthCard>
         </section>
 
         {preview ?? <AuthHeroPanel />}

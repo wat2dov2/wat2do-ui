@@ -7,6 +7,7 @@ import type { Club } from "@/shared/types";
 import type { ApiClubResponse, ApiPaginatedClubsResponse } from "@/shared/generated";
 import { api } from "@/shared/services/apiClient";
 import { normalizeClub } from "@/features/clubs/api/clubService";
+import { getSessionEmail } from "@/features/auth/api/auth.api";
 import { queryOptions } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { resolveSchool } from "@/shared/constants/schools";
@@ -78,12 +79,16 @@ type ClubCreateInput = Pick<
   | "club_type"
   | "logo_url"
   | "school"
-> & { submitted_by_email: string | null };
+>;
 
+/** Submits a club as the signed-in account, which hears back when it is reviewed. */
 export async function createClubAPI(
   clubData: ClubCreateInput,
 ): Promise<Club> {
-  const raw = await api.post<ApiClubResponse>("/clubs/", clubData);
+  const raw = await api.post<ApiClubResponse>("/clubs/", {
+    ...clubData,
+    submitted_by_email: getSessionEmail(),
+  });
   return normalizeClub(raw);
 }
 

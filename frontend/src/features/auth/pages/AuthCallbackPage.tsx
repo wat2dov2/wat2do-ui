@@ -38,7 +38,8 @@ export function AuthCallbackPage() {
 
   const navigateAfterAuthentication = useCallback(
     (school: string, onboardingRequired: boolean) => {
-      if (onboardingRequired) {
+      // A sign-in in its own window goes back to the page that opened it; onboarding waits.
+      if (onboardingRequired && returnTo !== ROUTES.AUTH_SIGNED_IN) {
         const onboardingPath = `${ROUTES.ONBOARDING}?${new URLSearchParams({
           [QP.SCHOOL]: school,
         })}`;

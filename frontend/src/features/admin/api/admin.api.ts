@@ -87,9 +87,8 @@ function toEventSubmission(row: ApiSubmissionResponse): EventSubmission {
 
 // ── Club mutations ─────────────────────────────────────────
 
-export async function adminCreateClub(club: Club, submittedByEmail: string | null): Promise<Club> {
+export async function adminCreateClub(club: Club): Promise<Club> {
   return createClubAPI({
-    submitted_by_email: submittedByEmail,
     club_name: club.club_name,
     categories: club.categories,
     club_page: club.club_page,

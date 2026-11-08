@@ -3,7 +3,6 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useRouter } from "next/navigation";
 import { BadgeCheck, Check, ExternalLink, HelpCircle, Instagram, Plus } from "lucide-react";
 import { IconSwap } from "@/shared/ui/icon-swap";
 import { cn } from "@/shared/lib/utils";
@@ -14,13 +13,13 @@ import { ClubDetailsSkeleton } from "@/features/clubs/components/ClubDetailsSkel
 import { Link } from "@/shared/ui/link";
 import { Separator } from "@/shared/ui/separator";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { useSignedInAction } from "@/features/auth/hooks/useSignInGate";
 import { ClaimClubModal } from "@/features/clubs/components/ClaimClubModal";
 import { ClubCategoryBadges } from "@/features/clubs/components/ClubCategoryBadges";
 import { getClubById } from "@/features/clubs/api/clubs.api";
 import { useSavedClubsStore } from "@/features/clubs/store/savedClubs.store";
 import { useOpenClubPanel } from "@/features/clubs/hooks/useOpenClubPanel";
 import { ROUTES } from "@/shared/constants/routes";
-import { toast } from "@/shared/hooks/use-toast";
 import { Container, PageHeader, Stack } from "@/shared/layout";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { sanitizeHref } from "@/shared/utils/url";
@@ -55,7 +54,7 @@ function ClubDetailsContent({
   positions,
 }: ClubDetailsContentProps) {
   const { t } = useTranslation();
-  const { isAuthenticated, userId, clubs } = useAuthState();
+  const { userId, clubs } = useAuthState();
   const [showClaimModal, setShowClaimModal] = useState(false);
   const toggleSave = useSavedClubsStore(
     (state) => state.toggleSaveClub,
@@ -68,19 +67,7 @@ function ClubDetailsContent({
   const openClubPanel = useOpenClubPanel();
   const clubPageHref = sanitizeHref(club.club_page);
   const discordHref = sanitizeHref(club.discord ?? "");
-  const router = useRouter();
-
-  // Signed-out visitors see the same actions; pressing one asks them to sign in first.
-  const requireSignIn = (action: () => void, message: string) => {
-    if (isAuthenticated) {
-      action();
-      return;
-    }
-    toast({
-      description: t(message),
-      action: { label: t("events.signIn"), onClick: () => router.push(ROUTES.LOGIN) },
-    });
-  };
+  const signedInAction = useSignedInAction();
 
   return (
     <>
@@ -123,7 +110,7 @@ function ClubDetailsContent({
                       variant="outline"
                       selected={isSaved}
                       selectionIndicator="none"
-                      onClick={() => requireSignIn(() => toggleSave(club.id), "clubs.signInToFollow")}
+                      onClick={() => signedInAction(() => toggleSave(club.id))}
                       aria-label={isSaved ? t("clubs.saved") : t("clubs.save")}
                     >
                       <IconSwap showAlternate={isSaved} icon={<Plus />} alternate={<Check className={cn(isSaved && "animate-success-pulse")} />} />
@@ -132,7 +119,8 @@ function ClubDetailsContent({
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => requireSignIn(() => setShowClaimModal(true), "clubs.signInToClaim")}
+                      // The claim form is open to everyone; it asks for sign-in when it is sent.
+                      onClick={() => setShowClaimModal(true)}
                     >
                       <BadgeCheck />
                       {t("clubs.claimClub")}

@@ -10,6 +10,8 @@
     "googleCompleting": "در حال تکمیل ورود با Google...",
     "googleCallbackDescription": "ورود شما با Google به‌صورت امن در حال تکمیل است.",
     "googleError": "ورود با Google تکمیل نشد. دوباره تلاش کنید.",
+    "googleWindowOpen": "در پنجره Google ادامه دهید...",
+    "googleWindowBlocked": "مرورگر شما پنجره Google را مسدود کرد. پنجره‌های بازشو را برای این سایت مجاز کنید یا با ایمیل ادامه دهید.",
     "orContinueWithEmail": "یا با ایمیل ادامه دهید",
     "skipToOnboarding": "ادامه بدون ورود",
     "verifyOtp": "کد تأیید",
@@ -32,7 +34,9 @@
     "consentAnonymized": "ممکن است الگوهای استفاده ناشناس را برای بهبود اکتشاف رویداد بررسی کنیم.",
     "consentAgreeTerms": "من با شرایط پلتفرم و سیاست استفاده پذیرفتنی برای اکتشاف رویدادهای دانشگاه موافقم.",
     "consentSubscribeUpdates": "برای دریافت به‌روزرسانی‌های گاه‌به‌گاه درباره ویژگی‌های جدید و نکات برجسته رویدادهای دانشگاه مشترک شوید.",
-    "signedInAs": "وارد شده به عنوان"
+    "signedInAs": "وارد شده به عنوان",
+    "signedInHeading": "وارد شدید.",
+    "signedInDescription": "می‌توانید این پنجره را ببندید و از همان جایی که بودید ادامه دهید."
   },
   "onboarding": {
     "faculties": {

@@ -31,6 +31,7 @@ const UnknownSchoolPage = lazy(() =>
 const CHROMELESS_ROUTES = new Set<string>([
   ROUTES.LOGIN,
   ROUTES.AUTH_CALLBACK,
+  ROUTES.AUTH_SIGNED_IN,
   ROUTES.ONBOARDING,
   ROUTES.ONBOARDING_DEMO,
   "/design-system",
@@ -39,6 +40,7 @@ const CHROMELESS_ROUTES = new Set<string>([
 const AUTH_FLOW_ROUTES = new Set<string>([
   ROUTES.LOGIN,
   ROUTES.AUTH_CALLBACK,
+  ROUTES.AUTH_SIGNED_IN,
   ROUTES.ONBOARDING,
   ROUTES.ONBOARDING_DEMO,
 ]);

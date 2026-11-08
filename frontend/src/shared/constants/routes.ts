@@ -18,6 +18,8 @@ export const ROUTES = {
   EVENTS: "/events",
   LOGIN: "/login",
   AUTH_CALLBACK: "/auth/callback",
+  /** The last page of a sign-in that ran in a window of its own. */
+  AUTH_SIGNED_IN: "/auth/signed-in",
   ONBOARDING: "/onboarding",
   ONBOARDING_DEMO: "/onboarding-demo",
   ABOUT: "/about",
@@ -98,6 +100,7 @@ const ROUTE_PAGE_TITLES: Partial<
   [ROUTES.EVENTS]: "Campus Events",
   [ROUTES.LOGIN]: "Sign In",
   [ROUTES.AUTH_CALLBACK]: "Signing In",
+  [ROUTES.AUTH_SIGNED_IN]: "Signed In",
   [ROUTES.ONBOARDING]: "Onboarding",
   [ROUTES.ONBOARDING_DEMO]: "Onboarding Demo",
   [ROUTES.ABOUT]: "About",
