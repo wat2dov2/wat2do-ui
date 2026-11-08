@@ -6,6 +6,8 @@ interface AvatarStackProps {
   size?: "default" | "sm" | "lg";
   overflowCount?: number;
   overflowLabel?: string;
+  /** Eager for avatars on the first screen, so they arrive with the page instead of one by one after it. */
+  loading?: "eager" | "lazy";
 }
 
 const AVATAR_SIZES = {
@@ -16,7 +18,7 @@ const AVATAR_SIZES = {
 } as const;
 
 /** Overlapping profile images with accessible names and an optional overflow count. */
-export function AvatarStack({ avatars, size = "default", overflowCount = 0, overflowLabel }: AvatarStackProps) {
+export function AvatarStack({ avatars, size = "default", overflowCount = 0, overflowLabel, loading = "lazy" }: AvatarStackProps) {
   const { box, px, fallback } = AVATAR_SIZES[size];
   return (
     <div data-slot="avatar-stack" className={size === "sm" ? "flex shrink-0 items-center -space-x-1.5" : "flex shrink-0 items-center -space-x-2"}>
@@ -33,6 +35,7 @@ export function AvatarStack({ avatars, size = "default", overflowCount = 0, over
             alt={avatar.name}
             width={px}
             height={px}
+            loading={loading}
             className="size-full"
             fallback={<span aria-hidden="true" className={`text-muted-foreground ${fallback}`}>{avatar.name.replace(/^@/, "").slice(0, 1).toUpperCase()}</span>}
           />

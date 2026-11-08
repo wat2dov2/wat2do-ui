@@ -4,6 +4,7 @@ import type { NextFixture } from "next/experimental/testmode/playwright.js";
 import { writeFile } from "node:fs/promises";
 import sharp from "sharp";
 import { mockApi } from "./api-fixture";
+import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 
 /*
  * Loading states must hold the exact layout of what replaces them.
@@ -190,7 +191,33 @@ async function images() {
   return posterImages;
 }
 
-async function installMocks(page: Page, next: NextFixture, gates: Gates, held: (path: string, url: URL) => boolean) {
+/** A signed-in visitor: the API restores their session and lists the club they run. */
+interface Visitor {
+  email: string;
+  role: "user" | "admin";
+  club: (typeof CLUBS)[number] | null;
+}
+
+/** Runs club 1, which hosts event 1. */
+const EXECUTIVE: Visitor = { email: "exec@uwaterloo.ca", role: "user", club: CLUBS[0]! };
+/** Runs club 2, so event 1 is someone else's. */
+const OTHER_CLUBS_EXECUTIVE: Visitor = { email: "member@uwaterloo.ca", role: "user", club: CLUBS[1]! };
+const ADMIN: Visitor = { email: "admin@wat2do.io", role: "admin", club: null };
+
+interface MockOptions {
+  /** Signed in as this visitor; signed out without one. */
+  visitor?: Visitor;
+  /** Fields that event 1 carries in this test only. */
+  firstEvent?: Partial<(typeof EVENTS)[number]>;
+}
+
+async function installMocks(
+  page: Page,
+  next: NextFixture,
+  gates: Gates,
+  held: (path: string, url: URL) => boolean,
+  { visitor, firstEvent }: MockOptions = {},
+) {
   const posters = await images();
   await page.route(`${MEDIA}/**`, async (route) => {
     const name = new URL(route.request().url()).pathname;
@@ -216,7 +243,25 @@ async function installMocks(page: Page, next: NextFixture, gates: Gates, held: (
     if (path === "/schools/uwaterloo") return json(SCHOOL);
     if (path === "/site-banner") return json(null);
     if (path === "/discovery-queries" || path === "/interactions/batch" || path.endsWith("/view")) return { status: 204 };
-    if (path === "/auth/refresh" || path === "/users/me") return json({ detail: "Not authenticated" }, 401);
+    if (path === "/auth/refresh") {
+      return visitor
+        ? json({ access_token: "token", token_type: "bearer", expires_in: 900, user_id: "auth-1" })
+        : json({ detail: "Not authenticated" }, 401);
+    }
+    if (path === "/users/me") {
+      return visitor
+        ? json({ id: "user-1", email: visitor.email, school: "uwaterloo", role: visitor.role, interests: [] })
+        : json({ detail: "Not authenticated" }, 401);
+    }
+    if (path === "/clubs/mine") return json(visitor?.club ? [visitor.club] : []);
+    // An event whose tickets are off, at a club that has not connected payouts.
+    if (/^\/events\/\d+\/ticketing$/.test(path)) return json(null);
+    if (/^\/clubs\/\d+\/payouts$/.test(path)) {
+      return json({
+        paid_tickets_enabled: false, connected: false, charges_enabled: false, payouts_enabled: false,
+        details_submitted: false, requirements_due: [], country: "CA", currency: "cad",
+      });
+    }
     if (path === "/going-events" || path === "/saved-clubs") return json([]);
     if (path === "/events/stats") {
       await gates.late.opened;
@@ -239,7 +284,8 @@ async function installMocks(page: Page, next: NextFixture, gates: Gates, held: (
     const eventMatch = /^\/events\/(\d+)$/.exec(path);
     if (eventMatch) {
       const event = EVENTS.find(item => item.id === Number(eventMatch[1]));
-      return event ? json(event) : json({ detail: "Not found" }, 404);
+      if (!event) return json({ detail: "Not found" }, 404);
+      return json(event.id === 1 ? { ...event, ...firstEvent } : event);
     }
     if (path === "/clubs") return json(paginated(CLUBS));
     const clubMatch = /^\/clubs\/(\d+)$/.exec(path);
@@ -256,6 +302,26 @@ async function installMocks(page: Page, next: NextFixture, gates: Gates, held: (
     console.log(`[skeleton-layout] unmocked ${request.method} ${path}${url.search}`);
     return json({ detail: "Not mocked" }, 404);
   });
+}
+
+/**
+ * A returning visitor: their sign-in is cached in this browser, as it is after
+ * any earlier visit, so the page can draw them signed in from its first frame.
+ */
+async function cacheSignIn(page: Page, visitor: Visitor) {
+  const clubs = visitor.club ? [{ id: visitor.club.id, club_name: visitor.club.club_name, school: visitor.club.school }] : [];
+  await page.addInitScript(([emailKey, profileKey, profile]) => {
+    localStorage.setItem(emailKey, JSON.stringify(profile.email));
+    localStorage.setItem(profileKey, JSON.stringify(profile.cached));
+  }, [STORAGE_KEYS.USER_EMAIL, STORAGE_KEYS.USER_PROFILE, {
+    email: visitor.email,
+    cached: {
+      id: "user-1", fullName: null, avatarUrl: null, faculty: "", interests: [], isFirstYear: false,
+      school: "uwaterloo", role: visitor.role, hasClub: clubs.length > 0, clubs,
+      clubId: clubs[0]?.id ?? null, clubName: clubs[0]?.club_name ?? null,
+      payoutEmail: null, promoterTosAcceptedAt: null, promoterTosVersion: null,
+    },
+  }] as const);
 }
 
 const OBSERVE_SHIFTS = () => {
@@ -642,6 +708,46 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       const { cls, shifts } = await shiftsSince(page, openedAt);
       await report(`event-drawer-${viewportName}`, compare(loadingBoxes, loadedBoxes, viewport.height), cls, shifts);
     });
+
+    test("club panel event page keeps its header from the server's HTML until its tickets load", async ({ page, next }) => {
+      const gates: Gates = { data: new Gate(), late: new Gate() };
+      gates.late.open();
+      // Signed in as the club's executive. The event, its tickets and the club's payouts wait.
+      // Its title is one line wide: a title's wrapping is the one thing no placeholder can know.
+      await installMocks(
+        page, next, gates,
+        path => path === "/events/1" || path === "/events/1/ticketing" || path === "/clubs/1/payouts",
+        { visitor: EXECUTIVE, firstEvent: { title: "Open Mic Night" } },
+      );
+      await cacheSignIn(page, EXECUTIVE);
+      await throttleCpu(page);
+      await page.addInitScript(OBSERVE_SHIFTS);
+
+      await page.goto(`${BASE}/club-panel/events/1`, { waitUntil: "commit" });
+      // The server's HTML already draws the page's header, before the session is restored.
+      await page.locator("[data-slot=page-header-title] [data-slot=skeleton-line]").first().waitFor();
+      const name = `club-panel-event-${viewportName}`;
+      const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=ticket-settings-card]", name, viewport.height);
+      await report(name, comparison, cls, shifts);
+    });
+
+    for (const [who, visitor] of [["a returning visitor", OTHER_CLUBS_EXECUTIVE], ["an admin", ADMIN]] as const) {
+      test(`event page draws ${who} signed in from its first frame`, async ({ page, next }) => {
+        const gates: Gates = { data: new Gate(), late: new Gate() };
+        await installMocks(page, next, gates, path => path === "/events/1", { visitor });
+        await cacheSignIn(page, visitor);
+        await throttleCpu(page);
+        await page.addInitScript(OBSERVE_SHIFTS);
+
+        await page.goto(`${BASE}/events/1`, { waitUntil: "commit" });
+        await page.locator("[data-slot=event-details-loading]").first().waitFor();
+        const name = `event-page-${visitor.role === "admin" ? "admin" : "signed-in"}-${viewportName}`;
+        const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=event-host]", name, viewport.height);
+        await report(name, comparison, cls, shifts);
+        // The Going card is the visitor's own, not the signed-out email form.
+        await expect(page.getByTestId("event-registration-auth")).toBeHidden();
+      });
+    }
 
     test("the top bar never paints half-parsed when the page's HTML pauses inside it", async ({ page, next, _nextWorker }) => {
       const gates: Gates = { data: new Gate(), late: new Gate() };

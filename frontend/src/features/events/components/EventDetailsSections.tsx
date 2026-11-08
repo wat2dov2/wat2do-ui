@@ -47,14 +47,15 @@ import { deleteEventAPI } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
 import { EmailOtpForm } from "@/features/auth/components/EmailOtpForm";
-import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { ClubManagerView, SessionView } from "@/features/auth/components/SessionView";
+import { useAuthState, useSessionKnown } from "@/features/auth/hooks/useAuthState";
 import { useUIStore } from "@/shared/store/ui.store";
 import { controlBox } from "@/shared/config/controlBox";
 import { translateFoods } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { ROUTES, clubPanelEventTicketsPath } from "@/shared/constants/routes";
 import { EventTicketCard, useEventTicketing } from "@/features/tickets";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { Skeleton, SkeletonLine } from "@/shared/ui/skeleton";
 import { formatCents } from "@/shared/utils/currency";
 import { toast } from "@/shared/hooks/use-toast";
 import type { Event } from "@/shared/types";
@@ -401,51 +402,64 @@ export function EventRegistrationPrompt({
   onRegister: () => void | Promise<void>;
 }) {
   const { t } = useTranslation();
-  const { profileCompleted, userEmail, userFullName, userAvatarUrl } = useAuthState();
+  const { userEmail, userFullName, userAvatarUrl } = useAuthState();
+  // Until the page wakes up, who is signed in is not known: the signed-in look holds their lines' places.
+  const sessionKnown = useSessionKnown();
   const displayName = userFullName || userEmail?.split("@")[0] || "";
   return (
     <Card>
       <CardContent>
         <Stack gap={3}>
-          {profileCompleted ? (
-            <Stack direction="horizontal" gap={2} align="center">
-              {userAvatarUrl ? (
-                <LazyImage src={userAvatarUrl} alt="" width={24} height={24} className="size-6" fallback={null} />
-              ) : null}
-              <Stack gap={1}>
-                <CardTitle>{displayName}</CardTitle>
-                <CardDescription>{userEmail}</CardDescription>
+          <SessionView
+            signedIn={
+              <Stack direction="horizontal" gap={2} align="center">
+                {sessionKnown ? (
+                  userAvatarUrl ? (
+                    <LazyImage src={userAvatarUrl} alt="" width={24} height={24} className="size-6" fallback={null} />
+                  ) : null
+                ) : (
+                  // The picture's place, kept when the cached sign-in has one (see sessionInitScript).
+                  <span aria-hidden="true" className="hidden size-6 shrink-0 in-data-[session-avatar]:block" />
+                )}
+                <Stack gap={1}>
+                  <CardTitle>{sessionKnown ? displayName : <SkeletonLine className="w-28" />}</CardTitle>
+                  <CardDescription>{sessionKnown ? userEmail : <SkeletonLine className="w-40" />}</CardDescription>
+                </Stack>
               </Stack>
-            </Stack>
-          ) : (
-            <EmailOtpForm
-              data-testid="event-registration-auth"
-              school={school}
-              requestCodeLabel={t("events.going")}
-              actionLabel={t("events.going")}
-              focusOnMount={false}
-              isSubmitDisabled={unavailable}
-              submitDisabledReason={unavailableReason}
-              onAuthenticated={onRegister}
-            />
-          )}
+            }
+            signedOut={
+              <EmailOtpForm
+                data-testid="event-registration-auth"
+                school={school}
+                requestCodeLabel={t("events.going")}
+                actionLabel={t("events.going")}
+                focusOnMount={false}
+                isSubmitDisabled={unavailable}
+                submitDisabledReason={unavailableReason}
+                onAuthenticated={onRegister}
+              />
+            }
+          />
         </Stack>
       </CardContent>
-      {profileCompleted ? (
-        <CardFooter className="w-full">
-          <Button
-            type="button"
-            variant="primary"
-            className="w-full"
-            disabled={isPending || unavailable}
-            disabledReason={unavailableReason}
-            onClick={() => void onRegister()}
-            aria-label={t("events.going")}
-          >
-            {t("events.going")}
-          </Button>
-        </CardFooter>
-      ) : null}
+      <SessionView
+        signedIn={
+          <CardFooter className="w-full">
+            <Button
+              type="button"
+              variant="primary"
+              className="w-full"
+              disabled={isPending || unavailable}
+              disabledReason={unavailableReason}
+              onClick={() => void onRegister()}
+              aria-label={t("events.going")}
+            >
+              {t("events.going")}
+            </Button>
+          </CardFooter>
+        }
+        signedOut={null}
+      />
     </Card>
   );
 }
@@ -524,7 +538,13 @@ function EventAttendeesSection({ eventId }: { eventId: number }) {
  * The actions everyone sees, inert, while the event loads. Members who manage
  * the event see more once it arrives.
  */
-export function EventActionsPlaceholder() {
+export function EventActionsPlaceholder({ clubId }: {
+  /**
+   * The event's club when it is already known (opened from a list), so its team's
+   * controls hold their places too; admins' always do.
+   */
+  clubId?: number | null;
+}) {
   const { t } = useTranslation();
   return (
     <Stack direction="horizontal" gap={2} wrap data-slot="event-actions" aria-hidden="true">
@@ -532,6 +552,20 @@ export function EventActionsPlaceholder() {
         <Calendar className="size-4" />
         {t("common.addToCalendar")}
       </Button>
+      <ClubManagerView clubId={clubId}>
+        <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
+          <Ticket className="size-4" />
+          {t("tickets.manage")}
+        </Button>
+        <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
+          <Edit className="size-4" />
+          {t("common.edit")}
+        </Button>
+        <Button type="button" variant="destructive" size="sm" disabled tabIndex={-1}>
+          <Trash2 className="size-4" />
+          {t("common.delete")}
+        </Button>
+      </ClubManagerView>
       <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
         <Share2 className="size-4" />
         {t("common.share")}
@@ -566,9 +600,6 @@ export function EventActions({
   const [reportOpen, setReportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { isAdmin, clubs } = useAuthState();
-  // Admins and the hosting club's own members can edit and delete it; the server checks the same.
-  const canManage = isAdmin || clubs.some((club) => club.id === event.club_id);
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
 
   const handleEdit = useCallback(() => {
@@ -605,31 +636,30 @@ export function EventActions({
           {t("common.addToCalendar")}
         </Button>
       </EventCalendarDownloadMenu>
-      {canManage && (
-        <>
-          {event.club_id != null ? (
-            <Button type="button" variant="outline" size="sm" asChild>
-              <NextLink href={clubPanelEventTicketsPath(event.id)}>
-                <Ticket className="size-4" />
-                {t("tickets.manage")}
-              </NextLink>
-            </Button>
-          ) : null}
-          <Button type="button" variant="outline" size="sm" onClick={handleEdit}>
-            <Edit className="size-4" />
-            {t("common.edit")}
+      {/* Admins and the hosting club's own members can edit and delete it; the server checks the same. */}
+      <ClubManagerView clubId={event.club_id}>
+        {event.club_id != null ? (
+          <Button type="button" variant="outline" size="sm" asChild>
+            <NextLink href={clubPanelEventTicketsPath(event.id)}>
+              <Ticket className="size-4" />
+              {t("tickets.manage")}
+            </NextLink>
           </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={() => setDeleteOpen(true)}
-          >
-            <Trash2 className="size-4" />
-            {t("common.delete")}
-          </Button>
-        </>
-      )}
+        ) : null}
+        <Button type="button" variant="outline" size="sm" onClick={handleEdit}>
+          <Edit className="size-4" />
+          {t("common.edit")}
+        </Button>
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          onClick={() => setDeleteOpen(true)}
+        >
+          <Trash2 className="size-4" />
+          {t("common.delete")}
+        </Button>
+      </ClubManagerView>
       <Button type="button" variant="outline" size="sm" onClick={() => setShareOpen(true)}>
         <Share2 className="size-4" />
         {t("common.share")}
@@ -653,7 +683,7 @@ export function EventActions({
           />
         </Suspense>
       )}
-      {canManage && deleteOpen && (
+      {deleteOpen && (
         <Suspense fallback={null}>
           <AdminDeleteDialog
             isOpen={deleteOpen}

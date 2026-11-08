@@ -9,10 +9,12 @@
 // Components
 export { EmailOtpForm } from "./components/EmailOtpForm";
 export { PreviewStyleEventCard } from "./components/PreviewStyleEventCard";
+export { ClubManagerView, SessionView } from "./components/SessionView";
 
 // Hooks
 export {
   useAuthState,
+  useSessionKnown,
   useUserEmail,
 } from "./hooks/useAuthState";
 export { useRequireSignIn, useSignedInAction } from "./hooks/useSignInGate";

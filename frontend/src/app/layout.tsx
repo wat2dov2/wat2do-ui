@@ -11,6 +11,7 @@ import {
   getRequestSchool,
   getSchoolDirectoryForPage,
 } from "@/shared/api/schools.server";
+import { sessionInitScript } from "@/features/auth/lib/sessionInitScript";
 import { STORAGE_KEYS } from "@/shared/constants/storageKeys";
 import { getSchoolThemeStyle } from "@/shared/lib/schoolBranding";
 import "../index.css";
@@ -140,6 +141,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
+        />
+        <script
+          id="session-init"
+          dangerouslySetInnerHTML={{ __html: sessionInitScript }}
         />
       </head>
       <body>

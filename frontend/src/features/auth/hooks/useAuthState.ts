@@ -157,6 +157,17 @@ export function useAuthState(): AuthState {
   return useSyncExternalStore(subscribe, getSnapshot, () => SERVER_AUTH_STATE);
 }
 
+const subscribeToNothing = () => () => {};
+
+/**
+ * False in the server's HTML and while the page hydrates, when the browser's
+ * session cannot be known yet (`useAuthState` reports the signed-out server
+ * state then); true from then on.
+ */
+export function useSessionKnown(): boolean {
+  return useSyncExternalStore(subscribeToNothing, () => true, () => false);
+}
+
 /** Primitive selector - re-renders only when the email changes. */
 export function useUserEmail(): string | null {
   return useSyncExternalStore(

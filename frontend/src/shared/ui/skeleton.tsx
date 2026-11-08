@@ -18,12 +18,14 @@ export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivEl
 /**
  * One line of text that has not loaded yet. It takes exactly the line box of
  * the text it stands in for (the surrounding font size and line height), so
- * the real line lands where the placeholder was.
+ * the real line lands where the placeholder was. It is spans throughout, so
+ * it may stand inside a heading or paragraph, where a block would break the
+ * server's HTML.
  */
 export function SkeletonLine({ className }: { className?: string }) {
   return (
     <span data-slot="skeleton-line" aria-hidden="true" className="flex h-[1lh] w-full items-center">
-      <Skeleton className={cn("h-[0.75em] w-full rounded-sm", className)} />
+      <span data-slot="skeleton" className={cn("h-[0.75em] w-full rounded-sm bg-muted", className)} />
     </span>
   );
 }

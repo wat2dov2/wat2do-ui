@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { EventDetailsBodySkeleton } from "@/features/events/components/EventDetailsDrawerSkeleton";
@@ -13,6 +13,7 @@ import {
   EventDetailsSimilarEventsSkeleton,
 } from "@/features/events/components/EventDetailsSections";
 import {
+  cachedEvent,
   fetchEventById,
   eventFeedQueryOptions,
 } from "@/features/events/api/events.api";
@@ -33,7 +34,7 @@ interface EventDetailsPageContainerProps {
 }
 
 /** The page's header, shared by the page and its loading state. */
-function EventDetailsPageHeader({ event }: { event: Event | undefined }) {
+function EventDetailsPageHeader({ event, clubId }: { event: Event | undefined; clubId?: number | null }) {
   const { t } = useTranslation();
   return (
     <PageHeader
@@ -41,17 +42,20 @@ function EventDetailsPageHeader({ event }: { event: Event | undefined }) {
         href: ROUTES.EVENTS,
         label: t("events.allEvents"),
       }}
-      actions={event ? <EventActions event={event} /> : <EventActionsPlaceholder />}
+      actions={event ? <EventActions event={event} /> : <EventActionsPlaceholder clubId={clubId} />}
     />
   );
 }
 
 /** The event page before its event loads, laid out like the page itself. */
 export function EventDetailsPageSkeleton() {
+  const params = useParams<{ id?: string }>();
+  // Opened from a list, the event's club is known, so its team's controls hold their places.
+  const clubId = cachedEvent(Number(params.id))?.club_id;
   return (
     <Container size="lg">
       <Stack gap={6}>
-        <EventDetailsPageHeader event={undefined} />
+        <EventDetailsPageHeader event={undefined} clubId={clubId} />
         <EventDetailsBodySkeleton />
         <EventDetailsSimilarEventsSkeleton />
       </Stack>
