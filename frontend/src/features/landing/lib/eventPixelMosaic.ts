@@ -7,6 +7,7 @@
  * cell size, onto a canvas backed at the screen's pixel ratio. The Wat2Do
  * logo reads out of the grid only because the cells on it are given posters
  * whose own dominant colour matches that part of the logo; nothing is tinted.
+ * Its squares are finer than the grid's, so its outline reads sharper.
  * A headline is spelled the same way, in the heading's own typeface, out of
  * dark posters only, and its squares only ever swap among those, so the shapes
  * always stay legible. The phrase below its lead takes turns, respelling
@@ -95,6 +96,10 @@ const TITLE_MAX_LIGHTNESS = 0.2;
 const TITLE_MIN_SHARE = 0.35;
 /** The smallest cell a headline may ask for, in CSS pixels, so its widest line still fits on one line on the narrowest phones. */
 const MIN_TILE_SIZE = 2;
+/** Each grid square the logo touches splits into this many squares a side, so the logo reads at a finer grain than the grid. */
+const LOGO_SPLIT = 3;
+/** Logo squares never split smaller than this, in CSS pixels; on a fine grid they stay whole. */
+const MIN_LOGO_SQUARE = 3;
 /** Tries at a random unused poster before searching the pool for the least shown one. */
 const PICK_TRIES = 8;
 
@@ -236,6 +241,14 @@ export function startEventPixelMosaic(
   let columns = 0;
   let rows = 0;
   let scale = 1;
+  /** Each square's top-left corner and side, in CSS pixels. */
+  let cellX = new Float32Array(0);
+  let cellY = new Float32Array(0);
+  let cellSize = new Float32Array(0);
+  /** Grid squares the logo split, drawn as their finer squares instead. */
+  let hidden: Uint8Array = new Uint8Array(0);
+  /** The lowest grid row the logo reaches, or -1 without a logo. */
+  let logoBottom = -1;
   let posters = new Uint16Array(0);
   /** How many squares show each poster right now, so a pick can prefer one that is not on screen. */
   const shown = new Uint16Array(count);
@@ -289,7 +302,7 @@ export function startEventPixelMosaic(
 
   /** The cells that spell the lead and one phrase, on the full grid. */
   function inkFor(phraseIndex: number): Uint8Array {
-    const cells = new Uint8Array(columns * rows);
+    const cells = new Uint8Array(posters.length);
     for (const source of [leadInk, phraseInk[phraseIndex]]) {
       source?.forEach((value, index) => { if (value) cells[index] = 1; });
     }
@@ -317,8 +330,6 @@ export function startEventPixelMosaic(
     const regionColumns = Math.floor(region.width / tile);
     const left = Math.round(region.left / tile);
     // The headline starts a gap of empty rows below the logo's lowest cell, at every cell size.
-    let logoBottom = -1;
-    logo.forEach((letter, index) => { if (letter) logoBottom = Math.max(logoBottom, Math.floor(index / columns)); });
     const regionTop = Math.round(region.top / tile);
     // Exactly the gap, even where the logo's box leaves empty rows below it; the region's height follows.
     const top = logoBottom >= 0 ? logoBottom + 1 + TITLE_GAP_ROWS : regionTop;
@@ -339,9 +350,10 @@ export function startEventPixelMosaic(
   }
 
   function drawPoster(index: number, poster: number, alpha: number, colour: boolean) {
-    const x = (index % columns) * tile * scale;
-    const y = Math.floor(index / columns) * tile * scale;
-    const size = (tile - look.gutter) * scale;
+    const x = cellX[index] * scale;
+    const y = cellY[index] * scale;
+    // The gutter shrinks with the square, so split logo squares keep the grid's proportions.
+    const size = cellSize[index] * (1 - look.gutter / tile) * scale;
     const { tilePixels, columns: atlasColumns } = atlas;
     context!.globalAlpha = alpha * (colour ? 1 : MUTED_ALPHA);
     context!.drawImage(
@@ -353,9 +365,7 @@ export function startEventPixelMosaic(
 
   /** Draws one square, crossfading from the poster it is leaving while `progress` runs from 0 to 1. */
   function drawCell(index: number, fade?: { from: number; fromColour: boolean; progress: number }) {
-    const x = (index % columns) * tile * scale;
-    const y = Math.floor(index / columns) * tile * scale;
-    context!.clearRect(x, y, tile * scale, tile * scale);
+    context!.clearRect(cellX[index] * scale, cellY[index] * scale, cellSize[index] * scale, cellSize[index] * scale);
     if (fade) drawPoster(index, fade.from, 1 - fade.progress, fade.fromColour);
     drawPoster(index, posters[index], fade ? fade.progress : 1, isColour(index));
     context!.globalAlpha = 1;
@@ -363,16 +373,79 @@ export function startEventPixelMosaic(
 
   function drawAll() {
     context!.clearRect(0, 0, canvas.width, canvas.height);
-    for (let index = 0; index < posters.length; index += 1) drawCell(index);
+    for (let index = 0; index < posters.length; index += 1) if (!hidden[index]) drawCell(index);
   }
 
   /** Swaps one square to a new poster for its shape, starting its crossfade. */
   function swap(index: number, now: number) {
-    if (fading.has(index)) return;
+    if (hidden[index] || fading.has(index)) return;
     const from = posters[index];
     const fromColour = isColour(index);
     place(index, pick(index));
     fading.set(index, { from, fromColour, start: now });
+  }
+
+  /**
+   * Lays out every square: the plain grid, then, where the logo falls, each
+   * grid square it touches split LOGO_SPLIT a side, its finer squares taking
+   * the logo's letters from a mask traced at that finer grain.
+   */
+  function layoutLogo() {
+    // The plain grid's squares come first; the logo's split squares follow them.
+    const gridCount = columns * rows;
+    const region = content.logoRegion?.();
+    const split = region && tile / LOGO_SPLIT >= MIN_LOGO_SQUARE ? LOGO_SPLIT : 1;
+    const fineColumns = columns * split;
+    const fine = region
+      ? logoCells(content.logoMask, fineColumns, rows * split, {
+        left: Math.round(region.left / tile) * split,
+        top: Math.round(region.top / tile) * split,
+        columns: Math.floor(region.width / tile) * split,
+        rows: Math.floor(region.height / tile) * split,
+      })
+      : new Uint8Array(gridCount);
+    const xs: number[] = [];
+    const ys: number[] = [];
+    const sizes: number[] = [];
+    const letters: number[] = [];
+    const add = (x: number, y: number, size: number, letter: number) => {
+      xs.push(x);
+      ys.push(y);
+      sizes.push(size);
+      letters.push(letter);
+    };
+    hidden = new Uint8Array(gridCount);
+    logoBottom = -1;
+    for (let index = 0; index < gridCount; index += 1) {
+      const row = Math.floor(index / columns);
+      add((index % columns) * tile, row * tile, tile, split === 1 ? fine[index] : 0);
+      if (split === 1 && fine[index]) logoBottom = row;
+    }
+    if (split > 1) {
+      const fineIndex = (index: number, sx: number, sy: number) =>
+        (Math.floor(index / columns) * split + sy) * fineColumns + (index % columns) * split + sx;
+      for (let index = 0; index < gridCount; index += 1) {
+        let touched = false;
+        for (let sy = 0; sy < split && !touched; sy += 1) {
+          for (let sx = 0; sx < split && !touched; sx += 1) touched = fine[fineIndex(index, sx, sy)] !== 0;
+        }
+        if (!touched) continue;
+        hidden[index] = 1;
+        logoBottom = Math.max(logoBottom, Math.floor(index / columns));
+        const side = tile / split;
+        for (let sy = 0; sy < split; sy += 1) {
+          for (let sx = 0; sx < split; sx += 1) {
+            add((index % columns) * tile + sx * side, Math.floor(index / columns) * tile + sy * side, side, fine[fineIndex(index, sx, sy)]);
+          }
+        }
+      }
+    }
+    hidden = Uint8Array.from({ length: xs.length }, (_, index) => (index < gridCount ? hidden[index] : 0));
+    cellX = Float32Array.from(xs);
+    cellY = Float32Array.from(ys);
+    cellSize = Float32Array.from(sizes);
+    logo = Uint8Array.from(letters);
+    posters = new Uint16Array(xs.length);
   }
 
   function resize() {
@@ -389,22 +462,15 @@ export function startEventPixelMosaic(
     // Resizing the backing store resets the context, smoothing included.
     context!.imageSmoothingEnabled = true;
     context!.imageSmoothingQuality = "high";
-    const region = content.logoRegion?.();
-    logo = region
-      ? logoCells(content.logoMask, columns, rows, {
-        left: Math.round(region.left / tile),
-        top: Math.round(region.top / tile),
-        columns: Math.floor(region.width / tile),
-        rows: Math.floor(region.height / tile),
-      })
-      : new Uint8Array(columns * rows);
+    layoutLogo();
     if (spelling) spellTitle(spelling);
     ink = inkFor(phrase);
     shown.fill(0);
-    posters = new Uint16Array(columns * rows);
     // Shapes first, from their smaller pools, so the background never takes the posters they need.
     const shaped = (index: number) => Number(logo[index] !== 0 || ink[index] === 1);
-    const order = Array.from({ length: columns * rows }, (_, index) => index).sort((a, c) => shaped(c) - shaped(a));
+    const order = Array.from({ length: posters.length }, (_, index) => index)
+      .filter((index) => !hidden[index])
+      .sort((a, c) => shaped(c) - shaped(a));
     for (const index of order) {
       const poster = pick(index);
       posters[index] = poster;

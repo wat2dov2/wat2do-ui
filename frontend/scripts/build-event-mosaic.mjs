@@ -40,7 +40,7 @@ const TOPIC_PICKS = { networking: 120, social: 120 };
 /** How near (RGB distance) a dominant colour must be to count as matching a logo colour, for the build's report. */
 const LOGO_MATCH_DISTANCE = 90;
 /** The logo mask's width in samples; its height follows the logo's shape. */
-const LOGO_MASK_WIDTH = 80;
+const LOGO_MASK_WIDTH = 240;
 const PAGE_SIZE = 100;
 const DOWNLOAD_CONCURRENCY = 16;
 
