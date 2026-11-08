@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useRequestSchool } from "@/app/client-providers";
 import { eventFeedQueryOptions } from "@/features/events/api/events.api";
+import { EventHighlightSectionsSkeleton } from "@/features/events/components/EventHighlightSections";
 import { EventList } from "@/features/events/components/EventList";
 import { EventsPageHeader } from "@/features/events/components/EventsPageHeader";
 import { useCurrentTime } from "@/features/events/hooks/useGoingEvents";
@@ -52,8 +53,11 @@ function EventsLoading() {
   const campusSeasonOptions = feed ? search.campusSeasonOptions : resolveCampusSeasonFilters(
     schoolBySlug.get(school), currentTimeMs, i18n.resolvedLanguage ?? i18n.language, [], feedFilterAvailability(NO_EVENTS, school),
   ).options;
+  // The page shows its highlights only before a search or filter, and so does its stand-in.
+  const showHighlights = search.filterCount === 0 && search.searchQuery.trim().length === 0;
   return (
     <>
+      {showHighlights ? <EventHighlightSectionsSkeleton school={school} /> : null}
       <EventsPageHeader
         filters={{ ...search, campusSeasonOptions }}
         school={school}

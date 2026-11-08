@@ -20,7 +20,7 @@ interface PositionListProps {
 }
 
 /** The position card before it loads: artwork, a one-line title, its stats line and description. */
-function PositionCardSkeleton() {
+export function PositionCardSkeleton() {
   return (
     <div className="flex h-full w-full flex-col rounded-xl" data-skeleton-key="card">
       <CardImageSkeleton />

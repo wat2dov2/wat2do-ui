@@ -2,6 +2,7 @@ import { useMemo, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EventsBrowseViews } from "@/features/events/components/EventsBrowseViews";
 import { EventsPageHeader } from "@/features/events/components/EventsPageHeader";
+import { EventHighlightSections } from "@/features/events/components/EventHighlightSections";
 import type { EventBrowseView } from "@/features/events/components/EventViewSelect";
 import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
@@ -43,6 +44,7 @@ export function EventsPageContainer({
 
     filters,
     allEvents,
+    highlights,
   } = useEventsPageData({
     firstScreen,
     initialSchool,
@@ -73,9 +75,28 @@ export function EventsPageContainer({
     filters.setSearchQuery(latestAddedEvent.title);
   }, [filters, latestAddedEvent]);
 
+  const handleSeeAllFeatured = useCallback(() => {
+    filters.setFeatured(true);
+  }, [filters]);
+
+  const hasActiveFilters = filters.filterCount > 0 || filters.searchQuery.trim().length > 0;
+  // A search or filter collapses the highlights, so its results start right
+  // under the search box; so does the map or calendar view, which fill the page.
+  const showHighlights = view === "grid" && !hasActiveFilters && !error;
+
   return (
     <>
       <Stack gap={2} data-page-layout={view === "map" ? "viewport" : undefined}>
+        {showHighlights ? (
+          <EventHighlightSections
+            school={initialSchool}
+            highlights={highlights}
+            mapEvents={listing?.complete ? allEvents : null}
+            eventStats={eventStats}
+            onEventClick={handleEventClick}
+            onSeeAllFeatured={handleSeeAllFeatured}
+          />
+        ) : null}
         <EventsPageHeader
           filters={filters}
           school={initialSchool}
@@ -109,7 +130,7 @@ export function EventsPageContainer({
               totalCount={listing?.complete === false ? listing.total : undefined}
               onEventClick={handleEventClick}
               onClearFilters={filters.clearAllFilters}
-              hasActiveFilters={filters.filterCount > 0 || filters.searchQuery.trim().length > 0}
+              hasActiveFilters={hasActiveFilters}
               eventStats={eventStats}
               isLoading={listing === null}
               loadFailureNotice={restLoadFailed ? (
