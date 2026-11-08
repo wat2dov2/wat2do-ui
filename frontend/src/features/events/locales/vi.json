@@ -43,12 +43,15 @@
     "noUpcomingEvents": "Không có sự kiện sắp tới nào",
     "upcomingEventCount": "sự kiện sắp tới",
     "upcomingEventCount_other": "các sự kiện sắp tới",
+    "eventCount": "sự kiện",
+    "eventCount_other": "sự kiện",
     "thisWeek": "Tuần này",
     "discoverEvents": "Khám Phá Sự Kiện",
     "clickCount": "{{count}} nhấp",
     "clickCount_other": "{{count}} nhấp chuột",
     "noEventsFound": "Không tìm thấy sự kiện nào",
     "noEventsFoundDesc": "Không tìm thấy sự kiện nào phù hợp với bộ lọc hiện tại của bạn. Hãy thử điều chỉnh tìm kiếm hoặc xóa một số bộ lọc.",
+    "past": "Đã qua",
     "noEventsScheduled": "Không có sự kiện nào được lên lịch",
     "noEventsScheduledDesc": "Hiện tại không có sự kiện nào được lên lịch. Hãy quay lại sau!",
     "dateFilter": {
@@ -62,10 +65,12 @@
       "custom": "Chọn ngày"
     },
     "clearAllFilters": "Xóa tất cả bộ lọc",
+    "seePastEvents": "Xem sự kiện đã qua",
     "dateSections": {
       "today": "Hôm nay",
       "tomorrow": "Ngày mai",
-      "range": "{{start}} đến {{end}}"
+      "range": "{{start}} đến {{end}}",
+      "past": "Sự kiện đã qua"
     },
     "reportDialog": {
       "title": "Báo cáo sự kiện",

@@ -88,6 +88,7 @@
   "navigation": {
     "events": "رویدادها",
     "submit": "ثبت",
+    "signInRequired": "نیاز به ورود",
     "clubs": "سازمان‌ها",
     "positions": "موقعیت‌ها",
     "myEvents": "رویدادهای من",
@@ -155,6 +156,9 @@
   "filters": {
     "filtersHeader": "فیلترها",
     "date": "تاریخ",
+    "startsFrom": "از",
+    "startDate": "تاریخ شروع",
+    "startTime": "ساعت شروع",
     "title": "عنوان",
     "location": "مکان",
     "price": "قیمت",

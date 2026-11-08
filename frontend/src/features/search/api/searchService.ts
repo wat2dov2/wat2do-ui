@@ -1,8 +1,13 @@
 import type { Event } from "@/shared/types";
 import type { EventDateFilter } from "@/shared/types/filter.types";
-import type { CampusSeasonFilterOption, SearchStoreFilterValues } from "@/features/search/api/filterService";
+import {
+  resolveStartFromMs,
+  type CampusSeasonFilterOption,
+  type SearchStoreFilterValues,
+} from "@/features/search/api/filterService";
 import {
   getPrimaryOccurrence,
+  hasEventEnded,
   isActiveOrUpcomingOccurrence,
   parseLocalDateValue,
   schoolCalendarDate,
@@ -14,7 +19,11 @@ import { getEventCategory } from "@/shared/utils/event";
 interface SearchFilters extends Omit<SearchStoreFilterValues, "sortBy" | "sortOrder"> {
   goingEventIds: number[];
   campusSeasonOptions: readonly CampusSeasonFilterOption[];
+  /** The moment the default start ("now") stands for: the time the list is drawn at, else the clock. */
+  startNowMs?: number | null;
 }
+
+type Occurrence = Event["occurrences"][number];
 
 type SortOptions = Pick<SearchStoreFilterValues, "sortBy" | "sortOrder">;
 
@@ -129,7 +138,7 @@ function filterCampusSeasonOccurrences(
   event: Event,
   selected: readonly CampusSeasonFilterOption[],
   timeZone: string,
-  currentTimeMs: number,
+  isListed: (occurrence: Occurrence) => boolean,
 ): Event[] {
   const matching = selected.filter(option => event.campus_season_ids?.includes(option.classificationId));
   if (matching.some(option => option.id === option.classificationId)) return [event];
@@ -141,7 +150,7 @@ function filterCampusSeasonOccurrences(
     };
   }));
   const occurrences = event.occurrences.filter(occurrence =>
-    isActiveOrUpcomingOccurrence(occurrence, currentTimeMs) && ranges.some(range => occurrenceOverlapsDateRange(occurrence, range)),
+    isListed(occurrence) && ranges.some(range => occurrenceOverlapsDateRange(occurrence, range)),
   );
   return occurrences.length > 0 ? [{ ...event, occurrences }] : [];
 }
@@ -182,30 +191,47 @@ export function filterEvents(
     ? Date.parse(filters.addedSince)
     : Number.NaN;
   const currentDate = new Date(Date.now());
+  // The start filter: an event is listed while a session is still on at the start
+  // (in its school's time), and without a start every event is.
+  const startsMs = new Map<string, number | null>();
+  const startOf = (event: Event): number | null => {
+    const timeZone = getSchoolTimezone(event.school);
+    if (!startsMs.has(timeZone)) {
+      startsMs.set(timeZone, resolveStartFromMs(filters.startFrom, filters.startNowMs ?? currentDate.getTime(), timeZone));
+    }
+    return startsMs.get(timeZone) ?? null;
+  };
+  const listedFrom = (startMs: number | null) => (occurrence: Occurrence) =>
+    startMs === null || isActiveOrUpcomingOccurrence(occurrence, startMs);
+  const started = events.filter((event) => {
+    const startMs = startOf(event);
+    return startMs === null || !hasEventEnded(event, startMs);
+  });
   const dateRanges = new Map<string, DateFilterRange | null>();
-  // Carry only matching, still-visible sessions into cards and date sections.
+  // Carry only matching, listed sessions into cards and date sections.
   // Returning the original occurrence list could label a Today result Tomorrow.
   const dateCandidates = filters.dateFilter !== "any"
-    ? events.map((event) => {
+    ? started.map((event) => {
       const timeZone = getSchoolTimezone(event.school);
       if (!dateRanges.has(timeZone)) {
         dateRanges.set(timeZone, resolveDateFilterRange(filters.dateFilter, filters.customDate, currentDate, timeZone));
       }
       const dateRange = dateRanges.get(timeZone);
       if (!dateRange) return event;
+      const isListed = listedFrom(startOf(event));
       return {
         ...event,
         occurrences: event.occurrences.filter((occurrence) =>
-          isActiveOrUpcomingOccurrence(occurrence, currentDate.getTime()) &&
+          isListed(occurrence) &&
           occurrenceOverlapsDateRange(occurrence, dateRange),
         ),
       };
     }).filter((event) => event.occurrences.length > 0)
-    : events;
+    : started;
 
   const selectedSeasons = filters.campusSeasonOptions.filter(option => filters.campusSeasonIds.includes(option.id));
   const candidates = filters.campusSeasonIds.length > 0
-    ? dateCandidates.flatMap(event => filterCampusSeasonOccurrences(event, selectedSeasons, getSchoolTimezone(event.school), currentDate.getTime()))
+    ? dateCandidates.flatMap(event => filterCampusSeasonOccurrences(event, selectedSeasons, getSchoolTimezone(event.school), listedFrom(startOf(event))))
     : dateCandidates;
 
   const filtered = candidates.filter((event) => {

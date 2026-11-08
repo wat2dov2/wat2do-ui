@@ -31,4 +31,11 @@ export interface FilterState {
   addedSince: string;
   dateFilter: EventDateFilter;
   customDate: string;
+  /**
+   * The start date and time the list begins at: events still on at that moment
+   * or later. `"now"` (the default) follows the clock, which is what keeps
+   * ended events out; `""` sets no start, so past events are listed too; any
+   * other value is a school-local `yyyy-MM-ddTHH:mm` the reader picked.
+   */
+  startFrom: string;
 }

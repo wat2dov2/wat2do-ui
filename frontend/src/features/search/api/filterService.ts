@@ -1,7 +1,8 @@
 import type { Event, EventDateFilter, FilterState } from "@/shared/types";
 import type { SchoolSummary } from "@/shared/api/schools.api";
+import { fromZonedTime } from "date-fns-tz";
 import { eventVisibleUntilMs, parseLocalDateValue, schoolCalendarDate } from "@/shared/utils/date";
-import { getEventFilterCategories } from "@/shared/constants/eventFilters";
+import { getEventFilterCategories, START_FROM_NOW } from "@/shared/constants/eventFilters";
 
 // Shared normalization for visual filters and QR handoff.
 
@@ -32,6 +33,7 @@ export const EMPTY_FILTER_STATE: FilterState = {
   addedSince: "",
   dateFilter: "any",
   customDate: "",
+  startFrom: START_FROM_NOW,
 };
 
 /** "Free food" means an event that has food and costs nothing; one definition for every entry point. */
@@ -89,6 +91,34 @@ function localDateFrom(value: unknown): string {
   return typeof value === "string" && parseLocalDateValue(value) ? value : "";
 }
 
+const LOCAL_DATE_TIME = /^(\d{4})-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d$/;
+/** Years a start can name; anything else is a date still being typed (0002, 0020, 0202...). */
+const FIRST_START_YEAR = 2000;
+const LAST_START_YEAR = 2100;
+
+/** Whether `value` is a start the reader can pick: a real school-local date and time in a plausible year. */
+export function isPickedStartFrom(value: string): boolean {
+  const match = LOCAL_DATE_TIME.exec(value);
+  const year = Number(match?.[1]);
+  return Boolean(match && parseLocalDateValue(value.slice(0, 10))) && year >= FIRST_START_YEAR && year <= LAST_START_YEAR;
+}
+
+function startFromValue(value: unknown): string {
+  if (value === "") return "";
+  return typeof value === "string" && isPickedStartFrom(value) ? value : START_FROM_NOW;
+}
+
+/**
+ * The moment the list begins in `timeZone`: `nowMs` for the default, null for no
+ * start (or before the clock is known), else the picked school-local time.
+ */
+export function resolveStartFromMs(startFrom: string, nowMs: number | null, timeZone: string): number | null {
+  if (startFrom === START_FROM_NOW) return nowMs;
+  if (!startFrom) return null;
+  // Never throws (unlike localDateTimeToUtc), so a time a clock change skips still starts the list.
+  return fromZonedTime(startFrom, timeZone).getTime();
+}
+
 function dateFilterFrom(
   value: unknown,
   customDate: string,
@@ -129,6 +159,7 @@ export function normalizeFilterState(filters: FilterStateInput): FilterState {
     addedSince: isoTimestampFrom(filters.addedSince),
     dateFilter,
     customDate: dateFilter === "custom" ? customDate : "",
+    startFrom: startFromValue(filters.startFrom),
   };
 }
 
@@ -159,6 +190,7 @@ export function filterStateToStoreValues(filters: FilterState): SearchStoreFilte
     addedSince: normalized.addedSince,
     dateFilter: normalized.dateFilter,
     customDate: normalized.customDate,
+    startFrom: normalized.startFrom,
   };
 }
 
@@ -190,6 +222,7 @@ export function storeStatesToFilterState(
     addedSince: values.addedSince,
     dateFilter: values.dateFilter,
     customDate: values.customDate,
+    startFrom: values.startFrom,
   };
 }
 

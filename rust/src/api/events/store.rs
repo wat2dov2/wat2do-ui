@@ -566,10 +566,24 @@ async fn club_logo_by_handle(
 
 // ── The feed ────────────────────────────────────────────────────────────
 
+/// Which occurrences a feed's lower bound keeps.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub enum LowerBound {
+    /// No lower bound (`include_past`).
+    #[default]
+    None,
+    /// The feed's default: occurrences starting at or after it (today's start).
+    StartsFrom(DateTime<Utc>),
+    /// A caller's `start_utc`: occurrences still on at it, by the rule the site
+    /// lists by (an end at or after it, or with no end, a start within
+    /// `event_without_end_visibility_minutes` before it or later).
+    OnAt(DateTime<Utc>),
+}
+
 /// What the default date-ordered feed (`_load_lightweight_date_page`) reads.
 #[derive(Debug, Clone, Default)]
 pub struct DateWindow {
-    pub start_utc: Option<DateTime<Utc>>,
+    pub lower: LowerBound,
     pub end_utc: Option<DateTime<Utc>>,
     pub school_id: Option<i64>,
 }
@@ -721,11 +735,20 @@ impl Binds {
 
 fn window_conditions(window: &DateWindow, binds: &mut Binds) -> Vec<String> {
     let mut conditions = vec!["TRUE".to_owned()];
-    if let Some(start) = window.start_utc {
-        conditions.push(format!(
+    match window.lower {
+        LowerBound::None => {}
+        LowerBound::StartsFrom(start) => conditions.push(format!(
             "d.dtstart_utc >= {}",
             binds.push(Bind::Time(start))
-        ));
+        )),
+        LowerBound::OnAt(start) => {
+            let start = binds.push(Bind::Time(start));
+            conditions.push(format!(
+                "(d.dtend_utc >= {start} OR (d.dtend_utc IS NULL \
+                 AND d.dtstart_utc >= {start} - make_interval(mins => {})))",
+                crate::controlbox::EVENT_DISCOVERY.event_without_end_visibility_minutes
+            ));
+        }
     }
     if let Some(end) = window.end_utc {
         conditions.push(format!("d.dtstart_utc <= {}", binds.push(Bind::Time(end))));
@@ -813,6 +836,35 @@ pub struct ScanFilters {
     pub registration: Option<bool>,
     pub min_price: Option<f64>,
     pub max_price: Option<f64>,
+    /// `feed::ascii_search_text`: letters and digits the event's searchable
+    /// text must contain, so the row limit applies after the search narrows.
+    pub search_text: Option<String>,
+    /// Scan from the latest start back, so a feed read newest first keeps the
+    /// most recent occurrences within the row limit (a history with no lower
+    /// bound would otherwise keep only its oldest).
+    pub newest_first: bool,
+}
+
+/// The ASCII letters and digits of an event's searchable fields (those
+/// `feed::matches_search` reads), folded the way `feed::ascii_search_text`
+/// folds the search: each `CASEFOLDS_TO_ASCII` character becomes its letters,
+/// ASCII lowercases, and everything else drops out.
+fn ascii_search_document() -> String {
+    // Food named in text only: other JSON values in `food` are not searched.
+    let food = "CASE jsonb_typeof(e.food) \
+         WHEN 'array' THEN (SELECT string_agg(item #>> '{}', ' ') FROM jsonb_array_elements(e.food) item \
+         WHERE jsonb_typeof(item) = 'string') \
+         WHEN 'string' THEN e.food #>> '{}' END";
+    let club_ig = "(SELECT c.ig FROM public.clubs c WHERE c.id = e.club_id)";
+    let cohosts = "(SELECT string_agg(concat_ws(' ', h.club_name, h.ig), ' ') FROM public.clubs h \
+         WHERE h.id = ANY(e.cohost_club_ids))";
+    let mut text = format!(
+        "concat_ws(' ', e.title, e.club, e.ig_handle, {club_ig}, e.description, e.location, {cohosts}, {food})"
+    );
+    for (character, letters) in super::feed::CASEFOLDS_TO_ASCII {
+        text = format!("replace({text}, '{character}', '{letters}')");
+    }
+    format!("regexp_replace(lower({text}), '[^a-z0-9]+', '', 'g')")
 }
 
 /// The filtered feed's scan: the first 1000 occurrence rows in feed order and
@@ -822,7 +874,28 @@ pub async fn scan(
     filters: &ScanFilters,
 ) -> Result<(Vec<super::feed::ScannedRow>, HashMap<i64, CandidateEvent>), ApiError> {
     let mut binds = Binds::default();
-    let mut conditions = window_conditions(&filters.window, &mut binds);
+    let sql = scan_sql(filters, &mut binds);
+    let result: serde_json::Value =
+        read_with_retry(|| binds.apply(sqlx::query_scalar(&sql)).fetch_one(db)).await?;
+    let (rows, events): (Vec<(i64, i64)>, Vec<CandidateEvent>) = serde_json::from_value(result)
+        .map_err(|error| ApiError::Internal(anyhow::anyhow!("scan JSON: {error}")))?;
+    let rows = rows
+        .into_iter()
+        .map(|(event_id, start)| {
+            Ok(super::feed::ScannedRow {
+                event_id,
+                dtstart_utc: from_micros(start)?,
+            })
+        })
+        .collect::<Result<Vec<_>, ApiError>>()?;
+    Ok((
+        rows,
+        events.into_iter().map(|event| (event.id, event)).collect(),
+    ))
+}
+
+fn scan_sql(filters: &ScanFilters, binds: &mut Binds) -> String {
+    let mut conditions = window_conditions(&filters.window, binds);
     if let Some(ids) = &filters.event_ids {
         conditions.push(format!(
             "d.event_id = ANY({}::int8[])",
@@ -862,38 +935,33 @@ pub async fn scan(
     if let Some(price) = filters.max_price {
         conditions.push(format!("e.price <= {}", binds.push(Bind::Float(price))));
     }
-    let sql = format!(
+    if let Some(text) = &filters.search_text {
+        conditions.push(format!(
+            "strpos({}, {}) > 0",
+            ascii_search_document(),
+            binds.push(Bind::Text(text.clone()))
+        ));
+    }
+    let direction = if filters.newest_first { " DESC" } else { "" };
+    format!(
         "WITH scanned AS MATERIALIZED (SELECT row_number() OVER () AS rn, rows.* FROM (\
          SELECT d.event_id, d.dtstart_utc FROM public.event_dates d JOIN public.events e ON e.id = d.event_id \
-         WHERE {} ORDER BY d.dtstart_utc, d.event_id, d.id LIMIT {POSTGREST_MAX_ROWS}) rows) \
+         WHERE {} ORDER BY d.dtstart_utc{direction}, d.event_id{direction}, d.id{direction} LIMIT {POSTGREST_MAX_ROWS}) rows) \
          SELECT json_build_array(\
          (SELECT COALESCE(json_agg(json_build_array(scanned.event_id, {}) ORDER BY scanned.rn), '[]') FROM scanned), \
          (SELECT COALESCE(json_agg(json_build_object('id', e.id, 'title', e.title, 'description', e.description, \
-         'location', e.location, 'club', e.club, 'ig_handle', e.ig_handle, 'food', e.food, 'price', e.price, \
+         'location', e.location, 'club', e.club, 'ig_handle', e.ig_handle, \
+         'club_ig', (SELECT c.ig FROM public.clubs c WHERE c.id = e.club_id), \
+         'cohosts', COALESCE((SELECT json_agg(json_build_object('club_name', h.club_name, 'ig', h.ig)) \
+         FROM public.clubs h WHERE h.id = ANY(e.cohost_club_ids)), '[]'), \
+         'food', e.food, 'price', e.price, \
          'added_at', {}, 'timezone', s.timezone)), '[]') \
          FROM public.events e JOIN public.schools s ON s.id = e.school_id \
          WHERE e.id IN (SELECT scanned.event_id FROM scanned)))",
         conditions.join(" AND "),
         micros!("scanned.dtstart_utc"),
         micros!("e.added_at"),
-    );
-    let result: serde_json::Value =
-        read_with_retry(|| binds.apply(sqlx::query_scalar(&sql)).fetch_one(db)).await?;
-    let (rows, events): (Vec<(i64, i64)>, Vec<CandidateEvent>) = serde_json::from_value(result)
-        .map_err(|error| ApiError::Internal(anyhow::anyhow!("scan JSON: {error}")))?;
-    let rows = rows
-        .into_iter()
-        .map(|(event_id, start)| {
-            Ok(super::feed::ScannedRow {
-                event_id,
-                dtstart_utc: from_micros(start)?,
-            })
-        })
-        .collect::<Result<Vec<_>, ApiError>>()?;
-    Ok((
-        rows,
-        events.into_iter().map(|event| (event.id, event)).collect(),
-    ))
+    )
 }
 
 /// Hydrate a chosen page of event ids in order, with page one's newest event.
@@ -1089,6 +1157,77 @@ pub async fn admin_page(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scan_narrows_by_the_search_text_and_reads_newest_first_on_request() {
+        let mut binds = Binds::default();
+        let plain = scan_sql(&ScanFilters::default(), &mut binds);
+        assert!(plain.contains("ORDER BY d.dtstart_utc, d.event_id, d.id LIMIT 1000"));
+        assert!(!plain.contains("strpos("));
+        assert!(binds.values.is_empty());
+
+        let mut binds = Binds::default();
+        let history = scan_sql(
+            &ScanFilters {
+                search_text: Some("hackathon".into()),
+                newest_first: true,
+                ..ScanFilters::default()
+            },
+            &mut binds,
+        );
+        assert!(
+            history.contains("ORDER BY d.dtstart_utc DESC, d.event_id DESC, d.id DESC LIMIT 1000")
+        );
+        assert!(history.contains(&format!("strpos({}, $1) > 0", ascii_search_document())));
+        assert!(matches!(binds.values.as_slice(), [Bind::Text(text)] if text == "hackathon"));
+    }
+
+    #[test]
+    fn the_search_document_reads_every_field_the_search_reads() {
+        let document = ascii_search_document();
+        for field in [
+            "e.title",
+            "e.club",
+            "e.ig_handle",
+            "c.ig",
+            "e.description",
+            "e.location",
+            "h.club_name",
+            "h.ig",
+            "jsonb_typeof(item) = 'string'",
+        ] {
+            assert!(document.contains(field), "{field}");
+        }
+    }
+
+    #[test]
+    fn a_callers_start_keeps_what_is_still_on_and_the_default_keeps_what_starts() {
+        let at = "2026-11-08T17:00:00Z".parse::<DateTime<Utc>>().unwrap();
+        let conditions = |lower| {
+            let mut binds = Binds::default();
+            let sql = window_conditions(
+                &DateWindow {
+                    lower,
+                    ..DateWindow::default()
+                },
+                &mut binds,
+            )
+            .join(" AND ");
+            (sql, binds.values.len())
+        };
+        assert_eq!(conditions(LowerBound::None), ("TRUE".to_owned(), 0));
+        assert_eq!(
+            conditions(LowerBound::StartsFrom(at)),
+            ("TRUE AND d.dtstart_utc >= $1".to_owned(), 1)
+        );
+        let (on_at, binds) = conditions(LowerBound::OnAt(at));
+        assert_eq!(binds, 1);
+        assert!(on_at.contains("d.dtend_utc >= $1 OR (d.dtend_utc IS NULL"));
+        assert!(on_at.contains(&format!(
+            "d.dtstart_utc >= $1 - make_interval(mins => {})",
+            crate::controlbox::EVENT_DISCOVERY.event_without_end_visibility_minutes
+        )));
+    }
 
     #[test]
     fn url_host_matches_urlsplit() {

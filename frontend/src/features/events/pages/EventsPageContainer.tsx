@@ -10,6 +10,7 @@ import type { Event, Position } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { EmptyState, LoadFailureNotice } from "@/shared/feedback";
 import { Stack } from "@/shared/layout";
+import { START_FROM_NOW } from "@/shared/constants/eventFilters";
 import type { EventFeedFirstScreen } from "@/features/events/lib/eventFeedFirstScreen";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
 
@@ -47,6 +48,7 @@ export function EventsPageContainer({
 
     filters,
     allEvents,
+    upcomingEvents,
     highlights,
   } = useEventsPageData({
     firstScreen,
@@ -82,6 +84,11 @@ export function EventsPageContainer({
     filters.setFeatured(true);
   }, [filters]);
 
+  const { setStartFrom } = filters;
+  // Lifts the start filter alone; the search and every other filter stay.
+  const showPastEvents = useCallback(() => setStartFrom(""), [setStartFrom]);
+
+  // A start moved off its default counts in `filterCount`, so it collapses the highlights too.
   const hasActiveFilters = filters.filterCount > 0 || filters.searchQuery.trim().length > 0;
   // A search or filter collapses the highlights, so its results start right
   // under the search box; so does the map or calendar view, which fill the page.
@@ -98,7 +105,7 @@ export function EventsPageContainer({
           <EventHighlightSections
             school={initialSchool}
             highlights={highlights}
-            mapEvents={listing?.complete ? allEvents : null}
+            mapEvents={listing?.complete ? upcomingEvents : null}
             openPositions={openPositions}
             loadFailureNotice={loadFailureNotice}
             eventStats={eventStats}
@@ -140,6 +147,8 @@ export function EventsPageContainer({
               onEventClick={handleEventClick}
               onClearFilters={filters.clearAllFilters}
               hasActiveFilters={hasActiveFilters}
+              includePast={filters.startFrom !== START_FROM_NOW}
+              onShowPastEvents={filters.startFrom ? showPastEvents : undefined}
               eventStats={eventStats}
               isLoading={listing === null}
               loadFailureNotice={loadFailureNotice}

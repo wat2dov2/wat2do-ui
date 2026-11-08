@@ -88,6 +88,7 @@
   "navigation": {
     "events": "تقاریب",
     "submit": "جمع کرائیں",
+    "signInRequired": "سائن ان ضروری ہے",
     "clubs": "تنظیمیں",
     "positions": "عہدے",
     "myEvents": "میرے ایونٹس",
@@ -155,6 +156,9 @@
   "filters": {
     "filtersHeader": "فلٹرز",
     "date": "تاریخ",
+    "startsFrom": "سے شروع",
+    "startDate": "شروع کی تاریخ",
+    "startTime": "شروع کا وقت",
     "title": "عنوان",
     "location": "مقام",
     "price": "قیمت",

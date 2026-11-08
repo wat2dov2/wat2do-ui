@@ -43,12 +43,15 @@
     "noUpcomingEvents": "暂无即将到来的活动",
     "upcomingEventCount": "个即将到来的活动",
     "upcomingEventCount_other": "个即将到来的活动",
+    "eventCount": "个活动",
+    "eventCount_other": "个活动",
     "thisWeek": "本周",
     "discoverEvents": "发现活动",
     "clickCount": "{{count}} 次点击",
     "clickCount_other": "{{count}} 次点击",
     "noEventsFound": "未找到活动",
     "noEventsFoundDesc": "找不到符合您当前筛选条件的活动。请尝试调整搜索或清除某些筛选条件。",
+    "past": "已结束",
     "noEventsScheduled": "暂无活动安排",
     "noEventsScheduledDesc": "当前没有任何活动安排，请稍后再来看看！",
     "dateFilter": {
@@ -62,10 +65,12 @@
       "custom": "自定义日期"
     },
     "clearAllFilters": "清除所有筛选",
+    "seePastEvents": "查看过去的活动",
     "dateSections": {
       "today": "今天",
       "tomorrow": "明天",
-      "range": "{{start}} 至 {{end}}"
+      "range": "{{start}} 至 {{end}}",
+      "past": "过去的活动"
     },
     "reportDialog": {
       "title": "举报活动",

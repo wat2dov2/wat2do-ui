@@ -88,6 +88,7 @@
   "navigation": {
     "events": "ਸਮਾਗਮ",
     "submit": "ਜਮ੍ਹਾਂ ਕਰੋ",
+    "signInRequired": "ਸਾਈਨ ਇਨ ਲੋੜੀਂਦਾ",
     "clubs": "ਸੰਸਥਾਵਾਂ",
     "positions": "ਅਹੁਦੇ",
     "myEvents": "ਮੇਰੇ ਇਵੈਂਟ",
@@ -155,6 +156,9 @@
   "filters": {
     "filtersHeader": "ਫਿਲਟਰ",
     "date": "ਮਿਤੀ",
+    "startsFrom": "ਤੋਂ ਸ਼ੁਰੂ",
+    "startDate": "ਸ਼ੁਰੂਆਤੀ ਮਿਤੀ",
+    "startTime": "ਸ਼ੁਰੂਆਤੀ ਸਮਾਂ",
     "title": "ਸਿਰਲੇਖ",
     "location": "ਟਿਕਾਣਾ",
     "price": "ਕੀਮਤ",

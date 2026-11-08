@@ -43,8 +43,8 @@ const DEFAULT_QUERY = filterStateToStoreValues(EMPTY_FILTER_STATE);
 
 /**
  * The first screen as of `nowMs`, through the same steps the page takes for a
- * reader who has not searched or filtered: drop what has ended, filter, sort,
- * then lay the list out in date sections.
+ * reader who has not searched or filtered: filter (the default start drops what
+ * has ended), sort, then lay the list out in date sections.
  */
 export function buildEventFeedFirstScreen(
   feed: PaginatedEventsResponse,
@@ -52,9 +52,9 @@ export function buildEventFeedFirstScreen(
   getSchoolTimezone: (school: Event["school"]) => string,
   nowMs: number,
 ): EventFeedFirstScreen {
-  const visibleEvents = feed.items.filter((event) => hasActiveEventOccurrence(event, nowMs));
+  const stillOnEvents = feed.items.filter((event) => hasActiveEventOccurrence(event, nowMs));
   const listedEvents = sortEvents(
-    filterEvents(visibleEvents, { ...DEFAULT_QUERY, goingEventIds: [], campusSeasonOptions: [] }, getSchoolTimezone),
+    filterEvents(feed.items, { ...DEFAULT_QUERY, goingEventIds: [], campusSeasonOptions: [], startNowMs: nowMs }, getSchoolTimezone),
     DEFAULT_QUERY,
   );
   const sections = groupEventsByDateSection(getUniqueEvents(listedEvents), getSchoolTimezone, new Date(nowMs));
@@ -63,8 +63,8 @@ export function buildEventFeedFirstScreen(
       .flatMap((section) => section.events)
       .slice(0, controlBox.eventDiscovery.initialRenderCount),
     total: listedEvents.length,
-    highlights: buildEventHighlights(visibleEvents, nowMs),
-    latestAddedEvent: latestVisibleAddedEvent(feed.latest_added_event, feed.items, visibleEvents),
+    highlights: buildEventHighlights(stillOnEvents, nowMs),
+    latestAddedEvent: latestVisibleAddedEvent(feed.latest_added_event, feed.items, stillOnEvents),
     filterAvailability: feedFilterAvailability(feed.items, school),
     listedAtMs: nowMs,
   };

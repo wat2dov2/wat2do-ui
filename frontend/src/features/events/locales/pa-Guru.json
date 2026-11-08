@@ -43,12 +43,16 @@
     "noUpcomingEvents": "ਕੋਈ ਆਗਾਮੀ ਇਵੈਂਟ ਨਹੀਂ ਹਨ",
     "upcomingEventCount": "ਆਉਣ ਵਾਲਾ ਇਵੈਂਟ",
     "upcomingEventCount_other": "ਆਉਣ ਵਾਲੇ ਇਵੈਂਟ",
+    "eventCount": "ਇਵੈਂਟ",
+    "eventCount_other": "ਇਵੈਂਟ",
+    "eventCount_one": "ਇਵੈਂਟ",
     "thisWeek": "ਇਸ ਹਫਤੇ",
     "discoverEvents": "ਘਟਨਾਵਾਂ ਦੀ ਖੋਜ ਕਰੋ",
     "clickCount": "{{count}} ਕਲਿੱਕ",
     "clickCount_other": "{{count}} ਕਲਿੱਕ",
     "noEventsFound": "ਕੋਈ ਇਵੈਂਟ ਨਹੀਂ ਮਿਲੇ",
     "noEventsFoundDesc": "ਤੁਹਾਡੇ ਮੌਜੂਦਾ ਫਿਲਟਰਾਂ ਨਾਲ ਮੇਲ ਖਾਂਦਾ ਕੋਈ ਵੀ ਇਵੈਂਟ ਨਹੀਂ ਲੱਭ ਸਕਿਆ। ਆਪਣੀ ਖੋਜ ਨੂੰ ਵਿਵਸਥਿਤ ਕਰਨ ਜਾਂ ਕੁਝ ਫਿਲਟਰਾਂ ਨੂੰ ਸਾਫ਼ ਕਰਨ ਦੀ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+    "past": "ਪਿਛਲਾ",
     "noEventsScheduled": "ਕੋਈ ਇਵੈਂਟ ਨਿਯਤ ਨਹੀਂ ਕੀਤਾ ਗਿਆ ਹੈ",
     "noEventsScheduledDesc": "ਵਰਤਮਾਨ ਵਿੱਚ ਕੋਈ ਸਮਾਗਮ ਨਿਯਤ ਨਹੀਂ ਹਨ। ਬਾਅਦ ਵਿੱਚ ਦੁਬਾਰਾ ਜਾਂਚ ਕਰੋ!",
     "dateFilter": {
@@ -62,10 +66,12 @@
       "custom": "ਆਪਣੀ ਤਾਰੀਖ"
     },
     "clearAllFilters": "ਸਾਰੇ ਫਿਲਟਰ ਸਾਫ਼ ਕਰੋ",
+    "seePastEvents": "ਪਿਛਲੇ ਇਵੈਂਟ ਵੇਖੋ",
     "dateSections": {
       "today": "ਅੱਜ",
       "tomorrow": "ਕੱਲ੍ਹ",
-      "range": "{{start}} ਤੋਂ {{end}}"
+      "range": "{{start}} ਤੋਂ {{end}}",
+      "past": "ਪਿਛਲੇ ਇਵੈਂਟ"
     },
     "reportDialog": {
       "title": "ਘਟਨਾ ਦੀ ਰਿਪੋਰਟ ਕਰੋ",

@@ -260,7 +260,7 @@
           "events"
         ],
         "summary": "List Events",
-        "description": "Public school feed; optional ``start_utc``/``end_utc`` window.\n\n``include_past`` drops the default start-of-today lower bound, so a caller\ncan ask for a host's full history. Omits ``created_by``.",
+        "description": "Public school feed; optional ``start_utc``/``end_utc`` window.\n\n``start_utc`` keeps occurrences still on at it: ending at or after it, or with\nno end, starting no more than the no-end visibility window before it.\n``include_past`` drops the default start-of-today lower bound, so a caller\ncan ask for a host's full history. Omits ``created_by``.",
         "operationId": "list_events_events__get",
         "parameters": [
           {

@@ -1,3 +1,4 @@
+import { LogIn } from "lucide-react";
 import { Section, Stack } from "@/shared/layout";
 import { Badge } from "@/shared/ui/badge";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
@@ -58,6 +59,13 @@ export function BadgesSection() {
             <Badge size="lg">Large</Badge>
             <Badge size="stacked">Stacked</Badge>
           </Stack>
+        </ShowcaseBlock>
+
+        <ShowcaseBlock label="With icon (sized and spaced by the badge)">
+          <Badge variant="muted">
+            <LogIn aria-hidden />
+            Sign-in required
+          </Badge>
         </ShowcaseBlock>
 
 

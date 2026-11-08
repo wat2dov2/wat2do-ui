@@ -43,12 +43,16 @@
     "noUpcomingEvents": "هیچ رویداد آینده‌ای وجود ندارد",
     "upcomingEventCount": "رویداد آینده",
     "upcomingEventCount_other": "رویدادهای آینده",
+    "eventCount": "رویداد",
+    "eventCount_other": "رویداد",
+    "eventCount_one": "رویداد",
     "thisWeek": "این هفته",
     "discoverEvents": "کشف رویدادها",
     "clickCount": "{{count}} کلیک",
     "clickCount_other": "{{count}} کلیک",
     "noEventsFound": "هیچ رویدادی یافت نشد",
     "noEventsFoundDesc": "هیچ رویدادی مطابق فیلترهای فعلی شما پیدا نشد. سعی کنید جستجوی خود را تنظیم کنید یا برخی فیلترها را پاک کنید.",
+    "past": "گذشته",
     "noEventsScheduled": "هیچ رویدادی برنامه‌ریزی نشده است",
     "noEventsScheduledDesc": "در حال حاضر هیچ رویدادی برنامه‌ریزی نشده است. بعداً دوباره بررسی کنید!",
     "dateFilter": {
@@ -62,10 +66,12 @@
       "custom": "سفارشی"
     },
     "clearAllFilters": "پاک کردن همه فیلترها",
+    "seePastEvents": "دیدن رویدادهای گذشته",
     "dateSections": {
       "today": "امروز",
       "tomorrow": "فردا",
-      "range": "{{start}} تا {{end}}"
+      "range": "{{start}} تا {{end}}",
+      "past": "رویدادهای گذشته"
     },
     "reportDialog": {
       "title": "گزارش رویداد",

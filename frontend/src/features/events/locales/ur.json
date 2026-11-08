@@ -43,12 +43,16 @@
     "noUpcomingEvents": "کوئی آنے والا ایونٹ نہیں",
     "upcomingEventCount": "آنے والا ایونٹ",
     "upcomingEventCount_other": "آنے والے ایونٹس",
+    "eventCount": "ایونٹ",
+    "eventCount_other": "ایونٹس",
+    "eventCount_one": "ایونٹ",
     "thisWeek": "اس ہفتے",
     "discoverEvents": "ایونٹس دریافت کریں",
     "clickCount": "{{count}} کلک",
     "clickCount_other": "{{count}} کلکس",
     "noEventsFound": "کوئی واقعات نہیں ملے",
     "noEventsFoundDesc": "آپ کے موجودہ فلٹر کے مطابق کوئی ایونٹ نہیں ملا۔ اپنی تلاش کو ایڈجسٹ کرنے یا کچھ فلٹر صاف کرنے کی کوشش کریں۔",
+    "past": "گزشتہ",
     "noEventsScheduled": "کوئی ایونٹ شیڈول نہیں",
     "noEventsScheduledDesc": "فی الحال کوئی ایونٹ شیڈول نہیں ہے۔ بعد میں دوبارہ چیک کریں!",
     "dateFilter": {
@@ -62,10 +66,12 @@
       "custom": "اپنی تاریخ"
     },
     "clearAllFilters": "تمام فلٹرز صاف کریں",
+    "seePastEvents": "گزشتہ ایونٹس دیکھیں",
     "dateSections": {
       "today": "آج",
       "tomorrow": "کل",
-      "range": "{{start}} سے {{end}}"
+      "range": "{{start}} سے {{end}}",
+      "past": "گزشتہ ایونٹس"
     },
     "reportDialog": {
       "title": "تقریب کی رپورٹ کریں",

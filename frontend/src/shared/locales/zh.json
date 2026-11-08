@@ -85,6 +85,7 @@
   "navigation": {
     "events": "活动",
     "submit": "提交",
+    "signInRequired": "需要登录",
     "clubs": "组织",
     "positions": "职位",
     "myEvents": "我的活动",
@@ -152,6 +153,9 @@
   "filters": {
     "filtersHeader": "筛选条件",
     "date": "日期",
+    "startsFrom": "开始于",
+    "startDate": "开始日期",
+    "startTime": "开始时间",
     "title": "标题",
     "location": "地点",
     "price": "价格",

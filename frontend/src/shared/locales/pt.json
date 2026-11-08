@@ -91,6 +91,7 @@
   "navigation": {
     "events": "Eventos",
     "submit": "Enviar",
+    "signInRequired": "Requer login",
     "clubs": "Organizações",
     "positions": "Posições",
     "myEvents": "Meus Eventos",
@@ -158,6 +159,9 @@
   "filters": {
     "filtersHeader": "Filtros",
     "date": "Data",
+    "startsFrom": "A partir de",
+    "startDate": "Data de início",
+    "startTime": "Hora de início",
     "title": "Título",
     "location": "Localização",
     "price": "Preço",

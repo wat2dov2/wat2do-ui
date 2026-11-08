@@ -8,7 +8,7 @@ import { FilterDropdown } from "@/features/search/components/FilterDropdown";
 import { DateFilterSelect } from "@/features/events/components/DateFilterSelect";
 import { EventViewSelect, type EventBrowseView } from "@/features/events/components/EventViewSelect";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
-import { getEventQuickFilters } from "@/shared/constants/eventFilters";
+import { getEventQuickFilters, START_FROM_NOW } from "@/shared/constants/eventFilters";
 import { PageHeader } from "@/shared/layout";
 import { FilterBar } from "@/shared/layout/filter-bar";
 import { useUIStore } from "@/shared/store/ui.store";
@@ -69,7 +69,7 @@ export function EventsPageHeader({
     <PageHeader variant="listing">
       <PageCountHeading
         count={count}
-        label={t("events.upcomingEventCount", { count: count ?? 2 })}
+        label={t(filters.startFrom === START_FROM_NOW ? "events.upcomingEventCount" : "events.eventCount", { count: count ?? 2 })}
         latest={latest}
         currentTimeMs={currentTimeMs}
       />

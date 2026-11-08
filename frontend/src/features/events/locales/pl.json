@@ -43,12 +43,18 @@
     "noUpcomingEvents": "Brak nadchodzących wydarzeń",
     "upcomingEventCount": "nadchodzące wydarzenie",
     "upcomingEventCount_other": "nadchodzących wydarzeń",
+    "eventCount": "wydarzenie",
+    "eventCount_other": "wydarzeń",
+    "eventCount_one": "wydarzenie",
+    "eventCount_few": "wydarzenia",
+    "eventCount_many": "wydarzeń",
     "thisWeek": "Ten tydzień",
     "discoverEvents": "Odkryj Wydarzenia",
     "clickCount": "{{count}} kliknięcie",
     "clickCount_other": "{{count}} kliknięcia",
     "noEventsFound": "Nie znaleziono zdarzeń",
     "noEventsFoundDesc": "Nie znaleziono żadnych wydarzeń pasujących do aktualnych filtrów. Spróbuj zmienić wyszukiwanie lub usunąć niektóre filtry.",
+    "past": "Minione",
     "noEventsScheduled": "Brak zaplanowanych wydarzeń",
     "noEventsScheduledDesc": "Obecnie nie ma zaplanowanych wydarzeń. Sprawdź później!",
     "dateFilter": {
@@ -62,10 +68,12 @@
       "custom": "Własna data"
     },
     "clearAllFilters": "Wyczyść wszystkie filtry",
+    "seePastEvents": "Zobacz minione wydarzenia",
     "dateSections": {
       "today": "Dziś",
       "tomorrow": "Jutro",
-      "range": "{{start}}-{{end}}"
+      "range": "{{start}}-{{end}}",
+      "past": "Minione wydarzenia"
     },
     "reportDialog": {
       "title": "Zgłoś wydarzenie",

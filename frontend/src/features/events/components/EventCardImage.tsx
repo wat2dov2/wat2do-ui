@@ -12,7 +12,7 @@ import {
 } from "@/shared/ui/dialog";
 import { ClubBadgeLink } from "@/features/clubs/components/ClubBadgeLink";
 import { useGoingEvents } from "@/features/events/hooks/useGoingEvents";
-import { isEventHappeningNow } from "@/shared/utils/date";
+import { hasEventEnded, isEventHappeningNow } from "@/shared/utils/date";
 import { getEventImageStatus } from "@/shared/utils/event";
 import { cn } from "@/shared/lib/utils";
 import type { Event } from "@/shared/types";
@@ -61,6 +61,8 @@ export function EventCardImage({
   const { surfaceRef, registerCorner, cutouts, box } = useEventImageCutouts();
 
   const isLive = useMemo(() => isEventHappeningNow(event), [event]);
+  // Ended events are listed only where the reader asked for history (a club page, a start before now).
+  const isPast = useMemo(() => hasEventEnded(event), [event]);
 
   const { data: goingSelections } = useGoingEvents();
   const isGoing = useMemo(
@@ -143,6 +145,14 @@ export function EventCardImage({
           <BadgeMask variant="top-right" cutout containerRef={registerCorner("top-right")}>
             <Badge variant="live" size="md" className="flex items-center" data-settle="">
               {t("common.live")}
+            </Badge>
+          </BadgeMask>
+        )}
+
+        {isPast && (
+          <BadgeMask variant="top-right" cutout containerRef={registerCorner("top-right")}>
+            <Badge variant="muted" size="md" data-settle="">
+              {t("events.past")}
             </Badge>
           </BadgeMask>
         )}

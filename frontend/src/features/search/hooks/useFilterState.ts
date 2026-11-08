@@ -83,6 +83,7 @@ export function useFilterState() {
       addedSince: s.addedSince,
       dateFilter: s.dateFilter,
       customDate: s.customDate,
+      startFrom: s.startFrom,
     })),
   );
   const {
@@ -174,6 +175,10 @@ export function useFilterState() {
       updateFilterState({ dateFilter: value, customDate: selectedDate }),
     [updateFilterState],
   );
+  const setStartFrom = useCallback(
+    (value: string) => updateFilterState({ startFrom: value }),
+    [updateFilterState],
+  );
   const toggleCategory = useCallback(
     (cat: string) => toggleFilterValue("categories", cat),
     [toggleFilterValue],
@@ -211,6 +216,7 @@ export function useFilterState() {
     setGoingFilter,
     setAddedSince,
     setDateFilter,
+    setStartFrom,
     toggleCategory,
     toggleDay,
     clearAllFilters,

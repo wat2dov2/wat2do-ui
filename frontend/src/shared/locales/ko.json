@@ -85,6 +85,7 @@
   "navigation": {
     "events": "이벤트",
     "submit": "제출",
+    "signInRequired": "로그인 필요",
     "clubs": "조직",
     "positions": "직책",
     "myEvents": "내 이벤트",
@@ -152,6 +153,9 @@
   "filters": {
     "filtersHeader": "필터",
     "date": "날짜",
+    "startsFrom": "시작 기준",
+    "startDate": "시작 날짜",
+    "startTime": "시작 시간",
     "title": "제목",
     "location": "위치",
     "price": "가격",

@@ -85,6 +85,7 @@
   "navigation": {
     "events": "Events",
     "submit": "Submit",
+    "signInRequired": "Sign-in required",
     "clubs": "Clubs",
     "positions": "Positions",
     "myEvents": "My Events",
@@ -152,6 +153,9 @@
   "filters": {
     "filtersHeader": "Filters",
     "date": "Date",
+    "startsFrom": "Starts from",
+    "startDate": "Start date",
+    "startTime": "Start time",
     "title": "Title",
     "location": "Location",
     "price": "Price",

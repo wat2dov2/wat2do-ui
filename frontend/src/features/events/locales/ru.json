@@ -43,12 +43,18 @@
     "noUpcomingEvents": "Нет предстоящих событий",
     "upcomingEventCount": "предстоящее событие",
     "upcomingEventCount_other": "предстоящего события",
+    "eventCount": "событие",
+    "eventCount_other": "события",
+    "eventCount_one": "событие",
+    "eventCount_few": "события",
+    "eventCount_many": "событий",
     "thisWeek": "На этой неделе",
     "discoverEvents": "Открыть события",
     "clickCount": "{{count}} клик",
     "clickCount_other": "{{count}} клика",
     "noEventsFound": "События не найдены",
     "noEventsFoundDesc": "Не удалось найти события, соответствующие вашим текущим фильтрам. Попробуйте изменить поиск или сбросить некоторые фильтры.",
+    "past": "Прошедшее",
     "noEventsScheduled": "События не запланированы",
     "noEventsScheduledDesc": "В данный момент события не запланированы. Загляните позже!",
     "dateFilter": {
@@ -62,10 +68,12 @@
       "custom": "Выбрать дату"
     },
     "clearAllFilters": "Сбросить все фильтры",
+    "seePastEvents": "Посмотреть прошедшие события",
     "dateSections": {
       "today": "Сегодня",
       "tomorrow": "Завтра",
-      "range": "{{start}}-{{end}}"
+      "range": "{{start}}-{{end}}",
+      "past": "Прошедшие события"
     },
     "reportDialog": {
       "title": "Пожаловаться на событие",

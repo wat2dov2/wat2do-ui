@@ -88,6 +88,7 @@
   "navigation": {
     "events": "घटनाएँ",
     "submit": "जमा करें",
+    "signInRequired": "साइन इन आवश्यक",
     "clubs": "संगठन",
     "positions": "पद",
     "myEvents": "मेरे इवेंट",
@@ -155,6 +156,9 @@
   "filters": {
     "filtersHeader": "फ़िल्टर",
     "date": "तारीख",
+    "startsFrom": "से शुरू",
+    "startDate": "शुरू होने की तारीख",
+    "startTime": "शुरू होने का समय",
     "title": "शीर्षक",
     "location": "जगह",
     "price": "कीमत",

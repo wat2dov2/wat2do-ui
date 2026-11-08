@@ -88,6 +88,7 @@
   "navigation": {
     "events": "Mga Kaganapan",
     "submit": "Magsumite",
+    "signInRequired": "Kailangang mag-sign in",
     "clubs": "Mga organisasyon",
     "positions": "Mga posisyon",
     "myEvents": "Aking mga event",
@@ -155,6 +156,9 @@
   "filters": {
     "filtersHeader": "Mga Filter",
     "date": "Petsa",
+    "startsFrom": "Simula sa",
+    "startDate": "Petsa ng simula",
+    "startTime": "Oras ng simula",
     "title": "Pamagat",
     "location": "Lokasyon",
     "price": "Presyo",

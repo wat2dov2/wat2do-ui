@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useShallow } from "zustand/react/shallow";
 import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
 import { storeStatesToFilterState, useSearchStore, useSearch } from "@/features/search";
 import {
   EMPTY_FILTER_STATE,
   feedFilterAvailability,
   isSameFilterState,
+  resolveStartFromMs,
 } from "@/features/search/api/filterService";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import {
@@ -13,13 +15,16 @@ import {
   useGoingEvents,
 } from "@/features/events/hooks/useGoingEvents";
 import { controlBox } from "@/shared/config/controlBox";
+import { START_FROM_NOW } from "@/shared/constants/eventFilters";
 import { resolveSchool } from "@/shared/constants/schools";
+import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import type { Event } from "@/shared/types";
 import { getUniqueEvents } from "@/shared/utils/event";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
 import i18n from "@/shared/lib/i18n";
 import {
   eventFeedQueryOptions,
+  pastEventsQueryOptions,
   latestVisibleAddedEvent,
 } from "@/features/events/api/events.api";
 import type { EventFeedFirstScreen } from "@/features/events/lib/eventFeedFirstScreen";
@@ -85,29 +90,42 @@ export function useEventsPageData({
   // time, not every minute: an event ending while the reader scrolls would pull the
   // whole grid up under them. It moves on with the reader's next query or visit.
   const listTimeMs = useListTime(currentTimeMs, queryRevision);
-  const visibleEvents = useMemo(
-    () =>
-      listTimeMs === null
-        ? events
-        : events.filter((event) =>
-            hasActiveEventOccurrence(event, listTimeMs),
-          ),
-    [listTimeMs, events],
+  // The start filter decides what is listed. A start before now reaches events the
+  // snapshot does not hold, so those are read from the API, narrowed by the query.
+  const { getSchoolTimezone } = useSchoolDirectory();
+  const startFrom = useSearchStore((state) => state.startFrom);
+  const storedQuery = useSearchStore(useShallow(storeStatesToFilterState));
+  const startMs = resolveStartFromMs(startFrom, listTimeMs, getSchoolTimezone(schoolFilter));
+  const readsPast = startFrom !== START_FROM_NOW && (startMs === null || listTimeMs === null || startMs < listTimeMs);
+  const pastQuery = useQuery({
+    ...pastEventsQueryOptions(schoolFilter, storedQuery, readsPast && startMs !== null ? new Date(startMs).toISOString() : null),
+    enabled: readsPast,
+  });
+  const pastEvents = readsPast ? pastQuery.data : undefined;
+  const listedEvents = useMemo(
+    () => pastEvents ? getUniqueEvents([...events, ...pastEvents]) : events,
+    [events, pastEvents],
+  );
+  // The snapshot's events still on at the list's time, whatever the start filter
+  // reaches: the "new" line, the highlights and their map only ever show these.
+  const upcomingEvents = useMemo(
+    () => listTimeMs === null ? events : events.filter((event) => hasActiveEventOccurrence(event, listTimeMs)),
+    [events, listTimeMs],
   );
   const latestAddedEvent = useMemo(
     () => feed
-      ? latestVisibleAddedEvent(feed.latest_added_event, events, visibleEvents)
+      ? latestVisibleAddedEvent(feed.latest_added_event, events, upcomingEvents)
       : firstScreen?.latestAddedEvent ?? null,
-    [events, feed, firstScreen, visibleEvents],
+    [events, feed, firstScreen, upcomingEvents],
   );
   // Cut from the complete feed once it arrives, at the list's own time, so the
   // highlights change only when the list does; until then, the server's cut.
   const highlightsTimeMs = listTimeMs ?? feed?.generated_at ?? serverFirstScreen?.listedAtMs ?? null;
   const highlights = useMemo(
     () => feed
-      ? highlightsTimeMs === null ? null : buildEventHighlights(visibleEvents, highlightsTimeMs)
+      ? highlightsTimeMs === null ? null : buildEventHighlights(upcomingEvents, highlightsTimeMs)
       : firstScreen?.highlights ?? null,
-    [feed, firstScreen, highlightsTimeMs, visibleEvents],
+    [feed, firstScreen, highlightsTimeMs, upcomingEvents],
   );
   const filterAvailability = useMemo(
     () => feed ? feedFilterAvailability(feed.items, schoolFilter) : firstScreen?.filterAvailability ?? null,
@@ -115,7 +133,7 @@ export function useEventsPageData({
   );
 
   const filters = useSearch({
-    events: visibleEvents,
+    events: listedEvents,
     availability: filterAvailability,
     goingEventIds,
     goingCounts: eventStats,
@@ -140,26 +158,29 @@ export function useEventsPageData({
   }, queryRevision);
 
   // The first screen holds only the start of the default list, so any other
-  // query waits for the complete feed rather than show a partial answer.
-  const listing: EventListing | null = feed
+  // query waits for the complete feed rather than show a partial answer, and a
+  // start before now waits for the past events it reaches too.
+  const listing: EventListing | null = feed && (!readsPast || pastEvents)
     ? { events: orderedEvents, total: filters.filteredEvents.length, complete: true }
     : firstScreen && isSameFilterState(appliedFilterState, EMPTY_FILTER_STATE)
       ? { events: orderedEvents, total: firstScreen.total, complete: false }
       : null;
+  const pastLoadFailed = readsPast && pastQuery.isLoadingError;
 
   const refreshEvents = useCallback(() => {
     void query.refetch();
-  }, [query]);
+    if (pastQuery.isError) void pastQuery.refetch();
+  }, [query, pastQuery]);
 
   return {
     appliedQueryKey: `${queryRevision}:${JSON.stringify({ searchQuery, ...appliedFilters })}`,
     currentTimeMs,
     isLoading,
     error,
-    /** The rest of the feed failed to load behind the first screen, which stays usable. */
-    restLoadFailed,
+    /** The rest of the feed, or the past events asked for, failed to load; what is shown stays usable. */
+    restLoadFailed: restLoadFailed || pastLoadFailed,
     /** The feed is being read again (Try again). */
-    isRefreshing: query.isFetching,
+    isRefreshing: query.isFetching || pastQuery.isFetching,
     refreshEvents,
     eventStats,
     goingEventsReady,
@@ -169,7 +190,10 @@ export function useEventsPageData({
     listing,
     /** The must-know banner and carousel rows; null while the feed loads with no first screen. */
     highlights,
-    allEvents: visibleEvents,
+    /** The snapshot's events still on, for the highlights' map. */
+    upcomingEvents,
+    /** Every event the page holds, past events the start filter reached included. */
+    allEvents: listedEvents,
   };
 }
 

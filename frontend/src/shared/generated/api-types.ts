@@ -267,6 +267,8 @@ export interface paths {
          * List Events
          * @description Public school feed; optional ``start_utc``/``end_utc`` window.
          *
+         *     ``start_utc`` keeps occurrences still on at it: ending at or after it, or with
+         *     no end, starting no more than the no-end visibility window before it.
          *     ``include_past`` drops the default start-of-today lower bound, so a caller
          *     can ask for a host's full history. Omits ``created_by``.
          */

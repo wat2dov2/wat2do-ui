@@ -88,6 +88,7 @@
   "navigation": {
     "events": "ઇવેન્ટ્સ",
     "submit": "સબમિટ કરો",
+    "signInRequired": "સાઇન ઇન જરૂરી",
     "clubs": "સંસ્થાઓ",
     "positions": "હોદ્દાઓ",
     "myEvents": "મારી ઇવેન્ટ",
@@ -155,6 +156,9 @@
   "filters": {
     "filtersHeader": "ફિલ્ટર્સ",
     "date": "તારીખ",
+    "startsFrom": "થી શરૂ",
+    "startDate": "શરૂઆતની તારીખ",
+    "startTime": "શરૂઆતનો સમય",
     "title": "શીર્ષક",
     "location": "સ્થળ",
     "price": "કિંમત",

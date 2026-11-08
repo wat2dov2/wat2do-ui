@@ -100,6 +100,7 @@
   "navigation": {
     "events": "الأحداث",
     "submit": "إرسال",
+    "signInRequired": "يتطلب تسجيل الدخول",
     "clubs": "المنظمات",
     "positions": "المناصب",
     "myEvents": "فعالياتي",
@@ -167,6 +168,9 @@
   "filters": {
     "filtersHeader": "مرشحات",
     "date": "التاريخ",
+    "startsFrom": "يبدأ من",
+    "startDate": "تاريخ البدء",
+    "startTime": "وقت البدء",
     "title": "العنوان",
     "location": "الموقع",
     "price": "السعر",

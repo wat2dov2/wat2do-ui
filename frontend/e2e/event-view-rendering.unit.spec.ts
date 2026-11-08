@@ -394,6 +394,39 @@ test("a first screen of the feed lays out like the start of the complete list", 
   expect(render({ events: [], totalCount: listed.length })).not.toContain("events.noEventsScheduled");
 });
 
+test("an empty search offers past events beside Clear filters, and a start before now ends the list with them", () => {
+  const { EventList } = loadComponent("features/events/components/EventList", {
+    "@/features/events/components/EventCard": { EventCard: ({ event: card }: { event: Event }) => createElement("article", { "data-card": card.id }) },
+  }) as typeof import("../src/features/events/components/EventList");
+  const render = (props: Partial<ComponentProps<typeof EventList>>) =>
+    renderToStaticMarkup(createElement(EventList, { events: [], eventStats: null, ...props }));
+
+  const offered = render({ hasActiveFilters: true, onClearFilters: () => {}, onShowPastEvents: () => {} });
+  expect(offered).toContain("events.noEventsFound");
+  expect(offered).toContain("events.clearAllFilters");
+  expect(offered).toContain("events.seePastEvents");
+  // Once the start is already lifted there is nothing further back to offer.
+  expect(render({ hasActiveFilters: true, onClearFilters: () => {} })).not.toContain("events.seePastEvents");
+  // The default list with nothing on offers no history: the start stays hidden.
+  expect(render({ onShowPastEvents: () => {} })).not.toContain("events.seePastEvents");
+
+  const hourMs = 3_600_000;
+  const at = (id: number, offsetMs: number) => ({
+    ...event, id, school: "uwaterloo",
+    occurrences: [{ dtstart_utc: new Date(Date.now() + offsetMs).toISOString(), dtend_utc: null }],
+  }) as Event;
+  // In date order, as the feed sorts them: the oldest past event first.
+  const listed = [at(1, -72 * hourMs), at(2, -48 * hourMs), at(3, 2 * hourMs)];
+  const withPast = render({ events: listed, includePast: true });
+  expect(withPast).toContain("events.dateSections.past");
+  // Upcoming first; the Past section closes the list, latest first.
+  expect([...withPast.matchAll(/data-card="(\d+)"/g)].map(match => match[1])).toEqual(["3", "2", "1"]);
+  // With the default start an ended straggler is still dropped, not listed as past.
+  const byDefault = render({ events: listed });
+  expect(byDefault).not.toContain("events.dateSections.past");
+  expect([...byDefault.matchAll(/data-card="(\d+)"/g)].map(match => match[1])).toEqual(["3"]);
+});
+
 test("a failed load's notice lies over the list's waiting placeholders without changing them", () => {
   const { EventList } = loadComponent("features/events/components/EventList", {
     "@/features/events/components/EventCard": { EventCard: ({ event: card }: { event: Event }) => createElement("article", { "data-card": card.id }) },

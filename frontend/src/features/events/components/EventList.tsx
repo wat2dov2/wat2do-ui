@@ -9,6 +9,7 @@ import { SkeletonLine } from "@/shared/ui/skeleton";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import type { EventStats } from "@/features/events/api/events.api";
 import { EmptyState } from "@/shared/feedback";
+import { Stack } from "@/shared/layout/stack";
 import { Button } from "@/shared/ui/button";
 import { CARD_GRID_CLASS } from "@/shared/constants/ui";
 import { CardEntrance } from "@/shared/ui/card-entrance";
@@ -25,6 +26,13 @@ interface EventListProps {
   /** Called when the empty-state "Clear filters" button is pressed. */
   onClearFilters?: () => void;
   hasActiveFilters?: boolean;
+  /** The start filter is before now, so ended events may be listed; they close the list in a Past section. */
+  includePast?: boolean;
+  /**
+   * Offered beside "Clear filters" when a search or filter finds nothing: lifts
+   * the start filter so past events matching the same query load.
+   */
+  onShowPastEvents?: () => void;
   /** `null` until the live stats query succeeds. */
   eventStats: Record<string, EventStats> | null;
   isLoading?: boolean;
@@ -89,6 +97,8 @@ export function EventList({
   onEventClick,
   onClearFilters,
   hasActiveFilters = false,
+  includePast = false,
+  onShowPastEvents,
   eventStats,
   isLoading = false,
   groupByDateSections = true,
@@ -100,8 +110,8 @@ export function EventList({
   const { t, i18n } = useTranslation();
   const locale = i18n.language || "en-US";
   const dateSectionGroups = useMemo(
-    () => groupByDateSections ? groupEventsByDateSection(events, getSchoolTimezone) : [],
-    [events, getSchoolTimezone, groupByDateSections],
+    () => groupByDateSections ? groupEventsByDateSection(events, getSchoolTimezone, new Date(), includePast) : [],
+    [events, getSchoolTimezone, groupByDateSections, includePast],
   );
   const sectionOrderedEvents = useMemo(
     () =>
@@ -140,6 +150,7 @@ export function EventList({
   const sectionLabel = (section: EventDateSection): string => {
     if (section.kind === "today") return t("events.dateSections.today");
     if (section.kind === "tomorrow") return t("events.dateSections.tomorrow");
+    if (section.kind === "past") return t("events.dateSections.past");
     return formatEventDateSectionRange(section.startMs, section.endMs, t, locale);
   };
 
@@ -185,10 +196,19 @@ export function EventList({
             : t("events.noEventsScheduledDesc")
         }
         action={
-          hasActiveFilters && onClearFilters ? (
-            <Button variant="outline" onMouseDown={onClearFilters}>
-              {t("events.clearAllFilters")}
-            </Button>
+          hasActiveFilters && (onClearFilters || onShowPastEvents) ? (
+            <Stack direction="horizontal" gap={2} justify="center" wrap>
+              {onClearFilters ? (
+                <Button variant="outline" onMouseDown={onClearFilters}>
+                  {t("events.clearAllFilters")}
+                </Button>
+              ) : null}
+              {onShowPastEvents ? (
+                <Button variant="outline" onClick={onShowPastEvents}>
+                  {t("events.seePastEvents")}
+                </Button>
+              ) : null}
+            </Stack>
           ) : undefined
         }
         className="py-24"

@@ -94,6 +94,7 @@
   "navigation": {
     "events": "Wydarzenia",
     "submit": "Prześlij",
+    "signInRequired": "Wymaga zalogowania",
     "clubs": "Organizacje",
     "positions": "Stanowiska",
     "myEvents": "Moje wydarzenia",
@@ -161,6 +162,9 @@
   "filters": {
     "filtersHeader": "Filtry",
     "date": "Data",
+    "startsFrom": "Od",
+    "startDate": "Data rozpoczęcia",
+    "startTime": "Godzina rozpoczęcia",
     "title": "Tytuł",
     "location": "Lokalizacja",
     "price": "Cena",

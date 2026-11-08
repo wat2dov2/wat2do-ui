@@ -88,6 +88,7 @@
   "navigation": {
     "events": "நிகழ்வுகள்",
     "submit": "சமர்ப்பி",
+    "signInRequired": "உள்நுழைவு தேவை",
     "clubs": "அமைப்புகள்",
     "positions": "பதவிகள்",
     "myEvents": "என் நிகழ்வுகள்",
@@ -155,6 +156,9 @@
   "filters": {
     "filtersHeader": "வடிகட்டிகள்",
     "date": "தேதி",
+    "startsFrom": "தொடக்கம்",
+    "startDate": "தொடக்க தேதி",
+    "startTime": "தொடக்க நேரம்",
     "title": "தலைப்பு",
     "location": "இடம்",
     "price": "விலை",

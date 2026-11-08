@@ -85,6 +85,7 @@
   "navigation": {
     "events": "活動",
     "submit": "提交",
+    "signInRequired": "需要登入",
     "clubs": "組織",
     "positions": "職位",
     "myEvents": "我的活動",
@@ -152,6 +153,9 @@
   "filters": {
     "filtersHeader": "篩選器",
     "date": "日期",
+    "startsFrom": "由幾時開始",
+    "startDate": "開始日期",
+    "startTime": "開始時間",
     "title": "標題",
     "location": "地點",
     "price": "價格",
