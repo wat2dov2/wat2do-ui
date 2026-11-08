@@ -5,7 +5,7 @@ import { getPrimaryOccurrence, hasActiveEventOccurrence } from "@/shared/utils/d
 import { getUniqueEvents, isNetworkingEvent } from "@/shared/utils/event";
 
 /** What the events page shows above its grid, cut from the events still on. */
-export interface EventHomeSections {
+export interface EventHighlights {
   /** The banner's events, most important first. */
   mustKnow: Event[];
   /** Employer and business events, soonest first. */
@@ -45,7 +45,7 @@ function mustKnowScore(event: Event): number {
  * club appears once, so the banner shows several clubs' biggest events.
  */
 function pickMustKnowEvents(soonestFirst: readonly UpcomingEvent[], nowMs: number): Event[] {
-  const { mustKnowCount, mustKnowWindowMs } = controlBox.eventDiscovery.homeSections;
+  const { mustKnowCount, mustKnowWindowMs } = controlBox.eventDiscovery.highlights;
   const candidates = soonestFirst
     .filter(({ event, startMs }) =>
       startMs <= nowMs + mustKnowWindowMs
@@ -67,11 +67,11 @@ function pickMustKnowEvents(soonestFirst: readonly UpcomingEvent[], nowMs: numbe
 }
 
 /**
- * The events page's sections as of `nowMs`. The server cuts them into the
+ * The events page's highlights as of `nowMs`. The server cuts them into the
  * page's first screen and the browser cuts them again from the complete feed,
- * through this one function, so both draw the same sections.
+ * through this one function, so both draw the same highlights.
  */
-export function buildEventHomeSections(events: readonly Event[], nowMs: number): EventHomeSections {
+export function buildEventHighlights(events: readonly Event[], nowMs: number): EventHighlights {
   const now = new Date(nowMs);
   const soonestFirst = getUniqueEvents([...events])
     .filter(event => !event.cancelled && hasActiveEventOccurrence(event, nowMs))
@@ -83,7 +83,7 @@ export function buildEventHomeSections(events: readonly Event[], nowMs: number):
   const rowEvents = (belongs: (event: Event) => boolean) => soonestFirst
     .map(({ event }) => event)
     .filter(belongs)
-    .slice(0, controlBox.eventDiscovery.homeSections.rowEventCount);
+    .slice(0, controlBox.eventDiscovery.highlights.rowCardCount);
 
   return {
     mustKnow: pickMustKnowEvents(soonestFirst, nowMs),

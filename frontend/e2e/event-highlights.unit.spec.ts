@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 import type { Event } from "../src/shared/types";
-import { buildEventHomeSections } from "../src/features/events/lib/eventHomeSections";
+import { buildEventHighlights } from "../src/features/events/lib/eventHighlights";
 import { controlBox } from "../src/shared/config/controlBox";
 import { isNetworkingEvent } from "../src/shared/utils/event";
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
 const NOW_MS = Date.UTC(2026, 10, 8, 16);
-const { mustKnowCount, mustKnowWindowMs, rowEventCount } = controlBox.eventDiscovery.homeSections;
+const { mustKnowCount, mustKnowWindowMs, rowCardCount } = controlBox.eventDiscovery.highlights;
 
 function event(id: number, startsInHours: number, overrides: Partial<Event> = {}): Event {
   const startMs = NOW_MS + startsInHours * HOUR_MS;
@@ -34,7 +34,7 @@ function weekly(id: number, overrides: Partial<Event> = {}): Event {
   };
 }
 
-const mustKnowIds = (events: Event[]) => buildEventHomeSections(events, NOW_MS).mustKnow.map(item => item.id);
+const mustKnowIds = (events: Event[]) => buildEventHighlights(events, NOW_MS).mustKnow.map(item => item.id);
 
 test("networking means employers on campus or a Business event, the landing page's rule", () => {
   expect(isNetworkingEvent({ employers_on_campus: true, category: "Arts & Culture" })).toBe(true);
@@ -99,15 +99,15 @@ test("the rows hold networking and featured events, soonest first, up to a row's
     event(6, 3, { category: "Business", cancelled: true }),
     event(7, -2, { featured: true }),
   ];
-  const sections = buildEventHomeSections(events, NOW_MS);
-  expect(sections.networking.map(item => item.id)).toEqual([2, 4, 1]);
-  expect(sections.featured.map(item => item.id)).toEqual([3, 4]);
+  const highlights = buildEventHighlights(events, NOW_MS);
+  expect(highlights.networking.map(item => item.id)).toEqual([2, 4, 1]);
+  expect(highlights.featured.map(item => item.id)).toEqual([3, 4]);
 
-  const many = Array.from({ length: rowEventCount + 5 }, (_, index) => event(100 + index, index + 1, { featured: true }));
-  expect(buildEventHomeSections(many, NOW_MS).featured).toHaveLength(rowEventCount);
+  const many = Array.from({ length: rowCardCount + 5 }, (_, index) => event(100 + index, index + 1, { featured: true }));
+  expect(buildEventHighlights(many, NOW_MS).featured).toHaveLength(rowCardCount);
 });
 
-test("the sections are plain data, so the server can hand them to the page", () => {
-  const sections = buildEventHomeSections([event(1, 2, { featured: true }), event(2, 3, { category: "Business" })], NOW_MS);
-  expect(JSON.parse(JSON.stringify(sections))).toEqual(sections);
+test("the highlights are plain data, so the server can hand them to the page", () => {
+  const highlights = buildEventHighlights([event(1, 2, { featured: true }), event(2, 3, { category: "Business" })], NOW_MS);
+  expect(JSON.parse(JSON.stringify(highlights))).toEqual(highlights);
 });

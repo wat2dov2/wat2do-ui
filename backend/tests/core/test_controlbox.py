@@ -86,10 +86,10 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     assert controlbox.discovery_cache.public_page_stale_while_revalidate_seconds == 600
     assert controlbox.event_discovery.initial_render_count == 16
     assert controlbox.event_discovery.preview_event_count == 4
-    assert controlbox.event_discovery.home_sections.must_know_count == 5
-    assert controlbox.event_discovery.home_sections.must_know_window_days == 14
-    assert controlbox.event_discovery.home_sections.must_know_slide_seconds == 7
-    assert controlbox.event_discovery.home_sections.row_event_count == 12
+    assert controlbox.event_discovery.highlights.must_know_count == 5
+    assert controlbox.event_discovery.highlights.must_know_window_days == 14
+    assert controlbox.event_discovery.highlights.must_know_slide_seconds == 7
+    assert controlbox.event_discovery.highlights.row_card_count == 12
     assert set(controlbox.event_discovery.campus_seasons.definitions) == {
         "homecoming",
         "holidays",
@@ -693,12 +693,12 @@ def test_business_nomination_limits_must_be_positive(tmp_path: Path, field: str)
         ("must_know_count", 0),
         ("must_know_window_days", 0),
         ("must_know_slide_seconds", 1),
-        ("row_event_count", 0),
+        ("row_card_count", 0),
     ],
 )
-def test_event_home_section_controls_reject_invalid_configuration(tmp_path, field, value):
+def test_event_highlight_controls_reject_invalid_configuration(tmp_path, field, value):
     directory = _write_control(
-        tmp_path, "event_discovery", lambda data: data["home_sections"].update({field: value})
+        tmp_path, "event_discovery", lambda data: data["highlights"].update({field: value})
     )
     with pytest.raises(ValidationError):
         load_controlbox(directory)
