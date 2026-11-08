@@ -19,12 +19,25 @@ pub struct CandidateEvent {
     pub location: Option<String>,
     pub club: Option<String>,
     pub ig_handle: Option<String>,
+    /// The host club's Instagram handle.
+    #[serde(default)]
+    pub club_ig: Option<String>,
+    /// The cohosting clubs, which the search reads as the site does.
+    #[serde(default)]
+    pub cohosts: Vec<SearchCohost>,
     pub food: Option<serde_json::Value>,
     pub price: Option<f64>,
     /// Microseconds since the epoch.
     pub added_at: Option<i64>,
     /// The event's school's IANA zone.
     pub timezone: Option<String>,
+}
+
+/// A cohosting club's searchable name and handle.
+#[derive(Debug, Clone, Default, PartialEq, serde::Deserialize)]
+pub struct SearchCohost {
+    pub club_name: Option<String>,
+    pub ig: Option<String>,
 }
 
 /// One scanned occurrence row: the event and its start.
@@ -108,12 +121,40 @@ pub struct Filters<'a> {
     pub has_food: bool,
 }
 
-fn food_items(food: &Option<serde_json::Value>) -> Vec<String> {
-    match food {
+/// The text the search reads, the fields the site's search reads
+/// (`searchService.eventSearchHaystack`): title, host club and its handles,
+/// cohosts and theirs, description, location and the food named in text.
+/// `store::ascii_search_document` reads the same fields in Postgres.
+fn search_fields(event: &CandidateEvent) -> Vec<String> {
+    let food: Vec<String> = match &event.food {
         Some(serde_json::Value::String(text)) => vec![text.clone()],
-        Some(serde_json::Value::Array(items)) => items.iter().map(python_str).collect(),
+        Some(serde_json::Value::Array(items)) => items
+            .iter()
+            .filter_map(|item| item.as_str().map(str::to_owned))
+            .collect(),
         _ => Vec::new(),
-    }
+    };
+    [
+        &event.title,
+        &event.club,
+        &event.ig_handle,
+        &event.club_ig,
+        &event.description,
+        &event.location,
+    ]
+    .into_iter()
+    .flatten()
+    .cloned()
+    .chain(
+        event
+            .cohosts
+            .iter()
+            .flat_map(|cohost| [&cohost.club_name, &cohost.ig])
+            .flatten()
+            .cloned(),
+    )
+    .chain(food)
+    .collect()
 }
 
 /// Python's `str(value)` for a JSON value inside `food`.
@@ -149,22 +190,11 @@ fn matches_search(event: &CandidateEvent, search: &str) -> bool {
         return true;
     }
     let compact_search = compact(search);
-    let fields = [
-        &event.title,
-        &event.description,
-        &event.location,
-        &event.club,
-        &event.ig_handle,
-    ];
-    fields
-        .iter()
-        .map(|value| (*value).clone().unwrap_or_default())
-        .chain(food_items(&event.food))
-        .any(|value| {
-            let folded = casefold(&value);
-            folded.contains(search)
-                || (!compact_search.is_empty() && compact(&folded).contains(&compact_search))
-        })
+    search_fields(event).into_iter().any(|value| {
+        let folded = casefold(&value);
+        folded.contains(search)
+            || (!compact_search.is_empty() && compact(&folded).contains(&compact_search))
+    })
 }
 
 /// The non-ASCII characters whose case folding leaves ASCII letters or digits
@@ -421,19 +451,7 @@ mod tests {
 
     /// What `store::ascii_search_document` computes in Postgres.
     fn ascii_document(event: &CandidateEvent) -> String {
-        let mut text = [
-            &event.title,
-            &event.description,
-            &event.location,
-            &event.club,
-            &event.ig_handle,
-        ]
-        .iter()
-        .filter_map(|value| value.as_deref())
-        .map(str::to_owned)
-        .chain(food_items(&event.food))
-        .collect::<Vec<_>>()
-        .join(" ");
+        let mut text = search_fields(event).join(" ");
         for (character, letters) in CASEFOLDS_TO_ASCII {
             text = text.replace(character, letters);
         }
@@ -451,11 +469,22 @@ mod tests {
                 description: Some("Café ﬁlm night, ŉight owls, 中文 club".into()),
                 club: Some("UW Blueprint".into()),
                 ig_handle: Some("@uw_blue.print".into()),
-                food: Some(json!(["Bubble Tea", 3])),
+                club_ig: Some("uwblueprint.club".into()),
+                food: Some(json!(["Bubble Tea", 3, null, {"kind": "snack"}])),
                 ..event(1)
             },
             CandidateEvent {
                 location: Some("İstanbul Hall, K-12 Room".into()),
+                cohosts: vec![
+                    SearchCohost {
+                        club_name: Some("Kitchen Collective".into()),
+                        ig: Some("@ksoc.uw".into()),
+                    },
+                    SearchCohost {
+                        club_name: None,
+                        ig: Some("@chess_uw".into()),
+                    },
+                ],
                 ..event(2)
             },
         ];
@@ -472,11 +501,15 @@ mod tests {
             "uwblueprint",
             "@uw_blue.print",
             "bubble tea",
-            "3",
+            "blueprint.club",
             "istanbul",
             "k12",
             "k-12 room",
             "fest: hack",
+            "kitchen collective",
+            "kitchencollective",
+            "@ksoc.uw",
+            "chess_uw",
         ];
         let mut matches = 0;
         for event in &events {
@@ -505,6 +538,37 @@ mod tests {
         }
         // Every search above matches one of the two events.
         assert_eq!(matches, searches.len());
+    }
+
+    #[test]
+    fn search_reads_cohosts_and_club_handles_but_not_food_that_is_not_text() {
+        let row = CandidateEvent {
+            title: Some("Games Night".into()),
+            club_ig: Some("uw.games".into()),
+            cohosts: vec![SearchCohost {
+                club_name: Some("Board Game Society".into()),
+                ig: Some("@uwbgs".into()),
+            }],
+            food: Some(json!(["Pizza", 3, null, true, {"kind": "snack"}])),
+            ..event(1)
+        };
+        let finds = |search: &str| {
+            !filter(
+                vec![candidate(row.clone(), &[])],
+                &Filters {
+                    search,
+                    ..Filters::default()
+                },
+            )
+            .is_empty()
+        };
+        assert!(finds("board game society"));
+        assert!(finds("uwbgs"));
+        assert!(finds("uwgames"));
+        assert!(finds("pizza"));
+        for search in ["3", "none", "true", "snack"] {
+            assert!(!finds(search), "{search:?}");
+        }
     }
 
     #[test]

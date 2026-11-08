@@ -566,10 +566,24 @@ async fn club_logo_by_handle(
 
 // ── The feed ────────────────────────────────────────────────────────────
 
+/// Which occurrences a feed's lower bound keeps.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub enum LowerBound {
+    /// No lower bound (`include_past`).
+    #[default]
+    None,
+    /// The feed's default: occurrences starting at or after it (today's start).
+    StartsFrom(DateTime<Utc>),
+    /// A caller's `start_utc`: occurrences still on at it, by the rule the site
+    /// lists by (an end at or after it, or with no end, a start within
+    /// `event_without_end_visibility_minutes` before it or later).
+    OnAt(DateTime<Utc>),
+}
+
 /// What the default date-ordered feed (`_load_lightweight_date_page`) reads.
 #[derive(Debug, Clone, Default)]
 pub struct DateWindow {
-    pub start_utc: Option<DateTime<Utc>>,
+    pub lower: LowerBound,
     pub end_utc: Option<DateTime<Utc>>,
     pub school_id: Option<i64>,
 }
@@ -721,11 +735,20 @@ impl Binds {
 
 fn window_conditions(window: &DateWindow, binds: &mut Binds) -> Vec<String> {
     let mut conditions = vec!["TRUE".to_owned()];
-    if let Some(start) = window.start_utc {
-        conditions.push(format!(
+    match window.lower {
+        LowerBound::None => {}
+        LowerBound::StartsFrom(start) => conditions.push(format!(
             "d.dtstart_utc >= {}",
             binds.push(Bind::Time(start))
-        ));
+        )),
+        LowerBound::OnAt(start) => {
+            let start = binds.push(Bind::Time(start));
+            conditions.push(format!(
+                "(d.dtend_utc >= {start} OR (d.dtend_utc IS NULL \
+                 AND d.dtstart_utc >= {start} - make_interval(mins => {})))",
+                crate::controlbox::EVENT_DISCOVERY.event_without_end_visibility_minutes
+            ));
+        }
     }
     if let Some(end) = window.end_utc {
         conditions.push(format!("d.dtstart_utc <= {}", binds.push(Bind::Time(end))));
@@ -827,11 +850,17 @@ pub struct ScanFilters {
 /// folds the search: each `CASEFOLDS_TO_ASCII` character becomes its letters,
 /// ASCII lowercases, and everything else drops out.
 fn ascii_search_document() -> String {
+    // Food named in text only: other JSON values in `food` are not searched.
     let food = "CASE jsonb_typeof(e.food) \
-         WHEN 'array' THEN (SELECT string_agg(item, ' ') FROM jsonb_array_elements_text(e.food) item) \
+         WHEN 'array' THEN (SELECT string_agg(item #>> '{}', ' ') FROM jsonb_array_elements(e.food) item \
+         WHERE jsonb_typeof(item) = 'string') \
          WHEN 'string' THEN e.food #>> '{}' END";
-    let mut text =
-        format!("concat_ws(' ', e.title, e.description, e.location, e.club, e.ig_handle, {food})");
+    let club_ig = "(SELECT c.ig FROM public.clubs c WHERE c.id = e.club_id)";
+    let cohosts = "(SELECT string_agg(concat_ws(' ', h.club_name, h.ig), ' ') FROM public.clubs h \
+         WHERE h.id = ANY(e.cohost_club_ids))";
+    let mut text = format!(
+        "concat_ws(' ', e.title, e.club, e.ig_handle, {club_ig}, e.description, e.location, {cohosts}, {food})"
+    );
     for (character, letters) in super::feed::CASEFOLDS_TO_ASCII {
         text = format!("replace({text}, '{character}', '{letters}')");
     }
@@ -921,7 +950,11 @@ fn scan_sql(filters: &ScanFilters, binds: &mut Binds) -> String {
          SELECT json_build_array(\
          (SELECT COALESCE(json_agg(json_build_array(scanned.event_id, {}) ORDER BY scanned.rn), '[]') FROM scanned), \
          (SELECT COALESCE(json_agg(json_build_object('id', e.id, 'title', e.title, 'description', e.description, \
-         'location', e.location, 'club', e.club, 'ig_handle', e.ig_handle, 'food', e.food, 'price', e.price, \
+         'location', e.location, 'club', e.club, 'ig_handle', e.ig_handle, \
+         'club_ig', (SELECT c.ig FROM public.clubs c WHERE c.id = e.club_id), \
+         'cohosts', COALESCE((SELECT json_agg(json_build_object('club_name', h.club_name, 'ig', h.ig)) \
+         FROM public.clubs h WHERE h.id = ANY(e.cohost_club_ids)), '[]'), \
+         'food', e.food, 'price', e.price, \
          'added_at', {}, 'timezone', s.timezone)), '[]') \
          FROM public.events e JOIN public.schools s ON s.id = e.school_id \
          WHERE e.id IN (SELECT scanned.event_id FROM scanned)))",
@@ -1147,6 +1180,53 @@ mod tests {
         );
         assert!(history.contains(&format!("strpos({}, $1) > 0", ascii_search_document())));
         assert!(matches!(binds.values.as_slice(), [Bind::Text(text)] if text == "hackathon"));
+    }
+
+    #[test]
+    fn the_search_document_reads_every_field_the_search_reads() {
+        let document = ascii_search_document();
+        for field in [
+            "e.title",
+            "e.club",
+            "e.ig_handle",
+            "c.ig",
+            "e.description",
+            "e.location",
+            "h.club_name",
+            "h.ig",
+            "jsonb_typeof(item) = 'string'",
+        ] {
+            assert!(document.contains(field), "{field}");
+        }
+    }
+
+    #[test]
+    fn a_callers_start_keeps_what_is_still_on_and_the_default_keeps_what_starts() {
+        let at = "2026-11-08T17:00:00Z".parse::<DateTime<Utc>>().unwrap();
+        let conditions = |lower| {
+            let mut binds = Binds::default();
+            let sql = window_conditions(
+                &DateWindow {
+                    lower,
+                    ..DateWindow::default()
+                },
+                &mut binds,
+            )
+            .join(" AND ");
+            (sql, binds.values.len())
+        };
+        assert_eq!(conditions(LowerBound::None), ("TRUE".to_owned(), 0));
+        assert_eq!(
+            conditions(LowerBound::StartsFrom(at)),
+            ("TRUE AND d.dtstart_utc >= $1".to_owned(), 1)
+        );
+        let (on_at, binds) = conditions(LowerBound::OnAt(at));
+        assert_eq!(binds, 1);
+        assert!(on_at.contains("d.dtend_utc >= $1 OR (d.dtend_utc IS NULL"));
+        assert!(on_at.contains(&format!(
+            "d.dtstart_utc >= $1 - make_interval(mins => {})",
+            crate::controlbox::EVENT_DISCOVERY.event_without_end_visibility_minutes
+        )));
     }
 
     #[test]

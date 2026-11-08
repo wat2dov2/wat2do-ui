@@ -14,7 +14,7 @@ use crate::api::auth::{AdminUser, DbUser};
 use crate::api::body::{Body, Extra, json_first, merge_issues};
 use crate::api::cache_control;
 use crate::api::errors::ApiError;
-use crate::api::events::store::{self, DateWindow, LatestAdded, ScanFilters};
+use crate::api::events::store::{self, DateWindow, LatestAdded, LowerBound, ScanFilters};
 use crate::api::events::{feed, requests, writes};
 use crate::api::messages::EVENT_NOT_FOUND;
 use crate::api::pagination::{Paginated, Pagination};
@@ -241,11 +241,12 @@ pub async fn list_events(
     let pagination = feed.pagination;
     let first_page = pagination.page == 1;
     let school = feed.school.as_deref().filter(|school| !school.is_empty());
-    // `list_events`: an explicit start wins, then `include_past`, then today.
-    let lower_bound = match (feed.start_utc, feed.include_past) {
-        (Some(start), _) => Some(start),
-        (None, true) => None,
-        (None, false) => Some(store::today_start_utc(
+    // An explicit start wins (keeping what is still on at it, as the site
+    // lists), then `include_past`, then occurrences starting from today.
+    let lower = match (feed.start_utc, feed.include_past) {
+        (Some(start), _) => LowerBound::OnAt(start),
+        (None, true) => LowerBound::None,
+        (None, false) => LowerBound::StartsFrom(store::today_start_utc(
             &store::school_timezone(db, school).await?,
             Utc::now(),
         )?),
@@ -259,7 +260,7 @@ pub async fn list_events(
         None => None,
     };
     let window = DateWindow {
-        start_utc: lower_bound,
+        lower,
         end_utc: feed.end_utc,
         school_id,
     };
