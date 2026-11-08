@@ -396,7 +396,9 @@ async fn capacity_never_drops_below_the_tickets_taken() {
             .await
             .unwrap();
     }
-    let refused = ticketing::configure(&state, event, free(Some(1)), &officer)
+    let mut settings = free(Some(1));
+    settings.tiers[0].id = Some(tier);
+    let refused = ticketing::configure(&state, event, settings, &officer)
         .await
         .unwrap_err();
     assert_eq!(detail(refused), TICKET_CAPACITY_BELOW_ISSUED);
