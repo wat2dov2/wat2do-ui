@@ -31,7 +31,8 @@ import {
   DrawerTitle,
 } from "@/shared/ui/drawer";
 import { DrawerBody, Stack } from "@/shared/layout";
-import { useAuthState, type AuthState } from "@/features/auth/hooks/useAuthState";
+import { SessionView } from "@/features/auth/components/SessionView";
+import { useAuthState, useSessionKnown, type AuthState } from "@/features/auth/hooks/useAuthState";
 import { useRequestSchool } from "@/app/client-providers";
 import { prefetchPublicPage } from "@/app/hooks/useAppNavigation";
 import { logoutAPI } from "@/features/auth/api/auth.api";
@@ -152,6 +153,7 @@ export function TopNav() {
   const requestSchool = useRequestSchool();
   const { isAuthenticated, profileCompleted, isAdmin, clubs, clubId, userAvatarUrl, userEmail } =
     useAuthState();
+  const sessionKnown = useSessionKnown();
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
@@ -225,12 +227,18 @@ export function TopNav() {
         />
       </div>
 
+      {/*
+        The server cannot know who is visiting, so the controls that differ
+        between signed in and signed out are SessionView looks: the bar a
+        signed-in visitor first sees is already their own, never the signed-out
+        bar collapsing into an avatar once the page wakes up.
+      */}
       <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-        {!isAuthenticated && <nav
+        <SessionView signedIn={null} signedOut={<nav
           aria-label={t("navigation.primary")}
           className="hidden items-center gap-0.5 md:flex"
         >
-          {navigationItems.map(({ labelKey, href }) => {
+          {PRIMARY_NAV_ITEMS.map(({ labelKey, href }) => {
             const active = isRouteActive(pathname, href);
             return (
               <Button
@@ -253,26 +261,41 @@ export function TopNav() {
             );
           })}
           <SubmitMenu size="sm" />
-        </nav>}
+        </nav>} />
 
         <Drawer
           open={navigationOpen}
           onOpenChange={setNavigationOpen}
           direction="right"
         >
-          <Button
-            variant={isAuthenticated ? "avatar" : "outline"}
-            size="icon-sm"
-            className={isAuthenticated ? undefined : "md:hidden"}
-            aria-label={t("navigation.openMenu")}
-            aria-haspopup="dialog"
-            aria-expanded={navigationOpen}
-            onClick={() => setNavigationOpen(true)}
-          >
-            {isAuthenticated ? (
-              userAvatar
-            ) : <MoreHorizontal className="size-4" />}
-          </Button>
+          <SessionView
+            signedIn={
+              <Button
+                variant="avatar"
+                size="icon-sm"
+                aria-label={t("navigation.openMenu")}
+                aria-haspopup="dialog"
+                aria-expanded={navigationOpen}
+                onClick={() => setNavigationOpen(true)}
+              >
+                {/* The visitor's picture or initial is known once the page wakes up. */}
+                {sessionKnown ? userAvatar : null}
+              </Button>
+            }
+            signedOut={
+              <Button
+                variant="outline"
+                size="icon-sm"
+                className="md:hidden"
+                aria-label={t("navigation.openMenu")}
+                aria-haspopup="dialog"
+                aria-expanded={navigationOpen}
+                onClick={() => setNavigationOpen(true)}
+              >
+                <MoreHorizontal className="size-4" />
+              </Button>
+            }
+          />
           <DrawerContent aria-describedby={undefined}>
             <DrawerHeader className="sr-only">
               <DrawerTitle>{t("navigation.primary")}</DrawerTitle>
@@ -394,17 +417,16 @@ export function TopNav() {
           </DrawerContent>
         </Drawer>
 
-        {!isAuthenticated && <div className="hidden items-center gap-2 md:flex">
-          <Separator
-            orientation="vertical"
-            data-nav-preferences-divider
-            className="ml-0.5 mr-1.5 data-[orientation=vertical]:h-6"
-          />
-          <LanguageSelector />
-          <ThemeToggle />
-        </div>}
-
-        {!isAuthenticated && (
+        <SessionView signedIn={null} signedOut={<>
+          <div className="hidden items-center gap-2 md:flex">
+            <Separator
+              orientation="vertical"
+              data-nav-preferences-divider
+              className="ml-0.5 mr-1.5 data-[orientation=vertical]:h-6"
+            />
+            <LanguageSelector />
+            <ThemeToggle />
+          </div>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -422,7 +444,7 @@ export function TopNav() {
               <p>{t("modals.signIn.signInToSavePreferences")}</p>
             </TooltipContent>
           </Tooltip>
-        )}
+        </>} />
       </div>
       <span id={TOP_NAV_END_ID} hidden />
     </header>

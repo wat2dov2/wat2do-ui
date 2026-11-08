@@ -47,14 +47,15 @@ import { deleteEventAPI } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
 import { EmailOtpForm } from "@/features/auth/components/EmailOtpForm";
-import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { SessionView } from "@/features/auth/components/SessionView";
+import { useAuthState, useSessionKnown } from "@/features/auth/hooks/useAuthState";
 import { useUIStore } from "@/shared/store/ui.store";
 import { controlBox } from "@/shared/config/controlBox";
 import { translateFoods } from "@/shared/utils/foodTranslation";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { ROUTES, clubPanelEventTicketsPath } from "@/shared/constants/routes";
 import { EventTicketCard, useEventTicketing } from "@/features/tickets";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { Skeleton, SkeletonLine } from "@/shared/ui/skeleton";
 import { formatCents } from "@/shared/utils/currency";
 import { toast } from "@/shared/hooks/use-toast";
 import type { Event } from "@/shared/types";
@@ -401,51 +402,64 @@ export function EventRegistrationPrompt({
   onRegister: () => void | Promise<void>;
 }) {
   const { t } = useTranslation();
-  const { profileCompleted, userEmail, userFullName, userAvatarUrl } = useAuthState();
+  const { userEmail, userFullName, userAvatarUrl } = useAuthState();
+  // Until the page wakes up, who is signed in is not known: the signed-in look holds their lines' places.
+  const sessionKnown = useSessionKnown();
   const displayName = userFullName || userEmail?.split("@")[0] || "";
   return (
     <Card>
       <CardContent>
         <Stack gap={3}>
-          {profileCompleted ? (
-            <Stack direction="horizontal" gap={2} align="center">
-              {userAvatarUrl ? (
-                <LazyImage src={userAvatarUrl} alt="" width={24} height={24} className="size-6" fallback={null} />
-              ) : null}
-              <Stack gap={1}>
-                <CardTitle>{displayName}</CardTitle>
-                <CardDescription>{userEmail}</CardDescription>
+          <SessionView
+            signedIn={
+              <Stack direction="horizontal" gap={2} align="center">
+                {sessionKnown ? (
+                  userAvatarUrl ? (
+                    <LazyImage src={userAvatarUrl} alt="" width={24} height={24} className="size-6" fallback={null} />
+                  ) : null
+                ) : (
+                  // The picture's place, kept when the cached sign-in has one (see sessionInitScript).
+                  <span aria-hidden="true" className="hidden size-6 shrink-0 in-data-[session-avatar]:block" />
+                )}
+                <Stack gap={1}>
+                  <CardTitle>{sessionKnown ? displayName : <SkeletonLine className="w-28" />}</CardTitle>
+                  <CardDescription>{sessionKnown ? userEmail : <SkeletonLine className="w-40" />}</CardDescription>
+                </Stack>
               </Stack>
-            </Stack>
-          ) : (
-            <EmailOtpForm
-              data-testid="event-registration-auth"
-              school={school}
-              requestCodeLabel={t("events.going")}
-              actionLabel={t("events.going")}
-              focusOnMount={false}
-              isSubmitDisabled={unavailable}
-              submitDisabledReason={unavailableReason}
-              onAuthenticated={onRegister}
-            />
-          )}
+            }
+            signedOut={
+              <EmailOtpForm
+                data-testid="event-registration-auth"
+                school={school}
+                requestCodeLabel={t("events.going")}
+                actionLabel={t("events.going")}
+                focusOnMount={false}
+                isSubmitDisabled={unavailable}
+                submitDisabledReason={unavailableReason}
+                onAuthenticated={onRegister}
+              />
+            }
+          />
         </Stack>
       </CardContent>
-      {profileCompleted ? (
-        <CardFooter className="w-full">
-          <Button
-            type="button"
-            variant="primary"
-            className="w-full"
-            disabled={isPending || unavailable}
-            disabledReason={unavailableReason}
-            onClick={() => void onRegister()}
-            aria-label={t("events.going")}
-          >
-            {t("events.going")}
-          </Button>
-        </CardFooter>
-      ) : null}
+      <SessionView
+        signedIn={
+          <CardFooter className="w-full">
+            <Button
+              type="button"
+              variant="primary"
+              className="w-full"
+              disabled={isPending || unavailable}
+              disabledReason={unavailableReason}
+              onClick={() => void onRegister()}
+              aria-label={t("events.going")}
+            >
+              {t("events.going")}
+            </Button>
+          </CardFooter>
+        }
+        signedOut={null}
+      />
     </Card>
   );
 }
