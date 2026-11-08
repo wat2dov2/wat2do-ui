@@ -8,7 +8,7 @@ import { getClubPositionsSnapshot } from "@/features/positions/api/positionDirec
 import { getClubDetailSnapshot } from "@/features/clubs/api/clubDirectory.server";
 import { isClubIndexable } from "@/features/clubs/lib/clubSeo";
 import { ClubDetailsPage as ClubDetailsPageContent } from "@/features/clubs/pages/ClubDetailsPage";
-import { ClubEventsGrid, ClubEventsGridSkeleton } from "@/features/events/components/ClubEventsGrid";
+import { ClubEventsGrid } from "@/features/events/components/ClubEventsGrid";
 import { ClubPositionsGrid, ClubPositionsGridSkeleton } from "@/features/positions/components/ClubPositionsGrid";
 import { getSchool } from "@/shared/api/schools.server";
 import { clubPagePath } from "@/shared/constants/routes";
@@ -19,7 +19,7 @@ import {
   isCanonicalProductionHost,
   selectSeoImage,
 } from "@/shared/lib/seo";
-import type { Club } from "@/shared/types";
+import type { Club, Event } from "@/shared/types";
 
 const loadDetailSnapshot = cache(getClubDetailSnapshot);
 
@@ -47,15 +47,22 @@ async function loadClub(
   }
 }
 
-/*
- * The header renders as soon as the club is known; each activity list streams
- * in behind its own boundary so the slowest feed never holds up the page.
+/**
+ * The club's events, read with the club so the page is revealed in one piece.
+ * Streamed behind their own boundary, they drew the header over a screen of
+ * placeholder cards that then collapsed to the club's real count. Without them
+ * the grid fetches on mount.
  */
-async function ClubEvents({ club }: { club: Club }) {
-  const initialEvents = await getClubEventsSnapshot(club.id, club.school);
-  return <ClubEventsGrid clubId={club.id} school={club.school} initialEvents={initialEvents} />;
+async function loadClubEvents(club: Club): Promise<Event[] | undefined> {
+  try {
+    return await getClubEventsSnapshot(club.id, club.school);
+  } catch (error) {
+    console.error("Club events fetch failed:", error);
+    return undefined;
+  }
 }
 
+/** Positions sit behind their tab, out of sight, so they stream in behind their own boundary. */
 async function ClubPositions({ club }: { club: Club }) {
   const initialPositions = await getClubPositionsSnapshot(club.id, club.school);
   return <ClubPositionsGrid clubId={club.id} school={club.school} initialPositions={initialPositions} />;
@@ -128,17 +135,16 @@ export default async function ClubDetailsPage({
     permanentRedirect(canonicalUrl);
   }
 
-  const schoolRecord = await getSchool(club.school);
+  const [schoolRecord, initialEvents] = await Promise.all([
+    getSchool(club.school),
+    loadClubEvents(club),
+  ]);
   return (
     <ClubDetailsPageContent
       clubId={club.id}
       initialClub={club}
       schoolName={schoolRecord?.name ?? club.school}
-      events={
-        <Suspense fallback={<ClubEventsGridSkeleton />}>
-          <ClubEvents club={club} />
-        </Suspense>
-      }
+      events={<ClubEventsGrid clubId={club.id} school={club.school} initialEvents={initialEvents} />}
       positions={
         <Suspense fallback={<ClubPositionsGridSkeleton />}>
           <ClubPositions club={club} />

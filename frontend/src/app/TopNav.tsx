@@ -66,10 +66,12 @@ function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
       className="flex h-8 w-10 shrink-0 cursor-pointer items-center justify-center transition-opacity hover:opacity-80"
       aria-label={label}
     >
+      {/* Eager: it opens every page's first paint, and a lazy image only starts loading after that paint. */}
       <Image
         alt=""
         width={34}
         height={24}
+        loading="eager"
         className="h-6 w-[34px] object-contain"
         src={imgImage1}
       />
