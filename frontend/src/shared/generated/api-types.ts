@@ -3291,6 +3291,8 @@ export interface components {
              * Format: date-time
              */
             token_expires_at: string;
+            /** Last Notification At */
+            last_notification_at?: string | null;
             /** Followers History */
             followers_history: components["schemas"]["InstagramFollowerCountResponse"][];
             /** Posts */

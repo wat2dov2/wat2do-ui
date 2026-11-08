@@ -3,6 +3,7 @@ import {
   engagement,
   followerChange,
   needsAttention,
+  notificationsQuiet,
   sortAccounts,
   sortPosts,
   type SocialAccount,
@@ -48,6 +49,14 @@ test("tokens near expiry or needing reauthorization need attention", () => {
   expect(needsAttention(account("a"), NOW)).toBe(false);
   expect(needsAttention(account("a", { token_expires_at: "2026-10-28T00:00:00Z" }), NOW)).toBe(true);
   expect(needsAttention(account("a", { requires_reauthorization: true }), NOW)).toBe(true);
+});
+
+test("accounts with no notification for over 36 hours, or none ever, are quiet", () => {
+  // NOW is 2026-10-24 12:00 UTC.
+  expect(notificationsQuiet(account("a", { last_notification_at: "2026-10-24T00:00:00Z" }), NOW)).toBe(false);
+  expect(notificationsQuiet(account("a", { last_notification_at: "2026-10-23T00:30:00Z" }), NOW)).toBe(false);
+  expect(notificationsQuiet(account("a", { last_notification_at: "2026-10-22T23:00:00Z" }), NOW)).toBe(true);
+  expect(notificationsQuiet(account("a"), NOW)).toBe(true);
 });
 
 test("sorts put the strongest account and post first, unknowns last", () => {

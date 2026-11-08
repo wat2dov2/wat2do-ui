@@ -240,12 +240,26 @@ async fn a_draft_is_read_saved_and_claimed_as_python_did() {
         Err(ApiError::Validation { .. })
     ));
 
+    // The dashboard shows when the school last received a notification.
+    let seen: DateTime<Utc> = sqlx::query_scalar(
+        "INSERT INTO public.instagram_notifications (school_id, intended_recipient_id, \
+             push_id, push_category, materialized_media_count, materialization_status) \
+         VALUES ($1, '17841400000000001', $2, 'subscription_daily_digest', 0, 'complete') \
+         RETURNING first_seen_at",
+    )
+    .bind(school)
+    .bind(format!("dashboard-{}", Uuid::new_v4()))
+    .fetch_one(&db)
+    .await
+    .unwrap();
     let dashboard = accounts::list(&db).await.unwrap();
     let account = dashboard
         .iter()
         .find(|account| account.account_key == "uwaterloo")
         .unwrap();
     assert_eq!(account.username, "wat2do.uwaterloo");
+    // Other tests may record a later one for the same school.
+    assert!(account.last_notification_at >= Some(seen));
 }
 
 #[tokio::test]

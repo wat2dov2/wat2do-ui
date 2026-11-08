@@ -490,6 +490,8 @@ It then reads every account with a working token through the Graph API, using on
 `instagram_account_snapshots` keeps one row per account per day, and `instagram_account_media` holds each account's newest posts, replaced on every run.
 Reach, views, saves and shares need the `instagram_business_manage_insights` permission, which the stored tokens were not granted.
 The admin's Social accounts page shows every account at once, with `stats_history_days` of follower history and the song the emulator added to each carousel wat2do published.
+It also flags each account whose school has received no Instagram notification for over 36 hours (`QUIET_NOTIFICATION_HOURS` in `frontend/src/features/admin/lib/socialAccounts.ts`), or never one, with a badge showing when the last one arrived, and counts them in the page header.
+Such an account's phone has stopped sending notifications, so nothing new is collected for that school until a person fixes the phone.
 One account's failure never stops the others, but it fails the run, which posts to Discord.
 
 ### Browser worker diagnostics

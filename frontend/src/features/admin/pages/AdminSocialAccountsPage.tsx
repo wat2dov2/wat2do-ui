@@ -4,6 +4,7 @@ import { BarChart3, Music } from "lucide-react";
 import {
   ACCOUNT_SORTS,
   POST_SORTS,
+  QUIET_NOTIFICATION_HOURS,
   sortAccounts,
   sortPosts,
   type AccountSort,
@@ -38,6 +39,9 @@ export function AdminSocialAccountsPage() {
     <PageShellHeader route={ROUTES.ADMIN_SOCIAL} description={capturedAt ? [
         t("admin.socialAccounts.updated", { time: formatRelativeTime(capturedAt, t) }),
         summary.needingAttention ? t("admin.socialAccounts.summary.needingAttention", { value: number(summary.needingAttention) }) : null,
+        summary.quietNotifications
+          ? t("admin.socialAccounts.summary.quietNotifications", { hours: QUIET_NOTIFICATION_HOURS, value: number(summary.quietNotifications) })
+          : null,
       ].filter(Boolean).join(" · ") : undefined} />
   );
   if (query.isError) {
