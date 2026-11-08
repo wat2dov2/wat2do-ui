@@ -17,12 +17,15 @@ export const POST_SORTS = ["newest", "likes", "comments"] as const;
 export type PostSort = (typeof POST_SORTS)[number];
 
 export const DAY_MS = 86_400_000;
+const HOUR_MS = 3_600_000;
 /** Days of posting activity the charts plot, matching the follower history the API returns. */
 const ACTIVITY_DAYS = 30;
 /** Posts each account card shows; the All posts tab lists the rest. */
 export const CARD_POST_COUNT = 3;
 /** Tokens this close to expiring need a person before the daily refresh gives up on them. */
 const TOKEN_WARNING_DAYS = 7;
+/** An account this long without an Instagram notification has stopped feeding ingestion: its phone needs a person. */
+export const QUIET_NOTIFICATION_HOURS = 36;
 
 export function average(values: (number | null | undefined)[]): number | null {
   const known = values.filter((value): value is number => typeof value === "number");
@@ -97,6 +100,11 @@ export function engagement(account: SocialAccount) {
 
 export function needsAttention(account: SocialAccount, now: number) {
   return account.requires_reauthorization || new Date(account.token_expires_at).getTime() - now < TOKEN_WARNING_DAYS * DAY_MS;
+}
+
+/** No notification for over QUIET_NOTIFICATION_HOURS, or never one. */
+export function notificationsQuiet(account: SocialAccount, now: number) {
+  return !account.last_notification_at || now - new Date(account.last_notification_at).getTime() > QUIET_NOTIFICATION_HOURS * HOUR_MS;
 }
 
 export function sortAccounts(accounts: SocialAccount[], sort: AccountSort): SocialAccount[] {

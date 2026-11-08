@@ -2,6 +2,8 @@
 //! connected account with its latest snapshot, follower history and newest
 //! posts, for the admin's social dashboard. The daily snapshot job
 //! (`wat2do-instagram stats`, `crate::instagram_publishing::stats`) writes these tables.
+//! Each account also carries when its school last received an Instagram
+//! notification, so the dashboard can flag a phone that stopped sending them.
 
 use std::collections::HashMap;
 
@@ -59,6 +61,10 @@ pub struct AccountStats {
     pub requires_reauthorization: bool,
     #[serde(serialize_with = "json::datetime")]
     pub token_expires_at: DateTime<Utc>,
+    /// When the school's newest notification was first seen; none when it
+    /// never received one.
+    #[serde(serialize_with = "json::option_datetime")]
+    pub last_notification_at: Option<DateTime<Utc>>,
     pub followers_history: Vec<FollowerCount>,
     pub posts: Vec<Post>,
 }
@@ -69,6 +75,7 @@ pub struct Account {
     pub instagram_username: String,
     pub requires_reauthorization: bool,
     pub expires_at: DateTime<Utc>,
+    pub last_notification_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -134,6 +141,7 @@ pub fn assemble(
                 captured_at: latest.as_ref().map(|latest| latest.captured_at),
                 requires_reauthorization: account.requires_reauthorization,
                 token_expires_at: account.expires_at,
+                last_notification_at: account.last_notification_at,
                 followers_history: days
                     .iter()
                     .map(|day| FollowerCount {
@@ -155,8 +163,13 @@ pub async fn list(db: &PgPool) -> Result<Vec<AccountStats>, ApiError> {
     let start = history_start(Utc::now())?;
     let accounts: Vec<Account> = read_with_retry(|| {
         sqlx::query_as(
-            "SELECT account_key, instagram_username, requires_reauthorization, expires_at \
-             FROM public.instagram_publishing_accounts ORDER BY account_key",
+            "SELECT a.account_key, a.instagram_username, a.requires_reauthorization, \
+                 a.expires_at, n.last_notification_at \
+             FROM public.instagram_publishing_accounts a \
+             LEFT JOIN (SELECT school_id, max(first_seen_at) AS last_notification_at \
+                 FROM public.instagram_notifications GROUP BY school_id) n \
+               ON n.school_id = a.school_id \
+             ORDER BY a.account_key",
         )
         .fetch_all(db)
     })
@@ -236,6 +249,7 @@ mod tests {
             instagram_username: format!("wat2do.{key}"),
             requires_reauthorization: false,
             expires_at: at(30),
+            last_notification_at: None,
         }
     }
 
@@ -256,8 +270,12 @@ mod tests {
             music_track: Some("Houdini by Dua Lipa".into()),
             account_key: "uwaterloo".into(),
         };
+        let uwaterloo = Account {
+            last_notification_at: Some(at(24)),
+            ..account("uwaterloo")
+        };
         let stats = assemble(
-            vec![account("queensu"), account("uwaterloo")],
+            vec![account("queensu"), uwaterloo],
             vec![snapshot(23, 1190), snapshot(24, 1200)],
             vec![post],
         );
@@ -275,12 +293,14 @@ mod tests {
                 "captured_at": null,
                 "requires_reauthorization": false,
                 "token_expires_at": "2026-10-30T13:00:00Z",
+                "last_notification_at": null,
                 "followers_history": [],
                 "posts": [],
             })
         );
         assert_eq!(value[1]["followers_count"], 1200);
         assert_eq!(value[1]["captured_at"], "2026-10-24T13:00:00Z");
+        assert_eq!(value[1]["last_notification_at"], "2026-10-24T13:00:00Z");
         assert_eq!(
             value[1]["followers_history"],
             serde_json::json!([

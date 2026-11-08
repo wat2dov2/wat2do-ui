@@ -5,6 +5,7 @@ import {
   average,
   dailyChange,
   needsAttention,
+  notificationsQuiet,
   postingTrends,
   totalFollowerTrend,
   type SocialPost,
@@ -39,6 +40,7 @@ export function useSocialAccounts() {
       capturedAt,
       summary: {
         needingAttention: accounts.filter(account => needsAttention(account, now)).length,
+        quietNotifications: accounts.filter(account => notificationsQuiet(account, now)).length,
         followers: accounts.reduce((sum, account) => sum + (account.followers_count ?? 0), 0),
         averageLikes: average(posts.map(post => post.like_count)),
       },
