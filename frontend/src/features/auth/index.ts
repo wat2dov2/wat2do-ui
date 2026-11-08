@@ -9,7 +9,7 @@
 // Components
 export { EmailOtpForm } from "./components/EmailOtpForm";
 export { PreviewStyleEventCard } from "./components/PreviewStyleEventCard";
-export { SessionView } from "./components/SessionView";
+export { ClubManagerView, SessionView } from "./components/SessionView";
 
 // Hooks
 export {

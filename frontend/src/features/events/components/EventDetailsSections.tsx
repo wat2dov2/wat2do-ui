@@ -47,7 +47,7 @@ import { deleteEventAPI } from "@/features/events/api/events.api";
 import { useEventStats } from "@/features/events/hooks/useEventStats";
 import { useCurrentTime, useGoingEventSelection } from "@/features/events/hooks/useGoingEvents";
 import { EmailOtpForm } from "@/features/auth/components/EmailOtpForm";
-import { SessionView } from "@/features/auth/components/SessionView";
+import { ClubManagerView, SessionView } from "@/features/auth/components/SessionView";
 import { useAuthState, useSessionKnown } from "@/features/auth/hooks/useAuthState";
 import { useUIStore } from "@/shared/store/ui.store";
 import { controlBox } from "@/shared/config/controlBox";
@@ -580,9 +580,6 @@ export function EventActions({
   const [reportOpen, setReportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { isAdmin, clubs } = useAuthState();
-  // Admins and the hosting club's own members can edit and delete it; the server checks the same.
-  const canManage = isAdmin || clubs.some((club) => club.id === event.club_id);
   const setEditingEvent = useUIStore((s) => s.setEditingEvent);
 
   const handleEdit = useCallback(() => {
@@ -619,31 +616,30 @@ export function EventActions({
           {t("common.addToCalendar")}
         </Button>
       </EventCalendarDownloadMenu>
-      {canManage && (
-        <>
-          {event.club_id != null ? (
-            <Button type="button" variant="outline" size="sm" asChild>
-              <NextLink href={clubPanelEventTicketsPath(event.id)}>
-                <Ticket className="size-4" />
-                {t("tickets.manage")}
-              </NextLink>
-            </Button>
-          ) : null}
-          <Button type="button" variant="outline" size="sm" onClick={handleEdit}>
-            <Edit className="size-4" />
-            {t("common.edit")}
+      {/* Admins and the hosting club's own members can edit and delete it; the server checks the same. */}
+      <ClubManagerView clubId={event.club_id}>
+        {event.club_id != null ? (
+          <Button type="button" variant="outline" size="sm" asChild>
+            <NextLink href={clubPanelEventTicketsPath(event.id)}>
+              <Ticket className="size-4" />
+              {t("tickets.manage")}
+            </NextLink>
           </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={() => setDeleteOpen(true)}
-          >
-            <Trash2 className="size-4" />
-            {t("common.delete")}
-          </Button>
-        </>
-      )}
+        ) : null}
+        <Button type="button" variant="outline" size="sm" onClick={handleEdit}>
+          <Edit className="size-4" />
+          {t("common.edit")}
+        </Button>
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          onClick={() => setDeleteOpen(true)}
+        >
+          <Trash2 className="size-4" />
+          {t("common.delete")}
+        </Button>
+      </ClubManagerView>
       <Button type="button" variant="outline" size="sm" onClick={() => setShareOpen(true)}>
         <Share2 className="size-4" />
         {t("common.share")}
@@ -667,7 +663,7 @@ export function EventActions({
           />
         </Suspense>
       )}
-      {canManage && deleteOpen && (
+      {deleteOpen && (
         <Suspense fallback={null}>
           <AdminDeleteDialog
             isOpen={deleteOpen}

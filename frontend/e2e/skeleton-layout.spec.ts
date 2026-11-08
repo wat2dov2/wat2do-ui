@@ -4,6 +4,7 @@ import type { NextFixture } from "next/experimental/testmode/playwright.js";
 import { writeFile } from "node:fs/promises";
 import sharp from "sharp";
 import { mockApi } from "./api-fixture";
+import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
 
 /*
  * Loading states must hold the exact layout of what replaces them.
@@ -236,7 +237,7 @@ async function installMocks(
     }
     if (path === "/users/me") {
       return signedIn
-        ? json({ id: "user-1", email: "exec@uwaterloo.ca", school: "uwaterloo", role: "user", interests: [] })
+        ? json({ id: "user-1", email: EXECUTIVE.email, school: "uwaterloo", role: "user", interests: [] })
         : json({ detail: "Not authenticated" }, 401);
     }
     if (path === "/clubs/mine") return json(signedIn ? [CLUBS[0]] : []);
@@ -288,6 +289,26 @@ async function installMocks(
     console.log(`[skeleton-layout] unmocked ${request.method} ${path}${url.search}`);
     return json({ detail: "Not mocked" }, 404);
   });
+}
+
+/** The club executive `installMocks({ signedIn })` signs in, and the club they run. */
+const EXECUTIVE = { email: "exec@uwaterloo.ca", club: CLUBS[0]! };
+
+/**
+ * A returning visitor: their sign-in is cached in this browser, as it is after
+ * any earlier visit, so the page can draw them signed in from its first frame.
+ */
+async function cacheSignIn(page: Page) {
+  await page.addInitScript(([emailKey, profileKey, email, club]) => {
+    localStorage.setItem(emailKey, JSON.stringify(email));
+    localStorage.setItem(profileKey, JSON.stringify({
+      id: "user-1", fullName: null, avatarUrl: null, faculty: "", interests: [], isFirstYear: false,
+      school: "uwaterloo", role: "user", hasClub: true,
+      clubs: [{ id: club.id, club_name: club.club_name, school: club.school }],
+      clubId: club.id, clubName: club.club_name,
+      payoutEmail: null, promoterTosAcceptedAt: null, promoterTosVersion: null,
+    }));
+  }, [STORAGE_KEYS.USER_EMAIL, STORAGE_KEYS.USER_PROFILE, EXECUTIVE.email, EXECUTIVE.club] as const);
 }
 
 const OBSERVE_SHIFTS = () => {
@@ -685,6 +706,7 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
         path => path === "/events/1" || path === "/events/1/ticketing" || path === "/clubs/1/payouts",
         { signedIn: true, firstEvent: { title: "Open Mic Night" } },
       );
+      await cacheSignIn(page);
       await throttleCpu(page);
       await page.addInitScript(OBSERVE_SHIFTS);
 
@@ -694,6 +716,22 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       const name = `club-panel-event-${viewportName}`;
       const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=ticket-settings-card]", name, viewport.height);
       await report(name, comparison, cls, shifts);
+    });
+
+    test("event page draws a returning visitor signed in from its first frame", async ({ page, next }) => {
+      const gates: Gates = { data: new Gate(), late: new Gate() };
+      await installMocks(page, next, gates, path => path === "/events/1", { signedIn: true });
+      await cacheSignIn(page);
+      await throttleCpu(page);
+      await page.addInitScript(OBSERVE_SHIFTS);
+
+      await page.goto(`${BASE}/events/1`, { waitUntil: "commit" });
+      await page.locator("[data-slot=event-details-loading]").first().waitFor();
+      const name = `event-page-signed-in-${viewportName}`;
+      const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=event-host]", name, viewport.height);
+      await report(name, comparison, cls, shifts);
+      // The Going card is the visitor's own, not the signed-out email form.
+      await expect(page.getByTestId("event-registration-auth")).toBeHidden();
     });
 
     test("the top bar never paints half-parsed when the page's HTML pauses inside it", async ({ page, next, _nextWorker }) => {
