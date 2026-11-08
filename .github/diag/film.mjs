@@ -12,31 +12,39 @@ const PHONE = {
   userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
 };
 
+const CLUB = process.env.CLUB_PATH ?? "/clubs/11126";
 const SCENARIOS = [
-  { name: "clubs-desktop", device: DESKTOP, steps: [{ goto: "/clubs" }, { wait: 5000 }] },
-  { name: "clubs-desktop-again", device: DESKTOP, steps: [{ goto: "/clubs" }, { wait: 5000 }] },
-  { name: "clubs-phone", device: PHONE, steps: [{ goto: "/clubs" }, { wait: 6000 }] },
-  { name: "events-desktop", device: DESKTOP, steps: [{ goto: "/events" }, { wait: 5000 }] },
-  { name: "event-page-desktop", device: DESKTOP, steps: [{ goto: "/events/49553" }, { wait: 5000 }] },
-  { name: "event-page-phone", device: PHONE, steps: [{ goto: "/events/49553" }, { wait: 6000 }] },
-  { name: "club-page-desktop", device: DESKTOP, steps: [{ goto: "/clubs/7050" }, { wait: 5000 }] },
-  {
-    name: "nav-events-to-clubs-desktop", device: DESKTOP, film: "after-first",
-    steps: [{ goto: "/events" }, { wait: 4000 }, { click: "a[href='/clubs']" }, { wait: 5000 }],
-  },
-  {
-    name: "nav-clubs-to-club-desktop", device: DESKTOP, film: "after-first",
-    steps: [{ goto: "/clubs" }, { wait: 4000 }, { click: "[data-club-card]" }, { wait: 5000 }],
-  },
-  {
-    name: "nav-club-to-event-desktop", device: DESKTOP, film: "after-first",
-    steps: [{ goto: "/clubs/7050" }, { wait: 4000 }, { click: "[data-event-card]" }, { wait: 5000 }],
-  },
+  { name: "club-desktop", device: DESKTOP, steps: [{ goto: CLUB }, { wait: 5000 }] },
+  { name: "club-desktop-again", device: DESKTOP, steps: [{ goto: CLUB }, { wait: 5000 }] },
+  { name: "club-phone", device: PHONE, steps: [{ goto: CLUB }, { wait: 6000 }] },
+  { name: "club-phone-again", device: PHONE, steps: [{ goto: CLUB }, { wait: 6000 }] },
+  // A returning visitor: the second load has the site's code in the browser cache.
+  { name: "club-phone-reload", device: PHONE, film: "after-first", steps: [{ goto: CLUB }, { wait: 5000 }, { goto: CLUB }, { wait: 6000 }] },
+  { name: "club-desktop-reload", device: DESKTOP, film: "after-first", steps: [{ goto: CLUB }, { wait: 5000 }, { goto: CLUB }, { wait: 5000 }] },
+  // A query string the page ignores misses the CDN, so the server renders it fresh.
+  { name: "club-phone-cold", device: PHONE, steps: [{ goto: `${CLUB}?film=${Date.now()}` }, { wait: 6000 }] },
+  { name: "club-desktop-cold", device: DESKTOP, steps: [{ goto: `${CLUB}?film=${Date.now() + 1}` }, { wait: 5000 }] },
 ];
 
 const OBSERVE = () => {
-  const store = { shifts: [], longTasks: [], lcp: [], paints: [] };
+  const store = { shifts: [], longTasks: [], lcp: [], paints: [], reveals: [], firstFrame: null };
   window.__film = store;
+  // React's streamed HTML reveals each finished boundary through $RV, in batches
+  // at most one per 300 ms; log when each batch lands and what it holds.
+  let reveal;
+  Object.defineProperty(window, "$RV", {
+    configurable: true,
+    get: () => reveal,
+    set: (fn) => {
+      reveal = function (batch) {
+        const ids = [];
+        for (let i = 0; i < batch.length; i += 2) ids.push(`${batch[i]?.id ?? "?"}<-${batch[i + 1]?.id ?? "?"}`);
+        store.reveals.push({ t: Math.round(performance.now()), ids });
+        return fn.apply(this, arguments);
+      };
+    },
+  });
+  requestAnimationFrame(() => { store.firstFrame = Math.round(performance.now()); });
   const describe = (node) => {
     if (!(node instanceof Element)) return node ? node.nodeName : "null";
     const key = node.getAttribute("data-skeleton-key") ?? node.getAttribute("data-slot");
