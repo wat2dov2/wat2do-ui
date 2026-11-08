@@ -6,7 +6,6 @@ import ts from "typescript";
 type Club = { club_name: string; logo_url?: string | null; event_count?: number; categories: string[] };
 type LandingEvents = {
   isFreeFoodEvent: (event: object) => boolean;
-  isNetworkingEvent: (event: object) => boolean;
   nicheClubs: (clubs: readonly Club[], count: number) => Club[];
 };
 
@@ -17,13 +16,6 @@ function loadLandingEvents(): LandingEvents {
   runInNewContext(outputText, { exports, Math });
   return exports;
 }
-
-test("networking opportunities are employer events and business clubs' events", () => {
-  const { isNetworkingEvent } = loadLandingEvents();
-  expect(isNetworkingEvent({ employers_on_campus: true, category: "Arts & Culture" })).toBe(true);
-  expect(isNetworkingEvent({ employers_on_campus: null, category: "Business" })).toBe(true);
-  expect(isNetworkingEvent({ employers_on_campus: null, category: "Games & Recreation" })).toBe(false);
-});
 
 test("free food is food that costs nothing", () => {
   const { isFreeFoodEvent } = loadLandingEvents();

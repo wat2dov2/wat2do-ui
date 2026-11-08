@@ -48,6 +48,8 @@ export function getEventCategory(event: Pick<Event, "category">): string {
 /**
  * A networking opportunity: an event employers come to (the feed's Employers
  * on campus flag), or one in the Business category, which business clubs run.
+ * The same rule chooses the landing hero mosaic's networking posters
+ * (scripts/build-event-mosaic.mjs).
  */
 export function isNetworkingEvent(event: Pick<Event, "employers_on_campus" | "category">): boolean {
   return event.employers_on_campus === true || event.category === "Business";

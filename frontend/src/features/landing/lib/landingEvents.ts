@@ -6,15 +6,6 @@ export function isFreeFoodEvent(event: Event): boolean {
 }
 
 /**
- * A networking opportunity: an event employers come to (the feed's Employers
- * on campus flag), or one run by a business club. The same rule chooses the
- * hero mosaic's networking posters (scripts/build-event-mosaic.mjs).
- */
-export function isNetworkingEvent(event: Event): boolean {
-  return event.employers_on_campus === true || event.category === "Business";
-}
-
-/**
  * Words that mark a club as broad rather than niche: student governments and
  * faculty societies, cultural and faith associations, chapters of national
  * groups, and orientation teams.

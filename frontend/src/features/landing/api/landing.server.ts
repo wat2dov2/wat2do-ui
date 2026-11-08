@@ -1,9 +1,10 @@
 import { getClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.server";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
 import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
-import { isFreeFoodEvent, isNetworkingEvent, nicheClubs } from "@/features/landing/lib/landingEvents";
+import { isFreeFoodEvent, nicheClubs } from "@/features/landing/lib/landingEvents";
 import type { Club, Event } from "@/shared/types";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
+import { isNetworkingEvent } from "@/shared/utils/event";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 /** Clubs the clubs preview shows. */
