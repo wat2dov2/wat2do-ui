@@ -1003,15 +1003,16 @@ class InstagramEmulatorControl(_ControlModel):
     audio_save_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
     # A story repost needs room to upload; below this much free space it waits.
     min_free_data_megabytes: int = Field(ge=0, le=10_000)
-    # Once per interval, Instagram is stopped on every Android user and these folders
-    # inside its data are deleted as root (the emulator runs a rooted Google APIs
-    # image), and these apps' data is cleared on these Android users.
+    # Once a day, from reclaim_hour (local time, before the morning's carousels
+    # publish), Instagram is stopped on every Android user and these folders inside its
+    # data are deleted as root (the emulator runs a rooted Google APIs image), and these
+    # apps' data is cleared on these Android users.
     instagram_cache_paths: tuple[
         Annotated[str, Field(pattern=r"^[a-z_]+(?:/[a-z_]+)*(?:/\*)?$")], ...
     ] = Field(min_length=1)
     reclaim_android_users: tuple[Annotated[int, Field(ge=1)], ...]
     reclaim_packages: tuple[Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.]+$")], ...]
-    reclaim_interval_hours: float = Field(gt=0, le=168, allow_inf_nan=False)
+    reclaim_hour: int = Field(ge=0, le=23)
     # The daily reclaim restarts the emulator and waits this long for it to boot again.
     restart_timeout_seconds: int = Field(ge=60, le=3600)
     # An account the app cannot switch to rests this long while the worker visits the
@@ -1021,9 +1022,9 @@ class InstagramEmulatorControl(_ControlModel):
     # The one worker that drives the emulator visits one account at a time. Replies
     # and post edits happen only between the action hours, follows only between the
     # follow hours (local time); otherwise it only reads, crawling Following lists in
-    # slices of this length. A visit follows at most this many accounts, or the busy
-    # count while another account's carousel waits for its song, and with nothing
-    # due the worker checks again after idle_seconds.
+    # slices of this length. A visit follows at most this many accounts, and stops
+    # following or crawling once any carousel waits for its song or the daily reclaim
+    # is due. With nothing due the worker checks again after idle_seconds.
     action_start_hour: int = Field(ge=0, le=23)
     action_end_hour: int = Field(ge=1, le=24)
     follow_start_hour: int = Field(ge=0, le=23)

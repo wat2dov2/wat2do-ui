@@ -164,6 +164,27 @@ def test_accounts_already_followed_are_confirmed_without_using_the_allowance(wor
     assert marks[3:] == [("followed", "3"), ("followed", "4")]
 
 
+def test_a_visit_stops_before_the_next_profile_when_the_worker_needs_the_emulator(world):
+    already = FollowOutcome("Following", tapped=False)
+    reader, marks = world({f"club{n}": already for n in range(20)})
+    asked = []
+
+    def stop():
+        asked.append(len(reader.followed))
+        return len(reader.followed) == 2
+
+    assert module.follow_due(object(), "utsg", 5, stop=stop) == FollowVisit(0, 2, False)
+    assert reader.followed == ["club0", "club1"]
+    assert asked == [0, 1, 2]
+
+
+def test_unfollows_stop_before_the_next_profile_when_the_worker_needs_the_emulator(world):
+    reader, _ = world()
+    visit = module.unfollow_due(object(), "utsg", 5, stop=lambda: len(reader.unfollowed) == 1)
+    assert visit == FollowVisit(1, 0, False)
+    assert reader.unfollowed == ["club0"]
+
+
 def test_a_visit_opens_a_bounded_number_of_profiles(world):
     already = FollowOutcome("Following", tapped=False)
     reader, _ = world({f"club{n}": already for n in range(100)})

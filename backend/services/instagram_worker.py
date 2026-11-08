@@ -7,7 +7,9 @@ its DMs, its unfollows and follows, and, when no other account is waiting, a sli
 its crawl.
 
 A new carousel gets its song as soon as possible, at any hour: while any account's
-carousel waits, visits do nothing but songs, and a crawl slice stops early for one.
+carousel waits, visits do nothing but songs, and unfollows, follows and crawl slices
+stop between profiles for one, or for the daily reclaim, which restarts the emulator
+before the morning's carousels publish.
 Replies happen only during the control box's action hours, follows only during its
 follow hours. The emulator's lock is held for one visit at a time, and one failing
 step never stops the others. An account the app cannot switch to rests while the
@@ -28,7 +30,13 @@ from itertools import groupby
 from core.controlbox import controlbox
 from services.instagram_accounts import school_account_username
 from services.instagram_dms import sweep
-from services.instagram_emulator.device import CONTROL, EmulatorDevice, EmulatorError, exclusive
+from services.instagram_emulator.device import (
+    CONTROL,
+    EmulatorDevice,
+    EmulatorError,
+    exclusive,
+    reclaim_due,
+)
 from services.instagram_follow import candidates, crawl, follows, scoring
 from services.instagram_publishing import music
 
@@ -61,9 +69,9 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
         for school in _visit_order(_current_user(device))
         if _switch_rested_until.get(school, moment) <= moment
     ]
-    due_music = set(music.schools_due(moment))
+    waiting = _songs_waiting(moment)
     tiers: list[tuple[list[str], bool]] = [
-        ([school for school in order if school in due_music], False)
+        ([school for school in order if school in waiting], False)
     ]
     if acting:
         tiers.append(([school for school in order if sweep.due(school, moment)], False))
@@ -121,14 +129,15 @@ def visit(
         device.reclaim_data()
         if not _switched(device, school, now):
             return
-        due_music = music.schools_due(now)
-        if school in due_music:
+        waiting = _songs_waiting(now)
+        if school in waiting:
             _step(f"music {school}", lambda: music.finish_due(device, school, now))
         # Other accounts' carousels waiting for their songs come before anything else here.
-        if set(due_music) - {school}:
+        if waiting - {school}:
             return
         if acting and sweep.due(school, now):
             _step(f"dms {school}", lambda: sweep.answer(device, school))
+        interrupt = _Interrupt()
         if following and _follows_rested_until.get(school, now) <= now:
             limit = CONTROL.follows_per_visit
             visits = []
@@ -136,33 +145,36 @@ def visit(
                 visits.append(
                     _step(
                         f"unfollows {school}",
-                        lambda: follows.unfollow_due(device, school, limit),
+                        lambda: follows.unfollow_due(device, school, limit, stop=interrupt),
                     )
                 )
-            if follows.follows_due(school):
+            if not interrupt.seen and follows.follows_due(school):
                 visits.append(
                     _step(
                         f"follows {school}",
-                        lambda: follows.follow_due(device, school, limit),
+                        lambda: follows.follow_due(device, school, limit, stop=interrupt),
                     )
                 )
-            if visits and not any(
-                isinstance(done, follows.FollowVisit) and (done.followed or done.confirmed)
-                for done in visits
+            if (
+                visits
+                and not interrupt.seen
+                and not any(
+                    isinstance(done, follows.FollowVisit) and (done.followed or done.confirmed)
+                    for done in visits
+                )
             ):
                 # Nothing went through, so the next try waits instead of looping here.
                 _follows_rested_until[school] = now + timedelta(seconds=FOLLOW.crawl_rest_seconds)
-        if crawl_slice:
+        if crawl_slice and not interrupt.seen:
             deadline = time.monotonic() + CONTROL.crawl_slice_minutes * 60
-            song_waiting = _SongWaiting()
             outcome = _step(
                 f"crawl {school}",
-                lambda: crawl.crawl_slice(device, school, deadline, stop=song_waiting),
+                lambda: crawl.crawl_slice(device, school, deadline, stop=interrupt),
             )
             if (
                 outcome != crawl.CRAWL_FINISHED
                 and time.monotonic() < deadline
-                and not song_waiting.seen
+                and not interrupt.seen
             ):
                 # The slice gave up early, usually because profiles kept failing to load.
                 _crawl_rested_until[school] = now + timedelta(seconds=FOLLOW.crawl_rest_seconds)
@@ -171,15 +183,25 @@ def visit(
         _score_in_background()
 
 
-class _SongWaiting:
-    """True once a new carousel is waiting for its song, so a crawl slice can stop for it."""
+def _songs_waiting(now: datetime) -> set[str]:
+    """Schools whose new carousel waits for its song, leaving out any account the app
+    could not switch to, so one unreachable account never holds up the others' work."""
+    return {
+        school for school in music.schools_due(now) if _switch_rested_until.get(school, now) <= now
+    }
+
+
+class _Interrupt:
+    """True once the emulator is needed for something more urgent than the visit's long
+    steps: a carousel waiting for its song, or the daily reclaim and restart. Unfollows,
+    follows and crawl slices ask it between profiles and stop for it."""
 
     def __init__(self) -> None:
         self.seen = False
 
     def __call__(self) -> bool:
         try:
-            self.seen = bool(music.schools_due(datetime.now(timezone.utc)))
+            self.seen = bool(_songs_waiting(datetime.now(timezone.utc))) or reclaim_due()
         except Exception:
             log.exception("Could not check for carousels waiting for a song")
         return self.seen
