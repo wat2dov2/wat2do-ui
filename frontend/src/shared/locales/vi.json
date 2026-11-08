@@ -354,7 +354,6 @@
     "selectSchool": "Chọn trường",
     "searchPlaceholder": "Tìm kiếm trường...",
     "noSchoolFound": "Không tìm thấy trường học.",
-    "unknownSubdomainEyebrow": "Trường học không được tìm thấy",
     "unknownSubdomainDocumentTitle": "Trường học không được tìm thấy | Wat2Do",
     "unknownSubdomainTitle": "Chúng tôi chưa có cơ sở này.",
     "unknownSubdomainDescription": "Không có trường Wat2Do nào được gán cho \"{{school}}\". Kiểm tra URL hoặc quay lại trang chính.",
@@ -691,7 +690,6 @@
     "social": "Mạng xã hội"
   },
   "notFound": {
-    "eyebrow": "Không tìm thấy trang",
     "title": "Trang này không tồn tại.",
     "description": "Liên kết có thể bị hỏng hoặc trang đã được di chuyển. Hãy quay lại và tìm việc gì đó để làm.",
     "browseEvents": "Xem sự kiện",

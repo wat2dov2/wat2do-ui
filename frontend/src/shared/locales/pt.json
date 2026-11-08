@@ -360,7 +360,6 @@
     "selectSchool": "Selecione a escola",
     "searchPlaceholder": "Pesquisar escolas...",
     "noSchoolFound": "Nenhuma escola encontrada.",
-    "unknownSubdomainEyebrow": "Escola não encontrada",
     "unknownSubdomainDocumentTitle": "Escola Não Encontrada | Wat2Do",
     "unknownSubdomainTitle": "Ainda não temos esse campus.",
     "unknownSubdomainDescription": "Não há uma escola Wat2Do mapeada para \"{{school}}\". Verifique o URL ou volte para o site principal.",
@@ -711,7 +710,6 @@
     "social": "Redes sociais"
   },
   "notFound": {
-    "eyebrow": "Página não encontrada",
     "title": "Esta página não existe.",
     "description": "O link pode estar quebrado ou a página pode ter sido movida. Volte e encontre algo para fazer.",
     "browseEvents": "Ver eventos",

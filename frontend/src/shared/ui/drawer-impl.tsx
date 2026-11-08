@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
-import { COARSE_POINTER_MEDIA } from "@/shared/hooks/useCoarsePointer"
+import { COARSE_POINTER_MEDIA, useCoarsePointer } from "@/shared/hooks/useCoarsePointer"
 import { cn } from "@/shared/lib/utils"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/shared/ui/button"
@@ -19,10 +19,16 @@ import { DrawerContentNodeContext, useDrawerPortalContainer } from "@/shared/ui/
 function Drawer({
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
+  // vaul drags a drawer from anywhere in its content, so with a mouse every
+  // attempt to select text dragged the drawer instead. `handleOnly` limits
+  // dragging to vaul's Handle, which we never render, so a mouse never drags a
+  // drawer (Escape or a click outside closes it); touch keeps swiping it closed.
+  const isCoarsePointer = useCoarsePointer()
   return (
     <DrawerPrimitive.Root
       data-slot="drawer"
       repositionInputs={false}
+      handleOnly={!isCoarsePointer}
       {...props}
     />
   )
@@ -85,6 +91,10 @@ const DrawerContent = React.forwardRef<
           onOpenAutoFocus={handleOpenAutoFocus}
           className={cn(
             "group/drawer-content fixed z-modal flex h-auto flex-col overflow-hidden bg-background",
+            // vaul's injected stylesheet makes drawers unselectable with a mouse
+            // ([data-vaul-drawer] { user-select: none }). It sits outside any
+            // cascade layer, so only an important utility wins over it.
+            "select-text!",
             "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-xl data-[vaul-drawer-direction=top]:border-b",
             "data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:left-1/2 data-[vaul-drawer-direction=bottom]:w-full data-[vaul-drawer-direction=bottom]:max-w-screen-md data-[vaul-drawer-direction=bottom]:-translate-x-1/2 data-[vaul-drawer-direction=bottom]:mt-16 data-[vaul-drawer-direction=bottom]:max-h-[85dvh] data-[vaul-drawer-direction=bottom]:rounded-t-xl data-[vaul-drawer-direction=bottom]:border-t",
             "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-sm",

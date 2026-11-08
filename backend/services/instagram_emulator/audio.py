@@ -26,6 +26,8 @@ from services.instagram_emulator.device import (
 
 _POST_URL = re.compile(r"^https://www\.instagram\.com/p/[A-Za-z0-9_-]+/$")
 _POST_OPTIONS = labels("More actions for this post")
+# Right after an account switch a post link can land on the feed instead.
+_POST_OPEN_ATTEMPTS = 2
 _EDIT = re.compile(r"^Edit$")
 _EDIT_INFO = re.compile(r"^Edit info$")
 _ADD_AUDIO = re.compile(r"^Add audio$")
@@ -33,9 +35,11 @@ _ADD_AUDIO = re.compile(r"^Add audio$")
 _AUDIO_ROW = re.compile(r"^(?:Add audio|m2_audio_primary_text)$")
 _SEARCH = re.compile(r"^Search\.\.\.$")
 _CLEAR_SEARCH = re.compile(r"^Clear text$")
-# Suggestions show before a search; result filters replace them once it runs.
+# Suggestions (a For you tab) show until a search runs; the results replace them,
+# under a Lyrics tab, a Filter button or no filter at all, depending on the account.
 _SUGGESTIONS = re.compile(r"^For you$")
-_RESULT_FILTERS = re.compile(r"^Lyrics$")
+# Results load a moment after the suggestions go.
+_RESULT_CHECKS = 3
 _TRACK = re.compile(r"^Select track (?P<label>.+)$")
 _CLIP = re.compile(r"^\d+ second clip$")
 _DONE = re.compile(r"^Done$")
@@ -124,7 +128,7 @@ def finish_post(
     if not _POST_URL.fullmatch(permalink):
         raise EmulatorError("Only an exact Instagram post can get audio")
     user = CONTROL.android_user_by_school[school]
-    device.open_instagram(user, permalink)
+    _open_post(device, user, permalink)
     _like_and_repost(device)
     if gif is not None:
         try:
@@ -133,10 +137,13 @@ def finish_post(
             # The GIF is a nice extra; it never holds up the song.
             log.warning("Could not comment a GIF on %s", permalink, exc_info=True)
     # Liking may have scrolled a tall post; open it again so its menu is in view.
-    device.open_instagram(user, permalink)
+    _open_post(device, user, permalink)
     device.tap_when(_POST_OPTIONS)
     device.tap_when(_EDIT)
     device.wait_for(_EDIT_INFO)
+    # The place goes first, while the edit screen is as it opened: a song just added
+    # grows its row, and the rows below it move under a tap read before they did.
+    tagged = place is not None and _tagged(device, place, permalink)
     audio = _scroll_to(device, _AUDIO_ROW)
     adding_song = audio.labelled(_ADD_AUDIO)
     if adding_song:
@@ -151,13 +158,24 @@ def finish_post(
     else:
         # An earlier try saved a song but failed before it was recorded.
         added = AddedTrack("", audio.text)
-    tagged = place is not None and _tagged(device, place, permalink)
     if adding_song or tagged:
         device.tap_when(_DONE)
         device.wait_until_gone(_EDIT_INFO, seconds=CONTROL.audio_save_wait_seconds)
     else:
         _discard(device)
     return added
+
+
+def _open_post(device: EmulatorDevice, user: int, permalink: str) -> None:
+    """Open the live post; a link that lands before the app is ready is opened again."""
+    for _ in range(_POST_OPEN_ATTEMPTS):
+        device.open_instagram(user, permalink)
+        try:
+            device.wait_for(_POST_OPTIONS)
+            return
+        except EmulatorError:
+            device.back()
+    raise EmulatorError("Instagram did not open the post")
 
 
 def _tagged(device: EmulatorDevice, place: PlaceTag, permalink: str) -> bool:
@@ -186,8 +204,7 @@ def _tag_location(device: EmulatorDevice, place: PlaceTag) -> bool:
     if index is None or not 0 <= index < len(places):
         _back_to_edit(device)
         return False
-    device.tap(places[index][1])
-    device.wait_for(_EDIT_INFO)
+    _tap_result(device, places[index][1], _EDIT_INFO)
     return True
 
 
@@ -280,14 +297,15 @@ def _pick_track(device: EmulatorDevice, queries: Sequence[str], choose: ChooseTr
     for number, query in enumerate(queries):
         if number:
             device.tap_when(_CLEAR_SEARCH)
-            device.wait_for(_SUGGESTIONS)
+            # An empty field shows its placeholder again, whatever the account shows below.
+            device.wait_for(_SEARCH)
         device.type_text(_typeable(query))
         tracks = _results(device)
         index = choose(query, [label for label, _ in tracks]) if tracks else None
         if index is None:
             continue
         label, node = tracks[index]
-        _select(device, node)
+        _tap_result(device, node, _CLIP)
         # The clip screen opens on Instagram's suggested part of the song.
         device.tap_when(_KEEP_CLIP)
         device.wait_for(_EDIT_INFO)
@@ -296,27 +314,33 @@ def _pick_track(device: EmulatorDevice, queries: Sequence[str], choose: ChooseTr
 
 
 def _results(device: EmulatorDevice) -> list[tuple[str, Node]]:
-    device.wait_for(_RESULT_FILTERS)
+    """The tracks the search found, in order; none when it found nothing."""
     device.wait_until_gone(_SUGGESTIONS, seconds=CONTROL.screen_wait_seconds)
-    device.pause()
-    tracks = []
-    for node in device.screen():
-        match = _TRACK.match(node.description) or _TRACK.match(node.text)
-        if match and match["label"] not in (label for label, _ in tracks):
-            tracks.append((match["label"], node))
+    tracks: list[tuple[str, Node]] = []
+    for _ in range(_RESULT_CHECKS):
+        device.pause()
+        for node in device.screen():
+            match = _TRACK.match(node.description) or _TRACK.match(node.text)
+            if match and match["label"] not in (label for label, _ in tracks):
+                tracks.append((match["label"], node))
+        if tracks:
+            break
     return tracks
 
 
-def _select(device: EmulatorDevice, track: Node) -> None:
-    # With the keyboard open, the first tap only closes it.
+def _tap_result(device: EmulatorDevice, result: Node, opens: re.Pattern[str]) -> None:
+    """Tap a search result until the screen it ``opens`` shows.
+
+    With the keyboard still open from typing the search, the first tap only closes it.
+    """
     for _ in range(2):
-        device.tap(track)
+        device.tap(result)
         try:
-            device.wait_for(_CLIP, seconds=CONTROL.screen_wait_seconds / 2)
+            device.wait_for(opens, seconds=CONTROL.screen_wait_seconds / 2)
             return
         except EmulatorError:
             continue
-    raise EmulatorError("Instagram did not open the track's clip")
+    raise EmulatorError(f"Instagram never showed {opens.pattern} for the chosen result")
 
 
 def _scroll_to(device: EmulatorDevice, pattern: re.Pattern[str]) -> Node:

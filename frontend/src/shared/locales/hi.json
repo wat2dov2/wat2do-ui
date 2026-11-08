@@ -357,7 +357,6 @@
     "selectSchool": "स्कूल चुनें",
     "searchPlaceholder": "स्कूल खोजें...",
     "noSchoolFound": "कोई स्कूल नहीं मिला।",
-    "unknownSubdomainEyebrow": "स्कूल नहीं मिला",
     "unknownSubdomainDocumentTitle": "स्कूल नहीं मिला | Wat2Do",
     "unknownSubdomainTitle": "हमारे पास अभी वह कैंपस नहीं है।",
     "unknownSubdomainDescription": "\"{{school}}\" से संबंधित कोई Wat2Do स्कूल मैप नहीं है। URL को चेक करें या मुख्य साइट पर वापस जाएं।",
@@ -701,7 +700,6 @@
     "social": "सोशल"
   },
   "notFound": {
-    "eyebrow": "पेज नहीं मिला",
     "title": "यह पेज मौजूद नहीं है।",
     "description": "हो सकता है लिंक टूटा हो या पेज हटा दिया गया हो। वापस जाएँ और करने के लिए कुछ खोजें।",
     "browseEvents": "इवेंट देखें",

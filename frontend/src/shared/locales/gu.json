@@ -357,7 +357,6 @@
     "selectSchool": "શાળું પસંદ કરો",
     "searchPlaceholder": "શાળાઓ શોધો...",
     "noSchoolFound": "કોઈ શાળા મળી નહિ.",
-    "unknownSubdomainEyebrow": "શાળા મળી નથી",
     "unknownSubdomainDocumentTitle": "શાળા મળી નથી | Wat2Do",
     "unknownSubdomainTitle": "અમારી પાસે તે કેમ્પસ હજુ નથી.",
     "unknownSubdomainDescription": "\"{{school}}\" સાથે જોડાયેલી કોઈ Wat2Do શાળા નથી. URL તપાસો અથવા મુખ્ય સાઇટ પર પાછા જાઓ.",
@@ -701,7 +700,6 @@
     "social": "સોશિયલ"
   },
   "notFound": {
-    "eyebrow": "પેજ મળ્યું નથી",
     "title": "આ પેજ અસ્તિત્વમાં નથી.",
     "description": "કદાચ લિંક તૂટેલી હોય અથવા પેજ ખસેડાયું હોય. પાછા જાઓ અને કરવા જેવું કંઈક શોધો.",
     "browseEvents": "ઇવેન્ટ્સ જુઓ",

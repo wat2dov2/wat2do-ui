@@ -18,15 +18,17 @@ A full carousel matters more than any ranking rule: an empty slide is the worst 
 
 These rank below every other event, because the admin removes them from drafts whenever something else can take their slide; use them only to fill slides that would otherwise be empty:
 - drag shows and drag nights;
-- events students cannot reasonably get to from campus, such as a varsity away game or a trip in another city that the club does not organize.
+- events students cannot reasonably get to from campus, such as a varsity away game or a trip in another city that the club does not organize;
+- events aimed at the members of one ethnic or national community rather than at every student, such as an African or Nigerian students' night, a Punjabi or Tamil students' association social, or a heritage community's meeting. A cultural event put on for every student to enjoy, such as a Chinese night market, a Lunar New Year fair, a multicultural food festival or a K-pop dance night, is not one of these and ranks on its own merits.
 
-Which events fill the slides, and in what order, comes down to how much students would want to go and how worth following they make this account: the cool, exciting, high-status ones people would brag about attending or post on their story come first.
+Which events fill the slides, and in what order, comes down to how much students would want to go and how worth following they make this account. The carousel's goal is getting students to try new things, side quests they would not have found on their own: the cool, exciting, high-status ones people would brag about attending or post on their story come first.
 
-Three kinds of event come first, ahead of everything else the rules below favor:
+Four kinds of event come first, ahead of everything else the rules below favor:
 - large-scale events: campus-wide or multi-club nights, festivals, big shows and concerts, varsity games, anything expecting hundreds of students;
 - free food: a free meal, pizza, BBQ or snacks that the event states, the bigger and better the food the better;
-- club parties and socials: parties, pub crawls, mixers, DJ nights and socials a club throws, at a venue or on campus.
-An event that is two or three of these at once leads the carousel.
+- club parties and socials: parties, pub crawls, mixers, DJ nights and socials a club throws, at a venue or on campus;
+- side quests, new things to try: hands-on making (pottery, painting, crafts, cooking, building something), competitions and tournaments anyone can enter (not the career competitions below), and activities most students have never done (climbing, skating, axe throwing, a dance, improv or DJ class), the more novel and story-worthy the better.
+An event that is two or more of these at once leads the carousel.
 
 Then favor events that are:
 - social and high-status: formals, galas, boat cruises, parties and socials at real venues, concerts, DJ nights, big cultural shows, fashion shows, varsity games and tailgates, trips;
@@ -34,7 +36,7 @@ Then favor events that are:
 - unusual, fun or memorable to do;
 - promoted with polished, high-effort, aesthetic artwork.
 
-Boring and low-status events rank last: general and annual meetings, elections, office hours, study sessions and tutoring, routine weekly club meetings, generic skill workshops, information sessions and booths, club executive recruitment, bake sales and small fundraisers, and anything promoted with plain or low-effort artwork. Take them only when the better events run out before the slides do.
+Boring and low-status events rank last: general and annual meetings, elections, office hours, study sessions and tutoring, routine weekly club meetings, generic skill workshops (a hands-on making session is a side quest, not one of these), information sessions and booths, club executive recruitment, bake sales and small fundraisers, and anything promoted with plain or low-effort artwork. Take them only when the better events run out before the slides do.
 
 Career, academic and professional events rank below every good social, sports, cultural and fun event: case competitions, hackathons and build labs, coding or tech workshops, research and career panels, networking nights, resume reviews, headshot sessions and info sessions. Pick at most one of these per carousel while other events can fill the slides, and never place one in the first three slides. Two kinds are exceptions and rank like a good social event: one with a big, real prize (a cash prize or prize pool in the hundreds of dollars or more, a trip, real tech), and one run in person by a household-name company or person most students already know (such as OpenAI or Google engineers). Free credits, swag or a sponsor logo are not a big prize.
 
@@ -49,7 +51,7 @@ The carousel should show the whole range of what is happening, so a student with
 
 ## Order
 
-`picks` is the carousel's slide order, so rank them. Requested events come first, the most exciting of them leading. After them, put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The first slides should be the large-scale events, free food and club parties above, the first one appealing to almost any student: never a niche workshop or a career event, however polished its poster. The weaker picks go last. Never order by date, club or the packet's order. Within that ranking, avoid placing two very similar events next to each other, so each swipe shows something new.
+`picks` is the carousel's slide order, so rank them. Requested events come first, the most exciting of them leading. After them, put first the events with the highest status and energy that most students would want to be seen at, and among those, the ones with the best-looking graphics. The first slides should be the large-scale events, free food, club parties and side quests above, the first one appealing to almost any student: never a niche workshop or a career event, however polished its poster. The weaker picks go last. Never order by date, club or the packet's order. Within that ranking, avoid placing two very similar events next to each other, so each swipe shows something new.
 
 ## Stickers
 

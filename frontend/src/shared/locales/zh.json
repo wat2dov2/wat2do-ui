@@ -354,7 +354,6 @@
     "selectSchool": "选择学校",
     "searchPlaceholder": "搜索学校...",
     "noSchoolFound": "未找到学校。",
-    "unknownSubdomainEyebrow": "未找到学校",
     "unknownSubdomainDocumentTitle": "未找到学校 | Wat2Do",
     "unknownSubdomainTitle": "我们还没有这个校园。",
     "unknownSubdomainDescription": "Wat2Do 没有映射到“{{school}}”的学校。请检查网址，或返回主站。",
@@ -691,7 +690,6 @@
     "social": "社交媒体"
   },
   "notFound": {
-    "eyebrow": "页面未找到",
     "title": "此页面不存在。",
     "description": "链接可能已失效，或页面已被移动。返回看看有什么活动吧。",
     "browseEvents": "浏览活动",

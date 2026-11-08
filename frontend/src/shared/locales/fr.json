@@ -360,7 +360,6 @@
     "selectSchool": "Sélectionner une école",
     "searchPlaceholder": "Rechercher des écoles...",
     "noSchoolFound": "Aucune école trouvée.",
-    "unknownSubdomainEyebrow": "École introuvable",
     "unknownSubdomainDocumentTitle": "École introuvable | Wat2Do",
     "unknownSubdomainTitle": "Nous n'avons pas encore ce campus.",
     "unknownSubdomainDescription": "Il n'y a pas d'école Wat2Do associée à \"{{school}}\". Vérifiez URL ou revenez au site principal.",
@@ -711,7 +710,6 @@
     "social": "Réseaux sociaux"
   },
   "notFound": {
-    "eyebrow": "Page introuvable",
     "title": "Cette page n'existe pas.",
     "description": "Le lien est peut-être rompu ou la page a été déplacée. Revenez en arrière pour trouver quoi faire.",
     "browseEvents": "Voir les événements",

@@ -354,7 +354,6 @@
     "selectSchool": "選擇學校",
     "searchPlaceholder": "搜尋學校…",
     "noSchoolFound": "未找到學校。",
-    "unknownSubdomainEyebrow": "找不到學校",
     "unknownSubdomainDocumentTitle": "找不到學校 | Wat2Do",
     "unknownSubdomainTitle": "我哋仲未有嗰個校園。",
     "unknownSubdomainDescription": "未有 Wat2Do 學校對應「{{school}}」。請檢查 URL 或返回主頁面。",
@@ -691,7 +690,6 @@
     "social": "社交平台"
   },
   "notFound": {
-    "eyebrow": "搵唔到頁面",
     "title": "呢個頁面唔存在。",
     "description": "條連結可能壞咗，或者頁面已經搬咗。返去搵啲嘢做啦。",
     "browseEvents": "睇活動",

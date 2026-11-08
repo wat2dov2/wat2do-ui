@@ -135,6 +135,42 @@ def test_tries_songs_until_one_matches_then_saves_the_post(screens) -> None:
     ]
 
 
+@pytest.mark.parametrize("filters", [("Lyrics",), ("Filter",), ()])
+def test_results_are_read_whatever_filters_the_account_shows(screens, filters) -> None:
+    # Accounts show a Lyrics tab, a Filter button or nothing above the results.
+    results = _screen(
+        "Clear text",
+        *filters,
+        "Select track After Hours (Live) by The Weeknd,4:27",
+        "Select track After Hours by The Weeknd,6:01",
+    )
+    device = screens(SUGGESTIONS, results)
+    device.type_text("the weeknd after hours")
+    assert [label for label, _ in module._results(device)] == [
+        "After Hours (Live) by The Weeknd,4:27",
+        "After Hours by The Weeknd,6:01",
+    ]
+
+
+def test_a_search_that_finds_nothing_has_no_results(screens) -> None:
+    device = screens(SUGGESTIONS, _screen("Clear text", "No results"))
+    device.type_text("a song nobody has")
+    assert module._results(device) == []
+
+
+def test_a_cleared_search_waits_for_the_empty_field_not_the_suggestions(screens) -> None:
+    # Some accounts never show For you again after Clear text.
+    cleared = _screen("Search...", "Trending")
+    device = screens(SUGGESTIONS, SUGGESTIONS, NO_MATCH, cleared, RESULTS, CLIP, EDITED)
+
+    def choose(query, tracks):
+        return 1 if query == "the weeknd after hours" else None
+
+    added = module._pick_track(device, ["beyonce halo", "the weeknd after hours"], choose)
+    assert added.track == "After Hours by The Weeknd,6:01"
+    assert device.typed == ["beyonce halo", "the weeknd after hours"]
+
+
 def test_no_matching_song_discards_the_edit(screens) -> None:
     device = screens(
         HOME,
@@ -191,6 +227,20 @@ def test_only_exact_post_urls_get_audio(screens, url) -> None:
     assert device.taps == []
 
 
+def test_a_post_link_that_lands_on_the_feed_is_opened_again(screens) -> None:
+    # Right after an account switch the link can land on the home feed instead.
+    device = screens(HOME, HOME, HOME, POST_PAGE)
+    module._open_post(device, 0, POST)
+    assert device.taps == ["back"]
+
+
+def test_a_post_that_never_opens_is_an_error(screens) -> None:
+    device = screens(HOME)
+    with pytest.raises(EmulatorError, match="did not open the post"):
+        module._open_post(device, 0, POST)
+    assert device.taps == ["back"] * module._POST_OPEN_ATTEMPTS
+
+
 def test_an_accounts_first_repost_closes_instagrams_note(screens) -> None:
     device = screens(LIKED_PAGE, FIRST_REPOST, LIKED_PAGE, reposted=(False, True))
     module._like_and_repost(device)
@@ -236,8 +286,8 @@ WATERLOO = module.PlaceTag(
 )
 
 
-def _song_then_place(*after_song):
-    """Like, repost and pick a song on the first try, then show ``after_song``."""
+def _edit_with_place(*after_place):
+    """Like and repost, open Edit and tag the place, then show ``after_place``."""
     return (
         HOME,
         POST_PAGE,
@@ -245,57 +295,63 @@ def _song_then_place(*after_song):
         LIKED_PAGE,
         LIKED_PAGE,
         MENU,
-        EDIT_INFO_AUDIO,
-        SUGGESTIONS,
-        SUGGESTIONS,
-        RESULTS,
-        CLIP,
-        EDITED,
-        *after_song,
+        _edit_rows("Add audio", "Add location"),
+        LOCATION_SEARCH,
+        LOCATION_SEARCH,
+        PLACES,
+        *after_place,
     )
 
 
-def test_the_school_place_is_tagged_in_the_same_edit_as_the_song(screens) -> None:
+# Picking After Hours from Add audio, back to the edit screen with the song.
+SONG = (SUGGESTIONS, SUGGESTIONS, RESULTS, CLIP, EDITED)
+
+
+def test_the_school_place_is_tagged_before_the_song_in_the_same_edit(screens) -> None:
     device = screens(
-        *_song_then_place(
-            _edit_rows("After Hours", "Add location"),
-            LOCATION_SEARCH,
-            LOCATION_SEARCH,
-            PLACES,
-            _edit_rows("After Hours", "University of Waterloo"),
-            POST_PAGE,
-        )
+        *_edit_with_place(_edit_rows("Add audio", "University of Waterloo"), *SONG, POST_PAGE)
     )
     added = module.finish_post(
         device, "uwaterloo", POST, ["the weeknd after hours"], lambda *_: 1, place=WATERLOO
     )
     assert added.track == "After Hours by The Weeknd,6:01"
-    assert device.typed == ["the weeknd after hours", "University of Waterloo"]
-    assert device.taps[-5:] == [
-        "action_bar_button_action",
+    assert device.typed == ["University of Waterloo", "the weeknd after hours"]
+    assert device.taps[-8:] == [
         "Add location",
         "row_search_edit_text",
         "University of Waterloo",
+        "Add audio",
+        "Search...",
+        "Select track After Hours by The Weeknd,6:01",
+        "action_bar_button_action",
         "Done",
     ]
 
 
-def test_no_place_for_the_school_still_saves_the_song(screens) -> None:
-    device = screens(
-        *_song_then_place(
-            _edit_rows("After Hours", "Add location"),
-            LOCATION_SEARCH,
-            LOCATION_SEARCH,
-            PLACES,
-            _edit_rows("After Hours", "Add location"),
-            POST_PAGE,
-        )
-    )
+def test_no_place_for_the_school_still_adds_and_saves_the_song(screens) -> None:
+    device = screens(*_edit_with_place(_edit_rows("Add audio", "Add location"), *SONG, POST_PAGE))
     nowhere = module.PlaceTag("University of Waterloo", lambda name, places: None)
-    module.finish_post(
+    added = module.finish_post(
         device, "uwaterloo", POST, ["the weeknd after hours"], lambda *_: 1, place=nowhere
     )
-    assert device.taps[-2:] == ["back", "Done"]
+    assert added.track == "After Hours by The Weeknd,6:01"
+    assert device.taps[-6:-4] == ["back", "Add audio"]
+    assert device.taps[-1] == "Done"
+
+
+def test_a_place_tapped_while_the_keyboard_is_open_is_tapped_again(screens) -> None:
+    # The first tap on the place only closes the keyboard left open by the search.
+    device = screens(
+        *_edit_with_place(
+            PLACES, _edit_rows("Add audio", "University of Waterloo"), *SONG, POST_PAGE
+        )
+    )
+    module.finish_post(
+        device, "uwaterloo", POST, ["the weeknd after hours"], lambda *_: 1, place=WATERLOO
+    )
+    assert device.taps.count("University of Waterloo") == 2
+    assert "back" not in device.taps
+    assert device.taps[-1] == "Done"
 
 
 def test_a_post_with_its_song_and_place_is_left_as_it_is(screens) -> None:

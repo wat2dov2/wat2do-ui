@@ -50,6 +50,8 @@ const badgeVariants = cva(
         sm: "px-1.5 py-px text-[9px] font-medium rounded-lg",
         md: "px-2 py-0.5 text-[11px] font-bold rounded-xl",
         lg: "px-2.5 py-1 text-xs font-bold rounded-xl",
+        // Large type in a box no taller than a line of card text, so badges stacked beside text lines never outgrow them.
+        stacked: "h-4.5 px-2.5 text-xs font-bold leading-none rounded-xl",
         xl: "px-3 py-1.5 text-sm font-bold rounded-xl",
         // Large on display surfaces such as the landing hero, compact on phones.
         display: "px-2.5 py-1 text-xs font-bold rounded-xl sm:px-3 sm:py-1 sm:text-sm",

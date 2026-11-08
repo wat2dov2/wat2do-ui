@@ -354,7 +354,6 @@
     "selectSchool": "Select school",
     "searchPlaceholder": "Search schools...",
     "noSchoolFound": "No school found.",
-    "unknownSubdomainEyebrow": "School not found",
     "unknownSubdomainDocumentTitle": "School Not Found | Wat2Do",
     "unknownSubdomainTitle": "We do not have that campus yet.",
     "unknownSubdomainDescription": "There is no Wat2Do school mapped to \"{{school}}\". Check the URL or head back to the main site.",
@@ -691,7 +690,6 @@
     "social": "Social"
   },
   "notFound": {
-    "eyebrow": "Page not found",
     "title": "This page does not exist.",
     "description": "The link may be broken or the page may have moved. Head back and find something to do.",
     "browseEvents": "Browse events",

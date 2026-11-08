@@ -29,6 +29,9 @@ const EMPTY_BADGES: readonly CardBadge[] = [];
 /** A badge's icon steps up with the badge. */
 const BADGE_ICON_SIZE_CLASS = { sm: "size-2.5", lg: "size-3.5" } as const;
 
+/** Cards stack their badges beside the date, time and location, so a large badge is no taller than one of those lines. */
+const CARD_BADGE_SIZE = { sm: "sm", lg: "stacked" } as const;
+
 interface EventCardBadgeProps {
   badge: CardBadge;
   interactive: boolean;
@@ -55,7 +58,7 @@ function EventCardBadge({ badge, interactive, className }: EventCardBadgeProps) 
     return (
       <Badge
         variant="outline"
-        size={size}
+        size={CARD_BADGE_SIZE[size]}
         role={iconOnly ? "img" : undefined}
         aria-label={iconOnly ? badge.text : undefined}
         className={badgeClassName}
@@ -66,7 +69,7 @@ function EventCardBadge({ badge, interactive, className }: EventCardBadgeProps) 
   }
   return (
     <TapTooltip content={badge.tooltip}>
-      <Badge asChild variant="outline" size={size} className={badgeClassName}>
+      <Badge asChild variant="outline" size={CARD_BADGE_SIZE[size]} className={badgeClassName}>
         <button type="button" aria-label={iconOnly ? badge.text : undefined}>{face}</button>
       </Badge>
     </TapTooltip>
@@ -82,7 +85,9 @@ const CONTENT_STACK_CLASS = "flex h-full flex-1 flex-col gap-2";
 const TITLE_CLASS = "line-clamp-2 text-[15px] font-semibold leading-[1.1]";
 const STATS_CLASS = "mt-0.5 block text-[11px] font-medium leading-none";
 const DESCRIPTION_CLASS = "mt-2 line-clamp-2 text-xs leading-relaxed";
-const METADATA_CLASS = "mt-auto flex min-w-0 items-end justify-between gap-1";
+// The date, time and location follow the title at the stack's gap; a card stretched
+// to its row's tallest neighbour keeps the spare height below them, not above.
+const METADATA_CLASS = "flex min-w-0 items-end justify-between gap-1";
 const METADATA_LINES_CLASS = "min-w-0 flex-1 space-y-0.5";
 const METADATA_LINE_CLASS = "flex min-w-0 items-center gap-1 text-[13px]";
 
@@ -262,13 +267,14 @@ export function EventCardContent({
                * tea") ate the row and squeezed the date, time and location
                * beside it down to a few characters each. Two-fifths of the row is the
                * most this column may claim; past that the label ellipsises.
-               * The badges sit in a wrapping row rather than a stack, so they stay
-               * within the metadata lines beside them: a card is as tall with three
-               * badges as with none, and its loading skeleton matches either way.
+               * The badges stack, each no taller than a metadata line, so three of them
+               * (58 px) stay within the date, time and location beside them (62.5 px):
+               * a card is as tall with three badges as with none, and its loading
+               * skeleton matches either way.
                */
               <div
                 data-slot="event-card-badges"
-                className="flex min-w-0 max-w-[40%] shrink flex-row flex-wrap content-start items-start justify-end gap-0.5"
+                className="flex min-w-0 max-w-[40%] shrink flex-col items-end gap-0.5"
               >
                 {badges.map((badge) => (
                   <EventCardBadge key={badge.text} badge={badge} interactive={interactive} className={badgeClassName} />
