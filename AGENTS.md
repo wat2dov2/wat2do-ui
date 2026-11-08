@@ -138,6 +138,7 @@ the school's story, and only then does the thread get the reply.
 The emulator finds every control by its accessibility label, taps at a random point
 inside it after a random pause, types one character at a time, and never types a
 password.
+It reads each screen through `ScreenReader.java` (`backend/services/instagram_emulator`), `uiautomator dump` kept running while the emulator is held, rebuilt into the committed `screen-reader.jar` by `scripts/build_screen_reader.py`.
 Each reply is confirmed by seeing it appear in the thread.
 The emulator also likes, reposts and adds music to our own carousels after the API
 publishes them, since the API can do none of these: on the school's next visit the
