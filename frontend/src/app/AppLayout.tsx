@@ -23,7 +23,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         {children}
       </PageFrame>
 
-      <div className="pointer-events-none fixed right-2 bottom-4 z-50 sm:right-4">
+      {/* Flex, so the wrapper has no line box and is always exactly its
+          button's size. As a plain block it took the line height and font
+          metrics it inherits, and the corner moved as they settled. */}
+      <div className="pointer-events-none fixed right-2 bottom-4 z-50 flex sm:right-4">
         <BackToTopButton />
       </div>
     </div>
