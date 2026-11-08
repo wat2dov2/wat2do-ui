@@ -82,6 +82,7 @@
   "navigation": {
     "events": "Sự kiện",
     "submit": "Gửi",
+    "signInRequired": "Cần đăng nhập",
     "clubs": "Tổ chức",
     "positions": "Vị trí",
     "myEvents": "Sự kiện của tôi",

@@ -82,6 +82,7 @@
   "navigation": {
     "events": "이벤트",
     "submit": "제출",
+    "signInRequired": "로그인 필요",
     "clubs": "조직",
     "positions": "직책",
     "myEvents": "내 이벤트",

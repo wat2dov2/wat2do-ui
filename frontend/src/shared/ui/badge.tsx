@@ -6,7 +6,7 @@ import { cn } from "@/shared/lib/utils"
 
 // A badge that is a link or button shows focus the way Button does: for the keyboard, never after a tap or click.
 const badgeVariants = cva(
-  "inline-flex w-fit max-w-full items-center border outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+  "inline-flex w-fit max-w-full items-center gap-1 border outline-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
   {
     variants: {
       variant: {

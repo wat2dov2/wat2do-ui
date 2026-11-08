@@ -82,6 +82,7 @@
   "navigation": {
     "events": "Events",
     "submit": "Submit",
+    "signInRequired": "Sign-in required",
     "clubs": "Clubs",
     "positions": "Positions",
     "myEvents": "My Events",

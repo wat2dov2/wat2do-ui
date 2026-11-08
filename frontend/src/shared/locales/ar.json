@@ -97,6 +97,7 @@
   "navigation": {
     "events": "الأحداث",
     "submit": "إرسال",
+    "signInRequired": "يتطلب تسجيل الدخول",
     "clubs": "المنظمات",
     "positions": "المناصب",
     "myEvents": "فعالياتي",

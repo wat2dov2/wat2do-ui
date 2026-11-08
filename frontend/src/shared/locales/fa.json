@@ -85,6 +85,7 @@
   "navigation": {
     "events": "رویدادها",
     "submit": "ثبت",
+    "signInRequired": "نیاز به ورود",
     "clubs": "سازمان‌ها",
     "positions": "موقعیت‌ها",
     "myEvents": "رویدادهای من",

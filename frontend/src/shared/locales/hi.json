@@ -85,6 +85,7 @@
   "navigation": {
     "events": "घटनाएँ",
     "submit": "जमा करें",
+    "signInRequired": "साइन इन आवश्यक",
     "clubs": "संगठन",
     "positions": "पद",
     "myEvents": "मेरे इवेंट",

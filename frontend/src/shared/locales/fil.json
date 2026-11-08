@@ -85,6 +85,7 @@
   "navigation": {
     "events": "Mga Kaganapan",
     "submit": "Magsumite",
+    "signInRequired": "Kailangang mag-sign in",
     "clubs": "Mga organisasyon",
     "positions": "Mga posisyon",
     "myEvents": "Aking mga event",

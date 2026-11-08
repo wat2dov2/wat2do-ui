@@ -782,7 +782,7 @@ function FraudIndicator({ payout }: { payout: AdminPosterPayout }) {
   return (
     <Badge
       variant="outline"
-      className="gap-1 border-destructive/30 bg-destructive/10 text-destructive"
+      className="border-destructive/30 bg-destructive/10 text-destructive"
     >
       <ShieldAlert className="size-3.5" />
       {t("admin.posterPayouts.fraudFlagged")}

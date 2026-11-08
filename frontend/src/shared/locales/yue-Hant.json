@@ -82,6 +82,7 @@
   "navigation": {
     "events": "活動",
     "submit": "提交",
+    "signInRequired": "需要登入",
     "clubs": "組織",
     "positions": "職位",
     "myEvents": "我的活動",

@@ -91,6 +91,7 @@
   "navigation": {
     "events": "Wydarzenia",
     "submit": "Prześlij",
+    "signInRequired": "Wymaga zalogowania",
     "clubs": "Organizacje",
     "positions": "Stanowiska",
     "myEvents": "Moje wydarzenia",

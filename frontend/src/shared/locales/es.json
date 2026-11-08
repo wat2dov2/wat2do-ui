@@ -88,6 +88,7 @@
   "navigation": {
     "events": "Eventos",
     "submit": "Enviar",
+    "signInRequired": "Requiere iniciar sesión",
     "clubs": "Organizaciones",
     "positions": "Posiciones",
     "myEvents": "Mis Eventos",

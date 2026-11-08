@@ -85,6 +85,7 @@
   "navigation": {
     "events": "Veranstaltungen",
     "submit": "Einreichen",
+    "signInRequired": "Anmeldung erforderlich",
     "clubs": "Organisationen",
     "positions": "Positionen",
     "myEvents": "Meine Veranstaltungen",
