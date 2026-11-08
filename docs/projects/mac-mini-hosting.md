@@ -64,6 +64,8 @@ The R2 bucket, `media.wat2do.io`, tiered cache, the CAA record and the certifica
 Per-visitor limits (sign-in codes, reports, interaction caps, QR scan hashes) need the visitor's address, and the API trusts `X-Wat2Do-Viewer-Ip` only from loopback (`rust/src/api/client_ip.rs`), where Caddy is its only caller.
 CloudFront's viewer-request functions set `X-Wat2Do-Viewer-Ip` from the connection, replacing whatever the visitor sent, and the API origin adds `X-Wat2Do-Origin-Verify` (`origin_verify_secret`).
 On `api.wat2do.io`, Caddy keeps `X-Wat2Do-Viewer-Ip` only when `X-Wat2Do-Origin-Verify` matches its `ORIGIN_VERIFY_SECRET` (`~/wat2do-data/config/caddy.env`), and strips the secret before the API; any other request gets `CF-Connecting-IP`, whatever it sent.
+Until the website moves to AWS (below), Vercel serves it, and `frontend/src/proxy.ts` does CloudFront's part: it sends both headers with every `/api` request Vercel forwards, taking the visitor from `CF-Connecting-IP` only when Vercel's `x-real-ip` is a Cloudflare address (`backend/controlbox/viewer_ip.json`).
+Only Vercel's build uses that proxy, its address list and the `.vercelignore` that uploads just `frontend/` and `backend/controlbox`, so they live in `infra/vercel/`, and the CI/CD deploy job copies them into its checkout right before `vercel deploy`, failing when one is missing.
 Server rendering never calls the API on a visitor's behalf (its reads are public snapshots and details), so its requests carry no visitor address.
 
 ### Discovery snapshots
@@ -99,7 +101,7 @@ Since then a page view needs no function at all (cached pages, stored thumbnails
 4. Put the R2 key and `STORAGE_*` settings in `backend.env` and the runtime checkout's `.env`, and `wat2do-api`'s AWS key for SES.
 5. Deploy the branch's website (`deploy.sh`'s upload steps) and load-test it through CloudFront before any DNS change (`curl --resolve wat2do.io:443:<CloudFront address>`).
 6. Merge: the deploy job applies the migration that moves stored media URLs to `https://media.wat2do.io/`, deploys the API and the website, and `install.py io.wat2do.caddy io.wat2do.api` reloads Caddy (API-only) and gives the API its 30 second stop timeout.
-7. Copy media written since step 3 once more, point `wat2do.io`, `www` and `*` in Cloudflare at the distribution's domain (DNS-only), then delete `~/wat2do-data/discovery-cache`, `web.env`, the `io.wat2do.web` job, the Vercel project and the IAM user `wat2do-ses-sender`.
+7. Copy media written since step 3 once more, point `wat2do.io`, `www` and `*` in Cloudflare at the distribution's domain (DNS-only), then delete `~/wat2do-data/discovery-cache`, `web.env`, the `io.wat2do.web` job, the Vercel project with `infra/vercel/` and the deploy job's Vercel step, and the IAM user `wat2do-ses-sender`.
 
 ## Status
 
