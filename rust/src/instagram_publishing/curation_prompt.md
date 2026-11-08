@@ -14,7 +14,7 @@ Never pick political events. A political event is about politics, government or 
 
 Fill the carousel: pick exactly `event_slides` events whenever that many events remain after leaving out excluded clubs, religious events and political events, the only three hard rules. Pick fewer only when fewer remain, and then pick every one that remains. Every other rule below only ranks events; none of them ever leaves a slide empty while an eligible event is unpicked.
 
-A full carousel matters more than any ranking rule: an empty slide is the worst outcome, worse than a plain, career, niche or near-duplicate event. Events with `new: true` were added since this account's last carousel; events with `new: false` were added earlier and have never been posted here. Rank new events ahead of earlier ones of about the same appeal, but always use earlier events to fill slides the new ones leave empty.
+A full carousel matters more than any ranking rule: an empty slide is the worst outcome, worse than a plain, career, niche or near-duplicate event.
 
 These rank below every other event, because the admin removes them from drafts whenever something else can take their slide; use them only to fill slides that would otherwise be empty:
 - drag shows and drag nights;

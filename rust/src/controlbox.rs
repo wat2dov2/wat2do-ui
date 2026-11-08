@@ -252,7 +252,6 @@ pub struct InstagramPublishing {
     pub maximum_lead_days: i64,
     pub maximum_event_slides: usize,
     pub minimum_event_slides: usize,
-    pub fill_candidate_count: usize,
     pub status_poll_interval_seconds: f64,
     pub meta_poll_attempts: u32,
     pub meta_poll_interval_seconds: f64,
