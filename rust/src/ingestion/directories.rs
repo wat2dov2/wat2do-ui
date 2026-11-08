@@ -17,7 +17,6 @@ use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
 use chrono::{DateTime, NaiveDateTime, Offset, TimeDelta, TimeZone, Utc};
-use chrono_tz::Tz;
 use fs2::FileExt;
 use futures_util::{StreamExt, stream};
 use serde_json::{Map, Value, json};
@@ -29,6 +28,7 @@ use crate::claude::{self, Agent, Limited, claude_environment, remove_leftovers};
 use crate::controlbox::INGESTION;
 use crate::pyjson::dumps;
 use crate::schools;
+use crate::time_zones::Tz;
 use crate::urls::urlsplit;
 
 pub const WORKDIR_PREFIX: &str = "wat2do-directory-";

@@ -10,7 +10,6 @@ use std::collections::{HashMap, HashSet};
 
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Duration, NaiveDate, Utc};
-use chrono_tz::Tz;
 use serde_json::{Map, Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -28,6 +27,7 @@ use crate::api::routes::instagram_publishing::captions::{
 use crate::constants::EVENT_CATEGORIES;
 use crate::controlbox::INSTAGRAM_PUBLISHING;
 use crate::text::python_strip;
+use crate::time_zones::Tz;
 
 /// A packet whose school has no draft today yet.
 pub const NEEDS_REVIEW: &str = "needs_review";

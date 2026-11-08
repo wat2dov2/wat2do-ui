@@ -16,7 +16,6 @@ base64 = "0.22"
 bytes = "1"
 caseless = "0.2"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
-chrono-tz = "0.10"
 clap = { version = "4", features = ["derive"] }
 dotenvy = "0.15"
 fastrand = "2"
@@ -32,6 +31,9 @@ hyper-util = { version = "0.1", features = ["client-legacy", "http1", "tokio"] }
 idna = "1"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp"] }
 indexmap = { version = "2", features = ["serde"] }
+# Zone rules come only from the bundled tz database (see src/time_zones.rs).
+jiff = { version = "0.2", default-features = false, features = ["std", "tz-fat", "tzdb-bundle-always", "perf-inline"] }
+jiff-tzdb = "0.1.9"
 jpeg-encoder = "0.7.1"
 jsonwebtoken = { version = "11", default-features = false, features = ["aws_lc_rs"] }
 libc = "0.2"

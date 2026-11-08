@@ -13,11 +13,12 @@ use std::time::Duration;
 
 use anyhow::{Result, anyhow, bail};
 use chrono::{DateTime, Datelike, NaiveDate, NaiveTime, TimeDelta, TimeZone, Utc};
-use chrono_tz::Tz;
 use regex::Regex;
 use serde_json::{Map, Value};
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
+
+use crate::time_zones::Tz;
 
 pub struct Agent<'a> {
     /// Names the agent in its errors, such as "Ingestion agent".

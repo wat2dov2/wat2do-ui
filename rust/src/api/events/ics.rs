@@ -4,13 +4,13 @@
 //! (never splitting a backslash escape), local times with `TZID` and UTC as `Z`.
 
 use chrono::{DateTime, Utc};
-use chrono_tz::Tz;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::going::GoingSelection;
 use crate::api::errors::ApiError;
 use crate::db::read_with_retry;
+use crate::time_zones::Tz;
 
 /// `_PRODID`.
 const PRODID: &str = "-//wat2do//calendar feed//EN";

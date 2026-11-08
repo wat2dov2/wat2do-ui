@@ -5,12 +5,14 @@
 //! "Rust database tests" job). Every test makes its own school and sources, so
 //! the tests run in parallel without seeing each other's rows.
 
+use chrono::{DateTime, NaiveDateTime, TimeDelta, TimeZone, Utc};
 use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::agent::ingest;
 use crate::api::test_database::database;
+use crate::time_zones::Tz;
 
 /// A school of its own, so no other test's listings meet this one's.
 async fn school(db: &PgPool) -> (i32, String) {
@@ -81,4 +83,59 @@ async fn a_retry_settles_the_posters_its_cut_short_run_left() {
 
     assert_eq!(poster(&db, left).await, None);
     assert_eq!(poster(&db, other).await, Some(other_poster));
+}
+
+/// The agent converts every school time with `local_to_utc` and reads it back
+/// with `utc_to_local`; both must agree with the tz database Rust bundles,
+/// whatever tz database this Postgres was built with.
+#[tokio::test]
+async fn school_times_in_postgres_follow_the_bundled_tz_database() {
+    let Some(db) = database() else { return };
+    let mut zones: Vec<String> =
+        sqlx::query_scalar("SELECT DISTINCT timezone::text FROM public.schools")
+            .fetch_all(&db)
+            .await
+            .unwrap();
+    zones.extend(["America/Vancouver", "America/Edmonton", "America/Winnipeg"].map(String::from));
+    // Every six hours through three winters, so each transition and each
+    // missing fall-back is crossed.
+    let start: DateTime<Utc> = "2025-10-01T00:00:00Z".parse().unwrap();
+    let instants: Vec<DateTime<Utc>> = (0..4 * 365 * 3)
+        .map(|step| start + TimeDelta::hours(6 * step))
+        .collect();
+    for name in zones {
+        let zone: Tz = name.parse().unwrap();
+        let walls: Vec<NaiveDateTime> = sqlx::query_scalar(
+            "SELECT public.utc_to_local(instant, $2) FROM unnest($1::timestamptz[]) AS instant",
+        )
+        .bind(&instants)
+        .bind(&name)
+        .fetch_all(&db)
+        .await
+        .unwrap();
+        let expected: Vec<NaiveDateTime> = instants
+            .iter()
+            .map(|instant| instant.with_timezone(&zone).naive_local())
+            .collect();
+        assert_eq!(walls, expected, "utc_to_local in {name}");
+
+        // Wall times that exist exactly once read back to their instant.
+        let unambiguous: Vec<NaiveDateTime> = expected
+            .into_iter()
+            .filter(|wall| zone.from_local_datetime(wall).single().is_some())
+            .collect();
+        let back: Vec<DateTime<Utc>> = sqlx::query_scalar(
+            "SELECT public.local_to_utc(wall, $2) FROM unnest($1::timestamp[]) AS wall",
+        )
+        .bind(&unambiguous)
+        .bind(&name)
+        .fetch_all(&db)
+        .await
+        .unwrap();
+        let expected: Vec<DateTime<Utc>> = unambiguous
+            .iter()
+            .map(|wall| zone.from_local_datetime(wall).unwrap().with_timezone(&Utc))
+            .collect();
+        assert_eq!(back, expected, "local_to_utc in {name}");
+    }
 }

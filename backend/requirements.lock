@@ -182,8 +182,10 @@ typing-inspection==0.4.4
     #   fastapi
     #   pydantic
     #   pydantic-settings
-tzdata==2026.4
-    # via icalendar
+tzdata==2026.6
+    # via
+    #   -r requirements.txt
+    #   icalendar
 urllib3==2.8.0
     # via botocore
 uvicorn==0.53.0

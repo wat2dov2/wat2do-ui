@@ -8,11 +8,11 @@
 //! `test_captions.py` cases.
 
 use chrono::{DateTime, Utc};
-use chrono_tz::Tz;
 
 use crate::api::errors::ApiError;
 use crate::api::events::model::Event;
 use crate::text::{python_space, python_strip};
+use crate::time_zones::Tz;
 
 const INSTAGRAM_CAPTION_LIMIT: usize = 2200;
 pub const CAPTION_TOO_LONG: &str = "Caption intro and generated event details exceed Instagram's 2200-character limit. Shorten the intro or reduce the number of slides.";
@@ -337,6 +337,19 @@ mod tests {
             build_caption(&[], &utsg, &"x".repeat(2200)),
             Err(ApiError::Validation { detail, .. }) if detail == CAPTION_TOO_LONG
         ));
+    }
+
+    #[test]
+    fn british_columbia_times_stay_on_utc_minus_seven_after_november_2026() {
+        // UBC Symphony Orchestra, Nov 6 2026 at 7:30 PM, after BC stopped falling back.
+        let ubc = CaptionSchool {
+            slug: "ubc",
+            timezone: "America/Vancouver".parse().unwrap(),
+            french: false,
+        };
+        let start = Utc.with_ymd_and_hms(2026, 11, 7, 2, 30, 0).unwrap();
+        let caption = build_caption(&[titled("UBC Symphony Orchestra", start)], &ubc, "").unwrap();
+        assert!(caption.contains("🗓 Fri, Nov 6 · 7:30 PM"), "{caption}");
     }
 
     #[test]
