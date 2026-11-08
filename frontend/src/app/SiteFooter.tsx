@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { useRequestSchool } from "@/app/client-providers";
-import imgLogo from "@/assets/wat2do-logo-nav.webp";
 import { EXTERNAL_LINKS, schoolInstagramHandle } from "@/shared/constants/links";
 import { ROUTES } from "@/shared/constants/routes";
 import { Container, Stack } from "@/shared/layout";
@@ -50,10 +49,10 @@ export function SiteFooter() {
             <Stack direction="horizontal" gap={2} align="center">
               <Image
                 alt={t("common.logo")}
-                width={34}
+                width={89}
                 height={24}
-                className="h-6 w-[34px] select-none object-contain"
-                src={imgLogo}
+                className="h-6 w-[89px] select-none object-contain"
+                src="/brand/wat2do-secondary.svg"
               />
               <Link
                 href={instagramHref}
