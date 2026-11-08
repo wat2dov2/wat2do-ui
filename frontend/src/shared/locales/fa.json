@@ -75,7 +75,10 @@
       "last24Hours": "جدید"
     },
     "addedToWat2Do": "اضافه‌شده به Wat2Do",
-    "postedBy": "منتشرشده توسط"
+    "postedBy": "منتشرشده توسط",
+    "seeAll": "مشاهده همه",
+    "scrollBack": "پیمایش به عقب",
+    "scrollForward": "پیمایش به جلو"
   },
   "errorBoundary": {
     "title": "مشکلی پیش آمد",

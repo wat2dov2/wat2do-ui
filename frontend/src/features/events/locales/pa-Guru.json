@@ -156,6 +156,18 @@
       "clusterNear": "{{location}} ਦੇ ਨੇੜੇ {{count}} ਸਮਾਗਮ",
       "clusterNear_one": "{{location}} ਦੇ ਨੇੜੇ {{count}} ਸਮਾਗਮ",
       "clusterNear_other": "{{location}} ਦੇ ਨੇੜੇ {{count}} ਸਮਾਗਮ"
+    },
+    "highlights": {
+      "mustKnow": "ਜ਼ਰੂਰ ਜਾਣੋ",
+      "slide": "{{total}} ਵਿੱਚੋਂ {{current}}",
+      "showSlide": "{{total}} ਵਿੱਚੋਂ ਜ਼ਰੂਰੀ ਇਵੈਂਟ {{current}} ਦਿਖਾਓ",
+      "play": "ਸਲਾਈਡਸ਼ੋ ਚਲਾਓ",
+      "pause": "ਸਲਾਈਡਸ਼ੋ ਰੋਕੋ",
+      "previous": "ਪਿਛਲਾ ਇਵੈਂਟ",
+      "next": "ਅਗਲਾ ਇਵੈਂਟ",
+      "openEvent": "ਇਵੈਂਟ ਦੇਖੋ",
+      "map": "ਕੈਂਪਸ ਦੇ ਆਲੇ-ਦੁਆਲੇ",
+      "networking": "ਨੈੱਟਵਰਕਿੰਗ ਦੇ ਮੌਕੇ"
     }
   }
 }

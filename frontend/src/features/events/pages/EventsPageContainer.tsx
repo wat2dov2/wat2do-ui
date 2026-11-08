@@ -2,10 +2,11 @@ import { useMemo, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EventsBrowseViews } from "@/features/events/components/EventsBrowseViews";
 import { EventsPageHeader } from "@/features/events/components/EventsPageHeader";
+import { EventHighlightSections } from "@/features/events/components/EventHighlightSections";
 import type { EventBrowseView } from "@/features/events/components/EventViewSelect";
 import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
-import type { Event } from "@/shared/types";
+import type { Event, Position } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { EmptyState, LoadFailureNotice } from "@/shared/feedback";
 import { Stack } from "@/shared/layout";
@@ -17,11 +18,14 @@ const NO_EVENTS: Event[] = [];
 interface EventsPageContainerProps {
   /** The server's first screen of the feed, or null when it could not read the feed. */
   firstScreen: EventFeedFirstScreen | null;
+  /** The open positions row's positions, or null when the server could not read them. */
+  openPositions: Position[] | null;
   initialSchool: string;
 }
 
 export function EventsPageContainer({
   firstScreen,
+  openPositions,
   initialSchool,
 }: EventsPageContainerProps) {
   usePosterLandingConfirmation();
@@ -43,6 +47,7 @@ export function EventsPageContainer({
 
     filters,
     allEvents,
+    highlights,
   } = useEventsPageData({
     firstScreen,
     initialSchool,
@@ -73,9 +78,34 @@ export function EventsPageContainer({
     filters.setSearchQuery(latestAddedEvent.title);
   }, [filters, latestAddedEvent]);
 
+  const handleSeeAllFeatured = useCallback(() => {
+    filters.setFeatured(true);
+  }, [filters]);
+
+  const hasActiveFilters = filters.filterCount > 0 || filters.searchQuery.trim().length > 0;
+  // A search or filter collapses the highlights, so its results start right
+  // under the search box; so does the map or calendar view, which fill the page.
+  const showHighlights = view === "grid" && !hasActiveFilters && !error;
+  // Everything waiting for the rest of the feed says so the same way, with a way to try again.
+  const loadFailureNotice = restLoadFailed ? (
+    <LoadFailureNotice message={t("events.loadFailed")} onRetry={refreshEvents} retrying={isRefreshing} />
+  ) : undefined;
+
   return (
     <>
       <Stack gap={2} data-page-layout={view === "map" ? "viewport" : undefined}>
+        {showHighlights ? (
+          <EventHighlightSections
+            school={initialSchool}
+            highlights={highlights}
+            mapEvents={listing?.complete ? allEvents : null}
+            openPositions={openPositions}
+            loadFailureNotice={loadFailureNotice}
+            eventStats={eventStats}
+            onEventClick={handleEventClick}
+            onSeeAllFeatured={handleSeeAllFeatured}
+          />
+        ) : null}
         <EventsPageHeader
           filters={filters}
           school={initialSchool}
@@ -109,12 +139,10 @@ export function EventsPageContainer({
               totalCount={listing?.complete === false ? listing.total : undefined}
               onEventClick={handleEventClick}
               onClearFilters={filters.clearAllFilters}
-              hasActiveFilters={filters.filterCount > 0 || filters.searchQuery.trim().length > 0}
+              hasActiveFilters={hasActiveFilters}
               eventStats={eventStats}
               isLoading={listing === null}
-              loadFailureNotice={restLoadFailed ? (
-                <LoadFailureNotice message={t("events.loadFailed")} onRetry={refreshEvents} retrying={isRefreshing} />
-              ) : undefined}
+              loadFailureNotice={loadFailureNotice}
               resetKey={appliedQueryKey}
               groupByDateSections={
                 filters.sortBy === "date" && filters.sortOrder === "asc"

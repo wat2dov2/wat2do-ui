@@ -184,6 +184,18 @@
       "clusterNear_few": "{{count}} فعاليات قرب {{location}}",
       "clusterNear_many": "{{count}} فعالية قرب {{location}}",
       "clusterNear_other": "{{count}} فعالية قرب {{location}}"
+    },
+    "highlights": {
+      "mustKnow": "لا تفوّتها",
+      "slide": "{{current}} من {{total}}",
+      "showSlide": "عرض الفعالية {{current}} من {{total}} التي لا تفوّت",
+      "play": "تشغيل العرض",
+      "pause": "إيقاف العرض مؤقتًا",
+      "previous": "الفعالية السابقة",
+      "next": "الفعالية التالية",
+      "openEvent": "عرض الفعالية",
+      "map": "في أرجاء الحرم",
+      "networking": "فرص التواصل المهني"
     }
   }
 }

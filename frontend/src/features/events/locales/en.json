@@ -152,6 +152,18 @@
       "clusterNear": "{{count}} event near {{location}}",
       "clusterNear_one": "{{count}} event near {{location}}",
       "clusterNear_other": "{{count}} events near {{location}}"
+    },
+    "highlights": {
+      "mustKnow": "Must know",
+      "slide": "{{current}} of {{total}}",
+      "showSlide": "Show must-know event {{current}} of {{total}}",
+      "play": "Play slideshow",
+      "pause": "Pause slideshow",
+      "previous": "Previous event",
+      "next": "Next event",
+      "openEvent": "View event",
+      "map": "Around campus",
+      "networking": "Networking opportunities"
     }
   }
 }

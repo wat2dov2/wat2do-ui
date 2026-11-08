@@ -78,7 +78,10 @@
       "last24Hours": "Nouveau"
     },
     "addedToWat2Do": "Ajouté à Wat2Do",
-    "postedBy": "Publié par"
+    "postedBy": "Publié par",
+    "seeAll": "Tout voir",
+    "scrollBack": "Défiler vers l'arrière",
+    "scrollForward": "Défiler vers l'avant"
   },
   "errorBoundary": {
     "title": "Quelque chose a mal tourné",

@@ -156,6 +156,18 @@
       "clusterNear": "{{count}} رویداد نزدیک {{location}}",
       "clusterNear_one": "{{count}} رویداد نزدیک {{location}}",
       "clusterNear_other": "{{count}} رویداد نزدیک {{location}}"
+    },
+    "highlights": {
+      "mustKnow": "از دستش ندهید",
+      "slide": "{{current}} از {{total}}",
+      "showSlide": "نمایش رویداد مهم {{current}} از {{total}}",
+      "play": "پخش نمایش اسلاید",
+      "pause": "توقف نمایش اسلاید",
+      "previous": "رویداد قبلی",
+      "next": "رویداد بعدی",
+      "openEvent": "مشاهده رویداد",
+      "map": "در اطراف پردیس",
+      "networking": "فرصت‌های شبکه‌سازی"
     }
   }
 }

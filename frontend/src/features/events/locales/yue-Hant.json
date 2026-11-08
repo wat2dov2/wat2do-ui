@@ -149,6 +149,18 @@
       "clusterAt_other": "{{location}} 有 {{count}} 個活動",
       "clusterNear": "{{location}} 附近有 {{count}} 個活動",
       "clusterNear_other": "{{location}} 附近有 {{count}} 個活動"
+    },
+    "highlights": {
+      "mustKnow": "必睇活動",
+      "slide": "第 {{current}} 個，共 {{total}} 個",
+      "showSlide": "顯示第 {{current}} 個必睇活動，共 {{total}} 個",
+      "play": "播放輪播",
+      "pause": "暫停輪播",
+      "previous": "上一個活動",
+      "next": "下一個活動",
+      "openEvent": "睇活動",
+      "map": "校園周邊",
+      "networking": "建立人脈機會"
     }
   }
 }

@@ -163,6 +163,18 @@
       "clusterNear_one": "{{count}} evento perto de {{location}}",
       "clusterNear_many": "{{count}} eventos perto de {{location}}",
       "clusterNear_other": "{{count}} eventos perto de {{location}}"
+    },
+    "highlights": {
+      "mustKnow": "Imperdíveis",
+      "slide": "{{current}} de {{total}}",
+      "showSlide": "Mostrar o evento imperdível {{current}} de {{total}}",
+      "play": "Reproduzir apresentação",
+      "pause": "Pausar apresentação",
+      "previous": "Evento anterior",
+      "next": "Próximo evento",
+      "openEvent": "Ver evento",
+      "map": "Pelo campus",
+      "networking": "Oportunidades de networking"
     }
   }
 }

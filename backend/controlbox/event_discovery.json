@@ -4,6 +4,12 @@
   "initial_render_count": 16,
   "preview_event_count": 4,
   "server_feed_page_size": 100,
+  "highlights": {
+    "must_know_count": 5,
+    "must_know_window_days": 14,
+    "must_know_slide_seconds": 7,
+    "row_card_count": 12
+  },
   "views": {
     "calendar_scroll_hour": 16,
     "map_initial_zoom": 14,

@@ -72,7 +72,10 @@
       "last24Hours": "신규"
     },
     "addedToWat2Do": "Wat2Do에 추가됨",
-    "postedBy": "게시자"
+    "postedBy": "게시자",
+    "seeAll": "모두 보기",
+    "scrollBack": "뒤로 스크롤",
+    "scrollForward": "앞으로 스크롤"
   },
   "errorBoundary": {
     "title": "문제가 발생했습니다",

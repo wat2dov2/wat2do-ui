@@ -23,6 +23,7 @@ import {
   latestVisibleAddedEvent,
 } from "@/features/events/api/events.api";
 import type { EventFeedFirstScreen } from "@/features/events/lib/eventFeedFirstScreen";
+import { buildEventHighlights } from "@/features/events/lib/eventHighlights";
 
 const NO_EVENTS: Event[] = [];
 
@@ -99,6 +100,15 @@ export function useEventsPageData({
       : firstScreen?.latestAddedEvent ?? null,
     [events, feed, firstScreen, visibleEvents],
   );
+  // Cut from the complete feed once it arrives, at the list's own time, so the
+  // highlights change only when the list does; until then, the server's cut.
+  const highlightsTimeMs = listTimeMs ?? feed?.generated_at ?? serverFirstScreen?.listedAtMs ?? null;
+  const highlights = useMemo(
+    () => feed
+      ? highlightsTimeMs === null ? null : buildEventHighlights(visibleEvents, highlightsTimeMs)
+      : firstScreen?.highlights ?? null,
+    [feed, firstScreen, highlightsTimeMs, visibleEvents],
+  );
   const filterAvailability = useMemo(
     () => feed ? feedFilterAvailability(feed.items, schoolFilter) : firstScreen?.filterAvailability ?? null,
     [feed, firstScreen, schoolFilter],
@@ -157,6 +167,8 @@ export function useEventsPageData({
     filters,
     /** Null while the reader's results wait for the complete feed. */
     listing,
+    /** The must-know banner and carousel rows; null while the feed loads with no first screen. */
+    highlights,
     allEvents: visibleEvents,
   };
 }

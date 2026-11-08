@@ -75,7 +75,10 @@
       "last24Hours": "نیا"
     },
     "addedToWat2Do": "Wat2Do میں شامل کیا گیا",
-    "postedBy": "شائع کنندہ"
+    "postedBy": "شائع کنندہ",
+    "seeAll": "سب دیکھیں",
+    "scrollBack": "پیچھے اسکرول کریں",
+    "scrollForward": "آگے اسکرول کریں"
   },
   "errorBoundary": {
     "title": "کچھ غلط ہو گیا",

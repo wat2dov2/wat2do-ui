@@ -149,6 +149,18 @@
       "clusterAt_other": "{{count}} sự kiện tại {{location}}",
       "clusterNear": "{{count}} sự kiện gần {{location}}",
       "clusterNear_other": "{{count}} sự kiện gần {{location}}"
+    },
+    "highlights": {
+      "mustKnow": "Không thể bỏ lỡ",
+      "slide": "{{current}} / {{total}}",
+      "showSlide": "Hiện sự kiện không thể bỏ lỡ {{current}} / {{total}}",
+      "play": "Phát trình chiếu",
+      "pause": "Tạm dừng trình chiếu",
+      "previous": "Sự kiện trước",
+      "next": "Sự kiện tiếp theo",
+      "openEvent": "Xem sự kiện",
+      "map": "Quanh khuôn viên",
+      "networking": "Cơ hội kết nối"
     }
   }
 }

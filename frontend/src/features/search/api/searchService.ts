@@ -149,7 +149,7 @@ function filterCampusSeasonOccurrences(
 const THREE_WEEKS_MS = 21 * 24 * 60 * 60 * 1000;
 
 /** "Recurring" means a series whose occurrences span at least three weeks. */
-function recursAtLeastThreeWeeks(event: Event): boolean {
+export function recursAtLeastThreeWeeks(event: Event): boolean {
   let earliest = Number.POSITIVE_INFINITY;
   let latest = Number.NEGATIVE_INFINITY;
   for (const occurrence of event.occurrences) {

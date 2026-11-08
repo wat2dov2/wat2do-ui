@@ -78,7 +78,10 @@
       "last24Hours": "Nuevo"
     },
     "addedToWat2Do": "Añadido a Wat2Do",
-    "postedBy": "Publicado por"
+    "postedBy": "Publicado por",
+    "seeAll": "Ver todo",
+    "scrollBack": "Desplazar hacia atrás",
+    "scrollForward": "Desplazar hacia adelante"
   },
   "errorBoundary": {
     "title": "Algo salió mal",

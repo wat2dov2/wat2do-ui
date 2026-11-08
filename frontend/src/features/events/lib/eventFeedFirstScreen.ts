@@ -4,6 +4,7 @@ import {
   type PaginatedEventsResponse,
 } from "@/features/events/api/events.api";
 import { groupEventsByDateSection } from "@/features/events/lib/eventDateSections";
+import { buildEventHighlights, type EventHighlights } from "@/features/events/lib/eventHighlights";
 import {
   EMPTY_FILTER_STATE,
   feedFilterAvailability,
@@ -28,6 +29,8 @@ export interface EventFeedFirstScreen {
   events: Event[];
   /** How many events the default list holds: the page's count. */
   total: number;
+  /** The must-know banner and carousel rows above the list. */
+  highlights: EventHighlights;
   /** The "new" line above the list. */
   latestAddedEvent: LatestAddedEvent;
   /** What the whole feed offers the filter row (varsity games, campus seasons). */
@@ -60,6 +63,7 @@ export function buildEventFeedFirstScreen(
       .flatMap((section) => section.events)
       .slice(0, controlBox.eventDiscovery.initialRenderCount),
     total: listedEvents.length,
+    highlights: buildEventHighlights(visibleEvents, nowMs),
     latestAddedEvent: latestVisibleAddedEvent(feed.latest_added_event, feed.items, visibleEvents),
     filterAvailability: feedFilterAvailability(feed.items, school),
     listedAtMs: nowMs,

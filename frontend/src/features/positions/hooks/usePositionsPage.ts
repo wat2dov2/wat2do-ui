@@ -1,13 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { PaginatedPositionsResponse } from "@/features/positions/api/positions.api";
-import { getPositionDirectory } from "@/features/positions/api/positions.api";
+import { positionDirectoryQueryOptions } from "@/features/positions/api/positions.api";
 import { useDiscoveryQueryTracking } from "@/shared/hooks/useDiscoveryQueryTracking";
 import { resolveSchool } from "@/shared/constants/schools";
 import { filterPositions } from "@/features/positions/api/positionService";
-import { queryKeys } from "@/shared/lib/queryKeys";
 import type { Position, PositionType } from "@/shared/types";
-import { discoverySnapshotSeed, preserveDiscoveryGeneration } from "@/shared/api/discovery.api";
+import { discoverySnapshotSeed } from "@/shared/api/discovery.api";
 
 type PositionTypeFilter = PositionType | "all";
 
@@ -27,11 +26,8 @@ export function usePositionsPage({
   const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
   const school = resolveSchool(initialSchool);
   const query = useQuery({
-    queryKey: queryKeys.positions.allForSchool(school),
-    retry: false,
-    queryFn: () => getPositionDirectory(school),
+    ...positionDirectoryQueryOptions(school),
     ...discoverySnapshotSeed(initialDirectory),
-    structuralSharing: preserveDiscoveryGeneration,
   });
   const positions = useMemo(
     () => filterPositions(query.data?.items ?? [], {

@@ -156,6 +156,18 @@
       "clusterNear": "{{location}} નજીક {{count}} ઇવેન્ટ",
       "clusterNear_one": "{{location}} નજીક {{count}} ઇવેન્ટ",
       "clusterNear_other": "{{location}} નજીક {{count}} ઇવેન્ટ"
+    },
+    "highlights": {
+      "mustKnow": "જરૂર જાણો",
+      "slide": "{{total}} માંથી {{current}}",
+      "showSlide": "{{total}} માંથી જરૂરી ઇવેન્ટ {{current}} બતાવો",
+      "play": "સ્લાઇડશો ચલાવો",
+      "pause": "સ્લાઇડશો થોભાવો",
+      "previous": "પાછલી ઇવેન્ટ",
+      "next": "આગલી ઇવેન્ટ",
+      "openEvent": "ઇવેન્ટ જુઓ",
+      "map": "કેમ્પસની આસપાસ",
+      "networking": "નેટવર્કિંગની તકો"
     }
   }
 }

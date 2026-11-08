@@ -72,7 +72,10 @@
       "last24Hours": "Mới"
     },
     "addedToWat2Do": "Đã thêm vào Wat2Do",
-    "postedBy": "Đăng bởi"
+    "postedBy": "Đăng bởi",
+    "seeAll": "Xem tất cả",
+    "scrollBack": "Cuộn lại",
+    "scrollForward": "Cuộn tới"
   },
   "errorBoundary": {
     "title": "Đã xảy ra sự cố",

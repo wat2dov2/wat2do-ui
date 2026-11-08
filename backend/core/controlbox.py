@@ -154,12 +154,23 @@ class MapGeocodingControl(_ControlModel):
     ]
 
 
+class EventHighlightsControl(_ControlModel):
+    # The events page's must-know banner: how many events it rotates through,
+    # how far ahead it looks, and how long each one shows before the next.
+    must_know_count: int = Field(ge=1, le=10)
+    must_know_window_days: int = Field(ge=1, le=60)
+    must_know_slide_seconds: int = Field(ge=3, le=60)
+    # How many cards each of the events page's carousel rows (events or positions) holds.
+    row_card_count: int = Field(ge=1, le=50)
+
+
 class EventDiscoveryControl(_ControlModel):
     new_event_window_hours: int = Field(gt=0)
     event_without_end_visibility_minutes: int = Field(gt=0)
     initial_render_count: int = Field(gt=0, le=100)
     preview_event_count: int = Field(gt=0, le=100)
     server_feed_page_size: int = Field(gt=0, le=100)
+    highlights: EventHighlightsControl
     campus_seasons: CampusSeasonsControl
     views: EventViewsControl
     map_geocoding: MapGeocodingControl

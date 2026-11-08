@@ -72,7 +72,10 @@
       "last24Hours": "最新"
     },
     "addedToWat2Do": "加入 Wat2Do",
-    "postedBy": "發佈者"
+    "postedBy": "發佈者",
+    "seeAll": "睇晒全部",
+    "scrollBack": "向後捲動",
+    "scrollForward": "向前捲動"
   },
   "errorBoundary": {
     "title": "出咗啲問題",

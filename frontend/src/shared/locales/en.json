@@ -72,7 +72,10 @@
       "last24Hours": "New"
     },
     "addedToWat2Do": "Added to Wat2Do",
-    "postedBy": "Posted by"
+    "postedBy": "Posted by",
+    "seeAll": "See all",
+    "scrollBack": "Scroll back",
+    "scrollForward": "Scroll forward"
   },
   "errorBoundary": {
     "title": "Something went wrong",
