@@ -5203,15 +5203,16 @@ test.describe("Navigation", () => {
     // The preview is shared by link only, so search engines must never index it.
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("before it's over.");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Every campus event");
     await expect(page.getByRole("heading", { name: "Campus is NOT boring. Its events are just hidden." })).toBeVisible();
-    // The hero is the school's live event map, and the stats are counted from its feeds.
+    // The hero is the school's live event map, and its corner and the stats are counted from its feeds.
     await expect(page.getByLabel("Map", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("upcoming events right now")).toBeVisible();
+    await expect(page.getByText("upcoming events right now")).toHaveCount(2);
+    await expect(page.getByText("upcoming events right now").last()).toBeVisible();
 
     await page.getByRole("link", { name: "How it works" }).click();
     await expect(page).toHaveURL(/#how-it-works$/);
-    await expect(page.getByRole("heading", { name: "So how is this different from other event sites?" })).toBeInViewport();
+    await expect(page.getByRole("heading", { name: "Every opportunity, kept up to date." })).toBeInViewport();
 
     await page.getByRole("link", { name: "See what's on" }).first().click();
     await expect(page).toHaveURL(`${BASE}/events`);

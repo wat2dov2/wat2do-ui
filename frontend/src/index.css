@@ -85,6 +85,16 @@
   --color-badge-updated: var(--badge-updated);
   --color-badge-going: var(--badge-going);
   --color-badge-going-foreground: var(--badge-going-foreground);
+  --color-tint-school: var(--tint-school);
+  --color-tint-school-foreground: var(--tint-school-foreground);
+  --color-tint-live: var(--tint-live);
+  --color-tint-live-foreground: var(--tint-live-foreground);
+  --color-tint-free: var(--tint-free);
+  --color-tint-free-foreground: var(--tint-free-foreground);
+  --color-tint-new: var(--tint-new);
+  --color-tint-new-foreground: var(--tint-new-foreground);
+  --color-tint-time: var(--tint-time);
+  --color-tint-time-foreground: var(--tint-time-foreground);
 
   /* Fonts */
   --font-sans: var(--font-family-sans);

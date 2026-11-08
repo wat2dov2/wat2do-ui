@@ -80,4 +80,19 @@
   --page-school-secondary: #111111;
   --school-marker: var(--page-school-primary);
   --school-marker-foreground: var(--page-school-secondary);
+
+  /* Badge tints: what a badge means, in one hue, wherever Wat2Do shows it. A soft
+     wash of the hue behind text and icon in a darker (light theme) or lighter
+     (dark theme) shade of the same hue, which keeps both at WCAG AA. Each hue is
+     the one the product already uses for that meaning. */
+  --tint-school: var(--school-marker);
+  --tint-school-foreground: var(--school-marker-foreground);
+  --tint-live: color-mix(in oklab, var(--success) 20%, var(--background));
+  --tint-live-foreground: color-mix(in oklab, var(--success) 45%, var(--foreground));
+  --tint-free: color-mix(in oklab, var(--success) 20%, var(--background));
+  --tint-free-foreground: color-mix(in oklab, var(--success) 45%, var(--foreground));
+  --tint-new: color-mix(in oklab, var(--badge-new) 20%, var(--background));
+  --tint-new-foreground: color-mix(in oklab, var(--badge-new) 45%, var(--foreground));
+  --tint-time: color-mix(in oklab, var(--warning) 22%, var(--background));
+  --tint-time-foreground: color-mix(in oklab, var(--warning) 45%, var(--foreground));
 }

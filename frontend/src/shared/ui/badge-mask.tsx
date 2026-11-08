@@ -1,4 +1,5 @@
 import React from "react";
+import { cn } from "@/shared/lib/utils";
 import { BADGE_MASK_PATHS, type BadgeMaskVariant } from "@/shared/ui/badge-mask-paths";
 
 interface BadgeMaskProps {
@@ -13,8 +14,14 @@ interface BadgeMaskProps {
    * painting them would fill the hole back in.
    */
   cutout?: boolean;
-  /** Measured by `useCardCutouts` to size the notch. */
+  /** Measured by `useEventImageCutouts` to size the notch. */
   containerRef?: React.Ref<HTMLDivElement>;
+  /**
+   * Take part in the parent's layout instead of being pinned over the corner,
+   * so content below the badge flows under it however tall the badge wraps.
+   * The parent still places it flush in its corner.
+   */
+  inFlow?: boolean;
 }
 
 interface MaskSvgProps {
@@ -59,26 +66,28 @@ export function BadgeMask({
   outlineClassName,
   cutout = false,
   containerRef,
+  inFlow = false,
 }: BadgeMaskProps) {
   const surfaceClass = cutout ? "" : "bg-background";
+  const placement = (corner: string) => (inFlow ? "relative min-w-0" : `absolute ${corner}`);
   switch (variant) {
     case "top-left":
       return (
-        <div ref={containerRef} className="absolute top-0 left-0 z-10 flex max-w-full flex-col pointer-events-none">
+        <div ref={containerRef} className={cn(placement("top-0 left-0"), "z-10 flex max-w-full flex-col pointer-events-none")}>
           <div className="flex min-w-0">
-            <div className={`pointer-events-auto flex min-w-0 pb-1 pr-1 ${surfaceClass} rounded-br-xl ${outlined ? `border-r border-b border-current ${outlineClassName}` : ""}`}>
+            <div className={`pointer-events-auto flex min-w-0 pr-(--notch-gap) pb-(--notch-gap) ${surfaceClass} rounded-br-(--notch-radius) ${outlined ? `border-r border-b border-current ${outlineClassName}` : ""}`}>
               {children}
             </div>
             {!cutout && <MaskSvg
               variant="top-left"
-              className="size-2 shrink-0 text-background"
+              className="size-(--notch-fillet) shrink-0 text-background"
               outlined={outlined}
               outlineClassName={outlineClassName}
             />}
           </div>
           {!cutout && <MaskSvg
             variant="top-left"
-            className="size-2 shrink-0 text-background"
+            className="size-(--notch-fillet) shrink-0 text-background"
             outlined={outlined}
             outlineClassName={outlineClassName}
           />}
@@ -86,21 +95,21 @@ export function BadgeMask({
       );
     case "top-right":
       return (
-        <div ref={containerRef} className="absolute top-0 right-0 z-10 flex max-w-full flex-col pointer-events-none">
+        <div ref={containerRef} className={cn(placement("top-0 right-0"), "z-10 flex max-w-full flex-col pointer-events-none")}>
           <div className="flex min-w-0">
             {!cutout && <MaskSvg
               variant="top-right"
-              className="size-2 shrink-0 text-background"
+              className="size-(--notch-fillet) shrink-0 text-background"
               outlined={outlined}
               outlineClassName={outlineClassName}
             />}
-            <div className={`pointer-events-auto flex min-w-0 pb-1 pl-1 ${surfaceClass} rounded-bl-xl ${outlined ? `border-l border-b border-current ${outlineClassName}` : ""}`}>
+            <div className={`pointer-events-auto flex min-w-0 pl-(--notch-gap) pb-(--notch-gap) ${surfaceClass} rounded-bl-(--notch-radius) ${outlined ? `border-l border-b border-current ${outlineClassName}` : ""}`}>
               {children}
             </div>
           </div>
           {!cutout && <MaskSvg
             variant="top-right"
-            className="size-2 ml-auto shrink-0 text-background"
+            className="size-(--notch-fillet) ml-auto shrink-0 text-background"
             outlined={outlined}
             outlineClassName={outlineClassName}
           />}
@@ -108,20 +117,20 @@ export function BadgeMask({
       );
     case "bottom-left":
       return (
-        <div ref={containerRef} className="absolute bottom-0 left-0 z-10 flex max-w-full flex-col pointer-events-none">
+        <div ref={containerRef} className={cn(placement("bottom-0 left-0"), "z-10 flex max-w-full flex-col pointer-events-none")}>
           {!cutout && <MaskSvg
             variant="bottom-left"
-            className="size-2 shrink-0 text-background"
+            className="size-(--notch-fillet) shrink-0 text-background"
             outlined={outlined}
             outlineClassName={outlineClassName}
           />}
           <div className="flex min-w-0">
-            <div className={`pointer-events-auto flex min-w-0 pt-1 pr-1 ${surfaceClass} rounded-tr-xl ${outlined ? `border-r border-t border-current ${outlineClassName}` : ""}`}>
+            <div className={`pointer-events-auto flex min-w-0 pr-(--notch-gap) pt-(--notch-gap) ${surfaceClass} rounded-tr-(--notch-radius) ${outlined ? `border-r border-t border-current ${outlineClassName}` : ""}`}>
               {children}
             </div>
             {!cutout && <MaskSvg
               variant="bottom-left"
-              className="size-2 mt-auto shrink-0 text-background"
+              className="size-(--notch-fillet) mt-auto shrink-0 text-background"
               outlined={outlined}
               outlineClassName={outlineClassName}
             />}
@@ -130,21 +139,21 @@ export function BadgeMask({
       );
     case "bottom-right":
       return (
-        <div ref={containerRef} className="absolute bottom-0 right-0 z-10 flex max-w-full flex-col pointer-events-none">
+        <div ref={containerRef} className={cn(placement("bottom-0 right-0"), "z-10 flex max-w-full flex-col pointer-events-none")}>
           {!cutout && <MaskSvg
             variant="bottom-right"
-            className="size-2 ml-auto shrink-0 text-background"
+            className="size-(--notch-fillet) ml-auto shrink-0 text-background"
             outlined={outlined}
             outlineClassName={outlineClassName}
           />}
           <div className="flex min-w-0">
             {!cutout && <MaskSvg
               variant="bottom-right"
-              className="size-2 mt-auto shrink-0 text-background"
+              className="size-(--notch-fillet) mt-auto shrink-0 text-background"
               outlined={outlined}
               outlineClassName={outlineClassName}
             />}
-            <div className={`pointer-events-auto flex min-w-0 pt-1 pl-1 ${surfaceClass} rounded-tl-xl ${outlined ? `border-l border-t border-current ${outlineClassName}` : ""}`}>
+            <div className={`pointer-events-auto flex min-w-0 pl-(--notch-gap) pt-(--notch-gap) ${surfaceClass} rounded-tl-(--notch-radius) ${outlined ? `border-l border-t border-current ${outlineClassName}` : ""}`}>
               {children}
             </div>
           </div>

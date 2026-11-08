@@ -152,6 +152,13 @@ Token scale:
 Current UI leans on `rounded-xl` (`12px`) for buttons, cards, nav items, event
 cards, dialogs, and floating controls.
 
+Corner badges sit in notches cut into the card face (`shared/ui/badge-mask.tsx`
+with `shared/ui/event-image-cutout.tsx`).
+Their shape comes from `--notch-gap` (4px), `--notch-fillet` (8px) and
+`--notch-radius` (16px, the badge's 12px plus the gap, so the notch runs
+concentric with the badge); a surface marked `data-notch-size="display"` scales
+them to 6px, 12px and 18px from the `sm` breakpoint up.
+
 Guidance:
 
 - Use `12px` for primary app surfaces.
@@ -287,6 +294,21 @@ Common badge meanings:
 - Category badges: category background/text pair.
 
 Do not over-badge. A card with too many badges becomes harder to scan.
+
+Tinted badges (`Badge` variants `tint-*`, tokens `--tint-*` in
+`decorative-tokens.css`) carry one meaning each, in the hue the product already
+uses for it: a soft wash of the hue behind text and icon in a darker (light
+theme) or lighter (dark theme) shade of it, at WCAG AA in both themes.
+
+| Variant | Meaning | Hue it reuses |
+| --- | --- | --- |
+| `tint-school` | The school itself | `--school-marker` |
+| `tint-live` | Happening or counted now | `--destructive` (the Live badge) |
+| `tint-free` | Free, no account needed | `--success` |
+| `tint-new` | Freshly read from clubs' posts | `--badge-new` |
+| `tint-time` | A date or time | `--warning` (the Soon badge) |
+
+Anything else stays neutral; colour is kept for meaning.
 
 ## Forms And Inputs
 

@@ -26,8 +26,9 @@ export function LandingEventViews({ view, events, isLoading }: LandingEventViews
   const openEvent = useCallback((event: Event) => router.push(eventPagePath(event.id)), [router]);
 
   return (
-    // The map fills its container, so it needs one with a height of its own.
-    <div className={cn("flex w-full flex-col", view === "map" && "h-[26rem] sm:h-[34rem]")}>
+    // The map runs edge to edge under the card's notches and fills a height of its own; the
+    // grid and calendar keep clear of the notched badges above and below them.
+    <div className={cn("flex w-full flex-col", view === "map" ? "h-[26rem] sm:h-[34rem]" : "px-3 py-14 sm:px-4")}>
       <EventsBrowseViews
         view={view}
         school={school}

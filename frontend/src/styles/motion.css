@@ -103,7 +103,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   :is([data-slot="dropdown-menu-item"], [data-slot="select-item"]),
-  .animate-success-pulse {
+  .animate-success-pulse,
+  .animate-pulse-live {
     animation: none !important;
   }
   [data-slot="switch-thumb"] {

@@ -100,7 +100,7 @@ function render(component: React.ComponentType<Record<string, unknown>>, props: 
 test("poster frames load the stored thumbnail before hydration, never a resized copy", () => {
   const html = render(EventImageCutout, {
     backgroundColor: "var(--surface-elevated)", imageSrc: posterUrl, imageAlt: "Campus poster",
-    imageLoading: "lazy", cutouts: [], width: 0, height: 0,
+    imageLoading: "lazy", cutouts: [], box: { width: 0, height: 0, fillet: 8, radius: 12 },
   });
   expect(html).toContain('<img alt="Campus poster"');
   expect(html).toContain('loading="lazy"');
@@ -113,7 +113,7 @@ test("poster frames load the stored thumbnail before hydration, never a resized 
 test("measured cutouts mask the HTML image face and eager posters receive priority", () => {
   const html = render(EventImageCutout, {
     backgroundColor: "var(--surface-elevated)", imageSrc: posterUrl, imageAlt: "Campus poster",
-    imageLoading: "eager", cutouts: [{ corner: "bottom-left", width: 112, height: 32 }], width: 240, height: 208,
+    imageLoading: "eager", cutouts: [{ corner: "bottom-left", width: 112, height: 32 }], box: { width: 240, height: 208, fillet: 8, radius: 12 },
   });
   expect(html).toContain("clip-path:path(&quot;");
   expect(html).toContain('data-slot="event-image-face"');
@@ -123,11 +123,13 @@ test("measured cutouts mask the HTML image face and eager posters receive priori
 });
 
 test("direct clipping pixels remove each measured corner while preserving the image face", async () => {
-  for (const corner of ["top-left", "top-right", "bottom-left", "bottom-right"]) {
+  // The event card's notch, and the display size the landing hero scales it to.
+  const corners = ["top-left", "top-right", "bottom-left", "bottom-right"];
+  for (const [notch, corner] of [{ fillet: 8, radius: 12 }, { fillet: 12, radius: 16 }].flatMap((notch) => corners.map((corner) => [notch, corner] as const))) {
     for (const badgeWidth of [72, 160]) {
       const html = render(EventImageCutout, {
         backgroundColor: "white", cutouts: [{ corner, width: badgeWidth, height: 32 }],
-        width: 240, height: 208,
+        box: { width: 240, height: 208, ...notch },
       });
       const path = html.match(/clip-path:path\(&quot;([^&]+)&quot;\)/)?.[1];
       expect(path).toBeDefined();
@@ -150,7 +152,7 @@ test("custom carousel photos stay inside the measured transparent face", () => {
     backgroundColor: "var(--muted)",
     imageContent: createElement("img", { src: "/_next/static/media/campus.webp", alt: "Campus" }),
     cutouts: [{ corner: "bottom-left", width: 240, height: 48 }],
-    width: 640, height: 480,
+    box: { width: 640, height: 480, fillet: 8, radius: 12 },
   });
   expect(html.match(/<img /g)).toHaveLength(1);
   expect(html).toMatch(/<div[^>]*data-slot="event-image-face"[^>]*clip-path:[^>]*><img /);
@@ -279,7 +281,7 @@ test("video details show the poster thumbnail and defer video bytes until playba
   const videoUrl = `${imageDelivery.media_origin}/event-videos/reel.mp4`;
   const html = render(EventImageCutout, {
     backgroundColor: "var(--surface-elevated)", imageSrc: posterUrl, imageAlt: "Campus reel",
-    videoSrc: videoUrl, cutouts: [], width: 320, height: 320,
+    videoSrc: videoUrl, cutouts: [], box: { width: 320, height: 320, fillet: 8, radius: 12 },
   });
   expect(html).toContain(`<video src="${videoUrl}"`);
   expect(html).toContain(`poster="${posterThumbnailUrl}"`);
@@ -295,7 +297,7 @@ test("video details show the poster thumbnail and defer video bytes until playba
 test("poster zoom overlays remain interactive only when the caller supplies a control", () => {
   const html = render(EventImageCutout, {
     backgroundColor: "var(--surface-elevated)", imageSrc: posterUrl, imageAlt: "Campus poster",
-    cutouts: [], width: 320, height: 320,
+    cutouts: [], box: { width: 320, height: 320, fillet: 8, radius: 12 },
     children: createElement("button", { type: "button", "aria-label": "View poster" }),
   });
   expect(html).toContain('data-slot="event-image-overlay"');

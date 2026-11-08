@@ -36,6 +36,12 @@ const badgeVariants = cva(
           "border-badge-updated bg-badge-updated",
         going:
           "border-badge-going bg-badge-going text-badge-going-foreground",
+        // Tinted badges carry one meaning each, in the hue the product uses for it (decorative-tokens.css).
+        "tint-school": "border-transparent bg-tint-school text-tint-school-foreground",
+        "tint-live": "border-transparent bg-tint-live text-tint-live-foreground",
+        "tint-free": "border-transparent bg-tint-free text-tint-free-foreground",
+        "tint-new": "border-transparent bg-tint-new text-tint-new-foreground",
+        "tint-time": "border-transparent bg-tint-time text-tint-time-foreground",
         category:
           "border-transparent gap-1.5 leading-none",
       },
@@ -47,6 +53,8 @@ const badgeVariants = cva(
         // Large type in a box no taller than a line of card text, so badges stacked beside text lines never outgrow them.
         stacked: "h-4.5 px-2.5 text-xs font-bold leading-none rounded-xl",
         xl: "px-3 py-1.5 text-sm font-bold rounded-xl",
+        // Large on display surfaces such as the landing hero, compact on phones.
+        display: "px-2.5 py-1 text-xs font-bold rounded-xl sm:px-3 sm:py-1 sm:text-sm",
       },
     },
     defaultVariants: {

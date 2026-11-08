@@ -110,8 +110,7 @@ export function EventCardImage({
             </div>
           }
           cutouts={cutouts}
-          width={box.width}
-          height={box.height}
+          box={box}
           className="absolute inset-0"
         >
           {canExpandImage ? (

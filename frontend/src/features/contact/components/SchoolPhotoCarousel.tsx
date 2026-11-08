@@ -101,8 +101,7 @@ export function SchoolPhotoCarousel({ isLoading = false }: { isLoading?: boolean
           <EventImageCutout
             backgroundColor="var(--muted)"
             cutouts={cutouts}
-            width={box.width}
-            height={box.height}
+            box={box}
             className="absolute inset-0"
             imageContent={isLoading ? (
               <Skeleton className="absolute inset-0 rounded-none" />

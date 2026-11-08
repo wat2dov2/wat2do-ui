@@ -1,48 +1,66 @@
 import { getClubDirectorySnapshot } from "@/features/clubs/api/clubDirectory.server";
 import { getSchoolBrowseSnapshot } from "@/features/events/api/eventFeed.server";
-import type { Event } from "@/shared/types";
+import { getPositionDirectorySnapshot } from "@/features/positions/api/positionDirectory.server";
+import { isFreeFoodEvent, isNetworkingEvent, nicheClubs } from "@/features/landing/lib/landingEvents";
+import type { Club, Event } from "@/shared/types";
 import { hasActiveEventOccurrence } from "@/shared/utils/date";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+/** Clubs the clubs preview shows. */
+const PREVIEW_CLUBS = 2;
 
-/** Everything the landing page shows about one school, from its published feeds. */
+/**
+ * Everything the landing page shows about one school, from its published
+ * feeds. A feed that cannot be read leaves its numbers null, never zero, so
+ * the page says nothing rather than something untrue.
+ */
 export interface LandingSnapshot {
   /** Upcoming events at the school, in the feed's order. */
-  events: Event[];
-  /** Clubs in the school's directory; null when the directory is unavailable. */
-  clubCount: number | null;
+  events: Event[] | null;
   /** Upcoming events first added in the last seven days. */
-  newThisWeekCount: number;
+  newThisWeekCount: number | null;
+  /** Upcoming networking opportunities: employer events and business clubs' events. */
+  networkingCount: number | null;
+  /** Upcoming events with food that cost nothing, as the feed's free food filter finds them. */
+  freeFoodCount: number | null;
+  /** Clubs in the school's directory. */
+  clubCount: number | null;
+  /** A few niche clubs from the directory, for the clubs preview. */
+  previewClubs: Club[];
+  /** Open club positions at the school. */
+  positionCount: number | null;
+}
+
+/** Reads a published feed, or null with the failure logged when it is unavailable. */
+async function readOrNull<T>(label: string, read: () => Promise<T>): Promise<T | null> {
+  try {
+    return await read();
+  } catch (error) {
+    console.error(`Landing page ${label} fetch failed:`, error);
+    return null;
+  }
 }
 
 /**
- * Reads the same published snapshots as the events and clubs pages, so the
- * landing page's map, views and numbers always match what students will find.
- * An unavailable feed shows an empty page section rather than failing the page.
+ * Reads the same published snapshots as the events, clubs and positions pages,
+ * so the landing page's views and numbers always match what students will find.
  */
 export async function getLandingSnapshot(school: string): Promise<LandingSnapshot> {
   const now = Date.now();
-  const [events, clubCount] = await Promise.all([
-    getSchoolBrowseSnapshot(school).then(
-      (snapshot) => snapshot.items.filter((event) => hasActiveEventOccurrence(event, now)),
-      (error: unknown) => {
-        console.error("Landing page event feed fetch failed:", error);
-        return [];
-      },
-    ),
-    getClubDirectorySnapshot(school).then(
-      (directory) => directory.items.length,
-      (error: unknown) => {
-        console.error("Landing page club directory fetch failed:", error);
-        return null;
-      },
-    ),
+  const [events, clubs, positions] = await Promise.all([
+    readOrNull("event feed", async () =>
+      (await getSchoolBrowseSnapshot(school)).items.filter((event) => hasActiveEventOccurrence(event, now))),
+    readOrNull("club directory", async () => (await getClubDirectorySnapshot(school)).items),
+    readOrNull("position directory", async () => (await getPositionDirectorySnapshot(school)).items),
   ]);
+  const countEvents = (matches: (event: Event) => boolean) => (events ? events.filter(matches).length : null);
   return {
     events,
-    clubCount,
-    newThisWeekCount: events.filter(
-      (event) => event.added_at && now - Date.parse(event.added_at) <= WEEK_MS,
-    ).length,
+    newThisWeekCount: countEvents((event) => Boolean(event.added_at) && now - Date.parse(event.added_at!) <= WEEK_MS),
+    networkingCount: countEvents(isNetworkingEvent),
+    freeFoodCount: countEvents(isFreeFoodEvent),
+    clubCount: clubs?.length ?? null,
+    previewClubs: nicheClubs(clubs ?? [], PREVIEW_CLUBS),
+    positionCount: positions?.length ?? null,
   };
 }

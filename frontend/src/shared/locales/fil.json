@@ -555,15 +555,19 @@
   },
   "landing": {
     "hero": {
-      "note": "Libre para sa lahat · Pinopondohan ng mga student impact award",
-      "titleLead": "Bawat kaganapan sa campus,",
-      "titleHighlight": "bago pa ito matapos.",
-      "description": "Natatabunan ang mga kaganapan ng mga organisasyon sa daan-daang Instagram account. Inilalagay ng Wat2Do ang lahat ng ito sa iisang feed.",
+      "badges": {
+        "free": "Libre, walang account",
+        "source": "Kinuha mula sa Instagram"
+      },
+      "titleLeadBefore": "Bawat",
+      "titleWords": {
+        "event": "kaganapan sa campus",
+        "networking": "networking na pagkakataon sa campus",
+        "social": "social event sa campus",
+        "position": "posisyon sa club sa campus"
+      },
       "primaryAction": "Tingnan kung ano'ng meron",
-      "secondaryAction": "Paano ito gumagana",
-      "mapTitle": "{{total}} paparating na kaganapan sa {{school}}",
-      "mapTitle_one": "{{total}} paparating na kaganapan sa {{school}}",
-      "mapTitle_other": "{{total}} paparating na kaganapan sa {{school}}"
+      "secondaryAction": "Paano ito gumagana"
     },
     "problem": {
       "title": "HINDI boring ang campus. Nakatago lang ang mga kaganapan.",
@@ -585,15 +589,11 @@
           "title": "Kaya parang walang nangyayari",
           "description": "Kapag kalat ang mga kaganapan sa daan-daang account, parang tahimik ang campus. Pero hindi. Hindi mo lang ito nakikita."
         }
-      },
-      "story": "Nakakita si Tony ng Instagram story para sa Italian cooking lessons, $5 lang. Tatlong araw na pala itong naka-post.",
-      "storyOver": "Tapos na ang kaganapan.",
-      "storyEnd": "Kaya ginawa namin ang lugar na matagal na naming hinihiling na meron.",
-      "signature": "Tony & Erica, mga founder ng Wat2Do"
+      }
     },
     "solution": {
-      "title": "Iisang feed. Bawat organisasyon. Walang paghahanap.",
-      "description": "Ang Wat2Do na ang magfo-follow sa mga account para hindi mo na kailangan, at ginagawang kaganapan ang bawat flyer na puwede mong i-search, i-filter at i-save.",
+      "title": "Bawat oportunidad, laging updated.",
+      "description": "Bawat kaganapan, networking night at bukas na posisyon sa mga club ng {{school}}, ina-update agad pagka-post ng mga club. Maghanap, mag-filter at i-save ang gusto mo.",
       "stats": {
         "clubsLabel": "organisasyong sinusubaybayan sa {{school}}",
         "clubsLabel_one": "organisasyong sinusubaybayan sa {{school}}",
@@ -603,122 +603,26 @@
         "upcomingLabel_other": "mga paparating na kaganapan ngayon",
         "newLabel": "bagong kaganapan sa nakaraang 7 araw",
         "newLabel_one": "bagong kaganapan sa nakaraang 7 araw",
-        "newLabel_other": "mga bagong kaganapan sa nakaraang 7 araw"
-      }
-    },
-    "different": {
-      "title": "So bakit ito naiiba sa ibang site ng mga kaganapan?",
-      "description": "Naghihintay ang ibang site na i-submit ng mga organisasyon ang kanilang mga kaganapan. Ang iba ay nakakulong sa loob ng Instagram, na bina-ban ang mga bot. Pero nailalabas pa rin ng Wat2Do ang mga ito.",
-      "points": {
-        "relay": {
-          "cost": "Daan-daang oras"
-        },
-        "alwaysOn": {
-          "title": "Isang Mac mini na hindi natutulog",
-          "description": "Binubuksan ng isang M4 Mac mini na binili namin nang anonymous ang bawat na-flag na post at ginagawa itong data, 24/7.",
-          "cost": "$899"
-        },
-        "claude": {
-          "title": "Binabasa ni Claude ang bawat flyer",
-          "description": "Ginagawang mga kaganapan ng Claude Haiku ang mga flyer nang may guardrails: walang inimbento, sinusuri ang mga duplicate, at naka-lock sa mga event table ang database login.",
-          "cost": "$200 / buwan"
-        },
-        "cloud": {
-          "title": "Online para sa bawat paaralan",
-          "description": "Naka-host sa AWS ang feed na may mga backup, kaya hindi kailanman masisira ng bug ang karanasan ng mga tunay na estudyante.",
-          "cost": "$100 / buwan"
-        }
-      },
-      "costNote": "Sinasagot namin ang mga gastusing ito gamit ang mga student impact award at bursary sa University of Waterloo, pondong para mapabuti ang buhay-estudyante, kaya nananatiling libre ang Wat2Do para sa bawat estudyante.",
-      "diagramLabel": "Paano nagiging listing sa Wat2Do ang Instagram post ng isang organisasyon: inaabisuhan ng mga account ng organisasyon ang isang naka-redact na hakbang, binabasa ng browser worker at post fetcher ng laging-bukas na Mac mini ang post, ginagawa itong kaganapan ng mga Claude agent na may guardrails, at isang checkpoint ang nagpapapasok dito sa mahigpit na naka-lock na database ng kaganapan sa likod ng feed mo. Kapag may nasira, inaalerto ng Mac mini ang isang personal na phone at inaayos namin ito mula sa isang laptop.",
-      "diagram": {
-        "zoneInstagram": "Instagram",
-        "zoneMac": "Mac mini · laging bukas",
-        "zoneWat2do": "Wat2Do",
-        "accounts": "Mga account ng organisasyon",
-        "browser": "Browser worker",
-        "fetcher": "Anonymous fetcher",
-        "agents": "Mga Claude agent",
-        "database": "Database ng kaganapan",
-        "feed": "Ang feed mo",
-        "guardrails": "Mga guardrail",
-        "zoneOnCall": "On call",
-        "laptop": "Ang personal na laptop namin",
-        "laptopNote": "(remote control sa Mac mini)",
-        "pager": "Personal na phone"
-      },
-      "redacted": "Naka-redact"
-    },
-    "useCases": {
-      "title": "Campus life, sa paraan mo",
-      "description": "Anim na paraan ng paggamit ng mga estudyante sa {{school}} ng Wat2Do.",
-      "items": {
-        "freeFood": {
-          "title": "Libreng pagkain sa pagitan ng klase",
-          "description": "Pizza sa mga info session, bake sale, at socials na may meryenda. I-filter sa libreng pagkain at planuhin ang tanghalian mo.",
-          "action": "Tingnan ang libreng pagkain"
-        },
-        "employers": {
-          "title": "Makilala ang mga employer sa campus",
-          "description": "Mga info session at networking night kung saan personal na pumupunta ang mga recruiter. Madalas, nagsisimula ang magandang oportunidad sa isang usapan.",
-          "action": "Tingnan ang mga employer event"
-        },
-        "competitions": {
-          "title": "Mga kompetisyon at hackathon",
-          "description": "Case comp, hackathon at pitch night, may premyo at totoong maidadagdag sa resume mo.",
-          "action": "Tingnan ang mga kompetisyon"
-        },
-        "newToCampus": {
-          "title": "Bago sa campus?",
-          "description": "I-browse ang bawat organisasyon sa school mo at hanapin ang mga taong kapareho mo ng hilig.",
-          "action": "I-browse ang mga organisasyon"
-        },
-        "getInvolved": {
-          "title": "Sumali sa isang exec team",
-          "description": "Dito ipinopost ng mga organisasyon ang mga bakanteng posisyon, mula first-year rep hanggang president. Makilahok nang higit pa sa pagdalo.",
-          "action": "Tingnan ang mga bakanteng posisyon"
-        },
-        "bored": {
-          "title": "Walang magawa ngayong gabi?",
-          "description": "I-search ang \"random\" sa feed at pipili ang Wat2Do ng kaganapang malapit nang magsimula para sa iyo.",
-          "action": "Sorpresahin mo ako"
-        }
+        "newLabel_other": "mga bagong kaganapan sa nakaraang 7 araw",
+        "networkingLabel": "paparating na networking na pagkakataon",
+        "networkingLabel_one": "paparating na networking na pagkakataon",
+        "networkingLabel_other": "mga paparating na networking na pagkakataon",
+        "freeFoodLabel": "paparating na kaganapan na may libreng pagkain",
+        "freeFoodLabel_one": "paparating na kaganapan na may libreng pagkain",
+        "freeFoodLabel_other": "mga paparating na kaganapan na may libreng pagkain",
+        "positionsLabel": "bukas na posisyon sa club",
+        "positionsLabel_one": "bukas na posisyon sa club",
+        "positionsLabel_other": "mga bukas na posisyon sa club"
       }
     },
     "features": {
-      "capture": {
-        "title": "Mula Instagram flyer hanggang kaganapan, awtomatiko",
-        "description": "Tuloy lang ang mga organisasyon sa pag-post gaya ng dati. Binabasa ng Wat2Do ang bawat flyer at kinukuha ang petsa, oras, lugar at presyo, kaya napupunta ang kaganapan sa feed nang walang kailangang mag-fill out ng form.",
-        "mockHandle": "@italian.club",
-        "mockTitle": "Italian cooking class",
-        "mockDate": "Huwebes, 6:00 PM",
-        "mockPlace": "Kusina ng student centre",
-        "mockPrice": "$5",
-        "mockAdded": "Naidagdag mula sa post ng organisasyon"
-      },
       "filters": {
-        "title": "Libreng pagkain sa dalawang tap",
-        "description": "Mabilis na filter para sa libreng pagkain, mga employer sa campus at mga kompetisyon. O paliitin pa ayon sa araw, presyo, organisasyon at lokasyon.",
-        "mockQuery": "pizza"
-      },
-      "reminders": {
-        "title": "Hindi mo na makakalimutang pupunta ka",
-        "description": "I-tap ang Pupunta at ie-email ka ng Wat2Do mga isang oras bago ito magsimula. I-save ang mga kaganapan sa Google Calendar o iCal, o i-on ang 9 AM na email ng mga kaganapan sa araw na iyon.",
-        "mockSubject": "Magsisimula sa loob ng 1 oras: Italian cooking class",
-        "mockBody": "Kusina ng student centre, 6:00 PM. Kita-kits!",
-        "mockMorning": "Araw-araw na email tuwing 9 AM"
+        "title": "Libreng pagkain sa isang tap",
+        "description": "I-on ang Libreng pagkain at libreng events na may pagkain lang ang ipapakita ng feed. Paliitin pa ayon sa araw, presyo, club at lokasyon."
       },
       "clubs": {
         "title": "Hanapin ang mga organisasyong hindi mo alam na meron pala",
-        "description": "I-browse ang bawat organisasyon sa {{school}}, i-follow ang mga gusto mo, at maghanap ng mga bakanteng posisyon kapag gusto mong sumali.",
-        "mockClubOne": "Repair Club",
-        "mockClubTwo": "Salsa Society",
-        "mockClubThree": "Climbing Club",
-        "mockUpcoming": "{{count}} paparating na kaganapan",
-        "mockUpcoming_one": "{{count}} paparating na kaganapan",
-        "mockUpcoming_other": "{{count}} paparating na mga kaganapan",
-        "mockFollow": "I-follow",
-        "mockFollowing": "Naka-follow"
+        "description": "I-browse ang bawat organisasyon sa {{school}}, i-follow ang mga gusto mo, at maghanap ng mga bakanteng posisyon kapag gusto mong sumali."
       }
     },
     "faq": {
@@ -750,7 +654,6 @@
     },
     "closing": {
       "title": "Tama na ang pag-alam kinabukasan.",
-      "description": "Tingnan ang lahat ng nangyayari sa {{school}}, sa iisang lugar.",
       "action": "Tingnan kung ano'ng meron"
     }
   },

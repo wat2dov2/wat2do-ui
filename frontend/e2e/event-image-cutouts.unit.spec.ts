@@ -30,6 +30,10 @@ test("late badges stay measured through resize, replacement and removal", () => 
         return [initial, (update: (previous: unknown) => unknown) => { state[index] = update(state[index]); }];
       },
     } : {},
+    // The notch tokens the surface inherits from functional-tokens.css.
+    getComputedStyle: () => ({
+      getPropertyValue: (name: string) => ({ "--notch-fillet": " 8px", "--notch-radius": " 12px" })[name] ?? "",
+    }),
     ResizeObserver: class {
       constructor(callback: () => void) { resize = callback; }
       observe(node: Node) { observed.add(node); }
@@ -41,6 +45,8 @@ test("late badges stay measured through resize, replacement and removal", () => 
   const surface = { getBoundingClientRect: () => ({ width: 240.5, height: 208 }) };
   hook.surfaceRef.current = surface;
   const cleanup = effect();
+  // The face is measured unrounded, and the notch is cut with the tokens its badges are drawn with.
+  expect(state[0]).toEqual({ width: 240.5, height: 208, fillet: 8, radius: 12 });
   let badgeWidth = 90;
   const badge = { getBoundingClientRect: () => ({ width: badgeWidth, height: 24 }) };
   const register = hook.registerCorner("bottom-left");

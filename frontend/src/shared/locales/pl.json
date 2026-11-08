@@ -561,17 +561,19 @@
   },
   "landing": {
     "hero": {
-      "note": "Za darmo dla wszystkich · Finansowane z nagród za studencki wpływ",
-      "titleLead": "Każde wydarzenie na kampusie,",
-      "titleHighlight": "zanim się skończy.",
-      "description": "Wydarzenia organizacji giną wśród setek kont na Instagramie. Wat2Do zbiera je wszystkie w jednym feedzie.",
+      "badges": {
+        "free": "Za darmo, bez konta",
+        "source": "Prosto z Instagrama"
+      },
+      "titleLeadBefore": "Każde",
+      "titleWords": {
+        "event": "wydarzenie na kampusie",
+        "networking": "wydarzenie na kampusie",
+        "social": "wydarzenie na kampusie",
+        "position": "wydarzenie na kampusie"
+      },
       "primaryAction": "Zobacz, co się dzieje",
-      "secondaryAction": "Jak to działa",
-      "mapTitle": "{{total}} nadchodzące wydarzenie na {{school}}",
-      "mapTitle_one": "{{total}} nadchodzące wydarzenie na {{school}}",
-      "mapTitle_few": "{{total}} nadchodzące wydarzenia na {{school}}",
-      "mapTitle_many": "{{total}} nadchodzących wydarzeń na {{school}}",
-      "mapTitle_other": "{{total}} nadchodzącego wydarzenia na {{school}}"
+      "secondaryAction": "Jak to działa"
     },
     "problem": {
       "title": "Na kampusie NIE jest nudno. Wydarzenia są po prostu ukryte.",
@@ -593,15 +595,11 @@
           "title": "I wydaje się, że nic się nie dzieje",
           "description": "Gdy wydarzenia są rozrzucone po setkach kont, kampus wydaje się cichy. A wcale nie jest. Po prostu tego nie widzisz."
         }
-      },
-      "story": "Tony trafił na relację o lekcjach kuchni włoskiej, tylko $5. Wrzucono ją trzy dni wcześniej.",
-      "storyOver": "Wydarzenie już się skończyło.",
-      "storyEnd": "Więc zbudowaliśmy miejsce, którego sami nam brakowało.",
-      "signature": "Tony & Erica, założyciele Wat2Do"
+      }
     },
     "solution": {
-      "title": "Jeden feed. Każda organizacja. Bez szukania.",
-      "description": "Wat2Do śledzi konta za Ciebie i zamienia każdy plakat w wydarzenie, które możesz wyszukać, przefiltrować i zapisać.",
+      "title": "Każda okazja, zawsze aktualna.",
+      "description": "Każde wydarzenie, wieczór networkingowy i otwarte stanowisko w klubach na {{school}}, aktualizowane, gdy tylko kluby je opublikują. Szukaj, filtruj i zapisuj to, co cię interesuje.",
       "stats": {
         "clubsLabel": "organizacja śledzona na {{school}}",
         "clubsLabel_one": "organizacja śledzona na {{school}}",
@@ -617,124 +615,32 @@
         "newLabel_one": "nowe wydarzenie w ostatnich 7 dniach",
         "newLabel_few": "nowe wydarzenia w ostatnich 7 dniach",
         "newLabel_many": "nowych wydarzeń w ostatnich 7 dniach",
-        "newLabel_other": "nowego wydarzenia w ostatnich 7 dniach"
-      }
-    },
-    "different": {
-      "title": "Czym to się właściwie różni od innych stron z wydarzeniami?",
-      "description": "Inne strony czekają, aż organizacje same zgłoszą wydarzenia. Reszta zostaje zamknięta w Instagramie, który blokuje boty. Wat2Do i tak je stamtąd wyciąga.",
-      "points": {
-        "relay": {
-          "cost": "Setki godzin"
-        },
-        "alwaysOn": {
-          "title": "Mac mini, który nigdy nie śpi",
-          "description": "Kupiony przez nas M4 Mac mini anonimowo otwiera każdy oznaczony post i zamienia go w dane, całą dobę.",
-          "cost": "$899"
-        },
-        "claude": {
-          "title": "Claude czyta każdy plakat",
-          "description": "Claude Haiku zamienia plakaty w wydarzenia z zabezpieczeniami: nic zmyślonego, duplikaty sprawdzone, a login do bazy danych ograniczony do tabel wydarzeń.",
-          "cost": "$200 / mies."
-        },
-        "cloud": {
-          "title": "Online dla każdej uczelni",
-          "description": "AWS hostuje feed z kopiami zapasowymi, więc żaden bug nie zepsuje niczego prawdziwym studentom.",
-          "cost": "$100 / mies."
-        }
-      },
-      "costNote": "Pokrywamy te koszty z nagród za wpływ na społeczność studencką i stypendiów na University of Waterloo, czyli funduszy przeznaczonych na poprawę życia studentów, żeby Wat2Do pozostało darmowe dla każdego studenta.",
-      "diagramLabel": "Jak post organizacji na Instagramie staje się wpisem w Wat2Do: konta organizacji powiadamiają utajniony krok, worker przeglądarki i pobieranie postów na stale włączonym Mac mini odczytują post, agenci Claude z zabezpieczeniami zamieniają go w wydarzenie, a punkt kontrolny wpuszcza je do bazy wydarzeń z ograniczonym dostępem, która zasila Twój feed. Gdy coś się zepsuje, Mac mini wysyła alert na prywatny telefon, a my naprawiamy to z laptopa.",
-      "diagram": {
-        "zoneInstagram": "Instagram",
-        "zoneMac": "Mac mini · zawsze włączony",
-        "zoneWat2do": "Wat2Do",
-        "accounts": "Konta organizacji",
-        "browser": "Worker przeglądarki",
-        "fetcher": "Anonimowy pobieracz",
-        "agents": "Agenci Claude",
-        "database": "Baza wydarzeń",
-        "feed": "Twój feed",
-        "guardrails": "Zabezpieczenia",
-        "zoneOnCall": "Dyżur",
-        "laptop": "Nasz prywatny laptop",
-        "laptopNote": "(zdalne sterowanie Mac mini)",
-        "pager": "Prywatny telefon"
-      },
-      "redacted": "Utajnione"
-    },
-    "useCases": {
-      "title": "Kampus po Twojemu",
-      "description": "Sześć sposobów, w jakie studenci na {{school}} korzystają z Wat2Do.",
-      "items": {
-        "freeFood": {
-          "title": "Darmowe jedzenie między zajęciami",
-          "description": "Pizza na spotkaniach informacyjnych, kiermasze ciast, spotkania z przekąskami. Włącz filtr darmowego jedzenia i zaplanuj pod to lunch.",
-          "action": "Zobacz darmowe jedzenie"
-        },
-        "employers": {
-          "title": "Poznaj pracodawców na kampusie",
-          "description": "Spotkania informacyjne i wieczory networkingowe, na które rekruterzy przychodzą osobiście. Dobre okazje często zaczynają się od jednej rozmowy.",
-          "action": "Zobacz wydarzenia z pracodawcami"
-        },
-        "competitions": {
-          "title": "Konkursy i hackathony",
-          "description": "Konkursy case study, hackathony i wieczory pitchów, z nagrodami i czymś konkretnym do CV.",
-          "action": "Zobacz konkursy"
-        },
-        "newToCampus": {
-          "title": "Nowy na kampusie?",
-          "description": "Przeglądaj wszystkie organizacje na swojej uczelni i znajdź ludzi, którzy lubią to samo co Ty.",
-          "action": "Przeglądaj organizacje"
-        },
-        "getInvolved": {
-          "title": "Dołącz do zarządu",
-          "description": "Organizacje publikują tu wolne stanowiska, od przedstawicieli pierwszego roku po prezesów. Angażuj się, a nie tylko przychodź.",
-          "action": "Zobacz wolne stanowiska"
-        },
-        "bored": {
-          "title": "Nie masz co robić wieczorem?",
-          "description": "Wpisz „random” w wyszukiwarce feedu, a Wat2Do wybierze dla Ciebie coś, co dzieje się niedługo.",
-          "action": "Zaskocz mnie"
-        }
+        "newLabel_other": "nowego wydarzenia w ostatnich 7 dniach",
+        "networkingLabel": "nadchodząca okazja do networkingu",
+        "networkingLabel_few": "nadchodzące okazje do networkingu",
+        "networkingLabel_many": "nadchodzących okazji do networkingu",
+        "networkingLabel_one": "nadchodząca okazja do networkingu",
+        "networkingLabel_other": "nadchodzącej okazji do networkingu",
+        "freeFoodLabel": "nadchodzące wydarzenie z darmowym jedzeniem",
+        "freeFoodLabel_few": "nadchodzące wydarzenia z darmowym jedzeniem",
+        "freeFoodLabel_many": "nadchodzących wydarzeń z darmowym jedzeniem",
+        "freeFoodLabel_one": "nadchodzące wydarzenie z darmowym jedzeniem",
+        "freeFoodLabel_other": "nadchodzącego wydarzenia z darmowym jedzeniem",
+        "positionsLabel": "otwarte stanowisko w klubie",
+        "positionsLabel_few": "otwarte stanowiska w klubach",
+        "positionsLabel_many": "otwartych stanowisk w klubach",
+        "positionsLabel_one": "otwarte stanowisko w klubie",
+        "positionsLabel_other": "otwartego stanowiska w klubach"
       }
     },
     "features": {
-      "capture": {
-        "title": "Z plakatu na Instagramie w wydarzenie, automatycznie",
-        "description": "Organizacje publikują tak jak zawsze. Wat2Do czyta każdy plakat i wyciąga datę, godzinę, miejsce i cenę, więc wydarzenie trafia do feedu bez wypełniania żadnego formularza.",
-        "mockHandle": "@italian.club",
-        "mockTitle": "Warsztaty kuchni włoskiej",
-        "mockDate": "Czwartek, 18:00",
-        "mockPlace": "Kuchnia w centrum studenckim",
-        "mockPrice": "$5",
-        "mockAdded": "Dodano z posta organizacji"
-      },
       "filters": {
-        "title": "Darmowe jedzenie w dwa kliknięcia",
-        "description": "Szybkie filtry: darmowe jedzenie, pracodawcy na kampusie i konkursy. Albo zawęź wyniki według dnia, ceny, organizacji i miejsca.",
-        "mockQuery": "pizza"
-      },
-      "reminders": {
-        "title": "Już nigdy nie przegapisz swoich planów",
-        "description": "Kliknij „Wezmę udział”, a Wat2Do wyśle Ci maila mniej więcej godzinę przed startem. Zapisuj wydarzenia w Google Calendar lub iCal albo włącz maila o 9:00 z wydarzeniami na dany dzień.",
-        "mockSubject": "Start za 1 godzinę: warsztaty kuchni włoskiej",
-        "mockBody": "Kuchnia w centrum studenckim, 18:00. Do zobaczenia!",
-        "mockMorning": "Codzienny mail o 9:00"
+        "title": "Darmowe jedzenie w jedno kliknięcie",
+        "description": "Włącz Darmowe jedzenie, a feed pokaże tylko darmowe wydarzenia z jedzeniem. Zawęź dalej według dnia, ceny, klubu i miejsca."
       },
       "clubs": {
         "title": "Odkryj organizacje, o których istnieniu nie wiesz",
-        "description": "Przeglądaj wszystkie organizacje na {{school}}, obserwuj te, które Ci się podobają, i znajdź wolne stanowiska, gdy zechcesz się zaangażować.",
-        "mockClubOne": "Klub Napraw",
-        "mockClubTwo": "Koło Salsy",
-        "mockClubThree": "Klub Wspinaczkowy",
-        "mockUpcoming": "{{count}} nadchodzące wydarzenie",
-        "mockUpcoming_one": "{{count}} nadchodzące wydarzenie",
-        "mockUpcoming_few": "{{count}} nadchodzące wydarzenia",
-        "mockUpcoming_many": "{{count}} nadchodzących wydarzeń",
-        "mockUpcoming_other": "{{count}} nadchodzącego wydarzenia",
-        "mockFollow": "Obserwuj",
-        "mockFollowing": "Obserwujesz"
+        "description": "Przeglądaj wszystkie organizacje na {{school}}, obserwuj te, które Ci się podobają, i znajdź wolne stanowiska, gdy zechcesz się zaangażować."
       }
     },
     "faq": {
@@ -768,7 +674,6 @@
     },
     "closing": {
       "title": "Koniec z dowiadywaniem się dzień później.",
-      "description": "Wszystko, co dzieje się na {{school}}, w jednym miejscu.",
       "action": "Zobacz, co się dzieje"
     }
   },

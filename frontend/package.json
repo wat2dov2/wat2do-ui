@@ -23,6 +23,7 @@
     "type-check": "tsc --noEmit",
     "audit:i18n": "node scripts/audit-i18n-literals.mjs",
     "check": "npm run lint && npm run audit:i18n && npm run type-check",
+    "build-event-mosaic": "node scripts/build-event-mosaic.mjs",
     "generate-poster-templates": "node scripts/generate-poster-templates.mjs",
     "render-school-posters": "node scripts/school-posters/render-school-posters.mjs",
     "start": "next start",

@@ -552,14 +552,19 @@
   },
   "landing": {
     "hero": {
-      "note": "Free for everyone · Funded by student impact awards",
-      "titleLead": "Every campus event,",
-      "titleHighlight": "before it's over.",
-      "description": "Club events get buried across hundreds of Instagram accounts. Wat2Do puts them all in one feed.",
+      "badges": {
+        "free": "Free, no account",
+        "source": "Pulled from Instagram"
+      },
+      "titleLeadBefore": "Every campus",
+      "titleWords": {
+        "event": "event",
+        "networking": "networking event",
+        "social": "social event",
+        "position": "club position"
+      },
       "primaryAction": "See what's on",
-      "secondaryAction": "How it works",
-      "mapTitle": "{{total}} upcoming event at {{school}}",
-      "mapTitle_other": "{{total}} upcoming events at {{school}}"
+      "secondaryAction": "How it works"
     },
     "problem": {
       "title": "Campus is NOT boring. Its events are just hidden.",
@@ -581,136 +586,34 @@
           "title": "So it feels like nothing happens",
           "description": "When events are scattered across hundreds of accounts, campus feels quiet. It isn't. You just can't see it."
         }
-      },
-      "story": "Tony found an Instagram story for Italian cooking lessons, just $5. It had been posted three days earlier.",
-      "storyOver": "The event was already over.",
-      "storyEnd": "So we built the one place we wished existed.",
-      "signature": "Tony & Erica, founders of Wat2Do"
+      }
     },
     "solution": {
-      "title": "One feed. Every club. No searching.",
-      "description": "Wat2Do follows the accounts so you don't have to, and turns every flyer into an event you can search, filter and save.",
+      "title": "Every opportunity, kept up to date.",
+      "description": "Every event, networking night and club opening at {{school}}, updated as clubs post them. Search, filter and save the ones you want.",
       "stats": {
         "clubsLabel": "club tracked at {{school}}",
         "clubsLabel_other": "clubs tracked at {{school}}",
         "upcomingLabel": "upcoming event right now",
         "upcomingLabel_other": "upcoming events right now",
         "newLabel": "new event in the last 7 days",
-        "newLabel_other": "new events in the last 7 days"
-      }
-    },
-    "different": {
-      "title": "So how is this different from other event sites?",
-      "description": "Other sites wait for clubs to submit events. The rest stay locked inside Instagram, which bans bots. Wat2Do gets them out anyway.",
-      "points": {
-        "relay": {
-          "cost": "100s of hours"
-        },
-        "alwaysOn": {
-          "title": "A Mac mini that never sleeps",
-          "description": "An M4 Mac mini we bought opens each flagged post anonymously and turns it into data, 24/7.",
-          "cost": "$899"
-        },
-        "claude": {
-          "title": "Claude reads every flyer",
-          "description": "Claude Haiku turns flyers into events with guardrails: nothing invented, duplicates checked, and a database login locked to event tables.",
-          "cost": "$200 / month"
-        },
-        "cloud": {
-          "title": "Online for every school",
-          "description": "AWS hosts the feed with backups, so a bug never breaks things for real students.",
-          "cost": "$100 / month"
-        }
-      },
-      "costNote": "We cover these costs with student impact awards and bursaries at the University of Waterloo, funding meant to improve student life, so Wat2Do stays free for every student.",
-      "diagramLabel": "How a club's Instagram post becomes a Wat2Do listing: club accounts notify a redacted step, an always-on Mac mini's browser worker and anonymous fetcher read the post, Claude agents with guardrails turn it into an event, and a checkpoint lets it into a locked-down event database behind your feed. If anything breaks, the Mac mini pages a personal phone and we fix it from a laptop.",
-      "diagram": {
-        "zoneInstagram": "Instagram",
-        "zoneMac": "Mac mini · always on",
-        "zoneWat2do": "Wat2Do",
-        "accounts": "Club accounts",
-        "browser": "Browser worker",
-        "fetcher": "Anonymous fetcher",
-        "agents": "Claude agents",
-        "database": "Event database",
-        "feed": "Your feed",
-        "guardrails": "Guardrails",
-        "zoneOnCall": "On call",
-        "laptop": "Our personal laptop",
-        "laptopNote": "(remote control to the Mac mini)",
-        "pager": "Personal phone"
-      },
-      "redacted": "Redacted"
-    },
-    "useCases": {
-      "title": "However you do campus",
-      "description": "Six ways students at {{school}} use Wat2Do.",
-      "items": {
-        "freeFood": {
-          "title": "Free food between classes",
-          "description": "Pizza at info sessions, bake sales, socials with snacks. Filter to free food and plan lunch around it.",
-          "action": "See free food"
-        },
-        "employers": {
-          "title": "Meet employers on campus",
-          "description": "Info sessions and networking nights where recruiters show up in person. Good leads often start with one conversation.",
-          "action": "See employer events"
-        },
-        "competitions": {
-          "title": "Competitions and hackathons",
-          "description": "Case comps, hackathons and pitch nights, with prizes and something real for your resume.",
-          "action": "See competitions"
-        },
-        "newToCampus": {
-          "title": "New to campus?",
-          "description": "Browse every club at your school and find people who are into the same things you are.",
-          "action": "Browse clubs"
-        },
-        "getInvolved": {
-          "title": "Join an exec team",
-          "description": "Clubs post open roles here, from first-year reps to presidents. Get involved beyond showing up.",
-          "action": "See open positions"
-        },
-        "bored": {
-          "title": "Nothing to do tonight?",
-          "description": "Search \"random\" in the feed and Wat2Do picks something happening soon for you.",
-          "action": "Surprise me"
-        }
+        "newLabel_other": "new events in the last 7 days",
+        "networkingLabel": "upcoming networking opportunity",
+        "networkingLabel_other": "upcoming networking opportunities",
+        "freeFoodLabel": "upcoming event with free food",
+        "freeFoodLabel_other": "upcoming events with free food",
+        "positionsLabel": "open club position",
+        "positionsLabel_other": "open club positions"
       }
     },
     "features": {
-      "capture": {
-        "title": "From Instagram flyer to event, automatically",
-        "description": "Clubs keep posting the way they always have. Wat2Do reads each flyer and pulls out the date, time, place and price, so the event lands in the feed without anyone filling out a form.",
-        "mockHandle": "@italian.club",
-        "mockTitle": "Italian cooking class",
-        "mockDate": "Thursday, 6:00 PM",
-        "mockPlace": "Student centre kitchen",
-        "mockPrice": "$5",
-        "mockAdded": "Added from the club's post"
-      },
       "filters": {
-        "title": "Free food in two taps",
-        "description": "Quick filters for free food, employers on campus and competitions. Or narrow it down by day, price, club and location.",
-        "mockQuery": "pizza"
-      },
-      "reminders": {
-        "title": "Never forget you were going",
-        "description": "Tap Going and Wat2Do emails you about an hour before it starts. Save events to Google Calendar or iCal, or turn on a 9 AM email with the day's events.",
-        "mockSubject": "Starts in 1 hour: Italian cooking class",
-        "mockBody": "Student centre kitchen at 6:00 PM. See you there.",
-        "mockMorning": "9 AM daily email"
+        "title": "Free food in one tap",
+        "description": "Turn on Free food and the feed shows only free events with food. Narrow it further by day, price, club and location."
       },
       "clubs": {
         "title": "Find the clubs you didn't know existed",
-        "description": "Browse every club at {{school}}, follow the ones you like, and find open positions when you want to get involved.",
-        "mockClubOne": "Repair Club",
-        "mockClubTwo": "Salsa Society",
-        "mockClubThree": "Climbing Club",
-        "mockUpcoming": "{{count}} upcoming event",
-        "mockUpcoming_other": "{{count}} upcoming events",
-        "mockFollow": "Follow",
-        "mockFollowing": "Following"
+        "description": "Browse every club at {{school}}, follow the ones you like, and find open positions when you want to get involved."
       }
     },
     "faq": {
@@ -741,7 +644,6 @@
     },
     "closing": {
       "title": "Stop finding out the day after.",
-      "description": "See everything happening at {{school}}, all in one place.",
       "action": "See what's on"
     }
   },
