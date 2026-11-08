@@ -6,7 +6,7 @@ import { EventHighlightSections } from "@/features/events/components/EventHighli
 import type { EventBrowseView } from "@/features/events/components/EventViewSelect";
 import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
-import type { Event } from "@/shared/types";
+import type { Event, Position } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { EmptyState, LoadFailureNotice } from "@/shared/feedback";
 import { Stack } from "@/shared/layout";
@@ -18,11 +18,14 @@ const NO_EVENTS: Event[] = [];
 interface EventsPageContainerProps {
   /** The server's first screen of the feed, or null when it could not read the feed. */
   firstScreen: EventFeedFirstScreen | null;
+  /** The open positions row's positions, or null when the server could not read them. */
+  openPositions: Position[] | null;
   initialSchool: string;
 }
 
 export function EventsPageContainer({
   firstScreen,
+  openPositions,
   initialSchool,
 }: EventsPageContainerProps) {
   usePosterLandingConfirmation();
@@ -83,6 +86,10 @@ export function EventsPageContainer({
   // A search or filter collapses the highlights, so its results start right
   // under the search box; so does the map or calendar view, which fill the page.
   const showHighlights = view === "grid" && !hasActiveFilters && !error;
+  // Everything waiting for the rest of the feed says so the same way, with a way to try again.
+  const loadFailureNotice = restLoadFailed ? (
+    <LoadFailureNotice message={t("events.loadFailed")} onRetry={refreshEvents} retrying={isRefreshing} />
+  ) : undefined;
 
   return (
     <>
@@ -92,6 +99,8 @@ export function EventsPageContainer({
             school={initialSchool}
             highlights={highlights}
             mapEvents={listing?.complete ? allEvents : null}
+            openPositions={openPositions}
+            loadFailureNotice={loadFailureNotice}
             eventStats={eventStats}
             onEventClick={handleEventClick}
             onSeeAllFeatured={handleSeeAllFeatured}
@@ -133,9 +142,7 @@ export function EventsPageContainer({
               hasActiveFilters={hasActiveFilters}
               eventStats={eventStats}
               isLoading={listing === null}
-              loadFailureNotice={restLoadFailed ? (
-                <LoadFailureNotice message={t("events.loadFailed")} onRetry={refreshEvents} retrying={isRefreshing} />
-              ) : undefined}
+              loadFailureNotice={loadFailureNotice}
               resetKey={appliedQueryKey}
               groupByDateSections={
                 filters.sortBy === "date" && filters.sortOrder === "asc"
