@@ -591,6 +591,8 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       await expect(page.locator("img[src*='wat2do-logo-nav']").first()).toHaveAttribute("loading", "eager");
       await expect(page.locator("[data-slot=club-details] [data-slot=page-header] [data-slot=avatar-stack] img")).toHaveAttribute("loading", "eager");
       await expect(page.locator("[data-slot=club-details] [data-event-card] [data-slot=avatar-stack] img").first()).toHaveAttribute("loading", "eager");
+      // A first-row poster that has arrived appears with the page, never as a placeholder first.
+      await expect(page.locator("[data-slot=club-details] [data-event-card] [data-slot=event-image-face] img").first()).toHaveAttribute("decoding", "sync");
     });
 
     test("events list keeps its layout when the complete feed replaces the server's first screen", async ({ page, next }) => {

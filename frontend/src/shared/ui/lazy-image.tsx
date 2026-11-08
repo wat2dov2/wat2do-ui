@@ -80,7 +80,9 @@ function ImageContent({
             height={height}
             loading={loading}
             fetchPriority={loading === "eager" ? "high" : undefined}
-            decoding="async"
+            // A first-screen image that has already arrived is decoded with the frame that
+            // shows the page, so it never paints as an empty placeholder for a frame first.
+            decoding={loading === "eager" ? "sync" : "async"}
             onLoad={event => { setStatus("loaded"); onLoad?.(event.currentTarget); }}
             onError={() => (fallbackSrc && imageSrc !== fallbackSrc ? setImageSrc(fallbackSrc) : setStatus("error"))}
             className={cn("relative", fit === "contain" ? "object-contain" : "object-cover")}
