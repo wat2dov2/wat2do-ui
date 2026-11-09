@@ -44,6 +44,8 @@ The aim is a site that is fast and costs close to nothing: nothing runs all the 
 3. Only then uploads the website: static files and the data cache to the web bucket, each function's code, and a CloudFront invalidation of `/*`, then checks `/healthz` and a school's discovery snapshot.
 
 Website build settings are in `~/wat2do-data/config/web-build.env` (`API_URL=https://api.wat2do.io`, `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`).
+OpenNext leaves sharp out of the server function, so `frontend/open-next.config.ts` has it install the Linux arm64 build of the version the website builds with, which the Instagram slide route needs.
+The deploy then points Turbopack's link to it (`.next/node_modules/sharp-<hash>`, made for `frontend/node_modules`) at that copy, keeps links as links in the zip, and stops when any link in the bundle has no package behind it.
 The functions' settings and secrets are Terraform's (`~/wat2do-data/config/web.tfvars`, mode 0600), so a deploy only replaces code.
 A new top-level entry in `frontend/public` needs its own CloudFront behavior, so the deploy stops until `terraform apply` has added it.
 

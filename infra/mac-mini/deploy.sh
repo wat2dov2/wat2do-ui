@@ -78,6 +78,24 @@ mv "$build/frontend/package-lock.json" "$build/package-lock.json"
 )
 restore_lockfile
 
+# Turbopack loads a server package through a link in .next/node_modules
+# (<package>-<hash>) to frontend/node_modules/<package>. OpenNext leaves sharp
+# out of that folder and installs its Linux build at the bundle's root
+# (frontend/open-next.config.ts), so a link it left dangling goes there instead.
+# The zip keeps links as links, so Node resolves sharp's own imports from the
+# bundle's root, where its dependencies are complete.
+server_bundle="$build/frontend/.open-next/server-functions/default"
+for link in "$server_bundle/frontend/.next/node_modules"/*; do
+  { [ -L "$link" ] && [ ! -e "$link" ]; } || continue
+  target="$(readlink "$link")"
+  ln -sfn "../../../node_modules/${target##*/node_modules/}" "$link"
+done
+dangling="$(find "$server_bundle" -type l ! -exec test -e {} \; -print)"
+if [ -n "$dangling" ]; then
+  log "the website's server bundle links to packages it does not have: $dangling"
+  exit 1
+fi
+
 log "assembling $release"
 rm -rf "$release.partial"
 mkdir -p "$release.partial/bin" "$release.partial/infra"
@@ -157,7 +175,7 @@ log "deploying $sha to the website's functions"
 update_function() {
   local name="$1" bundle="$2" zip
   zip="$(mktemp -t "$name").zip"
-  (cd "$bundle" && rm -f "$zip" && zip -qr -X "$zip" .)
+  (cd "$bundle" && rm -f "$zip" && zip -qry -X "$zip" .)
   aws s3 cp "$zip" "s3://$web_bucket/_deploy/$name.zip" --only-show-errors
   aws lambda update-function-code --function-name "$name" \
     --s3-bucket "$web_bucket" --s3-key "_deploy/$name.zip" >/dev/null
