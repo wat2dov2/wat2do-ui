@@ -271,13 +271,20 @@ class EmulatorDevice:
         (``screen_wait_seconds`` when not given), and return its last answer.
 
         ``look`` answers with something falsy while the screen does not show it yet.
-        A dialog covering the app is answered (``_prompt``) unless it is what ``look`` is
-        after, a few at most, so one that will not go away cannot hold the wait forever.
+        A screen that cannot be read yet, such as while the app starts afresh or Android
+        switches users, is waited out too. A dialog covering the app is answered
+        (``_prompt``) unless it is what ``look`` is after, a few at most, so one that
+        will not go away cannot hold the wait forever.
         """
         deadline = self._monotonic() + (seconds or CONTROL.screen_wait_seconds)
         answered = 0
         while True:
-            nodes = self.screen()
+            try:
+                nodes = self.screen()
+            except EmulatorError:
+                if self._monotonic() >= deadline:
+                    raise
+                continue
             seen = look(nodes)
             if seen:
                 return seen
@@ -476,7 +483,13 @@ class EmulatorDevice:
 
     def use_android_user(self, user: int) -> None:
         """Bring the Android user that holds the account to the foreground, waiting only
-        until it is in front and unlocked, at most ``user_switch_wait_seconds``."""
+        until it is in front, unlocked and on screen, at most ``user_switch_wait_seconds``.
+
+        For a dozen seconds after Android reports the switch, its own switching screen
+        and then a blank one hold the display: nothing can be read, and a link opened
+        then lands late. The user's own screen (its last app, or the home screen) comes
+        back by itself; a switch whose screen is slower than the wait goes on anyway.
+        """
         if self.adb("shell", "am", "get-current-user").strip() == str(user):
             return
         self.adb("shell", "am", "switch-user", str(user))
@@ -486,11 +499,24 @@ class EmulatorDevice:
                 raise EmulatorError("Emulator did not switch Android users")
             self._sleep(_POLL_SECONDS)
         self.wake()
+        while not self._user_on_screen(user) and self._monotonic() < deadline:
+            self._sleep(_POLL_SECONDS)
 
     def _user_ready(self, user: int) -> bool:
         return self.adb("shell", "am", "get-current-user").strip() == str(
             user
         ) and "RUNNING_UNLOCKED" in self.adb("shell", "am", "get-started-user-state", str(user))
+
+    def _user_on_screen(self, user: int) -> bool:
+        """Whether one of the user's own windows has the focus and can be read."""
+        try:
+            focus = self.adb("shell", "dumpsys window | grep -m1 mCurrentFocus")
+            if f" u{user} " not in focus:
+                return False
+            self._read_screen()
+        except EmulatorError:
+            return False
+        return True
 
     def use_account(self, user: int, account_username: str) -> None:
         """Switch the app to the account, confirmed by the DM inbox's title.

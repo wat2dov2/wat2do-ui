@@ -92,7 +92,12 @@ def test_taps_land_inside_the_middle_of_the_control() -> None:
         assert 150 <= x <= 250 and 250 <= y <= 350
 
 
-def test_a_user_switch_waits_only_until_the_user_is_in_front_and_unlocked() -> None:
+SWITCHING = "  mCurrentFocus=Window{7f8d89e u0 android}\n"
+BLANK = "  mCurrentFocus=null\n"
+LAUNCHER = "  mCurrentFocus=Window{3401685 u10 com.google.android.apps.nexuslauncher/x}\n"
+
+
+def test_a_user_switch_waits_until_the_users_own_screen_is_up() -> None:
     commands = []
     outputs = [
         (0, "0\n"),  # current user before the switch
@@ -104,10 +109,24 @@ def test_a_user_switch_waits_only_until_the_user_is_in_front_and_unlocked() -> N
         (0, "RUNNING_UNLOCKED\n"),
         (0, ""),  # wake
         (0, ""),
+        (0, SWITCHING),  # Android's switching screen
+        (0, BLANK),
+        (0, LAUNCHER),  # the user's home screen, still being drawn
+        (0, LAUNCHER),
     ]
-    _device(outputs, commands).use_android_user(10)
+    device = _device(outputs, commands, ["", SCREEN])
+    device.use_android_user(10)
     assert outputs == []
     assert commands[1][-3:] == ["am", "switch-user", "10"]
+    assert device._reader.screens == []
+
+
+def test_a_user_whose_screen_is_slow_to_come_up_is_used_anyway(monkeypatch) -> None:
+    ready = [(0, "0\n"), (0, ""), (0, "10\n"), (0, "RUNNING_UNLOCKED\n"), (0, ""), (0, "")]
+    device = _device(ready + [(0, BLANK)] * 20, [])
+    clock = iter(range(0, 1_000, 5))
+    monkeypatch.setattr(device, "_monotonic", lambda: next(clock))
+    device.use_android_user(10)
 
 
 def test_a_user_that_never_comes_to_the_front_fails(monkeypatch) -> None:
@@ -441,6 +460,21 @@ def test_watching_returns_what_the_screen_shows_once_it_shows_it(monkeypatch) ->
     story = re.compile("^Your story$")
     nodes = device.watch(lambda nodes: [node for node in nodes if node.labelled(story)])
     assert [node.text for node in nodes] == ["Your story"]
+
+
+def test_watching_waits_out_a_screen_that_cannot_be_read_yet() -> None:
+    # A cold start of the app leaves no window to read for longer than one read retries.
+    unreadable = [ScreenReaderError()] * (module._SCREEN_READ_ATTEMPTS * 2)
+    device = _device([], [], [*unreadable, SCREEN])
+    assert device.wait_for(re.compile("^Your story$")).text == "Your story"
+
+
+def test_a_screen_that_never_becomes_readable_still_fails_the_wait(monkeypatch) -> None:
+    device = _device([], [], [ScreenReaderError()] * 200)
+    clock = iter(range(0, 1_000))
+    monkeypatch.setattr(device, "_monotonic", lambda: next(clock))
+    with pytest.raises(module.EmulatorError, match="could not be read"):
+        device.wait_for(re.compile("^Your story$"), seconds=5)
 
 
 def test_watching_gives_up_with_the_last_answer(monkeypatch) -> None:
