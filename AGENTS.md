@@ -155,8 +155,8 @@ One row per school and handle is kept whatever its status, so an account an admi
 Every listed club's Instagram account goes in approved for its school (`sync_club_targets`); crawled accounts wait for review.
 A crawl (`backend/services/instagram_follow/crawl.py`) starts at most once per `controlbox/instagram_follow.json` `crawl_interval_days` per school.
 It searches the school account's own Following list for the school's names in `school_names` (UofT's campuses list each other), then each match's Following list in turn, reading from each row's button whether we already follow that account.
-Every match is followed further, and an unfollowed account with no row yet becomes a pending candidate.
-The crawl stops once `crawl_miss_streak` profiles in a row find nothing new; a profile that fails to load is retried later and never counts as a miss.
+Every match the school follows is searched in turn, and an unfollowed account with no row yet becomes a pending candidate, searched by a later crawl once the school follows it.
+The crawl stops only once `crawl_miss_streak` profiles in a row find nothing new, or no match is left to search; a profile that fails to load is retried later and never counts as a miss.
 It runs in slices (`crawl_slice`) with its place kept in local state, so it never holds the emulator for hours.
 New candidates are read logged out from their profile embed (`fetch_profile`) and scored by Claude (`backend/services/instagram_follow/prompt.md`) from their newest posts.
 Admins review them on the admin Social page's Follow candidates tab; approvals and rejections are staged in the page and submitted together.
