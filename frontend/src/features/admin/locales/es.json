@@ -5,6 +5,7 @@
     "reportUpdateFailed": "No se pudo actualizar el reporte. Inténtalo de nuevo.",
     "eventReport": "Reporte de evento",
     "pendingCount": "{{label}}: {{value}} pendientes",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "No se pudieron cargar algunos recuentos pendientes.",
     "eventReports": "Reportes de eventos",
     "reportReason": "Motivo del reporte",
@@ -441,7 +442,7 @@
       "notRead": "Aún no se ha leído. La próxima ejecución diaria lo completará.",
       "summary": {
         "needingAttention": "Requieren atención: {{value}}",
-        "quietNotifications": "Sin notificaciones en {{hours}} h: {{value}}",
+        "quietNotifications": "Sin notificaciones en {{hours}} h",
         "followers": "Seguidores en total",
         "averageLikes": "Me gusta promedio por publicación",
         "followerGains": "Seguidores nuevos por día",

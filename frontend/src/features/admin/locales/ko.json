@@ -5,6 +5,7 @@
     "reportUpdateFailed": "신고를 업데이트하지 못했습니다. 다시 시도해 주세요.",
     "eventReport": "이벤트 신고",
     "pendingCount": "{{label}}: {{value}}건 대기 중",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "일부 대기 건수를 불러오지 못했습니다.",
     "eventReports": "행사 신고",
     "reportReason": "신고 사유",
@@ -441,7 +442,7 @@
       "notRead": "아직 읽지 않았습니다. 다음 일일 실행에서 채워집니다.",
       "summary": {
         "needingAttention": "확인 필요: {{value}}",
-        "quietNotifications": "{{hours}}시간 넘게 알림 없음: {{value}}",
+        "quietNotifications": "{{hours}}시간 넘게 알림 없음",
         "followers": "총 팔로워",
         "averageLikes": "게시물당 평균 좋아요",
         "followerGains": "일별 신규 팔로워",

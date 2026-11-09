@@ -5,6 +5,7 @@
     "reportUpdateFailed": "புகாரைப் புதுப்பிக்க முடியவில்லை. மீண்டும் முயலவும்.",
     "eventReport": "நிகழ்வு புகார்",
     "pendingCount": "{{label}}: {{value}} நிலுவையில்",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "சில நிலுவை எண்ணிக்கைகளை ஏற்ற முடியவில்லை.",
     "eventReports": "நிகழ்வுப் புகார்கள்",
     "reportReason": "புகாரின் காரணம்",
@@ -441,7 +442,7 @@
       "notRead": "இன்னும் படிக்கப்படவில்லை. அடுத்த தினசரி ஓட்டம் இதை நிரப்பும்.",
       "summary": {
         "needingAttention": "கவனம் தேவை: {{value}}",
-        "quietNotifications": "{{hours}} மணிநேரமாக அறிவிப்பு இல்லை: {{value}}",
+        "quietNotifications": "{{hours}} மணிநேரமாக அறிவிப்பு இல்லை",
         "followers": "மொத்த பின்தொடர்பவர்கள்",
         "averageLikes": "ஒரு இடுகைக்கு சராசரி விருப்பங்கள்",
         "followerGains": "ஒரு நாளுக்கு புதிய பின்தொடர்பவர்கள்",

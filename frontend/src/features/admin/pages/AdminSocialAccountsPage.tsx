@@ -40,7 +40,7 @@ export function AdminSocialAccountsPage() {
         t("admin.socialAccounts.updated", { time: formatRelativeTime(capturedAt, t) }),
         summary.needingAttention ? t("admin.socialAccounts.summary.needingAttention", { value: number(summary.needingAttention) }) : null,
         summary.quietNotifications
-          ? t("admin.socialAccounts.summary.quietNotifications", { hours: QUIET_NOTIFICATION_HOURS, value: number(summary.quietNotifications) })
+          ? t("admin.alertCount", { label: t("admin.socialAccounts.summary.quietNotifications", { hours: QUIET_NOTIFICATION_HOURS }), value: number(summary.quietNotifications) })
           : null,
       ].filter(Boolean).join(" · ") : undefined} />
   );

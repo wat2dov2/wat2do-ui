@@ -5,6 +5,7 @@
     "reportUpdateFailed": "ਰਿਪੋਰਟ ਅੱਪਡੇਟ ਨਹੀਂ ਹੋ ਸਕੀ। ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     "eventReport": "ਇਵੈਂਟ ਰਿਪੋਰਟ",
     "pendingCount": "{{label}}: {{value}} ਬਕਾਇਆ",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "ਕੁਝ ਬਕਾਇਆ ਗਿਣਤੀਆਂ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀਆਂ।",
     "eventReports": "ਇਵੈਂਟ ਰਿਪੋਰਟਾਂ",
     "reportReason": "ਰਿਪੋਰਟ ਦਾ ਕਾਰਨ",
@@ -441,7 +442,7 @@
       "notRead": "ਹਾਲੇ ਪੜ੍ਹਿਆ ਨਹੀਂ ਗਿਆ। ਅਗਲਾ ਰੋਜ਼ਾਨਾ ਰਨ ਇਸਨੂੰ ਭਰ ਦੇਵੇਗਾ।",
       "summary": {
         "needingAttention": "ਧਿਆਨ ਲੋੜੀਂਦਾ: {{value}}",
-        "quietNotifications": "{{hours}} ਘੰਟਿਆਂ ਤੋਂ ਕੋਈ ਸੂਚਨਾ ਨਹੀਂ: {{value}}",
+        "quietNotifications": "{{hours}} ਘੰਟਿਆਂ ਤੋਂ ਕੋਈ ਸੂਚਨਾ ਨਹੀਂ",
         "followers": "ਕੁੱਲ ਫਾਲੋਅਰ",
         "averageLikes": "ਹਰ ਪੋਸਟ ਦੇ ਔਸਤ ਲਾਈਕ",
         "followerGains": "ਹਰ ਦਿਨ ਨਵੇਂ ਫਾਲੋਅਰ",

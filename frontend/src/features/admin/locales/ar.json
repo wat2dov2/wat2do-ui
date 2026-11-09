@@ -5,6 +5,7 @@
     "reportUpdateFailed": "تعذر تحديث البلاغ. يرجى المحاولة مرة أخرى.",
     "eventReport": "بلاغ عن فعالية",
     "pendingCount": "{{label}}: {{value}} قيد الانتظار",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "تعذر تحميل بعض أعداد العناصر المعلقة.",
     "eventReports": "بلاغات الفعاليات",
     "reportReason": "سبب البلاغ",
@@ -441,7 +442,7 @@
       "notRead": "لم يُقرأ بعد. سيملؤه التشغيل اليومي القادم.",
       "summary": {
         "needingAttention": "تحتاج إلى متابعة: {{value}}",
-        "quietNotifications": "بلا إشعارات منذ {{hours}} ساعة: {{value}}",
+        "quietNotifications": "بلا إشعارات منذ {{hours}} ساعة",
         "followers": "إجمالي المتابعين",
         "averageLikes": "متوسط الإعجابات لكل منشور",
         "followerGains": "المتابعون الجدد يوميًا",

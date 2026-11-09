@@ -5,6 +5,7 @@
     "reportUpdateFailed": "Impossible de mettre à jour le signalement. Réessayez.",
     "eventReport": "Signalement d’événement",
     "pendingCount": "{{label}} : {{value}} en attente",
+    "alertCount": "{{label}} : {{value}}",
     "pendingCountsError": "Certains nombres en attente n’ont pas pu être chargés.",
     "eventReports": "Signalements d’événements",
     "reportReason": "Motif du signalement",
@@ -441,7 +442,7 @@
       "notRead": "Pas encore relevé. Le prochain relevé quotidien le remplira.",
       "summary": {
         "needingAttention": "À vérifier : {{value}}",
-        "quietNotifications": "Sans notification depuis {{hours}} h : {{value}}",
+        "quietNotifications": "Sans notification depuis {{hours}} h",
         "followers": "Abonnés au total",
         "averageLikes": "J'aime moyens par publication",
         "followerGains": "Nouveaux abonnés par jour",
