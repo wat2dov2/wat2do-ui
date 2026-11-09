@@ -271,13 +271,20 @@ class EmulatorDevice:
         (``screen_wait_seconds`` when not given), and return its last answer.
 
         ``look`` answers with something falsy while the screen does not show it yet.
-        A dialog covering the app is answered (``_prompt``) unless it is what ``look`` is
-        after, a few at most, so one that will not go away cannot hold the wait forever.
+        A screen that cannot be read yet, such as while the app starts afresh or Android
+        switches users, is waited out too. A dialog covering the app is answered
+        (``_prompt``) unless it is what ``look`` is after, a few at most, so one that
+        will not go away cannot hold the wait forever.
         """
         deadline = self._monotonic() + (seconds or CONTROL.screen_wait_seconds)
         answered = 0
         while True:
-            nodes = self.screen()
+            try:
+                nodes = self.screen()
+            except EmulatorError:
+                if self._monotonic() >= deadline:
+                    raise
+                continue
             seen = look(nodes)
             if seen:
                 return seen

@@ -462,6 +462,21 @@ def test_watching_returns_what_the_screen_shows_once_it_shows_it(monkeypatch) ->
     assert [node.text for node in nodes] == ["Your story"]
 
 
+def test_watching_waits_out_a_screen_that_cannot_be_read_yet() -> None:
+    # A cold start of the app leaves no window to read for longer than one read retries.
+    unreadable = [ScreenReaderError()] * (module._SCREEN_READ_ATTEMPTS * 2)
+    device = _device([], [], [*unreadable, SCREEN])
+    assert device.wait_for(re.compile("^Your story$")).text == "Your story"
+
+
+def test_a_screen_that_never_becomes_readable_still_fails_the_wait(monkeypatch) -> None:
+    device = _device([], [], [ScreenReaderError()] * 200)
+    clock = iter(range(0, 1_000))
+    monkeypatch.setattr(device, "_monotonic", lambda: next(clock))
+    with pytest.raises(module.EmulatorError, match="could not be read"):
+        device.wait_for(re.compile("^Your story$"), seconds=5)
+
+
 def test_watching_gives_up_with_the_last_answer(monkeypatch) -> None:
     device = _device([], [], [SCREEN] * 50)
     clock = iter(range(0, 1_000))
