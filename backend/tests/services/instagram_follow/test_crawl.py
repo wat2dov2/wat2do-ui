@@ -71,11 +71,15 @@ def _rows(*rows):
     return [FollowingRow(username, name, followed) for username, name, followed in rows]
 
 
-def test_a_crawl_snowballs_through_clubs_and_records_new_accounts_only(world):
+def test_a_crawl_snowballs_through_followed_clubs_and_records_new_accounts_only(world):
     reader = _Reader(
         {
             "wat2do.utm": _rows(("utmmsa", "UTM MSA", True), ("someone", "Unrelated", True)),
-            "utmmsa": _rows(("utmaclub", "UTMAC", False), ("rejected.utm", "Rejected UTM", False)),
+            "utmmsa": _rows(
+                ("utmchess", "UTM Chess", True),
+                ("utmaclub", "UTMAC", False),
+                ("rejected.utm", "Rejected UTM", False),
+            ),
         }
     )
     added, progress = world(reader)
@@ -84,8 +88,9 @@ def test_a_crawl_snowballs_through_clubs_and_records_new_accounts_only(world):
 
     assert [handle for handle, _ in added] == ["utmaclub"]
     assert added[0][1] == {"source": "crawl", "name": "UTMAC", "found_via": ["utmmsa"]}
-    # Every match is followed further, accounts we follow and rejected ones included.
-    assert reader.visits == ["wat2do.utm", "utmmsa", "utmaclub", "rejected.utm"]
+    # Only the matches the school follows are searched in turn; a new candidate waits
+    # for a later crawl, once the school follows it.
+    assert reader.visits == ["wat2do.utm", "utmmsa", "utmchess"]
     assert progress[-1]["status"] == "finished"
     assert not module._state_path("utm").exists()
 
@@ -119,7 +124,7 @@ def test_the_deadline_keeps_the_crawls_place(world):
     assert module.json.loads(module._state_path("utm").read_text())["queue"] == ["utmmsa"]
 
     assert module.crawl_slice(object(), "utm", deadline=float("inf")) == module.CRAWL_FINISHED
-    assert reader.visits == ["wat2do.utm", "utmmsa", "utmaclub"]
+    assert reader.visits == ["wat2do.utm", "utmmsa"]
 
 
 def test_only_names_of_the_school_are_followed_further(world):
@@ -181,17 +186,16 @@ def test_a_crawl_slice_stops_for_a_waiting_song_and_keeps_its_place(world):
     assert module.json.loads(module._state_path("utm").read_text())["queue"] == ["utmmsa"]
 
 
-def test_a_crawl_ends_after_its_profile_cap(world, monkeypatch):
-    reader = _Reader(
-        {
-            "wat2do.utm": _rows(("utmmsa", "UTM MSA", True)),
-            "utmmsa": _rows(("utmaclub", "UTMAC", False)),
-        }
-    )
-    world(reader)
-    monkeypatch.setattr(
-        module, "CONTROL", module.CONTROL.model_copy(update={"crawl_max_profiles": 1})
-    )
+def test_only_misses_in_a_row_end_a_crawl_before_its_clubs_run_out(world):
+    clubs = [f"utm{number}" for number in range(6)]
+    lists = {"wat2do.utm": _rows(*((club, club.upper(), True) for club in clubs))}
+    # Every club but the last few turns up an account the school has no row for yet.
+    for club in clubs[:3]:
+        lists[club] = _rows((f"{club}.new", "New UTM club", False))
+    reader = _Reader(lists)
+    added, _ = world(reader, streak=2)
 
     assert module.crawl_slice(object(), "utm", deadline=float("inf")) == module.CRAWL_FINISHED
-    assert reader.visits == ["wat2do.utm", "utmmsa"]
+
+    assert [handle for handle, _ in added] == ["utm0.new", "utm1.new", "utm2.new"]
+    assert reader.visits == ["wat2do.utm", "utm0", "utm1", "utm2", "utm3", "utm4"]

@@ -2,10 +2,13 @@
 
 A crawl searches the school account's own Following list for the school's names; the
 clubs it finds are the first seeds. For each seed it searches that seed's Following
-list for the same names: an account we don't follow is a candidate, and every match,
-followed or not, joins the queue. A seed is productive when it turns up an account
-the school has no row for yet, so an account an admin rejected is never offered
-again. The crawl stops once ``crawl_miss_streak`` seeds in a row turn up nothing new.
+list for the same names: an account we don't follow is a candidate, and every match the
+school follows joins the queue, so the crawl reads every club's list and never wanders
+into the personal accounts that also carry the school's name. A candidate is searched
+in turn by a later crawl, once the school follows it. A seed is productive when it turns
+up an account the school has no row for yet, so an account an admin rejected is never
+offered again. The crawl ends once ``crawl_miss_streak`` seeds in a row turn up nothing
+new, or when no seed is left.
 
 Crawls take hours, so the emulator worker advances them in slices between its other
 jobs: ``crawl_slice`` works until a deadline and keeps its place in local state.
@@ -102,11 +105,7 @@ def crawl_slice(
         state["seeded"] = True
         _save(school, state)
     failed_in_a_row = 0
-    while (
-        state["queue"]
-        and state["streak"] < CONTROL.crawl_miss_streak
-        and state["visited"] < CONTROL.crawl_max_profiles
-    ):
+    while state["queue"] and state["streak"] < CONTROL.crawl_miss_streak:
         if time.monotonic() >= deadline or (stop is not None and stop()):
             return CRAWL_RUNNING
         seed = state["queue"].pop(0)
@@ -155,17 +154,18 @@ class _Crawler:
         for row in rows:
             if row.username == f"wat2do.{self.school}" or not self._matches(row.username, row.name):
                 continue
-            if not row.followed and row.username not in self.known:
-                candidates.add_candidate(
-                    self.school_id,
-                    row.username,
-                    source=FOLLOW_SOURCE_CRAWL,
-                    name=row.name,
-                    found_via=[seed],
-                )
-                self.known.add(row.username)
-                new += 1
-            if row.username not in queued:
+            if not row.followed:
+                if row.username not in self.known:
+                    candidates.add_candidate(
+                        self.school_id,
+                        row.username,
+                        source=FOLLOW_SOURCE_CRAWL,
+                        name=row.name,
+                        found_via=[seed],
+                    )
+                    self.known.add(row.username)
+                    new += 1
+            elif row.username not in queued:
                 state["queue"].append(row.username)
                 queued.add(row.username)
         return new

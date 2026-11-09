@@ -9,10 +9,9 @@
   "profile_read_delay_min_seconds": 3,
   "profile_read_delay_max_seconds": 6,
   "crawl_interval_days": 7,
-  "crawl_max_profiles": 300,
   "follow_retry_hours": 12,
   "crawl_miss_streak": 20,
-  "crawl_max_scrolls": 25,
+  "crawl_max_scrolls": 100,
   "crawl_profile_wait_seconds": 40,
   "crawl_seed_attempts": 3,
   "failures_before_rest": 3,
@@ -20,8 +19,16 @@
   "follows_per_account_per_day": 150,
   "follows_per_account_per_hour": 40,
   "school_names": {
+    "berkeley": [
+      "ucb",
+      "asuc"
+    ],
     "brocku": [
       "brock"
+    ],
+    "carleton": [
+      "sprott",
+      "cusa"
     ],
     "dalhousie": [
       "dal"
@@ -43,29 +50,39 @@
       "uoit"
     ],
     "ottawa": [
-      "uottawa"
+      "uottawa",
+      "telfer"
     ],
     "queensu": [
-      "queens"
+      "queen"
     ],
     "tmu": [
-      "ryerson"
+      "ryerson",
+      "torontomet",
+      "tmsu",
+      "tedrogers"
     ],
     "ualberta": [
-      "uofa"
+      "uofa",
+      "alberta"
     ],
     "ucalgary": [
       "uofc"
+    ],
+    "udem": [
+      "umontreal"
     ],
     "ulaval": [
       "laval"
     ],
     "umanitoba": [
       "uofm",
-      "manitoba"
+      "manitoba",
+      "umsu"
     ],
     "umich": [
-      "michigan"
+      "michigan",
+      "uofm"
     ],
     "upenn": [
       "penn"
@@ -102,7 +119,9 @@
       "laurier"
     ],
     "yorku": [
-      "york"
+      "york",
+      "osgoode",
+      "glendon"
     ]
   }
 }
