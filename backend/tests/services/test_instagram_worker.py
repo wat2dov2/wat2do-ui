@@ -228,7 +228,7 @@ def test_a_crawl_that_gives_up_early_rests_before_its_next_slice(due, monkeypatc
     device = _Device()
     assert worker.visit_next(device, NIGHT)
     assert not worker.visit_next(device, NIGHT)
-    later = NIGHT + timedelta(seconds=worker.FOLLOW.crawl_rest_seconds)
+    later = NIGHT + timedelta(seconds=worker.FOLLOW.rest_seconds)
     assert worker.visit_next(device, later)
 
 
@@ -244,6 +244,60 @@ def test_follows_that_get_nowhere_rest_instead_of_looping(due, monkeypatch):
     device = _Device()
     assert worker.visit_next(device, DAY)
     assert not worker.visit_next(device, DAY)
+
+
+def test_follows_whose_profiles_keep_failing_rest_even_after_some_went_through(due, monkeypatch):
+    due.follows = {"sfu"}
+    monkeypatch.setattr(
+        worker.follows,
+        "follow_due",
+        lambda device, school, limit, stop=None: FollowVisit(
+            followed=2, confirmed=0, blocked=False, failing=True
+        ),
+    )
+    device = _Device()
+    assert worker.visit_next(device, DAY)
+    assert not worker.visit_next(device, DAY)
+    later = DAY + timedelta(seconds=worker.FOLLOW.rest_seconds)
+    assert worker.visit_next(device, later)
+
+
+def test_while_a_song_waits_no_other_work_is_looked_up(due, monkeypatch):
+    due.music = ["uwo"]
+    due.follows = {"ubc"}
+    due.crawls = {"ubc"}
+    looked_up = []
+    monkeypatch.setattr(worker.follows, "follows_due", lambda school: looked_up.append(school))
+    monkeypatch.setattr(worker.follows, "unfollows_due", lambda school: looked_up.append(school))
+    monkeypatch.setattr(worker.crawl, "crawl_due", lambda school, now: looked_up.append(school))
+    visited = []
+    monkeypatch.setattr(worker, "visit", lambda device, school, **_: visited.append(school))
+    assert worker.visit_next(_Device(), DAY)
+    assert visited == ["uwo"]
+    assert looked_up == []
+
+
+def test_a_visit_that_fails_outright_never_stops_the_worker(monkeypatch):
+    class Stop(Exception):
+        pass
+
+    def visit_next(device):
+        raise worker.EmulatorError("adb get-state did not complete")
+
+    waits = []
+
+    def sleep(seconds):
+        waits.append(seconds)
+        raise Stop
+
+    monkeypatch.setattr(worker, "EmulatorDevice", object)
+    monkeypatch.setattr(worker.candidates, "sync_club_targets", lambda: None)
+    monkeypatch.setattr(worker, "visit_next", visit_next)
+    monkeypatch.setattr(worker.time, "sleep", sleep)
+    with pytest.raises(Stop):
+        worker.run_forever()
+    # The emulator may be restarting; the worker waits a little and goes on.
+    assert waits == [worker.CONTROL.idle_seconds]
 
 
 def test_follows_stop_for_a_carousel_that_starts_waiting_mid_visit(due, monkeypatch):

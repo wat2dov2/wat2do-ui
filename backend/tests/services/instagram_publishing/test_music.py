@@ -263,7 +263,10 @@ def test_only_the_first_try_comments_a_gif(monkeypatch, database):
     monkeypatch.setattr(music, "finish_post", finish_post)
     music._add_music(DEVICE, {**BATCH, "school": "uwaterloo", "music_attempts": 0}, ["q"])
     music._add_music(DEVICE, {**BATCH, "school": "uwaterloo", "music_attempts": 1}, ["q"])
-    assert [call.args[5] for call in finish_post.call_args_list] == ["gif", None]
+    first, retry = (call.args[5] for call in finish_post.call_args_list)
+    # Claude names the scene while the post opens; the edit asks for it when it is needed.
+    assert first() == "gif"
+    assert retry is None
     assert asked == [BATCH["id"]]
 
 

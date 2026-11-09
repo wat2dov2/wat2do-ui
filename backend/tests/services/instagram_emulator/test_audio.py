@@ -61,7 +61,7 @@ class _Device(EmulatorDevice):
         if len(self.screens) > 1:
             self.screens.pop(0)
 
-    def tap(self, node, *, hold_ms=0):
+    def _press(self, node, hold_ms):
         self.taps.append(node.text or node.resource_id)
         self._advance()
 
@@ -136,7 +136,7 @@ def test_tries_songs_until_one_matches_then_saves_the_post(screens) -> None:
 
 
 @pytest.mark.parametrize("filters", [("Lyrics",), ("Filter",), ()])
-def test_results_are_read_whatever_filters_the_account_shows(screens, filters) -> None:
+def test_results_are_read_whatever_filters_the_account_shows(filters) -> None:
     # Accounts show a Lyrics tab, a Filter button or nothing above the results.
     results = _screen(
         "Clear text",
@@ -144,18 +144,14 @@ def test_results_are_read_whatever_filters_the_account_shows(screens, filters) -
         "Select track After Hours (Live) by The Weeknd,4:27",
         "Select track After Hours by The Weeknd,6:01",
     )
-    device = screens(SUGGESTIONS, results)
-    device.type_text("the weeknd after hours")
-    assert [label for label, _ in module._results(device)] == [
+    assert [label for label, _ in module._tracks(results)] == [
         "After Hours (Live) by The Weeknd,4:27",
         "After Hours by The Weeknd,6:01",
     ]
 
 
-def test_a_search_that_finds_nothing_has_no_results(screens) -> None:
-    device = screens(SUGGESTIONS, _screen("Clear text", "No results"))
-    device.type_text("a song nobody has")
-    assert module._results(device) == []
+def test_a_search_that_finds_nothing_has_no_results() -> None:
+    assert module._tracks(_screen("Clear text", "No results")) == []
 
 
 def test_a_cleared_search_waits_for_the_empty_field_not_the_suggestions(screens) -> None:
@@ -248,10 +244,32 @@ def test_an_accounts_first_repost_closes_instagrams_note(screens) -> None:
 
 
 def test_a_repost_that_never_shows_is_an_error(screens) -> None:
-    device = screens(LIKED_PAGE, LIKED_PAGE, reposted=(False,) * 10)
+    device = screens(LIKED_PAGE, LIKED_PAGE, reposted=(False,) * 100)
     with pytest.raises(EmulatorError, match="reposted"):
         module._like_and_repost(device)
     assert device.taps == ["Repost"]
+
+
+def test_a_failed_try_starts_the_app_afresh(screens, monkeypatch) -> None:
+    device = screens(HOME, _screen("Loading"))
+    resets = []
+    monkeypatch.setattr(device, "reset_app", resets.append)
+    with pytest.raises(EmulatorError, match="did not open the post"):
+        module.finish_post(device, "uwaterloo", POST, ["halo"], lambda *_: 0)
+    assert resets == [module.CONTROL.android_user_by_school["uwaterloo"]]
+
+
+def test_the_gif_is_asked_for_only_once_the_post_is_liked_and_reposted(screens) -> None:
+    device = screens(HOME, POST_PAGE, LIKED_PAGE, LIKED_PAGE, LIKED_PAGE, MENU, EDIT_INFO)
+    asked = []
+
+    def scene():
+        asked.append(list(device.taps))
+        return None
+
+    with pytest.raises(EmulatorError):
+        module.finish_post(device, "uwaterloo", POST, ["halo"], lambda *_: 0, scene)
+    assert asked == [["Like", "Repost"]]
 
 
 def test_a_post_that_already_has_a_song_is_left_as_it_is(screens) -> None:

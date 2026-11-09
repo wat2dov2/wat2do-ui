@@ -15,9 +15,10 @@
   "crawl_max_scrolls": 25,
   "crawl_profile_wait_seconds": 40,
   "crawl_seed_attempts": 3,
-  "crawl_failures_before_rest": 3,
-  "crawl_rest_seconds": 600,
+  "failures_before_rest": 3,
+  "rest_seconds": 600,
   "follows_per_account_per_day": 150,
+  "follows_per_account_per_hour": 40,
   "school_names": {
     "brocku": [
       "brock"

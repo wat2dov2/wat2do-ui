@@ -25,6 +25,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import TypeVar
 
 from PIL import Image
 
@@ -45,6 +46,11 @@ _held = threading.local()
 # Android's accessibility service is connected only while a job drives the app.
 _readers: weakref.WeakSet[ScreenReader] = weakref.WeakSet()
 _RESTART_POLL_SECONDS = 5
+# How often a wait reads the screen again; a read of a screen that has gone still is
+# almost free, and one still changing waits for it to settle first.
+_POLL_SECONDS = 0.5
+# Dialogs one wait answers before it stops expecting the screen to change for them.
+_PROMPTS_PER_WAIT = 5
 _SELECT_ALL = ("113", "29")  # KEYCODE_CTRL_LEFT + KEYCODE_A
 # Share of dark pixels in an icon's middle that means a check mark is drawn there.
 _MARKED_DARK_SHARE = 0.2
@@ -52,6 +58,9 @@ _MARKED_DARK_SHARE = 0.2
 
 class EmulatorError(RuntimeError):
     """The emulator or the Instagram app is not in a state the automation expects."""
+
+
+_Seen = TypeVar("_Seen")
 
 
 @dataclass(frozen=True)
@@ -100,6 +109,8 @@ _INSTAGRAM_NOT_RESPONDING = re.compile(r"^Instagram isn't responding$")
 _WAIT = labels("Wait")
 _CLOSE_APP = labels("Close app")
 _CLOSE = re.compile(r"^Close$")
+# Shown once per account, the first time it reposts anything; Close keeps the repost.
+_FIRST_REPOST_NOTE = re.compile(r"^You reposted ")
 # Rows in the account switcher read "wat2do.school, 3 follows and 2 more".
 _SWITCHER_ROW = re.compile(r"^wat2do\.[a-z0-9._]+(?:, .*)?$")
 _SWITCHER_SCROLLS = 3
@@ -250,34 +261,53 @@ class EmulatorDevice:
         )
 
     def wait_for(self, pattern: re.Pattern[str], *, seconds: float | None = None) -> Node:
+        node = self.watch(lambda nodes: self.find(pattern, nodes), seconds=seconds)
+        if node is None:
+            raise EmulatorError(f"Instagram never showed {pattern.pattern}")
+        return node
+
+    def watch(self, look: Callable[[list[Node]], _Seen], *, seconds: float | None = None) -> _Seen:
+        """Read the screen until ``look`` finds what it is after, for at most ``seconds``
+        (``screen_wait_seconds`` when not given), and return its last answer.
+
+        ``look`` answers with something falsy while the screen does not show it yet.
+        A dialog covering the app is answered (``_prompt``) unless it is what ``look`` is
+        after, a few at most, so one that will not go away cannot hold the wait forever.
+        """
         deadline = self._monotonic() + (seconds or CONTROL.screen_wait_seconds)
+        answered = 0
         while True:
             nodes = self.screen()
-            node = self.find(pattern, nodes)
-            if node is not None:
-                return node
+            seen = look(nodes)
+            if seen:
+                return seen
             prompt = self._prompt(nodes)
-            if prompt is not None and not pattern.match(prompt.label):
+            if prompt is not None and answered < _PROMPTS_PER_WAIT:
                 self.tap(prompt)
+                answered += 1
                 continue
             if self._monotonic() >= deadline:
-                raise EmulatorError(f"Instagram never showed {pattern.pattern}")
-            self._sleep(1)
+                return seen
+            self._sleep(_POLL_SECONDS)
 
     def _prompt(self, nodes: list[Node]) -> Node | None:
         """The safe answer to a dialog covering the app, if one is showing.
 
-        One-time announcements ("Introducing instants" and the like), the low storage
-        warning and Android's not-responding dialog cover the app until answered;
-        declining, closing or waiting is always safe. A frozen Instagram rarely comes
-        back, so it is closed and the next step reopens it; Android's own processes
-        are waited for. Login info is saved when offered
-        after an account switch, so a later logout can come back without a password.
+        One-time announcements ("Introducing instants", the note after an account's
+        first repost and the like), the low storage warning and Android's
+        not-responding dialog cover the app until answered; declining, closing or
+        waiting is always safe. A frozen Instagram rarely comes back, so it is closed
+        and the next step reopens it; Android's own processes are waited for. Login
+        info is saved when offered after an account switch, so a later logout can come
+        back without a password.
         """
         if self.find(_SAVE_LOGIN, nodes) is not None:
             return self.find(_SAVE, nodes)
         prompt = self.find(_NOT_NOW, nodes)
-        if prompt is None and self.find(_LOW_STORAGE, nodes) is not None:
+        if prompt is None and (
+            self.find(_LOW_STORAGE, nodes) is not None
+            or self.find(_FIRST_REPOST_NOTE, nodes) is not None
+        ):
             prompt = self.find(_CLOSE, nodes)
         if prompt is None and self.find(_INSTAGRAM_NOT_RESPONDING, nodes) is not None:
             prompt = self.find(_CLOSE_APP, nodes)
@@ -290,10 +320,25 @@ class EmulatorDevice:
         while self.find(pattern) is not None:
             if self._monotonic() >= deadline:
                 raise EmulatorError(f"Instagram kept showing {pattern.pattern}")
-            self._sleep(1)
+            self._sleep(_POLL_SECONDS)
 
     def tap(self, node: Node, *, hold_ms: int = 0) -> None:
+        """Tap a control read earlier, after a person's pause."""
         self.pause()
+        self._press(node, hold_ms)
+
+    def tap_when(
+        self, pattern: re.Pattern[str], *, seconds: float | None = None, hold_ms: int = 0
+    ) -> None:
+        """Tap the control once it shows, after a person's pause.
+
+        The pause comes before the screen is read, so the screen settles while a person
+        would still be looking at it, and the control is tapped where it ended up.
+        """
+        self.pause()
+        self._press(self.wait_for(pattern, seconds=seconds), hold_ms)
+
+    def _press(self, node: Node, hold_ms: int) -> None:
         x1, y1, x2, y2 = node.bounds
         # Land somewhere in the middle half of the control, never on its edge.
         x = round(self._rng.uniform(x1 + (x2 - x1) / 4, x2 - (x2 - x1) / 4))
@@ -302,9 +347,6 @@ class EmulatorDevice:
             self.adb("shell", "input", "swipe", str(x), str(y), str(x), str(y), str(hold_ms))
         else:
             self.adb("shell", "input", "tap", str(x), str(y))
-
-    def tap_when(self, pattern: re.Pattern[str], *, seconds: float | None = None) -> None:
-        self.tap(self.wait_for(pattern, seconds=seconds))
 
     def pause(self) -> None:
         self._sleep(
@@ -442,7 +484,7 @@ class EmulatorDevice:
         while not self._user_ready(user):
             if self._monotonic() >= deadline:
                 raise EmulatorError("Emulator did not switch Android users")
-            self._sleep(1)
+            self._sleep(_POLL_SECONDS)
         self.wake()
 
     def _user_ready(self, user: int) -> bool:
@@ -454,20 +496,35 @@ class EmulatorDevice:
         """Switch the app to the account, confirmed by the DM inbox's title.
 
         The inbox is read rather than the home feed: an autoplaying video there keeps
-        the screen from ever going idle, and the screen reader gives up on it.
+        the screen from ever going idle, and the screen reader gives up on it. An
+        attempt that fails starts the app afresh for the next one, since a sheet or
+        dialog left open by an earlier step can keep the inbox from ever showing.
         """
         for _ in range(_SWITCH_ATTEMPTS):
-            if self.open_inbox(user) == account_username:
-                return
-            self.tap(self.wait_for(_PROFILE_TAB), hold_ms=1200)
-            # A tap while the account sheet is still sliding up can miss, leaving the
-            # sheet open; the next attempt notices and switches again.
-            self.tap(self._account_in_switcher(account_username))
+            try:
+                if self.open_inbox(user) == account_username:
+                    return
+                self.tap_when(_PROFILE_TAB, hold_ms=1200)
+                # A tap while the account sheet is still sliding up can miss, leaving the
+                # sheet open; the next attempt notices and switches again.
+                self.tap(self._account_in_switcher(account_username))
+            except EmulatorError:
+                self.reset_app(user)
+                continue
             # The switch lands on the home feed; let it settle before leaving for the
             # inbox, which opens again if its link still lands too early.
             self._sleep(CONTROL.account_switch_settle_seconds)
         if self.open_inbox(user) != account_username:
             raise EmulatorError("Instagram did not switch to the account")
+
+    def reset_app(self, user: int) -> None:
+        """Close Instagram on the Android user, so the next link starts it afresh.
+
+        A step that fails can leave a sheet or dialog open over the app, and every link
+        opened after it lands underneath, out of the screen reader's sight. The app
+        reopens on the account it was on.
+        """
+        self.adb("shell", "am", "force-stop", "--user", str(user), CONTROL.instagram_package)
 
     def open_inbox(self, user: int) -> str:
         """Open the DM inbox and return the username it belongs to."""

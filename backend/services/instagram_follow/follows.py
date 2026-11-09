@@ -3,12 +3,14 @@
 The emulator worker asks ``follows_due`` from the database alone, then calls
 ``follow_due`` with the emulator already on the school's account and a small number to
 follow this visit; the visit stops early once the worker needs the emulator for a
-carousel waiting for its song. Across the day a school account follows at most
-``follows_per_account_per_day``. Each follow turns the account's post notifications to
-All so ingestion hears about its posts; an account the school already follows is only
-marked followed, after its bell is checked. Instagram's "Try again later" pauses the
-account's follows for a day, and so do three Follow taps in a row that never stick
-(Instagram's silent limit); a follow that fails otherwise stays approved for later.
+carousel waiting for its song. A school account follows at most
+``follows_per_account_per_day`` a day and ``follows_per_account_per_hour`` within any
+hour. Each follow turns the account's post notifications to All so ingestion hears
+about its posts; an account the school already follows is only marked followed, after
+its bell is checked. Instagram's "Try again later" pauses the account's follows for a
+day, and so do three Follow taps in a row that never stick (Instagram's silent limit);
+a follow that fails otherwise stays approved for later, and ``failures_before_rest``
+failing in a row end the visit so the worker rests the account's follows.
 
 Accounts waiting in ``unfollow`` (rejected, but still followed) are unfollowed the
 same way, from the same daily allowance, before any new follow.
@@ -60,6 +62,8 @@ class FollowVisit:
     # Accounts the school already followed: marked followed, their bells checked.
     confirmed: int
     blocked: bool
+    # Profiles kept failing, so the visit stopped; the worker rests the account's follows.
+    failing: bool = False
 
 
 def follows_due(school: str) -> bool:
@@ -92,7 +96,7 @@ def unfollow_due(
         return FollowVisit(0, 0, _blocked(school))
     reader = _reader(device, school)
     allowed = min(limit, _allowance(school_id))
-    unfollowed = confirmed = 0
+    unfollowed = confirmed = failed = 0
     for row in candidates.to_unfollow(school_id, allowed * PROFILES_PER_FOLLOW):
         if unfollowed >= allowed or (stop is not None and stop()):
             break
@@ -104,7 +108,11 @@ def unfollow_due(
             return FollowVisit(unfollowed, confirmed, True)
         except EmulatorError as exc:
             candidates.mark_follow_failed(row["id"], str(exc))
+            failed += 1
+            if failed >= CONTROL.failures_before_rest:
+                return _failing(school, unfollowed, confirmed)
             continue
+        failed = 0
         # A profile that is gone or hidden needs no unfollow.
         candidates.mark_unfollowed(row["id"], tapped=bool(tapped))
         if tapped:
@@ -140,9 +148,9 @@ def follow_due(
     if school_id is None or _blocked(school):
         return FollowVisit(0, 0, _blocked(school))
     reader = _reader(device, school)
-    # Only a real follow counts toward the visit's limit and today's allowance.
+    # Only a real follow counts toward the visit's limit and the allowance.
     allowed = min(limit, _allowance(school_id))
-    followed = confirmed = unconfirmed = 0
+    followed = confirmed = unconfirmed = failed = 0
     for row in candidates.approved(school_id, allowed * PROFILES_PER_FOLLOW):
         if followed >= allowed or (stop is not None and stop()):
             break
@@ -152,6 +160,7 @@ def follow_due(
             # Counted now; it stays approved so a later visit sets its bell.
             candidates.mark_follow_failed(row["id"], str(exc), tapped=True)
             followed += 1
+            failed = 0
             if isinstance(exc.__cause__, ActionBlocked):
                 _block(school)
                 return FollowVisit(followed, confirmed, True)
@@ -170,7 +179,11 @@ def follow_due(
             continue
         except EmulatorError as exc:
             candidates.mark_follow_failed(row["id"], str(exc))
+            failed += 1
+            if failed >= CONTROL.failures_before_rest:
+                return _failing(school, followed, confirmed)
             continue
+        failed = 0
         if outcome is None:
             candidates.reject_gone(row["id"])
             continue
@@ -183,22 +196,38 @@ def follow_due(
     return FollowVisit(followed, confirmed, False)
 
 
+def _failing(school: str, followed: int, confirmed: int) -> FollowVisit:
+    log.warning("Profiles kept failing for %s; its follows rest", school)
+    return FollowVisit(followed, confirmed, False, failing=True)
+
+
 def _allowance(school_id: int) -> int:
-    """Follows and unfollows share the day's allowance."""
-    midnight = datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
-    used = 0
-    for column in ("followed_at", "unfollowed_at"):
-        response = (
-            get_sb()
-            .table(INSTAGRAM_FOLLOW_CANDIDATES)
-            .select("id", count="exact")
-            .eq("school_id", school_id)
-            .gte(column, midnight.isoformat())
-            .limit(1)
-            .execute()
-        )
-        used += response.count or 0
-    return CONTROL.follows_per_account_per_day - used
+    """Follows and unfollows share the allowance: what is left of today's, and of the
+    last hour's, whichever is smaller."""
+    now = datetime.now().astimezone()
+    midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    hour_ago = now - timedelta(hours=1)
+    since = min(midnight, hour_ago).isoformat()
+    rows = (
+        get_sb()
+        .table(INSTAGRAM_FOLLOW_CANDIDATES)
+        .select("followed_at,unfollowed_at")
+        .eq("school_id", school_id)
+        .or_(f'followed_at.gte."{since}",unfollowed_at.gte."{since}"')
+        .execute()
+    ).data or []
+    done = [
+        datetime.fromisoformat(stamp)
+        for row in rows
+        for stamp in (row["followed_at"], row["unfollowed_at"])
+        if stamp
+    ]
+    today = sum(1 for at in done if at >= midnight)
+    last_hour = sum(1 for at in done if at >= hour_ago)
+    return min(
+        CONTROL.follows_per_account_per_day - today,
+        CONTROL.follows_per_account_per_hour - last_hour,
+    )
 
 
 def _blocks() -> dict[str, Any]:

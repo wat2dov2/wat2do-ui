@@ -316,7 +316,7 @@ def test_the_account_already_open_is_confirmed_from_the_inbox_title(monkeypatch)
     opened, taps = [], []
     monkeypatch.setattr(device, "open_instagram", lambda user, url=None: opened.append(url))
     monkeypatch.setattr(device, "screen", lambda: _inbox("wat2do.ubc"))
-    monkeypatch.setattr(device, "tap", lambda node, hold_ms=0: taps.append(node))
+    monkeypatch.setattr(device, "_press", lambda node, hold_ms: taps.append(node))
     device.use_account(11, "wat2do.ubc")
     assert opened == [module.INBOX_URL] and taps == []
 
@@ -331,7 +331,7 @@ def test_switching_accounts_is_confirmed_from_the_inbox_title(monkeypatch) -> No
     taps = []
     monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
     monkeypatch.setattr(device, "screen", lambda: next(screens, after))
-    monkeypatch.setattr(device, "tap", lambda node, hold_ms=0: taps.append((node, hold_ms)))
+    monkeypatch.setattr(device, "_press", lambda node, hold_ms: taps.append((node, hold_ms)))
     device.use_account(11, "wat2do.ubc")
     assert taps == [(profile, 1200), (name, 0)]
 
@@ -346,7 +346,7 @@ def test_a_missed_switch_is_tried_again(monkeypatch) -> None:
     taps = []
     monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
     monkeypatch.setattr(device, "screen", lambda: next(screens, _inbox("wat2do.ubc")))
-    monkeypatch.setattr(device, "tap", lambda node, hold_ms=0: taps.append(node))
+    monkeypatch.setattr(device, "_press", lambda node, hold_ms: taps.append(node))
     device.use_account(11, "wat2do.ubc")
     assert taps == [profile, name, profile, name]
 
@@ -364,6 +364,30 @@ def test_an_inbox_covered_by_a_sheet_is_reopened_after_back(monkeypatch) -> None
     assert backs == [1]
 
 
+def test_a_switch_attempt_that_fails_starts_the_app_afresh(monkeypatch) -> None:
+    device = _device([], [])
+    resets = []
+    titles = iter([module.EmulatorError("Instagram's DM inbox could not be opened"), "wat2do.ubc"])
+
+    def open_inbox(user):
+        title = next(titles)
+        if isinstance(title, Exception):
+            raise title
+        return title
+
+    monkeypatch.setattr(device, "open_inbox", open_inbox)
+    monkeypatch.setattr(device, "reset_app", resets.append)
+    device.use_account(11, "wat2do.ubc")
+    # A sheet left open by an earlier step can hide the inbox until the app starts afresh.
+    assert resets == [11]
+
+
+def test_starting_the_app_afresh_stops_instagram_on_that_user_only() -> None:
+    commands = []
+    _device([(0, "")], commands).reset_app(11)
+    assert commands[0][3:] == ["shell", "am", "force-stop", "--user", "11", "com.instagram.android"]
+
+
 def test_a_switch_that_does_not_land_on_the_account_fails(monkeypatch) -> None:
     device = _device([], [])
     profile = module.Node("", "Profile", (933, 2172, 1012, 2251), "profile_tab")
@@ -372,7 +396,7 @@ def test_a_switch_that_does_not_land_on_the_account_fails(monkeypatch) -> None:
     screens = iter(([_inbox("wat2do.sfu") + [profile]] * 2 + [[row, name]] * 2) * 2)
     monkeypatch.setattr(device, "open_instagram", lambda user, url=None: None)
     monkeypatch.setattr(device, "screen", lambda: next(screens, _inbox("wat2do.sfu")))
-    monkeypatch.setattr(device, "tap", lambda node, hold_ms=0: None)
+    monkeypatch.setattr(device, "_press", lambda node, hold_ms: None)
     with pytest.raises(module.EmulatorError, match="did not switch"):
         device.use_account(11, "wat2do.ubc")
 
@@ -388,6 +412,42 @@ def test_waiting_saves_login_info_when_offered() -> None:
     commands = []
     _device([(0, "")], commands, [SAVE_LOGIN, SCREEN]).wait_for(re.compile("^Your story$"))
     assert 1420 <= int(commands[0][-1]) <= 1520
+
+
+def test_a_tap_on_a_control_waits_its_pause_before_reading_the_screen(monkeypatch) -> None:
+    device = _device([(0, "")], [], [SCREEN])
+    steps = []
+    read = device.screen
+    monkeypatch.setattr(device, "pause", lambda: steps.append("pause"))
+    monkeypatch.setattr(device, "screen", lambda: steps.append("read") or read())
+    device.tap_when(re.compile("^Your story$"))
+    # The screen settles during the pause, so the control is tapped where it ended up.
+    assert steps == ["pause", "read"]
+
+
+def test_a_dialog_that_will_not_go_away_cannot_hold_a_wait_forever(monkeypatch) -> None:
+    commands = []
+    taps = [(0, "")] * module._PROMPTS_PER_WAIT
+    device = _device(taps, commands, [PROMPT] * 50)
+    clock = iter(range(0, 1_000))
+    monkeypatch.setattr(device, "_monotonic", lambda: next(clock))
+    with pytest.raises(module.EmulatorError, match="never showed"):
+        device.wait_for(re.compile("^Your story$"), seconds=10)
+    assert len(commands) == module._PROMPTS_PER_WAIT
+
+
+def test_watching_returns_what_the_screen_shows_once_it_shows_it(monkeypatch) -> None:
+    device = _device([], [], ["", SCREEN, SCREEN])
+    story = re.compile("^Your story$")
+    nodes = device.watch(lambda nodes: [node for node in nodes if node.labelled(story)])
+    assert [node.text for node in nodes] == ["Your story"]
+
+
+def test_watching_gives_up_with_the_last_answer(monkeypatch) -> None:
+    device = _device([], [], [SCREEN] * 50)
+    clock = iter(range(0, 1_000))
+    monkeypatch.setattr(device, "_monotonic", lambda: next(clock))
+    assert device.watch(lambda nodes: [], seconds=5) == []
 
 
 def _screenshot(checked):
