@@ -5,6 +5,7 @@
     "reportUpdateFailed": "रिपोर्ट अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।",
     "eventReport": "इवेंट रिपोर्ट",
     "pendingCount": "{{label}}: {{value}} लंबित",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "कुछ लंबित संख्याएँ लोड नहीं हो सकीं।",
     "eventReports": "इवेंट रिपोर्ट",
     "reportReason": "रिपोर्ट का कारण",
@@ -441,7 +442,7 @@
       "notRead": "अभी पढ़ा नहीं गया। अगला दैनिक रन इसे भर देगा।",
       "summary": {
         "needingAttention": "ध्यान चाहिए: {{value}}",
-        "quietNotifications": "{{hours}} घंटे से कोई सूचना नहीं: {{value}}",
+        "quietNotifications": "{{hours}} घंटे से कोई सूचना नहीं",
         "followers": "कुल फ़ॉलोअर",
         "averageLikes": "प्रति पोस्ट औसत लाइक",
         "followerGains": "प्रति दिन नए फ़ॉलोअर",

@@ -7,6 +7,7 @@ import { AdminCard } from "@/shared/ui/AdminCard";
 import { Stack } from "@/shared/layout/stack";
 import { FormGrid } from "@/shared/layout/form-grid";
 import { useAdminPanel } from "@/features/admin/hooks/useAdminPanel";
+import { QUIET_NOTIFICATION_HOURS } from "@/features/admin/lib/socialAccounts";
 import { type AdminRouteKey } from "@/shared/constants/routes";
 
 interface AdminPanelProps {
@@ -55,6 +56,7 @@ export function AdminPanel({ onNavigate }: AdminPanelProps) {
         <AdminCard icon={Instagram} title={t("admin.instagramPublishing.title")} description={t("admin.instagramPublishing.cardDescription")}
           onClick={() => onNavigate("admin-instagram")} />
         <AdminCard icon={BarChart3} title={t("admin.socialAccounts.title")} description={t("admin.socialAccounts.cardDescription")}
+          alerts={[{ label: t("admin.socialAccounts.summary.quietNotifications", { hours: QUIET_NOTIFICATION_HOURS }), count: counts.quietSocialAccounts }]}
           onClick={() => onNavigate("admin-social")} />
         <AdminCard icon={Settings} title={t("admin.diagnostics.title")} description={t("admin.diagnostics.cardDescription")}
           onClick={() => onNavigate("admin-diagnostics")} />

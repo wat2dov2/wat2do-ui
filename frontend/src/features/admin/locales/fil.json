@@ -5,6 +5,7 @@
     "reportUpdateFailed": "Hindi ma-update ang ulat. Pakisubukang muli.",
     "eventReport": "Ulat sa kaganapan",
     "pendingCount": "{{label}}: {{value}} nakabinbin",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "Hindi ma-load ang ilang bilang ng mga nakabinbin.",
     "eventReports": "Mga ulat sa event",
     "reportReason": "Dahilan ng ulat",
@@ -441,7 +442,7 @@
       "notRead": "Hindi pa nababasa. Pupunan ito ng susunod na araw-araw na run.",
       "summary": {
         "needingAttention": "Kailangang tingnan: {{value}}",
-        "quietNotifications": "Walang notification sa {{hours}} oras: {{value}}",
+        "quietNotifications": "Walang notification sa {{hours}} oras",
         "followers": "Kabuuang follower",
         "averageLikes": "Average na like bawat post",
         "followerGains": "Mga bagong follower bawat araw",

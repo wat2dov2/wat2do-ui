@@ -5,6 +5,7 @@
     "reportUpdateFailed": "રિપોર્ટ અપડેટ થઈ શક્યો નહીં. ફરી પ્રયાસ કરો.",
     "eventReport": "ઇવેન્ટ રિપોર્ટ",
     "pendingCount": "{{label}}: {{value}} બાકી",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "કેટલીક બાકી સંખ્યાઓ લોડ થઈ શકી નથી.",
     "eventReports": "ઇવેન્ટ રિપોર્ટ",
     "reportReason": "રિપોર્ટનું કારણ",
@@ -441,7 +442,7 @@
       "notRead": "હજી વાંચ્યું નથી. આગલો દૈનિક રન તેને ભરી દેશે.",
       "summary": {
         "needingAttention": "ધ્યાન જરૂરી: {{value}}",
-        "quietNotifications": "{{hours}} કલાકથી કોઈ સૂચના નહીં: {{value}}",
+        "quietNotifications": "{{hours}} કલાકથી કોઈ સૂચના નહીં",
         "followers": "કુલ ફોલોઅર્સ",
         "averageLikes": "દરેક પોસ્ટના સરેરાશ લાઇક્સ",
         "followerGains": "દરરોજ નવા ફોલોઅર્સ",

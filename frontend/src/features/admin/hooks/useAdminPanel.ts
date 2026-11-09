@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getPositionSubmissions, getAdminPosterPayouts, getSponsorSubmissions } from "@/features/admin/api/admin.api";
 import { useAdminPendingCounts } from "@/features/admin/hooks/useAdminList";
+import { useSocialAccounts } from "@/features/admin/hooks/useSocialAccounts";
 import { queryKeys } from "@/shared/lib/queryKeys";
 import { SUBMISSION_PENDING } from "@/shared/constants/statuses";
 
@@ -11,6 +12,7 @@ export function useAdminPanel() {
   const positions = useQuery({ queryKey: queryKeys.positionSubmissions.list(1, SUBMISSION_PENDING), queryFn: () => getPositionSubmissions(1, SUBMISSION_PENDING) });
   const payouts = useQuery({ queryKey: queryKeys.posterPayouts.list(payoutFilters), queryFn: () => getAdminPosterPayouts(payoutFilters) });
   const sponsors = useQuery({ queryKey: queryKeys.sponsorSubmissions.list(1, SUBMISSION_PENDING), queryFn: () => getSponsorSubmissions(1, SUBMISSION_PENDING) });
+  const social = useSocialAccounts();
   return {
     counts: {
       eventSubmissions: moderation.counts.submissions ?? null,
@@ -20,8 +22,9 @@ export function useAdminPanel() {
       positionSubmissions: positions.data?.total ?? null,
       payouts: payouts.data?.total ?? null,
       sponsorSubmissions: sponsors.data?.total ?? null,
+      quietSocialAccounts: social.query.data ? social.summary.quietNotifications : null,
     },
-    loadFailed: moderation.isError || positions.isError || payouts.isError || sponsors.isError,
-    retry: () => { void moderation.refetch(); void positions.refetch(); void payouts.refetch(); void sponsors.refetch(); },
+    loadFailed: moderation.isError || positions.isError || payouts.isError || sponsors.isError || social.query.isError,
+    retry: () => { void moderation.refetch(); void positions.refetch(); void payouts.refetch(); void sponsors.refetch(); void social.query.refetch(); },
   };
 }

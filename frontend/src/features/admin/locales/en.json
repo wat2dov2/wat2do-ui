@@ -5,6 +5,7 @@
     "reportUpdateFailed": "Could not update the report. Please try again.",
     "eventReport": "Event report",
     "pendingCount": "{{label}}: {{value}} pending",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "Some pending counts could not be loaded.",
     "eventReports": "Event reports",
     "reportReason": "Report reason",
@@ -441,7 +442,7 @@
       "notRead": "Not read yet. The next daily run fills this in.",
       "summary": {
         "needingAttention": "Need attention: {{value}}",
-        "quietNotifications": "No notifications in {{hours}} h: {{value}}",
+        "quietNotifications": "No notifications in {{hours}} h",
         "followers": "Total followers",
         "averageLikes": "Average likes per post",
         "followerGains": "Followers gained per day",

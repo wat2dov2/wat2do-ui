@@ -5,6 +5,7 @@
     "reportUpdateFailed": "Не удалось обновить жалобу. Попробуйте ещё раз.",
     "eventReport": "Жалоба на событие",
     "pendingCount": "{{label}}: {{value}} в ожидании",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "Не удалось загрузить некоторые счётчики ожидающих заявок.",
     "eventReports": "Жалобы на мероприятия",
     "reportReason": "Причина жалобы",
@@ -441,7 +442,7 @@
       "notRead": "Ещё не прочитано. Следующий ежедневный запуск заполнит это.",
       "summary": {
         "needingAttention": "Требуют внимания: {{value}}",
-        "quietNotifications": "Без уведомлений больше {{hours}} ч: {{value}}",
+        "quietNotifications": "Без уведомлений больше {{hours}} ч",
         "followers": "Всего подписчиков",
         "averageLikes": "Среднее число лайков на публикацию",
         "followerGains": "Новые подписчики в день",

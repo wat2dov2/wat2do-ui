@@ -5,6 +5,7 @@
     "reportUpdateFailed": "رپورٹ اپ ڈیٹ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
     "eventReport": "ایونٹ کی رپورٹ",
     "pendingCount": "{{label}}: {{value}} زیر التوا",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "کچھ زیر التوا تعداد لوڈ نہیں ہو سکیں۔",
     "eventReports": "ایونٹ رپورٹس",
     "reportReason": "رپورٹ کی وجہ",
@@ -441,7 +442,7 @@
       "notRead": "ابھی پڑھا نہیں گیا۔ اگلا روزانہ رن اسے بھر دے گا۔",
       "summary": {
         "needingAttention": "توجہ درکار: {{value}}",
-        "quietNotifications": "{{hours}} گھنٹوں سے کوئی اطلاع نہیں: {{value}}",
+        "quietNotifications": "{{hours}} گھنٹوں سے کوئی اطلاع نہیں",
         "followers": "کل فالوورز",
         "averageLikes": "فی پوسٹ اوسط لائکس",
         "followerGains": "روزانہ نئے فالوورز",

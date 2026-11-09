@@ -5,6 +5,7 @@
     "reportUpdateFailed": "Không thể cập nhật báo cáo. Vui lòng thử lại.",
     "eventReport": "Báo cáo sự kiện",
     "pendingCount": "{{label}}: {{value}} đang chờ",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "Không thể tải một số số lượng đang chờ.",
     "eventReports": "Báo cáo sự kiện",
     "reportReason": "Lý do báo cáo",
@@ -441,7 +442,7 @@
       "notRead": "Chưa đọc. Lần chạy hằng ngày tiếp theo sẽ điền vào.",
       "summary": {
         "needingAttention": "Cần chú ý: {{value}}",
-        "quietNotifications": "Không có thông báo trong {{hours}} giờ: {{value}}",
+        "quietNotifications": "Không có thông báo trong {{hours}} giờ",
         "followers": "Tổng người theo dõi",
         "averageLikes": "Lượt thích trung bình mỗi bài",
         "followerGains": "Người theo dõi mới mỗi ngày",

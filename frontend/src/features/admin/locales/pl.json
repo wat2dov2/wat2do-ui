@@ -5,6 +5,7 @@
     "reportUpdateFailed": "Nie udało się zaktualizować zgłoszenia. Spróbuj ponownie.",
     "eventReport": "Zgłoszenie wydarzenia",
     "pendingCount": "{{label}}: {{value}} oczekujących",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "Nie udało się wczytać niektórych liczników oczekujących spraw.",
     "eventReports": "Zgłoszenia wydarzeń",
     "reportReason": "Powód zgłoszenia",
@@ -441,7 +442,7 @@
       "notRead": "Jeszcze nie odczytano. Uzupełni to następne codzienne uruchomienie.",
       "summary": {
         "needingAttention": "Wymagają uwagi: {{value}}",
-        "quietNotifications": "Bez powiadomień od {{hours}} h: {{value}}",
+        "quietNotifications": "Bez powiadomień od {{hours}} h",
         "followers": "Obserwujący łącznie",
         "averageLikes": "Średnio polubień na post",
         "followerGains": "Nowi obserwujący dziennie",

@@ -5,6 +5,7 @@
     "reportUpdateFailed": "به‌روزرسانی گزارش ممکن نشد. دوباره تلاش کنید.",
     "eventReport": "گزارش رویداد",
     "pendingCount": "{{label}}: {{value}} در انتظار",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "بارگیری برخی شمارش‌های در انتظار ممکن نشد.",
     "eventReports": "گزارش‌های رویدادها",
     "reportReason": "دلیل گزارش",
@@ -441,7 +442,7 @@
       "notRead": "هنوز خوانده نشده. اجرای روزانهٔ بعدی آن را پر می‌کند.",
       "summary": {
         "needingAttention": "نیازمند رسیدگی: {{value}}",
-        "quietNotifications": "بدون اعلان در {{hours}} ساعت: {{value}}",
+        "quietNotifications": "بدون اعلان در {{hours}} ساعت",
         "followers": "مجموع دنبال‌کنندگان",
         "averageLikes": "میانگین پسند هر پست",
         "followerGains": "دنبال‌کنندگان جدید در روز",
