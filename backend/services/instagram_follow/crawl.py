@@ -120,7 +120,7 @@ def crawl_slice(
                 state["queue"].append(seed)
             log.warning("Follow crawl %s could not read %s: %s", school, seed, exc)
             _save(school, state)
-            if failed_in_a_row >= CONTROL.crawl_failures_before_rest:
+            if failed_in_a_row >= CONTROL.failures_before_rest:
                 # A run of failures usually means Instagram is slow for this account.
                 return CRAWL_RUNNING
             continue

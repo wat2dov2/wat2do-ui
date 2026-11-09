@@ -13,8 +13,10 @@ before the morning's carousels publish.
 Replies happen only during the control box's action hours, follows only during its
 follow hours. The emulator's lock is held for one visit at a time, and one failing
 step never stops the others. An account the app cannot switch to rests while the
-others go on, and switches failing in a row restart the emulator, whose Android
-stalls after long uptimes.
+others go on, and so do an account's follows or crawl once its profiles keep failing;
+switches failing in a row restart the emulator, whose Android stalls after long
+uptimes. A visit that fails outright, such as while the emulator restarts, is tried
+again after a short wait, so the worker itself never stops.
 """
 
 from __future__ import annotations
@@ -55,12 +57,16 @@ def run_forever() -> None:
         if synced_at is None or now - synced_at >= _CLUB_SYNC_INTERVAL:
             _step("club sync", candidates.sync_club_targets)
             synced_at = now
-        if not visit_next(device):
+        if not _step("visit", lambda: visit_next(device)):
             time.sleep(CONTROL.idle_seconds)
 
 
 def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
-    """Visit the account with the most urgent work; False when nothing is due anywhere."""
+    """Visit the account with the most urgent work; False when nothing is due anywhere.
+
+    Each kind of work is looked up only when nothing more urgent is due, so a song
+    never waits on the database questions about follows and crawls.
+    """
     moment = (now or datetime.now(timezone.utc)).astimezone()
     acting = acting_hours(moment)
     following = following_hours(moment)
@@ -69,16 +75,18 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
         for school in _visit_order(_current_user(device))
         if _switch_rested_until.get(school, moment) <= moment
     ]
-    waiting = _songs_waiting(moment)
-    tiers: list[tuple[list[str], bool]] = [
-        ([school for school in order if school in waiting], False)
-    ]
+
+    def songs() -> list[str]:
+        waiting = _songs_waiting(moment)
+        return [school for school in order if school in waiting]
+
+    tiers: list[tuple[Callable[[], list[str]], bool]] = [(songs, False)]
     if acting:
-        tiers.append(([school for school in order if sweep.due(school, moment)], False))
+        tiers.append((lambda: [school for school in order if sweep.due(school, moment)], False))
     if following:
         tiers.append(
             (
-                [
+                lambda: [
                     school
                     for school in order
                     if _follows_rested_until.get(school, moment) <= moment
@@ -87,14 +95,15 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
                 False,
             )
         )
-    crawls = (_crawl_order(order, moment), True)
+    crawls = (lambda: _crawl_order(order, moment), True)
     # The crawl runs around the clock: it takes every other visit while follows,
     # unfollows or DMs are also waiting, rather than only when nothing else is due.
     if _last_visit_crawled:
         tiers.append(crawls)
     else:
         tiers.insert(1, crawls)
-    for schools, crawling in tiers:
+    for due, crawling in tiers:
+        schools = due()
         if schools:
             visit(
                 device,
@@ -155,16 +164,9 @@ def visit(
                         lambda: follows.follow_due(device, school, limit, stop=interrupt),
                     )
                 )
-            if (
-                visits
-                and not interrupt.seen
-                and not any(
-                    isinstance(done, follows.FollowVisit) and (done.followed or done.confirmed)
-                    for done in visits
-                )
-            ):
-                # Nothing went through, so the next try waits instead of looping here.
-                _follows_rested_until[school] = now + timedelta(seconds=FOLLOW.crawl_rest_seconds)
+            if visits and not interrupt.seen and _follows_stuck(visits):
+                # The next try waits instead of looping here.
+                _follows_rested_until[school] = now + timedelta(seconds=FOLLOW.rest_seconds)
         if crawl_slice and not interrupt.seen:
             deadline = time.monotonic() + CONTROL.crawl_slice_minutes * 60
             outcome = _step(
@@ -177,10 +179,19 @@ def visit(
                 and not interrupt.seen
             ):
                 # The slice gave up early, usually because profiles kept failing to load.
-                _crawl_rested_until[school] = now + timedelta(seconds=FOLLOW.crawl_rest_seconds)
+                _crawl_rested_until[school] = now + timedelta(seconds=FOLLOW.rest_seconds)
             crawled = True
     if crawled:
         _score_in_background()
+
+
+def _follows_stuck(visits: list[object]) -> bool:
+    """Whether the visit's unfollows and follows stopped on profiles that kept failing,
+    or got nothing through at all."""
+    done = [visit for visit in visits if isinstance(visit, follows.FollowVisit)]
+    return any(visit.failing for visit in done) or not any(
+        visit.followed or visit.confirmed for visit in done
+    )
 
 
 def _songs_waiting(now: datetime) -> set[str]:

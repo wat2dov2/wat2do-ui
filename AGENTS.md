@@ -162,7 +162,7 @@ New candidates are read logged out from their profile embed (`fetch_profile`) an
 Admins review them on the admin Social page's Follow candidates tab; approvals and rejections are staged in the page and submitted together.
 Approving creates the school's club for the handle unless one exists, and queues the follow.
 The emulator worker checks `crawl_due` and `follows_due` from the database, then calls `crawl_slice` and `follow_due` with the emulator on the school's account.
-`follow_due` follows a few approved accounts per visit, at most `follows_per_account_per_day` a day, and sets each one's post notifications to All so ingestion hears about its posts; an account already followed is only marked followed, after its bell is checked, and never counts toward the day's follows.
+`follow_due` follows a few approved accounts per visit, at most `follows_per_account_per_day` a day and `follows_per_account_per_hour` within any hour, and sets each one's post notifications to All so ingestion hears about its posts; an account already followed is only marked followed, after its bell is checked, and never counts toward the day's follows.
 Instagram's "Try again later" pauses that account's follows for a day; it is never pushed through.
 Only the worker taps the emulator, holding its lock for one visit at a time.
 Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
@@ -183,6 +183,7 @@ deletes Instagram's caches on every Android user as root
 (`instagram_cache_paths`), never its login, databases or settings, then restarts the
 emulator, whose host process leaks about 3 GB of memory a day.
 Unfollows, follows and crawl slices stop between profiles once a carousel waits for its song or that restart is due.
+A step that fails starts Instagram afresh on that Android user, so nothing it left open covers the next step, and `failures_before_rest` profiles failing in a row rest that account's follows or crawl.
 `dry_run` decides and records every DM without replying, reposting or queueing anything.
 Never log DM text.
 

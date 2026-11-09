@@ -1,6 +1,5 @@
 import pytest
 
-from services.instagram_emulator import following as module
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError, Node
 from services.instagram_emulator.following import (
     ActionBlocked,
@@ -74,7 +73,7 @@ class _Device(EmulatorDevice):
         if len(self.screens) > 1:
             self.screens.pop(0)
 
-    def tap(self, node, *, hold_ms=0):
+    def _press(self, node, hold_ms):
         self._advance(node.text or node.description or node.resource_id)
 
     def type_text(self, text):
@@ -89,13 +88,8 @@ class _Device(EmulatorDevice):
     def open_instagram(self, user, url=None):
         self._advance(url)
 
-
-@pytest.fixture(autouse=True)
-def fake_clock(monkeypatch):
-    """Waits pass instantly: each look at the clock is a second later than the last."""
-    seconds = iter(range(0, 100_000))
-    monkeypatch.setattr(module.time, "sleep", lambda _seconds: None)
-    monkeypatch.setattr(module.time, "monotonic", lambda: next(seconds))
+    def reset_app(self, user):
+        self.actions.append(f"fresh start for user {user}")
 
 
 def _reader(device):
@@ -115,6 +109,32 @@ def test_search_reads_who_we_follow_and_who_we_dont_across_scrolls() -> None:
         FollowingRow("utmpadel", "UTM Padel", False),
     ]
     assert "type utm" in device.actions
+
+
+class _FilteringDevice(_Device):
+    """A list that filters by itself a read after typing, as Instagram's does a moment later."""
+
+    def __init__(self, screens, settling):
+        super().__init__(screens)
+        self.settling = settling
+
+    def screen(self):
+        shown = self.screens[0]
+        if any(shown is screen for screen in self.settling):
+            self.screens.pop(0)
+        return shown
+
+
+def test_a_search_reads_the_list_once_it_shows_only_matches() -> None:
+    everyone = _list(("chessclub", "Message", "Chess Club"), ("utmaclub", "Follow", "UTMAC"))
+    matches = _list(("utmaclub", "Follow", "UTMAC"))
+    device = _FilteringDevice(
+        [HOME, _profile("seed"), SEARCH_FIELD, SEARCH_FIELD, everyone, matches], [everyone]
+    )
+
+    rows = _reader(device).search_following("seed", ["utm"])
+
+    assert rows == [FollowingRow("utmaclub", "UTMAC", False)]
 
 
 def test_search_reopens_the_list_for_each_name() -> None:
@@ -236,6 +256,42 @@ def test_a_missing_bell_on_an_account_already_followed_is_a_plain_failure() -> N
     with pytest.raises(EmulatorError) as raised:
         _reader(device).follow("utmmsa")
     assert not isinstance(raised.value, FollowedWithoutBell)
+
+
+def test_a_bell_sheet_left_open_by_a_failed_follow_is_cleared_by_a_fresh_start() -> None:
+    # 11-08: the sheet stayed over umich's app and 148 profiles after it never loaded.
+    following = _profile("utmaclub", button="Following")
+    device = _Device(
+        [
+            HOME,
+            _profile("utmaclub"),
+            following,
+            _bell("Most relevant"),
+            [_node("All")],
+            following,
+            _bell("Most relevant"),
+        ]
+    )
+
+    with pytest.raises(FollowedWithoutBell):
+        _reader(device).follow("utmaclub")
+    assert device.actions[-1] == "fresh start for user 0"
+
+
+def test_a_profile_that_never_loads_starts_the_app_afresh() -> None:
+    device = _Device([HOME, [_node("Loading")]])
+
+    with pytest.raises(EmulatorError, match="never loaded"):
+        _reader(device).unfollow("club")
+    assert device.actions[-1] == "fresh start for user 0"
+
+
+def test_a_profile_that_works_leaves_the_app_as_it_is() -> None:
+    following = _profile("utmmsa", button="Following")
+    device = _Device([HOME, following, _bell("All"), following])
+
+    _reader(device).follow("utmmsa")
+    assert not any(action.startswith("fresh start") for action in device.actions)
 
 
 def test_unfollowing_taps_following_then_confirms() -> None:

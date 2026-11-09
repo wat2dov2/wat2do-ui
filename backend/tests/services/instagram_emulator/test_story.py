@@ -38,7 +38,7 @@ class _Device(EmulatorDevice):
     def screen(self):
         return self.screens[0]
 
-    def tap(self, node, *, hold_ms=0):
+    def _press(self, node, hold_ms):
         self.taps.append(node.text)
         if len(self.screens) > 1:
             self.screens.pop(0)

@@ -319,6 +319,14 @@ class _ThreadDevice:
     def tap_when(self, pattern):
         pass
 
+    def watch(self, look, *, seconds=None):
+        """Looks at each screen in turn; the last one is the last look."""
+        while True:
+            last = len(self.screens) == 1
+            seen = look(self.screen())
+            if seen or last:
+                return seen
+
     def type_text(self, text):
         self.typed.append(text)
 
@@ -337,6 +345,15 @@ def test_a_reply_is_confirmed_even_when_older_messages_scroll_away() -> None:
     # The keyboard capitalized the first letter.
     sent = _node("Just shared it!", (700, 1200, 1040, 1250))
     device = _ThreadDevice([_thread(older, request), _thread(request), _thread(request, sent)])
+    THREAD_READER(device, lambda: None).send("just shared it!")
+    assert device.typed == ["just shared it!"]
+
+
+def test_a_reply_slow_to_appear_is_still_confirmed() -> None:
+    request = _node("could you share our post?", (179, 600, 882, 700))
+    sent = _node("Just shared it!", (700, 1200, 1040, 1250))
+    # The reply shows only after several reads, as it can on a slow connection.
+    device = _ThreadDevice([_thread(request)] * 7 + [_thread(request, sent)])
     THREAD_READER(device, lambda: None).send("just shared it!")
     assert device.typed == ["just shared it!"]
 

@@ -22,8 +22,10 @@ _SHARE = labels("Send post", "Share")
 _ADD_TO_STORY = labels("Add to story")
 _STORY_EDITOR = labels("Add a caption", "Close Friends")
 _POST_TO_STORY = labels("Your story")
-# First use of the story camera asks for these once per Android user.
+# First use of the story camera asks for these once per Android user, one after another.
 _PERMISSION = labels("While using the app", "Allow all")
+_EDITOR_OR_PERMISSION = re.compile(f"{_STORY_EDITOR.pattern}|{_PERMISSION.pattern}")
+_PERMISSIONS_ASKED = 3
 # Shown once per account after the first story; Wat2Do never cross-posts to Facebook.
 _FACEBOOK_SHARING = labels("Share your stories to Facebook")
 _NOT_NOW = re.compile(r"^Not now$")
@@ -61,13 +63,10 @@ def _required(node: Node | None) -> Node:
 
 
 def _open_story_editor(device: EmulatorDevice) -> None:
-    for _ in range(5):
-        nodes = device.screen()
-        if device.find(_STORY_EDITOR, nodes) is not None:
+    """Wait for the story editor, granting the camera what Android asks for on the way."""
+    for _ in range(_PERMISSIONS_ASKED + 1):
+        shown = device.wait_for(_EDITOR_OR_PERMISSION)
+        if not shown.labelled(_PERMISSION):
             return
-        prompt = device.find(_PERMISSION, nodes)
-        if prompt is not None:
-            device.tap(prompt)
-        else:
-            device.pause()
+        device.tap(shown)
     raise EmulatorError("Instagram's story editor did not open")

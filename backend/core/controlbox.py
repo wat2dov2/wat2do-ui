@@ -930,13 +930,17 @@ class InstagramFollowControl(_ControlModel):
     crawl_max_scrolls: int = Field(ge=1, le=200)
     crawl_profile_wait_seconds: int = Field(ge=5, le=300)
     # A profile that fails to load is retried later, up to this many times, and never
-    # counts as a miss; this many failures in a row rests the crawl before going on.
+    # counts as a miss.
     crawl_seed_attempts: int = Field(ge=1, le=10)
-    crawl_failures_before_rest: int = Field(ge=1, le=20)
-    crawl_rest_seconds: int = Field(ge=0, le=7200)
+    # This many profiles failing in a row end a crawl slice or a visit's follows, and
+    # that account's crawl or follows rest this long before the next try.
+    failures_before_rest: int = Field(ge=1, le=20)
+    rest_seconds: int = Field(ge=0, le=7200)
 
-    # Each school account follows at most this many approved accounts per day.
+    # Each school account follows (or unfollows) at most this many accounts a day, and
+    # this many within any hour, so a fast emulator never makes an account follow in bursts.
     follows_per_account_per_day: int = Field(ge=1, le=200)
+    follows_per_account_per_hour: int = Field(ge=1, le=200)
 
     # Names clubs use for their school besides its slug, searched in Following lists.
     # UofT's campuses list each other: a club named for one campus often runs on another.
@@ -996,12 +1000,13 @@ class InstagramEmulatorControl(_ControlModel):
     user_switch_wait_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
     account_switch_settle_seconds: float = Field(ge=0, le=60, allow_inf_nan=False)
     screen_wait_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
-    # A screen read waits until the app has drawn nothing new for this long, as
-    # `uiautomator dump` does, but at most this many seconds: a screen that never
-    # settles, such as a playing video, is then read as it is.
+    # A screen read waits until the app has drawn nothing new for this long, but at
+    # most this many seconds: a screen that never settles, such as a playing video, is
+    # then read as it is.
     screen_settle_milliseconds: int = Field(ge=0, le=5000)
     screen_settle_wait_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
-    # Every tap and keystroke waits a random human-like pause inside this window.
+    # Every tap, swipe and Back waits a random human-like pause inside this window,
+    # and every keystroke one inside the keystroke window.
     step_delay_min_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
     step_delay_max_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
     keystroke_delay_min_seconds: float = Field(ge=0, le=5, allow_inf_nan=False)
