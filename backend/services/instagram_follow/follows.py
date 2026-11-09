@@ -67,19 +67,19 @@ class FollowVisit:
 
 
 def follows_due(school: str) -> bool:
-    """Whether the school has approved accounts waiting and may follow more today."""
+    """Whether the school has approved accounts waiting and room for a visit's follows."""
     school_id = school_service.get_school_id(school)
     if school_id is None or _blocked(school):
         return False
-    return _allowance(school_id) > 0 and bool(candidates.approved(school_id, 1))
+    return _room_for_a_visit(school_id) and bool(candidates.approved(school_id, 1))
 
 
 def unfollows_due(school: str) -> bool:
-    """Whether the school has accounts to unfollow and may act on more today."""
+    """Whether the school has accounts to unfollow and room for a visit's unfollows."""
     school_id = school_service.get_school_id(school)
     if school_id is None or _blocked(school):
         return False
-    return _allowance(school_id) > 0 and bool(candidates.to_unfollow(school_id, 1))
+    return _room_for_a_visit(school_id) and bool(candidates.to_unfollow(school_id, 1))
 
 
 def unfollow_due(
@@ -204,6 +204,20 @@ def _failing(school: str, followed: int, confirmed: int) -> FollowVisit:
 def _allowance(school_id: int) -> int:
     """Follows and unfollows share the allowance: what is left of today's, and of the
     last hour's, whichever is smaller."""
+    return min(_left(school_id))
+
+
+def _room_for_a_visit(school_id: int) -> bool:
+    """Whether the last hour leaves room for a whole visit's follows, or for all that is
+    left of today's, so the worker never switches accounts for a follow or two while
+    the hour's allowance frees up one follow at a time."""
+    today, hour = _left(school_id)
+    whole_visit = min(EMULATOR.follows_per_visit, CONTROL.follows_per_account_per_hour, today)
+    return today > 0 and hour >= whole_visit
+
+
+def _left(school_id: int) -> tuple[int, int]:
+    """How many follows and unfollows are left today, and within the last hour."""
     now = datetime.now().astimezone()
     midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
     hour_ago = now - timedelta(hours=1)
@@ -224,7 +238,7 @@ def _allowance(school_id: int) -> int:
     ]
     today = sum(1 for at in done if at >= midnight)
     last_hour = sum(1 for at in done if at >= hour_ago)
-    return min(
+    return (
         CONTROL.follows_per_account_per_day - today,
         CONTROL.follows_per_account_per_hour - last_hour,
     )

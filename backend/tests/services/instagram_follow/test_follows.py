@@ -38,7 +38,7 @@ def world(monkeypatch, tmp_path):
     marks = []
     monkeypatch.setattr(module, "BLOCKS_PATH", tmp_path / "blocked.json")
     monkeypatch.setattr(module.school_service, "get_school_id", lambda school: 7)
-    monkeypatch.setattr(module, "_allowance", lambda school_id: 2)
+    monkeypatch.setattr(module, "_left", lambda school_id: (2, 40))
     monkeypatch.setattr(
         module.candidates,
         "approved",
@@ -162,12 +162,26 @@ def test_follows_are_due_while_accounts_wait_and_the_day_allows(world, monkeypat
     world()
     assert module.follows_due("utsg") is True
 
-    monkeypatch.setattr(module, "_allowance", lambda school_id: 0)
+    monkeypatch.setattr(module, "_left", lambda school_id: (0, 40))
     assert module.follows_due("utsg") is False
 
-    monkeypatch.setattr(module, "_allowance", lambda school_id: 2)
+    monkeypatch.setattr(module, "_left", lambda school_id: (2, 40))
     monkeypatch.setattr(module.candidates, "approved", lambda school_id, limit: [])
     assert module.follows_due("utsg") is False
+
+
+def test_follows_wait_until_the_hour_has_room_for_a_whole_visit(world, monkeypatch):
+    world()
+    visit = min(module.EMULATOR.follows_per_visit, module.CONTROL.follows_per_account_per_hour)
+    # The hour frees up one follow at a time; a visit for one or two is not worth the switch.
+    monkeypatch.setattr(module, "_left", lambda school_id: (100, visit - 1))
+    assert module.follows_due("utsg") is False
+    assert module.unfollows_due("utsg") is False
+    monkeypatch.setattr(module, "_left", lambda school_id: (100, visit))
+    assert module.follows_due("utsg") is True
+    # Near the end of the day, what is left of it is a whole visit.
+    monkeypatch.setattr(module, "_left", lambda school_id: (3, 5))
+    assert module.follows_due("utsg") is True
 
 
 class _At:
