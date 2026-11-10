@@ -17,7 +17,9 @@ use super::super::errors::{BrowserError, BrowserResult, SessionKind};
 use super::super::scripts;
 use super::bridge::{Bridge, is_ascii_digits};
 use super::runner::{JavascriptRunner, PinnedRunner};
-use super::session::{BrowserInstagramSession, CANCELLATION_UNCONFIRMED, LOGGED_OUT_PAUSE};
+use super::session::{
+    ACCOUNT_UNAVAILABLE, BrowserInstagramSession, CANCELLATION_UNCONFIRMED, LOGGED_OUT_PAUSE,
+};
 use super::{WAT2DO_ACCOUNT_PATTERN, account_profile_url, school_account_username};
 use crate::controlbox::instagram_browser as control;
 use crate::pyjson;
@@ -214,6 +216,48 @@ impl BrowserTabPool {
         }
         school_account_username(&control().bootstrap_profile_school).map_err(BrowserError::Value)
     }
+
+    fn stored_password(&self, username: &str) -> BrowserResult<String> {
+        account_login::account_password(&self.bridge, username).ok_or_else(|| {
+            BrowserError::session(format!(
+                "Instagram needs a person: no stored password for {username}"
+            ))
+        })
+    }
+
+    /// Log a missing account in through the login form Switch accounts opens.
+    ///
+    /// Its password goes to Instagram at most once a day per account, and within the
+    /// day's total of account logins. The entry is recorded only once the form is open,
+    /// so a failure before the password goes out spends nothing.
+    fn log_in_from_switcher(
+        &self,
+        session: &mut BrowserInstagramSession,
+        username: &str,
+        password: &str,
+    ) -> BrowserResult<()> {
+        if !self
+            .queue
+            .account_login_allowed(username, self.bridge.time())?
+        {
+            return Err(logins_used_up(username));
+        }
+        session.open_login_form()?;
+        if !self
+            .queue
+            .reserve_account_login(username, self.bridge.time())?
+        {
+            session.close_account_chooser()?;
+            return Err(logins_used_up(username));
+        }
+        session.log_in(username, password)
+    }
+}
+
+fn logins_used_up(username: &str) -> BrowserError {
+    BrowserError::session(format!(
+        "Instagram needs a person: {username}'s password was already entered today, or today's account logins are used up"
+    ))
 }
 
 impl TabPool for BrowserTabPool {
@@ -416,20 +460,14 @@ impl TabPool for BrowserTabPool {
                 .cloned()
                 .unwrap_or_else(|| pyjson::str(&preferred));
             let username = account_login::canonical_account(&shown);
-            let Some(password) = account_login::account_password(&self.bridge, &username) else {
-                return Err(BrowserError::session(format!(
-                    "Instagram needs a person: no stored password for {username}"
-                )));
-            };
+            let password = self.stored_password(&username)?;
             // A password goes to Instagram at most once a day per account, and within
             // the day's total of account logins.
             if !self
                 .queue
                 .reserve_account_login(&username, self.bridge.time())?
             {
-                return Err(BrowserError::session(format!(
-                    "Instagram needs a person: {username}'s password was already entered today, or today's account logins are used up"
-                )));
+                return Err(logins_used_up(&username));
             }
             session.log_in(&username, &password)?;
             outcome = Some("logged_in".to_owned());
@@ -461,12 +499,10 @@ impl TabPool for BrowserTabPool {
         Ok(username.expect("identified before returning"))
     }
 
+    /// Added the way a person adds one: from the `login_from_school` account, which is
+    /// logged back in first (under the same caps) when Instagram dropped it too.
     fn add_account(&self, username: &str) -> BrowserResult<()> {
-        let Some(password) = account_login::account_password(&self.bridge, username) else {
-            return Err(BrowserError::session(format!(
-                "Instagram needs a person: no stored password for {username}"
-            )));
-        };
+        let password = self.stored_password(username)?;
         let ids = self.live_ids(&self.registered_ids()?)?;
         if ids.is_empty() {
             return Err(BrowserError::tab_unavailable(
@@ -481,7 +517,18 @@ impl TabPool for BrowserTabPool {
         );
         let from_account =
             school_account_username(&control().login_from_school).map_err(BrowserError::Value)?;
-        session.add_account(username, &password, &from_account)
+        if username != from_account && session.active_account()? != from_account {
+            match session.switch_account(&from_account) {
+                Err(error) if error.to_string() == ACCOUNT_UNAVAILABLE => {
+                    let from_password = self.stored_password(&from_account)?;
+                    self.log_in_from_switcher(&mut session, &from_account, &from_password)?;
+                    // The account being added gets a full login's time of its own.
+                    session.reset_job_deadline(control().login_recovery_timeout_seconds);
+                }
+                other => other?,
+            }
+        }
+        self.log_in_from_switcher(&mut session, username, &password)
     }
 
     fn prepare(

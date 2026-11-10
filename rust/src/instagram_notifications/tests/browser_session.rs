@@ -571,23 +571,40 @@ class Element {
 global.getComputedStyle = () => ({visibility: "visible", display: "block"});
 "#;
 
-/// `_evaluate_account_identity`: the current-account source over an HTML fixture.
-fn evaluate_account_identity(html: &str, ready_state: &str) -> Option<Value> {
-    let root = parse_fixture(html, true);
-    let script = format!(
+/// `DOM_ADAPTER` over an HTML fixture as `document`, each element keeping its text.
+fn fixture_document(html: &str) -> String {
+    format!(
         r#"{DOM_ADAPTER}
       Object.defineProperty(Element.prototype, "textContent", {{get() {{
         return (this.attrs["data-fixture-text"] || "") +
           this.children.map(child => child.textContent).join("");
       }}}});
+      global.document = new Element({root});
+    "#,
+        root = parse_fixture(html, true)
+    )
+}
+
+/// What a page source returns over an HTML fixture, and the ids of what it clicked.
+fn evaluate_on_page(html: &str, source: &str) -> Option<Value> {
+    node_json(&format!(
+        "{document}\nconst status = {source};\nconsole.log(JSON.stringify({{status, clicks}}));",
+        document = fixture_document(html)
+    ))
+}
+
+/// `_evaluate_account_identity`: the current-account source over an HTML fixture.
+fn evaluate_account_identity(html: &str, ready_state: &str) -> Option<Value> {
+    let script = format!(
+        r#"{document}
       const bounds = Element.prototype.getBoundingClientRect;
       Element.prototype.getBoundingClientRect = function() {{
         return {{...bounds.call(this), left: Number(this.attrs["data-left"] || 10)}};
       }};
-      global.document = new Element({root});
       document.readyState = {ready};
       console.log(JSON.stringify({source}));
     "#,
+        document = fixture_document(html),
         ready = pyjson::string(ready_state),
         source = scripts::CURRENT_ACCOUNT_USERNAME,
     );
@@ -609,6 +626,7 @@ fn test_account_switch_control_sources_parse() {
         scripts::SWITCH_BUTTON_STATE.to_owned(),
         scripts::CLICK_SWITCH_ACCOUNTS.to_owned(),
         scripts::ACCOUNT_CHOOSER_STATE.to_owned(),
+        scripts::CLOSE_ACCOUNT_CHOOSER.to_owned(),
         scripts::click_account("usask.wat2do.io"),
     ] {
         let Some((success, _, stderr)) = node(&["--check"], &source) else {
@@ -3101,6 +3119,82 @@ fn test_account_chooser_close_is_scoped_and_unambiguous() {
     }
 }
 
+/// The page's own navigation, showing the active account.
+const OWN_NAVIGATION: &str =
+    "<nav><a href='/wat2do.yorku/'><img alt=\"wat2do.yorku's profile picture\"></a></nav>";
+/// Switch accounts with other accounts saved: the chooser.
+const ACCOUNT_CHOOSER: &str = "<div role='dialog'><div><h2>Switch accounts</h2>\
+     <div role='button' id='close'><svg aria-label='Close'><title>Close</title></svg></div></div>\
+     <div role='button' id='guelph'>wat2do.guelph</div>\
+     <button id='existing'>Log into an Existing Account</button></div>";
+/// Switch accounts with no other account saved, as Brave showed it on 11-09: an empty
+/// heading, the login inputs and the buttons "Close", "Save login info", "Log in" and
+/// "Forgot password?".
+const BARE_LOGIN_FORM: &str = "<div role='dialog'>\
+     <div role='button' id='close'><svg aria-label='Close'><title>Close</title></svg></div>\
+     <h1></h1><form><input name='username' type='text'><input name='password' type='password'>\
+     <input name='LoginCheckbox' type='checkbox'>\
+     <div role='button' id='save'>Save login info</div><button id='log-in'>Log in</button>\
+     <div role='button' id='forgot'>Forgot password?</div></form></div>";
+/// A post opened in a dialog, which has its own Close.
+const POST_DIALOG: &str = "<div role='dialog'>\
+     <div role='button' id='post-close'><svg aria-label='Close'><title>Close</title></svg></div>\
+     <article>a post</article></div>";
+/// Instagram's logged-out login page: a password field, but no dialog.
+const LOGIN_PAGE: &str = "<main><form><input name='username' type='text'>\
+     <input name='password' type='password'><button id='log-in'>Log in</button></form></main>";
+
+#[test]
+fn test_account_chooser_state_tells_the_chooser_from_the_bare_login_form() {
+    setup();
+    for (html, expected) in [
+        (format!("{OWN_NAVIGATION}{ACCOUNT_CHOOSER}"), "ready"),
+        (format!("{OWN_NAVIGATION}{BARE_LOGIN_FORM}"), "login"),
+        (format!("{OWN_NAVIGATION}{POST_DIALOG}"), "pending"),
+        (OWN_NAVIGATION.to_owned(), "pending"),
+        (LOGIN_PAGE.to_owned(), "pending"),
+    ] {
+        let Some(result) = evaluate_on_page(&html, scripts::ACCOUNT_CHOOSER_STATE) else {
+            return;
+        };
+        assert_eq!(result["status"], json!(expected), "{html}");
+    }
+}
+
+#[test]
+fn test_account_chooser_close_also_closes_the_bare_login_form() {
+    setup();
+    for (html, status, clicked) in [
+        (
+            format!("{OWN_NAVIGATION}{ACCOUNT_CHOOSER}"),
+            "clicked",
+            vec!["close"],
+        ),
+        (
+            format!("{OWN_NAVIGATION}{BARE_LOGIN_FORM}"),
+            "clicked",
+            vec!["close"],
+        ),
+        // Only Switch accounts' own dialog is ever closed.
+        (format!("{OWN_NAVIGATION}{POST_DIALOG}"), "missing", vec![]),
+        (LOGIN_PAGE.to_owned(), "missing", vec![]),
+        (
+            format!("{OWN_NAVIGATION}{BARE_LOGIN_FORM}{BARE_LOGIN_FORM}"),
+            "missing",
+            vec![],
+        ),
+    ] {
+        let Some(result) = evaluate_on_page(&html, scripts::CLOSE_ACCOUNT_CHOOSER) else {
+            return;
+        };
+        assert_eq!(
+            result,
+            json!({"status": status, "clicks": clicked}),
+            "{html}"
+        );
+    }
+}
+
 // ---------------------------------------------------------------------------------------
 // Account activation fallbacks
 
@@ -4684,4 +4778,393 @@ fn test_log_in_password_apple_event_error_waits_for_a_person() {
     assert!(error.to_string().starts_with("Instagram needs a person"));
     assert!(error.to_string().contains("Apple Event -1712"));
     assert_eq!(page.lock().unwrap().submitted.len(), 1);
+}
+
+// ---------------------------------------------------------------------------------------
+// Accounts Instagram dropped from Brave
+
+/// Instagram in the worker's tabs, holding `accounts` (the first is active).
+///
+/// Switch accounts opens the chooser, which lists the other accounts, once Brave holds
+/// more than one (or `chooser` says so); with only one it opens a bare login form, as on
+/// 11-09. Either dialog hides the page's navigation. A submitted password logs its
+/// account in and makes it active.
+struct Instagram {
+    accounts: Vec<String>,
+    chooser: bool,
+    existing_account_button: bool,
+    menu: bool,
+    dialog: Option<&'static str>,
+    logins: usize,
+}
+
+const DROPPED: [&str; 3] = ["wat2do.guelph", "wat2do.columbia", "wat2do.yorku"];
+
+fn instagram_pool(accounts: &[&str], dialog: Option<&'static str>) -> (Pool, Shared<Instagram>) {
+    let instagram = shared(Instagram {
+        accounts: strings(accounts),
+        chooser: false,
+        existing_account_button: true,
+        menu: false,
+        dialog,
+        logins: 0,
+    });
+    let page = instagram.clone();
+    let url = format!("https://www.instagram.com/{}/", accounts[0]);
+    let pool = registered_pool(2, &url, move |brave, tab, source| {
+        let mut instagram = page.lock().unwrap();
+        while instagram.logins < brave.secrets.len() {
+            let secret = &brave.secrets[instagram.logins];
+            let account = DROPPED
+                .into_iter()
+                .find(|account| secret.contains(account))
+                .expect("a known account logs in")
+                .to_owned();
+            instagram.logins += 1;
+            instagram.accounts.retain(|held| *held != account);
+            instagram.accounts.insert(0, account);
+            instagram.dialog = None;
+        }
+        if source == scripts::CANCEL_REQUEST {
+            return ok("settled");
+        }
+        if source == scripts::CLEAR_REQUEST {
+            return ok("cleared");
+        }
+        if source == scripts::CURRENT_PATH {
+            return ok(&brave.path(tab));
+        }
+        if source == scripts::PAGE_RESPONSE {
+            return ok(&json!({"path": brave.path(tab), "rate_limited": false}).to_string());
+        }
+        if source == scripts::SERVER_LOGIN {
+            return ok("logged_in");
+        }
+        if source == scripts::CURRENT_ACCOUNT_USERNAME {
+            // A modal hides the navigation that names the active account.
+            return ok(if instagram.dialog.is_some() {
+                ""
+            } else {
+                &instagram.accounts[0]
+            });
+        }
+        if source.contains("activeRecipient") {
+            return ok("true");
+        }
+        assert_eq!(tab, "1", "only the primary tab switches accounts");
+        if source == scripts::OPEN_MORE {
+            instagram.menu = true;
+            return ok("clicked");
+        }
+        if source == scripts::SWITCH_BUTTON_STATE {
+            return ok(if instagram.menu { "ready" } else { "pending" });
+        }
+        if source == scripts::CLICK_SWITCH_ACCOUNTS {
+            instagram.menu = false;
+            instagram.dialog = Some(if instagram.chooser || instagram.accounts.len() > 1 {
+                "chooser"
+            } else {
+                "login"
+            });
+            return ok("clicked");
+        }
+        if source == scripts::ACCOUNT_CHOOSER_STATE {
+            return ok(match instagram.dialog {
+                Some("chooser") => "ready",
+                Some(_) => "login",
+                None => "pending",
+            });
+        }
+        if source == scripts::CLOSE_ACCOUNT_CHOOSER {
+            return ok(if instagram.dialog.take().is_some() {
+                "clicked"
+            } else {
+                "missing"
+            });
+        }
+        if source == scripts::LOGIN_FORM_STATE {
+            let state = if instagram.dialog == Some("login") {
+                "form"
+            } else {
+                "pending"
+            };
+            return ok(&json!({ "state": state }).to_string());
+        }
+        if source == scripts::click_label("Log into an Existing Account") {
+            if instagram.dialog != Some("chooser") || !instagram.existing_account_button {
+                return ok("missing");
+            }
+            instagram.dialog = Some("login");
+            return ok("clicked");
+        }
+        if let Some(rest) = source
+            .split_once("const username = \"")
+            .map(|(_, rest)| rest)
+        {
+            // Only the other accounts are listed as entries to switch to.
+            let username = rest.split('"').next().unwrap().to_owned();
+            if instagram.dialog != Some("chooser") || !instagram.accounts[1..].contains(&username) {
+                return ok("missing");
+            }
+            instagram.accounts.retain(|held| *held != username);
+            instagram.accounts.insert(0, username);
+            instagram.dialog = None;
+            return ok("clicked");
+        }
+        panic!("unexpected page source: {source}");
+    });
+    pool.brave.lock().unwrap().passwords = DROPPED
+        .iter()
+        .map(|account| ((*account).to_owned(), format!("{account}-password")))
+        .collect();
+    (pool, instagram)
+}
+
+fn primary_sources(pool: &Pool) -> Vec<String> {
+    pool.brave
+        .lock()
+        .unwrap()
+        .sources
+        .iter()
+        .filter(|(tab, _)| tab == "1")
+        .map(|(_, source)| source.clone())
+        .collect()
+}
+
+/// The accounts whose passwords went to Instagram, in order.
+fn passwords_entered(pool: &Pool) -> Vec<String> {
+    pool.brave
+        .lock()
+        .unwrap()
+        .secrets
+        .iter()
+        .map(|secret| {
+            DROPPED
+                .into_iter()
+                .find(|account| secret.contains(&format!("{account}-password")))
+                .unwrap()
+                .to_owned()
+        })
+        .collect()
+}
+
+fn login_entered_today(pool: &Pool, username: &str) -> bool {
+    pool.setting(&format!("account_login_at:{username}"))
+        .is_number()
+}
+
+#[test]
+fn test_switching_to_an_account_brave_lacks_closes_what_switch_accounts_opened() {
+    setup();
+    // The chooser lists other accounts but not this one; with no other account saved,
+    // Switch accounts opens a bare login form instead.
+    for accounts in [&["wat2do.guelph", "wat2do.yorku"][..], &["wat2do.yorku"]] {
+        let (pool, instagram) = instagram_pool(accounts, None);
+        let mut session = pool.session("1", true);
+        let error = error_of(session.switch_account("wat2do.columbia"));
+        assert!(error.is_session());
+        assert_eq!(
+            error.to_string(),
+            "Matching Instagram browser account is unavailable"
+        );
+        // Nothing is left over the page, so its account reads again.
+        assert_eq!(instagram.lock().unwrap().dialog, None);
+        assert_eq!(
+            session.current_account_username().unwrap().as_deref(),
+            Some(accounts[0])
+        );
+        let sources = primary_sources(&pool);
+        assert_eq!(count(&sources, scripts::CLOSE_ACCOUNT_CHOOSER), 1);
+        assert_eq!(
+            count(&sources, &scripts::click_account("wat2do.columbia")),
+            usize::from(accounts.len() > 1),
+            "a bare login form has no entries to click"
+        );
+    }
+}
+
+#[test]
+fn test_a_login_form_left_open_is_closed_before_switching() {
+    setup();
+    let (pool, instagram) = instagram_pool(&["wat2do.yorku", "wat2do.guelph"], Some("login"));
+    pool.session("1", true)
+        .switch_account("wat2do.guelph")
+        .unwrap();
+    assert_eq!(instagram.lock().unwrap().accounts[0], "wat2do.guelph");
+    let sources = primary_sources(&pool);
+    assert_eq!(count(&sources, scripts::CLOSE_ACCOUNT_CHOOSER), 1);
+    assert_eq!(count(&sources, scripts::CLICK_SWITCH_ACCOUNTS), 1);
+}
+
+#[test]
+fn test_a_dropped_login_school_is_logged_in_before_the_missing_account() {
+    setup();
+    // 11-09: Instagram dropped every account but the active one, guelph included.
+    let (pool, instagram) = instagram_pool(&["wat2do.yorku"], None);
+    pool.pool.add_account("wat2do.columbia").unwrap();
+    assert_eq!(
+        instagram.lock().unwrap().accounts,
+        strings(&["wat2do.columbia", "wat2do.guelph", "wat2do.yorku"])
+    );
+    assert_eq!(dialog_left(&instagram), None);
+    // Guelph first, through the bare form; then the missing account from guelph.
+    assert_eq!(
+        passwords_entered(&pool),
+        strings(&["wat2do.guelph", "wat2do.columbia"])
+    );
+    assert_eq!(
+        count(
+            &primary_sources(&pool),
+            &scripts::click_label("Log into an Existing Account")
+        ),
+        1
+    );
+    // Each password entry counts against the same caps.
+    assert!(login_entered_today(&pool, "wat2do.guelph"));
+    assert!(login_entered_today(&pool, "wat2do.columbia"));
+    assert_eq!(
+        pool.setting("account_login_attempts")
+            .as_array()
+            .unwrap()
+            .len(),
+        2
+    );
+}
+
+fn dialog_left(instagram: &Shared<Instagram>) -> Option<&'static str> {
+    instagram.lock().unwrap().dialog
+}
+
+#[test]
+fn test_an_active_login_school_is_used_even_under_a_chooser_left_open() {
+    setup();
+    // 11-09 21:33: guelph is active and a failed switch left the chooser over the page,
+    // hiding which account is active.
+    let (pool, instagram) = instagram_pool(&["wat2do.guelph"], Some("chooser"));
+    instagram.lock().unwrap().chooser = true;
+    pool.pool.add_account("wat2do.columbia").unwrap();
+    assert_eq!(instagram.lock().unwrap().accounts[0], "wat2do.columbia");
+    assert_eq!(passwords_entered(&pool), strings(&["wat2do.columbia"]));
+    let sources = primary_sources(&pool);
+    // Never a switch to the account that is already active.
+    assert_eq!(count(&sources, &scripts::click_account("wat2do.guelph")), 0);
+    assert_eq!(
+        count(
+            &sources,
+            &scripts::click_label("Log into an Existing Account")
+        ),
+        1
+    );
+    assert!(!login_entered_today(&pool, "wat2do.guelph"));
+}
+
+#[test]
+fn test_a_saved_login_school_is_switched_to_before_adding_the_account() {
+    setup();
+    let (pool, instagram) = instagram_pool(&["wat2do.yorku", "wat2do.guelph"], None);
+    pool.pool.add_account("wat2do.columbia").unwrap();
+    assert_eq!(
+        instagram.lock().unwrap().accounts,
+        strings(&["wat2do.columbia", "wat2do.guelph", "wat2do.yorku"])
+    );
+    assert_eq!(passwords_entered(&pool), strings(&["wat2do.columbia"]));
+    assert_eq!(
+        count(
+            &primary_sources(&pool),
+            &scripts::click_account("wat2do.guelph")
+        ),
+        1
+    );
+}
+
+#[test]
+fn test_a_dropped_login_school_is_added_through_the_bare_form_itself() {
+    setup();
+    let (pool, instagram) = instagram_pool(&["wat2do.yorku"], None);
+    pool.pool.add_account("wat2do.guelph").unwrap();
+    assert_eq!(instagram.lock().unwrap().accounts[0], "wat2do.guelph");
+    assert_eq!(passwords_entered(&pool), strings(&["wat2do.guelph"]));
+    let sources = primary_sources(&pool);
+    // The bare form is the login form: nothing to click before the password.
+    assert_eq!(
+        count(
+            &sources,
+            &scripts::click_label("Log into an Existing Account")
+        ),
+        0
+    );
+    assert_eq!(count(&sources, scripts::CLOSE_ACCOUNT_CHOOSER), 0);
+}
+
+#[test]
+fn test_no_password_is_typed_once_an_accounts_login_is_spent() {
+    setup();
+    let (pool, instagram) = instagram_pool(&["wat2do.guelph", "wat2do.yorku"], None);
+    // Its password already went to Instagram today.
+    assert!(
+        pool.queue
+            .reserve_account_login("wat2do.columbia", pool.host.time() - 3600.0)
+            .unwrap()
+    );
+    let error = error_of(pool.pool.add_account("wat2do.columbia"));
+    assert!(error.is_session());
+    assert!(
+        error
+            .to_string()
+            .contains("columbia's password was already entered today")
+    );
+    assert!(passwords_entered(&pool).is_empty());
+    assert_eq!(dialog_left(&instagram), None);
+    assert_eq!(
+        count(&primary_sources(&pool), scripts::CLICK_SWITCH_ACCOUNTS),
+        0,
+        "refused before Switch accounts opens"
+    );
+}
+
+#[test]
+fn test_a_failure_before_the_password_spends_no_login() {
+    setup();
+    let (pool, instagram) = instagram_pool(&["wat2do.guelph", "wat2do.yorku"], None);
+    instagram.lock().unwrap().existing_account_button = false;
+    let error = error_of(pool.pool.add_account("wat2do.columbia"));
+    assert!(error.is(SessionKind::PageUnavailable));
+    assert!(error.to_string().contains("add-account control"));
+    assert!(passwords_entered(&pool).is_empty());
+    assert_eq!(dialog_left(&instagram), None);
+    assert!(!login_entered_today(&pool, "wat2do.columbia"));
+    assert_eq!(pool.setting("account_login_attempts"), Value::Null);
+}
+
+#[test]
+fn test_a_digest_for_a_dropped_account_logs_it_in_and_then_runs() {
+    use super::super::browser_worker::Worker;
+
+    setup();
+    // Every account but yorku dropped, as on 11-09: the digest's first preparation finds
+    // its account missing, the worker logs guelph and then it in, and the digest runs.
+    let (pool, instagram) = instagram_pool(&["wat2do.yorku"], None);
+    let directory = tempfile::tempdir().unwrap();
+    let mut worker = Worker::new(bridge(&pool.host), pool.queue.clone(), None);
+    worker.seams.school_account_for = Arc::new(|_| None);
+    worker.seams.browser_lock_path = directory.path().join("browser.lock");
+    worker.seams.execute_job = Arc::new(
+        |job: &BrowserJob, _: &mut BrowserInstagramSession, _: Option<&dyn Fn(&BrowserError)>| {
+            assert_eq!(job.account_username, "wat2do.columbia");
+            Ok(json!({"status": "succeeded"}))
+        },
+    );
+    let job = pool
+        .queue
+        .enqueue_digest("123", "wat2do.columbia", "cache-entry:1")
+        .unwrap();
+    assert!(worker.process_next_job(true).unwrap());
+    let finished = pool.queue.get(&job.id).unwrap().unwrap();
+    assert_eq!(finished.state, "succeeded", "{:?}", finished.error);
+    assert_eq!(instagram.lock().unwrap().accounts[0], "wat2do.columbia");
+    assert_eq!(
+        passwords_entered(&pool),
+        strings(&["wat2do.guelph", "wat2do.columbia"])
+    );
+    assert_eq!(pool.setting("paused"), Value::Null);
 }

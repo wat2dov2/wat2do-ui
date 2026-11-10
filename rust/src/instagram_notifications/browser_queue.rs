@@ -977,18 +977,35 @@ impl BrowserJobQueue {
     /// day (`account_login_at:<account>`) and `account_login_daily_limit` a day in all
     /// (`account_login_attempts`). False, recording nothing, when either is spent.
     pub fn reserve_account_login(&self, username: &str, now: f64) -> BrowserResult<bool> {
+        let Some(mut spent) = self.account_logins_if_allowed(username, now)? else {
+            return Ok(false);
+        };
+        spent.push(json!(now));
+        self.set_setting("account_login_attempts", Value::from(spent))?;
+        self.set_setting(&format!("account_login_at:{username}"), json!(now))?;
+        Ok(true)
+    }
+
+    /// Whether `reserve_account_login` would allow `username` a login at `now`,
+    /// recording nothing.
+    pub fn account_login_allowed(&self, username: &str, now: f64) -> BrowserResult<bool> {
+        Ok(self.account_logins_if_allowed(username, now)?.is_some())
+    }
+
+    /// The day's account logins so far, or None once `username` may not log in again.
+    fn account_logins_if_allowed(
+        &self,
+        username: &str,
+        now: f64,
+    ) -> BrowserResult<Option<Vec<Value>>> {
         let attempts =
             recent_timestamps(&self.setting_or("account_login_attempts", json!([]))?, now);
         let key = format!("account_login_at:{username}");
         let last = pyjson::number(&self.setting_or(&key, json!(0))?).unwrap_or(0.0);
-        if attempts.len() >= control().account_login_daily_limit || now - last < 86_400.0 {
-            return Ok(false);
-        }
-        let mut spent = attempts;
-        spent.push(json!(now));
-        self.set_setting("account_login_attempts", Value::from(spent))?;
-        self.set_setting(&key, json!(now))?;
-        Ok(true)
+        Ok(
+            (attempts.len() < control().account_login_daily_limit && now - last >= 86_400.0)
+                .then_some(attempts),
+        )
     }
 
     /// Choose a public bootstrap profile without claiming or switching an account.
