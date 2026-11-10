@@ -6,7 +6,7 @@ The executor may be an AI agent, but the executor must still follow `AGENTS.md`,
 
 Do not declare a school launched because a row, logo, or Instagram account merely exists.
 
-A launch is complete only when the school identity, database records, club directory, Instagram account, following and notification setup, publishing credentials, notification routing, application behavior, and verification gates all pass.
+A launch is complete only when the school identity, database records, club directory, Instagram account, following and notification setup, publishing credentials, Automate routing, application behavior, and verification gates all pass.
 
 ## 1. Definition of done
 
@@ -22,8 +22,8 @@ A new school is complete only when all of the following are true:
 - The chapter Instagram account exists as `<schoolslug>.wat2do.io`, is not joined to a shared Accounts Center, is a professional Business account, and has the standard Wat2Do profile.
 - The chapter account follows every verified club Instagram account stored for that school.
 - Instagram post notifications are set to `All` for every followed club when Instagram exposes the consolidated notification screen.
-- The chapter account is logged into the Instagram app on the Mac's Android emulator, on the Android user `android_user_by_school` in `backend/controlbox/instagram_emulator.json` names for it.
-- A real notification to the chapter account has been forwarded from the emulator, its recipient identifier is mapped to the school, and the `process-notification` workflow resolves it to the correct school.
+- The chapter account is logged into the dedicated Android device that runs the Automate flow.
+- A real notification from the chapter account has been observed, its Automate recipient identifier is mapped to the school, and the `process-notification` workflow resolves it to the correct school.
 - The chapter account is configured in the Meta developer app using Instagram API with Instagram Login.
 - The account's validated Instagram-scoped user ID and encrypted access token exist in `public.instagram_publishing_accounts`.
 - A publishing draft can be generated for the school and the production token-maintenance path recognizes the account.
@@ -47,7 +47,7 @@ Do not introduce a second source of truth.
 | Expected Instagram publishing accounts | `backend/controlbox/instagram_publishing.json` | This contains non-secret account keys, school slugs, usernames, and enablement only. |
 | Instagram publishing identity and credentials | `public.instagram_publishing_accounts` | This service-role-only table stores the validated user ID, username, encrypted token, expiry, and reauthorization state. |
 | Instagram token encryption key | Ignored backend environment file and the Mac's `~/wat2do-data/config/backend.env` | Never store it in a controlbox file, migration, document, or task output. |
-| Notification-to-school routing | `public.schools.recipient_id` | This is the `intended_recipient_id` observed in the account's Instagram notifications, which the Mac's emulator forwards. |
+| Notification-to-school routing | `public.schools.recipient_id` | This is the identifier observed from the Android Automate notification payload. |
 | Single-account scrape school resolution | `backend/services/scraper/single_user.py` | It resolves `INTENDED_RECIPIENT_ID` through the database and already accepts database-added schools. |
 | Club following targets | Database clubs for the school | Follow the verified target set through the logged-in Android account while browser-cookie automation is paused. |
 | Bell notification state | Instagram Android application state | `automate_bell_notifications.py` drives the already-open consolidated list and does not read the spreadsheet. |
@@ -68,7 +68,7 @@ Putting a plaintext or encrypted token directly on `public.schools` would duplic
 
 `public.schools.recipient_id` and `public.instagram_publishing_accounts.instagram_user_id` are not interchangeable.
 
-The recipient ID comes from the Instagram notification and routes the workflow run the forwarded notification starts to a school.
+The recipient ID comes from the Android notification and routes an Automate-triggered scrape to a school.
 
 The publishing user ID is returned by the Instagram API `/me` identity request for the generated token and is used by the publishing API.
 
@@ -214,7 +214,7 @@ Record `semester_start`, `semester_end`, and `url_with_semester_dates`.
 
 Use the campus's IANA timezone, such as `America/Toronto`, instead of an abbreviation such as `EST`.
 
-Leave `recipient_id` null until it has been observed in a forwarded notification.
+Leave `recipient_id` null until it has been observed from the Automate notification flow.
 
 Never guess a recipient ID from the Meta API user ID.
 
@@ -934,25 +934,23 @@ Manually spot-check the first, middle, and last processed accounts.
 
 If completeness reconciliation is required and the processed count is insufficient, improve the single existing bell workflow rather than adding a second automation path.
 
-## 16. Phase L: Add the account to the Mac's emulator
+## 16. Phase L: Add the account to the dedicated Automate phone
 
-The account must remain logged into the Instagram app on the Mac's Android emulator, where the notification forwarder (`backend/jobs/forward_instagram_notifications.py`) catches its notifications.
+The account must remain logged into the physical Android phone that runs the Automate notification flow.
 
-Hold the emulator's lock while working on it by hand, so the emulator worker waits.
+Add it as a separate Instagram login and do not join it to a shared Accounts Center.
 
-Add it as a separate Instagram login on an Android user with room and do not join it to a shared Accounts Center.
+If the phone or Instagram app reaches an account limit, do not silently evict another chapter or claim completion.
 
-The app holds at most ten accounts per Android user; if every user is full, do not silently evict another chapter or claim completion.
+Record the limit and assign the school to another approved device, Android user profile, or operational slot with the human's approval.
 
-Record the limit and assign the school to another Android user with the human's approval.
+Enable Android notification permission for Instagram.
 
-Add the school to `android_user_by_school` in `backend/controlbox/instagram_emulator.json`, which tells the worker where to find the account and the forwarder which users to keep running.
-
-Grant Instagram Android's notification permission on that user (`adb shell pm grant --user <id> com.instagram.android android.permission.POST_NOTIFICATIONS`).
+Confirm that post notifications are allowed by the operating system, are not silenced by battery optimization, and are visible to the Automate flow.
 
 Trigger or wait for one real post notification from a followed test club.
 
-Verify that the forwarder's log (`~/.local/state/wat2do/notification-forwarding/forwarder.log`) shows it forwarded with the account's `intended_recipient_id`.
+Verify that Automate sends a `new_instagram_post` repository dispatch containing the expected username or post URL and `intended_recipient_id`.
 
 Verify the GitHub **Process Notifications** workflow starts and routes it to the new school.
 
@@ -1176,7 +1174,7 @@ Use these rules:
 - If a login fails, record the exact account and failure state without exposing credentials.
 - If following is soft-blocked, preserve progress, cool down, and retry within the script's established limits.
 - If the consolidated bell list does not exist, stop the notification phase and record it as blocked.
-- If every Android user on the emulator holds ten accounts, obtain an approved Android user assignment instead of evicting an unknown account.
+- If the Automate phone reaches an account limit, obtain an approved device assignment instead of evicting an unknown account.
 - If the Meta tester invitation does not appear, verify the exact username, professional account state, accepted app role, and logged-in Instagram account before retrying.
 - If token identity is wrong, revoke the token and restart generation for the correct account.
 - If token import rejects the username, fix the non-secret controlbox configuration or the selected account rather than bypassing validation.
@@ -1199,7 +1197,7 @@ The final handoff must contain no secrets and must include:
 - Chapter Instagram username and non-secret profile checklist.
 - Expected follow count, completed follow count, and unresolved/dead-handle count.
 - Bell automation processed count or the documented consolidated-list blocker.
-- Emulator Android user assignment and routing verification result.
+- Automate device assignment and routing verification result.
 - Meta API route used, which must be Instagram Login.
 - Non-secret publishing credential row fields and token health.
 - Publishing draft verification result.
@@ -1256,7 +1254,7 @@ The final handoff must contain no secrets and must include:
 - [ ] Professional Business account enabled.
 - [ ] Profile image, display name, bio, category, link, contact email, hours, and music verified.
 
-### Following and notifications
+### Following, notifications, and Automate
 
 - [ ] Follow target set read from the database.
 - [ ] Android account identity confirmed as the chapter account.
@@ -1264,7 +1262,7 @@ The final handoff must contain no secrets and must include:
 - [ ] Followed count reconciled against the database target count.
 - [ ] Consolidated bell list opened or blocker recorded.
 - [ ] Post notifications set to `All` and count spot-checked.
-- [ ] Account logged into the Instagram app on the Mac's emulator and added to `android_user_by_school`.
+- [ ] Account logged into the dedicated Automate phone as a separate login.
 - [ ] Real notification generated the expected repository dispatch.
 - [ ] Recipient ID stored on the correct school row through a migration.
 - [ ] `process-notification` routed and processed the test correctly.

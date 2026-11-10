@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Build the Java programs the Mac runs on the emulator into their committed jars.
+"""Build the emulator's screen reader, ``services/instagram_emulator/screen-reader.jar``.
 
-Each program in ``services/instagram_emulator/device_program.py`` ``PROGRAMS`` whose jar no
-longer carries its source's SHA-256 is compiled against the Android SDK's platform with a
-JDK's javac, turned into Android bytecode by d8 from the pinned r8 release on Google's Maven
-repository (downloaded once and checked against its SHA-256), and packed with that hash,
-which the tests compare with the source so a committed jar never falls behind it. The Mac
-only copies the jars to the device and needs no JDK.
+``ScreenReader.java`` is compiled against the Android SDK's platform with a JDK's
+javac, turned into Android bytecode by d8 from the pinned r8 release on Google's Maven
+repository (downloaded once and checked against its SHA-256), and packed with the
+source's SHA-256, which the tests compare with the source so the committed jar never
+falls behind it. The worker only copies the jar to the device and needs no JDK.
 """
 
 from __future__ import annotations
@@ -23,7 +22,12 @@ from pathlib import Path
 BACKEND_DIRECTORY = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_DIRECTORY))
 
-from services.instagram_emulator.device_program import PROGRAMS, DeviceProgram  # noqa: E402
+from services.instagram_emulator.screen_reader import (  # noqa: E402
+    JAR,
+    SOURCE,
+    SOURCE_HASH_ENTRY,
+    source_hash,
+)
 
 R8_VERSION = "8.11.18"
 R8_SHA256 = "fbe6f7d59d46d6296919f6cc4793536439921d357c9a6bbf45ea4acc3c8736a7"
@@ -36,35 +40,15 @@ ENTRY_TIME = (1980, 1, 1, 0, 0, 0)
 
 
 def main() -> int:
-    stale = [program for program in PROGRAMS if program.built_hash() != program.source_hash()]
-    if not stale:
-        print("Every jar is built from its current source")
-        return 0
     sdk = Path(os.environ.get("ANDROID_HOME") or Path.home() / "Library/Android/sdk")
     android_jar = sdk / "platforms" / ANDROID_PLATFORM / "android.jar"
     if not android_jar.is_file():
         raise SystemExit(f"The Android SDK has no {ANDROID_PLATFORM} platform at {android_jar}")
     r8 = _r8()
-    for program in stale:
-        _build(program, android_jar, r8)
-        print(f"Built {program.jar.relative_to(BACKEND_DIRECTORY)}")
-    return 0
-
-
-def _build(program: DeviceProgram, android_jar: Path, r8: Path) -> None:
-    with tempfile.TemporaryDirectory(prefix=f"wat2do-{program.name}-") as work:
+    with tempfile.TemporaryDirectory(prefix="wat2do-screen-reader-") as work:
         classes = Path(work) / "classes"
         subprocess.run(
-            [
-                "javac",
-                "--release",
-                "11",
-                "-cp",
-                str(android_jar),
-                "-d",
-                str(classes),
-                str(program.source),
-            ],
+            ["javac", "--release", "11", "-cp", str(android_jar), "-d", str(classes), str(SOURCE)],
             check=True,
         )
         dexed = Path(work) / "dexed.jar"
@@ -87,9 +71,11 @@ def _build(program: DeviceProgram, android_jar: Path, r8: Path) -> None:
         )
         with zipfile.ZipFile(dexed) as built:
             dex = built.read("classes.dex")
-    with zipfile.ZipFile(program.jar, "w") as jar:
+    with zipfile.ZipFile(JAR, "w") as jar:
         jar.writestr(zipfile.ZipInfo("classes.dex", ENTRY_TIME), dex)
-        jar.writestr(zipfile.ZipInfo(program.source_hash_entry, ENTRY_TIME), program.source_hash())
+        jar.writestr(zipfile.ZipInfo(SOURCE_HASH_ENTRY, ENTRY_TIME), source_hash())
+    print(f"Built {JAR.relative_to(BACKEND_DIRECTORY)}")
+    return 0
 
 
 def _r8() -> Path:

@@ -24,7 +24,7 @@ const ACTIVITY_DAYS = 30;
 export const CARD_POST_COUNT = 3;
 /** Tokens this close to expiring need a person before the daily refresh gives up on them. */
 const TOKEN_WARNING_DAYS = 7;
-/** An account this long without an Instagram notification has stopped feeding ingestion: the emulator's forwarding needs a person. */
+/** An account this long without an Instagram notification has stopped feeding ingestion: its phone needs a person. */
 export const QUIET_NOTIFICATION_HOURS = 36;
 
 export function average(values: (number | null | undefined)[]): number | null {

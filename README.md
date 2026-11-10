@@ -156,7 +156,7 @@ Production secrets live in that file and the other files under `~/wat2do-data/co
 Each push to `main` runs the CI/CD deploy job on the Mac's own runner (`infra/mac-mini/deploy.sh`), which builds the release, applies migrations, switches the Mac to it and then uploads the same commit's website to AWS.
 
 Event and position ingestion runs through one database table, `public.ingestion_items`, with one row per Instagram post or directory page, run by the Rust binary `wat2do-ingest` (`rust/src/ingestion`).
-Instagram notifications come to the school accounts in the Instagram app on the Mac's Android emulator, where a forwarder (`backend/jobs/forward_instagram_notifications.py`) sends each post and digest notification to the `process-notification` workflow.
+Instagram notifications come from a physical Android phone running Automate, which triggers the `process-notification` workflow.
 The workflow records exact post URLs in the notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker, and a database trigger adds each post to `ingestion_items`.
 An always-on processor on the Mac listens for the Postgres notification (`LISTEN ingestion_items`) that a trigger on the queue sends whenever a row is added or changes, and wakes at once.
 Its fetcher reads each new post logged out, with no account or cookies (`rust/src/ingestion/fetch.rs`), and marks the row ready; a deleted post is marked gone.
