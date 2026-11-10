@@ -164,6 +164,30 @@ def test_the_uptime_is_read_from_android() -> None:
     commands = []
     assert _device([(0, "9512.31 31842.07\n")], commands).uptime_seconds() == 9512.31
     assert commands[0][3:] == ["shell", "cat", "/proc/uptime"]
+    with pytest.raises(module.EmulatorError, match="uptime"):
+        _device([(0, "")], []).uptime_seconds()
+
+
+def test_the_load_and_free_memory_are_read_from_android() -> None:
+    proc = (
+        "3.45 2.91 2.40 5/2081 31337\n"
+        "MemTotal:        4021336 kB\n"
+        "MemFree:          112340 kB\n"
+        "MemAvailable:    1433600 kB\n"
+    )
+    commands = []
+    assert _device([(0, proc)], commands).load() == (3.45, 1400)
+    assert commands[0][3:] == ["shell", "cat", "/proc/loadavg", "/proc/meminfo"]
+    with pytest.raises(module.EmulatorError, match="free memory"):
+        _device([(0, "3.45 2.91 2.40 5/2081 31337\n")], []).load()
+    with pytest.raises(module.EmulatorError, match="load"):
+        _device([(0, "")], []).load()
+
+
+def test_the_foreground_user_is_read_from_android() -> None:
+    assert _device([(0, "11\n")], []).current_user() == 11
+    with pytest.raises(module.EmulatorError, match="foreground"):
+        _device([(0, "Error\n")], []).current_user()
 
 
 def test_unlabelled_controls_are_found_by_their_resource_id() -> None:

@@ -695,19 +695,34 @@ class NotificationForwardingControl(_ControlModel):
     push_categories: tuple[Annotated[str, Field(pattern=r"^[a-z0-9_]{1,100}$")], ...] = Field(
         min_length=1
     )
-    # The reader and the Android users are checked this often: a user switch stops one
-    # of the users, and it gets no pushes until it is started again. After the emulator
-    # boots, the users start only once it has been up for boot_settle_seconds.
+    # The reader and the Android users are checked this often.
     check_seconds: int = Field(ge=1, le=600)
-    boot_settle_seconds: int = Field(ge=0, le=900)
-    # A dispatch that fails is tried again after a pause that doubles from the first to
-    # the longest; each dispatch gets this long.
+    # A user switch stops a user, which then gets no pushes. One that has stayed stopped
+    # this long is started again, at most one per check, once the emulator has been up
+    # boot_settle_seconds, the foreground user has not changed for
+    # quiet_foreground_seconds, the one-minute load is at most max_load_average and at
+    # least min_available_megabytes of memory are free: starting users on a busy
+    # emulator froze Android.
+    boot_settle_seconds: int = Field(ge=0, le=3600)
+    restart_after_stopped_minutes: int = Field(ge=0, le=1440)
+    quiet_foreground_seconds: int = Field(ge=0, le=3600)
+    max_load_average: float = Field(gt=0, le=100, allow_inf_nan=False)
+    min_available_megabytes: int = Field(ge=0, le=16_384)
+    # Dispatches start at least this far apart. A failed one ends the pass, and sending
+    # waits a pause that doubles from the first to the longest while failures go on.
+    # GitHub answers 422 both to a payload it refuses and to a burst it takes for spam,
+    # so a notification is dropped only once refused on this many separate passes.
+    send_spacing_seconds: float = Field(ge=0, le=60, allow_inf_nan=False)
     retry_first_seconds: int = Field(ge=1, le=3600)
     retry_longest_seconds: int = Field(ge=1, le=86_400)
+    refusals_before_drop: int = Field(ge=1, le=20)
     dispatch_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
     # A forwarded notification is remembered this long, so one still showing when the
     # reader starts again is not sent twice.
     remember_days: int = Field(ge=1, le=60)
+    # forwarder.log is rotated at this size, keeping this many old files.
+    log_max_bytes: int = Field(ge=65536, le=67108864)
+    log_backup_count: int = Field(ge=1, le=10)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
 
     @model_validator(mode="after")

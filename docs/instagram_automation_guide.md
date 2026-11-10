@@ -49,23 +49,29 @@ Existing assets remain available to other references and cached pages.
 
 Notifications come from the Mac mini's Android emulator, where every school account is logged into the Instagram app and active, so Instagram pushes their notifications there.
 The physical phones running Automate are no longer part of collection.
-The `io.wat2do.notification-forwarding` LaunchAgent (`jobs/forward_instagram_notifications.py run`, `services/notification_forwarding.py`) keeps every Android user in `android_user_by_school` running, since a stopped user gets no pushes, and listens on the device for Instagram's notifications.
+The `io.wat2do.notification-forwarding` LaunchAgent (`jobs/forward_instagram_notifications.py run`, `services/notification_forwarding.py`) keeps the Android users in `android_user_by_school` running, since a stopped user gets no pushes, and listens on the device for Instagram's notifications.
 Android keeps at most three users running and stops the least recently used one in the background whenever the foreground user switches, which the worker does when it moves to an account on another Android user.
-So every `check_seconds` (`controlbox/notification_forwarding.json`) the forwarder starts any stopped user again with `am start-user -w`, logging the user and how long it took, and Instagram delivers the pushes it held once the user is up.
-After a boot, the users wait until the emulator has been up `boot_settle_seconds`.
+Starting users on a busy emulator froze Android (load near 50 with all four running on 10-25), so the forwarder checks every `check_seconds` (`controlbox/notification_forwarding.json`) and starts a user again with `am start-user -w` only once it has been stopped `restart_after_stopped_minutes`.
+It starts at most one per check, the one stopped longest, and only once the emulator has been up `boot_settle_seconds`, while the foreground user (`am get-current-user`) has stayed the same `quiet_foreground_seconds`, the one-minute load in `/proc/loadavg` is at most `max_load_average` and `MemAvailable` is at least `min_available_megabytes`.
+User 0 and the foreground user always run.
+It logs the user, how long it had been stopped and how long the start took, and Instagram delivers the pushes it held once the user is up, so a stopped user's notifications arrive at most about `restart_after_stopped_minutes` late.
+The worker's own switches keep most users running anyway.
 The listener is `NotificationReader.java`, which runs as root under app_process and registers with Android's notification service the way the system's own listeners do, for every Android user at once, so nothing is installed or granted on the device.
 It prints only Instagram's notifications whose push category is in `push_categories` (`post` and `subscription_daily_digest`, the ones the workflow processes), with the extras the phones forwarded: the notification's text, flags and numbers, without its pictures or icons.
 A direct message, and its text, never leaves the emulator.
 When the reader starts, it also prints the notifications still showing, so a forwarder started again misses nothing on screen.
+The forwarder also checks each one's push category itself and drops, without logging anything of it, one outside `push_categories`.
 The forwarder sends each new one as the phones' `new_instagram_post` repository dispatch, `{"event_type": "new_instagram_post", "client_payload": {"notification_dict": {...}}}`, through the Mac's own `gh` login, so no token is stored.
 A collapsed `subscription_daily_digest` notification is forwarded unchanged so the workflow's Rust job (`wat2do-browser process-notification`, `rust/src/instagram_notifications/process_notification.rs`) remains the single owner of media materialization.
 The repository and its Actions logs are public, and GitHub prints every `env:` value in each step's log.
 So the workflow processes only `post` and `subscription_daily_digest` notifications, names any other run by its push category alone (a direct message's title is its sender), and never puts a payload in an `env:` block, a log line or an artifact: the processing step reads it from the event file (`$GITHUB_EVENT_PATH`) and hands it to the binary as `NOTIFICATION_JSON`.
-Each notification is sent once per intended recipient and push ID, remembered for `remember_days` in `~/.local/state/wat2do/notification-forwarding/state.json`.
-One GitHub did not take waits there and is tried again, oldest first, after a pause that doubles from `retry_first_seconds` to `retry_longest_seconds`; one GitHub refuses outright (HTTP 422) is dropped and logged.
+Each notification is sent once per intended recipient and push ID, remembered for `remember_days` in `~/.local/state/wat2do/notification-forwarding/state.json`, and dispatches start at least `send_spacing_seconds` apart.
+A failed dispatch ends the pass: what waits stays there and is tried again, oldest first, after a pause that doubles from `retry_first_seconds` to `retry_longest_seconds`.
+GitHub answers HTTP 422 both to a payload it refuses and to a burst it takes for spam, so a notification is dropped, with an error in the log, only once refused on `refusals_before_drop` separate passes.
+A state file that cannot be saved (a full disk) is logged and kept in memory, and one that cannot be read is moved aside as `state.json.unreadable-<time>` so the forwarder starts afresh.
 The forwarder never taps the emulator and never holds its lock.
-When the worker restarts the emulator, the reader stops with it; the forwarder waits for the boot, starts the reader again, and starts the other users once the emulator has settled.
-Its log, `~/.local/state/wat2do/notification-forwarding/forwarder.log`, names push categories, recipients and counts, never a notification's text.
+When the worker restarts the emulator, the reader stops with it; the forwarder forwards what the reader printed last, waits for the boot and starts the reader again.
+Its log, `~/.local/state/wat2do/notification-forwarding/forwarder.log`, is rotated at `log_max_bytes`, keeping `log_backup_count` old files, and names push categories, recipients and counts, never a notification's text.
 Only one forwarder runs at a time.
 
 Install it, or update it after a change, from the runtime checkout:

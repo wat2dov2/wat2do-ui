@@ -1,20 +1,24 @@
 """Forward Instagram's notifications from the Mac's emulator to the notification workflow.
 
 The school accounts are active in the Instagram app on the Mac's Android emulator, so
-Instagram pushes their notifications there. The forwarder keeps every Android user that
-holds a school account running, since a stopped user gets no pushes and Android stops one
-whenever the worker switches users, and listens on the device through
+Instagram pushes their notifications there. The forwarder listens on the device through
 ``NotificationReader``, which prints only the push categories in
-``controlbox/notification_forwarding.json``: posts and daily digests, never a direct
-message. Each new one becomes the ``new_instagram_post`` repository dispatch the phones'
-Automate flow used to send, which starts the ``process-notification`` workflow.
+``controlbox/notification_forwarding.json`` (posts and daily digests, never a direct
+message), and sends each new one as the ``new_instagram_post`` repository dispatch the
+phones' Automate flow used to send, which starts the ``process-notification`` workflow.
+
+A stopped Android user gets no pushes, and Android stops one whenever the worker switches
+users, since it keeps at most three running. The forwarder starts such a user again once
+it has stayed stopped a while, one at a time and only while the emulator is calm, since
+starting users on a busy emulator froze Android; Instagram then delivers what it held.
 
 A notification is sent once per intended recipient and push ID. One that cannot be sent
 waits on disk and is tried again, oldest first, after a pause that doubles while sending
 keeps failing, so a GitHub or network outage loses nothing. The forwarder never taps the
 emulator and never holds its lock: when the worker restarts the emulator, the reader
-stops with it, and the forwarder waits for the boot, then starts the reader and the users
-again. Logs name push categories, recipients and counts, never a notification's text.
+stops with it, and the forwarder takes what it printed last, waits for the boot and
+listens again. Logs name push categories, recipients and counts, never a notification's
+text.
 """
 
 from __future__ import annotations
@@ -50,8 +54,9 @@ _LOCK_PATH = STATE_DIRECTORY / "forwarder.lock"
 _HTTP_STATUS = re.compile(r"\(HTTP (\d{3})\)")
 # GitHub refuses a dispatch whose payload it cannot accept with this status.
 _REFUSED = "422"
-# The Android users holding school accounts, each of which must run to get its pushes.
-_ACCOUNT_USERS = sorted(set(EMULATOR.android_user_by_school.values()))
+# The Android users holding school accounts that Android can stop; the system user, 0,
+# always runs.
+_STOPPABLE_USERS = sorted(set(EMULATOR.android_user_by_school.values()) - {0})
 
 
 class DispatchError(RuntimeError):
@@ -59,7 +64,7 @@ class DispatchError(RuntimeError):
 
 
 class DispatchRefused(DispatchError):
-    """GitHub refused this notification's dispatch, so sending it again cannot help."""
+    """GitHub answered 422: it refused the payload, or took a burst of dispatches for spam."""
 
 
 def dispatch(notification: Notification) -> None:
@@ -113,10 +118,10 @@ class Outbox:
     def __init__(self, path: Path | None, *, now: Callable[[], float] = time.time) -> None:
         self._path = path
         self._now = now
-        state = _load(path) if path is not None else {}
-        self._handled: dict[str, float] = state.get("handled", {})
+        state = _load(path) if path is not None else _EMPTY
+        self._handled: dict[str, float] = dict(state["handled"])
         # Oldest first.
-        self._waiting: list[dict[str, Any]] = state.get("waiting", [])
+        self._waiting: list[dict[str, Any]] = list(state["waiting"])
 
     def __len__(self) -> int:
         return len(self._waiting)
@@ -126,15 +131,26 @@ class Outbox:
         key = _key(notification)
         if key in self._handled or any(item["key"] == key for item in self._waiting):
             return False
-        self._waiting.append({"key": key, "extras": notification.extras})
+        self._waiting.append({"key": key, "extras": notification.extras, "refusals": 0})
         self._save()
         return True
 
     def waiting(self) -> list[Notification]:
         return [Notification(item["extras"]) for item in self._waiting]
 
+    def refused(self, notification: Notification) -> int:
+        """Count a refusal of a waiting notification; returns how many it has had."""
+        key = _key(notification)
+        refusals = 0
+        for item in self._waiting:
+            if item["key"] == key:
+                item["refusals"] += 1
+                refusals = item["refusals"]
+        self._save()
+        return refusals
+
     def handled(self, notification: Notification) -> None:
-        """Take a notification off the queue for good: it was sent, or can never be."""
+        """Take a notification off the queue for good: it was sent, or never can be."""
         key = _key(notification)
         now = self._now()
         horizon = now - CONTROL.remember_days * 86_400
@@ -146,9 +162,16 @@ class Outbox:
     def _save(self) -> None:
         if self._path is None:
             return
-        self._path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         state = {"handled": self._handled, "waiting": self._waiting}
-        atomic_write(self._path, json.dumps(state, sort_keys=True).encode())
+        try:
+            self._path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            atomic_write(self._path, json.dumps(state, sort_keys=True).encode())
+        except OSError as exc:
+            # A full disk: the queue stays in memory, and the next change saves it again.
+            log.error("Could not save the forwarder's state (%s)", exc.strerror or exc)
+
+
+_EMPTY: dict[str, Any] = {"handled": {}, "waiting": []}
 
 
 def _key(notification: Notification) -> str:
@@ -156,10 +179,40 @@ def _key(notification: Notification) -> str:
 
 
 def _load(path: Path) -> dict[str, Any]:
+    """The saved state, or an empty one. A state that cannot be read is moved aside, so
+    the forwarder starts afresh instead of failing every time it starts."""
     try:
-        return json.loads(path.read_text())
+        state = json.loads(path.read_text())
     except FileNotFoundError:
-        return {}
+        return _EMPTY
+    except (OSError, ValueError):
+        state = None
+    if _readable(state):
+        return state
+    aside = path.with_name(f"{path.name}.unreadable-{int(time.time())}")
+    try:
+        path.replace(aside)
+    except OSError as exc:
+        log.error("Could not move the forwarder's unreadable state aside (%s)", exc.strerror)
+    else:
+        log.warning("The forwarder's state was unreadable; moved it to %s", aside.name)
+    return _EMPTY
+
+
+def _readable(state: Any) -> bool:
+    return (
+        isinstance(state, dict)
+        and isinstance(state.get("handled"), dict)
+        and all(isinstance(at, int | float) for at in state["handled"].values())
+        and isinstance(state.get("waiting"), list)
+        and all(
+            isinstance(item, dict)
+            and isinstance(item.get("key"), str)
+            and isinstance(item.get("extras"), dict)
+            and isinstance(item.get("refusals"), int)
+            for item in state["waiting"]
+        )
+    )
 
 
 class Forwarder:
@@ -189,6 +242,10 @@ class Forwarder:
         self._monotonic = monotonic
         self._up: bool | None = None
         self._settled = False
+        self._foreground: int | None = None
+        self._foreground_since = 0.0
+        self._stopped_since: dict[int, float] = {}
+        self._sent_at: float | None = None
         self._retry_at = 0.0
         self._retry_seconds = 0.0
 
@@ -207,18 +264,30 @@ class Forwarder:
                 self._sleep(CONTROL.check_seconds)
 
     def step(self) -> None:
-        """Listen for ``check_seconds``, after starting the reader and any stopped user."""
-        if not self._reader.running and not self._start_reader():
+        """Listen for ``check_seconds``, or wait that long for the emulator, then send
+        what waits."""
+        if self._listening():
+            if not self._dry_run:
+                self._keep_users_running()
+            for notification in self._reader.notifications(CONTROL.check_seconds):
+                self._receive(notification)
+        else:
             self._sleep(CONTROL.check_seconds)
-            return
-        if not self._dry_run:
-            self._keep_users_running()
-        for notification in self._reader.notifications(CONTROL.check_seconds):
-            self._receive(notification)
         self._send_waiting()
 
-    def _start_reader(self) -> bool:
-        """Start listening once the emulator has booted; False while it has not."""
+    def _listening(self) -> bool:
+        """Whether the reader runs, starting it once the emulator has booted.
+
+        A reader that ended, as it does when the emulator restarts, may have printed a
+        notification just before, so what it printed is taken first.
+        """
+        if self._reader.running:
+            return True
+        try:
+            for notification in self._reader.notifications(CONTROL.check_seconds):
+                self._receive(notification)
+        except NotificationReaderError:
+            pass
         up = self._device.is_online() and self._device.booted()
         if up != self._up:
             log.info("The emulator is up" if up else "The emulator is down; waiting for it")
@@ -231,27 +300,77 @@ class Forwarder:
         return True
 
     def _keep_users_running(self) -> None:
-        """Start each Android user holding school accounts that is not running.
+        """Start one Android user holding school accounts that has stayed stopped.
 
-        Android keeps at most three users running and stops the least recently used one
-        in the background whenever the worker switches users. A stopped user gets no
-        pushes; Instagram delivers the ones it held once the user is up again. After a
-        boot, the users wait until the emulator has been up ``boot_settle_seconds``.
+        Android keeps at most three users running and stops the least recently used one in
+        the background whenever the worker switches users; a stopped user gets no pushes
+        until it runs again, when Instagram delivers what it held. Starting users on a busy
+        emulator froze Android, so a user starts again only once it has been stopped
+        ``restart_after_stopped_minutes``, at most one per check, after the emulator has
+        been up ``boot_settle_seconds``, while the foreground user has stayed the same for
+        ``quiet_foreground_seconds`` and the emulator's load and free memory are in bounds.
         """
+        now = self._monotonic()
+        try:
+            current = self._device.current_user()
+        except EmulatorError as exc:
+            log.warning("Could not read the foreground Android user (%s)", exc)
+            return
+        if current != self._foreground:
+            self._foreground, self._foreground_since = current, now
+        for user in _STOPPABLE_USERS:
+            try:
+                stopped = user != current and not self._device.user_running(user)
+            except EmulatorError as exc:
+                log.warning("Could not read Android user %d's state (%s)", user, exc)
+                continue
+            if stopped:
+                self._stopped_since.setdefault(user, now)
+            else:
+                self._stopped_since.pop(user, None)
+        due = [
+            user
+            for user, since in self._stopped_since.items()
+            if now - since >= CONTROL.restart_after_stopped_minutes * 60
+        ]
+        if not due or now - self._foreground_since < CONTROL.quiet_foreground_seconds:
+            return
         try:
             if not self._settled:
-                if self._device.uptime_seconds() < CONTROL.boot_settle_seconds:
-                    return
-                self._settled = True
-            for user in _ACCOUNT_USERS:
-                if not self._device.user_running(user):
-                    started = self._monotonic()
-                    self._device.start_user(user)
-                    log.info("Started Android user %d in %.1f s", user, self._monotonic() - started)
+                self._settled = self._device.uptime_seconds() >= CONTROL.boot_settle_seconds
+            if not self._settled:
+                return
+            load, available = self._device.load()
         except EmulatorError as exc:
-            log.warning("Could not start the stopped Android users (%s); trying again", exc)
+            log.warning("Could not read the emulator's load (%s)", exc)
+            return
+        if load > CONTROL.max_load_average or available < CONTROL.min_available_megabytes:
+            return
+        user = min(due, key=self._stopped_since.__getitem__)
+        stopped_minutes = (now - self._stopped_since[user]) / 60
+        try:
+            self._device.start_user(user)
+        except EmulatorError as exc:
+            # It waits its turn again, so another stopped user goes first.
+            self._stopped_since[user] = now
+            log.warning(
+                "Android user %d, stopped %.0f min, did not start (%s)", user, stopped_minutes, exc
+            )
+            return
+        del self._stopped_since[user]
+        log.info(
+            "Started Android user %d, stopped %.0f min, in %.1f s",
+            user,
+            stopped_minutes,
+            self._monotonic() - now,
+        )
 
     def _receive(self, notification: Notification) -> None:
+        if notification.category not in CONTROL.push_categories:
+            # The reader prints only these, so this is a fault; whatever it printed, a
+            # direct message above all, goes no further, and nothing of it is logged.
+            log.warning("Dropped a notification in a category that is not forwarded")
+            return
         if not (notification.recipient_id and notification.push_id):
             # The workflow cannot route or record it.
             log.warning(
@@ -266,34 +385,21 @@ class Forwarder:
             )
 
     def _send_waiting(self) -> None:
-        """Send what waits, oldest first; a failure pauses sending for a doubling pause."""
+        """Send what waits, oldest first, dispatches ``send_spacing_seconds`` apart.
+
+        A failed dispatch ends the pass, and sending waits a pause that doubles while
+        failures go on. GitHub answers 422 both to a payload it refuses and to a burst it
+        takes for spam, so a notification is dropped only once refused on
+        ``refusals_before_drop`` separate passes.
+        """
         if self._dry_run or self._monotonic() < self._retry_at:
             return
         for notification in self._outbox.waiting():
+            self._space_out()
             try:
                 self._send(notification)
-            except DispatchRefused as exc:
-                log.error(
-                    "GitHub refused a %s notification for %s (%s); dropped it",
-                    notification.category,
-                    notification.recipient_id,
-                    exc,
-                )
             except DispatchError as exc:
-                self._retry_seconds = min(
-                    max(self._retry_seconds * 2, CONTROL.retry_first_seconds),
-                    CONTROL.retry_longest_seconds,
-                )
-                self._retry_at = self._monotonic() + self._retry_seconds
-                log.warning(
-                    "Could not forward a %s notification for %s (%s); %d waiting, "
-                    "trying again in %d s",
-                    notification.category,
-                    notification.recipient_id,
-                    exc,
-                    len(self._outbox),
-                    self._retry_seconds,
-                )
+                self._pause_after(notification, exc)
                 return
             self._outbox.handled(notification)
             self._retry_seconds = 0
@@ -303,6 +409,38 @@ class Forwarder:
                 notification.recipient_id,
                 len(self._outbox),
             )
+
+    def _space_out(self) -> None:
+        if self._sent_at is not None:
+            wait = self._sent_at + CONTROL.send_spacing_seconds - self._monotonic()
+            if wait > 0:
+                self._sleep(wait)
+        self._sent_at = self._monotonic()
+
+    def _pause_after(self, notification: Notification, exc: DispatchError) -> None:
+        self._retry_seconds = min(
+            max(self._retry_seconds * 2, CONTROL.retry_first_seconds),
+            CONTROL.retry_longest_seconds,
+        )
+        self._retry_at = self._monotonic() + self._retry_seconds
+        refusals = self._outbox.refused(notification) if isinstance(exc, DispatchRefused) else 0
+        if refusals >= CONTROL.refusals_before_drop:
+            self._outbox.handled(notification)
+            log.error(
+                "GitHub refused a %s notification for %s %d times; dropped it",
+                notification.category,
+                notification.recipient_id,
+                refusals,
+            )
+            return
+        log.warning(
+            "Could not forward a %s notification for %s (%s); %d waiting, trying again in %d s",
+            notification.category,
+            notification.recipient_id,
+            exc,
+            len(self._outbox),
+            self._retry_seconds,
+        )
 
 
 def run_forever(*, dry_run: bool = False) -> None:

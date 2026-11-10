@@ -476,7 +476,31 @@ class EmulatorDevice:
 
     def uptime_seconds(self) -> float:
         """How long Android has been up since it booted."""
-        return float(self.adb("shell", "cat", "/proc/uptime").split()[0])
+        output = self.adb("shell", "cat", "/proc/uptime")
+        try:
+            return float(output.split()[0])
+        except (IndexError, ValueError) as exc:
+            raise EmulatorError("Android's uptime could not be read") from exc
+
+    def load(self) -> tuple[float, int]:
+        """Android's load average over the last minute, and its available memory in MB."""
+        output = self.adb("shell", "cat", "/proc/loadavg", "/proc/meminfo")
+        available = re.search(r"^MemAvailable:\s+(\d+) kB$", output, re.MULTILINE)
+        try:
+            load = float(output.split()[0])
+        except (IndexError, ValueError) as exc:
+            raise EmulatorError("Android's load could not be read") from exc
+        if available is None:
+            raise EmulatorError("Android's free memory could not be read")
+        return load, int(available.group(1)) // 1024
+
+    def current_user(self) -> int:
+        """The Android user in the foreground."""
+        output = self.adb("shell", "am", "get-current-user").strip()
+        try:
+            return int(output)
+        except ValueError as exc:
+            raise EmulatorError("The foreground Android user could not be read") from exc
 
     def wake(self) -> None:
         self.adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
@@ -491,7 +515,7 @@ class EmulatorDevice:
         then lands late. The user's own screen (its last app, or the home screen) comes
         back by itself; a switch whose screen is slower than the wait goes on anyway.
         """
-        if self.adb("shell", "am", "get-current-user").strip() == str(user):
+        if self.current_user() == user:
             return
         self.adb("shell", "am", "switch-user", str(user))
         deadline = self._monotonic() + CONTROL.user_switch_wait_seconds
@@ -504,9 +528,7 @@ class EmulatorDevice:
             self._sleep(_POLL_SECONDS)
 
     def _user_ready(self, user: int) -> bool:
-        return self.adb("shell", "am", "get-current-user").strip() == str(
-            user
-        ) and self.user_running(user)
+        return self.current_user() == user and self.user_running(user)
 
     def user_running(self, user: int) -> bool:
         """Whether the Android user is running and unlocked, so its apps get their pushes."""

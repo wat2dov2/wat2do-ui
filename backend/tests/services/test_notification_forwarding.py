@@ -2,6 +2,8 @@ import json
 import logging
 import re
 import subprocess
+import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -11,13 +13,17 @@ from services.instagram_emulator.device import EmulatorError
 from services.instagram_emulator.notification_reader import (
     PUSH_CATEGORY,
     PUSH_ID,
+    READY,
     RECIPIENT_ID,
     Notification,
+    NotificationReader,
     NotificationReaderError,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-USERS = sorted(set(module.EMULATOR.android_user_by_school.values()))
+CONTROL = module.CONTROL
+STOPPED_LONG_ENOUGH = CONTROL.restart_after_stopped_minutes * 60
+SECONDARY_USERS = sorted(set(module.EMULATOR.android_user_by_school.values()) - {0})
 
 
 def _notification(push_id="65fc29b1e2462H11beb7f373H65fc2e4b42734H49", category="post"):
@@ -32,13 +38,30 @@ def _notification(push_id="65fc29b1e2462H11beb7f373H65fc2e4b42734H49", category=
     )
 
 
+class _Clock:
+    def __init__(self):
+        self.now = 0.0
+
+    def __call__(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.now += seconds
+
+
 class _Device:
-    def __init__(self, *, up=True, uptime=10_000.0, running=USERS):
-        self.up = up
-        self.uptime = uptime
+    """An emulator whose users, load and memory a test sets."""
+
+    def __init__(self, clock, *, running=SECONDARY_USERS, current=0):
+        self.clock = clock
+        self.up = True
+        self.uptime = 10_000.0
+        self.current = current
         self.running = set(running)
+        self.load_average = 2.0
+        self.available = 1500
         self.started = []
-        self.start_fails = False
+        self.failing = set()
 
     def is_online(self):
         return self.up
@@ -49,19 +72,27 @@ class _Device:
     def uptime_seconds(self):
         return self.uptime
 
+    def current_user(self):
+        return self.current
+
     def user_running(self, user):
+        assert user not in (0, self.current), "user 0 and the foreground user always run"
         return user in self.running
 
+    def load(self):
+        return self.load_average, self.available
+
     def start_user(self, user):
-        if self.start_fails:
-            raise EmulatorError("adb shell did not complete")
+        if user in self.failing:
+            raise EmulatorError("Android user did not start")
+        self.clock.now += 7.25
         self.started.append(user)
         self.running.add(user)
 
 
 class _Reader:
     """Hands out one queued batch of notifications per listen; a queued error is raised,
-    and so is the one a reader on a device that went away raises."""
+    and so is the error a reader raises once its device has gone away."""
 
     def __init__(self, *batches, device=None):
         self.batches = list(batches)
@@ -77,6 +108,8 @@ class _Reader:
         self.running = False
 
     def notifications(self, seconds):
+        if not self.running:
+            raise NotificationReaderError("The notification reader stopped")
         batch = self.batches.pop(0) if self.batches else []
         if self.device is not None and not self.device.up:
             batch = NotificationReaderError("The notification reader stopped")
@@ -86,15 +119,9 @@ class _Reader:
         yield from batch
 
 
-class _Clock:
-    def __init__(self):
-        self.now = 0.0
-
-    def __call__(self):
-        return self.now
-
-
-def _forwarder(device, reader, outbox, *, send=None, dry_run=False, clock=None):
+def _forwarder(reader, outbox, *, device=None, send=None, dry_run=False, clock=None):
+    clock = clock or _Clock()
+    device = device or _Device(clock)
     sent = []
 
     def record(notification):
@@ -108,8 +135,8 @@ def _forwarder(device, reader, outbox, *, send=None, dry_run=False, clock=None):
         outbox,
         dry_run=dry_run,
         send=record,
-        sleep=lambda _seconds: None,
-        monotonic=clock or _Clock(),
+        sleep=clock.sleep,
+        monotonic=clock,
     )
     return forwarder, sent
 
@@ -117,22 +144,43 @@ def _forwarder(device, reader, outbox, *, send=None, dry_run=False, clock=None):
 def test_each_notification_is_forwarded_once_even_after_a_restart(tmp_path) -> None:
     state = tmp_path / "state.json"
     first = _notification()
-    forwarder, sent = _forwarder(_Device(), _Reader([first], [first]), module.Outbox(state))
+    forwarder, sent = _forwarder(_Reader([first], [first]), module.Outbox(state))
     forwarder.step()
     forwarder.step()
     assert sent == [first.push_id]
     # A forwarder started again remembers it, as a reader started again shows it again.
-    forwarder, sent = _forwarder(_Device(), _Reader([first]), module.Outbox(state))
+    forwarder, sent = _forwarder(_Reader([first]), module.Outbox(state))
     forwarder.step()
     assert sent == []
 
 
-def test_a_notification_the_workflow_cannot_route_is_skipped(tmp_path, caplog) -> None:
+def test_a_notification_the_workflow_cannot_route_is_skipped(caplog) -> None:
     unroutable = Notification({PUSH_CATEGORY: "post", PUSH_ID: "abc"})
-    forwarder, sent = _forwarder(_Device(), _Reader([unroutable]), module.Outbox(None))
+    forwarder, sent = _forwarder(_Reader([unroutable]), module.Outbox(None))
     forwarder.step()
     assert sent == []
     assert "Skipped a post notification" in caplog.text
+
+
+def test_a_direct_message_the_reader_printed_is_dropped_and_never_logged(tmp_path, caplog):
+    caplog.set_level(logging.DEBUG)
+    message = Notification(
+        {
+            PUSH_CATEGORY: "direct_v2_text",
+            PUSH_ID: "65fe1H2H3",
+            RECIPIENT_ID: "76214170483",
+            "android.title": "wat2do.uwaterloo: someone",
+            "android.text": "my private message",
+        }
+    )
+    state = tmp_path / "state.json"
+    forwarder, sent = _forwarder(_Reader([message]), module.Outbox(state))
+    forwarder.step()
+    assert sent == []
+    assert not state.exists()
+    assert "Dropped a notification" in caplog.text
+    for secret in ("my private message", "someone", "direct_v2_text", "65fe1H2H3"):
+        assert secret not in caplog.text
 
 
 def test_a_failed_dispatch_waits_on_disk_and_is_tried_again_after_a_doubling_pause(
@@ -148,24 +196,26 @@ def test_a_failed_dispatch_waits_on_disk_and_is_tried_again_after_a_doubling_pau
 
     older, newer = _notification("older"), _notification("newer")
     reader = _Reader([older], [newer], [], [], [], [])
-    forwarder, sent = _forwarder(_Device(), reader, module.Outbox(state), send=send, clock=clock)
+    forwarder, sent = _forwarder(reader, module.Outbox(state), send=send, clock=clock)
     forwarder.step()
-    first = module.CONTROL.retry_first_seconds
+    first = CONTROL.retry_first_seconds
     assert sent == ["older"]
     assert "Could not forward a post notification for 76214170483 (HTTP 502)" in caplog.text
     assert len(json.loads(state.read_text())["waiting"]) == 1
+    tried_at = clock.now
     # Nothing is sent again until the pause is over.
-    clock.now = first - 1
+    clock.now = tried_at + first - 1
     forwarder.step()
     assert sent == ["older"]
-    clock.now = first
+    clock.now = tried_at + first
     forwarder.step()
     assert sent == ["older", "older"]
     # The second failure in a row pauses twice as long; then both go, oldest first.
-    clock.now = 3 * first - 1
+    tried_at = clock.now
+    clock.now = tried_at + 2 * first - 1
     forwarder.step()
     assert sent == ["older", "older"]
-    clock.now = 3 * first
+    clock.now = tried_at + 2 * first
     forwarder.step()
     assert sent == ["older", "older", "older", "newer"]
     assert json.loads(state.read_text())["waiting"] == []
@@ -180,33 +230,89 @@ def test_the_pause_between_tries_stops_growing_at_its_longest() -> None:
         raise module.DispatchError("HTTP 502")
 
     forwarder, _ = _forwarder(
-        _Device(), _Reader([_notification()]), module.Outbox(None), send=fail, clock=clock
+        _Reader([_notification()]), module.Outbox(None), send=fail, clock=clock
     )
     for _ in range(30):
         forwarder.step()
         clock.now = forwarder._retry_at
-    assert forwarder._retry_seconds == module.CONTROL.retry_longest_seconds
+    assert forwarder._retry_seconds == CONTROL.retry_longest_seconds
 
 
-def test_a_dispatch_github_refuses_is_dropped_and_holds_nothing_up(caplog) -> None:
+def test_a_refused_dispatch_pauses_sending_and_is_dropped_only_after_separate_refusals(
+    tmp_path, caplog
+) -> None:
+    caplog.set_level(logging.INFO)
+    clock = _Clock()
+
     def send(notification):
         if notification.push_id == "refused":
             raise module.DispatchRefused("HTTP 422")
 
-    outbox = module.Outbox(None)
+    outbox = module.Outbox(tmp_path / "state.json")
     reader = _Reader([_notification("refused"), _notification("fine")])
-    forwarder, sent = _forwarder(_Device(), reader, outbox, send=send)
+    forwarder, sent = _forwarder(reader, outbox, send=send, clock=clock)
+    passes = 0
+    while "fine" not in sent:
+        forwarder.step()
+        passes += 1
+        # GitHub may have taken a burst for spam: the pass ends there and sending pauses.
+        assert sent.count("fine") == 0 or sent.count("refused") == CONTROL.refusals_before_drop
+        clock.now = max(clock.now, forwarder._retry_at)
+        assert passes < 10
+    assert sent.count("refused") == CONTROL.refusals_before_drop
+    assert sent[-1] == "fine" and len(outbox) == 0
+    assert "refused a post notification" in caplog.text
+    # A refusal is never reported as forwarded.
+    assert caplog.text.count("Forwarded a post notification") == 1
+
+
+def test_a_refusal_does_not_reset_the_pause_between_tries() -> None:
+    clock = _Clock()
+    answers = iter(
+        [
+            module.DispatchError("HTTP 502"),
+            module.DispatchRefused("HTTP 422"),
+            module.DispatchRefused("HTTP 422"),
+        ]
+    )
+
+    def send(_notification):
+        raise next(answers)
+
+    forwarder, _ = _forwarder(
+        _Reader([_notification()]), module.Outbox(None), send=send, clock=clock
+    )
+    pauses = []
+    for _ in range(3):
+        forwarder.step()
+        pauses.append(forwarder._retry_seconds)
+        clock.now = forwarder._retry_at
+    first = CONTROL.retry_first_seconds
+    assert pauses == [first, 2 * first, 4 * first]
+
+
+def test_dispatches_start_at_least_the_spacing_apart() -> None:
+    clock = _Clock()
+    started = []
+    batch = [_notification(f"push-{index}") for index in range(4)]
+    forwarder, _ = _forwarder(
+        _Reader(batch),
+        module.Outbox(None),
+        send=lambda _notification: started.append(clock.now),
+        clock=clock,
+    )
     forwarder.step()
-    assert sent == ["refused", "fine"]
-    assert len(outbox) == 0
-    assert "GitHub refused a post notification" in caplog.text
+    assert len(started) == 4
+    gaps = [later - earlier for earlier, later in zip(started, started[1:])]
+    assert all(gap >= CONTROL.send_spacing_seconds for gap in gaps)
 
 
 def test_a_restarting_emulator_is_waited_for_and_heard_again_once_it_is_up(caplog) -> None:
     caplog.set_level(logging.INFO)
-    device = _Device()
+    clock = _Clock()
+    device = _Device(clock)
     reader = _Reader(device=device)
-    forwarder, _ = _forwarder(device, reader, module.Outbox(None))
+    forwarder, _ = _forwarder(reader, module.Outbox(None), device=device, clock=clock)
     forwarder.step()
     assert reader.running and reader.starts == 1
     # The worker restarts the emulator: the reader stops with it.
@@ -222,10 +328,40 @@ def test_a_restarting_emulator_is_waited_for_and_heard_again_once_it_is_up(caplo
     assert caplog.text.count("Listening for Instagram notifications") == 2
 
 
+def test_a_notification_printed_just_before_the_reader_ended_is_still_forwarded() -> None:
+    # The device-side reader prints a notification, then the emulator goes away.
+    notification = _notification()
+    script = (
+        f"print({READY.decode().strip()!r}, flush=True)\n"
+        f"print({json.dumps(notification.extras)!r}, flush=True)\n"
+    )
+    reader = NotificationReader(
+        "adb",
+        "emulator-5554",
+        lambda *_args: "",
+        package="com.instagram.android",
+        categories=CONTROL.push_categories,
+        timeout_seconds=10,
+        popen=lambda _command, **kwargs: subprocess.Popen([sys.executable, "-c", script], **kwargs),
+    )
+    clock = _Clock()
+    device = _Device(clock)
+    forwarder, sent = _forwarder(reader, module.Outbox(None), device=device, clock=clock)
+    reader.start()
+    deadline = time.monotonic() + 10
+    while reader.running and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert not reader.running
+    device.up = False
+    forwarder.step()
+    assert sent == [notification.push_id]
+
+
 def test_a_reader_that_stops_is_started_again_on_the_next_step(caplog) -> None:
     caplog.set_level(logging.INFO)
+    clock = _Clock()
     reader = _Reader(NotificationReaderError("The notification reader stopped"), [])
-    forwarder, _ = _forwarder(_Device(), reader, module.Outbox(None))
+    forwarder, _ = _forwarder(reader, module.Outbox(None), clock=clock)
     sleeps = []
     forwarder._sleep = sleeps.append
     steps = iter([True, True])
@@ -239,55 +375,135 @@ def test_a_reader_that_stops_is_started_again_on_the_next_step(caplog) -> None:
     with pytest.raises(KeyboardInterrupt):
         forwarder.run_forever()
     assert reader.starts == 2
-    assert sleeps == [module.CONTROL.check_seconds]
+    assert sleeps == [CONTROL.check_seconds]
     assert "The notification reader stopped; checking again" in caplog.text
 
 
-def test_stopped_users_start_once_the_emulator_has_settled_after_its_boot() -> None:
-    device = _Device(uptime=module.CONTROL.boot_settle_seconds - 1, running=[0])
-    forwarder, _ = _forwarder(device, _Reader(), module.Outbox(None))
+def _settled_forwarder(*, stopped, current=0):
+    """A forwarder whose emulator has been up and on one foreground user for long enough."""
+    clock = _Clock()
+    running = [user for user in SECONDARY_USERS if user not in stopped]
+    device = _Device(clock, running=running, current=current)
+    forwarder, _ = _forwarder(_Reader(), module.Outbox(None), device=device, clock=clock)
+    return forwarder, device, clock
+
+
+def test_a_stopped_user_starts_again_once_it_has_stayed_stopped_long_enough(caplog) -> None:
+    caplog.set_level(logging.INFO)
+    user = SECONDARY_USERS[-1]
+    forwarder, device, clock = _settled_forwarder(stopped=[user])
+    forwarder.step()
+    clock.now = STOPPED_LONG_ENOUGH - 1
     forwarder.step()
     assert device.started == []
-    device.uptime = module.CONTROL.boot_settle_seconds
+    clock.now = STOPPED_LONG_ENOUGH
     forwarder.step()
-    assert device.started == [user for user in USERS if user != 0]
+    assert device.started == [user]
+    minutes = CONTROL.restart_after_stopped_minutes
+    assert f"Started Android user {user}, stopped {minutes} min, in 7.2 s" in caplog.text
 
 
-def test_a_user_a_switch_stopped_is_started_again_on_the_next_check(caplog) -> None:
-    caplog.set_level(logging.INFO)
+def test_a_user_that_runs_again_meanwhile_is_left_alone() -> None:
+    user = SECONDARY_USERS[-1]
+    forwarder, device, clock = _settled_forwarder(stopped=[user])
+    forwarder.step()
+    # The worker switched to it, which started it.
+    device.running.add(user)
+    clock.now = STOPPED_LONG_ENOUGH
+    forwarder.step()
+    device.running.discard(user)
+    clock.now = STOPPED_LONG_ENOUGH + 60
+    forwarder.step()
+    assert device.started == []
+
+
+def test_users_start_one_per_check_and_the_longest_stopped_first() -> None:
+    first, second = SECONDARY_USERS[-1], SECONDARY_USERS[-2]
+    forwarder, device, clock = _settled_forwarder(stopped=[first])
+    forwarder.step()
+    clock.now = 60
+    device.running.discard(second)
+    forwarder.step()
+    clock.now = STOPPED_LONG_ENOUGH + 60
+    forwarder.step()
+    assert device.started == [first]
+    forwarder.step()
+    assert device.started == [first, second]
+
+
+def test_no_user_starts_until_the_foreground_user_has_stayed_put() -> None:
+    user = SECONDARY_USERS[-1]
+    forwarder, device, clock = _settled_forwarder(stopped=[user])
+    forwarder.step()
+    clock.now = STOPPED_LONG_ENOUGH
+    # The worker has just switched users.
+    device.current = SECONDARY_USERS[0]
+    forwarder.step()
+    clock.now = STOPPED_LONG_ENOUGH + CONTROL.quiet_foreground_seconds - 1
+    forwarder.step()
+    assert device.started == []
+    clock.now = STOPPED_LONG_ENOUGH + CONTROL.quiet_foreground_seconds
+    forwarder.step()
+    assert device.started == [user]
+
+
+@pytest.mark.parametrize(
+    "busy",
+    [
+        {"load_average": CONTROL.max_load_average + 0.5},
+        {"available": CONTROL.min_available_megabytes - 1},
+        {"uptime": CONTROL.boot_settle_seconds - 1},
+    ],
+)
+def test_no_user_starts_on_a_busy_or_freshly_booted_emulator(busy) -> None:
+    user = SECONDARY_USERS[-1]
+    forwarder, device, clock = _settled_forwarder(stopped=[user])
+    forwarder.step()
+    clock.now = STOPPED_LONG_ENOUGH
+    for name, value in busy.items():
+        setattr(device, name, value)
+    forwarder.step()
+    assert device.started == []
+
+
+def test_the_foreground_user_and_user_0_are_never_started() -> None:
+    current = SECONDARY_USERS[0]
+    forwarder, device, clock = _settled_forwarder(stopped=[], current=current)
+    device.running.discard(current)
+    forwarder.step()
+    clock.now = STOPPED_LONG_ENOUGH * 2
+    forwarder.step()
+    assert device.started == []
+
+
+def test_a_user_that_will_not_start_lets_the_others_go_first(caplog) -> None:
+    bad, good = SECONDARY_USERS[-1], SECONDARY_USERS[-2]
+    forwarder, device, clock = _settled_forwarder(stopped=[bad])
+    device.failing.add(bad)
+    forwarder.step()
+    clock.now = 60
+    device.running.discard(good)
+    forwarder.step()
+    clock.now = STOPPED_LONG_ENOUGH + 60
+    forwarder.step()
+    assert f"Android user {bad}, stopped" in caplog.text and "did not start" in caplog.text
+    forwarder.step()
+    assert device.started == [good]
+
+
+def test_a_dry_run_prints_what_it_would_send_and_changes_nothing(capsys) -> None:
     clock = _Clock()
-    device = _Device()
-
-    def start_user(user):
-        clock.now += 7.25
-        device.running.add(user)
-
-    device.start_user = start_user
-    forwarder, _ = _forwarder(device, _Reader(), module.Outbox(None), clock=clock)
-    forwarder.step()
-    # Android stops the least recently used background user when the worker switches.
-    device.running.discard(USERS[-1])
-    forwarder.step()
-    assert USERS[-1] in device.running
-    assert f"Started Android user {USERS[-1]} in 7.2 s" in caplog.text
-
-
-def test_a_user_that_will_not_start_leaves_the_reader_listening(caplog) -> None:
-    device = _Device(running=[0])
-    device.start_fails = True
-    reader = _Reader([_notification()])
-    forwarder, sent = _forwarder(device, reader, module.Outbox(None))
-    forwarder.step()
-    assert reader.running and sent == [_notification().push_id]
-    assert "Could not start the stopped Android users" in caplog.text
-
-
-def test_a_dry_run_prints_what_it_would_send_and_changes_nothing(tmp_path, capsys) -> None:
-    device = _Device(running=[0])
+    device = _Device(clock, running=[])
     notification = _notification()
     forwarder, sent = _forwarder(
-        device, _Reader([notification, notification]), module.Outbox(None), dry_run=True
+        _Reader([notification, notification]),
+        module.Outbox(None),
+        device=device,
+        dry_run=True,
+        clock=clock,
     )
+    forwarder.step()
+    clock.now = STOPPED_LONG_ENOUGH * 2
     forwarder.step()
     assert sent == [] and device.started == []
     assert capsys.readouterr().out == (
@@ -302,16 +518,42 @@ def test_handled_notifications_are_forgotten_after_the_remembered_days(tmp_path)
     assert outbox.add(old)
     outbox.handled(old)
     assert not outbox.add(old)
-    now[0] = module.CONTROL.remember_days * 86_400 + 1
+    now[0] = CONTROL.remember_days * 86_400 + 1
     outbox.handled(_notification("new"))
     assert outbox.add(old)
+
+
+def test_a_state_that_cannot_be_saved_is_logged_and_forwarding_goes_on(
+    tmp_path, monkeypatch, caplog
+) -> None:
+    def full_disk(_path, _payload):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(module, "atomic_write", full_disk)
+    forwarder, sent = _forwarder(_Reader([_notification()]), module.Outbox(tmp_path / "s.json"))
+    forwarder.step()
+    assert sent == [_notification().push_id]
+    assert "Could not save the forwarder's state (No space left on device)" in caplog.text
+
+
+@pytest.mark.parametrize("saved", ["{not json", "[]", '{"handled": {}, "waiting": [{"key": "a"}]}'])
+def test_an_unreadable_state_is_moved_aside_and_the_forwarder_starts_afresh(
+    tmp_path, caplog, saved
+) -> None:
+    state = tmp_path / "state.json"
+    state.write_text(saved)
+    outbox = module.Outbox(state)
+    assert len(outbox) == 0 and outbox.add(_notification())
+    aside = list(tmp_path.glob("state.json.unreadable-*"))
+    assert [path.read_text() for path in aside] == [saved]
+    assert "unreadable; moved it to state.json.unreadable-" in caplog.text
 
 
 def test_the_forwarder_sends_exactly_the_categories_the_workflow_processes() -> None:
     source = (REPO_ROOT / "rust/src/instagram_notifications/process_notification.rs").read_text()
     declared = re.search(r"const ACTIONABLE_CATEGORIES: \[&str; \d+\] = \[([^\]]*)\]", source)
     assert declared is not None
-    assert set(re.findall(r'"([^"]+)"', declared.group(1))) == set(module.CONTROL.push_categories)
+    assert set(re.findall(r'"([^"]+)"', declared.group(1))) == set(CONTROL.push_categories)
 
 
 def _completed(returncode, stderr=""):
@@ -332,7 +574,7 @@ def test_a_dispatch_starts_the_workflow_the_way_the_phones_did(monkeypatch) -> N
     assert command == [
         "gh",
         "api",
-        f"repos/{module.CONTROL.github_repo}/dispatches",
+        f"repos/{CONTROL.github_repo}/dispatches",
         "--method",
         "POST",
         "--input",
