@@ -49,6 +49,7 @@ Budget no more than three Instagram accounts per device and scale horizontally b
 adding devices.
 The workflow records exact post URLs in the notification ledger, and a
 database trigger adds each post to `public.ingestion_items`, the only ingestion queue.
+The repository and its Actions logs are public: the workflow processes only `post` and `subscription_daily_digest` notifications, its `route` job ends every other category (direct messages included) with a notice naming only the category, and a notification payload never enters an `env:` block, a log line or an artifact.
 The Mac's always-on processor reads each queued post logged out, with no account,
 cookie or session ID, then owns extraction and database writes.
 The processor is Rust (`rust/src/ingestion`, binary `wat2do-ingest`); its LaunchAgent `io.wat2do.ingestion.process` runs `cargo run --release` against the runtime checkout, so a kickstart builds and runs that checkout's code and `prompt.md`.

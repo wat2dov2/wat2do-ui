@@ -1,8 +1,10 @@
-"""Exercise the notification workflow's binary setup and its pinned GitHub expression validator."""
+"""Exercise the notification workflow's routing, payload handling, binary setup and its pinned
+GitHub expression validator."""
 
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -25,10 +27,10 @@ def runner(tmp_path, monkeypatch):
     for name, value in {
         "GITHUB_ENV": tmp_path / "github-env",
         "GITHUB_OUTPUT": tmp_path / "github-output",
-        "NOTIFICATION_JSON": "PRIVATE_NOTIFICATION_PAYLOAD",
         "DATA_API_KEY": "PRIVATE_CREDENTIAL",
     }.items():
         monkeypatch.setenv(name, str(value))
+    monkeypatch.delenv("NOTIFICATION_JSON", raising=False)
     return tmp_path
 
 
@@ -384,13 +386,16 @@ def test_missing_routing_fails_without_logging_payload(runner, monkeypatch):
 
 
 ROUTE_STEP = WORKFLOW["jobs"]["route"]["steps"][0]
+# The categories the Rust handler records (ACTIONABLE_CATEGORIES); it ignores every other one.
+PROCESSED_CATEGORIES = ["post", "subscription_daily_digest"]
+RECIPIENT_ID = "17841400000000000"
 
 
-def run_route(monkeypatch, *, recipient="", school="", payload="{}", poster=""):
+def run_route(monkeypatch, *, category="post", recipient="", school="", manual=False):
+    monkeypatch.setenv("MANUAL_RETRIEVAL", "true" if manual else "false")
+    monkeypatch.setenv("PUSH_CATEGORY", category)
     monkeypatch.setenv("INTENDED_RECIPIENT_ID", recipient)
     monkeypatch.setenv("TARGET_SCHOOL", school)
-    monkeypatch.setenv("NOTIFICATION_JSON", payload)
-    monkeypatch.setenv("POSTER_ID", poster)
     return subprocess.run(
         ["bash", "-e", "-c", ROUTE_STEP["run"]],
         capture_output=True,
@@ -402,16 +407,207 @@ def run_route(monkeypatch, *, recipient="", school="", payload="{}", poster=""):
 
 @pytest.mark.parametrize(
     ("recipient", "school", "routed"),
-    [("", "", "false"), ("17841400000000000", "", "true"), ("", "Waterloo", "true")],
+    [("", "", "false"), (RECIPIENT_ID, "", "true"), ("", "Waterloo", "true")],
 )
 def test_route_skips_notifications_without_routing(runner, monkeypatch, recipient, school, routed):
-    result = run_route(
-        monkeypatch, recipient=recipient, school=school, payload='{"android.title": null}'
-    )
+    result = run_route(monkeypatch, recipient=recipient, school=school)
 
     assert result.returncode == 0
     assert output_file("GITHUB_OUTPUT")["routed"] == routed
     assert ("::notice::Skipped" in result.stdout) == (routed == "false")
+
+
+@pytest.mark.parametrize("category", PROCESSED_CATEGORIES)
+def test_route_passes_post_and_digest_notifications(runner, monkeypatch, category):
+    result = run_route(monkeypatch, category=category, recipient=RECIPIENT_ID)
+
+    assert result.returncode == 0
+    assert output_file("GITHUB_OUTPUT")["routed"] == "true"
+    assert not result.stdout + result.stderr
+
+
+@pytest.mark.parametrize(
+    "category",
+    [
+        "direct_v2_text",
+        "direct_v2_media_share",
+        "direct_v2_clips_share",
+        "suggested_close_friend",
+        "Post",
+        "",
+    ],
+)
+def test_route_ends_every_other_category_naming_only_the_category(runner, monkeypatch, category):
+    result = run_route(monkeypatch, category=category, recipient=RECIPIENT_ID)
+
+    assert result.returncode == 0
+    assert output_file("GITHUB_OUTPUT")["routed"] == "false"
+    assert result.stdout == (
+        f"::notice::Skipped a {category or 'uncategorized'} notification; "
+        "only post and subscription_daily_digest notifications are processed.\n"
+    )
+    assert not result.stderr
+
+
+def test_a_manual_retrieval_carries_no_category_and_is_routed(runner, monkeypatch):
+    result = run_route(monkeypatch, category="", school="uwaterloo", manual=True)
+
+    assert result.returncode == 0
+    assert output_file("GITHUB_OUTPUT")["routed"] == "true"
+    assert not result.stdout + result.stderr
+
+
+def test_route_reads_the_category_from_where_it_reads_the_recipient():
+    recipient = ROUTE_STEP["env"]["INTENDED_RECIPIENT_ID"]
+    category = ROUTE_STEP["env"]["PUSH_CATEGORY"]
+
+    assert category == recipient.replace(
+        "github.event.client_payload.intended_recipient_id || ", ""
+    ).replace("intended_recipient_id", "push_category")
+    assert ROUTE_STEP["env"]["MANUAL_RETRIEVAL"] == (
+        "${{ github.event_name == 'workflow_dispatch' && !inputs.notification_payload }}"
+    )
+
+
+def test_the_workflow_processes_exactly_the_categories_the_binary_records():
+    handler = (REPO_ROOT / "rust/src/instagram_notifications/process_notification.rs").read_text()
+    actionable = re.search(r"const ACTIONABLE_CATEGORIES: \[&str; \d+\] = \[(.*?)\];", handler)
+    assert actionable and json.loads(f"[{actionable.group(1)}]") == PROCESSED_CATEGORIES
+
+    for category in PROCESSED_CATEGORIES:
+        assert f'"$PUSH_CATEGORY" != {category}' in ROUTE_STEP["run"]
+    listed = f"contains(fromJSON('{json.dumps(PROCESSED_CATEGORIES, separators=(',', ':'))}'), "
+    assert WORKFLOW["run-name"].count(listed) == 2
+
+
+def test_only_processed_notifications_are_named_by_their_title():
+    # A direct message's android.title is its sender.
+    clauses = [line.strip() for line in WORKFLOW["run-name"].splitlines()]
+    titled = [clause for clause in clauses if "android.title" in clause]
+
+    assert len(titled) == 2
+    assert all(clause.startswith('contains(fromJSON(\'["post",') for clause in titled)
+    assert "android.text" not in WORKFLOW["run-name"]
+    assert "format('Skipped {0} notification', " in WORKFLOW["run-name"]
+
+
+def env_blocks():
+    yield "workflow", WORKFLOW.get("env", {})
+    for job_name, job in WORKFLOW["jobs"].items():
+        yield job_name, job.get("env", {})
+        for step in job["steps"]:
+            yield f"{job_name}: {step.get('name', step.get('id'))}", step.get("env", {})
+
+
+def test_no_env_block_carries_the_notification_payload():
+    # GitHub prints every env: value in each step's log, and these logs are public.
+    for owner, env in env_blocks():
+        for name, value in env.items():
+            if "notification_dict" in value or "notification_payload" in value:
+                assert name in {"MANUAL_RETRIEVAL", "PUSH_CATEGORY", "INTENDED_RECIPIENT_ID"}, (
+                    owner,
+                    name,
+                )
+            # No whole payload, and none of the Android extras (android.title, android.text).
+            assert "toJSON" not in value and "['android." not in value, (owner, name)
+            assert name != "NOTIFICATION_JSON", owner
+
+
+def test_no_step_stores_or_uploads_the_notification_payload():
+    steps = [step for job in WORKFLOW["jobs"].values() for step in job["steps"]]
+
+    assert not any("artifact" in step.get("uses", "") for step in steps)
+    readers = [step.get("name") for step in steps if "GITHUB_EVENT_PATH" in step.get("run", "")]
+    assert readers == ["Process the Instagram account"]
+
+
+@pytest.fixture
+def fake_binary(runner, monkeypatch):
+    """A notification binary that records its arguments and NOTIFICATION_JSON, printing nothing."""
+    binary = runner / "wat2do-browser"
+    binary.write_text(
+        "#!/bin/sh\n"
+        'printf "%s\\n" "$*" > "$BINARY_ARGUMENTS"\n'
+        'printf "%s" "${NOTIFICATION_JSON-unset}" > "$BINARY_PAYLOAD"\n'
+    )
+    binary.chmod(0o755)
+    (runner / "backend").mkdir()
+    monkeypatch.setenv("NOTIFICATION_BINARY", str(binary))
+    monkeypatch.setenv("BINARY_ARGUMENTS", str(runner / "arguments"))
+    monkeypatch.setenv("BINARY_PAYLOAD", str(runner / "payload"))
+    return runner
+
+
+def process_event(runner, monkeypatch, event):
+    """Run the processing step on a GitHub event: its output, the binary's arguments and payload."""
+    event_path = runner / "event.json"
+    event_path.write_text(json.dumps(event))
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(event_path))
+    result = run_step("Process the Instagram account")
+    assert result.returncode == 0, result.stderr
+    return (
+        result.stdout + result.stderr,
+        (runner / "arguments").read_text().strip(),
+        (runner / "payload").read_text(),
+    )
+
+
+def notification(category):
+    return {
+        "android.title": "PRIVATE_SENDER",
+        "android.text": "PRIVATE_MESSAGE_TEXT",
+        "android.subText": "wat2do.uwaterloo",
+        "android.progress": 0,
+        "com.instagram.android.igns.logging.push_category": category,
+        "com.instagram.android.igns.logging.intended_recipient_id": RECIPIENT_ID,
+    }
+
+
+def test_a_forwarded_notification_reaches_only_the_binary(fake_binary, monkeypatch):
+    payload = notification("post")
+
+    output, arguments, received = process_event(
+        fake_binary, monkeypatch, {"client_payload": {"notification_dict": payload}}
+    )
+
+    assert arguments == "process-notification"
+    assert json.loads(received) == payload
+    assert "PRIVATE_" not in output
+
+
+def test_a_pasted_notification_reaches_the_binary_unchanged(fake_binary, monkeypatch):
+    payload = json.dumps(notification("subscription_daily_digest"), indent=2)
+
+    output, arguments, received = process_event(
+        fake_binary,
+        monkeypatch,
+        {"inputs": {"poster_id": "", "school": "", "notification_payload": payload}},
+    )
+
+    assert arguments == "process-notification"
+    assert received == payload
+    assert "PRIVATE_" not in output
+
+
+def test_a_manual_handle_is_retrieved_without_a_payload(fake_binary, monkeypatch):
+    for name, value in {
+        "TARGET_SCHOOL": "uwaterloo",
+        "POSTER_ID": "uwcsclub",
+        "CUTOFF_DAYS": "1825",
+    }.items():
+        monkeypatch.setenv(name, value)
+
+    output, arguments, received = process_event(
+        fake_binary,
+        monkeypatch,
+        {"inputs": {"poster_id": "uwcsclub", "school": "uwaterloo", "notification_payload": ""}},
+    )
+
+    assert arguments == "retrieve --school uwaterloo --url uwcsclub --cutoff-days 1825"
+    assert received == "unset"
+    assert (
+        output == "Queued uwcsclub for ingestion; the Mac's processor picks it up within seconds.\n"
+    )
 
 
 def test_processing_runs_only_for_routed_notifications():
