@@ -506,7 +506,7 @@
       },
       "submitFailed": "Nie udało się zapisać decyzji. Spróbuj ponownie.",
       "emptyTitle": "Nic do przejrzenia",
-      "emptyDescription": "Konta pojawiają się tutaj, gdy cotygodniowe wyszukiwanie je znajdzie."
+      "emptyDescription": "Konta pojawiają się tutaj, gdy wyszukiwanie je znajdzie."
     },
     "clubSubmissions": "Zgłoszenia klubów",
     "noClubSubmissions": "Brak zgłoszeń klubów",

@@ -506,7 +506,7 @@
       },
       "submitFailed": "Impossibile salvare le decisioni. Riprova.",
       "emptyTitle": "Niente da rivedere",
-      "emptyDescription": "Gli account compaiono qui man mano che la ricerca settimanale li trova."
+      "emptyDescription": "Gli account compaiono qui man mano che la ricerca li trova."
     },
     "clubSubmissions": "Proposte di club",
     "noClubSubmissions": "Nessuna proposta di club",

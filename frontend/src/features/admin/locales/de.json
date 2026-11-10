@@ -506,7 +506,7 @@
       },
       "submitFailed": "Die Entscheidungen konnten nicht gespeichert werden. Versuch es noch einmal.",
       "emptyTitle": "Nichts zu prüfen",
-      "emptyDescription": "Konten erscheinen hier, sobald die wöchentliche Suche sie findet."
+      "emptyDescription": "Konten erscheinen hier, sobald die Suche sie findet."
     },
     "clubSubmissions": "Club-Einreichungen",
     "noClubSubmissions": "Keine Club-Einreichungen",

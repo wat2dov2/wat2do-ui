@@ -506,7 +506,7 @@
       },
       "submitFailed": "Les décisions n'ont pas pu être enregistrées. Réessayez.",
       "emptyTitle": "Rien à revoir",
-      "emptyDescription": "Les comptes apparaissent ici à mesure que l'exploration hebdomadaire les trouve."
+      "emptyDescription": "Les comptes apparaissent ici à mesure que l'exploration les trouve."
     },
     "clubSubmissions": "Soumissions de clubs",
     "noClubSubmissions": "Aucune soumission de club",

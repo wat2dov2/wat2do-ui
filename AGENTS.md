@@ -96,7 +96,7 @@ Passwords go to the page through osascript's stdin, never a command line, log or
 A refused password or any other challenge waits for a person.
 School accounts' direct messages are not taken from notifications.
 One Mac LaunchAgent (`backend/jobs/run_instagram_worker.py`, `io.wat2do.instagram.worker`) is the only thing that drives the emulator (`backend/services/instagram_worker.py`).
-It visits one school account at a time: it picks the account with the most urgent work (a carousel waiting for its song, then an inbox due a check, then follows, then crawling), switches the app to it once, and does everything that account needs before moving on.
+It visits one school account at a time: it picks the account with the most urgent work (a carousel waiting for its song, then an inbox due a check, then follows, then crawling, which also takes every other visit), switches the app to it once, and does everything that account needs before moving on.
 Each inbox is checked at random times, a random gap set in `controlbox/instagram_dms.json` after each check.
 Replies, follows and post edits happen only between `controlbox/instagram_emulator.json` `action_start_hour` and `action_end_hour`; outside them the worker only reads.
 One failing step never stops the visit's other steps.
@@ -153,15 +153,15 @@ The emulator also finds and follows the clubs each school account should follow.
 `public.instagram_follow_candidates` is the one queue of accounts to follow: any feature that wants an account followed adds a row there with its `source` (`crawl`, `club` or `import`), and nothing else follows accounts.
 One row per school and handle is kept whatever its status, so an account an admin rejected is never offered again.
 Every listed club's Instagram account goes in approved for its school (`sync_club_targets`); crawled accounts wait for review.
-A crawl (`backend/services/instagram_follow/crawl.py`) starts at most once per `controlbox/instagram_follow.json` `crawl_interval_days` per school.
-It searches the school account's own Following list for the school's names in `school_names` (UofT's campuses list each other), then each match's Following list in turn, reading from each row's button whether we already follow that account.
+Crawling (`backend/services/instagram_follow/crawl.py`) never stops: a crawl under way goes first, then schools never crawled, then the school whose last crawl finished longest ago, so a school whose crawl ends is crawled again once the schools that finished before it have had their turn.
+Every crawl starts over from the school account's own Following list, searching it for the school's names in `controlbox/instagram_follow.json` `school_names` (UofT's campuses list each other), then each match's Following list in turn, reading from each row's button whether we already follow that account.
 Every match the school follows is searched in turn, and an unfollowed account with no row yet becomes a pending candidate, searched by a later crawl once the school follows it.
 The crawl stops only once `crawl_miss_streak` profiles in a row find nothing new, or no match is left to search; a profile that fails to load is retried later and never counts as a miss.
 It runs in slices (`crawl_slice`) with its place kept in local state, so it never holds the emulator for hours.
 New candidates are read logged out from their profile embed (`fetch_profile`) and scored by Claude (`backend/services/instagram_follow/prompt.md`) from their newest posts.
 Admins review them on the admin Social page's Follow candidates tab; approvals and rejections are staged in the page and submitted together.
 Approving creates the school's club for the handle unless one exists, and queues the follow.
-The emulator worker checks `crawl_due` and `follows_due` from the database, then calls `crawl_slice` and `follow_due` with the emulator on the school's account.
+The emulator worker checks `follows_due` and each school's `last_crawl_finished` from the database, then calls `follow_due` and `crawl_slice` with the emulator on the school's account.
 `follow_due` follows a few approved accounts per visit, at most `follows_per_account_per_day` a day and `follows_per_account_per_hour` within any hour, and sets each one's post notifications to All so ingestion hears about its posts; an account already followed is only marked followed, after its bell is checked, and never counts toward the day's follows.
 Instagram's "Try again later" pauses that account's follows for a day; it is never pushed through.
 Only the worker taps the emulator, holding its lock for one visit at a time.

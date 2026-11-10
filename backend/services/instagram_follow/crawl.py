@@ -10,6 +10,11 @@ up an account the school has no row for yet, so an account an admin rejected is 
 offered again. The crawl ends once ``crawl_miss_streak`` seeds in a row turn up nothing
 new, or when no seed is left.
 
+Crawling never stops. Once a school's crawl ends, the emulator worker crawls the school
+again in turn, behind the schools whose crawls ended before it (``last_crawl_finished``).
+The new crawl starts over from the school's own Following list, so it also searches the
+clubs the school followed since and finds accounts created since.
+
 Crawls take hours, so the emulator worker advances them in slices between its other
 jobs: ``crawl_slice`` works until a deadline and keeps its place in local state.
 A profile that fails to load says nothing about the seed, so it is retried later and
@@ -22,7 +27,7 @@ import json
 import logging
 import time
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -54,29 +59,19 @@ def crawl_running(school: str) -> bool:
     return _state_path(school).exists()
 
 
-def last_crawl_started(school: str) -> datetime | None:
-    """When the school's newest crawl started, or None when it was never crawled."""
+def last_crawl_finished(school: str) -> datetime | None:
+    """When the school's newest finished crawl ended, or None when none has finished yet."""
     latest = (
         get_sb()
         .table(INSTAGRAM_FOLLOW_CRAWLS)
-        .select("started_at")
+        .select("finished_at")
         .eq("school_id", _school_id(school))
-        .order("started_at", desc=True)
+        .eq("status", CRAWL_FINISHED)
+        .order("finished_at", desc=True)
         .limit(1)
         .execute()
     ).data
-    return datetime.fromisoformat(latest[0]["started_at"]) if latest else None
-
-
-def crawl_due(school: str, now: datetime | None = None) -> bool:
-    """Whether the school has a crawl under way, or none started within the interval."""
-    if crawl_running(school):
-        return True
-    started = last_crawl_started(school)
-    if started is None:
-        return True
-    now = now or datetime.now(timezone.utc)
-    return now - started >= timedelta(days=CONTROL.crawl_interval_days)
+    return datetime.fromisoformat(latest[0]["finished_at"]) if latest else None
 
 
 def crawl_slice(
