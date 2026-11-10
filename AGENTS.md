@@ -41,12 +41,15 @@ maintainability.
 
 ### Instagram notification ingestion direction
 
-Collect Instagram notifications through the official Instagram app on a physical
-Android phone running Automate, whose `NotificationListenerService` flow triggers
-the GitHub `process-notification` workflow directly.
-Do not use Android emulators for notification collection.
-Budget no more than three Instagram accounts per device and scale horizontally by
-adding devices.
+Instagram notifications are collected on the Mac mini's Android emulator, where every school account is logged into the official Instagram app.
+The accounts are active there, so since November 2026 Instagram pushes their post notifications to the emulator instead of the physical phones running Automate, which are no longer part of collection.
+`backend/jobs/forward_instagram_notifications.py` (LaunchAgent `io.wat2do.notification-forwarding`, `backend/services/notification_forwarding.py`) forwards them to the GitHub `process-notification` workflow.
+It keeps every Android user in `controlbox/instagram_emulator.json` `android_user_by_school` running, since a stopped user gets no pushes: Android keeps at most three users running and stops the least recently used one in the background whenever the worker switches users, so the forwarder starts any stopped one again every `controlbox/notification_forwarding.json` `check_seconds`, and Instagram delivers the pushes it held once the user is up.
+It listens through `NotificationReader.java` (`backend/services/instagram_emulator`), a root process under app_process that registers with Android's notification service for every user at once, rebuilt into the committed `notification-reader.jar` by `scripts/build_emulator_jars.py`.
+The reader prints only Instagram notifications whose push category is in `controlbox/notification_forwarding.json` `push_categories` (posts and daily digests, the ones the workflow processes), so a direct message, or its text, never leaves the emulator: the repository is public.
+Each one becomes the `new_instagram_post` repository dispatch the phones sent, through the Mac's own `gh` login, once per intended recipient and push ID; one GitHub did not take waits in `~/.local/state/wat2do/notification-forwarding` and is tried again after a doubling pause.
+The forwarder never taps the emulator and never holds its lock; when the worker restarts the emulator, it waits for the boot, then starts the reader and the users again.
+Its log names push categories, recipients and counts, never a notification's text.
 The workflow records exact post URLs in the notification ledger, and a
 database trigger adds each post to `public.ingestion_items`, the only ingestion queue.
 The repository and its Actions logs are public: the workflow processes only `post` and `subscription_daily_digest` notifications, its `route` job ends every other category (direct messages included) with a notice naming only the category, and a notification payload never enters an `env:` block, a log line or an artifact.
@@ -139,7 +142,7 @@ the school's story, and only then does the thread get the reply.
 The emulator finds every control by its accessibility label, taps at a random point
 inside it after a random pause, types one character at a time, and never types a
 password.
-It reads each screen through `ScreenReader.java` (`backend/services/instagram_emulator`), `uiautomator dump` kept running while the emulator is held, rebuilt into the committed `screen-reader.jar` by `scripts/build_screen_reader.py`.
+It reads each screen through `ScreenReader.java` (`backend/services/instagram_emulator`), `uiautomator dump` kept running while the emulator is held, rebuilt into the committed `screen-reader.jar` by `scripts/build_emulator_jars.py`.
 Each reply is confirmed by seeing it appear in the thread.
 The emulator also likes, reposts and adds music to our own carousels after the API
 publishes them, since the API can do none of these: on the school's next visit the
@@ -186,6 +189,7 @@ deletes Instagram's caches on every Android user as root
 emulator, whose host process leaks about 3 GB of memory a day.
 Unfollows, follows and crawl slices stop between profiles once a carousel waits for its song or that restart is due.
 A step that fails starts Instagram afresh on that Android user, so nothing it left open covers the next step, and `failures_before_rest` profiles failing in a row rest that account's follows or crawl.
+Both stop Instagram with `am force-stop`, which also leaves an app unable to receive pushes until it is opened again, so `pm unstop` follows every one; the reclaim never clears Google Play services, which would drop the users' push registration.
 `dry_run` decides and records every DM without replying, reposting or queueing anything.
 Never log DM text.
 

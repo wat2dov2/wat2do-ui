@@ -1,0 +1,12 @@
+{
+  "github_repo": "wat2dov2/wat2do-ui",
+  "dispatch_event_type": "new_instagram_post",
+  "push_categories": ["post", "subscription_daily_digest"],
+  "check_seconds": 5,
+  "boot_settle_seconds": 90,
+  "retry_first_seconds": 30,
+  "retry_longest_seconds": 1800,
+  "dispatch_timeout_seconds": 30,
+  "remember_days": 7,
+  "launch_agent_timeout_seconds": 30
+}
