@@ -6,14 +6,14 @@ use chrono::{DateTime, Utc};
 use sqlx::{PgExecutor, PgPool};
 use uuid::Uuid;
 
-use super::model::{OrderRow, PaymentAccount, TicketRow, TicketingRow};
+use super::model::{OrderRow, PaymentAccount, TicketRow, TicketingRow, TierRow};
 use crate::db::read_with_retry;
 
 /// `SELECT` of `event_ticketing` with what follows it.
 macro_rules! ticketing_select {
     ($rest:literal) => {
         concat!(
-            "SELECT event_id, price_cents, currency, capacity, paused FROM public.event_ticketing ",
+            "SELECT event_id, currency, capacity, paused FROM public.event_ticketing ",
             $rest
         )
     };
@@ -23,13 +23,14 @@ macro_rules! ticketing_select {
 macro_rules! ticket_select {
     ($rest:literal) => {
         concat!(
-            "SELECT t.id, t.event_id, t.event_date_id, t.holder_user_id, \
-             u.email AS holder_email, u.full_name AS holder_full_name, t.order_id, t.code, \
+            "SELECT t.id, t.event_id, t.event_date_id, t.tier_id, tier.name AS tier_name, \
+             t.holder_user_id, u.email AS holder_email, u.full_name AS holder_full_name, t.order_id, t.code, \
              t.status, t.checked_in_at, t.refunded_at, t.refund_requested_at, \
              t.refund_request_note, t.refund_declined_at, t.created_at, o.unit_amount_cents, \
              o.currency, o.paid_at \
              FROM public.tickets t \
              JOIN public.users u ON u.id = t.holder_user_id \
+             JOIN public.ticket_tiers tier ON tier.id = t.tier_id \
              LEFT JOIN public.ticket_orders o ON o.id = t.order_id ",
             $rest
         )
@@ -40,7 +41,7 @@ macro_rules! ticket_select {
 macro_rules! order_select {
     ($rest:literal) => {
         concat!(
-            "SELECT id, event_id, event_date_id, club_id, buyer_user_id, buyer_email, quantity, \
+            "SELECT id, event_id, event_date_id, tier_id, club_id, buyer_user_id, buyer_email, quantity, \
              unit_amount_cents, currency, status, stripe_account_id, \
              stripe_checkout_session_id, stripe_payment_intent_id, reserved_until \
              FROM public.ticket_orders ",
@@ -85,80 +86,107 @@ pub async fn lock_ticketing(
         .await
 }
 
-/// How many people are going to each of these dates.
-pub async fn going_by_date(
+/// The event's tiers, in the club's order.
+pub async fn tiers(
+    executor: impl PgExecutor<'_>,
+    event_id: i64,
+) -> Result<Vec<TierRow>, sqlx::Error> {
+    sqlx::query_as::<_, TierRow>(
+        "SELECT id, event_id, name, price_cents, capacity FROM public.ticket_tiers \
+         WHERE event_id = $1 ORDER BY position, created_at",
+    )
+    .bind(event_id as i32)
+    .fetch_all(executor)
+    .await
+}
+
+/// How many people are going to these dates, all together.
+pub async fn going_count(
     executor: impl PgExecutor<'_>,
     event_id: i64,
     date_ids: &[Uuid],
-) -> Result<HashMap<Uuid, i64>, sqlx::Error> {
-    let rows: Vec<(Uuid, i64)> = sqlx::query_as(
-        "SELECT event_date_id, count(*) FROM public.user_going_events \
-         WHERE event_id = $1 AND event_date_id = ANY($2) GROUP BY event_date_id",
+) -> Result<i64, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT count(*) FROM public.user_going_events \
+         WHERE event_id = $1 AND event_date_id = ANY($2)",
     )
     .bind(event_id as i32)
     .bind(date_ids)
+    .fetch_one(executor)
+    .await
+}
+
+/// Seats each tier of an event has given out: valid tickets, plus seats a
+/// buyer still holds on Stripe Checkout. A tier with none is left out.
+pub async fn seats_taken_by_tier(
+    executor: impl PgExecutor<'_>,
+    event_id: i64,
+    now: DateTime<Utc>,
+) -> Result<HashMap<Uuid, i64>, sqlx::Error> {
+    let rows: Vec<(Uuid, i64)> = sqlx::query_as(
+        "SELECT tier_id, sum(seats)::int8 FROM ( \
+             SELECT tier_id, count(*) AS seats FROM public.tickets \
+             WHERE event_id = $1 AND status = 'valid' GROUP BY tier_id \
+             UNION ALL \
+             SELECT tier_id, sum(quantity) FROM public.ticket_orders \
+             WHERE event_id = $1 AND status = 'pending' AND reserved_until > $2 \
+             GROUP BY tier_id) AS taken \
+         GROUP BY tier_id",
+    )
+    .bind(event_id as i32)
+    .bind(now)
     .fetch_all(executor)
     .await?;
     Ok(rows.into_iter().collect())
 }
 
-/// Seats one date has given out: valid tickets, plus seats a buyer still holds
-/// on Stripe Checkout.
-pub async fn seats_taken(
+/// Valid tickets per tier, the floor a new limit cannot go under.
+pub async fn valid_tickets_by_tier(
     executor: impl PgExecutor<'_>,
-    event_date_id: Uuid,
-    now: DateTime<Utc>,
-) -> Result<i64, sqlx::Error> {
-    sqlx::query_scalar::<_, i64>(
-        "SELECT (SELECT count(*) FROM public.tickets \
-                 WHERE event_date_id = $1 AND status = 'valid') \
-              + (SELECT coalesce(sum(quantity), 0) FROM public.ticket_orders \
-                 WHERE event_date_id = $1 AND status = 'pending' AND reserved_until > $2)::int8",
+    event_id: i64,
+) -> Result<HashMap<Uuid, i64>, sqlx::Error> {
+    let rows: Vec<(Uuid, i64)> = sqlx::query_as(
+        "SELECT tier_id, count(*) FROM public.tickets \
+         WHERE event_id = $1 AND status = 'valid' GROUP BY tier_id",
     )
-    .bind(event_date_id)
+    .bind(event_id as i32)
+    .fetch_all(executor)
+    .await?;
+    Ok(rows.into_iter().collect())
+}
+
+/// Any ticket of the tier was ever issued, or someone paid or is paying for one.
+pub async fn tier_in_use(
+    executor: impl PgExecutor<'_>,
+    tier_id: Uuid,
+    now: DateTime<Utc>,
+) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM public.tickets WHERE tier_id = $1) \
+             OR EXISTS (SELECT 1 FROM public.ticket_orders WHERE tier_id = $1 \
+                        AND (status = 'paid' OR (status = 'pending' AND reserved_until > $2)))",
+    )
+    .bind(tier_id)
     .bind(now)
     .fetch_one(executor)
     .await
 }
 
-/// `seats_taken` for every date of an event that has given any out.
-pub async fn seats_taken_by_date(
-    db: &PgPool,
-    event_id: i64,
-    now: DateTime<Utc>,
-) -> Result<HashMap<Uuid, i64>, sqlx::Error> {
-    let rows: Vec<(Uuid, i64)> = read_with_retry(|| {
-        sqlx::query_as(
-            "SELECT event_date_id, sum(seats)::int8 FROM ( \
-                 SELECT event_date_id, count(*) AS seats FROM public.tickets \
-                 WHERE event_id = $1 AND status = 'valid' GROUP BY event_date_id \
-                 UNION ALL \
-                 SELECT event_date_id, sum(quantity) FROM public.ticket_orders \
-                 WHERE event_id = $1 AND status = 'pending' AND reserved_until > $2 \
-                 GROUP BY event_date_id) AS taken \
-             GROUP BY event_date_id",
-        )
-        .bind(event_id)
-        .bind(now)
-        .fetch_all(db)
-    })
-    .await?;
-    Ok(rows.into_iter().collect())
-}
-
-/// Valid tickets per date, the floor a new capacity cannot go under.
-pub async fn valid_tickets_by_date(
-    executor: impl PgExecutor<'_>,
-    event_id: i64,
-) -> Result<HashMap<Uuid, i64>, sqlx::Error> {
-    let rows: Vec<(Uuid, i64)> = sqlx::query_as(
-        "SELECT event_date_id, count(*) FROM public.tickets \
-         WHERE event_id = $1 AND status = 'valid' GROUP BY event_date_id",
-    )
-    .bind(event_id)
-    .fetch_all(executor)
-    .await?;
-    Ok(rows.into_iter().collect())
+/// Remove a tier nobody holds or is buying a ticket of (`tier_in_use`),
+/// with the checkouts of it that ended or whose hold ran out.
+pub async fn delete_tier(
+    connection: &mut sqlx::PgConnection,
+    tier_id: Uuid,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("DELETE FROM public.ticket_orders WHERE tier_id = $1 AND status <> 'paid'")
+        .bind(tier_id)
+        .execute(&mut *connection)
+        .await?;
+    sqlx::query("DELETE FROM public.ticket_tiers WHERE id = $1")
+        .bind(tier_id)
+        .execute(&mut *connection)
+        .await?;
+    Ok(())
 }
 
 /// Any ticket was ever issued for the event, or a buyer is on Checkout now.
@@ -313,15 +341,17 @@ pub async fn insert_free_ticket(
     executor: impl PgExecutor<'_>,
     event_id: i64,
     event_date_id: Uuid,
+    tier_id: Uuid,
     user_id: Uuid,
     code: &str,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "INSERT INTO public.tickets (event_id, event_date_id, holder_user_id, code) \
-         VALUES ($1, $2, $3, $4)",
+        "INSERT INTO public.tickets (event_id, event_date_id, tier_id, holder_user_id, code) \
+         VALUES ($1, $2, $3, $4, $5)",
     )
     .bind(event_id as i32)
     .bind(event_date_id)
+    .bind(tier_id)
     .bind(user_id)
     .bind(code)
     .execute(executor)

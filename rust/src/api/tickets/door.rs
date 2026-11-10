@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use super::model::{
     CheckInResult, ClubEventTicketSummary, EventTicketDeskResponse, TicketAttendee,
-    TicketCheckInResponse, TicketDateCounts, TicketRow, TicketStatus,
+    TicketCheckInResponse, TicketDateCounts, TicketRow, TicketStatus, TicketTierCounts,
 };
 use super::ticketing::{closes_at, managed_event, view};
 use super::{codes, store};
@@ -31,6 +31,7 @@ pub fn attendee(ticket: &TicketRow) -> TicketAttendee {
         event_date_id: ticket.event_date_id,
         holder_name: ticket.holder_name(),
         holder_email: ticket.holder_email.clone(),
+        tier_name: ticket.tier_name.clone(),
         issued_at: ticket.paid_at.unwrap_or(ticket.created_at),
         checked_in_at: ticket.checked_in_at,
         refunded_at: ticket.refunded_at,
@@ -134,7 +135,7 @@ pub async fn set_check_in(
     })
 }
 
-/// Counts per date and the whole door list for one event with tickets.
+/// Counts per tier and date, and the whole door list, for one event with tickets.
 pub async fn desk(
     state: &AppState,
     event_id: i64,
@@ -148,25 +149,40 @@ pub async fn desk(
     let tickets = store::tickets_for_event(&state.db, event_id).await?;
     let mut issued: HashMap<Uuid, i64> = HashMap::new();
     let mut admitted: HashMap<Uuid, i64> = HashMap::new();
-    let mut revenue_cents = 0;
+    let mut tiers: HashMap<Uuid, TicketTierCounts> = HashMap::new();
     for ticket in tickets.iter().filter(|ticket| ticket.is_valid()) {
+        let paid = i64::from(ticket.unit_amount_cents.unwrap_or(0));
+        let checked_in = i64::from(ticket.checked_in_at.is_some());
         *issued.entry(ticket.event_date_id).or_default() += 1;
-        if ticket.checked_in_at.is_some() {
-            *admitted.entry(ticket.event_date_id).or_default() += 1;
-        }
-        revenue_cents += i64::from(ticket.unit_amount_cents.unwrap_or(0));
+        *admitted.entry(ticket.event_date_id).or_default() += checked_in;
+        let tier = tiers.entry(ticket.tier_id).or_insert(TicketTierCounts {
+            tier_id: ticket.tier_id,
+            issued: 0,
+            checked_in: 0,
+            revenue_cents: 0,
+        });
+        tier.issued += 1;
+        tier.checked_in += checked_in;
+        tier.revenue_cents += paid;
     }
-    let remaining: HashMap<Uuid, Option<i64>> = ticketing
-        .dates
-        .iter()
-        .map(|date| (date.event_date_id, date.remaining))
-        .collect();
     let valid = issued.values().sum();
     Ok(EventTicketDeskResponse {
         issued: valid,
         checked_in: admitted.values().sum(),
         refunded: tickets.len() as i64 - valid,
-        revenue_cents,
+        revenue_cents: tiers.values().map(|tier| tier.revenue_cents).sum(),
+        tiers: ticketing
+            .tiers
+            .iter()
+            .map(|tier| {
+                tiers.remove(&tier.id).unwrap_or(TicketTierCounts {
+                    tier_id: tier.id,
+                    issued: 0,
+                    checked_in: 0,
+                    revenue_cents: 0,
+                })
+            })
+            .collect(),
         dates: event
             .occurrences
             .iter()
@@ -175,7 +191,6 @@ pub async fn desk(
                 dtstart_utc: occurrence.dtstart_utc,
                 issued: issued.get(&occurrence.id).copied().unwrap_or(0),
                 checked_in: admitted.get(&occurrence.id).copied().unwrap_or(0),
-                remaining: remaining.get(&occurrence.id).copied().flatten(),
             })
             .collect(),
         // Holders waiting on a refund answer come first, so a request never sits unseen.
@@ -199,7 +214,10 @@ pub async fn club_summaries(
 ) -> Result<Vec<ClubEventTicketSummary>, ApiError> {
     let rows = read_with_retry(|| {
         sqlx::query(
-            "SELECT et.event_id::int8 AS event_id, et.price_cents, et.currency, et.capacity, et.paused, \
+            "SELECT et.event_id::int8 AS event_id, \
+                    (SELECT coalesce(min(tier.price_cents), 0) FROM public.ticket_tiers tier \
+                     WHERE tier.event_id = et.event_id) AS lowest_price_cents, \
+                    et.currency, et.capacity, et.paused, \
                     count(t.id) FILTER (WHERE t.status = 'valid') AS issued, \
                     count(t.id) FILTER (WHERE t.status = 'valid' AND t.checked_in_at IS NOT NULL) AS checked_in, \
                     coalesce(sum(o.unit_amount_cents) FILTER (WHERE t.status = 'valid'), 0)::int8 AS revenue_cents, \
@@ -220,7 +238,7 @@ pub async fn club_summaries(
         .map(|row| {
             Ok(ClubEventTicketSummary {
                 event_id: row.try_get("event_id")?,
-                price_cents: row.try_get("price_cents")?,
+                lowest_price_cents: row.try_get("lowest_price_cents")?,
                 currency: row.try_get("currency")?,
                 capacity: row.try_get("capacity")?,
                 paused: row.try_get("paused")?,

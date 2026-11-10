@@ -64,6 +64,7 @@ pub fn send_tickets(
     event: Event,
     occurrence: Occurrence,
     recipient: String,
+    tier_name: String,
     codes: Vec<String>,
     payment: Option<(i32, String)>,
     idempotency_key: String,
@@ -81,6 +82,7 @@ pub fn send_tickets(
             &occurrence,
             tz,
             &recipient,
+            &tier_name,
             &codes,
             payment,
             hero,
@@ -101,6 +103,7 @@ fn tickets_message(
     occurrence: &Occurrence,
     tz: Tz,
     recipient: &str,
+    tier_name: &str,
     codes: &[String],
     payment: Option<Payment<'_>>,
     hero: Option<Arc<InlineImage>>,
@@ -133,6 +136,7 @@ fn tickets_message(
     let mut rows = vec![
         ("When".to_owned(), when.clone()),
         ("Where".to_owned(), where_.clone()),
+        ("Ticket".to_owned(), tier_name.to_owned()),
     ];
     let mut text_payment = Vec::new();
     match payment {
@@ -195,6 +199,7 @@ fn tickets_message(
         String::new(),
         format!("When: {when}"),
         format!("Where: {where_}"),
+        format!("Ticket: {tier_name}"),
     ];
     text.extend(text_payment);
     text.push(String::new());
@@ -417,6 +422,7 @@ mod tests {
             &occurrence,
             Tz::America__Toronto,
             "a@b.c",
+            "General admission",
             &["CODE2222222222222222222A".to_owned()],
             None,
             None,
@@ -425,6 +431,7 @@ mod tests {
         assert_eq!(message.subject, "Your ticket for Board Games Night");
         assert!(message.body_html.contains("cid:ticket-1"));
         assert!(message.body_html.contains("Hosted by"));
+        assert!(message.body_text.contains("Ticket: General admission"));
         assert!(!message.body_html.contains("Total paid"));
         assert!(
             message
@@ -449,6 +456,7 @@ mod tests {
             &occurrence,
             Tz::America__Toronto,
             "a@b.c",
+            "Early bird",
             &["A".repeat(24), "B".repeat(24)],
             Some(Payment {
                 unit_amount_cents: 1500,

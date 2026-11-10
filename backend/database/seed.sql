@@ -798,8 +798,8 @@ WHERE school.id = event.school_id
 
 -- Free QR tickets on a few upcoming club events, so the ticket card, the
 -- club's desk and the door scanner have something to show locally.
-INSERT INTO public.event_ticketing (event_id, price_cents, capacity)
-SELECT event.id, 0, 40
+INSERT INTO public.event_ticketing (event_id, capacity)
+SELECT event.id, 40
 FROM public.events AS event
 WHERE event.ingestion_source = 'seed'
   AND event.club_id IS NOT NULL
@@ -811,3 +811,19 @@ WHERE event.ingestion_source = 'seed'
 ORDER BY event.id
 LIMIT 3
 ON CONFLICT (event_id) DO NOTHING;
+
+-- Their tickets come in one free tier, and the first also has a members tier.
+INSERT INTO public.ticket_tiers (event_id, name, price_cents, capacity, position)
+SELECT ticketing.event_id, 'General admission', 0, NULL, 0
+FROM public.event_ticketing AS ticketing
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.ticket_tiers AS tier WHERE tier.event_id = ticketing.event_id
+);
+INSERT INTO public.ticket_tiers (event_id, name, price_cents, capacity, position)
+SELECT ticketing.event_id, 'Club members', 0, 15, 1
+FROM public.event_ticketing AS ticketing
+WHERE ticketing.event_id = (SELECT min(event_id) FROM public.event_ticketing)
+  AND NOT EXISTS (
+      SELECT 1 FROM public.ticket_tiers AS tier
+      WHERE tier.event_id = ticketing.event_id AND tier.position = 1
+  );

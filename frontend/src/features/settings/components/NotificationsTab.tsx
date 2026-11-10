@@ -5,10 +5,8 @@ import type {
 } from "@/features/settings/api/notificationPreferences.api";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
-import { Label } from "@/shared/ui/label";
 import { Separator } from "@/shared/ui/separator";
-import { Switch } from "@/shared/ui/switch";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { SwitchField } from "@/shared/ui/switch-field";
 
 interface NotificationsTabProps {
   preferences: NotificationPreferences;
@@ -51,36 +49,36 @@ export function NotificationsTab({
   return (
     <Card>
       <CardContent className="space-y-6" aria-busy={isLoading}>
-        <PreferenceToggle
+        <SwitchField
           id="morning-email"
           label={t("settings.notifications.morningEmail")}
           description={t("settings.notifications.morningEmailDesc")}
           checked={preferences.morningEmail}
-          isLoading={isLoading}
+          loading={isLoading}
           disabled={controlsDisabled}
           onCheckedChange={(checked) =>
             onPreferenceChange("morningEmail", checked)
           }
         />
         <Separator />
-        <PreferenceToggle
+        <SwitchField
           id="event-reminder"
           label={t("settings.notifications.eventReminder")}
           description={t("settings.notifications.eventReminderDesc")}
           checked={preferences.eventReminder}
-          isLoading={isLoading}
+          loading={isLoading}
           disabled={controlsDisabled}
           onCheckedChange={(checked) =>
             onPreferenceChange("eventReminder", checked)
           }
         />
         <Separator />
-        <PreferenceToggle
+        <SwitchField
           id="event-change"
           label={t("settings.notifications.eventChange")}
           description={t("settings.notifications.eventChangeDesc")}
           checked={preferences.eventChange}
-          isLoading={isLoading}
+          loading={isLoading}
           disabled={controlsDisabled}
           onCheckedChange={(checked) =>
             onPreferenceChange("eventChange", checked)
@@ -88,42 +86,5 @@ export function NotificationsTab({
         />
       </CardContent>
     </Card>
-  );
-}
-
-function PreferenceToggle({
-  id,
-  label,
-  description,
-  checked,
-  isLoading,
-  disabled,
-  onCheckedChange,
-}: {
-  id: string;
-  label: string;
-  description: string;
-  checked: boolean;
-  isLoading: boolean;
-  disabled: boolean;
-  onCheckedChange: (checked: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex-1 space-y-1">
-        <Label htmlFor={id} className="text-base font-medium">
-          {label}
-        </Label>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
-      {isLoading ? <Skeleton className="h-6 w-11 rounded-full" /> : (
-        <Switch
-          id={id}
-          checked={checked}
-          disabled={disabled}
-          onCheckedChange={onCheckedChange}
-        />
-      )}
-    </div>
   );
 }

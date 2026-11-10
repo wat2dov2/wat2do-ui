@@ -421,9 +421,11 @@ pub struct Ticketing {
     pub currency_by_country: HashMap<String, String>,
     pub minimum_price_cents: i32,
     pub maximum_price_cents: i32,
-    /// Per date of an event.
+    /// The most tickets an event, or one of its tiers, can be limited to.
     pub maximum_capacity: i32,
     pub maximum_tickets_per_order: i32,
+    /// The most tiers one event's tickets come in.
+    pub maximum_tiers: usize,
     pub checkout_minutes: i64,
     pub reservation_grace_minutes: i64,
     /// The door admits a ticket from this long before its date starts until
@@ -838,6 +840,7 @@ mod tests {
         assert!(DISCOVERY_QUERIES.maximum_filters_bytes > 0);
         assert!(!PROMOTER_PROGRAM.tos_version.is_empty());
         assert!(TICKETING.maximum_tickets_per_order > 0);
+        assert!(TICKETING.maximum_tiers > 0);
         assert!(POSITIONS.undated_visibility_months > 0);
         assert!(OUTREACH.club_url_template.contains("{club_id}"));
         assert!(!NOTIFICATION_DEFAULTS.enabled("unknown_type"));

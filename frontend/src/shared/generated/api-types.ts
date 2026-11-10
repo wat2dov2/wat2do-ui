@@ -371,7 +371,7 @@ export interface paths {
         get: operations["get_event_ticketing_events__event_id__ticketing_get"];
         /**
          * Configure Event Ticketing
-         * @description Turn tickets on for the club's event, or change them. A price of zero gives free tickets.
+         * @description Turn tickets on for the club's event, or change them: one limit on every ticket, and the tiers people choose from. A tier priced at zero is free.
          */
         put: operations["configure_event_ticketing_events__event_id__ticketing_put"];
         post?: never;
@@ -396,7 +396,7 @@ export interface paths {
         put?: never;
         /**
          * Take Free Ticket
-         * @description Take the event's free ticket to one date; taking it again returns the same ticket.
+         * @description Take a free tier's ticket to one date; taking it again returns the same ticket.
          */
         post: operations["take_free_ticket_events__event_id__ticketing_tickets_post"];
         delete?: never;
@@ -2341,8 +2341,11 @@ export interface components {
         ClubEventTicketSummary: {
             /** Format: int64 */
             event_id: number;
-            /** Format: int32 */
-            price_cents: number;
+            /**
+             * Format: int32
+             * @description The cheapest tier's price; zero when any tier is free.
+             */
+            lowest_price_cents: number;
             currency: string | null;
             /** Format: int32 */
             capacity: number | null;
@@ -3019,45 +3022,45 @@ export interface components {
             refunded: number;
             /** Format: int64 */
             revenue_cents: number;
+            /** @description In the order of `ticketing.tiers`. */
+            tiers: components["schemas"]["TicketTierCounts"][];
             dates: components["schemas"]["TicketDateCounts"][];
             attendees: components["schemas"]["TicketAttendee"][];
         };
-        /**
-         * @description How people get into an event, or null when it has no tickets. A price of
-         *     zero means free tickets, one per person and date.
-         */
+        /** @description How people get into an event, or null when it has no tickets. */
         EventTicketingResponse: {
             /** Format: int64 */
             event_id: number;
-            /** Format: int32 */
-            price_cents: number;
-            /** @description "cad" or "usd" for paid tickets; null for free ones. */
+            /** @description "cad" or "usd" once any tier is paid; null while every tier is free. */
             currency: string | null;
-            /** Format: int32 */
-            capacity: number | null;
-            paused: boolean;
-            /** @description Some date is open and the event takes tickets right now. */
-            available: boolean;
             /**
              * Format: int32
-             * @description The most tickets one person gets at a time: one when they are free.
+             * @description The most tickets the whole event gives out, every date and tier
+             *     together; null for no limit.
              */
-            maximum_per_order: number;
+            capacity: number | null;
+            /**
+             * Format: int64
+             * @description Tickets left under the event's limit; null when it has none.
+             */
+            remaining: number | null;
+            paused: boolean;
+            /** @description Some date and some tier are open, and the event takes tickets right now. */
+            available: boolean;
+            /** @description In the club's order. */
+            tiers: components["schemas"]["TicketTierAvailability"][];
             dates: components["schemas"]["TicketDateAvailability"][];
         };
         /** @description A club turning tickets on for its event, or changing them. */
         EventTicketingUpdate: {
             /**
              * Format: int32
-             * @description Zero for free tickets.
-             */
-            price_cents: number;
-            /**
-             * Format: int32
-             * @description Tickets per date; null for no limit.
+             * @description The most tickets the whole event gives out; null for no limit.
              */
             capacity?: number | null;
             paused: boolean;
+            /** @description Every tier, in the order people see them. A tier left out is removed. */
+            tiers: components["schemas"]["TicketTierUpdate"][];
         };
         /** EventUpdate */
         EventUpdate: {
@@ -3186,6 +3189,8 @@ export interface components {
         FreeTicketCreate: {
             /** Format: uuid */
             event_date_id: string;
+            /** Format: uuid */
+            tier_id: string;
         };
         /** GoingEventSelection */
         GoingEventSelection: {
@@ -4705,6 +4710,7 @@ export interface components {
             event_date_id: string;
             holder_name: string;
             holder_email: string;
+            tier_name: string;
             /**
              * Format: date-time
              * @description When the ticket was taken or paid for.
@@ -4735,6 +4741,8 @@ export interface components {
         TicketCheckoutCreate: {
             /** Format: uuid */
             event_date_id: string;
+            /** Format: uuid */
+            tier_id: string;
             /** Format: int32 */
             quantity: number;
         };
@@ -4751,12 +4759,7 @@ export interface components {
             dtstart_utc: string;
             /** Format: date-time */
             dtend_utc: string | null;
-            /**
-             * Format: int64
-             * @description Null when the event has no capacity limit.
-             */
-            remaining: number | null;
-            /** @description Someone could take or buy a ticket for this date right now. */
+            /** @description The date still takes tickets: it has not ended. */
             open: boolean;
         };
         TicketDateCounts: {
@@ -4768,8 +4771,6 @@ export interface components {
             issued: number;
             /** Format: int64 */
             checked_in: number;
-            /** Format: int64 */
-            remaining: number | null;
         };
         /** @description A buyer's own checkout, polled after Stripe sends them back. */
         TicketOrderResponse: {
@@ -4801,6 +4802,7 @@ export interface components {
             status: components["schemas"]["TicketStatus"];
             /** @description Bought through Stripe; false for a free ticket. */
             paid: boolean;
+            tier_name: string;
             /** Format: date-time */
             checked_in_at: string | null;
             /** Format: int64 */
@@ -4839,6 +4841,68 @@ export interface components {
          * @enum {string}
          */
         TicketStatus: "valid" | "refunded";
+        /** @description One tier of an event's tickets, as anyone viewing the event sees it. */
+        TicketTierAvailability: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /**
+             * Format: int32
+             * @description Zero for a free tier: one ticket per person and date.
+             */
+            price_cents: number;
+            /**
+             * Format: int32
+             * @description The tier's own limit; null when only the event's limit applies.
+             */
+            capacity: number | null;
+            /**
+             * Format: int64
+             * @description Tickets left in this tier, under both its own limit and the event's;
+             *     null when neither limits it.
+             */
+            remaining: number | null;
+            /**
+             * Format: int32
+             * @description The most tickets one person gets at a time: one when they are free.
+             */
+            maximum_per_order: number;
+            /** @description Someone could take or buy a ticket of this tier right now. */
+            open: boolean;
+        };
+        /** @description One tier's tickets at the club's desk. */
+        TicketTierCounts: {
+            /** Format: uuid */
+            tier_id: string;
+            /**
+             * Format: int64
+             * @description Valid tickets of this tier: taken for free, or sold and not refunded.
+             */
+            issued: number;
+            /** Format: int64 */
+            checked_in: number;
+            /** Format: int64 */
+            revenue_cents: number;
+        };
+        /** @description One tier in a club's ticket settings. */
+        TicketTierUpdate: {
+            /**
+             * Format: uuid
+             * @description The tier being changed; null for a new one.
+             */
+            id?: string | null;
+            name: string;
+            /**
+             * Format: int32
+             * @description Zero for a free tier.
+             */
+            price_cents: number;
+            /**
+             * Format: int32
+             * @description The tier's own limit; null when only the event's limit applies.
+             */
+            capacity?: number | null;
+        };
         TokenResponse: {
             access_token: string;
             /** @default bearer */

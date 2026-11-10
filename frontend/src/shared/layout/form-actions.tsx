@@ -21,7 +21,7 @@ function FormActions({
     <div
       data-slot="form-actions"
       className={cn(
-        "flex gap-3 border-t border-border pt-6",
+        "flex w-full gap-3 border-t border-border pt-6",
         alignClasses[align],
         className
       )}

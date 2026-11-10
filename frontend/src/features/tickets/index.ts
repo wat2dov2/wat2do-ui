@@ -7,7 +7,8 @@ export const DoorScanner = lazy(() =>
 export { EventTicketCard } from "./components/EventTicketCard";
 export { TicketDeskStats } from "./components/TicketDeskStats";
 export { TicketDoorList } from "./components/TicketDoorList";
-export { TicketSettingsCard, type TicketPayouts } from "./components/TicketSettingsCard";
+export { TicketSettingsForm, type TicketPayouts } from "./components/TicketSettingsForm";
+export { TicketSettingsSummary } from "./components/TicketSettingsSummary";
 export { useEventTicketing, useTicketDesk, useTicketRefunds } from "./hooks/useTickets";
 export { MyTicketsPage } from "./pages/MyTicketsPage";
 export { TicketOrderPage } from "./pages/TicketOrderPage";

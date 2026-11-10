@@ -27,20 +27,30 @@ export function stopEventTicketing(eventId: number): Promise<void> {
   return api.delete<void>(`/events/${eventId}/ticketing`);
 }
 
-/** Take the event's free ticket to one date; taking it again returns the same ticket. */
-export function takeFreeTicket(eventId: number, eventDateId: string): Promise<ApiTicketResponse> {
+/** The date and tier someone gets a ticket to. */
+export interface TicketChoice {
+  eventDateId: string;
+  tierId: string;
+}
+
+/** Take a free tier's ticket to one date; taking it again returns the same ticket. */
+export function takeFreeTicket(
+  eventId: number,
+  { eventDateId, tierId }: TicketChoice,
+): Promise<ApiTicketResponse> {
   return api.post<ApiTicketResponse>(`/events/${eventId}/ticketing/tickets`, {
     event_date_id: eventDateId,
+    tier_id: tierId,
   });
 }
 
 export function startTicketCheckout(
   eventId: number,
-  eventDateId: string,
-  quantity: number,
+  { eventDateId, tierId, quantity }: TicketChoice & { quantity: number },
 ): Promise<ApiTicketCheckoutResponse> {
   return api.post<ApiTicketCheckoutResponse>(`/events/${eventId}/ticketing/checkout`, {
     event_date_id: eventDateId,
+    tier_id: tierId,
     quantity,
   });
 }

@@ -84,29 +84,37 @@ test.describe("what the ticket requests send", () => {
     api.put = original.put;
   });
 
-  test("taking a free ticket names only its date", async () => {
-    await takeFreeTicket(42, "date-1");
+  test("taking a free ticket names its date and tier", async () => {
+    await takeFreeTicket(42, { eventDateId: "date-1", tierId: "tier-1" });
     expect(sent).toEqual([
-      { method: "POST", path: "/events/42/ticketing/tickets", data: { event_date_id: "date-1" } },
+      {
+        method: "POST",
+        path: "/events/42/ticketing/tickets",
+        data: { event_date_id: "date-1", tier_id: "tier-1" },
+      },
     ]);
   });
 
-  test("a checkout names its date and how many tickets", async () => {
-    await startTicketCheckout(42, "date-1", 3);
+  test("a checkout names its date, its tier and how many tickets", async () => {
+    await startTicketCheckout(42, { eventDateId: "date-1", tierId: "tier-2", quantity: 3 });
     expect(sent[0]).toEqual({
       method: "POST",
       path: "/events/42/ticketing/checkout",
-      data: { event_date_id: "date-1", quantity: 3 },
+      data: { event_date_id: "date-1", tier_id: "tier-2", quantity: 3 },
     });
   });
 
-  test("free tickets are a price of zero, and settings always say whether they are paused", async () => {
-    await configureEventTicketing(42, { price_cents: 0, capacity: null, paused: false });
-    expect(sent[0]).toEqual({
-      method: "PUT",
-      path: "/events/42/ticketing",
-      data: { price_cents: 0, capacity: null, paused: false },
-    });
+  test("settings send the event's limit, pausing and every tier", async () => {
+    const settings = {
+      capacity: 120,
+      paused: false,
+      tiers: [
+        { id: null, name: "Members", price_cents: 0, capacity: 40 },
+        { id: "tier-1", name: "General admission", price_cents: 1500, capacity: null },
+      ],
+    };
+    await configureEventTicketing(42, settings);
+    expect(sent[0]).toEqual({ method: "PUT", path: "/events/42/ticketing", data: settings });
   });
 
   test("a scanned link is sent as its code, safely in the path", async () => {

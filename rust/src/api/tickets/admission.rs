@@ -10,7 +10,7 @@ use chrono::{DateTime, Duration, Utc};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use super::model::{OrderRow, TicketCheckoutResponse, TicketResponse, TicketingRow};
+use super::model::{OrderRow, TicketCheckoutResponse, TicketResponse, TicketingRow, TierRow};
 use super::stripe::{ConnectedAccount, Stripe, WebhookEvent};
 use super::ticketing::{lock_for_change, refuse_unless_open};
 use super::{codes, emails, holders, payouts, refunds, store};
@@ -22,8 +22,8 @@ use crate::api::events::model::{Event, Occurrence};
 use crate::api::events::store::event_by_id;
 use crate::api::messages::{
     EVENT_NOT_FOUND, PAID_TICKET_NOT_RETURNABLE, TICKET_ALREADY_USED, TICKET_DATE_NOT_FOUND,
-    TICKET_NOT_FOUND, TICKET_ORDER_NOT_FOUND, TICKET_QUANTITY_TOO_HIGH, TICKETS_NOT_AVAILABLE,
-    TICKETS_SOLD_OUT,
+    TICKET_NOT_FOUND, TICKET_ORDER_NOT_FOUND, TICKET_QUANTITY_TOO_HIGH, TICKET_TIER_NOT_FOUND,
+    TICKETS_NOT_AVAILABLE, TICKETS_SOLD_OUT,
 };
 use crate::controlbox::TICKETING;
 
@@ -47,32 +47,81 @@ async fn event_and_date(
     Ok((event, occurrence))
 }
 
-/// One free ticket to one date: taking it again returns the same ticket.
+/// The event's ticketing row and the tier asked for, both locked behind the
+/// event (`lock_for_change`).
+async fn lock_tier(
+    connection: &mut sqlx::PgConnection,
+    event_id: i64,
+    tier_id: Uuid,
+) -> Result<(TicketingRow, TierRow), ApiError> {
+    let row = lock_for_change(&mut *connection, event_id)
+        .await?
+        .ok_or_else(|| ApiError::validation(TICKETS_NOT_AVAILABLE))?;
+    let tier = store::tiers(&mut *connection, event_id)
+        .await?
+        .into_iter()
+        .find(|tier| tier.id == tier_id)
+        .ok_or_else(|| ApiError::validation(TICKET_TIER_NOT_FOUND))?;
+    Ok((row, tier))
+}
+
+/// Refuse `quantity` more tickets of `tier` when they would pass its own
+/// limit or the event's.
+async fn refuse_unless_room(
+    connection: &mut sqlx::PgConnection,
+    row: &TicketingRow,
+    tier: &TierRow,
+    quantity: i32,
+    now: DateTime<Utc>,
+) -> Result<(), ApiError> {
+    if row.capacity.is_none() && tier.capacity.is_none() {
+        return Ok(());
+    }
+    let taken = store::seats_taken_by_tier(&mut *connection, i64::from(row.event_id), now).await?;
+    let wanted = i64::from(quantity);
+    let full = |capacity: Option<i32>, taken: i64| {
+        capacity.is_some_and(|capacity| taken + wanted > i64::from(capacity))
+    };
+    if full(row.capacity, taken.values().sum())
+        || full(tier.capacity, taken.get(&tier.id).copied().unwrap_or(0))
+    {
+        return Err(ApiError::validation(TICKETS_SOLD_OUT));
+    }
+    Ok(())
+}
+
+/// One free ticket to one date: taking it again, of any tier, returns the
+/// same ticket.
 pub async fn take_free(
     state: &AppState,
     event_id: i64,
     event_date_id: Uuid,
+    tier_id: Uuid,
     user: &User,
 ) -> Result<TicketResponse, ApiError> {
     let (event, occurrence) = event_and_date(state, event_id, event_date_id).await?;
     let now = Utc::now();
     let mut transaction = state.db.begin().await?;
-    let row = lock_for_change(&mut transaction, event_id)
-        .await?
-        .filter(TicketingRow::is_free)
-        .ok_or_else(|| ApiError::validation(TICKETS_NOT_AVAILABLE))?;
+    let (row, tier) = lock_tier(&mut transaction, event_id, tier_id).await?;
+    if !tier.is_free() {
+        return Err(ApiError::validation(TICKETS_NOT_AVAILABLE));
+    }
     if let Some(code) = store::free_ticket(&mut *transaction, user.id, event_date_id).await? {
         drop(transaction);
         return holders::by_code(state, &code, Some(user)).await;
     }
     refuse_unless_open(&row, &occurrence, now)?;
-    if let Some(capacity) = row.capacity
-        && store::seats_taken(&mut *transaction, event_date_id, now).await? >= i64::from(capacity)
-    {
-        return Err(ApiError::validation(TICKETS_SOLD_OUT));
-    }
+    refuse_unless_room(&mut transaction, &row, &tier, 1, now).await?;
     let code = codes::new_code();
-    store::insert_free_ticket(&mut *transaction, event_id, event_date_id, user.id, &code).await?;
+    store::insert_free_ticket(
+        &mut *transaction,
+        event_id,
+        event_date_id,
+        tier.id,
+        user.id,
+        &code,
+    )
+    .await?;
     transaction.commit().await?;
 
     mark_going(state, user.id, event_id, event_date_id).await;
@@ -82,6 +131,7 @@ pub async fn take_free(
         event,
         occurrence,
         user.email.clone(),
+        tier.name,
         vec![code.clone()],
         None,
         format!("ticket:{code}"),
@@ -144,6 +194,7 @@ pub async fn start_checkout(
     state: &AppState,
     event_id: i64,
     event_date_id: Uuid,
+    tier_id: Uuid,
     quantity: i32,
     buyer: &User,
 ) -> Result<TicketCheckoutResponse, ApiError> {
@@ -156,17 +207,25 @@ pub async fn start_checkout(
     let checkout_ends =
         now + Duration::minutes(TICKETING.checkout_minutes + STRIPE_EXPIRY_MARGIN_MINUTES);
     let reserved_until = checkout_ends + Duration::minutes(TICKETING.reservation_grace_minutes);
-    let order = reserve(
+    let (order, tier_name) = reserve(
         state,
         &event,
         &occurrence,
+        tier_id,
         quantity,
         buyer,
         reserved_until,
         now,
     )
     .await?;
-    let params = checkout_params(state, &event, &occurrence, &order, checkout_ends);
+    let params = checkout_params(
+        state,
+        &event,
+        &occurrence,
+        tier_name.as_deref(),
+        &order,
+        checkout_ends,
+    );
     let session = match Stripe::new(state.settings)?
         .create_checkout_session(
             &order.stripe_account_id,
@@ -193,60 +252,63 @@ pub async fn start_checkout(
     })
 }
 
+/// Hold `quantity` seats of a paid tier in a pending order. Returns the order
+/// and, when the event has several tiers, the tier's name for Checkout.
+#[allow(clippy::too_many_arguments)]
 async fn reserve(
     state: &AppState,
     event: &Event,
     occurrence: &Occurrence,
+    tier_id: Uuid,
     quantity: i32,
     buyer: &User,
     reserved_until: DateTime<Utc>,
     now: DateTime<Utc>,
-) -> Result<OrderRow, ApiError> {
+) -> Result<(OrderRow, Option<String>), ApiError> {
     let club_id = event
         .club_id
         .ok_or_else(|| ApiError::validation(TICKETS_NOT_AVAILABLE))?;
     let account = payouts::ready_account(&state.db, club_id).await?;
     let mut transaction = state.db.begin().await?;
-    let row = lock_for_change(&mut transaction, event.id)
-        .await?
-        .filter(|row| !row.is_free())
-        .ok_or_else(|| ApiError::validation(TICKETS_NOT_AVAILABLE))?;
-    refuse_unless_open(&row, occurrence, now)?;
-    if let Some(capacity) = row.capacity
-        && store::seats_taken(&mut *transaction, occurrence.id, now).await? + i64::from(quantity)
-            > i64::from(capacity)
-    {
-        return Err(ApiError::validation(TICKETS_SOLD_OUT));
+    let (row, tier) = lock_tier(&mut transaction, event.id, tier_id).await?;
+    if tier.is_free() {
+        return Err(ApiError::validation(TICKETS_NOT_AVAILABLE));
     }
+    refuse_unless_open(&row, occurrence, now)?;
+    refuse_unless_room(&mut transaction, &row, &tier, quantity, now).await?;
+    let several_tiers = store::tiers(&mut *transaction, event.id).await?.len() > 1;
     let order = sqlx::query_as::<_, OrderRow>(
-        "INSERT INTO public.ticket_orders (id, event_id, event_date_id, club_id, buyer_user_id, \
-         buyer_email, quantity, unit_amount_cents, currency, stripe_account_id, reserved_until) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) \
-         RETURNING id, event_id, event_date_id, club_id, buyer_user_id, buyer_email, quantity, \
-         unit_amount_cents, currency, status, stripe_account_id, stripe_checkout_session_id, \
-         stripe_payment_intent_id, reserved_until",
+        "INSERT INTO public.ticket_orders (id, event_id, event_date_id, tier_id, club_id, \
+         buyer_user_id, buyer_email, quantity, unit_amount_cents, currency, stripe_account_id, \
+         reserved_until) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) \
+         RETURNING id, event_id, event_date_id, tier_id, club_id, buyer_user_id, buyer_email, \
+         quantity, unit_amount_cents, currency, status, stripe_account_id, \
+         stripe_checkout_session_id, stripe_payment_intent_id, reserved_until",
     )
     .bind(Uuid::new_v4())
     .bind(event.id as i32)
     .bind(occurrence.id)
+    .bind(tier.id)
     .bind(club_id as i32)
     .bind(buyer.id)
     .bind(&buyer.email)
     .bind(quantity)
-    .bind(row.price_cents)
+    .bind(tier.price_cents)
     .bind(row.currency.as_deref().unwrap_or("cad"))
     .bind(&account.stripe_account_id)
     .bind(reserved_until)
     .fetch_one(&mut *transaction)
     .await?;
     transaction.commit().await?;
-    Ok(order)
+    Ok((order, several_tiers.then_some(tier.name)))
 }
 
 fn checkout_params(
     state: &AppState,
     event: &Event,
     occurrence: &Occurrence,
+    tier_name: Option<&str>,
     order: &OrderRow,
     expires_at: DateTime<Utc>,
 ) -> Value {
@@ -257,7 +319,11 @@ fn checkout_params(
         "event_id": event.id.to_string(),
         "event_date_id": occurrence.id.to_string(),
     });
-    let mut product = json!({"name": truncate(&event.title, 250)});
+    let name = match tier_name {
+        Some(tier) => format!("{} ({tier})", event.title),
+        None => event.title.clone(),
+    };
+    let mut product = json!({"name": truncate(&name, 250)});
     if let Some(location) = event
         .location
         .as_deref()
@@ -399,12 +465,14 @@ async fn fulfil(
     .await?;
     let codes: Vec<String> = (0..order.quantity).map(|_| codes::new_code()).collect();
     sqlx::query(
-        "INSERT INTO public.tickets (order_id, event_id, event_date_id, holder_user_id, code) \
-         SELECT $1, $2, $3, $4, code FROM unnest($5::text[]) AS code",
+        "INSERT INTO public.tickets \
+         (order_id, event_id, event_date_id, tier_id, holder_user_id, code) \
+         SELECT $1, $2, $3, $4, $5, code FROM unnest($6::text[]) AS code",
     )
     .bind(order_id)
     .bind(order.event_id)
     .bind(order.event_date_id)
+    .bind(order.tier_id)
     .bind(order.buyer_user_id)
     .bind(&codes)
     .execute(&mut *transaction)
@@ -452,6 +520,10 @@ async fn after_fulfilment(state: &AppState, order_id: Uuid) -> Result<(), ApiErr
         return Ok(());
     }
     mark_going(state, order.buyer_user_id, event_id, order.event_date_id).await;
+    let tier_name = tickets
+        .first()
+        .map(|ticket| ticket.tier_name.clone())
+        .unwrap_or_default();
     let codes = tickets.into_iter().map(|ticket| ticket.code).collect();
     emails::send_tickets(
         state.db.clone(),
@@ -459,6 +531,7 @@ async fn after_fulfilment(state: &AppState, order_id: Uuid) -> Result<(), ApiErr
         event,
         occurrence,
         order.buyer_email.clone(),
+        tier_name,
         codes,
         Some((order.unit_amount_cents, order.currency.clone())),
         format!("ticket-confirmation:{order_id}"),

@@ -92,6 +92,11 @@ export function clubPanelDoorScannerPath(eventId: number): string {
   return `${clubPanelEventTicketsPath(eventId)}/scan`;
 }
 
+/** The form that sets up an event's tickets, or changes them. */
+export function clubPanelTicketSettingsPath(eventId: number): string {
+  return `${clubPanelEventTicketsPath(eventId)}/settings`;
+}
+
 const APP_NAME = "Wat2Do";
 
 const ROUTE_PAGE_TITLES: Partial<

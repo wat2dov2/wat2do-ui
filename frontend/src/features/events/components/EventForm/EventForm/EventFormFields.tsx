@@ -1,4 +1,3 @@
-import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { MapPin, DollarSign, Utensils, Plus, Trash2, ExternalLink } from "lucide-react";
 import {
@@ -11,7 +10,7 @@ import {
   FieldSet,
 } from "@/shared/ui/field";
 import { FormGrid, Stack } from "@/shared/layout";
-import { Switch } from "@/shared/ui/switch";
+import { SwitchField } from "@/shared/ui/switch-field";
 import { Button } from "@/shared/ui/button";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { translateCategory } from "@/shared/utils/event";
@@ -23,7 +22,6 @@ import { useEventFormContext } from "@/features/events/components/EventForm/Even
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 
 export function EventFormFields() {
-  const registrationId = useId();
   const { getSchoolTimezone } = useSchoolDirectory();
   const { event_categories: eventCategories } = useAppConstants();
   const { t } = useTranslation();
@@ -201,20 +199,11 @@ export function EventFormFields() {
             placeholder={t("forms.foodPlaceholder")}
           />
 
-          <Field>
-            <FieldLabel htmlFor={registrationId}>
-              {t("forms.registration")}
-            </FieldLabel>
-            <div className="w-fit">
-              <Switch
-                id={registrationId}
-                checked={formData.registration}
-                onCheckedChange={(checked) =>
-                  updateField("registration", checked)
-                }
-              />
-            </div>
-          </Field>
+          <SwitchField
+            label={t("forms.registration")}
+            checked={formData.registration}
+            onCheckedChange={(checked) => updateField("registration", checked)}
+          />
 
           <ImageUploadField
             label={t("forms.eventImage")}

@@ -28,6 +28,9 @@ const ClubPanelEventTicketsPage = lazy(() =>
 const ClubPanelDoorScannerPage = lazy(() =>
   loadClubPanel().then((m) => ({ default: m.ClubPanelDoorScannerPage }))
 );
+const ClubPanelTicketSettingsPage = lazy(() =>
+  loadClubPanel().then((m) => ({ default: m.ClubPanelTicketSettingsPage }))
+);
 const ClubPanelPayoutsPage = lazy(() => loadClubPanel().then((m) => ({ default: m.ClubPanelPayoutsPage })));
 
 /**
@@ -113,6 +116,14 @@ export function ClubPanelDoorScannerRoute() {
   return (
     <ClubPanelSuspense size="md">
       <ClubPanelDoorScannerPage />
+    </ClubPanelSuspense>
+  );
+}
+
+export function ClubPanelTicketSettingsRoute() {
+  return (
+    <ClubPanelSuspense size="md">
+      <ClubPanelTicketSettingsPage />
     </ClubPanelSuspense>
   );
 }

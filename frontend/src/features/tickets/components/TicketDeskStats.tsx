@@ -8,10 +8,7 @@ import { formatCents } from "@/shared/utils/currency";
 /** Tickets out, people in, seats left and, for paid tickets, the money. */
 export function TicketDeskStats({ desk }: { desk: ApiEventTicketDeskResponse }) {
   const { t, i18n } = useTranslation();
-  const remaining = desk.dates.reduce<number | null>(
-    (total, date) => (date.remaining == null || total == null ? null : total + date.remaining),
-    0,
-  );
+  const remaining = desk.ticketing.remaining;
   const currency = desk.ticketing.currency;
   return (
     <FormGrid columns={currency ? 4 : 3}>

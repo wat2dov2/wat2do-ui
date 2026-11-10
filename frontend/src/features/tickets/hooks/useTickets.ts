@@ -17,6 +17,7 @@ import {
   startTicketCheckout,
   stopEventTicketing,
   takeFreeTicket,
+  type TicketChoice,
 } from "@/features/tickets/api/tickets.api";
 import type {
   ApiEventTicketingUpdate,
@@ -114,7 +115,7 @@ export function useTakeFreeTicket(eventId: number) {
   const invalidate = useInvalidateEventTickets(eventId);
   const showError = useErrorToast();
   return useMutation({
-    mutationFn: (eventDateId: string) => takeFreeTicket(eventId, eventDateId),
+    mutationFn: (choice: TicketChoice) => takeFreeTicket(eventId, choice),
     onSuccess: invalidate,
     onError: showError,
   });
@@ -135,8 +136,8 @@ export function useReturnTicket(eventId: number) {
 export function useTicketCheckout(eventId: number) {
   const showError = useErrorToast();
   return useMutation({
-    mutationFn: ({ eventDateId, quantity }: { eventDateId: string; quantity: number }) =>
-      startTicketCheckout(eventId, eventDateId, quantity),
+    mutationFn: (order: TicketChoice & { quantity: number }) =>
+      startTicketCheckout(eventId, order),
     onSuccess: ({ checkout_url }) => {
       window.location.assign(checkout_url);
     },

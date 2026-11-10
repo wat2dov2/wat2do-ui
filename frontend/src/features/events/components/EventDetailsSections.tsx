@@ -56,6 +56,7 @@ import { queryKeys } from "@/shared/lib/queryKeys";
 import { ROUTES, clubPanelEventTicketsPath } from "@/shared/constants/routes";
 import { EventTicketCard, useEventTicketing } from "@/features/tickets";
 import { Skeleton, SkeletonLine } from "@/shared/ui/skeleton";
+import type { ApiEventTicketingResponse } from "@/shared/generated";
 import { formatCents } from "@/shared/utils/currency";
 import { toast } from "@/shared/hooks/use-toast";
 import type { Event } from "@/shared/types";
@@ -205,12 +206,18 @@ function EventRegistrationCell({ event }: { event: Event }) {
 
 function EventCostCell({ event }: { event: Event }) {
   const { t, i18n } = useTranslation();
+  /** What the event's tiers cost: one price, or the range from the cheapest to the dearest. */
+  const ticketCost = (ticketing: ApiEventTicketingResponse) => {
+    const prices = ticketing.tiers.map((tier) => tier.price_cents);
+    const money = (cents: number) =>
+      cents === 0 ? t("common.free") : formatCents(cents, ticketing.currency ?? "cad", i18n.language);
+    const [lowest, highest] = [Math.min(...prices), Math.max(...prices)];
+    return lowest === highest ? money(lowest) : `${money(lowest)} - ${money(highest)}`;
+  };
   // An event with tickets costs what its tickets cost.
   const { data: ticketing } = useEventTicketing(ticketedEventId(event));
   const cost = ticketing
-    ? ticketing.price_cents === 0
-      ? t("common.free")
-      : formatCents(ticketing.price_cents, ticketing.currency ?? "cad", i18n.language)
+    ? ticketCost(ticketing)
     : event.price == null
       ? null
       : event.price === 0

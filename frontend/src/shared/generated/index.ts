@@ -108,6 +108,8 @@ export type ApiPaginatedPosterPayoutResponse =
 // ── Tickets ─────────────────────────────────────────────────────────
 export type ApiEventTicketingResponse = components["schemas"]["EventTicketingResponse"];
 export type ApiEventTicketingUpdate = components["schemas"]["EventTicketingUpdate"];
+export type ApiTicketTier = components["schemas"]["TicketTierAvailability"];
+export type ApiTicketTierUpdate = components["schemas"]["TicketTierUpdate"];
 export type ApiEventTicketDeskResponse = components["schemas"]["EventTicketDeskResponse"];
 export type ApiTicketResponse = components["schemas"]["TicketResponse"];
 export type ApiTicketOrderResponse = components["schemas"]["TicketOrderResponse"];
