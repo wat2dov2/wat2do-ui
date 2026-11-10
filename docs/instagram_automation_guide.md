@@ -52,6 +52,8 @@ Log the phone's Instagram app into the school accounts being collected, keeping 
 Automate's Android `NotificationListenerService` flow observes each Instagram notification and sends a `new_instagram_post` repository dispatch to GitHub.
 The dispatch carries the notification's recipient ID, push ID, push category, and Instagram action.
 A collapsed `subscription_daily_digest` notification is forwarded unchanged so the workflow's Rust job (`wat2do-browser process-notification`, `rust/src/instagram_notifications/process_notification.rs`) remains the single owner of media materialization.
+The repository and its Actions logs are public, and GitHub prints every `env:` value in each step's log.
+So the workflow processes only `post` and `subscription_daily_digest` notifications, names any other run by its push category alone (a direct message's title is its sender), and never puts a payload in an `env:` block, a log line or an artifact: the processing step reads it from the event file (`$GITHUB_EVENT_PATH`) and hands it to the binary as `NOTIFICATION_JSON`.
 
 ## Shared Brave browser worker
 
@@ -529,7 +531,7 @@ Existing local job history is not backfilled; lifecycle events begin when the up
 Clubs sometimes DM a school account to ask Wat2Do to share their post.
 The phone's Automate flow already forwards every Instagram notification, and DMs arrive as the `direct_v2_text`, `direct_v2_media_share` and `direct_v2_clips_share` push categories.
 Their `ig_action` is `direct_v2?id=<thread>&x=<message>`; a reel share also carries `clip_id`.
-The notification job ignores them: the emulator worker's inbox sweep reads each school's inbox at random times instead.
+The workflow's `route` job ends them, like every category but `post` and `subscription_daily_digest`, with a notice naming only the category, so no later step ever holds a message: the emulator worker's inbox sweep reads each school's inbox at random times instead.
 
 The worker answers as the school in the Instagram app on the Mac's Android emulator, never in Brave, holding the emulator's lock for the whole job:
 
