@@ -143,53 +143,6 @@ def test_the_current_android_user_is_not_switched_again() -> None:
     assert len(commands) == 1
 
 
-def test_a_user_counts_as_running_once_it_is_unlocked() -> None:
-    device = _device(
-        [(0, "RUNNING_UNLOCKED\n"), (0, "RUNNING_LOCKED\n"), (0, "User is not started: 11\n")], []
-    )
-    assert device.user_running(11)
-    assert not device.user_running(11)
-    assert not device.user_running(11)
-
-
-def test_a_user_is_started_in_the_background_until_it_is_unlocked() -> None:
-    commands = []
-    _device([(0, "Success: user started\n")], commands).start_user(11)
-    assert commands[0][3:] == ["shell", "am", "start-user", "-w", "11"]
-    with pytest.raises(module.EmulatorError, match="user 11 did not start"):
-        _device([(0, "Error: could not start user\n")], []).start_user(11)
-
-
-def test_the_uptime_is_read_from_android() -> None:
-    commands = []
-    assert _device([(0, "9512.31 31842.07\n")], commands).uptime_seconds() == 9512.31
-    assert commands[0][3:] == ["shell", "cat", "/proc/uptime"]
-    with pytest.raises(module.EmulatorError, match="uptime"):
-        _device([(0, "")], []).uptime_seconds()
-
-
-def test_the_load_and_free_memory_are_read_from_android() -> None:
-    proc = (
-        "3.45 2.91 2.40 5/2081 31337\n"
-        "MemTotal:        4021336 kB\n"
-        "MemFree:          112340 kB\n"
-        "MemAvailable:    1433600 kB\n"
-    )
-    commands = []
-    assert _device([(0, proc)], commands).load() == (3.45, 1400)
-    assert commands[0][3:] == ["shell", "cat", "/proc/loadavg", "/proc/meminfo"]
-    with pytest.raises(module.EmulatorError, match="free memory"):
-        _device([(0, "3.45 2.91 2.40 5/2081 31337\n")], []).load()
-    with pytest.raises(module.EmulatorError, match="load"):
-        _device([(0, "")], []).load()
-
-
-def test_the_foreground_user_is_read_from_android() -> None:
-    assert _device([(0, "11\n")], []).current_user() == 11
-    with pytest.raises(module.EmulatorError, match="foreground"):
-        _device([(0, "Error\n")], []).current_user()
-
-
 def test_unlabelled_controls_are_found_by_their_resource_id() -> None:
     screen = SCREEN.replace(
         "</hierarchy>",
@@ -348,7 +301,7 @@ def test_the_reclaim_is_due_once_a_day_from_its_hour(reclaimed_path) -> None:
     assert module.reclaim_due(today + timedelta(days=1))
 
 
-def test_reclaiming_deletes_instagram_caches_and_leaves_it_able_to_get_pushes(
+def test_reclaiming_deletes_instagram_caches_and_leaves_it_out_of_the_stopped_state(
     reclaimed_path,
 ) -> None:
     users = sorted(set(module.CONTROL.android_user_by_school.values()))
@@ -363,9 +316,9 @@ def test_reclaiming_deletes_instagram_caches_and_leaves_it_able_to_get_pushes(
         assert f"am force-stop --user {user} com.instagram.android" in script
         assert f"/data/user/{user}/com.instagram.android/files/one_cache_path" in script
         assert "databases" not in script and "shared_prefs" not in script
-        # The force stop leaves the app unable to receive pushes until this.
+        # The force stop leaves the app stopped, getting nothing in the background, until this.
         assert unstop[3:] == ["shell", "pm", "unstop", "--user", str(user), "com.instagram.android"]
-    # Nothing else is cleared: clearing Google Play services lost the users' push registration.
+    # Nothing else is cleared: clearing Google Play services dropped the users' registration.
     assert not any("clear" in command for command in commands)
     assert reclaimed_path.exists()
     # The emulator restarts last, after the record that stops tomorrow's repeat.
@@ -452,7 +405,7 @@ def test_starting_the_app_afresh_stops_instagram_on_that_user_only() -> None:
     _device([(0, ""), (0, "")], commands).reset_app(11)
     assert [command[3:] for command in commands] == [
         ["shell", "am", "force-stop", "--user", "11", "com.instagram.android"],
-        # The app keeps getting its pushes until it is opened again.
+        # The app is closed, not left stopped as if it had never been opened.
         ["shell", "pm", "unstop", "--user", "11", "com.instagram.android"],
     ]
 

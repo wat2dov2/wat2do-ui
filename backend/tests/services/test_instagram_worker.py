@@ -17,8 +17,8 @@ class _Device:
         self.unreachable = set(unreachable)
         self.restarts = 0
 
-    def current_user(self):
-        return 0
+    def adb(self, *args):
+        return "0\n"
 
     def wake(self):
         pass

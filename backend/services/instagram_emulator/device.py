@@ -124,7 +124,7 @@ def _sdk_tool(name: str, folder: str) -> str:
     return str(sdk / folder / name)
 
 
-def adb_path() -> str:
+def _adb_path() -> str:
     return _sdk_tool("adb", "platform-tools")
 
 
@@ -155,7 +155,7 @@ class EmulatorDevice:
         self._sleep = sleep
         self._monotonic = monotonic
         self._rng = rng or random.SystemRandom()
-        self._adb = adb_path()
+        self._adb = _adb_path()
         self._reader = reader or ScreenReader(
             self._adb,
             CONTROL.serial,
@@ -422,9 +422,11 @@ class EmulatorDevice:
         Instagram never trims its own image cache, downloaded camera effects or models,
         so on every Android user that holds accounts the app is stopped and those
         folders, listed in the controlbox, are deleted as root. Its login, databases and
-        settings stay, so no account is logged out, and the app is left able to receive
-        pushes (``_unstop``). The emulator is then restarted, since its host process leaks
-        memory. It runs once a day, when ``reclaim_due`` says so.
+        settings stay, so no account is logged out, and the app is left out of Android's
+        stopped state (``_unstop``). No other app's data is cleared: clearing Google Play
+        services dropped the Android user's device and push registration. The emulator is
+        then restarted, since its host process leaks memory. It runs once a day, when
+        ``reclaim_due`` says so.
         """
         if not reclaim_due():
             return self.free_data_megabytes()
@@ -461,46 +463,18 @@ class EmulatorDevice:
             # The old emulator answers until it exits; only a new one's boot counts.
             if not stopped:
                 stopped = not self.is_online()
-            elif self.booted():
+            elif self._booted():
                 self._sleep(CONTROL.screen_wait_seconds)
                 self.wake()
                 return
             self._sleep(_RESTART_POLL_SECONDS)
         raise EmulatorError("The emulator did not come back after a restart")
 
-    def booted(self) -> bool:
+    def _booted(self) -> bool:
         try:
             return self.adb("shell", "getprop", "sys.boot_completed").strip() == "1"
         except EmulatorError:
             return False
-
-    def uptime_seconds(self) -> float:
-        """How long Android has been up since it booted."""
-        output = self.adb("shell", "cat", "/proc/uptime")
-        try:
-            return float(output.split()[0])
-        except (IndexError, ValueError) as exc:
-            raise EmulatorError("Android's uptime could not be read") from exc
-
-    def load(self) -> tuple[float, int]:
-        """Android's load average over the last minute, and its available memory in MB."""
-        output = self.adb("shell", "cat", "/proc/loadavg", "/proc/meminfo")
-        available = re.search(r"^MemAvailable:\s+(\d+) kB$", output, re.MULTILINE)
-        try:
-            load = float(output.split()[0])
-        except (IndexError, ValueError) as exc:
-            raise EmulatorError("Android's load could not be read") from exc
-        if available is None:
-            raise EmulatorError("Android's free memory could not be read")
-        return load, int(available.group(1)) // 1024
-
-    def current_user(self) -> int:
-        """The Android user in the foreground."""
-        output = self.adb("shell", "am", "get-current-user").strip()
-        try:
-            return int(output)
-        except ValueError as exc:
-            raise EmulatorError("The foreground Android user could not be read") from exc
 
     def wake(self) -> None:
         self.adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
@@ -515,7 +489,7 @@ class EmulatorDevice:
         then lands late. The user's own screen (its last app, or the home screen) comes
         back by itself; a switch whose screen is slower than the wait goes on anyway.
         """
-        if self.current_user() == user:
+        if self.adb("shell", "am", "get-current-user").strip() == str(user):
             return
         self.adb("shell", "am", "switch-user", str(user))
         deadline = self._monotonic() + CONTROL.user_switch_wait_seconds
@@ -528,16 +502,9 @@ class EmulatorDevice:
             self._sleep(_POLL_SECONDS)
 
     def _user_ready(self, user: int) -> bool:
-        return self.current_user() == user and self.user_running(user)
-
-    def user_running(self, user: int) -> bool:
-        """Whether the Android user is running and unlocked, so its apps get their pushes."""
-        return "RUNNING_UNLOCKED" in self.adb("shell", "am", "get-started-user-state", str(user))
-
-    def start_user(self, user: int) -> None:
-        """Start the Android user in the background and wait until it is unlocked."""
-        if "Success" not in self.adb("shell", "am", "start-user", "-w", str(user)):
-            raise EmulatorError(f"Android user {user} did not start")
+        return self.adb("shell", "am", "get-current-user").strip() == str(
+            user
+        ) and "RUNNING_UNLOCKED" in self.adb("shell", "am", "get-started-user-state", str(user))
 
     def _user_on_screen(self, user: int) -> bool:
         """Whether one of the user's own windows has the focus and can be read."""
@@ -580,17 +547,19 @@ class EmulatorDevice:
 
         A step that fails can leave a sheet or dialog open over the app, and every link
         opened after it lands underneath, out of the screen reader's sight. The app
-        reopens on the account it was on, and gets its pushes meanwhile (``_unstop``).
+        reopens on the account it was on, and is left out of Android's stopped state
+        (``_unstop``).
         """
         self.adb("shell", "am", "force-stop", "--user", str(user), CONTROL.instagram_package)
         self._unstop(user)
 
     def _unstop(self, user: int) -> None:
-        """Let Instagram receive pushes again after ``am force-stop``.
+        """Take Instagram out of the stopped state ``am force-stop`` leaves it in.
 
-        A force stop also marks the app stopped, and Android delivers nothing to a stopped
-        app, its push messages included, until it is launched again, so every account on
-        the user would go without notifications until the worker next opened the app there.
+        A force stop also marks the app stopped, as if it had never been opened, and
+        Android then delivers it nothing in the background (its broadcasts, alarms,
+        scheduled jobs and push messages) until it is launched again. ``pm unstop`` leaves
+        it closed the way a person closing it would, so the force stop only closes it.
         """
         self.adb("shell", "pm", "unstop", "--user", str(user), CONTROL.instagram_package)
 

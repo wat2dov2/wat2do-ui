@@ -1,7 +1,7 @@
 # Instagram Automation Commands
 
-The active collection path uses Instagram's notifications to the school accounts on the Mac's Android emulator.
-The Mac's notification forwarder sends each post and digest notification to the GitHub `process-notification` workflow, which records each exact post URL in the notification ledger.
+The active collection path uses Instagram notifications on a physical Android phone running Automate.
+Automate triggers the GitHub `process-notification` workflow, which records each exact post URL in the notification ledger.
 When Instagram collapses several posts into one digest, the GitHub processing job submits a high-priority job to the Mac's shared browser worker before recording notification media.
 A database trigger adds each recorded post to `public.ingestion_items`, the ingestion queue.
 An always-on launchd processor on the Mac, `wat2do-ingest process` (Rust, `rust/src/ingestion`), wakes on a Postgres notification from the queue, reads each new post logged out (no account, cookie or session ID), and then runs a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
@@ -45,44 +45,15 @@ Image repairs write a new immutable URL instead of replacing a cached file in pl
 Each update is conditional on the selected row retaining the original media reference, and successful updates refresh that school's discovery data.
 Existing assets remain available to other references and cached pages.
 
-## Emulator notification forwarding
+## Android notification phone
 
-Notifications come from the Mac mini's Android emulator, where every school account is logged into the Instagram app and active, so Instagram pushes their notifications there.
-The physical phones running Automate are no longer part of collection.
-The `io.wat2do.notification-forwarding` LaunchAgent (`jobs/forward_instagram_notifications.py run`, `services/notification_forwarding.py`) keeps the Android users in `android_user_by_school` running, since a stopped user gets no pushes, and listens on the device for Instagram's notifications.
-Android keeps at most three users running and stops the least recently used one in the background whenever the foreground user switches, which the worker does when it moves to an account on another Android user.
-Starting users on a busy emulator froze Android (load near 50 with all four running on 10-25), so the forwarder checks every `check_seconds` (`controlbox/notification_forwarding.json`) and starts a user again with `am start-user -w` only once it has been stopped `restart_after_stopped_minutes`.
-It starts at most one per check, the one stopped longest, and only once the emulator has been up `boot_settle_seconds`, while the foreground user (`am get-current-user`) has stayed the same `quiet_foreground_seconds`, the one-minute load in `/proc/loadavg` is at most `max_load_average` and `MemAvailable` is at least `min_available_megabytes`.
-User 0 and the foreground user always run.
-It logs the user, how long it had been stopped and how long the start took, and Instagram delivers the pushes it held once the user is up, so a stopped user's notifications arrive at most about `restart_after_stopped_minutes` late.
-The worker's own switches keep most users running anyway.
-The listener is `NotificationReader.java`, which runs as root under app_process and registers with Android's notification service the way the system's own listeners do, for every Android user at once, so nothing is installed or granted on the device.
-It prints only Instagram's notifications whose push category is in `push_categories` (`post` and `subscription_daily_digest`, the ones the workflow processes), with the extras the phones forwarded: the notification's text, flags and numbers, without its pictures or icons.
-A direct message, and its text, never leaves the emulator.
-When the reader starts, it also prints the notifications still showing, so a forwarder started again misses nothing on screen.
-The forwarder also checks each one's push category itself and drops, without logging anything of it, one outside `push_categories`.
-The forwarder sends each new one as the phones' `new_instagram_post` repository dispatch, `{"event_type": "new_instagram_post", "client_payload": {"notification_dict": {...}}}`, through the Mac's own `gh` login, so no token is stored.
+Notifications come from one physical Android phone, not an emulator.
+Log the phone's Instagram app into the school accounts being collected, keeping each device to three accounts or fewer and adding devices for more capacity.
+Automate's Android `NotificationListenerService` flow observes each Instagram notification and sends a `new_instagram_post` repository dispatch to GitHub.
+The dispatch carries the notification's recipient ID, push ID, push category, and Instagram action.
 A collapsed `subscription_daily_digest` notification is forwarded unchanged so the workflow's Rust job (`wat2do-browser process-notification`, `rust/src/instagram_notifications/process_notification.rs`) remains the single owner of media materialization.
 The repository and its Actions logs are public, and GitHub prints every `env:` value in each step's log.
 So the workflow processes only `post` and `subscription_daily_digest` notifications, names any other run by its push category alone (a direct message's title is its sender), and never puts a payload in an `env:` block, a log line or an artifact: the processing step reads it from the event file (`$GITHUB_EVENT_PATH`) and hands it to the binary as `NOTIFICATION_JSON`.
-Each notification is sent once per intended recipient and push ID, remembered for `remember_days` in `~/.local/state/wat2do/notification-forwarding/state.json`, and dispatches start at least `send_spacing_seconds` apart.
-A failed dispatch ends the pass: what waits stays there and is tried again, oldest first, after a pause that doubles from `retry_first_seconds` to `retry_longest_seconds`.
-GitHub answers HTTP 422 both to a payload it refuses and to a burst it takes for spam, so a notification is dropped, with an error in the log, only once refused on `refusals_before_drop` separate passes.
-A state file that cannot be saved (a full disk) is logged and kept in memory, and one that cannot be read is moved aside as `state.json.unreadable-<time>` so the forwarder starts afresh.
-The forwarder never taps the emulator and never holds its lock.
-When the worker restarts the emulator, the reader stops with it; the forwarder forwards what the reader printed last, waits for the boot and starts the reader again.
-Its log, `~/.local/state/wat2do/notification-forwarding/forwarder.log`, is rotated at `log_max_bytes`, keeping `log_backup_count` old files, and names push categories, recipients and counts, never a notification's text.
-Only one forwarder runs at a time.
-
-Install it, or update it after a change, from the runtime checkout:
-
-```sh
-cd backend
-.venv/bin/python jobs/forward_instagram_notifications.py install-schedule
-```
-
-`run --dry-run` only listens: it prints each notification it would send (push category, recipient and push ID), starts no user and sends nothing.
-Boot the LaunchAgent out first (`launchctl bootout gui/$(id -u)/io.wat2do.notification-forwarding`), since only one forwarder runs at a time, and bootstrap it again after.
 
 ## Shared Brave browser worker
 
@@ -368,10 +339,15 @@ An older direct-resolution workflow waiting on the lock does not participate in 
 
 The `process-notification` workflow submits a collapsed digest to the shared worker's queued resolver automatically.
 
-## Manual bell setup and runners
+## Android phone setup
 
-The emulator worker sets each account it follows to All notifications.
-To set every followed profile of an account to All by hand on another Android device, enable USB debugging, open the consolidated `All profiles you follow` screen on it, and run the existing bell configuration against the device's serial from `adb devices`:
+Install Instagram and Automate on the physical Android phone through Google Play.
+An authorized human must complete Instagram login, two-factor prompts, security challenges, and Automate flow import.
+Keep the phone to three accounts or fewer and do not add them to a shared Accounts Center.
+Import the established Automate notification listener flow and grant Automate notification access when Android asks.
+The flow dispatches each Instagram notification to the `process-notification` workflow.
+
+For each logged-in Instagram account, enable USB debugging, open the consolidated `All profiles you follow` screen on the phone, and run the existing bell configuration against the phone's serial from `adb devices`:
 
 ```sh
 cd backend
@@ -515,16 +491,16 @@ It reads once the screen has gone `screen_settle_milliseconds` without a change,
 Every tap, swipe and Back waits a random pause between `step_delay_min_seconds` and `step_delay_max_seconds`; a tap on a control that is yet to show takes its pause before the screen is read, so the screen settles during the pause and the control is tapped where it ended up.
 A wait for something to show (a post, search results, a confirmation) reads the screen every half second until it does, at most `screen_wait_seconds`, and answers any dialog covering the app on the way.
 A step that fails starts Instagram afresh on that Android user (`am force-stop`) before the next one: a sheet it left open, such as a profile's notification bell, covers every link opened after it, and the app reopens on the same account.
-`pm unstop` follows, since a force stop also leaves the app unable to receive pushes until it is opened again.
+`pm unstop` follows, since a force stop also leaves the app in Android's stopped state, getting nothing in the background (broadcasts, alarms, scheduled jobs, pushes) until it is opened again.
 After switching Android users, the worker waits until one of that user's own windows has the focus and can be read, at most `user_switch_wait_seconds`: for about a dozen seconds Android's switching screen and then a blank one hold the display, nothing can be read, and a link opened then lands late.
 `failures_before_rest` profiles failing in a row (`controlbox/instagram_follow.json`) end a visit's follows or a crawl slice, and that account's follows or crawl rest for `rest_seconds`; a school account follows at most `follows_per_account_per_day` accounts a day and `follows_per_account_per_hour` within any hour, and its follows are due again only once the hour has room for a whole visit (`follows_per_visit`), so the worker never switches accounts for a follow or two.
 A visit that fails outright, such as while the emulator restarts, is tried again after `idle_seconds`, and the worker keeps running.
-The worker copies the committed `screen-reader.jar` to the device when a reader starts; after changing the Java source, rebuild it with `python scripts/build_emulator_jars.py`, which rebuilds every device program whose jar lags its source, `notification-reader.jar` included (a JDK and the Android SDK's android-35 platform; the pinned d8 is downloaded and checked), and a test fails while a jar lags its source.
+The worker copies the committed `screen-reader.jar` to the device when a reader starts; after changing the Java source, rebuild it with `python scripts/build_screen_reader.py` (a JDK and the Android SDK's android-35 platform; the pinned d8 is downloaded and checked), and a test fails while the jar lags its source.
 The reader stops when the hold ends, so the accessibility service is connected only while a job drives the app.
 The virtual device runs the Google APIs system image, not the Play Store one, so adb can act as root; the Play Store and unused Google apps are disabled on every Android user so nothing updates or downloads in the background. Instagram needs Android's notification permission on every user (`adb shell pm grant --user <id> com.instagram.android android.permission.POST_NOTIFICATIONS`); without it, setting a profile's posts to All opens a "push notifications are off" dialog over the bell.
 Its data partition is 10 GB, and Instagram never trims its own image cache, camera effects or downloaded models.
 Once a day, on the emulator worker's first visit after `reclaim_hour` (8 a.m., before the morning's carousels publish), `reclaim_data()` stops Instagram on each Android user and deletes the folders in `instagram_cache_paths` as root; the controlbox refuses paths that hold its login, databases or settings, so no account is logged out.
-It then clears the stopped state the force stop leaves (`pm unstop`), so the users keep getting pushes, and it never clears Google Play services, which would drop their push registration.
+It then takes the app out of the stopped state the force stop leaves (`pm unstop`), and it never clears another app's data: clearing Google Play services on users 10-12 dropped their device and push registration.
 It then restarts the emulator, and long follow or crawl steps stop for it as they do for a song.
 A device moved to another system image keeps its data only if the emulator's rebuilt data files are replaced with the old ones before the second boot; do it on a copy (`cp -c` clones the AVD for free) and keep the original until every account is confirmed.
 
@@ -538,7 +514,7 @@ It then reads every account with a working token through the Graph API, using on
 Reach, views, saves and shares need the `instagram_business_manage_insights` permission, which the stored tokens were not granted.
 The admin's Social accounts page shows every account at once, with `stats_history_days` of follower history and the song the emulator added to each carousel wat2do published.
 It also flags each account whose school has received no Instagram notification for over 36 hours (`QUIET_NOTIFICATION_HOURS` in `frontend/src/features/admin/lib/socialAccounts.ts`), or never one, with a badge showing when the last one arrived, and counts them in the page header.
-Such an account's notifications have stopped reaching the emulator's forwarder (see Emulator notification forwarding), so nothing new is collected for that school until a person finds out why.
+Such an account's phone has stopped sending notifications, so nothing new is collected for that school until a person fixes the phone.
 One account's failure never stops the others, but it fails the run, which posts to Discord.
 
 ### Browser worker diagnostics
@@ -557,9 +533,9 @@ Existing local job history is not backfilled; lifecycle events begin when the up
 ## Direct messages
 
 Clubs sometimes DM a school account to ask Wat2Do to share their post.
-Their notifications (the `direct_v2_text`, `direct_v2_media_share` and `direct_v2_clips_share` push categories) never leave the emulator: the notification forwarder sends only posts and digests, so no message text reaches the public workflow.
-The workflow's `route` job would end any of them anyway, like every category but `post` and `subscription_daily_digest`, with a notice naming only the category.
-The emulator worker's inbox sweep reads each school's inbox at random times instead.
+The phone's Automate flow already forwards every Instagram notification, and DMs arrive as the `direct_v2_text`, `direct_v2_media_share` and `direct_v2_clips_share` push categories.
+Their `ig_action` is `direct_v2?id=<thread>&x=<message>`; a reel share also carries `clip_id`.
+The workflow's `route` job ends them, like every category but `post` and `subscription_daily_digest`, with a notice naming only the category, so no later step ever holds a message: the emulator worker's inbox sweep reads each school's inbox at random times instead.
 
 The worker answers as the school in the Instagram app on the Mac's Android emulator, never in Brave, holding the emulator's lock for the whole job:
 

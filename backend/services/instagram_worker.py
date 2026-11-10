@@ -297,7 +297,7 @@ def _step(name: str, action: Callable[[], object]) -> object:
 
 def _current_user(device: EmulatorDevice) -> int | None:
     try:
-        return device.current_user()
+        return int(device.adb("shell", "am", "get-current-user").strip())
     except Exception:
         return None
 
