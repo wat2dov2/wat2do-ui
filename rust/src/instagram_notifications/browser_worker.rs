@@ -422,13 +422,15 @@ impl Worker {
     }
 
     /// Log in an account missing from Brave, at most once a day per account and
-    /// `account_login_daily_limit` a day in all; the browser lock is held.
+    /// `account_login_daily_limit` a day in all; the browser lock is held. The pool
+    /// records each login just before its password goes out, so a failure before that
+    /// leaves the account to try again.
     pub fn attempt_account_login(
         &self,
         username: &str,
         now: &dyn Fn() -> f64,
     ) -> BrowserResult<bool> {
-        if !self.queue.reserve_account_login(username, now())? {
+        if !self.queue.account_login_allowed(username, now())? {
             return Ok(false);
         }
         match self.tab_pool().add_account(username) {

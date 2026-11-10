@@ -3838,13 +3838,19 @@ fn test_the_worker_resumes_by_itself_after_an_unconfirmed_cancellation() {
 fn test_a_missing_account_is_logged_in_once_a_day_and_capped() {
     let env = Env::new();
     let added = Arc::new(Mutex::new(Vec::new()));
-    let record = added.clone();
+    let now = Arc::new(Mutex::new(100_000.0));
+    let (record, queue, entered_at) = (added.clone(), env.queue.clone(), now.clone());
     let pool = env.pool().add_account(move |username| {
         record.lock().unwrap().push(username.to_owned());
+        // The pool records the login as its password goes out.
+        assert!(
+            queue
+                .reserve_account_login(username, *entered_at.lock().unwrap())
+                .unwrap()
+        );
         Ok(())
     });
     let worker = env.real_worker(pool);
-    let now = Mutex::new(100_000.0);
     let clock = || *now.lock().unwrap();
 
     assert!(
@@ -4082,11 +4088,16 @@ fn test_account_login_session_failure_before_a_password_does_not_pause() {
             .unwrap()
     );
     assert_eq!(setting(&env.queue, "paused"), None);
-    // The attempt is still spent: the account is not tried again the same day.
+    // No password went out, so nothing is spent: the next job tries the account again.
     assert!(
         !worker
             .attempt_account_login("wat2do.ucalgary", &|| 101_000.0)
             .unwrap()
+    );
+    assert_eq!(tried.load(Ordering::SeqCst), 2);
+    assert_eq!(
+        setting(&env.queue, "account_login_at:wat2do.ucalgary"),
+        None
     );
 }
 

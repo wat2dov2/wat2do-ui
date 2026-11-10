@@ -90,8 +90,11 @@ Exception: after Instagram logs Brave out, the worker may log back in by clickin
 saved wat2do profile on Instagram's own logged-out page and accepting "Save info",
 spaced and capped by controlbox.
 A school account missing from the switcher is logged in the way a person adds one: switch to the `login_from_school` account, then Switch accounts, "Log into an Existing Account".
+When Brave holds no other saved account, Switch accounts opens a bare login form instead of the chooser: a switch closes it and treats the account as missing, and adding an account logs in through that form directly.
+When the `login_from_school` account is missing too, it is logged back in first the same way, and counts toward the same limits.
+Switch accounts' dialog is always closed before the worker reads the active account or gives up, since a modal hides the page's navigation.
 A password prompt, there or after a logout, is answered with the account's password from the Mac's login Keychain (`login_keychain_service`), and an emailed security code is read from the Gmail inbox in `login_code_email` over IMAP.
-Each account's password is entered at most once a day and `account_login_daily_limit` a day in all, whether it is added or logged back in after a logout.
+Each account's password is entered at most once a day and `account_login_daily_limit` a day in all, whether it is added or logged back in after a logout; a login is recorded just before its password goes out, so a failure before that spends nothing.
 Once a password has been submitted, any failure (including a timeout) pauses browser work for a person and is never retried automatically.
 Passwords go to the page through osascript's stdin, never a command line, log or file.
 A refused password or any other challenge waits for a person.
