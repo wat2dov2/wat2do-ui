@@ -4349,7 +4349,7 @@ fn test_login_recovery_clicks_the_saved_profile_and_keeps_one_tap_login() {
         clicks[1..],
         [
             scripts::click_label("wat2do.ottawa"),
-            scripts::click_label("Save info"),
+            scripts::SAVE_LOGIN.to_owned(),
         ]
     );
     // Account identity is re-verified before the next job.
@@ -4676,7 +4676,11 @@ fn test_log_in_saves_the_login_info_and_ends_on_the_account() {
     session.log_in("wat2do.ucalgary", "s3cret").unwrap();
     let page = page.lock().unwrap();
     assert_eq!(page.submitted.len(), 1);
-    assert!(page.clicked.contains(&scripts::click_label("Save info")));
+    assert!(
+        page.clicked
+            .iter()
+            .any(|source| source == scripts::SAVE_LOGIN)
+    );
 }
 
 #[test]
@@ -4740,7 +4744,7 @@ fn test_log_in_clicks_save_info_once_while_the_page_stays_on_it() {
         Vec::new(),
     );
     session.log_in("wat2do.ucalgary", "s3cret").unwrap();
-    let save = scripts::click_label("Save info");
+    let save = scripts::SAVE_LOGIN.to_owned();
     assert_eq!(
         page.lock()
             .unwrap()
@@ -5167,4 +5171,29 @@ fn test_a_digest_for_a_dropped_account_logs_it_in_and_then_runs() {
         strings(&["wat2do.guelph", "wat2do.columbia"])
     );
     assert_eq!(pool.setting("paused"), Value::Null);
+}
+
+#[test]
+fn test_save_login_accepts_instagrams_save_button_under_either_label() {
+    setup();
+    // Since November 2026 the one-tap prompt reads "Save" / "Not now"; it used to read
+    // "Save info". Either is the one button the prompt offers to keep the login.
+    for label in ["Save", "Save info"] {
+        let html = format!(
+            "<main><div role='dialog'><h2>Save your login info?</h2>\
+             <button id='save'>{label}</button><button id='later'>Not now</button></div></main>"
+        );
+        let Some(result) = evaluate_on_page(&html, scripts::SAVE_LOGIN) else {
+            return;
+        };
+        assert_eq!(result["status"], json!("clicked"), "{label}");
+        assert_eq!(result["clicks"], json!(["save"]), "{label}");
+    }
+    let Some(result) = evaluate_on_page(
+        "<main><button id='later'>Not now</button></main>",
+        scripts::SAVE_LOGIN,
+    ) else {
+        return;
+    };
+    assert_eq!(result["status"], json!("missing"));
 }

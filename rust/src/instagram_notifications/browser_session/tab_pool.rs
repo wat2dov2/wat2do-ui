@@ -412,7 +412,7 @@ impl TabPool for BrowserTabPool {
                 Some("logged_in" | "password" | "challenge") => return Ok(true),
                 // Keeps one-tap login available; logged in either way.
                 Some("save_info") => {
-                    session.run(&scripts::click_label("Save info"))?;
+                    session.run(scripts::SAVE_LOGIN)?;
                     return Ok(true);
                 }
                 Some("profiles") if clicked.is_empty() => {}

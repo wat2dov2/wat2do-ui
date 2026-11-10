@@ -11,6 +11,8 @@ pub const VIEWPORT: &str = include_str!("scripts/viewport.js");
 pub const LOGGED_OUT: &str = include_str!("scripts/logged_out.js");
 pub const LOGIN_PAGE: &str = include_str!("scripts/login_page.js");
 pub const LOGIN_FORM_STATE: &str = include_str!("scripts/login_form_state.js");
+/// Accept Instagram's one-tap "Save" prompt after a login.
+pub const SAVE_LOGIN: &str = include_str!("scripts/save_login.js");
 pub const SERVER_LOGIN: &str = include_str!("scripts/server_login.js");
 pub const PAGE_RESPONSE: &str = include_str!("scripts/page_response.js");
 pub const EXECUTE_TAB: &str = include_str!("scripts/execute_tab.applescript");

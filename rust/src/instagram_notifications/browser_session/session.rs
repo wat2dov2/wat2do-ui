@@ -585,7 +585,7 @@ impl BrowserInstagramSession {
             if state == "save_info" {
                 // One click; the page then navigates away on its own.
                 if !save_clicked {
-                    session.run(&scripts::click_label("Save info"))?;
+                    session.run(scripts::SAVE_LOGIN)?;
                     save_clicked = true;
                 }
                 return Ok(false);
