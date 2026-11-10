@@ -919,8 +919,6 @@ class InstagramFollowControl(_ControlModel):
     profile_read_delay_min_seconds: float = Field(ge=0, le=60)
     profile_read_delay_max_seconds: float = Field(ge=0, le=120)
 
-    # Each school's crawl starts at most once per interval.
-    crawl_interval_days: int = Field(ge=1, le=60)
     # A follow that failed is tried again only after this long.
     follow_retry_hours: int = Field(ge=1, le=168)
     # A crawl stops after this many visited accounts in a row turn up nothing new; nothing

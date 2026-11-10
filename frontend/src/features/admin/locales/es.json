@@ -506,7 +506,7 @@
       },
       "submitFailed": "No se pudieron guardar las decisiones. Inténtalo de nuevo.",
       "emptyTitle": "Nada que revisar",
-      "emptyDescription": "Las cuentas aparecen aquí a medida que la búsqueda semanal las encuentra."
+      "emptyDescription": "Las cuentas aparecen aquí a medida que la búsqueda las encuentra."
     },
     "clubSubmissions": "Solicitudes de clubes",
     "noClubSubmissions": "No hay solicitudes de clubes",

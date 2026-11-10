@@ -506,7 +506,7 @@
       },
       "submitFailed": "Decisions could not be saved. Try again.",
       "emptyTitle": "Nothing to review",
-      "emptyDescription": "Accounts appear here as the weekly crawl finds them."
+      "emptyDescription": "Accounts appear here as the crawl finds them."
     },
     "clubSubmissions": "Club submissions",
     "noClubSubmissions": "No club submissions",

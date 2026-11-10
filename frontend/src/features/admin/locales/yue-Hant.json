@@ -506,7 +506,7 @@
       },
       "submitFailed": "儲存唔到決定，請再試。",
       "emptyTitle": "冇嘢要審核",
-      "emptyDescription": "每星期搜尋搵到帳號之後會喺度顯示。"
+      "emptyDescription": "搜尋搵到帳號之後會喺度顯示。"
     },
     "clubSubmissions": "社團提交",
     "noClubSubmissions": "暫無社團提交",

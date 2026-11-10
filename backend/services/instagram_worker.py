@@ -3,8 +3,10 @@
 Every emulator job is a step of a visit to one school account. The worker picks the
 account with the most urgent work, switches the app to it once, and does everything
 that account needs before moving on: the song, like and repost for its new carousels,
-its DMs, its unfollows and follows, and, when no other account is waiting, a slice of
-its crawl.
+its DMs, its unfollows and follows, and a slice of its crawl when the visit is the
+crawl's turn. Crawling gets every other visit, and every visit no other account needs,
+and never runs out: every school's crawl comes round again in turn, so the worker
+idles only while every account or its crawl rests.
 
 A new carousel gets its song as soon as possible, at any hour: while any account's
 carousel waits, visits do nothing but songs, and unfollows, follows and crawl slices
@@ -219,19 +221,16 @@ class _Interrupt:
 
 
 def _crawl_order(order: list[str], now: datetime) -> list[str]:
-    """Schools whose crawl is due, a crawl already under way first so one finishes
-    before the next starts; a crawl resting after failures waits its turn."""
-    due = [
-        school
-        for school in order
-        if _crawl_rested_until.get(school, now) <= now and crawl.crawl_due(school, now)
-    ]
-    running = [school for school in due if crawl.crawl_running(school)]
+    """Every school's crawl in turn: a crawl already under way first so one finishes
+    before the next starts, then schools never crawled, then the one whose last crawl
+    finished longest ago, so a school whose crawl just ended waits behind the others.
+    A crawl resting after failures waits its turn."""
+    ready = [school for school in order if _crawl_rested_until.get(school, now) <= now]
+    running = [school for school in ready if crawl.crawl_running(school)]
     if running:
         return running
-    # Never-crawled schools first, then the one crawled longest ago.
-    oldest = datetime.min.replace(tzinfo=timezone.utc)
-    return sorted(due, key=lambda school: crawl.last_crawl_started(school) or oldest)
+    never = datetime.min.replace(tzinfo=timezone.utc)
+    return sorted(ready, key=lambda school: crawl.last_crawl_finished(school) or never)
 
 
 def acting_hours(moment: datetime) -> bool:

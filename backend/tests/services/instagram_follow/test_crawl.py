@@ -1,4 +1,6 @@
-from datetime import datetime, timedelta, timezone
+import random
+from datetime import datetime, timezone
+from types import SimpleNamespace
 
 import pytest
 
@@ -36,6 +38,9 @@ def world(monkeypatch, tmp_path):
         lambda school_id, handle, **kwargs: added.append((handle, kwargs)),
     )
     monkeypatch.setattr(module, "_record_progress", lambda state, **extra: progress.append(extra))
+    # The school's matches keep the order Instagram lists them in, unless a test
+    # shuffles them with a seeded generator.
+    monkeypatch.setattr(module, "random", SimpleNamespace(shuffle=lambda matches: None))
 
     def load(school):
         path = module._state_path(school)
@@ -122,9 +127,11 @@ def test_the_deadline_keeps_the_crawls_place(world):
 
     assert module.crawl_slice(object(), "utm", deadline=0) == module.CRAWL_RUNNING
     assert module.json.loads(module._state_path("utm").read_text())["queue"] == ["utmmsa"]
+    assert module.crawl_running("utm")
 
     assert module.crawl_slice(object(), "utm", deadline=float("inf")) == module.CRAWL_FINISHED
     assert reader.visits == ["wat2do.utm", "utmmsa"]
+    assert not module.crawl_running("utm")
 
 
 def test_only_names_of_the_school_are_followed_further(world):
@@ -145,30 +152,72 @@ def test_uoft_campuses_search_each_others_names():
 
 
 @pytest.mark.parametrize(
-    ("latest", "due"),
+    ("latest", "finished"),
     [
-        ([], True),
-        ([{"started_at": "2026-10-20T00:00:00+00:00"}], True),
-        ([{"started_at": "2026-10-25T00:00:00+00:00"}], False),
+        ([], None),
+        (
+            [{"finished_at": "2026-10-25T06:30:00+00:00"}],
+            datetime(2026, 10, 25, 6, 30, tzinfo=timezone.utc),
+        ),
     ],
 )
-def test_a_school_is_due_a_week_after_its_last_crawl_started(
-    fake_sb, patch_sb, monkeypatch, tmp_path, latest, due
+def test_a_schools_last_crawl_finished_when_its_newest_finished_crawl_ended(
+    fake_sb, patch_sb, monkeypatch, latest, finished
 ):
     patch_sb("services.instagram_follow.crawl")
-    monkeypatch.setattr(module, "STATE_DIRECTORY", tmp_path)
     monkeypatch.setattr(module.school_service, "get_school_id", lambda school: 7)
     fake_sb.set_response(data=latest)
 
-    now = datetime(2026, 10, 28, tzinfo=timezone.utc)
-    assert module.crawl_due("utm", now) is due
+    assert module.last_crawl_finished("utm") == finished
+    # A crawl still under way has not finished, so it never counts.
+    fake_sb.eq.assert_any_call("school_id", 7)
+    fake_sb.eq.assert_any_call("status", "finished")
+    fake_sb.order.assert_called_once_with("finished_at", desc=True)
 
 
-def test_a_crawl_under_way_is_always_due(monkeypatch, tmp_path):
-    monkeypatch.setattr(module, "STATE_DIRECTORY", tmp_path)
-    (tmp_path / "utm.json").write_text("{}")
+def test_a_crawl_that_ended_starts_over_from_the_schools_own_following_list(world):
+    reader = _Reader(
+        {
+            "wat2do.utm": _rows(("utmmsa", "UTM MSA", True)),
+            "utmmsa": _rows(("utmchess", "UTM Chess", False)),
+        }
+    )
+    added, progress = world(reader)
+    assert module.crawl_slice(object(), "utm", deadline=float("inf")) == module.CRAWL_FINISHED
+    assert not module.crawl_running("utm")
 
-    assert module.crawl_due("utm", datetime.now(timezone.utc) + timedelta(days=1))
+    # Since then the school followed utmchess, which follows a club created after the crawl.
+    reader.lists = {
+        "wat2do.utm": _rows(("utmmsa", "UTM MSA", True), ("utmchess", "UTM Chess", True)),
+        "utmmsa": _rows(("utmchess", "UTM Chess", True)),
+        "utmchess": _rows(("utmboardgames", "UTM Board Games", False)),
+    }
+    reader.visits.clear()
+    assert module.crawl_slice(object(), "utm", deadline=float("inf")) == module.CRAWL_FINISHED
+
+    assert reader.visits == ["wat2do.utm", "utmmsa", "utmchess"]
+    assert [handle for handle, _ in added] == ["utmchess", "utmboardgames"]
+    assert [extra["status"] for extra in progress if extra] == ["finished", "finished"]
+
+
+def test_each_crawl_takes_the_schools_matches_in_a_new_order(world, monkeypatch):
+    clubs = [f"utm{number}" for number in range(6)]
+    world(_Reader({"wat2do.utm": _rows(*((club, club.upper(), True) for club in clubs))}))
+    monkeypatch.setattr(module, "random", random.Random(4))
+
+    def start() -> list[str]:
+        assert module.crawl_slice(object(), "utm", deadline=0) == module.CRAWL_RUNNING
+        path = module._state_path("utm")
+        queue = module.json.loads(path.read_text())["queue"]
+        # The crawl ends, so the next slice starts a new one.
+        path.unlink()
+        return queue
+
+    first, second = start(), start()
+    # Every match is still queued, but in a new order, so a crawl the miss streak ends
+    # early reaches clubs the last one never did.
+    assert sorted(first) == sorted(second) == clubs
+    assert first != second
 
 
 def test_a_crawl_slice_stops_for_a_waiting_song_and_keeps_its_place(world):

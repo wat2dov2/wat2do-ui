@@ -506,7 +506,7 @@
       },
       "submitFailed": "결정을 저장하지 못했습니다. 다시 시도하세요.",
       "emptyTitle": "검토할 항목 없음",
-      "emptyDescription": "매주 탐색이 계정을 찾으면 여기에 표시됩니다."
+      "emptyDescription": "탐색이 계정을 찾으면 여기에 표시됩니다."
     },
     "clubSubmissions": "동아리 제출",
     "noClubSubmissions": "동아리 제출 없음",

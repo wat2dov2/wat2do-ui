@@ -506,7 +506,7 @@
       },
       "submitFailed": "无法保存决定，请重试。",
       "emptyTitle": "没有需要审核的内容",
-      "emptyDescription": "每周搜索找到账号后会显示在这里。"
+      "emptyDescription": "搜索找到账号后会显示在这里。"
     },
     "clubSubmissions": "社团提交",
     "noClubSubmissions": "暂无社团提交",
