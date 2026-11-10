@@ -62,6 +62,37 @@ def test_invalid_notification_retry_schedule_hour_is_rejected(tmp_path) -> None:
         load_controlbox(directory)
 
 
+def test_notification_forwarding_sends_only_posts_and_digests_to_the_workflow() -> None:
+    control = controlbox.notification_forwarding
+    assert control.github_repo == "wat2dov2/wat2do-ui"
+    assert control.dispatch_event_type == "new_instagram_post"
+    assert set(control.push_categories) == {"post", "subscription_daily_digest"}
+    assert control.retry_first_seconds <= control.retry_longest_seconds
+    # A stopped user waits, so restarts never pile onto a busy emulator.
+    assert control.restart_after_stopped_minutes == 20
+    assert control.boot_settle_seconds == 300
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"retry_first_seconds": 600, "retry_longest_seconds": 60},
+        {"github_repo": "missing-slash"},
+        {"push_categories": []},
+        {"push_categories": ["direct v2"]},
+        {"max_load_average": 0},
+        {"refusals_before_drop": 0},
+        {"log_max_bytes": 1024},
+    ],
+)
+def test_unsafe_notification_forwarding_is_rejected(tmp_path, change) -> None:
+    directory = _write_control(
+        tmp_path, "notification_forwarding", lambda payload: payload.update(change)
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
 def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     directory = _write_control(
         tmp_path,

@@ -683,6 +683,55 @@ class NotificationWorkflowControl(_ControlModel):
     process_timeout_minutes: int = Field(ge=6, le=60)
 
 
+class NotificationForwardingControl(_ControlModel):
+    """Forwarding Instagram's notifications from the Mac's emulator to the workflow."""
+
+    # The repository (owner/name) whose process-notification workflow this repository
+    # dispatch type starts, as the phones' Automate flow sent it.
+    github_repo: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+    dispatch_event_type: str = Field(pattern=r"^[a-z_]{1,100}$")
+    # Only notifications in these push categories leave the emulator: the ones the
+    # workflow processes. Direct messages never do.
+    push_categories: tuple[Annotated[str, Field(pattern=r"^[a-z0-9_]{1,100}$")], ...] = Field(
+        min_length=1
+    )
+    # The reader and the Android users are checked this often.
+    check_seconds: int = Field(ge=1, le=600)
+    # A user switch stops a user, which then gets no pushes. One that has stayed stopped
+    # this long is started again, at most one per check, once the emulator has been up
+    # boot_settle_seconds, the foreground user has not changed for
+    # quiet_foreground_seconds, the one-minute load is at most max_load_average and at
+    # least min_available_megabytes of memory are free: starting users on a busy
+    # emulator froze Android.
+    boot_settle_seconds: int = Field(ge=0, le=3600)
+    restart_after_stopped_minutes: int = Field(ge=0, le=1440)
+    quiet_foreground_seconds: int = Field(ge=0, le=3600)
+    max_load_average: float = Field(gt=0, le=100, allow_inf_nan=False)
+    min_available_megabytes: int = Field(ge=0, le=16_384)
+    # Dispatches start at least this far apart. A failed one ends the pass, and sending
+    # waits a pause that doubles from the first to the longest while failures go on.
+    # GitHub answers 422 both to a payload it refuses and to a burst it takes for spam,
+    # so a notification is dropped only once refused on this many separate passes.
+    send_spacing_seconds: float = Field(ge=0, le=60, allow_inf_nan=False)
+    retry_first_seconds: int = Field(ge=1, le=3600)
+    retry_longest_seconds: int = Field(ge=1, le=86_400)
+    refusals_before_drop: int = Field(ge=1, le=20)
+    dispatch_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # A forwarded notification is remembered this long, so one still showing when the
+    # reader starts again is not sent twice.
+    remember_days: int = Field(ge=1, le=60)
+    # forwarder.log is rotated at this size, keeping this many old files.
+    log_max_bytes: int = Field(ge=65536, le=67108864)
+    log_backup_count: int = Field(ge=1, le=10)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def validate_retries(self) -> "NotificationForwardingControl":
+        if self.retry_first_seconds > self.retry_longest_seconds:
+            raise ValueError("retry_first_seconds cannot exceed retry_longest_seconds")
+        return self
+
+
 class RunnerSetupControl(_ControlModel):
     runner_count: int = Field(ge=1, le=10)
     runner_version: str = Field(pattern=r"^[0-9]+\.[0-9]+\.[0-9]+$")
@@ -1016,13 +1065,10 @@ class InstagramEmulatorControl(_ControlModel):
     min_free_data_megabytes: int = Field(ge=0, le=10_000)
     # Once a day, from reclaim_hour (local time, before the morning's carousels
     # publish), Instagram is stopped on every Android user and these folders inside its
-    # data are deleted as root (the emulator runs a rooted Google APIs image), and these
-    # apps' data is cleared on these Android users.
+    # data are deleted as root (the emulator runs a rooted Google APIs image).
     instagram_cache_paths: tuple[
         Annotated[str, Field(pattern=r"^[a-z_]+(?:/[a-z_]+)*(?:/\*)?$")], ...
     ] = Field(min_length=1)
-    reclaim_android_users: tuple[Annotated[int, Field(ge=1)], ...]
-    reclaim_packages: tuple[Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.]+$")], ...]
     reclaim_hour: int = Field(ge=0, le=23)
     # The daily reclaim restarts the emulator and waits this long for it to boot again.
     restart_timeout_seconds: int = Field(ge=60, le=3600)
@@ -1057,8 +1103,6 @@ class InstagramEmulatorControl(_ControlModel):
             raise ValueError(
                 "keystroke_delay_min_seconds cannot exceed keystroke_delay_max_seconds"
             )
-        if self.instagram_package in self.reclaim_packages:
-            raise ValueError("Clearing Instagram's data would log its accounts out")
         if {path.split("/")[0] for path in self.instagram_cache_paths} & _INSTAGRAM_LOGIN_FOLDERS:
             raise ValueError("Deleting Instagram's settings or databases would log it out")
         if (
@@ -1309,6 +1353,7 @@ class ControlBox(_ControlModel):
     instagram_browser: InstagramBrowserControl
     notification_workflow: NotificationWorkflowControl
     notification_retry: NotificationRetryControl
+    notification_forwarding: NotificationForwardingControl
     runner_setup: RunnerSetupControl
     instagram_bell_setup: InstagramBellSetupControl
     instagram_digest: InstagramDigestControl
