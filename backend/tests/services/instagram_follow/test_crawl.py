@@ -1,4 +1,6 @@
+import random
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 import pytest
 
@@ -36,6 +38,9 @@ def world(monkeypatch, tmp_path):
         lambda school_id, handle, **kwargs: added.append((handle, kwargs)),
     )
     monkeypatch.setattr(module, "_record_progress", lambda state, **extra: progress.append(extra))
+    # The school's matches keep the order Instagram lists them in, unless a test
+    # shuffles them with a seeded generator.
+    monkeypatch.setattr(module, "random", SimpleNamespace(shuffle=lambda matches: None))
 
     def load(school):
         path = module._state_path(school)
@@ -193,6 +198,26 @@ def test_a_crawl_that_ended_starts_over_from_the_schools_own_following_list(worl
     assert reader.visits == ["wat2do.utm", "utmmsa", "utmchess"]
     assert [handle for handle, _ in added] == ["utmchess", "utmboardgames"]
     assert [extra["status"] for extra in progress if extra] == ["finished", "finished"]
+
+
+def test_each_crawl_takes_the_schools_matches_in_a_new_order(world, monkeypatch):
+    clubs = [f"utm{number}" for number in range(6)]
+    world(_Reader({"wat2do.utm": _rows(*((club, club.upper(), True) for club in clubs))}))
+    monkeypatch.setattr(module, "random", random.Random(4))
+
+    def start() -> list[str]:
+        assert module.crawl_slice(object(), "utm", deadline=0) == module.CRAWL_RUNNING
+        path = module._state_path("utm")
+        queue = module.json.loads(path.read_text())["queue"]
+        # The crawl ends, so the next slice starts a new one.
+        path.unlink()
+        return queue
+
+    first, second = start(), start()
+    # Every match is still queued, but in a new order, so a crawl the miss streak ends
+    # early reaches clubs the last one never did.
+    assert sorted(first) == sorted(second) == clubs
+    assert first != second
 
 
 def test_a_crawl_slice_stops_for_a_waiting_song_and_keeps_its_place(world):

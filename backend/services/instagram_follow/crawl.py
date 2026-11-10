@@ -13,7 +13,9 @@ new, or when no seed is left.
 Crawling never stops. Once a school's crawl ends, the emulator worker crawls the school
 again in turn, behind the schools whose crawls ended before it (``last_crawl_finished``).
 The new crawl starts over from the school's own Following list, so it also searches the
-clubs the school followed since and finds accounts created since.
+clubs the school followed since and finds accounts created since. It takes the school's
+matches in a new random order, so a crawl the miss streak ends early still reaches clubs
+the last one never did, and crawl after crawl covers them all.
 
 Crawls take hours, so the emulator worker advances them in slices between its other
 jobs: ``crawl_slice`` works until a deadline and keeps its place in local state.
@@ -25,6 +27,7 @@ from __future__ import annotations
 
 import json
 import logging
+import random
 import time
 from collections.abc import Callable
 from datetime import datetime, timezone
@@ -97,6 +100,8 @@ def crawl_slice(
     crawler = _Crawler(school, state, reader)
     if not state["seeded"]:
         crawler.visit(f"wat2do.{school}")
+        # A new order each crawl, so the miss streak never ends every crawl at the same clubs.
+        random.shuffle(state["queue"])
         state["seeded"] = True
         _save(school, state)
     failed_in_a_row = 0

@@ -157,6 +157,7 @@ Crawling (`backend/services/instagram_follow/crawl.py`) never stops: a crawl und
 Every crawl starts over from the school account's own Following list, searching it for the school's names in `controlbox/instagram_follow.json` `school_names` (UofT's campuses list each other), then each match's Following list in turn, reading from each row's button whether we already follow that account.
 Every match the school follows is searched in turn, and an unfollowed account with no row yet becomes a pending candidate, searched by a later crawl once the school follows it.
 The crawl stops only once `crawl_miss_streak` profiles in a row find nothing new, or no match is left to search; a profile that fails to load is retried later and never counts as a miss.
+Each crawl takes the school's own matches in a new random order, so a crawl the miss streak ends early still reaches clubs the last one never did, and crawl after crawl covers them all.
 It runs in slices (`crawl_slice`) with its place kept in local state, so it never holds the emulator for hours.
 New candidates are read logged out from their profile embed (`fetch_profile`) and scored by Claude (`backend/services/instagram_follow/prompt.md`) from their newest posts.
 Admins review them on the admin Social page's Follow candidates tab; approvals and rejections are staged in the page and submitted together.
