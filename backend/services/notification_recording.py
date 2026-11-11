@@ -1,20 +1,23 @@
-"""Record the Instagram notifications the Mac's emulator gets in a local file.
+"""Record the Instagram notifications the Mac's emulator gets, and start the notification
+workflow for its posts.
 
 The school accounts are active in the Instagram app on the Mac's Android emulator, so
-Instagram pushes many of their notifications there. The recorder only listens: through
-``NotificationReader`` it appends one JSON line per notification to
-``~/.local/state/wat2do/notification-log/notifications.jsonl`` for a person to inspect.
-It triggers nothing: no workflow, no ingestion, no Android user started or stopped, no
-tap on the emulator, and it never holds the emulator's lock. The physical phones remain
-the only source the notification workflow processes.
+Instagram pushes many of their notifications there. Through ``NotificationReader`` the
+recorder appends one JSON line per notification to
+``~/.local/state/wat2do/notification-log/notifications.jsonl``, and hands each new post or
+daily digest to ``services/notification_dispatch.py``, which starts the
+``process-notification`` workflow for it just as the physical phones do. Nothing checks
+whether a phone sent the same notification: the workflow records each recipient and push
+ID once. Beyond that the recorder only listens: no Android user started or stopped, no
+tap on the emulator, and it never holds the emulator's lock.
 
 A line holds when the notification was posted and recorded, its Android user, the
 school account it was meant for (its Instagram ID, and its username once a notification
 has named it), Instagram's push category, the channel and every extra the reader
 carries. A direct message keeps only its push category, Android user, recipient and
 times, never its sender, title or text: this repository is public, and DM text is never
-logged anywhere. Group summaries only repeat the notifications under them and are
-skipped.
+logged anywhere, nor ever dispatched. Group summaries only repeat the notifications under
+them and are skipped.
 
 A notification is written once: by its recipient and Instagram's push ID, or by Android's
 key and post time when no push started it, remembered for ``remember_days``, so what a
@@ -48,6 +51,7 @@ from services.instagram_emulator.notification_reader import (
     NotificationReader,
     NotificationReaderError,
 )
+from services.notification_dispatch import Dispatcher
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.notification_recording
@@ -55,6 +59,7 @@ DIRECTORY = Path.home() / ".local/state/wat2do/notification-log"
 LOG_PATH = DIRECTORY / "recorder.log"
 FILE_NAME = "notifications.jsonl"
 _STATE_NAME = "state.json"
+_DISPATCH_NAME = "dispatch.json"
 _LOCK_NAME = "recorder.lock"
 # Instagram names the account a notification is for in its subText, as on the phones.
 _SUBTEXT = "android.subText"
@@ -233,13 +238,15 @@ def _readable(state: Any) -> bool:
 
 
 class Recorder:
-    """Keeps a reader listening on the emulator and writes what it hears."""
+    """Keeps a reader listening on the emulator, writes what it hears and starts the
+    workflow for its posts."""
 
     def __init__(
         self,
         device: EmulatorDevice,
         reader: NotificationReader,
         notifications: NotificationLog,
+        dispatcher: Dispatcher,
         *,
         sleep: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
@@ -247,6 +254,7 @@ class Recorder:
         self._device = device
         self._reader = reader
         self._notifications = notifications
+        self._dispatcher = dispatcher
         self._sleep = sleep
         self._monotonic = monotonic
         self._up: bool | None = None
@@ -264,7 +272,9 @@ class Recorder:
                 self._back_off()
 
     def step(self) -> None:
-        """Listen for ``listen_seconds``, or wait for the emulator and start listening."""
+        """Send the posts due to the workflow, then listen for ``listen_seconds``, or wait
+        for the emulator and start listening."""
+        self._dispatcher.send_due()
         if not self._reader.running:
             self._connect()
             return
@@ -273,6 +283,8 @@ class Recorder:
                 self._heard_at = self._monotonic()
                 if self._notifications.record(notification):
                     self._recorded += 1
+                    if not is_direct_message(notification):
+                        self._dispatcher.offer(notification)
         except NotificationReaderError as exc:
             # Usually the emulator restarting; the next step waits for it.
             log.info("%s after recording %d notifications", exc, self._recorded)
@@ -323,7 +335,9 @@ def run_forever() -> None:
             timeout_seconds=EMULATOR.adb_timeout_seconds,
         )
         try:
-            Recorder(device, reader, NotificationLog(DIRECTORY)).run_forever()
+            Recorder(
+                device, reader, NotificationLog(DIRECTORY), Dispatcher(DIRECTORY / _DISPATCH_NAME)
+            ).run_forever()
         finally:
             reader.stop()
 

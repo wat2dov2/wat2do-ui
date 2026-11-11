@@ -47,7 +47,7 @@ Existing assets remain available to other references and cached pages.
 
 ## Android notification phone
 
-Notifications come from one physical Android phone, not an emulator.
+Notifications come from a physical Android phone and from the Mac's Android emulator (below).
 Log the phone's Instagram app into the school accounts being collected, keeping each device to three accounts or fewer and adding devices for more capacity.
 Automate's Android `NotificationListenerService` flow observes each Instagram notification and sends a `new_instagram_post` repository dispatch to GitHub.
 The dispatch carries the notification's recipient ID, push ID, push category, and Instagram action.
@@ -55,14 +55,19 @@ A collapsed `subscription_daily_digest` notification is forwarded unchanged so t
 The repository and its Actions logs are public, and GitHub prints every `env:` value in each step's log.
 So the workflow processes only `post` and `subscription_daily_digest` notifications, names any other run by its push category alone (a direct message's title is its sender), and never puts a payload in an `env:` block, a log line or an artifact: the processing step reads it from the event file (`$GITHUB_EVENT_PATH`) and hands it to the binary as `NOTIFICATION_JSON`.
 
-### Emulator notification log
+### Emulator notifications
 
 Instagram also pushes many of the school accounts' notifications to the Mac's Android emulator, where the worker keeps the accounts active.
-The emulator only records them in a local file for inspection and triggers nothing: the phones stay the only source the workflow processes.
+The emulator records them in a local file and starts the workflow for each new post and daily digest, alongside the phones.
 `jobs/record_instagram_notifications.py run` (LaunchAgent `io.wat2do.notification-recorder`, installed with `install-schedule` from the runtime checkout) appends one JSON line per notification to `~/.local/state/wat2do/notification-log/notifications.jsonl`, rotated at `file_max_bytes` with `file_backup_count` old files kept (`controlbox/notification_recording.json`).
 A line holds `recorded_at`, `posted_at`, `android_user`, `recipient_id`, `account` (the school's username once a notification has named it), Instagram's push `category`, the Android `channel` and every `extras` value that JSON can carry.
 A direct message, recognized by its push category or channel (`direct_message_markers`), Android's message category or a conversation's style, keeps only its category, Android user, recipient and times, with `direct_message: true`; its sender, title and text never reach the file.
 Group summaries only repeat the notifications under them and are skipped.
+
+Each new notification whose push category is in `dispatch_push_categories` (`post`, `subscription_daily_digest`), and that carries a recipient and push ID, is sent through `gh api` as the phones' `new_instagram_post` repository dispatch to `github_repo` (`services/notification_dispatch.py`).
+No check is made against the phones: the workflow records each recipient and push ID once, so a notification both devices send is processed once.
+Each is sent once per recipient and push ID; one that cannot be sent waits in `dispatch.json` beside the log and is tried again, oldest first, `send_spacing_seconds` apart, after a pause that doubles from `retry_first_seconds` to `retry_longest_seconds`, and one GitHub refuses `refusals_before_drop` times is dropped.
+A direct message is never dispatched.
 
 The listener is `NotificationReader.java` (`services/instagram_emulator`), a root `app_process` program that registers with Android's notification service as a system listener for every Android user at once; it never dismisses or opens a notification, never taps the emulator and never holds the emulator's lock.
 Only running Android users get notifications, and the recorder never starts or stops one.

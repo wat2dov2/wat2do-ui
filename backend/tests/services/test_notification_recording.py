@@ -243,24 +243,41 @@ class _Reader:
 
 
 class _Log:
-    def __init__(self):
+    def __init__(self, written=True):
         self.recorded = []
+        self.written = written
 
     def record(self, notification):
         self.recorded.append(notification)
+        return self.written
+
+
+class _Dispatcher:
+    def __init__(self):
+        self.offered = []
+        self.sends = 0
+
+    def offer(self, notification):
+        self.offered.append(notification)
         return True
 
+    def send_due(self):
+        self.sends += 1
 
-def _recorder(device, reader, *, clock=None):
+
+def _recorder(device, reader, *, clock=None, notifications=None):
     sleeps = []
-    notifications = _Log()
+    notifications = notifications or _Log()
+    dispatcher = _Dispatcher()
     recorder = module.Recorder(
         device,
         reader,
         notifications,
+        dispatcher,
         sleep=sleeps.append,
         monotonic=clock or (lambda: 0.0),
     )
+    recorder.dispatcher = dispatcher
     return recorder, notifications, sleeps
 
 
@@ -339,7 +356,7 @@ def test_a_failed_step_stops_the_reader_and_the_recorder_goes_on(caplog):
 
     reader = _Reader([[_notification()]])
     recorder = module.Recorder(
-        _Device([True]), reader, _Broken(), sleep=sleep, monotonic=lambda: 0.0
+        _Device([True]), reader, _Broken(), _Dispatcher(), sleep=sleep, monotonic=lambda: 0.0
     )
     recorder.step()
     with pytest.raises(_Stop):
@@ -347,3 +364,23 @@ def test_a_failed_step_stops_the_reader_and_the_recorder_goes_on(caplog):
     assert reader.stops == 1
     assert sleeps == [module.CONTROL.reconnect_first_seconds]
     assert "failed a step" in caplog.text
+
+
+def test_each_new_notification_but_a_direct_message_is_offered_for_dispatch():
+    post = _notification()
+    message = _direct_message(push_id="push-2")
+    reader = _Reader([[post, message]])
+    recorder, _, _ = _recorder(_Device([True]), reader)
+    recorder.step()
+    recorder.step()
+    assert recorder.dispatcher.offered == [post]
+    # Every step first sends what is due, listening or not.
+    assert recorder.dispatcher.sends == 2
+
+
+def test_a_notification_written_before_is_not_offered_again():
+    reader = _Reader([[_notification()]])
+    recorder, _, _ = _recorder(_Device([True]), reader, notifications=_Log(written=False))
+    recorder.step()
+    recorder.step()
+    assert recorder.dispatcher.offered == []

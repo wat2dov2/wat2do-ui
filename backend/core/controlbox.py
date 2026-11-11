@@ -1224,9 +1224,8 @@ class NotificationRetryControl(_ControlModel):
 
 
 class NotificationRecordingControl(_ControlModel):
-    """Recording the Instagram notifications the Mac's emulator gets in a local file.
-
-    The recorder only listens and writes the file; it triggers nothing.
+    """Recording the Instagram notifications the Mac's emulator gets in a local file, and
+    starting the notification workflow for its posts.
     """
 
     # A notification whose push category or channel contains one of these, or that Android
@@ -1254,6 +1253,21 @@ class NotificationRecordingControl(_ControlModel):
     log_max_bytes: int = Field(ge=65536, le=67_108_864)
     log_backup_count: int = Field(ge=1, le=10)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # Each new notification in these Instagram push categories starts the workflow through
+    # this repository dispatch, as the phones' Automate flow does.
+    dispatch_push_categories: tuple[Annotated[str, Field(pattern=r"^[a-z_]{2,60}$")], ...] = Field(
+        min_length=1
+    )
+    github_repo: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+    dispatch_event_type: str = Field(pattern=r"^[a-z_]{2,60}$")
+    dispatch_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # Dispatches go out at least this far apart, so a burst is not taken for spam.
+    send_spacing_seconds: float = Field(ge=0, le=60, allow_inf_nan=False)
+    # A failed dispatch is tried again after a pause that doubles from the first to the
+    # longest; one GitHub refuses (422) this many times is dropped.
+    retry_first_seconds: float = Field(gt=0, le=3600, allow_inf_nan=False)
+    retry_longest_seconds: float = Field(gt=0, le=86_400, allow_inf_nan=False)
+    refusals_before_drop: int = Field(ge=1, le=20)
 
     @model_validator(mode="after")
     def validate_recording(self) -> "NotificationRecordingControl":
@@ -1261,6 +1275,14 @@ class NotificationRecordingControl(_ControlModel):
             raise ValueError("Instagram's direct message categories must stay redacted")
         if self.reconnect_first_seconds > self.reconnect_longest_seconds:
             raise ValueError("reconnect_first_seconds cannot exceed reconnect_longest_seconds")
+        if self.retry_first_seconds > self.retry_longest_seconds:
+            raise ValueError("retry_first_seconds cannot exceed retry_longest_seconds")
+        if any(
+            marker in category
+            for category in self.dispatch_push_categories
+            for marker in self.direct_message_markers
+        ):
+            raise ValueError("a direct message category must never be dispatched")
         return self
 
 
