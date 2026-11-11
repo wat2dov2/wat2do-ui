@@ -94,8 +94,13 @@ function apiPath(url: URL): string | null {
 
 function startTime(index: number) {
   // Every early event shares one date section, so the first screen is one section like the loading grid.
-  const base = Date.now() + 2 * 60 * 60 * 1000;
-  return new Date(base + index * 60_000).toISOString();
+  // They start at 17:00 UTC (noon or 1 PM in Toronto) on the next UTC day: starting a fixed time from
+  // now made runs between 8 and 10 PM Toronto cross midnight, which split the section and wrapped
+  // the event page's date onto a second line on phones.
+  const base = new Date();
+  base.setUTCDate(base.getUTCDate() + 1);
+  base.setUTCHours(17, 0, 0, 0);
+  return new Date(base.getTime() + index * 60_000).toISOString();
 }
 
 function makeEvent(index: number) {

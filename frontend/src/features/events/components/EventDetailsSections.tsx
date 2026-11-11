@@ -541,7 +541,7 @@ function EventAttendeesSection({ eventId }: { eventId: number }) {
 export function EventActionsPlaceholder({ clubId }: {
   /**
    * The event's club when it is already known (opened from a list), so its team's
-   * controls hold their places too; admins' always do.
+   * controls hold their places too; admins' edit and delete always do.
    */
   clubId?: number | null;
 }) {
@@ -552,11 +552,13 @@ export function EventActionsPlaceholder({ clubId }: {
         <Calendar className="size-4" />
         {t("common.addToCalendar")}
       </Button>
-      <ClubManagerView clubId={clubId}>
+      <ClubManagerView clubId={clubId} admins={false}>
         <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
           <Ticket className="size-4" />
           {t("tickets.manage")}
         </Button>
+      </ClubManagerView>
+      <ClubManagerView clubId={clubId}>
         <Button type="button" variant="outline" size="sm" disabled tabIndex={-1}>
           <Edit className="size-4" />
           {t("common.edit")}
@@ -636,16 +638,19 @@ export function EventActions({
           {t("common.addToCalendar")}
         </Button>
       </EventCalendarDownloadMenu>
-      {/* Admins and the hosting club's own members can edit and delete it; the server checks the same. */}
-      <ClubManagerView clubId={event.club_id}>
-        {event.club_id != null ? (
+      {/* Tickets are run from the hosting club's own panel, so only its members see them, admins included. */}
+      {event.club_id != null ? (
+        <ClubManagerView clubId={event.club_id} admins={false}>
           <Button type="button" variant="outline" size="sm" asChild>
             <NextLink href={clubPanelEventTicketsPath(event.id)}>
               <Ticket className="size-4" />
               {t("tickets.manage")}
             </NextLink>
           </Button>
-        ) : null}
+        </ClubManagerView>
+      ) : null}
+      {/* Admins and the hosting club's own members can edit and delete it; the server checks the same. */}
+      <ClubManagerView clubId={event.club_id}>
         <Button type="button" variant="outline" size="sm" onClick={handleEdit}>
           <Edit className="size-4" />
           {t("common.edit")}
