@@ -790,10 +790,18 @@ class InstagramLightpandaControl(_ControlModel):
     # Brave stops leaving an account's digests and the Following reads to Lightpanda when
     # the worker's Lightpanda lane has not said it is running for this long.
     lane_stale_seconds: float = Field(ge=5, le=600)
+    # A lane digest gets this long in all, opening its session included, and Brave takes
+    # one the lane has left waiting this long, so a digest always meets the workflow's
+    # deadline. A lane Following read (about a second) gets the third.
+    lane_digest_timeout_seconds: float = Field(gt=0, le=150)
+    lane_digest_wait_seconds: float = Field(gt=0, le=120)
+    lane_following_timeout_seconds: float = Field(gt=0, le=120)
     # The worker logs one more account in to Lightpanda at most this often, the accounts
     # with the most digests in the last ramp_lookback_days first, ramp_last_accounts last.
     ramp_interval_minutes: float = Field(ge=10, le=1440)
     ramp_lookback_days: int = Field(ge=1, le=60)
+    # The ramp never spends the day's last ramp_reserved_logins logins, which Brave needs.
+    ramp_reserved_logins: int = Field(ge=0, le=50)
     ramp_last_accounts: tuple[str, ...]
     # Shadow mode replays Brave's recent digests in Lightpanda and compares the media IDs.
     shadow_lookback_hours: float = Field(gt=0, le=168)
@@ -803,6 +811,10 @@ class InstagramLightpandaControl(_ControlModel):
 
     @model_validator(mode="after")
     def validate_download(self) -> "InstagramLightpandaControl":
+        if self.lane_digest_wait_seconds + self.lane_digest_timeout_seconds > 180:
+            # Brave still needs time for a digest the lane hands back within the
+            # workflow's 300 s wait.
+            raise ValueError("lane digest wait and timeout cannot exceed 180 seconds together")
         if self.session_idle_seconds > self.session_max_seconds:
             raise ValueError("session_idle_seconds cannot exceed session_max_seconds")
         if any(not re.fullmatch(r"wat2do[.][a-z0-9_]+", name) for name in self.ramp_last_accounts):

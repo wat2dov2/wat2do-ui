@@ -625,10 +625,13 @@ At most `max_sessions` (`controlbox/instagram_lightpanda.json`) of these process
 The `wat2do-browser` worker runs a Lightpanda lane in its own thread (`rust/src/lightpanda/lane.rs`), beside Brave and untouched by Brave's pauses and holds.
 It serves every account whose jar holds a login, unless that account is paused for a person (`lightpanda_paused:<account>`), in `excluded_accounts`, or held:
 
-- With `controlbox/instagram_digest.json` `digest_engine` `"lightpanda"`, a digest for a served account is read in that account's own session, with the same query, paging, checks and `maximum_pages` as Brave. Every other digest (an account not logged in to Lightpanda, or not served right now) is read in Brave as before, switching accounts as usual. With `"brave"`, Brave reads every digest.
+- With `controlbox/instagram_digest.json` `digest_engine` `"lightpanda"`, a digest for a served account is read in that account's own session, with the same query, paging, checks and `maximum_pages` as Brave. Every other digest (an account not logged in to Lightpanda, or not served right now) is read in Brave as before, switching accounts as usual. With `"brave"` (the setting today, while the lane serves the follow crawl first), Brave reads every digest; switching is a one-value change.
+- A lane digest gets `lane_digest_timeout_seconds` in all, opening its session included, and Brave takes any lane digest left waiting `lane_digest_wait_seconds`, so a digest always leaves Brave time within the workflow's 300 s wait. A Following read gets `lane_following_timeout_seconds`, so a stuck one never holds its account's digests for long.
 - Following reads with a known list owner ID go to whichever served account is free, each account at its own pace: at most `following_requests_per_hour` reads an hour and the same page and list pauses as Brave (`controlbox/instagram_browser.json`). Brave reads Following lists only while the lane serves no account, and the few reads whose owner must first be looked up by name, which Instagram answers only to a full browser.
 
 The lane says what it serves in the worker's `lightpanda_lane` setting with a heartbeat; once that heartbeat is `lane_stale_seconds` old (the worker stopped, or the lane failed), Brave takes everything back.
+The jobs it is running are listed in `lightpanda_jobs`: Brave's queue recovery (after a storage hiccup) leaves them to the lane while its heartbeat is fresh, and the worker forgets an earlier lane at start, so its reads are recovered then.
+The lane's reads pace and hold only their own accounts (`lightpanda_account:<account>`), never Brave's Following pauses or backoff.
 A session stays open while its account has work and closes after `session_idle_seconds` without a job or once `session_max_seconds` old; a waiting digest closes the longest-idle session to make room.
 A 429, a login wall or any other refusal on an account's read holds that account alone, starting at `rate_limit_backoff_seconds` and doubling while it repeats, up to `rate_limit_max_backoff_seconds`.
 A digest the lane cannot read holds its account the same way and goes back to Brave without spending an attempt.
@@ -639,8 +642,9 @@ When Instagram ends a session's login (its `sessionid` cookie is gone), the jar 
 
 A login types the account's Keychain password (`instagram_browser.json` `login_keychain_service`) and, when Instagram asks, the code it emailed to `login_code_email`.
 It spends the account's login for the day from the budget Brave uses (`account_login_daily_limit`, one per account a day, kept in the worker's `jobs.sqlite3`), and a first login, a new device to Instagram, also spends one of `new_login_daily_limit` places a day.
-A wrong password, a security check or a page the login does not recognise pauses the account (`lightpanda_paused:<account>`) until a person runs `resume`; nothing is retried blindly.
-The lane logs one more account in at most every `ramp_interval_minutes` (the first five minutes after the worker starts): accounts whose Lightpanda login Instagram ended first, then the accounts with the most digests in the last `ramp_lookback_days`, then `ramp_last_accounts` in their listed order.
+Each login's budget check and its record happen in one queue transaction, since the worker's Brave, its lane and `wat2do-lightpanda` all reserve from the same budget.
+From the first keystroke of the password on, the login counts as sent: any failure, a wrong password, a security check or a page the login does not recognise pauses the account (`lightpanda_paused:<account>`) until a person runs `resume`; nothing is retried blindly.
+The lane logs one more account in at most every `ramp_interval_minutes` (its next turn is kept in `lightpanda_ramp_at`, so a restart never brings it forward), and only while more than `ramp_reserved_logins` of the day's logins are left, so Brave's own relogins always have some: accounts whose Lightpanda login Instagram ended first, then the accounts with the most digests in the last `ramp_lookback_days`, then `ramp_last_accounts` in their listed order.
 An account whose login could not even be tried (no Keychain password, no login form) is skipped for a day.
 
 ### Commands

@@ -21,7 +21,9 @@ use super::browser::{Browser, Page};
 use super::scripts;
 use crate::controlbox::{INSTAGRAM_LIGHTPANDA as CONTROL, instagram_browser};
 use crate::instagram_notifications::account_login;
-use crate::instagram_notifications::browser_queue::{BrowserJobQueue, recent_timestamps};
+use crate::instagram_notifications::browser_queue::{
+    BrowserJobQueue, LoginReservation, recent_timestamps,
+};
 use crate::instagram_notifications::browser_session::Bridge;
 
 pub const LOGIN_URL: &str = "https://www.instagram.com/accounts/login/";
@@ -152,25 +154,20 @@ pub fn ramp_full(queue: &BrowserJobQueue, now: f64) -> anyhow::Result<bool> {
 }
 
 /// Spend the account's login for the day and, for a new device, one first-login
-/// place. False, spending nothing new, when either is gone.
+/// place, leaving `keep` of the day's logins unspent, all in one queue transaction.
+/// False, spending nothing, when any is gone.
 pub fn reserve(
     queue: &BrowserJobQueue,
     account: &str,
     new_device: bool,
+    keep: usize,
     now: f64,
 ) -> anyhow::Result<bool> {
-    if new_device && ramp_full(queue, now)? {
-        return Ok(false);
-    }
-    if !queue.reserve_account_login(account, now)? {
-        return Ok(false);
-    }
-    if new_device {
-        let mut recent = recent_timestamps(&queue.setting_or(NEW_LOGINS, json!([]))?, now);
-        recent.push(json!(now));
-        queue.set_setting(NEW_LOGINS, Value::from(recent))?;
-    }
-    Ok(true)
+    let reservation = LoginReservation {
+        keep,
+        first_login: new_device.then_some((NEW_LOGINS, CONTROL.new_login_daily_limit)),
+    };
+    Ok(queue.reserve_login(account, now, &reservation)?)
 }
 
 /// Log `account` in to its Lightpanda jar unless it already holds a login. The
@@ -181,6 +178,7 @@ pub async fn log_in(
     queue: &BrowserJobQueue,
     bridge: Arc<Bridge>,
     account: &str,
+    keep: usize,
 ) -> anyhow::Result<LoginResult> {
     if let Some(reason) = paused(queue, account)? {
         return Ok(LoginResult::Skipped(format!(
@@ -195,7 +193,7 @@ pub async fn log_in(
         )));
     }
     let mut browser = lightpanda.open(account).await?;
-    let attempt = attempt(&mut browser, queue, bridge, account, new_device).await;
+    let attempt = attempt(&mut browser, queue, bridge, account, new_device, keep).await;
     let closed = browser.close().await;
     let result = attempt?;
     closed?;
@@ -208,6 +206,7 @@ async fn attempt(
     bridge: Arc<Bridge>,
     account: &str,
     new_device: bool,
+    keep: usize,
 ) -> anyhow::Result<LoginResult> {
     if browser.has_session().await? {
         return Ok(LoginResult::AlreadyLoggedIn);
@@ -226,7 +225,7 @@ async fn attempt(
     if !wait_for_form(browser).await? {
         return Ok(LoginResult::Skipped("the login form never appeared".into()));
     }
-    if !reserve(queue, account, new_device, bridge.time())? {
+    if !reserve(queue, account, new_device, keep, bridge.time())? {
         return Ok(LoginResult::Skipped(
             "the account's login for today is spent".into(),
         ));
@@ -236,12 +235,17 @@ async fn attempt(
     if browser.evaluate(scripts::FOCUS_PASSWORD).await? != "focused" {
         return pause(queue, account, "the login form lost its password field");
     }
-    browser.insert_text(&password).await?;
-    drop(password);
+    // From the first keystroke of the password on, the login counts as sent: any
+    // failure waits for a person, and nothing is retried.
     let submitted_at = bridge.time();
-    browser.press_enter().await?;
-    // Once the password is sent, any failure waits for a person; nothing is retried.
-    match answer(browser, queue, bridge, account, new_device, submitted_at).await {
+    let sent = async {
+        browser.insert_text(&password).await?;
+        browser.press_enter().await?;
+        answer(browser, queue, bridge, account, new_device, submitted_at).await
+    }
+    .await;
+    drop(password);
+    match sent {
         Ok(result) => Ok(result),
         Err(error) => pause(
             queue,

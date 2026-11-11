@@ -380,11 +380,19 @@ pub struct InstagramLightpanda {
     pub session_max_seconds: f64,
     /// Brave reads what the Lightpanda lane claimed once its heartbeat is this old.
     pub lane_stale_seconds: f64,
+    /// A lane digest's whole deadline, opening its session included; Brave takes a
+    /// digest the lane has left waiting `lane_digest_wait_seconds`.
+    pub lane_digest_timeout_seconds: f64,
+    pub lane_digest_wait_seconds: f64,
+    /// A lane Following read's whole deadline, opening its session included.
+    pub lane_following_timeout_seconds: f64,
     /// The worker logs one more account in to Lightpanda at most this often: the
     /// accounts with the most digests in the last `ramp_lookback_days` first, and
     /// `ramp_last_accounts` last.
     pub ramp_interval_minutes: f64,
     pub ramp_lookback_days: f64,
+    /// The ramp leaves the day's last this many logins to Brave.
+    pub ramp_reserved_logins: usize,
     pub ramp_last_accounts: Vec<String>,
     pub shadow_lookback_hours: f64,
     pub shadow_jobs_per_account: usize,

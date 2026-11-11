@@ -12,22 +12,28 @@
 //! lane, handing its digests back to Brave, while it is held after a 429 or refusal,
 //! after any digest it could not read, and once Instagram ends its login (its jar
 //! then forgets the login until the ramp logs it in again). Brave's own pauses and
-//! holds never stop the lane.
+//! holds never stop the lane, and Brave's recovery leaves the lane's running jobs to
+//! it.
+//!
+//! A digest gets `lane_digest_timeout_seconds` in all, opening its session included,
+//! and a Following read `lane_following_timeout_seconds`, so a digest always meets the
+//! workflow's deadline (Brave also takes one the lane leaves waiting).
 //!
 //! At most `max_sessions` Lightpanda processes run at once on the Mac. A session stays
 //! open while its account has work and closes after `session_idle_seconds` without a
 //! job, or once `session_max_seconds` old; a waiting digest closes the longest-idle
-//! session to make room. Every `ramp_interval_minutes` the lane also logs one more
+//! session to make room. At its turn ([`ramp::take_turn`]) the lane also logs one more
 //! account in ([`super::ramp`]).
 
 use std::collections::{HashMap, HashSet};
+use std::future::Future;
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use serde_json::Value;
-use tokio::task::JoinSet;
+use tokio::task::{Id, JoinError, JoinSet};
 
 use super::Lightpanda;
 use super::browser::Browser;
@@ -37,7 +43,9 @@ use crate::controlbox::{
     DigestEngine, INSTAGRAM_DIGEST, INSTAGRAM_LIGHTPANDA as CONTROL, instagram_browser,
 };
 use crate::host::Event;
-use crate::instagram_notifications::browser_queue::{BrowserJob, BrowserJobQueue, Finish};
+use crate::instagram_notifications::browser_queue::{
+    BrowserJob, BrowserJobQueue, Finish, LanePending, LaneRead,
+};
 use crate::instagram_notifications::browser_session::Bridge;
 use crate::instagram_notifications::errors::{BrowserError, BrowserResult, SessionKind};
 use crate::pyjson;
@@ -48,10 +56,12 @@ const TICK: Duration = Duration::from_millis(500);
 const REFRESH: Duration = Duration::from_secs(5);
 /// How long it waits before trying a missing Lightpanda again.
 const INSTALL_RETRY: Duration = Duration::from_secs(600);
-/// The first ramp waits this long after the worker starts.
-const FIRST_RAMP: Duration = Duration::from_secs(300);
-/// How long shutdown waits for the reads under way.
-const SHUTDOWN_WAIT: Duration = Duration::from_secs(20);
+/// Shutdown, inside the worker's 30 s stop: the reads under way get this long to
+/// finish, and closing every session (which saves its jar) must end by the second.
+const SHUTDOWN_READS: Duration = Duration::from_secs(8);
+const SHUTDOWN_ALL: Duration = Duration::from_secs(24);
+/// How long a failed read waits to learn whether its session is still logged in.
+const SESSION_CHECK: Duration = Duration::from_secs(5);
 
 /// One account's open Lightpanda.
 struct Session {
@@ -72,10 +82,23 @@ struct Ran {
     logged_out: bool,
 }
 
+/// What a task returns.
 enum Task {
     Job(Box<Ran>),
     Ramp,
     Closed,
+}
+
+/// What a task is doing, by its ID, so one that panics still frees what it held.
+enum Doing {
+    Job {
+        account: String,
+        job: Box<BrowserJob>,
+    },
+    Ramp,
+    Close {
+        account: String,
+    },
 }
 
 /// Run the lane until `stopping` is set; the worker calls this in its own thread.
@@ -136,13 +159,17 @@ struct Lane {
     idle: HashMap<String, Session>,
     /// Accounts with a job or the ramp's login under way.
     busy: HashSet<String>,
+    /// Accounts whose session is closing: none is opened for them until it has, since
+    /// it still holds their lock.
+    closing: HashSet<String>,
     tasks: JoinSet<Task>,
-    /// Sessions open, opening or closing: each holds one of the `max_sessions` places.
+    doing: HashMap<Id, Doing>,
+    /// Sessions open, opening or closing, and the ramp's login: each holds one of the
+    /// `max_sessions` places.
     places: usize,
     /// When each account last ran a job, so the reads go round the accounts.
     last_used: HashMap<String, Instant>,
     refreshed: Option<Instant>,
-    ramp_at: Instant,
 }
 
 impl Lane {
@@ -161,11 +188,12 @@ impl Lane {
             served: Vec::new(),
             idle: HashMap::new(),
             busy: HashSet::new(),
+            closing: HashSet::new(),
             tasks: JoinSet::new(),
+            doing: HashMap::new(),
             places: 0,
             last_used: HashMap::new(),
             refreshed: None,
-            ramp_at: Instant::now() + FIRST_RAMP,
         }
     }
 
@@ -175,7 +203,7 @@ impl Lane {
                 tracing::error!("The Lightpanda lane failed a step: {error}");
             }
             let finished = tokio::select! {
-                Some(done) = self.tasks.join_next() => Some(done),
+                Some(done) = self.tasks.join_next_with_id() => Some(done),
                 () = tokio::time::sleep(TICK) => None,
             };
             if let Some(done) = finished {
@@ -188,15 +216,10 @@ impl Lane {
     fn step(&mut self) -> BrowserResult<()> {
         if self.refreshed.is_none_or(|at| at.elapsed() >= REFRESH) {
             self.refresh()?;
+            self.maybe_ramp();
         }
         self.close_idle();
-        self.claim()?;
-        if Instant::now() >= self.ramp_at && self.places < CONTROL.max_sessions {
-            self.ramp_at =
-                Instant::now() + Duration::from_secs_f64(CONTROL.ramp_interval_minutes * 60.0);
-            self.start_ramp();
-        }
-        Ok(())
+        self.claim()
     }
 
     /// Read which accounts are logged in and free, and say what the lane serves.
@@ -229,7 +252,7 @@ impl Lane {
                 served.push(account.clone());
             }
         }
-        let digests = if INSTAGRAM_DIGEST.digest_engine == DigestEngine::Lightpanda {
+        let digests = if reads_digests() {
             served.clone()
         } else {
             Vec::new()
@@ -262,23 +285,34 @@ impl Lane {
     }
 
     /// Give each free account the next job it may run, sessions already open first.
+    /// Only an account with work waiting takes the queue's write lock to claim it.
     fn claim(&mut self) -> BrowserResult<()> {
-        let digests = INSTAGRAM_DIGEST.digest_engine == DigestEngine::Lightpanda;
-        let mut waiting_digests = None;
-        for account in self.claim_order() {
+        let order = self.claim_order();
+        if order.is_empty() {
+            return Ok(());
+        }
+        let pending = self.queue.lightpanda_pending()?;
+        if pending == LanePending::default() {
+            return Ok(());
+        }
+        for account in order {
+            let digest = reads_digests() && pending.digests.contains(&account);
             let open = self.idle.contains_key(&account);
             if !open && self.places >= CONTROL.max_sessions {
-                // Full: only a waiting digest makes room, by closing the longest-idle session.
-                let waiting = match &waiting_digests {
-                    Some(waiting) => waiting,
-                    None => waiting_digests.insert(self.queue.pending_digest_accounts()?),
-                };
-                if digests && waiting.contains(&account) {
+                // Full: only a waiting digest makes room, by closing the longest-idle
+                // session once no other is closing.
+                if digest && self.closing.is_empty() {
                     self.close_longest_idle();
                 }
                 continue;
             }
-            let Some(job) = self.queue.claim_lightpanda(&account, digests, true)? else {
+            if !(digest || pending.following) {
+                continue;
+            }
+            let Some(job) = self
+                .queue
+                .claim_lightpanda(&account, digest, pending.following)?
+            else {
                 continue;
             };
             self.queue.record_diagnostic("running", Some(&job), None);
@@ -289,19 +323,24 @@ impl Lane {
             self.busy.insert(account.clone());
             self.last_used.insert(account.clone(), Instant::now());
             let lightpanda = self.lightpanda.clone();
-            self.tasks.spawn_local(async move {
+            let doing = Doing::Job {
+                account: account.clone(),
+                job: Box::new(job.clone()),
+            };
+            self.spawn(doing, async move {
                 Task::Job(Box::new(run_job(&lightpanda, account, job, session).await))
             });
         }
         Ok(())
     }
 
-    /// The free served accounts: open sessions first, then the least recently used.
+    /// The free served accounts (none busy or closing): open sessions first, then the
+    /// least recently used.
     fn claim_order(&self) -> Vec<String> {
         let mut order: Vec<String> = self
             .served
             .iter()
-            .filter(|account| !self.busy.contains(*account))
+            .filter(|account| !self.busy.contains(*account) && !self.closing.contains(*account))
             .cloned()
             .collect();
         order.sort_by_key(|account| {
@@ -334,21 +373,42 @@ impl Lane {
 
     fn close_session(&mut self, account: &str, session: Session, logged_out: bool) {
         let lightpanda = self.lightpanda.clone();
+        self.closing.insert(account.to_owned());
+        let doing = Doing::Close {
+            account: account.to_owned(),
+        };
         let account = account.to_owned();
-        self.tasks.spawn_local(async move {
+        self.spawn(doing, async move {
             shut(&lightpanda, &account, session.browser, logged_out).await;
             Task::Closed
         });
     }
 
-    fn start_ramp(&mut self) {
+    /// Log one more account in at the ramp's turn, while a session place is free.
+    fn maybe_ramp(&mut self) {
+        if self.places >= CONTROL.max_sessions
+            || self
+                .doing
+                .values()
+                .any(|doing| matches!(doing, Doing::Ramp))
+        {
+            return;
+        }
+        match ramp::take_turn(&self.queue, self.bridge.time()) {
+            Ok(true) => {}
+            Ok(false) => return,
+            Err(error) => {
+                tracing::error!("Lightpanda ramp could not take its turn: {error:#}");
+                return;
+            }
+        }
         self.places += 1;
         let (lightpanda, queue, bridge) = (
             self.lightpanda.clone(),
             self.queue.clone(),
             self.bridge.clone(),
         );
-        self.tasks.spawn_local(async move {
+        self.spawn(Doing::Ramp, async move {
             match ramp::step(&lightpanda, &queue, bridge).await {
                 Ok(Some((account, result))) => tracing::info!(
                     "Lightpanda ramp: {account} {}",
@@ -367,25 +427,47 @@ impl Lane {
         });
     }
 
+    fn spawn(&mut self, doing: Doing, task: impl Future<Output = Task> + 'static) {
+        let handle = self.tasks.spawn_local(task);
+        self.doing.insert(handle.id(), doing);
+    }
+
     /// Take a finished task in: a job's outcome goes to the queue, and its session back
-    /// to the idle ones while it is healthy.
-    fn settle(&mut self, done: Result<Task, tokio::task::JoinError>) {
-        match done {
-            Ok(Task::Job(ran)) => {
-                if let Err(error) = self.settle_job(*ran) {
-                    tracing::error!("A Lightpanda job could not be recorded: {error}");
-                }
+    /// to the idle ones while it is healthy. A task that panicked frees what it held,
+    /// and its job is settled as a failure.
+    fn settle(&mut self, done: Result<(Id, Task), JoinError>) {
+        let (id, task) = match done {
+            Ok((id, task)) => (id, Some(task)),
+            Err(error) => {
+                tracing::error!("A Lightpanda task failed: {error}");
+                (error.id(), None)
             }
-            Ok(Task::Ramp) => {
+        };
+        let Some(doing) = self.doing.remove(&id) else {
+            return;
+        };
+        let ran = match (task, doing) {
+            (Some(Task::Job(ran)), _) => *ran,
+            (_, Doing::Job { account, job }) => Ran {
+                account,
+                job: *job,
+                outcome: Err(BrowserError::transient("the Lightpanda task failed")),
+                session: None,
+                logged_out: false,
+            },
+            (_, Doing::Ramp) => {
                 self.places -= 1;
                 self.refreshed = None;
+                return;
             }
-            Ok(Task::Closed) => self.places -= 1,
-            Err(error) => {
-                // A panicked task's job stays running until the worker recovers it.
-                tracing::error!("A Lightpanda task failed: {error}");
+            (_, Doing::Close { account }) => {
                 self.places -= 1;
+                self.closing.remove(&account);
+                return;
             }
+        };
+        if let Err(error) = self.settle_job(ran) {
+            tracing::error!("A Lightpanda job could not be recorded: {error}");
         }
     }
 
@@ -400,13 +482,19 @@ impl Lane {
         self.busy.remove(&account);
         let error = match outcome {
             Ok(result) => {
-                let finished = self.queue.finish(&job, Finish::result(result));
-                if let Some(session) = session {
-                    self.idle.insert(account.clone(), session);
-                } else {
-                    self.places -= 1;
+                match session {
+                    Some(session) => {
+                        self.idle.insert(account.clone(), session);
+                    }
+                    None => self.places -= 1,
                 }
-                self.queue.lightpanda_read_finished(&account, &job, false)?;
+                let read = LaneRead {
+                    account,
+                    held: false,
+                };
+                let finished = self
+                    .queue
+                    .finish_lightpanda(&job, Finish::result(result), &read);
                 self.record(&job);
                 return finished;
             }
@@ -423,23 +511,24 @@ impl Lane {
             self.accounts.retain(|served| *served != account);
             self.served.retain(|served| *served != account);
         }
-        let failed = Failed::of(&job, &error, logged_out);
-        self.queue
-            .lightpanda_read_finished(&account, &job, failed.hold)?;
         tracing::warn!("Lightpanda job {} failed for {account}: {message}", job.id);
+        let failed = Failed::of(&job, &error, logged_out);
+        let read = LaneRead {
+            account,
+            held: failed.hold,
+        };
+        let outcome = Finish {
+            result: None,
+            error: Some(message),
+            requeue: failed.retry,
+            refund_rate_limit: failed.hand_back,
+        };
+        // The hold goes in with the finish, so the lane never takes the job again
+        // while the account is held, and Brave takes it once the lane says so.
+        let finished = self.queue.finish_lightpanda(&job, outcome, &read);
         if failed.hand_back {
-            // Brave must see the account gone before the job is pending again.
             self.publish()?;
         }
-        let finished = self.queue.finish(
-            &job,
-            Finish {
-                result: None,
-                error: Some(message),
-                requeue: failed.retry,
-                refund_rate_limit: failed.hand_back,
-            },
-        );
         self.record(&job);
         finished
     }
@@ -452,11 +541,13 @@ impl Lane {
     }
 
     /// Let the reads under way finish for a moment, hand everything back to Brave and
-    /// close every session.
+    /// close every session, all inside the worker's own stop.
     async fn shut_down(mut self) {
-        let deadline = tokio::time::Instant::now() + SHUTDOWN_WAIT;
+        let started = tokio::time::Instant::now();
         while !self.busy.is_empty() {
-            match tokio::time::timeout_at(deadline, self.tasks.join_next()).await {
+            match tokio::time::timeout_at(started + SHUTDOWN_READS, self.tasks.join_next_with_id())
+                .await
+            {
                 Ok(Some(done)) => self.settle(done),
                 _ => break,
             }
@@ -468,11 +559,20 @@ impl Lane {
         for account in idle {
             self.close(&account, false);
         }
-        while tokio::time::timeout_at(deadline + SHUTDOWN_WAIT, self.tasks.join_next())
-            .await
-            .is_ok_and(|done| done.is_some())
-        {}
+        while let Ok(Some(done)) =
+            tokio::time::timeout_at(started + SHUTDOWN_ALL, self.tasks.join_next_with_id()).await
+        {
+            self.doing
+                .remove(&done.map_or_else(|error| error.id(), |(id, _)| id));
+        }
+        // Whatever is still running is stopped with the lane: its processes are killed,
+        // and its jobs are the worker's next recovery's.
     }
+}
+
+/// Whether the lane reads digests (`digest_engine`).
+fn reads_digests() -> bool {
+    INSTAGRAM_DIGEST.digest_engine == DigestEngine::Lightpanda
 }
 
 /// What becomes of a job that failed in Lightpanda.
@@ -503,53 +603,68 @@ impl Failed {
     }
 }
 
-/// Run `job` in `account`'s session, opening one first when it has none.
+/// The whole time a job may take in the lane, opening its session included.
+fn job_deadline(job: &BrowserJob) -> Duration {
+    Duration::from_secs_f64(if job.kind == "digest" {
+        CONTROL.lane_digest_timeout_seconds
+    } else {
+        CONTROL.lane_following_timeout_seconds
+    })
+}
+
+/// Run `job` in `account`'s session, opening one first when it has none, all within
+/// the job's deadline.
 async fn run_job(
     lightpanda: &Lightpanda,
     account: String,
     job: BrowserJob,
     session: Option<Session>,
 ) -> Ran {
-    let opened = match session {
-        Some(session) => Ok(session),
-        None => open(lightpanda, &account).await,
+    let deadline = tokio::time::Instant::now() + job_deadline(&job);
+    let failed = |outcome: BrowserError, logged_out| Ran {
+        account: account.clone(),
+        job: job.clone(),
+        outcome: Err(outcome),
+        session: None,
+        logged_out,
     };
-    let mut session = match opened {
-        Ok(session) => session,
-        Err(Opened::LoggedOut) => {
-            return Ran {
-                account,
-                job,
-                outcome: Err(BrowserError::page_unavailable(
-                    "Instagram ended the Lightpanda login",
-                )),
-                session: None,
-                logged_out: true,
-            };
-        }
-        Err(Opened::Failed(error)) => {
-            return Ran {
-                account,
-                job,
-                // Not starting is a hand-back: the read never reached Instagram.
-                outcome: Err(BrowserError::rate_limited(format!(
-                    "Lightpanda could not start: {error:#}"
-                ))),
-                session: None,
-                logged_out: false,
-            };
-        }
+    let mut session = match session {
+        Some(session) => session,
+        None => match tokio::time::timeout_at(deadline, open(lightpanda, &account)).await {
+            Ok(Ok(session)) => session,
+            Ok(Err(Opened::LoggedOut)) => {
+                return failed(
+                    BrowserError::page_unavailable("Instagram ended the Lightpanda login"),
+                    true,
+                );
+            }
+            // Not starting is a hand-back: the read never reached Instagram.
+            Ok(Err(Opened::Failed(error))) => {
+                return failed(
+                    BrowserError::rate_limited(format!("Lightpanda could not start: {error:#}")),
+                    false,
+                );
+            }
+            Err(_) => {
+                return failed(
+                    BrowserError::rate_limited("Lightpanda did not start in time"),
+                    false,
+                );
+            }
+        },
     };
-    let timeout = Duration::from_secs_f64(instagram_browser().job_timeout_seconds * 2.0);
-    let outcome = match tokio::time::timeout(timeout, execute(&mut session, &account, &job)).await {
-        Ok(outcome) => outcome,
-        Err(_) => Err(BrowserError::Timeout(
-            "Lightpanda did not finish the job in time".to_owned(),
-        )),
-    };
+    let outcome =
+        match tokio::time::timeout_at(deadline, execute(&mut session, &account, &job)).await {
+            Ok(outcome) => outcome,
+            Err(_) => Err(BrowserError::Timeout(
+                "Lightpanda did not finish the job in time".to_owned(),
+            )),
+        };
     session.used = Instant::now();
-    let logged_out =
-        outcome.is_err() && session.browser.has_session().await.is_ok_and(|held| !held);
+    let logged_out = outcome.is_err()
+        && tokio::time::timeout(SESSION_CHECK, session.browser.has_session())
+            .await
+            .is_ok_and(|held| held.is_ok_and(|held| !held));
     Ran {
         account,
         job,
@@ -632,6 +747,66 @@ mod tests {
     use serde_json::Map;
 
     use super::*;
+    use crate::instagram_notifications::test_support::{FakeHost, bridge, queue};
+
+    #[test]
+    fn a_digest_and_its_wait_leave_brave_time_before_the_workflow_gives_up() {
+        let digest = job_deadline(&job("digest", 1)).as_secs_f64();
+        assert_eq!(digest, CONTROL.lane_digest_timeout_seconds);
+        assert!(digest + CONTROL.lane_digest_wait_seconds <= 180.0);
+        assert_eq!(
+            job_deadline(&job("following", 1)).as_secs_f64(),
+            CONTROL.lane_following_timeout_seconds
+        );
+    }
+
+    #[tokio::test]
+    async fn a_panicked_job_frees_its_account_and_settles_its_job() {
+        let local = tokio::task::LocalSet::new();
+        local
+            .run_until(async {
+                let directory = tempfile::tempdir().unwrap();
+                let host = FakeHost::idle();
+                let queue = queue(directory.path(), &host);
+                let lightpanda =
+                    Lightpanda::new("/nonexistent".into(), directory.path().join("lightpanda"))
+                        .unwrap();
+                let mut lane = Lane::new(
+                    Rc::new(lightpanda),
+                    queue.clone(),
+                    bridge(&host),
+                    Arc::new(Event::default()),
+                );
+                let account = "wat2do.mun".to_owned();
+                queue
+                    .set_lightpanda_lane(&[], std::slice::from_ref(&account), 1)
+                    .unwrap();
+                queue
+                    .enqueue_following("mun", &account, "crawl-1", "club.one", Some("101"), None)
+                    .unwrap();
+                let claimed = queue
+                    .claim_lightpanda(&account, false, true)
+                    .unwrap()
+                    .unwrap();
+                lane.busy.insert(account.clone());
+                lane.places = 1;
+                let doing = Doing::Job {
+                    account: account.clone(),
+                    job: Box::new(claimed.clone()),
+                };
+                lane.spawn(doing, async { panic!("a bug in the lane") });
+
+                let done = lane.tasks.join_next_with_id().await.unwrap();
+                lane.settle(done);
+
+                assert!(lane.busy.is_empty());
+                assert_eq!(lane.places, 0);
+                assert!(lane.doing.is_empty());
+                let settled = queue.get(&claimed.id).unwrap().unwrap();
+                assert_eq!(settled.state, "pending");
+            })
+            .await;
+    }
 
     fn job(kind: &str, attempts: i64) -> BrowserJob {
         BrowserJob {

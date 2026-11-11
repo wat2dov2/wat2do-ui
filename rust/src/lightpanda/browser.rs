@@ -31,9 +31,8 @@ pub struct Browser {
     target_id: String,
     session_id: String,
     peak_rss_kib: u64,
-    /// Holds the CDP socket; removed when the browser is dropped.
-    _runtime: tempfile::TempDir,
-    /// The account and the session place, released when the browser is dropped.
+    /// The account and the session place, with the place's socket directory, all
+    /// released when the browser is dropped.
     _lease: Lease,
 }
 
@@ -41,11 +40,7 @@ impl Browser {
     /// Start Lightpanda with the account's jar and open a blank page.
     pub async fn launch(binary: &Path, jar: CookieJar, lease: Lease) -> anyhow::Result<Self> {
         // Beside the jars: owner-only, and short enough for a socket path.
-        let runtime = tempfile::Builder::new()
-            .prefix("run-")
-            .tempdir_in(jar.directory())
-            .context("Lightpanda's socket directory could not be created")?;
-        let socket = runtime.path().join("cdp.sock");
+        let socket = lease.runtime_directory()?.join("cdp.sock");
         let mut command = Command::new(binary);
         command
             .arg("serve")
@@ -89,7 +84,6 @@ impl Browser {
             target_id,
             session_id,
             peak_rss_kib: 0,
-            _runtime: runtime,
             _lease: lease,
         };
         browser.sample_memory();

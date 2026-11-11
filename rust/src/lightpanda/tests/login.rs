@@ -52,21 +52,21 @@ fn first_logins_are_ramped_and_every_login_shares_brave_budget() {
     let limit = CONTROL.new_login_daily_limit;
     assert!(limit < instagram_browser().account_login_daily_limit);
     for index in 0..limit {
-        assert!(reserve(&worker, &format!("wat2do.n{index}"), true, now).unwrap());
+        assert!(reserve(&worker, &format!("wat2do.n{index}"), true, 0, now).unwrap());
     }
     assert!(ramp_full(&worker, now).unwrap());
     // The ramp holds a new device back and spends nothing of the account's day.
-    assert!(!reserve(&worker, "wat2do.held", true, now).unwrap());
+    assert!(!reserve(&worker, "wat2do.held", true, 0, now).unwrap());
     assert_eq!(
         worker.get_setting("account_login_at:wat2do.held").unwrap(),
         None
     );
     // An account Lightpanda already knows is not a new device, only budgeted.
-    assert!(reserve(&worker, "wat2do.known", false, now).unwrap());
-    assert!(!reserve(&worker, "wat2do.known", false, now + 60.0).unwrap());
+    assert!(reserve(&worker, "wat2do.known", false, 0, now).unwrap());
+    assert!(!reserve(&worker, "wat2do.known", false, 0, now + 60.0).unwrap());
     // A day later the ramp has room again.
     assert!(!ramp_full(&worker, now + 86_400.0).unwrap());
-    assert!(reserve(&worker, "wat2do.held", true, now + 86_400.0).unwrap());
+    assert!(reserve(&worker, "wat2do.held", true, 0, now + 86_400.0).unwrap());
 }
 
 #[test]
@@ -79,7 +79,7 @@ fn an_account_brave_logged_in_today_is_not_logged_in_again() {
     worker
         .set_setting("account_login_at:wat2do.mun", json!(now - 600.0))
         .unwrap();
-    assert!(!reserve(&worker, "wat2do.mun", true, now).unwrap());
+    assert!(!reserve(&worker, "wat2do.mun", true, 0, now).unwrap());
     // Nothing of the ramp was spent on it.
     assert_eq!(worker.get_setting(NEW_LOGINS).unwrap(), None);
 }
@@ -105,4 +105,47 @@ fn a_pause_holds_until_a_person_resumes_the_account() {
     assert_eq!(paused(&worker, "wat2do.ubc").unwrap(), None);
     resume(&worker, "wat2do.mun").unwrap();
     assert_eq!(paused(&worker, "wat2do.mun").unwrap(), None);
+}
+
+#[test]
+fn a_reservation_can_leave_the_days_last_logins_to_brave() {
+    let (_directory, worker) = worker();
+    let now = 1_793_700_000.0;
+    let limit = instagram_browser().account_login_daily_limit;
+    let spent: Vec<f64> = (0..limit - 3)
+        .map(|index| now - 60.0 * index as f64)
+        .collect();
+    worker
+        .set_setting("account_login_attempts", json!(spent))
+        .unwrap();
+    // Three left: keeping three spends none, keeping two spends one.
+    assert!(!reserve(&worker, "wat2do.ubc", false, 3, now).unwrap());
+    assert_eq!(
+        worker.get_setting("account_login_at:wat2do.ubc").unwrap(),
+        None
+    );
+    assert!(reserve(&worker, "wat2do.ubc", false, 2, now).unwrap());
+    assert_eq!(worker.account_logins_left(now).unwrap(), 2);
+}
+
+#[test]
+fn concurrent_reservations_never_overspend_the_budget() {
+    let (_directory, worker) = worker();
+    let now = 1_793_700_000.0;
+    let limit = instagram_browser().account_login_daily_limit;
+    let reserved: usize = std::thread::scope(|scope| {
+        let threads: Vec<_> = (0..limit * 2)
+            .map(|index| {
+                let worker = &worker;
+                scope.spawn(move || {
+                    reserve(worker, &format!("wat2do.c{index}"), false, 0, now).unwrap()
+                })
+            })
+            .collect();
+        threads
+            .into_iter()
+            .map(|thread| usize::from(thread.join().unwrap()))
+            .sum()
+    });
+    assert_eq!(reserved, limit);
 }

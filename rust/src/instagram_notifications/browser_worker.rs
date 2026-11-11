@@ -630,6 +630,8 @@ impl Worker {
             ));
         }
         make_interruptible();
+        // A lane from an earlier run is gone: its running jobs are this recovery's.
+        self.queue.reset_lightpanda_lane()?;
         let stopping = Arc::new(Event::default());
         let mut threads: Vec<JoinHandle<()>> = vec![self.keep_worker_alive(stopping.clone())];
         let mut collecting = false;

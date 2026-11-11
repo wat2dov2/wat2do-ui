@@ -80,7 +80,8 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::Login { account } => {
             let lightpanda = Lightpanda::installed().await?;
-            let result = login::log_in(&lightpanda, &*queue()?, bridge.clone(), &account).await?;
+            let result =
+                login::log_in(&lightpanda, &*queue()?, bridge.clone(), &account, 0).await?;
             println!(
                 "{account}: {}",
                 match result {

@@ -14,12 +14,13 @@
 
 use std::collections::HashSet;
 
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OptionalExtension, params};
 use serde_json::{Value, json};
 
 use super::{
-    AVAILABLE_ACCOUNT_SQL, BrowserJob, BrowserJobQueue, FOLLOWING_PAUSED, expire_pending_digests,
-    following_pauses, select_job, select_optional_job, storage, stored_setting, write_setting,
+    AVAILABLE_ACCOUNT_SQL, BrowserJob, BrowserJobQueue, FOLLOWING_PAUSED, Finish,
+    expire_pending_digests, following_pauses, select_job, select_optional_job, storage,
+    stored_setting, write_setting,
 };
 use crate::controlbox::{INSTAGRAM_LIGHTPANDA, instagram_browser as control};
 use crate::instagram_notifications::errors::BrowserResult;
@@ -28,10 +29,13 @@ use crate::pyjson;
 /// What the lane serves, with its heartbeat.
 const LIGHTPANDA_LANE: &str = "lightpanda_lane";
 
-/// Brave's digests: none whose account the lane serves. Bound to the lane's accounts as
-/// a JSON array ([`lane_digest_accounts`]).
+/// The jobs the lane is running, so Brave's recovery leaves them to it.
+const LANE_JOBS: &str = "lightpanda_jobs";
+
+/// Brave's digests: none whose account the lane serves, unless it has waited
+/// `lane_digest_wait_seconds` for the lane. Bound to [`lane_digest_arguments`].
 pub(super) const BRAVE_DIGEST_SQL: &str =
-    "account_username NOT IN (SELECT value FROM json_each(?))";
+    "(account_username NOT IN (SELECT value FROM json_each(?)) OR created_at<=?)";
 
 /// A Following read whose list owner's Instagram ID is known. Instagram answers a
 /// lookup by name (`web_profile_info`) only to a full browser, so Lightpanda reads only
@@ -116,10 +120,71 @@ impl AccountPace {
     }
 }
 
-/// The accounts whose digests the lane reads, as a JSON array; empty once its
+/// [`BRAVE_DIGEST_SQL`]'s arguments: the accounts whose digests the lane reads (none
+/// once its heartbeat is stale), and the newest a digest may be for Brave to take it
+/// from the lane anyway.
+pub(super) fn lane_digest_arguments(
+    db: &Connection,
+    now: f64,
+) -> BrowserResult<Vec<rusqlite::types::Value>> {
+    use rusqlite::types::Value as Sql;
+    Ok(vec![
+        Sql::Text(Value::from(lane_accounts(db, now, "digests")?).to_string()),
+        Sql::Real(now - INSTAGRAM_LIGHTPANDA.lane_digest_wait_seconds),
+    ])
+}
+
+/// The jobs the lane is running, as a JSON array, while it says it runs; none once its
 /// heartbeat is stale.
-pub(super) fn lane_digest_accounts(db: &Connection, now: f64) -> BrowserResult<String> {
-    Ok(Value::from(lane_accounts(db, now, "digests")?).to_string())
+pub(super) fn lane_running_jobs(db: &Connection, now: f64) -> BrowserResult<String> {
+    let jobs = if lane_fresh(db, now)? {
+        stored_setting(db, LANE_JOBS)?
+    } else {
+        Value::Null
+    };
+    Ok(match jobs {
+        Value::Array(jobs) => Value::Array(jobs),
+        _ => json!([]),
+    }
+    .to_string())
+}
+
+fn lane_fresh(db: &Connection, now: f64) -> BrowserResult<bool> {
+    let lane = stored_setting(db, LIGHTPANDA_LANE)?;
+    Ok(lane
+        .get("heartbeat")
+        .and_then(pyjson::number)
+        .is_some_and(|heartbeat| now - heartbeat <= INSTAGRAM_LIGHTPANDA.lane_stale_seconds))
+}
+
+/// How a read in the lane ended, recorded with its finish: it leaves the lane's
+/// running jobs, a Following read draws its account's next pauses, and `held` holds
+/// the account, while a read that went well after a quiet recovery window ends the
+/// escalation.
+pub struct LaneRead {
+    pub account: String,
+    pub held: bool,
+}
+
+impl LaneRead {
+    pub(super) fn record(&self, db: &Connection, job: &BrowserJob, now: f64) -> BrowserResult<()> {
+        if let Value::Array(mut running) = stored_setting(db, LANE_JOBS)? {
+            running.retain(|id| id.as_str() != Some(job.id.as_str()));
+            write_setting(db, LANE_JOBS, &Value::Array(running))?;
+        }
+        let mut pace = AccountPace::read(db, &self.account, now)?;
+        if job.kind == "following" {
+            (pace.next_page_at, pace.next_list_at) = following_pauses(now);
+        }
+        if self.held {
+            pace.hold(now);
+        } else if job.started_at.is_some_and(|started| {
+            started >= pace.held_until + control().rate_limit_recovery_seconds
+        }) {
+            pace.backoff = 0.0;
+        }
+        pace.write(db, &self.account)
+    }
 }
 
 /// Whether the lane reads Following lists, so Brave leaves them to it.
@@ -128,12 +193,10 @@ pub(super) fn lane_reads_following(db: &Connection, now: f64) -> BrowserResult<b
 }
 
 fn lane_accounts(db: &Connection, now: f64, key: &str) -> BrowserResult<Vec<String>> {
-    let lane = stored_setting(db, LIGHTPANDA_LANE)?;
-    let heartbeat = lane.get("heartbeat").and_then(pyjson::number);
-    if heartbeat.is_none_or(|heartbeat| now - heartbeat > INSTAGRAM_LIGHTPANDA.lane_stale_seconds) {
+    if !lane_fresh(db, now)? {
         return Ok(Vec::new());
     }
-    Ok(match lane.get(key) {
+    Ok(match stored_setting(db, LIGHTPANDA_LANE)?.get(key) {
         Some(Value::Array(accounts)) => accounts
             .iter()
             .filter_map(Value::as_str)
@@ -141,6 +204,13 @@ fn lane_accounts(db: &Connection, now: f64, key: &str) -> BrowserResult<Vec<Stri
             .collect(),
         _ => Vec::new(),
     })
+}
+
+/// What waits for the lane.
+#[derive(Debug, Default, PartialEq)]
+pub struct LanePending {
+    pub digests: HashSet<String>,
+    pub following: bool,
 }
 
 impl BrowserJobQueue {
@@ -161,6 +231,23 @@ impl BrowserJobQueue {
                 "sessions": sessions,
             }),
         )
+    }
+
+    /// Forget what a lane that is no longer running said and ran, before the worker
+    /// recovers its queue at start: those jobs are Brave's recovery's again.
+    pub fn reset_lightpanda_lane(&self) -> BrowserResult<()> {
+        self.set_setting(LIGHTPANDA_LANE, Value::Null)?;
+        self.set_setting(LANE_JOBS, json!([]))
+    }
+
+    /// Finish the lane's claim, recording its account's pace and hold with it.
+    pub fn finish_lightpanda(
+        &self,
+        claim: &BrowserJob,
+        outcome: Finish,
+        read: &LaneRead,
+    ) -> BrowserResult<()> {
+        self.retry_storage(|| self.finish_once(claim, &outcome, Some(read)))
     }
 
     /// The account's Following pace and hold.
@@ -223,6 +310,12 @@ impl BrowserJobQueue {
                     pace.reads.push(now);
                     pace.write(db, account)?;
                 }
+                let mut running = match stored_setting(db, LANE_JOBS)? {
+                    Value::Array(running) => running,
+                    _ => Vec::new(),
+                };
+                running.push(Value::from(row.id.clone()));
+                write_setting(db, LANE_JOBS, &Value::Array(running))?;
                 db.execute(
                     "UPDATE jobs SET state='running',started_at=?,attempts=attempts+1 WHERE id=?",
                     params![now, row.id],
@@ -252,8 +345,10 @@ impl BrowserJobQueue {
         })
     }
 
-    /// The accounts with a digest waiting, so the lane makes room for their sessions.
-    pub fn pending_digest_accounts(&self) -> BrowserResult<HashSet<String>> {
+    /// What waits for the lane, read without a write lock so an idle lane never
+    /// takes one: the accounts with a digest waiting, and whether a Following read
+    /// it may take waits.
+    pub fn lightpanda_pending(&self) -> BrowserResult<LanePending> {
         self.retry_storage(|| {
             let db = self.connect()?;
             let mut statement = db
@@ -262,41 +357,24 @@ impl BrowserJobQueue {
                      WHERE state='pending' AND kind='digest'",
                 )
                 .map_err(storage)?;
-            statement
+            let digests = statement
                 .query_map([], |row| row.get(0))
                 .map_err(storage)?
                 .collect::<Result<_, _>>()
-                .map_err(storage)
-        })
-    }
-
-    /// Record what `account`'s read of `job` came to: after a Following read the
-    /// pauses before the account's next page and next list are drawn; `held` holds the
-    /// account, and a read that went well after a quiet recovery window ends the
-    /// escalation.
-    pub fn lightpanda_read_finished(
-        &self,
-        account: &str,
-        job: &BrowserJob,
-        held: bool,
-    ) -> BrowserResult<()> {
-        self.retry_storage(|| {
-            let now = self.host.time();
-            self.immediate(|db| {
-                let control = control();
-                let mut pace = AccountPace::read(db, account, now)?;
-                if job.kind == "following" {
-                    (pace.next_page_at, pace.next_list_at) = following_pauses(now);
-                }
-                if held {
-                    pace.hold(now);
-                } else if job.started_at.is_some_and(|started| {
-                    started >= pace.held_until + control.rate_limit_recovery_seconds
-                }) {
-                    pace.backoff = 0.0;
-                }
-                pace.write(db, account)
-            })
+                .map_err(storage)?;
+            let following = db
+                .query_row(
+                    &format!(
+                        "SELECT 1 FROM jobs WHERE state='pending' AND kind='following' \
+                         AND {KNOWN_LIST_SQL} LIMIT 1"
+                    ),
+                    [],
+                    |_| Ok(()),
+                )
+                .optional()
+                .map_err(storage)?
+                .is_some();
+            Ok(LanePending { digests, following })
         })
     }
 
@@ -327,12 +405,8 @@ impl BrowserJobQueue {
                 held.insert(account.to_owned(), json!(pace.held_until));
             }
         }
-        let fresh = lane
-            .get("heartbeat")
-            .and_then(pyjson::number)
-            .is_some_and(|heartbeat| now - heartbeat <= INSTAGRAM_LIGHTPANDA.lane_stale_seconds);
         Ok(json!({
-            "running": fresh,
+            "running": lane_fresh(&db, now)?,
             "lane": lane,
             "held_until": held,
         }))

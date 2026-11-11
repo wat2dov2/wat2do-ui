@@ -344,7 +344,7 @@ async fn compare_account(
     let login = if lightpanda.jar(account)?.holds_session() {
         Ok("already logged in".to_owned())
     } else if let Some((queue, bridge)) = login {
-        match login::log_in(lightpanda, queue, bridge, account).await? {
+        match login::log_in(lightpanda, queue, bridge, account, 0).await? {
             LoginResult::AlreadyLoggedIn => Ok("already logged in".to_owned()),
             LoginResult::LoggedIn { new_device } => Ok(format!(
                 "logged in by the worker (new device: {new_device})"

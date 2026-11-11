@@ -2,6 +2,10 @@
 //! every `ramp_interval_minutes`, within the daily login budget it shares with Brave
 //! and `new_login_daily_limit` first logins a day.
 //!
+//! It never spends the day's last `ramp_reserved_logins` logins, which Brave's own
+//! relogins need, and its next turn is kept in the queue, so a restart never brings it
+//! forward.
+//!
 //! Accounts whose Lightpanda login Instagram ended go first (their device is known, so
 //! they spend no first-login place), then the accounts with the most digests in the
 //! last `ramp_lookback_days`, then `ramp_last_accounts` in their listed order. An
@@ -11,7 +15,7 @@
 use std::sync::Arc;
 
 use serde::Serialize;
-use serde_json::json;
+use serde_json::{Value, json};
 
 use super::Lightpanda;
 use super::login::{self, LoginResult};
@@ -21,6 +25,25 @@ use crate::instagram_notifications::browser_session::{Bridge, validate_account_u
 use crate::pyjson;
 
 const SKIPPED_FOR_SECONDS: f64 = 86_400.0;
+/// When the ramp may next log an account in, kept in the worker's settings so a
+/// restart never brings it forward.
+const NEXT_AT: &str = "lightpanda_ramp_at";
+/// The first ramp waits this long after the lane first runs.
+const FIRST_DELAY_SECONDS: f64 = 300.0;
+
+/// Whether the ramp is due at `now`; when it is, the next one is scheduled
+/// `ramp_interval_minutes` on, so each due ramp is taken once.
+pub fn take_turn(queue: &BrowserJobQueue, now: f64) -> anyhow::Result<bool> {
+    let Some(next_at) = pyjson::number(&queue.setting_or(NEXT_AT, Value::Null)?) else {
+        queue.set_setting(NEXT_AT, json!(now + FIRST_DELAY_SECONDS))?;
+        return Ok(false);
+    };
+    if now < next_at {
+        return Ok(false);
+    }
+    queue.set_setting(NEXT_AT, json!(now + CONTROL.ramp_interval_minutes * 60.0))?;
+    Ok(true)
+}
 
 fn skipped_key(account: &str) -> String {
     format!("lightpanda_ramp_skipped:{account}")
@@ -93,6 +116,9 @@ pub fn next(
     lightpanda: &Lightpanda,
     now: f64,
 ) -> anyhow::Result<Option<Candidate>> {
+    if queue.account_logins_left(now)? <= CONTROL.ramp_reserved_logins {
+        return Ok(None);
+    }
     let ramp_full = login::ramp_full(queue, now)?;
     for candidate in plan(queue, lightpanda, now)? {
         if (candidate.relogin || !ramp_full)
@@ -114,7 +140,14 @@ pub async fn step(
     let Some(candidate) = next(queue, lightpanda, now)? else {
         return Ok(None);
     };
-    let result = login::log_in(lightpanda, queue, bridge, &candidate.account).await?;
+    let result = login::log_in(
+        lightpanda,
+        queue,
+        bridge,
+        &candidate.account,
+        CONTROL.ramp_reserved_logins,
+    )
+    .await?;
     if matches!(result, LoginResult::Skipped(_)) {
         queue.set_setting(&skipped_key(&candidate.account), json!(now))?;
     }
@@ -131,6 +164,21 @@ mod tests {
             digests,
             relogin,
         }
+    }
+
+    #[test]
+    fn a_turn_comes_once_per_interval_and_survives_restarts() {
+        let directory = tempfile::tempdir().unwrap();
+        let host = crate::instagram_notifications::test_support::FakeHost::idle();
+        let queue = crate::instagram_notifications::test_support::queue(directory.path(), &host);
+        let now = 1_800_000_000.0;
+        assert!(!take_turn(&queue, now).unwrap());
+        // A restart a minute later does not bring the first turn forward.
+        assert!(!take_turn(&queue, now + 60.0).unwrap());
+        assert!(take_turn(&queue, now + FIRST_DELAY_SECONDS).unwrap());
+        assert!(!take_turn(&queue, now + FIRST_DELAY_SECONDS + 1.0).unwrap());
+        let interval = CONTROL.ramp_interval_minutes * 60.0;
+        assert!(take_turn(&queue, now + FIRST_DELAY_SECONDS + interval).unwrap());
     }
 
     #[test]

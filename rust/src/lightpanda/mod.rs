@@ -48,6 +48,27 @@ pub struct Lightpanda {
 pub struct Lease {
     _account: File,
     _slot: File,
+    /// The place's own directory for the CDP socket, beside the jars.
+    runtime: PathBuf,
+}
+
+impl Lease {
+    /// The place's socket directory, made afresh: whatever a killed session left in it
+    /// is removed first, since only this lease's holder may use it.
+    pub fn runtime_directory(&self) -> anyhow::Result<&Path> {
+        if self.runtime.exists() {
+            std::fs::remove_dir_all(&self.runtime)
+                .context("Lightpanda's old socket directory could not be removed")?;
+        }
+        jar::create_directory(&self.runtime)?;
+        Ok(&self.runtime)
+    }
+}
+
+impl Drop for Lease {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.runtime);
+    }
 }
 
 impl Lightpanda {
@@ -149,6 +170,7 @@ fn lease(jars: &Path, account: &str, places: usize) -> anyhow::Result<Lease> {
             return Ok(Lease {
                 _account: account_lock,
                 _slot: slot,
+                runtime: jars.join(format!("run-{place}")),
             });
         }
     }
@@ -196,7 +218,21 @@ mod tests {
         let second = lease(jars.path(), "wat2do.sfu", 2).unwrap();
         let full = lease(jars.path(), "wat2do.ubc", 2);
         assert!(full.err().unwrap().to_string().contains("all 2"));
+        // Each place has its own socket directory, cleared of what a killed session
+        // left and removed with the lease.
+        let directory = first.runtime_directory().unwrap().to_path_buf();
+        std::fs::write(directory.join("cdp.sock"), "").unwrap();
+        assert!(
+            first
+                .runtime_directory()
+                .unwrap()
+                .read_dir()
+                .unwrap()
+                .next()
+                .is_none()
+        );
         drop(first);
+        assert!(!directory.exists());
         let _third = lease(jars.path(), "wat2do.ubc", 2).unwrap();
         drop(second);
         assert!(lease(jars.path(), "../escape", 2).is_err());

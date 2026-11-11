@@ -95,10 +95,11 @@ fn each_account_reads_at_its_own_pace() {
     let claimed = queue.claim_lightpanda(MUN, false, true).unwrap().unwrap();
     assert_eq!(claimed.id, first.id);
     queue
-        .finish(&claimed, Finish::result(json!({"users": []})))
-        .unwrap();
-    queue
-        .lightpanda_read_finished(MUN, &claimed, false)
+        .finish_lightpanda(
+            &claimed,
+            Finish::result(json!({"users": []})),
+            &read(MUN, false),
+        )
         .unwrap();
 
     // MUN waits its spacing; SFU reads at once.
@@ -114,6 +115,22 @@ fn each_account_reads_at_its_own_pace() {
     assert!(queue.claim_lightpanda(MUN, false, true).unwrap().is_some());
 }
 
+fn read(account: &str, held: bool) -> LaneRead {
+    LaneRead {
+        account: account.to_owned(),
+        held,
+    }
+}
+
+fn refused() -> Finish {
+    Finish {
+        result: None,
+        error: Some("Instagram Following read failed with HTTP 429".into()),
+        requeue: true,
+        refund_rate_limit: true,
+    }
+}
+
 fn host_time(host: &FakeHost) -> f64 {
     crate::host::Host::time(host)
 }
@@ -126,17 +143,8 @@ fn a_hold_stops_only_that_account_and_backs_off() {
         .unwrap();
     following(&queue, "club.one", None);
     let claimed = queue.claim_lightpanda(MUN, false, true).unwrap().unwrap();
-    queue.lightpanda_read_finished(MUN, &claimed, true).unwrap();
     queue
-        .finish(
-            &claimed,
-            Finish {
-                result: None,
-                error: Some("Instagram Following read failed with HTTP 429".into()),
-                requeue: true,
-                refund_rate_limit: true,
-            },
-        )
+        .finish_lightpanda(&claimed, refused(), &read(MUN, true))
         .unwrap();
     let first = queue.lightpanda_pace(MUN).unwrap();
     assert_eq!(first.backoff, control().rate_limit_backoff_seconds);
@@ -149,7 +157,9 @@ fn a_hold_stops_only_that_account_and_backs_off() {
 
     // Held again soon after: twice as long.
     host.advance(control().rate_limit_backoff_seconds);
-    queue.lightpanda_read_finished(MUN, &retried, true).unwrap();
+    queue
+        .finish_lightpanda(&retried, refused(), &read(MUN, true))
+        .unwrap();
     assert_eq!(
         queue.lightpanda_pace(MUN).unwrap().backoff,
         control().rate_limit_backoff_seconds * 2.0
@@ -182,9 +192,14 @@ fn digest_counts_and_waiting_digests_name_the_accounts() {
         [(MUN.to_owned(), 2), (SFU.to_owned(), 1)]
     );
     assert_eq!(
-        queue.pending_digest_accounts().unwrap(),
-        [MUN.to_owned(), SFU.to_owned()].into_iter().collect()
+        queue.lightpanda_pending().unwrap(),
+        LanePending {
+            digests: [MUN.to_owned(), SFU.to_owned()].into_iter().collect(),
+            following: false,
+        }
     );
+    following(&queue, "club.one", None);
+    assert!(queue.lightpanda_pending().unwrap().following);
 }
 
 #[test]
@@ -201,4 +216,99 @@ fn a_list_whose_owner_id_is_unknown_stays_braves() {
         queue.claim_next(None, false).unwrap().unwrap().id,
         lookup.id
     );
+}
+
+#[test]
+fn brave_takes_a_lane_digest_left_waiting_too_long() {
+    let (_directory, host, queue) = setup();
+    let digest = queue.enqueue_digest("101", MUN, "cache-mun").unwrap();
+    queue
+        .set_lightpanda_lane(&accounts(&[MUN]), &accounts(&[MUN]), 1)
+        .unwrap();
+    assert!(queue.claim_next(None, false).unwrap().is_none());
+    host.advance(INSTAGRAM_LIGHTPANDA.lane_digest_wait_seconds + 1.0);
+    queue
+        .set_lightpanda_lane(&accounts(&[MUN]), &accounts(&[MUN]), 1)
+        .unwrap();
+    assert_eq!(
+        queue.claim_next(None, false).unwrap().unwrap().id,
+        digest.id
+    );
+}
+
+#[test]
+fn brave_recovery_leaves_the_running_lanes_reads_alone() {
+    let (_directory, host, queue) = setup();
+    queue
+        .set_lightpanda_lane(&[], &accounts(&[MUN]), 1)
+        .unwrap();
+    following(&queue, "club.one", None);
+    let claimed = queue.claim_lightpanda(MUN, false, true).unwrap().unwrap();
+
+    // A storage hiccup makes Brave recover the queue while the lane still reads.
+    queue.recover_interrupted().unwrap();
+    assert_eq!(queue.get(&claimed.id).unwrap().unwrap().state, "running");
+    queue
+        .finish_lightpanda(
+            &claimed,
+            Finish::result(json!({"users": []})),
+            &read(MUN, false),
+        )
+        .unwrap();
+    let finished = queue.get(&claimed.id).unwrap().unwrap();
+    assert_eq!(
+        (finished.state.as_str(), finished.attempts),
+        ("succeeded", 1)
+    );
+
+    // Once the lane stops saying it runs, its reads are recovery's again.
+    let wait = 3_600.0 + control().following_list_delay_max_seconds;
+    following(&queue, "club.two", None);
+    host.advance(wait);
+    queue
+        .set_lightpanda_lane(&[], &accounts(&[MUN]), 1)
+        .unwrap();
+    let stranded = queue.claim_lightpanda(MUN, false, true).unwrap().unwrap();
+    host.advance(INSTAGRAM_LIGHTPANDA.lane_stale_seconds + 1.0);
+    queue.recover_interrupted().unwrap();
+    assert_eq!(queue.get(&stranded.id).unwrap().unwrap().state, "pending");
+
+    // And a worker that starts afresh forgets an earlier lane at once.
+    host.advance(wait);
+    queue
+        .set_lightpanda_lane(&[], &accounts(&[MUN]), 1)
+        .unwrap();
+    let again = queue.claim_lightpanda(MUN, false, true).unwrap().unwrap();
+    queue.reset_lightpanda_lane().unwrap();
+    queue.recover_interrupted().unwrap();
+    assert_eq!(queue.get(&again.id).unwrap().unwrap().state, "pending");
+}
+
+#[test]
+fn the_lanes_reads_never_pace_or_reset_braves() {
+    let (_directory, _host, queue) = setup();
+    queue
+        .set_setting("following_rate_limit_backoff_seconds", json!(240.0))
+        .unwrap();
+    queue
+        .set_lightpanda_lane(&[], &accounts(&[MUN]), 1)
+        .unwrap();
+    following(&queue, "club.one", None);
+    let claimed = queue.claim_lightpanda(MUN, false, true).unwrap().unwrap();
+    queue
+        .finish_lightpanda(
+            &claimed,
+            Finish::result(json!({"users": []})),
+            &read(MUN, false),
+        )
+        .unwrap();
+    assert_eq!(queue.get_setting("following_next_list_at").unwrap(), None);
+    assert_eq!(queue.get_setting("following_next_page_at").unwrap(), None);
+    assert_eq!(
+        queue
+            .get_setting("following_rate_limit_backoff_seconds")
+            .unwrap(),
+        Some(json!(240.0))
+    );
+    assert!(queue.lightpanda_pace(MUN).unwrap().next_list_at > 0.0);
 }
