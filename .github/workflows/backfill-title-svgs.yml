@@ -1,0 +1,60 @@
+name: Backfill title SVGs
+
+# Draws the title SVG of every soon event listed before the ingestion agent
+# wrote them (`wat2do-ingest backfill-title-svgs`), on the Mac mini, against
+# production's database, at the commit production runs. Run it by hand after a
+# deploy; a second run picks up only events the first did not reach.
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: Events whose next date starts within this many days
+        default: "30"
+        type: string
+      limit:
+        description: At most this many events this run
+        default: "500"
+        type: string
+      dry_run:
+        description: Only count the events waiting
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  backfill:
+    name: Draw missing title SVGs on the Mac mini
+    runs-on: [self-hosted, wat2do-macmini-deploy]
+    environment: production
+    # It builds in the deploy's checkout, so it never runs beside a deploy.
+    concurrency:
+      group: deploy-mac-mini
+      cancel-in-progress: false
+    timeout-minutes: 480
+    steps:
+      - name: Build wat2do-ingest at the deployed commit and draw the titles
+        env:
+          DAYS: ${{ inputs.days }}
+          LIMIT: ${{ inputs.limit }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+          case "$DAYS$LIMIT" in
+            "" | *[!0-9]*) echo "days and limit must be whole numbers" >&2; exit 1 ;;
+          esac
+          data="$HOME/wat2do-data"
+          build="$HOME/wat2do-build"
+          sha=$(basename "$(readlink "$data/releases/current")")
+          git -C "$build" fetch --quiet origin
+          git -C "$build" checkout --quiet --detach "$sha"
+          (cd "$build/rust" && nice -n 10 cargo build --release --quiet --bin wat2do-ingest)
+          set -a
+          . "$data/config/backend.env"
+          set +a
+          flags=(--days "$DAYS" --limit "$LIMIT")
+          if [ "$DRY_RUN" = true ]; then flags+=(--dry-run); fi
+          nice -n 10 "$build/rust/target/release/wat2do-ingest" backfill-title-svgs "${flags[@]}"

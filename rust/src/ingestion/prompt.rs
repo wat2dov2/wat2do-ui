@@ -11,6 +11,11 @@ use crate::schools::{School, building_code_prompt, campus_season_prompt, lists_u
 
 const PROMPT: &str = include_str!("../../../backend/services/ingestion/prompt.md");
 
+/// How to draw an event's `title_svg` from its poster, shared by this prompt and
+/// the title SVG backfill (`super::title_svgs`).
+pub const TITLE_SVG_RULES: &str =
+    include_str!("../../../backend/services/ingestion/title_svg_rules.md");
+
 /// `backend/schemas/event_discovery_fields.json`, which the event schema,
 /// the extraction prompt and this agent's prompt all read.
 #[derive(Deserialize)]
@@ -182,6 +187,7 @@ pub fn render(source: &Source) -> String {
         ),
         ("categories", categories),
         ("discovery_rules", DISCOVERY_RULES.clone()),
+        ("title_svg_rules", TITLE_SVG_RULES.trim_end().to_owned()),
         ("campus_seasons", campus_season_prompt(&source.school.slug)),
         ("building_codes", building_code_prompt(&source.school.slug)),
     ];

@@ -248,7 +248,8 @@ fn video_urls(post: &Value) -> HashMap<String, String> {
         .collect()
 }
 
-fn extension(content_type: &str) -> &'static str {
+/// The file extension for an image's content type, `.jpg` when unknown.
+pub(crate) fn extension(content_type: &str) -> &'static str {
     match content_type {
         "image/png" => ".png",
         "image/webp" => ".webp",

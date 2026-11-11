@@ -15,6 +15,7 @@ pub mod processor;
 pub mod prompt;
 pub mod schedule;
 pub mod stop;
+pub mod title_svgs;
 
 #[cfg(test)]
 mod database_tests;

@@ -187,11 +187,7 @@ Columns:
   When some items are free and others sold, list only the free ones.
 - `registration`: true only when attendees are clearly told to register, RSVP or sign up.
 - `category`: always one of {{categories}}, the closest fit when none is exact; never NULL. Events without a category are hidden from category filters and never reach the Instagram carousels.
-- `title_svg`: the event's title as the poster sets it, drawn as one SVG the events page shows over the bottom of the poster on a dark fade.
-  Write `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 H">` holding only `<text>`, `<tspan>`, `<g>` and `<rect>` (for a band or box the title sits on), copying the poster's title: its words, line breaks, capitals, colours (hex), weight, italics, outline (`stroke` with `paint-order="stroke"`), tilt (`transform="rotate(...)"`) and stacked colour shadows.
-  Pick the closest common `font-family` stack for its lettering (for example `Impact,'Arial Narrow Bold',sans-serif` for condensed, `'Arial Black',sans-serif` for heavy, `Didot,'Bodoni 72',Georgia,serif` for high-contrast serif, `'Snell Roundhand','Brush Script MT',cursive` for script, `'Bradley Hand','Marker Felt',cursive` for brush), and give every `<text>` a `textLength` within the view box and `lengthAdjust="spacingAndGlyphs"` so no line is cut off whatever font a reader has.
-  Letters dark enough to vanish on the fade get a light outline; leave out everything that is not the title's text (icons, stars, dates, times, places, logos). No scripts, images, links, styles or event handlers.
-  Use NULL when there is no poster or its title is plain, unreadable or not shown.
+- `title_svg`: {{title_svg_rules}}
   On a listed event, set it only when this source's poster becomes its image.
 - `cancelled`: false unless the event is cancelled.
 - Never set `featured`, `created_by`, `display_handle`, `dtstart_utc`, `dtend_utc` or `source_posted_at` on `events`; the system fills them.
