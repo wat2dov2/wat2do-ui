@@ -75,10 +75,12 @@ enum Drawn {
 }
 
 /// Draw the missing title SVGs of events starting within `days`, soonest first,
-/// at most `limit` of them, `lanes` at a time. With `dry_run` only counts them.
+/// at most `limit` of them, `lanes` at a time; with `ids`, only those events
+/// (such as the ones the featured rows show). With `dry_run` only counts them.
 pub async fn backfill(
     pool: &PgPool,
     days: i32,
+    ids: &[i64],
     limit: usize,
     lanes: usize,
     dry_run: bool,
@@ -91,9 +93,11 @@ pub async fn backfill(
          WHERE e.title_svg IS NULL AND NOT e.cancelled \
            AND e.source_image_url LIKE 'https://%' \
            AND next.starts < now() + make_interval(days => $1) \
+           AND (cardinality($2::bigint[]) = 0 OR e.id::bigint = ANY($2)) \
          ORDER BY next.starts, e.id",
     )
     .bind(days)
+    .bind(ids)
     .fetch_all(pool)
     .await?
     .into_iter()

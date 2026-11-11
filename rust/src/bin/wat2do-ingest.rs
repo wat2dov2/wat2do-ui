@@ -44,6 +44,9 @@ enum Command {
         /// Events whose next date starts within this many days
         #[arg(long, default_value_t = 30)]
         days: i32,
+        /// Only these events, comma-separated (such as the ones the featured rows show)
+        #[arg(long, value_delimiter = ',')]
+        ids: Vec<i64>,
         /// At most this many events this run
         #[arg(long, default_value_t = 500)]
         limit: usize,
@@ -105,12 +108,13 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::BackfillTitleSvgs {
             days,
+            ids,
             limit,
             lanes,
             dry_run,
         } => {
             let pool = wat2do::db::connect(2).await?;
-            print_json(&title_svgs::backfill(&pool, days, limit, lanes, dry_run).await?)
+            print_json(&title_svgs::backfill(&pool, days, &ids, limit, lanes, dry_run).await?)
         }
         Command::InstallSchedule => schedule::install_schedule(&schedule::launchctl()?),
     }

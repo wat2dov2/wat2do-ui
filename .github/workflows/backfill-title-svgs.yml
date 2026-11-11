@@ -12,6 +12,10 @@ on:
         description: Events whose next date starts within this many days
         default: "30"
         type: string
+      event_ids:
+        description: Only these events, comma-separated (empty for every soon event)
+        default: ""
+        type: string
       limit:
         description: At most this many events this run
         default: "500"
@@ -38,6 +42,7 @@ jobs:
       - name: Build wat2do-ingest at the deployed commit and draw the titles
         env:
           DAYS: ${{ inputs.days }}
+          EVENT_IDS: ${{ inputs.event_ids }}
           LIMIT: ${{ inputs.limit }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
@@ -45,6 +50,9 @@ jobs:
           export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
           case "$DAYS$LIMIT" in
             "" | *[!0-9]*) echo "days and limit must be whole numbers" >&2; exit 1 ;;
+          esac
+          case "$EVENT_IDS" in
+            *[!0-9,]*) echo "event_ids must be comma-separated numbers" >&2; exit 1 ;;
           esac
           data="$HOME/wat2do-data"
           build="$HOME/wat2do-build"
@@ -56,5 +64,6 @@ jobs:
           . "$data/config/backend.env"
           set +a
           flags=(--days "$DAYS" --limit "$LIMIT")
+          if [ -n "$EVENT_IDS" ]; then flags+=(--ids "$EVENT_IDS"); fi
           if [ "$DRY_RUN" = true ]; then flags+=(--dry-run); fi
           nice -n 10 "$build/rust/target/release/wat2do-ingest" backfill-title-svgs "${flags[@]}"
