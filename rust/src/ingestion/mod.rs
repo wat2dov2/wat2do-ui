@@ -1,9 +1,10 @@
 //! The always-on ingestion processor: the `ingestion_items` queue turned into
-//! events and positions by Claude Haiku agents, and the directory agents that
-//! add to it.
+//! events and positions by Claude Haiku agents, the directory agents that
+//! add to it, and the club directory agents that queue clubs to follow.
 
 pub mod agent;
 pub mod changes;
+pub mod club_directories;
 pub mod club_logos;
 pub mod directories;
 pub mod fetch;

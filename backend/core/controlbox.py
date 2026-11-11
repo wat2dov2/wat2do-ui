@@ -870,6 +870,26 @@ class PositionsControl(_ControlModel):
     undated_visibility_months: int = Field(gt=0, le=12)
 
 
+class ClubDirectoryListingControl(_ControlModel):
+    """One listing request; ``{page}`` in the URL or JSON body pages through it from 1."""
+
+    url: str = Field(pattern=r"^https://\S+$", max_length=2048)
+    # Sent as a JSON POST body; without one the listing is a plain GET.
+    body: str | None = Field(default=None, min_length=2, max_length=2000)
+
+
+class ClubDirectoryControl(_ControlModel):
+    """A school's official club directory, read by a club directory agent."""
+
+    name: str = Field(min_length=1, max_length=100)
+    schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(
+        min_length=1, max_length=10
+    )
+    listings: list[ClubDirectoryListingControl] = Field(min_length=1, max_length=50)
+    # What the agent needs to know about this directory that its listing does not say.
+    notes: str = Field(default="", max_length=1000)
+
+
 class IngestionControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     parallel_agents: int = Field(ge=1, le=16)
@@ -887,6 +907,13 @@ class IngestionControl(_ControlModel):
     directory_listing_max_bytes: int = Field(gt=0, le=50_000_000)
     directory_model_timeout_seconds: int = Field(gt=0, le=3600)
     directory_scrape_interval_seconds: int = Field(ge=3600, le=86400)
+    # Club directory agents read each club directory's listing this often; the club pages
+    # they find are read a few at a time on every directory run, and again after a while.
+    club_directory_scan_days: int = Field(ge=1, le=90)
+    club_directory_max_listing_pages: int = Field(ge=1, le=200)
+    club_directory_pages_per_run: int = Field(ge=1, le=5000)
+    club_directory_page_delay_seconds: float = Field(ge=0, le=60, allow_inf_nan=False)
+    club_directory_recheck_days: int = Field(ge=1, le=365)
     claim_lease_seconds: int = Field(gt=0, le=86400)
     max_attempts: int = Field(ge=1, le=10)
     # Claude counts as unavailable after this many failed agent runs in a row; then, or when
@@ -909,11 +936,16 @@ class IngestionControl(_ControlModel):
     university_event_schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(
         max_length=100
     )
+    # Official club directories whose clubs' Instagram accounts are queued for following.
+    club_directories: list[ClubDirectoryControl] = Field(max_length=200)
 
     @model_validator(mode="after")
     def validate_budgets(self) -> "IngestionControl":
         if self.claim_lease_seconds <= self.model_timeout_seconds:
             raise ValueError("Ingestion claims must outlive one model call")
+        names = [directory.name for directory in self.club_directories]
+        if len(set(names)) != len(names):
+            raise ValueError("Club directory names must be unique")
         return self
 
 

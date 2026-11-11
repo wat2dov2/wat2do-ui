@@ -3158,7 +3158,7 @@ export interface components {
              * Source
              * @enum {string}
              */
-            source: "crawl" | "club" | "import";
+            source: "crawl" | "club" | "import" | "directory";
             /** Found Via */
             found_via: string[];
             /**

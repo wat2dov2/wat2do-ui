@@ -91,6 +91,9 @@ pub const NOTIFICATION_TYPES: [&str; 3] = [
 pub const NOTIFICATION_STATUS_SENT: &str = "sent";
 pub const NOTIFICATION_STATUS_FAILED: &str = "failed";
 
+/// `core.constants.FOLLOW_SOURCE_DIRECTORY`: a follow candidate a school's official club directory lists.
+pub const FOLLOW_SOURCE_DIRECTORY: &str = "directory";
+
 /// `core.constants.pagination`: page sizes and the deepest page.
 pub const DEFAULT_PAGE_SIZE: i64 = 50;
 pub const MAX_PAGE_SIZE: i64 = 100;

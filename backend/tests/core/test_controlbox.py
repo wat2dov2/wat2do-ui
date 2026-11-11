@@ -1052,3 +1052,15 @@ def test_ticketing_rejects_unsafe_settings(tmp_path: Path, patch, message) -> No
     path = _write_control(tmp_path, "ticketing", lambda payload: payload.update(patch))
     with pytest.raises(ValidationError, match=message):
         load_controlbox(path)
+
+
+def test_club_directories_are_named_once_and_list_their_schools(tmp_path: Path) -> None:
+    names = [directory.name for directory in controlbox.ingestion.club_directories]
+    assert "WUSA Clubs" in names
+    assert all(directory.schools for directory in controlbox.ingestion.club_directories)
+
+    def duplicate(payload: dict) -> None:
+        payload["club_directories"].append(payload["club_directories"][0])
+
+    with pytest.raises(ValidationError, match="Club directory names must be unique"):
+        load_controlbox(_write_control(tmp_path, "ingestion", duplicate))
