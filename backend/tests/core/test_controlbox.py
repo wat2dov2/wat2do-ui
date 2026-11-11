@@ -68,6 +68,8 @@ def test_notification_recording_keeps_direct_messages_redacted() -> None:
     assert control.reconnect_first_seconds <= control.reconnect_longest_seconds
     # A replayed notification is remembered past the emulator's daily restart.
     assert control.remember_days >= 1
+    # Only what the workflow processes is dispatched, never a direct message.
+    assert set(control.dispatch_push_categories) == {"post", "subscription_daily_digest"}
 
 
 @pytest.mark.parametrize(
@@ -77,6 +79,10 @@ def test_notification_recording_keeps_direct_messages_redacted() -> None:
         {"direct_message_markers": []},
         {"direct_message_markers": ["direct", "Direct V2"]},
         {"reconnect_first_seconds": 600, "reconnect_longest_seconds": 60},
+        {"retry_first_seconds": 3600, "retry_longest_seconds": 60},
+        {"dispatch_push_categories": ["post", "direct_v2_text"]},
+        {"dispatch_push_categories": []},
+        {"github_repo": "not a repo"},
         {"file_max_bytes": 1024},
         {"file_backup_count": 0},
         {"unknown_setting": 1},

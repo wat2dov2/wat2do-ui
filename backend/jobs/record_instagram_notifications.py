@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Record the Instagram notifications the Mac's emulator gets in a local file.
+"""Record the Instagram notifications the Mac's emulator gets, and start the workflow for
+its posts.
 
 ``run`` keeps appending each new notification to
 ``~/.local/state/wat2do/notification-log/notifications.jsonl``
-(``services/notification_recording.py``), with no direct message's text, and triggers
-nothing. Its own status lines go to ``recorder.log`` beside it, rotated at
+(``services/notification_recording.py``), with no direct message's text, and sends each
+new post and daily digest as the phones' repository dispatch
+(``services/notification_dispatch.py``). Its own status lines go to ``recorder.log`` beside it, rotated at
 ``log_max_bytes``. ``install-schedule`` keeps ``run`` alive through a macOS LaunchAgent.
 """
 
@@ -58,7 +60,7 @@ def log_to_file() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("run", help="Keep recording new notifications")
+    commands.add_parser("run", help="Keep recording new notifications and dispatching posts")
     commands.add_parser("install-schedule", help="Keep run alive through a LaunchAgent")
     args = parser.parse_args()
     if args.command == "install-schedule":

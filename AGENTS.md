@@ -43,10 +43,11 @@ maintainability.
 
 Collect Instagram notifications through the official Instagram app on a physical
 Android phone running Automate, whose `NotificationListenerService` flow triggers
-the GitHub `process-notification` workflow directly.
-Do not use Android emulators for notification collection.
-The Mac's emulator only records the Instagram notifications it gets, for a person to inspect: `backend/jobs/record_instagram_notifications.py` (LaunchAgent `io.wat2do.notification-recorder`) appends each one to `~/.local/state/wat2do/notification-log/notifications.jsonl` and triggers nothing (no workflow, no ingestion, no tap, no Android user started or stopped, never the emulator's lock).
-It keeps only a direct message's push category, Android user, recipient and times, never its sender or text.
+the GitHub `process-notification` workflow directly, and on the Mac's emulator.
+`backend/jobs/record_instagram_notifications.py` (LaunchAgent `io.wat2do.notification-recorder`) appends each notification the emulator gets to `~/.local/state/wat2do/notification-log/notifications.jsonl` and sends each new `post` and `subscription_daily_digest` one as the same `new_instagram_post` repository dispatch the phones send (`services/notification_dispatch.py`, `controlbox/notification_recording.json`).
+It does not check whether a phone already sent a notification; the workflow records each recipient and push ID once.
+Beyond that it only listens: no tap, no Android user started or stopped, never the emulator's lock.
+It keeps only a direct message's push category, Android user, recipient and times, never its sender or text, and never dispatches one.
 Budget no more than three Instagram accounts per device and scale horizontally by
 adding devices.
 The workflow records exact post URLs in the notification ledger, and a
