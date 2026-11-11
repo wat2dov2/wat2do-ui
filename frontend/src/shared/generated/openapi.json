@@ -11031,7 +11031,8 @@
             "enum": [
               "crawl",
               "club",
-              "import"
+              "import",
+              "directory"
             ],
             "title": "Source"
           },

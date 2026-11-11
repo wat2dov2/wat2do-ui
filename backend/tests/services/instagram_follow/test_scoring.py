@@ -121,3 +121,20 @@ def _posted(days_ago):
 def test_each_score_decides_the_account(verdict, profile, handle, expected):
     score = {"verdict": verdict, "score": 50, "reason": "r"}
     assert module.decision("wlu", {"handle": handle}, profile, score) == expected
+
+
+def test_an_unreadable_account_the_school_directory_lists_is_approved_on_review():
+    listed = {"handle": "someband", "source": "directory", "found_via": ["Laurier Clubs"]}
+    crawled = {"handle": "someband", "source": "crawl", "found_via": ["laurierchess"]}
+    review = {"verdict": "review", "score": 45, "reason": "r"}
+    assert module.decision("wlu", listed, {"read": "failed"}, review) == "approved"
+    assert module.decision("wlu", crawled, {"read": "failed"}, review) == "rejected"
+    reject = {**review, "verdict": "reject"}
+    assert module.decision("wlu", listed, {"read": "failed"}, reject) == "rejected"
+
+
+def test_the_scorer_sees_which_directory_lists_an_account():
+    row = {"handle": "x", "source": "directory", "found_via": ["SSMU Clubs"], "profile": PROFILE}
+    assert module._packet(row)["directory"] == "SSMU Clubs"
+    crawled = {**row, "source": "crawl", "found_via": ["ssmuaeum"]}
+    assert module._packet(crawled)["directory"] is None

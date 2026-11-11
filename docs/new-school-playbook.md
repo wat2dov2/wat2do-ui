@@ -379,6 +379,8 @@ Separately identify the official event directory used to seed or supplement the 
 
 Do not confuse a club directory with the event-directory sources stored in the `public.directory_sources` table.
 Add the event directory as one `directory_sources` row in a migration, with its listing URL, publishing club, listing format, and event URL patterns.
+Add the club directory to `backend/controlbox/ingestion.json` `club_directories` (its listing requests, the schools it covers, and notes on where each club's own page is), so the club directory agents queue the Instagram accounts of clubs registered after launch for following.
+Prefer a public JSON listing (a WordPress REST route or the platform's own API) over a page that loads more entries with JavaScript, and page through it with `{page}`.
 
 ### 9.2 Inspect the site before choosing a scraper
 

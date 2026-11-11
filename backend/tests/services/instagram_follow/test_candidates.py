@@ -82,6 +82,42 @@ def test_approving_reuses_the_schools_existing_club(sb, monkeypatch):
     assert sb.update.call_args.args[0]["club_id"] == 9
 
 
+def test_approving_a_row_found_for_a_club_gives_that_club_its_account(sb, monkeypatch):
+    candidate_id = uuid4()
+    sb.queue_responses([[{**_pending(candidate_id), "club_id": 12}]])
+    monkeypatch.setattr(
+        module.club_service,
+        "get_club",
+        lambda club_id: type("Club", (), {"id": club_id, "school": "utsg", "ig": None})(),
+    )
+    updated = []
+    monkeypatch.setattr(
+        module.club_service, "update_club", lambda club_id, data: updated.append((club_id, data))
+    )
+    monkeypatch.setattr(module.club_service, "lookup_club_by_school_and_ig", pytest.fail)
+    monkeypatch.setattr(module.club_service, "create_club", pytest.fail)
+
+    module.decide([(candidate_id, "approved")], decided_by=None)
+
+    assert updated == [(12, module.ClubUpdate(ig="utmaclub"))]
+    assert sb.update.call_args.args[0]["club_id"] == 12
+
+
+def test_a_club_that_found_its_own_account_keeps_it(sb, monkeypatch):
+    candidate_id = uuid4()
+    sb.queue_responses([[{**_pending(candidate_id), "club_id": 12}]])
+    monkeypatch.setattr(
+        module.club_service,
+        "get_club",
+        lambda club_id: type("Club", (), {"id": club_id, "school": "utsg", "ig": "utmac"})(),
+    )
+    monkeypatch.setattr(module.club_service, "update_club", pytest.fail)
+
+    module.decide([(candidate_id, "approved")], decided_by=None)
+
+    assert sb.update.call_args.args[0]["club_id"] == 12
+
+
 def test_rejecting_creates_nothing_and_decisions_on_settled_rows_are_skipped(sb, monkeypatch):
     rejected, settled = uuid4(), uuid4()
     sb.queue_responses([[_pending(rejected)]])

@@ -16,6 +16,7 @@ from core.constants import (
     DEFAULT_LIST_LIMIT,
     DEFAULT_PAGE_SIZE,
     EVENT_CATEGORIES,
+    FOLLOW_SOURCE_DIRECTORY,
     INTEREST_TO_CATEGORIES,
     MAX_AVATAR_SIZE_BYTES,
     MAX_AVATAR_URL_LENGTH,
@@ -148,6 +149,10 @@ def test_notification_types_and_statuses_match():
         assert _rust_value(name) == f'"{value}"'
     types = re.findall(r"NOTIFICATION_TYPE_[A-Z_]+", _rust_value("NOTIFICATION_TYPES"))
     assert [_rust_value(name).strip('"') for name in types] == list(NOTIFICATION_TYPES)
+
+
+def test_follow_sources_match():
+    assert _rust_value("FOLLOW_SOURCE_DIRECTORY") == f'"{FOLLOW_SOURCE_DIRECTORY}"'
 
 
 def test_event_and_filter_limits_match():

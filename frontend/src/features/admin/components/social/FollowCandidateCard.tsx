@@ -31,6 +31,8 @@ export function FollowCandidateCard({ candidate, schoolName, decision, onDecide 
       ? t("admin.socialAccounts.lastPost", { time: formatRelativeTimeCompact(candidate.last_posted_at, t) })
       : t(`admin.followCandidates.read.${candidate.read_status ?? "unread"}`),
   ].filter(Boolean);
+  // A crawled account was found through followed accounts; a directory account names its directory.
+  const foundVia = candidate.source === "directory" ? candidate.found_via : candidate.found_via.map((handle) => `@${handle}`);
 
   return (
     <Card>
@@ -54,7 +56,7 @@ export function FollowCandidateCard({ candidate, schoolName, decision, onDecide 
           {candidate.reason ? <p className="text-sm">{candidate.reason}</p> : null}
           {candidate.found_via.length ? (
             <p className="text-xs text-muted-foreground">
-              {t("admin.followCandidates.foundVia", { accounts: candidate.found_via.map((handle) => `@${handle}`).join(", ") })}
+              {t("admin.followCandidates.foundVia", { accounts: foundVia.join(", ") })}
             </p>
           ) : null}
           {candidate.follow_error ? <Badge variant="warning">{candidate.follow_error}</Badge> : null}

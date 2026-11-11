@@ -147,6 +147,11 @@ pub struct Ingestion {
     pub directory_listing_max_bytes: usize,
     pub directory_model_timeout_seconds: u64,
     pub directory_scrape_interval_seconds: u64,
+    pub club_directory_scan_days: u64,
+    pub club_directory_max_listing_pages: usize,
+    pub club_directory_pages_per_run: usize,
+    pub club_directory_page_delay_seconds: f64,
+    pub club_directory_recheck_days: u64,
     pub claim_lease_seconds: i32,
     pub max_attempts: i32,
     pub agent_failure_streak: u64,
@@ -160,6 +165,26 @@ pub struct Ingestion {
     pub profile_render_timeout_seconds: f64,
     pub launch_agent_timeout_seconds: f64,
     pub university_event_schools: Vec<String>,
+    pub club_directories: Vec<ClubDirectory>,
+}
+
+/// One official club directory in `controlbox/ingestion.json` `club_directories`.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ClubDirectory {
+    pub name: String,
+    pub schools: Vec<String>,
+    pub listings: Vec<ClubDirectoryListing>,
+    #[serde(default)]
+    pub notes: String,
+}
+
+/// One listing request; `{page}` in its URL or JSON body pages through it from 1.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ClubDirectoryListing {
+    pub url: String,
+    pub body: Option<String>,
 }
 
 /// The event image and video limits and the thumbnail sizes in `controlbox/uploads.json`.
