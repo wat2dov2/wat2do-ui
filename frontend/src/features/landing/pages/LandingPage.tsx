@@ -27,7 +27,7 @@ export function LandingPage({ snapshot }: LandingPageProps) {
         <LandingProblem schoolName={schoolName} />
         <LandingSolution schoolName={schoolName} snapshot={snapshot} />
         <LandingFaq />
-        <LandingClosing schoolName={schoolName} />
+        <LandingClosing />
       </Stack>
     </Container>
   );

@@ -170,9 +170,6 @@ class EventDiscoveryControl(_ControlModel):
     preview_event_count: int = Field(gt=0, le=100)
     server_feed_page_size: int = Field(gt=0, le=100)
     highlights: EventHighlightsControl
-    # Google Fonts the ingestion agent picks from for an event's title, the one
-    # closest to the lettering on its poster; the events page loads only these.
-    title_fonts: list[Annotated[str, Field(pattern=r"^[A-Za-z0-9 ]{1,60}$")]] = Field(min_length=1)
     campus_seasons: CampusSeasonsControl
     views: EventViewsControl
     map_geocoding: MapGeocodingControl

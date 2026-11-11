@@ -16,7 +16,6 @@
     "submitEventForReview": "提交活動以供審核",
     "submitForReview": "提交以供審核",
     "uploadEventFlyer": "上傳活動傳單",
-    "uploadEventFlyerDescription": "上傳或貼上圖片傳單，AI會自動填入詳情。",
     "processingEventImage": "處理活動圖片中",
     "flyerExtracted": "傳單詳情提取成功。",
     "flyerParseFailed": "傳單解析失敗",
@@ -157,7 +156,7 @@
     },
     "highlights": {
       "fresh": "Wat2Do 新活動",
-      "openEvent": "睇活動",
+      "by": "主辦",
       "map": "校園周邊",
       "networking": "建立人脈機會"
     }

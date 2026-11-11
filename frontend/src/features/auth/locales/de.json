@@ -1,6 +1,7 @@
 {
   "auth": {
     "heading": "Entdecke, was auf dem Campus passiert.",
+    "loginRequired": "Anmeldung erforderlich",
     "description": "Melde dich an oder erstelle ein Konto, um Veranstaltungen zu speichern, deinen Feed zu personalisieren und zu entdecken, was auf dem Campus passiert.",
     "emailLabel": "E-Mail-Adresse",
     "emailPlaceholder": "you@{{domain}}",

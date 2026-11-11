@@ -84,7 +84,6 @@
   "navigation": {
     "events": "Events",
     "submit": "Submit",
-    "signInRequired": "Sign-in required",
     "clubs": "Clubs",
     "positions": "Positions",
     "myEvents": "My Events",
@@ -562,35 +561,34 @@
         "social": "social event",
         "position": "club position"
       },
-      "primaryAction": "See what's on",
-      "primaryHoverAction": "Browse events",
+      "primaryAction": "Browse events",
       "secondaryAction": "About us"
     },
     "problem": {
-      "title": "Campus is NOT boring. Its events are just hidden.",
-      "description": "There's always something happening at {{school}}. The problem is where it gets announced.",
+      "title": "Most campus events never make it to your feed.",
+      "description": "Clubs at {{school}} announce events on their own Instagram accounts a few days ahead, and Instagram shows each post to only some of their followers.",
       "points": {
         "buried": {
           "title": "Buried in your feed",
-          "description": "Even when you follow a club, Instagram decides whether you see its post. Most event flyers sink under everything else in your feed."
+          "description": "Following a club doesn't mean you see its posts. Instagram picks what reaches you, and event flyers rarely beat everything else in your feed."
         },
         "scattered": {
           "title": "Hundreds of clubs, no shared feed",
-          "description": "Every club, society and team posts on its own account. Nobody follows all of them, so you only hear about what your friends repost."
+          "description": "Clubs, societies and teams each post on their own account. You can't follow hundreds of them, so you hear about whatever your friends happen to repost."
         },
         "late": {
           "title": "You find out the day after",
-          "description": "Free food, a recruiter night, a $5 cooking class. You see the recap post and realize it was yesterday."
+          "description": "You see the recap of a recruiter night or a free dinner and realize it was yesterday."
         },
         "quiet": {
-          "title": "So it feels like nothing happens",
-          "description": "When events are scattered across hundreds of accounts, campus feels quiet. It isn't. You just can't see it."
+          "title": "So campus feels quiet",
+          "description": "With events spread over hundreds of accounts, a week can look empty even when clubs ran plenty of things."
         }
       }
     },
     "solution": {
-      "title": "Every opportunity, kept up to date.",
-      "description": "Every event, networking night and club opening at {{school}}, updated as clubs post them. Search, filter and save the ones you want.",
+      "title": "Wat2Do puts it all on one page and keeps it current.",
+      "description": "Wat2Do reads club posts at {{school}} and lists the events and open club positions it finds, usually within a day of the post. You can search and filter them and save the ones you want.",
       "stats": {
         "clubsLabel": "club tracked at {{school}}",
         "clubsLabel_other": "clubs tracked at {{school}}",
@@ -613,7 +611,7 @@
       },
       "clubs": {
         "title": "Find the clubs you didn't know existed",
-        "description": "Browse every club at {{school}}, follow the ones you like, and find open positions when you want to get involved."
+        "description": "Browse the clubs at {{school}} and follow the ones you like. When you want to get involved, their open positions are listed too."
       }
     },
     "faq": {
@@ -625,7 +623,7 @@
         },
         "clubs": {
           "question": "Does my club need to sign up?",
-          "answer": "No. If your club posts events on a public Instagram account, Wat2Do picks them up automatically. You can also claim your club's page to manage it."
+          "answer": "No. If your club posts events on a public Instagram account, Wat2Do picks them up on its own. You can also claim your club's page to manage it."
         },
         "speed": {
           "question": "How fast do new events show up?",
@@ -643,8 +641,8 @@
       }
     },
     "closing": {
-      "title": "Stop finding out the day after.",
-      "action": "See what's on"
+      "title": "See this week's events before they happen.",
+      "action": "Browse events"
     }
   },
   "footer": {

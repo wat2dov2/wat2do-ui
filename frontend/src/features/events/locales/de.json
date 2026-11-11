@@ -16,7 +16,6 @@
     "submitEventForReview": "Veranstaltung zur Überprüfung einreichen",
     "submitForReview": "Zur Überprüfung einreichen",
     "uploadEventFlyer": "Eventflyer hochladen",
-    "uploadEventFlyerDescription": "Laden Sie ein Bild eines Flyers hoch oder fügen Sie es ein, und die KI füllt die Details automatisch aus.",
     "processingEventImage": "Verarbeitung des Veranstaltungsbildes",
     "flyerExtracted": "Flyer-Details erfolgreich extrahiert.",
     "flyerParseFailed": "Fehler beim Analysieren des Flyers",
@@ -165,7 +164,7 @@
     },
     "highlights": {
       "fresh": "Neu auf Wat2Do",
-      "openEvent": "Event ansehen",
+      "by": "von",
       "map": "Rund um den Campus",
       "networking": "Networking-Gelegenheiten"
     }

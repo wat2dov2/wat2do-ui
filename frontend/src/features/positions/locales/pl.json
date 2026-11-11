@@ -49,7 +49,6 @@
       "requirements": "Jedno wymaganie w wierszu, na przykład:\nUmiejętność pracy w zespole\nDostępność na cotygodniowe spotkania"
     },
     "uploadImage": "Prześlij plakat stanowiska",
-    "uploadImageDescription": "Prześlij lub wklej obraz stanowiska, a AI automatycznie uzupełni szczegóły.",
     "processingImage": "Przetwarzanie obrazu stanowiska",
     "imageParseFailed": "Nie udało się odczytać obrazu",
     "imageParseFailedDescription": "Nie udało się odczytać szczegółów stanowiska z obrazu.",

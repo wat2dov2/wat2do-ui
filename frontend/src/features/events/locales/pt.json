@@ -16,7 +16,6 @@
     "submitEventForReview": "Enviar Evento para Revisão",
     "submitForReview": "Enviar para Revisão",
     "uploadEventFlyer": "Carregar Flyer do Evento",
-    "uploadEventFlyerDescription": "Carregue ou cole uma imagem do flyer, e a IA preencherá automaticamente os detalhes.",
     "processingEventImage": "Processando imagem do evento",
     "flyerExtracted": "Detalhes do flyer extraídos com sucesso.",
     "flyerParseFailed": "Falha ao analisar flyer",
@@ -173,7 +172,7 @@
     },
     "highlights": {
       "fresh": "Novidades no Wat2Do",
-      "openEvent": "Ver evento",
+      "by": "por",
       "map": "Pelo campus",
       "networking": "Oportunidades de networking"
     }

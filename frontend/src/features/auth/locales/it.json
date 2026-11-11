@@ -1,6 +1,7 @@
 {
   "auth": {
     "heading": "Scopri cosa sta succedendo nel campus.",
+    "loginRequired": "Accesso richiesto",
     "description": "Accedi o crea un account per salvare eventi, personalizzare il tuo feed e scoprire cosa sta succedendo nel campus.",
     "emailLabel": "Indirizzo email",
     "emailPlaceholder": "tuo@{{domain}}",

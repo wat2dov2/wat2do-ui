@@ -102,9 +102,9 @@ class EventSummaryResponse(EventDiscoveryFields):
     registration: bool = False
     source_image_url: str | None = None
     source_video_url: str | None = None
-    title_font: str | None = Field(
+    title_svg: str | None = Field(
         default=None,
-        description="The web font closest to the lettering of the title on the event's poster",
+        description="The title as the event's poster sets it, drawn as an SVG; shown as an image",
     )
     source_url: str | None = None
     category: str | None = None
@@ -154,9 +154,9 @@ class EventResponse(EventDiscoveryFields):
     registration: bool = False
     source_image_url: str | None = None
     source_video_url: str | None = None
-    title_font: str | None = Field(
+    title_svg: str | None = Field(
         default=None,
-        description="The web font closest to the lettering of the title on the event's poster",
+        description="The title as the event's poster sets it, drawn as an SVG; shown as an image",
     )
     club_logo_url: str | None = None
     cohosts: list[ClubCohostResponse] = Field(default_factory=list)

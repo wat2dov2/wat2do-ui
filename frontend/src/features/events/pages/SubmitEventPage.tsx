@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { getUserProfile, useAuthState } from "@/features/auth";
+import { getUserProfile, LoginRequiredBadge, useAuthState } from "@/features/auth";
 import { useOwnClub } from "@/features/clubs";
 import { SubmitEventFlow } from "@/features/events/components/SubmitEventModal";
 import { useEventsStore } from "@/features/events/store/events.store";
@@ -61,6 +61,7 @@ export function SubmitEventPage() {
       <Stack gap={6}>
         <PageShellHeader
           route={ROUTES.EVENT_SUBMIT}
+          badge={<LoginRequiredBadge />}
           description={ownClub ? undefined : t("events.submitEventSchoolDescription", {
             school: getSchoolName(school),
           })}

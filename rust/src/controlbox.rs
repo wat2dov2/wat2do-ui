@@ -316,8 +316,6 @@ pub struct NotificationRetry {
 /// The campus seasons, map views and map geocoding in `controlbox/event_discovery.json`.
 #[derive(Debug, Deserialize)]
 pub struct EventDiscovery {
-    /// Google Fonts an event's title can be set in (`events.title_font`).
-    pub title_fonts: Vec<String>,
     /// How long an occurrence without an end stays listed after it starts.
     pub event_without_end_visibility_minutes: i64,
     pub campus_seasons: CampusSeasons,

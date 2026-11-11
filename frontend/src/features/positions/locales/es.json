@@ -48,7 +48,6 @@
       "requirements": "Un requisito por línea, por ejemplo:\nComodidad trabajando en equipo\nDisponibilidad para reuniones semanales"
     },
     "uploadImage": "Sube el póster del puesto",
-    "uploadImageDescription": "Sube o pega una imagen del puesto y la IA completará los detalles automáticamente.",
     "processingImage": "Procesando la imagen del puesto",
     "imageParseFailed": "No se pudo leer la imagen",
     "imageParseFailedDescription": "No pudimos leer los detalles del puesto en la imagen.",

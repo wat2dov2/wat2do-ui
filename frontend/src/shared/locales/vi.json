@@ -84,7 +84,6 @@
   "navigation": {
     "events": "Sự kiện",
     "submit": "Gửi",
-    "signInRequired": "Cần đăng nhập",
     "clubs": "Tổ chức",
     "positions": "Vị trí",
     "myEvents": "Sự kiện của tôi",
@@ -562,35 +561,34 @@
         "social": "buổi giao lưu trong trường",
         "position": "vị trí câu lạc bộ trong trường"
       },
-      "primaryAction": "Xem có gì hay",
-      "primaryHoverAction": "Xem sự kiện",
+      "primaryAction": "Xem sự kiện",
       "secondaryAction": "Về chúng tôi"
     },
     "problem": {
-      "title": "Trường KHÔNG HỀ nhàm chán. Chỉ là sự kiện bị giấu kín.",
-      "description": "Ở {{school}} lúc nào cũng có gì đó diễn ra. Vấn đề nằm ở nơi chúng được thông báo.",
+      "title": "Phần lớn sự kiện ở trường không bao giờ hiện lên bảng tin của bạn.",
+      "description": "Các câu lạc bộ ở {{school}} thông báo sự kiện trên tài khoản Instagram riêng vài ngày trước, và Instagram chỉ hiển thị mỗi bài đăng cho một phần người theo dõi của họ.",
       "points": {
         "buried": {
           "title": "Chìm nghỉm trong bảng tin",
-          "description": "Kể cả khi bạn theo dõi một tổ chức, Instagram vẫn quyết định bạn có thấy bài đăng của họ hay không. Hầu hết poster sự kiện đều bị chìm dưới mọi thứ khác trong bảng tin của bạn."
+          "description": "Theo dõi một tổ chức không có nghĩa là bạn sẽ thấy bài đăng của họ. Instagram chọn những gì đến với bạn, và poster sự kiện hiếm khi nổi hơn mọi thứ khác trong bảng tin của bạn."
         },
         "scattered": {
           "title": "Hàng trăm tổ chức, không có bảng tin chung",
-          "description": "Mỗi tổ chức, hội và đội đều đăng trên tài khoản riêng. Chẳng ai theo dõi hết, nên bạn chỉ biết những gì bạn bè đăng lại."
+          "description": "Câu lạc bộ, hội và đội nào cũng đăng trên tài khoản riêng. Bạn không thể theo dõi hàng trăm tài khoản, nên bạn biết những gì bạn bè tình cờ đăng lại."
         },
         "late": {
           "title": "Hôm sau bạn mới biết",
-          "description": "Đồ ăn miễn phí, buổi gặp nhà tuyển dụng, lớp nấu ăn $5. Bạn thấy bài tổng kết rồi mới nhận ra là hôm qua."
+          "description": "Bạn thấy bài tổng kết của một buổi gặp nhà tuyển dụng hay một bữa tối miễn phí rồi mới nhận ra là hôm qua."
         },
         "quiet": {
-          "title": "Nên cứ ngỡ chẳng có gì diễn ra",
-          "description": "Khi sự kiện nằm rải rác trên hàng trăm tài khoản, trường có vẻ yên ắng. Thật ra không phải vậy. Chỉ là bạn không nhìn thấy."
+          "title": "Nên trường có vẻ yên ắng",
+          "description": "Khi sự kiện nằm rải rác trên hàng trăm tài khoản, một tuần có thể trông trống trơn dù các câu lạc bộ đã tổ chức rất nhiều thứ."
         }
       }
     },
     "solution": {
-      "title": "Mọi cơ hội, luôn cập nhật.",
-      "description": "Mọi sự kiện, buổi networking và vị trí câu lạc bộ đang tuyển ở {{school}}, cập nhật ngay khi câu lạc bộ đăng. Tìm, lọc và lưu những gì bạn muốn.",
+      "title": "Wat2Do gom tất cả vào một trang và luôn cập nhật.",
+      "description": "Wat2Do đọc bài đăng của các câu lạc bộ ở {{school}} và liệt kê những sự kiện và vị trí câu lạc bộ đang tuyển mà nó tìm thấy, thường trong vòng một ngày sau khi đăng. Bạn có thể tìm, lọc và lưu những cái bạn muốn.",
       "stats": {
         "clubsLabel": "tổ chức được theo dõi tại {{school}}",
         "clubsLabel_other": "tổ chức được theo dõi tại {{school}}",
@@ -613,7 +611,7 @@
       },
       "clubs": {
         "title": "Khám phá những tổ chức bạn chưa từng biết",
-        "description": "Xem mọi tổ chức tại {{school}}, theo dõi những nơi bạn thích, và tìm vị trí đang tuyển khi bạn muốn tham gia."
+        "description": "Xem các tổ chức tại {{school}} và theo dõi những nơi bạn thích. Khi bạn muốn tham gia, vị trí đang tuyển của họ cũng được liệt kê."
       }
     },
     "faq": {
@@ -625,7 +623,7 @@
         },
         "clubs": {
           "question": "Tổ chức của mình có cần đăng ký không?",
-          "answer": "Không. Nếu tổ chức của bạn đăng sự kiện trên tài khoản Instagram công khai, Wat2Do sẽ tự động lấy về. Bạn cũng có thể nhận quyền quản lý trang của tổ chức."
+          "answer": "Không. Nếu tổ chức của bạn đăng sự kiện trên tài khoản Instagram công khai, Wat2Do sẽ tự lấy về. Bạn cũng có thể nhận quyền quản lý trang của tổ chức."
         },
         "speed": {
           "question": "Sự kiện mới xuất hiện nhanh cỡ nào?",
@@ -643,8 +641,8 @@
       }
     },
     "closing": {
-      "title": "Đừng để hôm sau mới biết nữa.",
-      "action": "Xem có gì hay"
+      "title": "Xem sự kiện tuần này trước khi chúng diễn ra.",
+      "action": "Xem sự kiện"
     }
   },
   "footer": {

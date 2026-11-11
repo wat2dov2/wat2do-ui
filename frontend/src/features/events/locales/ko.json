@@ -16,7 +16,6 @@
     "submitEventForReview": "검토를 위해 이벤트 제출",
     "submitForReview": "검토를 위해 제출",
     "uploadEventFlyer": "이벤트 전단 업로드",
-    "uploadEventFlyerDescription": "이미지 전단을 업로드하거나 붙여넣으면 AI가 자동으로 세부 정보를 채워줍니다.",
     "processingEventImage": "이벤트 이미지 처리 중",
     "flyerExtracted": "전단 세부 정보가 성공적으로 추출되었습니다.",
     "flyerParseFailed": "전단 분석 실패",
@@ -157,7 +156,7 @@
     },
     "highlights": {
       "fresh": "Wat2Do 신규 이벤트",
-      "openEvent": "이벤트 보기",
+      "by": "주최",
       "map": "캠퍼스 곳곳",
       "networking": "네트워킹 기회"
     }

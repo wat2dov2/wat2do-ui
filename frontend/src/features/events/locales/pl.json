@@ -16,7 +16,6 @@
     "submitEventForReview": "Prześlij wydarzenie do zatwierdzenia",
     "submitForReview": "Prześlij do zatwierdzenia",
     "uploadEventFlyer": "Prześlij ulotkę wydarzenia",
-    "uploadEventFlyerDescription": "Prześlij lub wklej obraz ulotki, a AI automatycznie uzupełni szczegóły.",
     "processingEventImage": "Przetwarzanie obrazu wydarzenia",
     "flyerExtracted": "Szczegóły ulotki zostały pomyślnie wyodrębnione.",
     "flyerParseFailed": "Analiza ulotki nie powiodła się",
@@ -181,7 +180,7 @@
     },
     "highlights": {
       "fresh": "Nowe na Wat2Do",
-      "openEvent": "Zobacz wydarzenie",
+      "by": "od",
       "map": "Wokół kampusu",
       "networking": "Okazje do networkingu"
     }

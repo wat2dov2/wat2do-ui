@@ -1,6 +1,7 @@
 {
   "auth": {
     "heading": "探索校園內的活動。",
+    "loginRequired": "需要登入",
     "description": "登入或建立帳戶以儲存活動、個人化你的資訊流，並探索校園內的活動。",
     "emailLabel": "電郵地址",
     "emailPlaceholder": "you@{{domain}}",

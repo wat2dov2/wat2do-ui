@@ -2728,10 +2728,11 @@ export interface components {
             /** Source Video Url */
             source_video_url?: string | null;
             /**
-             * Title Font
-             * @description The web font closest to the lettering of the title on the event's poster
+             * Title Svg
+             * @description The title as the event's poster sets it, drawn as an SVG; shown as an image
+             * @default null
              */
-            title_font?: string | null;
+            title_svg: string | null;
             /** Club Logo Url */
             club_logo_url?: string | null;
             /** Cohosts */
@@ -2838,10 +2839,11 @@ export interface components {
             /** Source Video Url */
             source_video_url?: string | null;
             /**
-             * Title Font
-             * @description The web font closest to the lettering of the title on the event's poster
+             * Title Svg
+             * @description The title as the event's poster sets it, drawn as an SVG; shown as an image
+             * @default null
              */
-            title_font?: string | null;
+            title_svg: string | null;
             /** Club Logo Url */
             club_logo_url?: string | null;
             /** Cohosts */
@@ -2972,10 +2974,11 @@ export interface components {
             /** Source Video Url */
             source_video_url?: string | null;
             /**
-             * Title Font
-             * @description The web font closest to the lettering of the title on the event's poster
+             * Title Svg
+             * @description The title as the event's poster sets it, drawn as an SVG; shown as an image
+             * @default null
              */
-            title_font?: string | null;
+            title_svg: string | null;
             /** Source Url */
             source_url?: string | null;
             /** Category */

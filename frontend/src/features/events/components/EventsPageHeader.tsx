@@ -8,6 +8,7 @@ import { FilterDropdown } from "@/features/search/components/FilterDropdown";
 import { DateFilterSelect } from "@/features/events/components/DateFilterSelect";
 import { EventViewSelect, type EventBrowseView } from "@/features/events/components/EventViewSelect";
 import { useAuthState } from "@/features/auth/hooks/useAuthState";
+import { useSignedInAction } from "@/features/auth/hooks/useSignInGate";
 import { getEventQuickFilters, START_FROM_NOW } from "@/shared/constants/eventFilters";
 import { PageHeader } from "@/shared/layout";
 import { FilterBar } from "@/shared/layout/filter-bar";
@@ -55,7 +56,8 @@ export function EventsPageHeader({
   appliedQueryKey,
 }: EventsPageHeaderProps) {
   const { t } = useTranslation();
-  const { profileCompleted } = useAuthState();
+  const { isAuthenticated, profileCompleted } = useAuthState();
+  const signedInAction = useSignedInAction();
   const showFilterDropdown = useUIStore((s) => s.showFilterDropdown);
   const setShowFilterDropdown = useUIStore((s) => s.setShowFilterDropdown);
   const quickFilters = getEventQuickFilters({ profileCompleted, sportsGameAvailable: filters.sportsGameAvailable });
@@ -95,7 +97,12 @@ export function EventsPageHeader({
             case "minGoing":
               return <IntegerFilter key={config.id} disabled={!eventStatsReady} value={filters.minGoing} active={filters.minGoing > 0} onChange={value => filters.setMinGoing(Number(value))} label={`>${t("events.goingCount", { count: filters.minGoing })}`} inputLabel={t("events.minimumGoing")} />;
             default:
-              return <Button activation="click" key={config.id} disabled={config.id === "going" && !goingEventsReady} variant={filters[config.value] ? "primary" : "outline"} size="sm" onClick={() => filters[config.action](!filters[config.value])} aria-pressed={filters[config.value]}>
+              // Going is the reader's own list: a signed-out reader is sent to log in instead.
+              return <Button activation="click" key={config.id} disabled={config.id === "going" && isAuthenticated && !goingEventsReady} variant={filters[config.value] ? "primary" : "outline"} size="sm" onClick={() => {
+                const toggle = () => filters[config.action](!filters[config.value]);
+                if (config.id === "going") signedInAction(toggle);
+                else toggle();
+              }} aria-pressed={filters[config.value]}>
                 {t(config.labelKey)}
               </Button>;
           }

@@ -84,7 +84,6 @@
   "navigation": {
     "events": "活动",
     "submit": "提交",
-    "signInRequired": "需要登录",
     "clubs": "组织",
     "positions": "职位",
     "myEvents": "我的活动",
@@ -562,35 +561,34 @@
         "social": "社交活动",
         "position": "社团职位"
       },
-      "primaryAction": "看看有什么活动",
-      "primaryHoverAction": "浏览活动",
+      "primaryAction": "浏览活动",
       "secondaryAction": "关于我们"
     },
     "problem": {
-      "title": "校园并不无聊，只是活动都藏起来了。",
-      "description": "{{school}} 每天都有事情发生。问题出在活动发布的地方。",
+      "title": "大多数校园活动根本不会出现在你的信息流里。",
+      "description": "{{school}} 的社团会提前几天在自己的 Instagram 账号上发布活动，而 Instagram 只会把每条帖子推给部分关注者。",
       "points": {
         "buried": {
           "title": "淹没在信息流里",
-          "description": "即使你关注了某个组织，能不能看到它的帖子也由 Instagram 决定。大多数活动海报都会被信息流里的其他内容淹没。"
+          "description": "关注了某个组织，不代表你能看到它的帖子。推给你什么由 Instagram 决定，活动海报很少能比信息流里的其他内容更显眼。"
         },
         "scattered": {
           "title": "上百个组织，没有统一的信息流",
-          "description": "每个组织、协会和队伍都在自己的账号上发帖。没人会全部关注，所以你只能看到朋友转发的那些。"
+          "description": "组织、协会和队伍各自在自己的账号上发帖。你不可能关注几百个账号，所以只能碰巧看到朋友转发的那些。"
         },
         "late": {
           "title": "第二天才知道",
-          "description": "免费餐饮、招聘之夜、$5 的烹饪课。等你刷到回顾帖，才发现那已经是昨天的事了。"
+          "description": "你刷到招聘之夜或免费晚餐的回顾帖，才发现那是昨天的事。"
         },
         "quiet": {
-          "title": "所以感觉什么都没发生",
-          "description": "活动分散在上百个账号里，校园就显得冷冷清清。其实并不是，只是你看不到而已。"
+          "title": "所以校园显得冷清",
+          "description": "活动分散在上百个账号里，就算社团办了很多活动，一周看起来也可能空空荡荡。"
         }
       }
     },
     "solution": {
-      "title": "每个机会，随时更新。",
-      "description": "{{school}} 的每个活动、社交之夜和社团招新，社团一发布就立即更新。搜索、筛选，把想去的都保存下来。",
+      "title": "Wat2Do 把一切汇总到一个页面，并保持更新。",
+      "description": "Wat2Do 会读取 {{school}} 社团的帖子，列出找到的活动和社团招新职位，通常在发帖后一天内。你可以搜索、筛选，并保存想要的。",
       "stats": {
         "clubsLabel": "{{school}} 已收录的组织",
         "clubsLabel_other": "{{school}} 已收录的组织",
@@ -613,7 +611,7 @@
       },
       "clubs": {
         "title": "发现你从没听说过的组织",
-        "description": "浏览 {{school}} 的所有组织，关注你喜欢的，想参与的时候还能找到正在招人的职位。"
+        "description": "浏览 {{school}} 的组织，关注你喜欢的。想参与的时候，它们正在招人的职位也会列出来。"
       }
     },
     "faq": {
@@ -625,7 +623,7 @@
         },
         "clubs": {
           "question": "我的组织需要注册吗？",
-          "answer": "不需要。只要你的组织在公开的 Instagram 账号上发布活动，Wat2Do 就会自动抓取。你也可以认领组织主页来管理它。"
+          "answer": "不需要。只要你的组织在公开的 Instagram 账号上发布活动，Wat2Do 就会自己抓取。你也可以认领组织主页来管理它。"
         },
         "speed": {
           "question": "新活动多快能出现？",
@@ -643,8 +641,8 @@
       }
     },
     "closing": {
-      "title": "别再第二天才知道了。",
-      "action": "看看有什么活动"
+      "title": "提前看到本周的活动。",
+      "action": "浏览活动"
     }
   },
   "footer": {

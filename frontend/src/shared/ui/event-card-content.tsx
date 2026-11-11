@@ -90,6 +90,9 @@ const DESCRIPTION_CLASS = "mt-2 line-clamp-2 text-xs leading-relaxed";
 const METADATA_CLASS = "flex min-w-0 items-end justify-between gap-1";
 const METADATA_LINES_CLASS = "min-w-0 flex-1 space-y-0.5";
 const METADATA_LINE_CLASS = "flex min-w-0 items-center gap-1 text-[13px]";
+// Each badge sits in a slot one metadata line tall, at the lines' own gap, so a
+// badge is centred on the date, time or location line beside it.
+const BADGE_SLOT_CLASS = "flex h-[1lh] min-w-0 max-w-full items-center justify-end text-[13px]";
 
 interface EventCardMetadataLineProps {
   icon: LucideIcon;
@@ -267,17 +270,19 @@ export function EventCardContent({
                * tea") ate the row and squeezed the date, time and location
                * beside it down to a few characters each. Two-fifths of the row is the
                * most this column may claim; past that the label ellipsises.
-               * The badges stack, each no taller than a metadata line, so three of them
-               * (58 px) stay within the date, time and location beside them (62.5 px):
+               * The badges stack on the same line pitch as the date, time and location,
+               * bottom-aligned with them, so three badges line up with those three lines:
                * a card is as tall with three badges as with none, and its loading
                * skeleton matches either way.
                */
               <div
                 data-slot="event-card-badges"
-                className="flex min-w-0 max-w-[40%] shrink flex-col items-end gap-0.5"
+                className="flex min-w-0 max-w-[40%] shrink flex-col items-end space-y-0.5"
               >
                 {badges.map((badge) => (
-                  <EventCardBadge key={badge.text} badge={badge} interactive={interactive} className={badgeClassName} />
+                  <span key={badge.text} className={BADGE_SLOT_CLASS}>
+                    <EventCardBadge badge={badge} interactive={interactive} className={badgeClassName} />
+                  </span>
                 ))}
               </div>
             )}

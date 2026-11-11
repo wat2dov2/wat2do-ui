@@ -7,7 +7,6 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::constants::EVENT_CATEGORIES;
-use crate::controlbox::EVENT_DISCOVERY;
 use crate::schools::{School, building_code_prompt, campus_season_prompt, lists_university_events};
 
 const PROMPT: &str = include_str!("../../../backend/services/ingestion/prompt.md");
@@ -182,15 +181,6 @@ pub fn render(source: &Source) -> String {
             },
         ),
         ("categories", categories),
-        (
-            "title_fonts",
-            EVENT_DISCOVERY
-                .title_fonts
-                .iter()
-                .map(|font| format!("'{font}'"))
-                .collect::<Vec<_>>()
-                .join(", "),
-        ),
         ("discovery_rules", DISCOVERY_RULES.clone()),
         ("campus_seasons", campus_season_prompt(&source.school.slug)),
         ("building_codes", building_code_prompt(&source.school.slug)),

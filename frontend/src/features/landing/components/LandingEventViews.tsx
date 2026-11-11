@@ -37,7 +37,6 @@ export function LandingEventViews({ view, events, isLoading }: LandingEventViews
         isLoading={isLoading}
         onEventClick={openEvent}
         groupByDateSections={false}
-        embedded
       />
     </div>
   );

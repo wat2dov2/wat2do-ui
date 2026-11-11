@@ -9,13 +9,14 @@ import {
   type MosaicController,
   type MosaicLook,
 } from "@/features/landing/lib/eventPixelMosaic";
+import { useDarkMode } from "@/shared/hooks/useDarkMode";
 import { cn } from "@/shared/lib/utils";
 
 /**
  * Small squares with half-pixel gutters, many changing every second. The atlas
  * holds 32 px posters, over twice the square, so squares stay crisp on 2x and 3x screens.
  */
-const LOOK: MosaicLook = { tileSize: 10, gutter: 0.5, swapsPerSecond: 0.4 };
+const LOOK: MosaicLook = { tileSize: 12, gutter: 0.5, swapsPerSecond: 0.4 };
 
 interface EventPixelMosaicProps {
   /** The element the Wat2Do logo is drawn behind, in the same card; none draws no logo. */
@@ -59,6 +60,8 @@ export function EventPixelMosaic({ logoRegion, title, buttons }: EventPixelMosai
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controllerRef = useRef<MosaicController | null>(null);
   const [ready, setReady] = useState(false);
+  // A theme switch redraws the mosaic, so the headline's posters always stand out from the page.
+  const { isDarkMode } = useDarkMode();
   const titleRef = useRef(title);
   const buttonsRef = useRef(buttons);
   useEffect(() => {
@@ -100,6 +103,7 @@ export function EventPixelMosaic({ logoRegion, title, buttons }: EventPixelMosai
         logoMask: manifest.logoMask,
         logoColours: manifest.logoColours,
         logoRegion: () => regionOf(logoRegion?.current),
+        onDark: isDarkMode,
         title: headline && {
           lead: headline.lead,
           phrases: headline.phrases,
@@ -137,7 +141,7 @@ export function EventPixelMosaic({ logoRegion, title, buttons }: EventPixelMosai
       controller?.stop();
     };
     // titleWords stands in for the headline and buttons, which are read through refs.
-  }, [logoRegion, titleWords]);
+  }, [logoRegion, titleWords, isDarkMode]);
 
   return (
     // Until the first atlas paints, the face shows the skeleton tone the rest of the app loads with.

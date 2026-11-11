@@ -4,13 +4,12 @@ import NextLink from "next/link";
 import { Link } from "@/shared/ui/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Crown, HelpCircle, LogIn, LogOut, MoreHorizontal, Plus, QrCode, Shapes, Settings, Shield, Ticket, Users } from "lucide-react";
+import { ChevronDown, Crown, HelpCircle, LogOut, MoreHorizontal, Plus, QrCode, Shapes, Settings, Shield, Ticket, Users } from "lucide-react";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@/shared/ui/tooltip";
-import { Badge } from "@/shared/ui/badge";
 import { Button, buttonVariants } from "@/shared/ui/button";
 import { LazyImage } from "@/shared/ui/lazy-image";
 import { SchoolCombobox } from "@/shared/ui/school-combobox";
@@ -105,22 +104,20 @@ const SETTINGS_NAV_ITEM = {
   Icon: Settings,
 } as const;
 
-// Event and position forms open to everyone but ask for sign-in before they submit.
+// Event and position forms open to everyone and ask for sign-in themselves, before they submit.
 const SUBMIT_ITEMS = [
-  { labelKey: "events.submitEvent", href: ROUTES.EVENT_SUBMIT, Icon: Ticket, requiresSignIn: true },
-  { labelKey: "positions.addPosition", href: ROUTES.POSITION_SUBMIT, Icon: Users, requiresSignIn: true },
-  { labelKey: "clubs.addClub", href: ROUTES.CLUB_CREATE, Icon: Shapes, requiresSignIn: false },
+  { labelKey: "events.submitEvent", href: ROUTES.EVENT_SUBMIT, Icon: Ticket },
+  { labelKey: "positions.addPosition", href: ROUTES.POSITION_SUBMIT, Icon: Users },
+  { labelKey: "clubs.addClub", href: ROUTES.CLUB_CREATE, Icon: Shapes },
 ] as const;
 
 interface SubmitMenuProps {
   size: "sm" | "navigation";
-  /** Signed-out readers see which forms will ask them to sign in. */
-  signedIn: boolean;
   onNavigate?: () => void;
 }
 
 /** The one way into every submission form: a menu of what to submit. */
-function SubmitMenu({ size, signedIn, onNavigate }: SubmitMenuProps) {
+function SubmitMenu({ size, onNavigate }: SubmitMenuProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
@@ -135,7 +132,7 @@ function SubmitMenu({ size, signedIn, onNavigate }: SubmitMenuProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {SUBMIT_ITEMS.map(({ labelKey, href, Icon, requiresSignIn }) => (
+        {SUBMIT_ITEMS.map(({ labelKey, href, Icon }) => (
           <DropdownMenuItem
             key={href}
             onSelect={() => {
@@ -145,12 +142,6 @@ function SubmitMenu({ size, signedIn, onNavigate }: SubmitMenuProps) {
           >
             <Icon />
             {t(labelKey)}
-            {requiresSignIn && !signedIn ? (
-              <Badge variant="muted">
-                <LogIn aria-hidden />
-                {t("navigation.signInRequired")}
-              </Badge>
-            ) : null}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -305,7 +296,7 @@ export function TopNav() {
               </Button>
             );
           })}
-          <SubmitMenu size="sm" signedIn={isAuthenticated} />
+          <SubmitMenu size="sm" />
         </nav>} />
 
         <Drawer
@@ -402,7 +393,7 @@ export function TopNav() {
                     </Button>
                   );
                 })}
-                <SubmitMenu size="navigation" signedIn={isAuthenticated} onNavigate={() => setNavigationOpen(false)} />
+                <SubmitMenu size="navigation" onNavigate={() => setNavigationOpen(false)} />
               </nav>
               {canOpenClubPanel && (
                 <>

@@ -1,6 +1,7 @@
 {
   "auth": {
     "heading": "캠퍼스에서 어떤 일이 일어나고 있는지 알아보세요.",
+    "loginRequired": "로그인이 필요합니다",
     "description": "이벤트를 저장하고, 피드를 개인화하며, 캠퍼스의 소식을 알아보려면 로그인하거나 계정을 만드세요.",
     "emailLabel": "이메일 주소",
     "emailPlaceholder": "you@{{domain}}",

@@ -46,7 +46,6 @@
       "requirements": "Mỗi dòng một yêu cầu, ví dụ:\nThoải mái làm việc nhóm\nCó thể tham gia họp hằng tuần"
     },
     "uploadImage": "Tải lên poster vị trí",
-    "uploadImageDescription": "Tải lên hoặc dán ảnh về vị trí, AI sẽ tự động điền thông tin.",
     "processingImage": "Đang xử lý ảnh vị trí",
     "imageParseFailed": "Không đọc được ảnh",
     "imageParseFailedDescription": "Chúng tôi không đọc được thông tin vị trí từ ảnh.",

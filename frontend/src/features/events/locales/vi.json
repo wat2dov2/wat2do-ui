@@ -16,7 +16,6 @@
     "submitEventForReview": "Gửi sự kiện để xem xét",
     "submitForReview": "Gửi để xem xét",
     "uploadEventFlyer": "Tải lên Tờ rơi Sự kiện",
-    "uploadEventFlyerDescription": "Tải lên hoặc dán một hình ảnh tờ rơi, và AI sẽ tự động điền trước các chi tiết.",
     "processingEventImage": "Đang xử lý hình ảnh sự kiện",
     "flyerExtracted": "Chi tiết tờ rơi đã được trích xuất thành công.",
     "flyerParseFailed": "Phân tích tờ rơi thất bại",
@@ -157,7 +156,7 @@
     },
     "highlights": {
       "fresh": "Mới trên Wat2Do",
-      "openEvent": "Xem sự kiện",
+      "by": "bởi",
       "map": "Quanh khuôn viên",
       "networking": "Cơ hội kết nối"
     }

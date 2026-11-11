@@ -47,7 +47,6 @@
       "requirements": "Eine Anforderung pro Zeile, zum Beispiel:\nGerne im Team arbeiten\nFür wöchentliche Treffen verfügbar sein"
     },
     "uploadImage": "Stellenposter hochladen",
-    "uploadImageDescription": "Lade ein Bild der Stelle hoch oder füge es ein, und die KI füllt die Details automatisch aus.",
     "processingImage": "Stellenbild wird verarbeitet",
     "imageParseFailed": "Bild konnte nicht gelesen werden",
     "imageParseFailedDescription": "Wir konnten keine Stellendetails aus dem Bild lesen.",

@@ -6,7 +6,8 @@ import { useTranslation } from "react-i18next";
 import { useRequestSchool } from "@/app/client-providers";
 import { eventFeedQueryOptions } from "@/features/events/api/events.api";
 import { EventHighlightSectionsSkeleton } from "@/features/events/components/EventHighlightSections";
-import { EventList } from "@/features/events/components/EventList";
+import { EVENT_MAP_VIEW_CLASS, EventsBrowseViews } from "@/features/events/components/EventsBrowseViews";
+import { DEFAULT_EVENT_VIEW } from "@/features/events/components/EventViewSelect";
 import { EventsPageHeader } from "@/features/events/components/EventsPageHeader";
 import { buildEventHighlights } from "@/features/events/lib/eventHighlights";
 import { useCurrentTime } from "@/features/events/hooks/useGoingEvents";
@@ -17,6 +18,7 @@ import { PositionsPageHeader, type PositionsHeaderState } from "@/features/posit
 import { useSearch } from "@/features/search";
 import { feedFilterAvailability, resolveCampusSeasonFilters } from "@/features/search/api/filterService";
 import { Stack } from "@/shared/layout";
+import { cn } from "@/shared/lib/utils";
 import { useAppConstants } from "@/shared/hooks/useAppConstants";
 import { useSchoolDirectory } from "@/shared/hooks/useSchoolDirectory";
 import type { Event } from "@/shared/types";
@@ -58,11 +60,11 @@ function EventsLoading() {
   const highlights = useMemo(() => feed ? buildEventHighlights(feed.items, currentTimeMs) : null, [feed, currentTimeMs]);
   return (
     <>
-      <EventHighlightSectionsSkeleton school={school} highlights={highlights} />
+      <EventHighlightSectionsSkeleton school={school} highlights={highlights} withMap={DEFAULT_EVENT_VIEW !== "map"} />
       <EventsPageHeader
         filters={{ ...search, campusSeasonOptions }}
         school={school}
-        view="grid"
+        view={DEFAULT_EVENT_VIEW}
         onViewChange={ignore}
         count={null}
         latest={null}
@@ -70,8 +72,13 @@ function EventsLoading() {
         eventStatsReady={false}
         goingEventsReady={false}
       />
-      <Stack as="main" className="relative z-10 w-full" role="main" aria-label={t("search.ariaLabel")}>
-        <EventList events={NO_EVENTS} eventStats={null} isLoading />
+      <Stack
+        as="main"
+        className={cn("relative z-10 w-full", DEFAULT_EVENT_VIEW === "map" && EVENT_MAP_VIEW_CLASS)}
+        role="main"
+        aria-label={t("search.ariaLabel")}
+      >
+        <EventsBrowseViews view={DEFAULT_EVENT_VIEW} school={school} events={NO_EVENTS} eventStats={null} isLoading onEventClick={ignore} />
       </Stack>
     </>
   );

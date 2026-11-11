@@ -8,6 +8,7 @@
 
 // Components
 export { EmailOtpForm } from "./components/EmailOtpForm";
+export { LoginRequiredBadge } from "./components/LoginRequiredBadge";
 export { PreviewStyleEventCard } from "./components/PreviewStyleEventCard";
 export { ClubManagerView, SessionView } from "./components/SessionView";
 

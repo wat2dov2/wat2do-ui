@@ -90,7 +90,6 @@
   "navigation": {
     "events": "Événements",
     "submit": "Soumettre",
-    "signInRequired": "Connexion requise",
     "clubs": "Organisations",
     "positions": "Postes",
     "myEvents": "Mes Événements",
@@ -568,35 +567,34 @@
         "social": "événements du campus",
         "position": "événements du campus"
       },
-      "primaryAction": "Voir ce qui se passe",
-      "primaryHoverAction": "Parcourir les événements",
+      "primaryAction": "Parcourir les événements",
       "secondaryAction": "À propos de nous"
     },
     "problem": {
-      "title": "Le campus n'est PAS ennuyeux. Ses événements sont juste cachés.",
-      "description": "Il se passe toujours quelque chose à {{school}}. Le problème, c'est où c'est annoncé.",
+      "title": "La plupart des événements du campus n'arrivent jamais dans votre fil.",
+      "description": "Les clubs de {{school}} annoncent leurs événements sur leurs propres comptes Instagram quelques jours à l'avance, et Instagram ne montre chaque publication qu'à une partie de leurs abonnés.",
       "points": {
         "buried": {
           "title": "Noyé dans votre fil",
-          "description": "Même si vous suivez un club, c'est Instagram qui décide si vous voyez sa publication. La plupart des affiches d'événements disparaissent sous tout le reste de votre fil."
+          "description": "Suivre un club ne veut pas dire que vous voyez ses publications. Instagram choisit ce qui vous parvient, et les affiches d'événements passent rarement devant tout le reste de votre fil."
         },
         "scattered": {
           "title": "Des centaines de clubs, aucun fil commun",
-          "description": "Chaque club, association et équipe publie sur son propre compte. Personne ne les suit tous, alors vous n'entendez parler que de ce que vos amis repartagent."
+          "description": "Clubs, associations et équipes publient chacun sur leur propre compte. Vous ne pouvez pas en suivre des centaines, alors vous entendez parler de ce que vos amis repartagent par hasard."
         },
         "late": {
           "title": "Vous l'apprenez le lendemain",
-          "description": "De la nourriture gratuite, une soirée recruteurs, un cours de cuisine à $5. Vous tombez sur la publication récap et réalisez que c'était hier."
+          "description": "Vous tombez sur le récap d'une soirée recruteurs ou d'un dîner gratuit et réalisez que c'était hier."
         },
         "quiet": {
-          "title": "Alors on a l'impression qu'il ne se passe rien",
-          "description": "Quand les événements sont éparpillés sur des centaines de comptes, le campus paraît calme. Il ne l'est pas. Vous ne le voyez simplement pas."
+          "title": "Alors le campus paraît calme",
+          "description": "Avec des événements éparpillés sur des centaines de comptes, une semaine peut sembler vide alors que les clubs ont organisé plein de choses."
         }
       }
     },
     "solution": {
-      "title": "Chaque occasion, toujours à jour.",
-      "description": "Chaque événement, soirée de réseautage et poste ouvert dans les clubs de {{school}}, mis à jour dès que les clubs les publient. Cherchez, filtrez et gardez ce qui vous intéresse.",
+      "title": "Wat2Do rassemble tout sur une seule page et la tient à jour.",
+      "description": "Wat2Do lit les publications des clubs de {{school}} et liste les événements et les postes ouverts dans les clubs qu'il trouve, en général moins d'un jour après la publication. Vous pouvez les chercher, les filtrer et enregistrer ceux que vous voulez.",
       "stats": {
         "clubsLabel": "club suivi à {{school}}",
         "clubsLabel_one": "club suivi à {{school}}",
@@ -631,7 +629,7 @@
       },
       "clubs": {
         "title": "Découvrez des clubs dont vous ignoriez l'existence",
-        "description": "Parcourez toutes les organisations de {{school}}, suivez celles qui vous plaisent et trouvez des postes ouverts quand vous voulez vous impliquer."
+        "description": "Parcourez les clubs de {{school}} et suivez ceux qui vous plaisent. Quand vous voulez vous impliquer, leurs postes ouverts sont aussi indiqués."
       }
     },
     "faq": {
@@ -643,7 +641,7 @@
         },
         "clubs": {
           "question": "Mon club doit-il s'inscrire ?",
-          "answer": "Non. Si votre club publie ses événements sur un compte Instagram public, Wat2Do les récupère automatiquement. Vous pouvez aussi revendiquer la page de votre club pour la gérer."
+          "answer": "Non. Si votre club publie ses événements sur un compte Instagram public, Wat2Do les récupère tout seul. Vous pouvez aussi revendiquer la page de votre club pour la gérer."
         },
         "speed": {
           "question": "En combien de temps les nouveaux événements apparaissent-ils ?",
@@ -663,8 +661,8 @@
       }
     },
     "closing": {
-      "title": "Arrêtez de l'apprendre le lendemain.",
-      "action": "Voir ce qui se passe"
+      "title": "Repérez les événements de la semaine à l'avance.",
+      "action": "Parcourir les événements"
     }
   },
   "footer": {

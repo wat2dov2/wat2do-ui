@@ -22,6 +22,7 @@ function validLastModified(
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const school = await getRequestSchool();
+  const homeUrl = getSchoolCanonicalUrl(school, ROUTES.HOME);
   const eventsUrl = getSchoolCanonicalUrl(school, ROUTES.EVENTS);
 
   try {
@@ -50,6 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }));
 
     return [
+      { url: homeUrl, changeFrequency: "daily", priority: 1 },
       {
         url: eventsUrl,
         lastModified: validLastModified(snapshot.latest_added_event?.added_at),
@@ -79,6 +81,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ];
   } catch (error) {
     console.error("School sitemap generation failed:", error);
-    return [{ url: eventsUrl, changeFrequency: "daily", priority: 1 }];
+    return [
+      { url: homeUrl, changeFrequency: "daily", priority: 1 },
+      { url: eventsUrl, changeFrequency: "daily", priority: 1 },
+    ];
   }
 }

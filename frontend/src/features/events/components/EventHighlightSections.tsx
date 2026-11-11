@@ -40,7 +40,7 @@ function EventMapSection({ school, events, onEventClick, loadFailureNotice }: Ev
     <Section title={t("events.highlights.map")}>
       <div ref={ref} className={MAP_FRAME_CLASS}>
         {hasIntersected && events ? (
-          <EventsBrowseViews view="map" school={school} events={events} eventStats={null} onEventClick={onEventClick} embedded />
+          <EventsBrowseViews view="map" school={school} events={events} eventStats={null} onEventClick={onEventClick} />
         ) : <EventViewSkeleton variant="map">{loadFailureNotice}</EventViewSkeleton>}
       </div>
     </Section>
@@ -87,13 +87,15 @@ interface EventHighlightSectionsProps {
   /** Every event still on; null until the complete feed arrives. */
   mapEvents: Event[] | null;
   eventStats: Record<string, EventStats> | null;
+  /** Whether the sections end with the campus map; the page's own map view leaves it out. */
+  withMap: boolean;
   onEventClick: (event: Event) => void;
   /** Shown where the map waits once the complete feed has failed to load. */
   loadFailureNotice?: ReactNode;
 }
 
 /** The featured row: tall poster cards, or their placeholders while the page's data loads. */
-function FeaturedRow({ events, onEventClick }: { events: Event[] | null; onEventClick: (event: Event) => void }) {
+function FeaturedRow({ events, onEventClick }: Omit<EventCarouselRowProps, "title" | "eventStats">) {
   const { t } = useTranslation();
   if (events !== null && events.length === 0) return null;
   return (
@@ -117,6 +119,7 @@ export function EventHighlightSections({
   highlights,
   mapEvents,
   eventStats,
+  withMap,
   onEventClick,
   loadFailureNotice,
 }: EventHighlightSectionsProps) {
@@ -138,7 +141,7 @@ export function EventHighlightSections({
           onEventClick={onEventClick}
         />
       </> : null}
-      <EventMapSection school={school} events={mapEvents} onEventClick={onEventClick} loadFailureNotice={loadFailureNotice} />
+      {withMap ? <EventMapSection school={school} events={mapEvents} onEventClick={onEventClick} loadFailureNotice={loadFailureNotice} /> : null}
     </Stack>
   );
 }
@@ -147,6 +150,7 @@ interface EventHighlightSectionsSkeletonProps {
   school: string;
   /** Highlights this visit already holds (a cached feed), or null when unknown. */
   highlights: EventHighlights | null;
+  withMap: boolean;
 }
 
 /**
@@ -154,7 +158,7 @@ interface EventHighlightSectionsSkeletonProps {
  * What this visit already knows decides which sections hold places; a section
  * that might turn out empty reserves nothing, as on the page itself.
  */
-export function EventHighlightSectionsSkeleton({ school, highlights }: EventHighlightSectionsSkeletonProps) {
+export function EventHighlightSectionsSkeleton({ school, highlights, withMap }: EventHighlightSectionsSkeletonProps) {
   const { t } = useTranslation();
   return (
     <Stack gap={8} data-slot="event-highlights" className={SECTIONS_CLASS}>
@@ -165,7 +169,7 @@ export function EventHighlightSectionsSkeleton({ school, highlights }: EventHigh
       {highlights && highlights.networking.length > 0 ? (
         <EventCarouselRow title={t("events.highlights.networking")} events={null} eventStats={null} onEventClick={ignoreEvent} />
       ) : null}
-      <EventMapSection school={school} events={null} onEventClick={ignoreEvent} />
+      {withMap ? <EventMapSection school={school} events={null} onEventClick={ignoreEvent} /> : null}
     </Stack>
   );
 }

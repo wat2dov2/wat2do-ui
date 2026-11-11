@@ -1,6 +1,7 @@
 {
   "auth": {
     "heading": "发现校园里正在发生的事情。",
+    "loginRequired": "需要登录",
     "description": "登录或创建账号以保存活动、个性化您的订阅源，并探索校园里正在发生的事情。",
     "emailLabel": "电子邮箱",
     "emailPlaceholder": "you@{{domain}}",

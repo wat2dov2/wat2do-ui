@@ -1,6 +1,7 @@
 {
   "auth": {
     "heading": "Khám phá những gì đang diễn ra trên khuôn viên trường.",
+    "loginRequired": "Cần đăng nhập",
     "description": "Đăng nhập hoặc tạo tài khoản để lưu sự kiện, cá nhân hóa nguồn cấp dữ liệu của bạn và khám phá những gì đang diễn ra trên khuôn viên trường.",
     "emailLabel": "Địa chỉ email",
     "emailPlaceholder": "you@{{domain}}",

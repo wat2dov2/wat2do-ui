@@ -87,7 +87,6 @@
   "navigation": {
     "events": "Mga Kaganapan",
     "submit": "Magsumite",
-    "signInRequired": "Kailangang mag-sign in",
     "clubs": "Mga organisasyon",
     "positions": "Mga posisyon",
     "myEvents": "Aking mga event",
@@ -565,35 +564,34 @@
         "social": "social event sa campus",
         "position": "posisyon sa club sa campus"
       },
-      "primaryAction": "Tingnan kung ano'ng meron",
-      "primaryHoverAction": "Mag-browse ng events",
+      "primaryAction": "Mag-browse ng events",
       "secondaryAction": "Tungkol sa amin"
     },
     "problem": {
-      "title": "HINDI boring ang campus. Nakatago lang ang mga kaganapan.",
-      "description": "Laging may nangyayari sa {{school}}. Ang problema ay kung saan ito inaanunsyo.",
+      "title": "Karamihan ng mga kaganapan sa campus ay hindi umaabot sa feed mo.",
+      "description": "Inaanunsyo ng mga organisasyon sa {{school}} ang kanilang mga kaganapan sa sarili nilang Instagram account ilang araw bago nito, at ipinapakita lang ng Instagram ang bawat post sa ilan sa kanilang mga follower.",
       "points": {
         "buried": {
           "title": "Natatabunan sa feed mo",
-          "description": "Kahit naka-follow ka sa isang organisasyon, Instagram ang nagpapasya kung makikita mo ang post nito. Karamihan ng mga flyer ng kaganapan ay natatabunan ng lahat ng iba pa sa feed mo."
+          "description": "Hindi porke naka-follow ka sa isang organisasyon ay makikita mo na ang mga post nito. Instagram ang pumipili kung ano ang makakarating sa iyo, at bihirang manaig ang mga flyer ng kaganapan sa lahat ng iba pa sa feed mo."
         },
         "scattered": {
           "title": "Daan-daang organisasyon, walang iisang feed",
-          "description": "Bawat organisasyon, samahan at team ay nagpo-post sa sarili nilang account. Walang nagfo-follow sa lahat, kaya ang nalalaman mo lang ay ang mga ni-repost ng mga kaibigan mo."
+          "description": "Bawat organisasyon, samahan at team ay nagpo-post sa sarili nilang account. Hindi mo kayang i-follow ang daan-daan sa kanila, kaya ang nalalaman mo ay kung ano ang nagkataong ni-repost ng mga kaibigan mo."
         },
         "late": {
           "title": "Kinabukasan mo na nalalaman",
-          "description": "Libreng pagkain, recruiter night, $5 na cooking class. Makikita mo ang recap post at saka mo mare-realize na kahapon pala iyon."
+          "description": "Makikita mo ang recap ng isang recruiter night o libreng hapunan at saka mo mare-realize na kahapon pala iyon."
         },
         "quiet": {
-          "title": "Kaya parang walang nangyayari",
-          "description": "Kapag kalat ang mga kaganapan sa daan-daang account, parang tahimik ang campus. Pero hindi. Hindi mo lang ito nakikita."
+          "title": "Kaya parang tahimik ang campus",
+          "description": "Dahil kalat ang mga kaganapan sa daan-daang account, puwedeng magmukhang walang laman ang isang linggo kahit marami namang ginawa ang mga organisasyon."
         }
       }
     },
     "solution": {
-      "title": "Bawat oportunidad, laging updated.",
-      "description": "Bawat kaganapan, networking night at bukas na posisyon sa mga club ng {{school}}, ina-update agad pagka-post ng mga club. Maghanap, mag-filter at i-save ang gusto mo.",
+      "title": "Inilalagay ng Wat2Do ang lahat sa iisang page at pinapanatili itong updated.",
+      "description": "Binabasa ng Wat2Do ang mga post ng mga club sa {{school}} at inililista ang mga kaganapan at bukas na posisyon sa club na nahahanap nito, kadalasan sa loob ng isang araw mula nang i-post. Puwede mo silang hanapin at i-filter, at i-save ang mga gusto mo.",
       "stats": {
         "clubsLabel": "organisasyong sinusubaybayan sa {{school}}",
         "clubsLabel_one": "organisasyong sinusubaybayan sa {{school}}",
@@ -622,7 +620,7 @@
       },
       "clubs": {
         "title": "Hanapin ang mga organisasyong hindi mo alam na meron pala",
-        "description": "I-browse ang bawat organisasyon sa {{school}}, i-follow ang mga gusto mo, at maghanap ng mga bakanteng posisyon kapag gusto mong sumali."
+        "description": "I-browse ang mga organisasyon sa {{school}} at i-follow ang mga gusto mo. Kapag gusto mong sumali, nakalista rin ang mga bakanteng posisyon nila."
       }
     },
     "faq": {
@@ -634,7 +632,7 @@
         },
         "clubs": {
           "question": "Kailangan bang mag-sign up ng organisasyon ko?",
-          "answer": "Hindi. Kung nagpo-post ang organisasyon mo ng mga kaganapan sa isang public na Instagram account, awtomatiko itong makukuha ng Wat2Do. Puwede mo ring i-claim ang page ng organisasyon mo para ikaw ang mag-manage nito."
+          "answer": "Hindi. Kung nagpo-post ang organisasyon mo ng mga kaganapan sa isang public na Instagram account, kusa itong makukuha ng Wat2Do. Puwede mo ring i-claim ang page ng organisasyon mo para ikaw ang mag-manage nito."
         },
         "speed": {
           "question": "Gaano kabilis lumalabas ang mga bagong kaganapan?",
@@ -653,8 +651,8 @@
       }
     },
     "closing": {
-      "title": "Tama na ang pag-alam kinabukasan.",
-      "action": "Tingnan kung ano'ng meron"
+      "title": "Tingnan ang mga kaganapan ngayong linggo bago mangyari.",
+      "action": "Mag-browse ng events"
     }
   },
   "footer": {

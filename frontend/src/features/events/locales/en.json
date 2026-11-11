@@ -16,7 +16,6 @@
     "submitEventForReview": "Submit Event for Review",
     "submitForReview": "Submit for Review",
     "uploadEventFlyer": "Upload Event Flyer",
-    "uploadEventFlyerDescription": "Upload or paste an image flyer, and AI will automatically prefill the details.",
     "processingEventImage": "Processing event image",
     "flyerExtracted": "Flyer details extracted successfully.",
     "flyerParseFailed": "Flyer parsing failed",
@@ -160,7 +159,7 @@
     },
     "highlights": {
       "fresh": "New on Wat2Do",
-      "openEvent": "View event",
+      "by": "by",
       "map": "Around campus",
       "networking": "Networking opportunities"
     }

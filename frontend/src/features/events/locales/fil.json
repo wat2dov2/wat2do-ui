@@ -16,7 +16,6 @@
     "submitEventForReview": "Isumite ang Kaganapan para sa Pagsusuri",
     "submitForReview": "Isumite para sa Pagsusuri",
     "uploadEventFlyer": "Mag-upload ng Flyer ng Kaganapan",
-    "uploadEventFlyerDescription": "Mag-upload o i-paste ang isang imahe ng flyer, at awtomatikong pupunan ng AI ang mga detalye.",
     "processingEventImage": "Pinoproseso ang imahe ng kaganapan",
     "flyerExtracted": "Matagumpay na na-extract ang mga detalye ng flyer.",
     "flyerParseFailed": "Nabigo ang pag-parse ng flyer",
@@ -165,7 +164,7 @@
     },
     "highlights": {
       "fresh": "Bago sa Wat2Do",
-      "openEvent": "Tingnan ang event",
+      "by": "ni",
       "map": "Sa paligid ng campus",
       "networking": "Mga pagkakataon sa networking"
     }

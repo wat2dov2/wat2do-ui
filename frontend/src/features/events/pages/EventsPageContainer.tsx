@@ -1,15 +1,16 @@
 import { useMemo, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { EventsBrowseViews } from "@/features/events/components/EventsBrowseViews";
+import { EVENT_MAP_VIEW_CLASS, EventsBrowseViews } from "@/features/events/components/EventsBrowseViews";
 import { EventsPageHeader } from "@/features/events/components/EventsPageHeader";
 import { EventHighlightSections } from "@/features/events/components/EventHighlightSections";
-import type { EventBrowseView } from "@/features/events/components/EventViewSelect";
+import { DEFAULT_EVENT_VIEW, type EventBrowseView } from "@/features/events/components/EventViewSelect";
 import { Button } from "@/shared/ui/button";
 import { useEventsPageData } from "@/features/events/hooks/useEventsPageData";
 import type { Event } from "@/shared/types";
 import { usePosterLandingConfirmation } from "@/features/qrcode/hooks/usePosterLandingConfirmation";
 import { EmptyState, LoadFailureNotice } from "@/shared/feedback";
 import { Stack } from "@/shared/layout";
+import { cn } from "@/shared/lib/utils";
 import { START_FROM_NOW } from "@/shared/constants/eventFilters";
 import type { EventFeedFirstScreen } from "@/features/events/lib/eventFeedFirstScreen";
 import { EventDetailsModal } from "@/features/events/components/EventDetailsModal";
@@ -51,7 +52,7 @@ export function EventsPageContainer({
     firstScreen,
     initialSchool,
   });
-  const [view, setView] = useState<EventBrowseView>("grid");
+  const [view, setView] = useState<EventBrowseView>(DEFAULT_EVENT_VIEW);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [hasOpenedDetails, setHasOpenedDetails] = useState(false);
 
@@ -82,12 +83,10 @@ export function EventsPageContainer({
   const showPastEvents = useCallback(() => setStartFrom(""), [setStartFrom]);
 
   const hasActiveFilters = filters.filterCount > 0 || filters.searchQuery.trim().length > 0;
-  // The highlights stay above the grid through any search or filter (the filter
+  // The highlights stay above every view through any search or filter (the filter
   // bar keeps the results in view), so the reader can always scroll back up to
-  // them. The map and calendar views leave them out: the map view fills the
-  // screen and holds every event the highlights' own map would, and both are
-  // whole other ways of browsing the list rather than narrowing it.
-  const showHighlights = view === "grid" && !error;
+  // them. In the map view they leave out their own campus map, which would repeat it.
+  const showHighlights = !error;
   // Everything waiting for the rest of the feed says so the same way, with a way to try again.
   const loadFailureNotice = restLoadFailed ? (
     <LoadFailureNotice message={t("events.loadFailed")} onRetry={refreshEvents} retrying={isRefreshing} />
@@ -95,7 +94,7 @@ export function EventsPageContainer({
 
   return (
     <>
-      <Stack gap={2} data-page-layout={view === "map" ? "viewport" : undefined}>
+      <Stack gap={2}>
         {showHighlights ? (
           <EventHighlightSections
             school={initialSchool}
@@ -103,6 +102,7 @@ export function EventsPageContainer({
             mapEvents={listing?.complete ? upcomingEvents : null}
             loadFailureNotice={loadFailureNotice}
             eventStats={eventStats}
+            withMap={view !== "map"}
             onEventClick={handleEventClick}
           />
         ) : null}
@@ -122,8 +122,7 @@ export function EventsPageContainer({
 
         <Stack
           as="main"
-          grow={view === "map"}
-          className="relative z-10 w-full"
+          className={cn("relative z-10 w-full", view === "map" && EVENT_MAP_VIEW_CLASS)}
           role="main"
           aria-label={t("search.ariaLabel")}
         >

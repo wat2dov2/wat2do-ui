@@ -37,6 +37,8 @@ import { EventCalendarDownloadMenu } from "@/features/events/components/EventCal
 import { EventCard } from "@/features/events/components/EventCard";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import { EventCardImage } from "@/features/events/components/EventCardImage";
+import { cn } from "@/shared/lib/utils";
+import { PosterTitleArt } from "@/features/events/components/PosterTitleArt";
 import { EventLocationMap } from "@/features/events/components/EventLocationMap";
 import { ClubBadgeLink } from "@/features/clubs";
 import { AvatarStack } from "@/shared/ui/avatar-stack";
@@ -737,11 +739,15 @@ export function EventDetailsBody({
 
       <div className={EVENT_DETAILS_LAYOUT.details}>
         <Stack gap={2} className="order-1" data-skeleton-key="event-title">
-          {renderTitle ? (
-            renderTitle(event.title)
-          ) : (
-            <h1 className={EVENT_DETAILS_LAYOUT.title}>{event.title}</h1>
-          )}
+          {/* A title its poster sets is shown as the poster sets it; the heading stays for screen readers. */}
+          {event.title_svg ? <PosterTitleArt svg={event.title_svg} variant="heading" /> : null}
+          <div className={cn(event.title_svg && "sr-only")}>
+            {renderTitle ? (
+              renderTitle(event.title)
+            ) : (
+              <h1 className={EVENT_DETAILS_LAYOUT.title}>{event.title}</h1>
+            )}
+          </div>
           <AddedAt value={event.added_at} timeZone={getSchoolTimezone(event.school)} />
         </Stack>
 

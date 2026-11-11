@@ -21,7 +21,7 @@ export default function NotFound() {
           action={
             <Stack direction="horizontal" justify="center" gap={2} wrap>
               <Button asChild>
-                <Link href={ROUTES.HOME}>{t("notFound.browseEvents")}</Link>
+                <Link href={ROUTES.EVENTS}>{t("notFound.browseEvents")}</Link>
               </Button>
               <Button asChild variant="outline">
                 <Link href={ROUTES.CLUBS}>{t("notFound.browseClubs")}</Link>

@@ -16,7 +16,6 @@
     "submitEventForReview": "ارسال رویداد برای بررسی",
     "submitForReview": "ارسال برای بررسی",
     "uploadEventFlyer": "بارگذاری بروشور رویداد",
-    "uploadEventFlyerDescription": "یک تصویر بروشور بارگذاری یا جای‌گذاری کنید، و AI به طور خودکار جزئیات را پر خواهد کرد.",
     "processingEventImage": "در حال پردازش تصویر رویداد",
     "flyerExtracted": "جزئیات بروشور با موفقیت استخراج شد.",
     "flyerParseFailed": "تجزیه بروشور شکست خورد",
@@ -165,7 +164,7 @@
     },
     "highlights": {
       "fresh": "تازه در Wat2Do",
-      "openEvent": "مشاهده رویداد",
+      "by": "از",
       "map": "در اطراف پردیس",
       "networking": "فرصت‌های شبکه‌سازی"
     }

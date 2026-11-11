@@ -302,7 +302,6 @@ theme) or lighter (dark theme) shade of it, at WCAG AA in both themes.
 
 | Variant | Meaning | Hue it reuses |
 | --- | --- | --- |
-| `tint-school` | The school itself | `--school-marker` |
 | `tint-live` | Happening or counted now | `--destructive` (the Live badge) |
 | `tint-free` | Free, no account needed | `--success` |
 | `tint-new` | Freshly read from clubs' posts | `--badge-new` |

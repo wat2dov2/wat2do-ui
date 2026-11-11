@@ -84,7 +84,6 @@
   "navigation": {
     "events": "活動",
     "submit": "提交",
-    "signInRequired": "需要登入",
     "clubs": "組織",
     "positions": "職位",
     "myEvents": "我的活動",
@@ -562,35 +561,34 @@
         "social": "社交活動",
         "position": "學會職位"
       },
-      "primaryAction": "睇吓有咩搞",
-      "primaryHoverAction": "睇活動",
+      "primaryAction": "睇活動",
       "secondaryAction": "關於我哋"
     },
     "problem": {
-      "title": "校園唔悶，只係啲活動收埋咗。",
-      "description": "{{school}} 成日都有嘢搞。問題係啲活動喺邊度公佈。",
+      "title": "校園大部分活動都去唔到你個 feed。",
+      "description": "{{school}} 啲學會會提前幾日喺自己嘅 Instagram 帳戶公佈活動，而 Instagram 每個 post 只會俾部分 followers 睇到。",
       "points": {
         "buried": {
           "title": "喺你個 feed 度沉咗",
-          "description": "就算你 follow 咗個組織，睇唔睇到佢個 post 都係 Instagram 話事。大部分活動海報都會沉喺你 feed 入面其他嘢下面。"
+          "description": "Follow 咗個組織唔代表你會睇到佢啲 post。Instagram 揀邊啲嘢去到你度，活動海報好少可以贏過你 feed 入面其他嘢。"
         },
         "scattered": {
           "title": "幾百個組織，冇一個共用 feed",
-          "description": "每個組織、學會同校隊都喺自己帳戶出 post。冇人會 follow 晒，所以你淨係知道朋友 share 過嘅嘢。"
+          "description": "組織、學會同校隊各自喺自己帳戶出 post。你冇可能 follow 晒幾百個，所以你只會知道朋友啱啱 share 咗嘅嘢。"
         },
         "late": {
           "title": "第二日先知",
-          "description": "免費餐飲、招聘之夜、$5 煮食班。你睇到活動回顧 post 先發覺原來係琴日。"
+          "description": "你睇到招聘之夜或者免費晚餐嘅回顧 post，先發覺原來係琴日。"
         },
         "quiet": {
-          "title": "所以好似咩都冇發生",
-          "description": "活動散晒喺幾百個帳戶，校園就顯得好靜。其實唔係，只係你睇唔到。"
+          "title": "所以校園好似好靜",
+          "description": "活動散晒喺幾百個帳戶，就算學會搞咗好多嘢，一個禮拜都可以睇落好空。"
         }
       }
     },
     "solution": {
-      "title": "每個機會，時刻更新。",
-      "description": "{{school}} 每個活動、交流夜同學會招人，學會一出 post 就即刻更新。搜尋、篩選，揀你想去嘅儲低。",
+      "title": "Wat2Do 將所有嘢集中喺一版，仲會保持更新。",
+      "description": "Wat2Do 會睇 {{school}} 啲學會 post，將搵到嘅活動同學會招人職位列出嚟，通常喺出 post 一日之內。你可以搜尋、篩選，揀你想要嘅儲低。",
       "stats": {
         "clubsLabel": "{{school}} 追蹤緊嘅組織",
         "clubsLabel_other": "{{school}} 追蹤緊嘅組織",
@@ -613,7 +611,7 @@
       },
       "clubs": {
         "title": "發掘你從來唔知有嘅組織",
-        "description": "瀏覽 {{school}} 所有組織，follow 你鍾意嘅，想參與嘅時候仲可以搵到開放緊嘅職位。"
+        "description": "瀏覽 {{school}} 嘅組織，follow 你鍾意嘅。想參與嘅時候，佢哋開放緊嘅職位都會列埋出嚟。"
       }
     },
     "faq": {
@@ -625,7 +623,7 @@
         },
         "clubs": {
           "question": "我嘅組織要唔要登記？",
-          "answer": "唔使。只要你嘅組織喺公開 Instagram 帳戶公佈活動，Wat2Do 就會自動擷取。你都可以認領組織專頁嚟管理。"
+          "answer": "唔使。只要你嘅組織喺公開 Instagram 帳戶公佈活動，Wat2Do 就會自己擷取。你都可以認領組織專頁嚟管理。"
         },
         "speed": {
           "question": "新活動幾快會出現？",
@@ -643,8 +641,8 @@
       }
     },
     "closing": {
-      "title": "唔好再第二日先知。",
-      "action": "睇吓有咩搞"
+      "title": "今個禮拜有咩活動，一早睇定。",
+      "action": "睇活動"
     }
   },
   "footer": {

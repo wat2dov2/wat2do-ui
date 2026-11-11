@@ -16,7 +16,6 @@
     "submitEventForReview": "ایونٹ کے جائزے کے لیے جمع کروائیں",
     "submitForReview": "جائزے کے لیے جمع کروائیں",
     "uploadEventFlyer": "ایونٹ فلائر اپلوڈ کریں",
-    "uploadEventFlyerDescription": "تصویری فلائر اپلوڈ کریں یا چسپاں کریں، اور AI خود بخود تفصیلات پُر کر دے گا۔",
     "processingEventImage": "ایونٹ کی تصویر پر کارروائی ہو رہی ہے",
     "flyerExtracted": "فلائر کی تفصیلات کامیابی کے ساتھ نکالی گئیں۔",
     "flyerParseFailed": "فلائر کی تفہیم ناکام رہی",
@@ -165,7 +164,7 @@
     },
     "highlights": {
       "fresh": "Wat2Do پر نیا",
-      "openEvent": "ایونٹ دیکھیں",
+      "by": "از",
       "map": "کیمپس کے آس پاس",
       "networking": "نیٹ ورکنگ کے مواقع"
     }

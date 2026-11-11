@@ -21,6 +21,8 @@ interface PageShellHeaderProps {
   route: string
   /** Data-dependent copy that replaces the shell's once it exists. */
   title?: React.ReactNode
+  /** A badge beside the title. */
+  badge?: React.ReactNode
   description?: React.ReactNode
   icon?: LucideIcon
   actions?: React.ReactNode
@@ -30,7 +32,7 @@ interface PageShellHeaderProps {
  * A page's header, drawn from its shell in PAGE_SHELLS. The route's loading
  * state renders this same component, so a page and its skeleton share a header.
  */
-export function PageShellHeader({ route, title, description, icon, actions }: PageShellHeaderProps) {
+export function PageShellHeader({ route, title, badge, description, icon, actions }: PageShellHeaderProps) {
   const { t } = useTranslation()
   const shell = PAGE_SHELLS[route]
   const back = shell.back ? BACK_LINKS[shell.back] : undefined
@@ -39,6 +41,7 @@ export function PageShellHeader({ route, title, description, icon, actions }: Pa
     <PageHeader
       icon={icon ?? shell.icon}
       title={title ?? t(shell.titleKey)}
+      badge={badge}
       description={description ?? (shell.descriptionKey ? t(shell.descriptionKey) : undefined)}
       back={back ? { href: back.href, label: t(back.labelKey) } : undefined}
       actions={actions}

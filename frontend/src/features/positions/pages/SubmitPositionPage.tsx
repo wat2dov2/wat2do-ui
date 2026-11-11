@@ -3,7 +3,7 @@
 import { PageShellHeader } from "@/shared/layout/page-shell-header";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
-import { useAuthState } from "@/features/auth";
+import { LoginRequiredBadge, useAuthState } from "@/features/auth";
 import { usePositionSubmission } from "@/features/positions/hooks/usePositionSubmission";
 import { Container, FormActions, FormGrid, FormLayout, Stack } from "@/shared/layout";
 import { Button } from "@/shared/ui/button";
@@ -29,13 +29,12 @@ export function SubmitPositionPage() {
   return (
     <Container size="sm">
       <Stack gap={6}>
-        <PageShellHeader route={ROUTES.POSITION_SUBMIT} />
+        <PageShellHeader route={ROUTES.POSITION_SUBMIT} badge={<LoginRequiredBadge />} />
         {form.submitted ? (
           <Stack gap={3}><p role="status">{t(form.published ? "positions.published" : "positions.submitted")}</p><Button asChild><Link href={ROUTES.POSITIONS}>{t("navigation.positions")}</Link></Button></Stack>
         ) : !form.formOpen ? (
           <ImageParseStep
             title={t("positions.uploadImage")}
-            description={t("positions.uploadImageDescription")}
             processingLabel={t("positions.processingImage")}
             imageParse={form.imageParse}
             onSkip={form.openForm}

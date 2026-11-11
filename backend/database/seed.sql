@@ -298,7 +298,10 @@ WITH hourly_seed AS (
         date_trunc('day', now() AT TIME ZONE school.timezone)
             + make_interval(hours => slot) AS local_start,
         school.id AS school_id,
-        (SELECT id FROM public.clubs WHERE school_id = school.id ORDER BY id LIMIT 1) AS club_id
+        -- A different club per slot, so the featured row (one card per club) fills up.
+        (SELECT id FROM public.clubs WHERE school_id = school.id ORDER BY id
+            OFFSET slot % greatest((SELECT count(*) FROM public.clubs WHERE school_id = school.id), 1)
+            LIMIT 1) AS club_id
     FROM public.schools school
     CROSS JOIN generate_series(0, 47) AS slot
     WHERE school.slug IN ('uwaterloo', 'ualberta', 'ulaval')
@@ -363,6 +366,93 @@ SELECT r.id,
 FROM resolved r JOIN prepared p USING (source_url)
 WHERE NOT EXISTS (SELECT 1 FROM public.event_dates d WHERE d.event_id = r.id);
 -- END hourly school mock events.
+
+-- BEGIN real Waterloo events (local seed only).
+-- Real events, posters and club logos copied from production's public feed
+-- (api.wat2do.io), one a day from tomorrow, so the events page's featured row
+-- shows real posters and titles locally. Each title is drawn as an SVG from its
+-- poster, the way the ingestion agent draws one (events.title_svg).
+WITH real_seed (ordinal, title, club_name, logo_url, location, category, price, poster, title_svg) AS (
+    VALUES
+        (1, 'Krispy Kreme Donut Sale', 'CESSxYCR', 'https://media.wat2do.io/organization-logos/a0affdab93cd460b9a2e3b1874bc7ad4.jpg', 'E7 1st floor', 'Community Service', NULL, 'https://media.wat2do.io/event-images/e2d3fe55a2b348b29548f2f676a12233.jpg', $svg$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 70"><text x="210" y="56" text-anchor="middle" font-family="'Arial Rounded MT Bold','Nunito','Arial Black',sans-serif" font-weight="900" font-size="60" letter-spacing="-1" fill="#1f52c9" stroke="#fbd3df" stroke-width="5" paint-order="stroke" textLength="396" lengthAdjust="spacingAndGlyphs">DONUT SALE!</text></svg>$svg$),
+        (2, 'Bagel Brunch', 'hillelwaterloolaurier', 'https://media.wat2do.io/organization-logos/2641259d52814bff81bd915a72ce6b78.jpg', 'The Lounge', 'Community Service', NULL, 'https://media.wat2do.io/event-images/35d3a990398a482cac778df32445dc6b.jpg', $svg$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 190"><rect x="20" y="6" width="270" height="88" fill="#ffffff"/><text x="155" y="84" text-anchor="middle" font-family="'Arial Black','Helvetica Neue',Impact,sans-serif" font-weight="900" font-size="88" letter-spacing="-4" fill="#111111" textLength="250" lengthAdjust="spacingAndGlyphs">BAGEL</text><g transform="rotate(-5 200 140)"><rect x="70" y="100" width="275" height="70" fill="#7a4cf5"/><text x="207" y="157" text-anchor="middle" font-family="'Arial Black','Helvetica Neue',Impact,sans-serif" font-weight="900" font-size="56" letter-spacing="-2" fill="#ffffff" textLength="250" lengthAdjust="spacingAndGlyphs">BRUNCH!</text></g></svg>$svg$),
+        (3, 'UW ACCE – Move for a Cause: Fitness Fundraiser', 'UW Chapter of Alliance for CancerCare Equity (ACCE-UW)', 'https://media.wat2do.io/organization-logos/282dfbc41f194237bac789b2f1e8d471.jpg', 'PAC Studio 1, 200 University Avenue West, Waterloo, ON N2L 3G1', 'Health', 12.0, 'https://media.wat2do.io/event-images/6c2beb5416d64d8195a3551005985f24.jpg', $svg$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 160"><g font-family="'Avenir Next Condensed','Oswald','Arial Narrow',Impact,sans-serif" font-weight="800" text-anchor="middle" fill="#f4efe6" stroke="#2a2a33" stroke-width="3" paint-order="stroke"><text x="150" y="68" font-size="72" letter-spacing="1" textLength="270" lengthAdjust="spacingAndGlyphs">FITNESS</text><text x="150" y="146" font-size="72" letter-spacing="-1" textLength="290" lengthAdjust="spacingAndGlyphs">FUNDRAISER</text></g></svg>$svg$),
+        (4, 'Bites & Insights', 'Association of Health Students Undergraduate Members', 'https://media.wat2do.io/organization-logos/ced9826e228249789b4db7728240b27f.jpg', 'Graduate House', 'Arts & Culture', 0.0, 'https://media.wat2do.io/event-images/c5e9ac14da2b42b89a5e220364e98227.jpg', $svg$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 200"><text x="20" y="92" font-family="'Arial Black','Helvetica Neue',Impact,sans-serif" font-weight="900" font-size="100" letter-spacing="-4" fill="#2a95a0" textLength="230" lengthAdjust="spacingAndGlyphs">BITES</text><text x="80" y="180" font-family="'Snell Roundhand','Brush Script MT','Segoe Script',cursive" font-size="78" fill="#7fd0d8" textLength="270" lengthAdjust="spacingAndGlyphs">&amp; Insights</text></svg>$svg$),
+        (5, 'Bachata And Salsa Classes', 'Mambo Club', 'https://media.wat2do.io/organization-logos/1f01e5bb6b714043bab0ed7afe44cbc9.jpg', 'Student Life Centre (SLC) Lower Atrium', 'Games & Recreation', 60.0, 'https://media.wat2do.io/event-images/a9762570c982448a98eaa267ffa31f66.jpg', $svg$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 150"><text x="220" y="38" text-anchor="middle" font-family="'Brush Script MT','Marker Felt',cursive" font-style="italic" font-size="40" fill="#ffd53d" transform="rotate(-4 220 30)" textLength="150" lengthAdjust="spacingAndGlyphs">2026 Fall</text><g font-family="'Arial Black','Helvetica Neue',sans-serif" font-weight="900" text-anchor="middle" fill="#ffffff" letter-spacing="6"><text x="220" y="92" font-size="44" textLength="360" lengthAdjust="spacingAndGlyphs">BACHATA</text><text x="220" y="140" font-size="44" textLength="330" lengthAdjust="spacingAndGlyphs">&amp; SALSA</text></g></svg>$svg$),
+        (6, 'Night Hike and S''mores', 'Outers Club', 'https://media.wat2do.io/organization-logos/5e748784f6d4497991ab497e2adf6959.jpg', 'CIF Parking Lot', 'Games & Recreation', NULL, 'https://media.wat2do.io/event-images/4ca091c290504d88a0364f6e548886ec.jpg', $svg$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 190"><g font-family="'Didot','Bodoni 72','Playfair Display',Georgia,serif" font-weight="900" fill="#f3ead4" text-anchor="middle"><text x="200" y="52" font-size="50" letter-spacing="-1" textLength="300" lengthAdjust="spacingAndGlyphs">WOMEN IN</text><text x="200" y="104" font-size="50" letter-spacing="-1" textLength="380" lengthAdjust="spacingAndGlyphs">WILDERNESS</text></g><text x="200" y="160" text-anchor="middle" font-family="'Marker Felt','Chalkboard SE','Comic Sans MS',cursive" font-size="34" fill="#f99a1c" letter-spacing="2" textLength="370" lengthAdjust="spacingAndGlyphs">NIGHT HIKE &amp; S'MORES</text></svg>$svg$),
+        (7, 'Women in Wilderness Walk and Bonfire', 'Women in Computer Science', 'https://media.wat2do.io/organization-logos/0cdd6f72dade483f877f535251818d7f.jpg', 'Columbia Icefield (CIF) Main Entrance', 'Games & Recreation', 0.0, 'https://media.wat2do.io/event-images/8340b7bfac594562a02c08ae3c7f72ac.jpg', $svg$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 190"><g font-family="'Futura','Poppins','Century Gothic','Avenir Next',sans-serif" font-weight="800" font-size="62" letter-spacing="-3" fill="#ffe5ea" stroke="#d24c69" stroke-width="3" paint-order="stroke"><text x="14" y="58" textLength="280" lengthAdjust="spacingAndGlyphs">women in</text><text x="14" y="118" textLength="370" lengthAdjust="spacingAndGlyphs">wilderness</text><text x="14" y="178" textLength="372" lengthAdjust="spacingAndGlyphs">walk &amp; bonfire</text></g></svg>$svg$),
+        (8, 'Brush & Bond', 'Science Society', 'https://media.wat2do.io/organization-logos/391e92799a6d43a2a988420c2b26862e.jpg', 'STC 0020', 'Arts & Culture', NULL, 'https://media.wat2do.io/event-images/54ace408a08d458588e4f2a22c2747ef.jpg', $svg$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 210"><text x="20" y="84" font-family="'Bradley Hand','Marker Felt','Segoe Print',cursive" font-weight="700" font-size="78" fill="#aad6f7" transform="skewX(-8)" textLength="250" lengthAdjust="spacingAndGlyphs">Brush &amp;</text><text x="120" y="196" font-family="'Arial Black','Helvetica Neue',Impact,sans-serif" font-weight="900" font-size="104" letter-spacing="-3" fill="#fbf5e6" textLength="230" lengthAdjust="spacingAndGlyphs">BOND</text></svg>$svg$),
+        (9, 'Blood On The Clocktower', 'Deception Board Games Club', 'https://media.wat2do.io/organization-logos/b53b3e458fc54909ac63da2946e5b6fe.jpg', 'Mathematics & Computer (MC) 4064', 'Games & Recreation', NULL, 'https://media.wat2do.io/event-images/db4a2c892a624192a4c6c323b678d4cc.jpg', $svg$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 130"><g font-family="'Copperplate','Cinzel','Trajan Pro',Georgia,serif" font-weight="700" text-anchor="middle" fill="#ffffff" stroke="#141414" stroke-width="4" paint-order="stroke"><text x="200" y="54" font-size="50" letter-spacing="2" textLength="360" lengthAdjust="spacingAndGlyphs">BLOOD ON THE</text><text x="200" y="116" font-size="56" letter-spacing="2" textLength="384" lengthAdjust="spacingAndGlyphs">CLOCKTOWER</text></g></svg>$svg$),
+        (10, 'Waterloo GeoGuessr', 'University of Waterloo Geoguessr Club (UWGG)', 'https://media.wat2do.io/organization-logos/4544c68ba6a04468b3c1cc79aa8683e6.jpg', 'Environment 3 (EV3) 4412', 'Games & Recreation', NULL, 'https://media.wat2do.io/event-images/5afc7a4717d04395a50513fbbc1e5dbe.jpg', $svg$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 130"><text x="180" y="52" text-anchor="middle" font-family="'Avenir Next','Nunito','Segoe UI',sans-serif" font-weight="700" font-size="52" fill="#ffffff" textLength="230" lengthAdjust="spacingAndGlyphs">Waterloo</text><text x="180" y="118" text-anchor="middle" font-family="'Avenir Next','Nunito','Segoe UI',sans-serif" font-weight="800" font-size="54" letter-spacing="1" fill="#e6343a" stroke="#ffffff" stroke-width="5" paint-order="stroke" textLength="330" lengthAdjust="spacingAndGlyphs">GEOGUESSR</text></svg>$svg$),
+        (11, 'Improv UW Drop-in Jams', 'Improv Club, UW', 'https://media.wat2do.io/organization-logos/3fedeb757896430c8613289e470b5a34.jpg', 'Arts Lecture Hall (AL) 113', 'Arts & Culture', NULL, 'https://media.wat2do.io/event-images/fc66f921536e41a78a3e97e2a938b35c.jpg', $svg$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 140"><g font-family="Impact,'Haettenschweiler','Arial Narrow Bold',sans-serif" font-size="110" text-anchor="middle" letter-spacing="2"><text x="206" y="124" fill="#46c2ff" textLength="380" lengthAdjust="spacingAndGlyphs">IMPROV UW</text><text x="204" y="118" fill="#ff5fa8" textLength="380" lengthAdjust="spacingAndGlyphs">IMPROV UW</text><text x="202" y="112" fill="#ffd23f" textLength="380" lengthAdjust="spacingAndGlyphs">IMPROV UW</text><text x="200" y="104" fill="#ffffff" stroke="#151515" stroke-width="3" paint-order="stroke" textLength="380" lengthAdjust="spacingAndGlyphs">IMPROV UW</text></g></svg>$svg$),
+        (12, 'Mental Health in Aviation', 'Aviation Society', 'https://media.wat2do.io/organization-logos/6c53667956a748478dd5946b30cf11ac.jpg', 'STC 0040', 'Health', NULL, 'https://media.wat2do.io/event-images/260af6a2f4d44c07b38b8fcefa1b9f18.jpg', $svg$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 150"><g font-family="Impact,'Avenir Next Condensed','Arial Narrow Bold',sans-serif" text-anchor="middle" fill="#ffffff"><text x="200" y="64" font-size="70" letter-spacing="-1" textLength="384" lengthAdjust="spacingAndGlyphs">MENTAL HEALTH</text><text x="200" y="136" font-size="70" letter-spacing="-1" textLength="320" lengthAdjust="spacingAndGlyphs">IN AVIATION</text></g></svg>$svg$)
+), school AS (
+    SELECT id, timezone FROM public.schools WHERE slug = 'uwaterloo'
+), new_clubs AS (
+    INSERT INTO public.clubs (club_name, categories, logo_url, school_id, status)
+    SELECT real_seed.club_name, jsonb_build_array(real_seed.category), real_seed.logo_url, school.id, 'approved'
+    FROM real_seed CROSS JOIN school
+    WHERE NOT EXISTS (
+        SELECT 1 FROM public.clubs club WHERE club.school_id = school.id AND club.club_name = real_seed.club_name
+    )
+    RETURNING id, club_name
+), prepared AS (
+    SELECT real_seed.*, school.id AS school_id, school.timezone,
+        format('https://wat2do.local/seed/real/%s', real_seed.ordinal) AS source_url,
+        date_trunc('day', now() AT TIME ZONE school.timezone)
+            + make_interval(days => real_seed.ordinal, hours => 18) AS local_start,
+        coalesce(
+            (SELECT id FROM new_clubs WHERE new_clubs.club_name = real_seed.club_name),
+            (SELECT id FROM public.clubs club
+             WHERE club.school_id = school.id AND club.club_name = real_seed.club_name ORDER BY id LIMIT 1)
+        ) AS club_id
+    FROM real_seed CROSS JOIN school
+), inserted AS (
+    INSERT INTO public.events (
+        title, description, location, price, source_image_url, title_svg, school_id, source_url,
+        category, club, club_id, added_at, ingestion_source
+    )
+    SELECT title, 'A real Waterloo event copied from production for the local featured row.',
+        location, price, poster, title_svg, school_id, source_url, category, club_name, club_id,
+        now() - make_interval(hours => ordinal), 'seed'
+    FROM prepared
+    WHERE NOT EXISTS (SELECT 1 FROM public.events e WHERE e.source_url = prepared.source_url)
+    RETURNING id, source_url
+), resolved AS (
+    SELECT id, source_url FROM inserted
+    UNION ALL
+    SELECT e.id, e.source_url FROM public.events e JOIN prepared p USING (source_url)
+)
+INSERT INTO public.event_dates (event_id, dtstart_utc, dtend_utc, tz)
+SELECT r.id,
+    p.local_start AT TIME ZONE p.timezone,
+    (p.local_start + interval '2 hours') AT TIME ZONE p.timezone,
+    p.timezone
+FROM resolved r JOIN prepared p USING (source_url)
+WHERE NOT EXISTS (SELECT 1 FROM public.event_dates d WHERE d.event_id = r.id);
+
+-- Wat2Do posted them in one carousel, which is what makes an event featured.
+WITH carousel AS (
+    INSERT INTO public.instagram_publish_batches (
+        account_key, instagram_user_id, school_id, local_date,
+        window_start, window_end, status, caption, published_at
+    )
+    SELECT school.slug, 'local-seed-not-a-meta-account', school.id,
+        (now() AT TIME ZONE school.timezone)::date - 20,
+        now() - interval '21 days', now() - interval '20 days',
+        'published', 'Real Waterloo events for the local featured row', now() - interval '20 days'
+    FROM public.schools school
+    WHERE school.slug = 'uwaterloo'
+    ON CONFLICT (account_key, local_date, batch_kind) DO NOTHING
+    RETURNING id, account_key, school_id, published_at
+)
+INSERT INTO public.instagram_publish_items (batch_id, account_key, event_id, position, published_at)
+SELECT carousel.id, carousel.account_key, event.id,
+    row_number() OVER (ORDER BY event.id)::integer, carousel.published_at
+FROM carousel
+JOIN public.events event ON event.school_id = carousel.school_id
+WHERE event.source_url LIKE 'https://wat2do.local/seed/real/%';
+-- END real Waterloo events.
 
 -- Paid, unpaid, and unspecified roles exercise filters without guessing from text.
 INSERT INTO public.positions (
@@ -811,11 +901,3 @@ WHERE event.ingestion_source = 'seed'
 ORDER BY event.id
 LIMIT 3
 ON CONFLICT (event_id) DO NOTHING;
-
--- Poster-styled titles on seeded events with posters, so the featured row
--- shows titles set in their posters' fonts locally.
-UPDATE public.events AS event
-SET title_font = (ARRAY['Permanent Marker', 'Anton', 'Playfair Display', 'Bungee', 'Pacifico', 'Bebas Neue'])[1 + event.id % 6]
-WHERE event.ingestion_source = 'seed'
-  AND event.source_image_url IS NOT NULL
-  AND event.title_font IS NULL;

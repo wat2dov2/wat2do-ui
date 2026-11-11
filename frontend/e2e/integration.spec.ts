@@ -5186,31 +5186,25 @@ test.describe("Navigation", () => {
     }
   });
 
-  test("root redirects preserve query state and the events page owns canonical metadata", async ({ request }) => {
-    const params = new URLSearchParams([
-      ["event", "1"], ["school", "uwaterloo"], ["tag", "free food"], ["tag", "new"],
-    ]);
-    const rootResponse = await request.get(`${BASE}/?${params}`, { maxRedirects: 0 });
-    expect(rootResponse.status()).toBe(308);
-    const destination = new URL(rootResponse.headers().location, BASE);
-    expect(destination.origin).toBe(BASE);
-    expect(destination.pathname).toBe("/events");
-    expect([...destination.searchParams]).toEqual([...params]);
+  test("the root is the landing page and the events page owns its own canonical metadata", async ({ request }) => {
+    const rootResponse = await request.get(`${BASE}/`, { maxRedirects: 0 });
+    expect(rootResponse.status()).toBe(200);
+    const rootHtml = await rootResponse.text();
+    expect(rootHtml).toContain('rel="canonical" href="https://uwaterloo.wat2do.io"');
+    expect(rootHtml).not.toMatch(/<meta name="robots" content="[^"]*noindex/);
 
-    const response = await request.get(destination.toString());
+    const response = await request.get(`${BASE}/events`);
     expect(response.status()).toBe(200);
     const html = await response.text();
     expect(html).toContain('rel="canonical" href="https://uwaterloo.wat2do.io/events"');
     expect(html).toContain('property="og:url" content="https://uwaterloo.wat2do.io/events"');
   });
 
-  test("the unlisted landing preview leads with the problem and sends students to the feed", async ({ page }) => {
-    await page.goto(`${BASE}/preview-62182b6ad5`, { waitUntil: "domcontentloaded" });
-    // The preview is shared by link only, so search engines must never index it.
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  test("the landing page leads with the problem and sends students to the feed", async ({ page }) => {
+    await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
 
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Every campus event");
-    await expect(page.getByRole("heading", { name: "Campus is NOT boring. Its events are just hidden." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Most campus events never make it to your feed." })).toBeVisible();
     // The hero is the school's live event map, and its corner and the stats are counted from its feeds.
     await expect(page.getByLabel("Map", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("upcoming events right now")).toHaveCount(2);
@@ -5218,9 +5212,9 @@ test.describe("Navigation", () => {
 
     await page.getByRole("link", { name: "How it works" }).click();
     await expect(page).toHaveURL(/#how-it-works$/);
-    await expect(page.getByRole("heading", { name: "Every opportunity, kept up to date." })).toBeInViewport();
+    await expect(page.getByRole("heading", { name: "Wat2Do puts it all on one page and keeps it current." })).toBeInViewport();
 
-    await page.getByRole("link", { name: "See what's on" }).first().click();
+    await page.getByRole("link", { name: "Browse events" }).first().click();
     await expect(page).toHaveURL(`${BASE}/events`);
     await expect(page.getByRole("main", { name: "Events list" })).toBeVisible();
   });

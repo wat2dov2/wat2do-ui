@@ -217,7 +217,6 @@ export function SubmitEventFlow({
     return (
       <ImageParseStep
         title={t("events.uploadEventFlyer")}
-        description={t("events.uploadEventFlyerDescription")}
         processingLabel={t("events.processingEventImage")}
         imageParse={imageParse}
       />

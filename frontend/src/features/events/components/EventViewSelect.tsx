@@ -3,6 +3,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export type EventBrowseView = "grid" | "map" | "calendar";
 
+/** The view the events page opens on. */
+export const DEFAULT_EVENT_VIEW: EventBrowseView = "map";
+
 export function EventViewSelect({ value, onChange }: { value: EventBrowseView; onChange: (view: EventBrowseView) => void }) {
   const { t } = useTranslation();
   return (

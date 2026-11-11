@@ -1,15 +1,4 @@
 /* Map-owned poster and sheet composition, shared by every venue and cluster. */
-/* In a viewport page layout the page header's filter bar floats over the top of the map. */
-[data-page-layout="viewport"] [data-view="map"] {
-  --event-map-top-inset: 3rem;
-}
-[data-page-layout="viewport"] .event-map-sheet {
-  border-top: 1px solid var(--border);
-  border-top-left-radius: 0.75rem;
-}
-[data-view="map"] .maplibregl-ctrl-top-right {
-  top: var(--event-map-top-inset, 0);
-}
 /* Floats in the map's bottom-left corner and flies back to the campus centre.
    The map's credits stay in the bottom-right corner. */
 .event-map-home[data-slot="button"] {
@@ -153,7 +142,7 @@
 }
 .event-map-sheet {
   position: absolute;
-  top: var(--event-map-top-inset, 0);
+  top: 0;
   bottom: 0;
   right: 0;
   z-index: 4;

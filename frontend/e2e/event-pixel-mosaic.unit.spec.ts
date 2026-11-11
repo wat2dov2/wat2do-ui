@@ -89,6 +89,7 @@ function loadMosaic(width = 240, height = 120) {
         posters: manifest.posters,
         logoMask: manifest.logoMask,
         logoColours: manifest.logoColours,
+        onDark: false,
         logoRegion,
       }),
   };
@@ -235,6 +236,7 @@ test("buttons are spelled in half-size squares inside a border, and a hover resp
       posters: manifest.posters,
       logoMask: manifest.logoMask,
       logoColours: manifest.logoColours,
+      onDark: false,
       buttons: buttons(width),
     });
 
@@ -249,7 +251,7 @@ test("buttons are spelled in half-size squares inside a border, and a hover resp
   expect(lit.length).toBeGreaterThan(2 * 32 + 2 * 12);
   expect(lit.length).toBeLessThan(32 * 14 / 2);
 
-  // Still under reduced motion, a hover respells the squares that change at once.
+  // Still under reduced motion, a hover jumps straight to the hovered label.
   mosaic.draws.length = 0;
   controller.setHover(0);
   expect(mosaic.draws.length).toBeGreaterThan(10);
@@ -260,4 +262,44 @@ test("buttons are spelled in half-size squares inside a border, and a hover resp
   // A region too narrow for even one button draws none, and says so.
   start(200);
   expect(layouts.at(-1)).toBeNull();
+});
+
+test("a hovered button's label glides by fading its squares, never moving them, and glides back on leaving", () => {
+  const mosaic = loadMosaic(480, 240);
+  clock.now = 0;
+  // No background swaps, so every draw below is the label gliding.
+  const controller = mosaic.engine.startEventPixelMosaic(mosaic.canvas, mosaic.atlas, { tileSize: 24, gutter: 1, swapsPerSecond: 0 }, true, {
+    posters: manifest.posters,
+    logoMask: manifest.logoMask,
+    logoColours: manifest.logoColours,
+    onDark: false,
+    buttons: {
+      items: [{ label: "GO", hoverLabel: "GO →" }],
+      region: () => ({ left: 0, top: 0, width: 480, height: 240 }),
+      onLayout: () => {},
+    },
+  });
+  /** The draws of each of the next `count` frames, 30 ms apart. */
+  const run = (count: number) => Array.from({ length: count }, () => {
+    clock.now += 30;
+    mosaic.draws.length = 0;
+    mosaic.frames.shift()!(clock.now);
+    return [...mosaic.draws];
+  });
+  // The first frame only starts the clock.
+  run(1);
+  // "GO" sits 9 squares into the button and "GO →" 4: five squares at 60 ms each, so ten 30 ms frames.
+  controller.setHover(0);
+  const over = run(12);
+  expect(over.slice(0, 10).every((draws) => draws.length > 0)).toBe(true);
+  expect(over.slice(10).every((draws) => draws.length === 0)).toBe(true);
+  // Only the button's half-size squares redraw, in place; mid-glide some show part of their colour.
+  const glided = over.slice(0, 10).flat();
+  expect(glided.every((draw) => draw.size === 23)).toBe(true);
+  expect(glided.some((draw) => draw.source === mosaic.image && draw.alpha > 0 && draw.alpha < 1)).toBe(true);
+
+  controller.setHover(null);
+  const back = run(12);
+  expect(back.slice(0, 10).every((draws) => draws.length > 0)).toBe(true);
+  expect(back.slice(10).every((draws) => draws.length === 0)).toBe(true);
 });

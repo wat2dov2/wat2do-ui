@@ -15,8 +15,10 @@
  *
  * Buttons are spelled the same way, each label inside a border of squares, in
  * squares half the grid's size so they read at a button's size. Hovering one
- * respells it from left to right, so its label seems to slide over and make
- * room for an arrow.
+ * slides its label aside while its hover label (the label and an arrow) slides
+ * in, and leaving slides it back. Nothing moves: each square fades between
+ * muted and full colour by how much of the gliding label covers it, so the
+ * label seems to glide smoothly across squares that stay put.
  *
  * Squares avoid showing a poster that is already on screen while the posters
  * that keep their shape allow it, so the grid shows as many images as it can.
@@ -83,6 +85,8 @@ export interface MosaicContent {
   logoColours: Readonly<Record<string, string>>;
   /** Where the logo goes, in CSS pixels relative to the canvas; none draws no logo. */
   logoRegion?: () => MosaicRect | null;
+  /** Whether the page is dark, which flips the headline from the darkest posters to the lightest. */
+  onDark: boolean;
   /** A headline to spell in cells: a fixed lead, and phrases that take turns below it. */
   title?: {
     lead: string;
@@ -148,10 +152,8 @@ const BUTTON_PAD_X = 4;
 const BUTTON_PAD_Y = 2;
 /** Grid squares between neighbouring buttons. */
 const BUTTON_GAP = 2;
-/** A hover respells a button from its left edge to its right across this long, so its label seems to slide. */
-const HOVER_SWEEP_MS = 260;
-/** Each square of the sweep lands up to this much later, so the wipe is not a hard line. */
-const HOVER_JITTER_MS = 60;
+/** How long a hovered button's label takes to glide one square aside. */
+const HOVER_STEP_MS = 60;
 
 function canvasOf(width: number, height: number) {
   const canvas = document.createElement("canvas");
@@ -283,7 +285,7 @@ export function startEventPixelMosaic(
       return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
     };
     // On a dark page dark letters vanish, so the headline takes the lightest posters instead.
-    const onDark = document.documentElement.classList.contains("dark");
+    const { onDark } = content;
     const stand = everyPoster.filter((poster) => (onDark ? lightness(poster) >= TITLE_MIN_LIGHTNESS_ON_DARK : lightness(poster) <= TITLE_MAX_LIGHTNESS));
     const solid = stand.filter((poster) => content.posters[poster].share >= TITLE_MIN_SHARE);
     const order = onDark ? (a: number, c: number) => lightness(c) - lightness(a) : (a: number, c: number) => lightness(a) - lightness(c);
@@ -321,17 +323,35 @@ export function startEventPixelMosaic(
   let buttonOf = new Int16Array(0);
   /** Each button square's place in its button's own grid of squares, row by row. */
   let buttonCell = new Uint32Array(0);
-  /** Each button's grid of squares: its width, and its ink at rest and hovered. */
-  let buttonInk: { width: number; rest: Uint8Array; hover: Uint8Array }[] = [];
+  /** Each button's grid of squares: its width, and its ink frame by frame from rest to hovered. */
+  let buttonInk: { width: number; frames: Uint8Array[] }[] = [];
+  /**
+   * Where each button's label is between its frames, from 0 (at rest) to its
+   * last frame (hovered); between two frames its squares blend the two.
+   */
+  let buttonPosition: number[] = [];
   let hover: number | null = null;
+  let lastTick = 0;
   /** Squares mid-swap, by index, to the poster they are leaving, whether it was in colour, and when they started. */
-  const fading = new Map<number, { from: number; fromColour: boolean; start: number }>();
+  const fading = new Map<number, { from: number; fromColour: number; start: number }>();
   let frame = 0;
   let lastSwap = 0;
   let visible = true;
 
   /** Squares on the logo or a headline letter are drawn in full colour; every other square is muted. */
   const isColour = (index: number) => logo[index] !== 0 || ink[index] === 1;
+  /** How much of a square's colour shows, 0 muted to 1 full; a button square blends its label's two nearest frames. */
+  const colourOf = (index: number) => {
+    const button = buttonOf[index];
+    if (button < 0) return isColour(index) ? 1 : 0;
+    const { frames } = buttonInk[button];
+    const position = buttonPosition[button];
+    const below = Math.floor(position);
+    const above = Math.min(below + 1, frames.length - 1);
+    const share = position - below;
+    const cell = buttonCell[index];
+    return frames[below][cell] * (1 - share) + frames[above][cell] * share;
+  };
 
   /**
    * A poster for a square, from the posters that keep its shape legible, and
@@ -339,7 +359,8 @@ export function startEventPixelMosaic(
    */
   const pick = (index: number) => {
     const letter = logo[index];
-    const pool = letter ? logoChoicesFor(String.fromCharCode(letter)) : ink[index] ? titleChoices : everyPoster;
+    // Button squares always hold dark posters, so a hover only fades them, never swaps them.
+    const pool = letter ? logoChoicesFor(String.fromCharCode(letter)) : ink[index] || buttonOf[index] >= 0 ? titleChoices : everyPoster;
     for (let tries = 0; tries < PICK_TRIES; tries += 1) {
       const candidate = pool[Math.floor(Math.random() * pool.length)];
       if (shown[candidate] === 0) return candidate;
@@ -368,14 +389,13 @@ export function startEventPixelMosaic(
     }
     buttonOf.forEach((button, index) => {
       if (button < 0) return;
-      const ink = buttonInk[button];
-      cells[index] = (hover === button ? ink.hover : ink.rest)[buttonCell[index]];
+      cells[index] = buttonInk[button].frames[Math.round(buttonPosition[button])][buttonCell[index]];
     });
     return cells;
   }
 
-  /** A button's label inside its border, on its own `width` x `height` grid of squares. */
-  function buttonGlyphs(label: string, width: number, height: number): Uint8Array {
+  /** A button's label inside its border, on its own `width` x `height` grid of squares, `shift` squares right of centre. */
+  function buttonGlyphs(label: string, width: number, height: number, shift = 0): Uint8Array {
     const cells = new Uint8Array(width * height);
     const inner = width - 2;
     const text = rasterizeTitle(label, inner);
@@ -384,11 +404,49 @@ export function startEventPixelMosaic(
       for (let x = 0; x < width; x += 1) {
         const border = x === 0 || y === 0 || x === width - 1 || y === height - 1;
         const glyphRow = y - top;
-        const lit = glyphRow >= 0 && glyphRow < GLYPH_ROWS && x > 0 && x < width - 1 && text[glyphRow * inner + x - 1] === 1;
+        const textColumn = x - 1 - shift;
+        const lit = glyphRow >= 0 && glyphRow < GLYPH_ROWS && textColumn >= 0 && textColumn < inner && text[glyphRow * inner + textColumn] === 1;
         if (border || lit) cells[y * width + x] = 1;
       }
     }
     return cells;
+  }
+
+  /**
+   * A button's ink from its label to its hover label: the hover label starts
+   * where the label sits and moves left a square a frame, so the label slides
+   * aside and the arrow slides in after it.
+   */
+  function slideFrames(label: string, hoverLabel: string, width: number, height: number): Uint8Array[] {
+    const inner = width - 2;
+    const start = (line: string) => Math.floor((inner - lineColumns(line)) / 2);
+    const distance = Math.max(1, start(label) - start(hoverLabel));
+    return [
+      buttonGlyphs(label, width, height),
+      ...Array.from({ length: distance }, (_, step) => buttonGlyphs(hoverLabel, width, height, distance - 1 - step)),
+    ];
+  }
+
+  /** The frame a button's label is heading for: its last when hovered, its first at rest. */
+  const targetFrame = (button: number) => (button === hover ? buttonInk[button].frames.length - 1 : 0);
+
+  /** Redraws a button's squares that are not mid-crossfade (those draw themselves). */
+  function drawButton(button: number) {
+    buttonOf.forEach((owner, index) => {
+      if (owner === button && !fading.has(index)) drawCell(index);
+    });
+  }
+
+  /** Glides every button's label toward its target by `elapsed` milliseconds' worth. */
+  function glideButtons(elapsed: number) {
+    buttonInk.forEach((_, button) => {
+      const target = targetFrame(button);
+      const position = buttonPosition[button];
+      if (position === target || elapsed <= 0) return;
+      const step = elapsed / HOVER_STEP_MS;
+      buttonPosition[button] = position < target ? Math.min(target, position + step) : Math.max(target, position - step);
+      drawButton(button);
+    });
   }
 
   /**
@@ -474,25 +532,31 @@ export function startEventPixelMosaic(
     phraseInk = title.phrases.map((phrase) => spell(phrase, LINE_ROWS));
   }
 
-  function drawPoster(index: number, poster: number, alpha: number, colour: boolean) {
+  /** Draws a poster at `alpha`, `colour` of the way from muted grey (0) to full colour (1). */
+  function drawPoster(index: number, poster: number, alpha: number, colour: number) {
     const x = cellX[index] * scale;
     const y = cellY[index] * scale;
     // The gutter shrinks with the square, so split logo squares keep the grid's proportions.
     const size = cellSize[index] * (1 - look.gutter / tile) * scale;
     const { tilePixels, columns: atlasColumns } = atlas;
-    context!.globalAlpha = alpha * (colour ? 1 : MUTED_ALPHA);
-    context!.drawImage(
-      colour ? atlas.image : grey,
-      (poster % atlasColumns) * tilePixels, Math.floor(poster / atlasColumns) * tilePixels, tilePixels, tilePixels,
-      x, y, size, size,
-    );
+    const layer = (image: CanvasImageSource, layerAlpha: number) => {
+      if (layerAlpha <= 0) return;
+      context!.globalAlpha = layerAlpha;
+      context!.drawImage(
+        image,
+        (poster % atlasColumns) * tilePixels, Math.floor(poster / atlasColumns) * tilePixels, tilePixels, tilePixels,
+        x, y, size, size,
+      );
+    };
+    layer(grey, alpha * (1 - colour) * MUTED_ALPHA);
+    layer(atlas.image, alpha * colour);
   }
 
   /** Draws one square, crossfading from the poster it is leaving while `progress` runs from 0 to 1. */
-  function drawCell(index: number, fade?: { from: number; fromColour: boolean; progress: number }) {
+  function drawCell(index: number, fade?: { from: number; fromColour: number; progress: number }) {
     context!.clearRect(cellX[index] * scale, cellY[index] * scale, cellSize[index] * scale, cellSize[index] * scale);
     if (fade) drawPoster(index, fade.from, 1 - fade.progress, fade.fromColour);
-    drawPoster(index, posters[index], fade ? fade.progress : 1, isColour(index));
+    drawPoster(index, posters[index], fade ? fade.progress : 1, colourOf(index));
     context!.globalAlpha = 1;
   }
 
@@ -505,7 +569,7 @@ export function startEventPixelMosaic(
   function swap(index: number, now: number) {
     if (hidden[index] || fading.has(index)) return;
     const from = posters[index];
-    const fromColour = isColour(index);
+    const fromColour = colourOf(index);
     place(index, pick(index));
     fading.set(index, { from, fromColour, start: now });
   }
@@ -574,11 +638,7 @@ export function startEventPixelMosaic(
     buttonInk = [];
     (boxes ?? []).forEach((box, button) => {
       const { label, hoverLabel } = content.buttons!.items[button];
-      buttonInk.push({
-        width: box.width,
-        rest: buttonGlyphs(label, box.width, box.height),
-        hover: buttonGlyphs(hoverLabel, box.width, box.height),
-      });
+      buttonInk.push({ width: box.width, frames: slideFrames(label, hoverLabel, box.width, box.height) });
       const side = tile / buttonSplit;
       for (let row = box.top; row < Math.min(rows, box.top + box.rows); row += 1) {
         for (let column = box.left; column < Math.min(columns, box.left + box.columns); column += 1) {
@@ -593,6 +653,7 @@ export function startEventPixelMosaic(
         }
       }
     });
+    buttonPosition = buttonInk.map((_, button) => targetFrame(button));
     buttonOf = Int16Array.from(owners);
     buttonCell = Uint32Array.from(places);
     hidden = Uint8Array.from({ length: xs.length }, (_, index) => (index < gridCount ? hidden[index] : 0));
@@ -642,7 +703,8 @@ export function startEventPixelMosaic(
     phrase = (phrase + 1) % phraseInk.length;
     respellTarget = inkFor(phrase);
     respellTarget.forEach((value, cell) => {
-      if (value !== ink[cell]) respelling.set(cell, now + Math.random() * RESPELL_MS);
+      // Buttons keep their own ink; only the headline respells.
+      if (value !== ink[cell] && buttonOf[cell] < 0) respelling.set(cell, now + Math.random() * RESPELL_MS);
     });
   }
 
@@ -660,11 +722,13 @@ export function startEventPixelMosaic(
         swap(Math.floor(Math.random() * posters.length), now);
       }
     }
+    glideButtons(lastTick ? now - lastTick : 0);
+    lastTick = now;
     // Squares whose letter changed with the phrase, each at its own moment.
     for (const [index, at] of respelling) {
       if (at > now || fading.has(index)) continue;
       const from = posters[index];
-      const fromColour = isColour(index);
+      const fromColour = colourOf(index);
       ink[index] = respellTarget[index];
       place(index, pick(index));
       fading.set(index, { from, fromColour, start: now });
@@ -686,6 +750,7 @@ export function startEventPixelMosaic(
     cancelAnimationFrame(frame);
     frame = 0;
     lastSwap = 0;
+    lastTick = 0;
   }
 
   function onVisibility() {
@@ -721,22 +786,12 @@ export function startEventPixelMosaic(
     setHover: (button) => {
       if (button === hover) return;
       hover = button;
-      respellTarget = inkFor(phrase);
-      const now = performance.now();
-      respellTarget.forEach((value, index) => {
-        const owner = buttonOf[index];
-        if (owner < 0 || value === ink[index]) return;
-        if (!animate) {
-          ink[index] = value;
-          place(index, pick(index));
-          drawCell(index);
-          return;
-        }
-        // Left to right across the button, so the label seems to slide.
-        const column = buttonCell[index] % buttonInk[owner].width;
-        respelling.set(index, now + (column / buttonInk[owner].width) * HOVER_SWEEP_MS + Math.random() * HOVER_JITTER_MS);
-      });
-      schedule();
+      if (animate) {
+        schedule();
+        return;
+      }
+      buttonPosition = buttonInk.map((_, index) => targetFrame(index));
+      buttonInk.forEach((_, index) => drawButton(index));
     },
   };
 }

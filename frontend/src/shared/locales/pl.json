@@ -93,7 +93,6 @@
   "navigation": {
     "events": "Wydarzenia",
     "submit": "Prześlij",
-    "signInRequired": "Wymaga zalogowania",
     "clubs": "Organizacje",
     "positions": "Stanowiska",
     "myEvents": "Moje wydarzenia",
@@ -571,35 +570,34 @@
         "social": "wydarzenie na kampusie",
         "position": "wydarzenie na kampusie"
       },
-      "primaryAction": "Zobacz, co się dzieje",
-      "primaryHoverAction": "Przeglądaj wydarzenia",
+      "primaryAction": "Przeglądaj wydarzenia",
       "secondaryAction": "O nas"
     },
     "problem": {
-      "title": "Na kampusie NIE jest nudno. Wydarzenia są po prostu ukryte.",
-      "description": "Na {{school}} zawsze coś się dzieje. Problem w tym, gdzie się o tym ogłasza.",
+      "title": "Większość wydarzeń na kampusie nigdy nie trafia do Twojego feedu.",
+      "description": "Kluby na {{school}} ogłaszają wydarzenia na własnych kontach na Instagramie kilka dni wcześniej, a Instagram pokazuje każdy post tylko części obserwujących.",
       "points": {
         "buried": {
           "title": "Giną w feedzie",
-          "description": "Nawet jeśli obserwujesz organizację, to Instagram decyduje, czy zobaczysz jej post. Większość plakatów wydarzeń tonie pod całą resztą Twojego feedu."
+          "description": "To, że obserwujesz organizację, nie znaczy, że zobaczysz jej posty. Instagram wybiera, co do Ciebie dociera, a plakaty wydarzeń rzadko wygrywają z całą resztą Twojego feedu."
         },
         "scattered": {
           "title": "Setki organizacji, zero wspólnego feedu",
-          "description": "Każdy klub, koło i drużyna publikuje na własnym koncie. Nikt nie obserwuje wszystkich, więc dowiadujesz się tylko o tym, co udostępnią znajomi."
+          "description": "Kluby, koła i drużyny publikują każde na własnym koncie. Nie dasz rady obserwować setek z nich, więc dowiadujesz się o tym, co akurat udostępnią znajomi."
         },
         "late": {
           "title": "Dowiadujesz się dzień później",
-          "description": "Darmowe jedzenie, wieczór z rekruterami, warsztaty kulinarne za $5. Widzisz post z relacją i orientujesz się, że to było wczoraj."
+          "description": "Widzisz relację z wieczoru z rekruterami albo darmowej kolacji i orientujesz się, że to było wczoraj."
         },
         "quiet": {
-          "title": "I wydaje się, że nic się nie dzieje",
-          "description": "Gdy wydarzenia są rozrzucone po setkach kont, kampus wydaje się cichy. A wcale nie jest. Po prostu tego nie widzisz."
+          "title": "I kampus wydaje się cichy",
+          "description": "Gdy wydarzenia są rozrzucone po setkach kont, tydzień może wyglądać na pusty, nawet jeśli kluby zorganizowały mnóstwo rzeczy."
         }
       }
     },
     "solution": {
-      "title": "Każda okazja, zawsze aktualna.",
-      "description": "Każde wydarzenie, wieczór networkingowy i otwarte stanowisko w klubach na {{school}}, aktualizowane, gdy tylko kluby je opublikują. Szukaj, filtruj i zapisuj to, co cię interesuje.",
+      "title": "Wat2Do zbiera wszystko na jednej stronie i dba, żeby była aktualna.",
+      "description": "Wat2Do czyta posty klubów na {{school}} i wypisuje znalezione wydarzenia i wolne stanowiska w klubach, zwykle w ciągu doby od publikacji. Możesz je przeszukiwać, filtrować i zapisywać te, które chcesz.",
       "stats": {
         "clubsLabel": "organizacja śledzona na {{school}}",
         "clubsLabel_one": "organizacja śledzona na {{school}}",
@@ -640,7 +638,7 @@
       },
       "clubs": {
         "title": "Odkryj organizacje, o których istnieniu nie wiesz",
-        "description": "Przeglądaj wszystkie organizacje na {{school}}, obserwuj te, które Ci się podobają, i znajdź wolne stanowiska, gdy zechcesz się zaangażować."
+        "description": "Przeglądaj organizacje na {{school}} i obserwuj te, które Ci się podobają. Gdy zechcesz się zaangażować, znajdziesz tam też ich wolne stanowiska."
       }
     },
     "faq": {
@@ -652,7 +650,7 @@
         },
         "clubs": {
           "question": "Czy moja organizacja musi się rejestrować?",
-          "answer": "Nie. Jeśli Twoja organizacja publikuje wydarzenia na publicznym koncie na Instagramie, Wat2Do wyłapie je automatycznie. Możesz też przejąć stronę swojej organizacji, żeby nią zarządzać."
+          "answer": "Nie. Jeśli Twoja organizacja publikuje wydarzenia na publicznym koncie na Instagramie, Wat2Do samo je wyłapie. Możesz też przejąć stronę swojej organizacji, żeby nią zarządzać."
         },
         "speed": {
           "question": "Jak szybko pojawiają się nowe wydarzenia?",
@@ -673,8 +671,8 @@
       }
     },
     "closing": {
-      "title": "Koniec z dowiadywaniem się dzień później.",
-      "action": "Zobacz, co się dzieje"
+      "title": "Zobacz wydarzenia tego tygodnia, zanim się odbędą.",
+      "action": "Przeglądaj wydarzenia"
     }
   },
   "footer": {

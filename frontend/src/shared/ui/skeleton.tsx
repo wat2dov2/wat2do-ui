@@ -5,11 +5,18 @@ import { cn } from "@/shared/lib/utils";
  * It is static: pages show dozens at once, and an animation on each one
  * costs phones a style recalculation and repaint every frame.
  */
-export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+/** A skeleton's fill: muted on the page, the page colour on a surface that is already muted. */
+const SKELETON_FILL = { page: "bg-muted", muted: "bg-background" } as const;
+
+export function Skeleton({
+  className,
+  on = "page",
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & { on?: keyof typeof SKELETON_FILL }) {
   return (
     <div
       data-slot="skeleton"
-      className={cn("rounded-md bg-muted", className)}
+      className={cn("rounded-md", SKELETON_FILL[on], className)}
       {...props}
     />
   );

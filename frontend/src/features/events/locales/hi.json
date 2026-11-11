@@ -16,7 +16,6 @@
     "submitEventForReview": "समीक्षा के लिए इवेंट सबमिट करें",
     "submitForReview": "समीक्षा के लिए सबमिट करें",
     "uploadEventFlyer": "इवेंट फ़्लायर अपलोड करें",
-    "uploadEventFlyerDescription": "एक छवि फ़्लायर अपलोड या पेस्ट करें, और AI विवरण स्वचालित रूप से पहले से भर जाएगा।",
     "processingEventImage": "इवेंट छवि संसाधित की जा रही है",
     "flyerExtracted": "फ़्लायर विवरण सफलतापूर्वक निकाला गया.",
     "flyerParseFailed": "फ़्लायर पार्सिंग विफल",
@@ -165,7 +164,7 @@
     },
     "highlights": {
       "fresh": "Wat2Do पर नया",
-      "openEvent": "इवेंट देखें",
+      "by": "द्वारा",
       "map": "कैंपस के आसपास",
       "networking": "नेटवर्किंग के मौके"
     }

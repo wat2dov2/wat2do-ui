@@ -825,7 +825,7 @@
           ],
           "title": "Source Video Url"
         },
-        "title_font": {
+        "title_svg": {
           "anyOf": [
             {
               "type": "string"
@@ -834,8 +834,9 @@
               "type": "null"
             }
           ],
-          "title": "Title Font",
-          "description": "The web font closest to the lettering of the title on the event's poster"
+          "default": null,
+          "description": "The title as the event's poster sets it, drawn as an SVG; shown as an image",
+          "title": "Title Svg"
         },
         "source_url": {
           "anyOf": [

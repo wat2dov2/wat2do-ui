@@ -58,7 +58,8 @@ test("map opens on campus, flies back to campus, and keeps its camera through fe
   let tree = render();
   let map = find(tree, node => node.type === "Map")!;
   expect(map.props.mapStyle).toBe("https://tiles.openfreemap.org/styles/liberty");
-  expect(map.props.cooperativeGestures).not.toBe(true);
+  // Every map sits in a scrolling page, so zooming takes Ctrl/⌘ or two fingers and never traps the scroll.
+  expect(map.props.cooperativeGestures).toBe(true);
   // Credits are compact only on narrow maps, not MapLibre's always-compact default.
   expect(map.props.attributionControl).toEqual({});
   // The map can report a missing source tile before its first load. That must

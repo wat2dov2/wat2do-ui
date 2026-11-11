@@ -46,7 +46,6 @@
     "published": "Position added.",
     "submissions": "Position submissions",
     "uploadImage": "Upload Position Poster",
-    "uploadImageDescription": "Upload or paste an image of the role, and AI will automatically prefill the details.",
     "processingImage": "Processing position image",
     "imageParseFailed": "Image parsing failed",
     "imageParseFailedDescription": "We could not read position details from the image.",

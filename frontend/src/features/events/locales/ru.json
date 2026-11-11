@@ -16,7 +16,6 @@
     "submitEventForReview": "Отправить событие на проверку",
     "submitForReview": "Отправить на проверку",
     "uploadEventFlyer": "Загрузить афишу мероприятия",
-    "uploadEventFlyerDescription": "Загрузите или вставьте изображение афиши, и ИИ автоматически заполнит детали.",
     "processingEventImage": "Обработка изображения мероприятия",
     "flyerExtracted": "Детали афиши успешно извлечены.",
     "flyerParseFailed": "Не удалось распознать афишу",
@@ -181,7 +180,7 @@
     },
     "highlights": {
       "fresh": "Новое на Wat2Do",
-      "openEvent": "Открыть событие",
+      "by": "от",
       "map": "По кампусу",
       "networking": "Возможности для нетворкинга"
     }

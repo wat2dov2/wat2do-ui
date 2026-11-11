@@ -1,6 +1,7 @@
 {
   "auth": {
     "heading": "Découvrez ce qui se passe sur le campus.",
+    "loginRequired": "Connexion requise",
     "description": "Connectez-vous ou créez un compte pour enregistrer des événements, personnaliser votre fil d'actualités et découvrir ce qui se passe sur le campus.",
     "emailLabel": "Adresse e-mail",
     "emailPlaceholder": "vous@{{domain}}",

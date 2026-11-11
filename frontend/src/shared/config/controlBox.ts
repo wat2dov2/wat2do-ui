@@ -41,7 +41,6 @@ export const controlBox = {
       featuredWindowMs: hoursToMilliseconds(eventDiscovery.highlights.featured_window_days * 24),
       rowCardCount: eventDiscovery.highlights.row_card_count,
     },
-    titleFonts: new Set<string>(eventDiscovery.title_fonts),
     views: eventDiscovery.views,
   },
   clubManagement: {

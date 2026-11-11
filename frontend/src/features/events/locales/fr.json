@@ -16,7 +16,6 @@
     "submitEventForReview": "Soumettre l'événement pour révision",
     "submitForReview": "Soumettre pour révision",
     "uploadEventFlyer": "Télécharger le flyer de l'événement",
-    "uploadEventFlyerDescription": "Téléchargez ou collez une image du flyer, et l'IA remplira automatiquement les détails.",
     "processingEventImage": "Traitement de l'image de l'événement",
     "flyerExtracted": "Détails du flyer extraits avec succès.",
     "flyerParseFailed": "Échec de l'analyse du flyer",
@@ -173,7 +172,7 @@
     },
     "highlights": {
       "fresh": "Nouveautés sur Wat2Do",
-      "openEvent": "Voir l'événement",
+      "by": "par",
       "map": "Sur le campus",
       "networking": "Occasions de réseautage"
     }

@@ -1,6 +1,7 @@
 {
   "auth": {
     "heading": "Tuklasin kung ano ang nangyayari sa campus.",
+    "loginRequired": "Kailangang mag-log in",
     "description": "Mag-sign in o gumawa ng account upang i-save ang mga kaganapan, i-personalize ang iyong feed, at tuklasin kung ano ang nangyayari sa campus.",
     "emailLabel": "Email address",
     "emailPlaceholder": "ikaw@{{domain}}",

@@ -155,9 +155,6 @@ const nextConfig: NextConfig = {
       headers: [{ key: "Vercel-CDN-Cache-Control", value: publicPageCdnCache }],
     }));
   },
-  async redirects() {
-    return [{ source: "/", destination: "/events", permanent: true }];
-  },
   async rewrites() {
     return [
       ...apiCollectionPaths.map((path) => ({

@@ -13,6 +13,7 @@ import { usePrefetchEventOnPress } from "@/features/events/hooks/usePrefetchEven
 import { useCardMouseDownActivate, useMobileClickActivation } from "@/shared/hooks";
 import { cn } from "@/shared/lib/utils";
 import { eventPagePath } from "@/features/events/lib/eventUrls";
+import { buildEventStatsLabel } from "@/features/events/lib/eventStatsLabel";
 import type { Event } from "@/shared/types";
 import type { EventStats } from "@/features/events/api/events.api";
 
@@ -32,20 +33,6 @@ interface EventCardProps {
   /** Load this card's poster immediately because it can be an initial LCP candidate. */
   imagePriority?: boolean;
   className?: string;
-}
-
-function buildEventStatsLabel(
-  t: TFunction,
-  stats: EventStats | undefined,
-): string | undefined {
-  if (!stats) return undefined;
-
-  const parts = [
-    stats.click_count > 0 ? t("events.clickCount", { count: stats.click_count }) : null,
-    stats.going_count > 0 ? t("events.goingCount", { count: stats.going_count }) : null,
-  ].filter((part): part is string => part !== null);
-
-  return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
 interface EventCardBodyProps {

@@ -106,17 +106,15 @@ export function LandingCard({ corners = {}, size = "section", face, bleed = fals
 /**
  * What a notched label means, as the colour the product uses for it. The legend
  * is the same everywhere on the page:
- * - `school`: the school itself, in its own colour.
  * - `live`: happening or counted right now.
  * - `free`: costs nothing, needs no account.
  * - `new`: freshly read from clubs' posts.
  * - `neutral`: everything else; colour is kept for meaning.
  */
-export type LandingNotchTone = "school" | "live" | "free" | "new" | "neutral";
+export type LandingNotchTone = "live" | "free" | "new" | "neutral";
 
 const TONE_VARIANTS = {
-  school: "tint-school",
-  live: "tint-live",
+  live: "live",
   free: "tint-free",
   new: "tint-new",
   neutral: "plain",

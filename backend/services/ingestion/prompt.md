@@ -131,12 +131,12 @@ psql -v ON_ERROR_STOP=1 <<'SQL'
 BEGIN;
 WITH e AS (
   INSERT INTO events (title, description, location, map_location, club, club_id, ig_handle, school_id, source_url,
-    source_image_url, ingestion_source, price, food, registration, category, title_font,
+    source_image_url, ingestion_source, price, food, registration, category, title_svg,
     competition, employers_on_campus, free_food_on_campus, sports_game, campus_season_ids)
   VALUES ($t$Drop-In Jam$t$, $t$Weekly improv jam.$t$, $t$AL 113$t$,
     $t$Arts Lecture Hall, University of Waterloo, 200 University Ave W, Waterloo, ON$t$, $t$Improv Club, UW$t$, 6805,
     'uwimprovisation', {{school_id}}, '{{source_url}}', '<poster reference>',
-    '{{ingestion_source}}', 0, '[]', false, 'Arts & Culture', 'Permanent Marker', NULL, NULL, NULL, NULL, NULL)
+    '{{ingestion_source}}', 0, '[]', false, 'Arts & Culture', $t$<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 140"><text x="200" y="104" text-anchor="middle" font-family="Impact,'Arial Narrow Bold',sans-serif" font-size="110" textLength="380" lengthAdjust="spacingAndGlyphs" fill="#ffffff" stroke="#151515" stroke-width="3" paint-order="stroke">IMPROV UW</text></svg>$t$, NULL, NULL, NULL, NULL, NULL)
   RETURNING id
 )
 INSERT INTO event_dates (event_id, dtstart_utc, dtend_utc, tz)
@@ -187,8 +187,11 @@ Columns:
   When some items are free and others sold, list only the free ones.
 - `registration`: true only when attendees are clearly told to register, RSVP or sign up.
 - `category`: always one of {{categories}}, the closest fit when none is exact; never NULL. Events without a category are hidden from category filters and never reach the Instagram carousels.
-- `title_font`: the font from this list whose letters look most like the event's title as the poster sets it: {{title_fonts}}.
-  Match the lettering's style (brush, script, condensed, serif, rounded, pixel, typewriter), not its words; use NULL when there is no poster or its title is plain, unreadable or not shown.
+- `title_svg`: the event's title as the poster sets it, drawn as one SVG the events page shows over the bottom of the poster on a dark fade.
+  Write `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 H">` holding only `<text>`, `<tspan>`, `<g>` and `<rect>` (for a band or box the title sits on), copying the poster's title: its words, line breaks, capitals, colours (hex), weight, italics, outline (`stroke` with `paint-order="stroke"`), tilt (`transform="rotate(...)"`) and stacked colour shadows.
+  Pick the closest common `font-family` stack for its lettering (for example `Impact,'Arial Narrow Bold',sans-serif` for condensed, `'Arial Black',sans-serif` for heavy, `Didot,'Bodoni 72',Georgia,serif` for high-contrast serif, `'Snell Roundhand','Brush Script MT',cursive` for script, `'Bradley Hand','Marker Felt',cursive` for brush), and give every `<text>` a `textLength` within the view box and `lengthAdjust="spacingAndGlyphs"` so no line is cut off whatever font a reader has.
+  Letters dark enough to vanish on the fade get a light outline; leave out everything that is not the title's text (icons, stars, dates, times, places, logos). No scripts, images, links, styles or event handlers.
+  Use NULL when there is no poster or its title is plain, unreadable or not shown.
   On a listed event, set it only when this source's poster becomes its image.
 - `cancelled`: false unless the event is cancelled.
 - Never set `featured`, `created_by`, `display_handle`, `dtstart_utc`, `dtend_utc` or `source_posted_at` on `events`; the system fills them.

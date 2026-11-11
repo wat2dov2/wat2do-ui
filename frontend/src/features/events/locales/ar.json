@@ -16,7 +16,6 @@
     "submitEventForReview": "إرسال الحدث للمراجعة",
     "submitForReview": "إرسال للمراجعة",
     "uploadEventFlyer": "تحميل منشور الفعالية",
-    "uploadEventFlyerDescription": "قم بتحميل أو لصق صورة المنشور، وسيقوم AI تلقائيًا بملء التفاصيل.",
     "processingEventImage": "معالجة صورة الفعالية",
     "flyerExtracted": "تم استخراج تفاصيل المنشور بنجاح.",
     "flyerParseFailed": "فشل تحليل المنشور",
@@ -197,7 +196,7 @@
     },
     "highlights": {
       "fresh": "جديد على Wat2Do",
-      "openEvent": "عرض الفعالية",
+      "by": "من",
       "map": "في أرجاء الحرم",
       "networking": "فرص التواصل المهني"
     }
