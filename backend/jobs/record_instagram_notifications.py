@@ -21,7 +21,7 @@ from pathlib import Path
 BACKEND_DIRECTORY = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_DIRECTORY))
 
-from core.launch_agents import install_launch_agent  # noqa: E402
+from core.launch_agents import CLAUDE_CODE_PATH, install_launch_agent  # noqa: E402
 from services import notification_recording  # noqa: E402
 
 LAUNCH_AGENT_LABEL = "io.wat2do.notification-recorder"
@@ -33,6 +33,8 @@ def launch_agent_payload() -> dict:
         "Label": LAUNCH_AGENT_LABEL,
         "ProgramArguments": [sys.executable, str(Path(__file__).resolve()), "run"],
         "WorkingDirectory": str(BACKEND_DIRECTORY),
+        # launchd's bare PATH has no gh, which sends the workflow dispatches.
+        "EnvironmentVariables": {"PATH": CLAUDE_CODE_PATH},
         "KeepAlive": True,
         "ProcessType": "Background",
         # run keeps its own rotated log.

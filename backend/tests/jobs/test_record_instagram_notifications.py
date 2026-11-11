@@ -15,6 +15,8 @@ def test_launch_agent_keeps_the_recorder_alive():
     assert "StartInterval" not in payload
     # run writes its own rotated log, so launchd keeps none.
     assert payload["StandardOutPath"] == payload["StandardErrorPath"] == "/dev/null"
+    # gh, which sends the workflow dispatches, lives in Homebrew's bin.
+    assert "/opt/homebrew/bin" in payload["EnvironmentVariables"]["PATH"].split(":")
 
 
 @pytest.fixture
