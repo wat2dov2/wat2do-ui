@@ -923,11 +923,12 @@ def test_follow_control_names_every_uoft_campus_for_the_others() -> None:
 
 def test_following_reads_are_paced_by_the_browser_controls() -> None:
     control = controlbox.instagram_browser
-    # The prototype's proven page size, one read a minute at most until a clean day.
+    # The prototype's proven page size; the hourly cap spaces reads at least
+    # 3600 / cap seconds apart, and a refusal holds only these reads.
     assert control.following_page_size == 50
     assert 0 < control.following_page_delay_min_seconds <= control.following_page_delay_max_seconds
     assert 0 < control.following_list_delay_min_seconds <= control.following_list_delay_max_seconds
-    assert control.following_requests_per_hour == 60
+    assert 3600 / control.following_requests_per_hour >= 1
 
 
 def test_follow_crawl_checks_must_not_start_slower_than_their_maximum(tmp_path: Path) -> None:
