@@ -41,28 +41,35 @@ export function SessionView({ signedIn, signedOut }: SessionViewProps) {
 }
 
 interface ClubManagerViewProps {
-  /** The club whose team sees these controls; admins see them for every club. */
+  /** The club whose team sees these controls; admins see them for every club unless `admins` is false. */
   clubId: number | null | undefined;
+  /**
+   * False for controls only the club's own team sees, even when the visitor is an
+   * admin (managing tickets, which happens in that club's panel).
+   */
+  admins?: boolean;
   children: ReactNode;
 }
 
 /**
- * Controls only a club's own team and admins see (edit, delete, manage tickets).
+ * Controls only a club's own team and admins see (edit, delete), or with
+ * `admins={false}` only the club's own team (manage tickets).
  *
  * Like `SessionView`, the server's HTML draws them hidden and
- * `sessionInitScript` shows them before first paint for an admin or a member
- * of this club, so the people who see them see them from the first frame
- * instead of watching them push the page's other controls aside.
+ * `sessionInitScript` shows them before first paint for a member of this club
+ * (and for an admin unless `admins` is false), so the people who see them see
+ * them from the first frame instead of watching them push the page's other
+ * controls aside.
  */
-export function ClubManagerView({ clubId, children }: ClubManagerViewProps) {
+export function ClubManagerView({ clubId, admins = true, children }: ClubManagerViewProps) {
   const known = useSessionKnown();
   const { isAdmin, clubs } = useAuthState();
-  const manages = isAdmin || clubs.some((club) => club.id === clubId);
+  const manages = (admins && isAdmin) || clubs.some((club) => club.id === clubId);
   if (known && !manages) return null;
   return (
     <div
       data-manager-for={clubId ?? undefined}
-      className={known ? "contents" : "hidden in-data-[session-admin]:contents"}
+      className={known ? "contents" : admins ? "hidden in-data-[session-admin]:contents" : "hidden"}
     >
       {children}
     </div>
