@@ -82,7 +82,7 @@ CREATE TABLE public.zone_rule_corrections (
     PRIMARY KEY (kind, record_id)
 );
 ALTER TABLE public.zone_rule_corrections ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.zone_rule_corrections FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON public.zone_rule_corrections FROM PUBLIC;
 GRANT ALL ON public.zone_rule_corrections TO service_role;
 
 WITH stored AS (

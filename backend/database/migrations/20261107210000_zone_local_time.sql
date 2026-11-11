@@ -73,9 +73,9 @@ AS $$
     )
 $$;
 
-REVOKE ALL ON FUNCTION public.zone_permanent_offset(text) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.local_to_utc(timestamp, text) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.utc_to_local(timestamptz, text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.zone_permanent_offset(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.local_to_utc(timestamp, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.utc_to_local(timestamptz, text) FROM PUBLIC;
 -- The ingestion agent writes and reads every school time through them.
 GRANT EXECUTE ON FUNCTION public.zone_permanent_offset(text),
     public.local_to_utc(timestamp, text),
