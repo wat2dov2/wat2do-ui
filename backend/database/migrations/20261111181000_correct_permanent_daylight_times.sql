@@ -5,7 +5,7 @@
 -- ('2026-11-06 19:30 America/Vancouver'::timestamptz, and positions'
 -- deadline_at the same way), so this server's tz database turned it into an
 -- instant. Its tz database predates the 2026 changes (see
--- 20261107210000_zone_local_time.sql), so it read every wall-clock time from
+-- 20261111180000_zone_local_time.sql), so it read every wall-clock time from
 -- 2026-11-01 to the next March (and each later winter) at the old winter
 -- offset: UBC Symphony Orchestra, Nov 6 7:30 PM, was stored as 03:30Z, not
 -- 02:30Z.
