@@ -82,7 +82,6 @@
     },
     "addedToWat2Do": "Добавлено в Wat2Do",
     "postedBy": "Опубликовано",
-    "seeAll": "Смотреть все",
     "scrollBack": "Прокрутить назад",
     "scrollForward": "Прокрутить вперёд"
   },
@@ -573,7 +572,8 @@
         "position": "события кампуса"
       },
       "primaryAction": "Смотреть события",
-      "secondaryAction": "Как это работает"
+      "primaryHoverAction": "Все события",
+      "secondaryAction": "О нас"
     },
     "problem": {
       "title": "В кампусе НЕ скучно. Просто события спрятаны.",

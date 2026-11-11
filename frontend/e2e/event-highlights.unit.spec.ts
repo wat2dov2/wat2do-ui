@@ -7,7 +7,7 @@ import { isNetworkingEvent } from "../src/shared/utils/event";
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
 const NOW_MS = Date.UTC(2026, 10, 8, 16);
-const { mustKnowCount, mustKnowWindowMs, rowCardCount } = controlBox.eventDiscovery.highlights;
+const { featuredCount, featuredWindowMs, rowCardCount } = controlBox.eventDiscovery.highlights;
 
 function event(id: number, startsInHours: number, overrides: Partial<Event> = {}): Event {
   const startMs = NOW_MS + startsInHours * HOUR_MS;
@@ -34,7 +34,7 @@ function weekly(id: number, overrides: Partial<Event> = {}): Event {
   };
 }
 
-const mustKnowIds = (events: Event[]) => buildEventHighlights(events, NOW_MS).mustKnow.map(item => item.id);
+const featuredIds = (events: Event[]) => buildEventHighlights(events, NOW_MS).featured.map(item => item.id);
 
 test("networking means employers on campus or a Business event, the landing page's rule", () => {
   expect(isNetworkingEvent({ employers_on_campus: true, category: "Arts & Culture" })).toBe(true);
@@ -44,7 +44,7 @@ test("networking means employers on campus or a Business event, the landing page
   expect(isNetworkingEvent({ employers_on_campus: null, category: null })).toBe(false);
 });
 
-test("must-know ranks featured, then employer, competition, varsity and co-hosted events", () => {
+test("the featured row ranks events Wat2Do featured, then employer, competition, varsity and co-hosted events", () => {
   const events = [
     event(1, 3),
     event(2, 4, { competition: true }),
@@ -55,18 +55,18 @@ test("must-know ranks featured, then employer, competition, varsity and co-hoste
     event(7, 9, { sports_game: true }),
   ];
   // 5 scores 5; 3 scores 3; 4 and 6 (two co-hosts count, a third does not) score 2,
-  // the sooner first; then 2 and 7 score 1, the sooner first. Five make the banner.
-  expect(mustKnowCount).toBe(5);
-  expect(mustKnowIds(events)).toEqual([5, 3, 4, 6, 2]);
+  // the sooner first; then 2 and 7 score 1, the sooner first; then plain 1.
+  expect(featuredCount).toBe(8);
+  expect(featuredIds(events)).toEqual([5, 3, 4, 6, 2, 7, 1]);
 });
 
-test("ties go to the sooner event, and plain events fill the banner when few stand out", () => {
+test("ties go to the sooner event, and plain events fill the row when few stand out", () => {
   const events = [event(1, 30), event(2, 10), event(3, 20, { featured: true })];
-  expect(mustKnowIds(events)).toEqual([3, 2, 1]);
+  expect(featuredIds(events)).toEqual([3, 2, 1]);
 });
 
-test("must-know leaves out what ended, was cancelled, starts too late, has no poster or recurs", () => {
-  const windowHours = mustKnowWindowMs / HOUR_MS;
+test("the featured row leaves out what ended, was cancelled, starts too late, has no poster or recurs", () => {
+  const windowHours = featuredWindowMs / HOUR_MS;
   const events = [
     event(1, -3, { featured: true }),
     event(2, 5, { featured: true, cancelled: true }),
@@ -77,34 +77,41 @@ test("must-know leaves out what ended, was cancelled, starts too late, has no po
     event(7, -0.5),
   ];
   // Event 7 is on now, so it still counts and comes first among the plain ones.
-  expect(mustKnowIds(events)).toEqual([7, 6]);
+  expect(featuredIds(events)).toEqual([7, 6]);
 });
 
-test("a club appears in the banner once, with its highest-ranked event", () => {
+test("a club appears in the featured row once, with its highest-ranked event", () => {
   const events = [
     event(1, 2, { club_id: 9, club: "Design Club" }),
     event(2, 3, { club_id: 9, club: "Design Club", featured: true }),
     event(3, 4),
   ];
-  expect(mustKnowIds(events)).toEqual([2, 3]);
+  expect(featuredIds(events)).toEqual([2, 3]);
 });
 
-test("the rows hold networking and featured events, soonest first, up to a row's length", () => {
+test("the rows hold the newest additions and networking events, up to a row's length", () => {
+  const added = (hoursAgo: number) => new Date(NOW_MS - hoursAgo * HOUR_MS).toISOString();
   const events = [
-    event(1, 50, { category: "Business" }),
-    event(2, 5, { employers_on_campus: true }),
-    event(3, 1, { featured: true }),
-    event(4, 20, { featured: true, category: "Business" }),
-    event(5, 2),
-    event(6, 3, { category: "Business", cancelled: true }),
-    event(7, -2, { featured: true }),
+    event(1, 50, { category: "Business", added_at: added(5), source_image_url: null }),
+    event(2, 5, { employers_on_campus: true, added_at: added(1), source_image_url: null }),
+    event(3, 1, { added_at: added(3), source_image_url: null }),
+    event(4, 20, { category: "Business", added_at: added(2), source_image_url: null }),
+    event(5, 2, { added_at: added(4), source_image_url: null }),
+    event(6, 3, { category: "Business", cancelled: true, added_at: added(0) }),
   ];
   const highlights = buildEventHighlights(events, NOW_MS);
   expect(highlights.networking.map(item => item.id)).toEqual([2, 4, 1]);
-  expect(highlights.featured.map(item => item.id)).toEqual([3, 4]);
+  expect(highlights.fresh.map(item => item.id)).toEqual([2, 4, 3, 5, 1]);
 
-  const many = Array.from({ length: rowCardCount + 5 }, (_, index) => event(100 + index, index + 1, { featured: true }));
-  expect(buildEventHighlights(many, NOW_MS).featured).toHaveLength(rowCardCount);
+  const many = Array.from({ length: rowCardCount + 5 }, (_, index) => event(100 + index, index + 1, { category: "Business" }));
+  expect(buildEventHighlights(many, NOW_MS).networking).toHaveLength(rowCardCount);
+});
+
+test("the new row leaves out what the featured row already shows", () => {
+  const events = [event(1, 2, { featured: true }), event(2, 3, { source_image_url: null })];
+  const highlights = buildEventHighlights(events, NOW_MS);
+  expect(highlights.featured.map(item => item.id)).toEqual([1]);
+  expect(highlights.fresh.map(item => item.id)).toEqual([2]);
 });
 
 test("the highlights are plain data, so the server can hand them to the page", () => {

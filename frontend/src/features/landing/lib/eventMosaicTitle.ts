@@ -54,8 +54,10 @@ const GLYPHS: Record<string, readonly string[]> = {
   ":": [".", "#", ".", ".", ".", "#", "."],
   "/": ["....#", "...#.", "...#.", "..#..", ".#...", ".#...", "#...."],
   "&": [".##..", "#..#.", "#.#..", ".#...", "#.#.#", "#..#.", ".##.#"],
+  "→": ["......", "...#..", "....#.", "######", "....#.", "...#..", "......"],
 };
-const GLYPH_ROWS = 7;
+/** Rows every glyph is tall. */
+export const GLYPH_ROWS = 7;
 /** Empty cells between the logo and the headline, between its lines, and below it, so the stack is evenly spaced. */
 export const TITLE_GAP_ROWS = 4;
 /** Rows per line: a glyph's seven and the gap below it. */
@@ -84,7 +86,7 @@ function fallbackFont(pixels: number) {
 }
 
 /** How many cells wide a line is drawn, with a cell's gap between glyphs. */
-function lineColumns(line: string): number {
+export function lineColumns(line: string): number {
   const glyphs = glyphsOf(line);
   if (glyphs) return glyphs.reduce((width, glyph) => width + glyph[0].length + 1, -1);
   const context = document.createElement("canvas").getContext("2d")!;

@@ -131,12 +131,12 @@ psql -v ON_ERROR_STOP=1 <<'SQL'
 BEGIN;
 WITH e AS (
   INSERT INTO events (title, description, location, map_location, club, club_id, ig_handle, school_id, source_url,
-    source_image_url, ingestion_source, price, food, registration, category,
+    source_image_url, ingestion_source, price, food, registration, category, title_font,
     competition, employers_on_campus, free_food_on_campus, sports_game, campus_season_ids)
   VALUES ($t$Drop-In Jam$t$, $t$Weekly improv jam.$t$, $t$AL 113$t$,
     $t$Arts Lecture Hall, University of Waterloo, 200 University Ave W, Waterloo, ON$t$, $t$Improv Club, UW$t$, 6805,
     'uwimprovisation', {{school_id}}, '{{source_url}}', '<poster reference>',
-    '{{ingestion_source}}', 0, '[]', false, 'Arts & Culture', NULL, NULL, NULL, NULL, NULL)
+    '{{ingestion_source}}', 0, '[]', false, 'Arts & Culture', 'Permanent Marker', NULL, NULL, NULL, NULL, NULL)
   RETURNING id
 )
 INSERT INTO event_dates (event_id, dtstart_utc, dtend_utc, tz)
@@ -187,6 +187,9 @@ Columns:
   When some items are free and others sold, list only the free ones.
 - `registration`: true only when attendees are clearly told to register, RSVP or sign up.
 - `category`: always one of {{categories}}, the closest fit when none is exact; never NULL. Events without a category are hidden from category filters and never reach the Instagram carousels.
+- `title_font`: the font from this list whose letters look most like the event's title as the poster sets it: {{title_fonts}}.
+  Match the lettering's style (brush, script, condensed, serif, rounded, pixel, typewriter), not its words; use NULL when there is no poster or its title is plain, unreadable or not shown.
+  On a listed event, set it only when this source's poster becomes its image.
 - `cancelled`: false unless the event is cancelled.
 - Never set `featured`, `created_by`, `display_handle`, `dtstart_utc`, `dtend_utc` or `source_posted_at` on `events`; the system fills them.
 

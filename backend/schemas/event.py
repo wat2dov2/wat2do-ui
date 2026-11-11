@@ -102,6 +102,10 @@ class EventSummaryResponse(EventDiscoveryFields):
     registration: bool = False
     source_image_url: str | None = None
     source_video_url: str | None = None
+    title_font: str | None = Field(
+        default=None,
+        description="The web font closest to the lettering of the title on the event's poster",
+    )
     source_url: str | None = None
     category: str | None = None
     club: str | None = None
@@ -150,6 +154,10 @@ class EventResponse(EventDiscoveryFields):
     registration: bool = False
     source_image_url: str | None = None
     source_video_url: str | None = None
+    title_font: str | None = Field(
+        default=None,
+        description="The web font closest to the lettering of the title on the event's poster",
+    )
     club_logo_url: str | None = None
     cohosts: list[ClubCohostResponse] = Field(default_factory=list)
     featured: bool = Field(default=False, description="Published to Instagram")

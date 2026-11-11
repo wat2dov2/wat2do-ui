@@ -9,8 +9,11 @@ import { BadgeMask } from "@/shared/ui/badge-mask";
 import type { BadgeMaskVariant } from "@/shared/ui/badge-mask-paths";
 import { EventImageCutout, createClipPath, useEventImageCutouts } from "@/shared/ui/event-image-cutout";
 
-/** `display` for the hero and closing; `section` for the cards that explain Wat2Do. */
-export type LandingCardSize = "display" | "section";
+/**
+ * `hero` runs edge to edge from the top of the page, under the navigation;
+ * `display` for the closing; `section` for the cards that explain Wat2Do.
+ */
+export type LandingCardSize = "hero" | "display" | "section";
 
 /** What sits in each corner that carries a badge. */
 export type LandingCardCorners = Partial<Record<BadgeMaskVariant, ReactNode>>;
@@ -18,6 +21,8 @@ export type LandingCardCorners = Partial<Record<BadgeMaskVariant, ReactNode>>;
 const CORNERS: readonly BadgeMaskVariant[] = ["top-left", "top-right", "bottom-left", "bottom-right"];
 
 const CONTENT_PADDING: Record<LandingCardSize, string> = {
+  // Clear of the navigation (h-12) laid over its top.
+  hero: "px-4 pt-22 pb-10 sm:px-12 sm:pt-28 sm:pb-16",
   display: "px-4 py-10 sm:px-12 sm:py-16",
   section: "p-5 sm:p-6",
 };
@@ -70,8 +75,8 @@ export function LandingCard({ corners = {}, size = "section", face, bleed = fals
   return (
     <div
       ref={surfaceRef}
-      data-notch-size={size === "display" ? "display" : undefined}
-      className="relative flex flex-col overflow-hidden rounded-xl"
+      data-notch-size={size === "section" ? undefined : "display"}
+      className={cn("relative flex flex-col overflow-hidden", size !== "hero" && "rounded-xl")}
     >
       {/* The event card's own face colour, so skeletons, controls and the feed read on it as they do there. */}
       <EventImageCutout
@@ -128,7 +133,7 @@ interface LandingNotchLabelProps {
 /** A label in a notch, like the club name on an event card, tinted by what it means. Long text truncates. */
 export function LandingNotchLabel({ icon: Icon, tone = "neutral", size = "section", children }: LandingNotchLabelProps) {
   return (
-    <Badge variant={TONE_VARIANTS[tone]} size={size === "display" ? "display" : "lg"} className="min-w-0 gap-1.5 tabular-nums">
+    <Badge variant={TONE_VARIANTS[tone]} size={size === "section" ? "lg" : "display"} className="min-w-0 gap-1.5 tabular-nums">
       {Icon ? <Icon aria-hidden="true" className="size-[1.15em] shrink-0" /> : null}
       <span className="truncate">{children}</span>
     </Badge>

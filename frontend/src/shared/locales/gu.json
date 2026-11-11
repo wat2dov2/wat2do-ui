@@ -76,7 +76,6 @@
     },
     "addedToWat2Do": "Wat2Do માં ઉમેર્યું",
     "postedBy": "પોસ્ટ કરનાર",
-    "seeAll": "બધું જુઓ",
     "scrollBack": "પાછળ સ્ક્રોલ કરો",
     "scrollForward": "આગળ સ્ક્રોલ કરો"
   },
@@ -567,7 +566,8 @@
         "position": "ક્લબ પદ"
       },
       "primaryAction": "જુઓ શું ચાલી રહ્યું છે",
-      "secondaryAction": "આ કેવી રીતે કામ કરે છે"
+      "primaryHoverAction": "ઇવેન્ટ્સ જુઓ",
+      "secondaryAction": "અમારા વિશે"
     },
     "problem": {
       "title": "કેમ્પસ કંટાળાજનક નથી. બસ તેની ઇવેન્ટ્સ છુપાયેલી છે.",

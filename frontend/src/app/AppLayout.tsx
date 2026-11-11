@@ -10,14 +10,15 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <div className="flex h-dvh flex-col overflow-hidden">
+    <div className="group/app flex h-dvh flex-col overflow-hidden">
       <TopNav />
 
       {/* `relative` makes the scroller the containing block, so absolutely
           positioned content (e.g. Highlighter's drawn annotations) scrolls with
-          the page instead of staying pinned to the viewport. */}
+          the page instead of staying pinned to the viewport. A band under the
+          navigation starts the scroller at the top of the window. */}
       <PageFrame
-        className="main-content-grid relative mt-12 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+        className="main-content-grid relative mt-12 min-h-0 flex-1 overflow-x-hidden overflow-y-auto has-[[data-under-nav]]:mt-0"
         footer={<SiteFooter />}
       >
         {children}

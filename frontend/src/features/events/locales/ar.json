@@ -196,12 +196,7 @@
       "clusterNear_other": "{{count}} فعالية قرب {{location}}"
     },
     "highlights": {
-      "mustKnow": "لا تفوّتها",
-      "slide": "{{current}} من {{total}}",
-      "play": "تشغيل العرض",
-      "pause": "إيقاف العرض مؤقتًا",
-      "previous": "الفعالية السابقة",
-      "next": "الفعالية التالية",
+      "fresh": "جديد على Wat2Do",
       "openEvent": "عرض الفعالية",
       "map": "في أرجاء الحرم",
       "networking": "فرص التواصل المهني"

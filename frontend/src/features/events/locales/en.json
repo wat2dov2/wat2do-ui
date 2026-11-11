@@ -159,12 +159,7 @@
       "clusterNear_other": "{{count}} events near {{location}}"
     },
     "highlights": {
-      "mustKnow": "Must know",
-      "slide": "{{current}} of {{total}}",
-      "play": "Play slideshow",
-      "pause": "Pause slideshow",
-      "previous": "Previous event",
-      "next": "Next event",
+      "fresh": "New on Wat2Do",
       "openEvent": "View event",
       "map": "Around campus",
       "networking": "Networking opportunities"

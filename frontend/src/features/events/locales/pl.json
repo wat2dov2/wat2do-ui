@@ -180,12 +180,7 @@
       "clusterNear_other": "{{count}} wydarzenia w pobliżu {{location}}"
     },
     "highlights": {
-      "mustKnow": "Nie przegap",
-      "slide": "{{current}} z {{total}}",
-      "play": "Odtwórz pokaz slajdów",
-      "pause": "Wstrzymaj pokaz slajdów",
-      "previous": "Poprzednie wydarzenie",
-      "next": "Następne wydarzenie",
+      "fresh": "Nowe na Wat2Do",
       "openEvent": "Zobacz wydarzenie",
       "map": "Wokół kampusu",
       "networking": "Okazje do networkingu"

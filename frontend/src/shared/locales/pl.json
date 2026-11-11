@@ -82,7 +82,6 @@
     },
     "addedToWat2Do": "Dodano do Wat2Do",
     "postedBy": "Opublikowane przez",
-    "seeAll": "Zobacz wszystko",
     "scrollBack": "Przewiń wstecz",
     "scrollForward": "Przewiń dalej"
   },
@@ -573,7 +572,8 @@
         "position": "wydarzenie na kampusie"
       },
       "primaryAction": "Zobacz, co się dzieje",
-      "secondaryAction": "Jak to działa"
+      "primaryHoverAction": "Przeglądaj wydarzenia",
+      "secondaryAction": "O nas"
     },
     "problem": {
       "title": "Na kampusie NIE jest nudno. Wydarzenia są po prostu ukryte.",

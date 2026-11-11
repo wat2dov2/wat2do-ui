@@ -164,12 +164,7 @@
       "clusterNear_other": "{{count}} kaganapan malapit sa {{location}}"
     },
     "highlights": {
-      "mustKnow": "Dapat malaman",
-      "slide": "{{current}} sa {{total}}",
-      "play": "I-play ang slideshow",
-      "pause": "I-pause ang slideshow",
-      "previous": "Nakaraang event",
-      "next": "Susunod na event",
+      "fresh": "Bago sa Wat2Do",
       "openEvent": "Tingnan ang event",
       "map": "Sa paligid ng campus",
       "networking": "Mga pagkakataon sa networking"

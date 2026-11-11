@@ -79,7 +79,6 @@
     },
     "addedToWat2Do": "Aggiunto a Wat2Do",
     "postedBy": "Pubblicato da",
-    "seeAll": "Vedi tutto",
     "scrollBack": "Scorri indietro",
     "scrollForward": "Scorri avanti"
   },
@@ -570,7 +569,8 @@
         "position": "eventi del campus"
       },
       "primaryAction": "Scopri cosa c'è",
-      "secondaryAction": "Come funziona"
+      "primaryHoverAction": "Sfoglia gli eventi",
+      "secondaryAction": "Chi siamo"
     },
     "problem": {
       "title": "Il campus NON è noioso. I suoi eventi sono solo nascosti.",

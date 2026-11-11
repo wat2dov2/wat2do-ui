@@ -9,6 +9,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-media-scrim: var(--media-scrim);
+  --color-on-media: var(--on-media);
+  --color-on-media-muted: var(--on-media-muted);
   --color-surface-hover: var(--surface-hover);
   --color-surface-active: var(--surface-active);
   --color-surface-elevated: var(--surface-elevated);

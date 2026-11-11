@@ -73,7 +73,6 @@
     },
     "addedToWat2Do": "添加到 Wat2Do",
     "postedBy": "发布者",
-    "seeAll": "查看全部",
     "scrollBack": "向后滚动",
     "scrollForward": "向前滚动"
   },
@@ -564,7 +563,8 @@
         "position": "社团职位"
       },
       "primaryAction": "看看有什么活动",
-      "secondaryAction": "如何运作"
+      "primaryHoverAction": "浏览活动",
+      "secondaryAction": "关于我们"
     },
     "problem": {
       "title": "校园并不无聊，只是活动都藏起来了。",

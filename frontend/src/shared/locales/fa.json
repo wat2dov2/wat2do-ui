@@ -76,7 +76,6 @@
     },
     "addedToWat2Do": "اضافه‌شده به Wat2Do",
     "postedBy": "منتشرشده توسط",
-    "seeAll": "مشاهده همه",
     "scrollBack": "پیمایش به عقب",
     "scrollForward": "پیمایش به جلو"
   },
@@ -567,7 +566,8 @@
         "position": "سمت در انجمن دانشگاه"
       },
       "primaryAction": "ببینید چه خبر است",
-      "secondaryAction": "چطور کار می‌کند"
+      "primaryHoverAction": "مرور رویدادها",
+      "secondaryAction": "درباره ما"
     },
     "problem": {
       "title": "دانشگاه خسته‌کننده نیست. فقط رویدادهایش پنهان هستند.",

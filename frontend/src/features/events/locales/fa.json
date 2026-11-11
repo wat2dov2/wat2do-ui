@@ -164,12 +164,7 @@
       "clusterNear_other": "{{count}} رویداد نزدیک {{location}}"
     },
     "highlights": {
-      "mustKnow": "از دستش ندهید",
-      "slide": "{{current}} از {{total}}",
-      "play": "پخش نمایش اسلاید",
-      "pause": "توقف نمایش اسلاید",
-      "previous": "رویداد قبلی",
-      "next": "رویداد بعدی",
+      "fresh": "تازه در Wat2Do",
       "openEvent": "مشاهده رویداد",
       "map": "در اطراف پردیس",
       "networking": "فرصت‌های شبکه‌سازی"

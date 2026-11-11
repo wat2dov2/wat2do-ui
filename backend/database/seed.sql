@@ -811,3 +811,11 @@ WHERE event.ingestion_source = 'seed'
 ORDER BY event.id
 LIMIT 3
 ON CONFLICT (event_id) DO NOTHING;
+
+-- Poster-styled titles on seeded events with posters, so the featured row
+-- shows titles set in their posters' fonts locally.
+UPDATE public.events AS event
+SET title_font = (ARRAY['Permanent Marker', 'Anton', 'Playfair Display', 'Bungee', 'Pacifico', 'Bebas Neue'])[1 + event.id % 6]
+WHERE event.ingestion_source = 'seed'
+  AND event.source_image_url IS NOT NULL
+  AND event.title_font IS NULL;

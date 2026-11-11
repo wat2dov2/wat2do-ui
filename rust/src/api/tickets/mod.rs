@@ -68,6 +68,7 @@ pub(crate) mod tests {
             food: None,
             registration: true,
             source_image_url: None,
+            title_font: None,
             source_video_url: None,
             source_url: None,
             category: None,

@@ -88,7 +88,6 @@
     },
     "addedToWat2Do": "أُضيف إلى Wat2Do",
     "postedBy": "نُشر بواسطة",
-    "seeAll": "عرض الكل",
     "scrollBack": "التمرير للخلف",
     "scrollForward": "التمرير للأمام"
   },
@@ -579,7 +578,8 @@
         "position": "منصب في نادٍ في الحرم الجامعي"
       },
       "primaryAction": "شاهد ما يحدث",
-      "secondaryAction": "كيف يعمل"
+      "primaryHoverAction": "تصفح الفعاليات",
+      "secondaryAction": "من نحن"
     },
     "problem": {
       "title": "الحرم الجامعي ليس مملًا. فعالياته مخفية فقط.",

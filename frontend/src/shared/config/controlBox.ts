@@ -37,11 +37,11 @@ export const controlBox = {
     previewEventCount: eventDiscovery.preview_event_count,
     serverFeedPageSize: eventDiscovery.server_feed_page_size,
     highlights: {
-      mustKnowCount: eventDiscovery.highlights.must_know_count,
-      mustKnowWindowMs: hoursToMilliseconds(eventDiscovery.highlights.must_know_window_days * 24),
-      mustKnowSlideMs: secondsToMilliseconds(eventDiscovery.highlights.must_know_slide_seconds),
+      featuredCount: eventDiscovery.highlights.featured_count,
+      featuredWindowMs: hoursToMilliseconds(eventDiscovery.highlights.featured_window_days * 24),
       rowCardCount: eventDiscovery.highlights.row_card_count,
     },
+    titleFonts: new Set<string>(eventDiscovery.title_fonts),
     views: eventDiscovery.views,
   },
   clubManagement: {

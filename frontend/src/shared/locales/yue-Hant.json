@@ -73,7 +73,6 @@
     },
     "addedToWat2Do": "加入 Wat2Do",
     "postedBy": "發佈者",
-    "seeAll": "睇晒全部",
     "scrollBack": "向後捲動",
     "scrollForward": "向前捲動"
   },
@@ -564,7 +563,8 @@
         "position": "學會職位"
       },
       "primaryAction": "睇吓有咩搞",
-      "secondaryAction": "點樣運作"
+      "primaryHoverAction": "睇活動",
+      "secondaryAction": "關於我哋"
     },
     "problem": {
       "title": "校園唔悶，只係啲活動收埋咗。",

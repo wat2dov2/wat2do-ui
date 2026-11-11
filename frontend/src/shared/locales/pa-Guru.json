@@ -76,7 +76,6 @@
     },
     "addedToWat2Do": "Wat2Do ਵਿੱਚ ਸ਼ਾਮਲ ਕੀਤਾ",
     "postedBy": "ਪੋਸਟ ਕਰਨ ਵਾਲਾ",
-    "seeAll": "ਸਭ ਦੇਖੋ",
     "scrollBack": "ਪਿੱਛੇ ਸਕ੍ਰੋਲ ਕਰੋ",
     "scrollForward": "ਅੱਗੇ ਸਕ੍ਰੋਲ ਕਰੋ"
   },
@@ -567,7 +566,8 @@
         "position": "ਕਲੱਬ ਅਹੁਦਾ"
       },
       "primaryAction": "ਦੇਖੋ ਕੀ ਹੋ ਰਿਹਾ ਹੈ",
-      "secondaryAction": "ਇਹ ਕਿਵੇਂ ਕੰਮ ਕਰਦਾ ਹੈ"
+      "primaryHoverAction": "ਇਵੈਂਟ ਵੇਖੋ",
+      "secondaryAction": "ਸਾਡੇ ਬਾਰੇ"
     },
     "problem": {
       "title": "ਕੈਂਪਸ ਬੋਰਿੰਗ ਨਹੀਂ ਹੈ। ਬੱਸ ਇਸਦੇ ਸਮਾਗਮ ਲੁਕੇ ਹੋਏ ਹਨ।",

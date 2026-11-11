@@ -34,6 +34,9 @@ const buttonVariants = cva(
           "bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-active focus-visible:ring-destructive/20",
         warning:
           "bg-warning text-warning-foreground hover:bg-warning-hover active:bg-warning-active focus-visible:ring-warning/20",
+        /** Set over a photo: frosted light glass with light text, in both themes. */
+        media:
+          "bg-on-media/20 text-on-media backdrop-blur-md hover:bg-on-media/30 active:bg-on-media/35",
       },
       size: {
         inline: "h-auto rounded-none border-0 p-0 font-normal whitespace-normal",

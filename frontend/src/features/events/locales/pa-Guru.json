@@ -164,12 +164,7 @@
       "clusterNear_other": "{{location}} ਦੇ ਨੇੜੇ {{count}} ਸਮਾਗਮ"
     },
     "highlights": {
-      "mustKnow": "ਜ਼ਰੂਰ ਜਾਣੋ",
-      "slide": "{{total}} ਵਿੱਚੋਂ {{current}}",
-      "play": "ਸਲਾਈਡਸ਼ੋ ਚਲਾਓ",
-      "pause": "ਸਲਾਈਡਸ਼ੋ ਰੋਕੋ",
-      "previous": "ਪਿਛਲਾ ਇਵੈਂਟ",
-      "next": "ਅਗਲਾ ਇਵੈਂਟ",
+      "fresh": "Wat2Do 'ਤੇ ਨਵਾਂ",
       "openEvent": "ਇਵੈਂਟ ਦੇਖੋ",
       "map": "ਕੈਂਪਸ ਦੇ ਆਲੇ-ਦੁਆਲੇ",
       "networking": "ਨੈੱਟਵਰਕਿੰਗ ਦੇ ਮੌਕੇ"

@@ -76,7 +76,6 @@
     },
     "addedToWat2Do": "Zu Wat2Do hinzugefügt",
     "postedBy": "Veröffentlicht von",
-    "seeAll": "Alle ansehen",
     "scrollBack": "Zurückscrollen",
     "scrollForward": "Weiterscrollen"
   },
@@ -567,7 +566,8 @@
         "position": "Campus-Veranstaltung"
       },
       "primaryAction": "Was ist los?",
-      "secondaryAction": "So funktioniert's"
+      "primaryHoverAction": "Events entdecken",
+      "secondaryAction": "Über uns"
     },
     "problem": {
       "title": "Der Campus ist NICHT langweilig. Seine Veranstaltungen sind nur versteckt.",

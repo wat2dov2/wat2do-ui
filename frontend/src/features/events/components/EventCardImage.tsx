@@ -18,20 +18,13 @@ import { cn } from "@/shared/lib/utils";
 import type { Event } from "@/shared/types";
 import { EVENT_CARD_IMAGE_HEIGHT } from "@/shared/constants/ui";
 
-/** The banner poster's shape, which its skeleton takes too. */
-export const FEATURE_POSTER_SHAPE_CLASS = "aspect-4/5 max-h-[45svh] w-full rounded-xl md:max-h-none";
-
 interface EventCardImageProps {
   event: Event;
   /**
    * `card` is the grid card's fixed-height header; `detail` is the square
-   * poster, which opens full size and plays the event's video; `feature` is the
-   * poster standing for the event in a banner, portrait (4:5, the shape most
-   * club posters are made in) and opening the event itself, so it neither
-   * expands nor plays. On a phone, where the banner spans the screen, it is cut
-   * to 45% of the screen's height so the banner's copy shows with it.
+   * poster, which opens full size and plays the event's video.
    */
-  variant: "card" | "detail" | "feature";
+  variant: "card" | "detail";
   /**
    * Renders the club badge inert. The submit form's live preview shows
    * the badge but must not let its menu filter the feed and leave the form.
@@ -96,7 +89,6 @@ export function EventCardImage({
           "relative shrink-0 overflow-hidden",
           variant === "card" && "rounded-t-xl rounded-br-xl",
           variant === "detail" && "aspect-square w-full rounded-xl",
-          variant === "feature" && FEATURE_POSTER_SHAPE_CLASS,
         )}
         style={variant === "card" ? { height: EVENT_CARD_IMAGE_HEIGHT } : undefined}
       >

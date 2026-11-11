@@ -2727,6 +2727,11 @@ export interface components {
             source_image_url?: string | null;
             /** Source Video Url */
             source_video_url?: string | null;
+            /**
+             * Title Font
+             * @description The web font closest to the lettering of the title on the event's poster
+             */
+            title_font?: string | null;
             /** Club Logo Url */
             club_logo_url?: string | null;
             /** Cohosts */
@@ -2832,6 +2837,11 @@ export interface components {
             source_image_url?: string | null;
             /** Source Video Url */
             source_video_url?: string | null;
+            /**
+             * Title Font
+             * @description The web font closest to the lettering of the title on the event's poster
+             */
+            title_font?: string | null;
             /** Club Logo Url */
             club_logo_url?: string | null;
             /** Cohosts */
@@ -2961,6 +2971,11 @@ export interface components {
             source_image_url?: string | null;
             /** Source Video Url */
             source_video_url?: string | null;
+            /**
+             * Title Font
+             * @description The web font closest to the lettering of the title on the event's poster
+             */
+            title_font?: string | null;
             /** Source Url */
             source_url?: string | null;
             /** Category */

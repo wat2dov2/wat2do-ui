@@ -9,7 +9,7 @@ import { splitInTwo } from "@/features/landing/lib/eventMosaicTitle";
 import { ROUTES } from "@/shared/constants/routes";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 /**
  * The last push back to the feed, its line spelled in the mosaic's squares
@@ -29,7 +29,7 @@ export function LandingClosing({ schoolName }: { schoolName: string }) {
         size="display"
         face={<EventPixelMosaic title={{ lead, phrases: [phrase], region: titleRegion, onLayout: setTitleHeight }} />}
         corners={{
-          "top-left": <LandingNotchLabel size="display" tone="school" icon={MapPin}>{schoolName}</LandingNotchLabel>,
+          "top-left": <LandingNotchLabel size="display" tone="school">{schoolName}</LandingNotchLabel>,
           "bottom-right": (
             <Button size="lg" asChild>
               <NextLink href={ROUTES.EVENTS}>

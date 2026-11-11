@@ -73,7 +73,6 @@
     },
     "addedToWat2Do": "Wat2Do에 추가됨",
     "postedBy": "게시자",
-    "seeAll": "모두 보기",
     "scrollBack": "뒤로 스크롤",
     "scrollForward": "앞으로 스크롤"
   },
@@ -564,7 +563,8 @@
         "position": "동아리 자리"
       },
       "primaryAction": "지금 뭐 하는지 보기",
-      "secondaryAction": "작동 방식"
+      "primaryHoverAction": "이벤트 둘러보기",
+      "secondaryAction": "우리에 대해"
     },
     "problem": {
       "title": "캠퍼스가 지루한 게 아니에요. 이벤트가 숨어 있을 뿐이죠.",

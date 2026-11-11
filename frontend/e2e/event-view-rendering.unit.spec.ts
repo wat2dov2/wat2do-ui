@@ -522,7 +522,7 @@ test("applied queries bring the results into view at the pinned header, never th
       : selector === '[data-slot="page-header"]' ? header : null,
   };
   let effect = () => {};
-  let refs: { current: unknown }[] = [];
+  const refs: { current: unknown }[] = [];
   let refIndex = 0;
   const componentModule = { exports: {} as typeof import("../src/shared/layout/filter-bar") };
   runInNewContext(outputText, {

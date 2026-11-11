@@ -6,12 +6,12 @@ import { getUniqueEvents, isNetworkingEvent } from "@/shared/utils/event";
 
 /** What the events page shows above its grid, cut from the events still on. */
 export interface EventHighlights {
-  /** The banner's events, most important first. */
-  mustKnow: Event[];
+  /** The featured row at the top of the page, most important first. */
+  featured: Event[];
+  /** Events most recently added to Wat2Do, newest first. */
+  fresh: Event[];
   /** Employer and business events, soonest first. */
   networking: Event[];
-  /** Events Wat2Do published to Instagram, soonest first. */
-  featured: Event[];
 }
 
 interface UpcomingEvent {
@@ -21,13 +21,13 @@ interface UpcomingEvent {
 }
 
 /**
- * Points an event earns toward the must-know banner, one entry per signal the
- * feed carries. Featured events were picked by hand for Wat2Do's Instagram, so
+ * Points an event earns toward the featured row, one entry per signal the
+ * feed carries. Events Wat2Do featured on Instagram were picked by hand, so
  * they weigh most; employers on campus, competitions and varsity games are the
  * one-off events students regret missing; each co-hosting club (up to two)
  * marks a bigger, joint event.
  */
-const MUST_KNOW_SIGNALS: ReadonlyArray<readonly [points: number, earned: (event: Event) => number]> = [
+const FEATURED_SIGNALS: ReadonlyArray<readonly [points: number, earned: (event: Event) => number]> = [
   [3, event => Number(event.featured === true)],
   [2, event => Number(event.employers_on_campus === true)],
   [1, event => Number(event.competition === true)],
@@ -35,23 +35,23 @@ const MUST_KNOW_SIGNALS: ReadonlyArray<readonly [points: number, earned: (event:
   [1, event => Math.min(event.cohosts?.length ?? 0, 2)],
 ];
 
-function mustKnowScore(event: Event): number {
-  return MUST_KNOW_SIGNALS.reduce((score, [points, earned]) => score + points * earned(event), 0);
+function featuredScore(event: Event): number {
+  return FEATURED_SIGNALS.reduce((score, [points, earned]) => score + points * earned(event), 0);
 }
 
 /**
- * The must-know banner's events: one-off events with a poster that are on now
- * or start within the window, ranked by their signals, then soonest first. A
- * club appears once, so the banner shows several clubs' biggest events.
+ * The featured row's events: one-off events with a poster that are on now or
+ * start within the window, ranked by their signals, then soonest first. A club
+ * appears once, so the row shows several clubs' biggest events.
  */
-function pickMustKnowEvents(soonestFirst: readonly UpcomingEvent[], nowMs: number): Event[] {
-  const { mustKnowCount, mustKnowWindowMs } = controlBox.eventDiscovery.highlights;
+function pickFeaturedEvents(soonestFirst: readonly UpcomingEvent[], nowMs: number): Event[] {
+  const { featuredCount, featuredWindowMs } = controlBox.eventDiscovery.highlights;
   const candidates = soonestFirst
     .filter(({ event, startMs }) =>
-      startMs <= nowMs + mustKnowWindowMs
+      startMs <= nowMs + featuredWindowMs
       && Boolean(event.source_image_url)
       && !recursAtLeastThreeWeeks(event))
-    .map(({ event }) => ({ event, score: mustKnowScore(event) }))
+    .map(({ event }) => ({ event, score: featuredScore(event) }))
     // Stable: equal scores keep their soonest-first order.
     .sort((a, b) => b.score - a.score);
   const clubs = new Set<string>();
@@ -61,7 +61,7 @@ function pickMustKnowEvents(soonestFirst: readonly UpcomingEvent[], nowMs: numbe
     if (clubs.has(club)) continue;
     clubs.add(club);
     picked.push(event);
-    if (picked.length === mustKnowCount) break;
+    if (picked.length === featuredCount) break;
   }
   return picked;
 }
@@ -80,14 +80,21 @@ export function buildEventHighlights(events: readonly Event[], nowMs: number): E
       startMs: Date.parse(getPrimaryOccurrence(event, now)?.dtstart_utc ?? "") || Number.POSITIVE_INFINITY,
     }))
     .sort((a, b) => a.startMs - b.startMs || a.event.id - b.event.id);
-  const rowEvents = (belongs: (event: Event) => boolean) => soonestFirst
-    .map(({ event }) => event)
-    .filter(belongs)
-    .slice(0, controlBox.eventDiscovery.highlights.rowCardCount);
+  const { rowCardCount } = controlBox.eventDiscovery.highlights;
+  const featured = pickFeaturedEvents(soonestFirst, nowMs);
+  const shown = new Set(featured.map(event => event.id));
 
   return {
-    mustKnow: pickMustKnowEvents(soonestFirst, nowMs),
-    networking: rowEvents(isNetworkingEvent),
-    featured: rowEvents(event => event.featured === true),
+    featured,
+    // The newest additions the featured row doesn't already show.
+    fresh: soonestFirst
+      .map(({ event }) => event)
+      .filter(event => !shown.has(event.id))
+      .sort((a, b) => Date.parse(b.added_at) - Date.parse(a.added_at) || b.id - a.id)
+      .slice(0, rowCardCount),
+    networking: soonestFirst
+      .map(({ event }) => event)
+      .filter(isNetworkingEvent)
+      .slice(0, rowCardCount),
   };
 }

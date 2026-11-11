@@ -76,7 +76,6 @@
     },
     "addedToWat2Do": "Idinagdag sa Wat2Do",
     "postedBy": "Ipinaskil ni",
-    "seeAll": "Tingnan lahat",
     "scrollBack": "Mag-scroll pabalik",
     "scrollForward": "Mag-scroll pasulong"
   },
@@ -567,7 +566,8 @@
         "position": "posisyon sa club sa campus"
       },
       "primaryAction": "Tingnan kung ano'ng meron",
-      "secondaryAction": "Paano ito gumagana"
+      "primaryHoverAction": "Mag-browse ng events",
+      "secondaryAction": "Tungkol sa amin"
     },
     "problem": {
       "title": "HINDI boring ang campus. Nakatago lang ang mga kaganapan.",

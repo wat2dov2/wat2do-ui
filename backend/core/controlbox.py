@@ -155,12 +155,11 @@ class MapGeocodingControl(_ControlModel):
 
 
 class EventHighlightsControl(_ControlModel):
-    # The events page's must-know banner: how many events it rotates through,
-    # how far ahead it looks, and how long each one shows before the next.
-    must_know_count: int = Field(ge=1, le=10)
-    must_know_window_days: int = Field(ge=1, le=60)
-    must_know_slide_seconds: int = Field(ge=3, le=60)
-    # How many cards each of the events page's carousel rows (events or positions) holds.
+    # The events page's featured row at its top: how many events it holds and
+    # how far ahead it looks for them.
+    featured_count: int = Field(ge=1, le=20)
+    featured_window_days: int = Field(ge=1, le=60)
+    # How many cards each of the events page's other carousel rows holds.
     row_card_count: int = Field(ge=1, le=50)
 
 
@@ -171,6 +170,9 @@ class EventDiscoveryControl(_ControlModel):
     preview_event_count: int = Field(gt=0, le=100)
     server_feed_page_size: int = Field(gt=0, le=100)
     highlights: EventHighlightsControl
+    # Google Fonts the ingestion agent picks from for an event's title, the one
+    # closest to the lettering on its poster; the events page loads only these.
+    title_fonts: list[Annotated[str, Field(pattern=r"^[A-Za-z0-9 ]{1,60}$")]] = Field(min_length=1)
     campus_seasons: CampusSeasonsControl
     views: EventViewsControl
     map_geocoding: MapGeocodingControl

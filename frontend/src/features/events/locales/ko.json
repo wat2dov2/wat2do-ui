@@ -156,12 +156,7 @@
       "clusterNear_other": "{{location}} 근처 이벤트 {{count}}개"
     },
     "highlights": {
-      "mustKnow": "놓치면 안 될 이벤트",
-      "slide": "{{total}}개 중 {{current}}번째",
-      "play": "슬라이드쇼 재생",
-      "pause": "슬라이드쇼 일시정지",
-      "previous": "이전 이벤트",
-      "next": "다음 이벤트",
+      "fresh": "Wat2Do 신규 이벤트",
       "openEvent": "이벤트 보기",
       "map": "캠퍼스 곳곳",
       "networking": "네트워킹 기회"

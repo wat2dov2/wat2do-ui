@@ -86,9 +86,8 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     assert controlbox.discovery_cache.public_page_stale_while_revalidate_seconds == 600
     assert controlbox.event_discovery.initial_render_count == 16
     assert controlbox.event_discovery.preview_event_count == 4
-    assert controlbox.event_discovery.highlights.must_know_count == 5
-    assert controlbox.event_discovery.highlights.must_know_window_days == 14
-    assert controlbox.event_discovery.highlights.must_know_slide_seconds == 7
+    assert controlbox.event_discovery.highlights.featured_count == 8
+    assert controlbox.event_discovery.highlights.featured_window_days == 14
     assert controlbox.event_discovery.highlights.row_card_count == 12
     assert set(controlbox.event_discovery.campus_seasons.definitions) == {
         "homecoming",
@@ -690,9 +689,8 @@ def test_business_nomination_limits_must_be_positive(tmp_path: Path, field: str)
 @pytest.mark.parametrize(
     "field,value",
     [
-        ("must_know_count", 0),
-        ("must_know_window_days", 0),
-        ("must_know_slide_seconds", 1),
+        ("featured_count", 0),
+        ("featured_window_days", 0),
         ("row_card_count", 0),
     ],
 )

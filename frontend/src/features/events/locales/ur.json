@@ -164,12 +164,7 @@
       "clusterNear_other": "{{location}} کے قریب {{count}} تقریبات"
     },
     "highlights": {
-      "mustKnow": "ضرور جانیں",
-      "slide": "{{total}} میں سے {{current}}",
-      "play": "سلائیڈ شو چلائیں",
-      "pause": "سلائیڈ شو روکیں",
-      "previous": "پچھلا ایونٹ",
-      "next": "اگلا ایونٹ",
+      "fresh": "Wat2Do پر نیا",
       "openEvent": "ایونٹ دیکھیں",
       "map": "کیمپس کے آس پاس",
       "networking": "نیٹ ورکنگ کے مواقع"

@@ -79,7 +79,6 @@
     },
     "addedToWat2Do": "Ajouté à Wat2Do",
     "postedBy": "Publié par",
-    "seeAll": "Tout voir",
     "scrollBack": "Défiler vers l'arrière",
     "scrollForward": "Défiler vers l'avant"
   },
@@ -570,7 +569,8 @@
         "position": "événements du campus"
       },
       "primaryAction": "Voir ce qui se passe",
-      "secondaryAction": "Comment ça marche"
+      "primaryHoverAction": "Parcourir les événements",
+      "secondaryAction": "À propos de nous"
     },
     "problem": {
       "title": "Le campus n'est PAS ennuyeux. Ses événements sont juste cachés.",

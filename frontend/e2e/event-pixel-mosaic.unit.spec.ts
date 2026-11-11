@@ -5,13 +5,14 @@ import ts from "typescript";
 import manifest from "../src/assets/event-mosaic-uwaterloo.json" with { type: "json" };
 
 type Draw = { source: unknown; sx: number; sy: number; pixels: number; x: number; y: number; size: number; alpha: number };
-type Controller = { stop: () => void };
+type Controller = { stop: () => void; setHover: (button: number | null) => void };
 type Title = {
   titleColumns: (lead: string, phrases: readonly string[]) => number;
   rasterizeTitle: (line: string, columns: number) => Uint8Array;
   LINE_ROWS: number;
   TITLE_ROWS: number;
   splitInTwo: (text: string) => [string, string];
+  lineColumns: (line: string) => number;
 };
 type Box = { left: number; top: number; columns: number; rows: number };
 type Engine = {
@@ -82,6 +83,7 @@ function loadMosaic(width = 240, height = 120) {
     canvas,
     image,
     engine: exports,
+    atlas,
     start: (animate: boolean, logoRegion?: () => { left: number; top: number; width: number; height: number }) =>
       exports.startEventPixelMosaic(canvas, atlas, { tileSize: 24, gutter: 1, swapsPerSecond: 0.1 }, animate, {
         posters: manifest.posters,
@@ -214,4 +216,48 @@ test("a closing line splits into two balanced lines, at a word break where there
   const title = loadTitle();
   expect(title.splitInTwo("Stop finding out the day after.")).toEqual(["Stop finding out", "the day after."]);
   expect(title.splitInTwo("别再事后才知道")).toEqual(["别再事后", "才知道"]);
+});
+
+test("buttons are spelled in half-size squares inside a border, and a hover respells them", () => {
+  const title = loadTitle();
+  // "GO" is two glyphs; hovered, "GO →" adds a space and the six-cell arrow.
+  expect(title.lineColumns("GO →")).toBe(5 + 1 + 5 + 1 + 3 + 1 + 6);
+
+  const mosaic = loadMosaic(480, 240);
+  const layouts: unknown[] = [];
+  const buttons = (width: number) => ({
+    items: [{ label: "GO", hoverLabel: "GO →" }],
+    region: () => ({ left: 0, top: 0, width, height: 240 }),
+    onLayout: (layout: unknown) => layouts.push(layout),
+  });
+  const start = (width: number) =>
+    mosaic.engine.startEventPixelMosaic(mosaic.canvas, mosaic.atlas, { tileSize: 24, gutter: 1, swapsPerSecond: 0.1 }, false, {
+      posters: manifest.posters,
+      logoMask: manifest.logoMask,
+      logoColours: manifest.logoColours,
+      buttons: buttons(width),
+    });
+
+  const controller = start(480);
+  // The widest label, padding and border: 32 squares of 12 px across (16 grid squares), centred; 14 down.
+  // On the 2x backing store a half square draws 23 px (its 12 px less its share of the gutter, doubled).
+  expect(layouts.at(-1)).toEqual({ height: 7 * 24, rects: [{ left: 2 * 24, top: 0, width: 16 * 24, height: 7 * 24 }] });
+  const halfSquares = mosaic.draws.filter((draw) => draw.size === 23);
+  expect(halfSquares.length).toBe(32 * 14);
+  // Its border and label are full-colour posters; the rest of it is muted like the grid.
+  const lit = halfSquares.filter((draw) => draw.source === mosaic.image);
+  expect(lit.length).toBeGreaterThan(2 * 32 + 2 * 12);
+  expect(lit.length).toBeLessThan(32 * 14 / 2);
+
+  // Still under reduced motion, a hover respells the squares that change at once.
+  mosaic.draws.length = 0;
+  controller.setHover(0);
+  expect(mosaic.draws.length).toBeGreaterThan(10);
+  mosaic.draws.length = 0;
+  controller.setHover(0);
+  expect(mosaic.draws).toHaveLength(0);
+
+  // A region too narrow for even one button draws none, and says so.
+  start(200);
+  expect(layouts.at(-1)).toBeNull();
 });

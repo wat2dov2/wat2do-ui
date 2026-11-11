@@ -77,10 +77,6 @@ export function EventsPageContainer({
     filters.setSearchQuery(latestAddedEvent.title);
   }, [filters, latestAddedEvent]);
 
-  const handleSeeAllFeatured = useCallback(() => {
-    filters.setFeatured(true);
-  }, [filters]);
-
   const { setStartFrom } = filters;
   // Lifts the start filter alone; the search and every other filter stay.
   const showPastEvents = useCallback(() => setStartFrom(""), [setStartFrom]);
@@ -108,7 +104,6 @@ export function EventsPageContainer({
             loadFailureNotice={loadFailureNotice}
             eventStats={eventStats}
             onEventClick={handleEventClick}
-            onSeeAllFeatured={handleSeeAllFeatured}
           />
         ) : null}
         <EventsPageHeader

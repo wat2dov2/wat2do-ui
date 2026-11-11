@@ -13,6 +13,11 @@
  * always stay legible. The phrase below its lead takes turns, respelling
  * square by square at scattered moments, never as a sweep.
  *
+ * Buttons are spelled the same way, each label inside a border of squares, in
+ * squares half the grid's size so they read at a button's size. Hovering one
+ * respells it from left to right, so its label seems to slide over and make
+ * room for an arrow.
+ *
  * Squares avoid showing a poster that is already on screen while the posters
  * that keep their shape allow it, so the grid shows as many images as it can.
  *
@@ -21,7 +26,15 @@
  * paints first; the full one replaces it when it arrives.
  */
 
-import { LINE_ROWS, TITLE_GAP_ROWS, TITLE_ROWS, rasterizeTitle, titleColumns } from "@/features/landing/lib/eventMosaicTitle";
+import {
+  GLYPH_ROWS,
+  LINE_ROWS,
+  TITLE_GAP_ROWS,
+  TITLE_ROWS,
+  lineColumns,
+  rasterizeTitle,
+  titleColumns,
+} from "@/features/landing/lib/eventMosaicTitle";
 
 export interface MosaicAtlas {
   image: CanvasImageSource;
@@ -48,6 +61,18 @@ export interface MosaicRect {
   height: number;
 }
 
+/** One button spelled in squares: its label, and the label hovering turns it into. */
+export interface MosaicButton {
+  label: string;
+  hoverLabel: string;
+}
+
+/** Where the spelled buttons landed: the row's height and each button, relative to the buttons' region. */
+export interface MosaicButtonLayout {
+  height: number;
+  rects: MosaicRect[];
+}
+
 /** What the mosaic needs to know about each poster and about the shapes it can draw. */
 export interface MosaicContent {
   /** Each poster's dominant colour (#rrggbb) and the share of the poster it covers, in atlas order. */
@@ -69,12 +94,24 @@ export interface MosaicContent {
     /** Told on every layout how tall the headline is in CSS pixels. */
     onLayout: (height: number) => void;
   };
+  /**
+   * Buttons to spell in a row at the top of a region (stacked when the row is
+   * too wide). Told where they landed, or null when even one is too wide for
+   * the region, so the page can draw ordinary buttons instead.
+   */
+  buttons?: {
+    items: readonly MosaicButton[];
+    region: () => MosaicRect | null;
+    onLayout: (layout: MosaicButtonLayout | null) => void;
+  };
 }
 
 export interface MosaicController {
   stop: () => void;
   /** Replaces the atlas (the full one after the first-paint copy) and redraws every cell. */
   setAtlas: (atlas: MosaicAtlas) => void;
+  /** Respells a button as hovered (by its index), or every button as at rest (null). */
+  setHover: (button: number | null) => void;
 }
 
 /** How long one square takes to crossfade to its next poster. */
@@ -104,6 +141,17 @@ const LOGO_SPLIT = 2;
 const MIN_LOGO_SQUARE = 3;
 /** Tries at a random unused poster before searching the pool for the least shown one. */
 const PICK_TRIES = 8;
+/** A button's squares split this many a side, at least MIN_LOGO_SQUARE pixels each, so its label reads at a button's size. */
+const BUTTON_SPLIT = 2;
+/** Squares between a button's border and its label, across and down. */
+const BUTTON_PAD_X = 4;
+const BUTTON_PAD_Y = 2;
+/** Grid squares between neighbouring buttons. */
+const BUTTON_GAP = 2;
+/** A hover respells a button from its left edge to its right across this long, so its label seems to slide. */
+const HOVER_SWEEP_MS = 260;
+/** Each square of the sweep lands up to this much later, so the wipe is not a hard line. */
+const HOVER_JITTER_MS = 60;
 
 function canvasOf(width: number, height: number) {
   const canvas = document.createElement("canvas");
@@ -192,7 +240,7 @@ export function startEventPixelMosaic(
 ): MosaicController {
   const context = canvas.getContext("2d");
   const parent = canvas.parentElement;
-  if (!context || !parent) return { stop: () => {}, setAtlas: () => {} };
+  if (!context || !parent) return { stop: () => {}, setAtlas: () => {}, setHover: () => {} };
 
   let atlas = firstAtlas;
   let grey = greyscale(firstAtlas);
@@ -269,6 +317,13 @@ export function startEventPixelMosaic(
   /** Squares waiting to respell, by index, to the moment they are due, and the flags they are heading for. */
   const respelling = new Map<number, number>();
   let respellTarget: Uint8Array = new Uint8Array(0);
+  /** Each square's button index, or -1 off the buttons. */
+  let buttonOf = new Int16Array(0);
+  /** Each button square's place in its button's own grid of squares, row by row. */
+  let buttonCell = new Uint32Array(0);
+  /** Each button's grid of squares: its width, and its ink at rest and hovered. */
+  let buttonInk: { width: number; rest: Uint8Array; hover: Uint8Array }[] = [];
+  let hover: number | null = null;
   /** Squares mid-swap, by index, to the poster they are leaving, whether it was in colour, and when they started. */
   const fading = new Map<number, { from: number; fromColour: boolean; start: number }>();
   let frame = 0;
@@ -311,7 +366,72 @@ export function startEventPixelMosaic(
     for (const source of [leadInk, phraseInk[phraseIndex]]) {
       source?.forEach((value, index) => { if (value) cells[index] = 1; });
     }
+    buttonOf.forEach((button, index) => {
+      if (button < 0) return;
+      const ink = buttonInk[button];
+      cells[index] = (hover === button ? ink.hover : ink.rest)[buttonCell[index]];
+    });
     return cells;
+  }
+
+  /** A button's label inside its border, on its own `width` x `height` grid of squares. */
+  function buttonGlyphs(label: string, width: number, height: number): Uint8Array {
+    const cells = new Uint8Array(width * height);
+    const inner = width - 2;
+    const text = rasterizeTitle(label, inner);
+    const top = Math.floor((height - GLYPH_ROWS) / 2);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const border = x === 0 || y === 0 || x === width - 1 || y === height - 1;
+        const glyphRow = y - top;
+        const lit = glyphRow >= 0 && glyphRow < GLYPH_ROWS && x > 0 && x < width - 1 && text[glyphRow * inner + x - 1] === 1;
+        if (border || lit) cells[y * width + x] = 1;
+      }
+    }
+    return cells;
+  }
+
+  /**
+   * Where each button goes, in grid squares: in one row centred at the top of
+   * its region, or stacked when the row is too wide; null when one alone is
+   * too wide, or there are none.
+   */
+  function placeButtons(split: number) {
+    const { buttons } = content;
+    const region = buttons?.region();
+    if (!buttons || !region || !buttons.items.length) return null;
+    const regionColumns = Math.floor(region.width / tile);
+    const left = Math.round(region.left / tile);
+    const top = Math.round(region.top / tile);
+    const roundUp = (cells: number) => Math.ceil(cells / split) * split;
+    const sizes = buttons.items.map(({ label, hoverLabel }) => ({
+      width: roundUp(Math.max(lineColumns(label), lineColumns(hoverLabel)) + 2 * BUTTON_PAD_X + 2),
+      height: roundUp(GLYPH_ROWS + 2 * BUTTON_PAD_Y + 2),
+    }));
+    const squares = sizes.map(({ width, height }) => ({ columns: width / split, rows: height / split }));
+    if (squares.some(({ columns }) => columns > regionColumns)) return null;
+    const rowWidth = squares.reduce((sum, { columns }) => sum + columns, 0) + BUTTON_GAP * (squares.length - 1);
+    const inRow = rowWidth <= regionColumns;
+    let x = left + Math.floor((regionColumns - rowWidth) / 2);
+    let y = top;
+    const boxes = squares.map((box, index) => {
+      const column = inRow ? x : left + Math.floor((regionColumns - box.columns) / 2);
+      const placed = { left: column, top: y, ...box, ...sizes[index] };
+      if (inRow) x += box.columns + BUTTON_GAP;
+      else y += box.rows + BUTTON_GAP;
+      return placed;
+    });
+    const bottom = Math.max(...boxes.map((box) => box.top + box.rows));
+    buttons.onLayout({
+      height: (bottom - top) * tile,
+      rects: boxes.map((box) => ({
+        left: box.left * tile - region.left,
+        top: box.top * tile - region.top,
+        width: box.columns * tile,
+        height: box.rows * tile,
+      })),
+    });
+    return boxes;
   }
 
   /**
@@ -445,6 +565,36 @@ export function startEventPixelMosaic(
         }
       }
     }
+    // The buttons' squares follow the logo's, each grid square under a button split like the logo's.
+    const buttonSplit = tile / BUTTON_SPLIT >= MIN_LOGO_SQUARE ? BUTTON_SPLIT : 1;
+    const boxes = placeButtons(buttonSplit);
+    if (!boxes) content.buttons?.onLayout(null);
+    const owners: number[] = new Array(xs.length).fill(-1);
+    const places: number[] = new Array(xs.length).fill(0);
+    buttonInk = [];
+    (boxes ?? []).forEach((box, button) => {
+      const { label, hoverLabel } = content.buttons!.items[button];
+      buttonInk.push({
+        width: box.width,
+        rest: buttonGlyphs(label, box.width, box.height),
+        hover: buttonGlyphs(hoverLabel, box.width, box.height),
+      });
+      const side = tile / buttonSplit;
+      for (let row = box.top; row < Math.min(rows, box.top + box.rows); row += 1) {
+        for (let column = box.left; column < Math.min(columns, box.left + box.columns); column += 1) {
+          hidden[row * columns + column] = 1;
+          for (let sy = 0; sy < buttonSplit; sy += 1) {
+            for (let sx = 0; sx < buttonSplit; sx += 1) {
+              add(column * tile + sx * side, row * tile + sy * side, side, 0);
+              owners.push(button);
+              places.push(((row - box.top) * buttonSplit + sy) * box.width + (column - box.left) * buttonSplit + sx);
+            }
+          }
+        }
+      }
+    });
+    buttonOf = Int16Array.from(owners);
+    buttonCell = Uint32Array.from(places);
     hidden = Uint8Array.from({ length: xs.length }, (_, index) => (index < gridCount ? hidden[index] : 0));
     cellX = Float32Array.from(xs);
     cellY = Float32Array.from(ys);
@@ -567,6 +717,26 @@ export function startEventPixelMosaic(
       atlas = next;
       grey = greyscale(next);
       drawAll();
+    },
+    setHover: (button) => {
+      if (button === hover) return;
+      hover = button;
+      respellTarget = inkFor(phrase);
+      const now = performance.now();
+      respellTarget.forEach((value, index) => {
+        const owner = buttonOf[index];
+        if (owner < 0 || value === ink[index]) return;
+        if (!animate) {
+          ink[index] = value;
+          place(index, pick(index));
+          drawCell(index);
+          return;
+        }
+        // Left to right across the button, so the label seems to slide.
+        const column = buttonCell[index] % buttonInk[owner].width;
+        respelling.set(index, now + (column / buttonInk[owner].width) * HOVER_SWEEP_MS + Math.random() * HOVER_JITTER_MS);
+      });
+      schedule();
     },
   };
 }

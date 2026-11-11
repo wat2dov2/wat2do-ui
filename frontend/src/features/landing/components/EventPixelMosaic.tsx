@@ -2,14 +2,20 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { loadFullAtlas, loadMosaicManifest, loadPreviewAtlas } from "@/features/landing/lib/eventMosaicAtlas";
-import { startEventPixelMosaic, type MosaicController, type MosaicLook } from "@/features/landing/lib/eventPixelMosaic";
+import {
+  startEventPixelMosaic,
+  type MosaicButton,
+  type MosaicButtonLayout,
+  type MosaicController,
+  type MosaicLook,
+} from "@/features/landing/lib/eventPixelMosaic";
 import { cn } from "@/shared/lib/utils";
 
 /**
- * Small squares with half-pixel gutters, a few changing at a time. The atlas
+ * Small squares with half-pixel gutters, many changing every second. The atlas
  * holds 32 px posters, over twice the square, so squares stay crisp on 2x and 3x screens.
  */
-const LOOK: MosaicLook = { tileSize: 10, gutter: 0.5, swapsPerSecond: 0.04 };
+const LOOK: MosaicLook = { tileSize: 10, gutter: 0.5, swapsPerSecond: 0.4 };
 
 interface EventPixelMosaicProps {
   /** The element the Wat2Do logo is drawn behind, in the same card; none draws no logo. */
@@ -27,10 +33,21 @@ interface EventPixelMosaicProps {
     region: RefObject<HTMLElement | null>;
     onLayout: (height: number) => void;
   };
+  /**
+   * Buttons spelled in the grid's squares at the top of `region`, each label
+   * in a border of squares; `hover` respells that one as its hover label.
+   * `onLayout` says where they landed, or null when they do not fit.
+   */
+  buttons?: {
+    items: readonly MosaicButton[];
+    region: RefObject<HTMLElement | null>;
+    hover: number | null;
+    onLayout: (layout: MosaicButtonLayout | null) => void;
+  };
 }
 
-/** How long each headline phrase stays. */
-const PHRASE_MS = 3000;
+/** How long each headline phrase stays, long enough to read without the words feeling restless. */
+const PHRASE_MS = 9000;
 
 /**
  * A grid of real scraped event posters. Fills its positioned parent and is
@@ -38,15 +55,25 @@ const PHRASE_MS = 3000;
  * paints first and the sharp atlas follows. Under reduced motion it is a still
  * mosaic.
  */
-export function EventPixelMosaic({ logoRegion, title }: EventPixelMosaicProps) {
+export function EventPixelMosaic({ logoRegion, title, buttons }: EventPixelMosaicProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const controllerRef = useRef<MosaicController | null>(null);
   const [ready, setReady] = useState(false);
   const titleRef = useRef(title);
+  const buttonsRef = useRef(buttons);
   useEffect(() => {
     titleRef.current = title;
-  }, [title]);
-  // The mosaic restarts only when the headline's words change, not on every render.
-  const titleWords = title ? [title.lead, ...title.phrases].join("\n") : "";
+    buttonsRef.current = buttons;
+  }, [title, buttons]);
+  // The mosaic restarts only when the words it spells change, not on every render.
+  const titleWords = [
+    ...(title ? [title.lead, ...title.phrases] : []),
+    ...(buttons?.items.flatMap(({ label, hoverLabel }) => [label, hoverLabel]) ?? []),
+  ].join("\n");
+  const hover = buttons?.hover ?? null;
+  useEffect(() => {
+    controllerRef.current?.setHover(hover);
+  }, [hover]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -62,6 +89,7 @@ export function EventPixelMosaic({ logoRegion, title }: EventPixelMosaicProps) {
       return { left: box.left - origin.left, top: box.top - origin.top, width: box.width, height: box.height };
     };
     const headline = titleRef.current;
+    const spelledButtons = buttonsRef.current;
 
     const start = async () => {
       const [manifest, preview] = await Promise.all([loadMosaicManifest(), loadPreviewAtlas()]);
@@ -79,7 +107,14 @@ export function EventPixelMosaic({ logoRegion, title }: EventPixelMosaicProps) {
           region: () => regionOf(headline.region.current),
           onLayout: (height) => titleRef.current?.onLayout(height),
         },
+        buttons: spelledButtons && {
+          items: spelledButtons.items,
+          region: () => regionOf(spelledButtons.region.current),
+          onLayout: (layout) => buttonsRef.current?.onLayout(layout),
+        },
       });
+      controllerRef.current = controller;
+      controller.setHover(buttonsRef.current?.hover ?? null);
       setReady(true);
       const full = await loadFullAtlas();
       if (!cancelled) controller.setAtlas(full);
@@ -96,11 +131,12 @@ export function EventPixelMosaic({ logoRegion, title }: EventPixelMosaicProps) {
     motion.addEventListener("change", restart);
     return () => {
       cancelled = true;
+      controllerRef.current = null;
       nearby.disconnect();
       motion.removeEventListener("change", restart);
       controller?.stop();
     };
-    // titleWords stands in for the headline itself, which is read through titleRef.
+    // titleWords stands in for the headline and buttons, which are read through refs.
   }, [logoRegion, titleWords]);
 
   return (

@@ -164,12 +164,7 @@
       "clusterNear_other": "{{location}} के पास {{count}} कार्यक्रम"
     },
     "highlights": {
-      "mustKnow": "ज़रूर जानें",
-      "slide": "{{total}} में से {{current}}",
-      "play": "स्लाइडशो चलाएँ",
-      "pause": "स्लाइडशो रोकें",
-      "previous": "पिछला इवेंट",
-      "next": "अगला इवेंट",
+      "fresh": "Wat2Do पर नया",
       "openEvent": "इवेंट देखें",
       "map": "कैंपस के आसपास",
       "networking": "नेटवर्किंग के मौके"

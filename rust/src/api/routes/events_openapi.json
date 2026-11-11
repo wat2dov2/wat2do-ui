@@ -1947,6 +1947,18 @@
           ],
           "title": "Source Video Url"
         },
+        "title_font": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Title Font",
+          "description": "The web font closest to the lettering of the title on the event's poster"
+        },
         "club_logo_url": {
           "anyOf": [
             {
@@ -2263,6 +2275,18 @@
             }
           ],
           "title": "Source Video Url"
+        },
+        "title_font": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Title Font",
+          "description": "The web font closest to the lettering of the title on the event's poster"
         },
         "club_logo_url": {
           "anyOf": [
@@ -2608,6 +2632,18 @@
             }
           ],
           "title": "Source Video Url"
+        },
+        "title_font": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Title Font",
+          "description": "The web font closest to the lettering of the title on the event's poster"
         },
         "source_url": {
           "anyOf": [

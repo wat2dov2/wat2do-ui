@@ -7,7 +7,7 @@ import { EventCard } from "@/features/events/components/EventCard";
 import { EventCardSkeleton } from "@/features/events/components/EventCardSkeleton";
 import { EventsBrowseViews } from "@/features/events/components/EventsBrowseViews";
 import { EventViewSkeleton } from "@/features/events/components/EventViewSurface";
-import { MustKnowHero, MustKnowHeroSkeleton } from "@/features/events/components/MustKnowHero";
+import { FeaturedEventCard, FeaturedEventCardSkeleton } from "@/features/events/components/FeaturedEventCard";
 import type { EventHighlights } from "@/features/events/lib/eventHighlights";
 import { useIntersectionObserver } from "@/shared/hooks/useIntersectionObserver";
 import { Section, Stack } from "@/shared/layout";
@@ -18,6 +18,7 @@ import type { Event } from "@/shared/types";
 const MAP_LOAD_MARGIN = "300px";
 /** Placeholders while a row loads: more than any screen shows at once. */
 const ROW_PLACEHOLDER_COUNT = 6;
+const FEATURED_PLACEHOLDER_COUNT = 4;
 /** The map fills its container, so the container has a height of its own. */
 const MAP_FRAME_CLASS = "flex h-96 w-full flex-col sm:h-[32rem]";
 
@@ -52,14 +53,13 @@ interface EventCarouselRowProps {
   events: Event[] | null;
   eventStats: Record<string, EventStats> | null;
   onEventClick: (event: Event) => void;
-  seeAll?: { onSelect: () => void };
 }
 
 /** A row of real event cards; a row with nothing in it is left out. */
-function EventCarouselRow({ title, events, eventStats, onEventClick, seeAll }: EventCarouselRowProps) {
+function EventCarouselRow({ title, events, eventStats, onEventClick }: EventCarouselRowProps) {
   if (events !== null && events.length === 0) return null;
   return (
-    <CardCarousel title={title} seeAll={seeAll} busy={events === null}>
+    <CardCarousel title={title} busy={events === null}>
       {events
         ? events.map(event => (
           <EventCard key={event.id} event={event} stats={eventStats?.[String(event.id)]} onEventClick={onEventClick} />
@@ -88,16 +88,29 @@ interface EventHighlightSectionsProps {
   mapEvents: Event[] | null;
   eventStats: Record<string, EventStats> | null;
   onEventClick: (event: Event) => void;
-  /** See all featured events: the feed's Featured filter. */
-  onSeeAllFeatured: () => void;
   /** Shown where the map waits once the complete feed has failed to load. */
   loadFailureNotice?: ReactNode;
 }
 
+/** The featured row: tall poster cards, or their placeholders while the page's data loads. */
+function FeaturedRow({ events, onEventClick }: { events: Event[] | null; onEventClick: (event: Event) => void }) {
+  const { t } = useTranslation();
+  if (events !== null && events.length === 0) return null;
+  return (
+    <CardCarousel title={t("filters.featured")} size="feature" busy={events === null}>
+      {events
+        ? events.map((event, index) => (
+          <FeaturedEventCard key={event.id} event={event} onEventClick={onEventClick} priority={index === 0} />
+        ))
+        : Array.from({ length: FEATURED_PLACEHOLDER_COUNT }, (_, index) => <FeaturedEventCardSkeleton key={index} />)}
+    </CardCarousel>
+  );
+}
+
 /**
  * What the events page shows above its search and grid, top to bottom: the
- * must-know banner, the campus map, then rows of networking opportunities,
- * featured events.
+ * featured row, rows of events new to Wat2Do and of networking
+ * opportunities, then the campus map.
  */
 export function EventHighlightSections({
   school,
@@ -105,31 +118,27 @@ export function EventHighlightSections({
   mapEvents,
   eventStats,
   onEventClick,
-  onSeeAllFeatured,
   loadFailureNotice,
 }: EventHighlightSectionsProps) {
   const { t } = useTranslation();
   return (
     <Stack gap={8} data-slot="event-highlights" className={SECTIONS_CLASS}>
-      {highlights === null
-        ? <MustKnowHeroSkeleton />
-        : highlights.mustKnow.length > 0 ? <MustKnowHero events={highlights.mustKnow} onEventClick={onEventClick} /> : null}
-      <EventMapSection school={school} events={mapEvents} onEventClick={onEventClick} loadFailureNotice={loadFailureNotice} />
+      <FeaturedRow events={highlights?.featured ?? null} onEventClick={onEventClick} />
       {highlights ? <>
+        <EventCarouselRow
+          title={t("events.highlights.fresh")}
+          events={highlights.fresh}
+          eventStats={eventStats}
+          onEventClick={onEventClick}
+        />
         <EventCarouselRow
           title={t("events.highlights.networking")}
           events={highlights.networking}
           eventStats={eventStats}
           onEventClick={onEventClick}
         />
-        <EventCarouselRow
-          title={t("filters.featured")}
-          events={highlights.featured}
-          eventStats={eventStats}
-          onEventClick={onEventClick}
-          seeAll={{ onSelect: onSeeAllFeatured }}
-        />
       </> : null}
+      <EventMapSection school={school} events={mapEvents} onEventClick={onEventClick} loadFailureNotice={loadFailureNotice} />
     </Stack>
   );
 }
@@ -149,14 +158,14 @@ export function EventHighlightSectionsSkeleton({ school, highlights }: EventHigh
   const { t } = useTranslation();
   return (
     <Stack gap={8} data-slot="event-highlights" className={SECTIONS_CLASS}>
-      {highlights === null || highlights.mustKnow.length > 0 ? <MustKnowHeroSkeleton /> : null}
-      <EventMapSection school={school} events={null} onEventClick={ignoreEvent} />
+      {highlights === null || highlights.featured.length > 0 ? <FeaturedRow events={null} onEventClick={ignoreEvent} /> : null}
+      {highlights && highlights.fresh.length > 0 ? (
+        <EventCarouselRow title={t("events.highlights.fresh")} events={null} eventStats={null} onEventClick={ignoreEvent} />
+      ) : null}
       {highlights && highlights.networking.length > 0 ? (
         <EventCarouselRow title={t("events.highlights.networking")} events={null} eventStats={null} onEventClick={ignoreEvent} />
       ) : null}
-      {highlights && highlights.featured.length > 0 ? (
-        <EventCarouselRow title={t("filters.featured")} events={null} eventStats={null} onEventClick={ignoreEvent} />
-      ) : null}
+      <EventMapSection school={school} events={null} onEventClick={ignoreEvent} />
     </Stack>
   );
 }

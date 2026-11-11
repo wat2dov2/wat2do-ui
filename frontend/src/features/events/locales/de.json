@@ -164,12 +164,7 @@
       "clusterNear_other": "{{count}} Veranstaltungen in der Nähe von {{location}}"
     },
     "highlights": {
-      "mustKnow": "Nicht verpassen",
-      "slide": "{{current}} von {{total}}",
-      "play": "Diashow abspielen",
-      "pause": "Diashow pausieren",
-      "previous": "Vorheriges Event",
-      "next": "Nächstes Event",
+      "fresh": "Neu auf Wat2Do",
       "openEvent": "Event ansehen",
       "map": "Rund um den Campus",
       "networking": "Networking-Gelegenheiten"

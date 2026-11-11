@@ -1,11 +1,17 @@
 "use client";
 
 import { Children, isValidElement, useCallback, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import NextLink from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Section } from "@/shared/layout/section";
 import { Button } from "@/shared/ui/button";
+
+const ITEM_CLASSES = {
+  // Phones show two cards and the edge of a third; wider screens keep the grid's card width.
+  cards: "flex w-[calc((100%-1rem)/2.25)] min-w-0 shrink-0 snap-start min-[480px]:w-52 lg:w-56",
+  // Phones show one poster card and the edge of the next; wider screens show several side by side.
+  feature: "flex w-[78%] min-w-0 shrink-0 snap-start min-[480px]:w-80 lg:w-[22rem]",
+} as const;
 
 /** Within this many pixels of an end, the row counts as being at it. */
 const EDGE_TOLERANCE_PX = 4;
@@ -14,10 +20,14 @@ const PAGE_FRACTION = 0.9;
 
 interface CardCarouselProps {
   title: string;
-  /** Where See all leads: another page, or an action such as applying the matching filter. */
-  seeAll?: { href: string } | { onSelect: () => void };
   /** The cards are placeholders for ones still loading. */
   busy?: boolean;
+  /**
+   * `cards` keeps the grid's card width; `feature` holds tall poster cards,
+   * most of a phone's width with the next one peeking in, and a fixed width on
+   * wider screens so a card never stretches across a wide one.
+   */
+  size?: keyof typeof ITEM_CLASSES;
   /** One card per child, in order. */
   children: ReactNode;
 }
@@ -44,7 +54,7 @@ function readEdges(row: HTMLElement): RowEdges {
  * by arrow buttons with a mouse, and snapping so a card is never left half cut
  * at the row's start. Cards keep the grid's width, so the same card fits both.
  */
-export function CardCarousel({ title, seeAll, busy = false, children }: CardCarouselProps) {
+export function CardCarousel({ title, busy = false, size = "cards", children }: CardCarouselProps) {
   const { t } = useTranslation();
   const rowRef = useRef<HTMLDivElement>(null);
   // The server cannot measure the row, so it draws the arrows a full row has.
@@ -75,7 +85,6 @@ export function CardCarousel({ title, seeAll, busy = false, children }: CardCaro
     row.scrollBy({ left: direction * forward * row.clientWidth * PAGE_FRACTION, behavior: reducedMotion ? "auto" : "smooth" });
   };
 
-  const seeAllLabel = <>{t("common.seeAll")}<ArrowRight aria-hidden="true" className="rtl:rotate-180" /></>;
   const fits = edges.atStart && edges.atEnd;
 
   return (
@@ -83,13 +92,6 @@ export function CardCarousel({ title, seeAll, busy = false, children }: CardCaro
       title={title}
       aria-busy={busy || undefined}
       actions={<>
-        {seeAll && !busy ? (
-          "href" in seeAll ? (
-            <Button asChild variant="link" size="sm"><NextLink href={seeAll.href}>{seeAllLabel}</NextLink></Button>
-          ) : (
-            <Button variant="link" size="sm" onClick={seeAll.onSelect}>{seeAllLabel}</Button>
-          )
-        ) : null}
         {/* Touch screens swipe the row, so only a mouse gets arrows. */}
         {fits ? null : <>
           <Button variant="outline" size="icon-sm" className="hidden pointer-fine:inline-flex" aria-label={t("common.scrollBack")} disabled={edges.atStart} onClick={() => scrollByPage(-1)}>
@@ -111,8 +113,7 @@ export function CardCarousel({ title, seeAll, busy = false, children }: CardCaro
         className="no-visible-scrollbar -my-3 flex snap-x snap-mandatory gap-x-4 overflow-x-auto overscroll-x-contain py-3 sm:gap-x-5"
       >
         {cards.map((card, index) => (
-          // Phones show two cards and the edge of a third; wider screens keep the grid's card width.
-          <div key={isValidElement(card) && card.key !== null ? card.key : index} role="listitem" className="flex w-[calc((100%-1rem)/2.25)] min-w-0 shrink-0 snap-start min-[480px]:w-52 lg:w-56">
+          <div key={isValidElement(card) && card.key !== null ? card.key : index} role="listitem" className={ITEM_CLASSES[size]}>
             {card}
           </div>
         ))}

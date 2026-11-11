@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import NextLink from "next/link";
 import { Link } from "@/shared/ui/link";
@@ -40,7 +40,7 @@ import { logoutAPI } from "@/features/auth/api/auth.api";
 import { useOpenClubPanel } from "@/features/clubs";
 import { PUBLIC_PAGE_ROUTES, ROUTES } from "@/shared/constants/routes";
 import { getSchoolOrigin } from "@/shared/constants/schools";
-import imgImage1 from "@/assets/wat2do-logo-nav.webp";
+import { MAIN_CONTENT_SCROLL_ROOT_SELECTOR } from "@/shared/constants/ui";
 
 type NavClub = AuthState["clubs"][number];
 
@@ -69,10 +69,10 @@ function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
     >
       <Image
         alt=""
-        width={34}
-        height={24}
-        className="h-6 w-[34px] object-contain"
-        src={imgImage1}
+        width={28}
+        height={28}
+        className="size-7 object-contain"
+        src="/brand/wat2do-mark-colour.svg"
       />
     </Link>
   );
@@ -158,6 +158,30 @@ function SubmitMenu({ size, signedIn, onNavigate }: SubmitMenuProps) {
   );
 }
 
+/** The navigation's height in CSS pixels (`h-12`). */
+const NAV_HEIGHT = 48;
+
+/**
+ * Whether the page has scrolled its band under the navigation (`PageBleed
+ * underNav`) out from beneath it. Until then the navigation is see-through
+ * over the band; pages without one are unaffected.
+ */
+function useScrolledPastBand(pathname: string): boolean {
+  const [past, setPast] = useState(false);
+  useEffect(() => {
+    const root = document.querySelector<HTMLElement>(MAIN_CONTENT_SCROLL_ROOT_SELECTOR);
+    if (!root) return;
+    const sync = () => {
+      const band = root.querySelector<HTMLElement>("[data-under-nav]");
+      setPast(band !== null && root.scrollTop >= band.offsetHeight - NAV_HEIGHT);
+    };
+    sync();
+    root.addEventListener("scroll", sync, { passive: true });
+    return () => root.removeEventListener("scroll", sync);
+  }, [pathname]);
+  return past;
+}
+
 function isRouteActive(pathname: string, href: string): boolean {
   if (href === ROUTES.EVENTS) return pathname === ROUTES.EVENTS;
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -172,6 +196,7 @@ export function TopNav() {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
+  const scrolledPastBand = useScrolledPastBand(pathname);
   const activeClub = clubs.find((club) => club.id === clubId) ?? clubs[0];
   const canOpenClubPanel = profileCompleted && Boolean(activeClub);
   const onClubPanel = isRouteActive(pathname, ROUTES.CLUB_PANEL);
@@ -221,7 +246,12 @@ export function TopNav() {
   );
 
   return (
-    <header data-slot="top-nav" className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-surface px-2 sm:gap-2 sm:px-4">
+    // Over a band under the navigation it is see-through, with no rule, until the band scrolls away.
+    <header
+      data-slot="top-nav"
+      data-scrolled={scrolledPastBand ? true : undefined}
+      className="fixed top-0 left-0 right-0 z-nav flex h-12 items-center justify-between gap-1.5 border-b border-border bg-surface px-2 transition-[background-color,border-color] duration-300 sm:gap-2 sm:px-4 group-has-[[data-under-nav]]/app:not-data-scrolled:border-transparent group-has-[[data-under-nav]]/app:not-data-scrolled:bg-transparent"
+    >
       {/*
         Chromium paints as soon as its HTML parser pauses, which on a slow CPU
         can fall inside this header: the first frame showed the primary

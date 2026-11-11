@@ -79,7 +79,6 @@
     },
     "addedToWat2Do": "Adicionado ao Wat2Do",
     "postedBy": "Publicado por",
-    "seeAll": "Ver tudo",
     "scrollBack": "Rolar para trás",
     "scrollForward": "Rolar para frente"
   },
@@ -570,7 +569,8 @@
         "position": "eventos do campus"
       },
       "primaryAction": "Ver o que está rolando",
-      "secondaryAction": "Como funciona"
+      "primaryHoverAction": "Ver eventos",
+      "secondaryAction": "Sobre nós"
     },
     "problem": {
       "title": "O campus NÃO é chato. Os eventos é que estão escondidos.",

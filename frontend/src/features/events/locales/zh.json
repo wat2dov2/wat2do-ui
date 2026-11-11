@@ -156,12 +156,7 @@
       "clusterNear_other": "{{location}} 附近有 {{count}} 个活动"
     },
     "highlights": {
-      "mustKnow": "必看活动",
-      "slide": "第 {{current}} 个，共 {{total}} 个",
-      "play": "播放轮播",
-      "pause": "暂停轮播",
-      "previous": "上一个活动",
-      "next": "下一个活动",
+      "fresh": "Wat2Do 新活动",
       "openEvent": "查看活动",
       "map": "校园周边",
       "networking": "社交拓展机会"

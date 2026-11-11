@@ -73,7 +73,6 @@
     },
     "addedToWat2Do": "Added to Wat2Do",
     "postedBy": "Posted by",
-    "seeAll": "See all",
     "scrollBack": "Scroll back",
     "scrollForward": "Scroll forward"
   },
@@ -564,7 +563,8 @@
         "position": "club position"
       },
       "primaryAction": "See what's on",
-      "secondaryAction": "How it works"
+      "primaryHoverAction": "Browse events",
+      "secondaryAction": "About us"
     },
     "problem": {
       "title": "Campus is NOT boring. Its events are just hidden.",

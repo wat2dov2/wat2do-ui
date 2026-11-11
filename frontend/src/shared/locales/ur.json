@@ -76,7 +76,6 @@
     },
     "addedToWat2Do": "Wat2Do میں شامل کیا گیا",
     "postedBy": "شائع کنندہ",
-    "seeAll": "سب دیکھیں",
     "scrollBack": "پیچھے اسکرول کریں",
     "scrollForward": "آگے اسکرول کریں"
   },
@@ -567,7 +566,8 @@
         "position": "کلب کا عہدہ"
       },
       "primaryAction": "دیکھیں کیا چل رہا ہے",
-      "secondaryAction": "یہ کیسے کام کرتا ہے"
+      "primaryHoverAction": "ایونٹس دیکھیں",
+      "secondaryAction": "ہمارے بارے میں"
     },
     "problem": {
       "title": "کیمپس بورنگ نہیں ہے۔ بس اس کے ایونٹس چھپے ہوئے ہیں۔",

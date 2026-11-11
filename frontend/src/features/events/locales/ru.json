@@ -180,12 +180,7 @@
       "clusterNear_other": "{{count}} события рядом с {{location}}"
     },
     "highlights": {
-      "mustKnow": "Не пропустите",
-      "slide": "{{current}} из {{total}}",
-      "play": "Запустить слайд-шоу",
-      "pause": "Приостановить слайд-шоу",
-      "previous": "Предыдущее событие",
-      "next": "Следующее событие",
+      "fresh": "Новое на Wat2Do",
       "openEvent": "Открыть событие",
       "map": "По кампусу",
       "networking": "Возможности для нетворкинга"
