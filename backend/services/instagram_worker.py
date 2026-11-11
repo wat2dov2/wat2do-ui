@@ -53,12 +53,7 @@ _CLUB_SYNC_INTERVAL = timedelta(hours=1)
 
 
 def run_forever() -> None:
-    threading.Thread(
-        target=crawl.run_forever,
-        args=(_score_in_background,),
-        name="instagram-follow-crawl",
-        daemon=True,
-    ).start()
+    threading.Thread(target=_crawl_forever, name="instagram-follow-crawl", daemon=True).start()
     device = EmulatorDevice()
     synced_at: datetime | None = None
     while True:
@@ -68,6 +63,17 @@ def run_forever() -> None:
             synced_at = now
         if not _step("visit", lambda: visit_next(device)):
             time.sleep(CONTROL.idle_seconds)
+
+
+def _crawl_forever() -> None:
+    """The follow crawl's thread: a crawl that stops for any reason is logged and
+    started again after a rest, so it never dies quietly."""
+    while True:
+        try:
+            crawl.run_forever(_score_in_background)
+        except Exception:
+            log.exception("The follow crawl stopped; starting it again")
+        time.sleep(FOLLOW.rest_seconds)
 
 
 def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:

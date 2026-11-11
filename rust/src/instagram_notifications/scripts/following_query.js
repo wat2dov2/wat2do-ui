@@ -10,8 +10,9 @@
    if (Number.isInteger(status) && status >= 100 && status <= 599) httpStatus = status;
    return new Error();
   };
-  // The page's own GET, as Instagram's web app sends it. Null when Instagram will not
-  // show the account to this viewer (gone, private or blocked).
+  // The page's own GET, as Instagram's web app sends it. Null only when Instagram says
+  // plainly that it will not show the account (gone, or private to this viewer); any
+  // other refusal is a block on these reads.
   const read = async path => {
    reason = "request_failed";
    const response = await fetch(path, {credentials: "include",
@@ -21,14 +22,23 @@
    try { body = await response.json(); } catch (_error) { body = null; }
    let landed = "";
    try { landed = new URL(response.url).pathname; } catch (_error) { landed = ""; }
+   const message = typeof body?.message === "string" ? body.message.toLowerCase() : "";
    if (response.status === 401 || landed.startsWith("/accounts/login") ||
        landed.startsWith("/challenge") || body?.require_login === true ||
-       ["login_required", "checkpoint_required", "challenge_required"].includes(body?.message)) {
+       ["login_required", "checkpoint_required", "challenge_required"].includes(message) ||
+       typeof body?.checkpoint_url === "string") {
     throw failed("login_required", response.status);
    }
-   if ([400, 403, 404].includes(response.status)) return null;
+   if (response.status === 429) throw failed("http_error", 429);
+   if (body?.spam === true || body?.feedback_required === true || message === "feedback_required" ||
+       message.includes("try again later") || message.includes("wait a few minutes")) {
+    throw failed("blocked", response.status);
+   }
+   if (response.status === 404 || /not authorized to view user|user not found/.test(message)) return null;
+   if (response.status >= 400 && response.status < 500) throw failed("blocked", response.status);
    if (!response.ok) throw failed("http_error", response.status);
    if (body === null || typeof body !== "object") throw failed("invalid_json");
+   if (body.status === "fail") throw failed("blocked", response.status);
    return body;
   };
   try {

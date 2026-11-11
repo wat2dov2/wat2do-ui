@@ -940,16 +940,23 @@ class InstagramFollowControl(_ControlModel):
     # A crawl stops after this many clubs in a row turn up nothing new; nothing else ends
     # it early, so it reads every club the school follows until then.
     crawl_miss_streak: int = Field(ge=1, le=100)
-    # An account no school name matches becomes a candidate once this many of the
-    # school's followed clubs follow it, counted across crawls.
+    # A public account no school name matches becomes a candidate once this many of the
+    # school's followed clubs follow it, counted across crawls; a sighting not seen
+    # again for this many days is forgotten.
     crawl_mutual_follow_threshold: int = Field(ge=2, le=20)
-    # A Following list is read at most this many pages deep.
+    crawl_sighting_retention_days: int = Field(ge=7, le=730)
+    # A club's Following list is read at most this many pages deep (the school's own
+    # list always to its end).
     crawl_list_page_limit: int = Field(ge=1, le=100)
     # A list that fails to read is tried again later, up to this many times, and never
     # counts as a miss.
     crawl_seed_attempts: int = Field(ge=1, le=10)
-    # How often the crawl checks on the Brave worker's read it is waiting for.
+    # The crawl checks on a Brave read it waits for this often at first, doubling the
+    # gap up to the maximum while it waits; a read still waiting after the timeout while
+    # Brave holds nothing rests that school's crawl.
     crawl_poll_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
+    crawl_poll_max_seconds: float = Field(gt=0, le=600, allow_inf_nan=False)
+    crawl_read_timeout_seconds: float = Field(ge=60, le=86_400, allow_inf_nan=False)
     # How long the emulator waits for a profile to load before a follow gives up on it.
     profile_wait_seconds: int = Field(ge=5, le=300)
     # This many lists or follows failing in a row rest that school's crawl or that
@@ -970,6 +977,8 @@ class InstagramFollowControl(_ControlModel):
     def _read_delays_are_ordered(self) -> "InstagramFollowControl":
         if self.profile_read_delay_min_seconds > self.profile_read_delay_max_seconds:
             raise ValueError("profile_read_delay_min_seconds must not exceed the maximum")
+        if self.crawl_poll_seconds > self.crawl_poll_max_seconds:
+            raise ValueError("crawl_poll_seconds must not exceed crawl_poll_max_seconds")
         return self
 
 

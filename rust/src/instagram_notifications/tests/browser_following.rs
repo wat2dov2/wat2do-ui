@@ -78,6 +78,7 @@ fn a_page_keeps_only_each_accounts_name_id_and_privacy_as_the_shown_account() {
     assert_eq!(result["username"], json!("club.one"));
     assert_eq!(result["user_id"], json!("101"));
     assert_eq!(result["next_max_id"], json!("QVFE+abc/="));
+    assert_eq!(result["invalid"], json!(0));
     assert_eq!(result["users"][0], listed("club.three", false));
     assert_eq!(result["users"][1]["is_private"], json!(true));
     assert_eq!(
@@ -134,6 +135,11 @@ fn a_429_or_a_login_wall_is_a_rate_limit_and_other_failures_keep_their_retry_kin
             "login",
         ),
         (
+            json!({"state": "failed", "reason": "blocked", "http_status": 400}),
+            SessionKind::RateLimited,
+            "refused",
+        ),
+        (
             json!({"state": "failed", "reason": "http_error", "http_status": 500}),
             SessionKind::PageUnavailable,
             "HTTP 500",
@@ -172,11 +178,27 @@ fn a_429_or_a_login_wall_is_a_rate_limit_and_other_failures_keep_their_retry_kin
 }
 
 #[test]
-fn malformed_accounts_ids_or_cursors_fail_the_read() {
+fn malformed_accounts_are_dropped_and_counted() {
+    let page = read(json!({
+        "state": "succeeded",
+        "user_id": "101",
+        "users": [
+            listed("Bad Name", false),
+            {"username": "club", "full_name": "", "pk": "", "is_private": false},
+            {"username": "club", "full_name": null, "pk": "1", "is_private": false},
+            "not an account",
+            listed("club.kept", false),
+        ],
+        "next_max_id": null,
+    }))
+    .unwrap();
+    assert_eq!(page["users"], json!([listed("club.kept", false)]));
+    assert_eq!(page["invalid"], json!(4));
+}
+
+#[test]
+fn a_page_without_a_list_its_id_or_a_valid_cursor_fails_the_read() {
     for payload in [
-        json!({"state": "succeeded", "user_id": "101", "users": [listed("Bad Name", false)], "next_max_id": null}),
-        json!({"state": "succeeded", "user_id": "101", "users": [{"username": "club", "full_name": "", "pk": "", "is_private": false}], "next_max_id": null}),
-        json!({"state": "succeeded", "user_id": "101", "users": [{"username": "club", "full_name": null, "pk": "1", "is_private": false}], "next_max_id": null}),
         json!({"state": "succeeded", "user_id": "101", "users": "nope", "next_max_id": null}),
         json!({"state": "succeeded", "user_id": "999", "users": [], "next_max_id": null}),
         json!({"state": "succeeded", "user_id": "101", "users": [], "next_max_id": "a b"}),
@@ -411,6 +433,69 @@ fn the_page_reports_only_fixed_reasons_and_safe_statuses() {
             Some("101"),
             r#"[[400, {"message": "Not authorized to view user"}]]"#,
             json!({"state": "succeeded", "hidden": true}),
+            1,
+        ),
+        (
+            r#""wat2do.ca""#,
+            Some("101"),
+            r#"[[400, {"message": "User not found", "status": "fail"}]]"#,
+            json!({"state": "succeeded", "hidden": true}),
+            1,
+        ),
+        (
+            r#""wat2do.ca""#,
+            Some("101"),
+            r#"[[400, {"message": "feedback_required", "spam": true}]]"#,
+            json!({"state": "failed", "reason": "blocked", "http_status": 400}),
+            1,
+        ),
+        (
+            r#""wat2do.ca""#,
+            Some("101"),
+            r#"[[400, {"spam": true}]]"#,
+            json!({"state": "failed", "reason": "blocked", "http_status": 400}),
+            1,
+        ),
+        (
+            r#""wat2do.ca""#,
+            Some("101"),
+            r#"[[403, {}]]"#,
+            json!({"state": "failed", "reason": "blocked", "http_status": 403}),
+            1,
+        ),
+        (
+            r#""wat2do.ca""#,
+            Some("101"),
+            r#"[[400, "not-json"]]"#,
+            json!({"state": "failed", "reason": "blocked", "http_status": 400}),
+            1,
+        ),
+        (
+            r#""wat2do.ca""#,
+            Some("101"),
+            r#"[[410, {}]]"#,
+            json!({"state": "failed", "reason": "blocked", "http_status": 410}),
+            1,
+        ),
+        (
+            r#""wat2do.ca""#,
+            Some("101"),
+            r#"[[200, {"status": "fail", "message": "Please wait a few minutes before you try again."}]]"#,
+            json!({"state": "failed", "reason": "blocked", "http_status": 200}),
+            1,
+        ),
+        (
+            r#""wat2do.ca""#,
+            Some("101"),
+            r#"[[200, {"status": "fail", "message": "do-not-export"}]]"#,
+            json!({"state": "failed", "reason": "blocked", "http_status": 200}),
+            1,
+        ),
+        (
+            r#""wat2do.ca""#,
+            Some("101"),
+            r#"[[200, {"checkpoint_url": "/challenge/x"}]]"#,
+            json!({"state": "failed", "reason": "login_required", "http_status": 200}),
             1,
         ),
         (

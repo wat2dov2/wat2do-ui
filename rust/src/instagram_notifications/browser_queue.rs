@@ -38,6 +38,8 @@ const AVAILABLE_ACCOUNT_SQL: &str = "account_username NOT IN (SELECT value FROM 
 const BROWSER_SCOPE: &str = "browser";
 const RETRIEVAL_SCOPE: &str = "retrieval";
 const FOLLOWING_SCOPE: &str = "following";
+/// Set (to a reason) to stop Following reads alone, leaving every other job running.
+pub const FOLLOWING_PAUSED: &str = "following_paused";
 
 /// Every job kind the queue accepts; a stored table missing any of them is rebuilt.
 const JOB_KINDS: [&str; 4] = ["digest", "retrieval", "engagement", "following"];
@@ -1195,9 +1197,9 @@ impl BrowserJobQueue {
                 if let Some((id, state)) = existing {
                     // Digest and Following retries are reads. Engagement retries always
                     // require an explicit retry, because they may already have acted on
-                    // Instagram.
-                    if (kind == "digest" || kind == "following")
-                        && (state == "failed" || state == "cancelled")
+                    // Instagram. A Following read someone cancelled stays cancelled.
+                    if (kind == "digest" && (state == "failed" || state == "cancelled"))
+                        || (kind == "following" && state == "failed")
                     {
                         db.execute(
                             "UPDATE jobs SET state='pending',created_at=?,started_at=NULL,finished_at=NULL,error=NULL,result=NULL,attempts=0 WHERE id=?",
@@ -1690,6 +1692,7 @@ impl BrowserJobQueue {
                 "backoff_seconds": self.setting_or("browser_rate_limit_backoff_seconds", json!(0))?,
             },
             "following": {
+                "paused": self.setting_or(FOLLOWING_PAUSED, json!(false))?,
                 "held_until": if pyjson::truthy(&following_until) { following_until } else { Value::Null },
                 "reads_last_hour": following_reads,
             },
@@ -1988,21 +1991,27 @@ pub(crate) fn read_only_kind(kind: &str) -> bool {
     matches!(kind, "digest" | "retrieval" | "following")
 }
 
-/// The oldest Following read once its pause has passed, unless these reads are held or
-/// the hour's reads are used up. A list's next page waits the page pause, a new list
-/// the list pause, both drawn when the previous read finished.
+/// The oldest Following read once it may run: these reads are neither stopped
+/// (`following_paused`) nor held, the last one was claimed at least an hour divided by
+/// `following_requests_per_hour` ago, so the hour's reads are spread evenly, and its
+/// own pause has passed. A list's next page waits the page pause, a new list the list
+/// pause, both drawn when the previous read finished. A read runs as whichever account
+/// Brave shows, so `excluded_accounts` never holds it.
 fn select_following(db: &Connection, now: f64) -> BrowserResult<Option<BrowserJob>> {
-    if now < rate_limit_state(db, FOLLOWING_SCOPE)?.0
-        || recent_following_reads(db, now)?.len() >= control().following_requests_per_hour
+    let spacing = 3_600.0 / control().following_requests_per_hour as f64;
+    let last_read = recent_following_reads(db, now)?
+        .iter()
+        .filter_map(pyjson::number)
+        .fold(f64::NEG_INFINITY, f64::max);
+    if pyjson::truthy(&stored_setting(db, FOLLOWING_PAUSED)?)
+        || now < rate_limit_state(db, FOLLOWING_SCOPE)?.0
+        || now < last_read + spacing
     {
         return Ok(None);
     }
     let Some(job) = select_optional_job(
         db,
-        &format!(
-            "SELECT * FROM jobs WHERE state='pending' AND kind='following' \
-             AND {AVAILABLE_ACCOUNT_SQL} ORDER BY created_at,id LIMIT 1"
-        ),
+        "SELECT * FROM jobs WHERE state='pending' AND kind='following' ORDER BY created_at,id LIMIT 1",
         &[],
     )?
     else {

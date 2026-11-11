@@ -2,15 +2,17 @@
 
 A crawl reads the school account's own Following list first: every public account the
 school follows is one of its clubs, and each is a seed. It then reads each seed's whole
-Following list. An account the school does not follow and has no row for becomes a
-pending candidate when its handle or name carries one of the school's names
-(``school_names``), or once ``crawl_mutual_follow_threshold`` of the school's followed
-clubs follow it. Those sightings are kept in local state across crawls, so a club two
-seeds follow is found even when no single crawl reaches both. A candidate is read in
-turn by a later crawl, once the school follows it. A seed is productive when it turns
-up an account the school has no row for yet, so an account an admin rejected is never
-offered again. The crawl ends once ``crawl_miss_streak`` seeds in a row turn up nothing
-new, or when no seed is left.
+Following list. A public account the school does not follow and has no row for becomes
+a pending candidate when its handle or name carries one of the school's names as a word
+(``names_school``), or once ``crawl_mutual_follow_threshold`` of the school's followed
+clubs follow it. Those sightings are kept in local state across crawls, so a club
+several seeds follow is found even when no single crawl reaches them all; a sighting
+not seen again for ``crawl_sighting_retention_days`` is forgotten. A private account is
+never a candidate: it is almost always a member, and the scorer cannot read it. A
+candidate is read in turn by a later crawl, once the school follows it. A seed is
+productive when it turns up an account the school has no row for yet, so an account an
+admin rejected is never offered again. The crawl ends once ``crawl_miss_streak`` seeds
+in a row turn up nothing new, or when no seed is left.
 
 Crawling never stops. A crawl under way goes first, then schools never crawled, then
 the school whose last crawl finished longest ago (``last_crawl_finished``), so a school
@@ -21,13 +23,18 @@ the seeds in a new random order, so a crawl the miss streak ends early still rea
 clubs the last one never did.
 
 The lists are read through the Mac's Brave worker (``wat2do-browser following``), one
-page per job, as whichever account Brave shows: the worker paces the reads and holds
-only them after a 429 or a login wall, and a hold or a pause simply keeps the crawl
-waiting. The crawl keeps one read outstanding, keeps its place in local state, and
-checks on the read every ``crawl_poll_seconds`` from its own thread of the emulator
-worker's process (``run_forever``). A page that fails to read is tried again, up to
+page per job, as whichever account Brave shows: the worker paces the reads, holds only
+them after a 429, a login wall or any other refusal, and stops them alone while
+``wat2do-browser pause-following`` is in force; a hold or a pause simply keeps the
+crawl waiting. The crawl keeps one read outstanding per school, keeps its place in
+local state, and checks on a waiting read from ``crawl_poll_seconds`` apart up to
+``crawl_poll_max_seconds`` apart, from its own thread of the emulator worker's process
+(``run_forever``). A page that fails to read is tried again, up to
 ``crawl_seed_attempts`` times, and never counts as a miss; ``failures_before_rest``
-failures in a row rest that school's crawl.
+failures in a row rest that school's crawl, and so does a read still waiting after
+``crawl_read_timeout_seconds`` while Brave holds nothing, so one stuck school never
+stalls the others. A resting crawl's outstanding read is still collected. A read an
+operator cancelled stays cancelled: its seed is given up.
 """
 
 from __future__ import annotations
@@ -35,6 +42,7 @@ from __future__ import annotations
 import json
 import logging
 import random
+import re
 import sqlite3
 import subprocess
 import time
@@ -57,19 +65,44 @@ from services.instagram_follow import candidates
 log = logging.getLogger(__name__)
 CONTROL = controlbox.instagram_follow
 STATE_DIRECTORY = Path.home() / ".local/state/wat2do/instagram-follow-crawl"
-# Accounts seen in the school's clubs' lists that are not candidates yet, and which
-# clubs follow them. Kept across crawls; an account leaves once it becomes a candidate.
+# Accounts seen in the school's clubs' lists that are not candidates yet, which clubs
+# follow them and when each was last seen. An account leaves once it becomes a candidate.
 SIGHTINGS_FILE = "sightings.sqlite3"
 
 CRAWL_FINISHED = "finished"
 _WAITING = ("pending", "running")
 _BROWSER_TIMEOUT_SECONDS = 60
 _MISSING_JOB = "job does not exist"
+# Letters only: handles and names split on dots, underscores, hyphens, spaces and digits.
+_WORD = re.compile(r"[^\W\d_]+")
+# A school name this long is distinctive enough to start or end a run-together word.
+_WORD_EDGE_LETTERS = 6
+# Every key a crawl's local state holds; state without them is from an older crawler.
+_STATE_KEYS = frozenset(
+    {
+        "crawl_id",
+        "school_id",
+        "seeded",
+        "followed",
+        "queue",
+        "done",
+        "failures",
+        "failed_in_a_row",
+        "streak",
+        "visited",
+        "found",
+        "reading",
+        "job",
+        "job_queued_at",
+    }
+)
 
-# A school whose reads keep failing waits until then (time.monotonic) before its next.
+# A school whose reads keep failing or stay stuck waits until then (time.monotonic).
 _rested_until: dict[str, float] = {}
 # Each school's handles with a row, read again whenever a seed's list starts.
 _known: dict[int, set[str]] = {}
+# When each waiting read is next checked, and the gap after that (time.monotonic).
+_next_check: dict[str, tuple[float, float]] = {}
 
 
 class BrowserQueueError(RuntimeError):
@@ -78,6 +111,37 @@ class BrowserQueueError(RuntimeError):
 
 def search_terms(school: str) -> list[str]:
     return [school, *CONTROL.school_names.get(school, [])]
+
+
+def names_school(school: str, handle: str, name: str | None) -> bool:
+    """Whether the handle or name carries one of the school's names as a word.
+
+    Handles and names split into words at dots, underscores, hyphens, spaces,
+    apostrophes and digits, so a short name such as "mac" or "dal" matches only a word
+    of its own, and a name written as several words ("Ted Rogers") matches one written
+    as one ("tedrogers"). The school's slug, and any name of at least
+    ``_WORD_EDGE_LETTERS`` letters, may also start or end a word, since handles run words
+    together (``utmmsa``, ``laurieritalianclub``).
+    """
+    words = _WORD.findall(f"{handle} {name or ''}".casefold())
+    for term in search_terms(school):
+        compact = "".join(_WORD.findall(term.casefold()))
+        if any(_words_spell(words[index:], compact) for index in range(len(words))):
+            return True
+        edge = term == school or len(compact) >= _WORD_EDGE_LETTERS
+        if edge and any(word.startswith(compact) or word.endswith(compact) for word in words):
+            return True
+    return False
+
+
+def _words_spell(words: list[str], term: str) -> bool:
+    """Whether the first words, run together, spell exactly the term."""
+    spelled = ""
+    for word in words:
+        spelled += word
+        if len(spelled) >= len(term):
+            return spelled == term
+    return False
 
 
 def crawl_running(school: str) -> bool:
@@ -101,28 +165,30 @@ def last_crawl_finished(school: str) -> datetime | None:
 
 
 def run_forever(on_found: Callable[[], None]) -> None:
-    """Keep crawling, one Brave read at a time; ``on_found`` runs after new candidates."""
+    """Keep crawling; ``on_found`` runs after new candidates. A failing step rests."""
     while True:
         try:
-            found = advance()
+            if advance():
+                on_found()
         except Exception:
             log.exception("Follow crawl step failed")
             time.sleep(CONTROL.rest_seconds)
             continue
-        if found:
-            on_found()
         time.sleep(CONTROL.crawl_poll_seconds)
 
 
 def advance() -> int:
-    """Collect the outstanding read of the crawl whose turn it is and queue its next.
-
-    Returns how many candidates the collected page added.
-    """
+    """Collect what resting crawls' reads returned, then take the next step of the crawl
+    whose turn it is. Returns how many candidates were added."""
+    now = time.monotonic()
+    found = 0
+    for school in EMULATOR.android_user_by_school:
+        if _rested_until.get(school, 0) > now and crawl_running(school):
+            found += _Crawl(school, _load(school)).step(request=False)
     school = next_school()
-    if school is None:
-        return 0
-    return _Crawl(school, _load(school)).step()
+    if school is not None:
+        found += _Crawl(school, _load(school)).step()
+    return found
 
 
 def next_school() -> str | None:
@@ -145,25 +211,39 @@ class _Crawl:
     def __init__(self, school: str, state: dict[str, Any]) -> None:
         self.school = school
         self.state = state
-        self.terms = search_terms(school)
 
-    def step(self) -> int:
+    def step(self, *, request: bool = True) -> int:
+        """Collect the outstanding read if it finished, then (with ``request``) queue the
+        next. Returns how many candidates the collected page added."""
         state = self.state
         found = 0
         if state["job"] is not None:
+            if not _check_due(state["job"]):
+                return 0
             job = _job(state["job"])
             if job is not None and job["state"] in _WAITING:
+                self._waiting()
                 return 0
+            _next_check.pop(state["job"], None)
             state["job"] = None
             result = (job or {}).get("result") or {}
             if job is not None and job["state"] == "succeeded" and not result.get("hidden"):
                 found = self._absorb(result)
+            elif job is not None and job["state"] == "cancelled":
+                self._cancelled()
             else:
                 self._failed(job)
             _save(self.school, state)
-        if _rested_until.get(self.school, 0) <= time.monotonic():
+        if request and _rested_until.get(self.school, 0) <= time.monotonic():
             self._request_next()
         return found
+
+    def _waiting(self) -> None:
+        """A read that waits too long while Brave holds nothing rests this school."""
+        waited = time.time() - self.state["job_queued_at"]
+        if waited > CONTROL.crawl_read_timeout_seconds and not _brave_holding():
+            log.warning("Follow crawl %s rests: its read has waited %d s", self.school, int(waited))
+            _rested_until[self.school] = time.monotonic() + CONTROL.rest_seconds
 
     def _request_next(self) -> None:
         state = self.state
@@ -190,6 +270,7 @@ class _Crawl:
         if reading["max_id"]:
             arguments.append(f"--max-id={reading['max_id']}")
         state["job"] = _browser(*arguments)["job_id"]
+        state["job_queued_at"] = time.time()
         _save(self.school, state)
 
     def _absorb(self, page: dict[str, Any]) -> int:
@@ -199,13 +280,22 @@ class _Crawl:
         reading["user_id"] = page["user_id"]
         reading["pages"] += 1
         state["failed_in_a_row"] = 0
+        if page["invalid"]:
+            log.warning(
+                "Follow crawl %s dropped %d unreadable accounts listed by %s",
+                self.school,
+                page["invalid"],
+                reading["seed"],
+            )
         if state["seeded"]:
             new = self._judge(reading["seed"], page["users"])
             reading["new"] += new
         else:
             new = 0
             self._take_clubs(page["users"])
-        if page["next_max_id"] and reading["pages"] < CONTROL.crawl_list_page_limit:
+        # The school's own list is read to its end: every club on it is a seed.
+        deeper = not state["seeded"] or reading["pages"] < CONTROL.crawl_list_page_limit
+        if page["next_max_id"] and deeper:
             reading["max_id"] = page["next_max_id"]
             return new
         state["reading"] = None
@@ -235,32 +325,34 @@ class _Crawl:
                 state["queue"].append([user["username"], user["pk"]])
 
     def _judge(self, seed: str, users: list[dict[str, Any]]) -> int:
-        """Record the accounts a club follows that the school does not; returns how many
-        became candidates."""
+        """Record the public accounts a club follows that the school does not; returns
+        how many became candidates."""
         state = self.state
         school_id = state["school_id"]
         if state["reading"]["pages"] == 1 or school_id not in _known:
             _known[school_id] = candidates.known_handles(school_id)
         known = _known[school_id]
         followed = set(state["followed"])
+        now = time.time()
         new = 0
         with closing(_sightings()) as db, db:
             for user in users:
                 handle = user["username"]
-                if handle in followed or handle in known or is_wat2do_account(handle):
+                if (
+                    user["is_private"]
+                    or handle in followed
+                    or handle in known
+                    or is_wat2do_account(handle)
+                ):
                     continue
-                if self._names_school(handle, user["full_name"]):
-                    vias = _vias(db, school_id, handle) | {seed}
-                elif not user["is_private"]:
-                    # Private accounts are members, not clubs: the scorer cannot read them.
-                    db.execute(
-                        "INSERT OR IGNORE INTO sightings VALUES (?, ?, ?)",
-                        (school_id, handle, seed),
-                    )
-                    vias = _vias(db, school_id, handle)
-                    if len(vias) < CONTROL.crawl_mutual_follow_threshold:
-                        continue
-                else:
+                db.execute(
+                    "INSERT INTO sightings VALUES (?, ?, ?, ?) ON CONFLICT DO UPDATE "
+                    "SET last_seen = excluded.last_seen",
+                    (school_id, handle, seed, now),
+                )
+                vias = _vias(db, school_id, handle)
+                named = names_school(self.school, handle, user["full_name"])
+                if not named and len(vias) < CONTROL.crawl_mutual_follow_threshold:
                     continue
                 candidates.add_candidate(
                     school_id,
@@ -276,9 +368,16 @@ class _Crawl:
                 new += 1
         return new
 
-    def _names_school(self, username: str, name: str) -> bool:
-        text = f"{username} {name}".casefold()
-        return any(term in text for term in self.terms)
+    def _cancelled(self) -> None:
+        """An operator cancelled the read: its seed is given up, and the school's own
+        list rests the crawl until it is read again."""
+        state = self.state
+        reading = state["reading"]
+        log.warning("Follow crawl %s: the read of %s was cancelled", self.school, reading["seed"])
+        if state["seeded"]:
+            self._give_up()
+        else:
+            _rested_until[self.school] = time.monotonic() + CONTROL.rest_seconds
 
     def _failed(self, job: dict[str, Any] | None) -> None:
         """A page that could not be read is tried again; it is never a miss."""
@@ -297,15 +396,45 @@ class _Crawl:
         failures[seed] = failures.get(seed, 0) + 1
         if state["seeded"] and failures[seed] >= CONTROL.crawl_seed_attempts:
             # The school's own list is needed to crawl at all, so only a seed gives up.
-            state["found"] += reading["new"]
-            state["reading"] = None
+            self._give_up()
         if state["failed_in_a_row"] >= CONTROL.failures_before_rest:
             # A run of failures usually means Instagram is refusing these reads for now.
             _rested_until[self.school] = time.monotonic() + CONTROL.rest_seconds
 
+    def _give_up(self) -> None:
+        """Leave the seed unvisited: neither a visit nor a miss."""
+        state = self.state
+        state["found"] += state["reading"]["new"]
+        state["reading"] = None
+
 
 def _reading(seed: str, user_id: str | None) -> dict[str, Any]:
     return {"seed": seed, "user_id": user_id, "max_id": None, "pages": 0, "new": 0}
+
+
+def _check_due(job_id: str) -> bool:
+    """Whether a waiting read is due another check; each check while it waits doubles
+    the gap before the next, from ``crawl_poll_seconds`` to ``crawl_poll_max_seconds``."""
+    now = time.monotonic()
+    due, gap = _next_check.get(job_id, (now, CONTROL.crawl_poll_seconds))
+    if now < due:
+        return False
+    _next_check[job_id] = (now + gap, min(gap * 2, CONTROL.crawl_poll_max_seconds))
+    return True
+
+
+def _brave_holding() -> bool:
+    """Whether the Brave worker is holding Following reads for now: stopped, paused,
+    held after a refusal, or not running at all."""
+    status = _browser("status")
+    following = status.get("following") or {}
+    held_until = following.get("held_until") or 0
+    return bool(
+        status.get("paused")
+        or following.get("paused")
+        or held_until > time.time()
+        or not (status.get("worker") or {}).get("running")
+    )
 
 
 def _vias(db: sqlite3.Connection, school_id: int, handle: str) -> set[str]:
@@ -321,9 +450,15 @@ def _sightings() -> sqlite3.Connection:
     db.execute(
         "CREATE TABLE IF NOT EXISTS sightings ("
         "school_id INTEGER NOT NULL, handle TEXT NOT NULL, via TEXT NOT NULL, "
-        "PRIMARY KEY (school_id, handle, via)) WITHOUT ROWID"
+        "last_seen REAL NOT NULL, PRIMARY KEY (school_id, handle, via)) WITHOUT ROWID"
     )
     return db
+
+
+def _forget_old_sightings() -> None:
+    oldest = time.time() - CONTROL.crawl_sighting_retention_days * 86_400
+    with closing(_sightings()) as db, db:
+        db.execute("DELETE FROM sightings WHERE last_seen < ?", (oldest,))
 
 
 def _browser(*arguments: str) -> dict[str, Any]:
@@ -363,7 +498,14 @@ def _state_path(school: str) -> Path:
 def _load(school: str) -> dict[str, Any]:
     path = _state_path(school)
     if path.exists():
-        return json.loads(path.read_text())
+        state = json.loads(path.read_text())
+        if _STATE_KEYS <= state.keys():
+            return state
+        # A crawl an older crawler started: record what it did and start afresh.
+        log.warning("Follow crawl %s: finishing a crawl kept in an older form", school)
+        _finish(school, state)
+    # Each new crawl first forgets sightings no crawl has seen again for long.
+    _forget_old_sightings()
     school_id = _school_id(school)
     state = {
         "crawl_id": _start_crawl(school_id),
@@ -379,9 +521,10 @@ def _load(school: str) -> dict[str, Any]:
         "streak": 0,
         "visited": 0,
         "found": 0,
-        # The list being read, page by page, and the Brave read waited for.
+        # The list being read, page by page, and the Brave read waited for, queued then.
         "reading": None,
         "job": None,
+        "job_queued_at": None,
     }
     _save(school, state)
     return state

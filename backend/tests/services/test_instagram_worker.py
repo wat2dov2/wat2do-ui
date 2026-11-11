@@ -218,6 +218,8 @@ def test_a_visit_that_fails_outright_never_stops_the_worker(monkeypatch):
     def crawl(on_found):
         crawls.append(on_found)
         started.set()
+        # The real crawl never returns.
+        threading.Event().wait()
 
     monkeypatch.setattr(worker.crawl, "run_forever", crawl)
     monkeypatch.setattr(worker, "EmulatorDevice", object)
@@ -231,6 +233,28 @@ def test_a_visit_that_fails_outright_never_stops_the_worker(monkeypatch):
     # The follow crawl runs beside it, scoring what it finds in the background.
     assert started.wait(5)
     assert crawls == [worker._score_in_background]
+
+
+def test_a_crawl_thread_that_stops_is_logged_and_started_again(monkeypatch, caplog):
+    class Stop(BaseException):
+        pass
+
+    runs = []
+
+    def run_forever(on_found):
+        runs.append(on_found)
+        if len(runs) == 1:
+            raise RuntimeError("scoring could not start")
+        raise Stop
+
+    rests = []
+    monkeypatch.setattr(worker.crawl, "run_forever", run_forever)
+    monkeypatch.setattr(worker.time, "sleep", rests.append)
+    with pytest.raises(Stop):
+        worker._crawl_forever()
+    assert runs == [worker._score_in_background] * 2
+    assert rests == [worker.FOLLOW.rest_seconds]
+    assert "starting it again" in caplog.text
 
 
 def test_follows_stop_for_a_carousel_that_starts_waiting_mid_visit(due, monkeypatch):

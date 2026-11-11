@@ -18,7 +18,7 @@ use serde_json::{Value, json};
 use tracing::Level;
 
 use super::browser_ingestion::canonical_target_url;
-use super::browser_queue::{BrowserJobQueue, WORKER_INSTALLATION_PAUSE};
+use super::browser_queue::{BrowserJobQueue, FOLLOWING_PAUSED, WORKER_INSTALLATION_PAUSE};
 use super::browser_session::{Bridge, canonical_post_url, school_account_username};
 use super::browser_worker::{Worker, handle_stop_signals};
 use super::carousel_engagement::{self, PublishingStore};
@@ -251,6 +251,10 @@ pub enum Command {
         #[arg(long)]
         max_id: Option<String>,
     },
+    /// Stop Following reads alone, so the follow crawl waits; every other job runs on
+    PauseFollowing,
+    /// Let Following reads run again
+    ResumeFollowing,
     /// Install this binary and start the macOS worker LaunchAgent
     Install,
     /// Install this binary and the daily LaunchAgent that reruns failed notification runs
@@ -447,6 +451,17 @@ fn operate(cli: Cli, services: &dyn CliServices) -> anyhow::Result<Option<Value>
                 max_id.as_deref(),
             )?;
             json!({"job_id": job.id})
+        }
+        Command::PauseFollowing => {
+            queue.set_setting(
+                FOLLOWING_PAUSED,
+                json!("Following reads stopped by an operator"),
+            )?;
+            json!({"following_paused": queue.get_setting(FOLLOWING_PAUSED)?})
+        }
+        Command::ResumeFollowing => {
+            queue.set_setting(FOLLOWING_PAUSED, Value::Bool(false))?;
+            json!({"following_paused": queue.get_setting(FOLLOWING_PAUSED)?})
         }
         Command::Sync => {
             carousel_engagement::sync_published_carousels(&queue, services.publishing()?, None)?

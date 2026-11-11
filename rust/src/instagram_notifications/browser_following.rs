@@ -49,8 +49,10 @@ pub fn validate_cursor(cursor: &str) -> BrowserResult<String> {
 /// Read the page of `username`'s Following list that `max_id` names (the first without
 /// one), looking the account's ID up first when `user_id` is unknown.
 ///
-/// A list Instagram will not show this viewer (a gone, private or blocked account) is
-/// `hidden`. A 429 or a login wall is a rate limit, which holds only Following reads.
+/// A list Instagram plainly will not show this viewer (a gone account, or one private
+/// to it) is `hidden`. A 429, a login wall or any other refusal (feedback, spam, an
+/// unexpected 4xx) is a rate limit, which holds only Following reads. A listed account
+/// that is not a valid name and ID is dropped and counted in `invalid`.
 pub fn read_page(
     session: &mut BrowserInstagramSession,
     username: &str,
@@ -74,20 +76,17 @@ pub fn read_page(
     if result.get("hidden") == Some(&json!(true)) {
         return Ok(json!({"account_username": account, "username": username, "hidden": true}));
     }
-    let invalid = || BrowserError::session("Instagram Following read returned invalid accounts");
+    let invalid = || BrowserError::session("Instagram Following read returned an invalid page");
     let listed_id = result
         .get("user_id")
         .and_then(Value::as_str)
         .and_then(|id| validate_recipient_id(id).ok())
         .filter(|id| user_id.is_none_or(|known| known == id))
         .ok_or_else(invalid)?;
-    let users = match result.get("users") {
-        Some(Value::Array(users)) => users
-            .iter()
-            .map(|user| listed_account(user).ok_or_else(invalid))
-            .collect::<BrowserResult<Vec<_>>>()?,
-        _ => return Err(invalid()),
+    let Some(Value::Array(listed)) = result.get("users") else {
+        return Err(invalid());
     };
+    let users: Vec<Value> = listed.iter().filter_map(listed_account).collect();
     let next_max_id = match result.get("next_max_id") {
         None | Some(Value::Null) => Value::Null,
         Some(Value::String(cursor)) => Value::from(validate_cursor(cursor).map_err(|_| invalid())?),
@@ -97,6 +96,7 @@ pub fn read_page(
         "account_username": account,
         "username": username,
         "user_id": listed_id,
+        "invalid": listed.len() - users.len(),
         "users": users,
         "next_max_id": next_max_id,
     }))
@@ -139,6 +139,7 @@ fn response_failure(payload: &Map<String, Value>) -> BrowserError {
         (Some("login_required"), _) => {
             BrowserError::rate_limited("Instagram asked for a login on a Following read")
         }
+        (Some("blocked"), _) => BrowserError::rate_limited("Instagram refused a Following read"),
         (Some("http_error"), Some(status)) => BrowserError::page_unavailable(format!(
             "Instagram Following read failed with HTTP {status}"
         )),

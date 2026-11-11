@@ -3432,7 +3432,7 @@ fn read_done() -> Finish {
 
 #[test]
 fn test_following_reads_wait_the_page_pause_within_a_list_and_the_list_pause_between_lists() {
-    pace(10.0, 30.0, 100);
+    pace(10.0, 30.0, 3600);
     let f = clocked();
     let q = &f.queue;
     let first = following(q, "club.one", None);
@@ -3466,7 +3466,7 @@ fn test_following_pauses_are_drawn_inside_their_windows() {
     let q = &f.queue;
     for index in 0..20 {
         following(q, &format!("club.{index}"), None);
-        f.clock.sleep(41.0);
+        f.clock.sleep(61.0);
         let claimed = claim(q).unwrap();
         let now = f.clock.now();
         q.finish(&claimed, read_done()).unwrap();
@@ -3478,26 +3478,61 @@ fn test_following_pauses_are_drawn_inside_their_windows() {
 }
 
 #[test]
-fn test_following_reads_stop_at_the_hourly_cap() {
-    pace(1.0, 1.0, 2);
+fn test_following_reads_are_spread_evenly_over_the_hour() {
+    pace(1.0, 1.0, 60);
     let f = fixture();
     let q = &f.queue;
     for name in ["club.one", "club.two", "club.three"] {
         following(q, name, None);
     }
-    for _ in 0..2 {
-        let claimed = claim(q).unwrap();
-        q.finish(&claimed, read_done()).unwrap();
-        f.clock.sleep(1.0);
-    }
-    f.clock.sleep(600.0);
+    let claimed = claim(q).unwrap();
+    q.finish(&claimed, read_done()).unwrap();
+    // The hour's 60 reads are a minute apart, never a burst.
+    f.clock.sleep(59.0);
     assert!(claim(q).is_none());
+    f.clock.sleep(1.0);
+    let claimed = claim(q).unwrap();
+    assert_eq!(claimed.payload["username"], json!("club.two"));
+    q.finish(&claimed, read_done()).unwrap();
     assert_eq!(
         q.status().unwrap()["following"]["reads_last_hour"],
         json!(2)
     );
-    f.clock.sleep(3_600.0);
-    assert_eq!(claim(q).unwrap().payload["username"], json!("club.three"));
+    f.clock.sleep(30.0);
+    assert!(claim(q).is_none());
+}
+
+#[test]
+fn test_following_reads_ignore_account_exclusions_and_stop_alone_when_paused() {
+    pace(1.0, 1.0, 3600);
+    let f = fixture();
+    let q = &f.queue;
+    q.set_setting("excluded_accounts", json!(["wat2do.ubc"]))
+        .unwrap();
+    let read = following(q, "club.one", None);
+    q.set_setting(FOLLOWING_PAUSED, json!("stopped")).unwrap();
+    let notified = q
+        .enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "while-stopped")
+        .unwrap();
+    assert_eq!(claim(q).unwrap().id, notified.id);
+    assert!(claim(q).is_none());
+    assert!(!paused(q));
+    q.set_setting(FOLLOWING_PAUSED, json!(false)).unwrap();
+    // A read runs as whichever account Brave shows, so an excluded school never holds it.
+    assert_eq!(claim(q).unwrap().id, read);
+}
+
+#[test]
+fn test_a_cancelled_following_read_stays_cancelled() {
+    let f = fixture();
+    let q = &f.queue;
+    let read = following(q, "club.one", None);
+    q.cancel(&read).unwrap();
+    assert_eq!(following(q, "club.one", None), read);
+    assert_eq!(job(q, &read).state, "cancelled");
+    assert!(claim(q).is_none());
+    q.retry(&read).unwrap();
+    assert_eq!(job(q, &read).state, "pending");
 }
 
 #[test]
@@ -3631,4 +3666,26 @@ fn test_an_interrupted_following_read_is_read_again() {
     q.recover_interrupted().unwrap();
     assert_eq!(job(q, &read).state, "pending");
     assert!(!paused(q));
+}
+
+#[test]
+fn test_repeated_following_refusals_escalate_their_hold() {
+    pace(1.0, 1.0, 3600);
+    let f = clocked();
+    let q = &f.queue;
+    let read = following(q, "club.one", None);
+    for expected in [1.0, 2.0, 4.0] {
+        let claimed = claim(q).unwrap();
+        assert_eq!(claimed.id, read);
+        q.defer_for_rate_limit(Some(&claimed), "Instagram refused a Following read")
+            .unwrap();
+        q.finish(&claimed, refund("Instagram refused a Following read"))
+            .unwrap();
+        assert_eq!(
+            setting_f64(q, "following_rate_limit_backoff_seconds"),
+            Some(expected * control().rate_limit_backoff_seconds)
+        );
+        f.clock
+            .sleep(setting_f64(q, "following_rate_limit_until").unwrap() - f.clock.now());
+    }
 }
