@@ -391,7 +391,9 @@ def test_a_cancelled_read_of_the_schools_own_list_rests_the_crawl(world):
 def test_a_read_held_by_the_worker_keeps_the_crawl_waiting_and_checks_less_often(
     world, monkeypatch
 ):
-    brave, _, _ = world({"wat2do.utm": [[_user("utmmsa")]]}, crawl_poll_max_seconds=8)
+    brave, _, _ = world(
+        {"wat2do.utm": [[_user("utmmsa")]]}, crawl_poll_seconds=2, crawl_poll_max_seconds=8
+    )
     brave.holding = True
     clock = SimpleNamespace(now=0.0)
     monkeypatch.setattr(module.time, "monotonic", lambda: clock.now)
