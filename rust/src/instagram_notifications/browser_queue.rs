@@ -51,11 +51,13 @@ const FINISHED_FOLLOWING_SQL: &str =
 
 /// Python's `_QUEUE_SCHEMA` with the `following` kind added: SQLite keeps this text in
 /// `sqlite_master`, and a stored table that lacks a kind is rebuilt with every job.
+/// Nothing queues `direct` jobs any more, but older queues still hold some, and the
+/// rebuild copies every job, so the kind stays allowed.
 const QUEUE_SCHEMA: &str = "
     CREATE TABLE IF NOT EXISTS jobs (
         id TEXT PRIMARY KEY,
         dedupe_key TEXT NOT NULL UNIQUE,
-        kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement', 'following')),
+        kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement', 'direct', 'following')),
         school TEXT NOT NULL,
         recipient_id TEXT NOT NULL,
         account_username TEXT NOT NULL,

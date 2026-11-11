@@ -3689,3 +3689,55 @@ fn test_repeated_following_refusals_escalate_their_hold() {
             .sleep(setting_f64(q, "following_rate_limit_until").unwrap() - f.clock.now());
     }
 }
+
+#[test]
+fn test_an_older_queue_with_direct_jobs_gains_the_following_kind() {
+    // The production queue was made before `following` and still holds `direct` jobs.
+    let directory = tempfile::tempdir().unwrap();
+    let clock = Clock::new(1_800_000_000.0, 0.001);
+    {
+        let db = rusqlite::Connection::open(directory.path().join("jobs.sqlite3")).unwrap();
+        db.execute_batch(
+            "CREATE TABLE jobs (
+                id TEXT PRIMARY KEY,
+                dedupe_key TEXT NOT NULL UNIQUE,
+                kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement', 'direct')),
+                school TEXT NOT NULL,
+                recipient_id TEXT NOT NULL,
+                account_username TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                state TEXT NOT NULL DEFAULT 'pending'
+                    CHECK(state IN ('pending','running','succeeded','failed','cancelled','unsupported')),
+                created_at REAL NOT NULL,
+                started_at REAL,
+                finished_at REAL,
+                result TEXT,
+                error TEXT,
+                attempts INTEGER NOT NULL DEFAULT 0
+            );
+            INSERT INTO jobs (id, dedupe_key, kind, school, recipient_id, account_username, payload, state, created_at)
+            VALUES ('old-direct', 'direct:1', 'direct', 'tmu', '1', 'wat2do.tmu', '{}', 'failed', 1.0),
+                   ('old-digest', 'digest:1', 'digest', 'ubc', '2', 'wat2do.ubc', '{}', 'succeeded', 2.0);",
+        )
+        .unwrap();
+    }
+    let queue = open(directory.path(), &clock);
+    drop(queue);
+    let db = rusqlite::Connection::open(directory.path().join("jobs.sqlite3")).unwrap();
+    let schema: String = db
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE name='jobs'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert!(schema.contains("'following'") && schema.contains("'direct'"));
+    let kinds: Vec<String> = db
+        .prepare("SELECT kind FROM jobs ORDER BY id")
+        .unwrap()
+        .query_map([], |row| row.get(0))
+        .unwrap()
+        .collect::<Result<_, _>>()
+        .unwrap();
+    assert_eq!(kinds, ["digest", "direct"]);
+}
