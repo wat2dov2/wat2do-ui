@@ -203,14 +203,28 @@ def test_an_unreadable_state_is_moved_aside(tmp_path, caplog):
 
 
 class _Device:
-    def __init__(self, ups):
+    def __init__(self, ups, *, stopped=(), broken=False):
         self.ups = list(ups)
+        self.stopped = set(stopped)
+        self.broken = broken
+        self.checked = []
+        self.started = []
 
     def is_online(self):
         return self.ups.pop(0)
 
     def booted(self):
         return True
+
+    def user_started(self, user):
+        self.checked.append(user)
+        if self.broken:
+            raise module.EmulatorError("adb shell failed")
+        return user not in self.stopped
+
+    def start_user(self, user):
+        self.started.append(user)
+        self.stopped.discard(user)
 
 
 class _Reader:
@@ -384,3 +398,43 @@ def test_a_notification_written_before_is_not_offered_again():
     recorder.step()
     recorder.step()
     assert recorder.dispatcher.offered == []
+
+
+def _users():
+    return sorted(set(module.EMULATOR.android_user_by_school.values()))
+
+
+def test_a_stopped_android_user_is_started_again_once_per_check(caplog):
+    caplog.set_level("INFO")
+    stopped = _users()[-1]
+    clock = [0.0]
+    device = _Device([True], stopped={stopped})
+    recorder, _, _ = _recorder(device, _Reader([[], [], []]), clock=lambda: clock[0])
+    recorder.step()
+    # Not checked before the reader listens: the emulator may still be down.
+    assert device.checked == []
+    recorder.step()
+    assert device.started == [stopped]
+    assert device.checked == _users()
+    assert f"Started Android user {stopped} again" in caplog.text
+    device.stopped.add(stopped)
+    recorder.step()
+    assert device.started == [stopped]
+    clock[0] = module.CONTROL.start_users_every_seconds
+    recorder.step()
+    assert device.started == [stopped, stopped]
+
+
+def test_a_user_check_that_fails_leaves_the_reader_listening(caplog):
+    post = _notification()
+    reader = _Reader([[post]])
+    device = _Device([True], broken=True)
+    recorder, notifications, sleeps = _recorder(device, reader)
+    recorder.step()
+    recorder.step()
+    assert device.checked == _users()[:1]
+    assert device.started == []
+    assert reader.running and reader.stops == 0
+    assert notifications.recorded == [post]
+    assert sleeps == []
+    assert "Could not start Android user" in caplog.text

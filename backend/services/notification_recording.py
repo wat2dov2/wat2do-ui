@@ -8,8 +8,12 @@ recorder appends one JSON line per notification to
 daily digest to ``services/notification_dispatch.py``, which starts the
 ``process-notification`` workflow for it just as the physical phones do. Nothing checks
 whether a phone sent the same notification: the workflow records each recipient and push
-ID once. Beyond that the recorder only listens: no Android user started or stopped, no
-tap on the emulator, and it never holds the emulator's lock.
+ID once. A stopped Android user gets no notifications, and Android stops the least
+recently used one whenever the worker switches another to the front, so every
+``start_users_every_seconds`` the recorder starts each user that holds a school account
+and has stopped, in the background (Instagram then delivers what it held back). Beyond
+that it only listens: no tap on the emulator, no user switched to the front, and it never
+holds the emulator's lock.
 
 A line holds when the notification was posted and recorded, its Android user, the
 school account it was meant for (its Instagram ID, and its username once a notification
@@ -45,7 +49,7 @@ from typing import Any
 from core.controlbox import controlbox
 from core.launch_agents import atomic_write
 from services.instagram_emulator.device import CONTROL as EMULATOR
-from services.instagram_emulator.device import EmulatorDevice, adb_path
+from services.instagram_emulator.device import EmulatorDevice, EmulatorError, adb_path
 from services.instagram_emulator.notification_reader import (
     Notification,
     NotificationReader,
@@ -261,6 +265,7 @@ class Recorder:
         self._pause = 0.0
         self._heard_at = 0.0
         self._recorded = 0
+        self._users_checked_at: float | None = None
 
     def run_forever(self) -> None:
         while True:
@@ -272,12 +277,13 @@ class Recorder:
                 self._back_off()
 
     def step(self) -> None:
-        """Send the posts due to the workflow, then listen for ``listen_seconds``, or wait
-        for the emulator and start listening."""
+        """Send the posts due to the workflow, start the Android users that stopped, then
+        listen for ``listen_seconds``, or wait for the emulator and start listening."""
         self._dispatcher.send_due()
         if not self._reader.running:
             self._connect()
             return
+        self._start_stopped_users()
         try:
             for notification in self._reader.notifications(CONTROL.listen_seconds):
                 self._heard_at = self._monotonic()
@@ -296,6 +302,25 @@ class Recorder:
                 CONTROL.quiet_restart_minutes,
             )
             self._reader.stop()
+
+    def _start_stopped_users(self) -> None:
+        now = self._monotonic()
+        if (
+            self._users_checked_at is not None
+            and now - self._users_checked_at < CONTROL.start_users_every_seconds
+        ):
+            return
+        self._users_checked_at = now
+        for user in sorted(set(EMULATOR.android_user_by_school.values())):
+            try:
+                if self._device.user_started(user):
+                    continue
+                self._device.start_user(user)
+            except EmulatorError as exc:
+                # The emulator may be restarting; the reader notices that on its own.
+                log.warning("Could not start Android user %d (%s)", user, exc)
+                return
+            log.info("Started Android user %d again, which had stopped", user)
 
     def _connect(self) -> None:
         up = self._device.is_online() and self._device.booted()

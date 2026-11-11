@@ -501,6 +501,20 @@ class EmulatorDevice:
         while not self._user_on_screen(user) and self._monotonic() < deadline:
             self._sleep(_POLL_SECONDS)
 
+    def user_started(self, user: int) -> bool:
+        """Whether the Android user is running (or booting), so its notifications arrive."""
+        state = self.adb("shell", "am", "get-started-user-state", str(user))
+        return "RUNNING" in state or "BOOTING" in state
+
+    def start_user(self, user: int) -> None:
+        """Start the Android user in the background, leaving the one in front where it is.
+
+        Android stops the least recently used background user when another is switched
+        to the front, and a stopped user gets no notifications; ``start-user`` brings it
+        back past that cap, and the pushes Instagram held for it then arrive.
+        """
+        self.adb("shell", "am", "start-user", "-w", str(user))
+
     def _user_ready(self, user: int) -> bool:
         return self.adb("shell", "am", "get-current-user").strip() == str(
             user

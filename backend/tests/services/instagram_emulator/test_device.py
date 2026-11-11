@@ -121,6 +121,25 @@ def test_a_user_switch_waits_until_the_users_own_screen_is_up() -> None:
     assert device._reader.screens == []
 
 
+def test_a_stopped_user_is_started_in_the_background() -> None:
+    commands = []
+    outputs = [
+        (0, "RUNNING_UNLOCKED\n"),
+        (0, "BOOTING\n"),
+        (0, "User is not started: 12\n"),
+        (0, "Success: user started\n"),
+    ]
+    device = _device(outputs, commands)
+    assert device.user_started(10)
+    assert device.user_started(11)
+    assert not device.user_started(12)
+    device.start_user(12)
+    assert commands[2][-3:] == ["am", "get-started-user-state", "12"]
+    # Started without switching to it: the user in front stays there.
+    assert commands[3][-4:] == ["am", "start-user", "-w", "12"]
+    assert not any("switch-user" in command for command in commands)
+
+
 def test_a_user_whose_screen_is_slow_to_come_up_is_used_anyway(monkeypatch) -> None:
     ready = [(0, "0\n"), (0, ""), (0, "10\n"), (0, "RUNNING_UNLOCKED\n"), (0, ""), (0, "")]
     device = _device(ready + [(0, BLANK)] * 20, [])

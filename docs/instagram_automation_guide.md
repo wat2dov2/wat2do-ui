@@ -70,7 +70,8 @@ Each is sent once per recipient and push ID; one that cannot be sent waits in `d
 A direct message is never dispatched.
 
 The listener is `NotificationReader.java` (`services/instagram_emulator`), a root `app_process` program that registers with Android's notification service as a system listener for every Android user at once; it never dismisses or opens a notification, never taps the emulator and never holds the emulator's lock.
-Only running Android users get notifications, and the recorder never starts or stops one.
+Only running Android users get notifications, and Android stops the least recently used background user whenever the worker switches another to the front (it keeps at most three running).
+So every `start_users_every_seconds` the recorder starts each Android user in `android_user_by_school` that has stopped with `am start-user -w`, in the background, never switched to the front; the pushes Instagram held back for it arrive within a minute or two.
 A starting reader prints the notifications still showing, so each notification is written once per recipient and push ID (or Android's key and post time when no push started it), remembered in `state.json` for `remember_days`.
 When the emulator restarts, as the worker has it do every morning, or adb goes away, the reader ends, and the recorder starts it again once the emulator has booted, waiting a pause that doubles from `reconnect_first_seconds` to `reconnect_longest_seconds`; a reader quiet for `quiet_restart_minutes` is started again too.
 A lock (`recorder.lock`) keeps one recorder running, and its own status lines go to `recorder.log` in the same folder.
