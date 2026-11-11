@@ -55,6 +55,22 @@ A collapsed `subscription_daily_digest` notification is forwarded unchanged so t
 The repository and its Actions logs are public, and GitHub prints every `env:` value in each step's log.
 So the workflow processes only `post` and `subscription_daily_digest` notifications, names any other run by its push category alone (a direct message's title is its sender), and never puts a payload in an `env:` block, a log line or an artifact: the processing step reads it from the event file (`$GITHUB_EVENT_PATH`) and hands it to the binary as `NOTIFICATION_JSON`.
 
+### Emulator notification log
+
+Instagram also pushes many of the school accounts' notifications to the Mac's Android emulator, where the worker keeps the accounts active.
+The emulator only records them in a local file for inspection and triggers nothing: the phones stay the only source the workflow processes.
+`jobs/record_instagram_notifications.py run` (LaunchAgent `io.wat2do.notification-recorder`, installed with `install-schedule` from the runtime checkout) appends one JSON line per notification to `~/.local/state/wat2do/notification-log/notifications.jsonl`, rotated at `file_max_bytes` with `file_backup_count` old files kept (`controlbox/notification_recording.json`).
+A line holds `recorded_at`, `posted_at`, `android_user`, `recipient_id`, `account` (the school's username once a notification has named it), Instagram's push `category`, the Android `channel` and every `extras` value that JSON can carry.
+A direct message, recognized by its push category or channel (`direct_message_markers`), Android's message category or a conversation's style, keeps only its category, Android user, recipient and times, with `direct_message: true`; its sender, title and text never reach the file.
+Group summaries only repeat the notifications under them and are skipped.
+
+The listener is `NotificationReader.java` (`services/instagram_emulator`), a root `app_process` program that registers with Android's notification service as a system listener for every Android user at once; it never dismisses or opens a notification, never taps the emulator and never holds the emulator's lock.
+Only running Android users get notifications, and the recorder never starts or stops one.
+A starting reader prints the notifications still showing, so each notification is written once per recipient and push ID (or Android's key and post time when no push started it), remembered in `state.json` for `remember_days`.
+When the emulator restarts, as the worker has it do every morning, or adb goes away, the reader ends, and the recorder starts it again once the emulator has booted, waiting a pause that doubles from `reconnect_first_seconds` to `reconnect_longest_seconds`; a reader quiet for `quiet_restart_minutes` is started again too.
+A lock (`recorder.lock`) keeps one recorder running, and its own status lines go to `recorder.log` in the same folder.
+To watch it live: `tail -f ~/.local/state/wat2do/notification-log/notifications.jsonl | jq -c '{posted_at, account, category}'`.
+
 ## Shared Brave browser worker
 
 Keep Brave running with the school accounts logged in and available under More > Switch accounts.
@@ -495,7 +511,7 @@ A step that fails starts Instagram afresh on that Android user (`am force-stop`)
 After switching Android users, the worker waits until one of that user's own windows has the focus and can be read, at most `user_switch_wait_seconds`: for about a dozen seconds Android's switching screen and then a blank one hold the display, nothing can be read, and a link opened then lands late.
 `failures_before_rest` profiles failing in a row (`controlbox/instagram_follow.json`) end a visit's follows or a crawl slice, and that account's follows or crawl rest for `rest_seconds`; a school account follows at most `follows_per_account_per_day` accounts a day and `follows_per_account_per_hour` within any hour, and its follows are due again only once the hour has room for a whole visit (`follows_per_visit`), so the worker never switches accounts for a follow or two.
 A visit that fails outright, such as while the emulator restarts, is tried again after `idle_seconds`, and the worker keeps running.
-The worker copies the committed `screen-reader.jar` to the device when a reader starts; after changing the Java source, rebuild it with `python scripts/build_screen_reader.py` (a JDK and the Android SDK's android-35 platform; the pinned d8 is downloaded and checked), and a test fails while the jar lags its source.
+The worker copies the committed `screen-reader.jar` to the device when a reader starts; after changing the Java source, rebuild it with `python scripts/build_emulator_jars.py`, which rebuilds every jar whose source changed (a JDK and the Android SDK's android-35 platform; the pinned d8 is downloaded and checked), and a test fails while the jar lags its source.
 The reader stops when the hold ends, so the accessibility service is connected only while a job drives the app.
 The virtual device runs the Google APIs system image, not the Play Store one, so adb can act as root; the Play Store and unused Google apps are disabled on every Android user so nothing updates or downloads in the background. Instagram needs Android's notification permission on every user (`adb shell pm grant --user <id> com.instagram.android android.permission.POST_NOTIFICATIONS`); without it, setting a profile's posts to All opens a "push notifications are off" dialog over the bell.
 Its data partition is 10 GB, and Instagram never trims its own image cache, camera effects or downloaded models.

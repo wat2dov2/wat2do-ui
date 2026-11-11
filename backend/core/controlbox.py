@@ -1223,6 +1223,47 @@ class NotificationRetryControl(_ControlModel):
     max_reruns_per_run: int = Field(ge=1, le=10)
 
 
+class NotificationRecordingControl(_ControlModel):
+    """Recording the Instagram notifications the Mac's emulator gets in a local file.
+
+    The recorder only listens and writes the file; it triggers nothing.
+    """
+
+    # A notification whose push category or channel contains one of these, or that Android
+    # files as a message or draws as a conversation, is a direct message: only its push
+    # category, Android user, recipient and times are kept, never its sender or text.
+    direct_message_markers: tuple[Annotated[str, Field(pattern=r"^[a-z_]{2,40}$")], ...] = Field(
+        min_length=1
+    )
+    # The reader is read this long at a time.
+    listen_seconds: float = Field(gt=0, le=600, allow_inf_nan=False)
+    # A reader that has printed nothing this long is started again, in case Android
+    # dropped its registration; the notifications it replays are not written twice.
+    quiet_restart_minutes: int = Field(ge=1, le=1440)
+    # While the emulator is down or the reader cannot start, the recorder waits a pause
+    # that doubles from the first to the longest.
+    reconnect_first_seconds: float = Field(gt=0, le=600, allow_inf_nan=False)
+    reconnect_longest_seconds: float = Field(gt=0, le=3600, allow_inf_nan=False)
+    # A recorded notification is remembered this long, so one a reader replays when it
+    # starts again is not written twice.
+    remember_days: int = Field(ge=1, le=60)
+    # notifications.jsonl is rotated at this size, keeping this many old files.
+    file_max_bytes: int = Field(ge=65536, le=1_073_741_824)
+    file_backup_count: int = Field(ge=1, le=20)
+    # recorder.log, the recorder's own status lines, is rotated the same way.
+    log_max_bytes: int = Field(ge=65536, le=67_108_864)
+    log_backup_count: int = Field(ge=1, le=10)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def validate_recording(self) -> "NotificationRecordingControl":
+        if "direct" not in self.direct_message_markers:
+            raise ValueError("Instagram's direct message categories must stay redacted")
+        if self.reconnect_first_seconds > self.reconnect_longest_seconds:
+            raise ValueError("reconnect_first_seconds cannot exceed reconnect_longest_seconds")
+        return self
+
+
 TicketCountry = Literal["CA", "US"]
 TicketCurrency = Literal["cad", "usd"]
 
@@ -1304,6 +1345,7 @@ class ControlBox(_ControlModel):
     instagram_browser: InstagramBrowserControl
     notification_workflow: NotificationWorkflowControl
     notification_retry: NotificationRetryControl
+    notification_recording: NotificationRecordingControl
     runner_setup: RunnerSetupControl
     instagram_bell_setup: InstagramBellSetupControl
     instagram_digest: InstagramDigestControl
