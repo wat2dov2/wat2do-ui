@@ -1,6 +1,7 @@
 //! Every AppleScript and JavaScript source the worker runs in Brave.
 //!
-//! The files under `scripts/` are byte for byte the sources Python ran. Templates mark
+//! The files under `scripts/` are the sources Python ran, byte for byte, plus the
+//! Following read (`following_query.js`), which is Rust's own. Templates mark
 //! interpolated values with `@@NAME@@`; values are inserted in one pass (an inserted
 //! value is never scanned again) and JSON values are encoded as Python's `json.dumps`.
 
@@ -50,6 +51,7 @@ const POST_CONTEXT: &str = include_str!("scripts/post_context.js");
 const DIGEST_QUERY: &str = include_str!("scripts/digest_query.js");
 const ENGAGEMENT: &str = include_str!("scripts/engagement.js");
 const PUBLIC_MEDIA_QUERY: &str = include_str!("scripts/public_media_query.js");
+const FOLLOWING_QUERY: &str = include_str!("scripts/following_query.js");
 
 /// Fill `@@NAME@@` placeholders from `values` in a single pass.
 fn render(template: &str, values: &[(&str, &str)]) -> String {
@@ -239,6 +241,33 @@ pub fn public_media_query(endpoint: &str, username: &str, profile: bool) -> Stri
                 },
             ),
             ("POST_LIMIT", &limit.to_string()),
+        ],
+    )
+}
+
+/// One page of `username`'s Following list, read as `account`: the page `max_id` names,
+/// or the first. Without `user_id` the account's ID is looked up from its name first.
+pub fn following_query(
+    account: &str,
+    username: &str,
+    user_id: Option<&str>,
+    max_id: Option<&str>,
+) -> String {
+    let optional = |value: Option<&str>| value.map_or_else(|| "null".to_owned(), json);
+    render(
+        FOLLOWING_QUERY,
+        &[
+            ("REQUEST_KEY", &json(REQUEST_KEY)),
+            ("CURRENT_ACCOUNT_USERNAME", CURRENT_ACCOUNT_USERNAME),
+            ("ACCOUNT", &json(account)),
+            ("USERNAME", &json(username)),
+            ("USER_ID", &optional(user_id)),
+            ("MAX_ID", &optional(max_id)),
+            (
+                "PAGE_SIZE",
+                &instagram_browser().following_page_size.to_string(),
+            ),
+            ("WEB_APP_ID", &json(&SCRAPING.instagram_web_app_id)),
         ],
     )
 }

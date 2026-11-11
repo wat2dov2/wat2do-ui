@@ -126,8 +126,7 @@ def _reader(device: EmulatorDevice, school: str) -> FollowingReader:
     return FollowingReader(
         device,
         EMULATOR.android_user_by_school[school],
-        profile_wait_seconds=CONTROL.crawl_profile_wait_seconds,
-        max_scrolls=CONTROL.crawl_max_scrolls,
+        profile_wait_seconds=CONTROL.profile_wait_seconds,
     )
 
 

@@ -6,7 +6,7 @@ When Instagram collapses several posts into one digest, the GitHub processing jo
 A database trigger adds each recorded post to `public.ingestion_items`, the ingestion queue.
 An always-on launchd processor on the Mac, `wat2do-ingest process` (Rust, `rust/src/ingestion`), wakes on a Postgres notification from the queue, reads each new post logged out (no account, cookie or session ID), and then runs a Claude Haiku agent through `claude -p`, which follows `backend/services/ingestion/prompt.md` and writes events and positions itself through a database login scoped to those tables.
 The Brave worker likes and natively reposts the original event posts selected in newly published Instagram carousels.
-Digest expansion, manual profile listing, and engagement share two worker-owned tabs in one registered Brave window, with credentials remaining inside the browser.
+Digest expansion, manual profile listing, the follow crawl's Following reads, and engagement share two worker-owned tabs in one registered Brave window, with credentials remaining inside the browser.
 Brave never opens individual posts for ingestion.
 
 ## Repair an existing poster or scraped video
@@ -81,7 +81,7 @@ To watch it live: `tail -f ~/.local/state/wat2do/notification-log/notifications.
 Keep Brave running with the school accounts logged in and available under More > Switch accounts.
 Open one Instagram tab for the worker to use as its primary tab.
 The first registered Instagram tab is reserved for account switching and serialized likes/reposts.
-Digest queries and manual profile listings use the second tab only.
+Digest queries, manual profile listings and Following reads use the second tab only.
 After a logout, the worker logs back in by clicking a saved wat2do profile on Instagram's logged-out page (at most once every `login_recovery_interval_seconds`, `login_recovery_daily_limit` times a day; an attempt that only timed out in Brave does not count). A password prompt is answered with the account's Keychain password (`login_keychain_service`) and an emailed security code from `login_code_email`; a refused password or other challenge waits for a person. A school account missing from the switcher is logged in from the `login_from_school` account through Switch accounts, "Log into an Existing Account", at most once a day per account and `account_login_daily_limit` a day in all; a login counts only once its password is about to be entered.
 When Brave holds no other saved account, Switch accounts opens a bare login form instead of the chooser, and the worker logs in through that form.
 A missing `login_from_school` account is logged back in first, under the same limits.
@@ -163,7 +163,7 @@ Public post/profile jobs run concurrently on the registered secondary tabs, leav
 One independent worker heartbeat stays fresh throughout startup, pool maintenance, preparation, and continuous retrieval streams.
 Digest jobs can run concurrently only for the same recipient and account; account switches and engagement remain serialized.
 All pool tabs settle their pending requests before the primary tab switches accounts, and secondary tabs reload to verify the resulting identity before a digest query.
-Manual profile listing comes after digests and before engagement.
+Manual profile listing comes after digests and before engagement; Following reads come last, one at a time.
 No account switch or click is interrupted halfway through to start another job.
 An exclusive browser lock covers each complete operation, and a separate worker lock prevents duplicate workers.
 Every completion is conditional on the original running claim's attempt and start time.
@@ -236,6 +236,17 @@ Use actual club handles rather than an illustrative profile URL.
 Public profile listing reuses the currently logged-in account without switching to the school's account; digest expansion and engagement still require the exact intended school account.
 A login, challenge or suspended-account page pauses browser work for human recovery.
 Reload worker code only when its current job has finished, preserving the spool and pause state.
+
+### Following reads for the follow crawl
+
+`wat2do-browser following --school <slug> --crawl <id> --username <handle> [--user-id <id>] [--max-id <cursor>]` queues one page of an account's Following list, and `wat2do-browser status --job-id <id>` returns it; the follow crawl (below) is the only caller.
+The worker reads the page on its second tab as whichever account Brave shows, never switching accounts, with the page's own `fetch` of `/api/v1/friendships/<user_id>/following/?count=<following_page_size>&max_id=<cursor>` and the web app's `x-ig-app-id` header, the request Instagram's own Following dialog makes.
+Without a user ID it first looks the account up with `/api/v1/users/web_profile_info/?username=<handle>`, as profile listings do.
+Only each listed account's username, display name, ID and privacy leave the tab, with the next page's cursor; a list Instagram will not show (a gone, private or blocked account) comes back `hidden`.
+Following reads run one at a time: a list's next page waits a random pause between `following_page_delay_min_seconds` and `following_page_delay_max_seconds` after the last read, a new list one between `following_list_delay_min_seconds` and `following_list_delay_max_seconds`, and at most `following_requests_per_hour` are claimed within any hour (`controlbox/instagram_browser.json`).
+They skip the logged-out page check other batches make, so each read is one request to Instagram.
+An HTTP 429 or a login wall on a Following read holds only Following reads, with the same doubling backoff as other holds; digests, listings and engagement go on, and a real logout still pauses everything through their own checks.
+Finished reads are deleted after `following_result_retention_seconds`, since each page carries a list of accounts the crawl takes within seconds.
 
 ### Eligible event posts
 
@@ -490,11 +501,17 @@ Publishing remains an explicit action in the admin page.
 Instagram's API publishes a carousel without music, so the Mac adds a song from the Instagram app on the Android emulator after it is live.
 Admins keep the song list in the Songs tab of the Instagram publishing admin page, typed loosely the way they would say it, such as "the weeknd after hours".
 Publishing stores the live post's `permalink` and sets the batch's `music_status` to `pending`.
-The emulator worker (`io.wat2do.instagram.worker`, `jobs/run_instagram_worker.py install-schedule`) visits a school's account first, at any hour, when one of its published batches has waited `music_delay_minutes` and is younger than `music_max_age_hours`. While any carousel waits for its song, visits add songs and nothing else (no DMs, follows or crawls), and unfollows, follows and crawl slices already under way stop before their next profile.
+The emulator worker (`io.wat2do.instagram.worker`, `jobs/run_instagram_worker.py install-schedule`) visits a school's account first, at any hour, when one of its published batches has waited `music_delay_minutes` and is younger than `music_max_age_hours`. While any carousel waits for its song, visits add songs and nothing else (no DMs or follows), and unfollows and follows already under way stop before their next profile.
 A carousel whose account the app cannot switch to rests with its account and holds up nothing else.
-Otherwise the follow crawl runs around the clock, for `crawl_slice_minutes` at a time, taking every other visit while DMs, follows or unfollows also wait and every visit when nothing else does: a school's crawl reads the Following list of every club the school follows until `crawl_miss_streak` in a row find nothing new, and an account whose follow failed is retried only after `follow_retry_hours`.
+The follow crawl (`services/instagram_follow/crawl.py`) runs around the clock in its own thread of the same process, and never touches the emulator: it reads Following lists through the Brave worker's Following reads (above), keeping one read outstanding and checking on it every `crawl_poll_seconds`.
+A school's crawl first reads the school account's own Following list (by its `recipient_id`, or its name when that is unset); every public account it follows is a seed.
+It then reads each seed's whole list, at most `crawl_list_page_limit` pages deep, until `crawl_miss_streak` seeds in a row add no new candidate, and an account whose follow failed is retried only after `follow_retry_hours`.
+An account the school does not follow and has no row for becomes a pending `crawl` candidate when its handle or name carries one of `school_names`, or once `crawl_mutual_follow_threshold` of the school's followed clubs follow it; `found_via` names those clubs.
+Those sightings of public accounts are kept across crawls in `~/.local/state/wat2do/instagram-follow-crawl/sightings.sqlite3` until the account becomes a candidate; private accounts count only through a name, since the scorer cannot read them.
 The crawl never runs out: a crawl under way goes first, then never-crawled schools, then the school whose last crawl finished longest ago, and every crawl starts over from the school's own Following list, so each school is crawled again in turn and clubs created since its last crawl are found.
-Each crawl takes the school's matches in a new random order, so a crawl that `crawl_miss_streak` ends early still reaches clubs the last one never did, and crawl after crawl covers them all.
+Each crawl takes the school's seeds in a new random order, so a crawl that `crawl_miss_streak` ends early still reaches clubs the last one never did, and crawl after crawl covers them all.
+A page that fails to read is read again, up to `crawl_seed_attempts` times, and never counts as a miss; a Brave hold or pause only keeps the crawl waiting.
+New candidates are scored in the background, one scoring run at a time.
 On a visit for a song it opens the live post, likes it and reposts it, then edits it: More actions, Edit, Add audio.
 On the first try only (`gif_comments`), it also comments a GIF: Haiku names a well-known movie or TV scene that fits the carousel's first event (`gif_query_prompt.md`, null for none or for religious, political or grief events), the app searches GIPHY from the comment composer's GIF button, and Haiku looks at the numbered results (`gif_pick_prompt.md`) and picks a real movie or show clip or none. Tapping a result posts it at once, so nothing is tapped unless one was picked; a GIF failure never holds up the song.
 Instagram's Repost label never changes and a second tap takes the repost back, so the job reads the check mark drawn inside the Repost icon from a screenshot and taps only when it is missing; the one-time "You reposted" note is closed.
@@ -514,7 +531,7 @@ A wait for something to show (a post, search results, a confirmation) reads the 
 A step that fails starts Instagram afresh on that Android user (`am force-stop`) before the next one: a sheet it left open, such as a profile's notification bell, covers every link opened after it, and the app reopens on the same account.
 `pm unstop` follows, since a force stop also leaves the app in Android's stopped state, getting nothing in the background (broadcasts, alarms, scheduled jobs, pushes) until it is opened again.
 After switching Android users, the worker waits until one of that user's own windows has the focus and can be read, at most `user_switch_wait_seconds`: for about a dozen seconds Android's switching screen and then a blank one hold the display, nothing can be read, and a link opened then lands late.
-`failures_before_rest` profiles failing in a row (`controlbox/instagram_follow.json`) end a visit's follows or a crawl slice, and that account's follows or crawl rest for `rest_seconds`; a school account follows at most `follows_per_account_per_day` accounts a day and `follows_per_account_per_hour` within any hour, and its follows are due again only once the hour has room for a whole visit (`follows_per_visit`), so the worker never switches accounts for a follow or two.
+`failures_before_rest` profiles failing in a row (`controlbox/instagram_follow.json`) end a visit's follows, and that account's follows rest for `rest_seconds` (as `failures_before_rest` failed Following reads in a row rest that school's crawl); a school account follows at most `follows_per_account_per_day` accounts a day and `follows_per_account_per_hour` within any hour, and its follows are due again only once the hour has room for a whole visit (`follows_per_visit`), so the worker never switches accounts for a follow or two.
 A visit that fails outright, such as while the emulator restarts, is tried again after `idle_seconds`, and the worker keeps running.
 The worker copies the committed `screen-reader.jar` to the device when a reader starts; after changing the Java source, rebuild it with `python scripts/build_emulator_jars.py`, which rebuilds every jar whose source changed (a JDK and the Android SDK's android-35 platform; the pinned d8 is downloaded and checked), and a test fails while the jar lags its source.
 The reader stops when the hold ends, so the accessibility service is connected only while a job drives the app.
@@ -522,7 +539,7 @@ The virtual device runs the Google APIs system image, not the Play Store one, so
 Its data partition is 10 GB, and Instagram never trims its own image cache, camera effects or downloaded models.
 Once a day, on the emulator worker's first visit after `reclaim_hour` (8 a.m., before the morning's carousels publish), `reclaim_data()` stops Instagram on each Android user and deletes the folders in `instagram_cache_paths` as root; the controlbox refuses paths that hold its login, databases or settings, so no account is logged out.
 It then takes the app out of the stopped state the force stop leaves (`pm unstop`), and it never clears another app's data: clearing Google Play services on users 10-12 dropped their device and push registration.
-It then restarts the emulator, and long follow or crawl steps stop for it as they do for a song.
+It then restarts the emulator, and long follow steps stop for it as they do for a song.
 A device moved to another system image keeps its data only if the emulator's rebuilt data files are replaced with the old ones before the second boot; do it on a copy (`cp -c` clones the AVD for free) and keep the original until every account is confirmed.
 
 ### Account stats and token refresh

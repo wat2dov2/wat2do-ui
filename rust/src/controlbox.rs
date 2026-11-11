@@ -224,6 +224,16 @@ pub struct InstagramBrowser {
     pub source_page_size: usize,
     pub engagement_interval_seconds: f64,
     pub engagement_max_wait_seconds: f64,
+    /// Following list reads: accounts per page, the random pause before a list's next
+    /// page and before a new list, the reads allowed within any hour, and how long a
+    /// finished read is kept for the crawl to collect.
+    pub following_page_size: usize,
+    pub following_page_delay_min_seconds: f64,
+    pub following_page_delay_max_seconds: f64,
+    pub following_list_delay_min_seconds: f64,
+    pub following_list_delay_max_seconds: f64,
+    pub following_requests_per_hour: usize,
+    pub following_result_retention_seconds: f64,
     pub bootstrap_profile_school: String,
     /// School slug to the name Brave's account switcher shows, in the file's order.
     pub school_switcher_username_overrides: IndexMap<String, String>,
@@ -843,6 +853,11 @@ mod tests {
         assert!(!NOTIFICATION_DEFAULTS.enabled("unknown_type"));
 
         assert!(INSTAGRAM_BROWSER.parallel_tabs >= 2);
+        assert!(
+            INSTAGRAM_BROWSER.following_page_delay_min_seconds
+                <= INSTAGRAM_BROWSER.following_page_delay_max_seconds
+        );
+        assert!(INSTAGRAM_BROWSER.following_requests_per_hour > 0);
         assert!(!SCRAPING.instagram_web_app_id.is_empty());
         assert!(INSTAGRAM_DIGEST.maximum_pages > 0);
         assert!(NOTIFICATION_RETRY.max_reruns_per_run > 0);

@@ -3,22 +3,23 @@
 Every emulator job is a step of a visit to one school account. The worker picks the
 account with the most urgent work, switches the app to it once, and does everything
 that account needs before moving on: the song, like and repost for its new carousels,
-its DMs, its unfollows and follows, and a slice of its crawl when the visit is the
-crawl's turn. Crawling gets every other visit, and every visit no other account needs,
-and never runs out: every school's crawl comes round again in turn, so the worker
-idles only while every account or its crawl rests.
+its DMs, and its unfollows and follows.
 
 A new carousel gets its song as soon as possible, at any hour: while any account's
-carousel waits, visits do nothing but songs, and unfollows, follows and crawl slices
-stop between profiles for one, or for the daily reclaim, which restarts the emulator
-before the morning's carousels publish.
+carousel waits, visits do nothing but songs, and unfollows and follows stop between
+profiles for one, or for the daily reclaim, which restarts the emulator before the
+morning's carousels publish.
 Replies happen only during the control box's action hours, follows only during its
 follow hours. The emulator's lock is held for one visit at a time, and one failing
 step never stops the others. An account the app cannot switch to rests while the
-others go on, and so do an account's follows or crawl once its profiles keep failing;
-switches failing in a row restart the emulator, whose Android stalls after long
-uptimes. A visit that fails outright, such as while the emulator restarts, is tried
-again after a short wait, so the worker itself never stops.
+others go on, and so do an account's follows once its profiles keep failing; switches
+failing in a row restart the emulator, whose Android stalls after long uptimes. A
+visit that fails outright, such as while the emulator restarts, is tried again after a
+short wait, so the worker itself never stops.
+
+The same process runs the follow crawl in its own thread (``crawl.run_forever``). It
+never touches the emulator: the Brave worker reads the Following lists, and the
+accounts it finds are scored in the background, one scoring run at a time.
 """
 
 from __future__ import annotations
@@ -52,6 +53,12 @@ _CLUB_SYNC_INTERVAL = timedelta(hours=1)
 
 
 def run_forever() -> None:
+    threading.Thread(
+        target=crawl.run_forever,
+        args=(_score_in_background,),
+        name="instagram-follow-crawl",
+        daemon=True,
+    ).start()
     device = EmulatorDevice()
     synced_at: datetime | None = None
     while True:
@@ -67,7 +74,7 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
     """Visit the account with the most urgent work; False when nothing is due anywhere.
 
     Each kind of work is looked up only when nothing more urgent is due, so a song
-    never waits on the database questions about follows and crawls.
+    never waits on the database questions about follows.
     """
     moment = (now or datetime.now(timezone.utc)).astimezone()
     acting = acting_hours(moment)
@@ -82,44 +89,24 @@ def visit_next(device: EmulatorDevice, now: datetime | None = None) -> bool:
         waiting = _songs_waiting(moment)
         return [school for school in order if school in waiting]
 
-    tiers: list[tuple[Callable[[], list[str]], bool]] = [(songs, False)]
+    tiers: list[Callable[[], list[str]]] = [songs]
     if acting:
-        tiers.append((lambda: [school for school in order if sweep.due(school, moment)], False))
+        tiers.append(lambda: [school for school in order if sweep.due(school, moment)])
     if following:
         tiers.append(
-            (
-                lambda: [
-                    school
-                    for school in order
-                    if _follows_rested_until.get(school, moment) <= moment
-                    and (follows.unfollows_due(school) or follows.follows_due(school))
-                ],
-                False,
-            )
+            lambda: [
+                school
+                for school in order
+                if _follows_rested_until.get(school, moment) <= moment
+                and (follows.unfollows_due(school) or follows.follows_due(school))
+            ]
         )
-    crawls = (lambda: _crawl_order(order, moment), True)
-    # The crawl runs around the clock: it takes every other visit while follows,
-    # unfollows or DMs are also waiting, rather than only when nothing else is due.
-    if _last_visit_crawled:
-        tiers.append(crawls)
-    else:
-        tiers.insert(1, crawls)
-    for due, crawling in tiers:
+    for due in tiers:
         schools = due()
         if schools:
-            visit(
-                device,
-                schools[0],
-                acting=acting,
-                following=following,
-                crawl_slice=crawling,
-                now=moment,
-            )
+            visit(device, schools[0], acting=acting, following=following, now=moment)
             return True
     return False
-
-
-_last_visit_crawled = False
 
 
 def visit(
@@ -128,13 +115,9 @@ def visit(
     *,
     acting: bool,
     following: bool,
-    crawl_slice: bool,
     now: datetime,
 ) -> None:
     """Switch to the school's account once and do everything it needs."""
-    global _last_visit_crawled
-    _last_visit_crawled = crawl_slice
-    crawled = False
     with exclusive():
         device.wake()
         device.reclaim_data()
@@ -169,22 +152,6 @@ def visit(
             if visits and not interrupt.seen and _follows_stuck(visits):
                 # The next try waits instead of looping here.
                 _follows_rested_until[school] = now + timedelta(seconds=FOLLOW.rest_seconds)
-        if crawl_slice and not interrupt.seen:
-            deadline = time.monotonic() + CONTROL.crawl_slice_minutes * 60
-            outcome = _step(
-                f"crawl {school}",
-                lambda: crawl.crawl_slice(device, school, deadline, stop=interrupt),
-            )
-            if (
-                outcome != crawl.CRAWL_FINISHED
-                and time.monotonic() < deadline
-                and not interrupt.seen
-            ):
-                # The slice gave up early, usually because profiles kept failing to load.
-                _crawl_rested_until[school] = now + timedelta(seconds=FOLLOW.rest_seconds)
-            crawled = True
-    if crawled:
-        _score_in_background()
 
 
 def _follows_stuck(visits: list[object]) -> bool:
@@ -206,8 +173,8 @@ def _songs_waiting(now: datetime) -> set[str]:
 
 class _Interrupt:
     """True once the emulator is needed for something more urgent than the visit's long
-    steps: a carousel waiting for its song, or the daily reclaim and restart. Unfollows,
-    follows and crawl slices ask it between profiles and stop for it."""
+    steps: a carousel waiting for its song, or the daily reclaim and restart. Unfollows
+    and follows ask it between profiles and stop for it."""
 
     def __init__(self) -> None:
         self.seen = False
@@ -218,19 +185,6 @@ class _Interrupt:
         except Exception:
             log.exception("Could not check for carousels waiting for a song")
         return self.seen
-
-
-def _crawl_order(order: list[str], now: datetime) -> list[str]:
-    """Every school's crawl in turn: a crawl already under way first so one finishes
-    before the next starts, then schools never crawled, then the one whose last crawl
-    finished longest ago, so a school whose crawl just ended waits behind the others.
-    A crawl resting after failures waits its turn."""
-    ready = [school for school in order if _crawl_rested_until.get(school, now) <= now]
-    running = [school for school in ready if crawl.crawl_running(school)]
-    if running:
-        return running
-    never = datetime.min.replace(tzinfo=timezone.utc)
-    return sorted(ready, key=lambda school: crawl.last_crawl_finished(school) or never)
 
 
 def acting_hours(moment: datetime) -> bool:
@@ -244,7 +198,6 @@ def following_hours(moment: datetime) -> bool:
 _scoring = threading.Lock()
 # A step that made no progress on an account waits this long before the worker tries
 # it there again, so one stuck account never keeps the worker to itself.
-_crawl_rested_until: dict[str, datetime] = {}
 _follows_rested_until: dict[str, datetime] = {}
 _switch_rested_until: dict[str, datetime] = {}
 _switch_failures = 0
@@ -274,7 +227,7 @@ def _switched(device: EmulatorDevice, school: str, now: datetime) -> bool:
 
 
 def _score_in_background() -> None:
-    """Score newly found accounts without holding up the emulator; one run at a time."""
+    """Score newly found accounts without holding up the crawl; one run at a time."""
     if not _scoring.acquire(blocking=False):
         return
 

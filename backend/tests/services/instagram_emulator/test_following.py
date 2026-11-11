@@ -5,7 +5,6 @@ from services.instagram_emulator.following import (
     ActionBlocked,
     FollowedWithoutBell,
     FollowingReader,
-    FollowingRow,
     FollowOutcome,
 )
 
@@ -17,10 +16,9 @@ def _node(text="", description="", resource_id="", top=0, bottom=100):
 HOME = [_node(description="Home")]
 
 
-def _profile(username, *, following="90following", button="Follow"):
+def _profile(username, *, button="Follow"):
     nodes = [
         _node(username, resource_id="action_bar_title"),
-        _node(description=following, resource_id="profile_header_following_stacked_familiar"),
         _node(button, f"{button} {username}", "profile_header_follow_button"),
     ]
     # Only a followed public profile has a bell in its top bar.
@@ -29,20 +27,6 @@ def _profile(username, *, following="90following", button="Follow"):
         if button == "Following"
         else nodes
     )
-
-
-SEARCH_FIELD = [_node("Search", resource_id="row_search_edit_text")]
-
-
-def _list(*rows):
-    nodes = list(SEARCH_FIELD)
-    for index, (username, label, name) in enumerate(rows):
-        top = 600 + index * 200
-        nodes.append(_node(username, resource_id="follow_list_username", top=top, bottom=top + 50))
-        nodes.append(
-            _node(label, f"{label} {name}", "follow_list_row_large_follow_button", top, top + 90)
-        )
-    return nodes
 
 
 def _bell(posts_value):
@@ -76,12 +60,6 @@ class _Device(EmulatorDevice):
     def _press(self, node, hold_ms):
         self._advance(node.text or node.description or node.resource_id)
 
-    def type_text(self, text):
-        self._advance(f"type {text}")
-
-    def scroll_down(self):
-        self._advance("scroll")
-
     def back(self):
         self._advance("back")
 
@@ -93,89 +71,13 @@ class _Device(EmulatorDevice):
 
 
 def _reader(device):
-    return FollowingReader(device, 0, profile_wait_seconds=30, max_scrolls=5)
+    return FollowingReader(device, 0, profile_wait_seconds=30)
 
 
-def test_search_reads_who_we_follow_and_who_we_dont_across_scrolls() -> None:
-    first = _list(("utmmsa", "Message", "UTM MSA"), ("utmaclub", "Follow", "UTMAC"))
-    second = _list(("utmaclub", "Follow", "UTMAC"), ("utmpadel", "Follow back", "UTM Padel"))
-    device = _Device([HOME, _profile("seed"), SEARCH_FIELD, SEARCH_FIELD, first, second])
+def test_a_gone_profile_has_nothing_to_follow() -> None:
+    device = _Device([HOME, [_node("Sorry, this page isn't available")]])
 
-    rows = _reader(device).search_following("seed", ["utm"])
-
-    assert rows == [
-        FollowingRow("utmmsa", "UTM MSA", True),
-        FollowingRow("utmaclub", "UTMAC", False),
-        FollowingRow("utmpadel", "UTM Padel", False),
-    ]
-    assert "type utm" in device.actions
-
-
-class _FilteringDevice(_Device):
-    """A list that filters by itself a read after typing, as Instagram's does a moment later."""
-
-    def __init__(self, screens, settling):
-        super().__init__(screens)
-        self.settling = settling
-
-    def screen(self):
-        shown = self.screens[0]
-        if any(shown is screen for screen in self.settling):
-            self.screens.pop(0)
-        return shown
-
-
-def test_a_search_reads_the_list_once_it_shows_only_matches() -> None:
-    everyone = _list(("chessclub", "Message", "Chess Club"), ("utmaclub", "Follow", "UTMAC"))
-    matches = _list(("utmaclub", "Follow", "UTMAC"))
-    device = _FilteringDevice(
-        [HOME, _profile("seed"), SEARCH_FIELD, SEARCH_FIELD, everyone, matches], [everyone]
-    )
-
-    rows = _reader(device).search_following("seed", ["utm"])
-
-    assert rows == [FollowingRow("utmaclub", "UTMAC", False)]
-
-
-def test_search_reopens_the_list_for_each_name() -> None:
-    rows = _list(("uoftchess", "Follow", "UofT Chess"))
-    device = _Device(
-        [
-            HOME,
-            _profile("seed"),
-            SEARCH_FIELD,
-            SEARCH_FIELD,
-            rows,
-            rows,
-            _profile("seed"),
-            SEARCH_FIELD,
-            SEARCH_FIELD,
-            rows,
-        ]
-    )
-
-    _reader(device).search_following("seed", ["utm", "uoft"])
-
-    assert device.actions.count("instagram://user?username=seed") == 2
-
-
-def test_a_private_profile_has_no_list_to_read() -> None:
-    device = _Device([HOME, [_node("This account is private")]])
-
-    assert _reader(device).search_following("seed", ["utm"]) is None
-
-
-def test_an_account_following_nobody_has_nothing_to_search() -> None:
-    device = _Device([HOME, _profile("seed", following="0following")])
-
-    assert _reader(device).search_following("seed", ["utm"]) == []
-
-
-def test_a_profile_that_never_loads_raises() -> None:
-    device = _Device([HOME, [_node("Loading")]])
-
-    with pytest.raises(EmulatorError):
-        _reader(device).search_following("seed", ["utm"])
+    assert _reader(device).follow("gone.club") is None
 
 
 def test_following_turns_post_notifications_to_all() -> None:

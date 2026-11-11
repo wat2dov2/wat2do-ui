@@ -598,6 +598,15 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"source_poll_interval_seconds": 0},
         {"source_page_size": 0},
         {"source_page_size": 1001},
+        {"following_page_size": 11},
+        {"following_page_size": 201},
+        {"following_page_delay_min_seconds": 0},
+        {"following_page_delay_min_seconds": 13},
+        {"following_list_delay_min_seconds": 21},
+        {"following_list_delay_max_seconds": 3601},
+        {"following_requests_per_hour": 0},
+        {"following_requests_per_hour": 1001},
+        {"following_result_retention_seconds": 599},
         {"worker_log_max_bytes": 65535},
         {"worker_log_max_bytes": 67108865},
         {"worker_log_backup_count": 0},
@@ -908,7 +917,26 @@ def test_follow_control_names_every_uoft_campus_for_the_others() -> None:
     names = controlbox.instagram_follow.school_names
     assert {"uoft", "utsc", "utsg"} <= set(names["utm"])
     assert controlbox.instagram_follow.crawl_miss_streak == 20
+    assert controlbox.instagram_follow.crawl_mutual_follow_threshold == 2
     assert controlbox.instagram_follow.follows_per_account_per_day == 150
+
+
+def test_following_reads_are_paced_by_the_browser_controls() -> None:
+    control = controlbox.instagram_browser
+    assert control.following_page_size == 100
+    assert 0 < control.following_page_delay_min_seconds <= control.following_page_delay_max_seconds
+    assert 0 < control.following_list_delay_min_seconds <= control.following_list_delay_max_seconds
+    assert control.following_requests_per_hour == 240
+
+
+def test_follow_crawl_needs_at_least_two_clubs_for_a_mutual_follow(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_follow",
+        lambda payload: payload.update({"crawl_mutual_follow_threshold": 1}),
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(path)
 
 
 def test_follow_profile_read_delays_must_be_ordered(tmp_path: Path) -> None:

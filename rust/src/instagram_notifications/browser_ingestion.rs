@@ -86,7 +86,7 @@ pub fn media_id_from_url(url: &str) -> BrowserResult<String> {
     Ok(value.to_string())
 }
 
-fn active_account(session: &mut BrowserInstagramSession) -> BrowserResult<String> {
+pub(super) fn active_account(session: &mut BrowserInstagramSession) -> BrowserResult<String> {
     // Capture the verified read itself instead of immediately rereading a loading DOM.
     let mut username = None;
     session.poll_until(|session| {
@@ -128,45 +128,11 @@ pub fn retrieve(
         Some(profile) => format!("/api/v1/users/web_profile_info/?username={profile}"),
         None => format!("/api/v1/media/{}/info/", media_id_from_url(&target)?),
     };
-    let result = match session.query(
+    let result = settled_read(
+        session,
         &scripts::public_media_query(&endpoint, &username, profile.is_some()),
-        true,
-    ) {
-        Ok(result) => result,
-        Err(BrowserError::ReadCleanupPending {
-            message,
-            mut operation_error,
-            completed_payload,
-        }) => {
-            if let Some(payload) = completed_payload
-                .as_ref()
-                .filter(|payload| payload.get("state") == Some(&json!("failed")))
-                && operation_error.as_deref().is_none_or(|error| {
-                    error.is(SessionKind::PageUnavailable)
-                        || error.is(SessionKind::AutomationTransient)
-                        || error.is_timeout()
-                })
-            {
-                let failure = response_failure(payload.get("reason"), payload.get("http_status"));
-                if failure.is(SessionKind::RateLimited) {
-                    operation_error = Some(Box::new(failure));
-                }
-            }
-            return Err(BrowserError::ReadCleanupPending {
-                message,
-                operation_error,
-                completed_payload,
-            });
-        }
-        Err(error) => return Err(error),
-    };
-    if result.get("state") != Some(&json!("succeeded")) {
-        // Never persist server response text, request headers or browser internals.
-        return Err(response_failure(
-            result.get("reason"),
-            result.get("http_status"),
-        ));
-    }
+        |payload| response_failure(payload.get("reason"), payload.get("http_status")),
+    )?;
     if active_account(session)? != username {
         return Err(BrowserError::account_changed(
             "Instagram browser account changed during retrieval",
@@ -217,6 +183,51 @@ pub fn retrieve(
         .map(|(post, _)| Value::Object(post))
         .collect();
     Ok(json!({"account_username": username, "posts": posts, "target_url": target}))
+}
+
+/// Run one read-only page query to its result. A failed request becomes `failure` of
+/// its payload, which only names a fixed reason and HTTP status: server response text,
+/// request headers and browser internals are never kept. A read whose cleanup must wait
+/// for its batch keeps a verified 429 from its payload, so a rate limit is never lost to
+/// a later loading page.
+pub(super) fn settled_read(
+    session: &mut BrowserInstagramSession,
+    source: &str,
+    failure: impl Fn(&Map<String, Value>) -> BrowserError,
+) -> BrowserResult<Map<String, Value>> {
+    let result = match session.query(source, true) {
+        Ok(result) => result,
+        Err(BrowserError::ReadCleanupPending {
+            message,
+            mut operation_error,
+            completed_payload,
+        }) => {
+            if let Some(Value::Object(payload)) = completed_payload
+                .as_ref()
+                .filter(|payload| payload.get("state") == Some(&json!("failed")))
+                && operation_error.as_deref().is_none_or(|error| {
+                    error.is(SessionKind::PageUnavailable)
+                        || error.is(SessionKind::AutomationTransient)
+                        || error.is_timeout()
+                })
+            {
+                let failure = failure(payload);
+                if failure.is(SessionKind::RateLimited) {
+                    operation_error = Some(Box::new(failure));
+                }
+            }
+            return Err(BrowserError::ReadCleanupPending {
+                message,
+                operation_error,
+                completed_payload,
+            });
+        }
+        Err(error) => return Err(error),
+    };
+    if result.get("state") != Some(&json!("succeeded")) {
+        return Err(failure(&result));
+    }
+    Ok(result)
 }
 
 fn response_failure(reason: Option<&Value>, http_status: Option<&Value>) -> BrowserError {

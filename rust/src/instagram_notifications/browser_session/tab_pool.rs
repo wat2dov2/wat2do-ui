@@ -544,17 +544,20 @@ impl TabPool for BrowserTabPool {
         self.ensure_capacity(Some(&job.account_username))?;
         let mut sessions = self.settle_registered_tabs()?;
         let primary = &mut sessions[0];
-        let logged_out = match primary.read(scripts::SERVER_LOGIN) {
-            Ok(state) => state == "logged_out",
-            // Unknown; the job's own requests will tell.
-            Err(error)
-                if error.is(SessionKind::AutomationTransient)
-                    || error.is(SessionKind::PageUnavailable) =>
-            {
-                false
-            }
-            Err(error) => return Err(error),
-        };
+        // A Following read is paced to the request: it spends no page load on this
+        // check, and a login wall in its own response holds only those reads.
+        let logged_out = job.kind != "following"
+            && match primary.read(scripts::SERVER_LOGIN) {
+                Ok(state) => state == "logged_out",
+                // Unknown; the job's own requests will tell.
+                Err(error)
+                    if error.is(SessionKind::AutomationTransient)
+                        || error.is(SessionKind::PageUnavailable) =>
+                {
+                    false
+                }
+                Err(error) => return Err(error),
+            };
         if logged_out {
             return Err(BrowserError::session(LOGGED_OUT_PAUSE));
         }

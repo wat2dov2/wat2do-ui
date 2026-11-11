@@ -33,6 +33,13 @@
   "source_page_size": 100,
   "engagement_interval_seconds": 10,
   "engagement_max_wait_seconds": 30,
+  "following_page_size": 100,
+  "following_page_delay_min_seconds": 6,
+  "following_page_delay_max_seconds": 12,
+  "following_list_delay_min_seconds": 10,
+  "following_list_delay_max_seconds": 20,
+  "following_requests_per_hour": 240,
+  "following_result_retention_seconds": 3600,
   "bootstrap_profile_school": "uwaterloo",
   "school_switcher_username_overrides": {
     "uwaterloo": "wat2do.ca"

@@ -626,6 +626,18 @@ class InstagramBrowserControl(_ControlModel):
     worker_log_backup_count: int = Field(ge=1, le=10)
     engagement_interval_seconds: float = Field(ge=1, le=3600)
     engagement_max_wait_seconds: float = Field(ge=1, le=3600)
+    # Following list reads for the follow crawl: one page of this many accounts per job,
+    # a random pause in the page window before each next page of a list and in the list
+    # window before each new list, and at most this many reads within any hour. A 429 or
+    # a login wall on one holds only these reads. Finished reads are kept this long for
+    # the crawl to collect, then deleted.
+    following_page_size: int = Field(ge=12, le=200)
+    following_page_delay_min_seconds: float = Field(ge=1, le=600, allow_inf_nan=False)
+    following_page_delay_max_seconds: float = Field(ge=1, le=600, allow_inf_nan=False)
+    following_list_delay_min_seconds: float = Field(ge=1, le=3600, allow_inf_nan=False)
+    following_list_delay_max_seconds: float = Field(ge=1, le=3600, allow_inf_nan=False)
+    following_requests_per_hour: int = Field(ge=1, le=1000)
+    following_result_retention_seconds: float = Field(ge=600, le=604_800, allow_inf_nan=False)
     actions: tuple[Literal["like", "save", "repost"], ...] = Field(min_length=1, max_length=3)
 
     @model_validator(mode="after")
@@ -661,6 +673,10 @@ class InstagramBrowserControl(_ControlModel):
             raise ValueError("Maximum rate limit backoff must include the initial backoff")
         if self.rate_limit_recovery_seconds < self.rate_limit_backoff_seconds:
             raise ValueError("Rate limit recovery must include the initial backoff")
+        if self.following_page_delay_min_seconds > self.following_page_delay_max_seconds:
+            raise ValueError("following_page_delay_min_seconds must not exceed the maximum")
+        if self.following_list_delay_min_seconds > self.following_list_delay_max_seconds:
+            raise ValueError("following_list_delay_min_seconds must not exceed the maximum")
         if (
             self.storage_busy_timeout_seconds * self.storage_retry_limit
             + self.storage_retry_interval_seconds * (self.storage_retry_limit - 1)
@@ -921,17 +937,23 @@ class InstagramFollowControl(_ControlModel):
 
     # A follow that failed is tried again only after this long.
     follow_retry_hours: int = Field(ge=1, le=168)
-    # A crawl stops after this many visited accounts in a row turn up nothing new; nothing
-    # else ends it early, so it reads every club the school follows until then.
+    # A crawl stops after this many clubs in a row turn up nothing new; nothing else ends
+    # it early, so it reads every club the school follows until then.
     crawl_miss_streak: int = Field(ge=1, le=100)
-    # Enough scrolls to read every match in even the longest Following list.
-    crawl_max_scrolls: int = Field(ge=1, le=200)
-    crawl_profile_wait_seconds: int = Field(ge=5, le=300)
-    # A profile that fails to load is retried later, up to this many times, and never
+    # An account no school name matches becomes a candidate once this many of the
+    # school's followed clubs follow it, counted across crawls.
+    crawl_mutual_follow_threshold: int = Field(ge=2, le=20)
+    # A Following list is read at most this many pages deep.
+    crawl_list_page_limit: int = Field(ge=1, le=100)
+    # A list that fails to read is tried again later, up to this many times, and never
     # counts as a miss.
     crawl_seed_attempts: int = Field(ge=1, le=10)
-    # This many profiles failing in a row end a crawl slice or a visit's follows, and
-    # that account's crawl or follows rest this long before the next try.
+    # How often the crawl checks on the Brave worker's read it is waiting for.
+    crawl_poll_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
+    # How long the emulator waits for a profile to load before a follow gives up on it.
+    profile_wait_seconds: int = Field(ge=5, le=300)
+    # This many lists or follows failing in a row rest that school's crawl or that
+    # account's follows this long before the next try.
     failures_before_rest: int = Field(ge=1, le=20)
     rest_seconds: int = Field(ge=0, le=7200)
 
@@ -1029,15 +1051,13 @@ class InstagramEmulatorControl(_ControlModel):
     switch_failures_before_restart: int = Field(ge=1, le=20)
     # The one worker that drives the emulator visits one account at a time. Replies
     # and post edits happen only between the action hours, follows only between the
-    # follow hours (local time); otherwise it only reads, crawling Following lists in
-    # slices of this length. A visit follows at most this many accounts, and stops
-    # following or crawling once any carousel waits for its song or the daily reclaim
-    # is due. With nothing due the worker checks again after idle_seconds.
+    # follow hours (local time). A visit follows at most this many accounts, and stops
+    # following once any carousel waits for its song or the daily reclaim is due. With
+    # nothing due the worker checks again after idle_seconds.
     action_start_hour: int = Field(ge=0, le=23)
     action_end_hour: int = Field(ge=1, le=24)
     follow_start_hour: int = Field(ge=0, le=23)
     follow_end_hour: int = Field(ge=1, le=24)
-    crawl_slice_minutes: int = Field(ge=1, le=120)
     follows_per_visit: int = Field(ge=1, le=50)
     idle_seconds: int = Field(ge=10, le=3600)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)

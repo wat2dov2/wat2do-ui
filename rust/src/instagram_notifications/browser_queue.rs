@@ -19,6 +19,7 @@ use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
 use super::browser_digest::DigestResolution;
+use super::browser_following::{validate_cursor, validate_list_owner};
 use super::browser_ingestion::canonical_target_url;
 use super::browser_session::{canonical_post_url, validate_account_username};
 use super::errors::{BrowserError, BrowserResult, StorageError};
@@ -32,19 +33,27 @@ pub const WORKER_INSTALLATION_PAUSE: &str = "Browser worker installation in prog
 const AVAILABLE_ACCOUNT_SQL: &str = "account_username NOT IN (SELECT value FROM json_each(COALESCE(\
 (SELECT value FROM settings WHERE key='excluded_accounts'),'[]')))";
 
-// Rate limit holds: "browser" stops every claim, "retrieval" only profile retrievals.
+// Rate limit holds: "browser" stops every claim, "retrieval" only profile retrievals,
+// "following" only Following list reads.
 const BROWSER_SCOPE: &str = "browser";
 const RETRIEVAL_SCOPE: &str = "retrieval";
+const FOLLOWING_SCOPE: &str = "following";
 
 /// Every job kind the queue accepts; a stored table missing any of them is rebuilt.
-const JOB_KINDS: [&str; 3] = ["digest", "retrieval", "engagement"];
+const JOB_KINDS: [&str; 4] = ["digest", "retrieval", "engagement", "following"];
 
-/// Python's `_QUEUE_SCHEMA`, byte for byte: SQLite keeps this text in `sqlite_master`.
+/// The finished Following reads still to be collected: the crawl takes each within
+/// seconds, so older ones are deleted rather than kept with their account lists.
+const FINISHED_FOLLOWING_SQL: &str =
+    "kind='following' AND state IN ('succeeded','failed','cancelled','unsupported')";
+
+/// Python's `_QUEUE_SCHEMA` with the `following` kind added: SQLite keeps this text in
+/// `sqlite_master`, and a stored table that lacks a kind is rebuilt with every job.
 const QUEUE_SCHEMA: &str = "
     CREATE TABLE IF NOT EXISTS jobs (
         id TEXT PRIMARY KEY,
         dedupe_key TEXT NOT NULL UNIQUE,
-        kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement')),
+        kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement', 'following')),
         school TEXT NOT NULL,
         recipient_id TEXT NOT NULL,
         account_username TEXT NOT NULL,
@@ -110,10 +119,10 @@ static CACHE_ID_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[A-Za-z0-9._:-]{1,255}$").expect("valid regex"));
 
 fn scope(job: Option<&BrowserJob>) -> &'static str {
-    if job.is_some_and(|job| job.kind == "retrieval") {
-        RETRIEVAL_SCOPE
-    } else {
-        BROWSER_SCOPE
+    match job.map(|job| job.kind.as_str()) {
+        Some("retrieval") => RETRIEVAL_SCOPE,
+        Some("following") => FOLLOWING_SCOPE,
+        _ => BROWSER_SCOPE,
     }
 }
 
@@ -773,8 +782,8 @@ impl BrowserJobQueue {
     /// Hold browser admission without changing a claim or its retry policy.
     ///
     /// A profile retrieval's 429 comes from Instagram's stricter profile endpoint, so it
-    /// holds only retrievals; digests keep running and hold everything if they are
-    /// limited too.
+    /// holds only retrievals, and a Following read's 429 or login wall holds only those
+    /// reads; digests keep running and hold everything if they are limited too.
     pub fn defer_for_rate_limit(
         &self,
         job: Option<&BrowserJob>,
@@ -1062,6 +1071,46 @@ impl BrowserJobQueue {
             .id)
     }
 
+    /// Queue one page of `username`'s Following list for crawl `crawl_id`: the first page
+    /// without `max_id`, then each page the previous one pointed to. Without `user_id`
+    /// the read looks the account up first. `account_username` (the school's account)
+    /// only names the job; the read runs as whichever account Brave shows.
+    pub fn enqueue_following(
+        &self,
+        school: &str,
+        account_username: &str,
+        crawl_id: &str,
+        username: &str,
+        user_id: Option<&str>,
+        max_id: Option<&str>,
+    ) -> BrowserResult<BrowserJob> {
+        if !SCHOOL_PATTERN.is_match(school) || !CACHE_ID_PATTERN.is_match(crawl_id) {
+            return Err(BrowserError::Value(
+                "Instagram Following read school or crawl is invalid".to_owned(),
+            ));
+        }
+        let mut payload = Map::new();
+        payload.insert("crawl".into(), crawl_id.into());
+        payload.insert("username".into(), validate_list_owner(username)?.into());
+        payload.insert(
+            "user_id".into(),
+            match user_id {
+                Some(user_id) => validate_recipient_id(user_id)
+                    .map_err(|_| BrowserError::Value("Instagram user ID is invalid".to_owned()))?
+                    .into(),
+                None => Value::Null,
+            },
+        );
+        payload.insert(
+            "max_id".into(),
+            max_id
+                .map(validate_cursor)
+                .transpose()?
+                .map_or(Value::Null, Value::from),
+        );
+        self.enqueue("following", school, "", account_username, payload)
+    }
+
     pub fn enqueue_engagement(
         &self,
         school: &str,
@@ -1100,7 +1149,12 @@ impl BrowserJobQueue {
         payload: Map<String, Value>,
     ) -> BrowserResult<BrowserJob> {
         self.retry_storage(|| {
-            let recipient_id = validate_recipient_id(recipient_id).map_err(BrowserError::Value)?;
+            // A Following read belongs to no recipient: it runs as whoever Brave shows.
+            let recipient_id = if kind == "following" {
+                String::new()
+            } else {
+                validate_recipient_id(recipient_id).map_err(BrowserError::Value)?
+            };
             let username = validate_account_username(username).map_err(BrowserError::Value)?;
             let mut identity = vec![kind.to_owned(), recipient_id.clone(), username.clone()];
             match kind {
@@ -1108,6 +1162,11 @@ impl BrowserJobQueue {
                 "retrieval" => {
                     identity.push(pyjson::str(&payload["url"]));
                     identity.push(pyjson::str(&payload["cutoff_days"]));
+                }
+                "following" => {
+                    for key in ["crawl", "username", "max_id"] {
+                        identity.push(pyjson::str(&payload[key]));
+                    }
                 }
                 // p/ and reel/ can reference the same media. Dedupe by its shortcode.
                 _ => identity.push(
@@ -1134,9 +1193,12 @@ impl BrowserJobQueue {
                     .optional()
                     .map_err(storage)?;
                 if let Some((id, state)) = existing {
-                    // Digest retries are reads. Engagement retries always require an
-                    // explicit retry, because they may already have acted on Instagram.
-                    if kind == "digest" && (state == "failed" || state == "cancelled") {
+                    // Digest and Following retries are reads. Engagement retries always
+                    // require an explicit retry, because they may already have acted on
+                    // Instagram.
+                    if (kind == "digest" || kind == "following")
+                        && (state == "failed" || state == "cancelled")
+                    {
                         db.execute(
                             "UPDATE jobs SET state='pending',created_at=?,started_at=NULL,finished_at=NULL,error=NULL,result=NULL,attempts=0 WHERE id=?",
                             params![self.host.time(), id],
@@ -1221,9 +1283,17 @@ impl BrowserJobQueue {
                 if row.is_none() && allow_engagement {
                     row = select_engagement(db, now, false)?;
                 }
+                if row.is_none() {
+                    row = select_following(db, now)?;
+                }
                 let Some(row) = row else {
                     return Ok(None);
                 };
+                if row.kind == "following" {
+                    let mut reads = recent_following_reads(db, now)?;
+                    reads.push(json!(now));
+                    write_setting(db, "following_reads", &Value::from(reads))?;
+                }
                 if row.kind == "engagement" {
                     db.execute(
                         UPSERT_SETTING,
@@ -1251,7 +1321,12 @@ impl BrowserJobQueue {
         limit: i64,
         allow_engagement: bool,
     ) -> BrowserResult<Vec<BrowserJob>> {
-        if self.is_storage_unavailable() || first.kind == "engagement" || limit <= 0 {
+        // Engagement is serialized, and Following reads are paced one at a time.
+        if self.is_storage_unavailable()
+            || first.kind == "engagement"
+            || first.kind == "following"
+            || limit <= 0
+        {
             return Ok(Vec::new());
         }
         self.retry_storage(|| {
@@ -1325,7 +1400,7 @@ impl BrowserJobQueue {
             && (!requeue
                 || error.as_deref().is_none_or(|error| error.trim().is_empty())
                 || result.is_some()
-                || !(claim.kind == "digest" || claim.kind == "retrieval")
+                || !read_only_kind(&claim.kind)
                 || claim.state != "running"
                 || claim.started_at.is_none()
                 || claim.attempts <= 0)
@@ -1393,16 +1468,19 @@ impl BrowserJobQueue {
                     ],
                 )
                 .map_err(storage)?;
+            if changed > 0 && stored_job.kind == "following" {
+                pace_following(db, now)?;
+            }
             if changed > 0
                 && state == "succeeded"
-                && (stored_job.kind == "digest"
-                    || stored_job.kind == "retrieval"
+                && (read_only_kind(&stored_job.kind)
                     || (stored_job.kind == "engagement" && !stored_job.dry_run()))
             {
-                // Any fresh success clears the shared hold; a retrieval also clears its own.
+                // Any fresh success clears the shared hold; a retrieval or Following read
+                // also clears its own.
                 let mut scopes = vec![BROWSER_SCOPE];
                 if scope(Some(&stored_job)) != BROWSER_SCOPE {
-                    scopes.push(RETRIEVAL_SCOPE);
+                    scopes.push(scope(Some(&stored_job)));
                 }
                 for scope in scopes {
                     let (deadline, backoff) = rate_limit_state(db, scope)?;
@@ -1476,7 +1554,7 @@ impl BrowserJobQueue {
                     newly_paused = true;
                 }
                 db.execute_batch(
-                    "UPDATE jobs SET state='pending',started_at=NULL WHERE kind IN ('digest','retrieval') AND state='running'",
+                    "UPDATE jobs SET state='pending',started_at=NULL WHERE kind IN ('digest','retrieval','following') AND state='running'",
                 )
                 .map_err(storage)?;
                 db.execute(
@@ -1596,6 +1674,11 @@ impl BrowserJobQueue {
         drop(db);
         let until = self.setting_or("browser_rate_limit_until", json!(0))?;
         let remaining = pyjson::number(&until).unwrap_or(0.0) - self.host.time();
+        let following_until = self.setting_or("following_rate_limit_until", json!(0))?;
+        let following_reads = {
+            let db = self.connect()?;
+            recent_following_reads(&db, self.host.time())?.len()
+        };
         Ok(json!({
             "queues": groups,
             "recent_failures": recent,
@@ -1605,6 +1688,10 @@ impl BrowserJobQueue {
                 "retry_at": if pyjson::truthy(&until) { until.clone() } else { Value::Null },
                 "remaining_seconds": if remaining > 0.0 { json!(remaining) } else { json!(0) },
                 "backoff_seconds": self.setting_or("browser_rate_limit_backoff_seconds", json!(0))?,
+            },
+            "following": {
+                "held_until": if pyjson::truthy(&following_until) { following_until } else { Value::Null },
+                "reads_last_hour": following_reads,
             },
             "source": self.get_setting("source_status")?,
             "profile_queue": self.get_setting("profile_queue_status")?,
@@ -1894,6 +1981,93 @@ fn select_engagement(
         ),
         &[sql_value(&selected)],
     )
+}
+
+/// Jobs that only read Instagram, so a failed one may be retried safely.
+pub(crate) fn read_only_kind(kind: &str) -> bool {
+    matches!(kind, "digest" | "retrieval" | "following")
+}
+
+/// The oldest Following read once its pause has passed, unless these reads are held or
+/// the hour's reads are used up. A list's next page waits the page pause, a new list
+/// the list pause, both drawn when the previous read finished.
+fn select_following(db: &Connection, now: f64) -> BrowserResult<Option<BrowserJob>> {
+    if now < rate_limit_state(db, FOLLOWING_SCOPE)?.0
+        || recent_following_reads(db, now)?.len() >= control().following_requests_per_hour
+    {
+        return Ok(None);
+    }
+    let Some(job) = select_optional_job(
+        db,
+        &format!(
+            "SELECT * FROM jobs WHERE state='pending' AND kind='following' \
+             AND {AVAILABLE_ACCOUNT_SQL} ORDER BY created_at,id LIMIT 1"
+        ),
+        &[],
+    )?
+    else {
+        return Ok(None);
+    };
+    let pause = if job.payload.get("max_id").is_some_and(pyjson::truthy) {
+        "following_next_page_at"
+    } else {
+        "following_next_list_at"
+    };
+    let ready_at = pyjson::number(&stored_setting(db, pause)?).unwrap_or(0.0);
+    Ok((now >= ready_at).then_some(job))
+}
+
+/// When the Following reads claimed within the hour before `now` were claimed.
+fn recent_following_reads(db: &Connection, now: f64) -> BrowserResult<Vec<Value>> {
+    Ok(match stored_setting(db, "following_reads")? {
+        Value::Array(reads) => reads
+            .into_iter()
+            .filter(|at| pyjson::number(at).is_some_and(|at| now - at < 3_600.0))
+            .collect(),
+        _ => Vec::new(),
+    })
+}
+
+/// After a Following read: draw the pauses before the next page and the next list, and
+/// delete finished reads the crawl has had time to collect.
+fn pace_following(db: &Connection, now: f64) -> BrowserResult<()> {
+    let control = control();
+    let between = |low: f64, high: f64| low + fastrand::f64() * (high - low);
+    let page = between(
+        control.following_page_delay_min_seconds,
+        control.following_page_delay_max_seconds,
+    );
+    let list = between(
+        control.following_list_delay_min_seconds,
+        control.following_list_delay_max_seconds,
+    );
+    write_setting(db, "following_next_page_at", &json!(now + page))?;
+    write_setting(db, "following_next_list_at", &json!(now + list))?;
+    db.execute(
+        &format!("DELETE FROM jobs WHERE {FINISHED_FOLLOWING_SQL} AND finished_at<?"),
+        [now - control.following_result_retention_seconds],
+    )
+    .map_err(storage)?;
+    Ok(())
+}
+
+/// A setting read inside a transaction: its JSON value, null when unset or invalid.
+fn stored_setting(db: &Connection, key: &str) -> BrowserResult<Value> {
+    let raw: Option<String> = db
+        .query_row("SELECT value FROM settings WHERE key=?", [key], |row| {
+            row.get(0)
+        })
+        .optional()
+        .map_err(storage)?;
+    Ok(raw
+        .and_then(|raw| serde_json::from_str(&raw).ok())
+        .unwrap_or(Value::Null))
+}
+
+fn write_setting(db: &Connection, key: &str, value: &Value) -> BrowserResult<()> {
+    db.execute(UPSERT_SETTING, params![key, pyjson::dumps(value, None)])
+        .map_err(storage)?;
+    Ok(())
 }
 
 fn select_job(db: &Connection, id: &str) -> BrowserResult<BrowserJob> {
