@@ -26,7 +26,7 @@ import { sanitizeHref } from "@/shared/utils/url";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import type { Club } from "@/shared/types";
 
-/** Activity lists arrive as server-streamed slots, one per tab. */
+/** Activity lists arrive as server-rendered slots, one per tab. */
 interface ClubActivitySlots {
   events: ReactNode;
   positions: ReactNode;
@@ -83,6 +83,7 @@ function ClubDetailsContent({
               <span className="flex items-center gap-3">
                 <AvatarStack
                   size="lg"
+                  loading="eager"
                   avatars={[{ src: club.logo_url ?? "", name: club.club_name }]}
                 />
                 {club.club_name}

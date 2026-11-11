@@ -5,6 +5,7 @@
     "reportUpdateFailed": "Die Meldung konnte nicht aktualisiert werden. Bitte erneut versuchen.",
     "eventReport": "Veranstaltungsmeldung",
     "pendingCount": "{{label}}: {{value}} ausstehend",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "Einige ausstehende Anzahlen konnten nicht geladen werden.",
     "eventReports": "Veranstaltungsmeldungen",
     "reportReason": "Meldegrund",
@@ -433,12 +434,15 @@
       "change": "Seit {{date}}: {{value}}",
       "rate": "Interaktionsrate: {{value}} %",
       "lastPost": "Letzter Beitrag {{time}}",
+      "lastNotification": "Letzte Benachrichtigung {{time}}",
+      "noNotifications": "Noch keine Benachrichtigungen",
       "reconnect": "Neu verbinden",
       "tokenExpires": "Token läuft ab: {{date}}",
       "noPosts": "Noch keine Beiträge.",
       "notRead": "Noch nicht gelesen. Der nächste tägliche Lauf füllt das aus.",
       "summary": {
         "needingAttention": "Brauchen Aufmerksamkeit: {{value}}",
+        "quietNotifications": "Seit {{hours}} Std. ohne Benachrichtigung",
         "followers": "Follower gesamt",
         "averageLikes": "Durchschnittliche Likes pro Beitrag",
         "followerGains": "Neue Follower pro Tag",
@@ -502,7 +506,7 @@
       },
       "submitFailed": "Die Entscheidungen konnten nicht gespeichert werden. Versuch es noch einmal.",
       "emptyTitle": "Nichts zu prüfen",
-      "emptyDescription": "Konten erscheinen hier, sobald die wöchentliche Suche sie findet."
+      "emptyDescription": "Konten erscheinen hier, sobald die Suche sie findet."
     },
     "clubSubmissions": "Club-Einreichungen",
     "noClubSubmissions": "Keine Club-Einreichungen",

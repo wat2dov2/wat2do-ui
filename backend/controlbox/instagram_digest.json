@@ -3,5 +3,6 @@
   "operation_name": "SubscriptionDigestFeedQuery",
   "client_doc_id": "20099285643937437306465362209",
   "web_app_id": "936619743392459",
-  "maximum_pages": 25
+  "maximum_pages": 25,
+  "digest_engine": "brave"
 }

@@ -5,6 +5,7 @@
     "reportUpdateFailed": "Não foi possível atualizar a denúncia. Tente novamente.",
     "eventReport": "Denúncia de evento",
     "pendingCount": "{{label}}: {{value}} pendentes",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "Não foi possível carregar algumas contagens pendentes.",
     "eventReports": "Denúncias de eventos",
     "reportReason": "Motivo da denúncia",
@@ -433,12 +434,15 @@
       "change": "Desde {{date}}: {{value}}",
       "rate": "Engajamento: {{value}}%",
       "lastPost": "Última publicação {{time}}",
+      "lastNotification": "Última notificação {{time}}",
+      "noNotifications": "Ainda sem notificações",
       "reconnect": "É preciso reconectar",
       "tokenExpires": "O token expira em {{date}}",
       "noPosts": "Ainda não há publicações.",
       "notRead": "Ainda não lida. A próxima execução diária preenche isto.",
       "summary": {
         "needingAttention": "Precisam de atenção: {{value}}",
+        "quietNotifications": "Sem notificações em {{hours}} h",
         "followers": "Total de seguidores",
         "averageLikes": "Média de curtidas por publicação",
         "followerGains": "Novos seguidores por dia",
@@ -502,7 +506,7 @@
       },
       "submitFailed": "Não foi possível salvar as decisões. Tente de novo.",
       "emptyTitle": "Nada para revisar",
-      "emptyDescription": "As contas aparecem aqui conforme a busca semanal as encontra."
+      "emptyDescription": "As contas aparecem aqui conforme a busca as encontra."
     },
     "clubSubmissions": "Submissões de clubes",
     "noClubSubmissions": "Nenhuma submissão de clube",

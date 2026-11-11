@@ -1,14 +1,23 @@
 name: Process Notifications
+# A direct message's title is its sender, so only the notifications this workflow
+# processes are named by their title; any other is named by its category alone.
 run-name: >-
   ${{
-    github.event.client_payload.notification_dict && format('{0} - {1}', github.event.client_payload.notification_dict['android.title'], github.event.client_payload.notification_dict['android.subText']) ||
-    inputs.notification_payload && format('{0} - {1}', fromJSON(inputs.notification_payload || '{}')['android.title'], fromJSON(inputs.notification_payload || '{}')['android.subText']) ||
+    contains(fromJSON('["post","subscription_daily_digest"]'), github.event.client_payload.notification_dict['com.instagram.android.igns.logging.push_category']) && format('{0} - {1}', github.event.client_payload.notification_dict['android.title'], github.event.client_payload.notification_dict['android.subText']) ||
+    contains(fromJSON('["post","subscription_daily_digest"]'), fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.push_category']) && format('{0} - {1}', fromJSON(inputs.notification_payload || '{}')['android.title'], fromJSON(inputs.notification_payload || '{}')['android.subText']) ||
+    (github.event_name == 'repository_dispatch' || inputs.notification_payload) && format('Skipped {0} notification', github.event.client_payload.notification_dict['com.instagram.android.igns.logging.push_category'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.push_category'] || 'uncategorized') ||
     format('Process @{0}', inputs.poster_id)
   }}
 
 # Process forwarded Instagram notifications or a manually selected handle.
 # Triggered either manually (workflow_dispatch) or by an external service
 # posting to repository_dispatch with type=new_instagram_post.
+#
+# This repository and its Actions logs are public, and GitHub prints every env:
+# value in each step's log. A notification payload (a direct message's text, for
+# one) therefore never enters an env: block, a log line or an artifact: route
+# reads only its category and recipient, and the processing step hands the payload
+# from the event file straight to the binary.
 #
 # When triggered manually, the workflow uses a five-year cutoff instead of
 # one day so an admin can backfill an account that hasn't been scraped before.
@@ -39,12 +48,21 @@ jobs:
     steps:
       - id: check
         env:
+          # A manual run may name a handle and school instead of a notification.
+          MANUAL_RETRIEVAL: ${{ github.event_name == 'workflow_dispatch' && !inputs.notification_payload }}
+          PUSH_CATEGORY: ${{ github.event.client_payload.notification_dict['com.instagram.android.igns.logging.push_category'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.push_category'] }}
           INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || github.event.client_payload.notification_dict['com.instagram.android.igns.logging.intended_recipient_id'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.intended_recipient_id'] }}
           TARGET_SCHOOL: ${{ github.event_name == 'workflow_dispatch' && inputs.school || '' }}
         run: |
+          # Only post and digest notifications name posts to record (ACTIONABLE_CATEGORIES in
+          # rust/src/instagram_notifications/process_notification.rs). Any other category,
+          # direct messages included, ends here, and the notice names only the category.
+          if [[ "$MANUAL_RETRIEVAL" != true && "$PUSH_CATEGORY" != post && "$PUSH_CATEGORY" != subscription_daily_digest ]]; then
+            echo "::notice::Skipped a ${PUSH_CATEGORY:-uncategorized} notification; only post and subscription_daily_digest notifications are processed."
+            echo 'routed=false' >> "$GITHUB_OUTPUT"
           # Instagram also posts empty summary notifications with no recipient. Nothing can
           # route them, so they finish here instead of failing in "Validate job inputs".
-          if [[ -z "$INTENDED_RECIPIENT_ID" && -z "$TARGET_SCHOOL" ]]; then
+          elif [[ -z "$INTENDED_RECIPIENT_ID" && -z "$TARGET_SCHOOL" ]]; then
             echo "::notice::Skipped a notification with no intended recipient or school; nothing to process."
             echo 'routed=false' >> "$GITHUB_OUTPUT"
           else
@@ -68,7 +86,6 @@ jobs:
       INTENDED_RECIPIENT_ID: ${{ github.event.client_payload.intended_recipient_id || github.event.client_payload.notification_dict['com.instagram.android.igns.logging.intended_recipient_id'] || fromJSON(inputs.notification_payload || '{}')['com.instagram.android.igns.logging.intended_recipient_id'] }}
       TARGET_SCHOOL: ${{ github.event_name == 'workflow_dispatch' && inputs.school || '' }}
       CUTOFF_DAYS: ${{ github.event_name == 'workflow_dispatch' && '1825' || github.event.client_payload.cutoff_days || '1' }}
-      NOTIFICATION_JSON: ${{ inputs.notification_payload || toJSON(github.event.client_payload.notification_dict) }}
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -82,16 +99,6 @@ jobs:
             printf '%s\n' "NOTIFICATION_RUNTIME_ROOT=$RUNNER_TOOL_CACHE/wat2do-notification-$RUNNER_OS-$RUNNER_ARCH"
             printf '%s\n' "TMPDIR=$RUNNER_TEMP"
           } >> "$GITHUB_ENV"
-
-      - name: Expose notification payload
-        run: echo "$NOTIFICATION_JSON" > notification_payload.json
-
-      - name: Upload notification payload artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: notification-payload
-          path: notification_payload.json
-          retention-days: 14
 
       - name: Validate job inputs
         run: |
@@ -127,9 +134,12 @@ jobs:
         timeout-minutes: ${{ fromJSON(steps.controls.outputs.process_timeout_minutes) }}
         working-directory: backend
         run: |
-          if [[ "$NOTIFICATION_JSON" != "null" && -n "$NOTIFICATION_JSON" ]]; then
-            echo "Processing raw notification payload..."
-            "$NOTIFICATION_BINARY" process-notification
+          # The payload goes from the event file to the binary's environment only, never
+          # through env:, which this public repository's logs print.
+          notification_json="$(jq -r '.inputs.notification_payload // (.client_payload.notification_dict // empty | tojson)' "$GITHUB_EVENT_PATH")"
+          if [[ -n "$notification_json" ]]; then
+            echo "Processing the forwarded notification..."
+            NOTIFICATION_JSON="$notification_json" "$NOTIFICATION_BINARY" process-notification
           else
             "$NOTIFICATION_BINARY" retrieve \
               --school "$TARGET_SCHOOL" \

@@ -147,6 +147,11 @@ pub struct Ingestion {
     pub directory_listing_max_bytes: usize,
     pub directory_model_timeout_seconds: u64,
     pub directory_scrape_interval_seconds: u64,
+    pub club_directory_scan_days: u64,
+    pub club_directory_max_listing_pages: usize,
+    pub club_directory_pages_per_run: usize,
+    pub club_directory_page_delay_seconds: f64,
+    pub club_directory_recheck_days: u64,
     pub claim_lease_seconds: i32,
     pub max_attempts: i32,
     pub agent_failure_streak: u64,
@@ -156,8 +161,30 @@ pub struct Ingestion {
     pub fetch_timeout_seconds: f64,
     pub club_logo_read_delay_seconds: f64,
     pub club_logo_retry_days: u64,
+    pub profile_renderer: String,
+    pub profile_render_timeout_seconds: f64,
     pub launch_agent_timeout_seconds: f64,
     pub university_event_schools: Vec<String>,
+    pub club_directories: Vec<ClubDirectory>,
+}
+
+/// One official club directory in `controlbox/ingestion.json` `club_directories`.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ClubDirectory {
+    pub name: String,
+    pub schools: Vec<String>,
+    pub listings: Vec<ClubDirectoryListing>,
+    #[serde(default)]
+    pub notes: String,
+}
+
+/// One listing request; `{page}` in its URL or JSON body pages through it from 1.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ClubDirectoryListing {
+    pub url: String,
+    pub body: Option<String>,
 }
 
 /// The event image and video limits and the thumbnail sizes in `controlbox/uploads.json`.
@@ -222,6 +249,16 @@ pub struct InstagramBrowser {
     pub source_page_size: usize,
     pub engagement_interval_seconds: f64,
     pub engagement_max_wait_seconds: f64,
+    /// Following list reads: accounts per page, the random pause before a list's next
+    /// page and before a new list, the reads allowed within any hour, and how long a
+    /// finished read is kept for the crawl to collect.
+    pub following_page_size: usize,
+    pub following_page_delay_min_seconds: f64,
+    pub following_page_delay_max_seconds: f64,
+    pub following_list_delay_min_seconds: f64,
+    pub following_list_delay_max_seconds: f64,
+    pub following_requests_per_hour: usize,
+    pub following_result_retention_seconds: f64,
     pub bootstrap_profile_school: String,
     /// School slug to the name Brave's account switcher shows, in the file's order.
     pub school_switcher_username_overrides: IndexMap<String, String>,
@@ -252,7 +289,6 @@ pub struct InstagramPublishing {
     pub maximum_lead_days: i64,
     pub maximum_event_slides: usize,
     pub minimum_event_slides: usize,
-    pub fill_candidate_count: usize,
     pub status_poll_interval_seconds: f64,
     pub meta_poll_attempts: u32,
     pub meta_poll_interval_seconds: f64,
@@ -296,6 +332,8 @@ pub struct InstagramDigest {
     pub client_doc_id: String,
     pub web_app_id: String,
     pub maximum_pages: i64,
+    /// Which browser the worker reads digests with.
+    pub digest_engine: DigestEngine,
 }
 
 /// `controlbox/notification_retry.json`, every field.
@@ -311,6 +349,55 @@ pub struct NotificationRetry {
     pub login_first_school: String,
     pub reruns_per_day: usize,
     pub max_reruns_per_run: i64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum DigestEngine {
+    Brave,
+    Lightpanda,
+}
+
+/// `controlbox/instagram_lightpanda.json`, every field.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InstagramLightpanda {
+    /// The pinned release, its download and the SHA-256 of that download.
+    pub version: String,
+    pub download_url: String,
+    pub sha256: String,
+    pub startup_timeout_seconds: f64,
+    pub navigation_timeout_seconds: f64,
+    pub shutdown_timeout_seconds: f64,
+    pub login_wait_seconds: f64,
+    pub login_poll_seconds: f64,
+    /// At most this many accounts log in to Lightpanda for the first time a day.
+    pub new_login_daily_limit: usize,
+    /// Most Lightpanda processes open at once on the Mac, across every wat2do process.
+    pub max_sessions: usize,
+    /// A worker session closes after this long without a job, or this long after it opened.
+    pub session_idle_seconds: f64,
+    pub session_max_seconds: f64,
+    /// Brave reads what the Lightpanda lane claimed once its heartbeat is this old.
+    pub lane_stale_seconds: f64,
+    /// A lane digest's whole deadline, opening its session included; Brave takes a
+    /// digest the lane has left waiting `lane_digest_wait_seconds`.
+    pub lane_digest_timeout_seconds: f64,
+    pub lane_digest_wait_seconds: f64,
+    /// A lane Following read's whole deadline, opening its session included.
+    pub lane_following_timeout_seconds: f64,
+    /// The worker logs one more account in to Lightpanda at most this often: the
+    /// accounts with the most digests in the last `ramp_lookback_days` first, and
+    /// `ramp_last_accounts` last.
+    pub ramp_interval_minutes: f64,
+    pub ramp_lookback_days: f64,
+    /// The ramp leaves the day's last this many logins to Brave.
+    pub ramp_reserved_logins: usize,
+    pub ramp_last_accounts: Vec<String>,
+    pub shadow_lookback_hours: f64,
+    pub shadow_jobs_per_account: usize,
+    pub shadow_digest_pause_seconds: f64,
+    pub shadow_account_pause_seconds: f64,
 }
 
 /// The campus seasons, map views and map geocoding in `controlbox/event_discovery.json`.
@@ -639,6 +726,12 @@ pub static NOTIFICATION_RETRY: LazyLock<NotificationRetry> = LazyLock::new(|| {
         include_str!("../../backend/controlbox/notification_retry.json"),
     )
 });
+pub static INSTAGRAM_LIGHTPANDA: LazyLock<InstagramLightpanda> = LazyLock::new(|| {
+    parse(
+        "instagram_lightpanda",
+        include_str!("../../backend/controlbox/instagram_lightpanda.json"),
+    )
+});
 pub static EVENT_DISCOVERY: LazyLock<EventDiscovery> = LazyLock::new(|| {
     parse(
         "event_discovery",
@@ -842,10 +935,16 @@ mod tests {
         assert!(!NOTIFICATION_DEFAULTS.enabled("unknown_type"));
 
         assert!(INSTAGRAM_BROWSER.parallel_tabs >= 2);
+        assert!(
+            INSTAGRAM_BROWSER.following_page_delay_min_seconds
+                <= INSTAGRAM_BROWSER.following_page_delay_max_seconds
+        );
+        assert!(INSTAGRAM_BROWSER.following_requests_per_hour > 0);
         assert!(!SCRAPING.instagram_web_app_id.is_empty());
         assert!(INSTAGRAM_DIGEST.maximum_pages > 0);
         assert!(NOTIFICATION_RETRY.max_reruns_per_run > 0);
         assert!(PUBLIC_ATTENDANCE.maximum_display_names > 0);
         assert!(INTERACTION_INGESTION.maximum_batch_size > 0);
+        assert_eq!(INSTAGRAM_LIGHTPANDA.sha256.len(), 64);
     }
 }

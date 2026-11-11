@@ -43,21 +43,29 @@ maintainability.
 
 Collect Instagram notifications through the official Instagram app on a physical
 Android phone running Automate, whose `NotificationListenerService` flow triggers
-the GitHub `process-notification` workflow directly.
-Do not use Android emulators for notification collection.
+the GitHub `process-notification` workflow directly, and on the Mac's emulator.
+`backend/jobs/record_instagram_notifications.py` (LaunchAgent `io.wat2do.notification-recorder`) appends each notification the emulator gets to `~/.local/state/wat2do/notification-log/notifications.jsonl` and sends each new `post` and `subscription_daily_digest` one as the same `new_instagram_post` repository dispatch the phones send (`services/notification_dispatch.py`, `controlbox/notification_recording.json`).
+It does not check whether a phone already sent a notification; the workflow records each recipient and push ID once.
+A stopped Android user gets no notifications, so every `start_users_every_seconds` it starts each user that holds an account and has stopped, in the background (`am start-user -w`, never switched to the front).
+Beyond that it only listens: no tap, never the emulator's lock.
+It keeps only a direct message's push category, Android user, recipient and times, never its sender or text, and never dispatches one.
 Budget no more than three Instagram accounts per device and scale horizontally by
 adding devices.
 The workflow records exact post URLs in the notification ledger, and a
 database trigger adds each post to `public.ingestion_items`, the only ingestion queue.
+The repository and its Actions logs are public: the workflow processes only `post` and `subscription_daily_digest` notifications, its `route` job ends every other category (direct messages included) with a notice naming only the category, and a notification payload never enters an `env:` block, a log line or an artifact.
 The Mac's always-on processor reads each queued post logged out, with no account,
 cookie or session ID, then owns extraction and database writes.
 The processor is Rust (`rust/src/ingestion`, binary `wat2do-ingest`); its LaunchAgent `io.wat2do.ingestion.process` runs `cargo run --release` against the runtime checkout, so a kickstart builds and runs that checkout's code and `prompt.md`.
 It runs a Claude Haiku agent that follows `backend/services/ingestion/prompt.md` and writes only events, event dates and positions through the scoped `wat2do_ingest_agent` login.
 When Claude's usage limit turns an agent away (HTTP 429), or `controlbox/ingestion.json` `agent_failure_streak` agent runs fail in a row, the row goes back without spending an attempt and every agent waits until the reset Claude names, or for `agent_pause_seconds`, so an outage never fails the queue.
 Every other Claude caller also treats the limit (`claude::Limited`, Python's `ClaudeLimited`) as no answer at all: a directory run stops and the next run starts over, DM threads stay unhandled, a carousel's song keeps waiting, and unscored follow candidates wait for the next run.
-The same processor reads, logged out and one at a time (`controlbox/ingestion.json` `club_logo_read_delay_seconds` apart), the Instagram profile of each club that has a handle but still needs a logo or still carries a placeholder "@handle" name, copies its picture into media storage as the club's logo, and replaces the placeholder name with the account's real one.
+The same processor reads, logged out and one at a time (`controlbox/ingestion.json` `club_logo_read_delay_seconds` apart), the Instagram profile of each club that has a handle but still needs a logo (rendered by Lightpanda at `controlbox/ingestion.json` `profile_renderer`, since Instagram no longer serves profile embeds) or still carries a placeholder "@handle" name, copies its picture into media storage as the club's logo, and replaces the placeholder name with the account's real one.
 A handle is read again only after `club_logo_retry_days`, and a refused read pauses these reads with the post fetches.
 Haiku directory agents, not code-based parsers, read the official school directories and queue finished event details; the same binary runs them (`wat2do-ingest scrape-directories`, LaunchAgent `io.wat2do.ingestion.directories`, installed with the processor by `wat2do-ingest install-schedule`).
+The same run then has Haiku club directory agents read each school's official club directory (`controlbox/ingestion.json` `club_directories`, `backend/services/ingestion/club_directory_prompt.md`, `rust/src/ingestion/club_directories.rs`), one agent per listing page every `club_directory_scan_days`, each reporting the clubs on its page with the Instagram account the page shows or else the club's own page on the directory.
+Code keeps only accounts the listing page shows and pages on the directory's own site, then reads up to `club_directory_pages_per_run` club pages a run, spaced out, each again only after `club_directory_recheck_days`, and takes the Instagram accounts a page links that the site's home page does not.
+Every such account its school has no follow candidate row for, and no club names, is queued for following as a pending `directory` row; which pages it read and when stay in `club-directories.json` in the ingestion state directory.
 wat2do lists only student-led clubs, events and positions (clubs, societies, student unions and governments, student media and groups) plus varsity teams and their games.
 Anything the university itself runs (departments, faculties, offices, services, centres, libraries, alumni, admissions, the university's own accounts) is never listed or followed: the directory prompt, the ingestion prompt and the follow scoring prompt each leave it out.
 The one exception is the schools in `controlbox/ingestion.json` `university_event_schools` (OCAD University, whose clubs post too few events): there the university's own events students can attend are listed and its accounts followed too, through each prompt's `{{lists_university_events}}`.
@@ -73,8 +81,11 @@ The worker, the workflow's job and the daily rerun of failed runs are Rust (`rus
 The workflow builds `wat2do-browser` from its own checkout once per source change (`scripts/notification-binary.sh`), before any credential is in its environment, and fails before recording anything when that binary is missing or stale.
 Their AppleScript and page JavaScript live under `rust/src/instagram_notifications/scripts/`, and the local queue stays `~/.local/state/wat2do/instagram-browser/jobs.sqlite3`.
 The worker owns two Instagram tabs in the existing Brave session.
-The first tab is reserved for account switching and serialized likes/reposts; the second tab owns digest queries and manual profile listings.
-An HTTP 429 on a profile listing holds only profile listings (Instagram limits that endpoint on its own); a 429 on any other job holds every claim.
+The first tab is reserved for account switching and serialized likes/reposts; the second tab owns digest queries, manual profile listings and the follow crawl's Following reads.
+Its queue's job kinds are `digest`, `engagement`, `retrieval` (profile listings) and `following`: one page of an account's Following list, read with the page's own `fetch` of `/api/v1/friendships/<user_id>/following/` as whichever account Brave shows (so `excluded_accounts` never holds it), never switching accounts, one at a time, at least an hour divided by `following_requests_per_hour` apart and after a pause before each next page and each new list (`controlbox/instagram_browser.json` `following_*`).
+An HTTP 429 on a profile listing holds only profile listings (Instagram limits that endpoint on its own), and a 429, a login wall or any other refusal on a Following read (feedback or spam blocks, any 4xx but a plain "not found" or "private") holds only Following reads; a 429 on any other job holds every claim.
+`wat2do-browser pause-following` stops Following reads alone, and `resume-following` lets them run again; a cancelled Following read stays cancelled.
+While the worker's Lightpanda lane (below) serves any account, Following reads whose list owner's ID is known run there instead, and Brave keeps only the rest.
 Brave never opens individual posts for ingestion.
 Account switches wait for every tab request to settle, verify the notification's
 intended recipient, and refresh each selected tab before querying.
@@ -89,14 +100,29 @@ Exception: after Instagram logs Brave out, the worker may log back in by clickin
 saved wat2do profile on Instagram's own logged-out page and accepting "Save info",
 spaced and capped by controlbox.
 A school account missing from the switcher is logged in the way a person adds one: switch to the `login_from_school` account, then Switch accounts, "Log into an Existing Account".
+When Brave holds no other saved account, Switch accounts opens a bare login form instead of the chooser: a switch closes it and treats the account as missing, and adding an account logs in through that form directly.
+When the `login_from_school` account is missing too, it is logged back in first the same way, and counts toward the same limits.
+Switch accounts' dialog is always closed before the worker reads the active account or gives up, since a modal hides the page's navigation.
 A password prompt, there or after a logout, is answered with the account's password from the Mac's login Keychain (`login_keychain_service`), and an emailed security code is read from the Gmail inbox in `login_code_email` over IMAP.
-Each account's password is entered at most once a day and `account_login_daily_limit` a day in all, whether it is added or logged back in after a logout.
+Each account's password is entered at most once a day and `account_login_daily_limit` a day in all, whether it is added or logged back in after a logout; a login is recorded just before its password goes out, so a failure before that spends nothing.
 Once a password has been submitted, any failure (including a timeout) pauses browser work for a person and is never retried automatically.
 Passwords go to the page through osascript's stdin, never a command line, log or file.
 A refused password or any other challenge waits for a person.
+Second exception (approved 2026-11-03): digests can be read with Lightpanda instead (`rust/src/lightpanda`, binary `wat2do-lightpanda`), one `lightpanda serve` process per school account, each with its own owner-only (0600) cookie jar in `~/.local/state/wat2do/instagram-browser/lightpanda/`.
+The worker may create, keep and replace those jars and log the accounts in to them itself, typing the Keychain password and the emailed code over CDP on an owner-only Unix socket; neither, nor any jar's contents, is ever logged, copied elsewhere or put on a command line.
+An account counts as logged in when its jar holds a non-empty `sessionid`.
+Lightpanda logins share Brave's budget above, and first logins (a new device to Instagram) are also capped at `controlbox/instagram_lightpanda.json` `new_login_daily_limit` a day.
+A wrong password, a security check or any page the login does not recognise pauses that account until a person runs `wat2do-lightpanda resume --account <account>`.
+These sessions are the one parallel pool of browser sessions allowed: the worker's Lightpanda lane (`rust/src/lightpanda/lane.rs`, a thread of `wat2do-browser`) keeps each served account's session open while it has work, at most `controlbox/instagram_lightpanda.json` `max_sessions` Lightpanda processes on the Mac at once (about 250 MB each), never two for one account.
+It serves every account whose jar holds a login and that is neither paused, excluded nor held, and says so in the queue with a heartbeat; Brave reads everything else, and everything once that heartbeat is `lane_stale_seconds` old.
+With `controlbox/instagram_digest.json` `digest_engine` `"lightpanda"`, a served account's digests are read in its own session (with `"brave"`, today's setting, Brave reads them all), each within `lane_digest_timeout_seconds` opening included; a digest Lightpanda cannot read, or leaves waiting `lane_digest_wait_seconds`, goes to Brave.
+Every served account reads Following lists at its own pace (Brave's `following_*` values, per account), so the crawl's reads spread over all of them; a 429, a login wall or a refusal holds only that account, and Brave reads Following lists only while the lane serves no account.
+Brave's pauses and holds never stop the lane, Brave's queue recovery leaves the lane's running jobs to it while its heartbeat is fresh, and the lane's reads never touch Brave's Following pace or backoff; a session Instagram logged out makes its jar forget the login.
+At most every `ramp_interval_minutes` (kept in the queue across restarts) the lane logs one more account in, the accounts with the most digests first, within the budgets above and never spending the day's last `ramp_reserved_logins` logins, which Brave's relogins need.
+Every login's budget check and record happen in one queue transaction, and from the first keystroke of a Lightpanda password on, any failure pauses that account for a person.
 School accounts' direct messages are not taken from notifications.
 One Mac LaunchAgent (`backend/jobs/run_instagram_worker.py`, `io.wat2do.instagram.worker`) is the only thing that drives the emulator (`backend/services/instagram_worker.py`).
-It visits one school account at a time: it picks the account with the most urgent work (a carousel waiting for its song, then an inbox due a check, then follows, then crawling), switches the app to it once, and does everything that account needs before moving on.
+It visits one school account at a time: it picks the account with the most urgent work (a carousel waiting for its song, then an inbox due a check, then follows), switches the app to it once, and does everything that account needs before moving on.
 Each inbox is checked at random times, a random gap set in `controlbox/instagram_dms.json` after each check.
 Replies, follows and post edits happen only between `controlbox/instagram_emulator.json` `action_start_hour` and `action_end_hour`; outside them the worker only reads.
 One failing step never stops the visit's other steps.
@@ -138,6 +164,7 @@ the school's story, and only then does the thread get the reply.
 The emulator finds every control by its accessibility label, taps at a random point
 inside it after a random pause, types one character at a time, and never types a
 password.
+It reads each screen through `ScreenReader.java` (`backend/services/instagram_emulator`), `uiautomator dump` kept running while the emulator is held, rebuilt into the committed `screen-reader.jar` by `scripts/build_emulator_jars.py`, which builds the notification recorder's `notification-reader.jar` too.
 Each reply is confirmed by seeing it appear in the thread.
 The emulator also likes, reposts and adds music to our own carousels after the API
 publishes them, since the API can do none of these: on the school's next visit the
@@ -148,20 +175,24 @@ track or none.
 The same edit tags the post with the school's own place: the first one Instagram's location search lists under the school's exact name (`schools.name`), else the one Claude Haiku recognizes as the school, or none; a place that cannot be tagged never holds up the song.
 A song the admin marks as Asian or K-pop is tried only at the campuses in
 `controlbox/instagram_publishing.json` `asian_song_schools`.
-The emulator also finds and follows the clubs each school account should follow.
-`public.instagram_follow_candidates` is the one queue of accounts to follow: any feature that wants an account followed adds a row there with its `source` (`crawl`, `club` or `import`), and nothing else follows accounts.
+The emulator also follows the clubs each school account should follow, and the follow crawl finds them through the browser worker.
+`public.instagram_follow_candidates` is the one queue of accounts to follow: any feature that wants an account followed adds a row there with its `source` (`crawl`, `club`, `import` or `directory`), and nothing else follows accounts.
 One row per school and handle is kept whatever its status, so an account an admin rejected is never offered again.
 Every listed club's Instagram account goes in approved for its school (`sync_club_targets`); crawled accounts wait for review.
-A crawl (`backend/services/instagram_follow/crawl.py`) starts at most once per `controlbox/instagram_follow.json` `crawl_interval_days` per school.
-It searches the school account's own Following list for the school's names in `school_names` (UofT's campuses list each other), then each match's Following list in turn, reading from each row's button whether we already follow that account.
-Every match is followed further, and an unfollowed account with no row yet becomes a pending candidate.
-The crawl stops once `crawl_miss_streak` profiles in a row find nothing new; a profile that fails to load is retried later and never counts as a miss.
-It runs in slices (`crawl_slice`) with its place kept in local state, so it never holds the emulator for hours.
+Accounts a school's official club directory lists come from the club directory agents as pending `directory` rows whose `found_via` names the directory, and the scorer decides them like crawled ones, told which directory lists each; one found for a club of ours without an account is linked to that club, so approving it gives that club the account instead of making a second club.
+Crawling (`backend/services/instagram_follow/crawl.py`) never stops: a crawl under way goes first, then schools never crawled, then the school whose last crawl finished longest ago, so a school whose crawl ends is crawled again once the schools that finished before it have had their turn.
+It reads Following lists only through the browser worker's `following` jobs (`wat2do-browser following`, collected with `status --job-id`, checked less often the longer a read waits), keeping one read outstanding per school and crawling as many schools at once as the worker has Following readers (`status` `following.readers`), and runs in its own thread of the emulator worker's process, restarted if it ever stops, without ever touching the emulator.
+Every crawl starts over from the school account's own Following list (read by its `recipient_id`, to its end): every public account the school follows is a seed, and each seed's whole Following list is read in turn, at most `crawl_list_page_limit` pages deep.
+A public account the school does not follow and has no row for becomes a pending candidate when its handle or name carries one of the school's names in `controlbox/instagram_follow.json` `school_names` as a word (UofT's campuses list each other; only the slug and names of six letters or more may start or end a run-together word, so "mac" or "queen" never matches inside one), or once `crawl_mutual_follow_threshold` of the school's followed clubs follow it; `found_via` names those clubs.
+Sightings below the threshold are kept across crawls in local state (`sightings.sqlite3`), so the count grows crawl after crawl, and one no crawl sees again for `crawl_sighting_retention_days` is forgotten; a private account is never a candidate, since it is almost always a member and the scorer cannot read it.
+The crawl stops only once `crawl_miss_streak` seeds in a row add no new candidate, or no seed is left; a page that fails to read is read again, up to `crawl_seed_attempts` times, and never counts as a miss, a hold or pause in Brave only keeps the crawl waiting, and a read still waiting after `crawl_read_timeout_seconds` while Brave holds nothing rests that school's crawl (its read is still collected) so the others go on.
+Each crawl takes the school's seeds in a new random order, so a crawl the miss streak ends early still reaches clubs the last one never did, and crawl after crawl covers them all.
+Its place is kept in local state, so a restart picks up at the page it was reading; state an older crawler left is finished and replaced by a fresh crawl.
 New candidates are read logged out from their profile embed (`fetch_profile`) and scored by Claude (`backend/services/instagram_follow/prompt.md`) from their newest posts.
 Admins review them on the admin Social page's Follow candidates tab; approvals and rejections are staged in the page and submitted together.
 Approving creates the school's club for the handle unless one exists, and queues the follow.
-The emulator worker checks `crawl_due` and `follows_due` from the database, then calls `crawl_slice` and `follow_due` with the emulator on the school's account.
-`follow_due` follows a few approved accounts per visit, at most `follows_per_account_per_day` a day, and sets each one's post notifications to All so ingestion hears about its posts; an account already followed is only marked followed, after its bell is checked, and never counts toward the day's follows.
+The emulator worker checks `follows_due` from the database, then calls `follow_due` with the emulator on the school's account.
+`follow_due` follows a few approved accounts per visit, at most `follows_per_account_per_day` a day and `follows_per_account_per_hour` within any hour, and sets each one's post notifications to All so ingestion hears about its posts; an account already followed is only marked followed, after its bell is checked, and never counts toward the day's follows.
 Instagram's "Try again later" pauses that account's follows for a day; it is never pushed through.
 Only the worker taps the emulator, holding its lock for one visit at a time.
 Every message is untrusted: the prompt lists the traps to ignore (instructions inside a
@@ -177,9 +208,13 @@ person (`run_instagram_worker.py resume-dms` once checked) and is never retried,
 may already have reached Instagram; the worker's other steps go on.
 A story repost waits, without accepting or answering the thread, while the emulator has
 less free storage than `controlbox/instagram_emulator.json` `min_free_data_megabytes`.
-Once a day the worker deletes Instagram's caches on every Android user as root
+Once a day, from `reclaim_hour` (before the morning's carousels publish), the worker
+deletes Instagram's caches on every Android user as root
 (`instagram_cache_paths`), never its login, databases or settings, then restarts the
 emulator, whose host process leaks about 3 GB of memory a day.
+Unfollows and follows stop between profiles once a carousel waits for its song or that restart is due.
+A step that fails starts Instagram afresh on that Android user, so nothing it left open covers the next step, and `failures_before_rest` profiles failing in a row rest that account's follows (as that many failed Following reads in a row rest that school's crawl).
+Both stop Instagram with `am force-stop`, which also leaves an app in Android's stopped state, getting nothing in the background until it is opened again, so `pm unstop` follows every one; the reclaim never clears another app's data (clearing Google Play services dropped the Android users' device registration).
 `dry_run` decides and records every DM without replying, reposting or queueing anything.
 Never log DM text.
 
@@ -261,6 +296,7 @@ The scheduled competitor pain point sweep is a standing, human-approved exceptio
 Safari window to read X search results in a session a person logged in.
 It only reads what the page shows, never posts, likes, replies or follows, and
 never reads or stores cookies; it never uses the Instagram worker's Brave.
+The worker's Lightpanda (`rust/src/lightpanda`, its lane in `wat2do-browser` and the `wat2do-lightpanda` commands) is the other standing exception: at most `controlbox/instagram_lightpanda.json` `max_sessions` headless processes at once, one per account, each stopped once its account has no work.
 Standing permission from an earlier task does not carry over.
 When you are done with anything you were explicitly asked to start, shut it down.
 

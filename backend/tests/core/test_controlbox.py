@@ -62,6 +62,40 @@ def test_invalid_notification_retry_schedule_hour_is_rejected(tmp_path) -> None:
         load_controlbox(directory)
 
 
+def test_notification_recording_keeps_direct_messages_redacted() -> None:
+    control = controlbox.notification_recording
+    assert "direct" in control.direct_message_markers
+    assert control.reconnect_first_seconds <= control.reconnect_longest_seconds
+    # A replayed notification is remembered past the emulator's daily restart.
+    assert control.remember_days >= 1
+    # Only what the workflow processes is dispatched, never a direct message.
+    assert set(control.dispatch_push_categories) == {"post", "subscription_daily_digest"}
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"direct_message_markers": ["message"]},
+        {"direct_message_markers": []},
+        {"direct_message_markers": ["direct", "Direct V2"]},
+        {"reconnect_first_seconds": 600, "reconnect_longest_seconds": 60},
+        {"retry_first_seconds": 3600, "retry_longest_seconds": 60},
+        {"dispatch_push_categories": ["post", "direct_v2_text"]},
+        {"dispatch_push_categories": []},
+        {"github_repo": "not a repo"},
+        {"file_max_bytes": 1024},
+        {"file_backup_count": 0},
+        {"unknown_setting": 1},
+    ],
+)
+def test_unsafe_notification_recording_is_rejected(tmp_path, change) -> None:
+    directory = _write_control(
+        tmp_path, "notification_recording", lambda payload: payload.update(change)
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(directory)
+
+
 def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     directory = _write_control(
         tmp_path,
@@ -138,6 +172,9 @@ def test_invalid_notification_retry_github_repo_is_rejected(tmp_path) -> None:
     assert controlbox.instagram_digest.operation_name == "SubscriptionDigestFeedQuery"
     assert controlbox.instagram_digest.client_doc_id == "20099285643937437306465362209"
     assert controlbox.instagram_digest.maximum_pages == 25
+    assert controlbox.instagram_digest.digest_engine == "brave"
+    assert controlbox.instagram_lightpanda.new_login_daily_limit == 4
+    assert controlbox.instagram_lightpanda.max_sessions == 4
     assert controlbox.workflow_failure_alerts.discord_admin_role_ids == ("1506447680287674469",)
     assert controlbox.promoter_program.rate_cents == 100
     assert controlbox.promoter_program.maximum_active_posters == 50
@@ -284,6 +321,44 @@ def test_invalid_instagram_digest_endpoint_is_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ValidationError, match="must use i.instagram.com"):
+        load_controlbox(path)
+
+
+def test_unknown_digest_engine_is_rejected(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path, "instagram_digest", lambda payload: payload.update({"digest_engine": "chrome"})
+    )
+
+    with pytest.raises(ValidationError, match="digest_engine"):
+        load_controlbox(path)
+
+
+@pytest.mark.parametrize(
+    ("patch", "message"),
+    [
+        (
+            {"download_url": "https://example.com/releases/download/1.0.2/lightpanda"},
+            "GitHub releases",
+        ),
+        (
+            {
+                "download_url": "https://github.com/lightpanda-io/browser/releases/download/nightly/lightpanda-aarch64-macos"
+            },
+            "pinned version",
+        ),
+        ({"sha256": "not-a-checksum"}, "sha256"),
+        ({"new_login_daily_limit": -1}, "new_login_daily_limit"),
+        ({"max_sessions": 0}, "max_sessions"),
+        ({"max_sessions": 9}, "max_sessions"),
+        ({"session_idle_seconds": 7200, "session_max_seconds": 3600}, "session_idle_seconds"),
+        ({"ramp_last_accounts": ["guelph"]}, "ramp_last_accounts"),
+        ({"lane_digest_timeout_seconds": 150, "lane_digest_wait_seconds": 60}, "lane digest"),
+    ],
+)
+def test_unsafe_lightpanda_controls_are_rejected(tmp_path: Path, patch, message) -> None:
+    path = _write_control(tmp_path, "instagram_lightpanda", lambda payload: payload.update(patch))
+
+    with pytest.raises(ValidationError, match=message):
         load_controlbox(path)
 
 
@@ -567,6 +642,15 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"source_poll_interval_seconds": 0},
         {"source_page_size": 0},
         {"source_page_size": 1001},
+        {"following_page_size": 11},
+        {"following_page_size": 201},
+        {"following_page_delay_min_seconds": 0},
+        {"following_page_delay_min_seconds": 13},
+        {"following_list_delay_min_seconds": 21},
+        {"following_list_delay_max_seconds": 3601},
+        {"following_requests_per_hour": 0},
+        {"following_requests_per_hour": 1001},
+        {"following_result_retention_seconds": 599},
         {"worker_log_max_bytes": 65535},
         {"worker_log_max_bytes": 67108865},
         {"worker_log_backup_count": 0},
@@ -893,7 +977,38 @@ def test_follow_control_names_every_uoft_campus_for_the_others() -> None:
     names = controlbox.instagram_follow.school_names
     assert {"uoft", "utsc", "utsg"} <= set(names["utm"])
     assert controlbox.instagram_follow.crawl_miss_streak == 20
+    assert controlbox.instagram_follow.crawl_mutual_follow_threshold == 3
     assert controlbox.instagram_follow.follows_per_account_per_day == 150
+
+
+def test_following_reads_are_paced_by_the_browser_controls() -> None:
+    control = controlbox.instagram_browser
+    # The prototype's proven page size; the hourly cap spaces reads at least
+    # 3600 / cap seconds apart, and a refusal holds only these reads.
+    assert control.following_page_size == 50
+    assert 0 < control.following_page_delay_min_seconds <= control.following_page_delay_max_seconds
+    assert 0 < control.following_list_delay_min_seconds <= control.following_list_delay_max_seconds
+    assert 3600 / control.following_requests_per_hour >= 1
+
+
+def test_follow_crawl_checks_must_not_start_slower_than_their_maximum(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_follow",
+        lambda payload: payload.update({"crawl_poll_seconds": 61, "crawl_poll_max_seconds": 60}),
+    )
+    with pytest.raises(ValidationError, match="crawl_poll_seconds"):
+        load_controlbox(path)
+
+
+def test_follow_crawl_needs_at_least_two_clubs_for_a_mutual_follow(tmp_path: Path) -> None:
+    path = _write_control(
+        tmp_path,
+        "instagram_follow",
+        lambda payload: payload.update({"crawl_mutual_follow_threshold": 1}),
+    )
+    with pytest.raises(ValidationError):
+        load_controlbox(path)
 
 
 def test_follow_profile_read_delays_must_be_ordered(tmp_path: Path) -> None:
@@ -998,3 +1113,15 @@ def test_ticketing_rejects_unsafe_settings(tmp_path: Path, patch, message) -> No
     path = _write_control(tmp_path, "ticketing", lambda payload: payload.update(patch))
     with pytest.raises(ValidationError, match=message):
         load_controlbox(path)
+
+
+def test_club_directories_are_named_once_and_list_their_schools(tmp_path: Path) -> None:
+    names = [directory.name for directory in controlbox.ingestion.club_directories]
+    assert "WUSA Clubs" in names
+    assert all(directory.schools for directory in controlbox.ingestion.club_directories)
+
+    def duplicate(payload: dict) -> None:
+        payload["club_directories"].append(payload["club_directories"][0])
+
+    with pytest.raises(ValidationError, match="Club directory names must be unique"):
+        load_controlbox(_write_control(tmp_path, "ingestion", duplicate))

@@ -23,7 +23,7 @@ A new school is complete only when all of the following are true:
 - The chapter account follows every verified club Instagram account stored for that school.
 - Instagram post notifications are set to `All` for every followed club when Instagram exposes the consolidated notification screen.
 - The chapter account is logged into the dedicated Android device that runs the Automate flow.
-- A real notification from the chapter account has been observed, its Automate recipient identifier is mapped to the school, and the `process-single-user` workflow resolves it to the correct school.
+- A real notification from the chapter account has been observed, its Automate recipient identifier is mapped to the school, and the `process-notification` workflow resolves it to the correct school.
 - The chapter account is configured in the Meta developer app using Instagram API with Instagram Login.
 - The account's validated Instagram-scoped user ID and encrypted access token exist in `public.instagram_publishing_accounts`.
 - A publishing draft can be generated for the school and the production token-maintenance path recognizes the account.
@@ -379,6 +379,8 @@ Separately identify the official event directory used to seed or supplement the 
 
 Do not confuse a club directory with the event-directory sources stored in the `public.directory_sources` table.
 Add the event directory as one `directory_sources` row in a migration, with its listing URL, publishing club, listing format, and event URL patterns.
+Add the club directory to `backend/controlbox/ingestion.json` `club_directories` (its listing requests, the schools it covers, and notes on where each club's own page is), so the club directory agents queue the Instagram accounts of clubs registered after launch for following.
+Prefer a public JSON listing (a WordPress REST route or the platform's own API) over a page that loads more entries with JavaScript, and page through it with `{page}`.
 
 ### 9.2 Inspect the site before choosing a scraper
 
@@ -952,15 +954,9 @@ Trigger or wait for one real post notification from a followed test club.
 
 Verify that Automate sends a `new_instagram_post` repository dispatch containing the expected username or post URL and `intended_recipient_id`.
 
-Verify the GitHub **Process Single User** workflow starts.
+Verify the GitHub **Process Notifications** workflow starts and routes it to the new school.
 
-Verify `backend/services/scraper/single_user.py` resolves the recipient ID to the new school.
-
-Verify the event or no-event result is logged without routing it to another school.
-
-If the observed recipient ID is not yet on the school row, add it through a reviewed migration and rerun the routing test.
-
-Also verify the Automate webhook log appears through the admin diagnostics path when that path is part of the active phone flow.
+If the observed recipient ID is not yet on the school row, add it through a reviewed migration and rerun the notification's run.
 
 ## 17. Phase M: Configure Meta Instagram publishing
 
@@ -1271,7 +1267,7 @@ The final handoff must contain no secrets and must include:
 - [ ] Account logged into the dedicated Automate phone as a separate login.
 - [ ] Real notification generated the expected repository dispatch.
 - [ ] Recipient ID stored on the correct school row through a migration.
-- [ ] `process-single-user` routed and processed the test correctly.
+- [ ] `process-notification` routed and processed the test correctly.
 
 ### Meta publishing
 

@@ -1,12 +1,10 @@
 import pytest
 
-from services.instagram_emulator import following as module
 from services.instagram_emulator.device import EmulatorDevice, EmulatorError, Node
 from services.instagram_emulator.following import (
     ActionBlocked,
     FollowedWithoutBell,
     FollowingReader,
-    FollowingRow,
     FollowOutcome,
 )
 
@@ -18,10 +16,9 @@ def _node(text="", description="", resource_id="", top=0, bottom=100):
 HOME = [_node(description="Home")]
 
 
-def _profile(username, *, following="90following", button="Follow"):
+def _profile(username, *, button="Follow"):
     nodes = [
         _node(username, resource_id="action_bar_title"),
-        _node(description=following, resource_id="profile_header_following_stacked_familiar"),
         _node(button, f"{button} {username}", "profile_header_follow_button"),
     ]
     # Only a followed public profile has a bell in its top bar.
@@ -30,20 +27,6 @@ def _profile(username, *, following="90following", button="Follow"):
         if button == "Following"
         else nodes
     )
-
-
-SEARCH_FIELD = [_node("Search", resource_id="row_search_edit_text")]
-
-
-def _list(*rows):
-    nodes = list(SEARCH_FIELD)
-    for index, (username, label, name) in enumerate(rows):
-        top = 600 + index * 200
-        nodes.append(_node(username, resource_id="follow_list_username", top=top, bottom=top + 50))
-        nodes.append(
-            _node(label, f"{label} {name}", "follow_list_row_large_follow_button", top, top + 90)
-        )
-    return nodes
 
 
 def _bell(posts_value):
@@ -74,14 +57,8 @@ class _Device(EmulatorDevice):
         if len(self.screens) > 1:
             self.screens.pop(0)
 
-    def tap(self, node, *, hold_ms=0):
+    def _press(self, node, hold_ms):
         self._advance(node.text or node.description or node.resource_id)
-
-    def type_text(self, text):
-        self._advance(f"type {text}")
-
-    def scroll_down(self):
-        self._advance("scroll")
 
     def back(self):
         self._advance("back")
@@ -89,73 +66,18 @@ class _Device(EmulatorDevice):
     def open_instagram(self, user, url=None):
         self._advance(url)
 
-
-@pytest.fixture(autouse=True)
-def fake_clock(monkeypatch):
-    """Waits pass instantly: each look at the clock is a second later than the last."""
-    seconds = iter(range(0, 100_000))
-    monkeypatch.setattr(module.time, "sleep", lambda _seconds: None)
-    monkeypatch.setattr(module.time, "monotonic", lambda: next(seconds))
+    def reset_app(self, user):
+        self.actions.append(f"fresh start for user {user}")
 
 
 def _reader(device):
-    return FollowingReader(device, 0, profile_wait_seconds=30, max_scrolls=5)
+    return FollowingReader(device, 0, profile_wait_seconds=30)
 
 
-def test_search_reads_who_we_follow_and_who_we_dont_across_scrolls() -> None:
-    first = _list(("utmmsa", "Message", "UTM MSA"), ("utmaclub", "Follow", "UTMAC"))
-    second = _list(("utmaclub", "Follow", "UTMAC"), ("utmpadel", "Follow back", "UTM Padel"))
-    device = _Device([HOME, _profile("seed"), SEARCH_FIELD, SEARCH_FIELD, first, second])
+def test_a_gone_profile_has_nothing_to_follow() -> None:
+    device = _Device([HOME, [_node("Sorry, this page isn't available")]])
 
-    rows = _reader(device).search_following("seed", ["utm"])
-
-    assert rows == [
-        FollowingRow("utmmsa", "UTM MSA", True),
-        FollowingRow("utmaclub", "UTMAC", False),
-        FollowingRow("utmpadel", "UTM Padel", False),
-    ]
-    assert "type utm" in device.actions
-
-
-def test_search_reopens_the_list_for_each_name() -> None:
-    rows = _list(("uoftchess", "Follow", "UofT Chess"))
-    device = _Device(
-        [
-            HOME,
-            _profile("seed"),
-            SEARCH_FIELD,
-            SEARCH_FIELD,
-            rows,
-            rows,
-            _profile("seed"),
-            SEARCH_FIELD,
-            SEARCH_FIELD,
-            rows,
-        ]
-    )
-
-    _reader(device).search_following("seed", ["utm", "uoft"])
-
-    assert device.actions.count("instagram://user?username=seed") == 2
-
-
-def test_a_private_profile_has_no_list_to_read() -> None:
-    device = _Device([HOME, [_node("This account is private")]])
-
-    assert _reader(device).search_following("seed", ["utm"]) is None
-
-
-def test_an_account_following_nobody_has_nothing_to_search() -> None:
-    device = _Device([HOME, _profile("seed", following="0following")])
-
-    assert _reader(device).search_following("seed", ["utm"]) == []
-
-
-def test_a_profile_that_never_loads_raises() -> None:
-    device = _Device([HOME, [_node("Loading")]])
-
-    with pytest.raises(EmulatorError):
-        _reader(device).search_following("seed", ["utm"])
+    assert _reader(device).follow("gone.club") is None
 
 
 def test_following_turns_post_notifications_to_all() -> None:
@@ -236,6 +158,42 @@ def test_a_missing_bell_on_an_account_already_followed_is_a_plain_failure() -> N
     with pytest.raises(EmulatorError) as raised:
         _reader(device).follow("utmmsa")
     assert not isinstance(raised.value, FollowedWithoutBell)
+
+
+def test_a_bell_sheet_left_open_by_a_failed_follow_is_cleared_by_a_fresh_start() -> None:
+    # 11-08: the sheet stayed over umich's app and 148 profiles after it never loaded.
+    following = _profile("utmaclub", button="Following")
+    device = _Device(
+        [
+            HOME,
+            _profile("utmaclub"),
+            following,
+            _bell("Most relevant"),
+            [_node("All")],
+            following,
+            _bell("Most relevant"),
+        ]
+    )
+
+    with pytest.raises(FollowedWithoutBell):
+        _reader(device).follow("utmaclub")
+    assert device.actions[-1] == "fresh start for user 0"
+
+
+def test_a_profile_that_never_loads_starts_the_app_afresh() -> None:
+    device = _Device([HOME, [_node("Loading")]])
+
+    with pytest.raises(EmulatorError, match="never loaded"):
+        _reader(device).unfollow("club")
+    assert device.actions[-1] == "fresh start for user 0"
+
+
+def test_a_profile_that_works_leaves_the_app_as_it_is() -> None:
+    following = _profile("utmmsa", button="Following")
+    device = _Device([HOME, following, _bell("All"), following])
+
+    _reader(device).follow("utmmsa")
+    assert not any(action.startswith("fresh start") for action in device.actions)
 
 
 def test_unfollowing_taps_following_then_confirms() -> None:

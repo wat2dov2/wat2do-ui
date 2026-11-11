@@ -1,10 +1,10 @@
 //! Each school's daily draft (`service.py`): the candidate packets Claude
 //! chooses from, and saving its choices as a draft an admin reviews.
 //!
-//! A school's candidates are the events added since its last carousel (or
-//! asked for in our DMs), then enough upcoming events it has never posted to
-//! fill a carousel. One draft per school per day: a later run never replaces
-//! one that exists, whatever its status.
+//! A school's candidates are only the events added since its last carousel (or
+//! asked for in our DMs): an event collected earlier never comes back to fill
+//! a carousel. One draft per school per day: a later run never replaces one
+//! that exists, whatever its status.
 
 use std::collections::{HashMap, HashSet};
 
@@ -66,10 +66,6 @@ pub struct Candidate {
     /// The school's zone: slides print local times.
     #[sqlx(skip)]
     pub tz: String,
-    /// Added since the account's last carousel, rather than an earlier
-    /// event it has never posted.
-    #[sqlx(skip)]
-    pub new: bool,
 }
 
 /// The columns a candidate reads (`_EVENT_COLUMNS`).
@@ -103,13 +99,11 @@ impl Candidate {
             "dtstart_utc": postgres_json_datetime(&self.dtstart_utc),
             "dtend_utc": timestamp(&self.dtend_utc),
             "tz": self.tz,
-            "new": self.new,
         })
     }
 
-    /// What the curation agent reads about the event (Python's `_EVENT_FIELDS`
-    /// plus `new`, which the prompt ranks by), in that order; the caller adds
-    /// its poster.
+    /// What the curation agent reads about the event (Python's `_EVENT_FIELDS`),
+    /// in that order; the caller adds its poster.
     pub fn packet_summary(&self) -> Map<String, Value> {
         let full = self.to_json();
         [
@@ -127,7 +121,6 @@ impl Candidate {
             "food",
             "registration",
             "carousel_requested_at",
-            "new",
         ]
         .into_iter()
         .map(|field| (field.to_owned(), full[field].clone()))
@@ -314,30 +307,6 @@ pub async fn list_draft_candidates(db: &PgPool, now: DateTime<Utc>) -> Result<Ve
     Ok(packets)
 }
 
-/// `_draft_candidates`: the events new since the last carousel, then enough
-/// upcoming ones the account never posted to fill it, soonest first.
-pub async fn draft_candidates(
-    db: &PgPool,
-    account_key: &str,
-    window_start: DateTime<Utc>,
-    window_end: DateTime<Utc>,
-) -> Result<Vec<Candidate>> {
-    let mut fresh = load_candidates(db, account_key, window_start, window_end).await?;
-    for event in &mut fresh {
-        event.new = true;
-    }
-    let room = INSTAGRAM_PUBLISHING
-        .fill_candidate_count
-        .saturating_sub(fresh.len());
-    if room == 0 {
-        return Ok(fresh);
-    }
-    let exclude: HashSet<i64> = fresh.iter().map(|event| event.id).collect();
-    let earlier = load_unposted_upcoming(db, account_key, window_end, &exclude, room).await?;
-    fresh.extend(earlier);
-    Ok(fresh)
-}
-
 /// When an occurrence must start for its event to make a carousel posted
 /// `now`: at least `minimum_lead_hours` and at most `maximum_lead_days` away.
 fn lead_window(now: DateTime<Utc>) -> (DateTime<Utc>, DateTime<Utc>) {
@@ -355,16 +324,12 @@ struct Occurrence {
 }
 
 /// Each event's first occurrence in `occurrences` (already in order).
-fn first_occurrences(occurrences: Vec<Occurrence>) -> (Vec<i64>, HashMap<i64, Occurrence>) {
-    let mut order = Vec::new();
+fn first_occurrences(occurrences: Vec<Occurrence>) -> HashMap<i64, Occurrence> {
     let mut first = HashMap::new();
     for occurrence in occurrences {
-        if let std::collections::hash_map::Entry::Vacant(entry) = first.entry(occurrence.event_id) {
-            order.push(occurrence.event_id);
-            entry.insert(occurrence);
-        }
+        first.entry(occurrence.event_id).or_insert(occurrence);
     }
-    (order, first)
+    first
 }
 
 /// Of `ids`, the events this account has already posted.
@@ -381,10 +346,10 @@ async fn published_ids(db: &PgPool, account_key: &str, ids: &[i64]) -> Result<Ha
     Ok(rows.into_iter().collect())
 }
 
-/// `_load_candidates`: the school's events added in the window, or asked for
+/// `_draft_candidates`: the school's events added in the window, or asked for
 /// in our DMs however long ago, that the account never posted and that have
 /// a postable occurrence; soonest first, the newer event first on a tie.
-async fn load_candidates(
+pub async fn draft_candidates(
     db: &PgPool,
     account_key: &str,
     window_start: DateTime<Utc>,
@@ -421,7 +386,7 @@ async fn load_candidates(
     .bind(to)
     .fetch_all(db)
     .await?;
-    let (_, first) = first_occurrences(occurrences);
+    let first = first_occurrences(occurrences);
     let tz = store::school_timezone(db, Some(account_key))
         .await
         .map_err(job_error)?;
@@ -444,62 +409,6 @@ fn with_occurrence(event: Candidate, occurrence: &Occurrence, tz: &str) -> Candi
         tz: tz.to_owned(),
         ..event
     }
-}
-
-/// `_load_unposted_upcoming`: up to `limit` of the school's upcoming events
-/// the account never posted, soonest first, marked not new.
-async fn load_unposted_upcoming(
-    db: &PgPool,
-    account_key: &str,
-    now: DateTime<Utc>,
-    exclude: &HashSet<i64>,
-    limit: usize,
-) -> Result<Vec<Candidate>> {
-    let Some(school_id) = store::school_id(db, account_key).await.map_err(job_error)? else {
-        return Ok(Vec::new());
-    };
-    let (from, to) = lead_window(now);
-    let occurrences: Vec<Occurrence> = sqlx::query_as(
-        "SELECT d.event_id::int8 AS event_id, d.dtstart_utc, d.dtend_utc \
-         FROM public.event_dates d JOIN public.events e ON e.id = d.event_id \
-         WHERE e.school_id = $1 AND e.cancelled = false \
-           AND d.dtstart_utc >= $2 AND d.dtstart_utc <= $3 \
-         ORDER BY d.dtstart_utc, d.id",
-    )
-    .bind(school_id as i32)
-    .bind(from)
-    .bind(to)
-    .fetch_all(db)
-    .await?;
-    let occurrences = occurrences
-        .into_iter()
-        .filter(|occurrence| !exclude.contains(&occurrence.event_id))
-        .collect();
-    let (order, first) = first_occurrences(occurrences);
-    if order.is_empty() {
-        return Ok(Vec::new());
-    }
-    let published = published_ids(db, account_key, &order).await?;
-    let ids32: Vec<i32> = order.iter().map(|id| *id as i32).collect();
-    let events: HashMap<i64, Candidate> = sqlx::query_as::<_, Candidate>(&format!(
-        "SELECT {EVENT_COLUMNS} FROM public.events e WHERE e.id = ANY($1)"
-    ))
-    .bind(&ids32)
-    .fetch_all(db)
-    .await?
-    .into_iter()
-    .map(|event| (event.id, event))
-    .collect();
-    let tz = store::school_timezone(db, Some(account_key))
-        .await
-        .map_err(job_error)?;
-    Ok(order
-        .iter()
-        .filter(|id| !published.contains(id))
-        .filter_map(|id| events.get(id).filter(|event| event.postable()))
-        .take(limit)
-        .map(|event| with_occurrence(event.clone(), &first[&event.id], &tz))
-        .collect())
 }
 
 /// What saving a draft did.
@@ -695,7 +604,6 @@ mod tests {
             dtstart_utc: Utc.with_ymd_and_hms(2026, 9, 29, 22, 0, 0).unwrap(),
             dtend_utc: None,
             tz: "America/Toronto".into(),
-            new: true,
         }
     }
 
@@ -718,16 +626,9 @@ mod tests {
                 "price",
                 "food",
                 "registration",
-                "carousel_requested_at",
-                "new"
+                "carousel_requested_at"
             ]
         );
-        assert_eq!(summary["new"], true);
-        let fill = Candidate {
-            new: false,
-            ..candidate(18)
-        };
-        assert_eq!(fill.packet_summary()["new"], false);
         assert_eq!(summary["dtstart_utc"], "2026-09-29T22:00:00+00:00");
         assert_eq!(summary["price"], json!(5));
         // test_codex_reads_candidates_without_writing
@@ -793,7 +694,6 @@ mod tests {
         let json = open.to_json();
         assert_eq!(json["window_start"], "2026-09-27T14:00:00+00:00");
         assert_eq!(json["events"][0]["id"], 17);
-        assert_eq!(json["events"][0]["new"], true);
         assert_eq!(json["excluded_clubs"], json!(["v1vaclub"]));
         assert_eq!(json["requires_reauthorization"], true);
     }

@@ -35,19 +35,24 @@ export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:/opt/homebrew/opt/postgresql@17/
 nvm use 22 >/dev/null
 
 log() { echo "deploy: $*"; }
+# The build shares the Mac with the emulator, Brave and the API: at most 4 crates
+# compile at once (all 10 cores and several GB of RAM otherwise), and the builds run
+# at a low priority so the services keep the CPU.
+export CARGO_BUILD_JOBS=4
+gentle() { nice -n 10 "$@"; }
 
 log "building $sha"
 git -C "$build" fetch --quiet origin
 git -C "$build" checkout --quiet --detach "$sha"
 
 binaries=(wat2do-api wat2do-instagram wat2do-send-notifications wat2do-poster-payouts)
-(cd "$build/rust" && cargo build --release --quiet "${binaries[@]/#/--bin=}")
+(cd "$build/rust" && gentle cargo build --release --quiet "${binaries[@]/#/--bin=}")
 
 # Dependencies change rarely; reinstall only when their lockfile does.
 stamp() { shasum -a 256 "$1" | cut -d ' ' -f 1; }
 frontend_lock="$(stamp "$build/frontend/package-lock.json")"
 if [ "$(cat "$build/frontend/.deploy-lock-stamp" 2>/dev/null)" != "$frontend_lock" ]; then
-  (cd "$build/frontend" && npm ci --no-audit --no-fund --loglevel=error)
+  (cd "$build/frontend" && gentle npm ci --no-audit --no-fund --loglevel=error)
   echo "$frontend_lock" >"$build/frontend/.deploy-lock-stamp"
 fi
 python_lock="$(stamp "$build/backend/requirements.txt")"
@@ -74,9 +79,27 @@ mv "$build/frontend/package-lock.json" "$build/package-lock.json"
   export APP_VERSION="$sha"
   rm -rf .open-next
   # Next 16.4 sometimes stops once on its advisory check and passes on a rerun.
-  npx --no-install open-next build || npx --no-install open-next build
+  gentle npx --no-install open-next build || gentle npx --no-install open-next build
 )
 restore_lockfile
+
+# Turbopack loads a server package through a link in .next/node_modules
+# (<package>-<hash>) to frontend/node_modules/<package>. OpenNext leaves sharp
+# out of that folder and installs its Linux build at the bundle's root
+# (frontend/open-next.config.ts), so a link it left dangling goes there instead.
+# The zip keeps links as links, so Node resolves sharp's own imports from the
+# bundle's root, where its dependencies are complete.
+server_bundle="$build/frontend/.open-next/server-functions/default"
+for link in "$server_bundle/frontend/.next/node_modules"/*; do
+  { [ -L "$link" ] && [ ! -e "$link" ]; } || continue
+  target="$(readlink "$link")"
+  ln -sfn "../../../node_modules/${target##*/node_modules/}" "$link"
+done
+dangling="$(find "$server_bundle" -type l ! -exec test -e {} \; -print)"
+if [ -n "$dangling" ]; then
+  log "the website's server bundle links to packages it does not have: $dangling"
+  exit 1
+fi
 
 log "assembling $release"
 rm -rf "$release.partial"
@@ -157,7 +180,7 @@ log "deploying $sha to the website's functions"
 update_function() {
   local name="$1" bundle="$2" zip
   zip="$(mktemp -t "$name").zip"
-  (cd "$bundle" && rm -f "$zip" && zip -qr -X "$zip" .)
+  (cd "$bundle" && rm -f "$zip" && zip -qry -X "$zip" .)
   aws s3 cp "$zip" "s3://$web_bucket/_deploy/$name.zip" --only-show-errors
   aws lambda update-function-code --function-name "$name" \
     --s3-bucket "$web_bucket" --s3-key "_deploy/$name.zip" >/dev/null

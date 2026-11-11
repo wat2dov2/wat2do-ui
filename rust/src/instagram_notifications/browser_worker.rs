@@ -12,8 +12,9 @@ use serde_json::{Value, json};
 
 use super::browser_digest;
 use super::browser_engagement;
+use super::browser_following;
 use super::browser_ingestion;
-use super::browser_queue::{BrowserJob, BrowserJobQueue, Finish};
+use super::browser_queue::{BrowserJob, BrowserJobQueue, Finish, read_only_kind};
 use super::browser_session::{
     ACCOUNT_UNAVAILABLE, Bridge, BrowserInstagramSession, BrowserTabPool, CANCELLATION_UNCONFIRMED,
     LOGGED_OUT_PAUSE, TabPool, make_interruptible, request_stop, school_account_username,
@@ -67,7 +68,7 @@ fn failure_reason(error: &BrowserError, what: &str) -> String {
 
 /// Jobs that only read Instagram: nothing they leave in flight can change anything.
 fn read_only(job: &BrowserJob) -> bool {
-    job.kind == "digest" || job.kind == "retrieval"
+    read_only_kind(&job.kind)
 }
 
 /// Pause for a person on account trouble or an action that may still go through.
@@ -422,13 +423,15 @@ impl Worker {
     }
 
     /// Log in an account missing from Brave, at most once a day per account and
-    /// `account_login_daily_limit` a day in all; the browser lock is held.
+    /// `account_login_daily_limit` a day in all; the browser lock is held. The pool
+    /// records each login just before its password goes out, so a failure before that
+    /// leaves the account to try again.
     pub fn attempt_account_login(
         &self,
         username: &str,
         now: &dyn Fn() -> f64,
     ) -> BrowserResult<bool> {
-        if !self.queue.reserve_account_login(username, now())? {
+        if !self.queue.account_login_allowed(username, now())? {
             return Ok(false);
         }
         match self.tab_pool().add_account(username) {
@@ -627,6 +630,8 @@ impl Worker {
             ));
         }
         make_interruptible();
+        // A lane from an earlier run is gone: its running jobs are this recovery's.
+        self.queue.reset_lightpanda_lane()?;
         let stopping = Arc::new(Event::default());
         let mut threads: Vec<JoinHandle<()>> = vec![self.keep_worker_alive(stopping.clone())];
         let mut collecting = false;
@@ -747,6 +752,10 @@ impl Worker {
         // Starts set: on startup the worker queues profiles it listed while stopping.
         self.queue.retrieval_finished.set();
         let mut threads = Vec::new();
+        let (queue, bridge, stop) = (self.queue.clone(), self.bridge.clone(), stopping.clone());
+        threads.push(spawn_named("instagram-browser-lightpanda", move || {
+            crate::lightpanda::lane::run(queue, bridge, stop);
+        }));
         let worker = self.clone();
         let stop = stopping.clone();
         threads.push(spawn_named("instagram-browser-profile-queue", move || {
@@ -897,6 +906,7 @@ pub fn execute_job(
     on_rate_limit: Option<&dyn Fn(&BrowserError)>,
 ) -> BrowserResult<Value> {
     let text = |key: &str| job.payload.get(key).map(pyjson::str).unwrap_or_default();
+    let optional = |key: &str| job.payload.get(key).and_then(Value::as_str);
     let executed = match job.kind.as_str() {
         "digest" => browser_digest::resolve(
             session,
@@ -912,6 +922,12 @@ pub fn execute_job(
                 .get("cutoff_days")
                 .and_then(Value::as_i64)
                 .unwrap_or(1),
+        ),
+        "following" => browser_following::read_page(
+            session,
+            &text("username"),
+            optional("user_id"),
+            optional("max_id"),
         ),
         _ => browser_engagement::engage_post(
             session,
@@ -1586,11 +1602,11 @@ fn execute_in_batch(
         // Successful operations settle themselves; execute_job covers every failed exit.
         let on_rate_limit = |error: &BrowserError| shared.defer_rate_limit(queue, job, error);
         let result = (worker.seams.execute_job)(job, session, Some(&on_rate_limit))?;
-        if job.kind == "retrieval"
+        if (job.kind == "retrieval" || job.kind == "following")
             && result.get("account_username").and_then(Value::as_str) != Some(username)
         {
             return Err(BrowserError::account_changed(
-                "Instagram retrieval account does not match the verified primary account",
+                "Instagram read account does not match the verified primary account",
             ));
         }
         Ok(result)

@@ -22,6 +22,7 @@ use futures_util::{StreamExt, stream};
 use serde_json::{Map, Value, json};
 use sqlx::PgPool;
 
+use super::club_directories;
 use super::page_image::{download, fetch_event_poster};
 use super::state_directory;
 use crate::claude::{self, Agent, Limited, claude_environment, remove_leftovers};
@@ -88,8 +89,9 @@ pub async fn list_sources(pool: &PgPool) -> Result<Vec<Source>> {
     .await?)
 }
 
-/// Run one agent per directory source, a few at a time, until Claude's usage
-/// limit turns one away; the sources left wait for the next run.
+/// Run one agent per directory source, a few at a time, then the club
+/// directory agents, until Claude's usage limit turns one away; the sources
+/// left wait for the next run.
 pub async fn scrape_directories(pool: &PgPool) -> Result<Counts> {
     let directory = state_directory();
     std::fs::create_dir_all(&directory)?;
@@ -110,10 +112,14 @@ pub async fn scrape_directories(pool: &PgPool) -> Result<Counts> {
     while let Some(counts) = results.next().await {
         add(&mut totals, counts);
     }
+    add(
+        &mut totals,
+        club_directories::scrape_club_directories(pool, &limited).await,
+    );
     Ok(totals)
 }
 
-fn add(totals: &mut Counts, counts: Counts) {
+pub(super) fn add(totals: &mut Counts, counts: Counts) {
     for (key, count) in counts {
         *totals.entry(key).or_default() += count;
     }
@@ -492,7 +498,7 @@ async fn save(
 }
 
 /// A reported URL must appear in the listing or live on the directory's own site.
-fn plausible(url: &str, page: &str, listing_host: &str) -> bool {
+pub(super) fn plausible(url: &str, page: &str, listing_host: &str) -> bool {
     let Ok(parts) = urlsplit(url, "") else {
         return false;
     };

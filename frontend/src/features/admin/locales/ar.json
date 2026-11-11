@@ -5,6 +5,7 @@
     "reportUpdateFailed": "تعذر تحديث البلاغ. يرجى المحاولة مرة أخرى.",
     "eventReport": "بلاغ عن فعالية",
     "pendingCount": "{{label}}: {{value}} قيد الانتظار",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "تعذر تحميل بعض أعداد العناصر المعلقة.",
     "eventReports": "بلاغات الفعاليات",
     "reportReason": "سبب البلاغ",
@@ -433,12 +434,15 @@
       "change": "منذ {{date}}: {{value}}",
       "rate": "التفاعل: {{value}}%",
       "lastPost": "آخر منشور {{time}}",
+      "lastNotification": "آخر إشعار {{time}}",
+      "noNotifications": "لا إشعارات بعد",
       "reconnect": "يلزم إعادة الربط",
       "tokenExpires": "ينتهي الرمز في {{date}}",
       "noPosts": "لا توجد منشورات بعد.",
       "notRead": "لم يُقرأ بعد. سيملؤه التشغيل اليومي القادم.",
       "summary": {
         "needingAttention": "تحتاج إلى متابعة: {{value}}",
+        "quietNotifications": "بلا إشعارات منذ {{hours}} ساعة",
         "followers": "إجمالي المتابعين",
         "averageLikes": "متوسط الإعجابات لكل منشور",
         "followerGains": "المتابعون الجدد يوميًا",
@@ -502,7 +506,7 @@
       },
       "submitFailed": "تعذّر حفظ القرارات. حاول مرة أخرى.",
       "emptyTitle": "لا شيء للمراجعة",
-      "emptyDescription": "تظهر الحسابات هنا عندما يعثر عليها البحث الأسبوعي."
+      "emptyDescription": "تظهر الحسابات هنا عندما يعثر عليها البحث."
     },
     "clubSubmissions": "طلبات الأندية",
     "noClubSubmissions": "لا توجد طلبات أندية",

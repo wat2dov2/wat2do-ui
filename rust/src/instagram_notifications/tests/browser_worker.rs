@@ -581,6 +581,14 @@ fn retrieval(queue: &BrowserJobQueue, shortcode: &str) -> String {
         .expect("retrieval queues")
 }
 
+fn following(queue: &BrowserJobQueue, username: &str) -> String {
+    tick(queue);
+    queue
+        .enqueue_following("ubc", "wat2do.ubc", "crawl-1", username, Some("101"), None)
+        .expect("Following read queues")
+        .id
+}
+
 fn enqueue(queue: &BrowserJobQueue, kind: &str, name: &str) -> String {
     match kind {
         "engagement" => engagement(queue, name),
@@ -3838,13 +3846,19 @@ fn test_the_worker_resumes_by_itself_after_an_unconfirmed_cancellation() {
 fn test_a_missing_account_is_logged_in_once_a_day_and_capped() {
     let env = Env::new();
     let added = Arc::new(Mutex::new(Vec::new()));
-    let record = added.clone();
+    let now = Arc::new(Mutex::new(100_000.0));
+    let (record, queue, entered_at) = (added.clone(), env.queue.clone(), now.clone());
     let pool = env.pool().add_account(move |username| {
         record.lock().unwrap().push(username.to_owned());
+        // The pool records the login as its password goes out.
+        assert!(
+            queue
+                .reserve_account_login(username, *entered_at.lock().unwrap())
+                .unwrap()
+        );
         Ok(())
     });
     let worker = env.real_worker(pool);
-    let now = Mutex::new(100_000.0);
     let clock = || *now.lock().unwrap();
 
     assert!(
@@ -4082,11 +4096,16 @@ fn test_account_login_session_failure_before_a_password_does_not_pause() {
             .unwrap()
     );
     assert_eq!(setting(&env.queue, "paused"), None);
-    // The attempt is still spent: the account is not tried again the same day.
+    // No password went out, so nothing is spent: the next job tries the account again.
     assert!(
         !worker
             .attempt_account_login("wat2do.ucalgary", &|| 101_000.0)
             .unwrap()
+    );
+    assert_eq!(tried.load(Ordering::SeqCst), 2);
+    assert_eq!(
+        setting(&env.queue, "account_login_at:wat2do.ucalgary"),
+        None
     );
 }
 
@@ -4121,4 +4140,81 @@ fn test_account_login_reservation_is_daily_per_account_and_capped() {
             .reserve_account_login("wat2do.a0", now + 86_400.0)
             .unwrap()
     );
+}
+
+// ---------------------------------------------------------------------------------
+// Following reads
+// ---------------------------------------------------------------------------------
+
+/// A Following page read as `account`.
+fn following_page(account: &str) -> Value {
+    json!({"account_username": account, "username": "club.one", "user_id": "101", "users": [], "next_max_id": null})
+}
+
+#[test]
+fn test_a_following_read_runs_alone_on_one_tab_as_the_shown_account() {
+    let env = Env::new();
+    let first = following(&env.queue, "club.one");
+    let second = following(&env.queue, "club.two");
+    let prepared = Arc::new(Mutex::new(Vec::new()));
+    let (seen, bridge) = (prepared.clone(), env.bridge.clone());
+    let pool = env.pool().prepare(move |job, count| {
+        seen.lock().unwrap().push((job.kind.clone(), count));
+        Ok((
+            (0..count)
+                .map(|index| Tab::new(index).session(&bridge))
+                .collect(),
+            ACCOUNT_USERNAME.to_owned(),
+        ))
+    });
+    let worker = env.worker(pool, settling(|_, _| Ok(following_page(ACCOUNT_USERNAME))));
+    assert!(worker.process_next_job(true).unwrap());
+    assert_eq!(*prepared.lock().unwrap(), [("following".to_owned(), 1)]);
+    assert_eq!(job(&env.queue, &first).state, "succeeded");
+    assert_eq!(
+        job(&env.queue, &first).result,
+        Some(following_page(ACCOUNT_USERNAME))
+    );
+    assert_eq!(job(&env.queue, &second).state, "pending");
+    // The next list waits its pause.
+    assert!(!worker.process_next_job(true).unwrap());
+}
+
+#[test]
+fn test_a_following_rate_limit_or_login_wall_holds_only_following_reads() {
+    let env = Env::new();
+    let read = following(&env.queue, "club.one");
+    let worker = env.worker(
+        env.pool(),
+        settling(|_, _| {
+            Err(BrowserError::rate_limited(
+                "Instagram asked for a login on a Following read",
+            ))
+        }),
+    );
+    assert!(worker.process_next_job(true).unwrap());
+    assert_eq!(job(&env.queue, &read).state, "pending");
+    assert_eq!(job(&env.queue, &read).attempts, 0);
+    assert!(number(setting(&env.queue, "following_rate_limit_until")) > env.host.time());
+    assert!(!env.queue.is_rate_limited(None, true).unwrap());
+    assert!(!is_paused(&env.queue));
+    let notified = digest(&env.queue, "AfterFollowingLimit");
+    assert_eq!(
+        env.queue.claim_next(None, true).unwrap().unwrap().id,
+        notified
+    );
+}
+
+#[test]
+fn test_a_following_read_from_another_account_is_never_kept() {
+    let env = Env::new();
+    let read = following(&env.queue, "club.one");
+    let worker = env.worker(
+        env.pool(),
+        settling(|_, _| Ok(following_page("wat2do.other"))),
+    );
+    assert!(worker.process_next_job(true).unwrap());
+    let stored = job(&env.queue, &read);
+    assert_eq!(stored.state, "pending");
+    assert_eq!(stored.result, None);
 }

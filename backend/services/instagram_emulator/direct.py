@@ -73,8 +73,6 @@ _TEXT_VIEW = "direct_text_message_text_view"
 _SHARES_TO_READ = 2
 # Upward swipes allowed to bring a share cut off at the top of the thread fully on screen.
 _REVEAL_SCROLLS = 4
-# A sent reply can take a few screen reads to appear.
-_SEND_CHECKS = 4
 
 
 class EmulatorDirectExecutor:
@@ -192,11 +190,12 @@ class _ThreadReader:
         self._device.type_text(text)
         self._device.tap_when(_SEND)
         # The thread scrolls as the reply lands and older messages leave the screen, so
-        # the reply is confirmed by being the newest message, not by a count.
-        for _ in range(_SEND_CHECKS):
-            self._device.pause()
-            if _newest_is_ours(self._screen_in_thread(), text):
-                return
+        # the reply is confirmed by being the newest message, not by a count. A thread
+        # the app has left is opened again for one last look.
+        if self._device.watch(
+            lambda nodes: _in_thread(nodes) and _newest_is_ours(nodes, text)
+        ) or _newest_is_ours(self._screen_in_thread(), text):
+            return
         raise EmulatorError("The reply did not appear in the thread")
 
     def _open(self) -> list[Node]:
@@ -205,8 +204,7 @@ class _ThreadReader:
 
     def _screen_in_thread(self) -> list[Node]:
         nodes = self._device.screen()
-        in_thread = any(node.resource_id == "message_list" for node in nodes)
-        return nodes if in_thread else self._open()
+        return nodes if _in_thread(nodes) else self._open()
 
     def _with_shared_links(self, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Copy the links of their newest few shared posts.
@@ -294,6 +292,10 @@ class _ThreadReader:
         self._device.back()
         match = _POST_LINK.match(pasted)
         return f"https://www.instagram.com/p/{match.group(1)}/" if match else None
+
+
+def _in_thread(nodes: list[Node]) -> bool:
+    return any(node.resource_id == "message_list" for node in nodes)
 
 
 def _their_shares(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:

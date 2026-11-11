@@ -2633,6 +2633,8 @@ fn test_old_queue_upgrade_keeps_jobs_settings_and_selected_school() {
     for legacy_kinds in [
         "'digest', 'engagement'",
         "'digest', 'RETRIEVAL', 'engagement'",
+        // The queue deployed before Following reads.
+        "'digest', 'retrieval', 'engagement'",
     ] {
         let f = fixture();
         let queue = &f.queue;
@@ -2651,7 +2653,10 @@ fn test_old_queue_upgrade_keeps_jobs_settings_and_selected_school() {
             connection
                 .execute(
                     "UPDATE sqlite_master SET sql=replace(sql, ?, ?) WHERE name='jobs'",
-                    ["'digest', 'retrieval', 'engagement'", legacy_kinds],
+                    [
+                        "'digest', 'retrieval', 'engagement', 'following'",
+                        legacy_kinds,
+                    ],
                 )
                 .unwrap();
             connection
@@ -2678,6 +2683,9 @@ fn test_old_queue_upgrade_keeps_jobs_settings_and_selected_school() {
             Some(json!("ubc")),
             "{legacy_kinds}"
         );
+        reopened
+            .enqueue_following("ubc", "wat2do.ubc", "crawl", "club.one", None, None)
+            .unwrap();
     }
 }
 
@@ -3387,4 +3395,349 @@ fn test_a_retrieval_rate_limit_holds_retrievals_but_not_digests() {
     assert!(claim(queue).is_none());
     f.clock.add(backoff());
     assert_eq!(claim(queue).unwrap().id, second);
+}
+
+// ---------------------------------------------------------------------------------
+// Following reads
+// ---------------------------------------------------------------------------------
+
+fn following(queue: &BrowserJobQueue, username: &str, max_id: Option<&str>) -> String {
+    queue
+        .enqueue_following(
+            "ubc",
+            "wat2do.ubc",
+            "crawl-1",
+            username,
+            Some("101"),
+            max_id,
+        )
+        .unwrap()
+        .id
+}
+
+/// Fixed pauses: `page` seconds before a list's next page, `list` before a new list.
+fn pace(page: f64, list: f64, per_hour: usize) {
+    overrides::instagram_browser(|control| {
+        control.following_page_delay_min_seconds = page;
+        control.following_page_delay_max_seconds = page;
+        control.following_list_delay_min_seconds = list;
+        control.following_list_delay_max_seconds = list;
+        control.following_requests_per_hour = per_hour;
+    });
+}
+
+fn read_done() -> Finish {
+    Finish::result(json!({"users": [], "next_max_id": null}))
+}
+
+#[test]
+fn test_following_reads_wait_the_page_pause_within_a_list_and_the_list_pause_between_lists() {
+    pace(10.0, 30.0, 3600);
+    let f = clocked();
+    let q = &f.queue;
+    let first = following(q, "club.one", None);
+    let claimed = claim(q).unwrap();
+    assert_eq!(claimed.id, first);
+    assert_eq!(claimed.payload["user_id"], json!("101"));
+    assert_eq!(claimed.recipient_id, "");
+    q.finish(&claimed, read_done()).unwrap();
+    let page = following(q, "club.one", Some("100"));
+    assert!(claim(q).is_none());
+    f.clock.sleep(10.0);
+    let claimed = claim(q).unwrap();
+    assert_eq!(claimed.id, page);
+    q.finish(&claimed, read_done()).unwrap();
+    let list = following(q, "club.two", None);
+    f.clock.sleep(10.0);
+    assert!(claim(q).is_none());
+    f.clock.sleep(20.0);
+    assert_eq!(claim(q).unwrap().id, list);
+}
+
+#[test]
+fn test_following_pauses_are_drawn_inside_their_windows() {
+    overrides::instagram_browser(|control| {
+        control.following_page_delay_min_seconds = 5.0;
+        control.following_page_delay_max_seconds = 9.0;
+        control.following_list_delay_min_seconds = 20.0;
+        control.following_list_delay_max_seconds = 40.0;
+    });
+    let f = clocked();
+    let q = &f.queue;
+    for index in 0..20 {
+        following(q, &format!("club.{index}"), None);
+        f.clock.sleep(61.0);
+        let claimed = claim(q).unwrap();
+        let now = f.clock.now();
+        q.finish(&claimed, read_done()).unwrap();
+        let page = setting_f64(q, "following_next_page_at").unwrap() - now;
+        let list = setting_f64(q, "following_next_list_at").unwrap() - now;
+        assert!((5.0..=9.0).contains(&page), "{page}");
+        assert!((20.0..=40.0).contains(&list), "{list}");
+    }
+}
+
+#[test]
+fn test_following_reads_are_spread_evenly_over_the_hour() {
+    pace(1.0, 1.0, 60);
+    let f = fixture();
+    let q = &f.queue;
+    for name in ["club.one", "club.two", "club.three"] {
+        following(q, name, None);
+    }
+    let claimed = claim(q).unwrap();
+    q.finish(&claimed, read_done()).unwrap();
+    // The hour's 60 reads are a minute apart, never a burst.
+    f.clock.sleep(59.0);
+    assert!(claim(q).is_none());
+    f.clock.sleep(1.0);
+    let claimed = claim(q).unwrap();
+    assert_eq!(claimed.payload["username"], json!("club.two"));
+    q.finish(&claimed, read_done()).unwrap();
+    assert_eq!(
+        q.status().unwrap()["following"]["reads_last_hour"],
+        json!(2)
+    );
+    f.clock.sleep(30.0);
+    assert!(claim(q).is_none());
+}
+
+#[test]
+fn test_following_reads_ignore_account_exclusions_and_stop_alone_when_paused() {
+    pace(1.0, 1.0, 3600);
+    let f = fixture();
+    let q = &f.queue;
+    q.set_setting("excluded_accounts", json!(["wat2do.ubc"]))
+        .unwrap();
+    let read = following(q, "club.one", None);
+    q.set_setting(FOLLOWING_PAUSED, json!("stopped")).unwrap();
+    let notified = q
+        .enqueue_digest(RECIPIENT_ID, ACCOUNT_USERNAME, "while-stopped")
+        .unwrap();
+    assert_eq!(claim(q).unwrap().id, notified.id);
+    assert!(claim(q).is_none());
+    assert!(!paused(q));
+    q.set_setting(FOLLOWING_PAUSED, json!(false)).unwrap();
+    // A read runs as whichever account Brave shows, so an excluded school never holds it.
+    assert_eq!(claim(q).unwrap().id, read);
+}
+
+#[test]
+fn test_a_cancelled_following_read_stays_cancelled() {
+    let f = fixture();
+    let q = &f.queue;
+    let read = following(q, "club.one", None);
+    q.cancel(&read).unwrap();
+    assert_eq!(following(q, "club.one", None), read);
+    assert_eq!(job(q, &read).state, "cancelled");
+    assert!(claim(q).is_none());
+    q.retry(&read).unwrap();
+    assert_eq!(job(q, &read).state, "pending");
+}
+
+#[test]
+fn test_a_following_rate_limit_holds_only_following_reads() {
+    pace(1.0, 1.0, 100);
+    let f = clocked();
+    let q = &f.queue;
+    let read = following(q, "club.one", None);
+    let claimed = claim(q).unwrap();
+    q.defer_for_rate_limit(
+        Some(&claimed),
+        "Instagram asked for a login on a Following read",
+    )
+    .unwrap();
+    q.finish(
+        &claimed,
+        refund("Instagram asked for a login on a Following read"),
+    )
+    .unwrap();
+    assert_eq!(job(q, &read).state, "pending");
+    assert_eq!(job(q, &read).attempts, 0);
+    assert!(!q.is_rate_limited(None, true).unwrap());
+    let held_until = setting_f64(q, "following_rate_limit_until").unwrap();
+    assert_eq!(
+        q.status().unwrap()["following"]["held_until"],
+        json!(held_until)
+    );
+    let notified = digest(q, "while-held");
+    let claimed = claim(q).unwrap();
+    assert_eq!(claimed.id, notified.id);
+    q.finish(&claimed, Finish::result(json!({"media_ids": []})))
+        .unwrap();
+    f.clock.sleep(5.0);
+    assert!(claim(q).is_none());
+    f.clock.sleep(control().rate_limit_backoff_seconds);
+    let claimed = claim(q).unwrap();
+    assert_eq!(claimed.id, read);
+    q.finish(&claimed, read_done()).unwrap();
+    // One success right after the hold proves nothing yet: the backoff stays escalated.
+    assert_eq!(
+        setting_f64(q, "following_rate_limit_backoff_seconds"),
+        Some(control().rate_limit_backoff_seconds)
+    );
+}
+
+#[test]
+fn test_following_reads_run_alone_dedupe_by_page_and_retry_failed_reads() {
+    pace(1.0, 1.0, 100);
+    let f = fixture();
+    let q = &f.queue;
+    let first = following(q, "club.one", None);
+    assert_eq!(following(q, "Club.One", None), first);
+    let other_page = following(q, "club.one", Some("100"));
+    assert_ne!(other_page, first);
+    let next_crawl = q
+        .enqueue_following(
+            "ubc",
+            "wat2do.ubc",
+            "crawl-2",
+            "club.one",
+            Some("101"),
+            None,
+        )
+        .unwrap()
+        .id;
+    assert_ne!(next_crawl, first);
+    let claimed = claim(q).unwrap();
+    assert_eq!(q.claim_companions(&claimed, 9, true).unwrap(), Vec::new());
+    q.finish(&claimed, Finish::error("Instagram Following read failed"))
+        .unwrap();
+    assert_eq!(job(q, &first).state, "failed");
+    assert_eq!(following(q, "club.one", None), first);
+    assert_eq!(job(q, &first).state, "pending");
+    assert_eq!(job(q, &first).attempts, 0);
+}
+
+#[test]
+fn test_following_reads_reject_invalid_identities() {
+    let f = fixture();
+    let q = &f.queue;
+    for (school, crawl, username, user_id, max_id) in [
+        ("UBC", "crawl", "club", None, None),
+        ("ubc", "a crawl", "club", None, None),
+        ("ubc", "crawl", "bad name", None, None),
+        ("ubc", "crawl", "club", Some("0101"), None),
+        ("ubc", "crawl", "club", Some("x"), None),
+        ("ubc", "crawl", "club", None, Some("a b")),
+    ] {
+        let error = q
+            .enqueue_following(school, "wat2do.ubc", crawl, username, user_id, max_id)
+            .unwrap_err();
+        assert!(
+            matches!(error, BrowserError::Value(_)),
+            "{username}: {error:?}"
+        );
+    }
+    assert!(
+        q.enqueue_following("ubc", "someone", "crawl", "club", None, None)
+            .is_err()
+    );
+}
+
+#[test]
+fn test_finished_following_reads_are_deleted_after_their_retention() {
+    pace(1.0, 1.0, 100);
+    overrides::instagram_browser(|control| control.following_result_retention_seconds = 600.0);
+    let f = clocked();
+    let q = &f.queue;
+    let old = following(q, "club.one", None);
+    let claimed = claim(q).unwrap();
+    q.finish(&claimed, read_done()).unwrap();
+    let kept_digest = digest(q, "kept");
+    let claimed = claim(q).unwrap();
+    q.finish(&claimed, Finish::result(json!({"media_ids": []})))
+        .unwrap();
+    f.clock.sleep(601.0);
+    let new = following(q, "club.two", None);
+    let claimed = claim(q).unwrap();
+    q.finish(&claimed, read_done()).unwrap();
+    assert!(q.get(&old).unwrap().is_none());
+    assert_eq!(job(q, &new).state, "succeeded");
+    assert_eq!(job(q, &kept_digest.id).state, "succeeded");
+}
+
+#[test]
+fn test_an_interrupted_following_read_is_read_again() {
+    let f = fixture();
+    let q = &f.queue;
+    let read = following(q, "club.one", None);
+    claim(q).unwrap();
+    q.recover_interrupted().unwrap();
+    assert_eq!(job(q, &read).state, "pending");
+    assert!(!paused(q));
+}
+
+#[test]
+fn test_repeated_following_refusals_escalate_their_hold() {
+    pace(1.0, 1.0, 3600);
+    let f = clocked();
+    let q = &f.queue;
+    let read = following(q, "club.one", None);
+    for expected in [1.0, 2.0, 4.0] {
+        let claimed = claim(q).unwrap();
+        assert_eq!(claimed.id, read);
+        q.defer_for_rate_limit(Some(&claimed), "Instagram refused a Following read")
+            .unwrap();
+        q.finish(&claimed, refund("Instagram refused a Following read"))
+            .unwrap();
+        assert_eq!(
+            setting_f64(q, "following_rate_limit_backoff_seconds"),
+            Some(expected * control().rate_limit_backoff_seconds)
+        );
+        f.clock
+            .sleep(setting_f64(q, "following_rate_limit_until").unwrap() - f.clock.now());
+    }
+}
+
+#[test]
+fn test_an_older_queue_with_direct_jobs_gains_the_following_kind() {
+    // The production queue was made before `following` and still holds `direct` jobs.
+    let directory = tempfile::tempdir().unwrap();
+    let clock = Clock::new(1_800_000_000.0, 0.001);
+    {
+        let db = rusqlite::Connection::open(directory.path().join("jobs.sqlite3")).unwrap();
+        db.execute_batch(
+            "CREATE TABLE jobs (
+                id TEXT PRIMARY KEY,
+                dedupe_key TEXT NOT NULL UNIQUE,
+                kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement', 'direct')),
+                school TEXT NOT NULL,
+                recipient_id TEXT NOT NULL,
+                account_username TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                state TEXT NOT NULL DEFAULT 'pending'
+                    CHECK(state IN ('pending','running','succeeded','failed','cancelled','unsupported')),
+                created_at REAL NOT NULL,
+                started_at REAL,
+                finished_at REAL,
+                result TEXT,
+                error TEXT,
+                attempts INTEGER NOT NULL DEFAULT 0
+            );
+            INSERT INTO jobs (id, dedupe_key, kind, school, recipient_id, account_username, payload, state, created_at)
+            VALUES ('old-direct', 'direct:1', 'direct', 'tmu', '1', 'wat2do.tmu', '{}', 'failed', 1.0),
+                   ('old-digest', 'digest:1', 'digest', 'ubc', '2', 'wat2do.ubc', '{}', 'succeeded', 2.0);",
+        )
+        .unwrap();
+    }
+    let queue = open(directory.path(), &clock);
+    drop(queue);
+    let db = rusqlite::Connection::open(directory.path().join("jobs.sqlite3")).unwrap();
+    let schema: String = db
+        .query_row(
+            "SELECT sql FROM sqlite_master WHERE name='jobs'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert!(schema.contains("'following'") && schema.contains("'direct'"));
+    let kinds: Vec<String> = db
+        .prepare("SELECT kind FROM jobs ORDER BY id")
+        .unwrap()
+        .query_map([], |row| row.get(0))
+        .unwrap()
+        .collect::<Result<_, _>>()
+        .unwrap();
+    assert_eq!(kinds, ["digest", "direct"]);
 }

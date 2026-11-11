@@ -48,11 +48,14 @@ pub struct Candidate {
     pub follow_error: Option<String>,
     #[serde(skip)]
     pub school_id: i32,
+    /// The school's club the row was found for, when it had no account yet.
+    #[serde(skip)]
+    pub club_id: Option<i32>,
 }
 
 const COLUMNS: &str = "c.id, s.slug AS school, c.handle, c.name, c.source, c.found_via, c.status, \
      c.read_status, c.followers_count, c.is_private, c.last_posted_at, c.score, c.verdict, \
-     c.reason, c.follow_error, c.school_id";
+     c.reason, c.follow_error, c.school_id, c.club_id";
 
 /// `list_candidates`: best scores first.
 pub async fn list(
@@ -108,8 +111,35 @@ fn handle_key(handle: &str) -> String {
     casefold(python_strip(handle).trim_start_matches('@'))
 }
 
-/// `_club_for`: the school's one club with this handle, or a new approved club.
+/// `_club_for`: the club the row was found for (given the account when it has
+/// none), else the school's one club with this handle, else a new approved club.
 async fn club_for(db: &PgPool, candidate: &Candidate) -> Result<i32, ApiError> {
+    if let Some(club_id) = candidate.club_id {
+        let linked: Option<(i32, bool)> = sqlx::query_as(
+            "WITH linked AS (SELECT id FROM public.clubs WHERE id = $1 AND school_id = $2), \
+                  filled AS ( \
+                      UPDATE public.clubs SET ig = $3 \
+                      WHERE id IN (SELECT id FROM linked) AND coalesce(btrim(ig), '') = '' \
+                      RETURNING id) \
+             SELECT id, EXISTS (SELECT 1 FROM filled) FROM linked",
+        )
+        .bind(club_id)
+        .bind(candidate.school_id)
+        .bind(&candidate.handle)
+        .fetch_optional(db)
+        .await?;
+        if let Some((id, filled)) = linked {
+            if filled {
+                // The account shows on the club's events and positions too.
+                revalidate_schools(
+                    std::slice::from_ref(&candidate.school),
+                    &["events", "positions", "clubs"],
+                )
+                .await;
+            }
+            return Ok(id);
+        }
+    }
     let clubs: Vec<(i32, Option<String>)> = read_with_retry(|| {
         sqlx::query_as("SELECT id, ig FROM public.clubs WHERE school_id = $1 ORDER BY id")
             .bind(candidate.school_id)
@@ -228,6 +258,7 @@ mod tests {
             reason: Some("Weekly mahjong nights".into()),
             follow_error: None,
             school_id: 7,
+            club_id: Some(3),
         };
         assert_eq!(
             serde_json::to_string(&candidate).unwrap(),

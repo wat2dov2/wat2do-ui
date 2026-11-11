@@ -1,6 +1,15 @@
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, ExternalLink } from "lucide-react";
-import { CARD_POST_COUNT, engagement, followerChange, followerTrend, needsAttention, postingTrends, type SocialAccount } from "@/features/admin/lib/socialAccounts";
+import { AlertTriangle, BellOff, ExternalLink } from "lucide-react";
+import {
+  CARD_POST_COUNT,
+  engagement,
+  followerChange,
+  followerTrend,
+  needsAttention,
+  notificationsQuiet,
+  postingTrends,
+  type SocialAccount,
+} from "@/features/admin/lib/socialAccounts";
 import { SocialPostTile } from "@/features/admin/components/social/SocialPostTile";
 import { SocialTrendChart } from "@/features/admin/components/social/SocialTrendChart";
 import { FormGrid, Stack } from "@/shared/layout";
@@ -58,6 +67,15 @@ export function SocialAccountRow({ account, readAt }: { account: SocialAccount; 
             </Stack>
           </Stack>
         </CardTitle>
+        {/* Below the title, outside its tight line height: the header's description row. */}
+        {notificationsQuiet(account, readAt) ? (
+          <Badge variant="warning">
+            <BellOff aria-hidden />
+            {account.last_notification_at
+              ? t("admin.socialAccounts.lastNotification", { time: formatRelativeTimeCompact(account.last_notification_at, t) })
+              : t("admin.socialAccounts.noNotifications")}
+          </Badge>
+        ) : null}
         <CardAction>
           <Stack direction="horizontal" gap={2} align="center">
             {needsAttention(account, readAt) ? (

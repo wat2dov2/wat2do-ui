@@ -2,12 +2,15 @@
 
 The emulator worker asks ``follows_due`` from the database alone, then calls
 ``follow_due`` with the emulator already on the school's account and a small number to
-follow this visit. Across the day a school account follows at most
-``follows_per_account_per_day``. Each follow turns the account's post notifications to
-All so ingestion hears about its posts; an account the school already follows is only
-marked followed, after its bell is checked. Instagram's "Try again later" pauses the
-account's follows for a day, and so do three Follow taps in a row that never stick
-(Instagram's silent limit); a follow that fails otherwise stays approved for later.
+follow this visit; the visit stops early once the worker needs the emulator for a
+carousel waiting for its song. A school account follows at most
+``follows_per_account_per_day`` a day and ``follows_per_account_per_hour`` within any
+hour. Each follow turns the account's post notifications to All so ingestion hears
+about its posts; an account the school already follows is only marked followed, after
+its bell is checked. Instagram's "Try again later" pauses the account's follows for a
+day, and so do three Follow taps in a row that never stick (Instagram's silent limit);
+a follow that fails otherwise stays approved for later, and ``failures_before_rest``
+failing in a row end the visit so the worker rests the account's follows.
 
 Accounts waiting in ``unfollow`` (rejected, but still followed) are unfollowed the
 same way, from the same daily allowance, before any new follow.
@@ -18,6 +21,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -58,34 +62,43 @@ class FollowVisit:
     # Accounts the school already followed: marked followed, their bells checked.
     confirmed: int
     blocked: bool
+    # Profiles kept failing, so the visit stopped; the worker rests the account's follows.
+    failing: bool = False
 
 
 def follows_due(school: str) -> bool:
-    """Whether the school has approved accounts waiting and may follow more today."""
+    """Whether the school has approved accounts waiting and room for a visit's follows."""
     school_id = school_service.get_school_id(school)
     if school_id is None or _blocked(school):
         return False
-    return _allowance(school_id) > 0 and bool(candidates.approved(school_id, 1))
+    return _room_for_a_visit(school_id) and bool(candidates.approved(school_id, 1))
 
 
 def unfollows_due(school: str) -> bool:
-    """Whether the school has accounts to unfollow and may act on more today."""
+    """Whether the school has accounts to unfollow and room for a visit's unfollows."""
     school_id = school_service.get_school_id(school)
     if school_id is None or _blocked(school):
         return False
-    return _allowance(school_id) > 0 and bool(candidates.to_unfollow(school_id, 1))
+    return _room_for_a_visit(school_id) and bool(candidates.to_unfollow(school_id, 1))
 
 
-def unfollow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
-    """Unfollow up to ``limit`` of the school's rejected accounts, within today's allowance."""
+def unfollow_due(
+    device: EmulatorDevice,
+    school: str,
+    limit: int,
+    *,
+    stop: Callable[[], bool] | None = None,
+) -> FollowVisit:
+    """Unfollow up to ``limit`` of the school's rejected accounts, within today's allowance,
+    until ``stop()`` says the emulator is needed for something more urgent."""
     school_id = school_service.get_school_id(school)
     if school_id is None or _blocked(school):
         return FollowVisit(0, 0, _blocked(school))
     reader = _reader(device, school)
     allowed = min(limit, _allowance(school_id))
-    unfollowed = confirmed = 0
+    unfollowed = confirmed = failed = 0
     for row in candidates.to_unfollow(school_id, allowed * PROFILES_PER_FOLLOW):
-        if unfollowed >= allowed:
+        if unfollowed >= allowed or (stop is not None and stop()):
             break
         try:
             tapped = reader.unfollow(row["handle"])
@@ -95,7 +108,11 @@ def unfollow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit
             return FollowVisit(unfollowed, confirmed, True)
         except EmulatorError as exc:
             candidates.mark_follow_failed(row["id"], str(exc))
+            failed += 1
+            if failed >= CONTROL.failures_before_rest:
+                return _failing(school, unfollowed, confirmed)
             continue
+        failed = 0
         # A profile that is gone or hidden needs no unfollow.
         candidates.mark_unfollowed(row["id"], tapped=bool(tapped))
         if tapped:
@@ -109,22 +126,32 @@ def _reader(device: EmulatorDevice, school: str) -> FollowingReader:
     return FollowingReader(
         device,
         EMULATOR.android_user_by_school[school],
-        profile_wait_seconds=CONTROL.crawl_profile_wait_seconds,
-        max_scrolls=CONTROL.crawl_max_scrolls,
+        profile_wait_seconds=CONTROL.profile_wait_seconds,
     )
 
 
-def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
-    """Follow up to ``limit`` of the school's approved accounts, within today's allowance."""
+def follow_due(
+    device: EmulatorDevice,
+    school: str,
+    limit: int,
+    *,
+    stop: Callable[[], bool] | None = None,
+) -> FollowVisit:
+    """Follow up to ``limit`` of the school's approved accounts, within today's allowance,
+    until ``stop()`` says the emulator is needed for something more urgent.
+
+    Confirming accounts the school already follows opens a profile each, so a visit
+    can run long; ``stop`` is asked before every profile.
+    """
     school_id = school_service.get_school_id(school)
     if school_id is None or _blocked(school):
         return FollowVisit(0, 0, _blocked(school))
     reader = _reader(device, school)
-    # Only a real follow counts toward the visit's limit and today's allowance.
+    # Only a real follow counts toward the visit's limit and the allowance.
     allowed = min(limit, _allowance(school_id))
-    followed = confirmed = unconfirmed = 0
+    followed = confirmed = unconfirmed = failed = 0
     for row in candidates.approved(school_id, allowed * PROFILES_PER_FOLLOW):
-        if followed >= allowed:
+        if followed >= allowed or (stop is not None and stop()):
             break
         try:
             outcome = reader.follow(row["handle"])
@@ -132,6 +159,7 @@ def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
             # Counted now; it stays approved so a later visit sets its bell.
             candidates.mark_follow_failed(row["id"], str(exc), tapped=True)
             followed += 1
+            failed = 0
             if isinstance(exc.__cause__, ActionBlocked):
                 _block(school)
                 return FollowVisit(followed, confirmed, True)
@@ -150,7 +178,11 @@ def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
             continue
         except EmulatorError as exc:
             candidates.mark_follow_failed(row["id"], str(exc))
+            failed += 1
+            if failed >= CONTROL.failures_before_rest:
+                return _failing(school, followed, confirmed)
             continue
+        failed = 0
         if outcome is None:
             candidates.reject_gone(row["id"])
             continue
@@ -163,22 +195,52 @@ def follow_due(device: EmulatorDevice, school: str, limit: int) -> FollowVisit:
     return FollowVisit(followed, confirmed, False)
 
 
+def _failing(school: str, followed: int, confirmed: int) -> FollowVisit:
+    log.warning("Profiles kept failing for %s; its follows rest", school)
+    return FollowVisit(followed, confirmed, False, failing=True)
+
+
 def _allowance(school_id: int) -> int:
-    """Follows and unfollows share the day's allowance."""
-    midnight = datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
-    used = 0
-    for column in ("followed_at", "unfollowed_at"):
-        response = (
-            get_sb()
-            .table(INSTAGRAM_FOLLOW_CANDIDATES)
-            .select("id", count="exact")
-            .eq("school_id", school_id)
-            .gte(column, midnight.isoformat())
-            .limit(1)
-            .execute()
-        )
-        used += response.count or 0
-    return CONTROL.follows_per_account_per_day - used
+    """Follows and unfollows share the allowance: what is left of today's, and of the
+    last hour's, whichever is smaller."""
+    return min(_left(school_id))
+
+
+def _room_for_a_visit(school_id: int) -> bool:
+    """Whether the last hour leaves room for a whole visit's follows, or for all that is
+    left of today's, so the worker never switches accounts for a follow or two while
+    the hour's allowance frees up one follow at a time."""
+    today, hour = _left(school_id)
+    whole_visit = min(EMULATOR.follows_per_visit, CONTROL.follows_per_account_per_hour, today)
+    return today > 0 and hour >= whole_visit
+
+
+def _left(school_id: int) -> tuple[int, int]:
+    """How many follows and unfollows are left today, and within the last hour."""
+    now = datetime.now().astimezone()
+    midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    hour_ago = now - timedelta(hours=1)
+    since = min(midnight, hour_ago).isoformat()
+    rows = (
+        get_sb()
+        .table(INSTAGRAM_FOLLOW_CANDIDATES)
+        .select("followed_at,unfollowed_at")
+        .eq("school_id", school_id)
+        .or_(f'followed_at.gte."{since}",unfollowed_at.gte."{since}"')
+        .execute()
+    ).data or []
+    done = [
+        datetime.fromisoformat(stamp)
+        for row in rows
+        for stamp in (row["followed_at"], row["unfollowed_at"])
+        if stamp
+    ]
+    today = sum(1 for at in done if at >= midnight)
+    last_hour = sum(1 for at in done if at >= hour_ago)
+    return (
+        CONTROL.follows_per_account_per_day - today,
+        CONTROL.follows_per_account_per_hour - last_hour,
+    )
 
 
 def _blocks() -> dict[str, Any]:

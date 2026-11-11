@@ -156,11 +156,12 @@ Production secrets live in that file and the other files under `~/wat2do-data/co
 Each push to `main` runs the CI/CD deploy job on the Mac's own runner (`infra/mac-mini/deploy.sh`), which builds the release, applies migrations, switches the Mac to it and then uploads the same commit's website to AWS.
 
 Event and position ingestion runs through one database table, `public.ingestion_items`, with one row per Instagram post or directory page, run by the Rust binary `wat2do-ingest` (`rust/src/ingestion`).
-Instagram notifications come from a physical Android phone running Automate, which triggers the `process-notification` workflow.
+Instagram notifications come from a physical Android phone running Automate and from the Mac's Android emulator (`jobs/record_instagram_notifications.py`), both of which trigger the `process-notification` workflow.
 The workflow records exact post URLs in the notification ledger, expanding collapsed digests through the Mac's logged-in Brave worker, and a database trigger adds each post to `ingestion_items`.
 An always-on processor on the Mac listens for the Postgres notification (`LISTEN ingestion_items`) that a trigger on the queue sends whenever a row is added or changes, and wakes at once.
 Its fetcher reads each new post logged out, with no account or cookies (`rust/src/ingestion/fetch.rs`), and marks the row ready; a deleted post is marked gone.
 Every 12 hours Claude Haiku directory agents (`wat2do-ingest scrape-directories`) read the official school directories listed in `public.directory_sources`, skip what is already handled or listed, and add finished event details as ready rows (`backend/services/ingestion/directory_prompt.md`).
+The same run has Claude Haiku club directory agents read each school's official club directory in `backend/controlbox/ingestion.json` `club_directories` (`backend/services/ingestion/club_directory_prompt.md`), read the club pages they find a few hundred a run, and queue every Instagram account the school has no follow candidate for in `public.instagram_follow_candidates` as a pending `directory` row, which the follow scorer decides.
 For each ready row the processor runs a Claude Haiku agent (`claude -p`) that follows `backend/services/ingestion/prompt.md`, up to `parallel_agents` at once (`backend/controlbox/ingestion.json`); posts from one club never run at the same time.
 The agent inserts, updates, cancels or reschedules events and positions itself through `psql` with the `wat2do_ingest_agent` login, which can only write events, event dates and positions.
 Set its connection string as `INGEST_AGENT_DATABASE_URL` in `backend/.env`; the role is created by migration and its password is set out of band.

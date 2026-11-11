@@ -13,6 +13,11 @@
   "directory_listing_max_bytes": 8000000,
   "directory_model_timeout_seconds": 1500,
   "directory_scrape_interval_seconds": 43200,
+  "club_directory_scan_days": 7,
+  "club_directory_max_listing_pages": 40,
+  "club_directory_pages_per_run": 300,
+  "club_directory_page_delay_seconds": 2,
+  "club_directory_recheck_days": 30,
   "claim_lease_seconds": 900,
   "max_attempts": 3,
   "agent_failure_streak": 12,
@@ -22,8 +27,80 @@
   "fetch_timeout_seconds": 30,
   "club_logo_read_delay_seconds": 20,
   "club_logo_retry_days": 30,
+  "profile_renderer": ".local/libexec/wat2do/lightpanda",
+  "profile_render_timeout_seconds": 45,
   "launch_agent_timeout_seconds": 30,
   "university_event_schools": [
     "ocadu"
+  ],
+  "club_directories": [
+    {
+      "name": "WUSA Clubs",
+      "schools": [
+        "uwaterloo"
+      ],
+      "listings": [
+        {
+          "url": "https://clubs.wusa.ca/api/v1/clubs_listing/active",
+          "body": "{\"page\": {page}, \"rows\": 100}"
+        }
+      ],
+      "notes": "The listing gives each club's id and at most one social link. Each club's page is https://clubs.wusa.ca/api/v1/clubs/<id>/profile, where <id> is its id in the listing."
+    },
+    {
+      "name": "U of T Student Organization Portal",
+      "schools": [
+        "utsg",
+        "utm",
+        "utsc"
+      ],
+      "listings": [
+        {
+          "url": "https://sop.utoronto.ca/wp-json/wp/v2/group?per_page=100&page={page}&_fields=link,title,campus"
+        }
+      ],
+      "notes": "Each group's page is its link. Its campus ids give its school: 24 is St George (utsg), 29 is UTM (utm), 34 is UTSC (utsc)."
+    },
+    {
+      "name": "SSMU Clubs",
+      "schools": [
+        "mcgill"
+      ],
+      "listings": [
+        {
+          "url": "https://ssmu.ca/student-life/clubs-services-isg/"
+        },
+        {
+          "url": "https://ssmu.ca/clubs/athletics-recreation-clubs/"
+        },
+        {
+          "url": "https://ssmu.ca/clubs/charity-environment-clubs/"
+        },
+        {
+          "url": "https://ssmu.ca/clubs/community-outreach-and-volunteering-clubs/"
+        },
+        {
+          "url": "https://ssmu.ca/clubs/health-wellness-clubs/"
+        },
+        {
+          "url": "https://ssmu.ca/clubs/hobby-leisure-clubs/"
+        },
+        {
+          "url": "https://ssmu.ca/clubs/language-publications/"
+        },
+        {
+          "url": "https://ssmu.ca/clubs/networking-and-leadership-development-clubs/"
+        },
+        {
+          "url": "https://ssmu.ca/clubs/performing-finearts-clubs/"
+        },
+        {
+          "url": "https://ssmu.ca/clubs/political-socialactivism-clubs/"
+        },
+        {
+          "url": "https://ssmu.ca/clubs/religion-culture-clubs/"
+        }
+      ]
+    }
   ]
 }

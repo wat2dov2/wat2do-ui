@@ -53,7 +53,21 @@ static GENERIC_ASSET: LazyLock<Regex> = LazyLock::new(|| {
 /// decoded body. Every hop must be http(s) on a host whose addresses are all
 /// public, since the URLs come from pages and agents.
 pub async fn download(url: &str, timeout: Duration, max_bytes: usize) -> Result<Vec<u8>> {
-    download_from(url, timeout, max_bytes, |hop| async move {
+    download_from(url, None, timeout, max_bytes, |hop| async move {
+        is_public_url(&hop).await
+    })
+    .await
+}
+
+/// [`download`], but POSTing `body` as JSON to `url` itself; a redirect is
+/// followed with a plain GET, the way a browser follows one.
+pub async fn post_json(
+    url: &str,
+    body: &str,
+    timeout: Duration,
+    max_bytes: usize,
+) -> Result<Vec<u8>> {
+    download_from(url, Some(body), timeout, max_bytes, |hop| async move {
         is_public_url(&hop).await
     })
     .await
@@ -68,6 +82,7 @@ async fn is_public_url(url: &Url) -> bool {
 
 async fn download_from<F, Allowed>(
     url: &str,
+    mut body: Option<&str>,
     timeout: Duration,
     max_bytes: usize,
     allowed: F,
@@ -88,11 +103,14 @@ where
         if !allowed(current.clone()).await {
             bail!("refusing a non-public address");
         }
-        let response = client
-            .get(current.as_str())
-            .header("Accept", "*/*")
-            .send()
-            .await?;
+        let request = match body.take() {
+            Some(body) => client
+                .post(current.as_str())
+                .header("Content-Type", "application/json")
+                .body(body.to_owned()),
+            None => client.get(current.as_str()),
+        };
+        let response = request.header("Accept", "*/*").send().await?;
         let status = response.status();
         if status.is_redirection()
             && let Some(location) = response
@@ -219,8 +237,8 @@ mod download_tests {
     /// A status line, extra headers and body.
     type Reply = (&'static str, Vec<(&'static str, String)>, Vec<u8>);
 
-    /// A one-request-per-connection HTTP server answering each path with
-    /// `respond(path) -> (status line, extra headers, body)`.
+    /// A one-request-per-connection HTTP server answering each request with
+    /// `respond("METHOD path") -> (status line, extra headers, body)`.
     async fn serve(respond: fn(&str) -> Reply) -> (String, Arc<AtomicUsize>) {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let base = format!("http://{}", listener.local_addr().unwrap());
@@ -243,9 +261,30 @@ mod download_tests {
                     }
                     request.extend_from_slice(&buffer[..read]);
                 }
+                // Read a POSTed body too, so closing the socket never resets it.
+                let header_end = request
+                    .windows(4)
+                    .position(|w| w == b"\r\n\r\n")
+                    .map_or(request.len(), |end| end + 4);
+                let length = String::from_utf8_lossy(&request[..header_end])
+                    .lines()
+                    .find_map(|line| {
+                        let (name, value) = line.split_once(':')?;
+                        name.eq_ignore_ascii_case("content-length")
+                            .then(|| value.trim().parse::<usize>().ok())?
+                    })
+                    .unwrap_or(0);
+                while request.len() < header_end + length {
+                    match socket.read(&mut buffer).await {
+                        Ok(read) if read > 0 => request.extend_from_slice(&buffer[..read]),
+                        _ => break,
+                    }
+                }
                 let text = String::from_utf8_lossy(&request);
-                let path = text.split_whitespace().nth(1).unwrap_or("/").to_owned();
-                let (status, headers, body) = respond(&path);
+                let mut words = text.split_whitespace();
+                let method = words.next().unwrap_or("GET");
+                let path = words.next().unwrap_or("/");
+                let (status, headers, body) = respond(&format!("{method} {path}"));
                 let mut response = format!(
                     "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n",
                     body.len()
@@ -268,8 +307,8 @@ mod download_tests {
         encoder.finish().unwrap()
     }
 
-    fn pages(path: &str) -> Reply {
-        match path {
+    fn pages(request: &str) -> Reply {
+        match request.split_once(' ').map_or(request, |(_, path)| path) {
             "/start" => ("302 Found", vec![("Location", "/final".into())], vec![]),
             "/final" => ("200 OK", vec![], b"hello".to_vec()),
             "/to-private" => (
@@ -298,30 +337,61 @@ mod download_tests {
     #[tokio::test]
     async fn redirects_are_followed_and_each_hop_is_checked() {
         let (base, _) = serve(pages).await;
-        let body = download_from(&format!("{base}/start"), SECOND, 100, not_private).await;
+        let body = download_from(&format!("{base}/start"), None, SECOND, 100, not_private).await;
         assert_eq!(body.unwrap(), b"hello");
-        let refused = download_from(&format!("{base}/to-private"), SECOND, 100, not_private).await;
+        let refused = download_from(
+            &format!("{base}/to-private"),
+            None,
+            SECOND,
+            100,
+            not_private,
+        )
+        .await;
         assert_eq!(
             refused.unwrap_err().to_string(),
             "refusing a non-public address"
         );
-        let missing = download_from(&format!("{base}/nope"), SECOND, 100, not_private).await;
+        let missing = download_from(&format!("{base}/nope"), None, SECOND, 100, not_private).await;
         assert_eq!(missing.unwrap_err().to_string(), "HTTP 404");
+    }
+
+    fn methods(request: &str) -> Reply {
+        match request {
+            "POST /listing" => ("303 See Other", vec![("Location", "/after".into())], vec![]),
+            other => ("200 OK", vec![], other.as_bytes().to_vec()),
+        }
+    }
+
+    #[tokio::test]
+    async fn a_json_body_is_posted_and_its_redirect_followed_with_a_get() {
+        let (base, requests) = serve(methods).await;
+        let posted = download_from(
+            &format!("{base}/listing"),
+            Some("{\"page\": 1}"),
+            SECOND,
+            100,
+            not_private,
+        )
+        .await;
+        assert_eq!(posted.unwrap(), b"GET /after");
+        assert_eq!(requests.load(Ordering::SeqCst), 2);
+        let plain = download_from(&format!("{base}/listing"), None, SECOND, 100, not_private).await;
+        assert_eq!(plain.unwrap(), b"GET /listing");
     }
 
     #[tokio::test]
     async fn compressed_bodies_are_decoded_and_capped_by_decoded_bytes() {
         let (base, _) = serve(pages).await;
-        let whole = download_from(&format!("{base}/gzip"), SECOND, 10_000, not_private).await;
+        let whole = download_from(&format!("{base}/gzip"), None, SECOND, 10_000, not_private).await;
         assert_eq!(whole.unwrap(), "x".repeat(5000).into_bytes());
-        let capped = download_from(&format!("{base}/gzip"), SECOND, 1000, not_private).await;
+        let capped = download_from(&format!("{base}/gzip"), None, SECOND, 1000, not_private).await;
         assert_eq!(capped.unwrap(), "x".repeat(1000).into_bytes());
     }
 
     #[tokio::test]
     async fn at_most_twenty_redirects_are_followed() {
         let (base, requests) = serve(pages).await;
-        let looped = download_from(&format!("{base}/loop"), SECOND, 100, not_private).await;
+        let looped = download_from(&format!("{base}/loop"), None, SECOND, 100, not_private).await;
         assert_eq!(looped.unwrap_err().to_string(), "too many redirects");
         assert_eq!(requests.load(Ordering::SeqCst), MAX_REDIRECTS + 1);
     }

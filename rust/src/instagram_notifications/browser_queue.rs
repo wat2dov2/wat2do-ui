@@ -19,6 +19,7 @@ use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
 use super::browser_digest::DigestResolution;
+use super::browser_following::{validate_cursor, validate_list_owner};
 use super::browser_ingestion::canonical_target_url;
 use super::browser_session::{canonical_post_url, validate_account_username};
 use super::errors::{BrowserError, BrowserResult, StorageError};
@@ -32,19 +33,31 @@ pub const WORKER_INSTALLATION_PAUSE: &str = "Browser worker installation in prog
 const AVAILABLE_ACCOUNT_SQL: &str = "account_username NOT IN (SELECT value FROM json_each(COALESCE(\
 (SELECT value FROM settings WHERE key='excluded_accounts'),'[]')))";
 
-// Rate limit holds: "browser" stops every claim, "retrieval" only profile retrievals.
+// Rate limit holds: "browser" stops every claim, "retrieval" only profile retrievals,
+// "following" only Following list reads.
 const BROWSER_SCOPE: &str = "browser";
 const RETRIEVAL_SCOPE: &str = "retrieval";
+const FOLLOWING_SCOPE: &str = "following";
+/// Set (to a reason) to stop Following reads alone, leaving every other job running.
+pub const FOLLOWING_PAUSED: &str = "following_paused";
 
 /// Every job kind the queue accepts; a stored table missing any of them is rebuilt.
-const JOB_KINDS: [&str; 3] = ["digest", "retrieval", "engagement"];
+const JOB_KINDS: [&str; 4] = ["digest", "retrieval", "engagement", "following"];
 
-/// Python's `_QUEUE_SCHEMA`, byte for byte: SQLite keeps this text in `sqlite_master`.
+/// The finished Following reads still to be collected: the crawl takes each within
+/// seconds, so older ones are deleted rather than kept with their account lists.
+const FINISHED_FOLLOWING_SQL: &str =
+    "kind='following' AND state IN ('succeeded','failed','cancelled','unsupported')";
+
+/// Python's `_QUEUE_SCHEMA` with the `following` kind added: SQLite keeps this text in
+/// `sqlite_master`, and a stored table that lacks a kind is rebuilt with every job.
+/// Nothing queues `direct` jobs any more, but older queues still hold some, and the
+/// rebuild copies every job, so the kind stays allowed.
 const QUEUE_SCHEMA: &str = "
     CREATE TABLE IF NOT EXISTS jobs (
         id TEXT PRIMARY KEY,
         dedupe_key TEXT NOT NULL UNIQUE,
-        kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement')),
+        kind TEXT NOT NULL CHECK(kind IN ('digest', 'retrieval', 'engagement', 'direct', 'following')),
         school TEXT NOT NULL,
         recipient_id TEXT NOT NULL,
         account_username TEXT NOT NULL,
@@ -110,10 +123,10 @@ static CACHE_ID_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[A-Za-z0-9._:-]{1,255}$").expect("valid regex"));
 
 fn scope(job: Option<&BrowserJob>) -> &'static str {
-    if job.is_some_and(|job| job.kind == "retrieval") {
-        RETRIEVAL_SCOPE
-    } else {
-        BROWSER_SCOPE
+    match job.map(|job| job.kind.as_str()) {
+        Some("retrieval") => RETRIEVAL_SCOPE,
+        Some("following") => FOLLOWING_SCOPE,
+        _ => BROWSER_SCOPE,
     }
 }
 
@@ -773,8 +786,8 @@ impl BrowserJobQueue {
     /// Hold browser admission without changing a claim or its retry policy.
     ///
     /// A profile retrieval's 429 comes from Instagram's stricter profile endpoint, so it
-    /// holds only retrievals; digests keep running and hold everything if they are
-    /// limited too.
+    /// holds only retrievals, and a Following read's 429 or login wall holds only those
+    /// reads; digests keep running and hold everything if they are limited too.
     pub fn defer_for_rate_limit(
         &self,
         job: Option<&BrowserJob>,
@@ -977,30 +990,76 @@ impl BrowserJobQueue {
     /// day (`account_login_at:<account>`) and `account_login_daily_limit` a day in all
     /// (`account_login_attempts`). False, recording nothing, when either is spent.
     pub fn reserve_account_login(&self, username: &str, now: f64) -> BrowserResult<bool> {
-        let attempts =
-            recent_timestamps(&self.setting_or("account_login_attempts", json!([]))?, now);
-        let key = format!("account_login_at:{username}");
-        let last = pyjson::number(&self.setting_or(&key, json!(0))?).unwrap_or(0.0);
-        if attempts.len() >= control().account_login_daily_limit || now - last < 86_400.0 {
-            return Ok(false);
-        }
-        let mut spent = attempts;
-        spent.push(json!(now));
-        self.set_setting("account_login_attempts", Value::from(spent))?;
-        self.set_setting(&key, json!(now))?;
-        Ok(true)
+        self.reserve_login(username, now, &LoginReservation::default())
+    }
+
+    /// [`reserve_account_login`](Self::reserve_account_login) with `reservation`'s
+    /// extra conditions, all checked and recorded in one transaction, since the
+    /// worker's threads and `wat2do-lightpanda` reserve from the same budget.
+    pub fn reserve_login(
+        &self,
+        username: &str,
+        now: f64,
+        reservation: &LoginReservation,
+    ) -> BrowserResult<bool> {
+        self.retry_storage(|| {
+            self.immediate(|db| {
+                let Some(mut spent) = account_logins_if_allowed(db, username, now)? else {
+                    return Ok(false);
+                };
+                if spent.len() + reservation.keep >= control().account_login_daily_limit {
+                    return Ok(false);
+                }
+                let mut first_logins = None;
+                if let Some((key, limit)) = reservation.first_login {
+                    let recent = recent_timestamps(&stored_setting(db, key)?, now);
+                    if recent.len() >= limit {
+                        return Ok(false);
+                    }
+                    first_logins = Some((key, recent));
+                }
+                spent.push(json!(now));
+                write_setting(db, "account_login_attempts", &Value::from(spent))?;
+                write_setting(db, &format!("account_login_at:{username}"), &json!(now))?;
+                if let Some((key, mut recent)) = first_logins {
+                    recent.push(json!(now));
+                    write_setting(db, key, &Value::from(recent))?;
+                }
+                Ok(true)
+            })
+        })
+    }
+
+    /// Whether `reserve_account_login` would allow `username` a login at `now`,
+    /// recording nothing.
+    pub fn account_login_allowed(&self, username: &str, now: f64) -> BrowserResult<bool> {
+        self.retry_storage(|| {
+            Ok(account_logins_if_allowed(&self.connect()?, username, now)?.is_some())
+        })
+    }
+
+    /// How many of the day's `account_login_daily_limit` logins are left at `now`.
+    pub fn account_logins_left(&self, now: f64) -> BrowserResult<usize> {
+        let spent = recent_timestamps(&self.setting_or("account_login_attempts", json!([]))?, now);
+        Ok(control()
+            .account_login_daily_limit
+            .saturating_sub(spent.len()))
     }
 
     /// Choose a public bootstrap profile without claiming or switching an account.
+    /// Digests Lightpanda reads never ask Brave for their account.
     pub fn peek_account_username(&self) -> BrowserResult<Option<String>> {
         self.retry_storage(|| {
             let db = self.connect()?;
+            let lightpanda = lane_digest_arguments(&db, self.host.time())?;
             db.query_row(
                 &format!(
                     "SELECT account_username FROM jobs WHERE state IN ('pending','running') \
-                     AND {AVAILABLE_ACCOUNT_SQL} ORDER BY created_at,id LIMIT 1"
+                     AND {AVAILABLE_ACCOUNT_SQL} \
+                     AND NOT (kind='digest' AND NOT {BRAVE_DIGEST_SQL}) \
+                     ORDER BY created_at,id LIMIT 1"
                 ),
-                [],
+                params_from_iter(lightpanda),
                 |row| row.get(0),
             )
             .optional()
@@ -1045,6 +1104,46 @@ impl BrowserJobQueue {
             .id)
     }
 
+    /// Queue one page of `username`'s Following list for crawl `crawl_id`: the first page
+    /// without `max_id`, then each page the previous one pointed to. Without `user_id`
+    /// the read looks the account up first. `account_username` (the school's account)
+    /// only names the job; the read runs as whichever account Brave shows.
+    pub fn enqueue_following(
+        &self,
+        school: &str,
+        account_username: &str,
+        crawl_id: &str,
+        username: &str,
+        user_id: Option<&str>,
+        max_id: Option<&str>,
+    ) -> BrowserResult<BrowserJob> {
+        if !SCHOOL_PATTERN.is_match(school) || !CACHE_ID_PATTERN.is_match(crawl_id) {
+            return Err(BrowserError::Value(
+                "Instagram Following read school or crawl is invalid".to_owned(),
+            ));
+        }
+        let mut payload = Map::new();
+        payload.insert("crawl".into(), crawl_id.into());
+        payload.insert("username".into(), validate_list_owner(username)?.into());
+        payload.insert(
+            "user_id".into(),
+            match user_id {
+                Some(user_id) => validate_recipient_id(user_id)
+                    .map_err(|_| BrowserError::Value("Instagram user ID is invalid".to_owned()))?
+                    .into(),
+                None => Value::Null,
+            },
+        );
+        payload.insert(
+            "max_id".into(),
+            max_id
+                .map(validate_cursor)
+                .transpose()?
+                .map_or(Value::Null, Value::from),
+        );
+        self.enqueue("following", school, "", account_username, payload)
+    }
+
     pub fn enqueue_engagement(
         &self,
         school: &str,
@@ -1083,7 +1182,12 @@ impl BrowserJobQueue {
         payload: Map<String, Value>,
     ) -> BrowserResult<BrowserJob> {
         self.retry_storage(|| {
-            let recipient_id = validate_recipient_id(recipient_id).map_err(BrowserError::Value)?;
+            // A Following read belongs to no recipient: it runs as whoever Brave shows.
+            let recipient_id = if kind == "following" {
+                String::new()
+            } else {
+                validate_recipient_id(recipient_id).map_err(BrowserError::Value)?
+            };
             let username = validate_account_username(username).map_err(BrowserError::Value)?;
             let mut identity = vec![kind.to_owned(), recipient_id.clone(), username.clone()];
             match kind {
@@ -1091,6 +1195,11 @@ impl BrowserJobQueue {
                 "retrieval" => {
                     identity.push(pyjson::str(&payload["url"]));
                     identity.push(pyjson::str(&payload["cutoff_days"]));
+                }
+                "following" => {
+                    for key in ["crawl", "username", "max_id"] {
+                        identity.push(pyjson::str(&payload[key]));
+                    }
                 }
                 // p/ and reel/ can reference the same media. Dedupe by its shortcode.
                 _ => identity.push(
@@ -1117,9 +1226,12 @@ impl BrowserJobQueue {
                     .optional()
                     .map_err(storage)?;
                 if let Some((id, state)) = existing {
-                    // Digest retries are reads. Engagement retries always require an
-                    // explicit retry, because they may already have acted on Instagram.
-                    if kind == "digest" && (state == "failed" || state == "cancelled") {
+                    // Digest and Following retries are reads. Engagement retries always
+                    // require an explicit retry, because they may already have acted on
+                    // Instagram. A Following read someone cancelled stays cancelled.
+                    if (kind == "digest" && (state == "failed" || state == "cancelled"))
+                        || (kind == "following" && state == "failed")
+                    {
                         db.execute(
                             "UPDATE jobs SET state='pending',created_at=?,started_at=NULL,finished_at=NULL,error=NULL,result=NULL,attempts=0 WHERE id=?",
                             params![self.host.time(), id],
@@ -1184,9 +1296,10 @@ impl BrowserJobQueue {
                     db,
                     &format!(
                         "SELECT * FROM jobs WHERE state='pending' AND kind='digest' \
-                         AND {AVAILABLE_ACCOUNT_SQL} ORDER BY created_at,id LIMIT 1"
+                         AND {AVAILABLE_ACCOUNT_SQL} AND {BRAVE_DIGEST_SQL} \
+                         ORDER BY created_at,id LIMIT 1"
                     ),
-                    &[],
+                    &lane_digest_arguments(db, now)?,
                 )?;
                 if row.is_none() && allow_engagement {
                     row = select_engagement(db, now, true)?;
@@ -1204,9 +1317,17 @@ impl BrowserJobQueue {
                 if row.is_none() && allow_engagement {
                     row = select_engagement(db, now, false)?;
                 }
+                if row.is_none() {
+                    row = select_following(db, now)?;
+                }
                 let Some(row) = row else {
                     return Ok(None);
                 };
+                if row.kind == "following" {
+                    let mut reads = recent_following_reads(db, now)?;
+                    reads.push(json!(now));
+                    write_setting(db, "following_reads", &Value::from(reads))?;
+                }
                 if row.kind == "engagement" {
                     db.execute(
                         UPSERT_SETTING,
@@ -1234,7 +1355,12 @@ impl BrowserJobQueue {
         limit: i64,
         allow_engagement: bool,
     ) -> BrowserResult<Vec<BrowserJob>> {
-        if self.is_storage_unavailable() || first.kind == "engagement" || limit <= 0 {
+        // Engagement is serialized, and Following reads are paced one at a time.
+        if self.is_storage_unavailable()
+            || first.kind == "engagement"
+            || first.kind == "following"
+            || limit <= 0
+        {
             return Ok(Vec::new());
         }
         self.retry_storage(|| {
@@ -1250,9 +1376,9 @@ impl BrowserJobQueue {
                             .query_row(
                                 &format!(
                                     "SELECT 1 FROM jobs WHERE state='pending' AND kind='digest' \
-                                     AND {AVAILABLE_ACCOUNT_SQL} LIMIT 1"
+                                     AND {AVAILABLE_ACCOUNT_SQL} AND {BRAVE_DIGEST_SQL} LIMIT 1"
                                 ),
-                                [],
+                                params_from_iter(lane_digest_arguments(db, now)?),
                                 |_| Ok(()),
                             )
                             .optional()
@@ -1288,7 +1414,7 @@ impl BrowserJobQueue {
 
     /// Complete a claim or atomically schedule a safe read retry.
     pub fn finish(&self, claim: &BrowserJob, outcome: Finish) -> BrowserResult<()> {
-        let finished = self.retry_storage(|| self.finish_once(claim, &outcome));
+        let finished = self.retry_storage(|| self.finish_once(claim, &outcome, None));
         if claim.kind == "retrieval" {
             // Queues a listed profile's posts without a polling loop.
             self.retrieval_finished.set();
@@ -1296,7 +1422,15 @@ impl BrowserJobQueue {
         finished
     }
 
-    fn finish_once(&self, claim: &BrowserJob, outcome: &Finish) -> BrowserResult<()> {
+    /// With `lane`, the claim is the Lightpanda lane's (`lightpanda::LaneRead`): it
+    /// leaves the lane's running jobs, and its account's pace and hold are recorded in
+    /// the same transaction instead of Brave's.
+    fn finish_once(
+        &self,
+        claim: &BrowserJob,
+        outcome: &Finish,
+        lane: Option<&LaneRead>,
+    ) -> BrowserResult<()> {
         let Finish {
             result,
             error,
@@ -1308,7 +1442,7 @@ impl BrowserJobQueue {
             && (!requeue
                 || error.as_deref().is_none_or(|error| error.trim().is_empty())
                 || result.is_some()
-                || !(claim.kind == "digest" || claim.kind == "retrieval")
+                || !read_only_kind(&claim.kind)
                 || claim.state != "running"
                 || claim.started_at.is_none()
                 || claim.attempts <= 0)
@@ -1331,6 +1465,9 @@ impl BrowserJobQueue {
             "succeeded"
         };
         let retried = self.immediate(|db| {
+            if let Some(lane) = lane {
+                lane.record(db, claim, self.host.time())?;
+            }
             let Some(stored_job) = db
                 .query_row("SELECT * FROM jobs WHERE id=?", [&claim.id], BrowserJob::from_row)
                 .optional()
@@ -1376,16 +1513,24 @@ impl BrowserJobQueue {
                     ],
                 )
                 .map_err(storage)?;
+            if changed > 0 && stored_job.kind == "following" {
+                delete_collected_following(db, now)?;
+                if lane.is_none() {
+                    pace_following(db, now)?;
+                }
+            }
+            // The lane's reads pace and hold their own accounts, never Brave's.
             if changed > 0
+                && lane.is_none()
                 && state == "succeeded"
-                && (stored_job.kind == "digest"
-                    || stored_job.kind == "retrieval"
+                && (read_only_kind(&stored_job.kind)
                     || (stored_job.kind == "engagement" && !stored_job.dry_run()))
             {
-                // Any fresh success clears the shared hold; a retrieval also clears its own.
+                // Any fresh success clears the shared hold; a retrieval or Following read
+                // also clears its own.
                 let mut scopes = vec![BROWSER_SCOPE];
                 if scope(Some(&stored_job)) != BROWSER_SCOPE {
-                    scopes.push(RETRIEVAL_SCOPE);
+                    scopes.push(scope(Some(&stored_job)));
                 }
                 for scope in scopes {
                     let (deadline, backoff) = rate_limit_state(db, scope)?;
@@ -1458,8 +1603,12 @@ impl BrowserJobQueue {
                     .map_err(storage)?;
                     newly_paused = true;
                 }
-                db.execute_batch(
-                    "UPDATE jobs SET state='pending',started_at=NULL WHERE kind IN ('digest','retrieval') AND state='running'",
+                // The lane's reads run on in its own thread; requeueing one would drop its
+                // finish and read the page twice.
+                db.execute(
+                    "UPDATE jobs SET state='pending',started_at=NULL WHERE kind IN ('digest','retrieval','following') AND state='running' \
+                     AND id NOT IN (SELECT value FROM json_each(?))",
+                    [lane_running_jobs(db, self.host.time())?],
                 )
                 .map_err(storage)?;
                 db.execute(
@@ -1579,6 +1728,12 @@ impl BrowserJobQueue {
         drop(db);
         let until = self.setting_or("browser_rate_limit_until", json!(0))?;
         let remaining = pyjson::number(&until).unwrap_or(0.0) - self.host.time();
+        let following_until = self.setting_or("following_rate_limit_until", json!(0))?;
+        let following_reads = {
+            let db = self.connect()?;
+            recent_following_reads(&db, self.host.time())?.len()
+        };
+        let lightpanda = self.lightpanda_status(self.host.time())?;
         Ok(json!({
             "queues": groups,
             "recent_failures": recent,
@@ -1589,6 +1744,13 @@ impl BrowserJobQueue {
                 "remaining_seconds": if remaining > 0.0 { json!(remaining) } else { json!(0) },
                 "backoff_seconds": self.setting_or("browser_rate_limit_backoff_seconds", json!(0))?,
             },
+            "following": {
+                "paused": self.setting_or(FOLLOWING_PAUSED, json!(false))?,
+                "held_until": if pyjson::truthy(&following_until) { following_until } else { Value::Null },
+                "reads_last_hour": following_reads,
+                "readers": self.following_readers(self.host.time())?,
+            },
+            "lightpanda": lightpanda,
             "source": self.get_setting("source_status")?,
             "profile_queue": self.get_setting("profile_queue_status")?,
         }))
@@ -1879,6 +2041,147 @@ fn select_engagement(
     )
 }
 
+/// Jobs that only read Instagram, so a failed one may be retried safely.
+pub(crate) fn read_only_kind(kind: &str) -> bool {
+    matches!(kind, "digest" | "retrieval" | "following")
+}
+
+/// The oldest Following read once it may run: these reads are neither stopped
+/// (`following_paused`) nor held, the last one was claimed at least an hour divided by
+/// `following_requests_per_hour` ago, so the hour's reads are spread evenly, and its
+/// own pause has passed. A list's next page waits the page pause, a new list the list
+/// pause, both drawn when the previous read finished. A read runs as whichever account
+/// Brave shows, so `excluded_accounts` never holds it.
+fn select_following(db: &Connection, now: f64) -> BrowserResult<Option<BrowserJob>> {
+    let spacing = 3_600.0 / control().following_requests_per_hour as f64;
+    let last_read = recent_following_reads(db, now)?
+        .iter()
+        .filter_map(pyjson::number)
+        .fold(f64::NEG_INFINITY, f64::max);
+    if pyjson::truthy(&stored_setting(db, FOLLOWING_PAUSED)?)
+        || now < rate_limit_state(db, FOLLOWING_SCOPE)?.0
+        || now < last_read + spacing
+    {
+        return Ok(None);
+    }
+    let lane = if lane_reads_following(db, now)? {
+        format!("AND NOT {KNOWN_LIST_SQL}")
+    } else {
+        String::new()
+    };
+    let Some(job) = select_optional_job(
+        db,
+        &format!(
+            "SELECT * FROM jobs WHERE state='pending' AND kind='following' {lane} \
+             ORDER BY created_at,id LIMIT 1"
+        ),
+        &[],
+    )?
+    else {
+        return Ok(None);
+    };
+    let pause = if job.payload.get("max_id").is_some_and(pyjson::truthy) {
+        "following_next_page_at"
+    } else {
+        "following_next_list_at"
+    };
+    let ready_at = pyjson::number(&stored_setting(db, pause)?).unwrap_or(0.0);
+    Ok((now >= ready_at).then_some(job))
+}
+
+/// When the Following reads claimed within the hour before `now` were claimed.
+fn recent_following_reads(db: &Connection, now: f64) -> BrowserResult<Vec<Value>> {
+    Ok(match stored_setting(db, "following_reads")? {
+        Value::Array(reads) => reads
+            .into_iter()
+            .filter(|at| pyjson::number(at).is_some_and(|at| now - at < 3_600.0))
+            .collect(),
+        _ => Vec::new(),
+    })
+}
+
+/// After Brave's Following read: draw its pauses before the next page and the next list.
+fn pace_following(db: &Connection, now: f64) -> BrowserResult<()> {
+    let (page_at, list_at) = following_pauses(now);
+    write_setting(db, "following_next_page_at", &json!(page_at))?;
+    write_setting(db, "following_next_list_at", &json!(list_at))?;
+    Ok(())
+}
+
+/// Delete finished Following reads the crawl has had time to collect.
+fn delete_collected_following(db: &Connection, now: f64) -> BrowserResult<()> {
+    db.execute(
+        &format!("DELETE FROM jobs WHERE {FINISHED_FOLLOWING_SQL} AND finished_at<?"),
+        [now - control().following_result_retention_seconds],
+    )
+    .map_err(storage)?;
+    Ok(())
+}
+
+/// The day's account logins so far, or None once `username` may not log in again.
+fn account_logins_if_allowed(
+    db: &Connection,
+    username: &str,
+    now: f64,
+) -> BrowserResult<Option<Vec<Value>>> {
+    let attempts = recent_timestamps(&stored_setting(db, "account_login_attempts")?, now);
+    let last = pyjson::number(&stored_setting(
+        db,
+        &format!("account_login_at:{username}"),
+    )?)
+    .unwrap_or(0.0);
+    Ok(
+        (attempts.len() < control().account_login_daily_limit && now - last >= 86_400.0)
+            .then_some(attempts),
+    )
+}
+
+/// Extra conditions on a login reservation.
+#[derive(Debug, Default)]
+pub struct LoginReservation {
+    /// Leave at least this many of the day's logins unspent (for Brave's relogins).
+    pub keep: usize,
+    /// A first login on a new device also needs a place among the last day's
+    /// timestamps in this setting, fewer than this many.
+    pub first_login: Option<(&'static str, usize)>,
+}
+
+/// When the next page of a list, and the next list, may be read after a Following
+/// read that finished at `now`: each a random pause in `following_*_delay_*` later.
+fn following_pauses(now: f64) -> (f64, f64) {
+    let control = control();
+    let between = |low: f64, high: f64| low + fastrand::f64() * (high - low);
+    (
+        now + between(
+            control.following_page_delay_min_seconds,
+            control.following_page_delay_max_seconds,
+        ),
+        now + between(
+            control.following_list_delay_min_seconds,
+            control.following_list_delay_max_seconds,
+        ),
+    )
+}
+
+/// A setting read inside a transaction: its JSON value, null when unset or invalid.
+fn stored_setting(db: &Connection, key: &str) -> BrowserResult<Value> {
+    let raw: Option<String> = db
+        .query_row("SELECT value FROM settings WHERE key=?", [key], |row| {
+            row.get(0)
+        })
+        .optional()
+        .map_err(storage)?;
+    Ok(raw
+        .and_then(|raw| serde_json::from_str(&raw).ok())
+        .unwrap_or(Value::Null))
+}
+
+fn write_setting(db: &Connection, key: &str, value: &Value) -> BrowserResult<()> {
+    db.execute(UPSERT_SETTING, params![key, pyjson::dumps(value, None)])
+        .map_err(storage)?;
+    Ok(())
+}
+
 fn select_job(db: &Connection, id: &str) -> BrowserResult<BrowserJob> {
     db.query_row("SELECT * FROM jobs WHERE id=?", [id], BrowserJob::from_row)
         .map_err(storage)
@@ -1938,6 +2241,14 @@ fn rows_as_objects(db: &Connection, sql: &str) -> BrowserResult<Vec<Value>> {
         .map_err(storage)?;
     Ok(rows)
 }
+
+#[path = "browser_queue_lightpanda.rs"]
+mod lightpanda;
+pub use lightpanda::{AccountPace, LanePending, LaneRead};
+use lightpanda::{
+    BRAVE_DIGEST_SQL, KNOWN_LIST_SQL, lane_digest_arguments, lane_reads_following,
+    lane_running_jobs,
+};
 
 /// The Python suite's cases, ported.
 #[cfg(test)]

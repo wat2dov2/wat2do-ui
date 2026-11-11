@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -539,8 +540,6 @@ class InstagramPublishingControl(_ControlModel):
     maximum_event_slides: int = Field(gt=0, le=8)
     # A carousel with fewer event slides is never published.
     minimum_event_slides: int = Field(ge=1, le=8)
-    # Curation sees at least this many events: new ones, then never-posted upcoming ones.
-    fill_candidate_count: int = Field(ge=8, le=80)
     status_poll_interval_seconds: float = Field(gt=0, le=60)
     meta_poll_attempts: int = Field(gt=0, le=30)
     meta_poll_interval_seconds: float = Field(gt=0, le=30)
@@ -638,6 +637,18 @@ class InstagramBrowserControl(_ControlModel):
     worker_log_backup_count: int = Field(ge=1, le=10)
     engagement_interval_seconds: float = Field(ge=1, le=3600)
     engagement_max_wait_seconds: float = Field(ge=1, le=3600)
+    # Following list reads for the follow crawl: one page of this many accounts per job,
+    # a random pause in the page window before each next page of a list and in the list
+    # window before each new list, and at most this many reads within any hour. A 429 or
+    # a login wall on one holds only these reads. Finished reads are kept this long for
+    # the crawl to collect, then deleted.
+    following_page_size: int = Field(ge=12, le=200)
+    following_page_delay_min_seconds: float = Field(ge=1, le=600, allow_inf_nan=False)
+    following_page_delay_max_seconds: float = Field(ge=1, le=600, allow_inf_nan=False)
+    following_list_delay_min_seconds: float = Field(ge=1, le=3600, allow_inf_nan=False)
+    following_list_delay_max_seconds: float = Field(ge=1, le=3600, allow_inf_nan=False)
+    following_requests_per_hour: int = Field(ge=1, le=1000)
+    following_result_retention_seconds: float = Field(ge=600, le=604_800, allow_inf_nan=False)
     actions: tuple[Literal["like", "save", "repost"], ...] = Field(min_length=1, max_length=3)
 
     @model_validator(mode="after")
@@ -673,6 +684,10 @@ class InstagramBrowserControl(_ControlModel):
             raise ValueError("Maximum rate limit backoff must include the initial backoff")
         if self.rate_limit_recovery_seconds < self.rate_limit_backoff_seconds:
             raise ValueError("Rate limit recovery must include the initial backoff")
+        if self.following_page_delay_min_seconds > self.following_page_delay_max_seconds:
+            raise ValueError("following_page_delay_min_seconds must not exceed the maximum")
+        if self.following_list_delay_min_seconds > self.following_list_delay_max_seconds:
+            raise ValueError("following_list_delay_min_seconds must not exceed the maximum")
         if (
             self.storage_busy_timeout_seconds * self.storage_retry_limit
             + self.storage_retry_interval_seconds * (self.storage_retry_limit - 1)
@@ -747,6 +762,8 @@ class InstagramDigestControl(_ControlModel):
     client_doc_id: str = Field(pattern=r"^[0-9]{20,40}$")
     web_app_id: str = Field(pattern=r"^[0-9]{10,20}$")
     maximum_pages: int = Field(gt=0, le=100)
+    # The browser the worker reads digests with; Lightpanda runs in shadow mode first.
+    digest_engine: Literal["brave", "lightpanda"]
 
     @model_validator(mode="after")
     def validate_endpoint(self) -> "InstagramDigestControl":
@@ -754,6 +771,68 @@ class InstagramDigestControl(_ControlModel):
             raise ValueError("Instagram digest endpoint must use i.instagram.com")
         if self.endpoint_url.path != "/graphql/query":
             raise ValueError("Instagram digest endpoint must use /graphql/query")
+        return self
+
+
+class InstagramLightpandaControl(_ControlModel):
+    """Lightpanda, the light headless browser that reads Instagram digests per account.
+
+    The worker installs the pinned release (its download must match ``sha256``) and runs
+    one process per school account with that account's own cookie jar.
+    """
+
+    version: str = Field(pattern=r"^[0-9]+[.][0-9]+[.][0-9]+$")
+    download_url: HttpUrl
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    startup_timeout_seconds: float = Field(gt=0, le=120)
+    navigation_timeout_seconds: float = Field(gt=0, le=300)
+    shutdown_timeout_seconds: float = Field(gt=0, le=60)
+    login_wait_seconds: float = Field(gt=0, le=300)
+    login_poll_seconds: float = Field(gt=0, le=30)
+    # Accounts logging in to Lightpanda for the first time, a new device to Instagram, per day.
+    new_login_daily_limit: int = Field(ge=0, le=50)
+    # Most Lightpanda processes open at once on the Mac (about 250 MB each), across the
+    # worker's sessions and any wat2do-lightpanda command.
+    max_sessions: int = Field(ge=1, le=8)
+    # A worker session closes after this long without a job, or this long after it opened.
+    session_idle_seconds: float = Field(gt=0, le=3600)
+    session_max_seconds: float = Field(gt=0, le=86400)
+    # Brave stops leaving an account's digests and the Following reads to Lightpanda when
+    # the worker's Lightpanda lane has not said it is running for this long.
+    lane_stale_seconds: float = Field(ge=5, le=600)
+    # A lane digest gets this long in all, opening its session included, and Brave takes
+    # one the lane has left waiting this long, so a digest always meets the workflow's
+    # deadline. A lane Following read (about a second) gets the third.
+    lane_digest_timeout_seconds: float = Field(gt=0, le=150)
+    lane_digest_wait_seconds: float = Field(gt=0, le=120)
+    lane_following_timeout_seconds: float = Field(gt=0, le=120)
+    # The worker logs one more account in to Lightpanda at most this often, the accounts
+    # with the most digests in the last ramp_lookback_days first, ramp_last_accounts last.
+    ramp_interval_minutes: float = Field(ge=10, le=1440)
+    ramp_lookback_days: int = Field(ge=1, le=60)
+    # The ramp never spends the day's last ramp_reserved_logins logins, which Brave needs.
+    ramp_reserved_logins: int = Field(ge=0, le=50)
+    ramp_last_accounts: tuple[str, ...]
+    # Shadow mode replays Brave's recent digests in Lightpanda and compares the media IDs.
+    shadow_lookback_hours: float = Field(gt=0, le=168)
+    shadow_jobs_per_account: int = Field(ge=1, le=50)
+    shadow_digest_pause_seconds: float = Field(ge=0, le=600)
+    shadow_account_pause_seconds: float = Field(ge=0, le=3600)
+
+    @model_validator(mode="after")
+    def validate_download(self) -> "InstagramLightpandaControl":
+        if self.lane_digest_wait_seconds + self.lane_digest_timeout_seconds > 180:
+            # Brave still needs time for a digest the lane hands back within the
+            # workflow's 300 s wait.
+            raise ValueError("lane digest wait and timeout cannot exceed 180 seconds together")
+        if self.session_idle_seconds > self.session_max_seconds:
+            raise ValueError("session_idle_seconds cannot exceed session_max_seconds")
+        if any(not re.fullmatch(r"wat2do[.][a-z0-9_]+", name) for name in self.ramp_last_accounts):
+            raise ValueError("ramp_last_accounts must name wat2do school accounts")
+        if self.download_url.host != "github.com":
+            raise ValueError("Lightpanda downloads must come from its GitHub releases")
+        if f"/releases/download/{self.version}/" not in (self.download_url.path or ""):
+            raise ValueError("Lightpanda's download must be the pinned version's release")
         return self
 
 
@@ -866,6 +945,26 @@ class PositionsControl(_ControlModel):
     undated_visibility_months: int = Field(gt=0, le=12)
 
 
+class ClubDirectoryListingControl(_ControlModel):
+    """One listing request; ``{page}`` in the URL or JSON body pages through it from 1."""
+
+    url: str = Field(pattern=r"^https://\S+$", max_length=2048)
+    # Sent as a JSON POST body; without one the listing is a plain GET.
+    body: str | None = Field(default=None, min_length=2, max_length=2000)
+
+
+class ClubDirectoryControl(_ControlModel):
+    """A school's official club directory, read by a club directory agent."""
+
+    name: str = Field(min_length=1, max_length=100)
+    schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(
+        min_length=1, max_length=10
+    )
+    listings: list[ClubDirectoryListingControl] = Field(min_length=1, max_length=50)
+    # What the agent needs to know about this directory that its listing does not say.
+    notes: str = Field(default="", max_length=1000)
+
+
 class IngestionControl(_ControlModel):
     model: str = Field(pattern=r"^claude-[a-z0-9-]+$")
     parallel_agents: int = Field(ge=1, le=16)
@@ -883,6 +982,13 @@ class IngestionControl(_ControlModel):
     directory_listing_max_bytes: int = Field(gt=0, le=50_000_000)
     directory_model_timeout_seconds: int = Field(gt=0, le=3600)
     directory_scrape_interval_seconds: int = Field(ge=3600, le=86400)
+    # Club directory agents read each club directory's listing this often; the club pages
+    # they find are read a few at a time on every directory run, and again after a while.
+    club_directory_scan_days: int = Field(ge=1, le=90)
+    club_directory_max_listing_pages: int = Field(ge=1, le=200)
+    club_directory_pages_per_run: int = Field(ge=1, le=5000)
+    club_directory_page_delay_seconds: float = Field(ge=0, le=60, allow_inf_nan=False)
+    club_directory_recheck_days: int = Field(ge=1, le=365)
     claim_lease_seconds: int = Field(gt=0, le=86400)
     max_attempts: int = Field(ge=1, le=10)
     # Claude counts as unavailable after this many failed agent runs in a row; then, or when
@@ -895,6 +1001,9 @@ class IngestionControl(_ControlModel):
     # Club logo profile reads share the Mac's IP with post fetches, so they are spaced out.
     club_logo_read_delay_seconds: float = Field(ge=0, le=3600, allow_inf_nan=False)
     club_logo_retry_days: int = Field(gt=0, le=365)
+    # Lightpanda, relative to the home folder; it renders club profiles logged out.
+    profile_renderer: str = Field(min_length=1, max_length=200)
+    profile_render_timeout_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
     # Schools whose student clubs post too few events, so their listings also carry the
     # events the university itself runs and their university accounts are followed. The
@@ -902,11 +1011,16 @@ class IngestionControl(_ControlModel):
     university_event_schools: list[Annotated[str, Field(pattern=r"^[a-z0-9-]{1,80}$")]] = Field(
         max_length=100
     )
+    # Official club directories whose clubs' Instagram accounts are queued for following.
+    club_directories: list[ClubDirectoryControl] = Field(max_length=200)
 
     @model_validator(mode="after")
     def validate_budgets(self) -> "IngestionControl":
         if self.claim_lease_seconds <= self.model_timeout_seconds:
             raise ValueError("Ingestion claims must outlive one model call")
+        names = [directory.name for directory in self.club_directories]
+        if len(set(names)) != len(names):
+            raise ValueError("Club directory names must be unique")
         return self
 
 
@@ -928,24 +1042,39 @@ class InstagramFollowControl(_ControlModel):
     profile_read_delay_min_seconds: float = Field(ge=0, le=60)
     profile_read_delay_max_seconds: float = Field(ge=0, le=120)
 
-    # Each school's crawl starts at most once per interval.
-    crawl_interval_days: int = Field(ge=1, le=60)
-    # A crawl ends after this many profiles, so every school gets its turn.
-    crawl_max_profiles: int = Field(ge=10, le=5000)
     # A follow that failed is tried again only after this long.
     follow_retry_hours: int = Field(ge=1, le=168)
-    # A crawl stops after this many visited accounts in a row turn up nothing new.
+    # A crawl stops after this many clubs in a row turn up nothing new; nothing else ends
+    # it early, so it reads every club the school follows until then.
     crawl_miss_streak: int = Field(ge=1, le=100)
-    crawl_max_scrolls: int = Field(ge=1, le=200)
-    crawl_profile_wait_seconds: int = Field(ge=5, le=300)
-    # A profile that fails to load is retried later, up to this many times, and never
-    # counts as a miss; this many failures in a row rests the crawl before going on.
+    # A public account no school name matches becomes a candidate once this many of the
+    # school's followed clubs follow it, counted across crawls; a sighting not seen
+    # again for this many days is forgotten.
+    crawl_mutual_follow_threshold: int = Field(ge=2, le=20)
+    crawl_sighting_retention_days: int = Field(ge=7, le=730)
+    # A club's Following list is read at most this many pages deep (the school's own
+    # list always to its end).
+    crawl_list_page_limit: int = Field(ge=1, le=100)
+    # A list that fails to read is tried again later, up to this many times, and never
+    # counts as a miss.
     crawl_seed_attempts: int = Field(ge=1, le=10)
-    crawl_failures_before_rest: int = Field(ge=1, le=20)
-    crawl_rest_seconds: int = Field(ge=0, le=7200)
+    # The crawl checks on a Brave read it waits for this often at first, doubling the
+    # gap up to the maximum while it waits; a read still waiting after the timeout while
+    # Brave holds nothing rests that school's crawl.
+    crawl_poll_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
+    crawl_poll_max_seconds: float = Field(gt=0, le=600, allow_inf_nan=False)
+    crawl_read_timeout_seconds: float = Field(ge=60, le=86_400, allow_inf_nan=False)
+    # How long the emulator waits for a profile to load before a follow gives up on it.
+    profile_wait_seconds: int = Field(ge=5, le=300)
+    # This many lists or follows failing in a row rest that school's crawl or that
+    # account's follows this long before the next try.
+    failures_before_rest: int = Field(ge=1, le=20)
+    rest_seconds: int = Field(ge=0, le=7200)
 
-    # Each school account follows at most this many approved accounts per day.
+    # Each school account follows (or unfollows) at most this many accounts a day, and
+    # this many within any hour, so a fast emulator never makes an account follow in bursts.
     follows_per_account_per_day: int = Field(ge=1, le=200)
+    follows_per_account_per_hour: int = Field(ge=1, le=200)
 
     # Names clubs use for their school besides its slug, searched in Following lists.
     # UofT's campuses list each other: a club named for one campus often runs on another.
@@ -955,6 +1084,8 @@ class InstagramFollowControl(_ControlModel):
     def _read_delays_are_ordered(self) -> "InstagramFollowControl":
         if self.profile_read_delay_min_seconds > self.profile_read_delay_max_seconds:
             raise ValueError("profile_read_delay_min_seconds must not exceed the maximum")
+        if self.crawl_poll_seconds > self.crawl_poll_max_seconds:
+            raise ValueError("crawl_poll_seconds must not exceed crawl_poll_max_seconds")
         return self
 
 
@@ -1005,7 +1136,13 @@ class InstagramEmulatorControl(_ControlModel):
     user_switch_wait_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
     account_switch_settle_seconds: float = Field(ge=0, le=60, allow_inf_nan=False)
     screen_wait_seconds: float = Field(gt=0, le=60, allow_inf_nan=False)
-    # Every tap and keystroke waits a random human-like pause inside this window.
+    # A screen read waits until the app has drawn nothing new for this long, but at
+    # most this many seconds: a screen that never settles, such as a playing video, is
+    # then read as it is.
+    screen_settle_milliseconds: int = Field(ge=0, le=5000)
+    screen_settle_wait_seconds: float = Field(gt=0, le=30, allow_inf_nan=False)
+    # Every tap, swipe and Back waits a random human-like pause inside this window,
+    # and every keystroke one inside the keystroke window.
     step_delay_min_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
     step_delay_max_seconds: float = Field(ge=0, le=30, allow_inf_nan=False)
     keystroke_delay_min_seconds: float = Field(ge=0, le=5, allow_inf_nan=False)
@@ -1015,15 +1152,13 @@ class InstagramEmulatorControl(_ControlModel):
     audio_save_wait_seconds: float = Field(gt=0, le=300, allow_inf_nan=False)
     # A story repost needs room to upload; below this much free space it waits.
     min_free_data_megabytes: int = Field(ge=0, le=10_000)
-    # Once per interval, Instagram is stopped on every Android user and these folders
-    # inside its data are deleted as root (the emulator runs a rooted Google APIs
-    # image), and these apps' data is cleared on these Android users.
+    # Once a day, from reclaim_hour (local time, before the morning's carousels
+    # publish), Instagram is stopped on every Android user and these folders inside its
+    # data are deleted as root (the emulator runs a rooted Google APIs image).
     instagram_cache_paths: tuple[
         Annotated[str, Field(pattern=r"^[a-z_]+(?:/[a-z_]+)*(?:/\*)?$")], ...
     ] = Field(min_length=1)
-    reclaim_android_users: tuple[Annotated[int, Field(ge=1)], ...]
-    reclaim_packages: tuple[Annotated[str, Field(pattern=r"^[a-z][a-z0-9_.]+$")], ...]
-    reclaim_interval_hours: float = Field(gt=0, le=168, allow_inf_nan=False)
+    reclaim_hour: int = Field(ge=0, le=23)
     # The daily reclaim restarts the emulator and waits this long for it to boot again.
     restart_timeout_seconds: int = Field(ge=60, le=3600)
     # An account the app cannot switch to rests this long while the worker visits the
@@ -1032,15 +1167,13 @@ class InstagramEmulatorControl(_ControlModel):
     switch_failures_before_restart: int = Field(ge=1, le=20)
     # The one worker that drives the emulator visits one account at a time. Replies
     # and post edits happen only between the action hours, follows only between the
-    # follow hours (local time); otherwise it only reads, crawling Following lists in
-    # slices of this length. A visit follows at most this many accounts, or the busy
-    # count while another account's carousel waits for its song, and with nothing
-    # due the worker checks again after idle_seconds.
+    # follow hours (local time). A visit follows at most this many accounts, and stops
+    # following once any carousel waits for its song or the daily reclaim is due. With
+    # nothing due the worker checks again after idle_seconds.
     action_start_hour: int = Field(ge=0, le=23)
     action_end_hour: int = Field(ge=1, le=24)
     follow_start_hour: int = Field(ge=0, le=23)
     follow_end_hour: int = Field(ge=1, le=24)
-    crawl_slice_minutes: int = Field(ge=1, le=120)
     follows_per_visit: int = Field(ge=1, le=50)
     idle_seconds: int = Field(ge=10, le=3600)
     launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
@@ -1057,8 +1190,6 @@ class InstagramEmulatorControl(_ControlModel):
             raise ValueError(
                 "keystroke_delay_min_seconds cannot exceed keystroke_delay_max_seconds"
             )
-        if self.instagram_package in self.reclaim_packages:
-            raise ValueError("Clearing Instagram's data would log its accounts out")
         if {path.split("/")[0] for path in self.instagram_cache_paths} & _INSTAGRAM_LOGIN_FOLDERS:
             raise ValueError("Deleting Instagram's settings or databases would log it out")
         if (
@@ -1228,6 +1359,72 @@ class NotificationRetryControl(_ControlModel):
     max_reruns_per_run: int = Field(ge=1, le=10)
 
 
+class NotificationRecordingControl(_ControlModel):
+    """Recording the Instagram notifications the Mac's emulator gets in a local file, and
+    starting the notification workflow for its posts.
+    """
+
+    # A notification whose push category or channel contains one of these, or that Android
+    # files as a message or draws as a conversation, is a direct message: only its push
+    # category, Android user, recipient and times are kept, never its sender or text.
+    direct_message_markers: tuple[Annotated[str, Field(pattern=r"^[a-z_]{2,40}$")], ...] = Field(
+        min_length=1
+    )
+    # The reader is read this long at a time.
+    listen_seconds: float = Field(gt=0, le=600, allow_inf_nan=False)
+    # A reader that has printed nothing this long is started again, in case Android
+    # dropped its registration; the notifications it replays are not written twice.
+    quiet_restart_minutes: int = Field(ge=1, le=1440)
+    # While the emulator is down or the reader cannot start, the recorder waits a pause
+    # that doubles from the first to the longest.
+    reconnect_first_seconds: float = Field(gt=0, le=600, allow_inf_nan=False)
+    reconnect_longest_seconds: float = Field(gt=0, le=3600, allow_inf_nan=False)
+    # A recorded notification is remembered this long, so one a reader replays when it
+    # starts again is not written twice.
+    remember_days: int = Field(ge=1, le=60)
+    # notifications.jsonl is rotated at this size, keeping this many old files.
+    file_max_bytes: int = Field(ge=65536, le=1_073_741_824)
+    file_backup_count: int = Field(ge=1, le=20)
+    # recorder.log, the recorder's own status lines, is rotated the same way.
+    log_max_bytes: int = Field(ge=65536, le=67_108_864)
+    log_backup_count: int = Field(ge=1, le=10)
+    launch_agent_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # This often, each Android user that holds a school account and has stopped is started
+    # again in the background: a stopped user gets no notifications.
+    start_users_every_seconds: float = Field(ge=10, le=3600, allow_inf_nan=False)
+    # Each new notification in these Instagram push categories starts the workflow through
+    # this repository dispatch, as the phones' Automate flow does.
+    dispatch_push_categories: tuple[Annotated[str, Field(pattern=r"^[a-z_]{2,60}$")], ...] = Field(
+        min_length=1
+    )
+    github_repo: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+    dispatch_event_type: str = Field(pattern=r"^[a-z_]{2,60}$")
+    dispatch_timeout_seconds: float = Field(gt=0, le=120, allow_inf_nan=False)
+    # Dispatches go out at least this far apart, so a burst is not taken for spam.
+    send_spacing_seconds: float = Field(ge=0, le=60, allow_inf_nan=False)
+    # A failed dispatch is tried again after a pause that doubles from the first to the
+    # longest; one GitHub refuses (422) this many times is dropped.
+    retry_first_seconds: float = Field(gt=0, le=3600, allow_inf_nan=False)
+    retry_longest_seconds: float = Field(gt=0, le=86_400, allow_inf_nan=False)
+    refusals_before_drop: int = Field(ge=1, le=20)
+
+    @model_validator(mode="after")
+    def validate_recording(self) -> "NotificationRecordingControl":
+        if "direct" not in self.direct_message_markers:
+            raise ValueError("Instagram's direct message categories must stay redacted")
+        if self.reconnect_first_seconds > self.reconnect_longest_seconds:
+            raise ValueError("reconnect_first_seconds cannot exceed reconnect_longest_seconds")
+        if self.retry_first_seconds > self.retry_longest_seconds:
+            raise ValueError("retry_first_seconds cannot exceed retry_longest_seconds")
+        if any(
+            marker in category
+            for category in self.dispatch_push_categories
+            for marker in self.direct_message_markers
+        ):
+            raise ValueError("a direct message category must never be dispatched")
+        return self
+
+
 TicketCountry = Literal["CA", "US"]
 TicketCurrency = Literal["cad", "usd"]
 
@@ -1309,9 +1506,11 @@ class ControlBox(_ControlModel):
     instagram_browser: InstagramBrowserControl
     notification_workflow: NotificationWorkflowControl
     notification_retry: NotificationRetryControl
+    notification_recording: NotificationRecordingControl
     runner_setup: RunnerSetupControl
     instagram_bell_setup: InstagramBellSetupControl
     instagram_digest: InstagramDigestControl
+    instagram_lightpanda: InstagramLightpandaControl
     instagram_publishing: InstagramPublishingControl
     competitor_pain_points: CompetitorPainPointsControl
     outreach: OutreachControl

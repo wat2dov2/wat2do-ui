@@ -2,6 +2,7 @@ import errno
 import plistlib
 import stat
 import subprocess
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -321,3 +322,9 @@ def test_interrupted_replacement_restores_old_agent_before_propagating(
     assert registered is True
     assert path.read_bytes() == previous
     assert list(tmp_path.iterdir()) == [path]
+
+
+def test_the_brave_worker_binary_is_where_its_install_puts_it():
+    rust = (Path(__file__).resolve().parents[3] / "rust/src/launch_agents.rs").read_text()
+    relative = launch_agents.INSTAGRAM_BROWSER_BINARY.relative_to(Path.home())
+    assert f'home().join("{relative}")' in rust

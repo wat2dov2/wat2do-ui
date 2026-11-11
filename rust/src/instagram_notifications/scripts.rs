@@ -1,6 +1,7 @@
 //! Every AppleScript and JavaScript source the worker runs in Brave.
 //!
-//! The files under `scripts/` are byte for byte the sources Python ran. Templates mark
+//! The files under `scripts/` are the sources Python ran, byte for byte, plus the
+//! Following read (`following_query.js`), which is Rust's own. Templates mark
 //! interpolated values with `@@NAME@@`; values are inserted in one pass (an inserted
 //! value is never scanned again) and JSON values are encoded as Python's `json.dumps`.
 
@@ -11,6 +12,8 @@ pub const VIEWPORT: &str = include_str!("scripts/viewport.js");
 pub const LOGGED_OUT: &str = include_str!("scripts/logged_out.js");
 pub const LOGIN_PAGE: &str = include_str!("scripts/login_page.js");
 pub const LOGIN_FORM_STATE: &str = include_str!("scripts/login_form_state.js");
+/// Accept Instagram's one-tap "Save" prompt after a login.
+pub const SAVE_LOGIN: &str = include_str!("scripts/save_login.js");
 pub const SERVER_LOGIN: &str = include_str!("scripts/server_login.js");
 pub const PAGE_RESPONSE: &str = include_str!("scripts/page_response.js");
 pub const EXECUTE_TAB: &str = include_str!("scripts/execute_tab.applescript");
@@ -48,6 +51,7 @@ const POST_CONTEXT: &str = include_str!("scripts/post_context.js");
 const DIGEST_QUERY: &str = include_str!("scripts/digest_query.js");
 const ENGAGEMENT: &str = include_str!("scripts/engagement.js");
 const PUBLIC_MEDIA_QUERY: &str = include_str!("scripts/public_media_query.js");
+const FOLLOWING_QUERY: &str = include_str!("scripts/following_query.js");
 
 /// Fill `@@NAME@@` placeholders from `values` in a single pass.
 fn render(template: &str, values: &[(&str, &str)]) -> String {
@@ -237,6 +241,56 @@ pub fn public_media_query(endpoint: &str, username: &str, profile: bool) -> Stri
                 },
             ),
             ("POST_LIMIT", &limit.to_string()),
+        ],
+    )
+}
+
+/// One page of `username`'s Following list, read as `account` (the account Brave
+/// shows): the page `max_id` names, or the first. Without `user_id` the account's ID is
+/// looked up from its name first.
+pub fn following_query(
+    account: &str,
+    username: &str,
+    user_id: Option<&str>,
+    max_id: Option<&str>,
+) -> String {
+    let check = format!("({CURRENT_ACCOUNT_USERNAME}) === {}", json(account));
+    following(&check, username, user_id, max_id)
+}
+
+/// [`following_query`] in a page logged in as the Instagram user `recipient_id`, which
+/// it checks by its `ds_user_id` cookie rather than the page's navigation (Lightpanda's
+/// sessions hold one account each and lay nothing out).
+pub fn following_query_as_recipient(
+    recipient_id: &str,
+    username: &str,
+    user_id: Option<&str>,
+    max_id: Option<&str>,
+) -> String {
+    let check = format!("({}) === \"true\"", recipient_is_active(recipient_id));
+    following(&check, username, user_id, max_id)
+}
+
+fn following(
+    account_is_active: &str,
+    username: &str,
+    user_id: Option<&str>,
+    max_id: Option<&str>,
+) -> String {
+    let optional = |value: Option<&str>| value.map_or_else(|| "null".to_owned(), json);
+    render(
+        FOLLOWING_QUERY,
+        &[
+            ("REQUEST_KEY", &json(REQUEST_KEY)),
+            ("ACCOUNT_IS_ACTIVE", account_is_active),
+            ("USERNAME", &json(username)),
+            ("USER_ID", &optional(user_id)),
+            ("MAX_ID", &optional(max_id)),
+            (
+                "PAGE_SIZE",
+                &instagram_browser().following_page_size.to_string(),
+            ),
+            ("WEB_APP_ID", &json(&SCRAPING.instagram_web_app_id)),
         ],
     )
 }

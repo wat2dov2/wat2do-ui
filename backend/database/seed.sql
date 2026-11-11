@@ -873,6 +873,13 @@ CROSS JOIN (VALUES
 WHERE school.slug = 'uwaterloo'
 ON CONFLICT (school_id, handle) DO NOTHING;
 
+-- A club the school's official club directory lists, waiting to be scored.
+INSERT INTO public.instagram_follow_candidates (school_id, handle, name, source, found_via, status)
+SELECT school.id, 'uwcheeseclub', 'Cheese Club', 'directory', ARRAY['WUSA Clubs'], 'pending'
+FROM public.schools school
+WHERE school.slug = 'uwaterloo'
+ON CONFLICT (school_id, handle) DO NOTHING;
+
 -- The existing ULaval draft exercises review before an Instagram account is connected.
 UPDATE public.instagram_publish_batches
 SET instagram_user_id = NULL

@@ -61,10 +61,7 @@ pub fn resolve(
     account_username: &str,
     cache_ent_id: &str,
 ) -> BrowserResult<DigestResolution> {
-    let cache_id = cache_ent_id.trim();
-    if !CACHE_ID_PATTERN.is_match(cache_id) {
-        return Err(BrowserError::digest("Instagram digest cache ID is invalid"));
-    }
+    let cache_id = checked_cache_id(cache_ent_id)?;
     let queried = session
         .activate_account(intended_recipient_id, account_username)
         .and_then(|username| {
@@ -118,6 +115,24 @@ pub fn resolve(
         Err(error) if error.is_session() => return Err(BrowserError::digest(error.to_string())),
         Err(error) => return Err(error),
     };
+    resolution(&payload, username)
+}
+
+/// The trimmed CacheEntID, when it is one Instagram could have sent.
+pub fn checked_cache_id(cache_ent_id: &str) -> BrowserResult<&str> {
+    let cache_id = cache_ent_id.trim();
+    if !CACHE_ID_PATTERN.is_match(cache_id) {
+        return Err(BrowserError::digest("Instagram digest cache ID is invalid"));
+    }
+    Ok(cache_id)
+}
+
+/// The media IDs of a settled digest request, whichever browser ran it, or the
+/// failure its reason stands for.
+pub fn resolution(
+    payload: &serde_json::Map<String, Value>,
+    account_username: String,
+) -> BrowserResult<DigestResolution> {
     if payload.get("state") != Some(&json!("succeeded")) {
         return Err(response_failure(
             payload.get("reason").unwrap_or(&Value::Null),
@@ -146,7 +161,7 @@ pub fn resolve(
         ));
     }
     Ok(DigestResolution {
-        account_username: username,
+        account_username,
         media_ids,
         page_count,
     })

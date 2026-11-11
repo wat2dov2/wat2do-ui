@@ -2,7 +2,8 @@
 
 Every screen is located by the labels Instagram exposes to accessibility tools, never
 by fixed coordinates, and every tap lands at a random point inside its control after
-a random pause, so the app sees a person's rhythm rather than a script's.
+a random pause, so the app sees a person's rhythm rather than a script's. The tree is
+read by a ``ScreenReader`` kept running on the device while the emulator is held.
 """
 
 from __future__ import annotations
@@ -17,19 +18,22 @@ import shutil
 import subprocess
 import threading
 import time
+import weakref
 import xml.etree.ElementTree as ElementTree
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
+from typing import TypeVar
 
 from PIL import Image
 
 from core.controlbox import controlbox
+from services.instagram_emulator.screen_reader import ScreenReader, ScreenReaderError
 
 CONTROL = controlbox.instagram_emulator
 _BOUNDS = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
-_DUMP_SUFFIX = "UI hierchary dumped to"
 _LAUNCHER_ACTIVITY = "com.instagram.mainactivity.LauncherActivity"
 _SCREEN_READ_ATTEMPTS = 5
 # Every job that drives the emulator holds this lock, so two never tap at once.
@@ -38,7 +42,15 @@ _LOCK_PATH = Path.home() / ".local/state/wat2do/instagram-emulator.lock"
 # clearing them on every visit only keeps the disk busy.
 _RECLAIMED_PATH = Path.home() / ".local/state/wat2do/instagram-emulator-reclaimed"
 _held = threading.local()
+# Every device's screen reader; the end of each hold on the emulator stops them, so
+# Android's accessibility service is connected only while a job drives the app.
+_readers: weakref.WeakSet[ScreenReader] = weakref.WeakSet()
 _RESTART_POLL_SECONDS = 5
+# How often a wait reads the screen again; a read of a screen that has gone still is
+# almost free, and one still changing waits for it to settle first.
+_POLL_SECONDS = 0.5
+# Dialogs one wait answers before it stops expecting the screen to change for them.
+_PROMPTS_PER_WAIT = 5
 _SELECT_ALL = ("113", "29")  # KEYCODE_CTRL_LEFT + KEYCODE_A
 # Share of dark pixels in an icon's middle that means a check mark is drawn there.
 _MARKED_DARK_SHARE = 0.2
@@ -46,6 +58,9 @@ _MARKED_DARK_SHARE = 0.2
 
 class EmulatorError(RuntimeError):
     """The emulator or the Instagram app is not in a state the automation expects."""
+
+
+_Seen = TypeVar("_Seen")
 
 
 @dataclass(frozen=True)
@@ -94,6 +109,8 @@ _INSTAGRAM_NOT_RESPONDING = re.compile(r"^Instagram isn't responding$")
 _WAIT = labels("Wait")
 _CLOSE_APP = labels("Close app")
 _CLOSE = re.compile(r"^Close$")
+# Shown once per account, the first time it reposts anything; Close keeps the repost.
+_FIRST_REPOST_NOTE = re.compile(r"^You reposted ")
 # Rows in the account switcher read "wat2do.school, 3 follows and 2 more".
 _SWITCHER_ROW = re.compile(r"^wat2do\.[a-z0-9._]+(?:, .*)?$")
 _SWITCHER_SCROLLS = 3
@@ -107,7 +124,7 @@ def _sdk_tool(name: str, folder: str) -> str:
     return str(sdk / folder / name)
 
 
-def _adb_path() -> str:
+def adb_path() -> str:
     return _sdk_tool("adb", "platform-tools")
 
 
@@ -132,12 +149,22 @@ class EmulatorDevice:
         sleep: Callable[[float], None] = time.sleep,
         monotonic: Callable[[], float] = time.monotonic,
         rng: random.Random | None = None,
+        reader: ScreenReader | None = None,
     ) -> None:
         self._run = run
         self._sleep = sleep
         self._monotonic = monotonic
         self._rng = rng or random.SystemRandom()
-        self._adb = _adb_path()
+        self._adb = adb_path()
+        self._reader = reader or ScreenReader(
+            self._adb,
+            CONTROL.serial,
+            self.adb,
+            settle_milliseconds=CONTROL.screen_settle_milliseconds,
+            settle_wait_seconds=CONTROL.screen_settle_wait_seconds,
+            timeout_seconds=CONTROL.adb_timeout_seconds,
+        )
+        _readers.add(self._reader)
 
     def is_online(self) -> bool:
         try:
@@ -166,13 +193,11 @@ class EmulatorDevice:
                 root = self._read_screen()
                 break
             except EmulatorError:
-                # The dump fails while the app is still animating, such as a playing video,
-                # and sometimes prints an error in place of the screen.
+                # The reader can fail to start or stop answering on a busy emulator (the
+                # next read starts it again), and no window may be active for a moment.
                 if attempt == _SCREEN_READ_ATTEMPTS - 1:
                     raise
                 self._sleep(1)
-        if root is None:
-            return []
         nodes = []
         for element in root.iter("node"):
             match = _BOUNDS.fullmatch(element.get("bounds", ""))
@@ -190,14 +215,11 @@ class EmulatorDevice:
                 )
         return nodes
 
-    def _read_screen(self) -> ElementTree.Element | None:
-        dump = self.adb("exec-out", "uiautomator", "dump", "/dev/tty")
-        dump = dump.split(_DUMP_SUFFIX, 1)[0].strip()
-        if not dump:
-            return None
+    def _read_screen(self) -> ElementTree.Element:
         try:
-            return ElementTree.fromstring(dump)
-        except ElementTree.ParseError as exc:
+            # Empty when no window is active, which does not parse either.
+            return ElementTree.fromstring(self._reader.read())
+        except (ScreenReaderError, ElementTree.ParseError) as exc:
             raise EmulatorError("Emulator screen could not be read") from exc
 
     def marked(self, icon: Node) -> bool:
@@ -239,34 +261,60 @@ class EmulatorDevice:
         )
 
     def wait_for(self, pattern: re.Pattern[str], *, seconds: float | None = None) -> Node:
+        node = self.watch(lambda nodes: self.find(pattern, nodes), seconds=seconds)
+        if node is None:
+            raise EmulatorError(f"Instagram never showed {pattern.pattern}")
+        return node
+
+    def watch(self, look: Callable[[list[Node]], _Seen], *, seconds: float | None = None) -> _Seen:
+        """Read the screen until ``look`` finds what it is after, for at most ``seconds``
+        (``screen_wait_seconds`` when not given), and return its last answer.
+
+        ``look`` answers with something falsy while the screen does not show it yet.
+        A screen that cannot be read yet, such as while the app starts afresh or Android
+        switches users, is waited out too. A dialog covering the app is answered
+        (``_prompt``) unless it is what ``look`` is after, a few at most, so one that
+        will not go away cannot hold the wait forever.
+        """
         deadline = self._monotonic() + (seconds or CONTROL.screen_wait_seconds)
+        answered = 0
         while True:
-            nodes = self.screen()
-            node = self.find(pattern, nodes)
-            if node is not None:
-                return node
+            try:
+                nodes = self.screen()
+            except EmulatorError:
+                if self._monotonic() >= deadline:
+                    raise
+                continue
+            seen = look(nodes)
+            if seen:
+                return seen
             prompt = self._prompt(nodes)
-            if prompt is not None and not pattern.match(prompt.label):
+            if prompt is not None and answered < _PROMPTS_PER_WAIT:
                 self.tap(prompt)
+                answered += 1
                 continue
             if self._monotonic() >= deadline:
-                raise EmulatorError(f"Instagram never showed {pattern.pattern}")
-            self._sleep(1)
+                return seen
+            self._sleep(_POLL_SECONDS)
 
     def _prompt(self, nodes: list[Node]) -> Node | None:
         """The safe answer to a dialog covering the app, if one is showing.
 
-        One-time announcements ("Introducing instants" and the like), the low storage
-        warning and Android's not-responding dialog cover the app until answered;
-        declining, closing or waiting is always safe. A frozen Instagram rarely comes
-        back, so it is closed and the next step reopens it; Android's own processes
-        are waited for. Login info is saved when offered
-        after an account switch, so a later logout can come back without a password.
+        One-time announcements ("Introducing instants", the note after an account's
+        first repost and the like), the low storage warning and Android's
+        not-responding dialog cover the app until answered; declining, closing or
+        waiting is always safe. A frozen Instagram rarely comes back, so it is closed
+        and the next step reopens it; Android's own processes are waited for. Login
+        info is saved when offered after an account switch, so a later logout can come
+        back without a password.
         """
         if self.find(_SAVE_LOGIN, nodes) is not None:
             return self.find(_SAVE, nodes)
         prompt = self.find(_NOT_NOW, nodes)
-        if prompt is None and self.find(_LOW_STORAGE, nodes) is not None:
+        if prompt is None and (
+            self.find(_LOW_STORAGE, nodes) is not None
+            or self.find(_FIRST_REPOST_NOTE, nodes) is not None
+        ):
             prompt = self.find(_CLOSE, nodes)
         if prompt is None and self.find(_INSTAGRAM_NOT_RESPONDING, nodes) is not None:
             prompt = self.find(_CLOSE_APP, nodes)
@@ -279,10 +327,25 @@ class EmulatorDevice:
         while self.find(pattern) is not None:
             if self._monotonic() >= deadline:
                 raise EmulatorError(f"Instagram kept showing {pattern.pattern}")
-            self._sleep(1)
+            self._sleep(_POLL_SECONDS)
 
     def tap(self, node: Node, *, hold_ms: int = 0) -> None:
+        """Tap a control read earlier, after a person's pause."""
         self.pause()
+        self._press(node, hold_ms)
+
+    def tap_when(
+        self, pattern: re.Pattern[str], *, seconds: float | None = None, hold_ms: int = 0
+    ) -> None:
+        """Tap the control once it shows, after a person's pause.
+
+        The pause comes before the screen is read, so the screen settles while a person
+        would still be looking at it, and the control is tapped where it ended up.
+        """
+        self.pause()
+        self._press(self.wait_for(pattern, seconds=seconds), hold_ms)
+
+    def _press(self, node: Node, hold_ms: int) -> None:
         x1, y1, x2, y2 = node.bounds
         # Land somewhere in the middle half of the control, never on its edge.
         x = round(self._rng.uniform(x1 + (x2 - x1) / 4, x2 - (x2 - x1) / 4))
@@ -291,9 +354,6 @@ class EmulatorDevice:
             self.adb("shell", "input", "swipe", str(x), str(y), str(x), str(y), str(hold_ms))
         else:
             self.adb("shell", "input", "tap", str(x), str(y))
-
-    def tap_when(self, pattern: re.Pattern[str], *, seconds: float | None = None) -> None:
-        self.tap(self.wait_for(pattern, seconds=seconds))
 
     def pause(self) -> None:
         self._sleep(
@@ -357,17 +417,18 @@ class EmulatorDevice:
         return int(line.split()[3]) // 1024
 
     def reclaim_data(self) -> int:
-        """Delete what Instagram and unused apps keep piling up; returns the free space.
+        """Delete what Instagram keeps piling up; returns the free space.
 
         Instagram never trims its own image cache, downloaded camera effects or models,
         so on every Android user that holds accounts the app is stopped and those
         folders, listed in the controlbox, are deleted as root. Its login, databases and
-        settings stay, so no account is logged out. Apps listed in ``reclaim_packages``
-        are cleared on Android users without a Google account. The emulator is then
-        restarted, since its host process leaks memory. It runs at most once per
-        ``reclaim_interval_hours``.
+        settings stay, so no account is logged out, and the app is left out of Android's
+        stopped state (``_unstop``). No other app's data is cleared: clearing Google Play
+        services dropped the Android user's device and push registration. The emulator is
+        then restarted, since its host process leaks memory. It runs once a day, when
+        ``reclaim_due`` says so.
         """
-        if _reclaimed_recently():
+        if not reclaim_due():
             return self.free_data_megabytes()
         package = CONTROL.instagram_package
         for user in sorted(set(CONTROL.android_user_by_school.values())):
@@ -381,9 +442,7 @@ class EmulatorDevice:
                 "-c",
                 shlex.quote(f"am force-stop --user {user} {package} && rm -rf {paths}"),
             )
-        for user in CONTROL.reclaim_android_users:
-            for cleared in CONTROL.reclaim_packages:
-                self.adb("shell", "pm", "clear", "--user", str(user), cleared)
+            self._unstop(user)
         _RECLAIMED_PATH.parent.mkdir(parents=True, exist_ok=True)
         _RECLAIMED_PATH.touch()
         self.restart()
@@ -396,6 +455,7 @@ class EmulatorDevice:
         only gives the memory back when it exits. Its accounts live on the device's
         disk, so they stay logged in.
         """
+        self._reader.stop()
         self.adb("emu", "kill")
         deadline = self._monotonic() + CONTROL.restart_timeout_seconds
         stopped = False
@@ -403,14 +463,14 @@ class EmulatorDevice:
             # The old emulator answers until it exits; only a new one's boot counts.
             if not stopped:
                 stopped = not self.is_online()
-            elif self._booted():
+            elif self.booted():
                 self._sleep(CONTROL.screen_wait_seconds)
                 self.wake()
                 return
             self._sleep(_RESTART_POLL_SECONDS)
         raise EmulatorError("The emulator did not come back after a restart")
 
-    def _booted(self) -> bool:
+    def booted(self) -> bool:
         try:
             return self.adb("shell", "getprop", "sys.boot_completed").strip() == "1"
         except EmulatorError:
@@ -422,7 +482,13 @@ class EmulatorDevice:
 
     def use_android_user(self, user: int) -> None:
         """Bring the Android user that holds the account to the foreground, waiting only
-        until it is in front and unlocked, at most ``user_switch_wait_seconds``."""
+        until it is in front, unlocked and on screen, at most ``user_switch_wait_seconds``.
+
+        For a dozen seconds after Android reports the switch, its own switching screen
+        and then a blank one hold the display: nothing can be read, and a link opened
+        then lands late. The user's own screen (its last app, or the home screen) comes
+        back by itself; a switch whose screen is slower than the wait goes on anyway.
+        """
         if self.adb("shell", "am", "get-current-user").strip() == str(user):
             return
         self.adb("shell", "am", "switch-user", str(user))
@@ -430,32 +496,86 @@ class EmulatorDevice:
         while not self._user_ready(user):
             if self._monotonic() >= deadline:
                 raise EmulatorError("Emulator did not switch Android users")
-            self._sleep(1)
+            self._sleep(_POLL_SECONDS)
         self.wake()
+        while not self._user_on_screen(user) and self._monotonic() < deadline:
+            self._sleep(_POLL_SECONDS)
+
+    def user_started(self, user: int) -> bool:
+        """Whether the Android user is running (or booting), so its notifications arrive."""
+        state = self.adb("shell", "am", "get-started-user-state", str(user))
+        return "RUNNING" in state or "BOOTING" in state
+
+    def start_user(self, user: int) -> None:
+        """Start the Android user in the background, leaving the one in front where it is.
+
+        Android stops the least recently used background user when another is switched
+        to the front, and a stopped user gets no notifications; ``start-user`` brings it
+        back past that cap, and the pushes Instagram held for it then arrive.
+        """
+        self.adb("shell", "am", "start-user", "-w", str(user))
 
     def _user_ready(self, user: int) -> bool:
         return self.adb("shell", "am", "get-current-user").strip() == str(
             user
         ) and "RUNNING_UNLOCKED" in self.adb("shell", "am", "get-started-user-state", str(user))
 
+    def _user_on_screen(self, user: int) -> bool:
+        """Whether one of the user's own windows has the focus and can be read."""
+        try:
+            focus = self.adb("shell", "dumpsys window | grep -m1 mCurrentFocus")
+            if f" u{user} " not in focus:
+                return False
+            self._read_screen()
+        except EmulatorError:
+            return False
+        return True
+
     def use_account(self, user: int, account_username: str) -> None:
         """Switch the app to the account, confirmed by the DM inbox's title.
 
         The inbox is read rather than the home feed: an autoplaying video there keeps
-        the screen from ever going idle, and the screen reader gives up on it.
+        the screen from ever going idle, and the screen reader gives up on it. An
+        attempt that fails starts the app afresh for the next one, since a sheet or
+        dialog left open by an earlier step can keep the inbox from ever showing.
         """
         for _ in range(_SWITCH_ATTEMPTS):
-            if self.open_inbox(user) == account_username:
-                return
-            self.tap(self.wait_for(_PROFILE_TAB), hold_ms=1200)
-            # A tap while the account sheet is still sliding up can miss, leaving the
-            # sheet open; the next attempt notices and switches again.
-            self.tap(self._account_in_switcher(account_username))
+            try:
+                if self.open_inbox(user) == account_username:
+                    return
+                self.tap_when(_PROFILE_TAB, hold_ms=1200)
+                # A tap while the account sheet is still sliding up can miss, leaving the
+                # sheet open; the next attempt notices and switches again.
+                self.tap(self._account_in_switcher(account_username))
+            except EmulatorError:
+                self.reset_app(user)
+                continue
             # The switch lands on the home feed; let it settle before leaving for the
             # inbox, which opens again if its link still lands too early.
             self._sleep(CONTROL.account_switch_settle_seconds)
         if self.open_inbox(user) != account_username:
             raise EmulatorError("Instagram did not switch to the account")
+
+    def reset_app(self, user: int) -> None:
+        """Close Instagram on the Android user, so the next link starts it afresh.
+
+        A step that fails can leave a sheet or dialog open over the app, and every link
+        opened after it lands underneath, out of the screen reader's sight. The app
+        reopens on the account it was on, and is left out of Android's stopped state
+        (``_unstop``).
+        """
+        self.adb("shell", "am", "force-stop", "--user", str(user), CONTROL.instagram_package)
+        self._unstop(user)
+
+    def _unstop(self, user: int) -> None:
+        """Take Instagram out of the stopped state ``am force-stop`` leaves it in.
+
+        A force stop also marks the app stopped, as if it had never been opened, and
+        Android then delivers it nothing in the background (its broadcasts, alarms,
+        scheduled jobs and push messages) until it is launched again. ``pm unstop`` leaves
+        it closed the way a person closing it would, so the force stop only closes it.
+        """
+        self.adb("shell", "pm", "unstop", "--user", str(user), CONTROL.instagram_package)
 
     def open_inbox(self, user: int) -> str:
         """Open the DM inbox and return the username it belongs to."""
@@ -496,12 +616,21 @@ class EmulatorDevice:
         self.adb("shell", "am", "start", "--user", str(user), *target)
 
 
-def _reclaimed_recently() -> bool:
+def reclaim_due(now: datetime | None = None) -> bool:
+    """Whether the daily reclaim and restart has not run since the last ``reclaim_hour``.
+
+    A fixed hour keeps the restart before the morning's carousels publish, instead of
+    drifting into the hours their songs are added.
+    """
+    moment = (now or datetime.now()).astimezone()
+    since = moment.replace(hour=CONTROL.reclaim_hour, minute=0, second=0, microsecond=0)
+    if moment < since:
+        since -= timedelta(days=1)
     try:
-        age = time.time() - _RECLAIMED_PATH.stat().st_mtime
+        reclaimed = datetime.fromtimestamp(_RECLAIMED_PATH.stat().st_mtime).astimezone()
     except FileNotFoundError:
-        return False
-    return age < CONTROL.reclaim_interval_hours * 3600
+        return True
+    return reclaimed < since
 
 
 @contextmanager
@@ -509,7 +638,7 @@ def exclusive() -> Iterator[None]:
     """Hold the emulator for one job; another job waits until this one is done.
 
     A job may nest it, such as a DM job around the story repost it triggers; only
-    the outermost hold takes the lock.
+    the outermost hold takes the lock, and its end stops the screen readers.
     """
     if getattr(_held, "depth", 0):
         _held.depth += 1
@@ -526,4 +655,6 @@ def exclusive() -> Iterator[None]:
             yield
         finally:
             _held.depth = 0
+            for reader in list(_readers):
+                reader.stop()
             fcntl.flock(handle, fcntl.LOCK_UN)

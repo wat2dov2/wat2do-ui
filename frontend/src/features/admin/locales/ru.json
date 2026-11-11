@@ -5,6 +5,7 @@
     "reportUpdateFailed": "Не удалось обновить жалобу. Попробуйте ещё раз.",
     "eventReport": "Жалоба на событие",
     "pendingCount": "{{label}}: {{value}} в ожидании",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "Не удалось загрузить некоторые счётчики ожидающих заявок.",
     "eventReports": "Жалобы на мероприятия",
     "reportReason": "Причина жалобы",
@@ -433,12 +434,15 @@
       "change": "С {{date}}: {{value}}",
       "rate": "Вовлечённость: {{value}}%",
       "lastPost": "Последняя публикация: {{time}}",
+      "lastNotification": "Последнее уведомление: {{time}}",
+      "noNotifications": "Уведомлений пока нет",
       "reconnect": "Нужно переподключить",
       "tokenExpires": "Токен истекает: {{date}}",
       "noPosts": "Публикаций пока нет.",
       "notRead": "Ещё не прочитано. Следующий ежедневный запуск заполнит это.",
       "summary": {
         "needingAttention": "Требуют внимания: {{value}}",
+        "quietNotifications": "Без уведомлений больше {{hours}} ч",
         "followers": "Всего подписчиков",
         "averageLikes": "Среднее число лайков на публикацию",
         "followerGains": "Новые подписчики в день",
@@ -502,7 +506,7 @@
       },
       "submitFailed": "Не удалось сохранить решения. Попробуйте ещё раз.",
       "emptyTitle": "Нечего проверять",
-      "emptyDescription": "Аккаунты появляются здесь по мере того, как еженедельный поиск их находит."
+      "emptyDescription": "Аккаунты появляются здесь по мере того, как поиск их находит."
     },
     "clubSubmissions": "Заявки клубов",
     "noClubSubmissions": "Нет заявок клубов",

@@ -5,6 +5,7 @@
     "reportUpdateFailed": "રિપોર્ટ અપડેટ થઈ શક્યો નહીં. ફરી પ્રયાસ કરો.",
     "eventReport": "ઇવેન્ટ રિપોર્ટ",
     "pendingCount": "{{label}}: {{value}} બાકી",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "કેટલીક બાકી સંખ્યાઓ લોડ થઈ શકી નથી.",
     "eventReports": "ઇવેન્ટ રિપોર્ટ",
     "reportReason": "રિપોર્ટનું કારણ",
@@ -433,12 +434,15 @@
       "change": "{{date}}થી: {{value}}",
       "rate": "એન્ગેજમેન્ટ: {{value}}%",
       "lastPost": "છેલ્લી પોસ્ટ {{time}}",
+      "lastNotification": "છેલ્લી સૂચના {{time}}",
+      "noNotifications": "હજી કોઈ સૂચના નથી",
       "reconnect": "ફરી જોડવું જરૂરી",
       "tokenExpires": "ટોકનની મુદત: {{date}}",
       "noPosts": "હજી કોઈ પોસ્ટ નથી.",
       "notRead": "હજી વાંચ્યું નથી. આગલો દૈનિક રન તેને ભરી દેશે.",
       "summary": {
         "needingAttention": "ધ્યાન જરૂરી: {{value}}",
+        "quietNotifications": "{{hours}} કલાકથી કોઈ સૂચના નહીં",
         "followers": "કુલ ફોલોઅર્સ",
         "averageLikes": "દરેક પોસ્ટના સરેરાશ લાઇક્સ",
         "followerGains": "દરરોજ નવા ફોલોઅર્સ",
@@ -502,7 +506,7 @@
       },
       "submitFailed": "નિર્ણયો સાચવી શકાયા નથી. ફરી પ્રયાસ કરો.",
       "emptyTitle": "સમીક્ષા માટે કંઈ નથી",
-      "emptyDescription": "સાપ્તાહિક શોધ એકાઉન્ટ શોધે તેમ તે અહીં દેખાય છે."
+      "emptyDescription": "શોધ એકાઉન્ટ શોધે તેમ તે અહીં દેખાય છે."
     },
     "clubSubmissions": "ક્લબ સબમિશન",
     "noClubSubmissions": "કોઈ ક્લબ સબમિશન નથી",

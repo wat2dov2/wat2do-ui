@@ -7,9 +7,10 @@ A sign of throttling stops the run; the rest are scored next time.
 
 Each score decides the account right away: approve verdicts, and review verdicts that
 posted within ``review_approve_days``, are approved; a profile that could not be read
-is approved only when its handle or name names the school (the follow itself then
-shows whether it exists); everything else is rejected. Rejected accounts that posted
-within the last year are read and scored again every ``recheck_days``.
+is approved only when its handle or name names the school or the school's club
+directory lists it (the follow itself then shows whether it exists); everything else
+is rejected. Rejected accounts that posted within the last year are read and scored
+again every ``recheck_days``.
 """
 
 from __future__ import annotations
@@ -25,11 +26,12 @@ from itertools import groupby
 from pathlib import Path
 from typing import Any
 
+from core.constants import FOLLOW_SOURCE_DIRECTORY
 from core.controlbox import controlbox
 from services.claude_code import ClaudeCodeError, ClaudeLimited, run_agent
 from services.ingestion.instagram_fetch import FetchBlocked, fetch_profile
 from services.instagram_follow import candidates
-from services.instagram_follow.crawl import search_terms
+from services.instagram_follow.crawl import names_school
 
 log = logging.getLogger(__name__)
 CONTROL = controlbox.instagram_follow
@@ -111,9 +113,10 @@ def decision(
     if score["verdict"] == "approve":
         return candidates.FOLLOW_CANDIDATE_APPROVED
     if profile["read"] == "failed":
-        text = f"{row['handle']} {profile.get('name') or row.get('name') or ''}".casefold()
-        names_school = any(term.casefold() in text for term in search_terms(school))
-        if score["verdict"] == "review" and names_school:
+        name = profile.get("name") or row.get("name")
+        if score["verdict"] == "review" and (
+            names_school(school, row["handle"], name) or _directory(row)
+        ):
             return candidates.FOLLOW_CANDIDATE_APPROVED
         return candidates.FOLLOW_CANDIDATE_REJECTED
     posts = profile.get("posts") or []
@@ -172,4 +175,12 @@ def _packet(row: dict[str, Any]) -> dict[str, Any]:
         if newest
         else None,
         "posts": [{key: post[key] for key in ("posted_at", "caption", "url")} for post in posts],
+        "directory": _directory(row),
     }
+
+
+def _directory(row: dict[str, Any]) -> str | None:
+    """The official club directory that lists the account, when one does."""
+    if row.get("source") != FOLLOW_SOURCE_DIRECTORY:
+        return None
+    return next(iter(row.get("found_via") or []), None)

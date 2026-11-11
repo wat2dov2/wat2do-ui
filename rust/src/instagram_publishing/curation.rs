@@ -409,7 +409,7 @@ mod tests {
         assert_eq!(*calls.lock().unwrap(), 1);
     }
 
-    fn candidate(id: i64, new: bool) -> Candidate {
+    fn candidate(id: i64) -> Candidate {
         Candidate {
             id,
             title: format!("Event {id}"),
@@ -427,16 +427,13 @@ mod tests {
             dtstart_utc: "2026-10-14T23:00:00Z".parse().unwrap(),
             dtend_utc: None,
             tz: "America/Toronto".into(),
-            new,
         }
     }
 
     #[test]
-    fn the_packet_marks_new_events_and_earlier_fill_events() {
-        // The prompt ranks `new: true` (added since the last carousel) ahead of
-        // `new: false` (upcoming, never posted, filling the carousel).
+    fn the_packet_gives_each_event_its_poster_file() {
         let mut packet = packet();
-        packet.open.as_mut().unwrap().events = vec![candidate(17, true), candidate(9, false)];
+        packet.open.as_mut().unwrap().events = vec![candidate(17), candidate(9)];
         let text =
             packet_document(&packet, "fr".into(), &[Some("posters/17.jpg".into()), None]).unwrap();
         let document: Value = serde_json::from_str(&text).unwrap();
@@ -444,16 +441,18 @@ mod tests {
         assert_eq!(
             events
                 .iter()
-                .map(|event| (event["id"].clone(), event["new"].clone()))
+                .map(|event| event["id"].clone())
                 .collect::<Vec<_>>(),
-            [(json!(17), json!(true)), (json!(9), json!(false))]
+            [json!(17), json!(9)]
         );
         assert_eq!(events[0]["poster_file"], "posters/17.jpg");
         assert_eq!(events[1]["poster_file"], Value::Null);
         assert_eq!(document["language"], "fr");
-        // As Python wrote it: one-space indent, `new` just before the poster.
-        assert!(text.contains("\n   \"carousel_requested_at\": null,\n   \"new\": true,\n   \"poster_file\": \"posters/17.jpg\"\n"));
-        assert!(text.contains("\n   \"new\": false,\n   \"poster_file\": null\n"));
+        // As Python wrote it: one-space indent, the poster last.
+        assert!(text.contains(
+            "\n   \"carousel_requested_at\": null,\n   \"poster_file\": \"posters/17.jpg\"\n"
+        ));
+        assert!(text.contains("\n   \"carousel_requested_at\": null,\n   \"poster_file\": null\n"));
     }
 
     #[test]

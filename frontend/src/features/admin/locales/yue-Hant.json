@@ -5,6 +5,7 @@
     "reportUpdateFailed": "無法更新舉報，請再試一次。",
     "eventReport": "活動舉報",
     "pendingCount": "{{label}}：{{value}} 項待處理",
+    "alertCount": "{{label}}：{{value}}",
     "pendingCountsError": "未能載入部分待處理數量。",
     "eventReports": "活動舉報",
     "reportReason": "舉報原因",
@@ -433,12 +434,15 @@
       "change": "自 {{date}}：{{value}}",
       "rate": "互動率：{{value}}%",
       "lastPost": "最近發帖 {{time}}",
+      "lastNotification": "最近通知 {{time}}",
+      "noNotifications": "仲未有通知",
       "reconnect": "需要重新連接",
       "tokenExpires": "權杖到期：{{date}}",
       "noPosts": "暫時未有帖子。",
       "notRead": "仲未讀取。下次每日運行會填好。",
       "summary": {
         "needingAttention": "需要處理：{{value}}",
+        "quietNotifications": "{{hours}} 小時冇通知",
         "followers": "追蹤者總數",
         "averageLikes": "每個帖子平均讚好",
         "followerGains": "每日新增追蹤者",
@@ -502,7 +506,7 @@
       },
       "submitFailed": "儲存唔到決定，請再試。",
       "emptyTitle": "冇嘢要審核",
-      "emptyDescription": "每星期搜尋搵到帳號之後會喺度顯示。"
+      "emptyDescription": "搜尋搵到帳號之後會喺度顯示。"
     },
     "clubSubmissions": "社團提交",
     "noClubSubmissions": "暫無社團提交",

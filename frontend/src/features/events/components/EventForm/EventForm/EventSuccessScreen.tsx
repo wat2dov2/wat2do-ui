@@ -1,6 +1,7 @@
 import NextLink from "next/link";
 import { Check, Sparkles, Ticket } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useAuthState } from "@/features/auth/hooks/useAuthState";
 import { clubPanelEventTicketsPath } from "@/shared/constants/routes";
 import { Button } from "@/shared/ui/button";
 import { formatCardDate, formatCardTime } from "@/shared/utils/date";
@@ -29,6 +30,9 @@ export function EventSuccessScreen({
   event,
 }: EventSuccessScreenProps) {
   const { t, i18n } = useTranslation();
+  const { clubs } = useAuthState();
+  // Tickets are set up in the club's own panel, so only its members are offered it, admins included.
+  const runsClub = formData.club_id != null && clubs.some((club) => club.id === formData.club_id);
 
   const handleDone = () => {
     onClose();
@@ -97,7 +101,7 @@ export function EventSuccessScreen({
             <Button variant="outline" onMouseDown={handleDone} className="flex-1">
               {t("common.done")}
             </Button>
-            {createdEventId != null && formData.club_id != null && !isEditMode ? (
+            {createdEventId != null && runsClub && !isEditMode ? (
               <Button asChild className="flex-1">
                 <NextLink href={clubPanelEventTicketsPath(createdEventId)} onClick={onClose}>
                   <Ticket className="size-4" />

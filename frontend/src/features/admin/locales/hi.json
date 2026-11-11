@@ -5,6 +5,7 @@
     "reportUpdateFailed": "रिपोर्ट अपडेट नहीं हो सकी। कृपया फिर से कोशिश करें।",
     "eventReport": "इवेंट रिपोर्ट",
     "pendingCount": "{{label}}: {{value}} लंबित",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "कुछ लंबित संख्याएँ लोड नहीं हो सकीं।",
     "eventReports": "इवेंट रिपोर्ट",
     "reportReason": "रिपोर्ट का कारण",
@@ -433,12 +434,15 @@
       "change": "{{date}} से: {{value}}",
       "rate": "एंगेजमेंट: {{value}}%",
       "lastPost": "आख़िरी पोस्ट {{time}}",
+      "lastNotification": "आख़िरी सूचना {{time}}",
+      "noNotifications": "अभी तक कोई सूचना नहीं",
       "reconnect": "फिर से जोड़ना ज़रूरी",
       "tokenExpires": "टोकन की समय-सीमा: {{date}}",
       "noPosts": "अभी कोई पोस्ट नहीं।",
       "notRead": "अभी पढ़ा नहीं गया। अगला दैनिक रन इसे भर देगा।",
       "summary": {
         "needingAttention": "ध्यान चाहिए: {{value}}",
+        "quietNotifications": "{{hours}} घंटे से कोई सूचना नहीं",
         "followers": "कुल फ़ॉलोअर",
         "averageLikes": "प्रति पोस्ट औसत लाइक",
         "followerGains": "प्रति दिन नए फ़ॉलोअर",
@@ -502,7 +506,7 @@
       },
       "submitFailed": "फ़ैसले सहेजे नहीं जा सके। फिर से कोशिश करें।",
       "emptyTitle": "समीक्षा के लिए कुछ नहीं",
-      "emptyDescription": "साप्ताहिक खोज जैसे-जैसे अकाउंट ढूँढती है, वे यहाँ दिखते हैं।"
+      "emptyDescription": "खोज जैसे-जैसे अकाउंट ढूँढती है, वे यहाँ दिखते हैं।"
     },
     "clubSubmissions": "क्लब सबमिशन",
     "noClubSubmissions": "कोई क्लब सबमिशन नहीं",

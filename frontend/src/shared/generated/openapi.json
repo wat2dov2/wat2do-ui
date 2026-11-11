@@ -11070,7 +11070,8 @@
             "enum": [
               "crawl",
               "club",
-              "import"
+              "import",
+              "directory"
             ],
             "title": "Source"
           },
@@ -11560,6 +11561,18 @@
             "type": "string",
             "format": "date-time",
             "title": "Token Expires At"
+          },
+          "last_notification_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Notification At"
           },
           "followers_history": {
             "items": {

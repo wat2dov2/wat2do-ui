@@ -25,6 +25,7 @@ import shutil
 import tempfile
 import unicodedata
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -40,7 +41,13 @@ from core.database import get_sb
 from core.tables import INSTAGRAM_PUBLISH_BATCHES, INSTAGRAM_PUBLISH_ITEMS, INSTAGRAM_SONGS
 from services import school_service
 from services.claude_code import ClaudeCodeError, ClaudeLimited, run_agent
-from services.instagram_emulator.audio import GifComment, PlaceTag, SongNotFound, finish_post
+from services.instagram_emulator.audio import (
+    GifComment,
+    GifScene,
+    PlaceTag,
+    SongNotFound,
+    finish_post,
+)
 from services.instagram_emulator.device import EmulatorDevice
 
 log = logging.getLogger(__name__)
@@ -131,7 +138,7 @@ def _pending_batches(now: datetime) -> list[dict[str, Any]]:
 def _add_music(device: EmulatorDevice, batch: dict[str, Any], songs: Sequence[str]) -> str:
     attempts = int(batch["music_attempts"]) + 1
     # Only the first try comments, so a retry never posts a second GIF.
-    gif = gif_comment(batch["id"]) if attempts == 1 and _CONTROL.gif_comments else None
+    gif = _gif_scene(batch["id"]) if attempts == 1 and _CONTROL.gif_comments else None
     place = _place_tag(batch["school"])
     try:
         added = finish_post(
@@ -154,6 +161,16 @@ def _add_music(device: EmulatorDevice, batch: dict[str, Any], songs: Sequence[st
         return status
     _record(batch["id"], INSTAGRAM_MUSIC_ADDED, attempts, track=added.track)
     return INSTAGRAM_MUSIC_ADDED
+
+
+def _gif_scene(batch_id: str) -> GifScene:
+    """Start Claude naming the carousel's GIF scene now, while the app opens, likes and
+    reposts the post; asking for the comment waits for its answer."""
+    scenes = ThreadPoolExecutor(max_workers=1, thread_name_prefix="instagram-gif-scene")
+    answer = scenes.submit(gif_comment, batch_id)
+    # The thread ends once this one answer is in.
+    scenes.shutdown(wait=False)
+    return answer.result
 
 
 def gif_comment(batch_id: str) -> GifComment | None:

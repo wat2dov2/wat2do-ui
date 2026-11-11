@@ -5,6 +5,7 @@
     "reportUpdateFailed": "ਰਿਪੋਰਟ ਅੱਪਡੇਟ ਨਹੀਂ ਹੋ ਸਕੀ। ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     "eventReport": "ਇਵੈਂਟ ਰਿਪੋਰਟ",
     "pendingCount": "{{label}}: {{value}} ਬਕਾਇਆ",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "ਕੁਝ ਬਕਾਇਆ ਗਿਣਤੀਆਂ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀਆਂ।",
     "eventReports": "ਇਵੈਂਟ ਰਿਪੋਰਟਾਂ",
     "reportReason": "ਰਿਪੋਰਟ ਦਾ ਕਾਰਨ",
@@ -433,12 +434,15 @@
       "change": "{{date}} ਤੋਂ: {{value}}",
       "rate": "ਐਂਗੇਜਮੈਂਟ: {{value}}%",
       "lastPost": "ਆਖਰੀ ਪੋਸਟ {{time}}",
+      "lastNotification": "ਆਖਰੀ ਸੂਚਨਾ {{time}}",
+      "noNotifications": "ਅਜੇ ਕੋਈ ਸੂਚਨਾ ਨਹੀਂ",
       "reconnect": "ਮੁੜ ਜੋੜਨਾ ਲੋੜੀਂਦਾ",
       "tokenExpires": "ਟੋਕਨ ਦੀ ਮਿਆਦ: {{date}}",
       "noPosts": "ਹਾਲੇ ਕੋਈ ਪੋਸਟ ਨਹੀਂ।",
       "notRead": "ਹਾਲੇ ਪੜ੍ਹਿਆ ਨਹੀਂ ਗਿਆ। ਅਗਲਾ ਰੋਜ਼ਾਨਾ ਰਨ ਇਸਨੂੰ ਭਰ ਦੇਵੇਗਾ।",
       "summary": {
         "needingAttention": "ਧਿਆਨ ਲੋੜੀਂਦਾ: {{value}}",
+        "quietNotifications": "{{hours}} ਘੰਟਿਆਂ ਤੋਂ ਕੋਈ ਸੂਚਨਾ ਨਹੀਂ",
         "followers": "ਕੁੱਲ ਫਾਲੋਅਰ",
         "averageLikes": "ਹਰ ਪੋਸਟ ਦੇ ਔਸਤ ਲਾਈਕ",
         "followerGains": "ਹਰ ਦਿਨ ਨਵੇਂ ਫਾਲੋਅਰ",
@@ -502,7 +506,7 @@
       },
       "submitFailed": "ਫ਼ੈਸਲੇ ਸੰਭਾਲੇ ਨਹੀਂ ਜਾ ਸਕੇ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
       "emptyTitle": "ਸਮੀਖਿਆ ਲਈ ਕੁਝ ਨਹੀਂ",
-      "emptyDescription": "ਹਫ਼ਤਾਵਾਰੀ ਖੋਜ ਜਿਵੇਂ ਖਾਤੇ ਲੱਭਦੀ ਹੈ, ਉਹ ਇੱਥੇ ਦਿਸਦੇ ਹਨ।"
+      "emptyDescription": "ਖੋਜ ਜਿਵੇਂ ਖਾਤੇ ਲੱਭਦੀ ਹੈ, ਉਹ ਇੱਥੇ ਦਿਸਦੇ ਹਨ।"
     },
     "clubSubmissions": "ਕਲੱਬ ਸਬਮਿਸ਼ਨ",
     "noClubSubmissions": "ਕੋਈ ਕਲੱਬ ਸਬਮਿਸ਼ਨ ਨਹੀਂ",

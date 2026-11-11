@@ -37,9 +37,8 @@ _SEARCH = re.compile(r"^Search\.\.\.$")
 _CLEAR_SEARCH = re.compile(r"^Clear text$")
 # Suggestions (a For you tab) show until a search runs; the results replace them,
 # under a Lyrics tab, a Filter button or no filter at all, depending on the account.
-_SUGGESTIONS = re.compile(r"^For you$")
 # Results load a moment after the suggestions go.
-_RESULT_CHECKS = 3
+_SUGGESTIONS = re.compile(r"^For you$")
 _TRACK = re.compile(r"^Select track (?P<label>.+)$")
 _CLIP = re.compile(r"^\d+ second clip$")
 _DONE = re.compile(r"^Done$")
@@ -51,25 +50,19 @@ _LIKE = re.compile(r"^Like$")
 _LIKED = re.compile(r"^Liked$")
 _LIKE_BUTTON = re.compile(r"^Liked?$")
 _REPOST = re.compile(r"^Repost$")
-# Shown once per account, the first time it reposts anything.
-_FIRST_REPOST_NOTE = re.compile(r"^You reposted ")
-_CLOSE = re.compile(r"^Close$")
-_REPOST_CHECKS = 5
 _COMMENT = re.compile(r"^Comment$")
 _COMMENTS_TITLE = re.compile(r"^Comments$")
 _GIF_BUTTON = re.compile(r"^comment_composer_animated_image_picker_button$")
 _GIF_SEARCH = re.compile(r"^search_edit_text$")
+# GIPHY's results load a moment after typing; a cell shorter than this is cut off by the keyboard.
 _GIF_CELL = "gif_image"
-# GIPHY results load a moment after typing; a cell shorter than this is cut off by the keyboard.
-_GIF_RESULT_CHECKS = 8
 _MIN_GIF_HEIGHT = 150
 # The edit screen's location row reads Add location until the post has a place.
 _LOCATION_ROW = re.compile(r"^m2_location_primary_text$")
 _ADD_LOCATION = re.compile(r"^Add location$")
 _LOCATION_SEARCH = re.compile(r"^row_search_edit_text$")
-_PLACE_TITLE = "row_venue_title"
 # Places load a moment after typing, like GIPHY's results.
-_PLACE_RESULT_CHECKS = 8
+_PLACE_TITLE = "row_venue_title"
 
 log = logging.getLogger(__name__)
 
@@ -98,6 +91,11 @@ class GifComment:
     pick: PickGif
 
 
+# The GIF to comment, or None; asked for only once the post is open, so Claude can name
+# its scene while the app opens the post.
+GifScene = Callable[[], GifComment | None]
+
+
 # Given the school's name and the places Instagram found for it, the index of the school.
 ChoosePlace = Callable[[str, Sequence[str]], int | None]
 
@@ -116,7 +114,7 @@ def finish_post(
     permalink: str,
     queries: Sequence[str],
     choose: ChooseTrack,
-    gif: GifComment | None = None,
+    gif: GifScene | None = None,
     place: PlaceTag | None = None,
 ) -> AddedTrack:
     """Like and repost the post, add the first song in ``queries`` that Instagram has and
@@ -124,15 +122,33 @@ def finish_post(
     what is still missing.
 
     The worker has already switched the app to the school's account and holds the lock.
+    A try that fails starts the app afresh, so nothing it left open covers the next post.
     """
     if not _POST_URL.fullmatch(permalink):
         raise EmulatorError("Only an exact Instagram post can get audio")
     user = CONTROL.android_user_by_school[school]
+    try:
+        return _finish(device, user, permalink, queries, choose, gif, place)
+    except EmulatorError:
+        device.reset_app(user)
+        raise
+
+
+def _finish(
+    device: EmulatorDevice,
+    user: int,
+    permalink: str,
+    queries: Sequence[str],
+    choose: ChooseTrack,
+    gif: GifScene | None,
+    place: PlaceTag | None,
+) -> AddedTrack:
     _open_post(device, user, permalink)
     _like_and_repost(device)
-    if gif is not None:
+    comment = gif() if gif is not None else None
+    if comment is not None:
         try:
-            _comment_gif(device, gif)
+            _comment_gif(device, comment)
         except EmulatorError:
             # The GIF is a nice extra; it never holds up the song.
             log.warning("Could not comment a GIF on %s", permalink, exc_info=True)
@@ -197,9 +213,9 @@ def _tag_location(device: EmulatorDevice, place: PlaceTag) -> bool:
         # The post already has a place, such as from an earlier try.
         return False
     device.tap(row)
-    device.tap(device.wait_for(_LOCATION_SEARCH))
+    device.tap_when(_LOCATION_SEARCH)
     device.type_text(_typeable(place.name))
-    places = _places(device)
+    places = device.watch(_places)
     index = place.choose(place.name, [title for title, _ in places]) if places else None
     if index is None or not 0 <= index < len(places):
         _back_to_edit(device)
@@ -208,18 +224,9 @@ def _tag_location(device: EmulatorDevice, place: PlaceTag) -> bool:
     return True
 
 
-def _places(device: EmulatorDevice) -> list[tuple[str, Node]]:
+def _places(nodes: list[Node]) -> list[tuple[str, Node]]:
     """The places Instagram's location search lists for the typed name, best match first."""
-    for _ in range(_PLACE_RESULT_CHECKS):
-        device.pause()
-        places = [
-            (node.text, node)
-            for node in device.screen()
-            if node.resource_id == _PLACE_TITLE and node.text
-        ]
-        if places:
-            return places
-    return []
+    return [(node.text, node) for node in nodes if node.resource_id == _PLACE_TITLE and node.text]
 
 
 def _back_to_edit(device: EmulatorDevice) -> None:
@@ -239,30 +246,31 @@ def _comment_gif(device: EmulatorDevice, gif: GifComment) -> bool:
     device.tap_when(_COMMENT)
     device.wait_for(_COMMENTS_TITLE)
     device.tap_when(_GIF_BUTTON)
-    device.tap(device.wait_for(_GIF_SEARCH))
+    device.tap_when(_GIF_SEARCH)
     device.type_text(gif.query)
-    cells: list[Node] = []
-    for _ in range(_GIF_RESULT_CHECKS):
-        device.pause()
-        cells = sorted(
-            (
-                node
-                for node in device.screen()
-                if node.resource_id == _GIF_CELL
-                and node.bounds[3] - node.bounds[1] >= _MIN_GIF_HEIGHT
-            ),
-            key=lambda node: (node.bounds[1], node.bounds[0]),
-        )
-        if cells:
-            break
+    cells = device.watch(_gif_cells)
     if not cells:
         return False
+    # Each cell's picture draws a moment after the cell itself, and the picker looks at them.
+    device.pause()
     index = gif.pick(device.screenshot(), [cell.bounds for cell in cells])
     if index is None or not 0 <= index < len(cells):
         return False
     device.tap(cells[index])
     device.pause()
     return True
+
+
+def _gif_cells(nodes: list[Node]) -> list[Node]:
+    """GIPHY's results in reading order, leaving out any the keyboard cuts off."""
+    return sorted(
+        (
+            node
+            for node in nodes
+            if node.resource_id == _GIF_CELL and node.bounds[3] - node.bounds[1] >= _MIN_GIF_HEIGHT
+        ),
+        key=lambda node: (node.bounds[1], node.bounds[0]),
+    )
 
 
 def _like_and_repost(device: EmulatorDevice) -> None:
@@ -280,16 +288,14 @@ def _like_and_repost(device: EmulatorDevice) -> None:
     if device.marked(device.wait_for(_REPOST)):
         return
     device.tap_when(_REPOST)
-    for _ in range(_REPOST_CHECKS):
-        device.pause()
-        nodes = device.screen()
-        if device.find(_FIRST_REPOST_NOTE, nodes) is not None:
-            device.tap_when(_CLOSE)
-            continue
-        repost = device.find(_REPOST, nodes)
-        if repost is not None and device.marked(repost):
-            return
-    raise EmulatorError("Instagram did not show the post as reposted")
+    # An account's first repost also shows a note, which the wait closes.
+    if not device.watch(lambda nodes: _reposted(device, nodes)):
+        raise EmulatorError("Instagram did not show the post as reposted")
+
+
+def _reposted(device: EmulatorDevice, nodes: list[Node]) -> bool:
+    repost = device.find(_REPOST, nodes)
+    return repost is not None and device.marked(repost)
 
 
 def _pick_track(device: EmulatorDevice, queries: Sequence[str], choose: ChooseTrack) -> AddedTrack:
@@ -300,7 +306,8 @@ def _pick_track(device: EmulatorDevice, queries: Sequence[str], choose: ChooseTr
             # An empty field shows its placeholder again, whatever the account shows below.
             device.wait_for(_SEARCH)
         device.type_text(_typeable(query))
-        tracks = _results(device)
+        device.wait_until_gone(_SUGGESTIONS, seconds=CONTROL.screen_wait_seconds)
+        tracks = device.watch(_tracks)
         index = choose(query, [label for label, _ in tracks]) if tracks else None
         if index is None:
             continue
@@ -313,18 +320,13 @@ def _pick_track(device: EmulatorDevice, queries: Sequence[str], choose: ChooseTr
     raise SongNotFound("Instagram had none of the songs")
 
 
-def _results(device: EmulatorDevice) -> list[tuple[str, Node]]:
-    """The tracks the search found, in order; none when it found nothing."""
-    device.wait_until_gone(_SUGGESTIONS, seconds=CONTROL.screen_wait_seconds)
+def _tracks(nodes: list[Node]) -> list[tuple[str, Node]]:
+    """The tracks the search found, in order; none while they load or when it found nothing."""
     tracks: list[tuple[str, Node]] = []
-    for _ in range(_RESULT_CHECKS):
-        device.pause()
-        for node in device.screen():
-            match = _TRACK.match(node.description) or _TRACK.match(node.text)
-            if match and match["label"] not in (label for label, _ in tracks):
-                tracks.append((match["label"], node))
-        if tracks:
-            break
+    for node in nodes:
+        match = _TRACK.match(node.description) or _TRACK.match(node.text)
+        if match and match["label"] not in (label for label, _ in tracks):
+            tracks.append((match["label"], node))
     return tracks
 
 

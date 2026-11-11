@@ -1,8 +1,8 @@
 """School Instagram account names, and the failures the emulator worker reports.
 
 The Brave notification worker that defined these is Rust (``rust/src/instagram_notifications``),
-which keeps its own copy of the account rules; the emulator worker and its DM sweep use these
-until they are ported too.
+which keeps its own copy of the account rules; the emulator worker, its DM sweep and the
+follow crawl use these until they are ported too.
 """
 
 from __future__ import annotations
@@ -21,6 +21,11 @@ class BrowserSessionError(RuntimeError):
 
 class BrowserEngagementUncertain(BrowserSessionError):
     """A native action may have executed without verified completion."""
+
+
+def is_wat2do_account(username: str) -> bool:
+    """Whether the Instagram username is one of our own accounts."""
+    return bool(_WAT2DO_ACCOUNT_PATTERN.fullmatch(username.casefold()))
 
 
 def school_account_username(school_slug: str) -> str:

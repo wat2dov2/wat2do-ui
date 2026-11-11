@@ -11,6 +11,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::agent::ingest;
+use super::club_directories::queue;
 use crate::api::test_database::database;
 use crate::time_zones::Tz;
 
@@ -138,4 +139,124 @@ async fn school_times_in_postgres_follow_the_bundled_tz_database() {
             .collect();
         assert_eq!(back, expected, "local_to_utc in {name}");
     }
+}
+
+/// A club of the school with no Instagram account, on its directory page.
+async fn club_without_account(db: &PgPool, school: i32, name: &str, page: &str) -> i32 {
+    sqlx::query_scalar(
+        "INSERT INTO public.clubs (club_name, club_page, school_id, status) \
+         VALUES ($1, $2, $3, 'approved') RETURNING id",
+    )
+    .bind(name)
+    .bind(page)
+    .bind(school)
+    .fetch_one(db)
+    .await
+    .unwrap()
+}
+
+async fn candidate(
+    db: &PgPool,
+    school: i32,
+    handle: &str,
+) -> Option<(String, Vec<String>, String, Option<i32>)> {
+    sqlx::query_as(
+        "SELECT source, found_via, status, club_id FROM public.instagram_follow_candidates \
+         WHERE school_id = $1 AND handle = $2",
+    )
+    .bind(school)
+    .bind(handle)
+    .fetch_optional(db)
+    .await
+    .unwrap()
+}
+
+#[tokio::test]
+async fn a_directory_club_is_queued_once_and_linked_to_its_club() {
+    let Some(db) = database() else { return };
+    let (school, _) = school(&db).await;
+    let page = "https://clubs.example.edu/clubs/7";
+    let chess = club_without_account(&db, school, "Chess Club", page).await;
+    let go =
+        club_without_account(&db, school, "Go Club", "https://clubs.example.edu/clubs/8").await;
+
+    // Found on the club's page: linked to the club that page belongs to.
+    assert!(
+        queue(
+            &db,
+            school,
+            "uwchess",
+            Some("Chess Club"),
+            "Clubs",
+            Some(page)
+        )
+        .await
+        .unwrap()
+    );
+    assert_eq!(
+        candidate(&db, school, "uwchess").await,
+        Some((
+            "directory".into(),
+            vec!["Clubs".into()],
+            "pending".into(),
+            Some(chess)
+        ))
+    );
+    // Shown in the listing: linked by the club's name.
+    assert!(
+        queue(&db, school, "uwgo", Some(" go club "), "Clubs", None)
+            .await
+            .unwrap()
+    );
+    assert_eq!(candidate(&db, school, "uwgo").await.unwrap().3, Some(go));
+    // A page and a name that point at two different clubs link neither.
+    let chess_page = Some(page);
+    assert!(
+        queue(&db, school, "uwgo2", Some("Go Club"), "Clubs", chess_page)
+            .await
+            .unwrap()
+    );
+    assert_eq!(candidate(&db, school, "uwgo2").await.unwrap().3, None);
+    // No club to link: still queued.
+    assert!(
+        queue(&db, school, "uwbridge", None, "Clubs", None)
+            .await
+            .unwrap()
+    );
+    assert_eq!(candidate(&db, school, "uwbridge").await.unwrap().3, None);
+
+    // A rejected account is never offered again.
+    sqlx::query(
+        "UPDATE public.instagram_follow_candidates SET status = 'rejected' \
+         WHERE school_id = $1 AND handle = 'uwbridge'",
+    )
+    .bind(school)
+    .execute(&db)
+    .await
+    .unwrap();
+    assert!(
+        !queue(&db, school, "uwbridge", None, "Clubs", None)
+            .await
+            .unwrap()
+    );
+    assert_eq!(
+        candidate(&db, school, "uwbridge").await.unwrap().2,
+        "rejected"
+    );
+
+    // An account one of the school's clubs already names is left to the club sync.
+    sqlx::query(
+        "INSERT INTO public.clubs (club_name, ig, school_id, status) \
+         VALUES ('Poker Club', '@UWPoker', $1, 'approved')",
+    )
+    .bind(school)
+    .execute(&db)
+    .await
+    .unwrap();
+    assert!(
+        !queue(&db, school, "uwpoker", None, "Clubs", None)
+            .await
+            .unwrap()
+    );
+    assert_eq!(candidate(&db, school, "uwpoker").await, None);
 }

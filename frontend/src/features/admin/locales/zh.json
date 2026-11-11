@@ -5,6 +5,7 @@
     "reportUpdateFailed": "无法更新举报，请重试。",
     "eventReport": "活动举报",
     "pendingCount": "{{label}}：{{value}} 项待处理",
+    "alertCount": "{{label}}：{{value}}",
     "pendingCountsError": "部分待处理数量无法加载。",
     "eventReports": "活动举报",
     "reportReason": "举报原因",
@@ -433,12 +434,15 @@
       "change": "自 {{date}}：{{value}}",
       "rate": "互动率：{{value}}%",
       "lastPost": "最近发帖 {{time}}",
+      "lastNotification": "最近通知 {{time}}",
+      "noNotifications": "尚无通知",
       "reconnect": "需要重新连接",
       "tokenExpires": "令牌到期：{{date}}",
       "noPosts": "暂无帖子。",
       "notRead": "尚未读取。下一次每日运行会填充。",
       "summary": {
         "needingAttention": "需要处理：{{value}}",
+        "quietNotifications": "{{hours}} 小时无通知",
         "followers": "粉丝总数",
         "averageLikes": "每帖平均点赞",
         "followerGains": "每日新增粉丝",
@@ -502,7 +506,7 @@
       },
       "submitFailed": "无法保存决定，请重试。",
       "emptyTitle": "没有需要审核的内容",
-      "emptyDescription": "每周搜索找到账号后会显示在这里。"
+      "emptyDescription": "搜索找到账号后会显示在这里。"
     },
     "clubSubmissions": "社团提交",
     "noClubSubmissions": "暂无社团提交",

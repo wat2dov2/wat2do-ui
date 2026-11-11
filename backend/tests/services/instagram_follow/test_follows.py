@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import pytest
 
 from services.instagram_emulator.device import EmulatorError
@@ -36,7 +38,7 @@ def world(monkeypatch, tmp_path):
     marks = []
     monkeypatch.setattr(module, "BLOCKS_PATH", tmp_path / "blocked.json")
     monkeypatch.setattr(module.school_service, "get_school_id", lambda school: 7)
-    monkeypatch.setattr(module, "_allowance", lambda school_id: 2)
+    monkeypatch.setattr(module, "_left", lambda school_id: (2, 40))
     monkeypatch.setattr(
         module.candidates,
         "approved",
@@ -107,6 +109,30 @@ def test_a_failed_follow_stays_approved_for_the_next_try(world):
     assert marks == [("failed", "0"), ("gone", "1"), ("followed", "2"), ("followed", "3")]
 
 
+def test_profiles_failing_in_a_row_end_the_visit(world):
+    broken = EmulatorError("Instagram profile never loaded")
+    reader, _ = world({f"club{n}": broken for n in range(20)})
+
+    assert module.follow_due(object(), "utsg", 5) == FollowVisit(0, 0, False, failing=True)
+    assert len(reader.followed) == module.CONTROL.failures_before_rest
+
+
+def test_a_profile_that_works_starts_the_failure_count_over(world):
+    broken = EmulatorError("Instagram profile never loaded")
+    reader, _ = world({"club0": broken, "club1": broken, "club3": broken, "club4": broken})
+
+    # Two failures, a follow, two failures, a follow: the day's two follows are made.
+    assert module.follow_due(object(), "utsg", 5) == FollowVisit(2, 0, False)
+
+
+def test_unfollows_failing_in_a_row_end_the_visit(world):
+    broken = EmulatorError("Instagram profile never loaded")
+    reader, _ = world({f"club{n}": broken for n in range(20)})
+
+    assert module.unfollow_due(object(), "utsg", 5) == FollowVisit(0, 0, False, failing=True)
+    assert len(reader.unfollowed) == module.CONTROL.failures_before_rest
+
+
 def test_follows_that_stop_sticking_pause_the_account_like_a_block(world):
     stuck = module.FollowNotConfirmed("Instagram never confirmed the follow")
     reader, marks = world({"club0": stuck, "club1": stuck, "club2": stuck})
@@ -136,22 +162,87 @@ def test_follows_are_due_while_accounts_wait_and_the_day_allows(world, monkeypat
     world()
     assert module.follows_due("utsg") is True
 
-    monkeypatch.setattr(module, "_allowance", lambda school_id: 0)
+    monkeypatch.setattr(module, "_left", lambda school_id: (0, 40))
     assert module.follows_due("utsg") is False
 
-    monkeypatch.setattr(module, "_allowance", lambda school_id: 2)
+    monkeypatch.setattr(module, "_left", lambda school_id: (2, 40))
     monkeypatch.setattr(module.candidates, "approved", lambda school_id, limit: [])
     assert module.follows_due("utsg") is False
 
 
-def test_todays_follows_and_unfollows_count_against_the_daily_cap(fake_sb, patch_sb):
-    patch_sb("services.instagram_follow.follows")
-    fake_sb.set_response(data=[], count=9)
+def test_follows_wait_until_the_hour_has_room_for_a_whole_visit(world, monkeypatch):
+    world()
+    visit = min(module.EMULATOR.follows_per_visit, module.CONTROL.follows_per_account_per_hour)
+    # The hour frees up one follow at a time; a visit for one or two is not worth the switch.
+    monkeypatch.setattr(module, "_left", lambda school_id: (100, visit - 1))
+    assert module.follows_due("utsg") is False
+    assert module.unfollows_due("utsg") is False
+    monkeypatch.setattr(module, "_left", lambda school_id: (100, visit))
+    assert module.follows_due("utsg") is True
+    # Near the end of the day, what is left of it is a whole visit.
+    monkeypatch.setattr(module, "_left", lambda school_id: (3, 5))
+    assert module.follows_due("utsg") is True
 
-    # Nine follows and nine unfollows today.
-    assert module._allowance(7) == module.CONTROL.follows_per_account_per_day - 18
+
+class _At:
+    """``datetime`` whose ``now`` is today at the given local time."""
+
+    def __init__(self, **time):
+        self.moment = datetime.now().astimezone().replace(**time, second=0, microsecond=0)
+
+    def now(self, tz=None):
+        return self.moment
+
+    def fromisoformat(self, text):
+        return datetime.fromisoformat(text)
+
+    def acted(self, column, **ago):
+        """A row followed (or unfollowed) this long before now."""
+        row = {"followed_at": None, "unfollowed_at": None}
+        row[column] = (self.moment - timedelta(**ago)).isoformat()
+        return row
+
+
+def test_todays_follows_and_unfollows_count_against_the_daily_cap(fake_sb, patch_sb, monkeypatch):
+    patch_sb("services.instagram_follow.follows")
+    clock = _At(hour=23)
+    monkeypatch.setattr(module, "datetime", clock)
+    fake_sb.set_response(
+        data=[clock.acted("followed_at", hours=5)] * 60
+        + [clock.acted("unfollowed_at", hours=3)] * 60
+    )
+
+    # Sixty follows and sixty unfollows today, none in the last hour.
+    assert module._allowance(7) == module.CONTROL.follows_per_account_per_day - 120
     # Every follow made today counts, including one whose bell step failed after it.
     assert all(call.args[0] != "status" for call in fake_sb.eq.call_args_list)
+
+
+def test_follows_in_the_last_hour_count_against_the_hourly_cap(fake_sb, patch_sb, monkeypatch):
+    patch_sb("services.instagram_follow.follows")
+    clock = _At(hour=23)
+    monkeypatch.setattr(module, "datetime", clock)
+    hourly = module.CONTROL.follows_per_account_per_hour
+    fake_sb.set_response(
+        data=[clock.acted("followed_at", minutes=20)] * (hourly - 3)
+        + [clock.acted("unfollowed_at", minutes=50)] * 2
+        + [clock.acted("followed_at", minutes=70)] * 5
+    )
+
+    # The hour has room for one more, though the day has plenty left.
+    assert module._allowance(7) == 1
+
+
+def test_just_after_midnight_the_hourly_cap_still_counts_the_hour_before(
+    fake_sb, patch_sb, monkeypatch
+):
+    patch_sb("services.instagram_follow.follows")
+    clock = _At(hour=0, minute=10)
+    monkeypatch.setattr(module, "datetime", clock)
+    hourly = module.CONTROL.follows_per_account_per_hour
+    fake_sb.set_response(data=[clock.acted("followed_at", minutes=30)] * hourly)
+
+    assert module._allowance(7) == 0
 
 
 def test_accounts_already_followed_are_confirmed_without_using_the_allowance(world):
@@ -162,6 +253,27 @@ def test_accounts_already_followed_are_confirmed_without_using_the_allowance(wor
     assert module.follow_due(object(), "utsg", 5) == FollowVisit(2, 3, False)
     assert marks[:3] == [("confirmed", "0"), ("confirmed", "1"), ("confirmed", "2")]
     assert marks[3:] == [("followed", "3"), ("followed", "4")]
+
+
+def test_a_visit_stops_before_the_next_profile_when_the_worker_needs_the_emulator(world):
+    already = FollowOutcome("Following", tapped=False)
+    reader, marks = world({f"club{n}": already for n in range(20)})
+    asked = []
+
+    def stop():
+        asked.append(len(reader.followed))
+        return len(reader.followed) == 2
+
+    assert module.follow_due(object(), "utsg", 5, stop=stop) == FollowVisit(0, 2, False)
+    assert reader.followed == ["club0", "club1"]
+    assert asked == [0, 1, 2]
+
+
+def test_unfollows_stop_before_the_next_profile_when_the_worker_needs_the_emulator(world):
+    reader, _ = world()
+    visit = module.unfollow_due(object(), "utsg", 5, stop=lambda: len(reader.unfollowed) == 1)
+    assert visit == FollowVisit(1, 0, False)
+    assert reader.unfollowed == ["club0"]
 
 
 def test_a_visit_opens_a_bounded_number_of_profiles(world):

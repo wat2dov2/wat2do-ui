@@ -1,10 +1,11 @@
 """The accounts each school account should follow, and what an admin decided about them.
 
 This table is the one place any feature asks for an account to be followed: it adds a
-row with its ``source`` (a crawl, a club, an import) and the emulator follows what is
-approved. One row per school and handle is kept whatever its status, so an account
+row with its ``source`` (a crawl, a club, an import, a school's club directory) and the
+emulator follows what is approved. One row per school and handle is kept whatever its status, so an account
 is never offered twice: an account an admin rejected stays rejected. Approving
-creates the club when the school has none with that handle, and queues the follow.
+creates the club when the school has none with that handle (or gives the account to the
+club a directory row was found for), and queues the follow.
 Rejecting an account the school already follows queues an unfollow instead.
 """
 
@@ -29,7 +30,7 @@ from core.pagination import fetch_all_pages
 from core.tables import CLUBS, INSTAGRAM_FOLLOW_CANDIDATES
 
 CONTROL = controlbox.instagram_follow
-from schemas.club import CLUB_STATUS_APPROVED, ClubCreate
+from schemas.club import CLUB_STATUS_APPROVED, ClubCreate, ClubUpdate
 from services import club_service, school_service
 from services.instagram_emulator.device import CONTROL as EMULATOR
 
@@ -240,6 +241,14 @@ def _pending_rows(ids: list[UUID]) -> dict[str, dict]:
 
 
 def _club_for(row: dict) -> int:
+    """The club the row was found for (given the account when it has none), else the
+    school's one club with the handle, else a new club."""
+    if row.get("club_id") is not None:
+        linked = club_service.get_club(int(row["club_id"]))
+        if linked is not None and linked.school == row["school"]:
+            if not (linked.ig or "").strip():
+                club_service.update_club(linked.id, ClubUpdate(ig=row["handle"]))
+            return linked.id
     existing = club_service.lookup_club_by_school_and_ig(row["school"], row["handle"])
     if existing is not None:
         return int(existing["id"])

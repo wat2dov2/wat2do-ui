@@ -66,10 +66,14 @@ function Wat2DoLogoLink({ label, onNavigate }: Wat2DoLogoLinkProps) {
       className="flex h-8 w-10 shrink-0 cursor-pointer items-center justify-center transition-opacity hover:opacity-80"
       aria-label={label}
     >
+      {/* It opens every page's first paint: a lazy image only starts loading after that
+          paint, and an async decode leaves it out of the frame that shows the bar. */}
       <Image
         alt=""
         width={28}
         height={28}
+        loading="eager"
+        decoding="sync"
         className="size-7 object-contain"
         src="/brand/wat2do-mark-colour.svg"
       />

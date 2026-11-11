@@ -240,12 +240,26 @@ async fn a_draft_is_read_saved_and_claimed_as_python_did() {
         Err(ApiError::Validation { .. })
     ));
 
+    // The dashboard shows when the school last received a notification.
+    let seen: DateTime<Utc> = sqlx::query_scalar(
+        "INSERT INTO public.instagram_notifications (school_id, intended_recipient_id, \
+             push_id, push_category, materialized_media_count, materialization_status) \
+         VALUES ($1, '17841400000000001', $2, 'subscription_daily_digest', 0, 'complete') \
+         RETURNING first_seen_at",
+    )
+    .bind(school)
+    .bind(format!("dashboard-{}", Uuid::new_v4()))
+    .fetch_one(&db)
+    .await
+    .unwrap();
     let dashboard = accounts::list(&db).await.unwrap();
     let account = dashboard
         .iter()
         .find(|account| account.account_key == "uwaterloo")
         .unwrap();
     assert_eq!(account.username, "wat2do.uwaterloo");
+    // Other tests may record a later one for the same school.
+    assert!(account.last_notification_at >= Some(seen));
 }
 
 #[tokio::test]
@@ -412,4 +426,67 @@ async fn approving_a_candidate_lists_its_club_and_rejecting_creates_nothing() {
         .await
         .unwrap();
     assert_eq!(again, follow_candidates::DecisionCounts::default());
+}
+
+#[tokio::test]
+async fn approving_a_directory_row_gives_its_club_the_account() {
+    // test_approving_a_row_found_for_a_club_gives_that_club_its_account
+    let Some(db) = database() else { return };
+    let school = uwaterloo(&db).await;
+    let admin = Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO public.users (id, email, auth_id, full_name) VALUES ($1, $2, $3, 'Admin')",
+    )
+    .bind(admin)
+    .bind(format!("admin-{}@example.com", admin.simple()))
+    .bind(admin.to_string())
+    .execute(&db)
+    .await
+    .unwrap();
+    let suffix = &Uuid::new_v4().simple().to_string()[..12];
+    let club: i32 = sqlx::query_scalar(
+        "INSERT INTO public.clubs (club_name, club_type, school_id, status) \
+         VALUES ($1, 'independent', $2, 'approved') RETURNING id",
+    )
+    .bind(format!("Chess Club {suffix}"))
+    .bind(school)
+    .fetch_one(&db)
+    .await
+    .unwrap();
+    let handle = format!("chess{suffix}");
+    let id: Uuid = sqlx::query_scalar(
+        "INSERT INTO public.instagram_follow_candidates \
+             (school_id, handle, name, source, found_via, club_id) \
+         VALUES ($1, $2, 'Chess Club', 'directory', ARRAY['WUSA Clubs'], $3) RETURNING id",
+    )
+    .bind(school)
+    .bind(&handle)
+    .bind(club)
+    .fetch_one(&db)
+    .await
+    .unwrap();
+
+    let counts = follow_candidates::decide(&db, &[(id, "approved".to_owned())], admin)
+        .await
+        .unwrap();
+    assert_eq!(counts.approved, 1);
+    let (club_id,): (Option<i32>,) =
+        sqlx::query_as("SELECT club_id FROM public.instagram_follow_candidates WHERE id = $1")
+            .bind(id)
+            .fetch_one(&db)
+            .await
+            .unwrap();
+    assert_eq!(club_id, Some(club));
+    let ig: Option<String> = sqlx::query_scalar("SELECT ig FROM public.clubs WHERE id = $1")
+        .bind(club)
+        .fetch_one(&db)
+        .await
+        .unwrap();
+    assert_eq!(ig.as_deref(), Some(handle.as_str()));
+    let made: i64 = sqlx::query_scalar("SELECT count(*) FROM public.clubs WHERE ig = $1")
+        .bind(&handle)
+        .fetch_one(&db)
+        .await
+        .unwrap();
+    assert_eq!(made, 1);
 }

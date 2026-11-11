@@ -27,6 +27,15 @@ pub const LOGGED_OUT_PAUSE: &str =
     "Instagram browser requires human account recovery: log in to Instagram in Brave";
 pub const CANCELLATION_UNCONFIRMED: &str = "cancellation could not be confirmed";
 
+/// What Switch accounts opened.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum AccountChooser {
+    /// Instagram's chooser, listing Brave's other saved accounts.
+    Accounts,
+    /// A bare login form: Brave holds no other saved account.
+    LoginForm,
+}
+
 pub struct BrowserInstagramSession {
     pub(crate) bridge: Arc<Bridge>,
     runner: Box<dyn JavascriptRunner>,
@@ -334,38 +343,11 @@ impl BrowserInstagramSession {
             self.run(source)?;
             self.poll_until(|session| {
                 let raw = session.read(scripts::REQUEST_STATE)?;
-                let invalid =
-                    || BrowserError::session("Instagram browser returned invalid request state");
-                let value: Value = serde_json::from_str(&raw).map_err(|_| invalid())?;
-                let Value::Object(value) = value else {
-                    if value.is_null() {
-                        return Ok(false);
-                    }
-                    return Err(invalid());
-                };
-                let (Some(result), Some(Value::Bool(settled))) =
-                    (value.get("result"), value.get("settled"))
-                else {
-                    return Err(invalid());
-                };
-                if value.len() != 2 {
-                    return Err(invalid());
-                }
-                if result.is_null() {
+                let Some((result, settled)) = request_result(&raw)? else {
                     return Ok(false);
-                }
-                let Value::Object(result) = result else {
-                    return Err(invalid());
                 };
-                let state = result.get("state").and_then(Value::as_str);
-                if !matches!(state, Some("pending" | "succeeded" | "failed")) {
-                    return Err(invalid());
-                }
-                if state == Some("pending") {
-                    return Ok(false);
-                }
-                payload = Some(result.clone());
-                completion_settled = *settled;
+                payload = Some(result);
+                completion_settled = settled;
                 Ok(completion_settled)
             })
         })();
@@ -528,14 +510,7 @@ impl BrowserInstagramSession {
             self.switch_account(username)?;
         }
         self.verify_account(recipient_id, username)?;
-        if self.read(scripts::ACCOUNT_CHOOSER_STATE)? == "ready"
-            && self.run(scripts::CLOSE_ACCOUNT_CHOOSER)? != "clicked"
-        {
-            return Err(BrowserError::session(
-                "Instagram account chooser could not be closed",
-            ));
-        }
-        Ok(())
+        self.close_account_chooser()
     }
 
     /// Fill and submit the login form on the page, then answer what Instagram asks.
@@ -581,10 +556,12 @@ impl BrowserInstagramSession {
         self.poll_until_within(window, |session| {
             state = session.login_state()?;
             if state == "save_info" {
-                // One click; the page then navigates away on its own.
+                // One click; the page then navigates away on its own. The prompt's
+                // button can render a moment after its page, so a click that found no
+                // button is tried again on the next poll instead of waiting out the
+                // deadline on a login that already succeeded.
                 if !save_clicked {
-                    session.run(&scripts::click_label("Save info"))?;
-                    save_clicked = true;
+                    save_clicked = session.run(scripts::SAVE_LOGIN)?.trim() == "clicked";
                 }
                 return Ok(false);
             }
@@ -644,32 +621,60 @@ impl BrowserInstagramSession {
         })
     }
 
-    /// Log in an account missing from the switcher, from `from_account`: the way a
-    /// person adds one, switch to an account that is logged in, then Switch accounts,
-    /// "Log into an Existing Account".
-    pub fn add_account(
-        &mut self,
-        username: &str,
-        password: &str,
-        from_account: &str,
-    ) -> BrowserResult<()> {
-        if username != from_account
-            && self.current_account_username()?.as_deref() != Some(from_account)
+    /// The active account, read once no dialog from Switch accounts covers the page.
+    pub(super) fn active_account(&mut self) -> BrowserResult<String> {
+        self.close_account_chooser()?;
+        let mut username: Option<String> = None;
+        self.poll_until(|session| {
+            username = session.current_account_username()?;
+            Ok(username.is_some())
+        })?;
+        Ok(username.expect("the poll ends once an account is read"))
+    }
+
+    /// Open Instagram's login form the way a person adds an account: Switch accounts,
+    /// then "Log into an Existing Account" when it lists Brave's other saved accounts,
+    /// or the bare form it opens when Brave holds no other.
+    pub(super) fn open_login_form(&mut self) -> BrowserResult<()> {
+        if self.open_account_chooser()? == AccountChooser::Accounts
+            && self.run(&scripts::click_label("Log into an Existing Account"))? != "clicked"
         {
-            self.switch_account(from_account)?;
-        }
-        self.open_account_chooser()?;
-        if self.run(&scripts::click_label("Log into an Existing Account"))? != "clicked" {
+            self.close_account_chooser()?;
             return Err(BrowserError::page_unavailable(
                 "Instagram's add-account control is unavailable",
             ));
         }
-        self.log_in(username, password)
+        self.poll_until(|session| Ok(session.login_state()? == "form"))
     }
 
-    fn open_account_chooser(&mut self) -> BrowserResult<()> {
-        if self.read(scripts::ACCOUNT_CHOOSER_STATE)? == "ready" {
+    fn account_chooser(&mut self) -> BrowserResult<Option<AccountChooser>> {
+        Ok(match self.read(scripts::ACCOUNT_CHOOSER_STATE)?.as_str() {
+            "ready" => Some(AccountChooser::Accounts),
+            "login" => Some(AccountChooser::LoginForm),
+            _ => None,
+        })
+    }
+
+    /// Close any dialog Switch accounts left open and wait until it is gone: a modal
+    /// hides the page's navigation, and with it the active account.
+    pub(super) fn close_account_chooser(&mut self) -> BrowserResult<()> {
+        if self.account_chooser()?.is_none() {
             return Ok(());
+        }
+        if self.run(scripts::CLOSE_ACCOUNT_CHOOSER)? != "clicked" {
+            return Err(BrowserError::session(
+                "Instagram account chooser could not be closed",
+            ));
+        }
+        self.poll_until(|session| Ok(session.account_chooser()?.is_none()))
+    }
+
+    fn open_account_chooser(&mut self) -> BrowserResult<AccountChooser> {
+        match self.account_chooser()? {
+            Some(AccountChooser::Accounts) => return Ok(AccountChooser::Accounts),
+            // A login form left open says nothing about which accounts Brave holds.
+            Some(AccountChooser::LoginForm) => self.close_account_chooser()?,
+            None => {}
         }
         if self.read(scripts::SWITCH_BUTTON_STATE)? != "ready" {
             if self.run(scripts::OPEN_MORE)? != "clicked" {
@@ -684,19 +689,31 @@ impl BrowserInstagramSession {
                 "Instagram account switch control is unavailable",
             ));
         }
-        self.poll_until(|session| Ok(session.read(scripts::ACCOUNT_CHOOSER_STATE)? == "ready"))
+        let mut opened: Option<AccountChooser> = None;
+        self.poll_until(|session| {
+            opened = session.account_chooser()?;
+            Ok(opened.is_some())
+        })?;
+        Ok(opened.expect("the poll ends once Switch accounts opened"))
     }
 
+    /// Select `username` in Switch accounts; `ACCOUNT_UNAVAILABLE` when Brave lacks it,
+    /// with the chooser closed again.
     pub(super) fn switch_account(&mut self, username: &str) -> BrowserResult<()> {
-        self.open_account_chooser()?;
-        let selected = self.run(&scripts::click_account(username))?;
-        if selected == "ambiguous" {
+        let selected = match self.open_account_chooser()? {
+            AccountChooser::Accounts => Some(self.run(&scripts::click_account(username))?),
+            // Brave holds no other saved account, so this one is missing too.
+            AccountChooser::LoginForm => None,
+        };
+        if selected.as_deref() != Some("clicked") {
+            self.close_account_chooser()?;
             return Err(BrowserError::session(
-                "Matching Instagram browser account is ambiguous",
+                if selected.as_deref() == Some("ambiguous") {
+                    "Matching Instagram browser account is ambiguous"
+                } else {
+                    ACCOUNT_UNAVAILABLE
+                },
             ));
-        }
-        if selected != "clicked" {
-            return Err(BrowserError::session(ACCOUNT_UNAVAILABLE));
         }
         self.poll_until(|session| {
             session.current_page_path(true)?;
@@ -722,4 +739,39 @@ fn submitted_login(username: &str, error: &BrowserError) -> BrowserError {
             }
         ),
     )
+}
+
+/// The finished result in a page's request state (what `scripts::REQUEST_STATE`
+/// returns) and whether its request has settled; None while it still runs. Any other
+/// shape is an invalid state.
+pub fn request_result(raw: &str) -> BrowserResult<Option<(serde_json::Map<String, Value>, bool)>> {
+    let invalid = || BrowserError::session("Instagram browser returned invalid request state");
+    let value: Value = serde_json::from_str(raw).map_err(|_| invalid())?;
+    let Value::Object(value) = value else {
+        if value.is_null() {
+            return Ok(None);
+        }
+        return Err(invalid());
+    };
+    let (Some(result), Some(Value::Bool(settled))) = (value.get("result"), value.get("settled"))
+    else {
+        return Err(invalid());
+    };
+    if value.len() != 2 {
+        return Err(invalid());
+    }
+    if result.is_null() {
+        return Ok(None);
+    }
+    let Value::Object(result) = result else {
+        return Err(invalid());
+    };
+    let state = result.get("state").and_then(Value::as_str);
+    if !matches!(state, Some("pending" | "succeeded" | "failed")) {
+        return Err(invalid());
+    }
+    if state == Some("pending") {
+        return Ok(None);
+    }
+    Ok(Some((result.clone(), *settled)))
 }

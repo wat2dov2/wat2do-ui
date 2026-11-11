@@ -5,6 +5,7 @@
     "reportUpdateFailed": "به‌روزرسانی گزارش ممکن نشد. دوباره تلاش کنید.",
     "eventReport": "گزارش رویداد",
     "pendingCount": "{{label}}: {{value}} در انتظار",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "بارگیری برخی شمارش‌های در انتظار ممکن نشد.",
     "eventReports": "گزارش‌های رویدادها",
     "reportReason": "دلیل گزارش",
@@ -433,12 +434,15 @@
       "change": "از {{date}}: {{value}}",
       "rate": "تعامل: {{value}}٪",
       "lastPost": "آخرین پست {{time}}",
+      "lastNotification": "آخرین اعلان {{time}}",
+      "noNotifications": "هنوز اعلانی نیامده",
       "reconnect": "نیاز به اتصال دوباره",
       "tokenExpires": "توکن در {{date}} منقضی می‌شود",
       "noPosts": "هنوز پستی نیست.",
       "notRead": "هنوز خوانده نشده. اجرای روزانهٔ بعدی آن را پر می‌کند.",
       "summary": {
         "needingAttention": "نیازمند رسیدگی: {{value}}",
+        "quietNotifications": "بدون اعلان در {{hours}} ساعت",
         "followers": "مجموع دنبال‌کنندگان",
         "averageLikes": "میانگین پسند هر پست",
         "followerGains": "دنبال‌کنندگان جدید در روز",
@@ -502,7 +506,7 @@
       },
       "submitFailed": "تصمیم‌ها ذخیره نشد. دوباره تلاش کنید.",
       "emptyTitle": "چیزی برای بررسی نیست",
-      "emptyDescription": "حساب‌ها وقتی جست‌وجوی هفتگی آن‌ها را پیدا کند اینجا نمایش داده می‌شوند."
+      "emptyDescription": "حساب‌ها وقتی جست‌وجو آن‌ها را پیدا کند اینجا نمایش داده می‌شوند."
     },
     "clubSubmissions": "درخواست‌های باشگاه",
     "noClubSubmissions": "هیچ درخواست باشگاهی وجود ندارد",

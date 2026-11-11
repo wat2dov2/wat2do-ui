@@ -163,6 +163,7 @@ export function EventCardImage({
               clubType={event.club_type}
               school={event.school}
               disabled={!interactive}
+              logoLoading={eagerImage ? "eager" : "lazy"}
               onNavigate={onClubNavigate}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}

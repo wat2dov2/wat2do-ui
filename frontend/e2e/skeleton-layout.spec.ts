@@ -20,7 +20,8 @@ import { STORAGE_KEYS } from "../src/shared/constants/storageKeys";
  * on both sides must keep its box (within 1px) across the swap, and the page
  * must record no layout shift while it loads, swaps and settles. The events
  * list paints its server-rendered first screen before the complete feed
- * arrives, so that first screen is held to the same standard. The top bar is
+ * arrives, so that first screen is held to the same standard. A club page waits
+ * for its events and draws them with its header. The top bar is
  * also loaded with its HTML paused partway through, as a slow CPU or network
  * can leave it, and must not shift either. The back-to-top corner must keep its
  * place however the text around it measures.
@@ -93,8 +94,13 @@ function apiPath(url: URL): string | null {
 
 function startTime(index: number) {
   // Every early event shares one date section, so the first screen is one section like the loading grid.
-  const base = Date.now() + 2 * 60 * 60 * 1000;
-  return new Date(base + index * 60_000).toISOString();
+  // They start at 17:00 UTC (noon or 1 PM in Toronto) on the next UTC day: starting a fixed time from
+  // now made runs between 8 and 10 PM Toronto cross midnight, which split the section and wrapped
+  // the event page's date onto a second line on phones.
+  const base = new Date();
+  base.setUTCDate(base.getUTCDate() + 1);
+  base.setUTCHours(17, 0, 0, 0);
+  return new Date(base.getTime() + index * 60_000).toISOString();
 }
 
 function makeEvent(index: number) {
@@ -550,7 +556,6 @@ const ROUTE_SURFACES: RouteSurface[] = [
   { name: "positions-list", path: "/positions", held: path => path === "/positions", loading: "[data-slot=discovery-loading]", loaded: "[data-slot=card-grid] article" },
   { name: "event-page", path: "/events/1", held: path => path === "/events/1", loading: "[data-slot=event-details-loading]", loaded: "[data-slot=event-host]" },
   { name: "club-page", path: "/clubs/1", held: path => path === "/clubs/1", loading: "[data-slot=club-details-loading]", loaded: "[data-slot=club-details]" },
-  { name: "club-page-events", path: "/clubs/1", held: (path, url) => path === "/events" && url.searchParams.has("club_ids"), loading: "[data-slot=club-details] [aria-busy=true]", loaded: "[data-slot=club-details] [data-event-card]" },
 ];
 
 for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
@@ -571,6 +576,29 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
         await report(name, comparison, cls, shifts);
       });
     }
+
+    test("club page waits for its events, then draws its header and events together", async ({ page, next }) => {
+      const gates: Gates = { data: new Gate(), late: new Gate() };
+      // The club itself is ready at once; only its events wait.
+      await installMocks(page, next, gates, (path, url) => path === "/events" && url.searchParams.has("club_ids"));
+      await throttleCpu(page);
+      await page.addInitScript(OBSERVE_SHIFTS);
+
+      await page.goto(`${BASE}/clubs/1`, { waitUntil: "commit" });
+      await page.locator("[data-slot=club-details-loading]").first().waitFor();
+      await settle(page);
+      // Never the header over a screen of placeholder cards that then collapse to the club's real count.
+      await expect(page.locator("[data-slot=club-details]")).toBeHidden();
+      const name = `club-page-events-${viewportName}`;
+      const { cls, shifts, comparison } = await measureSwap(page, gates, "[data-slot=club-details] [data-event-card]", name, viewport.height);
+      await report(name, comparison, cls, shifts);
+      // The first screen's logos load with the page instead of popping in after it.
+      await expect(page.locator("img[src*='wat2do-logo-nav']").first()).toHaveAttribute("loading", "eager");
+      await expect(page.locator("[data-slot=club-details] [data-slot=page-header] [data-slot=avatar-stack] img")).toHaveAttribute("loading", "eager");
+      await expect(page.locator("[data-slot=club-details] [data-event-card] [data-slot=avatar-stack] img").first()).toHaveAttribute("loading", "eager");
+      // A first-row poster that has arrived appears with the page, never as a placeholder first.
+      await expect(page.locator("[data-slot=club-details] [data-event-card] [data-slot=event-image-face] img").first()).toHaveAttribute("decoding", "sync");
+    });
 
     test("events list keeps its layout when the complete feed replaces the server's first screen", async ({ page, next }) => {
       const gates: Gates = { data: new Gate(), late: new Gate() };

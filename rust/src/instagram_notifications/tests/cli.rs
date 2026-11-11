@@ -1317,3 +1317,60 @@ fn test_resume_cannot_erase_a_concurrent_safety_hold() {
     assert_eq!(queue.get_setting("paused").unwrap(), Some(json!(hold)));
     assert!(stderr.contains("pause changed"), "{stderr}");
 }
+
+#[test]
+fn the_follow_crawl_queues_a_following_page_and_reads_it_back_by_job_id() {
+    let directory = tempfile::tempdir().unwrap();
+    let services = FakeCli::new(directory.path());
+    let (code, stdout, stderr) = main_with(
+        &services,
+        directory.path(),
+        &[
+            "following",
+            "--school=ubc",
+            "--crawl=crawl-1",
+            "--username=UBC.Club",
+            "--max-id=-QVFE+/=",
+        ],
+    );
+    assert_eq!(code, 0, "{stderr}");
+    let job_id = serde_json::from_str::<Value>(&stdout).unwrap()["job_id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let (code, stdout, _) = main_with(
+        &services,
+        directory.path(),
+        &["status", &format!("--job-id={job_id}")],
+    );
+    assert_eq!(code, 0);
+    let job: Value = serde_json::from_str(&stdout).unwrap();
+    assert_eq!(job["kind"], "following");
+    assert_eq!(job["account_username"], "wat2do.ubc");
+    assert_eq!(
+        job["payload"],
+        json!({"crawl": "crawl-1", "username": "ubc.club", "user_id": null, "max_id": "-QVFE+/="})
+    );
+    let (code, _, stderr) = main_with(&services, directory.path(), &["status", "--job-id=missing"]);
+    assert_eq!(code, 1);
+    assert!(stderr.contains("job does not exist"), "{stderr}");
+}
+
+#[test]
+fn following_reads_alone_can_be_stopped_and_started_again() {
+    let directory = tempfile::tempdir().unwrap();
+    let services = FakeCli::new(directory.path());
+    let (code, stdout, _) = main_with(&services, directory.path(), &["pause-following"]);
+    assert_eq!(code, 0);
+    assert!(serde_json::from_str::<Value>(&stdout).unwrap()["following_paused"].is_string());
+    let queue = open_queue(directory.path(), &services.host);
+    assert!(!queue.paused().unwrap());
+    let (_, stdout, _) = main_with(&services, directory.path(), &["status"]);
+    assert!(serde_json::from_str::<Value>(&stdout).unwrap()["following"]["paused"].is_string());
+    let (code, stdout, _) = main_with(&services, directory.path(), &["resume-following"]);
+    assert_eq!(code, 0);
+    assert_eq!(
+        serde_json::from_str::<Value>(&stdout).unwrap()["following_paused"],
+        json!(false)
+    );
+}

@@ -1,0 +1,28 @@
+{
+  "direct_message_markers": [
+    "direct",
+    "message"
+  ],
+  "listen_seconds": 5,
+  "quiet_restart_minutes": 60,
+  "reconnect_first_seconds": 5,
+  "reconnect_longest_seconds": 60,
+  "remember_days": 3,
+  "file_max_bytes": 16777216,
+  "file_backup_count": 5,
+  "log_max_bytes": 1048576,
+  "log_backup_count": 3,
+  "launch_agent_timeout_seconds": 30,
+  "start_users_every_seconds": 60,
+  "dispatch_push_categories": [
+    "post",
+    "subscription_daily_digest"
+  ],
+  "github_repo": "wat2dov2/wat2do-ui",
+  "dispatch_event_type": "new_instagram_post",
+  "dispatch_timeout_seconds": 30,
+  "send_spacing_seconds": 1,
+  "retry_first_seconds": 30,
+  "retry_longest_seconds": 1800,
+  "refusals_before_drop": 3
+}

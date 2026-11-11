@@ -5,6 +5,7 @@
     "reportUpdateFailed": "Could not update the report. Please try again.",
     "eventReport": "Event report",
     "pendingCount": "{{label}}: {{value}} pending",
+    "alertCount": "{{label}}: {{value}}",
     "pendingCountsError": "Some pending counts could not be loaded.",
     "eventReports": "Event reports",
     "reportReason": "Report reason",
@@ -433,12 +434,15 @@
       "change": "Since {{date}}: {{value}}",
       "rate": "Engagement: {{value}}%",
       "lastPost": "Last post {{time}}",
+      "lastNotification": "Last notification {{time}}",
+      "noNotifications": "No notifications yet",
       "reconnect": "Reconnect needed",
       "tokenExpires": "Token expires {{date}}",
       "noPosts": "No posts yet.",
       "notRead": "Not read yet. The next daily run fills this in.",
       "summary": {
         "needingAttention": "Need attention: {{value}}",
+        "quietNotifications": "No notifications in {{hours}} h",
         "followers": "Total followers",
         "averageLikes": "Average likes per post",
         "followerGains": "Followers gained per day",
@@ -502,7 +506,7 @@
       },
       "submitFailed": "Decisions could not be saved. Try again.",
       "emptyTitle": "Nothing to review",
-      "emptyDescription": "Accounts appear here as the weekly crawl finds them."
+      "emptyDescription": "Accounts appear here as the crawl finds them."
     },
     "clubSubmissions": "Club submissions",
     "noClubSubmissions": "No club submissions",
