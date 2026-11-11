@@ -646,7 +646,7 @@ def test_instagram_browser_controls_have_one_shared_timing_source():
         {"following_list_delay_min_seconds": 21},
         {"following_list_delay_max_seconds": 3601},
         {"following_requests_per_hour": 0},
-        {"following_requests_per_hour": 1001},
+        {"following_requests_per_hour": 3601},
         {"following_result_retention_seconds": 599},
         {"worker_log_max_bytes": 65535},
         {"worker_log_max_bytes": 67108865},

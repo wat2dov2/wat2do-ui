@@ -637,7 +637,7 @@ class InstagramBrowserControl(_ControlModel):
     following_page_delay_max_seconds: float = Field(ge=1, le=600, allow_inf_nan=False)
     following_list_delay_min_seconds: float = Field(ge=1, le=3600, allow_inf_nan=False)
     following_list_delay_max_seconds: float = Field(ge=1, le=3600, allow_inf_nan=False)
-    following_requests_per_hour: int = Field(ge=1, le=1000)
+    following_requests_per_hour: int = Field(ge=1, le=3600)
     following_result_retention_seconds: float = Field(ge=600, le=604_800, allow_inf_nan=False)
     actions: tuple[Literal["like", "save", "repost"], ...] = Field(min_length=1, max_length=3)
 
